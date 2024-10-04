@@ -25,98 +25,11 @@
 #  will exclude deselection in versions 0.18.1, and 0.18.2 only.
 
 deselected_tests:
-  # sklearn 1.6 unsupported features
-  - linear_model/tests/test_base.py::test_linear_regression_sample_weight_consistency[42-True-None-X_shape1]
-  - linear_model/tests/test_base.py::test_linear_regression_sample_weight_consistency[42-True-None-X_shape2]
-  - linear_model/tests/test_ridge.py::test_ridge_shapes_type
-  - linear_model/tests/test_ridge.py::test_ridge_cv_results_predictions[2-False-False]
-  - linear_model/tests/test_ridge.py::test_ridge_cv_results_predictions[2-False-True]
-  - neighbors/tests/test_neighbors.py::test_nan_euclidean_support[KNeighborsClassifier-params0]
-  - neighbors/tests/test_neighbors.py::test_nan_euclidean_support[KNeighborsRegressor-params1]
-  - neighbors/tests/test_neighbors.py::test_nan_euclidean_support[LocalOutlierFactor-params6]
-  - neighbors/tests/test_neighbors.py::test_neighbor_classifiers_loocv[ball_tree-nn_model0]
-  - neighbors/tests/test_neighbors.py::test_neighbor_classifiers_loocv[brute-nn_model0]
-  - neighbors/tests/test_neighbors.py::test_neighbor_classifiers_loocv[kd_tree-nn_model0]
-  - neighbors/tests/test_neighbors.py::test_neighbor_classifiers_loocv[auto-nn_model0]
-
   # Array API support
-  # sklearnex functional Array API support doesn't guarantee namespace consistency for the estimator's array attributes.
+  # sklearnex functional Array API support doesn't guaranty namespace consistency for the estimator's array attributes.
   - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_input_and_values-array_api_strict-None-None]
   - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_input_and_values-array_api_strict-None-None]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_get_precision-array_api_strict-None-None]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_get_precision-array_api_strict-None-None]
-  - linear_model/tests/test_ridge.py::test_ridge_array_api_compliance[Ridge(solver='svd')-check_array_api_attributes-array_api_strict-None-None]
   - linear_model/tests/test_ridge.py::test_ridge_array_api_compliance[Ridge(solver='svd')-check_array_api_input_and_values-array_api_strict-None-None]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full')-check_array_api_input_and_values-torch-cpu-float64]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full')-check_array_api_input_and_values-torch-cpu-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full')-check_array_api_get_precision-torch-cpu-float64]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full')-check_array_api_get_precision-torch-cpu-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=0.1,svd_solver='full',whiten=True)-check_array_api_input_and_values-torch-cpu-float64]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=0.1,svd_solver='full',whiten=True)-check_array_api_input_and_values-torch-cpu-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=0.1,svd_solver='full',whiten=True)-check_array_api_get_precision-torch-cpu-float64]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=0.1,svd_solver='full',whiten=True)-check_array_api_get_precision-torch-cpu-float32]
-  - decomposition/tests/test_pca.py::test_pca_mle_array_api_compliance[PCA(n_components='mle',svd_solver='full')-check_array_api_get_precision-torch-cpu-float64]
-  - decomposition/tests/test_pca.py::test_pca_mle_array_api_compliance[PCA(n_components='mle',svd_solver='full')-check_array_api_get_precision-torch-cpu-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full')-check_array_api_input_and_values-array_api_strict-device1-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full')-check_array_api_input_and_values-numpy.array_api-None-None]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full')-check_array_api_get_precision-array_api_strict-device1-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full',whiten=True)-check_array_api_input_and_values-array_api_strict-device1-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full',whiten=True)-check_array_api_get_precision-array_api_strict-device1-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=0.1,svd_solver='full',whiten=True)-check_array_api_input_and_values-array_api_strict-device1-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=0.1,svd_solver='full',whiten=True)-check_array_api_input_and_values-numpy.array_api-None-None]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=0.1,svd_solver='full',whiten=True)-check_array_api_get_precision-array_api_strict-device1-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_input_and_values-array_api_strict-CPU_DEVICE-float64]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_input_and_values-array_api_strict-device1-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_input_and_values-torch-cpu-float64]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_input_and_values-torch-cpu-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_get_precision-array_api_strict-CPU_DEVICE-float64]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_get_precision-array_api_strict-device1-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_get_precision-torch-cpu-float64]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_get_precision-torch-cpu-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_input_and_values-array_api_strict-CPU_DEVICE-float64]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_input_and_values-array_api_strict-device1-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_input_and_values-torch-cpu-float64]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_input_and_values-torch-cpu-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_get_precision-array_api_strict-CPU_DEVICE-float64]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_get_precision-array_api_strict-device1-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_get_precision-torch-cpu-float64]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_get_precision-torch-cpu-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,power_iteration_normalizer='QR',random_state=0,svd_solver='randomized')-check_array_api_input_and_values-array_api_strict-device1-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,power_iteration_normalizer='QR',random_state=0,svd_solver='randomized')-check_array_api_get_precision-array_api_strict-device1-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,power_iteration_normalizer='QR',random_state=0,svd_solver='randomized')-check_array_api_input_and_values-numpy.array_api-None-None]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,power_iteration_normalizer='QR',random_state=0,svd_solver='randomized')-check_array_api_get_precision-numpy.array_api-None-None]
-  - decomposition/tests/test_pca.py::test_pca_mle_array_api_compliance[PCA(n_components='mle',svd_solver='full')-check_array_api_get_precision-array_api_strict-device1-float32]
-  - linear_model/tests/test_ridge.py::test_ridge_array_api_compliance[Ridge(solver='svd')-check_array_api_input_and_values-array_api_strict-device1-float32]
-  - linear_model/tests/test_ridge.py::test_ridge_array_api_compliance[Ridge(solver='svd')-check_array_api_attributes-array_api_strict-device1-float32]
-  # `train_test_split` inconsistency for Array API inputs.
-  - model_selection/tests/test_split.py::test_array_api_train_test_split[True-None-array_api_strict-None-None]
-  - model_selection/tests/test_split.py::test_array_api_train_test_split[True-stratify1-array_api_strict-None-None]
-  - model_selection/tests/test_split.py::test_array_api_train_test_split[False-None-array_api_strict-None-None]
-  - model_selection/tests/test_split.py::test_array_api_train_test_split[True-None-torch-cpu-float64]
-  - model_selection/tests/test_split.py::test_array_api_train_test_split[True-None-torch-cpu-float32]
-  - model_selection/tests/test_split.py::test_array_api_train_test_split[True-stratify1-torch-cpu-float64]
-  - model_selection/tests/test_split.py::test_array_api_train_test_split[True-stratify1-torch-cpu-float32]
-  - model_selection/tests/test_split.py::test_array_api_train_test_split[False-None-torch-cpu-float64]
-  - model_selection/tests/test_split.py::test_array_api_train_test_split[False-None-torch-cpu-float32]
-  - model_selection/tests/test_split.py::test_array_api_train_test_split[True-None-array_api_strict-device1-float32]
-  - model_selection/tests/test_split.py::test_array_api_train_test_split[True-stratify1-array_api_strict-device1-float32]
-  - model_selection/tests/test_split.py::test_array_api_train_test_split[False-None-array_api_strict-device1-float32]
-  - model_selection/tests/test_split.py::test_array_api_train_test_split[True-None-numpy.array_api-None-None]
-  - model_selection/tests/test_split.py::test_array_api_train_test_split[True-stratify1-numpy.array_api-None-None]
-  - model_selection/tests/test_split.py::test_array_api_train_test_split[False-None-numpy.array_api-None-None]
-
-  # PCA. Array API functionally supported for all factorizations. power_iteration_normalizer=["LU", "QR"]
-  - decomposition/tests/test_pca.py::test_array_api_error_and_warnings_on_unsupported_params
-  # PCA. InvalidParameterError: The 'M' parameter of randomized_svd must be an instance of 'numpy.ndarray' or a sparse matrix.
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,power_iteration_normalizer='QR',random_state=0,svd_solver='randomized')-check_array_api_input_and_values-array_api_strict-None-None]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,power_iteration_normalizer='QR',random_state=0,svd_solver='randomized')-check_array_api_get_precision-array_api_strict-None-None]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,power_iteration_normalizer='QR',random_state=0,svd_solver='randomized')-check_array_api_input_and_values-torch-cpu-float64]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,power_iteration_normalizer='QR',random_state=0,svd_solver='randomized')-check_array_api_input_and_values-torch-cpu-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,power_iteration_normalizer='QR',random_state=0,svd_solver='randomized')-check_array_api_get_precision-torch-cpu-float64]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,power_iteration_normalizer='QR',random_state=0,svd_solver='randomized')-check_array_api_get_precision-torch-cpu-float32]
-  # Ridge regression. Array API functionally supported for all solvers. Not raising error for non-svd solvers.
-  - linear_model/tests/test_ridge.py::test_array_api_error_and_warnings_for_solver_parameter[array_api_strict]
-  - linear_model/tests/test_ridge.py::test_array_api_error_and_warnings_for_solver_parameter[torch]
 
   # 'kulsinski' distance was deprecated in scipy 1.11 but still marked as supported in scikit-learn < 1.3
   - neighbors/tests/test_neighbors.py::test_kneighbors_brute_backend[float64-kulsinski] <1.3
@@ -127,8 +40,20 @@ deselected_tests:
   - decomposition/tests/test_pca.py::test_pca_svd_solver_auto[1000-500-400-full] >=1.5
   - decomposition/tests/test_pca.py::test_pca_svd_solver_auto[1000-500-0.5-full] >=1.5
 
+  # test for KMeans FutureWarning is not removed from sklearn tests suit yet
+  - cluster/tests/test_k_means.py::test_change_n_init_future_warning[KMeans-10] ==1.4.dev0
+
+  # Non-critical, but there are significant numerical differences in doctest results
+  - pipeline.py::sklearn.pipeline.FeatureUnion
+  - ensemble/_forest.py::sklearn.ensemble._forest.RandomForestRegressor
+  - ensemble/_voting.py::sklearn.ensemble._voting.VotingRegressor
+
   # Non-critical, but there are significant differences due to different implementations
+  - ensemble/tests/test_forest.py::test_importances[RandomForestClassifier-gini-float64]
+  - ensemble/tests/test_voting.py::test_set_estimator_drop
   - linear_model/tests/test_common.py::test_balance_property[42-True-LinearRegression]
+  - linear_model/tests/test_logistic.py::test_logistic_regression_multinomial
+  - cluster/tests/test_k_means.py::test_k_means_fit_predict >=0.23,<0.24
   - neighbors/tests/test_lof.py::test_lof_dtype_equivalence[0.5-True-brute]
   - neighbors/tests/test_lof.py::test_lof_dtype_equivalence[auto-True-brute]
 
@@ -140,13 +65,25 @@ deselected_tests:
   - neighbors/tests/test_lof.py::test_lof_dtype_equivalence[auto-True-ball_tree] >=1.2 win32
   - neighbors/tests/test_lof.py::test_lof_dtype_equivalence[auto-True-kd_tree] >=1.2 win32
 
+  # TODO: fix for Linear Regression failed to converge on macOS only
+  - inspection/tests/test_partial_dependence.py::test_partial_dependence_easy_target[2-est0] >=0.23 darwin
+  - inspection/tests/test_partial_dependence.py::test_partial_dependence_easy_target[2-est1] >=0.23 darwin
+  - inspection/tests/test_partial_dependence.py::test_partial_dependence_easy_target[2-est2] >=0.23 darwin
+  - inspection/tests/test_partial_dependence.py::test_partial_dependence_easy_target[2-est3] >=0.23 darwin
+
   # Sklearnex RandomForestClassifier RNG is different from scikit-learn and daal4py
   # resulting in different feature importances for small number of trees (10).
-  # Issue disappears with bigger number of trees (>=20)
+  # Issue dissappears with bigger number of trees (>=20)
   - inspection/tests/test_permutation_importance.py::test_permutation_importance_correlated_feature_regression_pandas[0.5-1]
   - inspection/tests/test_permutation_importance.py::test_permutation_importance_correlated_feature_regression_pandas[0.5-2]
   - inspection/tests/test_permutation_importance.py::test_permutation_importance_correlated_feature_regression_pandas[1.0-1]
   - inspection/tests/test_permutation_importance.py::test_permutation_importance_correlated_feature_regression_pandas[1.0-2]
+
+  # Random forest classifier selects a different most-important feature
+  # Feature importances:
+  # scikit-learn-intelex  [0.             0.00553064     0.71323666     0.2812327 ]
+  # scikit-learn          [1.59232288e-04 2.65131818e-02 2.63581110e-01 7.09746476e-01]
+  - feature_selection/tests/test_from_model.py::test_prefit_get_feature_names_out
 
   # TODO: add support of subset invariance to SVM
   - tests/test_common.py::test_estimators[SVC()-check_methods_subset_invariance]
@@ -174,16 +111,32 @@ deselected_tests:
   # TODO: investigate copy failure of read-only buffer
   - linear_model/tests/test_coordinate_descent.py::test_read_only_buffer
 
+  # Warm starting issue on 1 iteration of LogReg
+  - linear_model/tests/test_logistic.py::test_warm_start[multinomial-True-True-lbfgs]
+  - linear_model/tests/test_logistic.py::test_warm_start[multinomial-True-True-newton-cg]
+  - linear_model/tests/test_logistic.py::test_warm_start[multinomial-False-True-newton-cg]
+  - linear_model/tests/test_logistic.py::test_warm_start[multinomial-False-True-lbfgs]
+
+  # Difference of assigned dtype: int64 (scikit-learn) vs. int32 (oneDAL/scikit-learn-intelex)
+  - cluster/_dbscan.py::sklearn.cluster._dbscan.DBSCAN
+  - neighbors/_base.py::sklearn.neighbors._base.KNeighborsMixin.kneighbors
+
   # Difference between scikit-learn and scikit-learn-intelex methods of kNN
   - neighbors/tests/test_neighbors.py::test_unsupervised_kneighbors[float64-euclidean-True-1000-5-100-1]
   - neighbors/tests/test_neighbors.py::test_unsupervised_kneighbors[float64-minkowski-True-1000-5-100-1]
   - neighbors/tests/test_neighbors.py::test_unsupervised_kneighbors[float64-l2-True-1000-5-100-1]
+  - neighbors/tests/test_neighbors.py::test_unsupervised_kneighbors[float64-l1-True-1000-5-100-1]
+  - neighbors/tests/test_neighbors.py::test_unsupervised_kneighbors[float64-cityblock-True-1000-5-100-1]
   - neighbors/tests/test_neighbors.py::test_neigh_predictions_algorithm_agnosticity[float64-KNeighborsClassifier-1-100-euclidean-1000-5-100]
   - neighbors/tests/test_neighbors.py::test_neigh_predictions_algorithm_agnosticity[float64-KNeighborsClassifier-1-100-minkowski-1000-5-100]
   - neighbors/tests/test_neighbors.py::test_neigh_predictions_algorithm_agnosticity[float64-KNeighborsRegressor-1-100-euclidean-1000-5-100]
   - neighbors/tests/test_neighbors.py::test_neigh_predictions_algorithm_agnosticity[float64-KNeighborsRegressor-1-100-minkowski-1000-5-100]
   - neighbors/tests/test_neighbors.py::test_neigh_predictions_algorithm_agnosticity[float64-KNeighborsClassifier-1-100-l2-1000-5-100]
+  - neighbors/tests/test_neighbors.py::test_neigh_predictions_algorithm_agnosticity[float64-KNeighborsClassifier-1-100-l1-1000-5-100]
   - neighbors/tests/test_neighbors.py::test_neigh_predictions_algorithm_agnosticity[float64-KNeighborsRegressor-1-100-l2-1000-5-100]
+  - neighbors/tests/test_neighbors.py::test_neigh_predictions_algorithm_agnosticity[float64-KNeighborsRegressor-1-100-l1-1000-5-100]
+  - neighbors/tests/test_neighbors.py::test_neigh_predictions_algorithm_agnosticity[float64-KNeighborsClassifier-1-100-cityblock-1000-5-100]
+  - neighbors/tests/test_neighbors.py::test_neigh_predictions_algorithm_agnosticity[float64-KNeighborsRegressor-1-100-cityblock-1000-5-100]
   - neighbors/tests/test_neighbors.py::test_KNeighborsClassifier_multioutput
 
   # Models with sparse data are different between oneAPI Data Analytics Library (oneDAL) and stock scikit-learn
@@ -193,6 +146,7 @@ deselected_tests:
 
   # Decision function is different, 1.83697605e-06
   - ensemble/tests/test_bagging.py::test_sparse_classification
+  - ensemble/tests/test_bagging.py::test_sparse_regression <0.23
 
   # Same results as in scikit-learn, but in a different order
   - svm/tests/test_svm.py::test_svc_ovr_tie_breaking[SVC]
@@ -215,17 +169,38 @@ deselected_tests:
   # Bitwise comparison of SVR score using a print (diff = 2.220446049250313e-16)
   - svm/tests/test_svm.py::test_custom_kernel_not_array_input[SVR]
 
+  # This test needs a warning from scikit-learn. scikit-learn-intelex raises the same warning
+  - tests/test_common.py::test_estimators[SVC()-check_supervised_y_2d]
+  - tests/test_common.py::test_estimators[SVR()-check_supervised_y_2d]
+  - tests/test_common.py::test_estimators[NuSVC()-check_supervised_y_2d]
+  - tests/test_common.py::test_estimators[NuSVR()-check_supervised_y_2d]
+
+  # Bitwise comparison of probabilities using a print.
+  - metrics/tests/test_classification.py >=0.22,<0.24
+
+  # Max absolute difference: 0.04 for rocauc, and 0.01 for precision_recall
+  - metrics/tests/test_ranking.py::test_roc_curve_hard >=0.23,<0.24
+
   # test_non_uniform_strategies fails due to differences in handling of vacuous clusters after update
-  # See https://github.com/uxlfoundation/scikit-learn-intelex/issues/69
+  # See https://github.com/IntelPython/daal4py/issues/69
   - cluster/tests/test_k_means.py::test_kmeans_relocated_clusters >=0.24
+
+  # In scikit-learn, these algorithms are not included in this test. However, scikit-learn-intelex
+  # does and throws an error. This is due to the different structure of the transformer.__module__.split(".").
+  - tests/test_common.py::test_transformers_get_feature_names_out[KMeans()] >=1.0
 
   # oneAPI Data Analytics Library (oneDAL) does not check convergence for tol == 0.0 for ease of benchmarking
   - cluster/tests/test_k_means.py::test_kmeans_convergence >=0.23
   - cluster/tests/test_k_means.py::test_kmeans_verbose >=0.23
 
+  # The Newton-CG solver solution computed in float32 disagrees with that of float64 by a small
+  # margin above the test threshold, see https://github.com/scikit-learn/scikit-learn/pull/13645
+  - linear_model/tests/test_logistic.py::test_dtype_match
+
   # Logistic Regression coeffs change due to fix for loss scaling
   # (https://github.com/scikit-learn/scikit-learn/pull/26721)
   - feature_selection/tests/test_from_model.py::test_importance_getter[estimator0-named_steps.logisticregression.coef_]
+  - inspection/_plot/tests/test_boundary_decision_display.py::test_class_of_interest_binary[predict_proba]
   - linear_model/tests/test_sag.py::test_sag_pobj_matches_logistic_regression
 
   # This fails on certain platforms. While weighted data does not go through DAAL,
@@ -235,8 +210,12 @@ deselected_tests:
   - ensemble/tests/test_stacking.py::test_stacking_with_sample_weight[StackingClassifier]
 
   # Insufficient accuracy of "coefs" and "intercept" in Elastic Net for multi-target problems
-  # https://github.com/uxlfoundation/oneDAL/issues/494
+  # https://github.com/oneapi-src/oneDAL/issues/494
   - linear_model/tests/test_coordinate_descent.py::test_enet_multitarget
+
+  # Insufficient accuracy of objective function in Elastic Net in case of warm_start
+  # https://github.com/oneapi-src/oneDAL/issues/495
+  - linear_model/tests/test_coordinate_descent.py::test_warm_start_convergence_with_regularizer_decrement <0.24
 
   # oneAPI Data Analytics Library (oneDAL) doesn't support sample_weight (back to scikit-learn),
   # sufficient accuracy (similar to previous cases)
@@ -245,6 +224,7 @@ deselected_tests:
   # Different interpretation of trees compared to scikit-learn
   # Looks like we need to align tree traversal. This problem will be fixed
   - ensemble/tests/test_forest.py::test_min_samples_leaf
+
   # Different random number generation engine in oneDAL and scikit-learn
   # The result is depend on random state, for random_state=777 in RandomForestClassifier the test is passed
   - ensemble/tests/test_voting.py::test_majority_label_iris
@@ -269,6 +249,7 @@ deselected_tests:
   - tests/test_multioutput.py::test_multi_output_classification
 
   # Linear Regression - minor mismatches in error/warning messages
+  - model_selection/tests/test_search.py::test_grid_search_pipeline_steps
   - linear_model/tests/test_base.py::test_linear_regression_pd_sparse_dataframe_warning
 
   # L1 Linear models with sklearn 1.1 + numpy > 1.25 - extra warnings from numpy lead to test fail
@@ -279,12 +260,22 @@ deselected_tests:
   - linear_model/tests/test_coordinate_descent.py::test_assure_warning_when_normalize[deprecated-0-LassoCV] >=1.1,<1.2
   - linear_model/tests/test_coordinate_descent.py::test_assure_warning_when_normalize[deprecated-0-ElasticNetCV] >=1.1,<1.2
 
+  # Different results scikit-learn-intelex and scikit-learn linear regression with weights. Need to investigate.
+  - inspection/tests/test_permutation_importance.py::test_permutation_importance_sample_weight >=0.24
+
   # OOB scores in scikit-learn and oneDAL are different because of different random number generators
+  - ensemble/tests/test_forest.py::test_forest_classifier_oob[X1-y1-0.65-array-ExtraTreesClassifier]
+  - ensemble/tests/test_forest.py::test_forest_classifier_oob[True-X1-y1-0.65-array-ExtraTreesClassifier] >=1.3
   - ensemble/tests/test_forest.py::test_forest_regressor_oob[True-X0-y0-0.7-array-ExtraTreesRegressor] >=1.3
+  - ensemble/tests/test_forest.py::test_forest_regressor_oob[X0-y0-0.7-array-RandomForestRegressor] >=1.2 darwin
+  - ensemble/tests/test_forest.py::test_forest_regressor_oob[True-X0-y0-0.7-array-RandomForestRegressor] >=1.3 darwin
   - ensemble/tests/test_forest.py::test_importances[ExtraTreesRegressor-squared_error-float64] >=0.23 darwin
   - ensemble/tests/test_forest.py::test_forest_regressor_oob[X0-y0-0.7-array-ExtraTreesRegressor]
   - ensemble/tests/test_forest.py::test_warm_start_oob
   - ensemble/tests/test_forest.py::test_distribution
+
+  # Need a warning from scikit-learn if some samples do not have OOB scores that can not be raised from oneDAL
+  - ensemble/tests/test_forest.py::test_forest_oob_warning
 
   # Different behavior when 1 class enters the input
   - feature_selection/tests/test_rfe.py::test_rfe_cv_groups
@@ -293,12 +284,23 @@ deselected_tests:
   - ensemble/tests/test_forest.py::test_memory_layout[float64-ExtraTreesRegressor]
   - ensemble/tests/test_forest.py::test_memory_layout[float32-ExtraTreesRegressor]
 
+  # The bugs are fixed in 2021.2 release
+  - ensemble/tests/test_stacking.py::test_stacking_cv_influence
+
   # module name should starts with 'sklearn.' but we have 'daal4py.sklearn.'
+  - tests/test_common.py::test_check_n_features_in_after_fitting[LogisticRegression()] >=0.24,<1.0
+  - tests/test_common.py::test_check_n_features_in_after_fitting[SVC()] >=0.24,<1.0
   - metrics/tests/test_score_objects.py::test_scoring_is_not_metric
   - utils/tests/test_estimator_checks.py::test_check_dataframe_column_names_consistency >=1.0
 
   # Stability issue with max absolute difference: 4.33846826e-08/1.17613697e-11. Remove in next release
   - ensemble/tests/test_bagging.py::test_estimators_samples_deterministic
+
+  # We use similar statements, but with different words
+  - ensemble/tests/test_gradient_boosting.py::test_gradient_boosting_with_init_pipeline >=1.0
+
+  # Data for the tests is generated by using SVC. It is not equal to stock scikit-learn
+  - metrics/tests/test_ranking.py::test_precision_recall_curve >=0.22,<0.24
 
   # Some values in PCA.components_ (in the last component) aren't equal (0.6 on average
   # for absolute error in this test) because of different implementations of PCA.
@@ -316,16 +318,29 @@ deselected_tests:
   # RandomForestRegressor sum(y_pred)!=sum(y_true)
   - ensemble/tests/test_forest.py::test_balance_property_random_forest[squared_error] >=1.0
 
+  # This test fails on mac mini 8.1 with stock scikit-learn
+  - semi_supervised/tests/test_label_propagation.py
+
   # This test fails because with patch config_context with new options, but the
   # test checks only the exact number of options that are used
   - tests/test_config.py::test_config_context
 
+  # Some scikit-learn-intelex docstrings differ from scikit-learn.
+  - tests/test_docstrings.py >=1.0.2
 
   # Accuracy of scikit-learn-intelex and scikit-learn may differ due to different approaches
+  - manifold/tests/test_t_sne.py::test_preserve_trustworthiness_approximately_with_precomputed_distances
   - manifold/tests/test_t_sne.py::test_bh_match_exact
   - manifold/tests/test_t_sne.py::test_uniform_grid[barnes_hut]
+  - manifold/tests/test_t_sne.py::test_sparse_precomputed_distance
+  - manifold/tests/test_t_sne.py::test_tsne_different_square_distances >=0.24
+
+  # Temporary deselected up to 2021.6 release. Need to fix
+  - ensemble/tests/test_bagging.py::test_classification
 
   # Failure related to incompatibility of older sklearn versions with updated dependencies
+  - ensemble/_hist_gradient_boosting/tests/test_compare_lightgbm.py::test_same_predictions_multiclass_classification >=0.24,<1.0
+  - ensemble/tests/test_gradient_boosting.py::test_gradient_boosting_with_init_pipeline >=0.24,<1.0
   - utils/tests/test_validation.py::test_check_array_pandas_dtype_casting >=1.0,<1.2
   - utils/tests/test_validation.py::test_check_sparse_pandas_sp_format <1.2
 
@@ -349,7 +364,20 @@ deselected_tests:
   - tests/test_common.py::test_estimators[LogisticRegression()-check_sample_weights_invariance(kind=zeros)] >=1.4
   - tests/test_multioutput.py::test_classifier_chain_fit_and_predict_with_sparse_data >=1.4
 
+  # Deselected tests for incremental algorithms
+  # Need to rework getting policy to correctly obtain it for method without data (finalize_fit)
+  # and avoid keeping it in class attribute, also need to investigate how to implement
+  # partial result serialization
+  - tests/test_common.py::test_estimators[IncrementalEmpiricalCovariance()-check_estimators_pickle]
+  - tests/test_common.py::test_estimators[IncrementalEmpiricalCovariance()-check_estimators_pickle(readonly_memmap=True)]
+  - tests/test_common.py::test_estimators[IncrementalLinearRegression()-check_estimators_pickle]
+  - tests/test_common.py::test_estimators[IncrementalLinearRegression()-check_estimators_pickle(readonly_memmap=True)]
+  - tests/test_common.py::test_estimators[IncrementalPCA()-check_estimators_pickle]
+  - tests/test_common.py::test_estimators[IncrementalPCA()-check_estimators_pickle(readonly_memmap=True)]
+  - tests/test_common.py::test_estimators[IncrementalRidge()-check_estimators_pickle]
+  - tests/test_common.py::test_estimators[IncrementalRidge()-check_estimators_pickle(readonly_memmap=True)]
   # There are not enough data to run onedal backend
+  - tests/test_common.py::test_estimators[IncrementalLinearRegression()-check_fit2d_1sample]
   - tests/test_common.py::test_estimators[IncrementalRidge()-check_fit2d_1sample]
 
   # Deselection of LogisticRegression tests over accuracy comparisons with sample_weights
@@ -360,47 +388,8 @@ deselected_tests:
 
   # Deselections for 2025.0
   - ensemble/tests/test_forest.py::test_importances[ExtraTreesRegressor-squared_error-float64]
-  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[42-0.01-sparse
-  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[42-1e-08-sparse
-  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[42-1e-100-sparse
-  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[42-0-sparse
-  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[0.01-sparse
-  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[1e-08-sparse
-  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[1e-100-sparse
-  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[0-sparse
 
-  # Fails in stock scikit-learn: checks that data is modified in-place when not strictly required
-  - linear_model/tests/test_base.py::test_inplace_data_preprocessing
-
-  # Failure occurs in python3.9 on windows CPU only - not easy to reproduce
-  - ensemble/tests/test_weight_boosting.py::test_estimator >= 1.4 win32
-
-  # array_api dispatching for oneDAL is recognized using the sklearn tag system. This is an expected
-  # break in sklearn conformance as additional non-default tags cause errors in this test. This
-  # non-conformance does not impact the verification system of sklearn. A new system (sklearn >=1.6)
-  # allows for public tag addition. Sklearn also acknowledges the abuse of the old system by others,
-  # meaning its not too impactful to use it so long as the default keys and value types set by sklearn
-  # are respected.
-  - tests/test_common.py::test_valid_tag_types <1.6
-
-  # Parameter validation test dbscan only in sklearn 1.1, this is temporary deselected before update
-  # to CI parameters, as parameter validation is globally handled in sklearn version 1.2 onward
-  - cluster/tests/test_dbscan.py::test_dbscan_params_validation
-
-  # From sklearn 1.6, need to resolve logreg bug from joblib with_parallel_backend.
-  # Removal of this deselection will result in test_logistic fails (this one will pass).
-  - feature_selection/tests/test_rfe.py::test_rfe_with_joblib_threading_backend
-  # Failing tests since sklearn 1.6
-  - tests/test_common.py::test_estimators[CalibratedClassifierCV(cv=3,estimator=LogisticRegression(C=1))-check_sample_weight_equivalence_on_dense_data]
-  - tests/test_common.py::test_estimators[ExtraTreesClassifier(n_estimators=5)-check_sample_weight_equivalence_on_dense_data]
-  - tests/test_common.py::test_estimators[ExtraTreesRegressor(n_estimators=5)-check_sample_weight_equivalence_on_dense_data]
-  - utils/tests/test_estimator_checks.py::test_xfail_count_with_no_fast_fail
-  # XFail vs XPass differs between scikit-learn and scikit-learn-intelex since 1.6
-  - tests/test_common.py::test_estimators[LinearRegression()-check_sample_weight_equivalence_on_dense_data] <1.7
-  - tests/test_common.py::test_estimators[LogisticRegression(max_iter=5)-check_sample_weight_equivalence_on_dense_data]
-  - tests/test_common.py::test_estimators[LogisticRegression(max_iter=5,solver='newton-cg')-check_sample_weight_equivalence_on_dense_data]
-  - tests/test_common.py::test_estimators[NuSVC()-check_class_weight_classifiers]
-  - tests/test_common.py::test_estimators[CalibratedClassifierCV(estimator=LogisticRegression(C=1))-check_sample_weights_invariance(kind=ones)]
+  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[42-1e-100-sparse_array-normal]
 
   # --------------------------------------------------------
   # No need to test daal4py patching
@@ -469,11 +458,11 @@ reduced_tests:
 
 public:
   - tests/test_common.py::test_estimators
+  # Failed in stock scikit-learn
+  - metrics/tests/test_common.py::test_not_symmetric_metric[precision_recall_curve]
+  - metrics/tests/test_common.py::test_binary_sample_weight_invariance[precision_recall_curve]
   # Fails from numpy 2.0 and sklearn 1.4+
   - neighbors/tests/test_neighbors.py::test_KNeighborsClassifier_raise_on_all_zero_weights
-  # floating point error near values == 0 in svm sparse tests using vc oneDAL builds
-  - svm/tests/test_sparse.py::test_unsorted_indices[csr_matrix] <1.7 win32
-  - svm/tests/test_sparse.py::test_unsorted_indices[csr_array] <1.7 win32
 
   # --------------------------------------------------------
   # The following tests currently fail with GPU offloading
@@ -482,31 +471,234 @@ gpu:
   - ensemble/tests/test_weight_boosting.py
   # Fails
   - cluster/tests/test_dbscan.py::test_weighted_dbscan
+  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[42-1e-100-sparse-normal]
+  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[42-1e-100-sparse-blobs]
   - model_selection/tests/test_search.py::test_unsupervised_grid_search
-  - ensemble/tests/test_voting.py::test_sample_weight[42]
+
+  - ensemble/tests/test_bagging.py::test_gridsearch
+  - ensemble/tests/test_bagging.py::test_estimators_samples
+  - ensemble/tests/test_common.py::test_ensemble_heterogeneous_estimators_behavior
+  - ensemble/tests/test_voting.py::test_parallel_fit
+  - ensemble/tests/test_voting.py::test_sample_weight
+
+  - feature_selection/tests/test_rfe.py::test_number_of_subsets_of_features
+
+  - manifold/tests/test_t_sne.py::test_preserve_trustworthiness_approximately
+  - manifold/tests/test_t_sne.py::test_uniform_grid
+  - manifold/tests/test_t_sne.py::test_tsne_different_square_distances
+
+  - metrics/tests/test_classification.py::test_precision_recall_f1_score_binary
+  - metrics/tests/test_classification.py::test_precision_recall_fscore_support_errors
+  - metrics/tests/test_classification.py::test_confusion_matrix_binary
+  - metrics/tests/test_classification.py::test_multilabel_confusion_matrix_binary
+  - metrics/tests/test_ranking.py::test_roc_curve
+  - metrics/tests/test_ranking.py::test_roc_returns_consistency
+  - metrics/tests/test_ranking.py::test_roc_curve_confidence
+  - metrics/tests/test_ranking.py::test_precision_recall_curve
+  - metrics/tests/test_ranking.py::test_score_scale_invariance
+  - metrics/tests/test_ranking.py::test_partial_roc_auc_score
+  - metrics/tests/test_score_objects.py::test_average_precision_pos_label
+
+  - mixture/tests/test_bayesian_mixture.py::test_bayesian_mixture_weights_prior_initialisation
+  - mixture/tests/test_bayesian_mixture.py::test_bayesian_mixture_mean_prior_initialisation
+  - mixture/tests/test_bayesian_mixture.py::test_bayesian_mixture_precisions_prior_initialisation
+  - mixture/tests/test_bayesian_mixture.py::test_bayesian_mixture_weights
+  - mixture/tests/test_bayesian_mixture.py::test_monotonic_likelihood
+  - mixture/tests/test_bayesian_mixture.py::test_compare_covar_type
+  - mixture/tests/test_bayesian_mixture.py::test_check_covariance_precision
+  - mixture/tests/test_bayesian_mixture.py::test_invariant_translation
+  - mixture/tests/test_bayesian_mixture.py::test_bayesian_mixture_fit_predict
+  - mixture/tests/test_bayesian_mixture.py::test_bayesian_mixture_fit_predict_n_init
+  - mixture/tests/test_bayesian_mixture.py::test_bayesian_mixture_predict_predict_proba
+  - mixture/tests/test_gaussian_mixture.py::test_check_weights
+  - mixture/tests/test_gaussian_mixture.py::test_check_means
+  - mixture/tests/test_gaussian_mixture.py::test_check_precisions
+  - mixture/tests/test_gaussian_mixture.py::test_gaussian_mixture_estimate_log_prob_resp
+  - mixture/tests/test_gaussian_mixture.py::test_gaussian_mixture_predict_predict_proba
+  - mixture/tests/test_gaussian_mixture.py::test_gaussian_mixture_fit_predict
+  - mixture/tests/test_gaussian_mixture.py::test_gaussian_mixture_fit_predict_n_init
+  - mixture/tests/test_gaussian_mixture.py::test_gaussian_mixture_fit
+  - mixture/tests/test_gaussian_mixture.py::test_gaussian_mixture_fit_best_params
+  - mixture/tests/test_gaussian_mixture.py::test_gaussian_mixture_fit_convergence_warning
+  - mixture/tests/test_gaussian_mixture.py::test_multiple_init
+  - mixture/tests/test_gaussian_mixture.py::test_gaussian_mixture_n_parameters
+  - mixture/tests/test_gaussian_mixture.py::test_bic_1d_1component
+  - mixture/tests/test_gaussian_mixture.py::test_gaussian_mixture_aic_bic
+  - mixture/tests/test_gaussian_mixture.py::test_gaussian_mixture_verbose
+  - mixture/tests/test_gaussian_mixture.py::test_warm_start
+  - mixture/tests/test_gaussian_mixture.py::test_convergence_detected_with_warm_start
+  - mixture/tests/test_gaussian_mixture.py::test_score
+  - mixture/tests/test_gaussian_mixture.py::test_score_samples
+  - mixture/tests/test_gaussian_mixture.py::test_monotonic_likelihood
+  - mixture/tests/test_gaussian_mixture.py::test_regularisation
+  - mixture/tests/test_gaussian_mixture.py::test_property
+  - mixture/tests/test_gaussian_mixture.py::test_sample
+  - mixture/tests/test_gaussian_mixture.py::test_init
+  - mixture/tests/test_mixture.py::test_gaussian_mixture_n_iter
+
+  - model_selection/tests/test_search.py::test_grid_search_one_grid_point
   - model_selection/tests/test_search.py::test_search_default_iid
+  - model_selection/tests/test_search.py::test_random_search_cv_results_multimetric
+  - model_selection/tests/test_search.py::test_predict_proba_disabled
+
+  - model_selection/tests/test_validation.py::test_cross_val_predict_sparse_prediction
+  - model_selection/tests/test_validation.py::test_fit_and_score_verbosity
+
   - neighbors/tests/test_neighbors.py::test_unsupervised_kneighbors
-  - neighbors/tests/test_neighbors.py::test_neighbors_metrics[float64-l2]
+
+  - neighbors/tests/test_neighbors.py::test_kneighbors_classifier
+  - neighbors/tests/test_neighbors.py::test_KNeighborsClassifier_multioutput
+  - neighbors/tests/test_neighbors.py::test_neighbors_metrics
+
+  - neighbors/tests/test_neighbors.py::test_neighbors_iris
+
+  - semi_supervised/tests/test_self_training.py::test_early_stopping
+
+  - svm/tests/test_sparse.py::test_svc
+  - svm/tests/test_sparse.py::test_svc_with_custom_kernel
+  - svm/tests/test_sparse.py::test_svc_iris
+  - svm/tests/test_sparse.py::test_error
+  - svm/tests/test_sparse.py::test_sample_weights
+  - svm/tests/test_sparse.py::test_sparse_realdata
+  - svm/tests/test_svm.py::test_precomputed
+  - svm/tests/test_svm.py::test_tweak_params
   - svm/tests/test_svm.py::test_svm_classifier_sided_sample_weight[estimator0]
   - svm/tests/test_svm.py::test_svm_equivalence_sample_weight_C
   - svm/tests/test_svm.py::test_negative_weights_svc_leave_two_labels[partial-mask-label-1-SVC]
   - svm/tests/test_svm.py::test_negative_weights_svc_leave_two_labels[partial-mask-label-2-SVC]
+  - svm/tests/test_svm.py::test_svc_clone_with_callable_kernel
+  - svm/tests/test_svm.py::test_custom_kernel_not_array_input[SVR]
+
+  - tests/test_common.py::test_estimators[BayesianGaussianMixture()-check_estimators_dtypes]
+  - tests/test_common.py::test_estimators[BayesianGaussianMixture()-check_fit_score_takes_y]
+  - tests/test_common.py::test_estimators[BayesianGaussianMixture()-check_estimators_fit_returns_self]
+  - tests/test_common.py::test_estimators[BayesianGaussianMixture()-check_estimators_fit_returns_self(readonly_memmap=True)]
+  - tests/test_common.py::test_estimators[BayesianGaussianMixture()-check_dtype_object]
+  - tests/test_common.py::test_estimators[BayesianGaussianMixture()-check_pipeline_consistency]
+  - tests/test_common.py::test_estimators[BayesianGaussianMixture()-check_estimators_nan_inf]
+  - tests/test_common.py::test_estimators[BayesianGaussianMixture()-check_estimators_overwrite_params]
+  - tests/test_common.py::test_estimators[BayesianGaussianMixture()-check_estimators_pickle]
+  - tests/test_common.py::test_estimators[BayesianGaussianMixture()-check_estimators_pickle(readonly_memmap=True)]
+  - tests/test_common.py::test_estimators[BayesianGaussianMixture()-check_methods_sample_order_invariance]
+  - tests/test_common.py::test_estimators[BayesianGaussianMixture()-check_methods_subset_invariance]
+  - tests/test_common.py::test_estimators[BayesianGaussianMixture()-check_fit2d_1feature]
+  - tests/test_common.py::test_estimators[BayesianGaussianMixture()-check_dict_unchanged]
+  - tests/test_common.py::test_estimators[BayesianGaussianMixture()-check_dont_overwrite_parameters]
+  - tests/test_common.py::test_estimators[BayesianGaussianMixture()-check_fit_idempotent]
+  - tests/test_common.py::test_estimators[BayesianGaussianMixture()-check_n_features_in]
+  - tests/test_common.py::test_estimators[BayesianGaussianMixture()-check_fit2d_predict1d]
   # sparse input is not implemented for DBSCAN.
+  - tests/test_common.py::test_estimators[DBSCAN()-check_estimator_sparse_data]
+  - tests/test_common.py::test_estimators[GaussianMixture()-check_estimators_dtypes]
+  - tests/test_common.py::test_estimators[GaussianMixture()-check_fit_score_takes_y]
+  - tests/test_common.py::test_estimators[GaussianMixture()-check_estimators_fit_returns_self]
+  - tests/test_common.py::test_estimators[GaussianMixture()-check_estimators_fit_returns_self(readonly_memmap=True)]
+  - tests/test_common.py::test_estimators[GaussianMixture()-check_dtype_object]
+  - tests/test_common.py::test_estimators[GaussianMixture()-check_pipeline_consistency]
+  - tests/test_common.py::test_estimators[GaussianMixture()-check_estimators_nan_inf]
+  - tests/test_common.py::test_estimators[GaussianMixture()-check_estimators_overwrite_params]
+  - tests/test_common.py::test_estimators[GaussianMixture()-check_estimators_pickle]
+  - tests/test_common.py::test_estimators[GaussianMixture()-check_estimators_pickle(readonly_memmap=True)]
+  - tests/test_common.py::test_estimators[GaussianMixture()-check_methods_sample_order_invariance]
+  - tests/test_common.py::test_estimators[GaussianMixture()-check_methods_subset_invariance]
+  - tests/test_common.py::test_estimators[GaussianMixture()-check_fit2d_1feature]
+  - tests/test_common.py::test_estimators[GaussianMixture()-check_dict_unchanged]
+  - tests/test_common.py::test_estimators[GaussianMixture()-check_dont_overwrite_parameters]
+  - tests/test_common.py::test_estimators[GaussianMixture()-check_fit_idempotent]
+  - tests/test_common.py::test_estimators[GaussianMixture()-check_n_features_in]
+  - tests/test_common.py::test_estimators[GaussianMixture()-check_fit2d_predict1d]
   - tests/test_common.py::test_estimators[RandomForestClassifier()-check_class_weight_classifiers]
+  - tests/test_common.py::test_estimators[SVC()-check_sample_weights_pandas_series]
   - tests/test_common.py::test_estimators[SVC()-check_sample_weights_not_an_array]
+  - tests/test_common.py::test_estimators[SVC()-check_sample_weights_shape]
+  - tests/test_common.py::test_estimators[SVC()-check_pipeline_consistency]
+  - tests/test_common.py::test_estimators[SVC()-check_estimators_nan_inf]
+  - tests/test_common.py::test_estimators[SVC()-check_estimators_pickle]
   - tests/test_common.py::test_estimators[SVC()-check_classifier_data_not_an_array]
+  - tests/test_common.py::test_estimators[SVC()-check_classifiers_classes]
+  - tests/test_common.py::test_estimators[SVC()-check_classifiers_train]
+  - tests/test_common.py::test_estimators[SVC()-check_class_weight_classifiers]
+  - tests/test_common.py::test_estimators[SVC()-check_fit2d_1feature]
+  - tests/test_common.py::test_estimators[SVC()-check_dict_unchanged]
+  - tests/test_common.py::test_estimators[SVC()-check_fit_idempotent]
+  - tests/test_common.py::test_estimators[SVC()-check_n_features_in]
+  - tests/test_common.py::test_estimators[SelfTrainingClassifier(base_estimator=LogisticRegression(C=1))-check_classifiers_classes]
+  - tests/test_common.py::test_estimators[SelfTrainingClassifier(base_estimator=LogisticRegression(C=1))-check_decision_proba_consistency]
+  - tests/test_common.py::test_estimators[StackingClassifier(estimators=[('est1',LogisticRegression(C=0.1)),('est2',LogisticRegression(C=1))])-check_sample_weights_invariance(kind=ones)]
+  - tests/test_common.py::test_estimators[StackingClassifier(estimators=[('est1',LogisticRegression(C=0.1)),('est2',LogisticRegression(C=1))])-check_sample_weights_invariance(kind=zeros)]
+  - tests/test_common.py::test_estimators[TSNE()-check_fit_idempotent]
+  - tests/test_common.py::test_estimators[TSNE()-check_n_features_in]
   - tests/test_common.py::test_search_cv[RandomizedSearchCV(estimator=LogisticRegression(),param_distributions={'C':[0.1,1.0]})-check_classifiers_classes]
   - tests/test_common.py::test_search_cv[RandomizedSearchCV(estimator=LogisticRegression(),param_distributions={'C':[0.1,1.0]})-check_decision_proba_consistency]
+  - tests/test_common.py::test_check_n_features_in_after_fitting[TSNE()]
+
+  - tests/test_multiclass.py::test_ovr_fit_predict_sparse
+  - tests/test_multiclass.py::test_ovr_binary
+  - tests/test_multiclass.py::test_ovr_fit_predict_svc
+  - tests/test_multiclass.py::test_ovr_multilabel_predict_proba
+  - tests/test_multiclass.py::test_ovr_multilabel_decision_function
+  - tests/test_multiclass.py::test_ovr_single_label_decision_function
+  - tests/test_multiclass.py::test_ovr_coef_
+  - tests/test_multiclass.py::test_ovr_deprecated_coef_intercept
+  - tests/test_multiclass.py::test_pairwise_cross_val_score
+  - tests/test_multioutput.py::test_multiclass_multioutput_estimator_predict_proba
   - tests/test_multioutput.py::test_classifier_chain_fit_and_predict_with_sparse_data
+
+  # Very slow execution due to SVC
+  - model_selection/tests/test_validation.py::test_validation_curve_cv_splits_consistency
+  - model_selection/tests/test_search.py::test_grid_search_cv_results
+  - model_selection/tests/test_search.py::test_random_search_cv_results
 
   # Segmentation faults on GPU
   - tests/test_common.py::test_search_cv
+  - manifold/tests/test_t_sne.py::test_n_iter_without_progress
 
+  # Other device issues
+  - tests/test_metaestimators.py::test_meta_estimators_delegate_data_validation[StackingClassifier]
+  - tests/test_multiclass.py::test_ovr_always_present
+  - tests/test_multiclass.py::test_support_missing_values[OneVsRestClassifier]
+  - tests/test_multiclass.py::test_support_missing_values[OneVsOneClassifier]
+  - tests/test_multioutput.py::test_multi_output_delegate_predict_proba
+  - tests/test_multioutput.py::test_classifier_chain_vs_independent_models
+  - tests/test_multioutput.py::test_base_chain_fit_and_predict
+  - tests/test_multioutput.py::test_base_chain_crossval_fit_and_predict
+  - tests/test_multioutput.py::test_multi_output_classes_[estimator1]
+  - tests/test_multioutput.py::test_multi_output_classes_[estimator2]
+  - tests/test_multioutput.py::test_support_missing_values[MultiOutputClassifier-LogisticRegression]
+  - tests/test_multioutput.py::test_classifier_chain_tuple_order[list]
+  - tests/test_multioutput.py::test_classifier_chain_tuple_order[array]
+  - tests/test_multioutput.py::test_classifier_chain_tuple_order[tuple]
+  - tests/test_pipeline.py::test_pipeline_methods_anova
+  - tests/test_pipeline.py::test_score_samples_on_pipeline_without_score_samples
+  - tests/test_pipeline.py::test_pipeline_methods_preprocessing_svm
+  - tests/test_pipeline.py::test_pipeline_transform
+  - tests/test_pipeline.py::test_feature_union_weights
+  - tests/test_pipeline.py::test_classes_property
+  - tests/test_pipeline.py::test_set_feature_union_passthrough
+  - tests/test_pipeline.py::test_pipeline_missing_values_leniency
+  - tests/test_pipeline.py::test_pipeline_set_output_integration
+  - tests/test_pipeline.py::test_feature_union_set_output
+  - tests/test_parallel.py::test_dispatch_config_parallel[1]
+  - tests/test_parallel.py::test_dispatch_config_parallel[2]
   # KD Tree (not implemented for GPU)
   - neighbors/tests/test_neighbors.py::test_neigh_predictions_algorithm_agnosticity[float64-KNeighborsClassifier-50-500-l2-1000-5-100]
   - neighbors/tests/test_neighbors.py::test_neigh_predictions_algorithm_agnosticity[float64-KNeighborsClassifier-100-1000-l2-1000-5-100]
   - neighbors/tests/test_neighbors.py::test_neigh_predictions_algorithm_agnosticity[float64-KNeighborsRegressor-50-500-l2-1000-5-100]
   - neighbors/tests/test_neighbors.py::test_neigh_predictions_algorithm_agnosticity[float64-KNeighborsRegressor-100-1000-l2-1000-5-100]
+  # failing due to numeric/code error
+  - linear_model/tests/test_common.py::test_balance_property[42-False-LogisticRegressionCV]
+  - sklearn/manifold/tests/test_t_sne.py::test_n_iter_without_progress
+  - model_selection/tests/test_search.py::test_searchcv_raise_warning_with_non_finite_score[RandomizedSearchCV-specialized_params1-False]
+  - model_selection/tests/test_search.py::test_searchcv_raise_warning_with_non_finite_score[RandomizedSearchCV-specialized_params1-True]
+  - tests/test_calibration.py::test_calibrated_classifier_cv_double_sample_weights_equivalence
+  - tests/test_calibration.py::test_calibrated_classifier_cv_zeros_sample_weights_equivalence
+  - tests/test_common.py::test_estimators[FeatureAgglomeration()-check_parameters_default_constructible]
+  - neighbors/tests/test_lof.py::test_novelty_true_common_tests[LocalOutlierFactor(novelty=True)-check_methods_subset_invariance]
+  - tests/test_common.py::test_transformers_get_feature_names_out[StackingRegressor(estimators=[('est1',Ridge(alpha=0.1)),('est2',Ridge(alpha=1))])]
+  - tests/test_common.py::test_transformers_get_feature_names_out[VotingRegressor(estimators=[('est1',Ridge(alpha=0.1)),('est2',Ridge(alpha=1))])]
+  - tests/test_common.py::test_f_contiguous_array_estimator[TSNE]
+  - manifold/tests/test_t_sne.py::test_tsne_works_with_pandas_output
+
   # GPU Forest algorithm implementation does not follow certain Scikit-learn standards
   - ensemble/tests/test_forest.py::test_max_leaf_nodes_max_depth
   - ensemble/tests/test_forest.py::test_min_samples_split[ExtraTreesClassifier]
@@ -515,10 +707,24 @@ gpu:
   - ensemble/tests/test_forest.py::test_max_samples_boundary_regressors
 
   # numerical issues in GPU Forest algorithms which require further investigation
+  - ensemble/tests/test_forest.py::test_forest_classifier_oob[X0-y0-0.9-array-ExtraTreesClassifier]
+  - ensemble/tests/test_forest.py::test_forest_classifier_oob[X0-y0-0.9-array-RandomForestClassifier]
+  - ensemble/tests/test_forest.py::test_forest_classifier_oob[X1-y1-0.65-array-RandomForestClassifier]
+  - ensemble/tests/test_forest.py::test_forest_classifier_oob[X2-y2-0.65-array-ExtraTreesClassifier]
+  - ensemble/tests/test_forest.py::test_forest_classifier_oob[X2-y2-0.65-array-RandomForestClassifier]
+  - ensemble/tests/test_forest.py::test_forest_regressor_oob[X0-y0-0.7-array-RandomForestRegressor]
+  - ensemble/tests/test_stacking.py::test_stacking_regressor_drop_estimator
   - ensemble/tests/test_voting.py::test_predict_on_toy_problem[42]
   - tests/test_common.py::test_estimators[ExtraTreesClassifier()-check_class_weight_classifiers]
   - tests/test_common.py::test_estimators[ExtraTreesRegressor()-check_sample_weights_invariance(kind=zeros)]
   - tests/test_common.py::test_estimators[RandomForestRegressor()-check_regressor_data_not_an_array]
+  - ensemble/tests/test_forest.py::test_max_samples_boundary_classifiers[ExtraTreesClassifier]
+  - tests/test_common.py::test_estimators[ExtraTreesClassifier()-check_classifier_data_not_an_array]
+  - tests/test_common.py::test_estimators[ExtraTreesClassifier()-check_classifiers_train]
+  - tests/test_common.py::test_estimators[ExtraTreesClassifier()-check_classifiers_train(readonly_memmap=True)]
+  - tests/test_common.py::test_estimators[ExtraTreesClassifier()-check_fit_idempotent]
+  - tests/test_common.py::test_estimators[ExtraTreesRegressor()-check_fit_idempotent]
+  - tests/test_common.py::test_estimators[ExtraTreesRegressor()-check_regressor_data_not_an_array]
 
   # GPU implementation of Extra Trees doesn't support sample_weights
   # comparisons to GPU with sample weights will use different algorithms
@@ -529,9 +735,3 @@ gpu:
   # RuntimeError: Device support is not implemented, failing as result of fallback to cpu false
   - svm/tests/test_svm.py::test_unfitted
   - tests/test_common.py::test_estimators[SVC()-check_estimators_unfitted]
-
-  # Introduced with RNG forest updates in oneDAL
-  - ensemble/tests/test_voting.py::test_set_estimator_drop
-
-  # Deselection for Scikit-Learn 1.4 GPU conformance
-  - model_selection/tests/test_validation.py::test_learning_curve_some_failing_fits_warning >=1.4
