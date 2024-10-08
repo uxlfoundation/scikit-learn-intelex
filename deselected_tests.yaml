@@ -29,6 +29,8 @@ deselected_tests:
   # sklearnex functional Array API support doesn't guaranty namespace consistency for the estimator's array attributes.
   - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_input_and_values-array_api_strict-None-None]
   - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_input_and_values-array_api_strict-None-None]
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_get_precision-array_api_strict-None-None]
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_get_precision-array_api_strict-None-None]
   - linear_model/tests/test_ridge.py::test_ridge_array_api_compliance[Ridge(solver='svd')-check_array_api_input_and_values-array_api_strict-None-None]
 
   # 'kulsinski' distance was deprecated in scipy 1.11 but still marked as supported in scikit-learn < 1.3
