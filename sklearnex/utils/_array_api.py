@@ -16,52 +16,124 @@
 
 """Tools to support array_api."""
 
+import itertools
+
 import numpy as np
 
 from daal4py.sklearn._utils import sklearn_check_version
-from onedal.utils._array_api import _get_sycl_namespace
+from onedal.utils._array_api import _asarray, _get_sycl_namespace
 
-from ..base import oneDALEstimator
-
-if sklearn_check_version("1.6"):
-    from ..base import Tags
-
+# TODO:
+# check the version of skl.
 if sklearn_check_version("1.2"):
     from sklearn.utils._array_api import get_namespace as sklearn_get_namespace
+    from sklearn.utils._array_api import _convert_to_numpy as _sklearn_convert_to_numpy
+
+from onedal._device_offload import dpctl_available, dpnp_available
+
+if dpctl_available:
+    import dpctl.tensor as dpt
+
+if dpnp_available:
+    import dpnp
+
+_NUMPY_NAMESPACE_NAMES = {"numpy", "array_api_compat.numpy"}
 
 
-def get_namespace(*arrays):
+def yield_namespaces(include_numpy_namespaces=True):
+    """Yield supported namespace.
+
+    This is meant to be used for testing purposes only.
+
+    Parameters
+    ----------
+    include_numpy_namespaces : bool, default=True
+        If True, also yield numpy namespaces.
+
+    Returns
+    -------
+    array_namespace : str
+        The name of the Array API namespace.
+    """
+    for array_namespace in [
+        # The following is used to test the array_api_compat wrapper when
+        # array_api_dispatch is enabled: in particular, the arrays used in the
+        # tests are regular numpy arrays without any "device" attribute.
+        "numpy",
+        # Stricter NumPy-based Array API implementation. The
+        # array_api_strict.Array instances always have a dummy "device" attribute.
+        "array_api_strict",
+        "dpctl.tensor",
+        "cupy",
+        "torch",
+    ]:
+        if not include_numpy_namespaces and array_namespace in _NUMPY_NAMESPACE_NAMES:
+            continue
+        yield array_namespace
+
+
+def yield_namespace_device_dtype_combinations(include_numpy_namespaces=True):
+    """Yield supported namespace, device, dtype tuples for testing.
+
+    Use this to test that an estimator works with all combinations.
+
+    Parameters
+    ----------
+    include_numpy_namespaces : bool, default=True
+        If True, also yield numpy namespaces.
+
+    Returns
+    -------
+    array_namespace : str
+        The name of the Array API namespace.
+
+    device : str
+        The name of the device on which to allocate the arrays. Can be None to
+        indicate that the default value should be used.
+
+    dtype_name : str
+        The name of the data type to use for arrays. Can be None to indicate
+        that the default value should be used.
+    """
+    for array_namespace in yield_namespaces(
+        include_numpy_namespaces=include_numpy_namespaces
+    ):
+        if array_namespace == "torch":
+            for device, dtype in itertools.product(
+                ("cpu", "cuda"), ("float64", "float32")
+            ):
+                yield array_namespace, device, dtype
+            yield array_namespace, "mps", "float32"
+        elif array_namespace == "dpctl.tensor":
+            for device, dtype in itertools.product(
+                ("cpu", "gpu"), ("float64", "float32")
+            ):
+                yield array_namespace, device, dtype
+        else:
+            yield array_namespace, None, None
+
+
+def _convert_to_numpy(array, xp):
+    """Convert X into a NumPy ndarray on the CPU."""
+    xp_name = xp.__name__
+
+    # if dpctl_available and isinstance(array, dpctl.tensor):
+    if dpctl_available and xp_name in {
+        "dpctl.tensor",
+    }:
+        return dpt.to_numpy(array)
+    elif dpnp_available and isinstance(array, dpnp.ndarray):
+        return dpnp.asnumpy(array)
+    elif sklearn_check_version("1.2"):
+        return _sklearn_convert_to_numpy(array, xp)
+    else:
+        return _asarray(array, xp)
+
+
+def get_namespace(*arrays, remove_none=True, remove_types=(str,), xp=None):
     """Get namespace of arrays.
 
-    Introspect `arrays` arguments and return their common Array API
-    compatible namespace object, if any. NumPy 1.22 and later can
-    construct such containers using the `numpy.array_api` namespace
-    for instance.
-
-    This function will return the namespace of SYCL-related arrays
-    which define the __sycl_usm_array_interface__ attribute
-    regardless of array_api support, the configuration of
-    array_api_dispatch, or scikit-learn version.
-
-    See: https://numpy.org/neps/nep-0047-array-api-standard.html
-
-    If `arrays` are regular numpy arrays, an instance of the
-    `_NumPyApiWrapper` compatibility wrapper is returned instead.
-
-    Namespace support is not enabled by default. To enabled it
-    call:
-
-      sklearn.set_config(array_api_dispatch=True)
-
-    or:
-
-      with sklearn.config_context(array_api_dispatch=True):
-          # your code here
-
-    Otherwise an instance of the `_NumPyApiWrapper`
-    compatibility wrapper is always returned irrespective of
-    the fact that arrays implement the `__array_namespace__`
-    protocol or not.
+    TBD
 
     Parameters
     ----------
@@ -77,46 +149,13 @@ def get_namespace(*arrays):
         True of the arrays are containers that implement the Array API spec.
     """
 
-    sycl_type, xp, is_array_api_compliant = _get_sycl_namespace(*arrays)
+    sycl_type, xp_sycl_namespace, is_array_api_compliant = _get_sycl_namespace(*arrays)
 
     if sycl_type:
-        return xp, is_array_api_compliant
+        return xp_sycl_namespace, is_array_api_compliant
     elif sklearn_check_version("1.2"):
-        return sklearn_get_namespace(*arrays)
+        return sklearn_get_namespace(
+            *arrays, remove_none=remove_none, remove_types=remove_types, xp=xp
+        )
     else:
         return np, False
-
-
-def enable_array_api(original_class: type[oneDALEstimator]) -> type[oneDALEstimator]:
-    """Enable sklearnex to use dpctl, dpnp or array_api inputs in oneDAL offloading.
-
-    This wrapper sets the proper flags/tags for the sklearnex infrastructure
-    to maintain the data framework, as the estimator can use it natively.
-
-    Parameters
-    ----------
-    original_class : oneDALEstimator subclass
-        Class which should enable data zero-copy support in sklearnex.
-
-    Returns
-    -------
-    original_class : modified oneDALEstimator subclass
-        Estimator class.
-    """
-    if sklearn_check_version("1.6"):
-
-        def __sklearn_tags__(self) -> Tags:
-            sktags = super(original_class, self).__sklearn_tags__()
-            sktags.onedal_array_api = True
-            return sktags
-
-        original_class.__sklearn_tags__ = __sklearn_tags__
-
-    elif sklearn_check_version("1.3"):
-
-        def _more_tags(self) -> dict[str, bool]:
-            return {"onedal_array_api": True}
-
-        original_class._more_tags = _more_tags
-
-    return original_class
