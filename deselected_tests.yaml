@@ -37,6 +37,11 @@ deselected_tests:
   - model_selection/tests/test_split.py::test_array_api_train_test_split[True-None-array_api_strict-None-None]
   - model_selection/tests/test_split.py::test_array_api_train_test_split[True-stratify1-array_api_strict-None-None]
   - model_selection/tests/test_split.py::test_array_api_train_test_split[False-None-array_api_strict-None-None]
+  # PCA. Array API functionally supported for all factorizations. power_iteration_normalizer=["LU", "QR"]
+  - decomposition/tests/test_pca.py::test_array_api_error_and_warnings_on_unsupported_params
+  # PCA. InvalidParameterError: The 'M' parameter of randomized_svd must be an instance of 'numpy.ndarray' or a sparse matrix.
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,power_iteration_normalizer='QR',random_state=0,svd_solver='randomized')-check_array_api_input_and_values-array_api_strict-None-None]
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,power_iteration_normalizer='QR',random_state=0,svd_solver='randomized')-check_array_api_get_precision-array_api_strict-None-None]
   # Ridge regression. Array API functionally supported for all solvers. Not raising error for non-svd solvers.
   - linear_model/tests/test_ridge.py::test_array_api_error_and_warnings_for_solver_parameter[array_api_strict]
 
