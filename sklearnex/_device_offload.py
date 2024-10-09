@@ -75,7 +75,7 @@ def dispatch(obj, method_name, branches, *args, **kwargs):
         return branches[backend](obj, *hostargs, **hostkwargs, queue=q)
     if backend == "sklearn":
         if (
-            sklearn_check_version("1.2")
+            sklearn_check_version("1.4")
             and get_config()["array_api_dispatch"]
             and "array_api_support" in obj._get_tags()
             and obj._get_tags()["array_api_support"]

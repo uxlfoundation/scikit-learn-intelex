@@ -21,7 +21,7 @@ import numpy as np
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal.utils._array_api import _asarray, _get_sycl_namespace
 
-if sklearn_check_version("1.2"):
+if sklearn_check_version("1.4"):
     from sklearn.utils._array_api import get_namespace as sklearn_get_namespace
     from sklearn.utils._array_api import _convert_to_numpy as _sklearn_convert_to_numpy
 
@@ -44,7 +44,7 @@ def _convert_to_numpy(array, xp):
         return dpt.to_numpy(array)
     elif dpnp_available and isinstance(array, dpnp.ndarray):
         return dpnp.asnumpy(array)
-    elif sklearn_check_version("1.2"):
+    elif sklearn_check_version("1.4"):
         return _sklearn_convert_to_numpy(array, xp)
     else:
         return _asarray(array, xp)
@@ -97,7 +97,7 @@ if sklearn_check_version("1.5"):
 
         if usm_iface:
             return xp_sycl_namespace, is_array_api_compliant
-        elif sklearn_check_version("1.2"):
+        elif sklearn_check_version("1.4"):
             return sklearn_get_namespace(
                 *arrays, remove_none=remove_none, remove_types=remove_types, xp=xp
             )
@@ -140,7 +140,7 @@ else:
 
         if usm_iface:
             return xp_sycl_namespace, is_array_api_compliant
-        elif sklearn_check_version("1.2"):
+        elif sklearn_check_version("1.4"):
             return sklearn_get_namespace(*arrays)
         else:
             return np, False
