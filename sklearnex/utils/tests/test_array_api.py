@@ -26,8 +26,14 @@ from onedal.tests.utils._dataframes_support import (
 
 # TODO:
 # add test suit for dpctl.tensor, dpnp.ndarray, numpy.ndarray without config_context(array_api_dispatch=True)).
+# TODO:
+# extend for DPNP inputs.
 
 
+@pytest.mark.skipif(
+    not sklearn_check_version("1.4"),
+    reason="Array API dispatch requires sklearn 1.4 version",
+)
 @pytest.mark.parametrize(
     "dataframe,queue",
     get_dataframes_and_queues(
