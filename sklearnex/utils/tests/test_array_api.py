@@ -60,7 +60,7 @@ def test_get_namespace_with_config_context(dataframe, queue):
 
 @pytest.mark.skipif(
     not sklearn_check_version("1.2"),
-    reason="array api dispatch requires sklearn 1.2 version",
+    reason="Array API dispatch requires sklearn 1.2 version",
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
@@ -96,7 +96,7 @@ def test_get_namespace_with_patching(dataframe, queue):
 
 @pytest.mark.skipif(
     not sklearn_check_version("1.2"),
-    reason="array api dispatch requires sklearn 1.2 version",
+    reason="Array API dispatch requires sklearn 1.2 version",
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
@@ -127,7 +127,7 @@ def test_convert_to_numpy_with_patching(dataframe, queue):
 
 @pytest.mark.skipif(
     not sklearn_check_version("1.2"),
-    reason="array api dispatch requires sklearn 1.2 version",
+    reason="Array API dispatch requires sklearn 1.2 version",
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
@@ -142,8 +142,8 @@ def test_convert_to_numpy_with_patching(dataframe, queue):
         pytest.param(np.float64, id=np.dtype(np.float64).name),
     ],
 )
-def test_check_array_with_patching(dataframe, queue, dtype):
-    """Test check_array TBD with `patch_sklearn`"""
+def test_validate_data_with_patching(dataframe, queue, dtype):
+    """Test validate_data TBD with `patch_sklearn`"""
     pytest.importorskip("array_api_compat")
 
     from sklearnex import patch_sklearn
@@ -151,14 +151,23 @@ def test_check_array_with_patching(dataframe, queue, dtype):
     patch_sklearn()
 
     from sklearn import config_context
-    from sklearn.utils import check_array
+    from sklearn.base import BaseEstimator
+
+    if sklearn_check_version("1.6"):
+        from sklearn.utils.validation import validate_data
+    else:
+        validate_data = BaseEstimator._validate_data
+
     from sklearn.utils._array_api import _convert_to_numpy, get_namespace
 
     X_np = np.asarray([[1, 2, 3], [4, 5, 6]], dtype=dtype)
     X_df = _convert_to_dataframe(X_np, sycl_queue=queue, target_df=dataframe)
     with config_context(array_api_dispatch=True):
+        est = BaseEstimator()
         xp, _ = get_namespace(X_df)
-        X_df_res = check_array(X_df, accept_sparse="csr", dtype=[xp.float64, xp.float32])
+        X_df_res = validate_data(
+            est, X_df, accept_sparse="csr", dtype=[xp.float64, xp.float32]
+        )
         assert type(X_df) == type(X_df_res)
         if dataframe != "numpy":
             # _convert_to_numpy not designed for numpy.ndarray inputs.
