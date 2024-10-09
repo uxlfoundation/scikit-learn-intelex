@@ -332,8 +332,9 @@ def test_patch_map_match():
     # sklearn functions which aren't exposed via __all__ in sklearn. It is a special
     # case where this rule is not applied (e.g. it is grandfathered in).
     del patched["_assert_all_finite"]
-    del patched["_convert_to_numpy"]
-    del patched["get_namespace"]
+    if sklearn_check_version("1.4"):
+        del patched["_convert_to_numpy"]
+        del patched["get_namespace"]
 
     # remove all scikit-learn-intelex-only estimators
     for i in patched.copy():

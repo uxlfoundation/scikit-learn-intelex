@@ -55,8 +55,8 @@ def test_get_namespace_with_config_context(dataframe, queue):
 
 
 @pytest.mark.skipif(
-    not sklearn_check_version("1.2"),
-    reason="Array API dispatch requires sklearn 1.2 version",
+    not sklearn_check_version("1.4"),
+    reason="Array API dispatch requires sklearn 1.4 version",
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
@@ -91,8 +91,8 @@ def test_get_namespace_with_patching(dataframe, queue):
 
 
 @pytest.mark.skipif(
-    not sklearn_check_version("1.2"),
-    reason="Array API dispatch requires sklearn 1.2 version",
+    not sklearn_check_version("1.4"),
+    reason="Array API dispatch requires sklearn 1.4 version",
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
@@ -124,8 +124,8 @@ def test_convert_to_numpy_with_patching(dataframe, queue):
 
 
 @pytest.mark.skipif(
-    not sklearn_check_version("1.2"),
-    reason="Array API dispatch requires sklearn 1.2 version",
+    not sklearn_check_version("1.4"),
+    reason="Array API dispatch requires sklearn 1.4 version",
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
