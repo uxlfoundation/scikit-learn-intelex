@@ -35,7 +35,7 @@ from onedal.tests.utils._dataframes_support import (
     ),
 )
 def test_get_namespace_with_config_context(dataframe, queue):
-    """Test get_namespace TBD"""
+    """Test `get_namespace` with `array_api_dispatch` enabled."""
     from sklearnex import config_context
     from sklearnex.utils._array_api import get_namespace
 
@@ -65,8 +65,8 @@ def test_get_namespace_with_config_context(dataframe, queue):
     ),
 )
 def test_get_namespace_with_patching(dataframe, queue):
-    """Test get_namespace TBD
-    with `patch_sklearn`
+    """Test `get_namespace` with `array_api_dispatch` and
+    `patch_sklearn` enabled.
     """
     array_api_compat = pytest.importorskip("array_api_compat")
 
@@ -101,7 +101,9 @@ def test_get_namespace_with_patching(dataframe, queue):
     ),
 )
 def test_convert_to_numpy_with_patching(dataframe, queue):
-    """Test _convert_to_numpy TBD with `patch_sklearn`"""
+    """Test `_convert_to_numpy` with `array_api_dispatch` and
+    `patch_sklearn` enabled.
+    """
     pytest.importorskip("array_api_compat")
 
     from sklearnex import patch_sklearn
@@ -139,7 +141,9 @@ def test_convert_to_numpy_with_patching(dataframe, queue):
     ],
 )
 def test_validate_data_with_patching(dataframe, queue, dtype):
-    """Test validate_data TBD with `patch_sklearn`"""
+    """Test validate_data with `array_api_dispatch` and
+    `patch_sklearn` enabled.
+    """
     pytest.importorskip("array_api_compat")
 
     from sklearnex import patch_sklearn
