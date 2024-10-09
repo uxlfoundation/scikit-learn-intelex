@@ -28,6 +28,9 @@ array_api_dataframes_and_namespaces = {
     "dpctl": "dpctl.tensor",
 }
 
+# TODO:
+# add test suit for dpctl.tensor, dpnp.ndarray, numpy.ndarray without config_context(array_api_dispatch=True)).
+
 
 @pytest.mark.parametrize(
     "dataframe,queue",
@@ -48,7 +51,11 @@ def test_get_namespace_with_config_context(dataframe, queue):
     with config_context(array_api_dispatch=True):
         xp_out, is_array_api_compliant = get_namespace(X)
         assert is_array_api_compliant
-        assert xp_out is array_api_compat.get_namespace(X)
+        if not dataframe in "numpy,array_api":
+            # Rather than array_api_compat.get_namespace raw output
+            # `get_namespace` has specific wrapper classes for `numpy.ndarray`
+            # or `array-api-strict`.
+            assert xp_out == array_api_compat.get_namespace(X)
 
 
 @pytest.mark.skipif(
@@ -80,7 +87,11 @@ def test_get_namespace_with_patching(dataframe, queue):
     with config_context(array_api_dispatch=True):
         xp_out, is_array_api_compliant = get_namespace(X)
         assert is_array_api_compliant
-        assert xp_out is array_api_compat.get_namespace(X)
+        if not dataframe in "numpy,array_api":
+            # Rather than array_api_compat.get_namespace raw output
+            # `get_namespace` has specific wrapper classes for `numpy.ndarray`
+            # or `array-api-strict`.
+            assert xp_out == array_api_compat.get_namespace(X)
 
 
 @pytest.mark.skipif(
