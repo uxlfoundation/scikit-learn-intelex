@@ -90,7 +90,7 @@ def test_get_namespace_with_patching(dataframe, queue):
 @pytest.mark.parametrize(
     "dataframe,queue",
     get_dataframes_and_queues(
-        dataframe_filter_="numpy,dpctl,array_api", device_filter_="cpu,gpu"
+        dataframe_filter_="dpctl,array_api", device_filter_="cpu,gpu"
     ),
 )
 def test_convert_to_numpy_with_patching(dataframe, queue):
@@ -149,4 +149,8 @@ def test_check_array_with_patching(dataframe, queue, dtype):
         xp, _ = get_namespace(X_df)
         X_df_res = check_array(X_df, accept_sparse="csr", dtype=[xp.float64, xp.float32])
         assert type(X_df) == type(X_df_res)
-        assert_allclose(_convert_to_numpy(X_df, xp), _convert_to_numpy(X_df_res, xp))
+        if dataframe != "numpy":
+            # _convert_to_numpy not designed for numpy.ndarray inputs.
+            assert_allclose(_convert_to_numpy(X_df, xp), _convert_to_numpy(X_df_res, xp))
+        else:
+            assert_allclose(X_df, X_df_res)
