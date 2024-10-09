@@ -40,7 +40,6 @@ def _convert_to_numpy(array, xp):
     """Convert X into a NumPy ndarray on the CPU."""
     xp_name = xp.__name__
 
-    # if dpctl_available and isinstance(array, dpctl.tensor):
     if dpctl_available and xp_name in {
         "dpctl.tensor",
     }:
