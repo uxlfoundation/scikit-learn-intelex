@@ -21,8 +21,6 @@ import numpy as np
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal.utils._array_api import _asarray, _get_sycl_namespace
 
-# TODO:
-# check the version of skl.
 if sklearn_check_version("1.2"):
     from sklearn.utils._array_api import get_namespace as sklearn_get_namespace
     from sklearn.utils._array_api import _convert_to_numpy as _sklearn_convert_to_numpy

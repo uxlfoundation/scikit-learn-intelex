@@ -24,10 +24,6 @@ from onedal.tests.utils._dataframes_support import (
     get_dataframes_and_queues,
 )
 
-array_api_dataframes_and_namespaces = {
-    "dpctl": "dpctl.tensor",
-}
-
 # TODO:
 # add test suit for dpctl.tensor, dpnp.ndarray, numpy.ndarray without config_context(array_api_dispatch=True)).
 
