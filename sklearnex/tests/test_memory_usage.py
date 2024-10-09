@@ -44,7 +44,7 @@ from sklearnex.tests.utils import (
 )
 
 CPU_SKIP_LIST = (
-    "_convert_to_numpy", # additional memory allocation is expected proportional to the input data
+    "_convert_to_numpy",  # additional memory allocation is expected proportional to the input data
     "TSNE",  # too slow for using in testing on common data size
     "config_context",  # does not malloc
     "get_config",  # does not malloc
@@ -59,7 +59,7 @@ CPU_SKIP_LIST = (
 )
 
 GPU_SKIP_LIST = (
-    "_convert_to_numpy", # additional memory allocation is expected proportional to the input data
+    "_convert_to_numpy",  # additional memory allocation is expected proportional to the input data
     "TSNE",  # too slow for using in testing on common data size
     "RandomForestRegressor",  # too slow for using in testing on common data size
     "KMeans",  # does not support GPU offloading
