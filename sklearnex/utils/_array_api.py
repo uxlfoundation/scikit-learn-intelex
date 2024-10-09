@@ -55,12 +55,32 @@ if sklearn_check_version("1.5"):
     def get_namespace(*arrays, remove_none=True, remove_types=(str,), xp=None):
         """Get namespace of arrays.
 
-        TBD
+        Extends stock scikit-learn's `get_namespace` primitive to support DPCTL usm_ndarrays
+        and DPNP ndarrays.
+        If no DPCTL usm_ndarray or DPNP ndarray inputs and backend scikit-learn version supports
+        Array API then :obj:`sklearn.utils._array_api.get_namespace` results are drawn.
+        Otherwise, numpy namespace will be returned.
+
+        Designed to work for numpy.ndarray, DPCTL usm_ndarrays and DPNP ndarrays without
+        `array-api-compat` or backend scikit-learn Array API support.
+
+        For full documentation refer to :obj:`sklearn.utils._array_api.get_namespace`.
 
         Parameters
         ----------
         *arrays : array objects
             Array objects.
+
+        remove_none : bool, default=True
+            Whether to ignore None objects passed in arrays.
+
+        remove_types : tuple or list, default=(str,)
+            Types to ignore in the arrays.
+
+        xp : module, default=None
+            Precomputed array namespace module. When passed, typically from a caller
+            that has already performed inspection of its own inputs, skips array
+            namespace inspection.
 
         Returns
         -------
@@ -89,7 +109,16 @@ else:
     def get_namespace(*arrays):
         """Get namespace of arrays.
 
-        TBD
+        Extends stock scikit-learn's `get_namespace` primitive to support DPCTL usm_ndarrays
+        and DPNP ndarrays.
+        If no DPCTL usm_ndarray or DPNP ndarray inputs and backend scikit-learn version supports
+        Array API then :obj:`sklearn.utils._array_api.get_namespace(*arrays)` results are drawn.
+        Otherwise, numpy namespace will be returned.
+
+        Designed to work for numpy.ndarray, DPCTL usm_ndarrays and DPNP ndarrays without
+        `array-api-compat` or backend scikit-learn Array API support.
+
+        For full documentation refer to :obj:`sklearn.utils._array_api.get_namespace`.
 
         Parameters
         ----------
