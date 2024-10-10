@@ -18,7 +18,13 @@
 
 from collections.abc import Iterable
 
+import numpy as np
+
+from daal4py.sklearn._utils import get_dtype
+from daal4py.sklearn._utils import make2d as d4p_make2d
+
 try:
+    import dpctl.tensor as dpt
     from dpctl.tensor import usm_ndarray
 
     dpctl_available = True
@@ -31,6 +37,18 @@ try:
     dpnp_available = True
 except ImportError:
     dpnp_available = False
+
+
+# TODO:
+# move to Array API module.
+# TODO
+# def make2d(arg, xp=None, is_array_api_compliant=None):
+def make2d(arg, xp=None):
+    if xp and not _is_numpy_namespace(xp) and arg.ndim == 1:
+        return xp.reshape(arg, (arg.size, 1)) if arg.ndim == 1 else arg
+    # TODO:
+    # reimpl via is_array_api_compliant usage.
+    return d4p_make2d(arg)
 
 
 if dpnp_available:
@@ -46,6 +64,20 @@ if dpnp_available:
             for i in range(len(array)):
                 array[i] = _convert_to_dpnp(array[i])
         return array
+
+
+def _convert_to_numpy(array, xp):
+    """Convert X into a NumPy ndarray on the CPU."""
+    xp_name = xp.__name__
+
+    if dpctl_available and xp_name in {
+        "dpctl.tensor",
+    }:
+        return dpt.to_numpy(array)
+    elif dpnp_available and isinstance(array, dpnp.ndarray):
+        return dpnp.asnumpy(array)
+    else:
+        return _asarray(array, xp)
 
 
 def _asarray(data, xp, *args, **kwargs):
@@ -89,3 +121,25 @@ def _get_sycl_namespace(*arrays):
             raise ValueError(f"SYCL type not recognized: {sua_iface}")
 
     return sua_iface, None, False
+
+
+def get_namespace(*arrays):
+    """Get namespace of arrays.
+    TBD.
+    Parameters
+    ----------
+    *arrays : array objects
+        Array objects.
+    Returns
+    -------
+    namespace : module
+        Namespace shared by array objects.
+    is_array_api : bool
+        True of the arrays are containers that implement the Array API spec.
+    """
+    sycl_type, xp, is_array_api_compliant = _get_sycl_namespace(*arrays)
+
+    if sycl_type:
+        return xp, is_array_api_compliant
+    else:
+        return np, True
