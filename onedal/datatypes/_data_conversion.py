@@ -18,6 +18,7 @@ import warnings
 
 import numpy as np
 
+from daal4py.sklearn._utils import make2d
 from onedal import _backend, _is_dpc_backend
 from onedal.utils import _is_csr
 
