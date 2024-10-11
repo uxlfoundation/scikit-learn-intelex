@@ -14,11 +14,9 @@
 # limitations under the License.
 # ===============================================================================
 
-import numpy as np
-from sklearn import set_config
 from sklearn.utils import check_array
 
-from onedal.datatypes._data_conversion import get_dtype, make2d
+from onedal.utils._array_api import get_dtype, make2d
 
 from ..common._base import BaseEstimator
 from ..common._mixin import ClusterMixin
@@ -29,6 +27,7 @@ from ..utils._array_api import (
     get_dtype,
     get_namespace,
     make2d,
+    sklearn_array_api_dispatch,
 )
 
 
@@ -64,10 +63,9 @@ class BaseDBSCAN(BaseEstimator, ClusterMixin):
             "result_options": "core_observation_indices|responses",
         }
 
+    @sklearn_array_api_dispatch()
     def _fit(self, X, xp, is_array_api_compliant, y, sample_weight, queue):
         policy = self._get_policy(queue, X)
-        # just for debug.
-        set_config(array_api_dispatch=True)
         # TODO:
         # check on dispatching and warn.
         # using scikit-learn primitives will require array_api_dispatch=True
@@ -76,16 +74,17 @@ class BaseDBSCAN(BaseEstimator, ClusterMixin):
         X = make2d(X)
         # X_device = X.device if xp else None
 
+        # TODO:
+        # move to _convert_to_supported to do astype conversion
+        # at once.
         types = [xp.float32, xp.float64]
         if get_dtype(X) not in types:
             X = X.astype(xp.float64)
-        # TODO:
-        # update iface
-        # X = _convert_to_supported(policy, X, xp)
+        X = _convert_to_supported(policy, X, xp=xp)
         # TODO:
         # remove if not required.
         sample_weight = (
-            _convert_to_supported(policy, sample_weight, xp)
+            _convert_to_supported(policy, sample_weight, xp=xp)
             if sample_weight is not None
             else None
         )

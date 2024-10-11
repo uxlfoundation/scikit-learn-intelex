@@ -17,8 +17,10 @@
 """Tools to support array_api."""
 
 from collections.abc import Iterable
+from functools import wraps
 
 import numpy as np
+from sklearn import config_context, get_config
 
 from daal4py.sklearn._utils import get_dtype
 from daal4py.sklearn._utils import make2d as d4p_make2d
@@ -121,6 +123,41 @@ def _get_sycl_namespace(*arrays):
             raise ValueError(f"SYCL type not recognized: {sua_iface}")
 
     return sua_iface, None, False
+
+
+# TODO:
+#
+sklearn_array_api_version = True
+
+
+def sklearn_array_api_dispatch(freefunc=False):
+    """
+    TBD
+    """
+
+    def decorator(func):
+        def wrapper_impl(obj, *args, **kwargs):
+            # if sklearn_array_api_version and not get_config["array_api_dispatch"]:
+            if sklearn_array_api_version:
+                with config_context(array_api_dispatch=True):
+                    return func(obj, *args, **kwargs)
+            return func(obj, *args, **kwargs)
+
+        if freefunc:
+
+            @wraps(func)
+            def wrapper_free(*args, **kwargs):
+                return wrapper_impl(None, *args, **kwargs)
+
+            return wrapper_free
+
+        @wraps(func)
+        def wrapper_with_self(self, *args, **kwargs):
+            return wrapper_impl(self, *args, **kwargs)
+
+        return wrapper_with_self
+
+    return decorator
 
 
 def get_namespace(*arrays):
