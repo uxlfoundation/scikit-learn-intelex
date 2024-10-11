@@ -30,10 +30,14 @@ except ImportError:
     dpctl_available = False
 
 
-def _apply_and_pass(func, *args):
+def _apply_and_pass(func, *args, **kwargs):
     if len(args) == 1:
-        return func(args[0])
-    return tuple(map(func, args))
+        return func(args[0], **kwargs) if len(kwargs) > 0 else func(args[0])
+    return (
+        tuple(func(arg, **kwargs) for arg in args)
+        if len(kwargs) > 0
+        else tuple(func(arg) for arg in args)
+    )
 
 
 def from_table(*args):
