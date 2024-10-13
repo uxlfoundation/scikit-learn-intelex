@@ -14,16 +14,12 @@
 # limitations under the License.
 # ==============================================================================
 
-import inspect
 import warnings
 from collections.abc import Sequence
-from numbers import Integral
+from numbers import Integral, Number
 
 import numpy as np
 from scipy import sparse as sp
-
-from onedal.common._backend import BackendFunction
-from onedal.utils import _sycl_queue_manager as QM
 
 if np.lib.NumpyVersion(np.__version__) >= np.lib.NumpyVersion("2.0.0a0"):
     # numpy_version >= 2.0
@@ -33,13 +29,11 @@ else:
     from numpy import VisibleDeprecationWarning
 
 from sklearn.preprocessing import LabelEncoder
-from sklearn.utils.validation import check_array
+from sklearn.utils.validation import check_array, check_non_negative
 
-from daal4py.sklearn.utils.validation import (
-    _assert_all_finite as _daal4py_assert_all_finite,
-)
-from onedal import _default_backend as backend
-from onedal.datatypes import to_table
+from daal4py.sklearn.utils.validation import _assert_all_finite
+
+from ..utils._array_api import get_namespace
 
 
 class DataConversionWarning(UserWarning):
@@ -93,7 +87,7 @@ def _compute_class_weight(class_weight, classes, y):
 
         le = LabelEncoder()
         y_ind = le.fit_transform(y_)
-        if not np.isin(classes, le.classes_).all():
+        if not all(np.in1d(classes, le.classes_)):
             raise ValueError("classes should have valid labels that are in y")
 
         y_bin = np.bincount(y_ind).astype(np.float64)
@@ -130,24 +124,6 @@ def _validate_targets(y, class_weight, dtype):
     return np.asarray(y, dtype=dtype, order="C"), class_weight_res, classes
 
 
-def get_finite_keyword():
-    """Return scikit-learn-matching finite check enabling keyword.
-
-    Gets the argument name for scikit-learn's validation functions compatible with
-    the current version of scikit-learn and using function inspection instead of
-    version check due to `onedal` design rule: sklearn versioning should occur
-    in ``sklearnex`` module.
-
-    Returns
-    -------
-    finite_keyword : str
-        Keyword string used to enable finiteness checking.
-    """
-    if "ensure_all_finite" in inspect.signature(check_array).parameters:
-        return "ensure_all_finite"
-    return "force_all_finite"
-
-
 def _check_array(
     array,
     dtype="numeric",
@@ -157,33 +133,37 @@ def _check_array(
     force_all_finite=True,
     ensure_2d=True,
     accept_large_sparse=True,
-    _finite_keyword=get_finite_keyword(),
 ):
     if force_all_finite:
         if sp.issparse(array):
             if hasattr(array, "data"):
-                _daal4py_assert_all_finite(array.data)
+                _assert_all_finite(array.data)
                 force_all_finite = False
         else:
-            _daal4py_assert_all_finite(array)
+            _assert_all_finite(array)
             force_all_finite = False
-    check_kwargs = {
-        "array": array,
-        "dtype": dtype,
-        "accept_sparse": accept_sparse,
-        "order": order,
-        "copy": copy,
-        "ensure_2d": ensure_2d,
-        "accept_large_sparse": accept_large_sparse,
-    }
-    check_kwargs[_finite_keyword] = force_all_finite
-
     array = check_array(
-        **check_kwargs,
+        array=array,
+        dtype=dtype,
+        accept_sparse=accept_sparse,
+        order=order,
+        copy=copy,
+        force_all_finite=force_all_finite,
+        ensure_2d=ensure_2d,
+        accept_large_sparse=accept_large_sparse,
     )
 
     if sp.issparse(array):
         return array
+
+    # TODO: Convert this kind of arrays to a table like in daal4py
+    if not array.flags.aligned and not array.flags.writeable:
+        array = np.array(array.tolist())
+
+    # TODO: If data is not contiguous copy to contiguous
+    # Need implemeted numpy table in oneDAL
+    if not array.flags.c_contiguous and not array.flags.f_contiguous:
+        array = np.ascontiguousarray(array, array.dtype)
     return array
 
 
@@ -222,7 +202,7 @@ def _check_X_y(
     if y_numeric and y.dtype.kind == "O":
         y = y.astype(np.float64)
     if force_all_finite:
-        _daal4py_assert_all_finite(y)
+        _assert_all_finite(y)
 
     lengths = [X.shape[0], y.shape[0]]
     uniques = np.unique(lengths)
@@ -307,7 +287,7 @@ def _type_of_target(y):
     # check float and contains non-integer float values
     if y.dtype.kind == "f" and np.any(y != y.astype(int)):
         # [.1, .2, 3] or [[.1, .2, 3]] or [[1., .2]] and not [1., 2., 3.]
-        _daal4py_assert_all_finite(y)
+        _assert_all_finite(y)
         return "continuous" + suffix
 
     if (len(np.unique(y)) > 2) or (y.ndim >= 2 and len(y[0]) > 1):
@@ -380,8 +360,6 @@ def _check_n_features(self, X, reset):
 
 
 def _num_features(X, fallback_1d=False):
-    if X is None:
-        raise ValueError("Expected array-like (array or non-string sequence), got None")
     type_ = type(X)
     if type_.__module__ == "builtins":
         type_name = type_.__qualname__
@@ -390,7 +368,7 @@ def _num_features(X, fallback_1d=False):
     message = "Unable to find the number of features from X of type " f"{type_name}"
     if not hasattr(X, "__len__") and not hasattr(X, "shape"):
         if not hasattr(X, "__array__"):
-            raise ValueError(message)
+            raise TypeError(message)
         # Only convert X to a numpy array if there is no cheaper, heuristic
         # option.
         X = np.asarray(X)
@@ -399,21 +377,15 @@ def _num_features(X, fallback_1d=False):
         ndim_thr = 1 if fallback_1d else 2
         if not hasattr(X.shape, "__len__") or len(X.shape) < ndim_thr:
             message += f" with shape {X.shape}"
-            raise ValueError(message)
-        if len(X.shape) <= 1:
-            return 1
-        else:
-            return X.shape[-1]
+            raise TypeError(message)
+        return X.shape[-1]
 
-    try:
-        first_sample = X[0]
-    except IndexError:
-        raise ValueError("Passed empty data.")
+    first_sample = X[0]
 
     # Do not consider an array-like of strings or dicts to be a 2D array
     if isinstance(first_sample, (str, bytes, dict)):
         message += f" where the samples are of type " f"{type(first_sample).__qualname__}"
-        raise ValueError(message)
+        raise TypeError(message)
 
     try:
         # If X is a list of lists, for instance, we assume that all nested
@@ -424,7 +396,7 @@ def _num_features(X, fallback_1d=False):
         else:
             return 1
     except Exception as err:
-        raise ValueError(message) from err
+        raise TypeError(message) from err
 
 
 def _num_samples(x):
@@ -432,10 +404,12 @@ def _num_samples(x):
     if hasattr(x, "fit") and callable(x.fit):
         # Don't get num_samples from an ensembles length!
         raise TypeError(message)
-
+    xp, _ = get_namespace(x)
     if not hasattr(x, "__len__") and not hasattr(x, "shape"):
         if hasattr(x, "__array__"):
-            x = np.asarray(x)
+            # TODO:
+            # use sycl_queue if required.
+            x = xp.asarray(x)
         else:
             raise TypeError(message)
 
@@ -462,42 +436,45 @@ def _is_csr(x):
     )
 
 
-def _assert_all_finite(X, allow_nan=False, input_name=""):
-    backend_method = BackendFunction(
-        backend.finiteness_checker.compute.compute, backend, "compute", no_policy=False
-    )
-    X_t = to_table(X)
-    params = {
-        "fptype": X_t.dtype,
-        "method": "dense",
-        "allow_nan": allow_nan,
-    }
-    with QM.manage_global_queue(None, X):
-        # Must use the queue provided by X
-        if not backend_method(params, X_t).finite:
-            type_err = "infinity" if allow_nan else "NaN, infinity"
-            padded_input_name = input_name + " " if input_name else ""
-            msg_err = f"Input {padded_input_name}contains {type_err}."
-            raise ValueError(msg_err)
-
-
-def assert_all_finite(
-    X,
-    *,
-    allow_nan=False,
-    input_name="",
+def _check_sample_weight(
+    sample_weight, X, dtype=None, copy=False, ensure_non_negative=False
 ):
-    _assert_all_finite(
-        X.data if sp.issparse(X) else X,
-        allow_nan=allow_nan,
-        input_name=input_name,
-    )
+    """Validate sample weights.
+    TBD
+    """
+    xp, _ = get_namespace(X)
+    n_samples = _num_samples(X)
 
+    if dtype is not None and dtype not in [xp.float32, xp.float64]:
+        dtype = xp.float64
 
-def is_contiguous(X):
-    if hasattr(X, "flags"):
-        return X.flags["C_CONTIGUOUS"] or X.flags["F_CONTIGUOUS"]
-    elif hasattr(X, "__dlpack__"):
-        return backend.dlpack_memory_order(X) is not None
+    if sample_weight is None:
+        sample_weight = np.ones(n_samples, dtype=dtype)
+    elif isinstance(sample_weight, Number):
+        sample_weight = xp.full(n_samples, sample_weight, dtype=dtype)
     else:
-        return False
+        if dtype is None:
+            dtype = [xp.float64, xp.float32]
+        sample_weight = check_array(
+            sample_weight,
+            accept_sparse=False,
+            ensure_2d=False,
+            dtype=dtype,
+            order="C",
+            copy=copy,
+            input_name="sample_weight",
+        )
+        if sample_weight.ndim != 1:
+            raise ValueError("Sample weights must be 1D array or scalar")
+
+        if sample_weight.shape != (n_samples,):
+            raise ValueError(
+                "sample_weight.shape == {}, expected {}!".format(
+                    sample_weight.shape, (n_samples,)
+                )
+            )
+
+    if ensure_non_negative:
+        check_non_negative(sample_weight, "`sample_weight`")
+
+    return sample_weight

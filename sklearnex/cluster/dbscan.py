@@ -18,24 +18,27 @@ import numbers
 from abc import ABC
 
 from scipy import sparse as sp
-from sklearn.cluster import DBSCAN as _sklearn_DBSCAN
-from sklearn.utils.validation import _check_sample_weight
+from sklearn.cluster import DBSCAN as sklearn_DBSCAN
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal.cluster import DBSCAN as onedal_DBSCAN
+from onedal.utils.validation import _check_sample_weight
 
-from .._config import get_config
 from .._device_offload import dispatch
 from .._utils import PatchingConditionsChain
-from ..base import oneDALEstimator
-from ..utils.validation import validate_data
+from ..utils._array_api import get_namespace
 
 if sklearn_check_version("1.1") and not sklearn_check_version("1.2"):
     from sklearn.utils import check_scalar
 
+if sklearn_check_version("1.6"):
+    from sklearn.utils.validation import validate_data
+else:
+    validate_data = sklearn_DBSCAN._validate_data
 
-class BaseDBSCAN(oneDALEstimator):
+
+class BaseDBSCAN(ABC):
     def _onedal_dbscan(self, **onedal_params):
         return onedal_DBSCAN(**onedal_params)
 
@@ -49,11 +52,11 @@ class BaseDBSCAN(oneDALEstimator):
 
 
 @control_n_jobs(decorated_methods=["fit"])
-class DBSCAN(BaseDBSCAN, _sklearn_DBSCAN):
-    __doc__ = _sklearn_DBSCAN.__doc__
+class DBSCAN(sklearn_DBSCAN, BaseDBSCAN):
+    __doc__ = sklearn_DBSCAN.__doc__
 
     if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {**_sklearn_DBSCAN._parameter_constraints}
+        _parameter_constraints: dict = {**sklearn_DBSCAN._parameter_constraints}
 
     def __init__(
         self,
@@ -87,8 +90,9 @@ class DBSCAN(BaseDBSCAN, _sklearn_DBSCAN):
         self.n_jobs = n_jobs
 
     def _onedal_fit(self, X, y, sample_weight=None, queue=None):
-        if get_config()["use_raw_input"] is False:
-            X = validate_data(self, X, ensure_all_finite=False)
+        xp, is_array_api_compliant = get_namespace(X)
+        if sklearn_check_version("1.0"):
+            X = validate_data(self, X, force_all_finite=False)
 
         onedal_params = {
             "eps": self.eps,
@@ -102,7 +106,9 @@ class DBSCAN(BaseDBSCAN, _sklearn_DBSCAN):
         }
         self._onedal_estimator = self._onedal_dbscan(**onedal_params)
 
-        self._onedal_estimator.fit(X, y=y, sample_weight=sample_weight, queue=queue)
+        self._onedal_estimator._fit(
+            X, xp, is_array_api_compliant, y, sample_weight, queue=queue
+        )
         self._save_attributes()
 
     def _onedal_supported(self, method_name, *data):
@@ -176,15 +182,16 @@ class DBSCAN(BaseDBSCAN, _sklearn_DBSCAN):
             if self.eps <= 0.0:
                 raise ValueError(f"eps == {self.eps}, must be > 0.0.")
 
-        use_raw_input = get_config().get("use_raw_input", False) is True
-        if not use_raw_input and sample_weight is not None:
+        if sample_weight is not None:
             sample_weight = _check_sample_weight(sample_weight, X)
+        # TODO:
+        # add new dispatching with array api context.
         dispatch(
             self,
             "fit",
             {
                 "onedal": self.__class__._onedal_fit,
-                "sklearn": _sklearn_DBSCAN.fit,
+                "sklearn": sklearn_DBSCAN.fit,
             },
             X,
             y,
@@ -193,4 +200,10 @@ class DBSCAN(BaseDBSCAN, _sklearn_DBSCAN):
 
         return self
 
-    fit.__doc__ = _sklearn_DBSCAN.fit.__doc__
+    # TODO:
+    # check it in case of the fallback
+    # to stock scikit-learn.
+    def _more_tags(self):
+        return {"array_api_support": True}
+
+    fit.__doc__ = sklearn_DBSCAN.fit.__doc__

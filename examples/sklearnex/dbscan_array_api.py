@@ -1,5 +1,5 @@
 # ==============================================================================
-# Copyright 2024 Intel Corporation
+# Copyright 2023 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,23 +14,37 @@
 # limitations under the License.
 # ==============================================================================
 
-import array_api_strict
-
-from sklearnex import config_context, patch_sklearn
-
-patch_sklearn()
-
-from sklearn.cluster import DBSCAN
-
-X = array_api_strict.asarray(
-    [[1.0, 2.0], [2.0, 2.0], [2.0, 3.0], [8.0, 7.0], [8.0, 8.0], [25.0, 80.0]],
-    dtype=array_api_strict.float32,
+from .validation import (
+    _check_array,
+    _check_classification_targets,
+    _check_n_features,
+    _check_sample_weight,
+    _check_X_y,
+    _column_or_1d,
+    _is_arraylike,
+    _is_arraylike_not_scalar,
+    _is_csr,
+    _is_integral_float,
+    _is_multilabel,
+    _num_features,
+    _num_samples,
+    _type_of_target,
+    _validate_targets,
 )
 
-# Could be launched without `config_context(array_api_dispatch=True)`. This context
-# manager for sklearnex, only guarantee that in case of the fallback to stock
-# scikit-learn, fitted attributes to be from the same Array API namespace as
-# the training data.
-clustering = DBSCAN(eps=3, min_samples=2).fit(X)
-
-print(f"Fitted labels :\n", clustering.labels_)
+__all__ = [
+    "_column_or_1d",
+    "_validate_targets",
+    "_check_X_y",
+    "_check_array",
+    "_check_classification_targets",
+    "_type_of_target",
+    "_is_integral_float",
+    "_is_multilabel",
+    "_check_n_features",
+    "_num_features",
+    "_num_samples",
+    "_is_arraylike",
+    "_is_arraylike_not_scalar",
+    "_is_csr",
+]
