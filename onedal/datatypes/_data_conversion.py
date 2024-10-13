@@ -80,7 +80,7 @@ if _is_dpc_backend:
                     "float64 because device does not support it",
                     RuntimeWarning,
                 )
-                return x.astype(xp.float32)
+                return xp.astype(x, dtype=xp.float32)
             else:
                 return x
 
