@@ -144,11 +144,19 @@ class BasePCA(BaseEstimator, metaclass=ABCMeta):
         params = self._get_onedal_params(X, xp, stage="predict")
 
         result = self._get_backend(
-            "decomposition", "dim_reduction", "infer", policy, params, model, to_table(_convert_to_numpy(X, xp=xp))
+            "decomposition",
+            "dim_reduction",
+            "infer",
+            policy,
+            params,
+            model,
+            to_table(_convert_to_numpy(X, xp=xp)),
         )
         # Since `from_table` data management enabled only for numpy host,
         # copy data from numpy host output to xp namespace array.
-        return _asarray(from_table(result.transformed_data).reshape(-1), xp=xp, sycl_queue=queue) 
+        return _asarray(
+            from_table(result.transformed_data).reshape(-1), xp=xp, sycl_queue=queue
+        )
 
     def _predict(self, X, xp, queue=None):
         xp, is_array_api_compliant = get_namespace(X)
@@ -176,20 +184,42 @@ class PCA(BasePCA):
 
         params = self._get_onedal_params(X)
         result = self._get_backend(
-            "decomposition", "dim_reduction", "train", policy, params, to_table(_convert_to_numpy(X, xp=xp))
+            "decomposition",
+            "dim_reduction",
+            "train",
+            policy,
+            params,
+            to_table(_convert_to_numpy(X, xp=xp)),
         )
 
         # Since `from_table` data management enabled only for numpy host,
         # copy data from numpy host output to xp namespace array.
-        self.mean_ = _asarray(from_table(result.means).reshape(-1), xp=xp, sycl_queue=queue) 
-        self.variances_ = _asarray(from_table(result.variances).reshape(-1), xp=xp, sycl_queue=queue) 
-        self.components_ = _asarray(from_table(result.eigenvectors).reshape(-1), xp=xp, sycl_queue=queue) 
-        self.singular_values_ = _asarray(from_table(result.singular_values).reshape(-1), xp=xp, sycl_queue=queue) 
+        self.mean_ = _asarray(
+            from_table(result.means).reshape(-1), xp=xp, sycl_queue=queue
+        )
+        self.variances_ = _asarray(
+            from_table(result.variances).reshape(-1), xp=xp, sycl_queue=queue
+        )
+        self.components_ = _asarray(
+            from_table(result.eigenvectors).reshape(-1), xp=xp, sycl_queue=queue
+        )
+        self.singular_values_ = _asarray(
+            from_table(result.singular_values).reshape(-1), xp=xp, sycl_queue=queue
+        )
         # self.explained_variance_ = np.maximum(from_table(result.eigenvalues).ravel(), 0)
         # TODO:
         # check for Array API.
-        self.explained_variance_ = xp.max(_asarray(from_table(result.singular_values).reshape(-1), xp=xp, sycl_queue=queue), 0)
-        self.explained_variance_ratio_ = _asarray(from_table(result.explained_variances_ratio).reshape(-1), xp=xp, sycl_queue=queue) 
+        self.explained_variance_ = xp.max(
+            _asarray(
+                from_table(result.singular_values).reshape(-1), xp=xp, sycl_queue=queue
+            ),
+            0,
+        )
+        self.explained_variance_ratio_ = _asarray(
+            from_table(result.explained_variances_ratio).reshape(-1),
+            xp=xp,
+            sycl_queue=queue,
+        )
         self.n_samples_ = n_samples
         self.n_features_ = n_features
 
