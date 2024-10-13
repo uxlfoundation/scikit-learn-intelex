@@ -14,21 +14,14 @@
 # limitations under the License.
 # ===============================================================================
 
-from sklearn.utils import check_array
+import numpy as np
 
-from onedal.utils._array_api import get_dtype, make2d
+from daal4py.sklearn._utils import get_dtype, make2d
 
 from ..common._base import BaseEstimator
 from ..common._mixin import ClusterMixin
 from ..datatypes import _convert_to_supported, from_table, to_table
-from ..utils._array_api import (
-    _asarray,
-    _convert_to_numpy,
-    get_dtype,
-    get_namespace,
-    make2d,
-    sklearn_array_api_dispatch,
-)
+from ..utils import _check_array
 
 
 class BaseDBSCAN(BaseEstimator, ClusterMixin):
@@ -53,9 +46,9 @@ class BaseDBSCAN(BaseEstimator, ClusterMixin):
         self.p = p
         self.n_jobs = n_jobs
 
-    def _get_onedal_params(self, xp, dtype):
+    def _get_onedal_params(self, dtype=np.float32):
         return {
-            "fptype": "float" if dtype == xp.float32 else "double",
+            "fptype": "float" if dtype == np.float32 else "double",
             "method": "by_default",
             "min_observations": int(self.min_samples),
             "epsilon": float(self.eps),
@@ -63,55 +56,28 @@ class BaseDBSCAN(BaseEstimator, ClusterMixin):
             "result_options": "core_observation_indices|responses",
         }
 
-    @sklearn_array_api_dispatch()
-    def _fit(self, X, xp, is_array_api_compliant, y, sample_weight, queue):
+    def _fit(self, X, y, sample_weight, module, queue):
         policy = self._get_policy(queue, X)
-        # TODO:
-        # check on dispatching and warn.
-        # using scikit-learn primitives will require array_api_dispatch=True
-        X = check_array(X, accept_sparse="csr", dtype=[xp.float64, xp.float32])
+        X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
         sample_weight = make2d(sample_weight) if sample_weight is not None else None
         X = make2d(X)
-        # X_device = X.device if xp else None
 
-        # TODO:
-        # move to _convert_to_supported to do astype conversion
-        # at once.
-        types = [xp.float32, xp.float64]
+        types = [np.float32, np.float64]
         if get_dtype(X) not in types:
-            X = X.astype(xp.float64)
-        X = _convert_to_supported(policy, X, xp=xp)
-        # TODO:
-        # remove if not required.
-        sample_weight = (
-            _convert_to_supported(policy, sample_weight, xp=xp)
-            if sample_weight is not None
-            else None
-        )
+            X = X.astype(np.float64)
+        X = _convert_to_supported(policy, X)
         dtype = get_dtype(X)
-        params = self._get_onedal_params(xp, dtype)
+        params = self._get_onedal_params(dtype)
+        result = module.compute(policy, params, to_table(X), to_table(sample_weight))
 
-        # Since `to_table` data management enabled only for numpy host inputs,
-        # copy data into numpy host for to_table conversion.
-        result = self._get_backend("dbscan", "clustering", None).compute(
-            policy, params, to_table(_convert_to_numpy(X, xp=xp)), to_table(None)
-        )
-
-        # Since `from_table` data management enabled only for numpy host,
-        # copy data from numpy host output to xp namespace array.
-        self.labels_ = _asarray(
-            from_table(result.responses).reshape(-1), xp=xp, sycl_queue=queue
-        )
+        self.labels_ = from_table(result.responses).ravel()
         if result.core_observation_indices is not None:
-            # self.core_sample_indices_ = _asarray(from_table(result.core_observation_indices).reshape(-1), xp=xp, sycl_queue=queue)
-            self.core_sample_indices_ = xp.asarray(
-                from_table(result.core_observation_indices).reshape(-1),
-                usm_type="device",
-                sycl_queue=queue,
-            )
+            self.core_sample_indices_ = from_table(
+                result.core_observation_indices
+            ).ravel()
         else:
-            self.core_sample_indices_ = xp.array([], dtype=xp.int32)
-        self.components_ = xp.take(X, self.core_sample_indices_, axis=0)
+            self.core_sample_indices_ = np.array([], dtype=np.intc)
+        self.components_ = np.take(X, self.core_sample_indices_, axis=0)
         self.n_features_in_ = X.shape[1]
         return self
 
@@ -139,8 +105,6 @@ class DBSCAN(BaseDBSCAN):
         self.n_jobs = n_jobs
 
     def fit(self, X, y=None, sample_weight=None, queue=None):
-        xp, is_array_api_compliant = get_namespace(X)
-        # TODO:
-        # update for queue getting.
-        queue = X.sycl_queue
-        return super()._fit(X, xp, is_array_api_compliant, y, sample_weight, queue)
+        return super()._fit(
+            X, y, sample_weight, self._get_backend("dbscan", "clustering", None), queue
+        )

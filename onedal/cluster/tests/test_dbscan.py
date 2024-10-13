@@ -16,16 +16,10 @@
 
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose
 from sklearn.cluster import DBSCAN as DBSCAN_SKLEARN
 from sklearn.cluster.tests.common import generate_clustered_data
 
 from onedal.cluster import DBSCAN as ONEDAL_DBSCAN
-from onedal.tests.utils._dataframes_support import (
-    _as_numpy,
-    _convert_to_dataframe,
-    get_dataframes_and_queues,
-)
 from onedal.tests.utils._device_selection import get_queues
 
 
@@ -129,17 +123,3 @@ def _test_across_grid_parameter_numpy_gen(queue, metric, use_weights: bool):
 @pytest.mark.parametrize("queue", get_queues())
 def test_across_grid_parameter_numpy_gen(queue, metric, use_weights: bool):
     _test_across_grid_parameter_numpy_gen(queue, metric=metric, use_weights=use_weights)
-
-
-# TODO:
-#  dtypes.
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_base_dbscan(dataframe, queue):
-
-    X = np.array([[1, 2], [2, 2], [2, 3], [8, 7], [8, 8], [25, 80]])
-    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    dbscan = ONEDAL_DBSCAN(eps=3, min_samples=2).fit(X)
-
-    result = dbscan.labels_
-    expected = np.array([0, 0, 0, 1, 1, -1], dtype=np.int32)
-    assert_allclose(expected, _as_numpy(result))

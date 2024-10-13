@@ -16,7 +16,7 @@
 
 import warnings
 from collections.abc import Sequence
-from numbers import Integral, Number
+from numbers import Integral
 
 import numpy as np
 from scipy import sparse as sp
@@ -29,11 +29,9 @@ else:
     from numpy import VisibleDeprecationWarning
 
 from sklearn.preprocessing import LabelEncoder
-from sklearn.utils.validation import check_array, check_non_negative
+from sklearn.utils.validation import check_array
 
 from daal4py.sklearn.utils.validation import _assert_all_finite
-
-from ..utils._array_api import get_namespace
 
 
 class DataConversionWarning(UserWarning):
@@ -404,12 +402,10 @@ def _num_samples(x):
     if hasattr(x, "fit") and callable(x.fit):
         # Don't get num_samples from an ensembles length!
         raise TypeError(message)
-    xp, _ = get_namespace(x)
+
     if not hasattr(x, "__len__") and not hasattr(x, "shape"):
         if hasattr(x, "__array__"):
-            # TODO:
-            # use sycl_queue if required.
-            x = xp.asarray(x)
+            x = np.asarray(x)
         else:
             raise TypeError(message)
 
@@ -434,47 +430,3 @@ def _is_csr(x):
     return isinstance(x, sp.csr_matrix) or (
         hasattr(sp, "csr_array") and isinstance(x, sp.csr_array)
     )
-
-
-def _check_sample_weight(
-    sample_weight, X, dtype=None, copy=False, ensure_non_negative=False
-):
-    """Validate sample weights.
-    TBD
-    """
-    xp, _ = get_namespace(X)
-    n_samples = _num_samples(X)
-
-    if dtype is not None and dtype not in [xp.float32, xp.float64]:
-        dtype = xp.float64
-
-    if sample_weight is None:
-        sample_weight = np.ones(n_samples, dtype=dtype)
-    elif isinstance(sample_weight, Number):
-        sample_weight = xp.full(n_samples, sample_weight, dtype=dtype)
-    else:
-        if dtype is None:
-            dtype = [xp.float64, xp.float32]
-        sample_weight = check_array(
-            sample_weight,
-            accept_sparse=False,
-            ensure_2d=False,
-            dtype=dtype,
-            order="C",
-            copy=copy,
-            input_name="sample_weight",
-        )
-        if sample_weight.ndim != 1:
-            raise ValueError("Sample weights must be 1D array or scalar")
-
-        if sample_weight.shape != (n_samples,):
-            raise ValueError(
-                "sample_weight.shape == {}, expected {}!".format(
-                    sample_weight.shape, (n_samples,)
-                )
-            )
-
-    if ensure_non_negative:
-        check_non_negative(sample_weight, "`sample_weight`")
-
-    return sample_weight

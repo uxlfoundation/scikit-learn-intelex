@@ -18,7 +18,6 @@ from .validation import (
     _check_array,
     _check_classification_targets,
     _check_n_features,
-    _check_sample_weight,
     _check_X_y,
     _column_or_1d,
     _is_arraylike,
