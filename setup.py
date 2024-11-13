@@ -84,13 +84,14 @@ sklearnex_version = (
 
 trues = ["true", "True", "TRUE", "1", "t", "T", "y", "Y", "Yes", "yes", "YES"]
 no_dist = True if "NO_DIST" in os.environ and os.environ["NO_DIST"] in trues else False
+no_dpc = True if "NO_DPC" in os.environ and os.environ["NO_DPC"] in trues else False
 no_stream = "NO_STREAM" in os.environ and os.environ["NO_STREAM"] in trues
 debug_build = os.getenv("DEBUG_BUILD") == "1"
 mpi_root = None if no_dist else os.environ["MPIROOT"]
 dpcpp = (
     shutil.which("icpx") is not None
     and "onedal_dpc" in get_onedal_shared_libs(dal_root)
-    and os.environ.get("NO_DPC", None) is None
+    and not no_dpc
     and not (IS_WIN and debug_build)
 )
 
