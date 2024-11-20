@@ -91,6 +91,46 @@ jobs:
     timeoutInMinutes: 180
     displayName: 'Run jupyter notebook demo'
 
+- job: Valgrind
+  timeoutInMinutes: 0
+  pool:
+    vmImage: 'ubuntu-latest'
+  steps:
+  - script: |
+      conda config --append channels conda-forge
+      conda config --remove channels defaults
+      conda update -y -q conda
+      conda create -y -q -n CB -c intel -c conda-forge python=$(python.version) dal-devel impi-devel
+    displayName: 'Conda create'
+  - script: |
+      bash .ci/scripts/describe_system.sh
+    displayName: 'System info'
+  - script: |
+      . /usr/share/miniconda/etc/profile.d/conda.sh
+      conda activate CB
+      pip install -r dependencies-dev
+      pip install -r requirements-doc.txt
+      pip install -r requirements-test.txt
+      pip install pytest-valgrind==0.2.0
+    displayName: 'Install requirements'
+  - script: |
+      . /usr/share/miniconda/etc/profile.d/conda.sh
+      conda activate CB
+      export DALROOT=$CONDA_PREFIX
+      ./conda-recipe/build.sh
+      python setup_sklearnex.py install --single-version-externally-managed --record=record.txt
+    displayName: 'Build daal4py/sklearnex'
+  - script: |
+      . /usr/share/miniconda/etc/profile.d/conda.sh
+      conda activate CB
+      cd ..
+      export PYTHONMALLOC=malloc
+      valgrind --show-leak-kinds=definite --log-file=/tmp/valgrind-output  \
+               python -m pytest --verbose --pyargs sklearnex               \
+              -vv --valgrind --valgrind-log=/tmp/valgrind-output
+    timeoutInMinutes: 180
+    displayName: 'Run Valgrind on sklearnex tests'
+
 - job: LinuxNightly
   timeoutInMinutes: 120
   strategy:
