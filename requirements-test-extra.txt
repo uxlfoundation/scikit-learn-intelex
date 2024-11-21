@@ -1,0 +1,4 @@
+dpnp
+dpctl
+mpi4py
+pytest-mpi
