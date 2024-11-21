@@ -15,6 +15,7 @@
 # ==============================================================================
 
 import logging
+import sys
 import threading
 from functools import wraps
 from inspect import Parameter, signature
@@ -212,14 +213,16 @@ def control_n_jobs(decorated_methods: list = []):
             and isinstance(original_class.__doc__, str)
             and "n_jobs : int" not in original_class.__doc__
         ):
-            parameters_doc_tail = "\n    Attributes"
-            n_jobs_doc = """
-    n_jobs : int, default=None
-        The number of jobs to use in parallel for the computation.
-        ``None`` means using all physical cores
-        unless in a :obj:`joblib.parallel_backend` context.
-        ``-1`` means using all logical cores.
-        See :term:`Glossary <n_jobs>` for more details.
+            # Python 3.13 removed extra tab in class doc string
+            tab = "    " if sys.version_info.minor < 13 else ""
+            parameters_doc_tail = f"\n{tab}Attributes"
+            n_jobs_doc = f"""
+{tab}n_jobs : int, default=None
+{tab}    The number of jobs to use in parallel for the computation.
+{tab}    ``None`` means using all physical cores
+{tab}    unless in a :obj:`joblib.parallel_backend` context.
+{tab}    ``-1`` means using all logical cores.
+{tab}    See :term:`Glossary <n_jobs>` for more details.
 """
             original_class.__doc__ = original_class.__doc__.replace(
                 parameters_doc_tail, n_jobs_doc + parameters_doc_tail
