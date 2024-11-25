@@ -81,7 +81,7 @@ if _is_dpc_backend:
 
     from ..common._policy import _HostInteropPolicy
 
-    def _convert_to_supported(policy, *data):
+    def _convert_to_supported(policy, *data, xp=np):
         def func(x):
             return x
 
@@ -93,13 +93,13 @@ if _is_dpc_backend:
         device = policy._queue.sycl_device
 
         def convert_or_pass(x):
-            if (x is not None) and (x.dtype == np.float64):
+            if (x is not None) and (x.dtype == xp.float64):
                 warnings.warn(
                     "Data will be converted into float32 from "
                     "float64 because device does not support it",
                     RuntimeWarning,
                 )
-                return x.astype(np.float32)
+                return xp.astype(x, dtype=xp.float32)
             else:
                 return x
 
@@ -132,7 +132,7 @@ if _is_dpc_backend:
 
 else:
 
-    def _convert_to_supported(policy, *data):
+    def _convert_to_supported(policy, *data, xp=np):
         def func(x):
             return x
 
