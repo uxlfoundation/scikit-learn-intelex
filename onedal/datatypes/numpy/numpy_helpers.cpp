@@ -14,9 +14,9 @@
 * limitations under the License.
 *******************************************************************************/
 
-#include "onedal/datatypes/utils/numpy_helpers.hpp"
+#include "onedal/datatypes/numpy/numpy_helpers.hpp"
 
-namespace oneapi::dal::python {
+namespace oneapi::dal::python::numpy {
 
 template <typename Key, typename Value>
 auto reverse_map(const std::map<Key, Value>& input) {
@@ -51,4 +51,4 @@ npy_dtype_t convert_dal_to_npy_type(dal::data_type type) {
 }
 
 
-} // namespace oneapi::dal::python
+} // namespace oneapi::dal::python::numpy

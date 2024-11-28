@@ -45,9 +45,9 @@ namespace py = pybind11;
         default: _EXCEPTION;                            \
     };
 
-namespace oneapi::dal::python {
+namespace oneapi::dal::python::sycl_usm {
 
 dal::data_type convert_sua_to_dal_type(std::string dtype);
 std::string convert_dal_to_sua_type(dal::data_type dtype);
 
-} // namespace oneapi::dal::python
+} // namespace oneapi::dal::python::sycl_usm

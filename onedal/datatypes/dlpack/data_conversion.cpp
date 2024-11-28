@@ -14,27 +14,17 @@
 * limitations under the License.
 *******************************************************************************/
 
-#pragma once
+#include "onedal/datatypes/dlpack/dlpack.h"
+#include "onedal/datatypes/dlpack/dlpack_helper.hpp"
+#include "onedal/datatypes/dlpack/device_conversion.hpp"
 
-#define PY_ARRAY_UNIQUE_SYMBOL ONEDAL_PY_ARRAY_API
+namespace oneapi::dal::python::dlpack {
 
-#include <pybind11/pybind11.h>
-#include <numpy/arrayobject.h>
+void instantiate_dlpack_interop(py::module& pm) {
+    auto sub_module = pm.def_submodule("dlpack");
+    dlpack::instantiate_dlpack_helper(sub_module);
+    dlpack::instantiate_dlpack_and_table(sub_module);
+    dlpack::instantiate_convert_to_policy(sub_module);
+}
 
-#include "oneapi/dal/table/common.hpp"
-
-namespace oneapi::dal::python {
-
-namespace py = pybind11;
-
-// Convert oneDAL table with zero-copy by use of `__sycl_usm_array_interface__` protocol.
-dal::table convert_from_sua_iface(py::object obj);
-
-// Create a dictionary for `__sycl_usm_array_interface__` protocol from oneDAL table properties.
-py::dict construct_sua_iface(const dal::table& input);
-
-// Adding `__sycl_usm_array_interface__` attribute to python oneDAL table, that representing
-// USM allocations.
-void define_sycl_usm_array_property(py::class_<dal::table>& t);
-
-} // namespace oneapi::dal::python
+} // namespace oneapi::dal::python::dlpack

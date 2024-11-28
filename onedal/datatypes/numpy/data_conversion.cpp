@@ -22,8 +22,8 @@
 #include "oneapi/dal/table/homogen.hpp"
 #include "oneapi/dal/table/detail/homogen_utils.hpp"
 
-#include "onedal/datatypes/data_conversion.hpp"
-#include "onedal/datatypes/utils/numpy_helpers.hpp"
+#include "onedal/datatypes/numpy/data_conversion.hpp"
+#include "onedal/datatypes/numpy/numpy_helpers.hpp"
 #include "onedal/version.hpp"
 
 #if ONEDAL_VERSION <= 20230100
@@ -32,7 +32,7 @@
     #include "oneapi/dal/table/csr.hpp"
 #endif
 
-namespace oneapi::dal::python {
+namespace oneapi::dal::python::numpy {
 
 #if ONEDAL_VERSION <= 20230100
 typedef oneapi::dal::detail::csr_table csr_table_t;
@@ -412,4 +412,4 @@ PyObject *convert_to_pyobject(const dal::table &input) {
     return res;
 }
 
-} // namespace oneapi::dal::python
+} // namespace oneapi::dal::python::numpy
