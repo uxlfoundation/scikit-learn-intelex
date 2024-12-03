@@ -15,7 +15,7 @@
 .. *******************************************************************************/
 
 .. |intelex_repo| replace:: |intelex| repository
-.. _intelex_repo: https://github.com/intel/scikit-learn-intelex
+.. _intelex_repo: https://github.com/uxlfoundation/scikit-learn-intelex
 
 ####################
 Quick Start
@@ -311,7 +311,7 @@ To prevent version conflicts, we recommend installing `scikit-learn-intelex` int
 Build from Sources
 **********************
 
-See `Installation instructions <https://github.com/intel/scikit-learn-intelex/blob/main/INSTALL.md>`_ to build |intelex| from the sources.
+See `Installation instructions <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/INSTALL.md>`_ to build |intelex| from the sources.
 
 Install Intel*(R) AI Tools
 ****************************
@@ -321,7 +321,7 @@ Download the Intel AI Tools `here <https://www.intel.com/content/www/us/en/devel
 Release Notes
 -------------------
 
-See the `Release Notes <https://github.com/intel/scikit-learn-intelex/releases>`_ for each version of Intel® Extension for Scikit-learn*.  
+See the `Release Notes <https://github.com/uxlfoundation/scikit-learn-intelex/releases>`_ for each version of Intel® Extension for Scikit-learn*.  
 
 System Requirements 
 --------------------

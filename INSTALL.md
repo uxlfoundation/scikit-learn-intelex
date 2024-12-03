@@ -40,7 +40,7 @@ To install Intel(R) Extension for Scikit-learn*, use one of the following scenar
 
 ## Before You Begin
 
-Check [System](https://intel.github.io/scikit-learn-intelex/latest/system-requirements.html) and [Memory](https://intel.github.io/scikit-learn-intelex/latest/memory-requirements.html) Requirements.
+Check [System](https://uxlfoundation.github.io/scikit-learn-intelex/latest/system-requirements.html) and [Memory](https://uxlfoundation.github.io/scikit-learn-intelex/latest/memory-requirements.html) Requirements.
 
 ## Supported Configurations
 
@@ -158,7 +158,7 @@ The build-process (using setup.py) happens in 4 stages:
 * cmake and pybind11
 * A C++ compiler with C++11 support
 * Clang-Format
-* [Intel® oneAPI Data Analytics Library (oneDAL)](https://github.com/oneapi-src/oneDAL) version 2021.1 or later
+* [Intel® oneAPI Data Analytics Library (oneDAL)](https://github.com/uxlfoundation/oneDAL) version 2021.1 or later
   * You can use the pre-built `dal-devel` conda package from conda-forge channel
 * MPI (optional, needed for distributed mode)
   * You can use the pre-built `impi_rt` and `impi-devel` conda packages from conda-forge channel
@@ -253,5 +253,5 @@ conda build .
 
 ## Next Steps
 
-- [Learn what patching is and how to patch scikit-learn](https://intel.github.io/scikit-learn-intelex/latest/what-is-patching.html)
-- [Start using scikit-learn-intelex](https://intel.github.io/scikit-learn-intelex/latest/quick-start.html)
+- [Learn what patching is and how to patch scikit-learn](https://uxlfoundation.github.io/scikit-learn-intelex/latest/what-is-patching.html)
+- [Start using scikit-learn-intelex](https://uxlfoundation.github.io/scikit-learn-intelex/latest/quick-start.html)

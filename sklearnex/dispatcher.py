@@ -483,7 +483,7 @@ def patch_sklearn(name=None, verbose=True, global_patch=False, preview=False):
     if verbose and sys.stderr is not None:
         sys.stderr.write(
             "Intel(R) Extension for Scikit-learn* enabled "
-            "(https://github.com/intel/scikit-learn-intelex)\n"
+            "(https://github.com/uxlfoundation/scikit-learn-intelex)\n"
         )
 
 

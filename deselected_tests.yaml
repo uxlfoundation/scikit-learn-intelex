@@ -162,7 +162,7 @@ deselected_tests:
   - ensemble/tests/test_stacking.py::test_stacking_with_sample_weight[StackingClassifier]
 
   # Insufficient accuracy of "coefs" and "intercept" in Elastic Net for multi-target problems
-  # https://github.com/oneapi-src/oneDAL/issues/494
+  # https://github.com/uxlfoundation/oneDAL/issues/494
   - linear_model/tests/test_coordinate_descent.py::test_enet_multitarget
 
   # oneAPI Data Analytics Library (oneDAL) doesn't support sample_weight (back to scikit-learn),

@@ -23,7 +23,7 @@ This document explains how to participate in project conversations, log bugs and
 
 Licensing
 ----------------------------------
-Intel(R) Extension for Scikit-learn uses the `Apache 2.0 License <https://github.com/intel/scikit-learn-intelex/blob/master/LICENSE>`_. By contributing to the project, you agree to the license and copyright terms and release your own contributions under these terms.
+Intel(R) Extension for Scikit-learn uses the `Apache 2.0 License <https://github.com/uxlfoundation/scikit-learn-intelex/blob/master/LICENSE>`_. By contributing to the project, you agree to the license and copyright terms and release your own contributions under these terms.
 
 Pull Requests
 ----------------------------------
@@ -50,7 +50,7 @@ Code Style
 -------------------
 
 We use `black <https://black.readthedocs.io/en/stable/>`_ and `isort <https://pycqa.github.io/isort/>`_ formatters for Python* code. 
-The line length is 90 characters; use default options otherwise. You can find the linter configuration in `.pyproject.toml <https://github.com/intel/scikit-learn-intelex/blob/master/pyproject.toml>`_.
+The line length is 90 characters; use default options otherwise. You can find the linter configuration in `.pyproject.toml <https://github.com/uxlfoundation/scikit-learn-intelex/blob/master/pyproject.toml>`_.
 
 A GitHub* Action verifies if your changes comply with the output of the auto-formatting tools.
 

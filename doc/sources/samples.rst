@@ -22,7 +22,7 @@ Samples
 
 The following samples are also provided as Jupyter notebooks in |intelex| repository.
 If you want to run them locally, refer to `these instructions
-<https://github.com/intel/scikit-learn-intelex/tree/main/examples/notebooks#snake-intelr-extension-for-scikit-learn-notebooks>`_.
+<https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/notebooks#snake-intelr-extension-for-scikit-learn-notebooks>`_.
 
 .. rubric:: Classification Tasks
 

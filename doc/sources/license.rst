@@ -20,4 +20,4 @@
 License
 ############################################
 
-License: https://github.com/intel/scikit-learn-intelex/blob/main/LICENSE
+License: https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/LICENSE

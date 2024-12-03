@@ -482,9 +482,9 @@ class build(orig_build.build, custom_build):
 
 
 project_urls = {
-    "Bug Tracker": "https://github.com/intel/scikit-learn-intelex",
+    "Bug Tracker": "https://github.com/uxlfoundation/scikit-learn-intelex",
     "Documentation": "https://intelpython.github.io/daal4py/",
-    "Source Code": "https://github.com/intel/scikit-learn-intelex/daal4py",
+    "Source Code": "https://github.com/uxlfoundation/scikit-learn-intelex/daal4py",
 }
 
 with open("README.md", "r", encoding="utf8") as f:
@@ -572,7 +572,7 @@ setup(
     license="Apache-2.0",
     author="Intel Corporation",
     version=sklearnex_version,
-    url="https://github.com/intel/scikit-learn-intelex",
+    url="https://github.com/uxlfoundation/scikit-learn-intelex",
     author_email="onedal.maintainers@intel.com",
     maintainer_email="onedal.maintainers@intel.com",
     project_urls=project_urls,

@@ -76,36 +76,36 @@ The following algorithms support distribution:
 
 - PCA (pca)
 
-  - `PCA <https://github.com/intel/scikit-learn-intelex/tree/main/examples/daal4py/pca_spmd.py>`_
+  - `PCA <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/pca_spmd.py>`_
 
 - SVD (svd)
 
-  - `SVD <https://github.com/intel/scikit-learn-intelex/tree/main/examples/daal4py/svd_spmd.py>`_
+  - `SVD <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/svd_spmd.py>`_
 
 - Linear Regression Training (linear_regression_training)
 
-  - `Linear Regression <https://github.com/intel/scikit-learn-intelex/tree/main/examples/daal4py/linear_regression_spmd.py>`_
+  - `Linear Regression <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/linear_regression_spmd.py>`_
 
 - Ridge Regression Training (ridge_regression_training)
 
-  - `Ridge Regression <https://github.com/intel/scikit-learn-intelex/tree/main/examples/daal4py/ridge_regression_spmd.py>`_
+  - `Ridge Regression <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/ridge_regression_spmd.py>`_
 
 - Multinomial Naive Bayes Training (multinomial_naive_bayes_training)
 
-  - `Naive Bayes <https://github.com/intel/scikit-learn-intelex/tree/main/examples/daal4py/naive_bayes_spmd.py>`_
+  - `Naive Bayes <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/naive_bayes_spmd.py>`_
 
 - K-Means (kmeans_init and kmeans)
 
-  - `K-Means <https://github.com/intel/scikit-learn-intelex/tree/main/examples/daal4py/kmeans_spmd.py>`_
+  - `K-Means <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/kmeans_spmd.py>`_
 
 - Correlation and Variance-Covariance Matrices (covariance)
 
-  - `Covariance <https://github.com/intel/scikit-learn-intelex/tree/main/examples/daal4py/covariance_spmd.py>`_
+  - `Covariance <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/covariance_spmd.py>`_
 
 - Moments of Low Order (low_order_moments)
 
-  - `Low Order Moments <https://github.com/intel/scikit-learn-intelex/tree/main/examples/daal4py/low_order_moms_spmd.py>`_
+  - `Low Order Moments <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/low_order_moms_spmd.py>`_
 
 - QR Decomposition (qr)
 
-  - `QR <https://github.com/intel/scikit-learn-intelex/tree/main/examples/daal4py/qr_spmd.py>`_
+  - `QR <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/qr_spmd.py>`_

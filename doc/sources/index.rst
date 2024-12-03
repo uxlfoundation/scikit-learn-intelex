@@ -15,7 +15,7 @@
 .. *******************************************************************************/
 
 .. |intelex_repo| replace:: |intelex| repository
-.. _intelex_repo: https://github.com/intel/scikit-learn-intelex
+.. _intelex_repo: https://github.com/uxlfoundation/scikit-learn-intelex
 
 .. _index:
 

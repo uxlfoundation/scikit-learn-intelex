@@ -27,7 +27,7 @@ Use the following methods if you face any challenges.
 Issues
 ----------------------------------
 
-If you have a problem, check out the `GitHub Issues <https://github.com/intel/scikit-learn-intelex/issues>`_ to see if the issue you want to address is already reported. 
+If you have a problem, check out the `GitHub Issues <https://github.com/uxlfoundation/scikit-learn-intelex/issues>`_ to see if the issue you want to address is already reported. 
 
 You may find users that have encountered the same bug or have similar ideas for changes or updates.
 

@@ -23,15 +23,15 @@ We publish blogs on Medium, so [follow us](https://medium.com/intel-analytics-so
 ## 🔗 Important links
 - [Documentation](https://intelpython.github.io/daal4py/)
 - [scikit-learn API and patching](https://intelpython.github.io/daal4py/sklearn.html#sklearn)
-- [Building from Sources](https://github.com/intel/scikit-learn-intelex/blob/main/daal4py/INSTALL.md)
-- [About Intel(R) oneAPI Data Analytics Library](https://github.com/oneapi-src/oneDAL)
+- [Building from Sources](https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/daal4py/INSTALL.md)
+- [About Intel(R) oneAPI Data Analytics Library](https://github.com/uxlfoundation/oneDAL)
 
 ## 💬 Support
 
 Report issues, ask questions, and provide suggestions using:
 
-- [GitHub Issues](https://github.com/intel/scikit-learn-intelex/issues)
-- [GitHub Discussions](https://github.com/intel/scikit-learn-intelex/discussions)
+- [GitHub Issues](https://github.com/uxlfoundation/scikit-learn-intelex/issues)
+- [GitHub Discussions](https://github.com/uxlfoundation/scikit-learn-intelex/discussions)
 - [Forum](https://community.intel.com/t5/Intel-Distribution-for-Python/bd-p/distribution-python)
 
 You may reach out to project maintainers privately at onedal.maintainers@intel.com
@@ -110,9 +110,9 @@ conda install impi_rt -c intel
 
 </details>
 
-You can [build daal4py from sources](https://github.com/intel/scikit-learn-intelex/blob/main/INSTALL.md) as well.
+You can [build daal4py from sources](https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/INSTALL.md) as well.
 
 
 # ⚠️ Scikit-learn patching
 
-Scikit-learn patching functionality in daal4py was deprecated and moved to a separate package - [Intel(R) Extension for Scikit-learn*](https://github.com/intel/scikit-learn-intelex). All future updates for the patching will be available in Intel(R) Extension for Scikit-learn only. Please use the package instead of daal4py for the Scikit-learn acceleration.
+Scikit-learn patching functionality in daal4py was deprecated and moved to a separate package - [Intel(R) Extension for Scikit-learn*](https://github.com/uxlfoundation/scikit-learn-intelex). All future updates for the patching will be available in Intel(R) Extension for Scikit-learn only. Please use the package instead of daal4py for the Scikit-learn acceleration.

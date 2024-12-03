@@ -18,7 +18,7 @@ cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 
 project("oneDAL python interface"
     LANGUAGES CXX
-    HOMEPAGE_URL https://github.com/oneapi-src/oneDAL
+    HOMEPAGE_URL https://github.com/uxlfoundation/oneDAL
 )
 
 set(CMAKE_BUILD_TYPE Release)
