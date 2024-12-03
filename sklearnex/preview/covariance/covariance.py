@@ -16,8 +16,7 @@
 
 import warnings
 
-import numpy as np
-from scipy import sparse as sp
+import scipy.sparse as sp
 from sklearn.covariance import EmpiricalCovariance as _sklearn_EmpiricalCovariance
 from sklearn.utils import check_array
 
@@ -30,11 +29,8 @@ from sklearnex.metrics import pairwise_distances
 
 from ..._device_offload import dispatch, wrap_output_data
 from ..._utils import PatchingConditionsChain, register_hyperparameters
-
-if sklearn_check_version("1.6"):
-    from sklearn.utils.validation import validate_data
-else:
-    validate_data = _sklearn_EmpiricalCovariance._validate_data
+from ...utils._array_api import get_namespace
+from ...utils.validation import validate_data
 
 
 @register_hyperparameters({"fit": get_hyperparameters("covariance", "compute")})
@@ -51,14 +47,23 @@ class EmpiricalCovariance(_sklearn_EmpiricalCovariance):
         assert hasattr(self, "_onedal_estimator")
         if not daal_check_version((2024, "P", 400)) and self.assume_centered:
             location = self._onedal_estimator.location_[None, :]
-            self._onedal_estimator.covariance_ += np.dot(location.T, location)
-            self._onedal_estimator.location_ = np.zeros_like(np.squeeze(location))
+            lp, _ = get_namespace(location)
+            self._onedal_estimator.covariance_ += lp.dot(location.T, location)
+            self._onedal_estimator.location_ = lp.zeros_like(lp.squeeze(location))
         self._set_covariance(self._onedal_estimator.covariance_)
         self.location_ = self._onedal_estimator.location_
 
     _onedal_covariance = staticmethod(onedal_EmpiricalCovariance)
 
     def _onedal_fit(self, X, queue=None):
+        xp, _ = get_namespace(X)
+        if sklearn_check_version("1.2"):
+            self._validate_params()
+        if sklearn_check_version("1.0"):
+            X = validate_data(self, X, dtype=[xp.float64, xp.float32])
+        else:
+            X = check_array(X)
+
         if X.shape[0] == 1:
             warnings.warn(
                 "Only one sample available. You may want to reshape your data array"
@@ -93,13 +98,6 @@ class EmpiricalCovariance(_sklearn_EmpiricalCovariance):
     _onedal_gpu_supported = _onedal_supported
 
     def fit(self, X, y=None):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
-        if sklearn_check_version("0.23"):
-            X = validate_data(self, X, force_all_finite=False)
-        else:
-            X = check_array(X, force_all_finite=False)
-
         dispatch(
             self,
             "fit",
@@ -113,10 +111,10 @@ class EmpiricalCovariance(_sklearn_EmpiricalCovariance):
         return self
 
     # expose sklearnex pairwise_distances if mahalanobis distance eventually supported
-    @wrap_output_data
     def mahalanobis(self, X):
+        xp, _ = get_namespace(X)
         if sklearn_check_version("1.0"):
-            X = validate_data(self, X, reset=False)
+            X = validate_data(self, X, reset=False, dtype=[xp.float64, xp.float32])
         else:
             X = check_array(X)
 
@@ -124,10 +122,10 @@ class EmpiricalCovariance(_sklearn_EmpiricalCovariance):
         with config_context(assume_finite=True):
             # compute mahalanobis distances
             dist = pairwise_distances(
-                X, self.location_[np.newaxis, :], metric="mahalanobis", VI=precision
+                X, self.location_[None, :], metric="mahalanobis", VI=precision
             )
 
-        return np.reshape(dist, (len(X),)) ** 2
+        return xp.reshape(dist, (len(X),)) ** 2
 
     error_norm = wrap_output_data(_sklearn_EmpiricalCovariance.error_norm)
     score = wrap_output_data(_sklearn_EmpiricalCovariance.score)

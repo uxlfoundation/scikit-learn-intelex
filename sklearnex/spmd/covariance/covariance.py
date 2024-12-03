@@ -14,8 +14,11 @@
 # limitations under the License.
 # ==============================================================================
 
-from onedal.spmd.covariance import EmpiricalCovariance
+from onedal.spmd.covariance import onedal_EmpiricalCovariance
 
-# TODO:
-# Currently it uses `onedal` module interface.
-# Add sklearnex dispatching.
+from ...preview.covariance import EmpiricalCovariance as EmpiricalCovariance_Batch
+
+
+class EmpiricalCovariance(EmpiricalCovariance_Batch):
+    __doc__ = EmpiricalCovariance_Batch.__doc__
+    _onedal_covariance = staticmethod(onedal_EmpiricalCovariance)
