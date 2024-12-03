@@ -89,7 +89,7 @@ class _BaseKMeans(onedal_BaseEstimator, TransformerMixin, ClusterMixin, ABC):
         bs = self._get_basic_statistics_backend("variance")
 
         res = bs._compute_raw(X_table, dummy, policy, dtype, is_csr)
-        mean_var = from_table(res["variance"]).mean()
+        mean_var = from_table(res.variance).mean()
 
         return mean_var * rtol
 

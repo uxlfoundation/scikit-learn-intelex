@@ -30,7 +30,7 @@ class IncrementalBasicStatistics(BaseEstimatorSPMD, base_IncrementalBasicStatist
             "basic_statistics", None, "partial_compute_result"
         )
 
-    def partial_fit(self, X, weights=None, queue=None):
+    def partial_fit(self, X, sample_weight=None, queue=None):
         """
         Computes partial data for basic statistics
         from data batch X and saves it to `_partial_result`.
@@ -51,13 +51,11 @@ class IncrementalBasicStatistics(BaseEstimatorSPMD, base_IncrementalBasicStatist
         """
         self._queue = queue
         policy = super(base_IncrementalBasicStatistics, self)._get_policy(queue, X)
-        X, weights = _convert_to_supported(policy, X, weights)
+        X, sample_weight = to_table(*_convert_to_supported(policy, X, sample_weight))
 
         if not hasattr(self, "_onedal_params"):
-            dtype = get_dtype(X)
-            self._onedal_params = self._get_onedal_params(False, dtype=dtype)
+            self._onedal_params = self._get_onedal_params(False, dtype=X.dtype)
 
-        X_table, weights_table = to_table(X, weights)
         self._partial_result = super(base_IncrementalBasicStatistics, self)._get_backend(
             "basic_statistics",
             None,
@@ -65,8 +63,8 @@ class IncrementalBasicStatistics(BaseEstimatorSPMD, base_IncrementalBasicStatist
             policy,
             self._onedal_params,
             self._partial_result,
-            X_table,
-            weights_table,
+            X,
+            sample_weight,
         )
 
         self._need_to_finalize = True

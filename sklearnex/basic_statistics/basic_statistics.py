@@ -16,10 +16,8 @@
 
 import warnings
 
-import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.utils import check_array
-from sklearn.utils.validation import _check_sample_weight
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
@@ -27,11 +25,8 @@ from onedal.basic_statistics import BasicStatistics as onedal_BasicStatistics
 
 from .._device_offload import dispatch
 from .._utils import IntelEstimator, PatchingConditionsChain
-
-if sklearn_check_version("1.6"):
-    from sklearn.utils.validation import validate_data
-else:
-    validate_data = BaseEstimator._validate_data
+from ..utils._array_api import get_namespace
+from ..utils.validation import _check_sample_weight, validate_data
 
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import StrOptions
@@ -130,30 +125,15 @@ class BasicStatistics(IntelEstimator, BaseEstimator):
 
     def _save_attributes(self):
         assert hasattr(self, "_onedal_estimator")
-
-        if self.result_options == "all":
-            result_options = onedal_BasicStatistics.get_all_result_options()
-        else:
-            result_options = self.result_options
-
-        if isinstance(result_options, str):
-            setattr(
-                self,
-                result_options + "_",
-                getattr(self._onedal_estimator, result_options),
-            )
-        elif isinstance(result_options, list):
-            for option in result_options:
-                setattr(self, option + "_", getattr(self._onedal_estimator, option))
+        for option in self._onedal_estimator.options:
+            setattr(self, option + "_", getattr(self._onedal_estimator, option))
 
     def __getattr__(self, attr):
-        if self.result_options == "all":
-            result_options = onedal_BasicStatistics.get_all_result_options()
-        else:
-            result_options = self.result_options
         is_deprecated_attr = (
-            isinstance(result_options, str) and (attr == result_options)
-        ) or (isinstance(result_options, list) and (attr in result_options))
+            attr in self._onedal_estimator.options
+            if "_onedal_estimator" in self.__dict__
+            else False
+        )
         if is_deprecated_attr:
             warnings.warn(
                 "Result attributes without a trailing underscore were deprecated in version 2025.1 and will be removed in 2026.0"
@@ -179,13 +159,16 @@ class BasicStatistics(IntelEstimator, BaseEstimator):
         if sklearn_check_version("1.2"):
             self._validate_params()
 
+        xp, _ = get_namespace(X)
         if sklearn_check_version("1.0"):
-            X = validate_data(self, X, dtype=[np.float64, np.float32], ensure_2d=False)
+            X = validate_data(self, X, dtype=[xp.float64, xp.float32], ensure_2d=False)
         else:
-            X = check_array(X, dtype=[np.float64, np.float32])
+            X = check_array(X, dtype=[xp.float64, xp.float32])
 
         if sample_weight is not None:
-            sample_weight = _check_sample_weight(sample_weight, X)
+            sample_weight = _check_sample_weight(
+                sample_weight, X, dtype=[xp.float64, xp.float32]
+            )
 
         onedal_params = {
             "result_options": self.result_options,
