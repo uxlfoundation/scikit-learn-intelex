@@ -285,7 +285,6 @@ deselected_tests:
   - tests/test_common.py::test_estimators[IncrementalRidge()-check_estimators_pickle]
   - tests/test_common.py::test_estimators[IncrementalRidge()-check_estimators_pickle(readonly_memmap=True)]
   # There are not enough data to run onedal backend
-  - tests/test_common.py::test_estimators[IncrementalLinearRegression()-check_fit2d_1sample]
   - tests/test_common.py::test_estimators[IncrementalRidge()-check_fit2d_1sample]
 
   # Deselection of LogisticRegression tests over accuracy comparisons with sample_weights
