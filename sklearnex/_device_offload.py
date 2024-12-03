@@ -16,6 +16,7 @@
 
 from functools import wraps
 
+from daal4py.sklearn._utils import sklearn_check_version
 from onedal._device_offload import _copy_to_usm, _get_global_queue, _transfer_to_host
 from onedal.utils._array_api import _asarray
 from onedal.utils._dpep_helpers import dpnp_available
@@ -72,7 +73,7 @@ def dispatch(obj, method_name, branches, *args, **kwargs):
         return branches[backend](obj, *hostargs, **hostkwargs, queue=q)
     if backend == "sklearn":
         if (
-            "array_api_dispatch" in get_config()
+            sklearn_check_version("1.4")
             and get_config()["array_api_dispatch"]
             and "array_api_support" in obj._get_tags()
             and obj._get_tags()["array_api_support"]

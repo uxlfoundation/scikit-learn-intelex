@@ -67,13 +67,15 @@ def with_sklearnex():
     unpatch_sklearn()
 
 
-@pytest.fixture
-def with_array_api():
-    if sklearn_check_version("1.2"):
-        with config_context(array_api_dispatch=True):
-            yield
-    else:
-        yield
+# TODO:
+# check if required.
+#@pytest.fixture
+#def with_array_api():
+#    if sklearn_check_version("1.2"):
+#        with config_context(array_api_dispatch=True):
+#            yield
+#    else:
+#        yield
 
 
 @pytest.fixture
