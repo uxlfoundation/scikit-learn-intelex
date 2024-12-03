@@ -17,7 +17,6 @@
 import numbers
 import warnings
 
-import numpy as np
 from sklearn.base import BaseEstimator, MultiOutputMixin, RegressorMixin
 from sklearn.metrics import r2_score
 from sklearn.utils import gen_batches
@@ -33,11 +32,8 @@ from onedal.linear_model import IncrementalRidge as onedal_IncrementalRidge
 
 from .._device_offload import dispatch, wrap_output_data
 from .._utils import PatchingConditionsChain
-
-if sklearn_check_version("1.6"):
-    from sklearn.utils.validation import validate_data
-else:
-    validate_data = BaseEstimator._validate_data
+from ..utils._array_api import get_namespace
+from ..utils.validation import validate_data
 
 
 @control_n_jobs(
@@ -151,19 +147,25 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, BaseEstimator):
             self._validate_params()
 
         if check_input:
+            xp, _ = get_namespace(X)
             if sklearn_check_version("1.0"):
                 X, y = validate_data(
                     self,
                     X,
                     y,
-                    dtype=[np.float64, np.float32],
+                    dtype=[xp.float64, xp.float32],
                     reset=first_pass,
                     copy=self.copy_X,
                     multi_output=True,
-                    force_all_finite=False,
                 )
             else:
-                check_X_y(X, y, multi_output=True, y_numeric=True)
+                X, y = check_X_y(
+                    X,
+                    y,
+                    dtype=[xp.float64, xp.float32],
+                    multi_output=True,
+                    y_numeric=True,
+                )
 
         if first_pass:
             self.n_samples_seen_ = X.shape[0]
@@ -196,17 +198,20 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, BaseEstimator):
             self._validate_params()
 
         if sklearn_check_version("1.0"):
+            xp, _ = get_namespace(X)
             X, y = validate_data(
                 self,
                 X,
                 y,
-                dtype=[np.float64, np.float32],
+                dtype=[xp.float64, xp.float32],
                 copy=self.copy_X,
                 multi_output=True,
                 ensure_2d=True,
             )
         else:
-            check_X_y(X, y, multi_output=True, y_numeric=True)
+            X, y = check_X_y(
+                X, y, dtype=[xp.float64, xp.float32], multi_output=True, y_numeric=True
+            )
 
         n_samples, n_features = X.shape
 

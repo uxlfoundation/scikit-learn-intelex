@@ -16,35 +16,13 @@
 
 import numpy as np
 
-from daal4py.sklearn._utils import get_dtype
-
 from ..common.hyperparameters import get_hyperparameters
 from ..datatypes import _convert_to_supported, from_table, to_table
 from ..utils import _check_X_y, _num_features
 from .linear_model import BaseLinearRegression
 
 
-class IncrementalLinearRegression(BaseLinearRegression):
-    """
-    Incremental Linear Regression oneDAL implementation.
-
-    Parameters
-    ----------
-    fit_intercept : bool, default=True
-        Whether to calculate the intercept for this model. If set
-        to False, no intercept will be used in calculations
-        (i.e. data is expected to be centered).
-
-    copy_X : bool, default=True
-        If True, X will be copied; else, it may be overwritten.
-
-    algorithm : string, default="norm_eq"
-        Algorithm used for computation on oneDAL side
-    """
-
-    def __init__(self, fit_intercept=True, copy_X=False, algorithm="norm_eq"):
-        super().__init__(fit_intercept=fit_intercept, copy_X=copy_X, algorithm=algorithm)
-        self._reset()
+class BaseIncrementalLinear(BaseLinearRegression):
 
     def _reset(self):
         self._partial_result = self._get_backend(
@@ -77,21 +55,16 @@ class IncrementalLinearRegression(BaseLinearRegression):
         self._queue = queue
         policy = self._get_policy(queue, X)
 
-        X, y = _convert_to_supported(policy, X, y)
+        self.n_features_in_ = _num_features(X, fallback_1d=True)
+
+        X_table, y_table = to_table(*_convert_to_supported(policy, X, y))
 
         if not hasattr(self, "_dtype"):
-            self._dtype = get_dtype(X)
+            self._dtype = X.dtype
             self._params = self._get_onedal_params(self._dtype)
 
-        y = np.asarray(y, dtype=self._dtype)
-
-        X, y = _check_X_y(
-            X, y, dtype=[np.float64, np.float32], accept_2d_y=True, force_all_finite=False
-        )
-
-        self.n_features_in_ = _num_features(X, fallback_1d=True)
-        X_table, y_table = to_table(X, y)
         hparams = get_hyperparameters("linear_regression", "train")
+
         if hparams is not None and not hparams.is_default:
             self._partial_result = module.partial_train(
                 policy,
@@ -147,7 +120,30 @@ class IncrementalLinearRegression(BaseLinearRegression):
         return self
 
 
-class IncrementalRidge(BaseLinearRegression):
+class IncrementalLinearRegression(BaseIncrementalLinear):
+    """
+    Incremental Linear Regression oneDAL implementation.
+
+    Parameters
+    ----------
+    fit_intercept : bool, default=True
+        Whether to calculate the intercept for this model. If set
+        to False, no intercept will be used in calculations
+        (i.e. data is expected to be centered).
+
+    copy_X : bool, default=True
+        If True, X will be copied; else, it may be overwritten.
+
+    algorithm : string, default="norm_eq"
+        Algorithm used for computation on oneDAL side
+    """
+
+    def __init__(self, fit_intercept=True, copy_X=False, algorithm="norm_eq"):
+        super().__init__(fit_intercept=fit_intercept, copy_X=copy_X, algorithm=algorithm)
+        self._reset()
+
+
+class IncrementalRidge(BaseIncrementalLinear):
     """
     Incremental Ridge Regression oneDAL implementation.
 
@@ -171,88 +167,7 @@ class IncrementalRidge(BaseLinearRegression):
     """
 
     def __init__(self, alpha=1.0, fit_intercept=True, copy_X=False, algorithm="norm_eq"):
-        module = self._get_backend("linear_model", "regression")
         super().__init__(
             fit_intercept=fit_intercept, alpha=alpha, copy_X=copy_X, algorithm=algorithm
         )
-        self._partial_result = module.partial_train_result()
-
-    def _reset(self):
-        module = self._get_backend("linear_model", "regression")
-        self._partial_result = module.partial_train_result()
-
-    def partial_fit(self, X, y, queue=None):
-        """
-        Computes partial data for ridge regression
-        from data batch X and saves it to `_partial_result`.
-        Parameters
-        ----------
-        X : array-like of shape (n_samples, n_features)
-            Training data batch, where `n_samples` is the number of samples
-            in the batch, and `n_features` is the number of features.
-
-        y: array-like of shape (n_samples,) or (n_samples, n_targets) in
-            case of multiple targets
-            Responses for training data.
-
-        queue : dpctl.SyclQueue
-            If not None, use this queue for computations.
-        Returns
-        -------
-        self : object
-            Returns the instance itself.
-        """
-        module = self._get_backend("linear_model", "regression")
-
-        self._queue = queue
-        policy = self._get_policy(queue, X)
-
-        X, y = _convert_to_supported(policy, X, y)
-
-        if not hasattr(self, "_dtype"):
-            self._dtype = get_dtype(X)
-            self._params = self._get_onedal_params(self._dtype)
-
-        y = np.asarray(y, dtype=self._dtype)
-
-        X, y = _check_X_y(
-            X, y, dtype=[np.float64, np.float32], accept_2d_y=True, force_all_finite=False
-        )
-
-        self.n_features_in_ = _num_features(X, fallback_1d=True)
-        X_table, y_table = to_table(X, y)
-        self._partial_result = module.partial_train(
-            policy, self._params, self._partial_result, X_table, y_table
-        )
-
-    def finalize_fit(self, queue=None):
-        """
-        Finalizes ridge regression computation and obtains coefficients
-        from the current `_partial_result`.
-
-        Parameters
-        ----------
-        queue : dpctl.SyclQueue
-            If available, uses provided queue for computations.
-
-        Returns
-        -------
-        self : object
-            Returns the instance itself.
-        """
-        module = self._get_backend("linear_model", "regression")
-        if queue is not None:
-            policy = self._get_policy(queue)
-        else:
-            policy = self._get_policy(self._queue)
-        result = module.finalize_train(policy, self._params, self._partial_result)
-
-        self._onedal_model = result.model
-
-        packed_coefficients = from_table(result.model.packed_coefficients)
-        self.coef_, self.intercept_ = (
-            packed_coefficients[:, 1:].squeeze(),
-            packed_coefficients[:, 0].squeeze(),
-        )
-
-        return self
+        self._reset()

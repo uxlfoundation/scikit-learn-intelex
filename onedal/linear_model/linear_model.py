@@ -19,13 +19,13 @@ from numbers import Number
 
 import numpy as np
 
-from daal4py.sklearn._utils import daal_check_version, get_dtype, make2d
+from daal4py.sklearn._utils import daal_check_version
 
 from ..common._base import BaseEstimator
 from ..common._estimator_checks import _check_is_fitted
 from ..common.hyperparameters import get_hyperparameters
 from ..datatypes import _convert_to_supported, from_table, to_table
-from ..utils import _check_array, _check_n_features, _check_X_y, _num_features
+from ..utils import _check_n_features, _num_features
 
 
 class BaseLinearRegression(BaseEstimator, metaclass=ABCMeta):
@@ -57,39 +57,18 @@ class BaseLinearRegression(BaseEstimator, metaclass=ABCMeta):
         module = self._get_backend("linear_model", "regression")
         model = module.model()
 
-        coefficients = self.coef_
-        dtype = get_dtype(coefficients)
-
-        if coefficients.ndim == 2:
-            n_features_in = coefficients.shape[1]
-            n_targets_in = coefficients.shape[0]
+        # force dtype and shape for all supported estimators to numpy
+        if np.isscalar(self.coef_):
+            coefs = np.asarray(self.coef_).reshape(1, 1)
         else:
-            n_features_in = coefficients.size
-            n_targets_in = 1
-
-        intercept = self.intercept_
-        if isinstance(intercept, Number):
-            assert n_targets_in == 1
+            coefs = from_table(to_table(self.coef_))
+        if np.isscalar(self.intercept_):
+            intercept = np.asarray(self.intercept_).reshape(1, 1)
         else:
-            if not isinstance(intercept, np.ndarray):
-                intercept = np.asarray(intercept, dtype=dtype)
-            assert n_targets_in == intercept.size
+            intercept = from_table(to_table(self.intercept_))
 
-        coefficients, intercept = make2d(coefficients), make2d(intercept)
-        coefficients = coefficients.T if n_targets_in == 1 else coefficients
-
-        assert coefficients.shape == (
-            n_targets_in,
-            n_features_in,
-        ), f"{coefficients.shape}, {n_targets_in}, {n_features_in}"
-        assert intercept.shape == (n_targets_in, 1), f"{intercept.shape}, {n_targets_in}"
-
-        desired_shape = (n_targets_in, n_features_in + 1)
-        packed_coefficients = np.zeros(desired_shape, dtype=dtype)
-
-        packed_coefficients[:, 1:] = coefficients
-        if self.fit_intercept:
-            packed_coefficients[:, 0][:, np.newaxis] = intercept
+        # will do automatic dtype promotion based on the two datatypes
+        packed_coefficients = np.concatenate((intercept, coefs), axis=1)
 
         packed_coefficients = _convert_to_supported(policy, packed_coefficients)
 
@@ -98,6 +77,54 @@ class BaseLinearRegression(BaseEstimator, metaclass=ABCMeta):
         self._onedal_model = model
 
         return model
+
+    def fit(self, X, y, queue=None):
+        """
+        Fit linear model.
+        Parameters
+        ----------
+        X : {array-like, sparse matrix} of shape (n_samples, n_features)
+            Training data.
+
+        y : array-like of shape (n_samples,) or (n_samples, n_targets)
+            Target values. Will be cast to X's dtype if necessary.
+
+        queue : dpctl.SyclQueue
+            If not None, use this queue for computations.
+
+        Returns
+        -------
+        self : object
+            Fitted Estimator.
+        """
+        module = self._get_backend("linear_model", "regression")
+
+        policy = self._get_policy(queue, X, y)
+
+        self.n_features_in_ = _num_features(X, fallback_1d=True)
+
+        X_table, y_table = to_table(*_convert_to_supported(policy, X, y))
+        params = self._get_onedal_params(X_table.dtype)
+
+        hparams = get_hyperparameters("linear_regression", "train")
+        if hparams is not None and not hparams.is_default:
+            result = module.train(policy, params, hparams.backend, X_table, y_table)
+        else:
+            result = module.train(policy, params, X_table, y_table)
+
+        self._onedal_model = result.model
+
+        packed_coefficients = from_table(result.model.packed_coefficients)
+        self.coef_, self.intercept_ = (
+            packed_coefficients[:, 1:],
+            packed_coefficients[:, 0],
+        )
+
+        if self.coef_.shape[0] == 1 and y.ndim == 1:
+            self.coef_ = self.coef_.ravel()
+            self.intercept_ = self.intercept_[0]
+
+        return self
 
     def predict(self, X, queue=None):
         """
@@ -121,9 +148,6 @@ class BaseLinearRegression(BaseEstimator, metaclass=ABCMeta):
 
         policy = self._get_policy(queue, X)
 
-        X = _check_array(
-            X, dtype=[np.float64, np.float32], force_all_finite=False, ensure_2d=False
-        )
         _check_n_features(self, X, False)
 
         if hasattr(self, "_onedal_model"):
@@ -131,9 +155,8 @@ class BaseLinearRegression(BaseEstimator, metaclass=ABCMeta):
         else:
             model = self._create_model(policy)
 
-        X = make2d(X)
-        X = _convert_to_supported(policy, X)
-        params = self._get_onedal_params(get_dtype(X))
+        X_table = to_table(_convert_to_supported(policy, X))
+        params = self._get_onedal_params(X_table.dtype)
 
         X_table = to_table(X)
         result = module.infer(policy, params, model, X_table)
@@ -169,71 +192,8 @@ class LinearRegression(BaseLinearRegression):
         copy_X=False,
         *,
         algorithm="norm_eq",
-        **kwargs,
     ):
         super().__init__(fit_intercept=fit_intercept, copy_X=copy_X, algorithm=algorithm)
-
-    def fit(self, X, y, queue=None):
-        """
-        Fit linear model.
-        Parameters
-        ----------
-        X : {array-like, sparse matrix} of shape (n_samples, n_features)
-            Training data.
-
-        y : array-like of shape (n_samples,) or (n_samples, n_targets)
-            Target values. Will be cast to X's dtype if necessary.
-
-        queue : dpctl.SyclQueue
-            If not None, use this queue for computations.
-
-        Returns
-        -------
-        self : object
-            Fitted Estimator.
-        """
-        module = self._get_backend("linear_model", "regression")
-
-        # TODO Fix _check_X_y to make sure this conversion is there
-        if not isinstance(X, np.ndarray):
-            X = np.asarray(X)
-
-        dtype = get_dtype(X)
-        if dtype not in [np.float32, np.float64]:
-            dtype = np.float64
-            X = X.astype(dtype, copy=self.copy_X)
-
-        y = np.asarray(y).astype(dtype=dtype)
-
-        X, y = _check_X_y(X, y, force_all_finite=False, accept_2d_y=True)
-
-        policy = self._get_policy(queue, X, y)
-
-        self.n_features_in_ = _num_features(X, fallback_1d=True)
-
-        X, y = _convert_to_supported(policy, X, y)
-        params = self._get_onedal_params(get_dtype(X))
-        X_table, y_table = to_table(X, y)
-
-        hparams = get_hyperparameters("linear_regression", "train")
-        if hparams is not None and not hparams.is_default:
-            result = module.train(policy, params, hparams.backend, X_table, y_table)
-        else:
-            result = module.train(policy, params, X_table, y_table)
-
-        self._onedal_model = result.model
-
-        packed_coefficients = from_table(result.model.packed_coefficients)
-        self.coef_, self.intercept_ = (
-            packed_coefficients[:, 1:],
-            packed_coefficients[:, 0],
-        )
-
-        if self.coef_.shape[0] == 1 and y.ndim == 1:
-            self.coef_ = self.coef_.ravel()
-            self.intercept_ = self.intercept_[0]
-
-        return self
 
 
 class Ridge(BaseLinearRegression):
@@ -261,69 +221,12 @@ class Ridge(BaseLinearRegression):
 
     def __init__(
         self,
-        alpha=1.0,
         fit_intercept=True,
         copy_X=False,
         *,
         algorithm="norm_eq",
-        **kwargs,
+        alpha=1.0,
     ):
         super().__init__(
-            fit_intercept=fit_intercept, alpha=alpha, copy_X=copy_X, algorithm=algorithm
+            fit_intercept=fit_intercept, copy_X=copy_X, algorithm=algorithm, alpha=alpha
         )
-
-    def fit(self, X, y, queue=None):
-        """
-        Fit linear model.
-        Parameters
-        ----------
-        X : {array-like, sparse matrix} of shape (n_samples, n_features)
-            Training data.
-
-        y : array-like of shape (n_samples,) or (n_samples, n_targets)
-            Target values. Will be cast to X's dtype if necessary.
-
-        queue : dpctl.SyclQueue
-            If not None, use this queue for computations.
-
-        Returns
-        -------
-        self : object
-            Fitted Estimator.
-        """
-        module = self._get_backend("linear_model", "regression")
-
-        if not isinstance(X, np.ndarray):
-            X = np.asarray(X)
-
-        dtype = get_dtype(X)
-        if dtype not in [np.float32, np.float64]:
-            dtype = np.float64
-            X = X.astype(dtype, copy=self.copy_X)
-
-        y = np.asarray(y).astype(dtype=dtype)
-
-        X, y = _check_X_y(X, y, force_all_finite=False, accept_2d_y=True)
-
-        policy = self._get_policy(queue, X, y)
-
-        self.n_features_in_ = _num_features(X, fallback_1d=True)
-
-        X, y = _convert_to_supported(policy, X, y)
-        params = self._get_onedal_params(get_dtype(X))
-        X_table, y_table = to_table(X, y)
-
-        result = module.train(policy, params, X_table, y_table)
-        self._onedal_model = result.model
-
-        packed_coefficients = from_table(result.model.packed_coefficients)
-        self.coef_, self.intercept_ = (
-            packed_coefficients[:, 1:],
-            packed_coefficients[:, 0],
-        )
-
-        if self.coef_.shape[0] == 1 and y.ndim == 1:
-            self.coef_ = self.coef_.ravel()
-            self.intercept_ = self.intercept_[0]
-
-        return self
