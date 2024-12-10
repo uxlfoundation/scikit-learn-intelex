@@ -146,12 +146,12 @@ void init_partial_train_result(py::module_& m) {
                 if (t.size() != 4)
                     throw std::runtime_error("Invalid state!");
                 result_t res;
-                if (py::cast<int>(t[0].attr("size")) != 0) res.set_partial_n_rows(convert_to_table(t[0].ptr()));
-                if (py::cast<int>(t[1].attr("size")) != 0) res.set_partial_crossproduct(convert_to_table(t[1].ptr()));
-                if (py::cast<int>(t[2].attr("size")) != 0) res.set_partial_sum(convert_to_table(t[2].ptr()));
+                if (py::cast<int>(t[0].attr("size")) != 0) res.set_partial_n_rows(convert_to_table(t[0]));
+                if (py::cast<int>(t[1].attr("size")) != 0) res.set_partial_crossproduct(convert_to_table(t[1]));
+                if (py::cast<int>(t[2].attr("size")) != 0) res.set_partial_sum(convert_to_table(t[2]));
                 py::list aux_list = t[3].cast<py::list>();
                 for (int i = 0; i < aux_list.size(); i++) {
-                    res.set_auxiliary_table(convert_to_table(aux_list[i].ptr()));
+                    res.set_auxiliary_table(convert_to_table(aux_list[i]));
                 }
                 return res;
             }

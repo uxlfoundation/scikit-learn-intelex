@@ -100,3 +100,21 @@ def pass_if_not_implemented_for_gpu(reason=""):
         return wrapper
 
     return decorator
+
+
+class DummySyclQueue:
+    """This class is designed to act like dpctl.SyclQueue
+    to allow device dispatching in scenarios when dpctl is not available"""
+
+    class DummySyclDevice:
+        def __init__(self, filter_string):
+            self._filter_string = filter_string
+            self.is_cpu = "cpu" in filter_string
+            self.is_gpu = "gpu" in filter_string
+            self.has_aspect_fp64 = self.is_cpu
+
+        def get_filter_string(self):
+            return self._filter_string
+
+    def __init__(self, filter_string):
+        self.sycl_device = self.DummySyclDevice(filter_string)

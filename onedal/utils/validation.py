@@ -36,7 +36,7 @@ from daal4py.sklearn.utils.validation import (
 )
 from onedal import _backend
 from onedal.common._policy import _get_policy
-from onedal.datatypes import _convert_to_supported, to_table
+from onedal.datatypes import to_table
 
 
 class DataConversionWarning(UserWarning):
@@ -438,7 +438,7 @@ def _is_csr(x):
 
 def _assert_all_finite(X, allow_nan=False, input_name=""):
     policy = _get_policy(None, X)
-    X_t = to_table(_convert_to_supported(policy, X))
+    X_t = to_table(X)
     params = {
         "fptype": X_t.dtype,
         "method": "dense",

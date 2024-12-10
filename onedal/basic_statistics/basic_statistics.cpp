@@ -223,12 +223,12 @@ void init_partial_compute_result(py::module_& m) {
                 if (t.size() != 6)
                     throw std::runtime_error("Invalid state!");
                 result_t res;
-                if (py::cast<int>(t[0].attr("size")) != 0) res.set_partial_n_rows(convert_to_table(t[0].ptr()));
-                if (py::cast<int>(t[1].attr("size")) != 0) res.set_partial_min(convert_to_table(t[1].ptr()));
-                if (py::cast<int>(t[2].attr("size")) != 0) res.set_partial_max(convert_to_table(t[2].ptr()));
-                if (py::cast<int>(t[2].attr("size")) != 0) res.set_partial_sum(convert_to_table(t[3].ptr()));
-                if (py::cast<int>(t[2].attr("size")) != 0) res.set_partial_sum_squares(convert_to_table(t[4].ptr()));
-                if (py::cast<int>(t[2].attr("size")) != 0) res.set_partial_sum_squares_centered(convert_to_table(t[5].ptr()));
+                if (py::cast<int>(t[0].attr("size")) != 0) res.set_partial_n_rows(convert_to_table(t[0]));
+                if (py::cast<int>(t[1].attr("size")) != 0) res.set_partial_min(convert_to_table(t[1]));
+                if (py::cast<int>(t[2].attr("size")) != 0) res.set_partial_max(convert_to_table(t[2]));
+                if (py::cast<int>(t[3].attr("size")) != 0) res.set_partial_sum(convert_to_table(t[3]));
+                if (py::cast<int>(t[4].attr("size")) != 0) res.set_partial_sum_squares(convert_to_table(t[4]));
+                if (py::cast<int>(t[5].attr("size")) != 0) res.set_partial_sum_squares_centered(convert_to_table(t[5]));
                 
                 return res;
             }

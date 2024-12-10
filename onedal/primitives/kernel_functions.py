@@ -19,7 +19,7 @@ import numpy as np
 from onedal import _backend
 
 from ..common._policy import _get_policy
-from ..datatypes import _convert_to_supported, from_table, to_table
+from ..datatypes import from_table, to_table
 from ..utils import _check_array
 
 
@@ -34,9 +34,8 @@ def _check_inputs(X, Y):
 
 def _compute_kernel(params, submodule, X, Y, queue):
     policy = _get_policy(queue, X, Y)
-    X, Y = _convert_to_supported(policy, X, Y)
+    X, Y = to_table(X, Y, queue=queue)
     params["fptype"] = X.dtype
-    X, Y = to_table(X, Y)
     result = submodule.compute(policy, params, X, Y)
     return from_table(result.values)
 

@@ -22,7 +22,7 @@ from sklearn.decomposition._pca import _infer_dimension
 from sklearn.utils.extmath import stable_cumsum
 
 from ..common._base import BaseEstimator
-from ..datatypes import _convert_to_supported, from_table, to_table
+from ..datatypes import from_table, to_table
 
 
 class BasePCA(BaseEstimator, metaclass=ABCMeta):
@@ -130,11 +130,11 @@ class BasePCA(BaseEstimator, metaclass=ABCMeta):
     def predict(self, X, queue=None):
         policy = self._get_policy(queue, X)
         model = self._create_model()
-        X = _convert_to_supported(policy, X)
-        params = self._get_onedal_params(X, stage="predict")
+        X_table = to_table(X, queue=queue)
+        params = self._get_onedal_params(X_table, stage="predict")
 
         result = self._get_backend(
-            "decomposition", "dim_reduction", "infer", policy, params, model, to_table(X)
+            "decomposition", "dim_reduction", "infer", policy, params, model, X_table
         )
         return from_table(result.transformed_data)
 
@@ -151,11 +151,11 @@ class PCA(BasePCA):
         # fails to be converted to oneDAL table
         if isinstance(X, np.ndarray) and not X.flags["OWNDATA"]:
             X = X.copy()
-        X = _convert_to_supported(policy, X)
 
+        X = to_table(X, queue=queue)
         params = self._get_onedal_params(X)
         result = self._get_backend(
-            "decomposition", "dim_reduction", "train", policy, params, to_table(X)
+            "decomposition", "dim_reduction", "train", policy, params, X
         )
 
         self.mean_ = from_table(result.means).ravel()

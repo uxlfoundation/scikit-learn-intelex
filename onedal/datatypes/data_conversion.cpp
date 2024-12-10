@@ -148,20 +148,40 @@ inline csr_table_t convert_to_csr_impl(PyObject* py_data,
     return res_table;
 }
 
-dal::table convert_to_table(PyObject *obj) {
+dal::table convert_to_table(py::object inp_obj, py::object queue) {
     dal::table res;
+    #ifdef ONEDAL_DATA_PARALLEL
+    if (!queue.is(py::none()) && !queue.attr("sycl_device").attr("has_aspect_fp64").cast<bool>()){
+        // If the queue exists, doesn't have the fp64 aspect, and the data is float64
+        // then cast it to float32
+        int type = reinterpret_cast<PyArray_Descr *>(inp_obj.attr("dtype").ptr())->type_num;
+        if(type == NPY_DOUBLE || type == NPY_DOUBLELTR){
+            PyErr_WarnEx(PyExc_RuntimeWarning,
+                         "Data will be converted into float32 from float64 because device does not support it",
+                         1);
+            // use astype instead of PyArray_Cast in order to support scipy sparse inputs
+            inp_obj = inp_obj.attr("astype")(py::dtype::of<float>());
+            res = convert_to_table(inp_obj); // queue will be set to none, as this check is no longer necessary
+            return res;
+        }
+    }
+    #endif // ONEDAL_DATA_PARALLEL
+
+    PyObject* obj = inp_obj.ptr();
+
     if (obj == nullptr || obj == Py_None) {
         return res;
     }
     if (is_array(obj)) {
         PyArrayObject *ary = reinterpret_cast<PyArrayObject *>(obj);
+
         if (!PyArray_ISCARRAY_RO(ary) && !PyArray_ISFARRAY_RO(ary)) {
             // NOTE: this will make a C-contiguous deep copy of the data
             // this is expected to be a special case
-            ary = PyArray_GETCONTIGUOUS(ary);
-            if (ary) {
-                res = convert_to_table(reinterpret_cast<PyObject *>(ary));
-                Py_DECREF(ary);
+            obj = reinterpret_cast<PyObject *>(PyArray_GETCONTIGUOUS(ary));
+            if (obj) {
+                res = convert_to_table(py::cast<py::object>(obj), queue);
+                Py_DECREF(obj);
                 return res;
             } 
             else {

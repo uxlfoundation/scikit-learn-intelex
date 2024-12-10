@@ -21,7 +21,7 @@ from daal4py.sklearn._utils import get_dtype
 from ...covariance import (
     IncrementalEmpiricalCovariance as base_IncrementalEmpiricalCovariance,
 )
-from ...datatypes import _convert_to_supported, to_table
+from ...datatypes import to_table
 from ...utils import _check_array
 from .._base import BaseEstimatorSPMD
 
@@ -63,13 +63,12 @@ class IncrementalEmpiricalCovariance(
 
         policy = super(base_IncrementalEmpiricalCovariance, self)._get_policy(queue, X)
 
-        X = _convert_to_supported(policy, X)
+        X_table = to_table(X, queue=queue)
 
         if not hasattr(self, "_dtype"):
-            self._dtype = get_dtype(X)
+            self._dtype = X_table.dtype
 
         params = self._get_onedal_params(self._dtype)
-        table_X = to_table(X)
         self._partial_result = super(
             base_IncrementalEmpiricalCovariance, self
         )._get_backend(
@@ -79,6 +78,6 @@ class IncrementalEmpiricalCovariance(
             policy,
             params,
             self._partial_result,
-            table_X,
+            X_table,
         )
         self._need_to_finalize = True

@@ -17,7 +17,7 @@ import numpy as np
 
 from daal4py.sklearn._utils import daal_check_version, get_dtype
 
-from ..datatypes import _convert_to_supported, from_table, to_table
+from ..datatypes import from_table, to_table
 from ..utils import _check_array
 from .covariance import BaseEmpiricalCovariance
 
@@ -101,13 +101,12 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
 
         policy = self._get_policy(queue, X)
 
-        X = _convert_to_supported(policy, X)
+        X_table = to_table(X, queue=queue)
 
         if not hasattr(self, "_dtype"):
-            self._dtype = get_dtype(X)
+            self._dtype = X_table.dtype
 
         params = self._get_onedal_params(self._dtype)
-        table_X = to_table(X)
         self._partial_result = self._get_backend(
             "covariance",
             None,
@@ -115,7 +114,7 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
             policy,
             params,
             self._partial_result,
-            table_X,
+            X_table,
         )
         self._need_to_finalize = True
 

@@ -34,7 +34,7 @@ from sklearn.utils import check_random_state
 
 from ..common._base import BaseEstimator as onedal_BaseEstimator
 from ..common._mixin import ClusterMixin, TransformerMixin
-from ..datatypes import _convert_to_supported, from_table, to_table
+from ..datatypes import from_table, to_table
 from ..utils import _check_array, _is_arraylike_not_scalar, _is_csr
 
 
@@ -205,8 +205,7 @@ class _BaseKMeans(onedal_BaseEstimator, TransformerMixin, ClusterMixin, ABC):
             assert centers.shape[1] == X_table.column_count
             # KMeans is implemented on both CPU and GPU for Dense and CSR data
             # The original policy can be used here
-            centers = _convert_to_supported(policy, centers)
-            centers_table = to_table(centers)
+            centers_table = to_table(centers, queue=getattr(policy, "_queue", None))
         else:
             raise TypeError("Unsupported type of the `init` value")
 
@@ -240,8 +239,7 @@ class _BaseKMeans(onedal_BaseEstimator, TransformerMixin, ClusterMixin, ABC):
                 f"callable, got '{ init }' instead."
             )
 
-        centers = _convert_to_supported(policy, centers)
-        return to_table(centers)
+        return to_table(centers, queue=getattr(policy, "_queue", None))
 
     def _fit_backend(
         self, X_table, centroids_table, module, policy, dtype=np.float32, is_csr=False
@@ -266,13 +264,10 @@ class _BaseKMeans(onedal_BaseEstimator, TransformerMixin, ClusterMixin, ABC):
         X = _check_array(
             X, dtype=[np.float64, np.float32], accept_sparse="csr", force_all_finite=False
         )
-        X = _convert_to_supported(policy, X)
-        dtype = get_dtype(X)
-        X_table = to_table(X)
+        X_table = to_table(X, queue=queue)
+        dtype = X_table.dtype
 
         self._check_params_vs_input(X_table, is_csr, policy, dtype=dtype)
-
-        params = self._get_onedal_params(is_csr, dtype)
 
         self.n_features_in_ = X_table.column_count
 
@@ -381,8 +376,7 @@ class _BaseKMeans(onedal_BaseEstimator, TransformerMixin, ClusterMixin, ABC):
         is_csr = _is_csr(X)
 
         policy = self._get_policy(queue, X)
-        X = _convert_to_supported(policy, X)
-        X_table = to_table(X)
+        X_table = to_table(X, queue=queue)
         params = self._get_onedal_params(is_csr, X_table.dtype, result_options)
 
         result = module.infer(policy, params, self.model_, X_table)

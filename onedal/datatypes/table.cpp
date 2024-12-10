@@ -81,15 +81,14 @@ ONEDAL_PY_INIT_MODULE(table) {
     define_sycl_usm_array_property(table_obj);
 #endif // ONEDAL_DATA_PARALLEL
 
-    m.def("to_table", [](py::object obj) {
+    m.def("to_table", [](py::object obj, py::object queue) {
         #ifdef ONEDAL_DATA_PARALLEL
         if (py::hasattr(obj, "__sycl_usm_array_interface__")) {
             return convert_from_sua_iface(obj);
         }
         #endif // ONEDAL_DATA_PARALLEL
 
-        auto* obj_ptr = obj.ptr();
-        return convert_to_table(obj_ptr);
+        return convert_to_table(obj, queue);
     });
 
     m.def("from_table", [](const dal::table& t) -> py::handle {

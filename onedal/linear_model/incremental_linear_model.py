@@ -19,7 +19,7 @@ import numpy as np
 from daal4py.sklearn._utils import get_dtype
 
 from ..common.hyperparameters import get_hyperparameters
-from ..datatypes import _convert_to_supported, from_table, to_table
+from ..datatypes import from_table, to_table
 from ..utils import _check_X_y, _num_features
 from .linear_model import BaseLinearRegression
 
@@ -77,20 +77,19 @@ class IncrementalLinearRegression(BaseLinearRegression):
         self._queue = queue
         policy = self._get_policy(queue, X)
 
-        X, y = _convert_to_supported(policy, X, y)
-
-        if not hasattr(self, "_dtype"):
-            self._dtype = get_dtype(X)
-            self._params = self._get_onedal_params(self._dtype)
-
-        y = np.asarray(y, dtype=self._dtype)
-
         X, y = _check_X_y(
             X, y, dtype=[np.float64, np.float32], accept_2d_y=True, force_all_finite=False
         )
+        y = np.asarray(y, dtype=X.dtype)
 
         self.n_features_in_ = _num_features(X, fallback_1d=True)
-        X_table, y_table = to_table(X, y)
+
+        X_table, y_table = to_table(X, y, queue=queue)
+
+        if not hasattr(self, "_dtype"):
+            self._dtype = X_table.dtype
+            self._params = self._get_onedal_params(self._dtype)
+
         hparams = get_hyperparameters("linear_regression", "train")
         if hparams is not None and not hparams.is_default:
             self._partial_result = module.partial_train(
@@ -207,20 +206,19 @@ class IncrementalRidge(BaseLinearRegression):
         self._queue = queue
         policy = self._get_policy(queue, X)
 
-        X, y = _convert_to_supported(policy, X, y)
-
-        if not hasattr(self, "_dtype"):
-            self._dtype = get_dtype(X)
-            self._params = self._get_onedal_params(self._dtype)
-
-        y = np.asarray(y, dtype=self._dtype)
-
         X, y = _check_X_y(
             X, y, dtype=[np.float64, np.float32], accept_2d_y=True, force_all_finite=False
         )
+        y = np.asarray(y, dtype=X.dtype)
 
         self.n_features_in_ = _num_features(X, fallback_1d=True)
-        X_table, y_table = to_table(X, y)
+
+        X_table, y_table = to_table(X, y, queue=queue)
+
+        if not hasattr(self, "_dtype"):
+            self._dtype = X_table.dtype
+            self._params = self._get_onedal_params(self._dtype)
+
         self._partial_result = module.partial_train(
             policy, self._params, self._partial_result, X_table, y_table
         )
