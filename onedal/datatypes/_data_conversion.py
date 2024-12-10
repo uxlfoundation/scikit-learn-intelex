@@ -18,7 +18,8 @@ import warnings
 
 import numpy as np
 
-from onedal import _backend, _is_dpc_backend
+from onedal import _default_backend as backend
+from onedal._device_offload import SyclQueueManager
 
 
 def _apply_and_pass(func, *args, **kwargs):
@@ -29,7 +30,7 @@ def _apply_and_pass(func, *args, **kwargs):
 
 def _convert_one_to_table(arg):
     # All inputs for table conversion must be array-like or sparse, not scalars
-    return _backend.to_table(np.atleast_2d(arg) if np.isscalar(arg) else arg)
+    return backend.to_table(np.atleast_2d(arg) if np.isscalar(arg) else arg)
 
 
 def to_table(*args):
@@ -54,7 +55,7 @@ def to_table(*args):
     return _apply_and_pass(_convert_one_to_table, *args)
 
 
-if _is_dpc_backend:
+if backend.is_dpc:
 
     try:
         # try/catch is used here instead of dpep_helpers because
@@ -79,18 +80,9 @@ if _is_dpc_backend:
         def _table_to_array(table, xp=None):
             return xp.asarray(table)
 
-    from ..common._policy import _HostInteropPolicy
-
-    def _convert_to_supported(policy, *data):
-        def func(x):
+    def _convert_to_supported(*data):
+        def identity(x):
             return x
-
-        # CPUs support FP64 by default
-        if isinstance(policy, _HostInteropPolicy):
-            return _apply_and_pass(func, *data)
-
-        # It can be either SPMD or DPCPP policy
-        device = policy._queue.sycl_device
 
         def convert_or_pass(x):
             if (x is not None) and (x.dtype == np.float64):
@@ -103,10 +95,14 @@ if _is_dpc_backend:
             else:
                 return x
 
-        if not device.has_aspect_fp64:
-            func = convert_or_pass
+        # find the device we're running on
+        queue = SyclQueueManager.from_data(data)
+        device = queue.sycl_device if queue else None
 
-        return _apply_and_pass(func, *data)
+        if device and not device.has_aspect_fp64:
+            return _apply_and_pass(convert_or_pass, *data)
+        else:
+            return _apply_and_pass(identity, *data)
 
     def convert_one_from_table(table, sycl_queue=None, sua_iface=None, xp=None):
         # Currently only `__sycl_usm_array_interface__` protocol used to
@@ -123,20 +119,20 @@ if _is_dpc_backend:
                 # Host tables first converted into numpy.narrays and then to array from xp
                 # namespace.
                 return xp.asarray(
-                    _backend.from_table(table), usm_type="device", sycl_queue=sycl_queue
+                    backend.from_table(table), usm_type="device", sycl_queue=sycl_queue
                 )
             else:
                 return _table_to_array(table, xp=xp)
 
-        return _backend.from_table(table)
+        return backend.from_table(table)
 
 else:
 
-    def _convert_to_supported(policy, *data):
-        def func(x):
+    def _convert_to_supported(*data):
+        def identity(x):
             return x
 
-        return _apply_and_pass(func, *data)
+        return _apply_and_pass(identity, *data)
 
     def convert_one_from_table(table, sycl_queue=None, sua_iface=None, xp=None):
         # Currently only `__sycl_usm_array_interface__` protocol used to
@@ -145,7 +141,7 @@ else:
             raise RuntimeError(
                 "SYCL usm array conversion from table requires the DPC backend"
             )
-        return _backend.from_table(table)
+        return backend.from_table(table)
 
 
 def from_table(*args, sycl_queue=None, sua_iface=None, xp=None):

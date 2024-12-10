@@ -14,10 +14,9 @@
 # limitations under the License.
 # ==============================================================================
 
-from onedal import _is_spmd_backend
+from onedal import _spmd_backend
 
-if _is_spmd_backend:
-    from onedal import _spmd_backend
+if _spmd_backend is not None:
 
     class _SPMDDataParallelInteropPolicy(_spmd_backend.spmd_data_parallel_policy):
         def __init__(self, queue):

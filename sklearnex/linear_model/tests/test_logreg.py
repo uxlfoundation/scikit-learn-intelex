@@ -49,7 +49,7 @@ def test_sklearnex_multiclass_classification(dataframe, queue):
     from sklearnex.linear_model import LogisticRegression
 
     X, y = load_iris(return_X_y=True)
-    X_train, X_test, y_train, y_test = prepare_input(X, y, dataframe, queue)
+    X_train, X_test, y_train, y_test = prepare_input(X, y, dataframe, queue=queue)
 
     logreg = LogisticRegression(fit_intercept=True, solver="lbfgs", max_iter=200).fit(
         X_train, y_train
@@ -72,7 +72,7 @@ def test_sklearnex_binary_classification(dataframe, queue):
     from sklearnex.linear_model import LogisticRegression
 
     X, y = load_breast_cancer(return_X_y=True)
-    X_train, X_test, y_train, y_test = prepare_input(X, y, dataframe, queue)
+    X_train, X_test, y_train, y_test = prepare_input(X, y, dataframe, queue=queue)
 
     logreg = LogisticRegression(fit_intercept=True, solver="newton-cg", max_iter=100).fit(
         X_train, y_train

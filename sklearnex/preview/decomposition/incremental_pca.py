@@ -57,9 +57,9 @@ class IncrementalPCA(_sklearn_IncrementalPCA):
     def _onedal_transform(self, X, queue=None):
         assert hasattr(self, "_onedal_estimator")
         if self._need_to_finalize:
-            self._onedal_finalize_fit()
+            self._onedal_finalize_fit(queue)
         X = check_array(X, dtype=[np.float64, np.float32])
-        return self._onedal_estimator.predict(X, queue)
+        return self._onedal_estimator.predict(X, queue=queue)
 
     def _onedal_fit_transform(self, X, queue=None):
         self._onedal_fit(X, queue)

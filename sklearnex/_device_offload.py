@@ -16,7 +16,7 @@
 
 from functools import wraps
 
-from onedal._device_offload import _copy_to_usm, _get_global_queue, _transfer_to_host
+from onedal._device_offload import SyclQueueManager, _copy_to_usm, _transfer_to_host
 from onedal.utils._array_api import _asarray
 from onedal.utils._dpep_helpers import dpnp_available
 
@@ -27,49 +27,51 @@ if dpnp_available:
 from ._config import get_config
 
 
-def _get_backend(obj, queue, method_name, *data):
-    cpu_device = queue is None or queue.sycl_device.is_cpu
-    gpu_device = queue is not None and queue.sycl_device.is_gpu
+def _get_backend(obj, method_name, *data):
+    queue = SyclQueueManager.get_global_queue()
+    cpu_device = queue is None or getattr(queue.sycl_device, "is_cpu", True)
+    gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
 
     if cpu_device:
         patching_status = obj._onedal_cpu_supported(method_name, *data)
         if patching_status.get_status():
-            return "onedal", queue, patching_status
+            return "onedal", patching_status
         else:
-            return "sklearn", None, patching_status
+            return "sklearn", patching_status
 
     allow_fallback_to_host = get_config()["allow_fallback_to_host"]
 
     if gpu_device:
         patching_status = obj._onedal_gpu_supported(method_name, *data)
         if patching_status.get_status():
-            return "onedal", queue, patching_status
+            return "onedal", patching_status
         else:
+            SyclQueueManager.remove_global_queue()
             if allow_fallback_to_host:
                 patching_status = obj._onedal_cpu_supported(method_name, *data)
                 if patching_status.get_status():
-                    return "onedal", None, patching_status
+                    return "onedal", patching_status
                 else:
-                    return "sklearn", None, patching_status
+                    return "sklearn", patching_status
             else:
-                return "sklearn", None, patching_status
+                return "sklearn", patching_status
 
     raise RuntimeError("Device support is not implemented")
 
 
 def dispatch(obj, method_name, branches, *args, **kwargs):
-    q = _get_global_queue()
-    has_usm_data_for_args, q, hostargs = _transfer_to_host(q, *args)
-    has_usm_data_for_kwargs, q, hostvalues = _transfer_to_host(q, *kwargs.values())
+    queue = getattr(SyclQueueManager.get_global_queue(), "implementation", None)
+    has_usm_data_for_args, hostargs = _transfer_to_host(*args)
+    has_usm_data_for_kwargs, hostvalues = _transfer_to_host(*kwargs.values())
     hostkwargs = dict(zip(kwargs.keys(), hostvalues))
 
-    backend, q, patching_status = _get_backend(obj, q, method_name, *hostargs)
+    backend, patching_status = _get_backend(obj, method_name, *hostargs)
     has_usm_data = has_usm_data_for_args or has_usm_data_for_kwargs
     if backend == "onedal":
         # Host args only used before onedal backend call.
         # Device will be offloaded when onedal backend will be called.
-        patching_status.write_log(queue=q, transferred_to_host=False)
-        return branches[backend](obj, *hostargs, **hostkwargs, queue=q)
+        patching_status.write_log(queue=queue, transferred_to_host=False)
+        return branches[backend](obj, *hostargs, **hostkwargs, queue=queue)
     if backend == "sklearn":
         if (
             "array_api_dispatch" in get_config()

@@ -17,9 +17,11 @@
 import numpy as np
 
 from daal4py.sklearn._utils import get_dtype
+from onedal._device_offload import supports_queue
+from onedal.common._backend import bind_default_backend
 
 from ..datatypes import _convert_to_supported, from_table, to_table
-from ..utils import _check_array
+from ..utils.validation import _check_array
 from .pca import BasePCA
 
 
@@ -98,12 +100,20 @@ class IncrementalPCA(BasePCA):
         self.whiten = whiten
         self._reset()
 
+    @bind_default_backend("decomposition.dim_reduction")
+    def finalize_train(self, params, partial_result): ...
+
+    @bind_default_backend("decomposition.dim_reduction")
+    def partial_train(self, params, partial_result, X_table): ...
+
+    @bind_default_backend("decomposition.dim_reduction")
+    def partial_train_result(self): ...
+
     def _reset(self):
         self._need_to_finalize = False
-        module = self._get_backend("decomposition", "dim_reduction")
+        self._partial_result = self.partial_train_result()
         if hasattr(self, "components_"):
             del self.components_
-        self._partial_result = module.partial_train_result()
 
     def __getstate__(self):
         # Since finalize_fit can't be dispatched without directly provided queue
@@ -116,7 +126,8 @@ class IncrementalPCA(BasePCA):
 
         return data
 
-    def partial_fit(self, X, queue):
+    @supports_queue
+    def partial_fit(self, X, queue=None):
         """Incremental fit with X. All of X is processed as a single batch.
 
         Parameters
@@ -152,28 +163,20 @@ class IncrementalPCA(BasePCA):
         else:
             self.n_components_ = self.n_components
 
-        self._queue = queue
-
-        policy = self._get_policy(queue, X)
-        X = _convert_to_supported(policy, X)
+        X = _convert_to_supported(X)
 
         if not hasattr(self, "_dtype"):
             self._dtype = get_dtype(X)
             self._params = self._get_onedal_params(X)
 
         X_table = to_table(X)
-        self._partial_result = self._get_backend(
-            "decomposition",
-            "dim_reduction",
-            "partial_train",
-            policy,
-            self._params,
-            self._partial_result,
-            X_table,
+        self._partial_result = self.partial_train(
+            self._params, self._partial_result, X_table
         )
         self._need_to_finalize = True
         return self
 
+    @supports_queue
     def finalize_fit(self, queue=None):
         """
         Finalizes principal components computation and obtains resulting
@@ -190,12 +193,7 @@ class IncrementalPCA(BasePCA):
             Returns the instance itself.
         """
         if self._need_to_finalize:
-            module = self._get_backend("decomposition", "dim_reduction")
-            if queue is not None:
-                policy = self._get_policy(queue)
-            else:
-                policy = self._get_policy(self._queue)
-            result = module.finalize_train(policy, self._params, self._partial_result)
+            result = self.finalize_train(self._params, self._partial_result)
             self.mean_ = from_table(result.means).ravel()
             self.var_ = from_table(result.variances).ravel()
             self.components_ = from_table(result.eigenvectors)
@@ -211,5 +209,6 @@ class IncrementalPCA(BasePCA):
             self.noise_variance_ = self._compute_noise_variance(
                 self.n_components_, min(self.n_samples_seen_, self.n_features_in_)
             )
-        self._need_to_finalize = False
+            self._need_to_finalize = False
+
         return self

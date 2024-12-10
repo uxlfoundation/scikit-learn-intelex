@@ -14,9 +14,9 @@
 # limitations under the License.
 # ==============================================================================
 
-import logging
 from collections.abc import Iterable
 from functools import wraps
+from typing import Optional
 
 import numpy as np
 from sklearn import get_config
@@ -26,17 +26,129 @@ from .utils._array_api import _asarray, _is_numpy_namespace
 from .utils._dpep_helpers import dpctl_available, dpnp_available
 
 if dpctl_available:
-    from dpctl import SyclQueue
+    from dpctl import SyclQueue as SyclQueueImplementation
     from dpctl.memory import MemoryUSMDevice, as_usm_memory
     from dpctl.tensor import usm_ndarray
 else:
-    import onedal
+    from onedal import _dpc_backend
 
-    # setting fallback to `object` will make if isinstance call
-    # in _get_global_queue always true for situations without the
-    # dpc backend when `device_offload` is used. Instead, it will
-    # fail at the policy check phase yielding a RuntimeError
-    SyclQueue = getattr(onedal._backend, "SyclQueue", object)
+    SyclQueueImplementation = getattr(_dpc_backend, "SyclQueue", None)
+
+
+class SyclQueue:
+    def __init__(self, target=None):
+        if target and isinstance(target, SyclQueueImplementation):
+            self.implementation = target
+        elif target and SyclQueueImplementation is not None:
+            self.implementation = SyclQueueImplementation(target)
+        else:
+            self.implementation = None
+
+    @property
+    def sycl_device(self):
+        return getattr(self.implementation, "sycl_device", None)
+
+
+class SyclQueueManager:
+    """Manage global and data SyclQueues"""
+
+    # single instance of global queue
+    __global_queue = None
+
+    @staticmethod
+    def get_global_queue() -> Optional[SyclQueue]:
+        """Get the global queue. Retrieve it from the config if not set."""
+        if (queue := SyclQueueManager.__global_queue) is not None:
+            if not isinstance(queue, SyclQueue):
+                raise ValueError("Global queue is not a SyclQueue object.")
+            return queue
+
+        target = _get_config()["target_offload"]
+
+        if target == "auto":
+            # queue will be created from the provided data to each function call
+            return SyclQueue(None)
+
+        if isinstance(target, (str, int)):
+            q = SyclQueue(target)
+        else:
+            q = target
+
+        SyclQueueManager.update_global_queue(q)
+        return q
+
+    @staticmethod
+    def remove_global_queue():
+        """Remove the global queue."""
+        SyclQueueManager.__global_queue = None
+
+    @staticmethod
+    def update_global_queue(queue):
+        """Update the global queue."""
+        if queue is not None and not isinstance(queue, SyclQueue):
+            # could be a device ID or selector string
+            queue = SyclQueue(queue)
+        SyclQueueManager.__global_queue = queue
+
+    @staticmethod
+    def from_data(*data) -> Optional[SyclQueue]:
+        """Extract the queue from provided data. This updates the global queue as well."""
+        for item in data:
+            # iterate through all data objects, extract the queue, and verify that all data objects are on the same device
+
+            # get the `usm_interface` - the C++ implementation might throw an exception if the data type is not supported
+            try:
+                usm_iface = getattr(item, "__sycl_usm_array_interface__", None)
+            except RuntimeError as e:
+                if "SUA interface" in str(e):
+                    # ignore SUA interface errors and move on
+                    continue
+                else:
+                    # unexpected, re-raise
+                    raise e
+
+            if usm_iface is None:
+                # no interface found - try next data object
+                continue
+
+            # extract the queue, verify it aligns with the global queue
+            global_queue = SyclQueueManager.get_global_queue()
+            data_queue = SyclQueue(usm_iface["syclobj"])
+            if global_queue is None:
+                SyclQueueManager.update_global_queue(data_queue)
+                global_queue = data_queue
+
+            # if the data item is on device, assert it's compatible with device in global queue
+            data_dev = data_queue.sycl_device
+            global_dev = global_queue.sycl_device
+            if (data_dev and global_dev) is not None and data_dev != global_dev:
+                raise ValueError(
+                    "Data objects are located on different target devices or not on selected device."
+                )
+
+        # after we went through the data, global queue is updated and verified (if any queue found)
+        return SyclQueueManager.get_global_queue()
+
+
+def supports_queue(func):
+    """
+    Decorator that updates the global queue based on provided queue and global configuration.
+    If a `queue` keyword argument is provided in the decorated function, its value will be used globally.
+    If no queue is provided, the global queue will be updated from the provided data.
+    In either case, all data objects are verified to be on the same device (or on host).
+    """
+
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        queue = kwargs.get("queue", None)
+        # update the global queue with what is provided, it can be None, then we will get it from provided data
+        SyclQueueManager.update_global_queue(queue)
+        # find the queues in data using SyclQueueManager to verify that all data objects are on the same device
+        kwargs["queue"] = SyclQueueManager.from_data(*args)
+        return func(self, *args, **kwargs)
+
+    return wrapper
+
 
 if dpnp_available:
     import dpnp
@@ -69,7 +181,7 @@ def _copy_to_usm(queue, array):
         return array
 
 
-def _transfer_to_host(queue, *data):
+def _transfer_to_host(*data):
     has_usm_data, has_host_data = False, False
 
     host_data = []
@@ -82,13 +194,6 @@ def _transfer_to_host(queue, *data):
                     "dpctl need to be installed to work "
                     "with __sycl_usm_array_interface__"
                 )
-            if queue is not None:
-                if queue.sycl_device != usm_iface["syclobj"].sycl_device:
-                    raise RuntimeError(
-                        "Input data shall be located " "on single target device"
-                    )
-            else:
-                queue = usm_iface["syclobj"]
 
             buffer = as_usm_memory(item).copy_to_host()
             order = "C"
@@ -117,25 +222,14 @@ def _transfer_to_host(queue, *data):
             raise RuntimeError("Input data shall be located on single target device")
 
         host_data.append(item)
-    return has_usm_data, queue, host_data
-
-
-def _get_global_queue():
-    target = _get_config()["target_offload"]
-
-    if target != "auto":
-        if isinstance(target, SyclQueue):
-            return target
-        return SyclQueue(target)
-    return None
+    return has_usm_data, host_data
 
 
 def _get_host_inputs(*args, **kwargs):
-    q = _get_global_queue()
-    _, q, hostargs = _transfer_to_host(q, *args)
-    _, q, hostvalues = _transfer_to_host(q, *kwargs.values())
+    _, hostargs = _transfer_to_host(*args)
+    _, hostvalues = _transfer_to_host(*kwargs.values())
     hostkwargs = dict(zip(kwargs.keys(), hostvalues))
-    return q, hostargs, hostkwargs
+    return hostargs, hostkwargs
 
 
 def _run_on_device(func, obj=None, *args, **kwargs):
@@ -164,21 +258,22 @@ def support_input_format(freefunc=False, queue_param=True):
         def wrapper_impl(obj, *args, **kwargs):
             if len(args) == 0 and len(kwargs) == 0:
                 return _run_on_device(func, obj, *args, **kwargs)
+
+            hostargs, hostkwargs = _get_host_inputs(*args, **kwargs)
             data = (*args, *kwargs.values())
-            data_queue, hostargs, hostkwargs = _get_host_inputs(*args, **kwargs)
-            if queue_param and not (
-                "queue" in hostkwargs and hostkwargs["queue"] is not None
-            ):
+            data_queue = SyclQueueManager.from_data(*data)
+            if queue_param and hostkwargs.get("queue") is None:
                 hostkwargs["queue"] = data_queue
             result = _run_on_device(func, obj, *hostargs, **hostkwargs)
+
             usm_iface = getattr(data[0], "__sycl_usm_array_interface__", None)
             if usm_iface is not None:
                 result = _copy_to_usm(data_queue, result)
                 if dpnp_available and isinstance(data[0], dpnp.ndarray):
                     result = _convert_to_dpnp(result)
                 return result
-            config = get_config()
-            if not ("transform_output" in config and config["transform_output"]):
+
+            if not get_config().get("transform_output"):
                 input_array_api = getattr(data[0], "__array_namespace__", lambda: None)()
                 if input_array_api:
                     input_array_api_device = data[0].device

@@ -14,13 +14,22 @@
 # limitations under the License.
 # ==============================================================================
 
-from onedal.linear_model import LinearRegression as LinearRegression_Batch
-
 from ..._device_offload import support_input_format
-from .._base import BaseEstimatorSPMD
+from ...common._backend import bind_spmd_backend
+from ...linear_model import LinearRegression as LinearRegression_Batch
 
 
-class LinearRegression(BaseEstimatorSPMD, LinearRegression_Batch):
+class LinearRegression(LinearRegression_Batch):
+
+    @bind_spmd_backend("linear_model.regression")
+    def train(self, *args, **kwargs): ...
+
+    @bind_spmd_backend("linear_model.regression")
+    def finalize_train(self, *args, **kwargs): ...
+
+    @bind_spmd_backend("linear_model.regression")
+    def infer(self, params, model, X): ...
+
     @support_input_format()
     def fit(self, X, y, queue=None):
         return super().fit(X, y, queue=queue)

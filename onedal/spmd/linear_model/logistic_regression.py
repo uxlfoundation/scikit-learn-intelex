@@ -14,13 +14,19 @@
 # limitations under the License.
 # ==============================================================================
 
-from onedal.linear_model import LogisticRegression as LogisticRegression_Batch
-
 from ..._device_offload import support_input_format
-from .._base import BaseEstimatorSPMD
+from ...common._backend import bind_spmd_backend
+from ...linear_model import LogisticRegression as LogisticRegression_Batch
 
 
-class LogisticRegression(BaseEstimatorSPMD, LogisticRegression_Batch):
+class LogisticRegression(LogisticRegression_Batch):
+
+    @bind_spmd_backend("logistic_regression.classification")
+    def train(self, params, X, y): ...
+
+    @bind_spmd_backend("logistic_regression.classification")
+    def infer(self, params, X, model): ...
+
     @support_input_format()
     def fit(self, X, y, queue=None):
         return super().fit(X, y, queue=queue)
