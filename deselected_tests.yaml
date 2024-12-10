@@ -25,6 +25,20 @@
 #  will exclude deselection in versions 0.18.1, and 0.18.2 only.
 
 deselected_tests:
+  # sklearn 1.6 unsupported features
+  - linear_model/tests/test_base.py::test_linear_regression_sample_weight_consistency[42-True-None-X_shape1]
+  - linear_model/tests/test_base.py::test_linear_regression_sample_weight_consistency[42-True-None-X_shape2]
+  - linear_model/tests/test_ridge.py::test_ridge_shapes_type
+  - linear_model/tests/test_ridge.py::test_ridge_cv_results_predictions[2-False-False]
+  - linear_model/tests/test_ridge.py::test_ridge_cv_results_predictions[2-False-True]
+  - neighbors/tests/test_neighbors.py::test_nan_euclidean_support[KNeighborsClassifier-params0]
+  - neighbors/tests/test_neighbors.py::test_nan_euclidean_support[KNeighborsRegressor-params1]
+  - neighbors/tests/test_neighbors.py::test_nan_euclidean_support[LocalOutlierFactor-params6]
+  - neighbors/tests/test_neighbors.py::test_neighbor_classifiers_loocv[ball_tree-nn_model0]
+  - neighbors/tests/test_neighbors.py::test_neighbor_classifiers_loocv[brute-nn_model0]
+  - neighbors/tests/test_neighbors.py::test_neighbor_classifiers_loocv[kd_tree-nn_model0]
+  - neighbors/tests/test_neighbors.py::test_neighbor_classifiers_loocv[auto-nn_model0]
+
   # Array API support
   # sklearnex functional Array API support doesn't guaranty namespace consistency for the estimator's array attributes.
   - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_input_and_values-array_api_strict-None-None]
