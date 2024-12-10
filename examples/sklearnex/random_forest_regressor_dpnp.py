@@ -15,16 +15,30 @@
 # ==============================================================================
 
 # sklearnex RF example for GPU offloading with DPNP ndarray:
-#    python ./random_forest_regressor_dpnp_batch.py
+#    python ./random_forest_regressor_dpnp.py
 
+import dpctl
 import dpnp
-import numpy as np
 from sklearn.datasets import make_regression
 from sklearn.model_selection import train_test_split
 
+# Import estimator via sklearnex's patch mechanism from sklearn
+from sklearnex import patch_sklearn, sklearn_is_patched
+
+patch_sklearn()
+
+# Function that can validate current state of patching
+sklearn_is_patched()
+
+# Import estimator from the patched sklearn namespace.
+from sklearn.ensemble import RandomForestRegressor
+
+# Or just directly import estimator from sklearnex namespace.
 from sklearnex.ensemble import RandomForestRegressor
 
-sycl_device = "gpu:0"
+# We create GPU SyclQueue and then put data to dpctl tensor using
+# the queue. It allows us to do computation on GPU.
+queue = dpctl.SyclQueue("gpu")
 
 X, y = make_regression(
     n_samples=1000, n_features=4, n_informative=2, random_state=0, shuffle=False
@@ -32,9 +46,9 @@ X, y = make_regression(
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
 
-dpnp_X_train = dpnp.asarray(X_train, device=sycl_device)
-dpnp_y_train = dpnp.asarray(y_train, device=sycl_device)
-dpnp_X_test = dpnp.asarray(X_test, device=sycl_device)
+dpnp_X_train = dpnp.asarray(X_train, usm_type="device", sycl_queue=queue)
+dpnp_y_train = dpnp.asarray(y_train, usm_type="device", sycl_queue=queue)
+dpnp_X_test = dpnp.asarray(X_test, usm_type="device", sycl_queue=queue)
 
 rf = RandomForestRegressor(max_depth=2, random_state=0).fit(dpnp_X_train, dpnp_y_train)
 
