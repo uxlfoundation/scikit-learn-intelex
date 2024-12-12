@@ -79,7 +79,8 @@ print(
     )
 )
 print(
-    "RMSE for entire rank {}: {}\n".format(
-        rank, mean_squared_error(y_test, dpt.to_numpy(y_predict), squared=False)
+    "MSE for entire rank {}: {}\n".format(
+        rank,
+        mean_squared_error(y_test, dpt.to_numpy(y_predict)),
     )
 )

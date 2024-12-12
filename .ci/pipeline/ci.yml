@@ -119,21 +119,18 @@ jobs:
       Python3.9_Sklearn1.0:
         PYTHON_VERSION: '3.9'
         SKLEARN_VERSION: '1.0'
-      Python3.9_Sklearn1.1:
-        PYTHON_VERSION: '3.9'
-        SKLEARN_VERSION: '1.1'
-      Python3.10_Sklearn1.2:
+      Python3.10_Sklearn1.3:
         PYTHON_VERSION: '3.10'
-        SKLEARN_VERSION: '1.2'
-      Python3.11_Sklearn1.3:
-        PYTHON_VERSION: '3.11'
         SKLEARN_VERSION: '1.3'
-      Python3.12_Sklearn1.4:
-        PYTHON_VERSION: '3.12'
+      Python3.11_Sklearn1.4:
+        PYTHON_VERSION: '3.11'
         SKLEARN_VERSION: '1.4'
       Python3.12_Sklearn1.5:
         PYTHON_VERSION: '3.12'
         SKLEARN_VERSION: '1.5'
+      Python3.13_Sklearn1.6:
+        PYTHON_VERSION: '3.13'
+        SKLEARN_VERSION: '1.6'
   pool:
     vmImage: 'ubuntu-22.04'
   steps:
@@ -146,21 +143,18 @@ jobs:
       Python3.9_Sklearn1.0:
         PYTHON_VERSION: '3.9'
         SKLEARN_VERSION: '1.0'
-      Python3.9_Sklearn1.1:
-        PYTHON_VERSION: '3.9'
-        SKLEARN_VERSION: '1.1'
-      Python3.10_Sklearn1.2:
+      Python3.10_Sklearn1.3:
         PYTHON_VERSION: '3.10'
-        SKLEARN_VERSION: '1.2'
-      Python3.11_Sklearn1.3:
-        PYTHON_VERSION: '3.11'
         SKLEARN_VERSION: '1.3'
-      Python3.12_Sklearn1.4:
-        PYTHON_VERSION: '3.12'
+      Python3.11_Sklearn1.4:
+        PYTHON_VERSION: '3.11'
         SKLEARN_VERSION: '1.4'
       Python3.12_Sklearn1.5:
         PYTHON_VERSION: '3.12'
         SKLEARN_VERSION: '1.5'
+      Python3.13_Sklearn1.6:
+        PYTHON_VERSION: '3.13'
+        SKLEARN_VERSION: '1.6'
   pool:
     vmImage: 'windows-2022'
   steps:
