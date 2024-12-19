@@ -122,37 +122,21 @@ def test_sklearnex_fit_on_gold_data(dataframe, queue, batch_size, dtype):
     assert_allclose(expected_means, result.location_)
 
 
-@pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues(dataframe_filter_="numpy,dpnp,dpctl")
-)
-@pytest.mark.parametrize("num_batches", [2, 10])
-@pytest.mark.parametrize("row_count", [100, 1000])
-@pytest.mark.parametrize("column_count", [10, 100])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
-@pytest.mark.parametrize("use_raw_input", [True, False])
-def test_sklearnex_partial_fit_on_random_data_raw(
-    dataframe, queue, num_batches, row_count, column_count, dtype, use_raw_input
-):
-    run_test_test_sklearnex_partial_fit_on_random_data(
-        dataframe, queue, num_batches, row_count, column_count, dtype, use_raw_input
-    )
-
-
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 @pytest.mark.parametrize("num_batches", [2, 10])
 @pytest.mark.parametrize("row_count", [100, 1000])
 @pytest.mark.parametrize("column_count", [10, 100])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("use_raw_input", [True, False])
 def test_sklearnex_partial_fit_on_random_data(
-    dataframe, queue, num_batches, row_count, column_count, dtype
-):
-    run_test_test_sklearnex_partial_fit_on_random_data(
-        dataframe, queue, num_batches, row_count, column_count, dtype
-    )
-
-
-def run_test_test_sklearnex_partial_fit_on_random_data(
-    dataframe, queue, num_batches, row_count, column_count, dtype, use_raw_input=False
+    skip_unsupported_raw_input,
+    dataframe,
+    queue,
+    num_batches,
+    row_count,
+    column_count,
+    dtype,
+    use_raw_input,
 ):
     from sklearnex.covariance import IncrementalEmpiricalCovariance
 
