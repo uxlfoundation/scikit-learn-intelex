@@ -22,15 +22,20 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
+from sklearnex._config import config_context
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_sklearnex_import_dbscan(dataframe, queue):
+@pytest.mark.parametrize("use_raw_input", [True, False])
+def test_sklearnex_import_dbscan(
+    skip_unsupported_raw_input, dataframe, queue, use_raw_input
+):
     from sklearnex.cluster import DBSCAN
 
-    X = np.array([[1, 2], [2, 2], [2, 3], [8, 7], [8, 8], [25, 80]])
+    X = np.array([[1, 2], [2, 2], [2, 3], [8, 7], [8, 8], [25, 80]], dtype=np.float32)
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    dbscan = DBSCAN(eps=3, min_samples=2).fit(X)
+    with config_context(use_raw_input=use_raw_input):
+        dbscan = DBSCAN(eps=3, min_samples=2).fit(X)
     assert "sklearnex" in dbscan.__module__
 
     result = dbscan.labels_

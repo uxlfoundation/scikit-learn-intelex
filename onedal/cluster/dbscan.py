@@ -60,48 +60,29 @@ class BaseDBSCAN(BaseEstimator, ClusterMixin):
 
     def _fit(self, X, y, sample_weight, module, queue):
         use_raw_input = _get_config().get("use_raw_input", False) is True
-        sua_iface, xp, _ = _get_sycl_namespace(X)
-
-        # All data should use the same sycl queue
-        if use_raw_input and sua_iface is not None:
-            queue = X.sycl_queue
-
         policy = self._get_policy(queue, X)
+
         if not use_raw_input:
             X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
             sample_weight = make2d(sample_weight) if sample_weight is not None else None
             X = make2d(X)
         X_table, sample_weight_table = to_table(X, sample_weight, queue=queue)
-
         params = self._get_onedal_params(X_table.dtype)
         result = module.compute(policy, params, X_table, sample_weight_table)
 
-        self.labels_ = xp.reshape(
-            from_table(result.responses, sua_iface=sua_iface, sycl_queue=queue, xp=xp), -1
-        )
+        _, xp, _ = _get_sycl_namespace(X)
+        self.labels_ = from_table(result.responses, sycl_queue=queue).ravel()
         if (
             result.core_observation_indices is not None
             and not result.core_observation_indices.kind == "empty"
         ):
-            self.core_sample_indices_ = xp.reshape(
-                from_table(
-                    result.core_observation_indices,
-                    sycl_queue=queue,
-                    sua_iface=sua_iface,
-                    xp=xp,
-                ),
-                -1,
-            )
+            self.core_sample_indices_ = from_table(
+                result.core_observation_indices,
+                sycl_queue=queue,
+            ).ravel()
         else:
-            # TODO:
-            # self.core_sample_indices_ = _asarray([], xp, sycl_queue=queue, dtype=xp.int32)
-            if sua_iface:
-                self.core_sample_indices_ = xp.asarray(
-                    [], sycl_queue=queue, dtype=xp.int32
-                )
-            else:
-                self.core_sample_indices_ = xp.asarray([], dtype=xp.int32)
-        self.components_ = xp.take(X, self.core_sample_indices_, axis=0)
+            self.core_sample_indices_ = np.array([], dtype=np.intc)
+        self.components_ = np.take(X, self.core_sample_indices_, axis=0)
         self.n_features_in_ = X.shape[1]
         return self
 
