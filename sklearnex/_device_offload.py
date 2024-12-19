@@ -58,7 +58,7 @@ def _get_backend(obj, queue, method_name, *data):
 
 
 def dispatch(obj, method_name, branches, *args, **kwargs):
-    if get_config()["use_raw_input"] is not True:
+    if get_config()["use_raw_input"] is False:
         q = _get_global_queue()
         has_usm_data_for_args, q, hostargs = _transfer_to_host(q, *args)
         has_usm_data_for_kwargs, q, hostvalues = _transfer_to_host(q, *kwargs.values())
