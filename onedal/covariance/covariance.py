@@ -127,6 +127,6 @@ class EmpiricalCovariance(BaseEmpiricalCovariance):
                 / X.shape[0]
             )
 
-        self.location_ = xp.reshape(from_table(result.means, sycl_queue=queue), -1)
+        self.location_ = from_table(result.means).ravel()
 
         return self
