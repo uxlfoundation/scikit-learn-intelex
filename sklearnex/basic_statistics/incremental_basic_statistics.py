@@ -21,11 +21,11 @@ from sklearn.utils.validation import _check_sample_weight
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
-from onedal._config import _get_config
 from onedal.basic_statistics import (
     IncrementalBasicStatistics as onedal_IncrementalBasicStatistics,
 )
 
+from .._config import get_config
 from .._device_offload import dispatch
 from .._utils import IntelEstimator, PatchingConditionsChain
 
@@ -195,7 +195,7 @@ class IncrementalBasicStatistics(IntelEstimator, BaseEstimator):
     def _onedal_partial_fit(self, X, sample_weight=None, queue=None, check_input=True):
         first_pass = not hasattr(self, "n_samples_seen_") or self.n_samples_seen_ == 0
 
-        use_raw_input = _get_config()["use_raw_input"]
+        use_raw_input = get_config()["use_raw_input"]
         # never check input when using raw input
         check_input &= use_raw_input is False
         if check_input:

@@ -23,7 +23,6 @@ from sklearn.utils.validation import _check_sample_weight
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
-from onedal._config import _get_config
 from onedal.cluster import DBSCAN as onedal_DBSCAN
 
 from .._config import get_config
@@ -91,7 +90,7 @@ class DBSCAN(_sklearn_DBSCAN, BaseDBSCAN):
         self.n_jobs = n_jobs
 
     def _onedal_fit(self, X, y, sample_weight=None, queue=None):
-        if _get_config()["use_raw_input"] is False:
+        if get_config()["use_raw_input"] is False:
             if sklearn_check_version("1.0"):
                 X = validate_data(self, X, force_all_finite=False)
 
