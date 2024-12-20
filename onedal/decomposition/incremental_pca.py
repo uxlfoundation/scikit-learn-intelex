@@ -148,7 +148,6 @@ class IncrementalPCA(BasePCA):
             X = _check_array(X, dtype=[np.float64, np.float32], ensure_2d=True)
 
         n_samples, n_features = X.shape
-
         first_pass = not hasattr(self, "components_")
         if first_pass:
             self.components_ = None
