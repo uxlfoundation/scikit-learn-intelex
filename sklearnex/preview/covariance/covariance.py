@@ -23,6 +23,7 @@ from sklearn.utils import check_array
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from onedal._config import _get_config
 from onedal.common.hyperparameters import get_hyperparameters
 from onedal.covariance import EmpiricalCovariance as onedal_EmpiricalCovariance
 from sklearnex import config_context
@@ -95,10 +96,11 @@ class EmpiricalCovariance(_sklearn_EmpiricalCovariance):
     def fit(self, X, y=None):
         if sklearn_check_version("1.2"):
             self._validate_params()
-        if sklearn_check_version("0.23"):
-            X = validate_data(self, X, force_all_finite=False)
-        else:
-            X = check_array(X, force_all_finite=False)
+        if _get_config()["use_raw_input"] is False:
+            if sklearn_check_version("0.23"):
+                X = validate_data(self, X, force_all_finite=False)
+            else:
+                X = check_array(X, force_all_finite=False)
 
         dispatch(
             self,

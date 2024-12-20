@@ -23,22 +23,33 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
+from sklearnex._config import config_context
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 @pytest.mark.parametrize("macro_block", [None, 1024])
 @pytest.mark.parametrize("assume_centered", [True, False])
-def test_sklearnex_import_covariance(dataframe, queue, macro_block, assume_centered):
+@pytest.mark.parametrize("use_raw_input", [True, False])
+def test_sklearnex_import_covariance(
+    skip_unsupported_raw_input,
+    dataframe,
+    queue,
+    macro_block,
+    assume_centered,
+    use_raw_input,
+):
     from sklearnex.preview.covariance import EmpiricalCovariance
 
-    X = np.array([[0, 1], [0, 1]])
+    X = np.array([[0, 1], [0, 1]], dtype=np.float32)
 
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     empcov = EmpiricalCovariance(assume_centered=assume_centered)
     if daal_check_version((2024, "P", 0)) and macro_block is not None:
         hparams = EmpiricalCovariance.get_hyperparameters("fit")
         hparams.cpu_macro_block = macro_block
-    result = empcov.fit(X)
+
+    with config_context(use_raw_input=use_raw_input):
+        result = empcov.fit(X)
 
     expected_covariance = np.array([[0, 0], [0, 0]])
     expected_means = np.array([0, 0])
@@ -51,10 +62,12 @@ def test_sklearnex_import_covariance(dataframe, queue, macro_block, assume_cente
     assert_allclose(expected_covariance, result.covariance_)
     assert_allclose(expected_means, result.location_)
 
-    X = np.array([[1, 2], [3, 6]])
+    X = np.array([[1, 2], [3, 6]], dtype=np.float32)
 
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    result = empcov.fit(X)
+
+    with config_context(use_raw_input=use_raw_input):
+        result = empcov.fit(X)
 
     if assume_centered:
         expected_covariance = np.array([[5, 10], [10, 20]])
