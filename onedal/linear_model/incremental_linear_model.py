@@ -75,10 +75,7 @@ class IncrementalLinearRegression(BaseLinearRegression):
         if not hasattr(self, "_params"):
             self._params = self._get_onedal_params(X.dtype)
 
-        use_raw_input = _get_config().get("use_raw_input") is True
-        if use_raw_input and self._sua_iface is not None:
-            queue = X.sycl_queue
-        if not use_raw_input:
+        if _get_config().get("use_raw_input") is False:
             X, y = _check_X_y(
                 X,
                 y,
@@ -88,16 +85,14 @@ class IncrementalLinearRegression(BaseLinearRegression):
             )
             y = np.asarray(y, dtype=X.dtype)
 
-        X_table, y_table = to_table(X, y, queue=queue)
-
         module = self._get_backend("linear_model", "regression")
 
-        self._sua_iface, self._xp, _ = _get_sycl_namespace(X, y)
-
-        self._queue = queue
         policy = self._get_policy(queue, X)
+        queue = self._queue = getattr(policy, "_queue", None)
 
         self.n_features_in_ = _num_features(X, fallback_1d=True)
+
+        X_table, y_table = to_table(X, y, queue=queue)
 
         hparams = get_hyperparameters("linear_regression", "train")
         if hparams is not None and not hparams.is_default:
@@ -129,7 +124,6 @@ class IncrementalLinearRegression(BaseLinearRegression):
         self : object
             Returns the instance itself.
         """
-
         if queue is not None:
             policy = self._get_policy(queue)
         else:
@@ -146,23 +140,13 @@ class IncrementalLinearRegression(BaseLinearRegression):
 
         self._onedal_model = result.model
 
-        if _get_config().get("use_raw_input") is True:
-            packed_coefficients = from_table(
-                result.model.packed_coefficients,
-                sua_iface=self._sua_iface,
-                sycl_queue=self._queue,
-                xp=self._xp,
-            )
-            self.coef_, self.intercept_ = (
-                self._xp.squeeze(packed_coefficients[:, 1:]),
-                self._xp.squeeze(packed_coefficients[:, 0]),
-            )
-        else:
-            packed_coefficients = from_table(result.model.packed_coefficients)
-            self.coef_, self.intercept_ = (
-                packed_coefficients[:, 1:].squeeze(),
-                packed_coefficients[:, 0].squeeze(),
-            )
+        packed_coefficients = from_table(
+            result.model.packed_coefficients, sycl_queue=self._queue
+        )
+        self.coef_, self.intercept_ = (
+            packed_coefficients[:, 1:].squeeze(),
+            packed_coefficients[:, 0].squeeze(),
+        )
 
         return self
 

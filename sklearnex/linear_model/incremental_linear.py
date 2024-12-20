@@ -28,6 +28,7 @@ from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal.linear_model import (
     IncrementalLinearRegression as onedal_IncrementalLinearRegression,
 )
+from sklearnex._config import get_config
 
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import Interval
@@ -240,31 +241,31 @@ class IncrementalLinearRegression(
         self._need_to_finalize = False
 
     def _onedal_fit(self, X, y, queue=None):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
-
-        if sklearn_check_version("1.0"):
-            X, y = validate_data(
-                self,
-                X,
-                y,
-                dtype=[np.float64, np.float32],
-                copy=self.copy_X,
-                multi_output=True,
-                ensure_2d=True,
-            )
-        else:
-            X = check_array(
-                X,
-                dtype=[np.float64, np.float32],
-                copy=self.copy_X,
-            )
-            y = check_array(
-                y,
-                dtype=[np.float64, np.float32],
-                copy=False,
-                ensure_2d=False,
-            )
+        if get_config()["use_raw_input"] is False:
+            if sklearn_check_version("1.2"):
+                self._validate_params()
+            if sklearn_check_version("1.0"):
+                X, y = validate_data(
+                    self,
+                    X,
+                    y,
+                    dtype=[np.float64, np.float32],
+                    copy=self.copy_X,
+                    multi_output=True,
+                    ensure_2d=True,
+                )
+            else:
+                X = check_array(
+                    X,
+                    dtype=[np.float64, np.float32],
+                    copy=self.copy_X,
+                )
+                y = check_array(
+                    y,
+                    dtype=[np.float64, np.float32],
+                    copy=False,
+                    ensure_2d=False,
+                )
 
         n_samples, n_features = X.shape
 
@@ -282,9 +283,6 @@ class IncrementalLinearRegression(
         for batch in gen_batches(n_samples, self.batch_size_):
             X_batch, y_batch = X[batch], y[batch]
             self._onedal_partial_fit(X_batch, y_batch, check_input=False, queue=queue)
-
-        if sklearn_check_version("1.2"):
-            self._validate_params()
 
         # finite check occurs on onedal side
         self.n_features_in_ = n_features
