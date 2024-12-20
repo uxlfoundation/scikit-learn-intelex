@@ -24,13 +24,15 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
+from sklearnex._config import config_context
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_sklearnex_import(dataframe, queue):
+@pytest.mark.parametrize("use_raw_input", [True, False])
+def test_sklearnex_import(skip_unsupported_raw_input, dataframe, queue, use_raw_input):
     from sklearnex.decomposition import PCA
 
-    X = [[-1, -1], [-2, -1], [-3, -2], [1, 1], [2, 1], [3, 2]]
+    X = np.array([[-1, -1], [-2, -1], [-3, -2], [1, 1], [2, 1], [3, 2]], dtype=np.float32)
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     X_transformed_expected = [
         [-1.38340578, -0.2935787],
@@ -42,9 +44,12 @@ def test_sklearnex_import(dataframe, queue):
     ]
 
     pca = PCA(n_components=2, svd_solver="covariance_eigh")
-    pca.fit(X)
-    X_transformed = pca.transform(X)
-    X_fit_transformed = PCA(n_components=2, svd_solver="covariance_eigh").fit_transform(X)
+    with config_context(use_raw_input=use_raw_input):
+        pca.fit(X)
+        X_transformed = pca.transform(X)
+        X_fit_transformed = PCA(
+            n_components=2, svd_solver="covariance_eigh"
+        ).fit_transform(X)
 
     if daal_check_version((2024, "P", 100)):
         assert "sklearnex" in pca.__module__
