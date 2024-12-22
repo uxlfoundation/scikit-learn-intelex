@@ -26,6 +26,7 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
+from sklearnex._config import config_context
 from sklearnex.tests.utils import _IS_INTEL
 
 
@@ -34,8 +35,16 @@ from sklearnex.tests.utils import _IS_INTEL
 @pytest.mark.parametrize("macro_block", [None, 1024])
 @pytest.mark.parametrize("overdetermined", [False, True])
 @pytest.mark.parametrize("multi_output", [False, True])
+@pytest.mark.parametrize("use_raw_input", [True, False])
 def test_sklearnex_import_linear(
-    dataframe, queue, dtype, macro_block, overdetermined, multi_output
+    skip_unsupported_raw_input,
+    dataframe,
+    queue,
+    dtype,
+    macro_block,
+    overdetermined,
+    multi_output,
+    use_raw_input,
 ):
     if (not overdetermined or multi_output) and not daal_check_version((2025, "P", 1)):
         pytest.skip("Functionality introduced in later versions")
@@ -71,7 +80,9 @@ def test_sklearnex_import_linear(
     y_list = y.tolist()
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     y = _convert_to_dataframe(y, sycl_queue=queue, target_df=dataframe)
-    linreg.fit(X, y)
+
+    with config_context(use_raw_input=use_raw_input):
+        linreg.fit(X, y)
 
     assert hasattr(linreg, "_onedal_estimator")
     assert "sklearnex" in linreg.__module__

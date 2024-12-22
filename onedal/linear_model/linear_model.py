@@ -200,13 +200,7 @@ class LinearRegression(BaseLinearRegression):
         """
         module = self._get_backend("linear_model", "regression")
 
-        sua_iface, xp, _ = _get_sycl_namespace(X)
-        use_raw_input = _get_config().get("use_raw_input") is True
-        if use_raw_input and sua_iface is not None:
-            queue = X.sycl_queue
-
-        if not use_raw_input:
-            # TODO Fix _check_X_y to make sure this conversion is there
+        if _get_config()["use_raw_input"] is False:
             if not isinstance(X, np.ndarray):
                 X = np.asarray(X)
 
@@ -220,12 +214,15 @@ class LinearRegression(BaseLinearRegression):
             X, y = _check_X_y(X, y, force_all_finite=False, accept_2d_y=True)
 
         policy = self._get_policy(queue, X, y)
+        if _get_config()["use_raw_input"] is True:
+            # make sure we are using the queue from the on-device provided data
+            queue = getattr(policy, "_queue", queue)
+
+        X_table, y_table = to_table(X, y, queue=queue)
 
         self.n_features_in_ = _num_features(X, fallback_1d=True)
 
-        X_table, y_table = to_table(X, y, queue=queue)
         params = self._get_onedal_params(X_table.dtype)
-
         hparams = get_hyperparameters("linear_regression", "train")
         if hparams is not None and not hparams.is_default:
             result = module.train(policy, params, hparams.backend, X_table, y_table)
@@ -235,7 +232,7 @@ class LinearRegression(BaseLinearRegression):
         self._onedal_model = result.model
 
         packed_coefficients = from_table(
-            result.model.packed_coefficients, sua_iface=sua_iface, sycl_queue=queue, xp=xp
+            result.model.packed_coefficients, sycl_queue=queue
         )
         self.coef_, self.intercept_ = (
             packed_coefficients[:, 1:],
@@ -243,7 +240,7 @@ class LinearRegression(BaseLinearRegression):
         )
 
         if self.coef_.shape[0] == 1 and y.ndim == 1:
-            self.coef_ = xp.reshape(self.coef_, (-1,))
+            self.coef_ = np.reshape(self.coef_, (-1,))
             self.intercept_ = self.intercept_[0]
 
         return self
