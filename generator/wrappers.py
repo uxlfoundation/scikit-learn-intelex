@@ -106,6 +106,8 @@ no_constructor = {
     "algorithms::engines::mt19937::Batch": {"seed": ["size_t", "seed"]},
     "algorithms::engines::mt2203::Batch": {"seed": ["size_t", "seed"]},
     "algorithms::engines::mcg59::Batch": {"seed": ["size_t", "seed"]},
+    "algorithms::engines::mrg32k3a::Batch": {"seed": ["size_t", "seed"]},
+    "algorithms::engines::philox4x32x10::Batch": {"seed": ["size_t", "seed"]},
 }
 
 # Some algorithms require a setup function, to provide input without actual compute
@@ -883,6 +885,12 @@ no_warn = {
         "ParameterType",
     ],
     "algorithms::engines::mt2203": [
+        "ParameterType",
+    ],
+    "algorithms::engines::mrg32k3a": [
+        "ParameterType",
+    ],
+    "algorithms::engines::philox4x32x10": [
         "ParameterType",
     ],
     "algorithms::gbt": [
