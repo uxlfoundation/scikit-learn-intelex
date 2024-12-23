@@ -54,3 +54,18 @@ def is_dpnp_available(version=None):
 
 dpctl_available = is_dpctl_available()
 dpnp_available = is_dpnp_available()
+
+
+if dpnp_available:
+    import dpnp
+if dpctl_available:
+    import dpctl.tensor as dpt
+
+
+def get_unique_values_with_dpep(X):
+    if dpnp_available:
+        return dpnp.unique(X)
+    elif dpctl_available:
+        return dpt.unique_values(X)
+    else:
+        raise RuntimeError("No DPEP package available to provide `unique` function.")

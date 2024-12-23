@@ -28,6 +28,7 @@ from onedal.covariance import EmpiricalCovariance as onedal_EmpiricalCovariance
 from sklearnex import config_context
 from sklearnex.metrics import pairwise_distances
 
+from ..._config import get_config
 from ..._device_offload import dispatch, wrap_output_data
 from ..._utils import PatchingConditionsChain, register_hyperparameters
 
@@ -95,10 +96,11 @@ class EmpiricalCovariance(_sklearn_EmpiricalCovariance):
     def fit(self, X, y=None):
         if sklearn_check_version("1.2"):
             self._validate_params()
-        if sklearn_check_version("0.23"):
-            X = validate_data(self, X, force_all_finite=False)
-        else:
-            X = check_array(X, force_all_finite=False)
+        if get_config()["use_raw_input"] is False:
+            if sklearn_check_version("0.23"):
+                X = validate_data(self, X, force_all_finite=False)
+            else:
+                X = check_array(X, force_all_finite=False)
 
         dispatch(
             self,

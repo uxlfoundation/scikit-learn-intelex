@@ -24,6 +24,7 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
+from sklearnex import config_context
 from sklearnex.preview.decomposition import IncrementalPCA
 
 
@@ -245,8 +246,18 @@ def test_sklearnex_fit_transform_on_gold_data(
 @pytest.mark.parametrize("row_count", [100, 1000])
 @pytest.mark.parametrize("column_count", [10, 100])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("use_raw_input", [True, False])
 def test_sklearnex_partial_fit_on_random_data(
-    dataframe, queue, n_components, whiten, num_blocks, row_count, column_count, dtype
+    skip_unsupported_raw_input,
+    dataframe,
+    queue,
+    n_components,
+    whiten,
+    num_blocks,
+    row_count,
+    column_count,
+    dtype,
+    use_raw_input,
 ):
     seed = 81
     gen = np.random.default_rng(seed)
@@ -254,12 +265,12 @@ def test_sklearnex_partial_fit_on_random_data(
     X = X.astype(dtype=dtype)
     X_split = np.array_split(X, num_blocks)
     incpca = IncrementalPCA(n_components=n_components, whiten=whiten)
-
-    for i in range(num_blocks):
-        X_split_df = _convert_to_dataframe(
-            X_split[i], sycl_queue=queue, target_df=dataframe
-        )
-        incpca.partial_fit(X_split_df)
+    with config_context(use_raw_input=use_raw_input):
+        for i in range(num_blocks):
+            X_split_df = _convert_to_dataframe(
+                X_split[i], sycl_queue=queue, target_df=dataframe
+            )
+            incpca.partial_fit(X_split_df)
 
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     transformed_data = incpca.transform(X_df)

@@ -92,15 +92,21 @@ def test_sklearnex_import_for_sparse_data(queue, algorithm, init):
 @pytest.mark.parametrize(
     "algorithm", ["lloyd" if sklearn_check_version("1.1") else "full", "elkan"]
 )
-def test_results_on_dense_gold_data(dataframe, queue, algorithm):
+@pytest.mark.parametrize("use_raw_input", [True, False])
+def test_results_on_dense_gold_data(
+    skip_unsupported_raw_input, dataframe, queue, algorithm, use_raw_input
+):
     from sklearnex.cluster import KMeans
 
-    X_train = np.array([[1, 2], [1, 4], [1, 0], [10, 2], [10, 4], [10, 0]])
-    X_test = np.array([[0, 0], [12, 3]])
+    X_train = np.array(
+        [[1, 2], [1, 4], [1, 0], [10, 2], [10, 4], [10, 0]], dtype=np.float32
+    )
+    X_test = np.array([[0, 0], [12, 3]], dtype=np.float32)
     X_train_df = _convert_to_dataframe(X_train, sycl_queue=queue, target_df=dataframe)
     X_test_df = _convert_to_dataframe(X_test, sycl_queue=queue, target_df=dataframe)
 
-    kmeans = KMeans(n_clusters=2, random_state=0, algorithm=algorithm).fit(X_train_df)
+    with config_context(use_raw_input=use_raw_input):
+        kmeans = KMeans(n_clusters=2, random_state=0, algorithm=algorithm).fit(X_train_df)
 
     if queue and queue.sycl_device.is_gpu:
         # KMeans Init Dense GPU implementation is different from CPU
@@ -112,7 +118,10 @@ def test_results_on_dense_gold_data(dataframe, queue, algorithm):
         expected_cluster_centers = np.array([[10.0, 2.0], [1.0, 2.0]], dtype=np.float32)
         expected_inertia = 16.0
 
-    assert_allclose(expected_cluster_labels, _as_numpy(kmeans.predict(X_test_df)))
+    with config_context(use_raw_input=use_raw_input):
+        result = kmeans.predict(X_test_df)
+
+    assert_allclose(expected_cluster_labels, _as_numpy(result))
     assert_allclose(expected_cluster_centers, _as_numpy(kmeans.cluster_centers_))
     assert expected_inertia == kmeans.inertia_
 

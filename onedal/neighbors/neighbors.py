@@ -28,6 +28,7 @@ from daal4py import (
     kdtree_knn_classification_training,
 )
 
+from .._config import _get_config
 from ..common._base import BaseEstimator
 from ..common._estimator_checks import _check_is_fitted, _is_classifier, _is_regressor
 from ..common._mixin import ClassifierMixin, RegressorMixin
@@ -462,7 +463,8 @@ class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
         return super()._fit(X, y, queue=queue)
 
     def predict(self, X, queue=None):
-        X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
+        if not _get_config()["use_raw_input"]:
+            X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
         onedal_model = getattr(self, "_onedal_model", None)
         n_features = getattr(self, "n_features_in_", None)
         n_samples_fit_ = getattr(self, "n_samples_fit_", None)
