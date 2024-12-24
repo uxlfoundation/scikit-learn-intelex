@@ -1,0 +1,47 @@
+name: publish
+'on':
+  push:
+    branches:
+      ktp-docs-ci
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y pandoc git
+        pip3 install -r requirements-doc.txt
+        pip3 install scikit-learn-intelex
+        cd doc
+        source set_version.sh
+        echo Generating version $DOC_VERSION
+    - name: build docs
+      run: |
+        cd doc
+        chmod +x build-doc.sh
+        ./build-doc.sh
+        mv _build/scikit-learn-intelex ../../output
+    - name: deploy docs
+      run: |
+        cd doc
+        source set_version.sh
+        cd ..
+        git fetch
+        git checkout -- doc/build-doc.sh
+        git checkout gh-pages
+        rm -rf $DOC_VERSION
+        mv -f ../output/$DOC_VERSION .
+        mv ../output/versions.json .
+        mv ../output/index.html .
+        rm -rf doc
+        git config --global user.name "${GITHUB_ACTOR}"
+        git config --global user.email "${GITHUB_ACTOR}@github.com"
+        git add .
+        git commit -m "latest HTML output"
+        git push -f https://${GITHUB_ACTOR}:${{secrets.GITHUB_TOKEN}}@github.com/${GITHUB_REPOSITORY}.git HEAD:gh-pages
+
