@@ -19,12 +19,12 @@ from onedal._device_offload import support_input_format
 
 # Note: `sklearnex.linear_model.ElasticNet` only has functional
 # sycl GPU support. No GPU device will be offloaded.
-ElasticNet.fit = support_input_format(queue_param=False)(ElasticNet.fit)
-ElasticNet.predict = support_input_format(queue_param=False)(ElasticNet.predict)
-ElasticNet.score = support_input_format(queue_param=False)(ElasticNet.score)
+ElasticNet.fit = support_input_format(ElasticNet.fit)
+ElasticNet.predict = support_input_format(ElasticNet.predict)
+ElasticNet.score = support_input_format(ElasticNet.score)
 
 # Note: `sklearnex.linear_model.Lasso` only has functional
 # sycl GPU support. No GPU device will be offloaded.
-Lasso.fit = support_input_format(queue_param=False)(Lasso.fit)
-Lasso.predict = support_input_format(queue_param=False)(Lasso.predict)
-Lasso.score = support_input_format(queue_param=False)(Lasso.score)
+Lasso.fit = support_input_format(Lasso.fit)
+Lasso.predict = support_input_format(Lasso.predict)
+Lasso.score = support_input_format(Lasso.score)

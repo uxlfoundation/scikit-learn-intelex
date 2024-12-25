@@ -21,11 +21,13 @@ import numpy as np
 from sklearn.decomposition._pca import _infer_dimension
 from sklearn.utils.extmath import stable_cumsum
 
-from ..common._base import BaseEstimator
+from onedal._device_offload import supports_queue
+from onedal.common._backend import bind_default_backend
+
 from ..datatypes import from_table, to_table
 
 
-class BasePCA(BaseEstimator, metaclass=ABCMeta):
+class BasePCA(metaclass=ABCMeta):
     """
     Base class for PCA oneDAL implementation.
     """
@@ -41,6 +43,16 @@ class BasePCA(BaseEstimator, metaclass=ABCMeta):
         self.method = method
         self.is_deterministic = is_deterministic
         self.whiten = whiten
+
+    # provides direct access to the backend model constructor
+    @bind_default_backend("decomposition.dim_reduction")
+    def model(self): ...
+
+    @bind_default_backend("decomposition.dim_reduction")
+    def train(self, params, X): ...
+
+    @bind_default_backend("decomposition.dim_reduction")
+    def infer(self, params, X, model): ...
 
     def _get_onedal_params(self, data, stage=None):
         if stage is None:
@@ -119,7 +131,7 @@ class BasePCA(BaseEstimator, metaclass=ABCMeta):
             return 0.0
 
     def _create_model(self):
-        m = self._get_backend("decomposition", "dim_reduction", "model")
+        m = self.model()
         m.eigenvectors = to_table(self.components_)
         m.means = to_table(self.mean_)
         if self.whiten:
@@ -127,26 +139,23 @@ class BasePCA(BaseEstimator, metaclass=ABCMeta):
         self._onedal_model = m
         return m
 
+    @supports_queue
     def predict(self, X, queue=None):
-        policy = self._get_policy(queue, X)
         model = self._create_model()
         X_table = to_table(X, queue=queue)
         params = self._get_onedal_params(X_table, stage="predict")
-
-        result = self._get_backend(
-            "decomposition", "dim_reduction", "infer", policy, params, model, X_table
-        )
+        result = self.infer(params, model, to_table(X))
         return from_table(result.transformed_data)
 
 
 class PCA(BasePCA):
 
+    @supports_queue
     def fit(self, X, y=None, queue=None):
         n_samples, n_features = X.shape
         n_sf_min = min(n_samples, n_features)
         self._validate_n_components(self.n_components, n_samples, n_features)
 
-        policy = self._get_policy(queue, X)
         # TODO: investigate why np.ndarray with OWNDATA=FALSE flag
         # fails to be converted to oneDAL table
         if isinstance(X, np.ndarray) and not X.flags["OWNDATA"]:
@@ -154,9 +163,7 @@ class PCA(BasePCA):
 
         X = to_table(X, queue=queue)
         params = self._get_onedal_params(X)
-        result = self._get_backend(
-            "decomposition", "dim_reduction", "train", policy, params, X
-        )
+        result = self.train(params, X)
 
         self.mean_ = from_table(result.means).ravel()
         self.variances_ = from_table(result.variances)
@@ -168,10 +175,6 @@ class PCA(BasePCA):
         ).ravel()
         self.n_samples_ = n_samples
         self.n_features_ = n_features
-
-        U = None
-        S = self.singular_values_
-        Vt = self.components_
 
         n_components = self._resolve_n_components_for_result(X.shape)
         self.n_components_ = n_components

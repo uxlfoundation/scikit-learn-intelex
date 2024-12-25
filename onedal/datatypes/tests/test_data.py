@@ -19,9 +19,11 @@ import pytest
 import scipy.sparse as sp
 from numpy.testing import assert_allclose
 
-from onedal import _backend, _is_dpc_backend
+from onedal import _default_backend, _dpc_backend
 from onedal.datatypes import from_table, to_table
 from onedal.utils._dpep_helpers import dpctl_available
+
+backend = _dpc_backend or _default_backend
 
 if dpctl_available:
     from onedal.datatypes.tests.common import (
@@ -53,29 +55,25 @@ unsupported_data_shapes = [
 ORDER_DICT = {"F": np.asfortranarray, "C": np.ascontiguousarray}
 
 
-if _is_dpc_backend:
+if backend.is_dpc:
     from daal4py.sklearn._utils import get_dtype
-    from onedal.cluster.dbscan import BaseDBSCAN
-    from onedal.common._policy import _get_policy
+    from onedal.cluster.dbscan import DBSCAN
 
     class DummyEstimatorWithTableConversions:
 
         def fit(self, X, y=None):
             sua_iface, xp, _ = _get_sycl_namespace(X)
-            policy = _get_policy(X.sycl_queue, None)
-            bs_DBSCAN = BaseDBSCAN()
+            dbscan = DBSCAN()
             types = [xp.float32, xp.float64]
             if get_dtype(X) not in types:
                 X = xp.astype(X, dtype=xp.float64)
             dtype = get_dtype(X)
-            params = bs_DBSCAN._get_onedal_params(dtype)
+            params = dbscan._get_onedal_params(dtype)
             X_table = to_table(X)
             # TODO:
             # check other candidates for the dummy base oneDAL func.
             # oneDAL backend func is needed to check result table checks.
-            result = _backend.dbscan.clustering.compute(
-                policy, params, X_table, to_table(None)
-            )
+            result = dbscan.compute(params, X_table, to_table(None))
             result_responses_table = result.responses
             result_responses_df = from_table(
                 result_responses_table,
@@ -231,7 +229,7 @@ def test_conversion_to_table(dtype):
     reason="dpctl is required for checks.",
 )
 @pytest.mark.skipif(
-    not _is_dpc_backend,
+    not backend.is_dpc,
     reason="__sycl_usm_array_interface__ support requires DPC backend.",
 )
 @pytest.mark.parametrize(
@@ -267,7 +265,7 @@ def test_input_sua_iface_zero_copy(dataframe, queue, order, dtype):
     reason="dpctl is required for checks.",
 )
 @pytest.mark.skipif(
-    not _is_dpc_backend,
+    not backend.is_dpc,
     reason="__sycl_usm_array_interface__ support requires DPC backend.",
 )
 @pytest.mark.parametrize(
@@ -324,7 +322,7 @@ def test_table_conversions(dataframe, queue, order, data_shape, dtype):
 
 
 @pytest.mark.skipif(
-    not _is_dpc_backend,
+    not backend.is_dpc,
     reason="__sycl_usm_array_interface__ support requires DPC backend.",
 )
 @pytest.mark.parametrize(
@@ -344,7 +342,7 @@ def test_sua_iface_interop_invalid_shape(dataframe, queue, data_shape):
 
 
 @pytest.mark.skipif(
-    not _is_dpc_backend,
+    not backend.is_dpc,
     reason="__sycl_usm_array_interface__ support requires DPC backend.",
 )
 @pytest.mark.parametrize(
@@ -376,7 +374,7 @@ def test_sua_iface_interop_unsupported_dtypes(dataframe, queue, dtype):
     "dataframe,queue", get_dataframes_and_queues("numpy,dpctl,dpnp", "cpu,gpu")
 )
 def test_to_table_non_contiguous_input(dataframe, queue):
-    if dataframe in "dpnp,dpctl" and not _is_dpc_backend:
+    if dataframe in "dpnp,dpctl" and not backend.is_dpc:
         pytest.skip("__sycl_usm_array_interface__ support requires DPC backend.")
     X, _ = np.mgrid[:10, :10]
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
@@ -389,7 +387,7 @@ def test_to_table_non_contiguous_input(dataframe, queue):
 
 
 @pytest.mark.skipif(
-    _is_dpc_backend,
+    backend.is_dpc,
     reason="Required check should be done if no DPC backend.",
 )
 @pytest.mark.parametrize(
@@ -407,7 +405,7 @@ def test_sua_iface_interop_if_no_dpc_backend(dataframe, queue, dtype):
 
 
 @pytest.mark.skipif(
-    not _is_dpc_backend, reason="Requires DPC backend for dtype conversion"
+    not backend.is_dpc, reason="Requires DPC backend for dtype conversion"
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("sparse", [True, False])

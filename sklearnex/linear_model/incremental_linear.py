@@ -233,10 +233,10 @@ class IncrementalLinearRegression(
             if is_underdetermined:
                 raise ValueError("Not enough samples for oneDAL")
 
-    def _onedal_finalize_fit(self, queue=None):
+    def _onedal_finalize_fit(self):
         assert hasattr(self, "_onedal_estimator")
         self._onedal_validate_underdetermined(self.n_samples_seen_, self.n_features_in_)
-        self._onedal_estimator.finalize_fit(queue=queue)
+        self._onedal_estimator.finalize_fit()
         self._need_to_finalize = False
 
     def _onedal_fit(self, X, y, queue=None):
@@ -294,7 +294,7 @@ class IncrementalLinearRegression(
                 "Only one sample available. You may want to reshape your data array"
             )
 
-        self._onedal_finalize_fit(queue=queue)
+        self._onedal_finalize_fit()
         return self
 
     @property

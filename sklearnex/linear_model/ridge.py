@@ -35,7 +35,7 @@ if daal_check_version((2024, "P", 600)):
         from sklearn.utils import check_scalar
 
     from onedal.linear_model import Ridge as onedal_Ridge
-    from onedal.utils import _num_features, _num_samples
+    from onedal.utils.validation import _num_features, _num_samples
 
     from .._device_offload import dispatch, wrap_output_data
     from .._utils import PatchingConditionsChain
@@ -383,8 +383,8 @@ else:
     from daal4py.sklearn.linear_model import Ridge
     from onedal._device_offload import support_input_format
 
-    Ridge.fit = support_input_format(queue_param=False)(Ridge.fit)
-    Ridge.predict = support_input_format(queue_param=False)(Ridge.predict)
-    Ridge.score = support_input_format(queue_param=False)(Ridge.score)
+    Ridge.fit = support_input_format(Ridge.fit)
+    Ridge.predict = support_input_format(Ridge.predict)
+    Ridge.score = support_input_format(Ridge.score)
 
     logging.warning("Ridge requires oneDAL version >= 2024.6 but it was not found")

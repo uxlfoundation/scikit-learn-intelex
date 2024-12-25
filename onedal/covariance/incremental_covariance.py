@@ -13,12 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
+
 import numpy as np
 
-from daal4py.sklearn._utils import daal_check_version, get_dtype
+from daal4py.sklearn._utils import daal_check_version
+from onedal._device_offload import SyclQueueManager, supports_queue
+from onedal.common._backend import bind_default_backend
 
 from ..datatypes import from_table, to_table
-from ..utils import _check_array
+from ..utils.validation import _check_array
 from .covariance import BaseEmpiricalCovariance
 
 
@@ -55,12 +58,21 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
     def __init__(self, method="dense", bias=False, assume_centered=False):
         super().__init__(method, bias, assume_centered)
         self._reset()
+        self._queue = None
+
+    @bind_default_backend("covariance")
+    def partial_compute(self, params, partial_result, X_table): ...
+
+    @bind_default_backend("covariance")
+    def partial_compute_result(self): ...
+
+    @bind_default_backend("covariance")
+    def finalize_compute(self, params, partial_result): ...
 
     def _reset(self):
         self._need_to_finalize = False
-        self._partial_result = self._get_backend(
-            "covariance", None, "partial_compute_result"
-        )
+        self._queue = None
+        self._partial_result = self.partial_compute_result()
 
     def __getstate__(self):
         # Since finalize_fit can't be dispatched without directly provided queue
@@ -73,6 +85,7 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
 
         return data
 
+    @supports_queue
     def partial_fit(self, X, y=None, queue=None):
         """
         Computes partial data for the covariance matrix
@@ -98,27 +111,19 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
         X = _check_array(X, dtype=[np.float64, np.float32], ensure_2d=True)
 
         self._queue = queue
-
-        policy = self._get_policy(queue, X)
-
         X_table = to_table(X, queue=queue)
 
         if not hasattr(self, "_dtype"):
             self._dtype = X_table.dtype
 
         params = self._get_onedal_params(self._dtype)
-        self._partial_result = self._get_backend(
-            "covariance",
-            None,
-            "partial_compute",
-            policy,
-            params,
-            self._partial_result,
-            X_table,
-        )
+        table_X = to_table(X)
+        self._partial_result = self.partial_compute(params, self._partial_result, table_X)
         self._need_to_finalize = True
+        # store the queue for when we finalize
+        self._queue = queue
 
-    def finalize_fit(self, queue=None):
+    def finalize_fit(self):
         """
         Finalizes covariance matrix and obtains `covariance_` and `location_`
         attributes from the current `_partial_result`.
@@ -135,19 +140,9 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
         """
         if self._need_to_finalize:
             params = self._get_onedal_params(self._dtype)
-            if queue is not None:
-                policy = self._get_policy(queue)
-            else:
-                policy = self._get_policy(self._queue)
+            with SyclQueueManager.manage_global_queue(self._queue):
+                result = self.finalize_compute(params, self._partial_result)
 
-            result = self._get_backend(
-                "covariance",
-                None,
-                "finalize_compute",
-                policy,
-                params,
-                self._partial_result,
-            )
             if daal_check_version((2024, "P", 1)) or (not self.bias):
                 self.covariance_ = from_table(result.cov_matrix)
             else:

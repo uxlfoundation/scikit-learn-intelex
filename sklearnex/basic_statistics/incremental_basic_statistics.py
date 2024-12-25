@@ -186,9 +186,9 @@ class IncrementalBasicStatistics(IntelEstimator, BaseEstimator):
         assert isinstance(onedal_options, str)
         return options
 
-    def _onedal_finalize_fit(self, queue=None):
+    def _onedal_finalize_fit(self):
         assert hasattr(self, "_onedal_estimator")
-        self._onedal_estimator.finalize_fit(queue=queue)
+        self._onedal_estimator.finalize_fit()
         self._need_to_finalize = False
 
     def _onedal_partial_fit(self, X, sample_weight=None, queue=None, check_input=True):
@@ -258,7 +258,7 @@ class IncrementalBasicStatistics(IntelEstimator, BaseEstimator):
 
         self.n_features_in_ = X.shape[1]
 
-        self._onedal_finalize_fit(queue=queue)
+        self._onedal_finalize_fit()
 
         return self
 
