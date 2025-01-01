@@ -352,7 +352,8 @@ def call_validate_data(text, estimator, method):
         idx = len(text["funcs"]) - 1 - text["funcs"][::-1].index("to_table")
         validfuncs = text["funcs"][:idx]
     except ValueError:
-        pytest.skip("onedal backend not used in this function")
+        raise
+        # pytest.skip("onedal backend not used in this function")
 
     validate_data = "validate_data" if sklearn_check_version("1.6") else "_validate_data"
 
