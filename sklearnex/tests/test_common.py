@@ -17,10 +17,11 @@
 import importlib.util
 import os
 import pathlib
+import pickle
 import pkgutil
 import re
+import subprocess
 import sys
-import trace
 
 import pytest
 from sklearn.utils import all_estimators
@@ -225,8 +226,39 @@ def _whitelist_to_blacklist():
 _TRACE_BLOCK_LIST = _whitelist_to_blacklist()
 
 
+class IsolatedTracer:
+    """This object allow for sklearnex tracing without impacting other processes
+    which are tracing python (e.g. coverage), which creates is an object meant to
+    run a trace in a subprocess using a sklearnex estimator with a specific method
+    and dataset"""
+
+    _blocklist = _TRACE_BLOCK_LIST
+
+    def __init__(self, est, X, y, method):
+        self._est = est
+        self._X = X
+        self._y = y
+        self._method = method
+
+    def __call__(self):
+        import trace
+
+        orig_modname = trace._modname
+        try:
+            trace._modname = _fullpath
+            tracer = trace.Trace(
+                count=0,
+                trace=1,
+                ignoredirs=self._blocklist,
+            )
+            # call trace on method with dataset
+            tracer.runfunc(call_method, self._est, self._method, self._X, self._y)
+        finally:
+            trace._modname = orig_modname
+
+
 @pytest.fixture
-def estimator_trace(estimator, method, cache, capsys, monkeypatch):
+def estimator_trace(estimator, method, cache):
     """Generate a trace of all function calls in calling estimator.method with cache.
 
     Parameters
@@ -270,17 +302,23 @@ def estimator_trace(estimator, method, cache, capsys, monkeypatch):
 
         # initialize tracer to have a more verbose module naming
         # this impacts ignoremods, but it is not used.
-        monkeypatch.setattr(trace, "_modname", _fullpath)
-        tracer = trace.Trace(
-            count=0,
-            trace=1,
-            ignoredirs=_TRACE_BLOCK_LIST,
-        )
-        # call trace on method with dataset
-        tracer.runfunc(call_method, est, method, X, y)
+        try:
+            pickle.dump(IsolatedTracer(est, X, y, method), "trace.p")
+            # collect trace for analysis
+            text = subprocess.run(
+                [
+                    sys.executable,
+                    "-c",
+                    "import pickle; pickle.load('trace.p')()",
+                ],
+                stdout=subprocess.PIPE,
+                text=True,
+            ).stdout
 
-        # collect trace for analysis
-        text = capsys.readouterr().out
+        finally:
+            # remove pickle file if it exists
+            os.remove("trace.p")
+
         for modulename, file in _TRACE_ALLOW_DICT.items():
             text = text.replace(file, modulename)
         regex_func = (
