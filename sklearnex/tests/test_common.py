@@ -315,7 +315,9 @@ def estimator_trace(estimator, method, cache):
                 text=True,
             ).stdout
 
+            print(text)
         finally:
+            os.listdir()
             # remove pickle file if it exists
             os.remove("trace.p")
 
