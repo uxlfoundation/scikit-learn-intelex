@@ -303,7 +303,7 @@ def estimator_trace(estimator, method, cache):
         # initialize tracer to have a more verbose module naming
         # this impacts ignoremods, but it is not used.
         try:
-            pickle.dump(IsolatedTracer(est, X, y, method), "trace.p")
+            pickle.dump(IsolatedTracer(est, X, y, method), open("trace.p", "wb"))
             # collect trace for analysis
             text = subprocess.run(
                 [
