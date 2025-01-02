@@ -48,20 +48,7 @@ jobs:
   pool:
     vmImage: 'ubuntu-22.04'
   steps:
-  - script: |
-      echo "##vso[task.setvariable variable=ISORT_VERSION]$(grep -zoP '(?<=isort\n    rev: ).*' .pre-commit-config.yaml)"
-      echo "##vso[task.setvariable variable=BLACK_VERSION]$(grep -zoP '(?<=black\n    rev: ).*' .pre-commit-config.yaml)"
-      echo "##vso[task.setvariable variable=PYTHON_LINT_VERSION]$(grep -oP -m 1 '(?<=python).*' .pre-commit-config.yaml)"
-    displayName: 'Collect lint versions'
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: $(PYTHON_LINT_VERSION)
-      addToPath: true
-  - script: |
-      python -m pip install --upgrade pip setuptools
-      pip install isort==${ISORT_VERSION} black[jupyter]==${BLACK_VERSION}
-      isort --profile black --check . && black --check .
-    displayName: 'Linting'
+  - template: linting.yml
 - job: LinuxCondaRecipe
   dependsOn: Lint
   timeoutInMinutes: 120
@@ -73,19 +60,7 @@ jobs:
   pool:
     vmImage: 'ubuntu-22.04'
   steps:
-  - script: |
-      conda config --add channels conda-forge
-      conda config --set channel_priority strict
-      conda update -y -q --all
-    displayName: "Conda update"
-  - script: |
-      conda create -y -q -n build-env conda-build conda-verify
-    displayName: "Conda create"
-  - script: |
-      . /usr/share/miniconda/etc/profile.d/conda.sh
-      conda activate build-env
-      conda build . --python $(PYTHON_VERSION) --numpy $(NUMPY_VERSION)
-    displayName: "Conda build and test"
+  - template: conda-recipe-lnx.yml
 - job: WindowsCondaRecipe
   dependsOn: Lint
   timeoutInMinutes: 120
@@ -97,20 +72,7 @@ jobs:
   pool:
     vmImage: 'windows-2022'
   steps:
-  - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
-    displayName: Add conda to PATH
-  - script: |
-      conda config --add channels conda-forge
-      conda config --set channel_priority strict
-      conda update -y -q --all
-    displayName: "Conda update"
-  - script: |
-      conda create -y -q -n build-env conda-build conda-verify
-    displayName: "Conda create"
-  - script: |
-      call activate build-env
-      conda build . --python $(PYTHON_VERSION) --numpy $(NUMPY_VERSION)
-    displayName: "Conda build and test"
+  - template: conda-recipe-win.yml
 - job: LinuxCondaEnv
   dependsOn: Lint
   timeoutInMinutes: 120
