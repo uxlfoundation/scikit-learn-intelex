@@ -229,6 +229,23 @@ _TRACE_BLOCK_LIST = _whitelist_to_blacklist()
 
 
 def sklearnex_trace(estimator, method):
+    """Generate a trace of all function calls in calling estimator.method.
+
+    Parameters
+    ----------
+    estimator : str
+        name of estimator which is a key from PATCHED_MODELS or
+
+    method : str
+        name of estimator method which is to be traced and stored
+
+    Returns
+    -------
+    text: str
+        Returns a string output (captured stdout of a python Trace call). It is a
+        modified version to be more informative, completed by a monkeypatching
+        of trace._modname.
+    """
     # get estimator
     try:
         est = PATCHED_MODELS[estimator]()
@@ -261,7 +278,11 @@ def sklearnex_trace(estimator, method):
         trace._modname = orig_modname
 
 
-def trace_daemon(pipe):
+def _trace_daemon(pipe):
+    """function interface for the other process. Information
+    exchanged using a multiprocess.Pipe"""
+    # a sent value with inherent conversion to False will break
+    # the while loop and complete the function
     while key := pipe.recv():
         text = ""
         try:
@@ -273,21 +294,42 @@ def trace_daemon(pipe):
 
 @pytest.fixture(scope="module")
 def isolated_trace():
+    """Generates a separate python process for isolated sklearnex traces.
+
+    It is a module scope fixture due to the overhead of importing all the
+    various dependencies and is done once before all the various tests.
+    Each test will first check a cached value, if not existent it will have
+    the waiting child process generate the trace and return the text for
+    caching on its behalf. The isolated process is stopped at test teardown.
+
+    Yields
+    -------
+    pipe_parent: multiprocess.Connection
+        one end of a duplex pipe to be used by other pytest fixtures for
+        communicating with the special isolated tracing python instance
+        for sklearnex estimators.
+    """
     try:
+        # force use of 'spawn' to guarantee a clean python environment
+        # from possible coverage arc tracing
         ctx = get_context("spawn")
         pipe_parent, pipe_child = ctx.Pipe()
-        p = ctx.Process(target=trace_daemon, args=(pipe_child,), daemon=True)
+        p = ctx.Process(target=_trace_daemon, args=(pipe_child,), daemon=True)
         p.start()
         yield pipe_parent
     finally:
+        # guarantee closing of the process via a try-catch-finally
+        # passing False terminates _trace_daemon's loop
+        pipe_parent.send(False)
         pipe_parent.close()
         pipe_child.close()
         p.terminate()
+        p.close()
 
 
 @pytest.fixture
 def estimator_trace(estimator, method, cache, isolated_trace):
-    """Generate a trace of all function calls in calling estimator.method with cache.
+    """Create cache of all function calls in calling estimator.method.
 
     Parameters
     ----------
@@ -299,9 +341,7 @@ def estimator_trace(estimator, method, cache, isolated_trace):
 
     cache: pytest.fixture (standard)
 
-    capsys: pytest.fixture (standard)
-
-    monkeypatch: pytest.fixture (standard)
+    isolated_trace: pytest.fixture (test_common.py)
 
     Returns
     -------
