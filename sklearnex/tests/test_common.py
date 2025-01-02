@@ -323,7 +323,7 @@ def isolated_trace():
         pipe_parent.send(False)
         pipe_parent.close()
         pipe_child.close()
-        p.terminate()
+        p.join()
         p.close()
 
 
