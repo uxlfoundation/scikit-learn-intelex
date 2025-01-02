@@ -20,7 +20,7 @@ steps:
     displayName: "Install codecov cli"
   - script: |
       PR="$(System.PullRequest.PullRequestId)"
-      SHA=$(git rev-parse HEAD)
+      SHA="$(git rev-parse HEAD)"
       VARARGS="-C ${SHA} -n azp-${SHA}-$(PYTHON_VERSION)-$(SKLEARN_VERSION)"
       if [ -n "${PR}" ]; then VARARGS="${VARARGS}-${PR} -P ${PR}"; fi
       ./codecov -v upload-process -Z -t $(CODECOV_TOKEN) $VARARGS -F azp -s ./coverage
