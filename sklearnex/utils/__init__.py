@@ -14,6 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 
-from .validation import assert_all_finite
+from .validation import _check_sample_weight, assert_all_finite, validate_data
 
 __all__ = ["assert_all_finite"]

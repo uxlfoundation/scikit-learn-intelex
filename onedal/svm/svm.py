@@ -354,7 +354,7 @@ class SVR(RegressorMixin, BaseSVM):
     ):
         super().__init__(
             C=C,
-            nu=0.5,
+            nu=0.0,
             epsilon=epsilon,
             kernel=kernel,
             degree=degree,
@@ -406,8 +406,8 @@ class SVC(ClassifierMixin, BaseSVM):
     ):
         super().__init__(
             C=C,
-            nu=0.5,
-            epsilon=0.0,
+            nu=0.0,
+            epsilon=0.0,  #  unused in BaseSVC
             kernel=kernel,
             degree=degree,
             gamma=gamma,
@@ -518,9 +518,9 @@ class NuSVC(ClassifierMixin, BaseSVM):
         **kwargs,
     ):
         super().__init__(
-            C=1.0,
+            C=0.0,
             nu=nu,
-            epsilon=0.0,
+            epsilon=0.0,  #  unused in libSVM
             kernel=kernel,
             degree=degree,
             gamma=gamma,

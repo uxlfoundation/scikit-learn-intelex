@@ -39,7 +39,8 @@ hparam_values = [
 @pytest.mark.parametrize("block, trees, rows, scale", hparam_values)
 def test_sklearnex_import_rf_classifier(dataframe, queue, block, trees, rows, scale):
     from sklearnex.ensemble import RandomForestClassifier
-
+    from sklearnex.utils.validation import validate_data
+    
     X, y = make_classification(
         n_samples=1000,
         n_features=4,
@@ -51,6 +52,8 @@ def test_sklearnex_import_rf_classifier(dataframe, queue, block, trees, rows, sc
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     y = _convert_to_dataframe(y, sycl_queue=queue, target_df=dataframe)
     rf = RandomForestClassifier(max_depth=2, random_state=0).fit(X, y)
+    # Test to see if this changes validation coverage
+    validate_data(rf, X, reset=False)
     hparams = RandomForestClassifier.get_hyperparameters("infer")
     if hparams and block is not None:
         hparams.block_size = block
