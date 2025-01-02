@@ -23,7 +23,7 @@ import re
 import sys
 import trace
 from contextlib import redirect_stdout
-from multiprocessing import Pipe, Process, set_start_method
+from multiprocessing import Pipe, Process, get_context
 
 import pytest
 from sklearn.utils import all_estimators
@@ -37,8 +37,6 @@ from sklearnex.tests.utils import (
     gen_dataset,
     gen_models_info,
 )
-
-set_start_method("spawn")  # use a clean python interpreter to separate the trace
 
 TARGET_OFFLOAD_ALLOWED_LOCATIONS = [
     "_config.py",
@@ -257,7 +255,7 @@ def sklearnex_trace(estimator, method):
         # call trace on method with dataset
         f = io.StringIO()
         with redirect_stdout(f):
-            tracer.runfunc(call_method, est, X, y)
+            tracer.runfunc(call_method, est, method, X, y)
         return f.getvalue()
     finally:
         trace._modname = orig_modname
@@ -275,12 +273,16 @@ def trace_daemon(pipe):
 
 @pytest.fixture(scope="module")
 def isolated_trace():
-    pipe_parent, pipe_child = Pipe()
-    p = Process(target=trace_daemon, args=(pipe_child,)).start()
-    yield pipe_parent
-    pipe_parent.close()
-    pipe_child.close()
-    p.close()
+    try:
+        ctx = get_context("spawn")
+        pipe_parent, pipe_child = ctx.Pipe()
+        p = ctx.Process(target=trace_daemon, args=(pipe_child,), daemon=True)
+        p.start()
+        yield pipe_parent
+    finally:
+        pipe_parent.close()
+        pipe_child.close()
+        p.terminate()
 
 
 @pytest.fixture
@@ -351,8 +353,7 @@ def call_validate_data(text, estimator, method):
         idx = len(text["funcs"]) - 1 - text["funcs"][::-1].index("to_table")
         validfuncs = text["funcs"][:idx]
     except ValueError:
-        raise
-        # pytest.skip("onedal backend not used in this function")
+        pytest.skip("onedal backend not used in this function")
 
     validate_data = "validate_data" if sklearn_check_version("1.6") else "_validate_data"
 
