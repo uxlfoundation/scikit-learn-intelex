@@ -15,16 +15,7 @@
 #===============================================================================
 steps:
   - script: |
-      echo "##vso[task.setvariable variable=ISORT_VERSION]$(grep -zoP '(?<=isort\n    rev: ).*' .pre-commit-config.yaml)"
-      echo "##vso[task.setvariable variable=BLACK_VERSION]$(grep -zoP '(?<=black\n    rev: ).*' .pre-commit-config.yaml)"
-      echo "##vso[task.setvariable variable=PYTHON_LINT_VERSION]$(grep -oP -m 1 '(?<=python).*' .pre-commit-config.yaml)"
-    displayName: 'Collect lint versions'
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: $(PYTHON_LINT_VERSION)
-      addToPath: true
-  - script: |
-      python -m pip install --upgrade pip setuptools
-      pip install isort==${ISORT_VERSION} black[jupyter]==${BLACK_VERSION}
-      isort --profile black --check . && black --check .
+      python -m pip install --upgrade pip pre-commit
+      pre-commit install
+      pre-commit run --all-files
     displayName: 'Linting'
