@@ -17,7 +17,6 @@
 import importlib.util
 import os
 import pathlib
-import pickle
 import pkgutil
 import re
 import subprocess
@@ -34,7 +33,6 @@ from sklearnex.tests.utils import (
     call_method,
     gen_dataset,
     gen_models_info,
-    IsolatedTracer,
 )
 
 TARGET_OFFLOAD_ALLOWED_LOCATIONS = [
@@ -225,13 +223,13 @@ def estimator_trace(estimator, method, cache, isolated_trace):
         onedal, sklearn, or sklearnex), and callinglines is the line
         which calls the function in calledfuncs
     """
-    key = "-".join((str(estimator), method))
+    key = "|".join((str(estimator), method))
     flag = cache.get("key", "") != key
     if flag:
 
         # initialize tracer to have a more verbose module naming
         # this impacts ignoremods, but it is not used.
-        text = isolated_trace.communicate(input="|".join((estimator, method)))[0]
+        text = isolated_trace.communicate(input=key)[0]
 
         for modulename, file in _TRACE_ALLOW_DICT.items():
             text = text.replace(file, modulename)
