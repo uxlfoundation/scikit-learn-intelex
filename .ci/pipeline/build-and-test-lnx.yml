@@ -69,7 +69,7 @@ steps:
       conda activate CB
       cd ..
       if [ -n "${TBBROOT}" ] && [ "${TBBROOT}" != "${CONDA_PREFIX}" ]; then source ${TBBROOT}/env/vars.sh; fi
-      if [ -n "${COVERAGE_RCFILE}" ]; then export COVERAGE_FILE=$(pwd)/.coverage.sklearnex
+      if [ -n "${COVERAGE_RCFILE}" ]; then export COVERAGE_FILE=$(pwd)/.coverage.sklearnex; fi
       ./s/conda-recipe/run_test.sh --json-report
     env:
       TBBROOT: ${{ variables.TBBROOT }}
@@ -79,7 +79,7 @@ steps:
       . /usr/share/miniconda/etc/profile.d/conda.sh
       conda activate CB
       if [ -n "${TBBROOT}" ] && [ "${TBBROOT}" != "${CONDA_PREFIX}" ]; then source ${TBBROOT}/env/vars.sh; fi
-      if [ -n "${COVERAGE_RCFILE}" ]; then export COVERAGE_FILE=$(pwd)/.coverage.sklearn
+      if [ -n "${COVERAGE_RCFILE}" ]; then export COVERAGE_FILE=$(pwd)/.coverage.sklearn; fi
       if [ -z "${NO_DPC}" ]; then export CPU="cpu"; fi
       bash .ci/scripts/run_sklearn_tests.sh $CPU
     env:
