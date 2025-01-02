@@ -184,7 +184,6 @@ class IncrementalEmpiricalCovariance(IntelEstimator, BaseEstimator):
             )
 
     def _onedal_partial_fit(self, X, queue=None, check_input=True):
-
         first_pass = not hasattr(self, "n_samples_seen_") or self.n_samples_seen_ == 0
 
         # finite check occurs on onedal side
