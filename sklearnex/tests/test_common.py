@@ -234,7 +234,7 @@ def sklearnex_trace(estimator, method):
     Parameters
     ----------
     estimator : str
-        name of estimator which is a key from PATCHED_MODELS or
+        name of estimator which is a key from PATCHED_MODELS or SPECIAL_INSTANCES
 
     method : str
         name of estimator method which is to be traced and stored
@@ -334,7 +334,7 @@ def estimator_trace(estimator, method, cache, isolated_trace):
     Parameters
     ----------
     estimator : str
-        name of estimator which is a key from PATCHED_MODELS or
+        name of estimator which is a key from PATCHED_MODELS or SPECIAL_INSTANCES
 
     method : str
         name of estimator method which is to be traced and stored
