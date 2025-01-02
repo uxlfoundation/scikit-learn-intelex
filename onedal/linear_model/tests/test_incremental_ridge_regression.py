@@ -24,6 +24,7 @@ if daal_check_version((2024, "P", 600)):
     from sklearn.metrics import mean_squared_error
     from sklearn.model_selection import train_test_split
 
+    from onedal.datatypes import from_table
     from onedal.linear_model import IncrementalRidge
     from onedal.tests.utils._device_selection import get_queues
 
@@ -105,3 +106,66 @@ if daal_check_version((2024, "P", 600)):
 
         tol = 2e-4 if res.dtype == np.float32 else 1e-7
         assert_allclose(gtr, res, rtol=tol)
+
+    @pytest.mark.parametrize("queue", get_queues())
+    @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+    def test_incremental_estimator_pickle(queue, dtype):
+        import pickle
+
+        model = IncrementalRidge()
+
+        # Check that estimator can be serialized without any data.
+        dump = pickle.dumps(model)
+        model_loaded = pickle.loads(dump)
+        seed = 77
+        gen = np.random.default_rng(seed)
+        X = gen.uniform(low=-0.3, high=+0.7, size=(10, 10))
+        X = X.astype(dtype)
+        coef = gen.random(size=(1, 10), dtype=dtype).T
+        y = X @ coef
+        X_split = np.array_split(X, 2)
+        y_split = np.array_split(y, 2)
+        model.partial_fit(X_split[0], y_split[0], queue=queue)
+        model_loaded.partial_fit(X_split[0], y_split[0], queue=queue)
+
+        # model.finalize_fit()
+
+        assert model._need_to_finalize == True
+        assert model_loaded._need_to_finalize == True
+
+        # Check that estimator can be serialized after partial_fit call.
+        dump = pickle.dumps(model)
+        model_loaded = pickle.loads(dump)
+
+        partial_xtx = from_table(model._partial_result.partial_xtx)
+        partial_xtx_loaded = from_table(model_loaded._partial_result.partial_xtx)
+        assert_allclose(partial_xtx, partial_xtx_loaded)
+
+        partial_xty = from_table(model._partial_result.partial_xty)
+        partial_xty_loaded = from_table(model_loaded._partial_result.partial_xty)
+        assert_allclose(partial_xty, partial_xty_loaded)
+
+        assert model._need_to_finalize == False
+        # Finalize is called during serialization to make sure partial results are finalized correctly.
+        assert model_loaded._need_to_finalize == False
+
+        model.partial_fit(X_split[1], y_split[1], queue=queue)
+        model_loaded.partial_fit(X_split[1], y_split[1], queue=queue)
+        assert model._need_to_finalize == True
+        assert model_loaded._need_to_finalize == True
+
+        dump = pickle.dumps(model_loaded)
+        model_loaded = pickle.loads(dump)
+
+        assert model._need_to_finalize == True
+        assert model_loaded._need_to_finalize == False
+
+        model.finalize_fit()
+        model_loaded.finalize_fit()
+
+        # Check that finalized estimator can be serialized.
+        dump = pickle.dumps(model_loaded)
+        model_loaded = pickle.loads(dump)
+
+        assert_allclose(model.coef_, model_loaded.coef_, atol=1e-6)
+        assert_allclose(model.intercept_, model_loaded.intercept_, atol=1e-6)

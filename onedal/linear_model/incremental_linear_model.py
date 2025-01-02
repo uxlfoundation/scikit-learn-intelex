@@ -47,9 +47,21 @@ class IncrementalLinearRegression(BaseLinearRegression):
         self._reset()
 
     def _reset(self):
+        self._need_to_finalize = False
         self._partial_result = self._get_backend(
             "linear_model", "regression", "partial_train_result"
         )
+
+    def __getstate__(self):
+        # Since finalize_fit can't be dispatched without directly provided queue
+        # and the dispatching policy can't be serialized, the computation is finalized
+        # here and the policy is not saved in serialized data.
+
+        self.finalize_fit()
+        data = self.__dict__.copy()
+        data.pop("_queue", None)
+
+        return data
 
     def partial_fit(self, X, y, queue=None):
         """
@@ -105,6 +117,9 @@ class IncrementalLinearRegression(BaseLinearRegression):
                 policy, self._params, self._partial_result, X_table, y_table
             )
 
+        self._need_to_finalize = True
+        return self
+
     def finalize_fit(self, queue=None):
         """
         Finalizes linear regression computation and obtains coefficients
@@ -121,27 +136,30 @@ class IncrementalLinearRegression(BaseLinearRegression):
             Returns the instance itself.
         """
 
-        if queue is not None:
-            policy = self._get_policy(queue)
-        else:
-            policy = self._get_policy(self._queue)
+        if self._need_to_finalize:
+            if queue is not None:
+                policy = self._get_policy(queue)
+            else:
+                policy = self._get_policy(self._queue)
 
-        module = self._get_backend("linear_model", "regression")
-        hparams = get_hyperparameters("linear_regression", "train")
-        if hparams is not None and not hparams.is_default:
-            result = module.finalize_train(
-                policy, self._params, hparams.backend, self._partial_result
+            module = self._get_backend("linear_model", "regression")
+            hparams = get_hyperparameters("linear_regression", "train")
+            if hparams is not None and not hparams.is_default:
+                result = module.finalize_train(
+                    policy, self._params, hparams.backend, self._partial_result
+                )
+            else:
+                result = module.finalize_train(policy, self._params, self._partial_result)
+
+            self._onedal_model = result.model
+
+            packed_coefficients = from_table(result.model.packed_coefficients)
+            self.coef_, self.intercept_ = (
+                packed_coefficients[:, 1:].squeeze(),
+                packed_coefficients[:, 0].squeeze(),
             )
-        else:
-            result = module.finalize_train(policy, self._params, self._partial_result)
 
-        self._onedal_model = result.model
-
-        packed_coefficients = from_table(result.model.packed_coefficients)
-        self.coef_, self.intercept_ = (
-            packed_coefficients[:, 1:].squeeze(),
-            packed_coefficients[:, 0].squeeze(),
-        )
+            self._need_to_finalize = False
 
         return self
 
@@ -170,15 +188,26 @@ class IncrementalRidge(BaseLinearRegression):
     """
 
     def __init__(self, alpha=1.0, fit_intercept=True, copy_X=False, algorithm="norm_eq"):
-        module = self._get_backend("linear_model", "regression")
         super().__init__(
             fit_intercept=fit_intercept, alpha=alpha, copy_X=copy_X, algorithm=algorithm
         )
-        self._partial_result = module.partial_train_result()
+        self._reset()
 
     def _reset(self):
         module = self._get_backend("linear_model", "regression")
         self._partial_result = module.partial_train_result()
+        self._need_to_finalize = False
+
+    def __getstate__(self):
+        # Since finalize_fit can't be dispatched without directly provided queue
+        # and the dispatching policy can't be serialized, the computation is finalized
+        # here and the policy is not saved in serialized data.
+
+        self.finalize_fit()
+        data = self.__dict__.copy()
+        data.pop("_queue", None)
+
+        return data
 
     def partial_fit(self, X, y, queue=None):
         """
@@ -223,6 +252,9 @@ class IncrementalRidge(BaseLinearRegression):
             policy, self._params, self._partial_result, X_table, y_table
         )
 
+        self._need_to_finalize = True
+        return self
+
     def finalize_fit(self, queue=None):
         """
         Finalizes ridge regression computation and obtains coefficients
@@ -238,19 +270,23 @@ class IncrementalRidge(BaseLinearRegression):
         self : object
             Returns the instance itself.
         """
-        module = self._get_backend("linear_model", "regression")
-        if queue is not None:
-            policy = self._get_policy(queue)
-        else:
-            policy = self._get_policy(self._queue)
-        result = module.finalize_train(policy, self._params, self._partial_result)
 
-        self._onedal_model = result.model
+        if self._need_to_finalize:
+            module = self._get_backend("linear_model", "regression")
+            if queue is not None:
+                policy = self._get_policy(queue)
+            else:
+                policy = self._get_policy(self._queue)
+            result = module.finalize_train(policy, self._params, self._partial_result)
 
-        packed_coefficients = from_table(result.model.packed_coefficients)
-        self.coef_, self.intercept_ = (
-            packed_coefficients[:, 1:].squeeze(),
-            packed_coefficients[:, 0].squeeze(),
-        )
+            self._onedal_model = result.model
+
+            packed_coefficients = from_table(result.model.packed_coefficients)
+            self.coef_, self.intercept_ = (
+                packed_coefficients[:, 1:].squeeze(),
+                packed_coefficients[:, 0].squeeze(),
+            )
+
+            self._need_to_finalize = False
 
         return self

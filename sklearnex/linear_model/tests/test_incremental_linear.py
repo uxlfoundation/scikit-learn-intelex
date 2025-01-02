@@ -205,3 +205,63 @@ def test_sklearnex_partial_fit_on_random_data(
     y_pred = inclin.predict(X_test_df)
 
     assert_allclose(expected_y_pred, _as_numpy(y_pred), atol=tol)
+
+
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize("fit_intercept", [True, False])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_sklearnex_incremental_estimatior_pickle(dataframe, queue, fit_intercept, dtype):
+    import pickle
+
+    from sklearnex.linear_model import IncrementalLinearRegression
+
+    inclin = IncrementalLinearRegression()
+
+    # Check that estimator can be serialized without any data.
+    dump = pickle.dumps(inclin)
+    inclin_loaded = pickle.loads(dump)
+
+    seed = 77
+    gen = np.random.default_rng(seed)
+    intercept = gen.random(size=1, dtype=dtype)
+    coef = gen.random(size=(1, 10), dtype=dtype).T
+    X = gen.uniform(low=-0.3, high=+0.7, size=(30, 10))
+    X = X.astype(dtype)
+    if fit_intercept:
+        y = X @ coef + intercept[np.newaxis, :]
+    else:
+        y = X @ coef
+    X_split = np.array_split(X, 2)
+    y_split = np.array_split(y, 2)
+    X_split_df = _convert_to_dataframe(X_split[0], sycl_queue=queue, target_df=dataframe)
+    y_split_df = _convert_to_dataframe(y_split[0], sycl_queue=queue, target_df=dataframe)
+    inclin.partial_fit(X_split_df, y_split_df)
+    inclin_loaded.partial_fit(X_split_df, y_split_df)
+
+    # Check that estimator can be serialized after partial_fit call.
+    dump = pickle.dumps(inclin_loaded)
+    inclin_loaded = pickle.loads(dump)
+
+    assert inclin.batch_size == inclin_loaded.batch_size
+    assert inclin.n_features_in_ == inclin_loaded.n_features_in_
+    assert inclin.n_samples_seen_ == inclin_loaded.n_samples_seen_
+    if hasattr(inclin, "_parameter_constraints"):
+        assert inclin._parameter_constraints == inclin_loaded._parameter_constraints
+    assert inclin.n_jobs == inclin_loaded.n_jobs
+
+    X_split_df = _convert_to_dataframe(X_split[1], sycl_queue=queue, target_df=dataframe)
+    y_split_df = _convert_to_dataframe(y_split[1], sycl_queue=queue, target_df=dataframe)
+    inclin.partial_fit(X_split_df, y_split_df)
+    inclin_loaded.partial_fit(X_split_df, y_split_df)
+    dump = pickle.dumps(inclin)
+    inclin_loaded = pickle.loads(dump)
+
+    assert_allclose(inclin.coef_, inclin_loaded.coef_, atol=1e-6)
+    assert_allclose(inclin.intercept_, inclin_loaded.intercept_, atol=1e-6)
+
+    # Check that finalized estimator can be serialized.
+    dump = pickle.dumps(inclin_loaded)
+    inclin_loaded = pickle.loads(dump)
+
+    assert_allclose(inclin.coef_, inclin_loaded.coef_, atol=1e-6)
+    assert_allclose(inclin.intercept_, inclin_loaded.intercept_, atol=1e-6)
