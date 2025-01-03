@@ -25,11 +25,7 @@ steps:
       chmod +x codecov
     displayName: "Install codecov cli"
   - script: |
-      pwd
-      ls -lha
-      export PATH=$CODECOV_TOKEN:$PATH
-      echo $PATH
       ./codecov -v do-upload -Z -t ${CODECOV_TOKEN} -F azp -f coverage.json -B main
     displayName: "Upload to codecov"
     env:
-      CODECOV_TOKEN: $(CODECOV_TOKEN)
+      CODECOV_TOKEN: c43efae8-f0c0-4047-801f-28556e57e20b
