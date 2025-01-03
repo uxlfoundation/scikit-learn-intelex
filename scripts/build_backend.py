@@ -140,7 +140,7 @@ def custom_build_cmake_clib(
                 memfree.remove("")
             memfree = int(memfree[1])  # total free physical memory in kB
     elif IS_WIN:
-        txt = subprocess.run(["powershell","Get-CIMInstance","Win32_OperatingSystem","|","Select","FreePhysicalMemory"], stdout=subprocess.PIPE, text=True)
+        txt = subprocess.run(["powershell.exe","Get-CIMInstance","Win32_OperatingSystem","|","Select","FreePhysicalMemory"], stdout=subprocess.PIPE, text=True)
         memfree = int(txt.stdout.strip().split(" ")[-1])  # total free physical memory in kB
 
     mem_per_proc = 2**20  # approximately 1GB
