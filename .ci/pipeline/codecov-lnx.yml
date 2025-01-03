@@ -25,6 +25,8 @@ steps:
       chmod +x codecov
     displayName: "Install codecov cli"
   - script: |
+      pwd
+      ls -lha
       echo $PR
       SHA=$(git rev-parse HEAD)
       echo $SHA
