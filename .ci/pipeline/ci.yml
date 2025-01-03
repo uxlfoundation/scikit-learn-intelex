@@ -141,6 +141,8 @@ jobs:
 - job: WindowsCondaEnv
   dependsOn: Lint
   timeoutInMinutes: 120
+  variables:
+    COVERAGE_RCFILE: '$(Build.Repository.LocalPath)\.coveragerc'
   strategy:
     matrix:
       Python3.9_Sklearn1.0:
