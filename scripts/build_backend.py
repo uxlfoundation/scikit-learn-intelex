@@ -131,16 +131,20 @@ def custom_build_cmake_clib(
         cmake_args += ["-DADD_ONEDAL_RPATH=ON"]
 
     cpu_count = multiprocessing.cpu_count()
+    memfree = sys.maxsize
     # limit parallel cmake jobs if memory size is insufficient
-    # TODO: add on all platforms
     if IS_LIN:
         with open("/proc/meminfo", "r") as meminfo_file_obj:
             memfree = meminfo_file_obj.read().split("\n")[1].split(" ")
             while "" in memfree:
                 memfree.remove("")
-            memfree = int(memfree[1])  # total memory in kB
-        cpu_count = min(cpu_count, floor(max(1, memfree / 2**20)))
+            memfree = int(memfree[1])  # total free physical memory in kB
+    elif IS_WIN:
+        txt = subprocess.run(["powershell","Get-CIMInstance","Win32_OperatingSystem","|","Select","FreePhysicalMemory"], stdout=subprocess.PIPE, text=True)
+        memfree = int(txt.stdout.strip().split(" ")[-1])  # total free physical memory in kB
 
+    mem_per_proc = 2**20  # approximately 1GB
+    cpu_count = min(cpu_count, floor(max(1, memfree / mem_per_proc)))
     make_args = ["cmake", "--build", abs_build_temp_path, "-j " + str(cpu_count)]
 
     make_install_args = [
