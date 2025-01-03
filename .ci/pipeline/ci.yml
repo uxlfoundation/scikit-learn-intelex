@@ -162,3 +162,4 @@ jobs:
     vmImage: 'windows-2022'
   steps:
   - template: build-and-test-win.yml
+  - template: codecov-win.yml
