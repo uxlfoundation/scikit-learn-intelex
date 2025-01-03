@@ -50,11 +50,13 @@ steps:
     displayName: 'Install testing requirements'
   - script: |
       call activate CB
+      set COVERAGE_FILE=%cd%\.coverage.sklearnex
       cd ..
       call s\conda-recipe\run_test.bat s\ --json-report
     displayName: 'Sklearnex testing'
   - script: |
       call activate CB
+      set COVERAGE_FILE=%cd%\.coverage.sklearn
       bash .ci/scripts/run_sklearn_tests.sh
     displayName: 'Sklearn testing'
     condition: succeededOrFailed()
