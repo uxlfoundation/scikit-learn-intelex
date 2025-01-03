@@ -27,9 +27,7 @@ steps:
   - script: |
       pwd
       ls -lha
-      echo $BUILD_REPOSITORY_NAME
-      echo $BUILD_REPOSITORY_LOCALPATH
-      ./codecov -v upload-process -Z -t ${CODECOV_TOKEN} -r uxlfoundation/scikit-learn-intelex -F azp -f coverage.json
+      ./codecov -v upload-process -Z -t ${CODECOV_TOKEN} -r uxlfoundation/scikit-learn-intelex -F azp -f coverage.json -B main
     displayName: "Upload to codecov"
     env:
       CODECOV_TOKEN: $(CODECOV_TOKEN)
