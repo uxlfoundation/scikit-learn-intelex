@@ -15,7 +15,7 @@
 #===============================================================================
 steps:
   - script: |
-      conda activate CB
+      call activate CB
       coverage combine .coverage.sklearnex .coverage.sklearn
       coverage json -o coverage.json
     displayName: "Create coverage report"
