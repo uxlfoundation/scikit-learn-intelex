@@ -27,7 +27,7 @@ steps:
   - script: |
       pwd
       ls -lha
-      ./codecov -v upload-process -Z -t ${CODECOV_TOKEN} -r uxlfoundation/scikit-learn-intelex -F azp -f coverage.json -B main
+      ./codecov -v upload-process -Z -t ${CODECOV_TOKEN} -F azp -f coverage.json -B main
     displayName: "Upload to codecov"
     env:
       CODECOV_TOKEN: $(CODECOV_TOKEN)
