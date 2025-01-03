@@ -27,6 +27,8 @@ steps:
   - script: |
       pwd
       ls -lha
+      export PATH=$CODECOV_TOKEN:$PATH
+      echo $PATH
       ./codecov -v do-upload -Z -t ${CODECOV_TOKEN} -F azp -f coverage.json -B main
     displayName: "Upload to codecov"
     env:
