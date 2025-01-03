@@ -25,7 +25,6 @@ steps:
       chmod +x codecov
     displayName: "Install codecov cli"
   - script: |
-      PR="$(System.PullRequest.PullRequestId)"
       echo $PR
       SHA=$(git rev-parse HEAD)
       echo $SHA
@@ -36,3 +35,4 @@ steps:
     displayName: "Upload to codecov"
     env:
       CODECOV_TOKEN: $(CODECOV_TOKEN)
+      PR: $(System.PullRequest.PullRequestNumber)
