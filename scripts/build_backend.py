@@ -143,7 +143,7 @@ def custom_build_cmake_clib(
     elif IS_WIN:
         txt = subprocess.run(
             [
-                "powershell.exe",
+                "powershell",
                 "Get-CIMInstance",
                 "Win32_OperatingSystem",
                 "|",
