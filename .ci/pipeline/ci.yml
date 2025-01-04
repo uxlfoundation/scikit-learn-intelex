@@ -114,6 +114,8 @@ jobs:
 - job: LinuxCondaEnv
   dependsOn: Lint
   timeoutInMinutes: 120
+  variables:
+    COVERAGE_RCFILE: '$(Build.Repository.LocalPath)/.coveragerc'
   strategy:
     matrix:
       Python3.9_Sklearn1.0:
@@ -135,9 +137,12 @@ jobs:
     vmImage: 'ubuntu-22.04'
   steps:
   - template: build-and-test-lnx.yml
+  - template: codecov-lnx.yml
 - job: WindowsCondaEnv
   dependsOn: Lint
   timeoutInMinutes: 120
+  variables:
+    COVERAGE_RCFILE: '$(Build.Repository.LocalPath)\.coveragerc'
   strategy:
     matrix:
       Python3.9_Sklearn1.0:
@@ -159,3 +164,4 @@ jobs:
     vmImage: 'windows-2022'
   steps:
   - template: build-and-test-win.yml
+  - template: codecov-win.yml
