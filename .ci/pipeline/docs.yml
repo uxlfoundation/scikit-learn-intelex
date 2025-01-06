@@ -17,8 +17,7 @@
 trigger:
   branches:
     include:
-    - main
-    - rls/*
+    - "*"
   paths:
     include:
     - requirements-doc.txt
