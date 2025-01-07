@@ -100,17 +100,15 @@ struct params2desc {
 
 template <typename Policy, typename Task>
 void init_compute_ops(py::module_& m) {
-    m.def("compute",
-          [](const Policy& policy,
-             const py::dict& params,
-             const table& data,
-             const table& weights) {
-              using namespace dbscan;
-              using input_t = compute_input<Task>;
+    m.def(
+        "compute",
+        [](const Policy& policy, const py::dict& params, const table& data, const table& weights) {
+            using namespace dbscan;
+            using input_t = compute_input<Task>;
 
-              compute_ops ops(policy, input_t{ data, weights }, params2desc{});
-              return fptype2t{ method2t{ Task{}, ops } }(params);
-          });
+            compute_ops ops(policy, input_t{ data, weights }, params2desc{});
+            return fptype2t{ method2t{ Task{}, ops } }(params);
+        });
 }
 
 template <typename Task>

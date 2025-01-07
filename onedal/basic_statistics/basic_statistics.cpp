@@ -114,9 +114,9 @@ auto get_onedal_result_options(const py::dict& params) {
 struct params2desc {
     template <typename Float, typename Method, typename Task>
     auto operator()(const py::dict& params) {
-        auto desc = dal::basic_statistics::descriptor<Float,
-            Method, dal::basic_statistics::task::compute>()
-            .set_result_options(get_onedal_result_options(params));
+        auto desc =
+            dal::basic_statistics::descriptor<Float, Method, dal::basic_statistics::task::compute>()
+                .set_result_options(get_onedal_result_options(params));
         return desc;
     }
 };
@@ -126,54 +126,53 @@ struct params2desc_incremental {
     template <typename Float, typename Method, typename Task>
     auto operator()(const py::dict& params) {
         auto desc = dal::basic_statistics::descriptor<Float,
-            dal::basic_statistics::method::dense, dal::basic_statistics::task::compute>()
-            .set_result_options(get_onedal_result_options(params));
+                                                      dal::basic_statistics::method::dense,
+                                                      dal::basic_statistics::task::compute>()
+                        .set_result_options(get_onedal_result_options(params));
         return desc;
     }
 };
 
 template <typename Policy, typename Task>
 void init_compute_ops(py::module& m) {
-    m.def("compute", [](
-        const Policy& policy,
-        const py::dict& params,
-        const table& data,
-        const table& weights) {
+    m.def(
+        "compute",
+        [](const Policy& policy, const py::dict& params, const table& data, const table& weights) {
             using namespace dal::basic_statistics;
             using input_t = compute_input<Task>;
 
             compute_ops ops(policy, input_t{ data, weights }, params2desc{});
             return fptype2t{ method2t{ Task{}, ops } }(params);
-        }
-    );
+        });
 }
-
 
 template <typename Policy, typename Task>
 void init_partial_compute_ops(py::module& m) {
     using prev_result_t = dal::basic_statistics::partial_compute_result<Task>;
-    m.def("partial_compute", [](
-        const Policy& policy,
-        const py::dict& params,
-        const prev_result_t& prev,
-        const table& data,
-        const table& weights) {
-            using namespace dal::basic_statistics;
-            using input_t = partial_compute_input<Task>;
-            partial_compute_ops ops(policy, input_t{ prev, data, weights }, params2desc_incremental{});
-            return fptype2t{ method2t{ Task{}, ops } }(params);
-        }
-    );
+    m.def("partial_compute",
+          [](const Policy& policy,
+             const py::dict& params,
+             const prev_result_t& prev,
+             const table& data,
+             const table& weights) {
+              using namespace dal::basic_statistics;
+              using input_t = partial_compute_input<Task>;
+              partial_compute_ops ops(policy,
+                                      input_t{ prev, data, weights },
+                                      params2desc_incremental{});
+              return fptype2t{ method2t{ Task{}, ops } }(params);
+          });
 }
 
 template <typename Policy, typename Task>
 void init_finalize_compute_ops(pybind11::module_& m) {
     using namespace dal::basic_statistics;
     using input_t = partial_compute_result<Task>;
-    m.def("finalize_compute", [](const Policy& policy, const pybind11::dict& params, const input_t& data) {
-        finalize_compute_ops ops(policy, data, params2desc_incremental{});
-        return fptype2t{ method2t{ Task{}, ops } }(params);
-    });
+    m.def("finalize_compute",
+          [](const Policy& policy, const pybind11::dict& params, const input_t& data) {
+              finalize_compute_ops ops(policy, data, params2desc_incremental{});
+              return fptype2t{ method2t{ Task{}, ops } }(params);
+          });
 }
 
 template <typename Task>
@@ -216,23 +215,28 @@ void init_partial_compute_result(py::module_& m) {
                     py::cast<py::object>(convert_to_pyobject(res.get_partial_max())),
                     py::cast<py::object>(convert_to_pyobject(res.get_partial_sum())),
                     py::cast<py::object>(convert_to_pyobject(res.get_partial_sum_squares())),
-                    py::cast<py::object>(convert_to_pyobject(res.get_partial_sum_squares_centered()))                    
-                );
+                    py::cast<py::object>(
+                        convert_to_pyobject(res.get_partial_sum_squares_centered())));
             },
             [](py::tuple t) {
                 if (t.size() != 6)
                     throw std::runtime_error("Invalid state!");
                 result_t res;
-                if (py::cast<int>(t[0].attr("size")) != 0) res.set_partial_n_rows(convert_to_table(t[0]));
-                if (py::cast<int>(t[1].attr("size")) != 0) res.set_partial_min(convert_to_table(t[1]));
-                if (py::cast<int>(t[2].attr("size")) != 0) res.set_partial_max(convert_to_table(t[2]));
-                if (py::cast<int>(t[3].attr("size")) != 0) res.set_partial_sum(convert_to_table(t[3]));
-                if (py::cast<int>(t[4].attr("size")) != 0) res.set_partial_sum_squares(convert_to_table(t[4]));
-                if (py::cast<int>(t[5].attr("size")) != 0) res.set_partial_sum_squares_centered(convert_to_table(t[5]));
-                
+                if (py::cast<int>(t[0].attr("size")) != 0)
+                    res.set_partial_n_rows(convert_to_table(t[0]));
+                if (py::cast<int>(t[1].attr("size")) != 0)
+                    res.set_partial_min(convert_to_table(t[1]));
+                if (py::cast<int>(t[2].attr("size")) != 0)
+                    res.set_partial_max(convert_to_table(t[2]));
+                if (py::cast<int>(t[3].attr("size")) != 0)
+                    res.set_partial_sum(convert_to_table(t[3]));
+                if (py::cast<int>(t[4].attr("size")) != 0)
+                    res.set_partial_sum_squares(convert_to_table(t[4]));
+                if (py::cast<int>(t[5].attr("size")) != 0)
+                    res.set_partial_sum_squares_centered(convert_to_table(t[5]));
+
                 return res;
-            }
-        ));
+            }));
 }
 
 ONEDAL_PY_DECLARE_INSTANTIATOR(init_compute_result);

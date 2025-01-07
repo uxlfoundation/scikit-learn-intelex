@@ -41,7 +41,6 @@ void instantiate_default_host_policy(py::module& m) {
 
 #ifdef ONEDAL_DATA_PARALLEL
 
-
 dp_policy_t make_dp_policy(std::uint32_t id) {
     sycl::queue queue = get_queue_by_device_id(id);
     return dp_policy_t{ std::move(queue) };
