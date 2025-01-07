@@ -153,9 +153,7 @@ def custom_build_cmake_clib(
             stdout=subprocess.PIPE,
             text=True,
         )
-        memfree = int(
-            txt.stdout.strip().split()[-1]
-        )  # total free physical memory in kB
+        memfree = int(txt.stdout.strip().split()[-1])  # total free physical memory in kB
 
     mem_per_proc = 20  # 2**20 kB or 1GB
     cpu_count = min(cpu_count, floor(max(1, memfree >> mem_per_proc)))
