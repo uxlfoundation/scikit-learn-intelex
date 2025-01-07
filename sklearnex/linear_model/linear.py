@@ -15,7 +15,6 @@
 # ===============================================================================
 
 import logging
-from abc import ABC
 
 import numpy as np
 from sklearn.linear_model import LinearRegression as _sklearn_LinearRegression
@@ -37,7 +36,7 @@ from sklearn.utils.validation import check_is_fitted, check_X_y
 
 from onedal.common.hyperparameters import get_hyperparameters
 from onedal.linear_model import LinearRegression as onedal_LinearRegression
-from onedal.utils import _num_features, _num_samples
+from onedal.utils.validation import _num_features, _num_samples
 
 if sklearn_check_version("1.6"):
     from sklearn.utils.validation import validate_data

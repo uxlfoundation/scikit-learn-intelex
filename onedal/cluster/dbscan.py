@@ -17,14 +17,15 @@
 import numpy as np
 
 from daal4py.sklearn._utils import get_dtype, make2d
+from onedal._device_offload import supports_queue
+from onedal.common._backend import bind_default_backend
 
-from ..common._base import BaseEstimator
 from ..common._mixin import ClusterMixin
 from ..datatypes import from_table, to_table
-from ..utils import _check_array
+from ..utils.validation import _check_array
 
 
-class BaseDBSCAN(BaseEstimator, ClusterMixin):
+class DBSCAN(ClusterMixin):
     def __init__(
         self,
         eps=0.5,
@@ -45,6 +46,9 @@ class BaseDBSCAN(BaseEstimator, ClusterMixin):
         self.leaf_size = leaf_size
         self.p = p
         self.n_jobs = n_jobs
+
+    @bind_default_backend("dbscan.clustering")
+    def compute(self, params, data_table, weights_table): ...
 
     def _get_onedal_params(self, dtype=np.float32):
         return {
@@ -56,14 +60,14 @@ class BaseDBSCAN(BaseEstimator, ClusterMixin):
             "result_options": "core_observation_indices|responses",
         }
 
-    def _fit(self, X, y, sample_weight, module, queue):
-        policy = self._get_policy(queue, X)
+    @supports_queue
+    def fit(self, X, y=None, sample_weight=None, queue=None):
         X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
         sample_weight = make2d(sample_weight) if sample_weight is not None else None
         X_table, sample_weight_table = to_table(X, sample_weight, queue=queue)
 
         params = self._get_onedal_params(X_table.dtype)
-        result = module.compute(policy, params, X_table, sample_weight_table)
+        result = self.compute(params, X_table, sample_weight_table)
 
         self.labels_ = from_table(result.responses).ravel()
         if result.core_observation_indices is not None:
@@ -75,31 +79,3 @@ class BaseDBSCAN(BaseEstimator, ClusterMixin):
         self.components_ = np.take(X, self.core_sample_indices_, axis=0)
         self.n_features_in_ = X.shape[1]
         return self
-
-
-class DBSCAN(BaseDBSCAN):
-    def __init__(
-        self,
-        eps=0.5,
-        *,
-        min_samples=5,
-        metric="euclidean",
-        metric_params=None,
-        algorithm="auto",
-        leaf_size=30,
-        p=None,
-        n_jobs=None,
-    ):
-        self.eps = eps
-        self.min_samples = min_samples
-        self.metric = metric
-        self.metric_params = metric_params
-        self.algorithm = algorithm
-        self.leaf_size = leaf_size
-        self.p = p
-        self.n_jobs = n_jobs
-
-    def fit(self, X, y=None, sample_weight=None, queue=None):
-        return super()._fit(
-            X, y, sample_weight, self._get_backend("dbscan", "clustering", None), queue
-        )

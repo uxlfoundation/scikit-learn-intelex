@@ -14,12 +14,14 @@
 # limitations under the License.
 # ==============================================================================
 
-from onedal import _backend
+from onedal import _default_backend, _dpc_backend
+
+backend = _dpc_backend or _default_backend
 
 
 def get_tree_state_cls(model, iTree, n_classes):
-    return _backend.get_tree.classification.get_tree_state(model, iTree, n_classes)
+    return backend.get_tree.classification.get_tree_state(model, iTree, n_classes)
 
 
 def get_tree_state_reg(model, iTree, n_classes):
-    return _backend.get_tree.regression.get_tree_state(model, iTree, n_classes)
+    return backend.get_tree.regression.get_tree_state(model, iTree, n_classes)

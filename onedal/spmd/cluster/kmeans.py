@@ -14,43 +14,43 @@
 # limitations under the License.
 # ==============================================================================
 
-from onedal.cluster import KMeans as KMeans_Batch
-from onedal.cluster import KMeansInit as KMeansInit_Batch
-from onedal.spmd.basic_statistics import BasicStatistics
-
 from ..._device_offload import support_input_format
-from .._base import BaseEstimatorSPMD
+from ...cluster import KMeans as KMeans_Batch
+from ...cluster import KMeansInit as KMeansInit_Batch
+from ...common._backend import bind_spmd_backend
+from ...spmd.basic_statistics import BasicStatistics
 
 
-class KMeansInit(BaseEstimatorSPMD, KMeansInit_Batch):
+class KMeansInit(KMeansInit_Batch):
     """
     KMeansInit oneDAL implementation for SPMD iface.
     """
 
-    pass
+    @bind_spmd_backend("kmeans_init.init", lookup_name="compute")
+    def backend_compute(self, params, data): ...
 
 
-class KMeans(BaseEstimatorSPMD, KMeans_Batch):
+class KMeans(KMeans_Batch):
     def _get_basic_statistics_backend(self, result_options):
         return BasicStatistics(result_options)
 
     def _get_kmeans_init(self, cluster_count, seed, algorithm):
         return KMeansInit(cluster_count=cluster_count, seed=seed, algorithm=algorithm)
 
-    @support_input_format()
-    def fit(self, X, y=None, queue=None):
-        return super().fit(X, queue=queue)
+    @bind_spmd_backend("kmeans.clustering")
+    def train(self, params, X_table, centroids_table): ...
 
-    @support_input_format()
+    @bind_spmd_backend("kmeans.clustering")
+    def infer(self, params, model, centroids_table): ...
+
+    @support_input_format
+    def fit(self, X, y=None, queue=None):
+        return super().fit(X, y, queue=queue)
+
+    @support_input_format
     def predict(self, X, queue=None):
         return super().predict(X, queue=queue)
 
-    @support_input_format()
+    @support_input_format
     def fit_predict(self, X, y=None, queue=None):
         return super().fit_predict(X, queue=queue)
-
-    def transform(self, X):
-        return super().transform(X)
-
-    def fit_transform(self, X, queue=None):
-        return super().fit_transform(X, queue=queue)
