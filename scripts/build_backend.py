@@ -136,10 +136,10 @@ def custom_build_cmake_clib(
     # limit parallel cmake jobs if memory size is insufficient
     if IS_LIN:
         with open("/proc/meminfo", "r") as meminfo_file_obj:
-            memfree = meminfo_file_obj.read().split("\n")[1].split(" ")
-            while "" in memfree:
-                memfree.remove("")
-            memfree = int(memfree[1])  # total free physical memory in kB
+            next(meminfo_file_obj)  # skip MemTotal
+            memfree = int(
+                next(meminfo_file_obj).strip().split()[-2]
+            )  # total free physical memory in kB
     elif IS_WIN:
         txt = subprocess.run(
             [
@@ -154,7 +154,7 @@ def custom_build_cmake_clib(
             text=True,
         )
         memfree = int(
-            txt.stdout.strip().split(" ")[-1]
+            txt.stdout.strip().split()[-1]
         )  # total free physical memory in kB
 
     mem_per_proc = 20  # 2**20 kB or 1GB
