@@ -19,8 +19,9 @@ examples/                     @maria-Petrova @Alexsandruss @samir-nasibli @napet
 # Dependencies
 conda-recipe/                 @napetrov @Alexsandruss
 dependencies-dev              @napetrov @Alexsandruss @samir-nasibli @homksei @ahuber21 @ethanglaser
+pyproject.toml                @napetrov @Alexsandruss @samir-nasibli @homksei @ahuber21 @ethanglaser
 requirements*                 @napetrov @Alexsandruss @samir-nasibli @homksei @ahuber21 @ethanglaser
-setup.py                      @napetrov @Alexsandruss @samir-nasibli @icfaust
+setup.*                       @napetrov @Alexsandruss @samir-nasibli @icfaust
 
 # Model builders
 *model_builders*              @razdoburdin @ahuber21 @avolkov-intel
@@ -30,6 +31,7 @@ setup.py                      @napetrov @Alexsandruss @samir-nasibli @icfaust
 
 # Testing
 **/test*.py                   @Alexsandruss @samir-nasibli @icfaust
+deselected_tests.yaml         @Alexsandruss @samir-nasibli @icfaust
 tests/                        @Alexsandruss @samir-nasibli @icfaust
 
 # Distributed
