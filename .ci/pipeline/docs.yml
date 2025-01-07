@@ -64,6 +64,7 @@ jobs:
     displayName: 'Install requirements'
   - script: |
       export PREFIX=$(dirname $(dirname $(which python)))
+      export DALROOT=$PREFIX
       ./conda-recipe/build.sh
     displayName: 'Build daal4py/sklearnex'
   - script: |
