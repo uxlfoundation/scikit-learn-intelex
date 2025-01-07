@@ -9,7 +9,7 @@
 doc/                          @maria-Petrova @napetrov @Alexsandruss @samir-nasibli @icfaust @david-cortes-intel
 requirements-doc.txt          @Alexsandruss @samir-nasibli @icfaust @david-cortes-intel
 
-# DPC++
+# sklearnex
 onedal/                       @Alexsandruss @samir-nasibli @icfaust
 sklearnex/                    @Alexsandruss @samir-nasibli @icfaust
 
@@ -37,7 +37,7 @@ tests/                        @Alexsandruss @samir-nasibli @icfaust
 # Distributed
 *spmd*                        @samir-nasibli @ethanglaser
 
-# Scikit-learn patching
+# daal4py
 daal4py/sklearn/              @Alexsandruss @samir-nasibli @icfaust
 
 # Core
