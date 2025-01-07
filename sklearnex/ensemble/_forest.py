@@ -18,8 +18,8 @@ import numbers
 import warnings
 from abc import ABC
 
-from scipy import sparse as sp
 import numpy as np
+from scipy import sparse as sp
 from sklearn.base import BaseEstimator, clone
 from sklearn.ensemble import ExtraTreesClassifier as _sklearn_ExtraTreesClassifier
 from sklearn.ensemble import ExtraTreesRegressor as _sklearn_ExtraTreesRegressor
