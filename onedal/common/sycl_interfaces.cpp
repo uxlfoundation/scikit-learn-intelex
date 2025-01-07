@@ -109,10 +109,10 @@ sycl::queue get_queue_by_get_capsule(const py::object& syclobj) {
 
 sycl::queue get_queue_by_pylong_pointer(const py::int_& syclobj) {
     // PyTorch XPU streams have a sycl_queue attribute which is
-    // a void pointer as PyLong (Python integer). It can be read and 
-    // converted into a sycl::queue.  This function allows 
+    // a void pointer as PyLong (Python integer). It can be read and
+    // converted into a sycl::queue.  This function allows
     // consumption of these objects for use in oneDAL.
-    void *ptr = PyLong_AsVoidPtr(syclobj.ptr());
+    void* ptr = PyLong_AsVoidPtr(syclobj.ptr());
     // assumes that the PyLong is a pointer to a queue
     return sycl::queue{ *static_cast<sycl::queue*>(ptr) };
 }
@@ -139,17 +139,17 @@ sycl::queue get_queue_from_python(const py::object& syclobj) {
         const auto caps = syclobj.cast<py::capsule>();
         return extract_from_capsule(std::move(caps));
     }
-    else if (py::hasattr(syclobj, device_name) && py::hasattr(syclobj.attr(device_name), filter_name)) {
+    else if (py::hasattr(syclobj, device_name) &&
+             py::hasattr(syclobj.attr(device_name), filter_name)) {
         auto attr = syclobj.attr(device_name).attr(filter_name);
         return get_queue_by_filter_string(attr.cast<std::string>());
     }
-    else
-    {
+    else {
         throw std::runtime_error("Unable to interpret \"syclobj\"");
     }
 }
 
-std::string get_device_name(const sycl::queue& queue){
+std::string get_device_name(const sycl::queue& queue) {
     return get_device_name(queue.get_device());
 }
 
@@ -175,8 +175,8 @@ std::uint32_t get_device_id(const sycl::queue& queue) {
     }
 }
 
-std::size_t get_used_memory(const py::object& syclobj){
-    const auto& device =  get_queue_from_python(syclobj).get_device();
+std::size_t get_used_memory(const py::object& syclobj) {
+    const auto& device = get_queue_from_python(syclobj).get_device();
     std::size_t total_memory = device.get_info<sycl::info::device::global_mem_size>();
     std::size_t free_memory = device.get_info<sycl::ext::intel::info::device::free_memory>();
     return total_memory - free_memory;

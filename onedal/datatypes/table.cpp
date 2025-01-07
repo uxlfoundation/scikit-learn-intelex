@@ -27,9 +27,9 @@
 #include "onedal/version.hpp"
 
 #if ONEDAL_VERSION <= 20230100
-    #include "oneapi/dal/table/detail/csr.hpp"
+#include "oneapi/dal/table/detail/csr.hpp"
 #else
-    #include "oneapi/dal/table/csr.hpp"
+#include "oneapi/dal/table/csr.hpp"
 #endif
 
 namespace py = pybind11;
@@ -72,7 +72,7 @@ ONEDAL_PY_INIT_MODULE(table) {
         const auto column_count = t.get_column_count();
         return py::make_tuple(row_count, column_count);
     });
-    table_obj.def_property_readonly("dtype", [](const table& t){
+    table_obj.def_property_readonly("dtype", [](const table& t) {
         // returns a numpy dtype, even if source was not from numpy
         return py::dtype(convert_dal_to_npy_type(t.get_metadata().get_data_type(0)));
     });
@@ -82,11 +82,11 @@ ONEDAL_PY_INIT_MODULE(table) {
 #endif // ONEDAL_DATA_PARALLEL
 
     m.def("to_table", [](py::object obj, py::object queue) {
-        #ifdef ONEDAL_DATA_PARALLEL
+#ifdef ONEDAL_DATA_PARALLEL
         if (py::hasattr(obj, "__sycl_usm_array_interface__")) {
             return convert_from_sua_iface(obj);
         }
-        #endif // ONEDAL_DATA_PARALLEL
+#endif // ONEDAL_DATA_PARALLEL
 
         return convert_to_table(obj, queue);
     });

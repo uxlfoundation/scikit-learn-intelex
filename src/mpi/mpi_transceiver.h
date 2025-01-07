@@ -28,16 +28,16 @@ public:
     virtual void init();
 
     virtual void fini();
-    
+
     virtual size_t nMembers();
 
     virtual size_t me();
 
-    virtual void send(const void* buff, size_t N, size_t recpnt, size_t tag);
+    virtual void send(const void * buff, size_t N, size_t recpnt, size_t tag);
 
     virtual size_t recv(void * buff, size_t N, int sender, int tag);
 
-    virtual void * gather(const void * ptr, size_t N, size_t root, const size_t * sizes, bool varying=true);
+    virtual void * gather(const void * ptr, size_t N, size_t root, const size_t * sizes, bool varying = true);
 
     virtual void bcast(void * ptr, size_t N, size_t root);
 
