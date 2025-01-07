@@ -15,7 +15,7 @@
 #===============================================================================
 steps:
   - script: |
-      python -m pip install --upgrade pip pre-commit
+      python -m pip install --upgrade pip pre-commit==4.0.1
       pre-commit install
-      pre-commit run --all-files
+      pre-commit run
     displayName: 'Linting'
