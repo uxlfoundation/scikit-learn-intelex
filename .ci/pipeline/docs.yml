@@ -63,18 +63,37 @@ jobs:
       pip list
     displayName: 'Install requirements'
   - script: |
+      echo "Starting Build daal4py/sklearnex"
+      echo "Current directory1: $(pwd)"
       export PREFIX=$(dirname $(dirname $(which python)))
-      export DALROOT=$PREFIX
+      export e=$PREFIX
       ./conda-recipe/build.sh
+      echo "Python executable being used1: $(which python)"
+      echo "Current directory2: $(pwd)"
+      echo "PREFIX is set to1: $PREFIX"
+      echo "Build daal4py/sklearnex completed successfully"
     displayName: 'Build daal4py/sklearnex'
   - script: |
+      echo "Starting Build daal4py documentation"
+      echo "Current directory3: $(pwd)"
       export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
+      echo "LD_LIBRARY_PATH is set to: $LD_LIBRARY_PATH"
       cd doc/daal4py
+      echo "Current directory: $(pwd)"
+      echo "PREFIX is set to2: $PREFIX"
+      python -c "import sys; print('Current sys.path1:', sys.path)"
+      echo "Python executable being used2: $(which python)"
       make html
+      echo "Build daal4py documentation completed successfully"
     displayName: 'Build daal4py documentation'
   - script: |
+      echo "Starting Build scikit-learn-intelex documentation"
+      echo "Current directory: $(pwd)"
       cd doc
+      python -c "import sys; print('Current sys.path2:', sys.path)"
+      echo "Python executable being used3: $(which python)"
       make html
+      echo "Build scikit-learn-intelex documentation completed successfully"
     displayName: 'Build scikit-learn-intelex documentation'
   - script: |
       mkdir $(Build.ArtifactStagingDirectory)/html/daal4py
