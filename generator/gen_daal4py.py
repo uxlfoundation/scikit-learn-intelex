@@ -1220,7 +1220,7 @@ def gen_daal4py(dalroot, outdir, version, warn_all=False, no_dist=False, no_stre
     algo_path = jp(head_path, "algorithms")
     rmtree(head_path, ignore_errors=True)
     copytree(orig_path, head_path)
-    formatfile = os.path.dirname(os.path.realpath(__file__)) + os.sep + ".clang-format"
+    formatfile = jp(os.path.dirname(os.path.realpath(__file__)), ".clang-format")
     for dirpath, dirnames, filenames in os.walk(algo_path):
         for filename in filenames:
             call(
