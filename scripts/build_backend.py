@@ -132,7 +132,7 @@ def custom_build_cmake_clib(
 
     cpu_count = multiprocessing.cpu_count()
     # convert to max supported pointer to a memory size in kB
-    memfree = sys.maxsize // (128 if sys.maxsize > 2**32 else 256)
+    memfree = sys.maxsize >> 10
     # limit parallel cmake jobs if memory size is insufficient
     if IS_LIN:
         with open("/proc/meminfo", "r") as meminfo_file_obj:
@@ -157,8 +157,8 @@ def custom_build_cmake_clib(
             txt.stdout.strip().split(" ")[-1]
         )  # total free physical memory in kB
 
-    mem_per_proc = 2**20  # approximately 1GB
-    cpu_count = min(cpu_count, floor(max(1, memfree / mem_per_proc)))
+    mem_per_proc = 20  # 2**20 kB or 1GB
+    cpu_count = min(cpu_count, floor(max(1, memfree >> mem_per_proc)))
     make_args = ["cmake", "--build", abs_build_temp_path, "-j " + str(cpu_count)]
 
     make_install_args = [
