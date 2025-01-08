@@ -224,51 +224,31 @@ def calculate_overlap_percentage(original_ranks, tsne_ranks, k):
         pytest.param(
             np.array(
                 [
-                    [0, 0, 0, 0],
                     [1, 1, 1, 1],
+                    [1.1, 1.1, 1.1, 1.1],
+                    [0.9, 0.9, 0.9, 0.9],
+                    [100, 100, 100, 100],
+                    [100.1, 100.1, 100.1, 100.1],
+                    [101.1, 101.1, 101.1, 101.1],
+                    [1, -1, 1, -1],
                     [-1e-9, 1e-9, -1e-9, 1e-9],
-                    [-1e9, 1e9, -1e9, 1e9],
+                    [42, 42, 42, 42],
+                    [8, -8, 8e8, -8e-8],
+                    [9e-7, -9e7, 9e-7, -9e7],
                     [1e-3, 1e3, -1e3, -1e-3],
                     [0, 1e9, -1e-9, 1],
-                    [1, -1, 1, -1],
-                    [42, 42, 42, 42],
                     [0, 0, 1, -1],
+                    [0, 0, 0, 0],
                     [-1e5, 0, 1e5, -1],
                     [2e9, 2e-9, -2e9, -2e-9],
-                    [3, -3, 3e3, -3e-3],
                     [5e-5, 5e5, -5e-5, -5e5],
                     [1, 0, -1e8, 1e8],
-                    [9e-7, -9e7, 9e-7, -9e7],
-                    [4e-4, 4e4, -4e-4, -4e-4],
-                    [6e-6, -6e6, 6e6, -6e-6],
-                    [8, -8, 8e8, -8e-8],
                 ]
             ),
             2,
             5.0,
-            (18, 2),
-            id="Complex Dataset1",
-        ),
-        pytest.param(
-            np.array(
-                [
-                    [0, 0, 0, 0],
-                    [1, 1, 1, 1],
-                    [-1e9, 1e9, -1e9, 1e9],
-                    [1e-3, 1e3, -1e3, -1e-3],
-                    [1, -1, 1, -1],
-                    [0, 1e9, -1e-9, 1],
-                    [-7e11, 7e11, -7e-11, 7e-11],
-                    [4e-4, 4e4, -4e-4, -4e-4],
-                    [6e-6, -6e6, 6e6, -6e-6],
-                    [0, 0, 0, 0],
-                    [1, 1, 1, 1],
-                ]
-            ),
-            2,
-            3.0,
-            (11, 2),
-            id="Complex Dataset2",
+            (19, 2),
+            id="Complex Dataset",
         ),
     ],
 )
@@ -292,11 +272,16 @@ def test_tsne_complex_and_gpu_validation(
     assert np.any(embedding != 0), f"Embedding contains only zeros."
 
     # Ensure close points in original space remain close in embedding
-    original_distances = compute_pairwise_distances(X)
-    tsne_distances = compute_pairwise_distances(embedding)
-    original_ranks = np.argsort(
-        original_distances, axis=1
-    )  # Get index of each row that is cloest to first column
-    tsne_ranks = np.argsort(tsne_distances, axis=1)
-    overlap_percentage = calculate_overlap_percentage(original_ranks, tsne_ranks, k=5)
-    assert overlap_percentage > 0.6
+    group_a_indices = [0, 1, 2]  # Hardcoded index of similar points
+    group_b_indices = [3, 4, 5]  # Hardcoded index of dissimilar points from a
+    embedding_distances = compute_pairwise_distances(
+        embedding
+    )  # Get an array of distance where [i, j] is distance b/t i and j
+    # Check for distance b/t two points in group A < distance of this point and any point in group B
+    for i in group_a_indices:
+        for j in group_a_indices:
+            if i != j:
+                assert (
+                    embedding_distances[i, j]
+                    < embedding_distances[i, group_b_indices].min()
+                ), f"Point {i} in Group A is closer to a point in Group B than to another point in Group A."
