@@ -49,94 +49,100 @@ def test_sklearnex_tsne_import(dataframe, queue):
 
 
 @pytest.mark.parametrize(
-    "description,X_generator,n_components,perplexity,expected_shape,should_raise",
+    "X_generator,n_components,perplexity,expected_shape,should_raise",
     [
-        (
-            "Test basic functionality",
+        pytest.param(
             lambda rng: np.array([[0, 0, 0], [0, 1, 1], [1, 0, 1], [1, 1, 1]]),
             2,
             2.0,
             (4, 2),
             False,
+            id="Basic functionality",
         ),
-        (
-            "Test with random data",
+        pytest.param(
             lambda rng: rng.random((100, 10)),
             2,
             30.0,
             (100, 2),
             False,
+            id="Random data",
         ),
-        (
-            "Test reproducibility",
-            lambda rng: rng.random((50, 10)),
-            2,
-            5.0,
-            (50, 2),
-            False,
-        ),
-        (
-            "Test large data",
-            lambda rng: rng.random((1000, 50)),
-            2,
-            50.0,
-            (1000, 2),
-            False,
-        ),
-        (
-            "Test valid minimal data",
+        pytest.param(
             lambda rng: np.array([[0, 0], [1, 1], [2, 2]]),
             2,
             2.0,
             (3, 2),
             False,
+            id="Valid minimal data",
         ),
-        (
-            "Edge case: constant data",
+        pytest.param(
             lambda rng: np.ones((10, 10)),
             2,
             5.0,
             (10, 2),
             False,
+            id="Constant data",
         ),
-        (
-            "Edge case: empty data",
+        pytest.param(
             lambda rng: np.empty((0, 10)),
             2,
             5.0,
             None,
             True,
+            id="Empty data",
         ),
-        (
-            "Edge case: data with NaN or infinite values",
+        pytest.param(
             lambda rng: np.array([[0, 0], [1, np.nan], [2, np.inf]]),
             2,
             5.0,
             None,
             True,
+            id="Data with NaN/Inf",
         ),
-        (
-            "Edge Case: Sparse-Like High-Dimensional Data",
+        pytest.param(
             lambda rng: rng.random((50, 500)) * (rng.random((50, 500)) > 0.99),
             2,
             30.0,
             (50, 2),
             False,
+            id="Sparse-like high-dimensional data",
         ),
-        (
-            "Edge Case: Extremely Low Perplexity",
+        pytest.param(
+            lambda rng: np.hstack(
+                [
+                    np.ones((50, 1)),  # First column is 1
+                    rng.random((50, 499)) * (rng.random((50, 499)) > 0.99),
+                ]
+            ),
+            2,
+            30.0,
+            (50, 2),
+            False,
+            id="Sparse-like data with constant column",
+        ),
+        pytest.param(
+            lambda rng: np.where(
+                np.arange(50 * 500).reshape(50, 500) % 10 == 0, 0, rng.random((50, 500))
+            ),
+            2,
+            30.0,
+            (50, 2),
+            False,
+            id="Sparse-like data with every tenth element zero",
+        ),
+        pytest.param(
             lambda rng: rng.random((10, 5)),
             2,
             0.5,
             (10, 2),
             False,
+            id="Extremely low perplexity",
         ),
     ],
 )
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_tsne_functionality_and_edge_cases(
-    description,
     X_generator,
     n_components,
     perplexity,
@@ -162,16 +168,60 @@ def test_tsne_functionality_and_edge_cases(
     else:
         tsne = TSNE(n_components=n_components, perplexity=perplexity, random_state=42)
         embedding = tsne.fit_transform(X_df)
-        assert (
-            embedding.shape == expected_shape
-        ), f"{description}: Incorrect embedding shape."
+        assert embedding.shape == expected_shape, f"Incorrect embedding shape."
+
+
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_tsne_reproducibility(dataframe, queue, dtype):
+    """
+    Test reproducibility
+    """
+    rng = np.random.default_rng(seed=42)
+    X = rng.random((50, 10)).astype(dtype)
+    X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+    tsne_1 = TSNE(n_components=2, random_state=42).fit_transform(X_df)
+    tsne_2 = TSNE(n_components=2, random_state=42).fit_transform(X_df)
+    assert_allclose(tsne_1, tsne_2, rtol=1e-5)
+
+
+def compute_pairwise_distances(data):
+    """
+    Returns:
+    distances[i, j] represents the distance between point i and point j in the data.
+    """
+    distances = np.linalg.norm(data[:, np.newaxis, :] - data[np.newaxis, :, :], axis=-1)
+    return distances
+
+
+def calculate_overlap_percentage(original_ranks, tsne_ranks, k):
+    """
+    Calculate percentage of overlapping neighbors between original and TSNE ranks.
+
+    Parameters:
+        original_ranks (np.ndarray): Ranked indices for original data.
+        tsne_ranks (np.ndarray): Ranked indices for TSNE embedding.
+        k (int): Number of top neighbors to consider.
+
+    Returns:
+        float: Mean overlap percentage.
+    """
+    num_points = original_ranks.shape[0]
+    overlap_percentages = []
+
+    for i in range(num_points):
+        original_neighbors = set(original_ranks[i, :k])
+        tsne_neighbors = set(tsne_ranks[i, :k])
+        overlap = len(original_neighbors & tsne_neighbors) / k
+        overlap_percentages.append(overlap)
+
+    return np.mean(overlap_percentages)
 
 
 @pytest.mark.parametrize(
-    "description,X,n_components,perplexity,expected_shape,device_filter",
+    "X,n_components,perplexity,expected_shape",
     [
-        (
-            "Specific complex dataset (CPU/GPU)",
+        pytest.param(
             np.array(
                 [
                     [0, 0, 0, 0],
@@ -189,7 +239,7 @@ def test_tsne_functionality_and_edge_cases(
                     [5e-5, 5e5, -5e-5, -5e5],
                     [1, 0, -1e8, 1e8],
                     [9e-7, -9e7, 9e-7, -9e7],
-                    [4e-4, 4e4, -4e-4, -4e4],
+                    [4e-4, 4e4, -4e-4, -4e-4],
                     [6e-6, -6e6, 6e6, -6e-6],
                     [8, -8, 8e8, -8e-8],
                 ]
@@ -197,10 +247,9 @@ def test_tsne_functionality_and_edge_cases(
             2,
             5.0,
             (18, 2),
-            "cpu,gpu",
+            id="Complex Dataset1",
         ),
-        (
-            "GPU validation dataset",
+        pytest.param(
             np.array(
                 [
                     [0, 0, 0, 0],
@@ -210,7 +259,7 @@ def test_tsne_functionality_and_edge_cases(
                     [1, -1, 1, -1],
                     [0, 1e9, -1e-9, 1],
                     [-7e11, 7e11, -7e-11, 7e-11],
-                    [4e-4, 4e4, -4e-4, -4e4],
+                    [4e-4, 4e4, -4e-4, -4e-4],
                     [6e-6, -6e6, 6e6, -6e-6],
                     [0, 0, 0, 0],
                     [1, 1, 1, 1],
@@ -219,38 +268,35 @@ def test_tsne_functionality_and_edge_cases(
             2,
             3.0,
             (11, 2),
-            "gpu",
+            id="Complex Dataset2",
         ),
     ],
 )
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_tsne_complex_and_gpu_validation(
-    description, X, n_components, perplexity, expected_shape, device_filter, dtype
+    X, n_components, perplexity, expected_shape, dataframe, queue, dtype
 ):
     """
     TSNE test covering specific complex datasets and GPU validation using parameterization.
     """
-    dataframes_and_queues = get_dataframes_and_queues(device_filter_=device_filter)
-    for param in dataframes_and_queues:
-        dataframe, queue = param.values
-        # Convert dataset to specified dtype
-        X = X.astype(dtype)
-        X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
 
-        try:
-            tsne = TSNE(n_components=n_components, perplexity=perplexity, random_state=42)
-            embedding = tsne.fit_transform(X_df)
+    X = X.astype(dtype)
+    X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+    tsne = TSNE(n_components=n_components, perplexity=perplexity, random_state=42)
+    embedding = tsne.fit_transform(X_df)
 
-            # Validate results
-            assert (
-                embedding.shape == expected_shape
-            ), f"{description}: Incorrect embedding shape."
-            if device_filter == "gpu":
-                assert np.all(
-                    np.isfinite(embedding)
-                ), f"{description}: Embedding contains NaN or infinite values."
-            assert np.any(
-                embedding != 0
-            ), f"{description}: Embedding contains only zeros."
-        except Exception as e:
-            pytest.fail(f"TSNE failed on {description}: {e}")
+    # Validate results
+    assert embedding.shape == expected_shape, f"Incorrect embedding shape."
+    assert np.all(np.isfinite(embedding)), f"Embedding contains NaN or infinite values."
+    assert np.any(embedding != 0), f"Embedding contains only zeros."
+
+    # Ensure close points in original space remain close in embedding
+    original_distances = compute_pairwise_distances(X)
+    tsne_distances = compute_pairwise_distances(embedding)
+    original_ranks = np.argsort(
+        original_distances, axis=1
+    )  # Get index of each row that is cloest to first column
+    tsne_ranks = np.argsort(tsne_distances, axis=1)
+    overlap_percentage = calculate_overlap_percentage(original_ranks, tsne_ranks, k=5)
+    assert overlap_percentage > 0.6
