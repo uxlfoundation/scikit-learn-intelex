@@ -48,6 +48,11 @@ jobs:
   pool:
     vmImage: 'ubuntu-22.04'
   steps:
+  - script:
+      echo "$(CODECOV_TOKEN)"
+      echo $TEST_VAR
+    env:
+      TEST_VAR: $(CODECOV_TOKEN)
   - template: linting.yml
 - job: LinuxCondaRecipe
   dependsOn: Lint
