@@ -227,9 +227,9 @@ def calculate_overlap_percentage(original_ranks, tsne_ranks, k):
                     [1, 1, 1, 1],
                     [1.1, 1.1, 1.1, 1.1],
                     [0.9, 0.9, 0.9, 0.9],
-                    [1000, 1000, 1000, 1000],
-                    [1000.1, 1000.1, 1000.1, 1000.1],
-                    [1001.1, 1001.1, 1001.1, 1001.1],
+                    [-10000, -10000, -10000, -10000],
+                    [-10000.1, -10000.1, -10000.1, -10000.1],
+                    [-10001.1, -10001.1, -10001.1, -10001.1],
                     [1, -1, 1, -1],
                     [-1e-9, 1e-9, -1e-9, 1e-9],
                     [42, 42, 42, 42],
@@ -281,6 +281,8 @@ def test_tsne_complex_and_gpu_validation(
     for i in group_a_indices:
         for j in group_a_indices:
             if i != j:
+                print(f"Distances within Group A: {embedding_distances[i, j]}")
+                print(f"Minimum distance from Group A to Group B: {embedding_distances[i, group_b_indices].min()}")
                 assert (
                     embedding_distances[i, j]
                     < embedding_distances[i, group_b_indices].min()
