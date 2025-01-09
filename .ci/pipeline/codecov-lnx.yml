@@ -26,4 +26,4 @@ steps:
       ./codecov -v upload-process -Z -t ${CODECOV_TOKEN} -F azure -f coverage.json
     displayName: "Upload to codecov"
     env:
-      CODECOV_TOKEN: $(CODECOV_TOKEN_OPEN)
+      CODECOV_TOKEN: $(CODECOV_TOKEN)
