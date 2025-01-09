@@ -226,7 +226,7 @@ def compute_pairwise_distances(data):
                 ]
             ),
             2,
-            5.0,
+            3.0,
             (19, 2),
             id="Complex Dataset",
         ),
@@ -259,7 +259,7 @@ def test_tsne_complex_and_gpu_validation(
         embedding
     )  # Get an array of distance where [i, j] is distance b/t i and j
     # Check for distance b/t two points in group A < distance of this point and any point in group B
-    print("Embedding shape:", embedding.shape)
+    print("Embedding:\n", embedding)
     print("Embedding distances:\n", embedding_distances)
     print("Group A distances:\n", embedding_distances[group_a_indices][:, group_a_indices])
     print("Group B distances:\n", embedding_distances[group_a_indices][:, group_b_indices])
