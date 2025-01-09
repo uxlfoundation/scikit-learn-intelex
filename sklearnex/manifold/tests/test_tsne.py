@@ -37,155 +37,155 @@ def test_sklearnex_import():
 from sklearnex.manifold import TSNE
 
 
-# @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-# def test_sklearnex_tsne_import(dataframe, queue):
-#     """Test TSNE compatibility with different backends and queues, and validate sklearnex module."""
-#     X = np.array([[0, 0, 0], [0, 1, 1], [1, 0, 1], [1, 1, 1]])
-#     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-#     tsne = TSNE(n_components=2, perplexity=2.0).fit(X_df)
-#     assert "daal4py" in tsne.__module__
-#     assert hasattr(tsne, "n_components"), "TSNE missing 'n_components' attribute."
-#     assert tsne.n_components == 2, "TSNE 'n_components' attribute is incorrect."
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+def test_sklearnex_tsne_import(dataframe, queue):
+    """Test TSNE compatibility with different backends and queues, and validate sklearnex module."""
+    X = np.array([[0, 0, 0], [0, 1, 1], [1, 0, 1], [1, 1, 1]])
+    X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+    tsne = TSNE(n_components=2, perplexity=2.0).fit(X_df)
+    assert "daal4py" in tsne.__module__
+    assert hasattr(tsne, "n_components"), "TSNE missing 'n_components' attribute."
+    assert tsne.n_components == 2, "TSNE 'n_components' attribute is incorrect."
 
 
-# @pytest.mark.parametrize(
-#     "X_generator,n_components,perplexity,expected_shape,should_raise",
-#     [
-#         pytest.param(
-#             lambda rng: np.array([[0, 0, 0], [0, 1, 1], [1, 0, 1], [1, 1, 1]]),
-#             2,
-#             2.0,
-#             (4, 2),
-#             False,
-#             id="Basic functionality",
-#         ),
-#         pytest.param(
-#             lambda rng: rng.random((100, 10)),
-#             2,
-#             30.0,
-#             (100, 2),
-#             False,
-#             id="Random data",
-#         ),
-#         pytest.param(
-#             lambda rng: np.array([[0, 0], [1, 1], [2, 2]]),
-#             2,
-#             2.0,
-#             (3, 2),
-#             False,
-#             id="Valid minimal data",
-#         ),
-#         pytest.param(
-#             lambda rng: np.ones((10, 10)),
-#             2,
-#             5.0,
-#             (10, 2),
-#             False,
-#             id="Constant data",
-#         ),
-#         pytest.param(
-#             lambda rng: np.empty((0, 10)),
-#             2,
-#             5.0,
-#             None,
-#             True,
-#             id="Empty data",
-#         ),
-#         pytest.param(
-#             lambda rng: np.array([[0, 0], [1, np.nan], [2, np.inf]]),
-#             2,
-#             5.0,
-#             None,
-#             True,
-#             id="Data with NaN/Inf",
-#         ),
-#         pytest.param(
-#             lambda rng: rng.random((50, 500)) * (rng.random((50, 500)) > 0.99),
-#             2,
-#             30.0,
-#             (50, 2),
-#             False,
-#             id="Sparse-like high-dimensional data",
-#         ),
-#         pytest.param(
-#             lambda rng: np.hstack(
-#                 [
-#                     np.ones((50, 1)),  # First column is 1
-#                     rng.random((50, 499)) * (rng.random((50, 499)) > 0.99),
-#                 ]
-#             ),
-#             2,
-#             30.0,
-#             (50, 2),
-#             False,
-#             id="Sparse-like data with constant column",
-#         ),
-#         pytest.param(
-#             lambda rng: np.where(
-#                 np.arange(50 * 500).reshape(50, 500) % 10 == 0, 0, rng.random((50, 500))
-#             ),
-#             2,
-#             30.0,
-#             (50, 2),
-#             False,
-#             id="Sparse-like data with every tenth element zero",
-#         ),
-#         pytest.param(
-#             lambda rng: rng.random((10, 5)),
-#             2,
-#             0.5,
-#             (10, 2),
-#             False,
-#             id="Extremely low perplexity",
-#         ),
-#     ],
-# )
-# @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-# @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-# def test_tsne_functionality_and_edge_cases(
-#     X_generator,
-#     n_components,
-#     perplexity,
-#     expected_shape,
-#     should_raise,
-#     dataframe,
-#     queue,
-#     dtype,
-# ):
-#     """
-#     TSNE test covering multiple functionality and edge cases using parameterization.
-#     """
-#     rng = np.random.default_rng(
-#         seed=42
-#     )  # Use generator to ensure independent dataset per test
-#     X = X_generator(rng)
-#     X = X.astype(dtype) if X.size > 0 else X
-#     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+@pytest.mark.parametrize(
+    "X_generator,n_components,perplexity,expected_shape,should_raise",
+    [
+        pytest.param(
+            lambda rng: np.array([[0, 0, 0], [0, 1, 1], [1, 0, 1], [1, 1, 1]]),
+            2,
+            2.0,
+            (4, 2),
+            False,
+            id="Basic functionality",
+        ),
+        pytest.param(
+            lambda rng: rng.random((100, 10)),
+            2,
+            30.0,
+            (100, 2),
+            False,
+            id="Random data",
+        ),
+        pytest.param(
+            lambda rng: np.array([[0, 0], [1, 1], [2, 2]]),
+            2,
+            2.0,
+            (3, 2),
+            False,
+            id="Valid minimal data",
+        ),
+        pytest.param(
+            lambda rng: np.ones((10, 10)),
+            2,
+            5.0,
+            (10, 2),
+            False,
+            id="Constant data",
+        ),
+        pytest.param(
+            lambda rng: np.empty((0, 10)),
+            2,
+            5.0,
+            None,
+            True,
+            id="Empty data",
+        ),
+        pytest.param(
+            lambda rng: np.array([[0, 0], [1, np.nan], [2, np.inf]]),
+            2,
+            5.0,
+            None,
+            True,
+            id="Data with NaN/Inf",
+        ),
+        pytest.param(
+            lambda rng: rng.random((50, 500)) * (rng.random((50, 500)) > 0.99),
+            2,
+            30.0,
+            (50, 2),
+            False,
+            id="Sparse-like high-dimensional data",
+        ),
+        pytest.param(
+            lambda rng: np.hstack(
+                [
+                    np.ones((50, 1)),  # First column is 1
+                    rng.random((50, 499)) * (rng.random((50, 499)) > 0.99),
+                ]
+            ),
+            2,
+            30.0,
+            (50, 2),
+            False,
+            id="Sparse-like data with constant column",
+        ),
+        pytest.param(
+            lambda rng: np.where(
+                np.arange(50 * 500).reshape(50, 500) % 10 == 0, 0, rng.random((50, 500))
+            ),
+            2,
+            30.0,
+            (50, 2),
+            False,
+            id="Sparse-like data with every tenth element zero",
+        ),
+        pytest.param(
+            lambda rng: rng.random((10, 5)),
+            2,
+            0.5,
+            (10, 2),
+            False,
+            id="Extremely low perplexity",
+        ),
+    ],
+)
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_tsne_functionality_and_edge_cases(
+    X_generator,
+    n_components,
+    perplexity,
+    expected_shape,
+    should_raise,
+    dataframe,
+    queue,
+    dtype,
+):
+    """
+    TSNE test covering multiple functionality and edge cases using parameterization.
+    """
+    rng = np.random.default_rng(
+        seed=42
+    )  # Use generator to ensure independent dataset per test
+    X = X_generator(rng)
+    X = X.astype(dtype) if X.size > 0 else X
+    X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
 
-#     if should_raise:
-#         with pytest.raises(ValueError):
-#             TSNE(n_components=n_components, perplexity=perplexity).fit_transform(X_df)
-#     else:
-#         tsne = TSNE(n_components=n_components, perplexity=perplexity, random_state=42)
-#         embedding = tsne.fit_transform(X_df)
-#         assert embedding.shape == expected_shape, f"Incorrect embedding shape."
+    if should_raise:
+        with pytest.raises(ValueError):
+            TSNE(n_components=n_components, perplexity=perplexity).fit_transform(X_df)
+    else:
+        tsne = TSNE(n_components=n_components, perplexity=perplexity, random_state=42)
+        embedding = tsne.fit_transform(X_df)
+        assert embedding.shape == expected_shape, f"Incorrect embedding shape."
 
 
-# @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-# @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-# def test_tsne_reproducibility(dataframe, queue, dtype):
-#     """
-#     Test reproducibility
-#     """
-#     rng = np.random.default_rng(seed=42)
-#     X = rng.random((50, 10)).astype(dtype)
-#     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-#     tsne_1 = TSNE(n_components=2, random_state=42).fit_transform(X_df)
-#     tsne_2 = TSNE(n_components=2, random_state=42).fit_transform(X_df)
-#     # in case of dpctl.tensor.usm_ndarray covert to numpy array
-#     tsne_1 = _as_numpy(tsne_1)
-#     tsne_2 = _as_numpy(tsne_2)
-#     assert_allclose(tsne_1, tsne_2, rtol=1e-5)
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_tsne_reproducibility(dataframe, queue, dtype):
+    """
+    Test reproducibility
+    """
+    rng = np.random.default_rng(seed=42)
+    X = rng.random((50, 10)).astype(dtype)
+    X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+    tsne_1 = TSNE(n_components=2, random_state=42).fit_transform(X_df)
+    tsne_2 = TSNE(n_components=2, random_state=42).fit_transform(X_df)
+    # in case of dpctl.tensor.usm_ndarray covert to numpy array
+    tsne_1 = _as_numpy(tsne_1)
+    tsne_2 = _as_numpy(tsne_2)
+    assert_allclose(tsne_1, tsne_2, rtol=1e-5)
 
 
 def compute_pairwise_distances(data):
