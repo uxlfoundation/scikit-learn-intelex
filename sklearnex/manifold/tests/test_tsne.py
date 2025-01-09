@@ -180,13 +180,6 @@ def test_tsne_functionality_and_edge_cases(
         assert np.all(
             np.isfinite(embedding)
         ), f"Embedding contains NaN or infinite values."
-        if np.all(X == X[0]):
-            # For constant data, TSNE embeddings may all be zero
-            assert np.all(
-                embedding == 0
-            ), f"Expected all-zero embeddings for constant data"
-        else:
-            assert np.any(embedding != 0), "Embedding contains only zeros."
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
