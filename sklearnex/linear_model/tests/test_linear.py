@@ -140,3 +140,62 @@ def test_sklearnex_reconstruct_model(dataframe, queue, dtype):
 
     tol = 1e-5 if _as_numpy(y_pred).dtype == np.float32 else 1e-7
     assert_allclose(gtr, _as_numpy(y_pred), rtol=tol)
+
+
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("fit_intercept", [False, True])
+@pytest.mark.parametrize("problem_type", ["regular", "overdetermined", "singular"])
+@pytest.mark.skipif(
+    not daal_check_version((2025, "P", 1)),
+    reason="Functionality introduced in the versions >= 2025.0",
+)
+def test_multioutput_regression(dataframe, queue, dtype, fit_intercept, problem_type):
+    if (
+        problem_type != "regular"
+        and queue
+        and queue.sycl_device.is_gpu
+        and not daal_check_version((2025, "P", 200))
+    ):
+        pytest.skip("Functionality introduced in later versions")
+    from sklearnex.linear_model import LinearRegression
+
+    gen = np.random.default_rng(seed=123)
+    if problem_type == "regular":
+        X = gen.standard_normal(size=(20, 5))
+    elif problem_type == "singular":
+        X = gen.standard_normal(size=(20, 4))
+        X[:, 3] = X[:, 2]
+    else:
+        X = gen.standard_normal(size=(10, 20))
+    y = gen.standard_normal(size=(X.shape[0], 3), dtype=dtype)
+
+    X_in = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+    y_in = _convert_to_dataframe(y, sycl_queue=queue, target_df=dataframe)
+
+    model = LinearRegression(fit_intercept=fit_intercept).fit(X_in, y_in)
+    if not fit_intercept:
+        A = X.T @ X
+        b = X.T @ y
+        x = model.coef_.T
+    else:
+        Xi = np.c_[X, np.ones((X.shape[0], 1))]
+        A = Xi.T @ Xi
+        b = Xi.T @ y
+        x = np.r_[model.coef_.T, model.intercept_.reshape((1, -1))]
+
+    residual = A @ x - b
+    assert np.all(np.abs(residual) < 1e-5)
+
+    pred = model.predict(X_in)
+    expected_pred = X @ model.coef_.T + model.intercept_.reshape((1, -1))
+    tol = 1e-5 if pred.dtype == np.float32 else 1e-7
+    assert_allclose(_as_numpy(pred), expected_pred, rtol=tol)
+
+    # check that it also works when 'y' is a list of lists
+    if dataframe == "numpy":
+        y_lists = y.tolist()
+        model_lists = LinearRegression(fit_intercept=fit_intercept).fit(X, y_lists)
+        assert_allclose(model.coef_, model_lists.coef_)
+        if fit_intercept:
+            assert_allclose(model.intercept_, model_lists.intercept_)

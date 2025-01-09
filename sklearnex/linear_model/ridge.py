@@ -22,7 +22,7 @@ if daal_check_version((2024, "P", 600)):
     import numbers
 
     import numpy as np
-    from scipy.sparse import issparse
+    import scipy.sparse as sp
     from sklearn.linear_model import Ridge as _sklearn_Ridge
     from sklearn.metrics import r2_score
     from sklearn.utils.validation import check_is_fitted
@@ -39,11 +39,8 @@ if daal_check_version((2024, "P", 600)):
 
     from .._device_offload import dispatch, wrap_output_data
     from .._utils import PatchingConditionsChain
-
-    if sklearn_check_version("1.6"):
-        from sklearn.utils.validation import validate_data
-    else:
-        validate_data = _sklearn_Ridge._validate_data
+    from ..utils._array_api import get_namespace
+    from ..utils.validation import validate_data
 
     @control_n_jobs(decorated_methods=["fit", "predict", "score"])
     class Ridge(_sklearn_Ridge):
@@ -99,6 +96,8 @@ if daal_check_version((2024, "P", 600)):
                     positive=positive,
                     random_state=random_state,
                 )
+
+        _onedal_Ridge = staticmethod(onedal_Ridge)
 
         def fit(self, X, y, sample_weight=None):
             if sklearn_check_version("1.2"):
@@ -172,7 +171,7 @@ if daal_check_version((2024, "P", 600)):
                         "Only 'auto' solver is supported.",
                     ),
                     (
-                        not issparse(X) and not issparse(y),
+                        not sp.issparse(X) and not sp.issparse(y),
                         "Sparse input is not supported.",
                     ),
                     (sample_weight is None, "Sample weight is not supported."),
@@ -195,8 +194,8 @@ if daal_check_version((2024, "P", 600)):
             assert len(data) <= 2
 
             n_samples = _num_samples(data[0])
-            model_is_sparse = issparse(self.coef_) or (
-                self.fit_intercept and issparse(self.intercept_)
+            model_is_sparse = sp.issparse(self.coef_) or (
+                self.fit_intercept and sp.issparse(self.intercept_)
             )
             patching_status.and_conditions(
                 [
@@ -206,7 +205,7 @@ if daal_check_version((2024, "P", 600)):
                         "Only 'auto' solver is supported.",
                     ),
                     (n_samples > 0, "Number of samples is less than 1."),
-                    (not issparse(data[0]), "Sparse input is not supported."),
+                    (not sp.issparse(data[0]), "Sparse input is not supported."),
                     (not model_is_sparse, "Sparse coefficients are not supported."),
                 ]
             )
@@ -280,11 +279,13 @@ if daal_check_version((2024, "P", 600)):
                 "alpha": self.alpha,
                 "copy_X": self.copy_X,
             }
-            self._onedal_estimator = onedal_Ridge(**onedal_params)
+            self._onedal_estimator = self._onedal_Ridge(**onedal_params)
 
         def _onedal_fit(self, X, y, sample_weight, queue=None):
             # `Sample weight` is not supported. Expected to be None value.
             assert sample_weight is None
+
+            xp, _ = get_namespace(X)
 
             if sklearn_check_version("1.2"):
                 self._validate_params()
@@ -296,9 +297,7 @@ if daal_check_version((2024, "P", 600)):
                 self.tol = check_scalar(
                     self.tol, "tol", target_type=numbers.Real, min_val=0.0
                 )
-                if self.alpha is not None and not isinstance(
-                    self.alpha, (np.ndarray, tuple)
-                ):
+                if self.alpha is not None and np.isscalar(self.alpha):
                     self.alpha = check_scalar(
                         self.alpha,
                         "alpha",
@@ -307,15 +306,15 @@ if daal_check_version((2024, "P", 600)):
                         include_boundaries="left",
                     )
 
-            check_params = {
-                "X": X,
-                "y": y,
-                "dtype": [np.float64, np.float32],
-                "accept_sparse": ["csr", "csc", "coo"],
-                "y_numeric": True,
-                "multi_output": True,
-            }
-            X, y = validate_data(self, **check_params)
+            X, y = validate_data(
+                self,
+                X=X,
+                y=y,
+                dtype=[xp.float64, xp.float32],
+                accept_sparse=["csr", "csc", "coo"],
+                y_numeric=True,
+                multi_output=True,
+            )
 
             if not sklearn_check_version("1.2"):
                 self._normalize = _deprecate_normalize(
@@ -329,7 +328,10 @@ if daal_check_version((2024, "P", 600)):
             self._save_attributes()
 
         def _onedal_predict(self, X, queue=None):
-            X = validate_data(self, X, accept_sparse=False, reset=False)
+            xp, _ = get_namespace(X)
+            X = validate_data(
+                self, X, accept_sparse=False, dtype=[xp.float64, xp.float32], reset=False
+            )
 
             if not hasattr(self, "_onedal_estimator"):
                 self._initialize_onedal_estimator()

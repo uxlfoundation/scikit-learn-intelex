@@ -122,7 +122,6 @@ def validate_data(
         # run local finite check
         allow_nan = ensure_all_finite == "allow-nan"
         # the return object from validate_data can be a single
-
         # element (either x or y) or both (as a tuple). An iterator along with
         # check_x and check_y can go through the output properly without
         # stacking layers of if statements to make sure the proper input_name

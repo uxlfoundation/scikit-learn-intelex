@@ -17,7 +17,6 @@
 import logging
 from abc import ABC
 
-import numpy as np
 from sklearn.linear_model import LinearRegression as _sklearn_LinearRegression
 from sklearn.metrics import r2_score
 from sklearn.utils.validation import check_array, check_is_fitted
@@ -28,6 +27,8 @@ from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from .._config import get_config
 from .._device_offload import dispatch, wrap_output_data
 from .._utils import PatchingConditionsChain, get_patch_message, register_hyperparameters
+from ..utils._array_api import get_namespace
+from ..utils.validation import validate_data
 
 if sklearn_check_version("1.0") and not sklearn_check_version("1.2"):
     from sklearn.linear_model._base import _deprecate_normalize
@@ -38,11 +39,6 @@ from sklearn.utils.validation import check_is_fitted, check_X_y
 from onedal.common.hyperparameters import get_hyperparameters
 from onedal.linear_model import LinearRegression as onedal_LinearRegression
 from onedal.utils import _num_features, _num_samples
-
-if sklearn_check_version("1.6"):
-    from sklearn.utils.validation import validate_data
-else:
-    validate_data = _sklearn_LinearRegression._validate_data
 
 
 @register_hyperparameters({"fit": get_hyperparameters("linear_regression", "train")})
@@ -86,6 +82,8 @@ class LinearRegression(_sklearn_LinearRegression):
                 n_jobs=n_jobs,
                 positive=positive,
             )
+
+    _onedal_LinearRegression = staticmethod(onedal_LinearRegression)
 
     def fit(self, X, y, sample_weight=None):
         if sklearn_check_version("1.2"):
@@ -235,16 +233,16 @@ class LinearRegression(_sklearn_LinearRegression):
 
     def _initialize_onedal_estimator(self):
         onedal_params = {"fit_intercept": self.fit_intercept, "copy_X": self.copy_X}
-        self._onedal_estimator = onedal_LinearRegression(**onedal_params)
+        self._onedal_estimator = self._onedal_LinearRegression(**onedal_params)
 
     def _onedal_fit(self, X, y, sample_weight, queue=None):
         assert sample_weight is None
-
+        xp, _ = get_namespace(X)
         supports_multi_output = daal_check_version((2025, "P", 1))
         check_params = {
             "X": X,
             "y": y,
-            "dtype": [np.float64, np.float32],
+            "dtype": [xp.float64, xp.float32],
             "accept_sparse": ["csr", "csc", "coo"],
             "y_numeric": True,
             "multi_output": supports_multi_output,
@@ -282,10 +280,13 @@ class LinearRegression(_sklearn_LinearRegression):
             self._save_attributes()
 
     def _onedal_predict(self, X, queue=None):
+        xp, _ = get_namespace(X)
         if sklearn_check_version("1.0"):
-            X = validate_data(self, X, accept_sparse=False, reset=False)
+            X = validate_data(
+                self, X, accept_sparse=False, dtype=[xp.float64, xp.float32], reset=False
+            )
         else:
-            X = check_array(X, accept_sparse=False)
+            X = check_array(X, dtype=[xp.float64, xp.float32], accept_sparse=False)
 
         if not hasattr(self, "_onedal_estimator"):
             self._initialize_onedal_estimator()

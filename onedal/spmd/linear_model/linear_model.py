@@ -16,15 +16,8 @@
 
 from onedal.linear_model import LinearRegression as LinearRegression_Batch
 
-from ..._device_offload import support_input_format
 from .._base import BaseEstimatorSPMD
 
 
 class LinearRegression(BaseEstimatorSPMD, LinearRegression_Batch):
-    @support_input_format()
-    def fit(self, X, y, queue=None):
-        return super().fit(X, y, queue=queue)
-
-    @support_input_format()
-    def predict(self, X, queue=None):
-        return super().predict(X, queue=queue)
+    pass

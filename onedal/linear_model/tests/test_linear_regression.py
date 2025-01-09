@@ -164,7 +164,7 @@ def test_overdetermined_system(queue, dtype, fit_intercept):
     X = gen.standard_normal(size=(10, 20))
     y = gen.standard_normal(size=X.shape[0])
 
-    model = LinearRegression(fit_intercept=fit_intercept).fit(X, y)
+    model = LinearRegression(fit_intercept=fit_intercept).fit(X, y, queue=queue)
     if not fit_intercept:
         A = X.T @ X
         b = X.T @ y
@@ -193,7 +193,7 @@ def test_singular_matrix(queue, dtype, fit_intercept):
     X[:, 2] = X[:, 3]
     y = gen.standard_normal(size=X.shape[0])
 
-    model = LinearRegression(fit_intercept=fit_intercept).fit(X, y)
+    model = LinearRegression(fit_intercept=fit_intercept).fit(X, y, queue=queue)
     if not fit_intercept:
         A = X.T @ X
         b = X.T @ y
@@ -205,55 +205,3 @@ def test_singular_matrix(queue, dtype, fit_intercept):
         x = np.r_[model.coef_, model.intercept_]
     residual = A @ x - b
     assert np.all(np.abs(residual) < 1e-6)
-
-
-@pytest.mark.parametrize("queue", get_queues())
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
-@pytest.mark.parametrize("fit_intercept", [False, True])
-@pytest.mark.parametrize("problem_type", ["regular", "overdetermined", "singular"])
-@pytest.mark.skipif(
-    not daal_check_version((2025, "P", 1)),
-    reason="Functionality introduced in the versions >= 2025.0",
-)
-def test_multioutput_regression(queue, dtype, fit_intercept, problem_type):
-    if (
-        problem_type != "regular"
-        and queue
-        and queue.sycl_device.is_gpu
-        and not daal_check_version((2025, "P", 200))
-    ):
-        pytest.skip("Functionality introduced in later versions")
-    gen = np.random.default_rng(seed=123)
-    if problem_type == "regular":
-        X = gen.standard_normal(size=(20, 5))
-    elif problem_type == "singular":
-        X = gen.standard_normal(size=(20, 4))
-        X[:, 3] = X[:, 2]
-    else:
-        X = gen.standard_normal(size=(10, 20))
-    Y = gen.standard_normal(size=(X.shape[0], 3), dtype=dtype)
-
-    model = LinearRegression(fit_intercept=fit_intercept).fit(X, Y)
-    if not fit_intercept:
-        A = X.T @ X
-        b = X.T @ Y
-        x = model.coef_.T
-    else:
-        Xi = np.c_[X, np.ones((X.shape[0], 1))]
-        A = Xi.T @ Xi
-        b = Xi.T @ Y
-        x = np.r_[model.coef_.T, model.intercept_.reshape((1, -1))]
-    residual = A @ x - b
-    assert np.all(np.abs(residual) < 1e-5)
-
-    pred = model.predict(X, queue=queue)
-    expected_pred = X @ model.coef_.T + model.intercept_.reshape((1, -1))
-    tol = 1e-5 if pred.dtype == np.float32 else 1e-7
-    assert_allclose(pred, expected_pred, rtol=tol)
-
-    # check that it also works when 'y' is a list of lists
-    Y_lists = Y.tolist()
-    model_lists = LinearRegression(fit_intercept=fit_intercept).fit(X, Y_lists)
-    assert_allclose(model.coef_, model_lists.coef_)
-    if fit_intercept:
-        assert_allclose(model.intercept_, model_lists.intercept_)

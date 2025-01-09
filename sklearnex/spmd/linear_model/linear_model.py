@@ -14,8 +14,11 @@
 # limitations under the License.
 # ==============================================================================
 
-from onedal.spmd.linear_model import LinearRegression
+from onedal.spmd.linear_model import LinearRegression as onedal_LinearRegression
 
-# TODO:
-# Currently it uses `onedal` module interface.
-# Add sklearnex dispatching.
+from ...linear_model import LinearRegression as LinearRegression_Batch
+
+
+class LinearRegression(LinearRegression_Batch):
+    __doc__ = LinearRegression_Batch.__doc__
+    _onedal_LinearRegression = onedal_LinearRegression
