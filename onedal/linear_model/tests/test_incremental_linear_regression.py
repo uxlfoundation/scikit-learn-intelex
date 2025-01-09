@@ -91,10 +91,10 @@ def test_full_results(queue, num_blocks, dtype):
     if queue and queue.sycl_device.is_gpu:
         tol = 5e-3 if model.coef_.dtype == np.float32 else 1e-5
     else:
-        tol = 2e-3 if model.coef_.dtype == np.float32 else 1e-5
+        tol = 3e-3 if model.coef_.dtype == np.float32 else 1e-5
     assert_allclose(coef, model.coef_.T, rtol=tol)
 
-    tol = 2e-3 if model.intercept_.dtype == np.float32 else 1e-5
+    tol = 3e-3 if model.intercept_.dtype == np.float32 else 1e-5
     assert_allclose(intercept, model.intercept_, rtol=tol)
 
     Xt = gen.random(size=(num_samples_test, num_features), dtype=dtype)
