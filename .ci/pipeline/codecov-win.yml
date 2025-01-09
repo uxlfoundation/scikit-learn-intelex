@@ -22,7 +22,8 @@ steps:
   - script: |
       set PATH=C:\msys64\usr\bin;%PATH%
       curl -Os https://cli.codecov.io/latest/windows/codecov.exe
-      .\codecov.exe -v upload-process -Z -t %CODECOV_TOKEN% -F azure -f coverage.json
+      set VARARGS="-n azure-$(AGENT_OS)-$(PYTHON_VERSION)-$(SKLEARN_VERSION)"
+      .\codecov.exe -v upload-process -Z -t %CODECOV_TOKEN% %VARARGS% -F azure -f coverage.json
     displayName: "Upload to codecov"
     env:
       CODECOV_TOKEN: $(CODECOV_TOKEN)
