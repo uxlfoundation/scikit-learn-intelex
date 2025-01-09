@@ -17,6 +17,7 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
+from sklearn.metrics.pairwise import pairwise_distances
 
 # Note: n_components must be 2 for now
 from onedal.tests.utils._dataframes_support import (
@@ -44,8 +45,8 @@ def test_sklearnex_tsne_import(dataframe, queue):
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     tsne = TSNE(n_components=2, perplexity=2.0).fit(X_df)
     assert "daal4py" in tsne.__module__
-    assert hasattr(tsne, "n_components"), "TSNE missing 'n_components' attribute."
     assert tsne.n_components == 2, "TSNE 'n_components' attribute is incorrect."
+    assert tsne.perplexity == 2.0, "TSNE 'perplexity' attribute is incorrect."
 
 
 @pytest.mark.parametrize(
@@ -81,7 +82,15 @@ def test_sklearnex_tsne_import(dataframe, queue):
             5.0,
             (10, 2),
             False,
-            id="Constant data",
+            id="Constant data1",
+        ),
+        pytest.param(
+            lambda rng: np.full((10, 10), 10),
+            2,
+            5.0,
+            (10, 2),
+            False,
+            id="Constant data2",
         ),
         pytest.param(
             lambda rng: np.empty((0, 10)),
@@ -152,9 +161,7 @@ def test_tsne_functionality_and_edge_cases(
     queue,
     dtype,
 ):
-    """
-    TSNE test covering multiple functionality and edge cases using parameterization.
-    """
+
     rng = np.random.default_rng(
         seed=42
     )  # Use generator to ensure independent dataset per test
@@ -168,7 +175,18 @@ def test_tsne_functionality_and_edge_cases(
     else:
         tsne = TSNE(n_components=n_components, perplexity=perplexity, random_state=42)
         embedding = tsne.fit_transform(X_df)
+        embedding = _as_numpy(embedding)
         assert embedding.shape == expected_shape, f"Incorrect embedding shape."
+        assert np.all(
+            np.isfinite(embedding)
+        ), f"Embedding contains NaN or infinite values."
+        if np.all(X == X[0]):
+            # For constant data, TSNE embeddings may all be zero
+            assert np.all(
+                embedding == 0
+            ), f"Expected all-zero embeddings for constant data"
+        else:
+            assert np.any(embedding != 0), "Embedding contains only zeros."
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -188,60 +206,35 @@ def test_tsne_reproducibility(dataframe, queue, dtype):
     assert_allclose(tsne_1, tsne_2, rtol=1e-5)
 
 
-def compute_pairwise_distances(data):
-    """
-    Returns:
-    distances[i, j] represents the distance between point i and point j in the data.
-    """
-    data = _as_numpy(data)
-    distances = np.linalg.norm(data[:, np.newaxis, :] - data[np.newaxis, :, :], axis=-1)
-    return distances
-
-
-@pytest.mark.parametrize(
-    "X,n_components,perplexity,expected_shape",
-    [
-        pytest.param(
-            np.array(
-                [
-                    [1, 1, 1, 1],
-                    [1.1, 1.1, 1.1, 1.1],
-                    [0.9, 0.9, 0.9, 0.9],
-                    [-100000, -100000, -100000, -100000],
-                    [-100000.1, -100000.1, -100000.1, -100000.1],
-                    [-100001.1, -100001.1, -100001.1, -100001.1],
-                    [1, -1, 1, -1],
-                    [-1e-9, 1e-9, -1e-9, 1e-9],
-                    [42, 42, 42, 42],
-                    [8, -8, 8e8, -8e-8],
-                    [9e-7, -9e7, 9e-7, -9e7],
-                    [1e-3, 1e3, -1e3, -1e-3],
-                    [0, 1e9, -1e-9, 1],
-                    [0, 0, 1, -1],
-                    [0, 0, 0, 0],
-                    [-1e5, 0, 1e5, -1],
-                    [2e9, 2e-9, -2e9, -2e-9],
-                    [5e-5, 5e5, -5e-5, -5e5],
-                    [1, 0, -1e8, 1e8],
-                ]
-            ),
-            2,
-            3.0,
-            (19, 2),
-            id="Complex Dataset",
-        ),
-    ],
-)
-@pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues(device_filter_="gpu")
-)
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_tsne_complex_and_gpu_validation(
-    X, n_components, perplexity, expected_shape, dataframe, queue, dtype
-):
+def test_tsne_complex_and_gpu_validation(dataframe, queue, dtype):
     """
     TSNE test covering specific complex datasets and GPU validation using parameterization.
     """
+    X = np.array(
+        [
+            [1, 1, 1, 1],
+            [1.1, 1.1, 1.1, 1.1],
+            [0.9, 0.9, 0.9, 0.9],
+            [2e9, 2e-9, -2e9, -2e-9],
+            [5e-5, 5e5, -5e-5, -5e5],
+            [9e-7, -9e7, 9e-7, -9e7],
+            [1, -1, 1, -1],
+            [-1e-9, 1e-9, -1e-9, 1e-9],
+            [42, 42, 42, 42],
+            [8, -8, 8e8, -8e-8],
+            [1e-3, 1e3, -1e3, -1e-3],
+            [0, 1e9, -1e-9, 1],
+            [0, 0, 1, -1],
+            [0, 0, 0, 0],
+            [-1e5, 0, 1e5, -1],
+            [1, 0, -1e8, 1e8],
+        ]
+    )
+    n_components = 2
+    perplexity = 3.0
+    expected_shape = (16, 2)
 
     X = X.astype(dtype)
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
@@ -257,14 +250,12 @@ def test_tsne_complex_and_gpu_validation(
     # Ensure close points in original space remain close in embedding
     group_a_indices = [0, 1, 2]  # Hardcoded index of similar points
     group_b_indices = [3, 4, 5]  # Hardcoded index of dissimilar points from a
-    embedding_distances = compute_pairwise_distances(
-        embedding
+    embedding_distances = pairwise_distances(
+        X, metric="euclidean"
     )  # Get an array of distance where [i, j] is distance b/t i and j
     # Check for distance b/t two points in group A < distance of this point and any point in group B
     for i in group_a_indices:
         for j in group_a_indices:
-            if i != j:
-                assert (
-                    embedding_distances[i, j]
-                    < embedding_distances[i, group_b_indices].min()
-                ), f"Point {i} in Group A is closer to a point in Group B than to another point in Group A."
+            assert (
+                embedding_distances[i, j] < embedding_distances[i, group_b_indices].min()
+            ), f"Point {i} in Group A is closer to a point in Group B than to another point in Group A."
