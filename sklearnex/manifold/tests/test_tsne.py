@@ -17,6 +17,7 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
+
 # Note: n_components must be 2 for now
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
