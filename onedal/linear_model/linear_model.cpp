@@ -89,10 +89,11 @@ struct params2desc {
 #if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240600
         const auto alpha = params["alpha"].cast<double>();
         auto desc = linear_regression::descriptor<Float, Method, Task>(intercept, alpha)
-            .set_result_options(get_onedal_result_options(params));
+                        .set_result_options(get_onedal_result_options(params));
 #else
-        auto desc = linear_regression::descriptor<Float, Method, Task>(intercept)
-            .set_result_options(get_onedal_result_options(params));
+        auto desc =
+            linear_regression::descriptor<Float, Method, Task>(intercept).set_result_options(
+                get_onedal_result_options(params));
 #endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240600
         return desc;
     }
@@ -102,65 +103,65 @@ template <typename Policy, typename Task>
 void init_train_ops(py::module& m) {
 #if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240000
     using train_hyperparams_t = dal::linear_regression::detail::train_parameters<Task>;
-    m.def("train", [](
-        const Policy& policy,
-        const py::dict& params,
-        const train_hyperparams_t& hyperparams,
-        const table& data,
-        const table& responses) {
-            using namespace dal::linear_regression;
-            using input_t = train_input<Task>;
-            train_ops_with_hyperparams ops(
-                policy, input_t{ data, responses }, params2desc{}, hyperparams);
-            return fptype2t{ method2t{ Task{}, ops } }(params);
-        }
-    );
+    m.def("train",
+          [](const Policy& policy,
+             const py::dict& params,
+             const train_hyperparams_t& hyperparams,
+             const table& data,
+             const table& responses) {
+              using namespace dal::linear_regression;
+              using input_t = train_input<Task>;
+              train_ops_with_hyperparams ops(policy,
+                                             input_t{ data, responses },
+                                             params2desc{},
+                                             hyperparams);
+              return fptype2t{ method2t{ Task{}, ops } }(params);
+          });
 #endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240000
-    m.def("train", [](
-        const Policy& policy,
-        const py::dict& params,
-        const table& data,
-        const table& responses) {
-            using namespace dal::linear_regression;
-            using input_t = train_input<Task>;
-            train_ops ops(policy, input_t{ data, responses }, params2desc{});
-            return fptype2t{ method2t{ Task{}, ops } }(params);
-        }
-    );
+    m.def("train",
+          [](const Policy& policy,
+             const py::dict& params,
+             const table& data,
+             const table& responses) {
+              using namespace dal::linear_regression;
+              using input_t = train_input<Task>;
+              train_ops ops(policy, input_t{ data, responses }, params2desc{});
+              return fptype2t{ method2t{ Task{}, ops } }(params);
+          });
 };
 
 template <typename Policy, typename Task>
 void init_partial_train_ops(py::module& m) {
     using prev_result_t = dal::linear_regression::partial_train_result<Task>;
     using train_hyperparams_t = dal::linear_regression::detail::train_parameters<Task>;
-    m.def("partial_train", [](
-        const Policy& policy,
-        const py::dict& params,
-        const train_hyperparams_t& hyperparams,
-        const prev_result_t& prev,
-        const table& data,
-        const table& responses) {
-            using namespace dal::linear_regression;
-            using input_t = partial_train_input<Task>;
-            partial_train_ops_with_hyperparams ops(
-                policy, input_t{ prev, data, responses }, params2desc{}, hyperparams);
-            return fptype2t{ method2t{ Task{}, ops } }(params);
-        }
-    );
+    m.def("partial_train",
+          [](const Policy& policy,
+             const py::dict& params,
+             const train_hyperparams_t& hyperparams,
+             const prev_result_t& prev,
+             const table& data,
+             const table& responses) {
+              using namespace dal::linear_regression;
+              using input_t = partial_train_input<Task>;
+              partial_train_ops_with_hyperparams ops(policy,
+                                                     input_t{ prev, data, responses },
+                                                     params2desc{},
+                                                     hyperparams);
+              return fptype2t{ method2t{ Task{}, ops } }(params);
+          });
 
     using prev_result_t = dal::linear_regression::partial_train_result<Task>;
-    m.def("partial_train", [](
-        const Policy& policy,
-        const py::dict& params,
-        const prev_result_t& prev,
-        const table& data,
-        const table& responses) {
-            using namespace dal::linear_regression;
-            using input_t = partial_train_input<Task>;
-            partial_train_ops ops(policy, input_t{ prev, data, responses }, params2desc{});
-            return fptype2t{ method2t{ Task{}, ops } }(params);
-        }
-    );
+    m.def("partial_train",
+          [](const Policy& policy,
+             const py::dict& params,
+             const prev_result_t& prev,
+             const table& data,
+             const table& responses) {
+              using namespace dal::linear_regression;
+              using input_t = partial_train_input<Task>;
+              partial_train_ops ops(policy, input_t{ prev, data, responses }, params2desc{});
+              return fptype2t{ method2t{ Task{}, ops } }(params);
+          });
 };
 
 template <typename Policy, typename Task>
@@ -168,24 +169,19 @@ void init_finalize_train_ops(py::module& m) {
     using input_t = dal::linear_regression::partial_train_result<Task>;
     using train_hyperparams_t = dal::linear_regression::detail::train_parameters<Task>;
 
-    m.def("finalize_train", [](
-        const Policy& policy,
-        const py::dict& params,
-        const train_hyperparams_t& hyperparams,
-        const input_t& data) {
-            finalize_train_ops_with_hyperparams ops(policy, data, params2desc{}, hyperparams);
-            return fptype2t{ method2t{ Task{}, ops } }(params);
-        }
-    );
+    m.def("finalize_train",
+          [](const Policy& policy,
+             const py::dict& params,
+             const train_hyperparams_t& hyperparams,
+             const input_t& data) {
+              finalize_train_ops_with_hyperparams ops(policy, data, params2desc{}, hyperparams);
+              return fptype2t{ method2t{ Task{}, ops } }(params);
+          });
 
-    m.def("finalize_train", [](
-        const Policy& policy,
-        const py::dict& params,
-        const input_t& data) {
-            finalize_train_ops ops(policy, data, params2desc{});
-            return fptype2t{ method2t{ Task{}, ops } }(params);
-        }
-    );
+    m.def("finalize_train", [](const Policy& policy, const py::dict& params, const input_t& data) {
+        finalize_train_ops ops(policy, data, params2desc{});
+        return fptype2t{ method2t{ Task{}, ops } }(params);
+    });
 };
 
 template <typename Policy, typename Task>
@@ -263,17 +259,20 @@ void init_train_hyperparameters(py::module_& m) {
 
     auto cls = py::class_<train_hyperparams_t>(m, "train_hyperparameters")
                    .def(py::init())
-                   .def("set_cpu_macro_block", [](train_hyperparams_t& self, int64_t cpu_macro_block) {
-                        self.set_cpu_macro_block(cpu_macro_block);
-                   })
-                   .def("set_gpu_macro_block", [](train_hyperparams_t& self, int64_t gpu_macro_block) {
-                        self.set_gpu_macro_block(gpu_macro_block);
-                   })
-                   .def("get_cpu_macro_block", [](const train_hyperparams_t& self) {
-                        return self.get_cpu_macro_block();
-                   })
+                   .def("set_cpu_macro_block",
+                        [](train_hyperparams_t& self, int64_t cpu_macro_block) {
+                            self.set_cpu_macro_block(cpu_macro_block);
+                        })
+                   .def("set_gpu_macro_block",
+                        [](train_hyperparams_t& self, int64_t gpu_macro_block) {
+                            self.set_gpu_macro_block(gpu_macro_block);
+                        })
+                   .def("get_cpu_macro_block",
+                        [](const train_hyperparams_t& self) {
+                            return self.get_cpu_macro_block();
+                        })
                    .def("get_gpu_macro_block", [](const train_hyperparams_t& self) {
-                        return self.get_gpu_macro_block();
+                       return self.get_gpu_macro_block();
                    });
 }
 
