@@ -16,8 +16,9 @@
 
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose
 from dpctl.tensor import to_numpy, usm_ndarray
+from numpy.testing import assert_allclose
+
 # Note: n_components must be 2 for now
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
@@ -195,9 +196,11 @@ def compute_pairwise_distances(data):
     Returns:
     distances[i, j] represents the distance between point i and point j in the data.
     """
-    if isinstance(data, usm_ndarray): data = to_numpy(data)
+    if isinstance(data, usm_ndarray):
+        data = to_numpy(data)
     distances = np.linalg.norm(data[:, np.newaxis, :] - data[np.newaxis, :, :], axis=-1)
     return distances
+
 
 @pytest.mark.parametrize(
     "X,n_components,perplexity,expected_shape",
@@ -249,7 +252,8 @@ def test_tsne_complex_and_gpu_validation(
 
     # Validate results
     assert embedding.shape == expected_shape, f"Incorrect embedding shape."
-    if isinstance(embedding, usm_ndarray): embedding = to_numpy(embedding)
+    if isinstance(embedding, usm_ndarray):
+        embedding = to_numpy(embedding)
     assert np.all(np.isfinite(embedding)), f"Embedding contains NaN or infinite values."
     assert np.any(embedding != 0), f"Embedding contains only zeros."
 
