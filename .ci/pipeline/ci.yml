@@ -49,7 +49,7 @@ jobs:
     vmImage: 'ubuntu-22.04'
   steps:
   - script: |
-      echo $(CODECOV_TOKEN_OPEN)
+      echo $(CODECOV_TOKEN)
   - template: linting.yml
 - job: LinuxCondaRecipe
   dependsOn: Lint
