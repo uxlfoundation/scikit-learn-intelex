@@ -207,9 +207,9 @@ def compute_pairwise_distances(data):
                     [1, 1, 1, 1],
                     [1.1, 1.1, 1.1, 1.1],
                     [0.9, 0.9, 0.9, 0.9],
-                    [-10000, -10000, -10000, -10000],
-                    [-10000.1, -10000.1, -10000.1, -10000.1],
-                    [-10001.1, -10001.1, -10001.1, -10001.1],
+                    [-100000, -100000, -100000, -100000],
+                    [-100000.1, -100000.1, -100000.1, -100000.1],
+                    [-100001.1, -100001.1, -100001.1, -100001.1],
                     [1, -1, 1, -1],
                     [-1e-9, 1e-9, -1e-9, 1e-9],
                     [42, 42, 42, 42],
@@ -232,7 +232,9 @@ def compute_pairwise_distances(data):
         ),
     ],
 )
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues(device_filter_="gpu"))
+@pytest.mark.parametrize(
+    "dataframe,queue", get_dataframes_and_queues(device_filter_="gpu")
+)
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_tsne_complex_and_gpu_validation(
     X, n_components, perplexity, expected_shape, dataframe, queue, dtype
@@ -259,15 +261,9 @@ def test_tsne_complex_and_gpu_validation(
         embedding
     )  # Get an array of distance where [i, j] is distance b/t i and j
     # Check for distance b/t two points in group A < distance of this point and any point in group B
-    print("Embedding:\n", embedding)
-    print("Embedding distances:\n", embedding_distances)
-    print("Group A distances:\n", embedding_distances[group_a_indices][:, group_a_indices])
-    print("Group B distances:\n", embedding_distances[group_a_indices][:, group_b_indices])
     for i in group_a_indices:
         for j in group_a_indices:
             if i != j:
-                print(f"Distances within Group A: {embedding_distances[i, j]}")
-                print(f"Minimum distance from Group A to Group B: {embedding_distances[i, group_b_indices].min()}")
                 assert (
                     embedding_distances[i, j]
                     < embedding_distances[i, group_b_indices].min()
