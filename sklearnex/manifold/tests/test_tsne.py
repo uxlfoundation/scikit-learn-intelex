@@ -17,7 +17,7 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
-
+from dpctl.tensor import to_numpy, usm_ndarray
 # Note: n_components must be 2 for now
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
@@ -182,6 +182,11 @@ def test_tsne_reproducibility(dataframe, queue, dtype):
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     tsne_1 = TSNE(n_components=2, random_state=42).fit_transform(X_df)
     tsne_2 = TSNE(n_components=2, random_state=42).fit_transform(X_df)
+    # in case of dpctl.tensor.usm_ndarray covert to numpy array
+    if isinstance(tsne_1, usm_ndarray):
+        tsne_1 = to_numpy(tsne_1)
+    if isinstance(tsne_2, usm_ndarray):
+        tsne_2 = to_numpy(tsne_2)
     assert_allclose(tsne_1, tsne_2, rtol=1e-5)
 
 
@@ -190,33 +195,9 @@ def compute_pairwise_distances(data):
     Returns:
     distances[i, j] represents the distance between point i and point j in the data.
     """
+    if isinstance(data, usm_ndarray): data = to_numpy(data)
     distances = np.linalg.norm(data[:, np.newaxis, :] - data[np.newaxis, :, :], axis=-1)
     return distances
-
-
-def calculate_overlap_percentage(original_ranks, tsne_ranks, k):
-    """
-    Calculate percentage of overlapping neighbors between original and TSNE ranks.
-
-    Parameters:
-        original_ranks (np.ndarray): Ranked indices for original data.
-        tsne_ranks (np.ndarray): Ranked indices for TSNE embedding.
-        k (int): Number of top neighbors to consider.
-
-    Returns:
-        float: Mean overlap percentage.
-    """
-    num_points = original_ranks.shape[0]
-    overlap_percentages = []
-
-    for i in range(num_points):
-        original_neighbors = set(original_ranks[i, :k])
-        tsne_neighbors = set(tsne_ranks[i, :k])
-        overlap = len(original_neighbors & tsne_neighbors) / k
-        overlap_percentages.append(overlap)
-
-    return np.mean(overlap_percentages)
-
 
 @pytest.mark.parametrize(
     "X,n_components,perplexity,expected_shape",
@@ -268,6 +249,7 @@ def test_tsne_complex_and_gpu_validation(
 
     # Validate results
     assert embedding.shape == expected_shape, f"Incorrect embedding shape."
+    if isinstance(embedding, usm_ndarray): embedding = to_numpy(embedding)
     assert np.all(np.isfinite(embedding)), f"Embedding contains NaN or infinite values."
     assert np.any(embedding != 0), f"Embedding contains only zeros."
 
@@ -281,8 +263,6 @@ def test_tsne_complex_and_gpu_validation(
     for i in group_a_indices:
         for j in group_a_indices:
             if i != j:
-                print(f"Distances within Group A: {embedding_distances[i, j]}")
-                print(f"Minimum distance from Group A to Group B: {embedding_distances[i, group_b_indices].min()}")
                 assert (
                     embedding_distances[i, j]
                     < embedding_distances[i, group_b_indices].min()
