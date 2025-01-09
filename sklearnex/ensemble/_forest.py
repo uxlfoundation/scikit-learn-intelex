@@ -812,17 +812,18 @@ class ForestClassifier(_sklearn_ForestClassifier, BaseForest):
         return patching_status
 
     def _onedal_predict(self, X, queue=None):
-        if sklearn_check_version("1.0"):
-            X = validate_data(
-                self,
-                X,
-                dtype=[np.float64, np.float32],
-                force_all_finite=False,
-                reset=False,
-                ensure_2d=True,
-            )
-        else:
-            if not get_config()["use_raw_input"]:
+        xp, _ = get_namespace(X)
+        if not get_config()["use_raw_input"]:
+            if sklearn_check_version("1.0"):
+                X = validate_data(
+                    self,
+                    X,
+                    dtype=[np.float64, np.float32],
+                    force_all_finite=False,
+                    reset=False,
+                    ensure_2d=True,
+                )
+            else:
                 X = check_array(
                     X,
                     dtype=[np.float64, np.float32],
@@ -844,7 +845,7 @@ class ForestClassifier(_sklearn_ForestClassifier, BaseForest):
             self._check_n_features(X, reset=False)
 
         res = self._onedal_estimator.predict(X, queue=queue)
-        return np.take(self.classes_, res.ravel().astype(np.int64, casting="unsafe"))
+        return xp.take(self.classes_, xp.astype(xp.reshape(res, -1), xp.int64, casting="unsafe"))
 
     def _onedal_predict_proba(self, X, queue=None):
         xp, _ = get_namespace(X)
