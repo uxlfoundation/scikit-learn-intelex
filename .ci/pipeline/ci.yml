@@ -60,6 +60,8 @@ jobs:
   pool:
     vmImage: 'ubuntu-22.04'
   steps:
+  - script: |
+      echo $(CODECOV_TOKEN_OPEN)
   - template: conda-recipe-lnx.yml
 - job: WindowsCondaRecipe
   dependsOn: Lint
