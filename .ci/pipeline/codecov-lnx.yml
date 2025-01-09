@@ -23,7 +23,7 @@ steps:
   - script: |
       curl -Os https://cli.codecov.io/latest/linux/codecov
       chmod +x codecov
-      export VARARGS=-n azure-$(AGENT_OS)-$(PYTHON_VERSION)-$(SKLEARN_VERSION)
+      export VARARGS=-n azure-$AGENT_OS-$(PYTHON_VERSION)-$(SKLEARN_VERSION)
       ./codecov -v upload-process -Z -t ${CODECOV_TOKEN} ${VARARGS} -F azure -f coverage.json
     displayName: "Upload to codecov"
     env:
