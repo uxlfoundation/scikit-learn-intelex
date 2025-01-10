@@ -118,6 +118,7 @@ def custom_build_cmake_clib(
         "-DoneDAL_LIBRARY_DIR=" + jp(os.environ["DALROOT"], "lib", arch_dir),
         "-Dpybind11_DIR=" + pybind11.get_cmake_dir(),
         "-DoneDAL_USE_PARAMETERS_LIB=" + use_parameters_arg,
+        "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON",
     ]
 
     if build_distribute:
