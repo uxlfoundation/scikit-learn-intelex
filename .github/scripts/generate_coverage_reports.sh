@@ -27,7 +27,7 @@ if [[ $OSTYPE == *"linux"* ]]; then
         GCOV_EXE="gcov"
     fi
     echo $GCOV_EXE
-    FILTER=$(dirname $(realpath ./onedal)).*
+    FILTER=$(realpath ./onedal).*
     echo $FILTER
     gcovr --gcov-executable "${GCOV_EXE}" -r build/ --lcov -v --filter "${FITLER}" -o coverage"${1}".info
     sed -i "s|${PWD}/||g" coverage"${1}".info
