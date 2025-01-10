@@ -28,16 +28,19 @@ ONEDAL_PY_INIT_MODULE(table_metadata) {
     py::class_<table_metadata> table_metadata_obj(m, "table_metadata");
     table_metadata_obj.def(py::init());
     table_metadata_obj.def_property_readonly("feature_count", //
-                            &table_metadata::get_feature_count);
+                                             &table_metadata::get_feature_count);
 
-    table_metadata_obj.def("get_raw_dtype", [](const table_metadata* const ptr, std::int64_t feature) {
-        return static_cast<std::int64_t>(ptr->get_data_type(feature));
-    });
+    table_metadata_obj.def("get_raw_dtype",
+                           [](const table_metadata* const ptr, std::int64_t feature) {
+                               return static_cast<std::int64_t>(ptr->get_data_type(feature));
+                           });
 
-    table_metadata_obj.def("get_npy_dtype", [](const table_metadata* const ptr, std::int64_t feature) {
-        const auto npy_type = convert_dal_to_npy_type(ptr->get_data_type(feature));
-        return py::dtype(npy_type);
-    });
+    table_metadata_obj.def("get_npy_dtype",
+                           [](const table_metadata* const ptr, std::int64_t feature) {
+                               const auto npy_type =
+                                   convert_dal_to_npy_type(ptr->get_data_type(feature));
+                               return py::dtype(npy_type);
+                           });
 
     m.def("get_table_metadata", [](const dal::table& t) {
         return t.get_metadata();

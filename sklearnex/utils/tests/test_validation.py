@@ -14,8 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 
-import time
-
 import numpy as np
 import numpy.random as rand
 import pytest
@@ -67,7 +65,7 @@ def test_sum_infinite_actually_finite(dtype, shape, ensure_all_finite):
 )
 @pytest.mark.parametrize("ensure_all_finite", ["allow-nan", True])
 @pytest.mark.parametrize("check", ["inf", "NaN", None])
-@pytest.mark.parametrize("seed", [0, int(time.time())])
+@pytest.mark.parametrize("seed", [0, 123456])
 @pytest.mark.parametrize(
     "dataframe, queue",
     get_dataframes_and_queues(_dataframes_supported),
@@ -110,7 +108,7 @@ def test_validate_data_random_location(
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("ensure_all_finite", ["allow-nan", True])
 @pytest.mark.parametrize("check", ["inf", "NaN", None])
-@pytest.mark.parametrize("seed", [0, int(time.time())])
+@pytest.mark.parametrize("seed", [0, 123456])
 @pytest.mark.parametrize(
     "dataframe, queue",
     get_dataframes_and_queues(_dataframes_supported),
@@ -151,7 +149,7 @@ def test_validate_data_random_shape_and_location(
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("check", ["inf", "NaN", None])
-@pytest.mark.parametrize("seed", [0, int(time.time())])
+@pytest.mark.parametrize("seed", [0, 123456])
 @pytest.mark.parametrize(
     "dataframe, queue",
     get_dataframes_and_queues(_dataframes_supported),

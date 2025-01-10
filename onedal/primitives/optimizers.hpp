@@ -24,7 +24,7 @@
 
 namespace oneapi::dal::python {
 
-template<typename Optimizer>
+template <typename Optimizer>
 auto get_optimizer_descriptor(const pybind11::dict& params) {
     auto optimizer = Optimizer{};
     optimizer.set_tolerance(params["tol"].cast<double>());
