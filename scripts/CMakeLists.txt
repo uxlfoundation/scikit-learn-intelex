@@ -63,14 +63,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${WARNING_FLAGS} ${SDL_FLAGS}")
 
 set(PYTHON_ONEDAL "${CMAKE_CURRENT_SOURCE_DIR}/../onedal/")
 
-if(ONEDAL_GCOV)
-    if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-        set(CMAKE_CXX_FLAGS "-Xarch_host -fprofile-arcs -Xarch_host -ftest-coverage -fprofile-dir=${PYTHON_ONEDAL} ${CMAKE_CXX_FLAGS}")
-        set(CMAKE_SHARED_LINKER_FLAGS "-lgcov -Xarch_host -fprofile-dir=${PYTHON_ONEDAL} ${CMAKE_SHARED_LINKER_FLAGS}")
-    else()
-        message(FATAL_ERROR "Unsupported compiler for code coverage.")
-    endif()
-endif()
+
 
 file(GLOB_RECURSE sources
     ${PYTHON_ONEDAL}/**/*.cpp
@@ -148,6 +141,16 @@ elseif(IFACE_IS_DPC OR IFACE_IS_SPMD_DPC)
     if(WIN32)
         set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
     endif()
+
+    if(ONEDAL_GCOV)
+        if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+            set(CMAKE_CXX_FLAGS "-Xarch_host -fprofile-arcs -Xarch_host -ftest-coverage -fprofile-dir=${PYTHON_ONEDAL} ${CMAKE_CXX_FLAGS}")
+            set(CMAKE_SHARED_LINKER_FLAGS "-lgcov -Xarch_host -fprofile-dir=${PYTHON_ONEDAL} ${CMAKE_SHARED_LINKER_FLAGS}")
+        else()
+            message(FATAL_ERROR "Unsupported compiler for code coverage.")
+        endif()
+    endif()
+
 
     if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
         set(CMAKE_CXX_FLAGS "-fsycl ${CMAKE_CXX_FLAGS}")
