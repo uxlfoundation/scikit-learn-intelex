@@ -29,7 +29,8 @@ if [[ $OSTYPE == *"linux"* ]]; then
     echo $GCOV_EXE
     FILTER=$(realpath ./onedal).*
     echo $FILTER
-    gcovr --gcov-executable "${GCOV_EXE}" -r build/ --lcov -v --filter "${FITLER}" -o coverage"${1}".info
-    sed -i "s|${PWD}/||g" coverage"${1}".info
+    cd build
+    gcovr --gcov-executable "${GCOV_EXE}" -r ../ . --lcov -v --filter "${FITLER}" -o ../coverage"${1}".info
+    sed -i "s|${PWD}/||g" ../coverage"${1}".info
     # remove absolute filepath to match coverage.py file
 fi
