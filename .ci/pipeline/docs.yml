@@ -64,7 +64,7 @@ jobs:
     displayName: 'Install requirements'
   - script: |
       export PREFIX=$(dirname $(dirname $(which python)))
-      export e=$PREFIX
+      export DALROOT=$PREFIX
       ./conda-recipe/build.sh
       echo "Python executable being used1: $(which python)"
     displayName: 'Build daal4py/sklearnex'
