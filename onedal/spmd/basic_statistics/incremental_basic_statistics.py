@@ -17,11 +17,8 @@
 from ...basic_statistics import (
     IncrementalBasicStatistics as base_IncrementalBasicStatistics,
 )
-from ..._device_offload import support_input_format
 from .._base import BaseEstimatorSPMD
 
 
 class IncrementalBasicStatistics(BaseEstimatorSPMD, base_IncrementalBasicStatistics):
-    @support_input_format()
-    def partial_fit(self, X, weights=None, queue=None):
-        return super().partial_fit(X, weights=weights, queue=queue)
+    pass

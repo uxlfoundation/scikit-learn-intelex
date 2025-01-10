@@ -15,11 +15,8 @@
 # ==============================================================================
 
 from ...decomposition import IncrementalPCA as base_IncrementalPCA
-from ..._device_offload import support_input_format
 from .._base import BaseEstimatorSPMD
 
 
 class IncrementalPCA(BaseEstimatorSPMD, base_IncrementalPCA):
-    @support_input_format()
-    def partial_fit(self, X, y=None, queue=None):
-        return super().partial_fit(X, queue=queue)
+    pass

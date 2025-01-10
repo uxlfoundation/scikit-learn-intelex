@@ -17,11 +17,8 @@
 from ...linear_model import (
     IncrementalLinearRegression as base_IncrementalLinearRegression,
 )
-from ..._device_offload import support_input_format
 from .._base import BaseEstimatorSPMD
 
 
 class IncrementalLinearRegression(BaseEstimatorSPMD, base_IncrementalLinearRegression):
-    @support_input_format()
-    def partial_fit(self, X, y, queue=None):
-        return super().partial_fit(X, y, queue=queue)
+    pass

@@ -17,13 +17,10 @@
 from ...covariance import (
     IncrementalEmpiricalCovariance as base_IncrementalEmpiricalCovariance,
 )
-from ..._device_offload import support_input_format
 from .._base import BaseEstimatorSPMD
 
 
 class IncrementalEmpiricalCovariance(
     BaseEstimatorSPMD, base_IncrementalEmpiricalCovariance
 ):
-    @support_input_format()
-    def partial_fit(self, X, y=None, queue=None):
-        return super().partial_fit(X, queue=queue)
+    pass
