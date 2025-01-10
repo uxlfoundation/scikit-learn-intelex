@@ -72,7 +72,11 @@ jobs:
       echo "Current directory3: $(pwd)"
       ls -l daal4py/
       ls -l build/
+      ls -l build/lib.linux-x86_64-cpython-311
+      echo "Checking for shared libraries in build directory:"
+      find build/ -name "*.so"
       export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
+      echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
       cd doc/daal4py
       python -c "import sys; print('Current sys.path1:', sys.path)"
       make html
