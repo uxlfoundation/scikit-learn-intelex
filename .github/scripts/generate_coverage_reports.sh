@@ -21,13 +21,14 @@ coverage json -o coverage."${1}".json
 # create gcov report (lcov format)
 if [[ $OSTYPE == *"linux"* ]]; then
     # extract llvm tool for gcov processing
-    if [[ -n "$2" ]]; then
+    if [[ -z "$2" ]]; then
         GCOV_EXE="$(dirname $(type -P -a icpx))/compiler/llvm-cov gcov"
     else
         GCOV_EXE="gcov"
     fi
-
+    echo $GCOV_EXE
     FILTER=$(dirname $(realpath .)).*
+    echo $FILTER
     gcovr --gcov-executable "${GCOV_EXE}" -r build/ --lcov --filter "${FITLER}" -o coverage"${1}".info
     sed -i "s|${PWD}/||g" coverage"${1}".info
     # remove absolute filepath to match coverage.py file
