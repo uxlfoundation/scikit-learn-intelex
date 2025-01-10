@@ -99,7 +99,9 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
 
         self._queue = queue
 
-        policy = IncrementalEmpiricalCovariance._get_policy(IncrementalEmpiricalCovariance, queue, X)
+        policy = IncrementalEmpiricalCovariance._get_policy(
+            IncrementalEmpiricalCovariance, queue, X
+        )
 
         X_table = to_table(X, queue=queue)
 

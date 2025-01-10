@@ -105,7 +105,9 @@ class IncrementalBasicStatistics(BaseBasicStatistics):
             Returns the instance itself.
         """
         self._queue = queue
-        policy = IncrementalBasicStatistics._get_policy(IncrementalBasicStatistics, queue, X)
+        policy = IncrementalBasicStatistics._get_policy(
+            IncrementalBasicStatistics, queue, X
+        )
 
         X = _check_array(
             X, dtype=[np.float64, np.float32], ensure_2d=False, force_all_finite=False

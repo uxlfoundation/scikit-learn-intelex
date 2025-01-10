@@ -100,7 +100,9 @@ class IncrementalPCA(BasePCA):
 
     def _reset(self):
         self._need_to_finalize = False
-        module = IncrementalPCA._get_backend(IncrementalPCA, "decomposition", "dim_reduction")
+        module = IncrementalPCA._get_backend(
+            IncrementalPCA, "decomposition", "dim_reduction"
+        )
         if hasattr(self, "components_"):
             del self.components_
         self._partial_result = module.partial_train_result()
