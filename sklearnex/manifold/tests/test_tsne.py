@@ -45,8 +45,8 @@ def test_sklearnex_tsne_import(dataframe, queue):
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     tsne = TSNE(n_components=2, perplexity=2.0).fit(X_df)
     assert "daal4py" in tsne.__module__
-    assert tsne.n_components == 2, "TSNE 'n_components' attribute is incorrect."
-    assert tsne.perplexity == 2.0, "TSNE 'perplexity' attribute is incorrect."
+    assert tsne.n_components == 2
+    assert tsne.perplexity == 2.0
 
 
 @pytest.mark.parametrize(
@@ -75,22 +75,6 @@ def test_sklearnex_tsne_import(dataframe, queue):
             (3, 2),
             False,
             id="Valid minimal data",
-        ),
-        pytest.param(
-            lambda rng: np.ones((10, 10)),
-            2,
-            5.0,
-            (10, 2),
-            False,
-            id="Constant data1",
-        ),
-        pytest.param(
-            lambda rng: np.full((10, 10), 10),
-            2,
-            5.0,
-            (10, 2),
-            False,
-            id="Constant data2",
         ),
         pytest.param(
             lambda rng: np.empty((0, 10)),
@@ -176,18 +160,28 @@ def test_tsne_functionality_and_edge_cases(
         tsne = TSNE(n_components=n_components, perplexity=perplexity, random_state=42)
         embedding = tsne.fit_transform(X_df)
         embedding = _as_numpy(embedding)
-        assert embedding.shape == expected_shape, f"Incorrect embedding shape."
-        assert np.all(
-            np.isfinite(embedding)
-        ), f"Embedding contains NaN or infinite values."
+        assert embedding.shape == expected_shape
+        assert np.all(np.isfinite(embedding))
+        assert np.any(embedding != 0)
+
+
+@pytest.mark.parametrize("init", ["pca", "random"])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_tsne_constant_data(init, dtype):
+    X = np.ones((10, 10), dtype=dtype)
+    tsne = TSNE(n_components=2, init=init, perplexity=5, random_state=42)
+    embedding = tsne.fit_transform(X)
+    assert embedding.shape == (10, 2)
+    if init == "pca":
+        assert np.isclose(embedding[:, 0].std(), 0, atol=1e-6)  # Constant first dimension
+        assert np.allclose(embedding[:, 1], 0, atol=1e-6)  # Zero second dimension
+    elif init == "random":
+        assert np.all(np.isfinite(embedding))
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_tsne_reproducibility(dataframe, queue, dtype):
-    """
-    Test reproducibility
-    """
     rng = np.random.default_rng(seed=42)
     X = rng.random((50, 10)).astype(dtype)
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
@@ -202,9 +196,6 @@ def test_tsne_reproducibility(dataframe, queue, dtype):
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_tsne_complex_and_gpu_validation(dataframe, queue, dtype):
-    """
-    TSNE test covering specific complex datasets and GPU validation using parameterization.
-    """
     X = np.array(
         [
             [1, 1, 1, 1],
@@ -235,10 +226,10 @@ def test_tsne_complex_and_gpu_validation(dataframe, queue, dtype):
     embedding = tsne.fit_transform(X_df)
 
     # Validate results
-    assert embedding.shape == expected_shape, f"Incorrect embedding shape."
+    assert embedding.shape == expected_shape
     embedding = _as_numpy(embedding)
-    assert np.all(np.isfinite(embedding)), f"Embedding contains NaN or infinite values."
-    assert np.any(embedding != 0), f"Embedding contains only zeros."
+    assert np.all(np.isfinite(embedding))
+    assert np.any(embedding != 0)
 
     # Ensure close points in original space remain close in embedding
     group_a_indices = [0, 1, 2]  # Hardcoded index of similar points
