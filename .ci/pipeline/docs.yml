@@ -77,6 +77,17 @@ jobs:
       find build/ -name "*.so"
       export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
       echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
+      python -c "
+        import sys
+        sys.path.insert(0, '/home/vsts/work/1/s/build/lib.linux-x86_64-cpython-311')
+        print('Updated sys.path:', sys.path)
+        try:
+            import daal4py
+            print('daal4py imported successfully')
+        except ImportError as e:
+            print('ImportError:', e)
+            raise
+      "
       cd doc/daal4py
       python -c "import sys; print('Current sys.path1:', sys.path)"
       make html
