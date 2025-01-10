@@ -29,7 +29,7 @@ if [[ $OSTYPE == *"linux"* ]]; then
     echo $GCOV_EXE
     FILTER=$(dirname $(realpath .)).*
     echo $FILTER
-    gcovr --gcov-executable "${GCOV_EXE}" -r build/ --lcov --filter "${FITLER}" -o coverage"${1}".info --gcov-ignore-errors=no_working_dir_found
+    gcovr --gcov-executable "${GCOV_EXE}" -r build/ --lcov -v --filter "${FITLER}" -o coverage"${1}".info --gcov-ignore-errors=no_working_dir_found
     sed -i "s|${PWD}/||g" coverage"${1}".info
     # remove absolute filepath to match coverage.py file
 fi
