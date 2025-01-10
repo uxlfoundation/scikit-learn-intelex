@@ -125,7 +125,7 @@ class IncrementalBasicStatistics(BaseBasicStatistics):
             self._onedal_params = self._get_onedal_params(False, dtype=dtype)
 
         X_table, weights_table = to_table(X, weights, queue=queue)
-        IncrementalBasicStatistics._partial_result = self._get_backend(
+        self._partial_result = IncrementalBasicStatistics._get_backend(
             IncrementalBasicStatistics,
             "basic_statistics",
             None,
