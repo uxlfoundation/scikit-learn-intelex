@@ -95,6 +95,7 @@ jobs:
           echo "DPCFLAG=${DPCFLAG}" >> "$GITHUB_OUTPUT"
           # enable coverage report generation
           echo "COVERAGE_RCFILE=$(readlink -f .coveragerc)" >> "$GITHUB_ENV"
+          echo "SKLEARNEX_GCOV=1" >> "$GITHUB_ENV"
       - name: apt-get
         run: sudo apt-get update && sudo apt-get install -y clang-format
       - name: dpcpp installation
@@ -139,16 +140,19 @@ jobs:
           export COVERAGE_FILE=$(pwd)/.coverage.sklearn
           if [ "${{ steps.set-env.outputs.DPCFLAG }}" == "" ]; then export CPU=cpu; fi
           bash .ci/scripts/run_sklearn_tests.sh $CPU
-      - name: Create coverage report
+      - name: Create coverage reports
         run: |
           source venv/bin/activate
-          coverage combine .coverage.sklearnex .coverage.sklearn
-          coverage json -o coverage.lnx${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.json
+          source .github/scripts/activate_components.sh ${{ steps.set-env.outputs.DPCFLAG }}
+          pip install gcovr
+          bash .github/scripts/generate_coverage_reports.sh lnx${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }} ${{ steps.set-env.outputs.DPCFLAG }}
       - name: Archive coverage report
         uses: actions/upload-artifact@v4
         with:
           name: coverage_lnx_Py${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}
-          path: coverage.lnx${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.json
+          path: |
+            coverage.lnx${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.info
+            coverage.lnx${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.json
       - name: Sklearn testing [preview]
         run: |
           source venv/bin/activate
@@ -288,8 +292,7 @@ jobs:
         shell: cmd
         run: |
           call .\venv\Scripts\activate.bat
-          coverage combine .coverage.sklearnex .coverage.sklearn
-          coverage json -o coverage.win${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.json
+          bash .github/scripts/generate_coverage_reports.sh win${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}
       - name: Archive coverage report
         uses: actions/upload-artifact@v4
         with:
