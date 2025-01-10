@@ -130,6 +130,9 @@ def custom_build_cmake_clib(
     if use_abs_rpath:
         cmake_args += ["-DADD_ONEDAL_RPATH=ON"]
 
+    if True:
+        cmake_args += ["-DONEDAL_GCOV=ON"]
+        
     cpu_count = multiprocessing.cpu_count()
     # limit parallel cmake jobs if memory size is insufficient
     # TODO: add on all platforms

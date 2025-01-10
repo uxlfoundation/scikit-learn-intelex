@@ -29,6 +29,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 option(ADD_ONEDAL_RPATH "Adds oneDAL's file paths to the RPATH here" OFF)
 message(STATUS "ADD_ONEDAL_RPATH:" ${ADD_ONEDAL_RPATH})
 
+option(ONEDAL_GCOV "Compile with gcov" OFF)
+message(STATUS "ONEDAL_GCOV:" ${ONEDAL_GCOV})
+
 if(WIN32)
     # hint CMake to get python from PYTHON env. variable if defined
     if(DEFINED ENV{PYTHON})
@@ -59,6 +62,15 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${WARNING_FLAGS} ${SDL_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${WARNING_FLAGS} ${SDL_FLAGS}")
 
 set(PYTHON_ONEDAL "${CMAKE_CURRENT_SOURCE_DIR}/../onedal/")
+
+if(ONEDAL_GCOV)
+    if(CMAKE_CXX_COMPILER MATCHES ".*icpx" OR CMAKE_CXX_COMPILER MATCHES ".*icx" OR CMAKE_CXX_COMPILER MATCHES ".*g++")
+        set(CMAKE_CXX_FLAGS "--coverage -fprofile-dir=${PYTHON_ONEDAL} ${CMAKE_CXX_FLAGS}")
+        set(CMAKE_SHARED_LINKER_FLAGS "--coverage -fprofile-dir=${PYTHON_ONEDAL} ${CMAKE_SHARED_LINKER_FLAGS}")
+    else()
+        message(FATAL_ERROR "Unsupported compiler for code coverage.")
+    endif()
+endif()
 
 file(GLOB_RECURSE sources
     ${PYTHON_ONEDAL}/**/*.cpp
@@ -143,7 +155,7 @@ elseif(IFACE_IS_DPC OR IFACE_IS_SPMD_DPC)
 
     if(CMAKE_C_COMPILER MATCHES ".*icpx" OR CMAKE_C_COMPILER MATCHES ".*icx")
         set(CMAKE_C_FLAGS "-fsycl ${CMAKE_C_FLAGS}")
-    endif()
+    endif() 
 
     set(ONEDAL_LIBRARIES "")
     if(WIN32)
