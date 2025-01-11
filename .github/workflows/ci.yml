@@ -108,18 +108,18 @@ jobs:
           bash .ci/scripts/describe_system.sh
       - name: Install develop requirements
         run: |
-          python -m venv venv
+          python -m venv ../venv
           source venv/bin/activate
           pip install -r dependencies-dev
           pip list
       - name: Build daal4py/sklearnex
         run: |
-          source venv/bin/activate
+          source ../venv/bin/activate
           source .github/scripts/activate_components.sh ${{ steps.set-env.outputs.DPCFLAG }}
           python setup.py install --single-version-externally-managed --record=record.txt
       - name: Install testing requirements
         run: |
-          source venv/bin/activate
+          source ../venv/bin/activate
           source .github/scripts/activate_components.sh
           bash .ci/scripts/setup_sklearn.sh ${{ matrix.SKLEARN_VERSION }}
           pip install --upgrade -r requirements-test.txt
@@ -128,21 +128,21 @@ jobs:
           pip list
       - name: Sklearnex testing
         run: |
-          source venv/bin/activate
+          source ../venv/bin/activate
           source .github/scripts/activate_components.sh
           export COVERAGE_FILE=$(pwd)/.coverage.sklearnex
           cd .ci
           ../conda-recipe/run_test.sh
       - name: Sklearn testing
         run: |
-          source venv/bin/activate
+          source ../venv/bin/activate
           source .github/scripts/activate_components.sh
           export COVERAGE_FILE=$(pwd)/.coverage.sklearn
           if [ "${{ steps.set-env.outputs.DPCFLAG }}" == "" ]; then export CPU=cpu; fi
           bash .ci/scripts/run_sklearn_tests.sh $CPU
       - name: Create coverage reports
         run: |
-          source venv/bin/activate
+          source ../venv/bin/activate
           source .github/scripts/activate_components.sh ${{ steps.set-env.outputs.DPCFLAG }}
           bash .github/scripts/generate_coverage_reports.sh lnx${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }} ${{ steps.set-env.outputs.DPCFLAG }}
       - name: Archive coverage report
@@ -154,7 +154,7 @@ jobs:
             coverage.lnx${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.json
       - name: Sklearn testing [preview]
         run: |
-          source venv/bin/activate
+          source ../venv/bin/activate
           source .github/scripts/activate_components.sh
           if [ "${{ steps.set-env.outputs.DPCFLAG }}" == "" ]; then export CPU=cpu; fi
           export SKLEARNEX_PREVIEW='YES'
