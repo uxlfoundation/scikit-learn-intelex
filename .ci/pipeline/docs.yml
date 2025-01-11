@@ -73,7 +73,11 @@ jobs:
       ls -l daal4py/
       ls -l build/
       ls -l build/lib.linux-x86_64-cpython-311
+      ls -l /opt/hostedtoolcache/Python/3.11.10/x64/lib/python3.11/site-packages
+      ls -l /opt/hostedtoolcache/Python/3.11.10/x64/lib/python3.11/lib-dynload
+      ls -l /opt/hostedtoolcache/Python/3.11.10/x64/lib/python3.11
       echo "Checking for shared libraries in build directory:"
+      echo $PYTHONPATH
       find build/ -name "*.so"
       export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
       echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
