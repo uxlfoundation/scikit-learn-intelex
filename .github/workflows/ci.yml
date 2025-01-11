@@ -116,7 +116,6 @@ jobs:
         run: |
           source ../venv/bin/activate
           source .github/scripts/activate_components.sh ${{ steps.set-env.outputs.DPCFLAG }}
-          python setup.py install --single-version-externally-managed --record=record.txt
       - name: Install testing requirements
         run: |
           source ../venv/bin/activate
@@ -125,6 +124,7 @@ jobs:
           pip install --upgrade -r requirements-test.txt
           pip install $(python .ci/scripts/get_compatible_scipy_version.py ${{ matrix.SKLEARN_VERSION }}) pyyaml gcovr
           if [ "${{ steps.set-env.outputs.DPCFLAG }}" == "" ]; then pip install dpctl==${{ env.DPCTL_VERSION }} dpnp==${{ env.DPNP_VERSION }}; fi
+          python setup.py install --single-version-externally-managed --record=record.txt
           pip list
       - name: Sklearnex testing
         run: |
