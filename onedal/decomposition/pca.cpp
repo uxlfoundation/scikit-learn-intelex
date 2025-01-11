@@ -109,7 +109,8 @@ void init_train_result(py::module_& m) {
         .def_property_readonly("eigenvalues", &result_t::get_eigenvalues)
 #if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240100
         .def_property_readonly("singular_values", &result_t::get_singular_values)
-        .def_property_readonly("explained_variances_ratio", &result_t::get_explained_variances_ratio)
+        .def_property_readonly("explained_variances_ratio",
+                               &result_t::get_explained_variances_ratio)
 #endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION>=20240100
         .def_property_readonly("means", &result_t::get_means)
         .def_property_readonly("variances", &result_t::get_variances);
@@ -126,7 +127,7 @@ void init_partial_train_result(py::module_& m) {
         .DEF_ONEDAL_PY_PROPERTY(partial_crossproduct, result_t)
         .DEF_ONEDAL_PY_PROPERTY(partial_sum, result_t)
         .DEF_ONEDAL_PY_PROPERTY(auxiliary_table, result_t)
-        .def_property_readonly("auxiliary_table_count", &result_t::get_auxiliary_table_count)   
+        .def_property_readonly("auxiliary_table_count", &result_t::get_auxiliary_table_count)
         .def(py::pickle(
             [](const result_t& res) {
                 py::list auxiliary;
@@ -139,23 +140,24 @@ void init_partial_train_result(py::module_& m) {
                     py::cast<py::object>(convert_to_pyobject(res.get_partial_n_rows())),
                     py::cast<py::object>(convert_to_pyobject(res.get_partial_crossproduct())),
                     py::cast<py::object>(convert_to_pyobject(res.get_partial_sum())),
-                    auxiliary
-                );
+                    auxiliary);
             },
             [](py::tuple t) {
                 if (t.size() != 4)
                     throw std::runtime_error("Invalid state!");
                 result_t res;
-                if (py::cast<int>(t[0].attr("size")) != 0) res.set_partial_n_rows(convert_to_table(t[0]));
-                if (py::cast<int>(t[1].attr("size")) != 0) res.set_partial_crossproduct(convert_to_table(t[1]));
-                if (py::cast<int>(t[2].attr("size")) != 0) res.set_partial_sum(convert_to_table(t[2]));
+                if (py::cast<int>(t[0].attr("size")) != 0)
+                    res.set_partial_n_rows(convert_to_table(t[0]));
+                if (py::cast<int>(t[1].attr("size")) != 0)
+                    res.set_partial_crossproduct(convert_to_table(t[1]));
+                if (py::cast<int>(t[2].attr("size")) != 0)
+                    res.set_partial_sum(convert_to_table(t[2]));
                 py::list aux_list = t[3].cast<py::list>();
                 for (int i = 0; i < aux_list.size(); i++) {
                     res.set_auxiliary_table(convert_to_table(aux_list[i]));
                 }
                 return res;
-            }
-        ));
+            }));
 }
 
 template <typename Task>
@@ -182,27 +184,25 @@ void init_train_ops(py::module& m) {
 template <typename Policy, typename Task>
 void init_partial_train_ops(py::module& m) {
     using prev_result_t = dal::pca::partial_train_result<Task>;
-    m.def("partial_train", [](
-        const Policy& policy,
-        const py::dict& params,
-        const prev_result_t& prev,
-        const table& data) {
-            using namespace dal::pca;
-            using input_t = partial_train_input<Task>;
-            partial_train_ops ops(policy, input_t{ prev, data }, params2desc{});
-            return fptype2t{ incrementalmethod2t{ Task{}, ops } }(params);
-        }
-    );
+    m.def("partial_train",
+          [](const Policy& policy,
+             const py::dict& params,
+             const prev_result_t& prev,
+             const table& data) {
+              using namespace dal::pca;
+              using input_t = partial_train_input<Task>;
+              partial_train_ops ops(policy, input_t{ prev, data }, params2desc{});
+              return fptype2t{ incrementalmethod2t{ Task{}, ops } }(params);
+          });
 };
 
 template <typename Policy, typename Task>
 void init_finalize_train_ops(py::module& m) {
     using input_t = dal::pca::partial_train_result<Task>;
     m.def("finalize_train", [](const Policy& policy, const py::dict& params, const input_t& data) {
-            finalize_train_ops ops(policy, data, params2desc{});
-            return fptype2t{ incrementalmethod2t{ Task{}, ops } }(params);
-        }
-    );
+        finalize_train_ops ops(policy, data, params2desc{});
+        return fptype2t{ incrementalmethod2t{ Task{}, ops } }(params);
+    });
 };
 
 template <typename Policy, typename Task>
@@ -237,19 +237,19 @@ ONEDAL_PY_INIT_MODULE(decomposition) {
 
     using task_list = types<task::dim_reduction>;
     auto sub = m.def_submodule("decomposition");
-    #ifdef ONEDAL_DATA_PARALLEL_SPMD
-        ONEDAL_PY_INSTANTIATE(init_train_ops, sub, policy_spmd, task_list);
-        ONEDAL_PY_INSTANTIATE(init_finalize_train_ops, sub, policy_spmd, task_list);
-    #else  
-        ONEDAL_PY_INSTANTIATE(init_train_ops, sub, policy_list, task_list);
-        ONEDAL_PY_INSTANTIATE(init_infer_ops, sub, policy_list, task_list);
-        ONEDAL_PY_INSTANTIATE(init_model, sub, task_list);
-        ONEDAL_PY_INSTANTIATE(init_train_result, sub, task_list);
-        ONEDAL_PY_INSTANTIATE(init_partial_train_result, sub, task_list);
-        ONEDAL_PY_INSTANTIATE(init_infer_result, sub, task_list);
-        ONEDAL_PY_INSTANTIATE(init_partial_train_ops, sub, policy_list, task_list);
-        ONEDAL_PY_INSTANTIATE(init_finalize_train_ops, sub, policy_list, task_list);
-    #endif
+#ifdef ONEDAL_DATA_PARALLEL_SPMD
+    ONEDAL_PY_INSTANTIATE(init_train_ops, sub, policy_spmd, task_list);
+    ONEDAL_PY_INSTANTIATE(init_finalize_train_ops, sub, policy_spmd, task_list);
+#else
+    ONEDAL_PY_INSTANTIATE(init_train_ops, sub, policy_list, task_list);
+    ONEDAL_PY_INSTANTIATE(init_infer_ops, sub, policy_list, task_list);
+    ONEDAL_PY_INSTANTIATE(init_model, sub, task_list);
+    ONEDAL_PY_INSTANTIATE(init_train_result, sub, task_list);
+    ONEDAL_PY_INSTANTIATE(init_partial_train_result, sub, task_list);
+    ONEDAL_PY_INSTANTIATE(init_infer_result, sub, task_list);
+    ONEDAL_PY_INSTANTIATE(init_partial_train_ops, sub, policy_list, task_list);
+    ONEDAL_PY_INSTANTIATE(init_finalize_train_ops, sub, policy_list, task_list);
+#endif
 }
 
 ONEDAL_PY_TYPE2STR(dal::pca::task::dim_reduction, "dim_reduction");

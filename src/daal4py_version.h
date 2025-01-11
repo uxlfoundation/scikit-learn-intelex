@@ -18,7 +18,7 @@
 #define _DAAL4PY_VERSION_INCLUDED_
 #include <daal.h>
 #ifndef __INTEL_DAAL_STATUS__
-  #define __INTEL_DAAL_STATUS__ "P"
+    #define __INTEL_DAAL_STATUS__ "P"
 #endif
 
 #endif // _DAAL4PY_VERSION_INCLUDED
