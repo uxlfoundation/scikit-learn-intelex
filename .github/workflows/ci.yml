@@ -145,12 +145,14 @@ jobs:
           source ../venv/bin/activate
           source .github/scripts/activate_components.sh ${{ steps.set-env.outputs.DPCFLAG }}
           bash .github/scripts/generate_coverage_reports.sh lnx${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }} ${{ steps.set-env.outputs.DPCFLAG }}
+          ls -lha
+          ls -lha ..
       - name: Archive coverage report
         uses: actions/upload-artifact@v4
         with:
           name: coverage_lnx_Py${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}
           path: |
-            coverage.lnx${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.info
+            coveragelnx${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.info
             coverage.lnx${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.json
       - name: Sklearn testing [preview]
         run: |
