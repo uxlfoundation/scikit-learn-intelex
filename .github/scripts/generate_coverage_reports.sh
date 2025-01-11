@@ -24,7 +24,7 @@ if [[ $OSTYPE == *"linux"* ]]; then
     if [[ -z "$2" ]]; then
         GCOV_EXE="$(dirname $(type -P -a icpx))/compiler/llvm-cov gcov"
     else
-        GCOV_EXE="gcov"
+        GCOV_EXE="gcov-11"
     fi
     echo $GCOV_EXE
     FILTER=$(realpath ./onedal).*
