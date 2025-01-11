@@ -109,7 +109,7 @@ jobs:
       - name: Install develop requirements
         run: |
           python -m venv ../venv
-          source venv/bin/activate
+          source ../venv/bin/activate
           pip install -r dependencies-dev
           pip list
       - name: Build daal4py/sklearnex
