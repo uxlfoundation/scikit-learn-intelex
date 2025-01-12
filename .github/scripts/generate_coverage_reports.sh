@@ -22,7 +22,7 @@ coverage combine .coverage.sklearnex .coverage.sklearn
 coverage lcov -o coverage_py_"${1}".info
 
 # create gcov report (lcov format)
-if [[ $OSTYPE == *"linux"* ]]; then
+if [[ -n "${SKLEARNEX_GCOV}" ]]; then
     # extract llvm tool for gcov processing
     if [[ -z "$2" ]]; then
         GCOV_EXE="$(dirname $(type -P -a icpx))/compiler/llvm-cov gcov"
