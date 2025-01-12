@@ -16,7 +16,7 @@
 # limitations under the License.
 # ==============================================================================
 
-# Environment variables which impact build process:
+# Environment variables which impact the build process:
 #
 #   DALROOT (required)
 #      oneDAL root path (folder containing `bin`,`include`, and `lib` folders)
