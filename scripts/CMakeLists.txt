@@ -30,7 +30,7 @@ option(ADD_ONEDAL_RPATH "Adds oneDAL's file paths to the RPATH here" OFF)
 message(STATUS "ADD_ONEDAL_RPATH:" ${ADD_ONEDAL_RPATH})
 
 option(SKLEARNEX_GCOV "Compile with gcov" OFF)
-message(STATUS "SKLEARNEX_GCOV:" ${ONEDAL_SKLEARNEX})
+message(STATUS "SKLEARNEX_GCOV:" ${SKLEARNEX_GCOV})
 
 if(WIN32)
     # hint CMake to get python from PYTHON env. variable if defined
