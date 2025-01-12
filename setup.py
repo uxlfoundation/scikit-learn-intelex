@@ -19,10 +19,10 @@
 # Environment variables which impact build process:
 #
 #   DALROOT (required)
-#      oneDAL root folder (containing `bin`, `lib`, and `include` folders)
+#      oneDAL root path (folder containing `bin`, `lib`, and `include` folders)
 #
 #   MPIROOT (required if NO_DIST not set)
-#      MPI root folder (containing `bin`, `lib`, and `include` folders)
+#      MPI root path (folder containing `bin`, `lib`, and `include` folders)
 #
 #   NO_DIST (default: false)
 #      build sklearnex without MPI support
