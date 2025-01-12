@@ -161,7 +161,7 @@ elseif(IFACE_IS_DPC OR IFACE_IS_SPMD_DPC)
 
     if(CMAKE_C_COMPILER_ID STREQUAL "IntelLLVM")
         set(CMAKE_C_FLAGS "-fsycl ${CMAKE_C_FLAGS}")
-    endif() 
+    endif()
 
     set(ONEDAL_LIBRARIES "")
     if(WIN32)
