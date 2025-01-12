@@ -141,7 +141,7 @@ jobs:
           export COVERAGE_FILE=$(pwd)/.coverage.sklearn
           if [ "${{ steps.set-env.outputs.DPCFLAG }}" == "" ]; then export CPU=cpu; fi
           bash .ci/scripts/run_sklearn_tests.sh $CPU
-      - name: Create coverage reports
+      - name: Create coverage report
         run: |
           source venv/bin/activate
           source .github/scripts/activate_components.sh ${{ steps.set-env.outputs.DPCFLAG }}
@@ -151,8 +151,8 @@ jobs:
         with:
           name: coverage_lnx_Py${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}
           path: |
-            coveragelnx${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.info
-            coverage.lnx${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.json
+            gcov_lnx${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.info
+            coverage_lnx${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.info
       - name: Sklearn testing [preview]
         run: |
           source venv/bin/activate
@@ -297,7 +297,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage_win_Py${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}
-          path: coverage.win${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.json
+          path: coverage_win${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.json
       - name: Sklearn testing [preview]
         shell: cmd
         run: |
