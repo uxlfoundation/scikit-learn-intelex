@@ -36,7 +36,7 @@ if [[ $OSTYPE == *"linux"* ]]; then
     # the build numpy, this must be previously set as NUMPY_BUILD
     python -m pip install gcovr $NUMPY_BUILD
     
-    gcovr --gcov-executable "${GCOV_EXE}" -r . -v --lcov --filter "${FITLER}" -o ../coverage"${1}".info
+    gcovr --gcov-executable "${GCOV_EXE}" -r . -v --lcov --filter "${FITLER}" -o coverage"${1}".info
     # remove absolute filepath to match coverage.py file
     sed -i "s|${PWD}/||g" ../coverage"${1}".info
     
