@@ -14,12 +14,12 @@
 # limitations under the License.
 #===============================================================================
 
-ci_dir=$( dirname $( dirname "${BASH_SOURCE[0]}" ) )
+ci_dir=$( dirname $( dirname $( dirname "${BASH_SOURCE[0]}" ) ) )
 cd $ci_dir
 
 # create coverage.py report
 coverage combine .coverage.sklearnex .coverage.sklearn
-coverage lcov -o coverage_"${1}".info
+coverage lcov -o coverage."${1}".info
 
 # create gcov report (lcov format)
 if [[ $OSTYPE == *"linux"* ]]; then
@@ -39,9 +39,7 @@ if [[ $OSTYPE == *"linux"* ]]; then
     # the build numpy, this must be previously set as NUMPY_BUILD
     python -m pip install gcovr $NUMPY_BUILD
     
-    gcovr --gcov-executable "${GCOV_EXE}" -r . -v --lcov --filter "${FITLER}" -o gcov_"${1}".info
-    # remove absolute filepath to match coverage.py file
-    sed -i "s|${PWD}/||g" ../gcov_"${1}".info
+    gcovr --gcov-executable "${GCOV_EXE}" -r . -v --lcov --filter "${FITLER}" -o gcov."${1}".info
     
     # reinstall previous numpy
     python -m pip install $NUMPY_TEST
