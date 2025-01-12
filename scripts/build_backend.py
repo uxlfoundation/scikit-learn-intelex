@@ -131,8 +131,7 @@ def custom_build_cmake_clib(
         cmake_args += ["-DADD_ONEDAL_RPATH=ON"]
 
     cpu_count = multiprocessing.cpu_count()
-    max_jobs = os.getenv("MAX_JOBS")
-    cpu_count = min(cpu_count, max(1, max_jobs if max_jobs else cpu_count))
+    cpu_count = min(cpu_count, max(1, os.getenv("MAX_JOBS", cpu_count)))
     make_args = ["cmake", "--build", abs_build_temp_path, "-j " + str(cpu_count)]
 
     make_install_args = [
