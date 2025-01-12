@@ -117,7 +117,7 @@ jobs:
           source venv/bin/activate
           source .github/scripts/activate_components.sh ${{ steps.set-env.outputs.DPCFLAG }}
           python setup.py install --single-version-externally-managed --record=record.txt
-          if [[ -n "${SKLEARNEX_GCOV}" ]]; then echo "NUMPY_GCOV=$(python -m pip freeze | grep numpy)" >> "$GITHUB_ENV"; fi
+          echo "NUMPY_BUILD=$(python -m pip freeze | grep numpy)" >> "$GITHUB_ENV"
       - name: Install testing requirements
         run: |
           source venv/bin/activate
