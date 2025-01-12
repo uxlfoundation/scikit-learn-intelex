@@ -33,8 +33,8 @@ if [[ $OSTYPE == *"linux"* ]]; then
     NUMPY_TEST=$(python -m pip freeze | grep numpy)
     # install dependencies
     # proper operation of gcov with sklearnex requires the header files from
-    # the build numpy, this must be previously set as NUMPY_GCOV env. variable
-    python -m pip install gcovr $NUMPY_GCOV
+    # the build numpy, this must be previously set as NUMPY_BUILD
+    python -m pip install gcovr $NUMPY_BUILD
     
     gcovr --gcov-executable "${GCOV_EXE}" -r build/ --lcov --filter "${FITLER}" -o ../coverage"${1}".info
     # remove absolute filepath to match coverage.py file
