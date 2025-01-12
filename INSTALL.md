@@ -172,6 +172,7 @@ The build-process (using setup.py) happens in 4 stages:
 * ``NO_STREAM``: set to '1', 'yes' or alike to build without support for streaming mode
 * ``NO_DPC``: set to '1', 'yes' or alike to build without support of oneDAL DPC++ interfaces
 * ``OFF_ONEDAL_IFACE``: set to '1' to build without the support of oneDAL interfaces
+* ``MAX_JOBS``: max number processes for building sklearnex, default is the number of cpus
 
 **Note:** in order to use distributed mode, `mpi4py` is also required, and needs to be built with the same MPI backend as scikit-learn-intelex.
 
