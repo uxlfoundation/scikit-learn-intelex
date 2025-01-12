@@ -245,7 +245,7 @@ jobs:
           pip install --upgrade setuptools
           pip install cpufeature clang-format pyyaml
           pip install -r dependencies-dev
-          for /f "delims=" %%c in ('python -m pip freeze | grep numpy') do echo NUMPY_BUILD=%%c>> %GITHUB_ENV%
+          for /f "delims=" %%c in ('python -m pip freeze ^| grep numpy') do echo NUMPY_BUILD=%%c>> %GITHUB_ENV%
       - name: System info 
         shell: cmd
         run: |
