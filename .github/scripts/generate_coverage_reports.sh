@@ -24,15 +24,22 @@ if [[ $OSTYPE == *"linux"* ]]; then
     if [[ -z "$2" ]]; then
         GCOV_EXE="$(dirname $(type -P -a icpx))/compiler/llvm-cov gcov"
     else
-        GCOV_EXE="gcov-4"
-        g++ --version
-        gcov --version
+        GCOV_EXE="gcov"
     fi
     echo $GCOV_EXE
     FILTER=$(realpath ./onedal).*
     echo $FILTER
-    cd build
-    gcovr --gcov-executable "${GCOV_EXE}" -r ../ . --lcov -v --filter "${FITLER}" -o ../coverage"${1}".info
-    sed -i "s|${PWD}/||g" ../coverage"${1}".info
+    
+    NUMPY_TEST=$(python -m pip freeze | grep numpy)
+    # install dependencies
+    # proper operation of gcov with sklearnex requires the header files from
+    # the build numpy, this must be previously set as NUMPY_GCOV env. variable
+    python -m pip install gcovr $NUMPY_GCOV
+    
+    gcovr --gcov-executable "${GCOV_EXE}" -r build/ --lcov --filter "${FITLER}" -o ../coverage"${1}".info
     # remove absolute filepath to match coverage.py file
+    sed -i "s|${PWD}/||g" ../coverage"${1}".info
+    
+    # reinstall previous numpy
+    python -m pip install $NUMPY_TEST
 fi
