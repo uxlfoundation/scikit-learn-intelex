@@ -25,7 +25,7 @@ coverage lcov -o coverage_py_"${1}".info
 if [[ -n "${SKLEARNEX_GCOV}" ]]; then
     # extract llvm tool for gcov processing
     if [[ -z "$2" ]]; then
-        GCOV_EXE="$(dirname $(type -P -a icpx))/compiler/llvm-cov gcov"
+        GCOV_EXE="$(dirname $(type -P -a icx))/compiler/llvm-cov gcov"
     else
         GCOV_EXE="gcov"
     fi
