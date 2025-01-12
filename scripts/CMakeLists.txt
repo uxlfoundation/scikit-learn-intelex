@@ -29,8 +29,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 option(ADD_ONEDAL_RPATH "Adds oneDAL's file paths to the RPATH here" OFF)
 message(STATUS "ADD_ONEDAL_RPATH:" ${ADD_ONEDAL_RPATH})
 
-option(ONEDAL_GCOV "Compile with gcov" OFF)
-message(STATUS "ONEDAL_GCOV:" ${ONEDAL_GCOV})
+option(SKLEARNEX_GCOV "Compile with gcov" OFF)
+message(STATUS "SKLEARNEX_GCOV:" ${ONEDAL_SKLEARNEX})
 
 if(WIN32)
     # hint CMake to get python from PYTHON env. variable if defined
@@ -57,7 +57,7 @@ else()
     message(FATAL_ERROR "Unsupported system.")
 endif()
 
-if(ONEDAL_GCOV)
+if(SKLEARNEX_GCOV)
     if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         set(CMAKE_CXX_FLAGS "--coverage ${CMAKE_CXX_FLAGS}")
         set(CMAKE_SHARED_LINKER_FLAGS "--coverage ${CMAKE_SHARED_LINKER_FLAGS}")
@@ -149,7 +149,7 @@ elseif(IFACE_IS_DPC OR IFACE_IS_SPMD_DPC)
         set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
     endif()
 
-    if(ONEDAL_GCOV)
+    if(SKLEARNEX_GCOV)
         #assumes first argument is --coverage, allowing host code profiling
         set(CMAKE_CXX_FLAGS "-Xarch_host ${CMAKE_CXX_FLAGS}")
         set(CMAKE_SHARED_LINKER_FLAGS "-Xarch_host ${CMAKE_SHARED_LINKER_FLAGS}")
