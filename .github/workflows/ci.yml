@@ -151,8 +151,7 @@ jobs:
         with:
           name: coverage_lnx_Py${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}
           path: |
-            gcov_lnx${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.info
-            coverage_lnx${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.info
+            *_lnx${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.info
       - name: Sklearn testing [preview]
         run: |
           source venv/bin/activate
