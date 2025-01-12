@@ -106,7 +106,7 @@ if(IFACE STREQUAL "host")
             set(CMAKE_CXX_FLAGS "--coverage ${CMAKE_CXX_FLAGS}")
             set(CMAKE_SHARED_LINKER_FLAGS "--coverage ${CMAKE_SHARED_LINKER_FLAGS}")
         else()
-            message(WARNING "Code coverage will not be generated for `host` target")
+            message(WARNING "Code coverage will not be generated for target: host")
         endif()
     endif()
 
@@ -157,7 +157,7 @@ elseif(IFACE_IS_DPC OR IFACE_IS_SPMD_DPC)
             set(CMAKE_CXX_FLAGS "-Xarch_host --coverage ${CMAKE_CXX_FLAGS}")
             set(CMAKE_SHARED_LINKER_FLAGS "-Xarch_host --coverage ${CMAKE_SHARED_LINKER_FLAGS}")
         else
-            message(WARNING "Code coverage will not be generated for `${IFACE}` target")
+            message(WARNING "Code coverage will not be generated for target: " ${IFACE})
         endif()
     endif()
 
