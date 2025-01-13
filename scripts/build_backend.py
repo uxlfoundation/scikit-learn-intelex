@@ -134,6 +134,11 @@ def custom_build_cmake_clib(
 
     if use_gcov:
         cmake_args += ["-DSKLEARNEX_GCOV=ON"]
+        if IS_WIN and cxx == "icx":
+            # Windows builds using the MSVC linker, requiring manually specifying
+            # the clang_rt.profile-x86_64.lib and path, which must be determined
+            # from the icx compiler. It is passed as an additional input.
+            pass
 
     cpu_count = multiprocessing.cpu_count()
     # limit parallel cmake jobs if memory size is insufficient
