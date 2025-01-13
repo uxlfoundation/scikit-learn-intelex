@@ -13,24 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #===============================================================================
-coverage:
-  status:
-    project:
-      default:
-        target: 0
-        # Set targets to zero so that it will always stay green. Also leave
-        # information on thresholds so that future coverage percentage
-        # enforcement can be easily implemented by only adjusting the threshold
-        # and setting target: auto.
-        # threshold: 50
-    patch:
-      default:
-        target: 0
-        # Allow for diffs to have no code coverage.
-        # threshold: 50
-
-flags:
-  github:
-    after_n_builds: 1
-  azure:
-    after_n_builds: 8
+steps:
+  - script: |
+      call activate CB
+      coverage combine .coverage.sklearnex .coverage.sklearn
+      coverage json -o coverage.json
+    displayName: "Create coverage report"
+  - script: |
+      set PATH=C:\msys64\usr\bin;%PATH%
+      curl -Os https://cli.codecov.io/latest/windows/codecov.exe
+      set VARARGS=-n azure-%AGENT_OS%-$(PYTHON_VERSION)-$(SKLEARN_VERSION)
+      .\codecov.exe -v upload-process -Z -t %CODECOV_TOKEN% %VARARGS% -F azure -f coverage.json
+    displayName: "Upload to codecov"
+    env:
+      CODECOV_TOKEN: $(CODECOV_TOKEN)
