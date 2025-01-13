@@ -18,13 +18,13 @@ steps:
       . /usr/share/miniconda/etc/profile.d/conda.sh
       conda activate CB
       coverage combine .coverage.sklearnex .coverage.sklearn
-      coverage json -o coverage.json
+      coverage lcov -o coverage.info
     displayName: "Create coverage report"
   - script: |
       curl -Os https://cli.codecov.io/latest/linux/codecov
       chmod +x codecov
       export VARARGS="-n azure-${AGENT_OS}-$(PYTHON_VERSION)-$(SKLEARN_VERSION)"
-      ./codecov -v upload-process -Z -t ${CODECOV_TOKEN} "${VARARGS}" -F azure -f coverage.json
+      ./codecov -v upload-process -Z -t ${CODECOV_TOKEN} "${VARARGS}" -F azure -f coverage.info
     displayName: "Upload to codecov"
     env:
       CODECOV_TOKEN: $(CODECOV_TOKEN)
