@@ -590,7 +590,7 @@ setup(
     author_email="onedal.maintainers@intel.com",
     maintainer_email="onedal.maintainers@intel.com",
     project_urls=project_urls,
-    cmdclass={"develop": develop, "build": build}
+    cmdclass={"develop": develop, "build": build},
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
