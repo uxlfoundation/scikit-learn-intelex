@@ -228,15 +228,15 @@ def _whitelist_to_blacklist():
 _TRACE_BLOCK_LIST = _whitelist_to_blacklist()
 
 
-def sklearnex_trace(estimator, method):
+def sklearnex_trace(estimator_name, method_name):
     """Generate a trace of all function calls in calling estimator.method.
 
     Parameters
     ----------
-    estimator : str
+    estimator_name : str
         name of estimator which is a key from PATCHED_MODELS or SPECIAL_INSTANCES
 
-    method : str
+    method_name : str
         name of estimator method which is to be traced and stored
 
     Returns
@@ -247,10 +247,7 @@ def sklearnex_trace(estimator, method):
         of trace._modname.
     """
     # get estimator
-    try:
-        est = PATCHED_MODELS[estimator]()
-    except KeyError:
-        est = SPECIAL_INSTANCES[estimator]
+    estimator = (SPECIAL_INSTANCES | PATCHED_MODELS)[estimator_name]
 
     # get dataset
     X, y = gen_dataset(est)[0]
