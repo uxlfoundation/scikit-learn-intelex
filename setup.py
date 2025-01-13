@@ -430,7 +430,6 @@ class parallel_build_ext(_build_ext):
     def finalize_options(self):
         # set parallel execution to n_threads
         super().finalize_options()
-        print("parallel_build_ext RAN")
         if self.parallel is None:
             self.parallel = n_threads
 
@@ -500,7 +499,6 @@ class build(orig_build.build, custom_build):
 
     def run(self):
         custom_build.run(self)
-        print(f"HELLO RIGHT HERE!! {self.parallel}")
         super().run()
         custom_build.post_build(self)
 
