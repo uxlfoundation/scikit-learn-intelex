@@ -131,7 +131,7 @@ def custom_build_cmake_clib(
     if use_abs_rpath:
         cmake_args += ["-DADD_ONEDAL_RPATH=ON"]
 
-    make_args = ["cmake", "--build", abs_build_temp_path, "-j " + n_threads]
+    make_args = ["cmake", "--build", abs_build_temp_path, "-j " + str(n_threads)]
 
     make_install_args = [
         "cmake",
