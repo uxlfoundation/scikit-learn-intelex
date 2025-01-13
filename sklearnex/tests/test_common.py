@@ -247,7 +247,10 @@ def sklearnex_trace(estimator_name, method_name):
         of trace._modname.
     """
     # get estimator
-    estimator = (SPECIAL_INSTANCES | PATCHED_MODELS)[estimator_name]
+    try:
+        est = PATCHED_MODELS[estimator_name]()
+    except KeyError:
+        est = SPECIAL_INSTANCES[estimator_name]
 
     # get dataset
     X, y = gen_dataset(est)[0]
