@@ -44,7 +44,7 @@ using namespace pybind11::literals;
 template <typename Type>
 dal::table convert_to_homogen_impl(py::object obj) {
     dal::table res{};
-    
+
     // Get `__sycl_usm_array_interface__` dictionary representing USM allocations.
     auto sua_iface_dict = get_sua_interface(obj);
 
@@ -67,14 +67,14 @@ dal::table convert_to_homogen_impl(py::object obj) {
     // Get oneDAL Homogen DataLayout enumeration from input object shape and strides.
     const auto layout = get_sua_iface_layout(sua_iface_dict, r_count, c_count);
 
-    if (layout == dal::data_layout::unknown){
+    if (layout == dal::data_layout::unknown) {
         // NOTE: this will make a C-contiguous deep copy of the data
         // if possible, this is expected to be a special case
         py::object copy;
-        if (py::hasattr(obj, "copy")){
+        if (py::hasattr(obj, "copy")) {
             copy = obj.attr("copy")();
         }
-        else if (py::hasattr(obj, "__array_namespace__")){
+        else if (py::hasattr(obj, "__array_namespace__")) {
             const auto space = obj.attr("__array_namespace__")();
             copy = space.attr("asarray")(obj, "copy"_a = true);
         }

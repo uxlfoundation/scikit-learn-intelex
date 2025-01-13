@@ -1,5 +1,5 @@
 #===============================================================================
-# Copyright 2023 Intel Corporation
+# Copyright contributors to the oneDAL project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,19 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #===============================================================================
-
-repos:
-  - repo: https://github.com/psf/black
-    rev: 24.1.1
-    hooks:
-      - id: black
-        language_version: python3.10
-  - repo: https://github.com/PyCQA/isort
-    rev: 5.13.2
-    hooks:
-      - id: isort
-        language_version: python3.10
-  - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: v14.0.6
-    hooks:
-      - id: clang-format
+steps:
+  - script: |
+      . /usr/share/miniconda/etc/profile.d/conda.sh
+      conda activate CB
+      coverage combine .coverage.sklearnex .coverage.sklearn
+      coverage json -o coverage.json
+    displayName: "Create coverage report"
+  - script: |
+      curl -Os https://cli.codecov.io/latest/linux/codecov
+      chmod +x codecov
+      export VARARGS="-n azure-${AGENT_OS}-$(PYTHON_VERSION)-$(SKLEARN_VERSION)"
+      ./codecov -v upload-process -Z -t ${CODECOV_TOKEN} "${VARARGS}" -F azure -f coverage.json
+    displayName: "Upload to codecov"
+    env:
+      CODECOV_TOKEN: $(CODECOV_TOKEN)
