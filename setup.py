@@ -56,6 +56,7 @@ import numpy as np
 import setuptools.command.build as orig_build
 import setuptools.command.develop as orig_develop
 from Cython.Build import cythonize
+from Cython.Distutils import build_ext
 from setuptools import Extension, setup
 
 import scripts.build_backend as build_backend
@@ -470,7 +471,6 @@ class custom_build:
 
 class develop(orig_develop.develop, custom_build):
     def finalize_options(self):
-        # override setuptools.build finalize_options
         # to set parallel execution to n_threads
         super().finalize_options()
         if self.parallel is None or self.parallel is True:
@@ -484,6 +484,7 @@ class develop(orig_develop.develop, custom_build):
 
 class build(orig_build.build, custom_build):
     def finalize_options(self):
+        # override setuptools.build finalize_options
         # set parallel execution to n_threads
         super().finalize_options()
         if self.parallel is None or self.parallel is True:
@@ -590,7 +591,7 @@ setup(
     author_email="onedal.maintainers@intel.com",
     maintainer_email="onedal.maintainers@intel.com",
     project_urls=project_urls,
-    cmdclass={"develop": develop, "build": build},
+    cmdclass={"develop": develop, "build": build, "build_ext": build_ext},
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
