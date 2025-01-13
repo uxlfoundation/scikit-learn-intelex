@@ -39,7 +39,7 @@ if [[ -n "${SKLEARNEX_GCOV}" ]]; then
     # the build numpy, this must be previously set as NUMPY_BUILD
     python -m pip install gcovr $NUMPY_BUILD
     
-    gcovr --gcov-executable "${GCOV_EXE}" -r . -v --lcov --filter "${FITLER}" -o coverage_cpp_"${1}".info
+    gcovr --gcov-executable "${GCOV_EXE}" -r . -v --lcov --filter "${FILTER}" -o coverage_cpp_"${1}".info
     
     # reinstall previous numpy
     python -m pip install $NUMPY_TEST
