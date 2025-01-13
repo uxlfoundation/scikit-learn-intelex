@@ -37,7 +37,7 @@
 #      do not build or use oneDAL interfaces (e.g. DAAL support only)
 #
 #   NTHREADS (default: number of processors)
-#      maximum number of jobs used for compilation
+#      number of processes used for compilation, can be overridden with -j
 
 import glob
 
@@ -428,14 +428,12 @@ def get_onedal_py_libs():
 
 
 class parallel_build_ext(_build_ext):
-    def build_extensions(self):
-        with ThreadPoolExecutor(max_workers=n_threads) as executor:
-            result_list = [
-                executor.submit(self.build_extension, ext) for ext in self.extensions
-            ]
-        assert all(
-            f.exception() is None for f in result_list
-        ), "There were errors building the extensions"
+    def finalize_options(self):
+        # set parallel execution to n_threads
+        super().finalize_options()
+        print("parallel_build_ext RAN")
+        if self.parallel is None:
+            self.parallel = n_threads
 
 
 class custom_build:
@@ -485,7 +483,8 @@ class develop(orig_develop.develop, custom_build):
         # override setuptools.build finalize_options
         # to set parallel execution to n_threads
         super().finalize_options()
-        self.parallel = n_threads
+        if self.parallel is None:
+            self.parallel = n_threads
 
     def run(self):
         custom_build.run(self)
@@ -497,7 +496,8 @@ class build(orig_build.build, custom_build):
     def finalize_options(self):
         # set parallel execution to n_threads
         super().finalize_options()
-        self.parallel = n_threads
+        if self.parallel is None:
+            self.parallel = n_threads
 
     def run(self):
         custom_build.run(self)
