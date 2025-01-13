@@ -24,6 +24,7 @@ from onedal.basic_statistics.tests.utils import options_and_tests
 from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
+    get_queues,
 )
 from sklearnex.basic_statistics import BasicStatistics
 
@@ -174,12 +175,12 @@ def test_multiple_options_on_random_data(
 
 
 # @pytest.mark.skipif(not hasattr(sp, "random_array"), reason="requires scipy>=1.12.0")
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize("queue", get_queues())
 @pytest.mark.parametrize("row_count", [100, 1000])
 @pytest.mark.parametrize("column_count", [10, 100])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_multiple_options_on_random_sparse_data(
-    dataframe, queue, row_count, column_count, dtype
+    queue, row_count, column_count, dtype
 ):
     seed = 77
     random_state = 42
@@ -203,30 +204,21 @@ def test_multiple_options_on_random_sparse_data(
         "mean",
         "standard_deviation",
         "variance",
-        "sum_squares",
-        "sum_squares_centered",
         "second_order_raw_moment",
     ]
     basicstat = BasicStatistics(result_options=options)
 
     result = basicstat.fit(X_sparse)
 
-    gtr_sum, gtr_min, gtr_mean = (
-        options_and_tests["sum"][0](X_dense),
-        options_and_tests["min"][0](X_dense),
-        options_and_tests["mean"][0](X_dense),
-    )
-
-    tol = 5e-4 if result.mean_.dtype == np.float32 else 1e-7
-    assert_allclose(gtr_sum, result.sum_, atol=tol)
-    assert_allclose(gtr_min, result.min_, atol=tol)
-    assert_allclose(gtr_mean, result.mean_, atol=tol)
-    #assert_allclose(gtr_std, result.standard_deviation_, atol=tol)
-    #assert_allclose(gtr_var, result.variance_, atol=tol)
-    #assert_allclose(gtr_variation, result.variation_, atol=tol)
-    #assert_allclose(gtr_ss, result.sum_squares_, atol=tol)
-    #assert_allclose(gtr_ssc, result.sum_squares_centered_, atol=tol)
-    #assert_allclose(gtr_seconf_moment, result.second_order_raw_moment_, atol=tol)
+    for result_option in options_and_tests:
+        function, tols = options_and_tests[result_option]
+        if not result_option in options:
+            continue
+        fp32tol, fp64tol = tols
+        res = getattr(result, result_option)
+        gtr = function(X_dense)
+        tol = fp32tol if res.dtype == np.float32 else fp64tol
+        assert_allclose(gtr, res, atol=tol)
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())

@@ -17,12 +17,16 @@
 import warnings
 
 import numpy as np
+from scipy.sparse import issparse
 from sklearn.base import BaseEstimator
 from sklearn.utils import check_array
 from sklearn.utils.validation import _check_sample_weight
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
-from daal4py.sklearn._utils import sklearn_check_version
+from daal4py.sklearn._utils import (
+    sklearn_check_version,
+    daal_check_version,
+)
 from onedal.basic_statistics import BasicStatistics as onedal_BasicStatistics
 from onedal.utils import _is_csr
 
@@ -168,8 +172,29 @@ class BasicStatistics(IntelEstimator, BaseEstimator):
         )
 
     def _onedal_supported(self, method_name, *data):
+
         patching_status = PatchingConditionsChain(
             f"sklearnex.basic_statistics.{self.__class__.__name__}.{method_name}"
+        )
+
+        X, sample_weight = data
+        is_data_supported = (
+            _is_csr(X) and daal_check_version((2025, "P", 200))
+        ) or not issparse(X)
+
+        is_sample_weight_supported = sample_weight is None or not issparse(X)
+
+        patching_status.and_conditions(
+            [
+                (
+                    is_sample_weight_supported,
+                    "Sample weights are not supported for CSR data format",
+                ),
+                (
+                    is_data_supported,
+                    "Supported data formats: Dense, CSR (oneDAL version >= 2024.7.0).",
+                ),
+            ]
         )
         return patching_status
 
@@ -186,12 +211,7 @@ class BasicStatistics(IntelEstimator, BaseEstimator):
             X = check_array(X, dtype=[np.float64, np.float32])
 
         if sample_weight is not None:
-            if _is_csr(X):
-                raise ValueError(
-                    "Sample weights are not supported for CSR data format"
-                )
-            else:
-                sample_weight = _check_sample_weight(sample_weight, X)
+            sample_weight = _check_sample_weight(sample_weight, X)
 
         onedal_params = {
             "result_options": self.result_options,
