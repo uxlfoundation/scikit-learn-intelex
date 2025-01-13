@@ -72,7 +72,9 @@ jobs:
       ./conda-recipe/build.sh
       echo "Python executable being used1: $(which python)"
       python -c "import sys; print('sys.path:', sys.path)"
-      ls /opt/hostedtoolcache/Python/3.11.10/x64/lib/python3.11/site-packages
+      ls /opt/hostedtoolcache/Python/3.11.10/x64/lib/python3.11/site-packages/daal4py
+      ls /opt/hostedtoolcache/Python/3.11.10/x64/lib/python3.11/site-packages/sklearnex
+      ls /opt/hostedtoolcache/Python/3.11.10/x64/lib/python3.11/site-packages/onedal
       python -c "import daal4py; print('daal4py imported successfully')"
       python -c "import daal4py._daal4py; print('daal4py._daal4py imported successfully')"
       python -c "from sklearnex.basic_statistics import BasicStatistics; print('BasicStatistics imported successfully')"
