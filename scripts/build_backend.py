@@ -17,7 +17,6 @@
 # ===============================================================================
 
 import logging
-import multiprocessing
 import os
 import platform as plt
 import subprocess
