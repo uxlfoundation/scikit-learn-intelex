@@ -228,15 +228,15 @@ def _whitelist_to_blacklist():
 _TRACE_BLOCK_LIST = _whitelist_to_blacklist()
 
 
-def sklearnex_trace(estimator, method):
+def sklearnex_trace(estimator_name, method_name):
     """Generate a trace of all function calls in calling estimator.method.
 
     Parameters
     ----------
-    estimator : str
+    estimator_name : str
         name of estimator which is a key from PATCHED_MODELS or SPECIAL_INSTANCES
 
-    method : str
+    method_name : str
         name of estimator method which is to be traced and stored
 
     Returns
@@ -248,14 +248,14 @@ def sklearnex_trace(estimator, method):
     """
     # get estimator
     try:
-        est = PATCHED_MODELS[estimator]()
+        est = PATCHED_MODELS[estimator_name]()
     except KeyError:
-        est = SPECIAL_INSTANCES[estimator]
+        est = SPECIAL_INSTANCES[estimator_name]
 
     # get dataset
     X, y = gen_dataset(est)[0]
     # fit dataset if method does not contain 'fit'
-    if "fit" not in method:
+    if "fit" not in method_name:
         est.fit(X, y)
 
     # monkeypatch new modname for clearer info
@@ -272,7 +272,7 @@ def sklearnex_trace(estimator, method):
         # call trace on method with dataset
         f = io.StringIO()
         with redirect_stdout(f):
-            tracer.runfunc(call_method, est, method, X, y)
+            tracer.runfunc(call_method, est, method_name, X, y)
         return f.getvalue()
     finally:
         trace._modname = orig_modname
@@ -292,6 +292,18 @@ def _trace_daemon(pipe):
             pipe.send(text)
 
 
+class _FakePipe:
+    """ Minimalistic representation of a multiprocessing.Pipe for test development.
+    This allows for running sklearnex_trace in the parent process"""  
+    _text = ""
+    
+    def send(self, estimator_name, method_name):
+        self._text = sklearnex_trace(estimator_name, method_name)
+
+    def recv(self):
+        return self._text
+
+
 @pytest.fixture(scope="module")
 def isolated_trace():
     """Generates a separate python process for isolated sklearnex traces.
@@ -309,6 +321,7 @@ def isolated_trace():
         communicating with the special isolated tracing python instance
         for sklearnex estimators.
     """
+    # return _FakePipe
     try:
         # force use of 'spawn' to guarantee a clean python environment
         # from possible coverage arc tracing
