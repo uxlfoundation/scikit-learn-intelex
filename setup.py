@@ -48,7 +48,6 @@ import platform as plt
 import shutil
 import sys
 import time
-from concurrent.futures import ThreadPoolExecutor
 from ctypes.util import find_library
 from functools import partial
 from os.path import join as jp
