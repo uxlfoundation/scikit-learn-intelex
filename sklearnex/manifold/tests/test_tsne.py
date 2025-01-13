@@ -27,26 +27,26 @@ from onedal.tests.utils._dataframes_support import (
 )
 
 
-def test_sklearnex_import():
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+def test_sklearnex_import(dataframe, queue):
+    """Test TSNE compatibility with different backends and queues, and validate sklearnex module."""
     from sklearnex.manifold import TSNE
 
     X = np.array([[0, 0, 0], [0, 1, 1], [1, 0, 1], [1, 1, 1]])
-    tsne = TSNE(n_components=2, perplexity=2.0).fit(X)
-    assert "daal4py" in tsne.__module__
-
-
-from sklearnex.manifold import TSNE
-
-
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_sklearnex_tsne_import(dataframe, queue):
-    """Test TSNE compatibility with different backends and queues, and validate sklearnex module."""
-    X = np.array([[0, 0, 0], [0, 1, 1], [1, 0, 1], [1, 1, 1]])
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    tsne = TSNE(n_components=2, perplexity=2.0).fit(X_df)
+    tsne = TSNE(n_components=2, perplexity=2.0, random_state=42, init="random").fit(X_df)
+    embedding = tsne.fit_transform(X_df)
+    embedding = _as_numpy(embedding)
+    embedding_expected = [
+        [76.36912, -74.57714],
+        [62.14012, -80.512474],
+        [65.81533, -73.238434],
+        [-211.36201, -416.8551],
+    ]
     assert "daal4py" in tsne.__module__
     assert tsne.n_components == 2
     assert tsne.perplexity == 2.0
+    assert_allclose(embedding_expected, embedding, rtol=1e-5)
 
 
 @pytest.mark.parametrize(
@@ -145,6 +145,7 @@ def test_tsne_functionality_and_edge_cases(
     queue,
     dtype,
 ):
+    from sklearnex.manifold import TSNE
 
     rng = np.random.default_rng(
         seed=42
@@ -169,6 +170,8 @@ def test_tsne_functionality_and_edge_cases(
 @pytest.mark.parametrize("init", ["pca", "random"])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_tsne_constant_data(init, dataframe, queue, dtype):
+    from sklearnex.manifold import TSNE
+
     X = np.ones((10, 10), dtype=dtype)
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     tsne = TSNE(n_components=2, init=init, perplexity=5, random_state=42)
@@ -185,6 +188,8 @@ def test_tsne_constant_data(init, dataframe, queue, dtype):
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_tsne_reproducibility(dataframe, queue, dtype):
+    from sklearnex.manifold import TSNE
+
     rng = np.random.default_rng(seed=42)
     X = rng.random((50, 10)).astype(dtype)
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
@@ -199,6 +204,8 @@ def test_tsne_reproducibility(dataframe, queue, dtype):
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_tsne_complex_and_gpu_validation(dataframe, queue, dtype):
+    from sklearnex.manifold import TSNE
+
     X = np.array(
         [
             [1, 1, 1, 1],
