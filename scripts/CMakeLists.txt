@@ -126,7 +126,7 @@ if(IFACE STREQUAL "host")
     endif()
 
     if(SKLEARNEX_GCOV)
-        if((CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM" OR CMAKE_CXX_COMPILER_ID MATCHES ".*Clang"))
+        if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM" OR CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
             if(WIN32)
                 set(CMAKE_CXX_FLAGS "/clang:--coverage ${CMAKE_CXX_FLAGS}")
                 list(APPEND ONEDAL_LIBRARIES "clang_rt.profile-x86_64.lib")
