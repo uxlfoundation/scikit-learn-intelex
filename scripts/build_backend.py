@@ -49,6 +49,7 @@ def custom_build_cmake_clib(
     no_dist=True,
     use_parameters_lib=True,
     use_abs_rpath=False,
+    n_threads=1,
 ):
     import pybind11
 
@@ -130,9 +131,7 @@ def custom_build_cmake_clib(
     if use_abs_rpath:
         cmake_args += ["-DADD_ONEDAL_RPATH=ON"]
 
-    cpu_count = multiprocessing.cpu_count()
-    cpu_count = min(cpu_count, max(1, os.getenv("MAX_JOBS", cpu_count)))
-    make_args = ["cmake", "--build", abs_build_temp_path, "-j " + str(cpu_count)]
+    make_args = ["cmake", "--build", abs_build_temp_path, "-j " + n_threads]
 
     make_install_args = [
         "cmake",

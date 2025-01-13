@@ -76,8 +76,7 @@ IS_MAC = False
 IS_LIN = False
 
 dal_root = os.environ.get("DALROOT")
-n_threads = int(os.environ.get("NTHREADS", os.cpu_count() or 1))
-
+n_threads = min(os.cpu_count(), max(1, os.getenv("NTHREADS", os.cpu_count())))
 arch_dir = plt.machine()
 plt_dict = {"x86_64": "intel64", "AMD64": "intel64", "aarch64": "arm"}
 arch_dir = plt_dict[arch_dir] if arch_dir in plt_dict else arch_dir
@@ -442,12 +441,14 @@ class parallel_build_ext(_build_ext):
 class custom_build:
     def run(self):
         cxx = os.getenv("CXX", "cl" if IS_WIN else "g++")
-        build_onedal = lambda iface: build.backend.custom_build_cmake_clib(iface=iface,
-                                                                           cxx=cxx,
-                                                                           onedal_major_binary_version=ONEDAL_MAJOR_BINARY_VERSION,
-                                                                           no_dist=no_dist,
-                                                                           use_parameters_lib=use_parameters_lib,
-                                                                           use_abs_rpath=USE_ABS_RPATH)
+        build_onedal = lambda iface: build.backend.custom_build_cmake_clib(
+            iface=iface,
+            cxx=cxx,
+            onedal_major_binary_version=ONEDAL_MAJOR_BINARY_VERSION,
+            no_dist=no_dist,
+            use_parameters_lib=use_parameters_lib,
+            use_abs_rpath=USE_ABS_RPATH,
+        )
         if is_onedal_iface:
             build_onedal("host")
             if dpcpp:
@@ -479,23 +480,24 @@ class custom_build:
 
 
 class develop(orig_develop.develop, custom_build):
-    def finalize_options(self)
-        # set parallel execution to n_threads
+    def finalize_options(self):
+        # override setuptools.build finalize_options
+        # to set parallel execution to n_threads
         super().finalize_options()
         self.parallel = n_threads
-    
-    def run(self):    
+
+    def run(self):
         custom_build.run(self)
         super().run()
         custom_build.post_build(self)
 
 
 class build(orig_build.build, custom_build):
-    def finalize_options(self)
+    def finalize_options(self):
         # set parallel execution to n_threads
         super().finalize_options()
         self.parallel = n_threads
-    
+
     def run(self):
         custom_build.run(self)
         super().run()
