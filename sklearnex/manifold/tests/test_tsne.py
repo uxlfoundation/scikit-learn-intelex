@@ -165,12 +165,15 @@ def test_tsne_functionality_and_edge_cases(
         assert np.any(embedding != 0)
 
 
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 @pytest.mark.parametrize("init", ["pca", "random"])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_tsne_constant_data(init, dtype):
+def test_tsne_constant_data(init, dataframe, queue, dtype):
     X = np.ones((10, 10), dtype=dtype)
+    X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     tsne = TSNE(n_components=2, init=init, perplexity=5, random_state=42)
-    embedding = tsne.fit_transform(X)
+    embedding = tsne.fit_transform(X_df)
+    embedding = _as_numpy(embedding)
     assert embedding.shape == (10, 2)
     if init == "pca":
         assert np.isclose(embedding[:, 0].std(), 0, atol=1e-6)  # Constant first dimension
