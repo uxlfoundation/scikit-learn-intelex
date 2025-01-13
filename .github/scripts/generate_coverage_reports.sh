@@ -14,7 +14,7 @@
 # limitations under the License.
 #===============================================================================
 
-ci_dir=$( dirname $( dirname $( dirname "${BASH_SOURCE[0]}" ) ) )
+ci_dir=$(dirname $(dirname $(dirname "${BASH_SOURCE[0]}")))
 cd $ci_dir
 
 # create coverage.py report
