@@ -501,6 +501,7 @@ class build(orig_build.build, custom_build):
 
     def run(self):
         custom_build.run(self)
+        print(f"HELLO RIGHT HERE!! {self.parallel}")
         super().run()
         custom_build.post_build(self)
 
