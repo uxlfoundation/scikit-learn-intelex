@@ -50,8 +50,7 @@ inline auto get_kernel_descriptor(const pybind11::dict& params) {
         kernel.set_sigma(params["sigma"].cast<double>());
     }
     if constexpr (std::is_same_v<Kernel, sigmoid_kernel_t>) {
-        kernel.set_scale(params["scale"].cast<double>())
-              .set_shift(params["shift"].cast<double>());
+        kernel.set_scale(params["scale"].cast<double>()).set_shift(params["shift"].cast<double>());
     }
     return kernel;
 }
@@ -78,11 +77,15 @@ struct kernel_params2desc {
     }
 };
 
-template <typename Policy, typename Input, typename Result, typename Param2Desc, typename DenseMethod>
+template <typename Policy,
+          typename Input,
+          typename Result,
+          typename Param2Desc,
+          typename DenseMethod>
 inline void init_kernel_compute_ops(pybind11::module_& m) {
     m.def("compute",
           [](const Policy& policy, const pybind11::dict& params, const table& x, const table& y) {
-              compute_ops ops (policy, Input{x, y}, Param2Desc{});
+              compute_ops ops(policy, Input{ x, y }, Param2Desc{});
               return fptype2t{ kernel_method2t{ DenseMethod{}, ops } }(params);
           });
 }
