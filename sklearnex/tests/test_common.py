@@ -317,12 +317,12 @@ def isolated_trace():
 
     Yields
     -------
-    pipe_parent: multiprocess.Connection
+    pipe_parent: multiprocessing.Connection
         one end of a duplex pipe to be used by other pytest fixtures for
         communicating with the special isolated tracing python instance
         for sklearnex estimators.
     """
-    # return _FakePipe
+    # return _FakePipe()
     try:
         # force use of 'spawn' to guarantee a clean python environment
         # from possible coverage arc tracing
@@ -373,8 +373,10 @@ def estimator_trace(estimator, method, cache, isolated_trace):
 
         isolated_trace.send((estimator, method))
         text = isolated_trace.recv()
-        # provide a minimal error in the case that the tracing doesn't function
-        assert text, f"trace_daemon failure for {estimator}.{method}"
+        # if tracing does not function in isolated_trace, run it in parent process and fail
+        if text == "":
+            sklearnex_trace(estimator, method)
+            assert text, f"sklearnex_trace failure for {estimator}.{method}"
 
         for modulename, file in _TRACE_ALLOW_DICT.items():
             text = text.replace(file, modulename)
