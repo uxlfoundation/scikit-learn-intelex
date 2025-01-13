@@ -221,9 +221,13 @@ jobs:
           echo C:\msys64\usr\bin;>> %GITHUB_PATH%
           echo NO_DIST=YES>> %GITHUB_ENV%
           set DPCTL_TEMP="${{ env.DPCTL_PY_VERSIONS }}"
-          if not %DPCTL_TEMP:${{ matrix.PYTHON_VERSION }}=%==%DPCTL_TEMP% (echo DPCFLAG=>> %GITHUB_OUTPUT%) else (echo DPCFLAG="0">> %GITHUB_OUTPUT%)
+          if not %DPCTL_TEMP:${{ matrix.PYTHON_VERSION }}=%==%DPCTL_TEMP% (
+            echo DPCFLAG=>> %GITHUB_OUTPUT%
+            echo SKLEARNEX_GCOV=YES>> %GITHUB_ENV%
+          ) else (
+            echo DPCFLAG="0">> %GITHUB_OUTPUT%
+          )
           echo COVERAGE_RCFILE=%cd%\.coveragerc>> %GITHUB_ENV%
-          if %DPCFLAG%=="" echo SKLEARNEX_GCOV=YES>> %GITHUB_ENV%
       - name: Download Intel OpenCL CPU Runtime artifact
         if: ${{ steps.set-env.outputs.DPCFLAG == '' }}
         uses: actions/download-artifact@v4
