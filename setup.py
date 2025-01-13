@@ -49,7 +49,7 @@ import shutil
 import sys
 import time
 from ctypes.util import find_library
-from functools import partial
+from multiprocessing import Pool
 from os.path import join as jp
 from sysconfig import get_config_vars
 
@@ -427,11 +427,20 @@ def get_onedal_py_libs():
 
 
 class parallel_build_ext(_build_ext):
-    def finalize_options(self):
-        # set parallel execution to n_threads
-        super().finalize_options()
-        if self.parallel is None:
-            self.parallel = n_threads
+    def build_extension(self, ext):
+        # monkeypatch a mulitprocess pool to multithread daal4py compilation
+        try:
+            p = Pool(n_threads)
+            base_compile = self.compiler.compile
+
+            def parallel_compile(sources, **kwargs):
+                return p.map(lambda arg: base_compile(arg, **kwargs), sources)
+
+            self.compiler.compile = parallel_compile
+            return super().build_extension(ext)
+        finally:
+            p.close()
+            self.compiler.compile = base_compile
 
 
 class custom_build:
