@@ -228,15 +228,15 @@ def _whitelist_to_blacklist():
 _TRACE_BLOCK_LIST = _whitelist_to_blacklist()
 
 
-def sklearnex_trace(estimator_name, method_name):
+def sklearnex_trace(estimator, method):
     """Generate a trace of all function calls in calling estimator.method.
 
     Parameters
     ----------
-    estimator_name : str
+    estimator : str
         name of estimator which is a key from PATCHED_MODELS or SPECIAL_INSTANCES
 
-    method_name : str
+    method : str
         name of estimator method which is to be traced and stored
 
     Returns
@@ -247,15 +247,15 @@ def sklearnex_trace(estimator_name, method_name):
         of trace._modname.
     """
     # get estimator
-    est = (
-        PATCHED_MODELS.get(estimator_name, lambda: None)()
-        or SPECIAL_INSTANCES[estimator_name]
-    )
+    try:
+        est = PATCHED_MODELS[estimator]()
+    except KeyError:
+        est = SPECIAL_INSTANCES[estimator]
 
     # get dataset
     X, y = gen_dataset(est)[0]
-    # methods other than `fit` and `partial_fit` require a fitted estimator
-    if "fit" not in method_name:
+    # fit dataset if method does not contain 'fit'
+    if "fit" not in method:
         est.fit(X, y)
 
     # monkeypatch new modname for clearer info
@@ -272,7 +272,7 @@ def sklearnex_trace(estimator_name, method_name):
         # call trace on method with dataset
         f = io.StringIO()
         with redirect_stdout(f):
-            tracer.runfunc(call_method, est, method_name, X, y)
+            tracer.runfunc(call_method, est, method, X, y)
         return f.getvalue()
     finally:
         trace._modname = orig_modname
