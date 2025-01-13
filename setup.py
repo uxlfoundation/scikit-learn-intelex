@@ -427,6 +427,8 @@ def get_onedal_py_libs():
 class custom_build:
     def run(self):
         cxx = os.getenv("CXX", "cl" if IS_WIN else "g++")
+        if self.parallel is None or self.parallel is True:
+            self.parallel = n_threads
         build_onedal = lambda iface: build_backend.custom_build_cmake_clib(
             iface=iface,
             cxx=cxx,
@@ -434,7 +436,7 @@ class custom_build:
             no_dist=no_dist,
             use_parameters_lib=use_parameters_lib,
             use_abs_rpath=USE_ABS_RPATH,
-            n_threads=n_threads,
+            n_threads=self.parallel,
         )
         if is_onedal_iface:
             build_onedal("host")
@@ -471,7 +473,7 @@ class develop(orig_develop.develop, custom_build):
         # override setuptools.build finalize_options
         # to set parallel execution to n_threads
         super().finalize_options()
-        if self.parallel is None:
+        if self.parallel is None or self.parallel is True:
             self.parallel = n_threads
 
     def run(self):
@@ -484,7 +486,7 @@ class build(orig_build.build, custom_build):
     def finalize_options(self):
         # set parallel execution to n_threads
         super().finalize_options()
-        if self.parallel is None:
+        if self.parallel is None or self.parallel is True:
             self.parallel = n_threads
 
     def run(self):
