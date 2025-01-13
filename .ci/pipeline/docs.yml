@@ -73,7 +73,7 @@ jobs:
 
       ./conda-recipe/build.sh
 
-      cp ${DALROOT }/lib/python3.11/site-packages/daal4py/_daal4py.cpython-311-x86_64-linux-gnu.so daal4py/_daal4py.cpython-311-x86_64-linux-gnu.so
+      cp ${DALROOT}/lib/python3.11/site-packages/daal4py/_daal4py.cpython-311-x86_64-linux-gnu.so daal4py/_daal4py.cpython-311-x86_64-linux-gnu.so
       python -c "import daal4py; print('daal4py imported successfully')"
       python -c "import daal4py._daal4py; print('daal4py._daal4py imported successfully')"
       python -c "from sklearnex.basic_statistics import BasicStatistics; print('BasicStatistics imported successfully')"
