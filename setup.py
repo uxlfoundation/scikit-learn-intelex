@@ -36,7 +36,7 @@
 #   OFF_ONEDAL_IFACE (default: false)
 #      do not build or use oneDAL interfaces (e.g. DAAL support only)
 #
-#   MAX_JOBS (default: number of processors)
+#   NTHREADS (default: number of processors)
 #      maximum number of jobs used for compilation
 
 import glob
@@ -50,6 +50,7 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from ctypes.util import find_library
+from functools import partial
 from os.path import join as jp
 from sysconfig import get_config_vars
 
@@ -440,33 +441,19 @@ class parallel_build_ext(_build_ext):
 
 class custom_build:
     def run(self):
+        cxx = os.getenv("CXX", "cl" if IS_WIN else "g++")
+        build_onedal = lambda iface: build.backend.custom_build_cmake_clib(iface=iface,
+                                                                           cxx=cxx,
+                                                                           onedal_major_binary_version=ONEDAL_MAJOR_BINARY_VERSION,
+                                                                           no_dist=no_dist,
+                                                                           use_parameters_lib=use_parameters_lib,
+                                                                           use_abs_rpath=USE_ABS_RPATH)
         if is_onedal_iface:
-            cxx = os.getenv("CXX", "cl" if IS_WIN else "g++")
-            build_backend.custom_build_cmake_clib(
-                iface="host",
-                cxx=cxx,
-                onedal_major_binary_version=ONEDAL_MAJOR_BINARY_VERSION,
-                no_dist=no_dist,
-                use_parameters_lib=use_parameters_lib,
-                use_abs_rpath=USE_ABS_RPATH,
-            )
-        if dpcpp:
-            if is_onedal_iface:
-                build_backend.custom_build_cmake_clib(
-                    iface="dpc",
-                    onedal_major_binary_version=ONEDAL_MAJOR_BINARY_VERSION,
-                    no_dist=no_dist,
-                    use_parameters_lib=use_parameters_lib,
-                    use_abs_rpath=USE_ABS_RPATH,
-                )
+            build_onedal("host")
+            if dpcpp:
+                build_onedal("dpc")
                 if build_distribute:
-                    build_backend.custom_build_cmake_clib(
-                        iface="spmd_dpc",
-                        onedal_major_binary_version=ONEDAL_MAJOR_BINARY_VERSION,
-                        no_dist=no_dist,
-                        use_parameters_lib=use_parameters_lib,
-                        use_abs_rpath=USE_ABS_RPATH,
-                    )
+                    build_onedal("spmd_dpc")
 
     def post_build(self):
         if IS_MAC:
@@ -492,13 +479,23 @@ class custom_build:
 
 
 class develop(orig_develop.develop, custom_build):
-    def run(self):
+    def finalize_options(self)
+        # set parallel execution to n_threads
+        super().finalize_options()
+        self.parallel = n_threads
+    
+    def run(self):    
         custom_build.run(self)
         super().run()
         custom_build.post_build(self)
 
 
 class build(orig_build.build, custom_build):
+    def finalize_options(self)
+        # set parallel execution to n_threads
+        super().finalize_options()
+        self.parallel = n_threads
+    
     def run(self):
         custom_build.run(self)
         super().run()
