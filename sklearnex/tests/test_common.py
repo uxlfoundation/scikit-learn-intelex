@@ -255,7 +255,7 @@ def sklearnex_trace(estimator_name, method_name):
     # get dataset
     X, y = gen_dataset(est)[0]
     # methods other than `fit` and `partial_fit` require a fitted estimator
-    if "fit" not in method:
+    if "fit" not in method_name:
         est.fit(X, y)
 
     # monkeypatch new modname for clearer info
@@ -272,7 +272,7 @@ def sklearnex_trace(estimator_name, method_name):
         # call trace on method with dataset
         f = io.StringIO()
         with redirect_stdout(f):
-            tracer.runfunc(call_method, est, method, X, y)
+            tracer.runfunc(call_method, est, method_name, X, y)
         return f.getvalue()
     finally:
         trace._modname = orig_modname
