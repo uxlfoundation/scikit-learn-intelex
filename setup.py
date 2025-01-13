@@ -448,6 +448,7 @@ class custom_build:
             no_dist=no_dist,
             use_parameters_lib=use_parameters_lib,
             use_abs_rpath=USE_ABS_RPATH,
+            n_threads=n_threads,
         )
         if is_onedal_iface:
             build_onedal("host")
