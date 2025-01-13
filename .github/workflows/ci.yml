@@ -223,7 +223,7 @@ jobs:
           set DPCTL_TEMP="${{ env.DPCTL_PY_VERSIONS }}"
           if not %DPCTL_TEMP:${{ matrix.PYTHON_VERSION }}=%==%DPCTL_TEMP% (echo DPCFLAG=>> %GITHUB_OUTPUT%) else (echo DPCFLAG="0">> %GITHUB_OUTPUT%)
           echo COVERAGE_RCFILE=%cd%\.coveragerc>> %GITHUB_ENV%
-          if "${{ steps.set-env.outputs.DPCFLAG }}"=="" echo SKLEARNEX_GCOV=YES>> %GITHUB_ENV%
+          if %DPCFLAG%=="" echo SKLEARNEX_GCOV=YES>> %GITHUB_ENV%
       - name: Download Intel OpenCL CPU Runtime artifact
         if: ${{ steps.set-env.outputs.DPCFLAG == '' }}
         uses: actions/download-artifact@v4
