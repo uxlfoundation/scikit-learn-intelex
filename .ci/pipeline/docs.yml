@@ -63,8 +63,6 @@ jobs:
       pip list
     displayName: 'Install requirements'
   - script: |
-      echo "dalroot"
-      ls /opt/hostedtoolcache/Python/3.11.10/x64
       ls  /home/vsts/work/1
 
       export PREFIX=$(dirname $(dirname $(which python)))
@@ -75,8 +73,7 @@ jobs:
 
       ./conda-recipe/build.sh
 
-      ls /opt/hostedtoolcache/Python/3.11.10/x64/lib/python3.11/site-packages/daal4py
-
+      cp ${DALROOT }/lib/python3.11/site-packages/daal4py/_daal4py.cpython-311-x86_64-linux-gnu.so daal4py/_daal4py.cpython-311-x86_64-linux-gnu.so
       python -c "import daal4py; print('daal4py imported successfully')"
       python -c "import daal4py._daal4py; print('daal4py._daal4py imported successfully')"
       python -c "from sklearnex.basic_statistics import BasicStatistics; print('BasicStatistics imported successfully')"
