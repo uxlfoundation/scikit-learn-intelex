@@ -65,13 +65,21 @@ jobs:
   - script: |
       echo "PREFIX set to: $PREFIX"
       echo "DALROOT set to: $DALROOT"
+      echo "CONDA PREFIX: $CONDA_PREFIX"
+      echo "DALRPATH set to: $DALRPATH"
+
       export PREFIX=$(dirname $(dirname $(which python)))
       export DALROOT=$PREFIX
       echo "PREFIX set to: $PREFIX"
-      echo "DALROOT set to: $DALROOT"
+      echo "DALROOT set to1: $DALROOT"
+      ls ${DALROOT}/env/vars.sh
+
+
       ./conda-recipe/build.sh
-      echo "Python executable being used1: $(which python)"
-      python -c "import sys; print('sys.path:', sys.path)"
+
+      echo "DALRPATH set to2: $DALRPATH"
+      echo "Current directory: $(pwd)"
+      ls $(pwd)
       ls /opt/hostedtoolcache/Python/3.11.10/x64/lib/python3.11/site-packages/daal4py
       ls /opt/hostedtoolcache/Python/3.11.10/x64/lib/python3.11/site-packages/sklearnex
       ls /opt/hostedtoolcache/Python/3.11.10/x64/lib/python3.11/site-packages/onedal
