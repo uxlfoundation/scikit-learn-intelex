@@ -441,7 +441,7 @@ class parallel_build_ext(_build_ext):
 class custom_build:
     def run(self):
         cxx = os.getenv("CXX", "cl" if IS_WIN else "g++")
-        build_onedal = lambda iface: build.backend.custom_build_cmake_clib(
+        build_onedal = lambda iface: build_backend.custom_build_cmake_clib(
             iface=iface,
             cxx=cxx,
             onedal_major_binary_version=ONEDAL_MAJOR_BINARY_VERSION,
