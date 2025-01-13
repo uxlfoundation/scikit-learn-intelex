@@ -63,10 +63,9 @@ jobs:
       pip list
     displayName: 'Install requirements'
   - script: |
-      echo "PREFIX set to: $PREFIX"
-      echo "DALROOT set to: $DALROOT"
-      echo "CONDA PREFIX: $CONDA_PREFIX"
-      echo "DALRPATH set to: $DALRPATH"
+      echo "dalroot"
+      ls /opt/hostedtoolcache/Python/3.11.10/x64
+      ls  /home/vsts/work/1
 
       export PREFIX=$(dirname $(dirname $(which python)))
       export DALROOT=$PREFIX
@@ -74,15 +73,10 @@ jobs:
       echo "DALROOT set to1: $DALROOT"
       ls ${DALROOT}/env/vars.sh
 
-
       ./conda-recipe/build.sh
 
-      echo "DALRPATH set to2: $DALRPATH"
-      echo "Current directory: $(pwd)"
-      ls $(pwd)
       ls /opt/hostedtoolcache/Python/3.11.10/x64/lib/python3.11/site-packages/daal4py
-      ls /opt/hostedtoolcache/Python/3.11.10/x64/lib/python3.11/site-packages/sklearnex
-      ls /opt/hostedtoolcache/Python/3.11.10/x64/lib/python3.11/site-packages/onedal
+
       python -c "import daal4py; print('daal4py imported successfully')"
       python -c "import daal4py._daal4py; print('daal4py._daal4py imported successfully')"
       python -c "from sklearnex.basic_statistics import BasicStatistics; print('BasicStatistics imported successfully')"
