@@ -17,6 +17,7 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
+from scipy import sparse as sp
 
 from daal4py.sklearn._utils import daal_check_version
 from onedal.basic_statistics.tests.utils import options_and_tests
@@ -25,7 +26,6 @@ from onedal.tests.utils._dataframes_support import (
     get_dataframes_and_queues,
 )
 from sklearnex.basic_statistics import BasicStatistics
-
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 def test_sklearnex_import_basic_statistics(dataframe, queue):
@@ -171,6 +171,62 @@ def test_multiple_options_on_random_data(
     assert_allclose(gtr_mean, res_mean, atol=tol)
     assert_allclose(gtr_max, res_max, atol=tol)
     assert_allclose(gtr_sum, res_sum, atol=tol)
+
+
+# @pytest.mark.skipif(not hasattr(sp, "random_array"), reason="requires scipy>=1.12.0")
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize("row_count", [100, 1000])
+@pytest.mark.parametrize("column_count", [10, 100])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_multiple_options_on_random_sparse_data(
+    dataframe, queue, row_count, column_count, dtype
+):
+    seed = 77
+    random_state = 42
+
+    gen = np.random.default_rng(seed)
+
+    X_sparse = sp.random_array(
+        shape=(row_count, column_count),
+        density=0.05,
+        format="csr",
+        dtype=dtype,
+        random_state=gen,
+    )
+    X_dense = X_sparse.toarray()
+
+    options = [
+        "sum",
+        # TODO: There is a bug in oneDAL's max computations on GPU
+        # "max",
+        "min",
+        "mean",
+        "standard_deviation",
+        "variance",
+        "sum_squares",
+        "sum_squares_centered",
+        "second_order_raw_moment",
+    ]
+    basicstat = BasicStatistics(result_options=options)
+
+    result = basicstat.fit(X_sparse)
+
+    gtr_sum, gtr_min, gtr_mean = (
+        options_and_tests["sum"][0](X_dense),
+        options_and_tests["min"][0](X_dense),
+        options_and_tests["mean"][0](X_dense),
+    )
+
+    tol = 5e-4 if result.mean_.dtype == np.float32 else 1e-7
+    assert_allclose(gtr_sum, result.sum_, atol=tol)
+    assert_allclose(gtr_min, result.min_, atol=tol)
+    assert_allclose(gtr_mean, result.mean_, atol=tol)
+    #assert_allclose(gtr_std, result.standard_deviation_, atol=tol)
+    #assert_allclose(gtr_var, result.variance_, atol=tol)
+    #assert_allclose(gtr_variation, result.variation_, atol=tol)
+    #assert_allclose(gtr_ss, result.sum_squares_, atol=tol)
+    #assert_allclose(gtr_ssc, result.sum_squares_centered_, atol=tol)
+    #assert_allclose(gtr_seconf_moment, result.second_order_raw_moment_, atol=tol)
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
