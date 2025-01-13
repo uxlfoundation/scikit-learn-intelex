@@ -251,7 +251,7 @@ def sklearnex_trace(estimator_name, method_name):
 
     # get dataset
     X, y = gen_dataset(est)[0]
-    # fit dataset if method does not contain 'fit'
+    # methods other than `fit` and `partial_fit` require a fitted estimator
     if "fit" not in method:
         est.fit(X, y)
 
