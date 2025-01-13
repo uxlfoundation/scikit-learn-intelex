@@ -293,10 +293,11 @@ def _trace_daemon(pipe):
 
 
 class _FakePipe:
-    """ Minimalistic representation of a multiprocessing.Pipe for test development.
-    This allows for running sklearnex_trace in the parent process"""  
+    """Minimalistic representation of a multiprocessing.Pipe for test development.
+    This allows for running sklearnex_trace in the parent process"""
+
     _text = ""
-    
+
     def send(self, estimator_name, method_name):
         self._text = sklearnex_trace(estimator_name, method_name)
 
