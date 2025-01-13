@@ -75,7 +75,7 @@ IS_MAC = False
 IS_LIN = False
 
 dal_root = os.environ.get("DALROOT")
-n_threads = min(os.cpu_count(), max(1, os.getenv("NTHREADS", os.cpu_count())))
+n_threads = min(os.cpu_count(), max(1, int(os.getenv("NTHREADS", os.cpu_count()))))
 arch_dir = plt.machine()
 plt_dict = {"x86_64": "intel64", "AMD64": "intel64", "aarch64": "arm"}
 arch_dir = plt_dict[arch_dir] if arch_dir in plt_dict else arch_dir
