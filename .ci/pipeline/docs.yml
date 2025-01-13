@@ -63,40 +63,35 @@ jobs:
       pip list
     displayName: 'Install requirements'
   - script: |
+      echo "PREFIX set to: $PREFIX"
+      echo "DALROOT set to: $DALROOT"
       export PREFIX=$(dirname $(dirname $(which python)))
       export DALROOT=$PREFIX
+      echo "PREFIX set to: $PREFIX"
+      echo "DALROOT set to: $DALROOT"
       ./conda-recipe/build.sh
       echo "Python executable being used1: $(which python)"
+      python -c "import daal4py; print('daal4py imported successfully')"
+      python -c "import daal4py._daal4py; print('daal4py._daal4py imported successfully')"
+      python -c "from sklearnex.basic_statistics import BasicStatistics; print('BasicStatistics imported successfully')"
     displayName: 'Build daal4py/sklearnex'
   - script: |
       echo "Current directory3: $(pwd)"
+      python -c "import daal4py; print('daal4py imported successfully')"
+      python -c "import daal4py._daal4py; print('daal4py._daal4py imported successfully')"
+      python -c "from sklearnex.basic_statistics import BasicStatistics; print('BasicStatistics imported successfully')"
       ls -l daal4py/
       ls -l build/
       ls -l build/lib.linux-x86_64-cpython-311
-      ls -l /opt/hostedtoolcache/Python/3.11.10/x64/lib/python3.11/site-packages
-      ls -l /opt/hostedtoolcache/Python/3.11.10/x64/lib/python3.11/lib-dynload
-      ls -l /opt/hostedtoolcache/Python/3.11.10/x64/lib/python3.11
-      echo "Checking for shared libraries in build directory:"
-      echo $PYTHONPATH
       find build/ -name "*.so"
-      export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
-      echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
-      python -c "
-        import sys
-        sys.path.insert(0, '/home/vsts/work/1/s/build/lib.linux-x86_64-cpython-311')
-        print('Updated sys.path:', sys.path)
-        try:
-            import daal4py
-            print('daal4py imported successfully')
-        except ImportError as e:
-            print('ImportError:', e)
-            raise
-      "
+      python -c "import sys; print('sys.path:', sys.path)"
       cd doc/daal4py
-      python -c "import sys; print('Current sys.path1:', sys.path)"
       make html
     displayName: 'Build daal4py documentation'
   - script: |
+      python -c "import daal4py; print('daal4py imported successfully')"
+      python -c "import daal4py._daal4py; print('daal4py._daal4py imported successfully')"
+      python -c "from sklearnex.basic_statistics import BasicStatistics; print('BasicStatistics imported successfully')"
       cd doc
       python -c "import sys; print('Current sys.path2:', sys.path)"
       make html
