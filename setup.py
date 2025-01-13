@@ -427,10 +427,20 @@ def get_onedal_py_libs():
 
 
 class parallel_build_ext(_build_ext):
+    def finalize_options(self):
+        # override setuptools.build finalize_options
+        # to set parallel execution to n_threads
+        super().finalize_options()
+        if self.parallel is None:
+            self.parallel = n_threads
+
     def build_extension(self, ext):
         # monkeypatch a mulitprocess pool to multithread daal4py compilation
+        if self.parallel is None or self.parallel == 1:
+            return super().build_extension(ext)
+
         try:
-            p = Pool(n_threads)
+            p = Pool(self.parallel)
             base_compile = self.compiler.compile
 
             def parallel_compile(sources, **kwargs):
