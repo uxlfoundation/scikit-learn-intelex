@@ -49,7 +49,6 @@ import shutil
 import sys
 import time
 from ctypes.util import find_library
-from multiprocessing import Pool
 from os.path import join as jp
 from sysconfig import get_config_vars
 
@@ -589,7 +588,7 @@ setup(
     author_email="onedal.maintainers@intel.com",
     maintainer_email="onedal.maintainers@intel.com",
     project_urls=project_urls,
-    cmdclass={"develop": develop, "build": build,
+    cmdclass={"develop": develop, "build": build}
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
