@@ -37,7 +37,7 @@
 #      do not build or use oneDAL interfaces (e.g. DAAL support only)
 #
 #   NTHREADS (default: number of processors)
-#      number of processes used for compilation, can be overridden with -j
+#      number of processes used for onedal pybind11 compilation
 
 import glob
 
@@ -58,7 +58,6 @@ import setuptools.command.build as orig_build
 import setuptools.command.develop as orig_develop
 from Cython.Build import cythonize
 from setuptools import Extension, setup
-from setuptools.command.build_ext import build_ext as _build_ext
 
 import scripts.build_backend as build_backend
 from scripts.package_helpers import get_packages_with_tests
@@ -426,33 +425,6 @@ def get_onedal_py_libs():
     return libs
 
 
-class parallel_build_ext(_build_ext):
-    def finalize_options(self):
-        # override setuptools.build finalize_options
-        # to set parallel execution to n_threads
-        super().finalize_options()
-        if self.parallel is None:
-            self.parallel = n_threads
-
-    def build_extension(self, ext):
-        # monkeypatch a mulitprocess pool to multithread daal4py compilation
-        if self.parallel is None or self.parallel == 1:
-            return super().build_extension(ext)
-
-        try:
-            p = Pool(self.parallel)
-            base_compile = self.compiler.compile
-
-            def parallel_compile(sources, **kwargs):
-                return p.map(lambda arg: base_compile(arg, **kwargs), sources)
-
-            self.compiler.compile = parallel_compile
-            return super().build_extension(ext)
-        finally:
-            p.close()
-            self.compiler.compile = base_compile
-
-
 class custom_build:
     def run(self):
         cxx = os.getenv("CXX", "cl" if IS_WIN else "g++")
@@ -617,7 +589,7 @@ setup(
     author_email="onedal.maintainers@intel.com",
     maintainer_email="onedal.maintainers@intel.com",
     project_urls=project_urls,
-    cmdclass={"develop": develop, "build": build, "build_ext": parallel_build_ext},
+    cmdclass={"develop": develop, "build": build,
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
