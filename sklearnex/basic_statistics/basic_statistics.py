@@ -189,7 +189,7 @@ class BasicStatistics(IntelEstimator, BaseEstimator):
                 ),
                 (
                     is_data_supported,
-                    "Supported data formats: Dense, CSR (oneDAL version >= 2024.7.0).",
+                    "Supported data formats: Dense, CSR (oneDAL version >= 2025.2.0).",
                 ),
             ]
         )
