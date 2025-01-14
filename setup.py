@@ -312,6 +312,41 @@ def get_build_options():
     return eca, ela, include_dir_plat
 
 
+@contextmanager
+def set_nthreads(n_threads):
+    """MAKEFLAGS is used by the onedal cmake and cythonize to control the number
+    of processes. If it is set via the setup.py commmand with the --parallel or
+    -j argument, it will supercede this value. When both are not set, it will
+    default to the number of cpus, n_threads should be a positive integer, None,
+    or True"""
+    makeflags = os.getenv("MAKEFLAGS", None)
+    # True is used by setuptools to indicate cpu_count for `parallel`
+    # None is default for setuptools for single threading
+    orig_n_threads = re.findall(r"(?<=(?<!-)-j)\d*|$", makeflags)[0]
+    if n_threads is None:
+        n_threads = int(orig_n_threads) if orig_n_threads else os.cpu_count()
+    elif n_threads is True:
+        n_threads = os.cpu_count()
+
+    if makeflags:
+        if orig_n_threads:
+            # sub the value out
+            os.environ["MAKEFLAGS"] = re.sub(
+                r"(?<=(?<!-)-j)\d*", str(n_threads), makeflags, 1
+            )
+        else:
+            # add the value to MAKEFLAGS since it is not set
+            os.environ["MAKEFLAGS"] += f" -j{n_threads}"
+
+        yield n_threads
+        os.environ["MAKEFLAGS"] = makeflags
+
+    else:
+        os.environ["MAKEFLAGS"] = f"-j{n_threads}"
+        yield n_threads
+        del os.environ["MAKEFLAGS"]
+
+
 def getpyexts():
     eca, ela, include_dir_plat = get_build_options()
     libraries_plat = get_libs("daal")
@@ -335,7 +370,8 @@ def getpyexts():
         library_dirs=ONEDAL_LIBDIRS,
         language="c++",
     )
-    exts.extend(cythonize(ext, nthreads=n_threads))
+    with set_nthreads(None) as n_threads:
+        exts.extend(cythonize(ext, nthreads=n_threads))
 
     if not no_dist:
         mpi_include_dir = include_dir_plat + [np.get_include()] + MPI_INCDIRS
@@ -444,40 +480,6 @@ class custom_build:
                             f"{ext_lib}".split(" "),
                             shell=False,
                         )
-
-
-@contextmanager
-def set_nthreads(n_threads):
-    """MAKEFLAGS is used by the onedal cmake to determine the number of processes,
-    if it is set via the setup.py commmand with the --parallel or -j argument, it
-    will superceed this value. When both are not set, it will default to the number
-    of cpus, n_threads should be a positive integer, None, or True"""
-    makeflags = os.getenv("MAKEFLAGS", None)
-    # True is used by setuptools to indicate cpu_count for `parallel`
-    if n_threads is True:
-        n_threads = os.cpu_count()
-
-    if makeflags:
-        # extract "-j" option value set in makeflags
-        if re.findall(r"(?<=(?<!-)-j)\d*|$", makeflags)[0]:
-
-            if n_threads is not None:
-                # sub the value out if n_threads has been set
-                os.environ["MAKEFLAGS"] = re.sub(
-                    r"(?<=(?<!-)-j)\d*", str(n_threads), makeflags, 1
-                )
-        else:
-            # add the value to MAKEFLAGS since it is not set
-            os.environ["MAKEFLAGS"] += f" -j{n_threads if n_threads else os.cpu_count()}"
-
-        yield
-        os.environ["MAKEFLAGS"] = makeflags
-
-    else:
-        # parallel == None inidicates not set, we default to cpu_count
-        os.environ["MAKEFLAGS"] = f"-j{n_threads if n_threads else os.cpu_count()}"
-        yield
-        del os.environ["MAKEFLAGS"]
 
 
 class develop(orig_develop.develop, custom_build):
