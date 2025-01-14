@@ -314,13 +314,13 @@ def test_all_option_on_random_sparse_data(queue, row_count, column_count, dtype)
 
     gen = np.random.default_rng(seed)
 
-    X_sparse = sp.random(
+    X_sparse = gen_sparse_data(
         row_count,
         column_count,
         density=0.05,
         format="csr",
         dtype=dtype,
-        rng=gen,
+        random_state=gen,
     )
     X_dense = X_sparse.toarray()
 
