@@ -64,17 +64,22 @@ jobs:
       pip list
     displayName: 'Install requirements'
   - script: |
-      ls  /home/vsts/work/s
-     
-      echo "CONDA_PREFIX set to: $CONDA_PREFIX"
-      echo "DALROOT set to1: $DALROOT"
-      echo "TBBROOT set to1: $TBBROOT"
+      echo "Setting up TBBROOT..."
+      if [ -z "${TBBROOT}" ]; then
+        export TBBROOT=/opt/intel/oneapi/tbb/latest
+        echo "TBBROOT set to: $TBBROOT"
+      fi
+      if [ -n "${TBBROOT}" ]; then
+        source ${TBBROOT}/env/vars.sh
+        echo "TBBROOT environment variables sourced successfully."
+      fi
+
+      echo "TBBROOT set to: $TBBROOT"
       echo "LD_LIBRARY_PATH set to: $LD_LIBRARY_PATH"
-      if [ -n "${TBBROOT}" ] && [ "${TBBROOT}" != "${CONDA_PREFIX}" ]; then source ${TBBROOT}/env/vars.sh; fi
       export PREFIX=$(dirname $(dirname $(which python)))
       export DALROOT=$PREFIX
       echo "PREFIX set to: $PREFIX"
-      echo "DALROOT set to1: $DALROOT"
+      echo "DALROOT set to: $DALROOT"
       ls ${DALROOT}/env/vars.sh
 
       ./conda-recipe/build.sh
