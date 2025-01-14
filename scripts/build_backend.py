@@ -21,7 +21,6 @@ import os
 import platform as plt
 import subprocess
 import sys
-from math import floor
 from os.path import join as jp
 from sysconfig import get_config_var, get_paths
 
@@ -48,7 +47,6 @@ def custom_build_cmake_clib(
     no_dist=True,
     use_parameters_lib=True,
     use_abs_rpath=False,
-    n_threads=1,
 ):
     import pybind11
 
@@ -130,7 +128,8 @@ def custom_build_cmake_clib(
     if use_abs_rpath:
         cmake_args += ["-DADD_ONEDAL_RPATH=ON"]
 
-    make_args = ["cmake", "--build", abs_build_temp_path, "-j " + str(n_threads)]
+    # the number of parallel processes is dictated by MAKEFLAGS (see setup.py)
+    make_args = ["cmake", "--build", abs_build_temp_path]
 
     make_install_args = [
         "cmake",

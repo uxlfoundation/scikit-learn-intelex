@@ -46,6 +46,7 @@ import re
 import shutil
 import sys
 import time
+from contextlib import contextmanager
 from ctypes.util import find_library
 from os.path import join as jp
 from sysconfig import get_config_vars
@@ -72,10 +73,7 @@ IS_MAC = False
 IS_LIN = False
 
 dal_root = os.environ.get("DALROOT")
-makeflags = os.getenv("MAKEFLAGS", "")
-n_threads = re.findall(r"(?<=(?<!-)-j)\d*|$"), makeflags)[0]
-n_threads = int(n_threads) if n_threads else os.cpu_count()
-    
+
 arch_dir = plt.machine()
 plt_dict = {"x86_64": "intel64", "AMD64": "intel64", "aarch64": "arm"}
 arch_dir = plt_dict[arch_dir] if arch_dir in plt_dict else arch_dir
@@ -429,8 +427,6 @@ def get_onedal_py_libs():
 class custom_build:
     def run(self):
         cxx = os.getenv("CXX", "cl" if IS_WIN else "g++")
-        if self.parallel is None or self.parallel is True:
-            self.parallel = n_threads
         build_onedal = lambda iface: build_backend.custom_build_cmake_clib(
             iface=iface,
             cxx=cxx,
@@ -438,7 +434,6 @@ class custom_build:
             no_dist=no_dist,
             use_parameters_lib=use_parameters_lib,
             use_abs_rpath=USE_ABS_RPATH,
-            n_threads=self.parallel,
         )
         if is_onedal_iface:
             build_onedal("host")
@@ -470,31 +465,54 @@ class custom_build:
                         )
 
 
+@contextmanager
+def set_nthreads(n_threads):
+    """MAKEFLAGS is used by the onedal cmake to determine the number of processes,
+    if it is set via the setup.py commmand with the --parallel or -j argument, it
+    will superceed this value. When both are not set, it will default to the number
+    of cpus, n_threads should be a positive integer, None, or True"""
+    makeflags = os.getenv("MAKEFLAGS", None)
+    # True is used by setuptools to indicate cpu_count for `parallel`
+    if n_threads is True:
+        n_threads = os.cpu_count()
+
+    if makeflags:
+        # extract "-j" option value set in makeflags
+        if re.findall(r"(?<=(?<!-)-j)\d*|$", makeflags)[0] and n_threads:
+            # sub the value out if n_threads has been set
+            os.environ["MAKEFLAGS"] = re.sub(
+                r"(?<=(?<!-)-j)\d*", str(n_threads), makeflags, 1
+            )
+        else:
+            # add the value to MAKEFLAGS since it is not set
+            os.environ["MAKEFLAGS"] += f" -j{n_threads if n_threads else os.cpu_count()}"
+
+        yield
+        os.environ["MAKEFLAGS"] = makeflags
+
+    else:
+        # parallel == None inidicates not set, we default to cpu_count
+        os.environ["MAKEFLAGS"] = f"-j{n_threads if n_threads else os.cpu_count()}"
+        yield
+        del os.environ["MAKEFLAGS"]
+
+
 class develop(orig_develop.develop, custom_build):
-    def finalize_options(self):
-        # to set parallel execution to n_threads
-        super().finalize_options()
-        if self.parallel is None or self.parallel is True:
-            self.parallel = n_threads
 
     def run(self):
-        custom_build.run(self)
-        super().run()
-        custom_build.post_build(self)
+        with set_nthreads(self.parallel):
+            custom_build.run(self)
+            super().run()
+            custom_build.post_build(self)
 
 
 class build(orig_build.build, custom_build):
-    def finalize_options(self):
-        # override setuptools.build finalize_options
-        # set parallel execution to n_threads
-        super().finalize_options()
-        if self.parallel is None or self.parallel is True:
-            self.parallel = n_threads
 
     def run(self):
-        custom_build.run(self)
-        super().run()
-        custom_build.post_build(self)
+        with set_nthreads(self.parallel):
+            custom_build.run(self)
+            super().run()
+            custom_build.post_build(self)
 
 
 project_urls = {
