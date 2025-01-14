@@ -34,14 +34,14 @@ def test_sklearnex_import(dataframe, queue):
 
     X = np.array([[0, 0, 0], [0, 1, 1], [1, 0, 1], [1, 1, 1]])
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    tsne = TSNE(n_components=2, perplexity=2.0, random_state=42, init="random").fit(X_df)
+    tsne = TSNE(n_components=2, perplexity=2.0, random_state=42, init="pca").fit(X_df)
     embedding = tsne.fit_transform(X_df)
     embedding = _as_numpy(embedding)
     embedding_expected = [
-        [76.36912, -74.57714],
-        [62.14012, -80.512474],
-        [65.81533, -73.238434],
-        [-211.36201, -416.8551],
+        [64.868935, 74.25384],
+        [119.97079, 77.83494],
+        [72.8839, 66.91632],
+        [68.799904, 69.25651],
     ]
     assert "daal4py" in tsne.__module__
     assert tsne.n_components == 2
