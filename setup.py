@@ -16,26 +16,6 @@
 # limitations under the License.
 # ==============================================================================
 
-# Environment variables which impact the build process:
-#
-#   DALROOT (required)
-#      oneDAL root path (folder containing `bin`,`include`, and `lib` folders)
-#
-#   MPIROOT (required if NO_DIST not set)
-#      MPI root path (folder containing `bin`,`include`, and `lib` folders)
-#
-#   NO_DIST (default: false)
-#      build sklearnex without MPI support
-#
-#   NO_DPC (default: false)
-#      build oneDAL interfaces without SYCL support
-#
-#   NO_STREAM (default: false)
-#      disables building daal4py with streaming mode
-#
-#   OFF_ONEDAL_IFACE (default: false)
-#      do not build or use oneDAL interfaces (e.g. DAAL support only)
-
 import glob
 
 # System imports
