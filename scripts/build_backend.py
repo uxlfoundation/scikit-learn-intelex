@@ -129,6 +129,9 @@ def custom_build_cmake_clib(
     if use_abs_rpath:
         cmake_args += ["-DADD_ONEDAL_RPATH=ON"]
 
+    if use_gcov:
+        cmake_args += ["-DSKLEARNEX_GCOV=ON"]
+        
     # the number of parallel processes is dictated by MAKEFLAGS (see setup.py)
     make_args = ["cmake", "--build", abs_build_temp_path]
 
