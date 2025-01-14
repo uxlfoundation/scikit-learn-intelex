@@ -247,11 +247,8 @@ def sklearnex_trace(estimator_name, method_name):
         of trace._modname.
     """
     # get estimator
-    try:
-        est = PATCHED_MODELS[estimator_name]()
-    except KeyError:
-        est = SPECIAL_INSTANCES[estimator_name]
-
+    est = PATCHED_MODELS.get(estimator_name, lambda: None)() or SPECIAL_INSTANCES[estimator_name]
+    
     # get dataset
     X, y = gen_dataset(est)[0]
     # fit dataset if method does not contain 'fit'
@@ -287,8 +284,8 @@ def _trace_daemon(pipe):
         try:
             text = sklearnex_trace(*key)
         except:
-            # catch all exceptions and pass back
-            # this way the pipe stays open
+            # catch all exceptions and pass back,
+            # this way the process still runs
             text = ""
         finally:
             pipe.send(text)
@@ -375,9 +372,10 @@ def estimator_trace(estimator, method, cache, isolated_trace):
 
         isolated_trace.send((estimator, method))
         text = isolated_trace.recv()
-        # if tracing does not function in isolated_trace, run it in parent process and fail
+        # if tracing does not function in isolated_trace, run it in parent process and error
         if text == "":
             sklearnex_trace(estimator, method)
+            # guarantee failure if intermittent
             assert text, f"sklearnex_trace failure for {estimator}.{method}"
 
         for modulename, file in _TRACE_ALLOW_DICT.items():
