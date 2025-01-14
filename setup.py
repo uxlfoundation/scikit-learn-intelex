@@ -319,7 +319,7 @@ def set_nthreads(n_threads):
     -j argument, it will supercede this value. When both are not set, it will
     default to the number of cpus, n_threads should be a positive integer, None,
     or True"""
-    makeflags = os.getenv("MAKEFLAGS", None)
+    makeflags = os.getenv("MAKEFLAGS", "")
     # True is used by setuptools to indicate cpu_count for `parallel`
     # None is default for setuptools for single threading
     orig_n_threads = re.findall(r"(?<=(?<!-)-j)\d*|$", makeflags)[0]
