@@ -119,6 +119,7 @@ class BasePCA(BaseEstimator, metaclass=ABCMeta):
             return 0.0
 
     def _create_model(self):
+        # Not supported with spmd policy so BasePCA must be specified
         m = BasePCA._get_backend(BasePCA, "decomposition", "dim_reduction", "model")
         m.eigenvectors = to_table(self.components_)
         m.means = to_table(self.mean_)
@@ -128,11 +129,13 @@ class BasePCA(BaseEstimator, metaclass=ABCMeta):
         return m
 
     def predict(self, X, queue=None):
+        # Not supported with spmd policy so BasePCA must be specified
         policy = BasePCA._get_policy(BasePCA, queue, X)
         model = self._create_model()
         X_table = to_table(X, queue=queue)
         params = self._get_onedal_params(X_table, stage="predict")
 
+        # Not supported with spmd policy so BasePCA must be specified
         result = BasePCA._get_backend(
             BasePCA, "decomposition", "dim_reduction", "infer", policy, params, model, X_table
         )

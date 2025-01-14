@@ -71,6 +71,7 @@ class IncrementalBasicStatistics(BaseBasicStatistics):
 
     def _reset(self):
         self._need_to_finalize = False
+        # Not supported with spmd policy so IncrementalBasicStatistics must be specified
         self._partial_result = IncrementalBasicStatistics._get_backend(
             IncrementalBasicStatistics, "basic_statistics", None, "partial_compute_result"
         )
@@ -105,6 +106,7 @@ class IncrementalBasicStatistics(BaseBasicStatistics):
             Returns the instance itself.
         """
         self._queue = queue
+        # Not supported with spmd policy so IncrementalBasicStatistics must be specified
         policy = IncrementalBasicStatistics._get_policy(
             IncrementalBasicStatistics, queue, X
         )
@@ -125,6 +127,7 @@ class IncrementalBasicStatistics(BaseBasicStatistics):
             self._onedal_params = self._get_onedal_params(False, dtype=dtype)
 
         X_table, weights_table = to_table(X, weights, queue=queue)
+        # Not supported with spmd policy so IncrementalBasicStatistics must be specified
         self._partial_result = IncrementalBasicStatistics._get_backend(
             IncrementalBasicStatistics,
             "basic_statistics",

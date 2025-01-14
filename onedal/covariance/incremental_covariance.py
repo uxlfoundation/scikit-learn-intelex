@@ -58,6 +58,7 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
 
     def _reset(self):
         self._need_to_finalize = False
+        # Not supported with spmd policy so IncrementalEmpiricalCovariance must be specified
         self._partial_result = IncrementalEmpiricalCovariance._get_backend(
             IncrementalEmpiricalCovariance, "covariance", None, "partial_compute_result"
         )
@@ -99,6 +100,7 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
 
         self._queue = queue
 
+        # Not supported with spmd policy so IncrementalEmpiricalCovariance must be specified
         policy = IncrementalEmpiricalCovariance._get_policy(
             IncrementalEmpiricalCovariance, queue, X
         )
@@ -109,6 +111,7 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
             self._dtype = X_table.dtype
 
         params = self._get_onedal_params(self._dtype)
+        # Not supported with spmd policy so IncrementalEmpiricalCovariance must be specified
         self._partial_result = IncrementalEmpiricalCovariance._get_backend(
             IncrementalEmpiricalCovariance,
             "covariance",

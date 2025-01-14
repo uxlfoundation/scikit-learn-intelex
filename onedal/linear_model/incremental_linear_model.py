@@ -47,6 +47,7 @@ class IncrementalLinearRegression(BaseLinearRegression):
         self._reset()
 
     def _reset(self):
+        # Not supported with spmd policy so IncrementalLinearRegression must be specified
         self._partial_result = IncrementalLinearRegression._get_backend(
             IncrementalLinearRegression,
             "linear_model",
@@ -75,11 +76,13 @@ class IncrementalLinearRegression(BaseLinearRegression):
         self : object
             Returns the instance itself.
         """
+        # Not supported with spmd policy so IncrementalLinearRegression must be specified
         module = IncrementalLinearRegression._get_backend(
             IncrementalLinearRegression, "linear_model", "regression"
         )
 
         self._queue = queue
+        # Not supported with spmd policy so IncrementalLinearRegression must be specified
         policy = IncrementalLinearRegression._get_policy(
             IncrementalLinearRegression, queue, X
         )

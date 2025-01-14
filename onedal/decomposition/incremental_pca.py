@@ -100,6 +100,7 @@ class IncrementalPCA(BasePCA):
 
     def _reset(self):
         self._need_to_finalize = False
+        # Not supported with spmd policy so IncrementalPCA must be specified
         module = IncrementalPCA._get_backend(
             IncrementalPCA, "decomposition", "dim_reduction"
         )
@@ -156,6 +157,7 @@ class IncrementalPCA(BasePCA):
 
         self._queue = queue
 
+        # Not supported with spmd policy so IncrementalPCA must be specified
         policy = IncrementalPCA._get_policy(IncrementalPCA, queue, X)
         X_table = to_table(X, queue=queue)
 
@@ -163,6 +165,7 @@ class IncrementalPCA(BasePCA):
             self._dtype = X_table.dtype
             self._params = self._get_onedal_params(X_table)
 
+        # Not supported with spmd policy so IncrementalPCA must be specified
         self._partial_result = IncrementalPCA._get_backend(
             IncrementalPCA,
             "decomposition",
