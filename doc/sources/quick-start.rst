@@ -319,11 +319,7 @@ Download the Intel AI Tools `here <https://www.intel.com/content/www/us/en/devel
 Release Notes
 -------------------
 
-<<<<<<< HEAD
 See the `Release Notes <https://github.com/uxlfoundation/scikit-learn-intelex/releases>`_ for each version of Intel® Extension for Scikit-learn*.  
-=======
-See the `Release Notes <https://github.com/intel/scikit-learn-intelex/releases>`_ for each version of Intel® Extension for Scikit-learn*.
->>>>>>> e8a9b150 (CI: add `skywalking-eyes` license header check)
 
 System Requirements
 --------------------

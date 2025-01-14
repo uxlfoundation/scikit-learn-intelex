@@ -17,13 +17,13 @@ steps:
   - script: |
       call activate CB
       coverage combine .coverage.sklearnex .coverage.sklearn
-      coverage json -o coverage.json
+      coverage lcov -o coverage.info
     displayName: "Create coverage report"
   - script: |
       set PATH=C:\msys64\usr\bin;%PATH%
       curl -Os https://cli.codecov.io/latest/windows/codecov.exe
       set VARARGS=-n azure-%AGENT_OS%-$(PYTHON_VERSION)-$(SKLEARN_VERSION)
-      .\codecov.exe -v upload-process -Z -t %CODECOV_TOKEN% %VARARGS% -F azure -f coverage.json
+      .\codecov.exe -v upload-process -Z -t %CODECOV_TOKEN% %VARARGS% -F azure -f coverage.info
     displayName: "Upload to codecov"
     env:
       CODECOV_TOKEN: $(CODECOV_TOKEN)
