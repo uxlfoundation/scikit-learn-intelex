@@ -64,7 +64,12 @@ jobs:
     displayName: 'Install requirements'
   - script: |
       ls  /home/vsts/work/1
-
+      echo "in a:"
+      ls /home/vsts/work/1/a
+      echo "in b:"
+      ls /home/vsts/work/1/b
+      echo "CONDA_PREFIX set to: $CONDA_PREFIX"
+      echo "DALROOT set to1: $DALROOT"
       export PREFIX=$(dirname $(dirname $(which python)))
       export DALROOT=$PREFIX
       echo "PREFIX set to: $PREFIX"
