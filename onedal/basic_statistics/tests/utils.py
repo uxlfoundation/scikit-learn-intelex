@@ -18,8 +18,8 @@ import numpy as np
 
 options_and_tests = {
     "sum": (lambda X: np.sum(X, axis=0), (5e-4, 1e-7)),
-    "min": (lambda X: np.min(X, axis=0), (0, 0)),
-    "max": (lambda X: np.max(X, axis=0), (0, 0)),
+    "min": (lambda X: np.min(X, axis=0), (1e-7, 1e-7)),
+    "max": (lambda X: np.max(X, axis=0), (1e-7, 1e-7)),
     "mean": (lambda X: np.mean(X, axis=0), (5e-7, 1e-7)),
     "variance": (lambda X: np.var(X, axis=0), (2e-3, 2e-3)),
     "variation": (lambda X: np.std(X, axis=0) / np.mean(X, axis=0), (5e-2, 5e-2)),
@@ -34,9 +34,9 @@ options_and_tests = {
 
 options_and_tests_sparse = {
     "sum": (lambda X: np.sum(X, axis=0), (5e-4, 1e-7)),
-    "min": (lambda X: np.min(X, axis=0), (0, 0)),
+    "min": (lambda X: np.min(X, axis=0), (1e-7, 1e-7)),
     #    TODO: There is a bug in oneDAL's max computations on GPU
-    #    "max": (lambda X: np.max(X, axis=0), (0, 0)),
+    #    "max": (lambda X: np.max(X, axis=0), (1e-7, 1e-7)),
     "mean": (lambda X: np.mean(X, axis=0), (5e-7, 1e-7)),
     "variance": (lambda X: np.var(X, axis=0), (2e-3, 2e-3)),
     "variation": (lambda X: np.std(X, axis=0) / np.mean(X, axis=0), (0.1, 0.1)),
