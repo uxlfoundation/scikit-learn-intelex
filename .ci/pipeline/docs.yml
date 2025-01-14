@@ -47,6 +47,7 @@ jobs:
     vmImage: 'ubuntu-22.04'
   steps:
   - script: |
+      source /opt/intel/oneapi/compiler/latest/env/vars.sh
       bash .ci/scripts/describe_system.sh
     displayName: 'System info'
   - task: UsePythonVersion@0
@@ -63,13 +64,13 @@ jobs:
       pip list
     displayName: 'Install requirements'
   - script: |
-      ls  /home/vsts/work/1
-      echo "in a:"
-      ls /home/vsts/work/1/a
-      echo "in b:"
-      ls /home/vsts/work/1/b
+      ls  /home/vsts/work/s
+     
       echo "CONDA_PREFIX set to: $CONDA_PREFIX"
       echo "DALROOT set to1: $DALROOT"
+      echo "TBBROOT set to1: $TBBROOT"
+      echo "LD_LIBRARY_PATH set to: $LD_LIBRARY_PATH"
+      if [ -n "${TBBROOT}" ] && [ "${TBBROOT}" != "${CONDA_PREFIX}" ]; then source ${TBBROOT}/env/vars.sh; fi
       export PREFIX=$(dirname $(dirname $(which python)))
       export DALROOT=$PREFIX
       echo "PREFIX set to: $PREFIX"
