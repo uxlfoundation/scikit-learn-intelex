@@ -247,10 +247,7 @@ def sklearnex_trace(estimator_name, method_name):
         of trace._modname.
     """
     # get estimator
-    try:
-        est = PATCHED_MODELS[estimator_name]()
-    except KeyError:
-        est = SPECIAL_INSTANCES[estimator_name]
+    est = PATCHED_MODELS.get(estimator_name, lambda: None)() or SPECIAL_INSTANCES[estimator_name]
 
     # get dataset
     X, y = gen_dataset(est)[0]
@@ -286,8 +283,7 @@ def _trace_daemon(pipe):
     while key := pipe.recv():
         text = ""
         try:
-            estimator, method = key
-            text = sklearnex_trace(estimator, method)
+            text = sklearnex_trace(*key)
         finally:
             pipe.send(text)
 
@@ -298,8 +294,8 @@ class _FakePipe:
 
     _text = ""
 
-    def send(self, estimator_name, method_name):
-        self._text = sklearnex_trace(estimator_name, method_name)
+    def send(self, key):
+        self._text = sklearnex_trace(*key)
 
     def recv(self):
         return self._text
@@ -322,7 +318,7 @@ def isolated_trace():
         communicating with the special isolated tracing python instance
         for sklearnex estimators.
     """
-    # return _FakePipe()
+    return _FakePipe()
     try:
         # force use of 'spawn' to guarantee a clean python environment
         # from possible coverage arc tracing
