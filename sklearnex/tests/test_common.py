@@ -318,23 +318,23 @@ def isolated_trace():
         communicating with the special isolated tracing python instance
         for sklearnex estimators.
     """
-    return _FakePipe()
-    try:
-        # force use of 'spawn' to guarantee a clean python environment
-        # from possible coverage arc tracing
-        ctx = get_context("spawn")
-        pipe_parent, pipe_child = ctx.Pipe()
-        p = ctx.Process(target=_trace_daemon, args=(pipe_child,), daemon=True)
-        p.start()
-        yield pipe_parent
-    finally:
-        # guarantee closing of the process via a try-catch-finally
-        # passing False terminates _trace_daemon's loop
-        pipe_parent.send(False)
-        pipe_parent.close()
-        pipe_child.close()
-        p.join()
-        p.close()
+    yield _FakePipe()
+    #try:
+    #    # force use of 'spawn' to guarantee a clean python environment
+    #    # from possible coverage arc tracing
+    #    ctx = get_context("spawn")
+    #    pipe_parent, pipe_child = ctx.Pipe()
+    #    p = ctx.Process(target=_trace_daemon, args=(pipe_child,), daemon=True)
+    #    p.start()
+    #    yield pipe_parent
+    #finally:
+    #    # guarantee closing of the process via a try-catch-finally
+    #    # passing False terminates _trace_daemon's loop
+    #    pipe_parent.send(False)
+    #    pipe_parent.close()
+    #    pipe_child.close()
+    #    p.join()
+    #    p.close()
 
 
 @pytest.fixture
