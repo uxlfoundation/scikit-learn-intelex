@@ -49,6 +49,7 @@ def custom_build_cmake_clib(
     no_dist=True,
     use_parameters_lib=True,
     use_abs_rpath=False,
+    use_gcov=False,
 ):
     import pybind11
 
@@ -129,6 +130,9 @@ def custom_build_cmake_clib(
 
     if use_abs_rpath:
         cmake_args += ["-DADD_ONEDAL_RPATH=ON"]
+
+    if use_gcov:
+        cmake_args += ["-DSKLEARNEX_GCOV=ON"]
 
     cpu_count = multiprocessing.cpu_count()
     # limit parallel cmake jobs if memory size is insufficient

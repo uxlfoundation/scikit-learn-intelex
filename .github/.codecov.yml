@@ -28,3 +28,9 @@ coverage:
         target: 0
         # Allow for diffs to have no code coverage.
         # threshold: 50
+
+flags:
+  github:
+    after_n_builds: 1
+  azure:
+    after_n_builds: 8
