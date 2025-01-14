@@ -47,8 +47,12 @@ class IncrementalLinearRegression(BaseLinearRegression):
         self._reset()
 
     def _reset(self):
-        self._partial_result = self._get_backend(
-            "linear_model", "regression", "partial_train_result"
+        # Not supported with spmd policy so IncrementalLinearRegression must be specified
+        self._partial_result = IncrementalLinearRegression._get_backend(
+            IncrementalLinearRegression,
+            "linear_model",
+            "regression",
+            "partial_train_result",
         )
 
     def partial_fit(self, X, y, queue=None):
@@ -72,10 +76,16 @@ class IncrementalLinearRegression(BaseLinearRegression):
         self : object
             Returns the instance itself.
         """
-        module = self._get_backend("linear_model", "regression")
+        # Not supported with spmd policy so IncrementalLinearRegression must be specified
+        module = IncrementalLinearRegression._get_backend(
+            IncrementalLinearRegression, "linear_model", "regression"
+        )
 
         self._queue = queue
-        policy = self._get_policy(queue, X)
+        # Not supported with spmd policy so IncrementalLinearRegression must be specified
+        policy = IncrementalLinearRegression._get_policy(
+            IncrementalLinearRegression, queue, X
+        )
 
         X, y = _check_X_y(
             X, y, dtype=[np.float64, np.float32], accept_2d_y=True, force_all_finite=False
