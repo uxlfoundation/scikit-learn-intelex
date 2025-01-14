@@ -55,7 +55,7 @@ function generate_pytest_args {
         ARGS+=("--json-report-file=.pytest_reports/$1_report.json")
     fi
     if [ -n "${COVERAGE_RCFILE}" ]; then
-        ARGS+=(--cov=onedal --cov=sklearnex --cov-config="${COVERAGE_RCFILE}" --cov-append --cov-report=)
+        ARGS+=(--cov=onedal --cov=sklearnex --cov-config="${COVERAGE_RCFILE}" --cov-append --cov-branch --cov-report=)
     fi
     printf -- "${ARGS[*]}"
 }

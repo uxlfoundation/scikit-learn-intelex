@@ -47,6 +47,7 @@ def custom_build_cmake_clib(
     no_dist=True,
     use_parameters_lib=True,
     use_abs_rpath=False,
+    use_gcov=False,
 ):
     import pybind11
 
