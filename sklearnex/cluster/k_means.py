@@ -17,6 +17,7 @@
 import logging
 
 from daal4py.sklearn._utils import daal_check_version
+from sklearnex._config import get_config
 
 if daal_check_version((2023, "P", 200)):
 
@@ -156,20 +157,21 @@ if daal_check_version((2023, "P", 200)):
             return self
 
         def _onedal_fit(self, X, _, sample_weight, queue=None):
-            X = validate_data(
-                self,
-                X,
-                accept_sparse="csr",
-                dtype=[np.float64, np.float32],
-                order="C",
-                copy=self.copy_x,
-                accept_large_sparse=False,
-            )
+            if get_config()["use_raw_input"] is False:
+                X = validate_data(
+                    self,
+                    X,
+                    accept_sparse="csr",
+                    dtype=[np.float64, np.float32],
+                    order="C",
+                    copy=self.copy_x,
+                    accept_large_sparse=False,
+                )
 
-            if sklearn_check_version("1.2"):
-                self._check_params_vs_input(X)
-            else:
-                self._check_params(X)
+                if sklearn_check_version("1.2"):
+                    self._check_params_vs_input(X)
+                else:
+                    self._check_params(X)
 
             self._n_features_out = self.n_clusters
 
@@ -295,13 +297,14 @@ if daal_check_version((2023, "P", 200)):
                 )
 
         def _onedal_predict(self, X, sample_weight=None, queue=None):
-            X = validate_data(
-                self,
-                X,
-                accept_sparse="csr",
-                reset=False,
-                dtype=[np.float64, np.float32],
-            )
+            if get_config()["use_raw_input"] is False:
+                X = validate_data(
+                    self,
+                    X,
+                    accept_sparse="csr",
+                    reset=False,
+                    dtype=[np.float64, np.float32],
+                )
 
             if not hasattr(self, "_onedal_estimator"):
                 self._initialize_onedal_estimator()

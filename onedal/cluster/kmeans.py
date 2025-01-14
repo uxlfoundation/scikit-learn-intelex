@@ -32,10 +32,12 @@ from sklearn.exceptions import ConvergenceWarning
 from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.utils import check_random_state
 
+from .._config import _get_config
 from ..common._base import BaseEstimator as onedal_BaseEstimator
 from ..common._mixin import ClusterMixin, TransformerMixin
 from ..datatypes import from_table, to_table
 from ..utils import _check_array, _is_arraylike_not_scalar, _is_csr
+from ..utils._array_api import _get_sycl_namespace
 
 
 class _BaseKMeans(onedal_BaseEstimator, TransformerMixin, ClusterMixin, ABC):
@@ -80,7 +82,7 @@ class _BaseKMeans(onedal_BaseEstimator, TransformerMixin, ClusterMixin, ABC):
     def _get_basic_statistics_backend(self, result_options):
         return BasicStatistics(result_options)
 
-    def _tolerance(self, X_table, rtol, is_csr, policy, dtype):
+    def _tolerance(self, X_table, rtol, is_csr, policy, dtype, sua_iface):
         """Compute absolute tolerance from the relative tolerance"""
         if rtol == 0.0:
             return rtol
@@ -94,7 +96,7 @@ class _BaseKMeans(onedal_BaseEstimator, TransformerMixin, ClusterMixin, ABC):
         return mean_var * rtol
 
     def _check_params_vs_input(
-        self, X_table, is_csr, policy, default_n_init=10, dtype=np.float32
+        self, X_table, is_csr, policy, default_n_init=10, dtype=np.float32, sua_iface=None
     ):
         # n_clusters
         if X_table.shape[0] < self.n_clusters:
@@ -103,7 +105,7 @@ class _BaseKMeans(onedal_BaseEstimator, TransformerMixin, ClusterMixin, ABC):
             )
 
         # tol
-        self._tol = self._tolerance(X_table, self.tol, is_csr, policy, dtype)
+        self._tol = self._tolerance(X_table, self.tol, is_csr, policy, dtype, sua_iface)
 
         # n-init
         # TODO(1.4): Remove
@@ -261,9 +263,14 @@ class _BaseKMeans(onedal_BaseEstimator, TransformerMixin, ClusterMixin, ABC):
     def _fit(self, X, module, queue=None):
         policy = self._get_policy(queue, X)
         is_csr = _is_csr(X)
-        X = _check_array(
-            X, dtype=[np.float64, np.float32], accept_sparse="csr", force_all_finite=False
-        )
+
+        if _get_config()["use_raw_input"] is False:
+            X = _check_array(
+                X,
+                dtype=[np.float64, np.float32],
+                accept_sparse="csr",
+                force_all_finite=False,
+            )
         X_table = to_table(X, queue=queue)
         dtype = X_table.dtype
 

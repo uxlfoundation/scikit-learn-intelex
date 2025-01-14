@@ -18,8 +18,10 @@ import numpy as np
 
 from daal4py.sklearn._utils import get_dtype
 
+from .._config import _get_config
 from ..datatypes import from_table, to_table
 from ..utils import _check_array
+from ..utils._array_api import _get_sycl_namespace
 from .basic_statistics import BaseBasicStatistics
 
 
@@ -82,6 +84,7 @@ class IncrementalBasicStatistics(BaseBasicStatistics):
         self.finalize_fit()
         data = self.__dict__.copy()
         data.pop("_queue", None)
+        data.pop("_input_xp", None)  # module cannot be pickled
 
         return data
 
@@ -104,19 +107,31 @@ class IncrementalBasicStatistics(BaseBasicStatistics):
         self : object
             Returns the instance itself.
         """
+        use_raw_input = _get_config().get("use_raw_input", False)
+        sua_iface, xp, _ = _get_sycl_namespace(X)
+        # Saving input array namespace and sua_iface, that will be used in
+        # finalize_fit.
+        self._input_sua_iface = sua_iface
+        self._input_xp = xp
+
+        # All data should use the same sycl queue
+        if use_raw_input and sua_iface:
+            queue = X.sycl_queue
+
         self._queue = queue
         policy = self._get_policy(queue, X)
 
-        X = _check_array(
-            X, dtype=[np.float64, np.float32], ensure_2d=False, force_all_finite=False
-        )
-        if weights is not None:
-            weights = _check_array(
-                weights,
-                dtype=[np.float64, np.float32],
-                ensure_2d=False,
-                force_all_finite=False,
+        if not use_raw_input:
+            X = _check_array(
+                X, dtype=[np.float64, np.float32], ensure_2d=False, force_all_finite=False
             )
+            if weights is not None:
+                weights = _check_array(
+                    weights,
+                    dtype=[np.float64, np.float32],
+                    ensure_2d=False,
+                    force_all_finite=False,
+                )
 
         if not hasattr(self, "_onedal_params"):
             dtype = get_dtype(X)

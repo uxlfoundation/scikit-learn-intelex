@@ -18,6 +18,8 @@
 
 from collections.abc import Iterable
 
+import numpy as np
+
 from ._dpep_helpers import dpctl_available, dpnp_available
 
 if dpctl_available:
@@ -78,4 +80,4 @@ def _get_sycl_namespace(*arrays):
         else:
             raise ValueError(f"SYCL type not recognized: {sua_iface}")
 
-    return sua_iface, None, False
+    return sua_iface, np, False
