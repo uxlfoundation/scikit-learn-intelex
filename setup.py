@@ -35,9 +35,6 @@
 #
 #   OFF_ONEDAL_IFACE (default: false)
 #      do not build or use oneDAL interfaces (e.g. DAAL support only)
-#
-#   NTHREADS (default: number of processors)
-#      number of processes used for onedal pybind11 compilation
 
 import glob
 
@@ -45,6 +42,7 @@ import glob
 import os
 import pathlib
 import platform as plt
+import re
 import shutil
 import sys
 import time
@@ -74,7 +72,10 @@ IS_MAC = False
 IS_LIN = False
 
 dal_root = os.environ.get("DALROOT")
-n_threads = min(os.cpu_count(), max(1, int(os.getenv("NTHREADS", os.cpu_count()))))
+makeflags = os.getenv("MAKEFLAGS", "")
+n_threads = re.findall(r"(?<=(?<!-)-j)\d*|$"), makeflags)[0]
+n_threads = int(n_threads) if n_threads else os.cpu_count()
+    
 arch_dir = plt.machine()
 plt_dict = {"x86_64": "intel64", "AMD64": "intel64", "aarch64": "arm"}
 arch_dir = plt_dict[arch_dir] if arch_dir in plt_dict else arch_dir
