@@ -206,7 +206,13 @@ class BasicStatistics(IntelEstimator, BaseEstimator):
             self._validate_params()
 
         if sklearn_check_version("1.0"):
-            X = validate_data(self, X, dtype=[np.float64, np.float32], ensure_2d=False, accept_sparse="csr")
+            X = validate_data(
+                self,
+                X,
+                dtype=[np.float64, np.float32],
+                ensure_2d=False,
+                accept_sparse="csr",
+            )
         else:
             X = check_array(X, dtype=[np.float64, np.float32])
 

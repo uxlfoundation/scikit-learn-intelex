@@ -28,6 +28,7 @@ from onedal.tests.utils._dataframes_support import (
 )
 from sklearnex.basic_statistics import BasicStatistics
 
+
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 def test_sklearnex_import_basic_statistics(dataframe, queue):
     X = np.array([[0, 0], [1, 1]])
@@ -179,20 +180,19 @@ def test_multiple_options_on_random_data(
 @pytest.mark.parametrize("row_count", [100, 1000])
 @pytest.mark.parametrize("column_count", [10, 100])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_multiple_options_on_random_sparse_data(
-    queue, row_count, column_count, dtype
-):
+def test_multiple_options_on_random_sparse_data(queue, row_count, column_count, dtype):
     seed = 77
     random_state = 42
 
     gen = np.random.default_rng(seed)
 
-    X_sparse = sp.random_array(
-        shape=(row_count, column_count),
+    X_sparse = sp.random(
+        row_count,
+        column_count,
         density=0.05,
         format="csr",
         dtype=dtype,
-        random_state=gen,
+        rng=gen,
     )
     X_dense = X_sparse.toarray()
 
