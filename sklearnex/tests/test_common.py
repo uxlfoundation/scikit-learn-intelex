@@ -284,9 +284,12 @@ def _trace_daemon(pipe):
     # a sent value with inherent conversion to False will break
     # the while loop and complete the function
     while key := pipe.recv():
-        text = ""
         try:
             text = sklearnex_trace(*key)
+        except:
+            # catch all exceptions and pass back
+            # this way the pipe stays open
+            text = ""
         finally:
             pipe.send(text)
 
