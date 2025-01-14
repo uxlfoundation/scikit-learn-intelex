@@ -247,7 +247,10 @@ def sklearnex_trace(estimator_name, method_name):
         of trace._modname.
     """
     # get estimator
-    est = PATCHED_MODELS.get(estimator_name, lambda: None)() or SPECIAL_INSTANCES[estimator_name]
+    try:
+        est = PATCHED_MODELS[estimator_name]()
+    except KeyError:
+        est = SPECIAL_INSTANCES[estimator_name]
 
     # get dataset
     X, y = gen_dataset(est)[0]
@@ -318,23 +321,23 @@ def isolated_trace():
         communicating with the special isolated tracing python instance
         for sklearnex estimators.
     """
-    yield _FakePipe()
-    #try:
-    #    # force use of 'spawn' to guarantee a clean python environment
-    #    # from possible coverage arc tracing
-    #    ctx = get_context("spawn")
-    #    pipe_parent, pipe_child = ctx.Pipe()
-    #    p = ctx.Process(target=_trace_daemon, args=(pipe_child,), daemon=True)
-    #    p.start()
-    #    yield pipe_parent
-    #finally:
-    #    # guarantee closing of the process via a try-catch-finally
-    #    # passing False terminates _trace_daemon's loop
-    #    pipe_parent.send(False)
-    #    pipe_parent.close()
-    #    pipe_child.close()
-    #    p.join()
-    #    p.close()
+    # yield _FakePipe()
+    try:
+        # force use of 'spawn' to guarantee a clean python environment
+        # from possible coverage arc tracing
+        ctx = get_context("spawn")
+        pipe_parent, pipe_child = ctx.Pipe()
+        p = ctx.Process(target=_trace_daemon, args=(pipe_child,), daemon=True)
+        p.start()
+        yield pipe_parent
+    finally:
+        # guarantee closing of the process via a try-catch-finally
+        # passing False terminates _trace_daemon's loop
+        pipe_parent.send(False)
+        pipe_parent.close()
+        pipe_child.close()
+        p.join()
+        p.close()
 
 
 @pytest.fixture
