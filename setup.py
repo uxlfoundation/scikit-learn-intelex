@@ -459,11 +459,13 @@ def set_nthreads(n_threads):
 
     if makeflags:
         # extract "-j" option value set in makeflags
-        if re.findall(r"(?<=(?<!-)-j)\d*|$", makeflags)[0] and n_threads:
-            # sub the value out if n_threads has been set
-            os.environ["MAKEFLAGS"] = re.sub(
-                r"(?<=(?<!-)-j)\d*", str(n_threads), makeflags, 1
-            )
+        if re.findall(r"(?<=(?<!-)-j)\d*|$", makeflags)[0]:
+
+            if n_threads is not None:
+                # sub the value out if n_threads has been set
+                os.environ["MAKEFLAGS"] = re.sub(
+                    r"(?<=(?<!-)-j)\d*", str(n_threads), makeflags, 1
+                )
         else:
             # add the value to MAKEFLAGS since it is not set
             os.environ["MAKEFLAGS"] += f" -j{n_threads if n_threads else os.cpu_count()}"
