@@ -34,6 +34,7 @@ from sklearn.datasets import (
 import daal4py as d4p
 from daal4py.sklearn._utils import daal_check_version
 from onedal.tests.utils._dataframes_support import _as_numpy, get_dataframes_and_queues
+from sklearnex.basic_statistics import BasicStatistics
 from sklearnex.cluster import DBSCAN, KMeans
 from sklearnex.decomposition import PCA
 from sklearnex.metrics import pairwise_distances, roc_auc_score
