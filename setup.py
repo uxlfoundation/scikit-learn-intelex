@@ -418,9 +418,10 @@ class onedal_build:
         # True is used by setuptools to indicate cpu_count for `parallel`
         # None is default for setuptools for single threading
         # take the last defined value in MAKEFLAGS, as it will be the one
-        # used by cmake/make
-        regex = r"(?<=(?<!\S)-j)\d*(?!\S)|$"
-        orig_n_threads = re.findall(regex, makeflags)[-1]
+        # used by cmake/make. Do regex in reverse to deal with missing values
+        # and last values simultaneously in a simple fashion
+        regex_inv = r"(?<!\S)\d*(?=j-(?!\S))|$"
+        orig_n_threads = re.findall(regex_inv, makeflags[::-1])[0][::-1]
 
         if n_threads is None:
             n_threads = int(orig_n_threads) if orig_n_threads else os.cpu_count() or 1
