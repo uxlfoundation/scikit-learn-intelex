@@ -311,17 +311,6 @@ def get_build_options():
     return eca, ela, include_dir_plat
 
 
-def get_nthreads(n_threads=None):
-    """MAKEFLAGS is used by the onedal cmake and cythonize to control the number
-    of processes. If it is set via the setup.py commmand with the --parallel or
-    -j argument, it will supersede this value. When both are not set, it will
-    default to the number of cpus, n_threads should be a positive integer, None,
-    or True"""
-
-
-    return n_threads
-
-
 def getpyexts():
     eca, ela, include_dir_plat = get_build_options()
     libraries_plat = get_libs("daal")
