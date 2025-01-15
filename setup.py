@@ -423,9 +423,9 @@ class onedal_build:
         orig_n_threads = re.findall(regex, makeflags)[-1]
 
         if n_threads is None:
-            n_threads = int(orig_n_threads) if orig_n_threads else os.cpu_count()
+            n_threads = int(orig_n_threads) if orig_n_threads else os.cpu_count() or 1
         elif n_threads is True:
-            n_threads = os.cpu_count()
+            n_threads = os.cpu_count() or 1
 
         cxx = os.getenv("CXX", "cl" if IS_WIN else "g++")
         build_onedal = lambda iface: build_backend.custom_build_cmake_clib(
