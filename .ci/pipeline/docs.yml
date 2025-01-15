@@ -64,17 +64,22 @@ jobs:
       pip list
     displayName: 'Install requirements'
   - script: |
+      echo "DALROOT"
+      ls ${DALROOT}
       export PREFIX=$(dirname $(dirname $(which python)))
       export DALROOT=$PREFIX
       rm -rf ./build/*
-      find /opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11 -name "libonedal*.so*"
-      ls /opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/lib
+
+      echo "find"
+      find ${DALROOT} -name "libonedal*.so*"
+      echo "dalroot lib"
+      ls ${DALROOT}/lib
 
       ./conda-recipe/build.sh
 
 
       ls ${DALROOT}/lib/python3.11/site-packages/daal4py
-      cp daal4py/_daal4py.cpython*.so daal4py/
+      cp ${DALROOT}/lib/python3.11/site-packages/daal4py/_daal4py.cpython*.so daal4py/
 
       python -c "import daal4py; print('daal4py imported successfully')"
       python -c "import daal4py._daal4py; print('daal4py._daal4py imported successfully')"
