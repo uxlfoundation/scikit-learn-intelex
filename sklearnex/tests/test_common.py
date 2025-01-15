@@ -247,7 +247,7 @@ def sklearnex_trace(estimator_name, method_name):
         of trace._modname.
     """
     # get estimator
-    est = PATCHED_MODELS.get(estimator_name, lambda: None)() or SPECIAL_INSTANCES[estimator_name]
+    est = PATCHED_MODELS[estimator_name] if estimator_name in PATCHED_MODELS else SPECIAL_INSTANCES[estimator_name]
     
     # get dataset
     X, y = gen_dataset(est)[0]
