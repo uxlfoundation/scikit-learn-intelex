@@ -26,7 +26,6 @@ import re
 import shutil
 import sys
 import time
-from contextlib import contextmanager
 from ctypes.util import find_library
 from os.path import join as jp
 from sysconfig import get_config_vars
@@ -312,43 +311,26 @@ def get_build_options():
     return eca, ela, include_dir_plat
 
 
-@contextmanager
-def set_nthreads(n_threads):
+def get_nthreads(n_threads=None):
     """MAKEFLAGS is used by the onedal cmake and cythonize to control the number
     of processes. If it is set via the setup.py commmand with the --parallel or
-    -j argument, it will supercede this value. When both are not set, it will
+    -j argument, it will supersede this value. When both are not set, it will
     default to the number of cpus, n_threads should be a positive integer, None,
     or True"""
     makeflags = os.getenv("MAKEFLAGS", "")
     # True is used by setuptools to indicate cpu_count for `parallel`
     # None is default for setuptools for single threading
-    # take the last defined value in MAKEFLAGS, do the regex on the
-    # reversed string because of the limitations in re.sub (only
-    # replace the last value)
-    regex_inv = r"(?<!\S)\d*(?=j-(?!\S))"
-    orig_n_threads = re.findall(regex_inv + "|$", makeflags[::-1])[0][::-1]
+    # take the last defined value in MAKEFLAGS, as it will be the one
+    # used by cmake/make
+    regex = r"(?<=(?<!\S)-j)\d*(?<!\S)|$"
+    orig_n_threads = re.findall(regex, makeflags)[-1]
+
     if n_threads is None:
         n_threads = int(orig_n_threads) if orig_n_threads else os.cpu_count()
     elif n_threads is True:
         n_threads = os.cpu_count()
 
-    if makeflags:
-        if orig_n_threads:
-            # sub the value out
-            os.environ["MAKEFLAGS"] = re.sub(
-                regex_inv, str(n_threads)[::-1], makeflags[::-1], 1
-            )[::-1]
-        else:
-            # add the value to MAKEFLAGS since it is not set
-            os.environ["MAKEFLAGS"] += f" -j{n_threads}"
-
-        yield n_threads
-        os.environ["MAKEFLAGS"] = makeflags
-
-    else:
-        os.environ["MAKEFLAGS"] = f"-j{n_threads}"
-        yield n_threads
-        del os.environ["MAKEFLAGS"]
+    return n_threads
 
 
 def getpyexts():
@@ -374,8 +356,8 @@ def getpyexts():
         library_dirs=ONEDAL_LIBDIRS,
         language="c++",
     )
-    with set_nthreads(None) as n_threads:
-        exts.extend(cythonize(ext, nthreads=n_threads))
+
+    exts.extend(cythonize(ext, nthreads=get_nthreads()))
 
     if not no_dist:
         mpi_include_dir = include_dir_plat + [np.get_include()] + MPI_INCDIRS
@@ -448,12 +430,12 @@ def get_onedal_py_libs():
 class onedal_build:
 
     def run(self):
-        with set_nthreads(self.parallel) as n_threads:
-            self.onedal_run(n_threads)
-            super(onedal_build, self).run()
-            self.onedal_post_build()
+        self.onedal_run()
+        super(onedal_build, self).run()
+        self.onedal_post_build()
 
     def onedal_run(self, n_threads):
+        n_threads = get_nthreads(self.parallel)
         cxx = os.getenv("CXX", "cl" if IS_WIN else "g++")
         build_onedal = lambda iface: build_backend.custom_build_cmake_clib(
             iface=iface,
