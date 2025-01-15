@@ -86,5 +86,7 @@ def test_patching(configuration):
         return
     for skip in TO_SKIP:
         if re.search(skip, configuration) is not None:
+            # TODO:
+            # check if xfail needed instead.
             pytest.skip("SKIPPED", allow_module_level=False)
     raise ValueError("Test patching failed: " + configuration)

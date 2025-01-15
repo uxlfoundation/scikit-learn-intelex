@@ -162,7 +162,7 @@ def test_standard_estimator_stability(estimator, method, dataframe, queue):
     if estimator in ["LogisticRegression", "TSNE"]:
         pytest.skip(f"stability not guaranteed for {estimator}")
     if estimator in ["KMeans", "PCA"] and "score" in method and queue == None:
-        pytest.skip(f"variation observed in {estimator}.score")
+        pytest.xfail(f"variation observed in {estimator}.score")
     if estimator in ["IncrementalEmpiricalCovariance"] and method == "mahalanobis":
         pytest.skip("allowed fallback to sklearn occurs")
     _skip_neighbors(estimator, method)
@@ -191,9 +191,9 @@ def test_special_estimator_stability(estimator, method, dataframe, queue):
     if queue is None and estimator in ["LogisticRegression(solver='newton-cg')"]:
         pytest.skip(f"stability not guaranteed for {estimator}")
     if "KMeans" in estimator and method == "score" and queue == None:
-        pytest.skip(f"variation observed in KMeans.score")
+        pytest.xfail(f"variation observed in KMeans.score")
     if estimator == "BasicStatistics()" and queue == None:
-        pytest.skip(f"BasicStatistics not deterministic")
+        pytest.xfail(f"BasicStatistics not deterministic")
     if "NearestNeighbors" in estimator and "radius" in method:
         pytest.skip(f"RadiusNeighbors estimator not implemented in sklearnex")
     _skip_neighbors(estimator, method)
@@ -216,13 +216,13 @@ def test_special_estimator_stability(estimator, method, dataframe, queue):
 @pytest.mark.parametrize("estimator, method", gen_models_info(SPARSE_INSTANCES))
 def test_sparse_estimator_stability(estimator, method, dataframe, queue):
     if "KMeans" in estimator and method in "score" and queue == None:
-        pytest.skip(f"variation observed in KMeans.{method}")
+        pytest.xfail(f"variation observed in KMeans.{method}")
     if (
         not daal_check_version((2025, "P", 0))
         and "KMeans()" in estimator
         and queue == None
     ):
-        pytest.skip(f"variation observed in KMeans.{method} in 2024.7 oneDAL")
+        pytest.xfail(f"variation observed in KMeans.{method} in 2024.7 oneDAL")
     if "NearestNeighbors" in estimator and "radius" in method:
         pytest.skip(f"RadiusNeighbors estimator not implemented in sklearnex")
     _skip_neighbors(estimator, method)
@@ -247,7 +247,7 @@ def test_sparse_estimator_stability(estimator, method, dataframe, queue):
 @pytest.mark.parametrize("estimator, method", gen_models_info(STABILITY_INSTANCES))
 def test_other_estimator_stability(estimator, method, dataframe, queue):
     if "KMeans" in estimator and method == "score" and queue == None:
-        pytest.skip(f"variation observed in KMeans.score")
+        pytest.xfail(f"variation observed in KMeans.score")
     if "NearestNeighbors" in estimator and "radius" in method:
         pytest.skip(f"RadiusNeighbors estimator not implemented in sklearnex")
     _skip_neighbors(estimator, method)

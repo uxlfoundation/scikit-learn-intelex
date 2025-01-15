@@ -51,7 +51,7 @@ from onedal.tests.utils._dataframes_support import (
 def test_sklearnex_partial_fit_on_gold_data(dataframe, queue, dtype, assume_centered):
     is_gpu = queue is not None and queue.sycl_device.is_gpu
     if assume_centered and is_gpu and not daal_check_version((2025, "P", 0)):
-        pytest.skip(
+        pytest.xfail(
             "Due to a bug on oneDAL side, means are not set to zero when assume_centered=True"
         )
     from sklearnex.covariance import IncrementalEmpiricalCovariance
@@ -162,7 +162,7 @@ def test_sklearnex_fit_on_random_data(
 ):
     is_gpu = queue is not None and queue.sycl_device.is_gpu
     if assume_centered and is_gpu and not daal_check_version((2025, "P", 0)):
-        pytest.skip(
+        pytest.xfail(
             "Due to a bug on oneDAL side, means are not set to zero when assume_centered=True"
         )
     from sklearnex.covariance import IncrementalEmpiricalCovariance

@@ -64,7 +64,7 @@ def test_sklearnex_import_rf_classifier(dataframe, queue, block, trees, rows, sc
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 def test_sklearnex_import_rf_regression(dataframe, queue):
     if (not daal_check_version((2025, "P", 200))) and queue and queue.sycl_device.is_gpu:
-        pytest.skip("Skipping due to bug in histogram merges fixed in 2025.2.")
+        pytest.xfail("Skipping due to bug in histogram merges fixed in 2025.2.")
     from sklearnex.ensemble import RandomForestRegressor
 
     X, y = make_regression(n_features=4, n_informative=2, random_state=0, shuffle=False)
@@ -87,7 +87,7 @@ def test_sklearnex_import_rf_regression(dataframe, queue):
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 def test_sklearnex_import_et_classifier(dataframe, queue):
     if (not daal_check_version((2025, "P", 200))) and queue and queue.sycl_device.is_gpu:
-        pytest.skip("Skipping due to bug in histogram merges fixed in 2025.2.")
+        pytest.xfail("Skipping due to bug in histogram merges fixed in 2025.2.")
     from sklearnex.ensemble import ExtraTreesClassifier
 
     X, y = make_classification(
@@ -110,7 +110,7 @@ def test_sklearnex_import_et_classifier(dataframe, queue):
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 def test_sklearnex_import_et_regression(dataframe, queue):
     if (not daal_check_version((2025, "P", 200))) and queue and queue.sycl_device.is_gpu:
-        pytest.skip("Skipping due to bug in histogram merges fixed in 2025.2.")
+        pytest.xfail("Skipping due to bug in histogram merges fixed in 2025.2.")
     from sklearnex.ensemble import ExtraTreesRegressor
 
     X, y = make_regression(n_features=1, random_state=0, shuffle=False)

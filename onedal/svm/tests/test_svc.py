@@ -55,7 +55,7 @@ def _test_libsvm_parameters(queue, array_constr, dtype):
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_libsvm_parameters(queue, array_constr, dtype):
     if queue and queue.sycl_device.is_gpu:
-        pytest.skip("Sporadic failures on GPU sycl_queue.")
+        pytest.xfail("Sporadic failures on GPU sycl_queue.")
     _test_libsvm_parameters(queue, array_constr, dtype)
 
 
@@ -84,7 +84,7 @@ def test_class_weight(queue):
 @pytest.mark.parametrize("queue", get_queues())
 def test_sample_weight(queue):
     if queue and queue.sycl_device.is_gpu:
-        pytest.skip("Sporadic failures on GPU sycl_queue.")
+        pytest.xfail("Sporadic failures on GPU sycl_queue.")
     X = np.array([[-2, 0], [-1, -1], [0, -2], [0, 2], [1, 1], [2, 2]])
     y = np.array([1, 1, 1, 2, 2, 2])
 

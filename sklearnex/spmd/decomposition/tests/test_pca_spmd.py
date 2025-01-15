@@ -96,6 +96,8 @@ def test_pca_spmd_synthetic(
     n_samples, n_features, n_components, whiten, dataframe, queue, dtype
 ):
     # TODO: Resolve issues with batch fallback and lack of support for n_rows_rank < n_cols
+    # TODO:
+    # check if xfail is needed instead.
     if n_components == "mle" or n_components == 3:
         pytest.skip("Avoid error in case of batch fallback to sklearn")
     if n_samples <= n_features:
