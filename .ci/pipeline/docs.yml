@@ -64,25 +64,32 @@ jobs:
       pip list
     displayName: 'Install requirements'
   - script: |
-      echo "DALROOT ${DALROOT}"
-      ls ${DALROOT}
       export PREFIX=$(dirname $(dirname $(which python)))
       export DALROOT=$PREFIX
+
+      ls ${DALROOT}
+      echo "DALROOT ${DALROOT}"
+      find ${DALROOT} -name "libtbb.so.12"
+
       rm -rf ./build/*
 
-      echo "find"
+      echo "cp"
       mkdir -p ${DALROOT}/lib/intel64
-      cp ${DALROOT}/lib/* ${DALROOT}/lib/intel64/
+      cp ${DALROOT}/lib/*.so.* ${DALROOT}/lib/intel64/
 
-      find ${DALROOT} -name "libonedal*.so*"
       echo "dalroot lib"
       ls ${DALROOT}/lib
+      echo "dalroot lib intel64"
+      ls ${DALROOT}/lib/intel64/
+
 
       ./conda-recipe/build.sh
 
 
-      ls ${DALROOT}/lib/python3.11/site-packages/daal4py
       cp ${DALROOT}/lib/python3.11/site-packages/daal4py/_daal4py.cpython*.so daal4py/
+      ls daal4py
+      echo "find tbb file"
+      find ${DALROOT} -name "libtbb.so.12"
 
       python -c "import daal4py; print('daal4py imported successfully')"
       python -c "import daal4py._daal4py; print('daal4py._daal4py imported successfully')"
