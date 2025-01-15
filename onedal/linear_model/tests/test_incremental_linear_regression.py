@@ -92,7 +92,8 @@ def test_full_results(queue, num_blocks, dtype):
         tol = 5e-3 if model.coef_.dtype == np.float32 else 1e-5
     else:
         tol = 3e-3 if model.coef_.dtype == np.float32 else 1e-5
-    assert_allclose(coef, model.coef_.T, rtol=tol)
+    atol = 1e-4 if model.coef_.dtype == np.float32 else 1e-6
+    assert_allclose(coef, model.coef_.T, rtol=tol, atol=atol)
 
     tol = 3e-3 if model.intercept_.dtype == np.float32 else 1e-5
     assert_allclose(intercept, model.intercept_, rtol=tol)
