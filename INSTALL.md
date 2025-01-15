@@ -172,8 +172,11 @@ The build-process (using setup.py) happens in 4 stages:
 * ``NO_STREAM``: set to '1', 'yes' or alike to build without support for streaming mode
 * ``NO_DPC``: set to '1', 'yes' or alike to build without support of oneDAL DPC++ interfaces
 * ``OFF_ONEDAL_IFACE``: set to '1' to build without the support of oneDAL interfaces
+* ``MAKEFLAGS``: the last `-j` flag determines the number of threads for building the onedal extension. It will default to the number of processors when not set.
 
 **Note:** in order to use distributed mode, `mpi4py` is also required, and needs to be built with the same MPI backend as scikit-learn-intelex.
+**Note:** The `-j` flag in the ``MAKEFLAGS`` environment variable is superseded in `build` and `develop` mode by the ``--parallel`` and `-j` command line flags.
+
 
 ### Build Intel(R) Extension for Scikit-learn
 
