@@ -72,17 +72,10 @@ jobs:
       find ${DALROOT} -name "libtbb.so.12"
 
       rm -rf ./build/*
-
-      echo "cp"
-      mkdir -p ${DALROOT}/lib/intel64
-      cp ${DALROOT}/lib/*.so.* ${DALROOT}/lib/intel64/
-      export LD_LIBRARY_PATH=${DALROOT}/lib:${DALROOT}/lib/intel64:${LD_LIBRARY_PATH}
+      export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
 
       echo "dalroot lib"
       ls ${DALROOT}/lib
-      echo "dalroot lib intel64"
-      ls ${DALROOT}/lib/intel64/
-
 
       ./conda-recipe/build.sh
 
@@ -91,10 +84,6 @@ jobs:
       ls daal4py
       echo "find tbb file"
       find ${DALROOT} -name "libtbb.so.12"
-
-      python -c "import daal4py; print('daal4py imported successfully')"
-      python -c "import daal4py._daal4py; print('daal4py._daal4py imported successfully')"
-      python -c "from sklearnex.basic_statistics import BasicStatistics; print('BasicStatistics imported successfully')"
     displayName: 'Build daal4py/sklearnex'
   - script: |
       export PREFIX=$(dirname $(dirname $(which python)))
@@ -102,26 +91,15 @@ jobs:
       echo "daal4py"
       ls daal4py
       echo "DALROOT ${DALROOT}"
-      export LD_LIBRARY_PATH=${DALROOT}/lib:${DALROOT}/lib/intel64:${LD_LIBRARY_PATH}
-      echo "dalroot lib"
-      ls ${DALROOT}/lib
-      echo "dalroot lib intel64"
-      ls ${DALROOT}/lib/intel64/
-      python -c "import daal4py; print('daal4py imported successfully')"
-      python -c "import daal4py._daal4py; print('daal4py._daal4py imported successfully')"
-      python -c "from sklearnex.basic_statistics import BasicStatistics; print('BasicStatistics imported successfully')"
+      export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
       cd doc/daal4py
       make html
     displayName: 'Build daal4py documentation'
   - script: |
       export PREFIX=$(dirname $(dirname $(which python)))
       export DALROOT=$PREFIX
-      export LD_LIBRARY_PATH=${DALROOT}/lib:${DALROOT}/lib/intel64:${LD_LIBRARY_PATH}
-      python -c "import daal4py; print('daal4py imported successfully')"
-      python -c "import daal4py._daal4py; print('daal4py._daal4py imported successfully')"
-      python -c "from sklearnex.basic_statistics import BasicStatistics; print('BasicStatistics imported successfully')"
+      export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
       cd doc
-      python -c "import sys; print('Current sys.path2:', sys.path)"
       make html
     displayName: 'Build scikit-learn-intelex documentation'
   - script: |
