@@ -146,8 +146,6 @@ deselected_tests:
   # scikit-learn expects an exception for sparse matrices with 64-bit integer indices,
   # scikit-learn-intelex works correctly with 64-bit integer indices
   - tests/test_common.py::test_estimators[NuSVC()-check_estimator_sparse_data]
-  - tests/test_common.py::test_estimators[NuSVC()-check_estimator_sparse_array]
-  - tests/test_common.py::test_estimators[NuSVC()-check_estimator_sparse_matrix]
   - utils/tests/test_estimator_checks.py::test_xfail_ignored_in_check_estimator
 
   # SVC._dual_coef_ is changing after fitting, but the result of prediction is still the same
