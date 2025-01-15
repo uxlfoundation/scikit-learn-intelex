@@ -64,13 +64,16 @@ jobs:
       pip list
     displayName: 'Install requirements'
   - script: |
-      echo "DALROOT"
+      echo "DALROOT ${DALROOT}"
       ls ${DALROOT}
       export PREFIX=$(dirname $(dirname $(which python)))
       export DALROOT=$PREFIX
       rm -rf ./build/*
 
       echo "find"
+      mkdir -p ${DALROOT}/lib/intel64
+      cp ${DALROOT}/lib/* ${DALROOT}/lib/intel64/
+
       find ${DALROOT} -name "libonedal*.so*"
       echo "dalroot lib"
       ls ${DALROOT}/lib
