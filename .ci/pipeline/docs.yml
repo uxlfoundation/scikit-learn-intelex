@@ -78,6 +78,7 @@ jobs:
       export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
       python -c "from sklearnex.basic_statistics import BasicStatistics; print('BasicStatistics imported successfully')"
       cd doc/daal4py
+      make clean
       make html
     displayName: 'Build daal4py documentation'
   - script: |
@@ -86,8 +87,9 @@ jobs:
       export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
       python -c "from sklearnex.basic_statistics import BasicStatistics; print('BasicStatistics imported successfully')"
       echo "print ipynb path"
-      ls -l doc/sources/samples
+      ls -l doc/sources
       cd doc
+      make clean
       make html
     displayName: 'Build scikit-learn-intelex documentation'
   - script: |
