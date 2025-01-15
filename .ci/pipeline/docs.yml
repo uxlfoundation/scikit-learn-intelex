@@ -66,41 +66,19 @@ jobs:
   - script: |
       export PREFIX=$(dirname $(dirname $(which python)))
       export DALROOT=$PREFIX
-
-      ls ${DALROOT}
-      echo "DALROOT ${DALROOT}"
-      find ${DALROOT} -name "libtbb.so.12"
-
-      rm -rf ./build/*
-
-      echo "cp"
       mkdir -p ${DALROOT}/lib/intel64
       cp ${DALROOT}/lib/*.so.* ${DALROOT}/lib/intel64/
       export LD_LIBRARY_PATH=${DALROOT}/lib:${DALROOT}/lib/intel64:${LD_LIBRARY_PATH}
-
-      echo "dalroot lib"
-      ls ${DALROOT}/lib
-      echo "dalroot lib intel64"
-      ls ${DALROOT}/lib/intel64/
-
-
       ./conda-recipe/build.sh
-
-
       cp ${DALROOT}/lib/python3.11/site-packages/daal4py/_daal4py.cpython*.so daal4py/
-      ls daal4py
-      echo "find tbb file"
-      find ${DALROOT} -name "libtbb.so.12"
-
-      python -c "import daal4py; print('daal4py imported successfully')"
-      python -c "import daal4py._daal4py; print('daal4py._daal4py imported successfully')"
-      python -c "from sklearnex.basic_statistics import BasicStatistics; print('BasicStatistics imported successfully')"
     displayName: 'Build daal4py/sklearnex'
   - script: |
+      export LD_LIBRARY_PATH=${DALROOT}/lib:${DALROOT}/lib/intel64:${LD_LIBRARY_PATH}
       cd doc/daal4py
       make html
     displayName: 'Build daal4py documentation'
   - script: |
+      export LD_LIBRARY_PATH=${DALROOT}/lib:${DALROOT}/lib/intel64:${LD_LIBRARY_PATH}
       cd doc
       python -c "import sys; print('Current sys.path2:', sys.path)"
       make html
