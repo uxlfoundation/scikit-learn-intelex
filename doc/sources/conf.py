@@ -43,7 +43,7 @@ copyright = "Intel"
 author = "Intel"
 
 # The short X.Y version
-version = os.environ.get('DOC_VERSION','')
+version = os.environ.get("DOC_VERSION", "")
 # The full version, including alpha/beta/rc tags
 release = version
 
@@ -144,7 +144,6 @@ html_favicon = "_static/favicons.png"
 
 html_theme_options = {
     "logo_only": False,
-    "version_selector": True,
     "prev_next_buttons_location": "bottom",
     "style_external_links": False,
     "vcs_pageview_mode": "",
@@ -157,9 +156,11 @@ html_theme_options = {
 
 switcher_url = "/scikit-learn-intelex/versions.json"
 
-html_context = {"current_version": version,
-                "project_name": "scikit-learn-intelex",
-                "switcher_url": switcher_url}
+html_context = {
+    "current_version": version,
+    "project_name": "scikit-learn-intelex",
+    "switcher_url": switcher_url,
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
