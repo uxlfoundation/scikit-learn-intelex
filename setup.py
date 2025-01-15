@@ -441,8 +441,8 @@ def get_onedal_py_libs():
     return libs
 
 
-class custom_build:
-    def run(self):
+class onedal_build:
+    def onedal_run(self, n_threads):
         cxx = os.getenv("CXX", "cl" if IS_WIN else "g++")
         build_onedal = lambda iface: build_backend.custom_build_cmake_clib(
             iface=iface,
@@ -451,6 +451,8 @@ class custom_build:
             no_dist=no_dist,
             use_parameters_lib=use_parameters_lib,
             use_abs_rpath=USE_ABS_RPATH,
+            use_gcov=use_gcov,
+            n_threads=n_threads,
         )
         if is_onedal_iface:
             build_onedal("host")
@@ -459,7 +461,7 @@ class custom_build:
                 if build_distribute:
                     build_onedal("spmd_dpc")
 
-    def post_build(self):
+    def onedal_post_build(self):
         if IS_MAC:
             import subprocess
 
@@ -482,22 +484,22 @@ class custom_build:
                         )
 
 
-class develop(orig_develop.develop, custom_build):
+class develop(orig_develop.develop, onedal_build):
 
     def run(self):
-        with set_nthreads(self.parallel):
-            custom_build.run(self)
+        with set_nthreads(self.parallel) as n_threads:
+            self.onedal_run(n_threads)
             super().run()
-            custom_build.post_build(self)
+            self.onedal_post_build()
 
 
-class build(orig_build.build, custom_build):
+class build(orig_build.build, onedal_build):
 
     def run(self):
-        with set_nthreads(self.parallel):
-            custom_build.run(self)
+        with set_nthreads(self.parallel) as n_threads:
+            self.onedal_run(n_threads)
             super().run()
-            custom_build.post_build(self)
+            self.onedal_post_build()
 
 
 project_urls = {

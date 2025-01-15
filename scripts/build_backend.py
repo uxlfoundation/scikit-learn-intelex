@@ -48,6 +48,7 @@ def custom_build_cmake_clib(
     use_parameters_lib=True,
     use_abs_rpath=False,
     use_gcov=False,
+    n_threads=1,
 ):
     import pybind11
 
@@ -133,7 +134,9 @@ def custom_build_cmake_clib(
         cmake_args += ["-DSKLEARNEX_GCOV=ON"]
 
     # the number of parallel processes is dictated by MAKEFLAGS (see setup.py)
-    make_args = ["cmake", "--build", abs_build_temp_path]
+    # using make conventions (i.e. -j flag) but is set as a cmake argument to
+    # support Windows and Linux simultaneously
+    make_args = ["cmake", "--build", abs_build_temp_path, "-j" + str(n_threads)]
 
     make_install_args = [
         "cmake",
