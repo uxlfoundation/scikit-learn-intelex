@@ -446,6 +446,13 @@ def get_onedal_py_libs():
 
 
 class onedal_build:
+
+    def run(self):
+        with set_nthreads(self.parallel) as n_threads:
+            self.onedal_run(n_threads)
+            super(onedal_build, self).run()
+            self.onedal_post_build()
+
     def onedal_run(self, n_threads):
         cxx = os.getenv("CXX", "cl" if IS_WIN else "g++")
         build_onedal = lambda iface: build_backend.custom_build_cmake_clib(
@@ -488,22 +495,12 @@ class onedal_build:
                         )
 
 
-class develop(orig_develop.develop, onedal_build):
-
-    def run(self):
-        with set_nthreads(self.parallel) as n_threads:
-            self.onedal_run(n_threads)
-            super().run()
-            self.onedal_post_build()
+class develop(onedal_build, orig_develop.develop):
+    pass
 
 
-class build(orig_build.build, onedal_build):
-
-    def run(self):
-        with set_nthreads(self.parallel) as n_threads:
-            self.onedal_run(n_threads)
-            super().run()
-            self.onedal_post_build()
+class build(onedal_build, orig_build.build):
+    pass
 
 
 project_urls = {
