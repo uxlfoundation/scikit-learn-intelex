@@ -34,7 +34,6 @@ import numpy as np
 import setuptools.command.build as orig_build
 import setuptools.command.develop as orig_develop
 from Cython.Build import cythonize
-from Cython.Distutils import build_ext
 from setuptools import Extension, setup
 
 import scripts.build_backend as build_backend
@@ -572,7 +571,7 @@ setup(
     author_email="onedal.maintainers@intel.com",
     maintainer_email="onedal.maintainers@intel.com",
     project_urls=project_urls,
-    cmdclass={"develop": develop, "build": build, "build_ext": build_ext},
+    cmdclass={"develop": develop, "build": build},
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
