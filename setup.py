@@ -317,18 +317,7 @@ def get_nthreads(n_threads=None):
     -j argument, it will supersede this value. When both are not set, it will
     default to the number of cpus, n_threads should be a positive integer, None,
     or True"""
-    makeflags = os.getenv("MAKEFLAGS", "")
-    # True is used by setuptools to indicate cpu_count for `parallel`
-    # None is default for setuptools for single threading
-    # take the last defined value in MAKEFLAGS, as it will be the one
-    # used by cmake/make
-    regex = r"(?<=(?<!\S)-j)\d*(?<!\S)|$"
-    orig_n_threads = re.findall(regex, makeflags)[-1]
 
-    if n_threads is None:
-        n_threads = int(orig_n_threads) if orig_n_threads else os.cpu_count()
-    elif n_threads is True:
-        n_threads = os.cpu_count()
 
     return n_threads
 
@@ -357,7 +346,7 @@ def getpyexts():
         language="c++",
     )
 
-    exts.extend(cythonize(ext, nthreads=get_nthreads()))
+    exts.extend(cythonize(ext))
 
     if not no_dist:
         mpi_include_dir = include_dir_plat + [np.get_include()] + MPI_INCDIRS
@@ -434,8 +423,21 @@ class onedal_build:
         super(onedal_build, self).run()
         self.onedal_post_build()
 
-    def onedal_run(self, n_threads):
-        n_threads = get_nthreads(self.parallel)
+    def onedal_run(self):
+        n_threads = self.parallel
+        makeflags = os.getenv("MAKEFLAGS", "")
+        # True is used by setuptools to indicate cpu_count for `parallel`
+        # None is default for setuptools for single threading
+        # take the last defined value in MAKEFLAGS, as it will be the one
+        # used by cmake/make
+        regex = r"(?<=(?<!\S)-j)\d*(?<!\S)|$"
+        orig_n_threads = re.findall(regex, makeflags)[-1]
+
+        if n_threads is None:
+            n_threads = int(orig_n_threads) if orig_n_threads else os.cpu_count()
+        elif n_threads is True:
+            n_threads = os.cpu_count()
+
         cxx = os.getenv("CXX", "cl" if IS_WIN else "g++")
         build_onedal = lambda iface: build_backend.custom_build_cmake_clib(
             iface=iface,
