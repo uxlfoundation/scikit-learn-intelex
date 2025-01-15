@@ -84,6 +84,8 @@ jobs:
       ls daal4py
       echo "find tbb file"
       find ${DALROOT} -name "libtbb.so.12"
+      python -c "import daal4py._daal4py; print('daal4py._daal4py imported successfully')"
+
     displayName: 'Build daal4py/sklearnex'
   - script: |
       export PREFIX=$(dirname $(dirname $(which python)))
@@ -92,6 +94,7 @@ jobs:
       ls daal4py
       echo "DALROOT ${DALROOT}"
       export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
+      python -c "import daal4py._daal4py; print('daal4py._daal4py imported successfully')"
       cd doc/daal4py
       make html
     displayName: 'Build daal4py documentation'
@@ -99,6 +102,7 @@ jobs:
       export PREFIX=$(dirname $(dirname $(which python)))
       export DALROOT=$PREFIX
       export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
+      python -c "import daal4py._daal4py; print('daal4py._daal4py imported successfully')"
       cd doc
       make html
     displayName: 'Build scikit-learn-intelex documentation'
