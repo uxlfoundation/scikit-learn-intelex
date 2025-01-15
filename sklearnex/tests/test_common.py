@@ -252,7 +252,7 @@ def sklearnex_trace(estimator_name, method_name):
         if estimator_name in PATCHED_MODELS
         else SPECIAL_INSTANCES[estimator_name]
     )
-    
+
     # get dataset
     X, y = gen_dataset(est)[0]
     # fit dataset if method does not contain 'fit'
