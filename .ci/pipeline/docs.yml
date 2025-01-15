@@ -64,48 +64,28 @@ jobs:
       pip list
     displayName: 'Install requirements'
   - script: |
-      echo "Setting up TBBROOT..."
-      if [ -z "${TBBROOT}" ]; then
-        export TBBROOT=/opt/intel/oneapi/tbb/latest
-        echo "TBBROOT set to: $TBBROOT"
-      fi
-      if [ -n "${TBBROOT}" ]; then
-        source ${TBBROOT}/env/vars.sh
-        echo "TBBROOT environment variables sourced successfully."
-      fi
-
-      echo "TBBROOT set to: $TBBROOT"
-      echo "LD_LIBRARY_PATH set to: $LD_LIBRARY_PATH"
       export PREFIX=$(dirname $(dirname $(which python)))
       export DALROOT=$PREFIX
-      echo "PREFIX set to: $PREFIX"
-      echo "DALROOT set to: $DALROOT"
-      ls ${DALROOT}/env/vars.sh
+      rm -rf ./build/*
+      find /opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11 -name "libonedal*.so*"
+      ls /opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/lib
 
       ./conda-recipe/build.sh
 
-      cp ${DALROOT}/lib/python3.11/site-packages/daal4py/_daal4py.cpython-311-x86_64-linux-gnu.so daal4py/_daal4py.cpython-311-x86_64-linux-gnu.so
+
+      ls ${DALROOT}/lib/python3.11/site-packages/daal4py
+      cp daal4py/_daal4py.cpython*.so daal4py/
+
       python -c "import daal4py; print('daal4py imported successfully')"
       python -c "import daal4py._daal4py; print('daal4py._daal4py imported successfully')"
       python -c "from sklearnex.basic_statistics import BasicStatistics; print('BasicStatistics imported successfully')"
     displayName: 'Build daal4py/sklearnex'
   - script: |
-      echo "Current directory3: $(pwd)"
-      python -c "import daal4py; print('daal4py imported successfully')"
-      python -c "import daal4py._daal4py; print('daal4py._daal4py imported successfully')"
-      python -c "from sklearnex.basic_statistics import BasicStatistics; print('BasicStatistics imported successfully')"
-      ls -l daal4py/
-      ls -l build/
-      ls -l build/lib.linux-x86_64-cpython-311
-      find build/ -name "*.so"
-      python -c "import sys; print('sys.path:', sys.path)"
+      export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
       cd doc/daal4py
       make html
     displayName: 'Build daal4py documentation'
   - script: |
-      python -c "import daal4py; print('daal4py imported successfully')"
-      python -c "import daal4py._daal4py; print('daal4py._daal4py imported successfully')"
-      python -c "from sklearnex.basic_statistics import BasicStatistics; print('BasicStatistics imported successfully')"
       cd doc
       python -c "import sys; print('Current sys.path2:', sys.path)"
       make html
