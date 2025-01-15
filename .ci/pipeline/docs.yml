@@ -97,7 +97,11 @@ jobs:
       python -c "from sklearnex.basic_statistics import BasicStatistics; print('BasicStatistics imported successfully')"
     displayName: 'Build daal4py/sklearnex'
   - script: |
+      mkdir -p ${DALROOT}/lib/intel64
+      cp ${DALROOT}/lib/*.so.* ${DALROOT}/lib/intel64/
       export LD_LIBRARY_PATH=${DALROOT}/lib:${DALROOT}/lib/intel64:${LD_LIBRARY_PATH}
+      cp ${DALROOT}/lib/python3.11/site-packages/daal4py/_daal4py.cpython*.so daal4py/
+
       echo "dalroot lib"
       ls ${DALROOT}/lib
       echo "dalroot lib intel64"
@@ -109,6 +113,11 @@ jobs:
       make html
     displayName: 'Build daal4py documentation'
   - script: |
+      mkdir -p ${DALROOT}/lib/intel64
+      cp ${DALROOT}/lib/*.so.* ${DALROOT}/lib/intel64/
+      export LD_LIBRARY_PATH=${DALROOT}/lib:${DALROOT}/lib/intel64:${LD_LIBRARY_PATH}
+      cp ${DALROOT}/lib/python3.11/site-packages/daal4py/_daal4py.cpython*.so daal4py/
+
       export LD_LIBRARY_PATH=${DALROOT}/lib:${DALROOT}/lib/intel64:${LD_LIBRARY_PATH}
       python -c "import daal4py; print('daal4py imported successfully')"
       python -c "import daal4py._daal4py; print('daal4py._daal4py imported successfully')"
