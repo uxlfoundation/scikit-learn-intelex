@@ -168,13 +168,18 @@ class BasicStatistics(IntelEstimator, BaseEstimator):
             f"'{self.__class__.__name__}' object has no attribute '{attr}'"
         )
 
-    def _onedal_supported(self, method_name, *data):
-
+    def _onedal_cpu_supported(self, method_name, *data):
         patching_status = PatchingConditionsChain(
             f"sklearnex.basic_statistics.{self.__class__.__name__}.{method_name}"
         )
+        return patching_status
 
+    def _onedal_gpu_supported(self, method_name, *data):
+        patching_status = PatchingConditionsChain(
+            f"sklearnex.basic_statistics.{self.__class__.__name__}.{method_name}"
+        )
         X, sample_weight = data
+
         is_data_supported = (
             _is_csr(X) and daal_check_version((2025, "P", 200))
         ) or not issparse(X)
@@ -194,9 +199,6 @@ class BasicStatistics(IntelEstimator, BaseEstimator):
             ]
         )
         return patching_status
-
-    _onedal_cpu_supported = _onedal_supported
-    _onedal_gpu_supported = _onedal_supported
 
     def _onedal_fit(self, X, sample_weight=None, queue=None):
         if sklearn_check_version("1.2"):
