@@ -18,33 +18,40 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 
-from onedal.tests.utils._device_selection import get_queues
+from onedal.tests.utils._dataframes_support import (
+    _as_numpy,
+    _convert_to_dataframe,
+    get_dataframes_and_queues,
+)
 
 
-@pytest.mark.parametrize("queue", get_queues())
-def test_onedal_import_covariance(queue):
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("numpy,np_sycl"))
+def test_onedal_import_covariance(dataframe, queue):
     from onedal.covariance import EmpiricalCovariance
 
     X = np.array([[0, 1], [0, 1]])
+    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     result = EmpiricalCovariance().fit(X, queue=queue)
     expected_covariance = np.array([[0, 0], [0, 0]])
     expected_means = np.array([0, 1])
 
-    assert_allclose(expected_covariance, result.covariance_)
-    assert_allclose(expected_means, result.location_)
+    assert_allclose(expected_covariance, _as_numpy(result.covariance_))
+    assert_allclose(expected_means, _as_numpy(result.location_))
 
     X = np.array([[1, 2], [3, 6]])
+    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     result = EmpiricalCovariance().fit(X, queue=queue)
     expected_covariance = np.array([[2, 4], [4, 8]])
     expected_means = np.array([2, 4])
 
-    assert_allclose(expected_covariance, result.covariance_)
-    assert_allclose(expected_means, result.location_)
+    assert_allclose(expected_covariance, _as_numpy(result.covariance_))
+    assert_allclose(expected_means, _as_numpy(result.location_))
 
     X = np.array([[1, 2], [3, 6]])
+    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     result = EmpiricalCovariance(bias=True).fit(X, queue=queue)
     expected_covariance = np.array([[1, 2], [2, 4]])
     expected_means = np.array([2, 4])
 
-    assert_allclose(expected_covariance, result.covariance_)
-    assert_allclose(expected_means, result.location_)
+    assert_allclose(expected_covariance, _as_numpy(result.covariance_))
+    assert_allclose(expected_means, _as_numpy(result.location_))
