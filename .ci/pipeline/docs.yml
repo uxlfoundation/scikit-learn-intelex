@@ -54,7 +54,7 @@ jobs:
     inputs:
       versionSpec: '3.11'
       addToPath: true
-  - script: sudo apt-get update && sudo apt-get install -y clang-format
+  - script: sudo apt-get update && sudo apt-get install -y clang-format && sudo apt-get install -y pandoc 
     displayName: 'apt-get'
   - script: |
       pip install daal-devel impi-devel
