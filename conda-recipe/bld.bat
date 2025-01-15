@@ -30,4 +30,5 @@ IF DEFINED DPCPPROOT (
     call "%DPCPPROOT%\env\vars.bat"
 )
 
-%PYTHON% setup.py install -j1 --single-version-externally-managed --record record.txt
+set MAKEFLAGS=-j1
+%PYTHON% setup.py install --single-version-externally-managed --record record.txt
