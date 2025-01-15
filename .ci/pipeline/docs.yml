@@ -69,7 +69,7 @@ jobs:
       export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
       ./conda-recipe/build.sh
       cp ${DALROOT}/lib/python3.11/site-packages/daal4py/_daal4py.cpython*.so daal4py/
-      python -c "import daal4py._daal4py; print('daal4py._daal4py imported successfully')"
+      python -c "from sklearnex.basic_statistics import BasicStatistics; print('BasicStatistics imported successfully')"
 
     displayName: 'Build daal4py/sklearnex'
   - script: |
@@ -85,6 +85,8 @@ jobs:
       export DALROOT=$PREFIX
       export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
       python -c "from sklearnex.basic_statistics import BasicStatistics; print('BasicStatistics imported successfully')"
+      echo "print ipynb path"
+      ls -l doc/sources/samples
       cd doc
       make html
     displayName: 'Build scikit-learn-intelex documentation'
