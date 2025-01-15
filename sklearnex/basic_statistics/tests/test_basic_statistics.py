@@ -17,14 +17,27 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
+from scipy import sparse as sp
 
 from daal4py.sklearn._utils import daal_check_version
-from onedal.basic_statistics.tests.utils import options_and_tests
+from onedal.basic_statistics.tests.utils import (
+    options_and_tests,
+    options_and_tests_sparse,
+)
 from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
+    get_queues,
 )
 from sklearnex.basic_statistics import BasicStatistics
+
+
+# Generate random sparse data using scipy.sparse.random or scipy.sparse.random_array
+def gen_sparse_data(row_count, column_count, **kwargs):
+    if hasattr(sp, "random_array"):
+        return sp.random_array((row_count, column_count), **kwargs)
+    else:
+        return sp.random(row_count, column_count, **kwargs)
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -41,9 +54,9 @@ def test_sklearnex_import_basic_statistics(dataframe, queue):
     expected_min = np.array([0, 0])
     expected_max = np.array([1, 1])
 
-    assert_allclose(expected_mean, result.mean)
-    assert_allclose(expected_max, result.max)
-    assert_allclose(expected_min, result.min)
+    assert_allclose(expected_mean, result.mean_)
+    assert_allclose(expected_max, result.max_)
+    assert_allclose(expected_min, result.min_)
 
     result = BasicStatistics().fit(X_df, sample_weight=weights_df)
 
@@ -51,9 +64,9 @@ def test_sklearnex_import_basic_statistics(dataframe, queue):
     expected_weighted_min = np.array([0, 0])
     expected_weighted_max = np.array([0.5, 0.5])
 
-    assert_allclose(expected_weighted_mean, result.mean)
-    assert_allclose(expected_weighted_min, result.min)
-    assert_allclose(expected_weighted_max, result.max)
+    assert_allclose(expected_weighted_mean, result.mean_)
+    assert_allclose(expected_weighted_min, result.min_)
+    assert_allclose(expected_weighted_max, result.max_)
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -78,16 +91,16 @@ def test_multiple_options_on_gold_data(dataframe, queue, weighted, dtype):
         expected_weighted_mean = np.array([0.25, 0.25])
         expected_weighted_min = np.array([0, 0])
         expected_weighted_max = np.array([0.5, 0.5])
-        assert_allclose(expected_weighted_mean, result.mean)
-        assert_allclose(expected_weighted_max, result.max)
-        assert_allclose(expected_weighted_min, result.min)
+        assert_allclose(expected_weighted_mean, result.mean_)
+        assert_allclose(expected_weighted_max, result.max_)
+        assert_allclose(expected_weighted_min, result.min_)
     else:
         expected_mean = np.array([0.5, 0.5])
         expected_min = np.array([0, 0])
         expected_max = np.array([1, 1])
-        assert_allclose(expected_mean, result.mean)
-        assert_allclose(expected_max, result.max)
-        assert_allclose(expected_min, result.min)
+        assert_allclose(expected_mean, result.mean_)
+        assert_allclose(expected_max, result.max_)
+        assert_allclose(expected_min, result.min_)
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -117,12 +130,49 @@ def test_single_option_on_random_data(
     else:
         result = basicstat.fit(X_df)
 
-    res = getattr(result, result_option)
+    res = getattr(result, result_option + "_")
     if weighted:
         weighted_data = np.diag(weights) @ X
         gtr = function(weighted_data)
     else:
         gtr = function(X)
+
+    tol = fp32tol if res.dtype == np.float32 else fp64tol
+    assert_allclose(gtr, res, atol=tol)
+
+
+@pytest.mark.parametrize("queue", get_queues())
+@pytest.mark.parametrize("result_option", options_and_tests_sparse.keys())
+@pytest.mark.parametrize("row_count", [1000, 10000])
+@pytest.mark.parametrize("column_count", [10, 100])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_single_option_on_random_sparse_data(
+    queue, result_option, row_count, column_count, dtype
+):
+    function, tols = options_and_tests_sparse[result_option]
+    fp32tol, fp64tol = tols
+    seed = 77
+
+    gen = np.random.default_rng(seed)
+
+    X_sparse = gen_sparse_data(
+        row_count,
+        column_count,
+        density=0.05,
+        format="csr",
+        dtype=dtype,
+        random_state=gen,
+    )
+
+    X_dense = X_sparse.toarray()
+
+    basicstat = BasicStatistics(result_options=result_option)
+
+    result = basicstat.fit(X_sparse)
+
+    res = getattr(result, result_option + "_")
+
+    gtr = function(X_dense)
 
     tol = fp32tol if res.dtype == np.float32 else fp64tol
     assert_allclose(gtr, res, atol=tol)
@@ -152,7 +202,7 @@ def test_multiple_options_on_random_data(
     else:
         result = basicstat.fit(X_df)
 
-    res_mean, res_max, res_sum = result.mean, result.max, result.sum
+    res_mean, res_max, res_sum = result.mean_, result.max_, result.sum_
     if weighted:
         weighted_data = np.diag(weights) @ X
         gtr_mean, gtr_max, gtr_sum = (
@@ -171,6 +221,49 @@ def test_multiple_options_on_random_data(
     assert_allclose(gtr_mean, res_mean, atol=tol)
     assert_allclose(gtr_max, res_max, atol=tol)
     assert_allclose(gtr_sum, res_sum, atol=tol)
+
+
+@pytest.mark.parametrize("queue", get_queues())
+@pytest.mark.parametrize("row_count", [100, 1000])
+@pytest.mark.parametrize("column_count", [10, 100])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_multiple_options_on_random_sparse_data(queue, row_count, column_count, dtype):
+    seed = 77
+
+    gen = np.random.default_rng(seed)
+
+    X_sparse = gen_sparse_data(
+        row_count,
+        column_count,
+        density=0.05,
+        format="csr",
+        dtype=dtype,
+        random_state=gen,
+    )
+
+    X_dense = X_sparse.toarray()
+
+    options = [
+        "sum",
+        "min",
+        "mean",
+        "standard_deviation",
+        "variance",
+        "second_order_raw_moment",
+    ]
+    basicstat = BasicStatistics(result_options=options)
+
+    result = basicstat.fit(X_sparse)
+
+    for result_option in options_and_tests_sparse:
+        function, tols = options_and_tests_sparse[result_option]
+        if not result_option in options:
+            continue
+        fp32tol, fp64tol = tols
+        res = getattr(result, result_option + "_")
+        gtr = function(X_dense)
+        tol = fp32tol if res.dtype == np.float32 else fp64tol
+        assert_allclose(gtr, res, atol=tol)
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -203,11 +296,45 @@ def test_all_option_on_random_data(
     for result_option in options_and_tests:
         function, tols = options_and_tests[result_option]
         fp32tol, fp64tol = tols
-        res = getattr(result, result_option)
+        res = getattr(result, result_option + "_")
         if weighted:
             gtr = function(weighted_data)
         else:
             gtr = function(X)
+        tol = fp32tol if res.dtype == np.float32 else fp64tol
+        assert_allclose(gtr, res, atol=tol)
+
+
+@pytest.mark.parametrize("queue", get_queues())
+@pytest.mark.parametrize("row_count", [100, 1000])
+@pytest.mark.parametrize("column_count", [10, 100])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_all_option_on_random_sparse_data(queue, row_count, column_count, dtype):
+    seed = 77
+
+    gen = np.random.default_rng(seed)
+
+    X_sparse = gen_sparse_data(
+        row_count,
+        column_count,
+        density=0.05,
+        format="csr",
+        dtype=dtype,
+        random_state=gen,
+    )
+    X_dense = X_sparse.toarray()
+
+    basicstat = BasicStatistics(result_options="all")
+
+    result = basicstat.fit(X_sparse)
+
+    for result_option in options_and_tests_sparse:
+        function, tols = options_and_tests_sparse[result_option]
+        fp32tol, fp64tol = tols
+        res = getattr(result, result_option + "_")
+
+        gtr = function(X_dense)
+
         tol = fp32tol if res.dtype == np.float32 else fp64tol
         assert_allclose(gtr, res, atol=tol)
 
@@ -238,7 +365,7 @@ def test_1d_input_on_random_data(
     else:
         result = basicstat.fit(X_df)
 
-    res = getattr(result, result_option)
+    res = getattr(result, result_option + "_")
     if weighted:
         weighted_data = weights * X
         gtr = function(weighted_data)
