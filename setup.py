@@ -419,7 +419,7 @@ class onedal_build:
         # None is default for setuptools for single threading
         # take the last defined value in MAKEFLAGS, as it will be the one
         # used by cmake/make
-        regex = r"(?<=(?<!\S)-j)\d*(?<!\S)|$"
+        regex = r"(?<=(?<!\S)-j)\d*(?!\S)|$"
         orig_n_threads = re.findall(regex, makeflags)[-1]
 
         if n_threads is None:
