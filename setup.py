@@ -322,7 +322,11 @@ def set_nthreads(n_threads):
     makeflags = os.getenv("MAKEFLAGS", "")
     # True is used by setuptools to indicate cpu_count for `parallel`
     # None is default for setuptools for single threading
-    orig_n_threads = re.findall(r"(?<=(?<!\S)-j)\d*|$", makeflags)[0]
+    # take the last defined value in MAKEFLAGS, do the regex on the
+    # reversed string because of the limitations in re.sub (only
+    # replace the last value)
+    regex_inv = r"(?<!\S)\d*(?=j-(?!\S))"
+    orig_n_threads = re.findall(regex_inv + "|$", makeflags[::-1])[0][::-1]
     if n_threads is None:
         n_threads = int(orig_n_threads) if orig_n_threads else os.cpu_count()
     elif n_threads is True:
@@ -332,8 +336,8 @@ def set_nthreads(n_threads):
         if orig_n_threads:
             # sub the value out
             os.environ["MAKEFLAGS"] = re.sub(
-                r"(?<=(?<!\S)-j)\d*", str(n_threads), makeflags, 1
-            )
+                regex_inv, str(n_threads)[::-1], makeflags[::-1], 1
+            )[::-1]
         else:
             # add the value to MAKEFLAGS since it is not set
             os.environ["MAKEFLAGS"] += f" -j{n_threads}"
