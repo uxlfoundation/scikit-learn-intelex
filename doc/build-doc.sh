@@ -29,4 +29,4 @@ rsync -a --exclude='doc/$SAMPLES_DIR/daal4py_data_science.ipynb' examples/notebo
 
 # build the documentation
 cd doc
-make html
+make build-and-check-autodoc-warnings

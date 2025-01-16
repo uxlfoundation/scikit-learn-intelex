@@ -34,3 +34,8 @@ help:
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
 %: Makefile
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+
+# Build doc, redirect any warnings and erros to log, return as error if autodoc is found
+build-and-check-autodoc-warnings:
+	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O) 2>&1 | tee build.log
+	@grep -i "autodoc" build.log && { echo "Autodoc Warnings, build failed!"; exit 1; } || echo "Build succeeded!"

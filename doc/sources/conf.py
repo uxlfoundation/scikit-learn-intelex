@@ -34,6 +34,7 @@ import sys
 
 sys.path.insert(0, os.path.abspath("../"))
 
+
 # -- Project information -----------------------------------------------------
 
 project = "Intel(R) Extension for Scikit-learn*"
