@@ -14,6 +14,8 @@
 # limitations under the License.
 # ===============================================================================
 
+import numpy as np
+
 from sklearn.metrics import accuracy_score
 from sklearn.neighbors._classification import (
     KNeighborsClassifier as _sklearn_KNeighborsClassifier,
