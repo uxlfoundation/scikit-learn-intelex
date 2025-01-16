@@ -29,4 +29,11 @@ rsync -a --exclude='doc/$SAMPLES_DIR/daal4py_data_science.ipynb' examples/notebo
 
 # build the documentation
 cd doc
-make html
+SPHINXOPTS="-W" make html 2>&1 | tee build.log
+
+cat build.log
+
+# check for autodoc warnings
+if grep "WARNING" build.log; then
+    echo "Warnings detected, build failed!"
+  exit 1
