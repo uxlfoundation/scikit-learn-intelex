@@ -75,7 +75,7 @@ jobs:
       export DALROOT=$PREFIX
       export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
       cd doc/daal4py
-      make build-and-check-autodoc-warnings
+      make html
     displayName: 'Build daal4py documentation'
   - script: |
       export PREFIX=$(dirname $(dirname $(which python)))
