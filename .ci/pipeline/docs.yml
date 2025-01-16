@@ -78,8 +78,8 @@ jobs:
       cat build.log
       # check for autodoc warnings
       if grep -i "autodoc" build.log; then
-          echo "Autodoc Warnings detected, build failed!"
-          exit 1
+        echo "Autodoc Warnings detected, build failed!"
+        exit 1
     displayName: 'Build daal4py documentation'
   - script: |
       export PREFIX=$(dirname $(dirname $(which python)))
