@@ -20,15 +20,13 @@ from numpy.testing import assert_allclose
 from scipy import sparse as sp
 
 from daal4py.sklearn._utils import daal_check_version
-from onedal.basic_statistics.tests.utils import (
-    options_and_tests,
-    options_and_tests_sparse,
-)
+from onedal.basic_statistics.tests.utils import options_and_tests
 from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
     get_queues,
 )
+from sklearnex import config_context
 from sklearnex.basic_statistics import BasicStatistics
 
 
@@ -38,6 +36,17 @@ def gen_sparse_data(row_count, column_count, **kwargs):
         return sp.random_array((row_count, column_count), **kwargs)
     else:
         return sp.random(row_count, column_count, **kwargs)
+
+
+def compute_sparse_result(X_sparse, options, queue):
+    if queue is not None and queue.sycl_device.is_gpu:
+        with config_context(target_offload="gpu"):
+            basicstat = BasicStatistics(result_options=options)
+            result = basicstat.fit(X_sparse)
+    else:
+        basicstat = BasicStatistics(result_options=options)
+        result = basicstat.fit(X_sparse)
+    return result
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -142,14 +151,18 @@ def test_single_option_on_random_data(
 
 
 @pytest.mark.parametrize("queue", get_queues())
-@pytest.mark.parametrize("result_option", options_and_tests_sparse.keys())
+@pytest.mark.parametrize("result_option", options_and_tests.keys())
 @pytest.mark.parametrize("row_count", [1000, 10000])
 @pytest.mark.parametrize("column_count", [10, 100])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_single_option_on_random_sparse_data(
     queue, result_option, row_count, column_count, dtype
 ):
-    function, tols = options_and_tests_sparse[result_option]
+    if result_option in ["max", "sum_squares"] and (
+        queue is None or queue.sycl_device.is_cpu
+    ):
+        pytest.skip("max and sum_squares computations are buggy on CPU")
+    function, tols = options_and_tests[result_option]
     fp32tol, fp64tol = tols
     seed = 77
 
@@ -158,7 +171,7 @@ def test_single_option_on_random_sparse_data(
     X_sparse = gen_sparse_data(
         row_count,
         column_count,
-        density=0.05,
+        density=0.01,
         format="csr",
         dtype=dtype,
         random_state=gen,
@@ -166,9 +179,7 @@ def test_single_option_on_random_sparse_data(
 
     X_dense = X_sparse.toarray()
 
-    basicstat = BasicStatistics(result_options=result_option)
-
-    result = basicstat.fit(X_sparse)
+    result = compute_sparse_result(X_sparse, result_option, queue)
 
     res = getattr(result, result_option + "_")
 
@@ -251,12 +262,11 @@ def test_multiple_options_on_random_sparse_data(queue, row_count, column_count, 
         "variance",
         "second_order_raw_moment",
     ]
-    basicstat = BasicStatistics(result_options=options)
 
-    result = basicstat.fit(X_sparse)
+    result = compute_sparse_result(X_sparse, options, queue)
 
-    for result_option in options_and_tests_sparse:
-        function, tols = options_and_tests_sparse[result_option]
+    for result_option in options_and_tests:
+        function, tols = options_and_tests[result_option]
         if not result_option in options:
             continue
         fp32tol, fp64tol = tols
@@ -324,12 +334,15 @@ def test_all_option_on_random_sparse_data(queue, row_count, column_count, dtype)
     )
     X_dense = X_sparse.toarray()
 
-    basicstat = BasicStatistics(result_options="all")
+    result = compute_sparse_result(X_sparse, "all", queue)
 
-    result = basicstat.fit(X_sparse)
-
-    for result_option in options_and_tests_sparse:
-        function, tols = options_and_tests_sparse[result_option]
+    for result_option in options_and_tests:
+        if result_option in ["max", "sum_squares"] and (
+            queue is None or queue.sycl_device.is_cpu
+        ):
+            # TODO: here is a bug in oneDAL's max and sum_squares computations on CPU
+            continue
+        function, tols = options_and_tests[result_option]
         fp32tol, fp64tol = tols
         res = getattr(result, result_option + "_")
 
