@@ -34,3 +34,6 @@ flags:
     after_n_builds: 1
   azure:
     after_n_builds: 8
+
+github_checks:
+  annotations: false
