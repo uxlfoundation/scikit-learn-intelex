@@ -17,8 +17,7 @@
 trigger:
   branches:
     include:
-    - main
-    - rls/*
+    - "*"
   paths:
     include:
     - requirements-doc.txt
@@ -48,13 +47,14 @@ jobs:
     vmImage: 'ubuntu-22.04'
   steps:
   - script: |
+      source /opt/intel/oneapi/compiler/latest/env/vars.sh
       bash .ci/scripts/describe_system.sh
     displayName: 'System info'
   - task: UsePythonVersion@0
     inputs:
       versionSpec: '3.11'
       addToPath: true
-  - script: sudo apt-get update && sudo apt-get install -y clang-format
+  - script: sudo apt-get update && sudo apt-get install -y clang-format && sudo apt-get install -y pandoc 
     displayName: 'apt-get'
   - script: |
       pip install daal-devel impi-devel
@@ -66,16 +66,23 @@ jobs:
   - script: |
       export PREFIX=$(dirname $(dirname $(which python)))
       export DALROOT=$PREFIX
+      export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
       ./conda-recipe/build.sh
+      cp ${DALROOT}/lib/python3.11/site-packages/daal4py/_daal4py.cpython*.so daal4py/
     displayName: 'Build daal4py/sklearnex'
   - script: |
+      export PREFIX=$(dirname $(dirname $(which python)))
+      export DALROOT=$PREFIX
       export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
       cd doc/daal4py
       make html
     displayName: 'Build daal4py documentation'
   - script: |
+      export PREFIX=$(dirname $(dirname $(which python)))
+      export DALROOT=$PREFIX
+      export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
       cd doc
-      make html
+      ./build-doc.sh
     displayName: 'Build scikit-learn-intelex documentation'
   - script: |
       mkdir $(Build.ArtifactStagingDirectory)/html/daal4py
