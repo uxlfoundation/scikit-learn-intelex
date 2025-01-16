@@ -469,7 +469,7 @@ class onedal_build:
 
 
 class develop(onedal_build, orig_develop.develop):
-    pass
+    parallel = None
 
 
 class build(onedal_build, orig_build.build):
