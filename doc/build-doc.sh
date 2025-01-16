@@ -36,4 +36,4 @@ cat build.log
 # check for autodoc warnings
 if grep "WARNING" build.log; then
     echo "Warnings detected, build failed!"
-  exit 1
+    exit 1
