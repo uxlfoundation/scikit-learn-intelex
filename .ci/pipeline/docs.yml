@@ -71,11 +71,15 @@ jobs:
       cp ${DALROOT}/lib/python3.11/site-packages/daal4py/_daal4py.cpython*.so daal4py/
     displayName: 'Build daal4py/sklearnex'
   - script: |
+      export PREFIX=$(dirname $(dirname $(which python)))
+      export DALROOT=$PREFIX
       export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
       cd doc/daal4py
       make build-and-check-autodoc-warnings
     displayName: 'Build daal4py documentation'
   - script: |
+      export PREFIX=$(dirname $(dirname $(which python)))
+      export DALROOT=$PREFIX
       export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
       cd doc
       ./build-doc.sh
