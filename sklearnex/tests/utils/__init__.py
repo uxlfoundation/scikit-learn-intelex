@@ -25,8 +25,8 @@ from .base import (
     _get_processor_info,
     call_method,
     gen_dataset,
-    gen_sparse_dataset,
     gen_models_info,
+    gen_sparse_dataset,
     sklearn_clone_dict,
 )
 
