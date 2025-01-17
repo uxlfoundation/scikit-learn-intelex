@@ -407,10 +407,9 @@ PyObject *convert_to_pyobject(const dal::table &input) {
                                             homogen_input.get_row_count(),     \
                                             homogen_input.get_column_count()); \
     }
-        SET_CTYPE_NPY_FROM_DAL_TYPE(
-            dtype,
-            MAKE_NYMPY_FROM_HOMOGEN,
-            throw std::invalid_argument("Unable to convert numpy object"));
+        SET_CTYPE_NPY_FROM_DAL_TYPE(dtype,
+                                    MAKE_NYMPY_FROM_HOMOGEN,
+                                    throw std::invalid_argument("Unable to convert numpy object"));
 #undef MAKE_NYMPY_FROM_HOMOGEN
     }
     else if (input.get_kind() == csr_table_t::kind()) {
