@@ -64,7 +64,7 @@ jobs:
     displayName: 'Install requirements'
   - script: |
       # export PREFIX=$(dirname $(dirname $(which python)))
-      # export DALROOT=$PREFIX
+      export DALROOT=$(dirname $(dirname $(which python)))
       # export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
       NO_DPC=1
       NO_DIST=1
