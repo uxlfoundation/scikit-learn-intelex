@@ -201,8 +201,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     def _onedal_kneighbors(
         self, X=None, n_neighbors=None, return_distance=True, queue=None
     ):
-        if X:
-            X = validate_data(self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False)
+        X = validate_data(self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False)
         return self._onedal_estimator.kneighbors(
             X, n_neighbors, return_distance, queue=queue
         )
