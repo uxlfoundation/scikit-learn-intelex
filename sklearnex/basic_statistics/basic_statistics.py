@@ -184,7 +184,7 @@ class BasicStatistics(IntelEstimator, BaseEstimator):
             _is_csr(X) and daal_check_version((2025, "P", 200))
         ) or not issparse(X)
 
-        is_sample_weight_supported = not (sample_weight and issparse(X))
+        is_sample_weight_supported = sample_weight is None or not issparse(X)
 
         patching_status.and_conditions(
             [

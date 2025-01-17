@@ -26,7 +26,12 @@ options_and_tests = {
         lambda X: (
             np.std(X, axis=0) / np.mean(X, axis=0)
             if np.all(np.mean(X, axis=0))
-            else np.full(X.shape, np.inf)
+            else np.array(
+                [
+                    x / y if y != 0 else np.nan
+                    for x, y in zip(np.std(X, axis=0), np.mean(X, axis=0))
+                ]
+            )
         ),
         (0.1, 0.1),
     ),
