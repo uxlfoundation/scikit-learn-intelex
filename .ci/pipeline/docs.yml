@@ -70,7 +70,7 @@ jobs:
       NO_DIST=1
       python setup.py build_ext --inplace
       ./conda-recipe/build.sh
-      cp ${DALROOT}/lib/python3.11/site-packages/daal4py/_daal4py.cpython*.so daal4py/
+      # cp ${DALROOT}/lib/python3.11/site-packages/daal4py/_daal4py.cpython*.so daal4py/
     displayName: 'Build daal4py/sklearnex'
   - script: |
       # export PREFIX=$(dirname $(dirname $(which python)))
