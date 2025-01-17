@@ -64,8 +64,6 @@ jobs:
     displayName: 'Install requirements'
   - script: |
       export DALROOT=$(dirname $(dirname $(which python)))
-      export NO_DPC=1
-      export NO_DIST=1
       python setup.py build_ext --inplace
       ./conda-recipe/build.sh
     displayName: 'Build daal4py/sklearnex'
