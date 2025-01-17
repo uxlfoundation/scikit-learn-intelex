@@ -410,7 +410,7 @@ PyObject *convert_to_pyobject(const dal::table &input) {
         SET_CTYPE_NPY_FROM_DAL_TYPE(
             dtype,
             MAKE_NYMPY_FROM_HOMOGEN,
-            throw std::invalid_argument("Not avalible to convert a numpy"));
+            throw std::invalid_argument("Unable to convert numpy object"));
 #undef MAKE_NYMPY_FROM_HOMOGEN
     }
     else if (input.get_kind() == csr_table_t::kind()) {
@@ -421,7 +421,7 @@ PyObject *convert_to_pyobject(const dal::table &input) {
         SET_CTYPES_NPY_FROM_DAL_TYPE(
             dtype,
             MAKE_PY_FROM_CSR,
-            throw std::invalid_argument("Not avalible to convert a scipy.csr"));
+            throw std::invalid_argument("Unable to convert scipy csr object"));
 #undef MAKE_PY_FROM_CSR
     }
     else {
