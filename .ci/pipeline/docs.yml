@@ -66,8 +66,8 @@ jobs:
       # export PREFIX=$(dirname $(dirname $(which python)))
       export DALROOT=$(dirname $(dirname $(which python)))
       # export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
-      NO_DPC=1
-      NO_DIST=1
+      export NO_DPC=1
+      export NO_DIST=1
       python setup.py build_ext --inplace
       ./conda-recipe/build.sh
       # cp ${DALROOT}/lib/python3.11/site-packages/daal4py/_daal4py.cpython*.so daal4py/
@@ -75,7 +75,7 @@ jobs:
   - script: |
       # export PREFIX=$(dirname $(dirname $(which python)))
       # export DALROOT=$PREFIX
-      # export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
+      export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
       cd doc/daal4py
       make html 2>&1 | tee build.log
       cat build.log
@@ -88,7 +88,7 @@ jobs:
   - script: |
       # export PREFIX=$(dirname $(dirname $(which python)))
       # export DALROOT=$PREFIX
-      # export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
+      export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
       cd doc
       ./build-doc.sh
     displayName: 'Build scikit-learn-intelex documentation'
