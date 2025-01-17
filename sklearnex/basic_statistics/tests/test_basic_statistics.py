@@ -28,16 +28,10 @@ from onedal.tests.utils._dataframes_support import (
 )
 from sklearnex import config_context
 from sklearnex.basic_statistics import BasicStatistics
+from sklearnex.tests.utils import gen_sparse_dataset
 
 
-# Generate random sparse data using scipy.sparse.random or scipy.sparse.random_array
-def gen_sparse_data(row_count, column_count, **kwargs):
-    if hasattr(sp, "random_array"):
-        return sp.random_array((row_count, column_count), **kwargs)
-    else:
-        return sp.random(row_count, column_count, **kwargs)
-
-
+# Compute the basic statistics on sparse data on CPU or GPU depending on the queue
 def compute_sparse_result(X_sparse, options, queue):
     if queue is not None and queue.sycl_device.is_gpu:
         with config_context(target_offload="gpu"):
@@ -168,7 +162,7 @@ def test_single_option_on_random_sparse_data(
 
     gen = np.random.default_rng(seed)
 
-    X_sparse = gen_sparse_data(
+    X_sparse = gen_sparse_dataset(
         row_count,
         column_count,
         density=0.01,
@@ -243,7 +237,7 @@ def test_multiple_options_on_random_sparse_data(queue, row_count, column_count, 
 
     gen = np.random.default_rng(seed)
 
-    X_sparse = gen_sparse_data(
+    X_sparse = gen_sparse_dataset(
         row_count,
         column_count,
         density=0.05,
@@ -324,7 +318,7 @@ def test_all_option_on_random_sparse_data(queue, row_count, column_count, dtype)
 
     gen = np.random.default_rng(seed)
 
-    X_sparse = gen_sparse_data(
+    X_sparse = gen_sparse_dataset(
         row_count,
         column_count,
         density=0.05,
