@@ -14,6 +14,14 @@
 # limitations under the License.
 # ==============================================================================
 
+from os import environ
+
+# sklearn requires manual enabling of Scipy array API support
+# if `array-api-compat` package is present in environment
+# TODO: create generic approach to handle this for all tests
+environ["SCIPY_ARRAY_API"] = "1"
+
+
 import unittest
 
 import sklearn.utils.estimator_checks

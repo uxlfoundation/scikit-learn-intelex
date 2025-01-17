@@ -1,3 +1,19 @@
+<!--
+  ~ Copyright 2021 Intel Corporation
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+-->
+
 # daal4py - A Convenient Python API to the Intel(R) oneAPI Data Analytics Library
 [![Build Status](https://dev.azure.com/daal/daal4py/_apis/build/status/CI?branchName=main)](https://dev.azure.com/daal/daal4py/_build/latest?definitionId=9&branchName=main)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/21716/badge.svg)](https://scan.coverity.com/projects/daal4py)
@@ -23,15 +39,15 @@ We publish blogs on Medium, so [follow us](https://medium.com/intel-analytics-so
 ## 🔗 Important links
 - [Documentation](https://intelpython.github.io/daal4py/)
 - [scikit-learn API and patching](https://intelpython.github.io/daal4py/sklearn.html#sklearn)
-- [Building from Sources](https://github.com/intel/scikit-learn-intelex/blob/main/daal4py/INSTALL.md)
-- [About Intel(R) oneAPI Data Analytics Library](https://github.com/oneapi-src/oneDAL)
+- [Building from Sources](https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/daal4py/INSTALL.md)
+- [About Intel(R) oneAPI Data Analytics Library](https://github.com/uxlfoundation/oneDAL)
 
 ## 💬 Support
 
 Report issues, ask questions, and provide suggestions using:
 
-- [GitHub Issues](https://github.com/intel/scikit-learn-intelex/issues)
-- [GitHub Discussions](https://github.com/intel/scikit-learn-intelex/discussions)
+- [GitHub Issues](https://github.com/uxlfoundation/scikit-learn-intelex/issues)
+- [GitHub Discussions](https://github.com/uxlfoundation/scikit-learn-intelex/discussions)
 - [Forum](https://community.intel.com/t5/Intel-Distribution-for-Python/bd-p/distribution-python)
 
 You may reach out to project maintainers privately at onedal.maintainers@intel.com
@@ -110,9 +126,9 @@ conda install impi_rt -c intel
 
 </details>
 
-You can [build daal4py from sources](https://github.com/intel/scikit-learn-intelex/blob/main/INSTALL.md) as well.
+You can [build daal4py from sources](https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/INSTALL.md) as well.
 
 
 # ⚠️ Scikit-learn patching
 
-Scikit-learn patching functionality in daal4py was deprecated and moved to a separate package - [Intel(R) Extension for Scikit-learn*](https://github.com/intel/scikit-learn-intelex). All future updates for the patching will be available in Intel(R) Extension for Scikit-learn only. Please use the package instead of daal4py for the Scikit-learn acceleration.
+Scikit-learn patching functionality in daal4py was deprecated and moved to a separate package - [Intel(R) Extension for Scikit-learn*](https://github.com/uxlfoundation/scikit-learn-intelex). All future updates for the patching will be available in Intel(R) Extension for Scikit-learn only. Please use the package instead of daal4py for the Scikit-learn acceleration.

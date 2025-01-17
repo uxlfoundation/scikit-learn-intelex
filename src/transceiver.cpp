@@ -30,16 +30,24 @@ static std::mutex s_mtx;
 // We load a python module to get the actual transceiver implementation.
 // We inspect D4P_TRANSCEIVER env var for using a non-default module.
 // We throw an exception if something goes wrong (like the module cannot be loaded).
-#define CHECK() if(PyErr_Occurred()) { PyErr_Print(); PyGILState_Release(gilstate); throw std::runtime_error("Python Error"); }
+#define CHECK()                                   \
+    if (PyErr_Occurred())                         \
+    {                                             \
+        PyErr_Print();                            \
+        PyGILState_Release(gilstate);             \
+        throw std::runtime_error("Python Error"); \
+    }
 transceiver * get_transceiver()
 {
-    if(!s_trsc) {
+    if (!s_trsc)
+    {
         std::lock_guard<std::mutex> lock(s_mtx);
-        if(!s_trsc) {
+        if (!s_trsc)
+        {
             auto gilstate = PyGILState_Ensure();
 
             const char * modname = std::getenv("D4P_TRANSCEIVER");
-            if(modname == NULL ) modname = "daal4py.mpi_transceiver";
+            if (modname == NULL) modname = "daal4py.mpi_transceiver";
 
             PyObject * mod = PyImport_ImportModule(modname);
             CHECK();
@@ -51,7 +59,7 @@ transceiver * get_transceiver()
             PyGILState_Release(gilstate);
 
             // we expect the tcvr to be a pointer to a (static) shared-pointer object.
-            s_trsc.reset(new transceiver(*reinterpret_cast<std::shared_ptr<transceiver_iface>*>(tcvr)));
+            s_trsc.reset(new transceiver(*reinterpret_cast<std::shared_ptr<transceiver_iface> *>(tcvr)));
         }
     }
     return s_trsc.get();
@@ -60,11 +68,13 @@ transceiver * get_transceiver()
 
 void del_transceiver()
 {
-    if(s_trsc) {
+    if (s_trsc)
+    {
         std::lock_guard<std::mutex> lock(s_mtx);
-        if(s_trsc) {
+        if (s_trsc)
+        {
             auto gilstate = PyGILState_Ensure();
             s_trsc.reset();
-		}
-	}
+        }
+    }
 }

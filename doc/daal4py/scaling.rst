@@ -1,18 +1,16 @@
-.. ******************************************************************************
-.. * Copyright 2020 Intel Corporation
-.. *
-.. * Licensed under the Apache License, Version 2.0 (the "License");
-.. * you may not use this file except in compliance with the License.
-.. * You may obtain a copy of the License at
-.. *
-.. *     http://www.apache.org/licenses/LICENSE-2.0
-.. *
-.. * Unless required by applicable law or agreed to in writing, software
-.. * distributed under the License is distributed on an "AS IS" BASIS,
-.. * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-.. * See the License for the specific language governing permissions and
-.. * limitations under the License.
-.. *******************************************************************************/
+.. Copyright 2020 Intel Corporation
+..
+.. Licensed under the Apache License, Version 2.0 (the "License");
+.. you may not use this file except in compliance with the License.
+.. You may obtain a copy of the License at
+..
+..     http://www.apache.org/licenses/LICENSE-2.0
+..
+.. Unless required by applicable law or agreed to in writing, software
+.. distributed under the License is distributed on an "AS IS" BASIS,
+.. WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+.. See the License for the specific language governing permissions and
+.. limitations under the License.
 
 .. _distributed:
 
@@ -76,36 +74,36 @@ The following algorithms support distribution:
 
 - PCA (pca)
 
-  - `PCA <https://github.com/intel/scikit-learn-intelex/tree/main/examples/daal4py/pca_spmd.py>`_
+  - `PCA <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/pca_spmd.py>`_
 
 - SVD (svd)
 
-  - `SVD <https://github.com/intel/scikit-learn-intelex/tree/main/examples/daal4py/svd_spmd.py>`_
+  - `SVD <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/svd_spmd.py>`_
 
 - Linear Regression Training (linear_regression_training)
 
-  - `Linear Regression <https://github.com/intel/scikit-learn-intelex/tree/main/examples/daal4py/linear_regression_spmd.py>`_
+  - `Linear Regression <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/linear_regression_spmd.py>`_
 
 - Ridge Regression Training (ridge_regression_training)
 
-  - `Ridge Regression <https://github.com/intel/scikit-learn-intelex/tree/main/examples/daal4py/ridge_regression_spmd.py>`_
+  - `Ridge Regression <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/ridge_regression_spmd.py>`_
 
 - Multinomial Naive Bayes Training (multinomial_naive_bayes_training)
 
-  - `Naive Bayes <https://github.com/intel/scikit-learn-intelex/tree/main/examples/daal4py/naive_bayes_spmd.py>`_
+  - `Naive Bayes <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/naive_bayes_spmd.py>`_
 
 - K-Means (kmeans_init and kmeans)
 
-  - `K-Means <https://github.com/intel/scikit-learn-intelex/tree/main/examples/daal4py/kmeans_spmd.py>`_
+  - `K-Means <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/kmeans_spmd.py>`_
 
 - Correlation and Variance-Covariance Matrices (covariance)
 
-  - `Covariance <https://github.com/intel/scikit-learn-intelex/tree/main/examples/daal4py/covariance_spmd.py>`_
+  - `Covariance <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/covariance_spmd.py>`_
 
 - Moments of Low Order (low_order_moments)
 
-  - `Low Order Moments <https://github.com/intel/scikit-learn-intelex/tree/main/examples/daal4py/low_order_moms_spmd.py>`_
+  - `Low Order Moments <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/low_order_moms_spmd.py>`_
 
 - QR Decomposition (qr)
 
-  - `QR <https://github.com/intel/scikit-learn-intelex/tree/main/examples/daal4py/qr_spmd.py>`_
+  - `QR <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/qr_spmd.py>`_

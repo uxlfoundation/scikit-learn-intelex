@@ -122,6 +122,7 @@ if daal_check_version((2023, "P", 200)):
                         self.algorithm in supported_algs,
                         "Only 'lloyd' algorithm is supported, 'elkan' is computed using lloyd",
                     ),
+                    (self.n_clusters != 1, "n_clusters=1 is not supported"),
                     (correct_count, "n_clusters is smaller than number of samples"),
                     (
                         _acceptable_sample_weights,
@@ -230,6 +231,7 @@ if daal_check_version((2023, "P", 200)):
                         self.algorithm in supported_algs,
                         "Only 'lloyd' algorithm is supported, 'elkan' is computed using lloyd.",
                     ),
+                    (self.n_clusters != 1, "n_clusters=1 is not supported"),
                     (
                         is_data_supported,
                         "Supported data formats: Dense, CSR (oneDAL version >= 2024.7.0).",

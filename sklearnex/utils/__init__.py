@@ -14,6 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 
-from .validation import _assert_all_finite
+from .validation import assert_all_finite
 
-__all__ = ["_assert_all_finite"]
+__all__ = ["assert_all_finite"]

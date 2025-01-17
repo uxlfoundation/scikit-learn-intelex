@@ -11,6 +11,7 @@ daal4py.egg-info
 **/.ipynb_checkpoints
 doc/_build
 doc/sources/samples/*.ipynb
+doc/daal4py/_build/
 *.obj
 *.pyd
 build_oneapi_backend
@@ -34,3 +35,7 @@ tests/_results*
 
 # json reports from pytest
 .pytest_reports/*
+
+# Configurations from file explorers
+.directory
+.DS_Store

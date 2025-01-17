@@ -14,8 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 
-import time
-
 import numpy as np
 import numpy.random as rand
 import pytest
@@ -65,7 +63,7 @@ def test_sum_infinite_actually_finite(dtype, shape, allow_nan, dataframe, queue)
 )
 @pytest.mark.parametrize("allow_nan", [False, True])
 @pytest.mark.parametrize("check", ["inf", "NaN", None])
-@pytest.mark.parametrize("seed", [0, int(time.time())])
+@pytest.mark.parametrize("seed", [0, 123456])
 @pytest.mark.parametrize(
     "dataframe, queue", get_dataframes_and_queues("numpy,dpnp,dpctl")
 )
@@ -92,7 +90,7 @@ def test_assert_finite_random_location(
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("allow_nan", [False, True])
 @pytest.mark.parametrize("check", ["inf", "NaN", None])
-@pytest.mark.parametrize("seed", [0, int(time.time())])
+@pytest.mark.parametrize("seed", [0, 123456])
 @pytest.mark.parametrize(
     "dataframe, queue", get_dataframes_and_queues("numpy,dpnp,dpctl")
 )
@@ -120,7 +118,7 @@ def test_assert_finite_random_shape_and_location(
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("allow_nan", [False, True])
 @pytest.mark.parametrize("check", ["inf", "NaN", None])
-@pytest.mark.parametrize("seed", [0, int(time.time())])
+@pytest.mark.parametrize("seed", [0, 123456])
 def test_assert_finite_sparse(dtype, allow_nan, check, seed):
     lb, ub = 2, 2056
     rand.seed(seed)

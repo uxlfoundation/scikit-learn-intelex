@@ -16,6 +16,7 @@
 
 import numpy as np
 import pytest
+import scipy.sparse as sp
 from numpy.testing import assert_allclose
 
 from onedal import _backend, _is_dpc_backend
@@ -403,3 +404,41 @@ def test_sua_iface_interop_if_no_dpc_backend(dataframe, queue, dtype):
     expected_err_msg = "SYCL usm array conversion to table requires the DPC backend"
     with pytest.raises(RuntimeError, match=expected_err_msg):
         to_table(X)
+
+
+@pytest.mark.skipif(
+    not _is_dpc_backend, reason="Requires DPC backend for dtype conversion"
+)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("sparse", [True, False])
+def test_low_precision_gpu_conversion(dtype, sparse):
+    # Use a dummy queue as fp32 hardware is not in public testing
+
+    class DummySyclQueue:
+        """This class is designed to act like dpctl.SyclQueue
+        to force dtype conversion"""
+
+        class DummySyclDevice:
+            has_aspect_fp64 = False
+
+        sycl_device = DummySyclDevice()
+
+    queue = DummySyclQueue()
+
+    if sparse:
+        X = sp.random(100, 100, format="csr", dtype=dtype)
+    else:
+        X = np.random.rand(100, 100).astype(dtype)
+
+    if dtype == np.float64:
+        with pytest.warns(
+            RuntimeWarning,
+            match="Data will be converted into float32 from float64 because device does not support it",
+        ):
+            X_table = to_table(X, queue=queue)
+    else:
+        X_table = to_table(X, queue=queue)
+
+    assert X_table.dtype == np.float32
+    if dtype == np.float32 and not sparse:
+        assert_allclose(X, from_table(X_table))

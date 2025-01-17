@@ -18,6 +18,7 @@ steps:
     displayName: "apt-get"
   - script: |
       bash .ci/scripts/install_dpcpp.sh
+    condition: and(eq(variables.NO_DPC, ''), eq(variables.DPCPPROOT, ''))
     displayName: "dpcpp installation"
   - script: |
       source /opt/intel/oneapi/compiler/latest/env/vars.sh
@@ -27,20 +28,28 @@ steps:
       conda config --add channels conda-forge
       conda config --set channel_priority strict
       conda update -y -q conda
-      conda create -q -y -n CB -c conda-forge python=$(PYTHON_VERSION) dal-devel=2025 mpich pyyaml dpcpp-cpp-rt=2025.0
+      conda create -q -y -n CB -c conda-forge python=$(PYTHON_VERSION) mpich pyyaml dpcpp-cpp-rt=2025.0
     displayName: "Conda create"
   - script: |
       . /usr/share/miniconda/etc/profile.d/conda.sh
       conda activate CB
+      if [ -z "${DALROOT}" ]; then conda install -q -y -c conda-forge dal-devel=2025; fi
       pip install -r dependencies-dev
       pip list
+    env:
+      DALROOT: ${{ variables.DALROOT }}
     displayName: "Install develop requirements"
   - script: |
-      export DPCPPROOT=/opt/intel/oneapi/compiler/latest
+      if [ -z "${DPCPPROOT}" ]; then export DPCPPROOT=/opt/intel/oneapi/compiler/latest; fi
       . /usr/share/miniconda/etc/profile.d/conda.sh
       conda activate CB
-      export DALROOT=$CONDA_PREFIX
+      if [ -z "${DALROOT}" ]; then export DALROOT=$CONDA_PREFIX; fi
       ./conda-recipe/build.sh
+    env:
+      NO_DPC: ${{ variables.NO_DPC }}
+      NO_DIST: ${{ variables.NO_DIST }}
+      DPCPPROOT: ${{ variables.DPCPPROOT }}
+      DALROOT: ${{ variables.DALROOT }}
     displayName: "Build daal4py/sklearnex"
   - script: |
       . /usr/share/miniconda/etc/profile.d/conda.sh
@@ -50,26 +59,44 @@ steps:
       pip install $(python .ci/scripts/get_compatible_scipy_version.py)
       # dpep installation is set to pypi to avoid conflict of numpy versions from pip and conda
       # py312 is disabled due to segfault on exit of program with usage of dpctl
-      if [ $(echo $(PYTHON_VERSION) | grep '3.9\|3.10\|3.11') ] && [ $(SKLEARN_VERSION) != "1.0" ]; then pip install dpctl==0.18.* dpnp==0.16.*; fi
+      if [ $(echo $(PYTHON_VERSION) | grep '3.9\|3.10\|3.11') ] && [ $(SKLEARN_VERSION) != "1.0" ] && [ -z ${NO_DPC} ]; then pip install dpctl==0.18.* dpnp==0.16.*; fi
       pip list
+    env:
+      NO_DPC: ${{ variables.NO_DPC }}
     displayName: "Install testing requirements"
   - script: |
       . /usr/share/miniconda/etc/profile.d/conda.sh
       conda activate CB
+      if [ -n "${COVERAGE_RCFILE}" ]; then export COVERAGE_FILE=$(pwd)/.coverage.sklearnex; fi
       cd ..
+      if [ -n "${TBBROOT}" ] && [ "${TBBROOT}" != "${CONDA_PREFIX}" ]; then source ${TBBROOT}/env/vars.sh; fi
       ./s/conda-recipe/run_test.sh --json-report
+    env:
+      TBBROOT: ${{ variables.TBBROOT }}
+      COVERAGE_RCFILE: ${{ variables.COVERAGE_RCFILE }}
     displayName: "Sklearnex testing"
   - script: |
       . /usr/share/miniconda/etc/profile.d/conda.sh
       conda activate CB
-      bash .ci/scripts/run_sklearn_tests.sh cpu
+      if [ -n "${TBBROOT}" ] && [ "${TBBROOT}" != "${CONDA_PREFIX}" ]; then source ${TBBROOT}/env/vars.sh; fi
+      if [ -n "${COVERAGE_RCFILE}" ]; then export COVERAGE_FILE=$(pwd)/.coverage.sklearn; fi
+      if [ -z "${NO_DPC}" ]; then export CPU="cpu"; fi
+      bash .ci/scripts/run_sklearn_tests.sh $CPU
+    env:
+      TBBROOT: ${{ variables.TBBROOT }}
+      COVERAGE_RCFILE: ${{ variables.COVERAGE_RCFILE }}
+      NO_DPC: ${{ variables.NO_DPC }}
     displayName: "Sklearn testing"
     condition: succeededOrFailed()
   - script: |
       . /usr/share/miniconda/etc/profile.d/conda.sh
       conda activate CB
-      bash .ci/scripts/run_sklearn_tests.sh cpu
+      if [ -n "${TBBROOT}" ] && [ "${TBBROOT}" != "${CONDA_PREFIX}" ]; then source ${TBBROOT}/env/vars.sh; fi
+      if [ -z "${NO_DPC}" ]; then export CPU="cpu"; fi
+      bash .ci/scripts/run_sklearn_tests.sh $CPU
     env:
+      TBBROOT: ${{ variables.TBBROOT }}
+      NO_DPC: ${{ variables.NO_DPC }}
       SKLEARNEX_PREVIEW: "YES"
     displayName: "Sklearn testing [preview]"
     condition: succeededOrFailed()

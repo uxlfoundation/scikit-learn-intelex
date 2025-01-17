@@ -18,7 +18,7 @@ import numpy as np
 
 from daal4py.sklearn._utils import get_dtype
 
-from ..datatypes import _convert_to_supported, from_table, to_table
+from ..datatypes import from_table, to_table
 from ..utils import _check_array
 from .basic_statistics import BaseBasicStatistics
 
@@ -106,7 +106,6 @@ class IncrementalBasicStatistics(BaseBasicStatistics):
         """
         self._queue = queue
         policy = self._get_policy(queue, X)
-        X, weights = _convert_to_supported(policy, X, weights)
 
         X = _check_array(
             X, dtype=[np.float64, np.float32], ensure_2d=False, force_all_finite=False
@@ -123,7 +122,7 @@ class IncrementalBasicStatistics(BaseBasicStatistics):
             dtype = get_dtype(X)
             self._onedal_params = self._get_onedal_params(False, dtype=dtype)
 
-        X_table, weights_table = to_table(X, weights)
+        X_table, weights_table = to_table(X, weights, queue=queue)
         self._partial_result = self._get_backend(
             "basic_statistics",
             None,

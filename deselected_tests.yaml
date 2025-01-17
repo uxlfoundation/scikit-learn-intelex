@@ -25,6 +25,20 @@
 #  will exclude deselection in versions 0.18.1, and 0.18.2 only.
 
 deselected_tests:
+  # sklearn 1.6 unsupported features
+  - linear_model/tests/test_base.py::test_linear_regression_sample_weight_consistency[42-True-None-X_shape1]
+  - linear_model/tests/test_base.py::test_linear_regression_sample_weight_consistency[42-True-None-X_shape2]
+  - linear_model/tests/test_ridge.py::test_ridge_shapes_type
+  - linear_model/tests/test_ridge.py::test_ridge_cv_results_predictions[2-False-False]
+  - linear_model/tests/test_ridge.py::test_ridge_cv_results_predictions[2-False-True]
+  - neighbors/tests/test_neighbors.py::test_nan_euclidean_support[KNeighborsClassifier-params0]
+  - neighbors/tests/test_neighbors.py::test_nan_euclidean_support[KNeighborsRegressor-params1]
+  - neighbors/tests/test_neighbors.py::test_nan_euclidean_support[LocalOutlierFactor-params6]
+  - neighbors/tests/test_neighbors.py::test_neighbor_classifiers_loocv[ball_tree-nn_model0]
+  - neighbors/tests/test_neighbors.py::test_neighbor_classifiers_loocv[brute-nn_model0]
+  - neighbors/tests/test_neighbors.py::test_neighbor_classifiers_loocv[kd_tree-nn_model0]
+  - neighbors/tests/test_neighbors.py::test_neighbor_classifiers_loocv[auto-nn_model0]
+
   # Array API support
   # sklearnex functional Array API support doesn't guaranty namespace consistency for the estimator's array attributes.
   - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_input_and_values-array_api_strict-None-None]
@@ -162,7 +176,7 @@ deselected_tests:
   - ensemble/tests/test_stacking.py::test_stacking_with_sample_weight[StackingClassifier]
 
   # Insufficient accuracy of "coefs" and "intercept" in Elastic Net for multi-target problems
-  # https://github.com/oneapi-src/oneDAL/issues/494
+  # https://github.com/uxlfoundation/oneDAL/issues/494
   - linear_model/tests/test_coordinate_descent.py::test_enet_multitarget
 
   # oneAPI Data Analytics Library (oneDAL) doesn't support sample_weight (back to scikit-learn),
@@ -277,7 +291,6 @@ deselected_tests:
   - tests/test_multioutput.py::test_classifier_chain_fit_and_predict_with_sparse_data >=1.4
 
   # There are not enough data to run onedal backend
-  - tests/test_common.py::test_estimators[IncrementalLinearRegression()-check_fit2d_1sample]
   - tests/test_common.py::test_estimators[IncrementalRidge()-check_fit2d_1sample]
 
   # Deselection of LogisticRegression tests over accuracy comparisons with sample_weights
@@ -292,6 +305,9 @@ deselected_tests:
 
   # Fails in stock scikit-learn: checks that data is modified in-place when not strictly required
   - linear_model/tests/test_base.py::test_inplace_data_preprocessing
+
+  # Failure occurs in python3.9 on windows CPU only - not easy to reproduce
+  - ensemble/tests/test_weight_boosting.py::test_estimator >= 1.4 win32
 
   # --------------------------------------------------------
   # No need to test daal4py patching

@@ -1,21 +1,19 @@
-.. ******************************************************************************
-.. * Copyright 2020 Intel Corporation
-.. *
-.. * Licensed under the Apache License, Version 2.0 (the "License");
-.. * you may not use this file except in compliance with the License.
-.. * You may obtain a copy of the License at
-.. *
-.. *     http://www.apache.org/licenses/LICENSE-2.0
-.. *
-.. * Unless required by applicable law or agreed to in writing, software
-.. * distributed under the License is distributed on an "AS IS" BASIS,
-.. * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-.. * See the License for the specific language governing permissions and
-.. * limitations under the License.
-.. *******************************************************************************/
+.. Copyright 2020 Intel Corporation
+..
+.. Licensed under the Apache License, Version 2.0 (the "License");
+.. you may not use this file except in compliance with the License.
+.. You may obtain a copy of the License at
+..
+..     http://www.apache.org/licenses/LICENSE-2.0
+..
+.. Unless required by applicable law or agreed to in writing, software
+.. distributed under the License is distributed on an "AS IS" BASIS,
+.. WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+.. See the License for the specific language governing permissions and
+.. limitations under the License.
 
 .. |intelex_repo| replace:: |intelex| repository
-.. _intelex_repo: https://github.com/intel/scikit-learn-intelex
+.. _intelex_repo: https://github.com/uxlfoundation/scikit-learn-intelex
 
 .. _index:
 
@@ -43,13 +41,13 @@ Intel(R) Extension for Scikit-learn is also a part of `Intel(R) AI Tools <https:
   :width: 800
 
 
-These performance charts use benchmarks that you can find in the `scikit-learn bench repository <https://github.com/IntelPython/scikit-learn_bench>`_. 
+These performance charts use benchmarks that you can find in the `scikit-learn bench repository <https://github.com/IntelPython/scikit-learn_bench>`_.
 
 
-Supported Algorithms 
+Supported Algorithms
 ---------------------
 
-See all of the :ref:`sklearn_algorithms`. 
+See all of the :ref:`sklearn_algorithms`.
 
 
 Intel(R) Optimizations
@@ -96,7 +94,7 @@ Enable Intel(R) GPU optimizations
    quick-start.rst
    samples.rst
    kaggle.rst
-   
+
 .. toctree::
    :caption: Developer Guide
    :hidden:
@@ -111,7 +109,7 @@ Enable Intel(R) GPU optimizations
    verbose.rst
    preview.rst
    deprecation.rst
-   
+
 
 .. toctree::
    :caption: Performance
@@ -121,7 +119,7 @@ Enable Intel(R) GPU optimizations
    guide/acceleration.rst
 
 .. toctree::
-   :caption: Learn 
+   :caption: Learn
    :hidden:
    :maxdepth: 2
 
@@ -132,7 +130,7 @@ Enable Intel(R) GPU optimizations
    :caption: More
    :hidden:
    :maxdepth: 2
-   
+
    Support <support.rst>
    contribute.rst
    license.rst

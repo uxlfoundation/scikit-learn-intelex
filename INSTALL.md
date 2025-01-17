@@ -40,22 +40,17 @@ To install Intel(R) Extension for Scikit-learn*, use one of the following scenar
 
 ## Before You Begin
 
-Check [System](https://intel.github.io/scikit-learn-intelex/latest/system-requirements.html) and [Memory](https://intel.github.io/scikit-learn-intelex/latest/memory-requirements.html) Requirements.
+Check [System](https://uxlfoundation.github.io/scikit-learn-intelex/latest/system-requirements.html) and [Memory](https://uxlfoundation.github.io/scikit-learn-intelex/latest/memory-requirements.html) Requirements.
 
 ## Supported Configurations
 
-| OS / Python version | **Python 3.9** | **Python 3.10** | **Python 3.11** | **Python 3.12** |
-| :------------------ | :------------: |  :------------: |  :------------: |  :------------: |
-| **Linux**           |   [CPU, GPU]   |   [CPU, GPU]    |   [CPU, GPU]    |   [CPU, GPU]    |
-| **Windows**         |   [CPU, GPU]   |   [CPU, GPU]    |   [CPU, GPU]    |   [CPU, GPU]    |
-
-Applicable for:
-
-* PyPI
-* Anaconda Cloud from Conda-Forge Channel
-* Anaconda Cloud from Intel Channel
-
-
+* Operating systems: Linux*, Windows*
+* Python versions: 3.9 through 3.13
+* Devices: CPU, GPU
+* Distribution channels:
+  * PyPI
+  * Anaconda Cloud from Conda-Forge Channel
+  * Anaconda Cloud from Intel Channel (https://software.repos.intel.com/python/conda/)
 
 ## Install via PIP
 
@@ -151,14 +146,14 @@ The build-process (using setup.py) happens in 4 stages:
 4. Compiling and linking them
 
 ### Prerequisites
-* Python version >= 3.9, <= 3.12
+* Python version >= 3.9
 * Jinja2
 * Cython
 * Numpy
 * cmake and pybind11
 * A C++ compiler with C++11 support
-* Clang-Format
-* [Intel® oneAPI Data Analytics Library (oneDAL)](https://github.com/oneapi-src/oneDAL) version 2021.1 or later
+* Clang-Format version >=14
+* [Intel® oneAPI Data Analytics Library (oneDAL)](https://github.com/uxlfoundation/oneDAL) version 2021.1 or later, but be mindful that **the oneDAL version must be <= than that of scikit-learn-intelex** (it's backwards compatible but not forwards compatible).
   * You can use the pre-built `dal-devel` conda package from conda-forge channel
 * MPI (optional, needed for distributed mode)
   * You can use the pre-built `impi_rt` and `impi-devel` conda packages from conda-forge channel
@@ -172,8 +167,11 @@ The build-process (using setup.py) happens in 4 stages:
 * ``NO_STREAM``: set to '1', 'yes' or alike to build without support for streaming mode
 * ``NO_DPC``: set to '1', 'yes' or alike to build without support of oneDAL DPC++ interfaces
 * ``OFF_ONEDAL_IFACE``: set to '1' to build without the support of oneDAL interfaces
+* ``MAKEFLAGS``: the last `-j` flag determines the number of threads for building the onedal extension. It will default to the number of CPU threads when not set.
 
 **Note:** in order to use distributed mode, `mpi4py` is also required, and needs to be built with the same MPI backend as scikit-learn-intelex.
+**Note:** The `-j` flag in the ``MAKEFLAGS`` environment variable is superseded in `setup.py` modes which support the ``--parallel`` and `-j` command line flags.
+
 
 ### Build Intel(R) Extension for Scikit-learn
 
@@ -253,5 +251,5 @@ conda build .
 
 ## Next Steps
 
-- [Learn what patching is and how to patch scikit-learn](https://intel.github.io/scikit-learn-intelex/latest/what-is-patching.html)
-- [Start using scikit-learn-intelex](https://intel.github.io/scikit-learn-intelex/latest/quick-start.html)
+- [Learn what patching is and how to patch scikit-learn](https://uxlfoundation.github.io/scikit-learn-intelex/latest/what-is-patching.html)
+- [Start using scikit-learn-intelex](https://uxlfoundation.github.io/scikit-learn-intelex/latest/quick-start.html)
