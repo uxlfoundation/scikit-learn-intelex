@@ -66,6 +66,7 @@ jobs:
       export DALROOT=$(dirname $(dirname $(which python)))
       export NO_DIST=1
       python setup.py build_ext --inplace
+      ./conda-recipe/build.sh
     displayName: 'Build daal4py/sklearnex'
   - script: |
       export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
