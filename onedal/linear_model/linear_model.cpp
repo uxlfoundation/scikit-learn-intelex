@@ -252,9 +252,9 @@ void init_partial_train_result(py::module_& m) {
                     throw std::runtime_error("Invalid state!");
                 result_t res;
                 if (py::cast<int>(t[0].attr("size")) != 0)
-                    res.set_partial_xtx(convert_to_table(t[0].ptr()));
+                    res.set_partial_xtx(convert_to_table(t[0]));
                 if (py::cast<int>(t[1].attr("size")) != 0)
-                    res.set_partial_xty(convert_to_table(t[1].ptr()));
+                    res.set_partial_xty(convert_to_table(t[1]));
                 return res;
             }));
 }
