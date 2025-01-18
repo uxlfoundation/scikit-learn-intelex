@@ -60,7 +60,9 @@ class IncrementalPCA(_sklearn_IncrementalPCA):
         assert hasattr(self, "_onedal_estimator")
         if self._need_to_finalize:
             self._onedal_finalize_fit()
-        X = check_array(X, dtype=[np.float64, np.float32])
+        use_raw_input = get_config()["use_raw_input"]
+        if not use_raw_input:
+            X = check_array(X, dtype=[np.float64, np.float32])
         return self._onedal_estimator.predict(X, queue)
 
     def _onedal_fit_transform(self, X, queue=None):
@@ -125,17 +127,19 @@ class IncrementalPCA(_sklearn_IncrementalPCA):
         self._need_to_finalize = False
 
     def _onedal_fit(self, X, queue=None):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
+        use_raw_input = get_config()["use_raw_input"]
+        if not use_raw_input:
+            if sklearn_check_version("1.2"):
+                self._validate_params()
 
-        if sklearn_check_version("1.0"):
-            X = validate_data(self, X, dtype=[np.float64, np.float32], copy=self.copy)
-        else:
-            X = check_array(
-                X,
-                dtype=[np.float64, np.float32],
-                copy=self.copy,
-            )
+            if sklearn_check_version("1.0"):
+                X = validate_data(self, X, dtype=[np.float64, np.float32], copy=self.copy)
+            else:
+                X = check_array(
+                    X,
+                    dtype=[np.float64, np.float32],
+                    copy=self.copy,
+                )
 
         n_samples, n_features = X.shape
 
