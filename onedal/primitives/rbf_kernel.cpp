@@ -31,10 +31,16 @@ ONEDAL_PY_INIT_MODULE(rbf_kernel) {
     using param2desc_t = kernel_params2desc<descriptor>;
 
     auto sub = m.def_submodule("rbf_kernel");
-    #ifndef ONEDAL_DATA_PARALLEL_SPMD
-        ONEDAL_PY_INSTANTIATE(init_kernel_result, sub, result_t);
-        ONEDAL_PY_INSTANTIATE(init_kernel_compute_ops, sub, policy_list, input_t, result_t, param2desc_t, method::dense);
-    #endif
+#ifndef ONEDAL_DATA_PARALLEL_SPMD
+    ONEDAL_PY_INSTANTIATE(init_kernel_result, sub, result_t);
+    ONEDAL_PY_INSTANTIATE(init_kernel_compute_ops,
+                          sub,
+                          policy_list,
+                          input_t,
+                          result_t,
+                          param2desc_t,
+                          method::dense);
+#endif
 }
 
 } // namespace oneapi::dal::python

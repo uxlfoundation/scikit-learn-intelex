@@ -96,6 +96,13 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
     batch_size_ : int
         Inferred batch size from ``batch_size``.
+
+    Note
+    ----
+    Serializing instances of this class will trigger a forced finalization of calculations.
+    Since finalize_fit can't be dispatched without directly provided queue
+    and the dispatching policy can't be serialized, the computation is finalized
+    during serialization call and the policy is not saved in serialized data.
     """
 
     _onedal_incremental_ridge = staticmethod(onedal_IncrementalRidge)

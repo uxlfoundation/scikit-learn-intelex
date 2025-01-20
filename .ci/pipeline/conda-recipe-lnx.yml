@@ -1,5 +1,5 @@
 #===============================================================================
-# Copyright 2023 Intel Corporation
+# Copyright contributors to the oneDAL project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,19 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #===============================================================================
-
-repos:
-  - repo: https://github.com/psf/black
-    rev: 24.1.1
-    hooks:
-      - id: black
-        language_version: python3.10
-  - repo: https://github.com/PyCQA/isort
-    rev: 5.13.2
-    hooks:
-      - id: isort
-        language_version: python3.10
-  - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: v14.0.6
-    hooks:
-      - id: clang-format
+steps:
+  - script: |
+      conda config --add channels conda-forge
+      conda config --set channel_priority strict
+      conda update -y -q --all
+    displayName: "Conda update"
+  - script: |
+      conda create -y -q -n build-env conda-build conda-verify py-lief=0.14
+    displayName: "Conda create"
+  - script: |
+      . /usr/share/miniconda/etc/profile.d/conda.sh
+      conda activate build-env
+      conda build . --python $(PYTHON_VERSION) --numpy $(NUMPY_VERSION)
+    displayName: "Conda build and test"

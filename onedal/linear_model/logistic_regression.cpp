@@ -72,7 +72,6 @@ struct optimizer2t {
     Ops ops;
 };
 
-
 auto get_onedal_result_options(const py::dict& params) {
     using namespace dal::logistic_regression;
 
@@ -102,7 +101,7 @@ auto get_onedal_result_options(const py::dict& params) {
             else if (match.str() == "inner_iterations_count") {
                 onedal_options = onedal_options | result_options::inner_iterations_count;
             }
-#endif 
+#endif
             else {
                 ONEDAL_PARAM_DISPATCH_THROW_INVALID_VALUE(result_option);
             }
@@ -124,9 +123,8 @@ struct descriptor_creator<Float,
                           dal::logistic_regression::task::classification,
                           Optimizer> {
     static auto get(bool intercept, double C) {
-        return dal::logistic_regression::descriptor<Float,
-                                             Method,
-                                             dal::logistic_regression::task::classification>(intercept, C);
+        return dal::logistic_regression::
+            descriptor<Float, Method, dal::logistic_regression::task::classification>(intercept, C);
     }
 };
 
@@ -138,9 +136,9 @@ struct params2desc {
         const auto intercept = params["intercept"].cast<bool>();
         const auto C = params["C"].cast<double>();
 
-        auto desc = descriptor_creator<Float, Method, Task, Optimizer>::get(intercept, C).set_result_options(
-            get_onedal_result_options(params));
-        
+        auto desc = descriptor_creator<Float, Method, Task, Optimizer>::get(intercept, C)
+                        .set_result_options(get_onedal_result_options(params));
+
         desc.set_optimizer(get_optimizer_descriptor<Optimizer>(params));
 
         return desc;
@@ -163,7 +161,7 @@ struct init_train_ops_dispatcher<Policy, dal::logistic_regression::task::classif
                   using input_t = train_input<Task>;
 
                   train_ops ops(policy, input_t{ data, responses }, params2desc{});
-                  return fptype2t{ method2t{ Task{}, optimizer2t{ops} } }(params);
+                  return fptype2t{ method2t{ Task{}, optimizer2t{ ops } } }(params);
               });
     }
 };
@@ -184,7 +182,7 @@ void init_infer_ops(py::module_& m) {
               using input_t = infer_input<Task>;
 
               infer_ops ops(policy, input_t{ data, model }, params2desc{});
-              return fptype2t{ method2t{ Task{}, optimizer2t{ops} } }(params);
+              return fptype2t{ method2t{ Task{}, optimizer2t{ ops } } }(params);
           });
 }
 
@@ -240,9 +238,9 @@ ONEDAL_PY_DECLARE_INSTANTIATOR(init_infer_result);
 ONEDAL_PY_DECLARE_INSTANTIATOR(init_train_ops);
 ONEDAL_PY_DECLARE_INSTANTIATOR(init_infer_ops);
 
-} // namespace linear_model
-
 } // namespace logistic_regression
+
+} // namespace linear_model
 
 ONEDAL_PY_INIT_MODULE(logistic_regression) {
     using namespace dal::detail;
@@ -252,12 +250,11 @@ ONEDAL_PY_INIT_MODULE(logistic_regression) {
     using task_list = types<task::classification>;
     auto sub = m.def_submodule("logistic_regression");
 
-
 #if defined(ONEDAL_DATA_PARALLEL_SPMD)
-    #if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240100
-        ONEDAL_PY_INSTANTIATE(init_train_ops, sub, policy_spmd, task_list);
-        ONEDAL_PY_INSTANTIATE(init_infer_ops, sub, policy_spmd, task_list);
-    #endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240100
+#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240100
+    ONEDAL_PY_INSTANTIATE(init_train_ops, sub, policy_spmd, task_list);
+    ONEDAL_PY_INSTANTIATE(init_infer_ops, sub, policy_spmd, task_list);
+#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240100
 #else // ONEDAL_DATA_PARALLEL_SPMD
     ONEDAL_PY_INSTANTIATE(init_train_ops, sub, policy_list, task_list);
     ONEDAL_PY_INSTANTIATE(init_infer_ops, sub, policy_list, task_list);
