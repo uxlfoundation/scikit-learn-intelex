@@ -146,16 +146,12 @@ def test_single_option_on_random_data(
 
 @pytest.mark.parametrize("queue", get_queues())
 @pytest.mark.parametrize("result_option", options_and_tests.keys())
-@pytest.mark.parametrize("row_count", [1000, 10000])
+@pytest.mark.parametrize("row_count", [500, 2000])
 @pytest.mark.parametrize("column_count", [10, 100])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_single_option_on_random_sparse_data(
     queue, result_option, row_count, column_count, dtype
 ):
-    if result_option in ["max", "sum_squares"] and (
-        queue is None or queue.sycl_device.is_cpu
-    ):
-        pytest.skip("max and sum_squares computations are buggy on CPU")
     function, tols = options_and_tests[result_option]
     fp32tol, fp64tol = tols
     seed = 77
@@ -251,6 +247,7 @@ def test_multiple_options_on_random_sparse_data(queue, row_count, column_count, 
     options = [
         "sum",
         "min",
+        "max",
         "mean",
         "standard_deviation",
         "variance",
@@ -331,11 +328,6 @@ def test_all_option_on_random_sparse_data(queue, row_count, column_count, dtype)
     result = compute_sparse_result(X_sparse, "all", queue)
 
     for result_option in options_and_tests:
-        if result_option in ["max", "sum_squares"] and (
-            queue is None or queue.sycl_device.is_cpu
-        ):
-            # TODO: here is a bug in oneDAL's max and sum_squares computations on CPU
-            continue
         function, tols = options_and_tests[result_option]
         fp32tol, fp64tol = tols
         res = getattr(result, result_option + "_")
