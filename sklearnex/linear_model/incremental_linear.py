@@ -150,23 +150,24 @@ class IncrementalLinearRegression(
     _onedal_gpu_supported = _onedal_supported
 
     def _onedal_predict(self, X, queue=None):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
+        if get_config()["use_raw_input"] is False:
+            if sklearn_check_version("1.2"):
+                self._validate_params()
 
-        if sklearn_check_version("1.0"):
-            X = validate_data(
-                self,
-                X,
-                dtype=[np.float64, np.float32],
-                copy=self.copy_X,
-                reset=False,
-            )
-        else:
-            X = check_array(
-                X,
-                dtype=[np.float64, np.float32],
-                copy=self.copy_X,
-            )
+            if sklearn_check_version("1.0"):
+                X = validate_data(
+                    self,
+                    X,
+                    dtype=[np.float64, np.float32],
+                    copy=self.copy_X,
+                    reset=False,
+                )
+            else:
+                X = check_array(
+                    X,
+                    dtype=[np.float64, np.float32],
+                    copy=self.copy_X,
+                )
 
         assert hasattr(self, "_onedal_estimator")
         if self._need_to_finalize:
@@ -184,6 +185,9 @@ class IncrementalLinearRegression(
         if sklearn_check_version("1.2"):
             self._validate_params()
 
+        use_raw_input = get_config()["use_raw_input"]
+        # never check input when using raw input
+        check_input &= use_raw_input is False
         if check_input:
             if sklearn_check_version("1.0"):
                 X, y = validate_data(

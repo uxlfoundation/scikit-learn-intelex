@@ -123,7 +123,8 @@ class BaseLinearRegression(BaseEstimator, metaclass=ABCMeta):
 
         sua_iface, xp, _ = _get_sycl_namespace(X)
         use_raw_input = _get_config().get("use_raw_input") is True
-
+        if use_raw_input:
+            queue = X.sycl_queue
         policy = self._get_policy(queue, X)
 
         if not use_raw_input:
