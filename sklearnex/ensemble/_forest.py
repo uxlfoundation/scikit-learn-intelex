@@ -845,7 +845,9 @@ class ForestClassifier(_sklearn_ForestClassifier, BaseForest):
             self._check_n_features(X, reset=False)
 
         res = self._onedal_estimator.predict(X, queue=queue)
-        return xp.take(self.classes_, xp.astype(xp.reshape(res, -1), xp.int64, casting="unsafe"))
+        return xp.take(
+            self.classes_, xp.astype(xp.reshape(res, -1), xp.int64, casting="unsafe")
+        )
 
     def _onedal_predict_proba(self, X, queue=None):
         xp, _ = get_namespace(X)

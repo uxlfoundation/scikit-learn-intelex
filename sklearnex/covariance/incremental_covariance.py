@@ -353,7 +353,10 @@ class IncrementalEmpiricalCovariance(IntelEstimator, BaseEstimator):
                 )
             else:
                 X = check_array(
-                    X, dtype=[np.float64, np.float32], copy=self.copy, force_all_finite=False
+                    X,
+                    dtype=[np.float64, np.float32],
+                    copy=self.copy,
+                    force_all_finite=False,
                 )
                 self.n_features_in_ = X.shape[1]
 
