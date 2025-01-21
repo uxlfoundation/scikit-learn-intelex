@@ -152,6 +152,14 @@ def test_single_option_on_random_data(
 def test_single_option_on_random_sparse_data(
     queue, result_option, row_count, column_count, dtype
 ):
+    if not daal_check_version((2025, "P", 200)) and result_option in [
+        "max",
+        "sum_squares",
+    ]:
+        pytest.skip(
+            "There is a bug in 'max' and 'sum_squares' computations in oneDAL version < 2025.2"
+        )
+
     function, tols = options_and_tests[result_option]
     fp32tol, fp64tol = tols
     seed = 77
@@ -247,7 +255,6 @@ def test_multiple_options_on_random_sparse_data(queue, row_count, column_count, 
     options = [
         "sum",
         "min",
-        "max",
         "mean",
         "standard_deviation",
         "variance",
@@ -328,6 +335,12 @@ def test_all_option_on_random_sparse_data(queue, row_count, column_count, dtype)
     result = compute_sparse_result(X_sparse, "all", queue)
 
     for result_option in options_and_tests:
+        if not daal_check_version((2025, "P", 200)) and result_option in [
+            "max",
+            "sum_squares",
+        ]:
+            # TODO: There is a bug in 'max' and 'sum_squares' computations in oneDAL version < 2025.2
+            continue
         function, tols = options_and_tests[result_option]
         fp32tol, fp64tol = tols
         res = getattr(result, result_option + "_")

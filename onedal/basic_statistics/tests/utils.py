@@ -17,11 +17,11 @@
 import numpy as np
 
 
-# compute unbiased variation for the columns of array-like X
+# Compute unbiased variation for the columns of array-like X
 def variation(X):
     X_mean = np.mean(X, axis=0)
     if np.all(X_mean):
-        # avoid division by zero
+        # Avoid division by zero
         return np.std(X, axis=0, ddof=1) / X_mean
     else:
         return np.array(
