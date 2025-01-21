@@ -73,8 +73,9 @@ class IncrementalBasicStatistics(BaseBasicStatistics):
 
     def _reset(self):
         self._need_to_finalize = False
-        self._partial_result = self._get_backend(
-            "basic_statistics", None, "partial_compute_result"
+        # Not supported with spmd policy so IncrementalBasicStatistics must be specified
+        self._partial_result = IncrementalBasicStatistics._get_backend(
+            IncrementalBasicStatistics, "basic_statistics", None, "partial_compute_result"
         )
 
     def __getstate__(self):
@@ -119,7 +120,10 @@ class IncrementalBasicStatistics(BaseBasicStatistics):
             queue = X.sycl_queue
 
         self._queue = queue
-        policy = self._get_policy(queue, X)
+        # Not supported with spmd policy so IncrementalBasicStatistics must be specified
+        policy = IncrementalBasicStatistics._get_policy(
+            IncrementalBasicStatistics, queue, X
+        )
 
         if not use_raw_input:
             X = _check_array(
@@ -138,7 +142,9 @@ class IncrementalBasicStatistics(BaseBasicStatistics):
             self._onedal_params = self._get_onedal_params(False, dtype=dtype)
 
         X_table, weights_table = to_table(X, weights, queue=queue)
-        self._partial_result = self._get_backend(
+        # Not supported with spmd policy so IncrementalBasicStatistics must be specified
+        self._partial_result = IncrementalBasicStatistics._get_backend(
+            IncrementalBasicStatistics,
             "basic_statistics",
             None,
             "partial_compute",

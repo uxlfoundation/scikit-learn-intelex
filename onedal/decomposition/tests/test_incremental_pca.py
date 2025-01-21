@@ -40,7 +40,7 @@ def test_on_gold_data(queue, is_deterministic, whiten, num_blocks, dtype):
 
     result = incpca.finalize_fit()
 
-    transformed_data = incpca.predict(X, queue=queue)
+    transformed_data = incpca.transform(X, queue=queue)
 
     expected_n_components_ = 2
     expected_components_ = np.array([[0.83849224, 0.54491354], [-0.54491354, 0.83849224]])
@@ -128,7 +128,7 @@ def test_on_random_data(
 
     incpca.finalize_fit()
 
-    transformed_data = incpca.predict(X, queue=queue)
+    transformed_data = incpca.transform(X, queue=queue)
     tol = 3e-3 if transformed_data.dtype == np.float32 else 2e-6
 
     n_components = incpca.n_components_
