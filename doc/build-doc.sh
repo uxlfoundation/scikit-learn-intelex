@@ -29,4 +29,4 @@ rsync -a --exclude='daal4py_data_science.ipynb' examples/notebooks/*.ipynb doc/$
 
 # build the documentation
 cd doc
-SPHINXOPTS="-W" make html 
+O="-W" make html
