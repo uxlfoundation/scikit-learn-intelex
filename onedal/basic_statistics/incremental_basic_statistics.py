@@ -18,8 +18,10 @@ import numpy as np
 
 from daal4py.sklearn._utils import get_dtype
 
+from .._config import _get_config
 from ..datatypes import from_table, to_table
 from ..utils import _check_array
+from ..utils._array_api import _get_sycl_namespace
 from .basic_statistics import BaseBasicStatistics
 
 
@@ -71,8 +73,9 @@ class IncrementalBasicStatistics(BaseBasicStatistics):
 
     def _reset(self):
         self._need_to_finalize = False
-        self._partial_result = self._get_backend(
-            "basic_statistics", None, "partial_compute_result"
+        # Not supported with spmd policy so IncrementalBasicStatistics must be specified
+        self._partial_result = IncrementalBasicStatistics._get_backend(
+            IncrementalBasicStatistics, "basic_statistics", None, "partial_compute_result"
         )
 
     def __getstate__(self):
@@ -82,6 +85,7 @@ class IncrementalBasicStatistics(BaseBasicStatistics):
         self.finalize_fit()
         data = self.__dict__.copy()
         data.pop("_queue", None)
+        data.pop("_input_xp", None)  # module cannot be pickled
 
         return data
 
@@ -104,26 +108,43 @@ class IncrementalBasicStatistics(BaseBasicStatistics):
         self : object
             Returns the instance itself.
         """
-        self._queue = queue
-        policy = self._get_policy(queue, X)
+        use_raw_input = _get_config().get("use_raw_input", False)
+        sua_iface, xp, _ = _get_sycl_namespace(X)
+        # Saving input array namespace and sua_iface, that will be used in
+        # finalize_fit.
+        self._input_sua_iface = sua_iface
+        self._input_xp = xp
 
-        X = _check_array(
-            X, dtype=[np.float64, np.float32], ensure_2d=False, force_all_finite=False
+        # All data should use the same sycl queue
+        if use_raw_input and sua_iface:
+            queue = X.sycl_queue
+
+        self._queue = queue
+        # Not supported with spmd policy so IncrementalBasicStatistics must be specified
+        policy = IncrementalBasicStatistics._get_policy(
+            IncrementalBasicStatistics, queue, X
         )
-        if weights is not None:
-            weights = _check_array(
-                weights,
-                dtype=[np.float64, np.float32],
-                ensure_2d=False,
-                force_all_finite=False,
+
+        if not use_raw_input:
+            X = _check_array(
+                X, dtype=[np.float64, np.float32], ensure_2d=False, force_all_finite=False
             )
+            if weights is not None:
+                weights = _check_array(
+                    weights,
+                    dtype=[np.float64, np.float32],
+                    ensure_2d=False,
+                    force_all_finite=False,
+                )
 
         if not hasattr(self, "_onedal_params"):
             dtype = get_dtype(X)
             self._onedal_params = self._get_onedal_params(False, dtype=dtype)
 
         X_table, weights_table = to_table(X, weights, queue=queue)
-        self._partial_result = self._get_backend(
+        # Not supported with spmd policy so IncrementalBasicStatistics must be specified
+        self._partial_result = IncrementalBasicStatistics._get_backend(
+            IncrementalBasicStatistics,
             "basic_statistics",
             None,
             "partial_compute",

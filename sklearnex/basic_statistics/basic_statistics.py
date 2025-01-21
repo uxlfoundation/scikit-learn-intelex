@@ -25,6 +25,7 @@ from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal.basic_statistics import BasicStatistics as onedal_BasicStatistics
 
+from .._config import get_config
 from .._device_offload import dispatch
 from .._utils import IntelEstimator, PatchingConditionsChain
 
@@ -179,13 +180,16 @@ class BasicStatistics(IntelEstimator, BaseEstimator):
         if sklearn_check_version("1.2"):
             self._validate_params()
 
-        if sklearn_check_version("1.0"):
-            X = validate_data(self, X, dtype=[np.float64, np.float32], ensure_2d=False)
-        else:
-            X = check_array(X, dtype=[np.float64, np.float32])
+        if get_config()["use_raw_input"] is False:
+            if sklearn_check_version("1.0"):
+                X = validate_data(
+                    self, X, dtype=[np.float64, np.float32], ensure_2d=False
+                )
+            else:
+                X = check_array(X, dtype=[np.float64, np.float32])
 
-        if sample_weight is not None:
-            sample_weight = _check_sample_weight(sample_weight, X)
+            if sample_weight is not None:
+                sample_weight = _check_sample_weight(sample_weight, X)
 
         onedal_params = {
             "result_options": self.result_options,

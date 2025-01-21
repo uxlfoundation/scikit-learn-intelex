@@ -15,10 +15,12 @@
 # ===============================================================================
 import numpy as np
 
-from daal4py.sklearn._utils import daal_check_version, get_dtype
+from daal4py.sklearn._utils import daal_check_version
 
+from .._config import _get_config
 from ..datatypes import from_table, to_table
 from ..utils import _check_array
+from ..utils._array_api import _get_sycl_namespace
 from .covariance import BaseEmpiricalCovariance
 
 
@@ -58,8 +60,9 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
 
     def _reset(self):
         self._need_to_finalize = False
-        self._partial_result = self._get_backend(
-            "covariance", None, "partial_compute_result"
+        # Not supported with spmd policy so IncrementalEmpiricalCovariance must be specified
+        self._partial_result = IncrementalEmpiricalCovariance._get_backend(
+            IncrementalEmpiricalCovariance, "covariance", None, "partial_compute_result"
         )
 
     def __getstate__(self):
@@ -70,6 +73,7 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
         self.finalize_fit()
         data = self.__dict__.copy()
         data.pop("_queue", None)
+        data.pop("_input_xp", None)  # module cannot be pickled
 
         return data
 
@@ -95,11 +99,23 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
         self : object
             Returns the instance itself.
         """
-        X = _check_array(X, dtype=[np.float64, np.float32], ensure_2d=True)
+        # Saving input array namespace and sua_iface, that will be used in
+        # finalize_fit.
+        sua_iface, xp, _ = _get_sycl_namespace(X)
+        self._input_sua_iface = sua_iface
+        self._input_xp = xp
+
+        use_raw_input = _get_config().get("use_raw_input", False)
+        if use_raw_input and sua_iface:
+            queue = X.sycl_queue
+        if not use_raw_input:
+            X = _check_array(X, dtype=[np.float64, np.float32], ensure_2d=True)
 
         self._queue = queue
-
-        policy = self._get_policy(queue, X)
+        # Not supported with spmd policy so IncrementalEmpiricalCovariance must be specified
+        policy = IncrementalEmpiricalCovariance._get_policy(
+            IncrementalEmpiricalCovariance, queue, X
+        )
 
         X_table = to_table(X, queue=queue)
 
@@ -107,7 +123,9 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
             self._dtype = X_table.dtype
 
         params = self._get_onedal_params(self._dtype)
-        self._partial_result = self._get_backend(
+        # Not supported with spmd policy so IncrementalEmpiricalCovariance must be specified
+        self._partial_result = IncrementalEmpiricalCovariance._get_backend(
+            IncrementalEmpiricalCovariance,
             "covariance",
             None,
             "partial_compute",

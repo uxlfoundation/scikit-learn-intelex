@@ -25,6 +25,7 @@ from onedal.basic_statistics import (
     IncrementalBasicStatistics as onedal_IncrementalBasicStatistics,
 )
 
+from .._config import get_config
 from .._device_offload import dispatch
 from .._utils import IntelEstimator, PatchingConditionsChain
 
@@ -194,6 +195,9 @@ class IncrementalBasicStatistics(IntelEstimator, BaseEstimator):
     def _onedal_partial_fit(self, X, sample_weight=None, queue=None, check_input=True):
         first_pass = not hasattr(self, "n_samples_seen_") or self.n_samples_seen_ == 0
 
+        use_raw_input = get_config()["use_raw_input"]
+        # never check input when using raw input
+        check_input &= use_raw_input is False
         if check_input:
             if sklearn_check_version("1.0"):
                 X = validate_data(
@@ -208,7 +212,7 @@ class IncrementalBasicStatistics(IntelEstimator, BaseEstimator):
                     dtype=[np.float64, np.float32],
                 )
 
-        if sample_weight is not None:
+        if not use_raw_input and sample_weight is not None:
             sample_weight = _check_sample_weight(sample_weight, X)
 
         if first_pass:
