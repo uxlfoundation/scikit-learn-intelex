@@ -398,8 +398,7 @@ PyObject *convert_to_pyobject(const dal::table &input) {
     }
     if (input.get_kind() == dal::homogen_table::kind()) {
         const auto &homogen_input = static_cast<const dal::homogen_table &>(input);
-        if (homogen_input.get_data_layout() == dal::data_layout::row_major) {
-            const dal::data_type dtype = homogen_input.get_metadata().get_data_type(0);
+        const dal::data_type dtype = homogen_input.get_metadata().get_data_type(0);
 
 #define MAKE_NYMPY_FROM_HOMOGEN(NpType)                                        \
     {                                                                          \
@@ -408,16 +407,10 @@ PyObject *convert_to_pyobject(const dal::table &input) {
                                             homogen_input.get_row_count(),     \
                                             homogen_input.get_column_count()); \
     }
-            SET_CTYPE_NPY_FROM_DAL_TYPE(
-                dtype,
-                MAKE_NYMPY_FROM_HOMOGEN,
-                throw std::invalid_argument("Not avalible to convert a numpy"));
+        SET_CTYPE_NPY_FROM_DAL_TYPE(dtype,
+                                    MAKE_NYMPY_FROM_HOMOGEN,
+                                    throw std::invalid_argument("Unable to convert numpy object"));
 #undef MAKE_NYMPY_FROM_HOMOGEN
-        }
-        else {
-            throw std::invalid_argument(
-                "Output oneDAL table doesn't have row major format for homogen table");
-        }
     }
     else if (input.get_kind() == csr_table_t::kind()) {
         const auto &csr_input = static_cast<const csr_table_t &>(input);
@@ -427,7 +420,7 @@ PyObject *convert_to_pyobject(const dal::table &input) {
         SET_CTYPES_NPY_FROM_DAL_TYPE(
             dtype,
             MAKE_PY_FROM_CSR,
-            throw std::invalid_argument("Not avalible to convert a scipy.csr"));
+            throw std::invalid_argument("Unable to convert scipy csr object"));
 #undef MAKE_PY_FROM_CSR
     }
     else {

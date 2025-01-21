@@ -19,6 +19,9 @@
 #include "onedal/common.hpp"
 #include "onedal/version.hpp"
 
+#define NO_IMPORT_ARRAY // import_array called in table.cpp
+#include "onedal/datatypes/data_conversion.hpp"
+
 #include <regex>
 
 namespace py = pybind11;
@@ -237,7 +240,23 @@ void init_partial_train_result(py::module_& m) {
     py::class_<result_t>(m, "partial_train_result")
         .def(py::init())
         .DEF_ONEDAL_PY_PROPERTY(partial_xtx, result_t)
-        .DEF_ONEDAL_PY_PROPERTY(partial_xty, result_t);
+        .DEF_ONEDAL_PY_PROPERTY(partial_xty, result_t)
+        .def(py::pickle(
+            [](const result_t& res) {
+                return py::make_tuple(
+                    py::cast<py::object>(convert_to_pyobject(res.get_partial_xtx())),
+                    py::cast<py::object>(convert_to_pyobject(res.get_partial_xty())));
+            },
+            [](py::tuple t) {
+                if (t.size() != 2)
+                    throw std::runtime_error("Invalid state!");
+                result_t res;
+                if (py::cast<int>(t[0].attr("size")) != 0)
+                    res.set_partial_xtx(convert_to_table(t[0]));
+                if (py::cast<int>(t[1].attr("size")) != 0)
+                    res.set_partial_xty(convert_to_table(t[1]));
+                return res;
+            }));
 }
 
 template <typename Task>

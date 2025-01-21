@@ -22,10 +22,10 @@ import glob
 import os
 import pathlib
 import platform as plt
+import re
 import shutil
 import sys
 import time
-from concurrent.futures import ThreadPoolExecutor
 from ctypes.util import find_library
 from os.path import join as jp
 from sysconfig import get_config_vars
@@ -35,7 +35,6 @@ import setuptools.command.build as orig_build
 import setuptools.command.develop as orig_develop
 from Cython.Build import cythonize
 from setuptools import Extension, setup
-from setuptools.command.build_ext import build_ext as _build_ext
 
 import scripts.build_backend as build_backend
 from scripts.package_helpers import get_packages_with_tests
@@ -52,7 +51,6 @@ IS_MAC = False
 IS_LIN = False
 
 dal_root = os.environ.get("DALROOT")
-n_threads = int(os.environ.get("NTHREADS", os.cpu_count() or 1))
 
 arch_dir = plt.machine()
 plt_dict = {"x86_64": "intel64", "AMD64": "intel64", "aarch64": "arm"}
@@ -335,7 +333,8 @@ def getpyexts():
         library_dirs=ONEDAL_LIBDIRS,
         language="c++",
     )
-    exts.extend(cythonize(ext, nthreads=n_threads))
+
+    exts.extend(cythonize(ext))
 
     if not no_dist:
         mpi_include_dir = include_dir_plat + [np.get_include()] + MPI_INCDIRS
@@ -405,51 +404,48 @@ def get_onedal_py_libs():
     return libs
 
 
-class parallel_build_ext(_build_ext):
-    def build_extensions(self):
-        with ThreadPoolExecutor(max_workers=n_threads) as executor:
-            result_list = [
-                executor.submit(self.build_extension, ext) for ext in self.extensions
-            ]
-        assert all(
-            f.exception() is None for f in result_list
-        ), "There were errors building the extensions"
+class onedal_build:
 
-
-class custom_build:
     def run(self):
-        if is_onedal_iface:
-            cxx = os.getenv("CXX", "cl" if IS_WIN else "g++")
-            build_backend.custom_build_cmake_clib(
-                iface="host",
-                cxx=cxx,
-                onedal_major_binary_version=ONEDAL_MAJOR_BINARY_VERSION,
-                no_dist=no_dist,
-                use_parameters_lib=use_parameters_lib,
-                use_abs_rpath=USE_ABS_RPATH,
-                use_gcov=use_gcov,
-            )
-        if dpcpp:
-            if is_onedal_iface:
-                build_backend.custom_build_cmake_clib(
-                    iface="dpc",
-                    onedal_major_binary_version=ONEDAL_MAJOR_BINARY_VERSION,
-                    no_dist=no_dist,
-                    use_parameters_lib=use_parameters_lib,
-                    use_abs_rpath=USE_ABS_RPATH,
-                    use_gcov=use_gcov,
-                )
-                if build_distribute:
-                    build_backend.custom_build_cmake_clib(
-                        iface="spmd_dpc",
-                        onedal_major_binary_version=ONEDAL_MAJOR_BINARY_VERSION,
-                        no_dist=no_dist,
-                        use_parameters_lib=use_parameters_lib,
-                        use_abs_rpath=USE_ABS_RPATH,
-                        use_gcov=use_gcov,
-                    )
+        self.onedal_run()
+        super(onedal_build, self).run()
+        self.onedal_post_build()
 
-    def post_build(self):
+    def onedal_run(self):
+        n_threads = self.parallel
+        makeflags = os.getenv("MAKEFLAGS", "")
+        # True is used by setuptools to indicate cpu_count for `parallel`
+        # None is default for setuptools for single threading
+        # take the last defined value in MAKEFLAGS, as it will be the one
+        # used by cmake/make. Do regex in reverse to deal with missing values
+        # and last values simultaneously in a simple fashion
+        regex_inv = r"(?<!\S)\d*(?=j-(?!\S))|$"
+        orig_n_threads = re.findall(regex_inv, makeflags[::-1])[0][::-1]
+
+        if n_threads is None:
+            n_threads = int(orig_n_threads) if orig_n_threads else os.cpu_count() or 1
+        elif n_threads is True:
+            n_threads = os.cpu_count() or 1
+
+        cxx = os.getenv("CXX", "cl" if IS_WIN else "g++")
+        build_onedal = lambda iface: build_backend.custom_build_cmake_clib(
+            iface=iface,
+            cxx=cxx,
+            onedal_major_binary_version=ONEDAL_MAJOR_BINARY_VERSION,
+            no_dist=no_dist,
+            use_parameters_lib=use_parameters_lib,
+            use_abs_rpath=USE_ABS_RPATH,
+            use_gcov=use_gcov,
+            n_threads=n_threads,
+        )
+        if is_onedal_iface:
+            build_onedal("host")
+            if dpcpp:
+                build_onedal("dpc")
+                if build_distribute:
+                    build_onedal("spmd_dpc")
+
+    def onedal_post_build(self):
         if IS_MAC:
             import subprocess
 
@@ -472,18 +468,12 @@ class custom_build:
                         )
 
 
-class develop(orig_develop.develop, custom_build):
-    def run(self):
-        custom_build.run(self)
-        super().run()
-        custom_build.post_build(self)
+class develop(onedal_build, orig_develop.develop):
+    parallel = None
 
 
-class build(orig_build.build, custom_build):
-    def run(self):
-        custom_build.run(self)
-        super().run()
-        custom_build.post_build(self)
+class build(onedal_build, orig_build.build):
+    pass
 
 
 project_urls = {
@@ -581,7 +571,7 @@ setup(
     author_email="onedal.maintainers@intel.com",
     maintainer_email="onedal.maintainers@intel.com",
     project_urls=project_urls,
-    cmdclass={"develop": develop, "build": build, "build_ext": parallel_build_ext},
+    cmdclass={"develop": develop, "build": build},
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
@@ -596,6 +586,7 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "Topic :: Scientific/Engineering",
         "Topic :: System",
         "Topic :: Software Development",

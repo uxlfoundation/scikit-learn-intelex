@@ -17,12 +17,10 @@
 # ===============================================================================
 
 import logging
-import multiprocessing
 import os
 import platform as plt
 import subprocess
 import sys
-from math import floor
 from os.path import join as jp
 from sysconfig import get_config_var, get_paths
 
@@ -50,6 +48,7 @@ def custom_build_cmake_clib(
     use_parameters_lib=True,
     use_abs_rpath=False,
     use_gcov=False,
+    n_threads=1,
 ):
     import pybind11
 
@@ -134,18 +133,10 @@ def custom_build_cmake_clib(
     if use_gcov:
         cmake_args += ["-DSKLEARNEX_GCOV=ON"]
 
-    cpu_count = multiprocessing.cpu_count()
-    # limit parallel cmake jobs if memory size is insufficient
-    # TODO: add on all platforms
-    if IS_LIN:
-        with open("/proc/meminfo", "r") as meminfo_file_obj:
-            memfree = meminfo_file_obj.read().split("\n")[1].split(" ")
-            while "" in memfree:
-                memfree.remove("")
-            memfree = int(memfree[1])  # total memory in kB
-        cpu_count = min(cpu_count, floor(max(1, memfree / 2**20)))
-
-    make_args = ["cmake", "--build", abs_build_temp_path, "-j " + str(cpu_count)]
+    # the number of parallel processes is dictated by MAKEFLAGS (see setup.py)
+    # using make conventions (i.e. -j flag) but is set as a cmake argument to
+    # support Windows and Linux simultaneously
+    make_args = ["cmake", "--build", abs_build_temp_path, "-j" + str(n_threads)]
 
     make_install_args = [
         "cmake",

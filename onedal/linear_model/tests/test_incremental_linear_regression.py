@@ -16,11 +16,12 @@
 
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose, assert_array_equal
+from numpy.testing import assert_allclose
 from sklearn.datasets import load_diabetes
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 
+from onedal.datatypes import from_table
 from onedal.linear_model import IncrementalLinearRegression
 from onedal.tests.utils._device_selection import get_queues
 
@@ -41,29 +42,6 @@ def test_diabetes(queue, dtype):
     model.finalize_fit()
     y_pred = model.predict(X_test, queue=queue)
     assert mean_squared_error(y_test, y_pred) < 2396
-
-
-@pytest.mark.parametrize("queue", get_queues())
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
-@pytest.mark.skip(reason="pickling not implemented for oneDAL entities")
-def test_pickle(queue, dtype):
-    # TODO Implement pickling for oneDAL entities
-    X, y = load_diabetes(return_X_y=True)
-    X, y = X.astype(dtype), y.astype(dtype)
-    model = IncrementalLinearRegression(fit_intercept=True)
-    model.partial_fit(X, y, queue=queue)
-    model.finalize_fit()
-    expected = model.predict(X, queue=queue)
-
-    import pickle
-
-    dump = pickle.dumps(model)
-    model2 = pickle.loads(dump)
-
-    assert isinstance(model2, model.__class__)
-    result = model2.predict(X, queue=queue)
-
-    assert_array_equal(expected, result)
 
 
 @pytest.mark.parametrize("queue", get_queues())
@@ -167,3 +145,69 @@ def test_reconstruct_model(queue, dtype):
 
     tol = 1e-5 if res.dtype == np.float32 else 1e-7
     assert_allclose(gtr, res, rtol=tol)
+
+
+@pytest.mark.parametrize("queue", get_queues())
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_incremental_estimator_pickle(queue, dtype):
+    import pickle
+
+    from onedal.linear_model import IncrementalLinearRegression
+
+    inclr = IncrementalLinearRegression()
+
+    # Check that estimator can be serialized without any data.
+    dump = pickle.dumps(inclr)
+    inclr_loaded = pickle.loads(dump)
+    seed = 77
+    gen = np.random.default_rng(seed)
+    X = gen.uniform(low=-0.3, high=+0.7, size=(10, 10))
+    X = X.astype(dtype)
+    coef = gen.random(size=(1, 10), dtype=dtype).T
+    y = X @ coef
+    X_split = np.array_split(X, 2)
+    y_split = np.array_split(y, 2)
+    inclr.partial_fit(X_split[0], y_split[0], queue=queue)
+    inclr_loaded.partial_fit(X_split[0], y_split[0], queue=queue)
+
+    # inclr.finalize_fit()
+
+    assert inclr._need_to_finalize == True
+    assert inclr_loaded._need_to_finalize == True
+
+    # Check that estimator can be serialized after partial_fit call.
+    dump = pickle.dumps(inclr)
+    inclr_loaded = pickle.loads(dump)
+
+    partial_xtx = from_table(inclr._partial_result.partial_xtx)
+    partial_xtx_loaded = from_table(inclr_loaded._partial_result.partial_xtx)
+    assert_allclose(partial_xtx, partial_xtx_loaded)
+
+    partial_xty = from_table(inclr._partial_result.partial_xty)
+    partial_xty_loaded = from_table(inclr_loaded._partial_result.partial_xty)
+    assert_allclose(partial_xty, partial_xty_loaded)
+
+    assert inclr._need_to_finalize == False
+    # Finalize is called during serialization to make sure partial results are finalized correctly.
+    assert inclr_loaded._need_to_finalize == False
+
+    inclr.partial_fit(X_split[1], y_split[1], queue=queue)
+    inclr_loaded.partial_fit(X_split[1], y_split[1], queue=queue)
+    assert inclr._need_to_finalize == True
+    assert inclr_loaded._need_to_finalize == True
+
+    dump = pickle.dumps(inclr_loaded)
+    inclr_loaded = pickle.loads(dump)
+
+    assert inclr._need_to_finalize == True
+    assert inclr_loaded._need_to_finalize == False
+
+    inclr.finalize_fit()
+    inclr_loaded.finalize_fit()
+
+    # Check that finalized estimator can be serialized.
+    dump = pickle.dumps(inclr_loaded)
+    inclr_loaded = pickle.loads(dump)
+
+    assert_allclose(inclr.coef_, inclr_loaded.coef_, atol=1e-6)
+    assert_allclose(inclr.intercept_, inclr_loaded.intercept_, atol=1e-6)
