@@ -290,14 +290,6 @@ deselected_tests:
   - tests/test_common.py::test_estimators[LogisticRegression()-check_sample_weights_invariance(kind=zeros)] >=1.4
   - tests/test_multioutput.py::test_classifier_chain_fit_and_predict_with_sparse_data >=1.4
 
-  # Deselected tests for incremental algorithms
-  # Need to rework getting policy to correctly obtain it for method without data (finalize_fit)
-  # and avoid keeping it in class attribute, also need to investigate how to implement
-  # partial result serialization
-  - tests/test_common.py::test_estimators[IncrementalLinearRegression()-check_estimators_pickle]
-  - tests/test_common.py::test_estimators[IncrementalLinearRegression()-check_estimators_pickle(readonly_memmap=True)]
-  - tests/test_common.py::test_estimators[IncrementalRidge()-check_estimators_pickle]
-  - tests/test_common.py::test_estimators[IncrementalRidge()-check_estimators_pickle(readonly_memmap=True)]
   # There are not enough data to run onedal backend
   - tests/test_common.py::test_estimators[IncrementalRidge()-check_fit2d_1sample]
 

@@ -35,6 +35,7 @@ class IncrementalLinearRegression(BaseEstimatorSPMD, base_IncrementalLinearRegre
     """
 
     def _reset(self):
+        self._need_to_finalize = False
         self._partial_result = super(base_IncrementalLinearRegression, self)._get_backend(
             "linear_model", "regression", "partial_train_result"
         )
@@ -95,3 +96,6 @@ class IncrementalLinearRegression(BaseEstimatorSPMD, base_IncrementalLinearRegre
             self._partial_result = module.partial_train(
                 policy, self._params, self._partial_result, X_table, y_table
             )
+
+        self._need_to_finalize = True
+        return self
