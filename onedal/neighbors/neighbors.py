@@ -27,7 +27,6 @@ from daal4py import (
     kdtree_knn_classification_prediction,
     kdtree_knn_classification_training,
 )
-from ..utils._array_api import _get_sycl_namespace
 
 from .._config import _get_config
 from ..common._base import BaseEstimator
@@ -42,6 +41,7 @@ from ..utils import (
     _column_or_1d,
     _num_samples,
 )
+from ..utils._array_api import _get_sycl_namespace
 
 
 class NeighborsCommonBase(BaseEstimator, metaclass=ABCMeta):
