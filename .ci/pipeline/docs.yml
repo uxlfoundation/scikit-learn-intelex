@@ -65,6 +65,7 @@ jobs:
   - script: |
       export DALROOT=$(dirname $(dirname $(which python)))
       export NO_DIST=1
+      export LD_LIBRARY_PATH="${DALROOT}/lib:${LD_LIBRARY_PATH}"
       echo "before build"
       ls daal4py
       python setup.py build_ext --inplace --abs-rpath
