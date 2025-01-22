@@ -66,7 +66,8 @@ jobs:
       export DALROOT=$(dirname $(dirname $(which python)))
       export NO_DIST=1
       python setup.py build_ext --inplace --abs-rpath
-      python setup.py build --abs-rpath
+      # python setup.py build --abs-rpath
+      ./conda-recipe/build.sh
     displayName: 'Build daal4py/sklearnex'
   - script: |
       export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
@@ -80,13 +81,7 @@ jobs:
       fi
     displayName: 'Build daal4py documentation'
   - script: |
-      export DALROOT=$(dirname $(dirname $(which python)))
-      export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
-      echo "before"
-      python -c "import daal4py; print('Using daal4py from:', daal4py.__file__)"
       cd doc
-      echo "after"
-      python -c "import sys; sys.path.insert(0, '../daal4py')"
       python -c "import daal4py; print('Using daal4py from:', daal4py.__file__)"
       ./build-doc.sh
     displayName: 'Build scikit-learn-intelex documentation'
