@@ -67,9 +67,6 @@ jobs:
       export NO_DIST=1
       python setup.py build_ext --inplace --abs-rpath
       python setup.py build --abs-rpath
-      export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
-      python -c "import daal4py._daal4py; print('daal4py._daal4py imported successfully')"
-      python -c "from sklearnex.basic_statistics import BasicStatistics; print('BasicStatistics imported successfully')"
     displayName: 'Build daal4py/sklearnex'
   - script: |
       export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
@@ -85,6 +82,8 @@ jobs:
   - script: |
       export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
       cd doc
+      python -c "import daal4py._daal4py; print('daal4py._daal4py imported successfully')"
+      python -c "from sklearnex.basic_statistics import BasicStatistics; print('BasicStatistics imported successfully')"
       ./build-doc.sh
     displayName: 'Build scikit-learn-intelex documentation'
   - script: |
