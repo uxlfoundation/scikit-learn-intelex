@@ -70,9 +70,10 @@ jobs:
       export PYTHONPATH=$(pwd)
     displayName: 'Build daal4py/sklearnex'
   - script: |
-      if [[ -z "${PYTHONPATH}" ]]; then
-        export PYTHONPATH=$(pwd)
-      fi
+      export DALROOT=$(dirname $(dirname $(which python)))
+      export NO_DIST=1
+      python setup.py build_ext --inplace --abs-rpath
+      export PYTHONPATH=$(pwd)
       cd doc/daal4py
       make html 2>&1 | tee build.log
       cat build.log
@@ -83,9 +84,10 @@ jobs:
       fi
     displayName: 'Build daal4py documentation'
   - script: |
-      if [[ -z "${PYTHONPATH}" ]]; then
-        export PYTHONPATH=$(pwd)
-      fi
+      export DALROOT=$(dirname $(dirname $(which python)))
+      export NO_DIST=1
+      python setup.py build --abs-rpath
+      export PYTHONPATH=$(pwd)
       export O="-W"
       cd doc
       ./build-doc.sh
