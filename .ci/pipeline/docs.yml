@@ -71,6 +71,7 @@ jobs:
     displayName: 'Build daal4py/sklearnex'
   - script: |
       export DALROOT=$(dirname $(dirname $(which python)))
+      export LD_LIBRARY_PATH="${DALROOT}/lib:${LD_LIBRARY_PATH}"
       export NO_DIST=1
       python setup.py build_ext --inplace --abs-rpath
       export PYTHONPATH=$(pwd)
@@ -85,6 +86,7 @@ jobs:
     displayName: 'Build daal4py documentation'
   - script: |
       export DALROOT=$(dirname $(dirname $(which python)))
+      export LD_LIBRARY_PATH="${DALROOT}/lib:${LD_LIBRARY_PATH}"
       export NO_DIST=1
       python setup.py build --abs-rpath
       export PYTHONPATH=$(pwd)
