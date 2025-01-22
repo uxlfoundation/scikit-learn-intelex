@@ -228,18 +228,16 @@ class IncrementalBasicStatistics(IntelEstimator, BaseEstimator):
         self._need_to_finalize = True
 
     def _onedal_fit(self, X, sample_weight=None, queue=None):
-        use_raw_input = get_config()["use_raw_input"]
-        if not use_raw_input:
-            if sklearn_check_version("1.2"):
-                self._validate_params()
+        if sklearn_check_version("1.2"):
+            self._validate_params()
 
-            if sklearn_check_version("1.0"):
-                X = validate_data(self, X, dtype=[np.float64, np.float32])
-            else:
-                X = check_array(X, dtype=[np.float64, np.float32])
+        if sklearn_check_version("1.0"):
+            X = validate_data(self, X, dtype=[np.float64, np.float32])
+        else:
+            X = check_array(X, dtype=[np.float64, np.float32])
 
-            if sample_weight is not None:
-                sample_weight = _check_sample_weight(sample_weight, X)
+        if sample_weight is not None:
+            sample_weight = _check_sample_weight(sample_weight, X)
 
         n_samples, n_features = X.shape
         if self.batch_size is None:
