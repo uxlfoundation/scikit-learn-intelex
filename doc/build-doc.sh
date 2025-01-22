@@ -24,7 +24,7 @@ mkdir $SAMPLES_DIR
 
 # copy jupyter notebooks
 cd ..
-rsync -a --exclude='daal4py_data_science.ipynb' examples/notebooks/*.ipynb doc/$SAMPLES_DIR
+rsync -a --exclude='./daal4py_data_science.ipynb' examples/notebooks/*.ipynb doc/$SAMPLES_DIR
 
 # build the documentation
 cd doc
