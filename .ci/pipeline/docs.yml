@@ -80,8 +80,14 @@ jobs:
       fi
     displayName: 'Build daal4py documentation'
   - script: |
-      cd doc
+      export DALROOT=$(dirname $(dirname $(which python)))
       export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
+      export PYTHONPATH=./daal4py:$PYTHONPATH
+      echo "before"
+      python -c "import daal4py; print('Using daal4py from:', daal4py.__file__)"
+      cd doc
+      echo "after"
+      python -c "import daal4py; print('Using daal4py from:', daal4py.__file__)"
       ./build-doc.sh
     displayName: 'Build scikit-learn-intelex documentation'
   - script: |
