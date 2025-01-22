@@ -14,8 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #===============================================================================
-echo "Current location: $(pwd)"
-
 SAMPLES_DIR=sources/samples
 
 # remove the samples folder if it exists
