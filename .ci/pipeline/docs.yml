@@ -86,6 +86,7 @@ jobs:
       python -c "import daal4py; print('Using daal4py from:', daal4py.__file__)"
       cd doc
       echo "after"
+      python -c "import sys; sys.path.insert(0, '../daal4py')"
       python -c "import daal4py; print('Using daal4py from:', daal4py.__file__)"
       ./build-doc.sh
     displayName: 'Build scikit-learn-intelex documentation'
