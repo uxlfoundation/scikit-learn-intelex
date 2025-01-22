@@ -60,19 +60,19 @@ class BaseDBSCAN(BaseEstimator, ClusterMixin):
 
     def _fit(self, X, y, sample_weight, module, queue):
         use_raw_input = _get_config().get("use_raw_input", False) is True
+        sua_iface, _, _ = _get_sycl_namespace(X)
 
         if not use_raw_input:
             X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
             sample_weight = make2d(sample_weight) if sample_weight is not None else None
             X = make2d(X)
-        else:
+        elif sua_iface is not None:
             queue = X.sycl_queue
         policy = self._get_policy(queue, X)
         X_table, sample_weight_table = to_table(X, sample_weight, queue=queue)
         params = self._get_onedal_params(X_table.dtype)
         result = module.compute(policy, params, X_table, sample_weight_table)
 
-        _, xp, _ = _get_sycl_namespace(X)
         self.labels_ = from_table(result.responses, sycl_queue=queue).ravel()
         if (
             result.core_observation_indices is not None
