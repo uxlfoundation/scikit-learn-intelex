@@ -72,7 +72,7 @@ jobs:
       ./conda-recipe/build.sh
       python -c "import daal4py._daal4py; print('Using _daal4py from:', daal4py.__file__)"
       python -c "import sys; print('sys.path during pytest execution:', sys.path)"
-      cp ${DALROOT}/lib/python3.11/site-packages/daal4py/_daal4py.cpython*.so daal4py/
+      # cp ${DALROOT}/lib/python3.11/site-packages/daal4py/_daal4py.cpython*.so daal4py/
     displayName: 'Build daal4py/sklearnex'
   - script: |
       export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
