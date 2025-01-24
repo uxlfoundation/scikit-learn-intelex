@@ -470,8 +470,7 @@ def test_non_array(X, queue):
     not _is_dpc_backend, reason="Requires DPC backend for dtype conversion"
 )
 @pytest.mark.parametrize("X", [None, 5, "test", True, [], np.pi, lambda: None])
-@pytest.mark.parametrize("sparse", [True, False])
-def test_low_precision_non_array(X, sparse):
+def test_low_precision_non_array(X):
     # Use a dummy queue as fp32 hardware is not in public testing
 
     class DummySyclQueue:
