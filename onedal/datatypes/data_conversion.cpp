@@ -154,6 +154,13 @@ inline csr_table_t convert_to_csr_impl(PyObject *py_data,
 
 dal::table convert_to_table(py::object inp_obj, py::object queue) {
     dal::table res;
+
+    PyObject *obj = inp_obj.ptr();
+
+    if (obj == nullptr || obj == Py_None) {
+        return res;
+    }
+
 #ifdef ONEDAL_DATA_PARALLEL
     if (!queue.is(py::none()) && !queue.attr("sycl_device").attr("has_aspect_fp64").cast<bool>() &&
         hasattr(inp_obj, "dtype")) {
@@ -174,11 +181,6 @@ dal::table convert_to_table(py::object inp_obj, py::object queue) {
     }
 #endif // ONEDAL_DATA_PARALLEL
 
-    PyObject *obj = inp_obj.ptr();
-
-    if (obj == nullptr || obj == Py_None) {
-        return res;
-    }
     if (is_array(obj)) {
         PyArrayObject *ary = reinterpret_cast<PyArrayObject *>(obj);
 
