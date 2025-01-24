@@ -68,7 +68,7 @@ jobs:
       ./conda-recipe/build.sh
     displayName: 'Build daal4py/sklearnex'
   - script: |
-      export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
+      # export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
       cd doc/daal4py
       make html 2>&1 | tee build.log
       cat build.log
