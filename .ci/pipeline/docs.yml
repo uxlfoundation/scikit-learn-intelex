@@ -69,18 +69,18 @@ jobs:
       # python setup.py build --abs-rpath
       # export PYTHONPATH=$(pwd)
       export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
-
-      python -c "import daal4py; print('Using daal4py from1:', daal4py.file)"
-
       ./conda-recipe/build.sh
+      python -c "import daal4py._daal4py; print('Using _daal4py from:', daal4py.__file__)"
+      python -c "import sys; print('sys.path during pytest execution:', sys.path)"
       cp ${DALROOT}/lib/python3.11/site-packages/daal4py/_daal4py.cpython*.so daal4py/
     displayName: 'Build daal4py/sklearnex'
   - script: |
       export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
-      python -c "import daal4py; print('Using daal4py from1:', daal4py.file)"
+      python -c "import daal4py._daal4py; print('Using _daal4py from:', daal4py.__file__)"
+      python -c "import sys; print('sys.path during pytest execution:', sys.path)"
       cd doc/daal4py
-      python -c "import daal4py; print('Using daal4py from2:', daal4py.file)"
-
+      python -c "import daal4py._daal4py; print('Using _daal4py from:', daal4py.__file__)"
+      python -c "import sys; print('sys.path during pytest execution:', sys.path)"
       make html 2>&1 | tee build.log
       cat build.log
       # check for autodoc warnings
@@ -91,9 +91,11 @@ jobs:
     displayName: 'Build daal4py documentation'
   - script: |
       export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
-      python -c "import daal4py; print('Using daal4py from3:', daal4py.file)"
+      python -c "import daal4py._daal4py; print('Using _daal4py from:', daal4py.__file__)"
+      python -c "import sys; print('sys.path during pytest execution:', sys.path)"
       cd doc
-      python -c "import daal4py; print('Using daal4py from4:', daal4py.file)"
+      python -c "import daal4py._daal4py; print('Using _daal4py from:', daal4py.__file__)"
+      python -c "import sys; print('sys.path during pytest execution:', sys.path)"
       ./build-doc.sh
     displayName: 'Build scikit-learn-intelex documentation'
   - script: |
