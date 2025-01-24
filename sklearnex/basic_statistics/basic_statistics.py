@@ -64,13 +64,13 @@ class BasicStatistics(IntelEstimator, BaseEstimator):
         mean_ : ndarray of shape (n_features,)
             Mean of each feature over all samples.
         variance_ : ndarray of shape (n_features,)
-            Variance of each feature over all samples.
+            Variance of each feature over all samples. Bessel's correction is used.
         variation_ : ndarray of shape (n_features,)
-            Variation of each feature over all samples.
+            Variation of each feature over all samples. Bessel's correction is used.
         sum_squares_ : ndarray of shape (n_features,)
             Sum of squares for each feature over all samples.
         standard_deviation_ : ndarray of shape (n_features,)
-            Standard deviation of each feature over all samples.
+            Unbiased standard deviation of each feature over all samples. Bessel's correction is used.
         sum_squares_centered_ : ndarray of shape (n_features,)
             Centered sum of squares for each feature over all samples.
         second_order_raw_moment_ : ndarray of shape (n_features,)
@@ -180,9 +180,9 @@ class BasicStatistics(IntelEstimator, BaseEstimator):
         )
         X, sample_weight = data
 
-        is_data_supported = (
+        is_data_supported = not issparse(X) or (
             _is_csr(X) and daal_check_version((2025, "P", 200))
-        ) or not issparse(X)
+        )
 
         is_sample_weight_supported = sample_weight is None or not issparse(X)
 

@@ -157,7 +157,7 @@ def test_single_option_on_random_sparse_data(
         "sum_squares",
     ]:
         pytest.skip(
-            "There is a bug in 'max' and 'sum_squares' computations in oneDAL version < 2025.2"
+            "'max' and 'sum_squares' calculate using a subset of the data in oneDAL version < 2025.2"
         )
 
     function, tols = options_and_tests[result_option]
@@ -339,7 +339,6 @@ def test_all_option_on_random_sparse_data(queue, row_count, column_count, dtype)
             "max",
             "sum_squares",
         ]:
-            # TODO: There is a bug in 'max' and 'sum_squares' computations in oneDAL version < 2025.2
             continue
         function, tols = options_and_tests[result_option]
         fp32tol, fp64tol = tols
