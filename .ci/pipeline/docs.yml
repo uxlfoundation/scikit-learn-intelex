@@ -64,16 +64,16 @@ jobs:
     displayName: 'Install requirements'
   - script: |
       export DALROOT=$(dirname $(dirname $(which python)))
-      export NO_DIST=1
-      python setup.py build_ext --inplace --abs-rpath
-      python setup.py build --abs-rpath
-      export PYTHONPATH=$(pwd)
+      # export NO_DIST=1
+      # python setup.py build_ext --inplace --abs-rpath
+      # python setup.py build --abs-rpath
+      # export PYTHONPATH=$(pwd)
       export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
 
       python -c "import daal4py; print('Using daal4py from1:', daal4py.file)"
 
-      # ./conda-recipe/build.sh
-      # cp ${DALROOT}/lib/python3.11/site-packages/daal4py/_daal4py.cpython*.so daal4py/
+      ./conda-recipe/build.sh
+      cp ${DALROOT}/lib/python3.11/site-packages/daal4py/_daal4py.cpython*.so daal4py/
     displayName: 'Build daal4py/sklearnex'
   - script: |
       export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
