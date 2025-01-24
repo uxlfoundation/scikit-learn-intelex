@@ -450,12 +450,10 @@ def test_non_array(X, queue):
     # Verify that to and from table doesn't raise errors
     # no guarantee is made about type or content
     err_str = ""
-    if np.isscalar(X) or X is None:
-        temp = np.atleast_2d(X)
-        if temp.dtype not in [np.float64, np.float32, np.int64]:
-            err_str = "[convert_to_table] Not available input format for convert Python object to onedal table."
 
-    else:
+    if np.isscalar(X) and np.atleast2d(X).dtype not in [np.float64, np.float32, np.int64]:
+        err_str = "[convert_to_table] Not available input format for convert Python object to onedal table."
+    elif not (X is None or isinstance(X, np.array)):
         err_str = "Found unsupported array type"
 
     if err_str:
