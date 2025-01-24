@@ -442,3 +442,33 @@ def test_low_precision_gpu_conversion(dtype, sparse):
     assert X_table.dtype == np.float32
     if dtype == np.float32 and not sparse:
         assert_allclose(X, from_table(X_table))
+
+
+@pytest.mark.parametrize("X", [None, 1, "test", [], np.pi, lambda: None])
+@pytest.mark.parametrize("queue", get_queues())
+def test_non_array(X, queue):
+    # Verify that to and from table doesn't raise errors
+    # no guarantee is made about type or content
+    X_table = to_table(X, queue=queue)
+    from_table(X_table)
+
+
+@pytest.mark.skipif(
+    not _is_dpc_backend, reason="Requires DPC backend for dtype conversion"
+)
+@pytest.mark.parametrize("X", [None, 1, "test", [], np.pi, lambda: None])
+@pytest.mark.parametrize("sparse", [True, False])
+def test_low_precision_non_array(X, sparse):
+    # Use a dummy queue as fp32 hardware is not in public testing
+
+    class DummySyclQueue:
+        """This class is designed to act like dpctl.SyclQueue
+        to force dtype conversion"""
+
+        class DummySyclDevice:
+            has_aspect_fp64 = False
+
+        sycl_device = DummySyclDevice()
+
+    queue = DummySyclQueue()
+    X_table = to_table(X, queue=queue)
