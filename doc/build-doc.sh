@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #===============================================================================
+
 SAMPLES_DIR=sources/samples
 
 # remove the samples folder if it exists
