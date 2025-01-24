@@ -65,12 +65,17 @@ jobs:
   - script: |
       export DALROOT=$(dirname $(dirname $(which python)))
       export NO_DIST=1
-      ./conda-recipe/build.sh
-      cp ${DALROOT}/lib/python3.11/site-packages/daal4py/_daal4py.cpython*.so daal4py/
+      python setup.py build_ext --inplace --abs-rpath
+      python setup.py build --abs-rpath
+      # ./conda-recipe/build.sh
+      # cp ${DALROOT}/lib/python3.11/site-packages/daal4py/_daal4py.cpython*.so daal4py/
     displayName: 'Build daal4py/sklearnex'
   - script: |
       export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
+      python -c "import daal4py; print('Using daal4py from1:', daal4py.file)"
       cd doc/daal4py
+      python -c "import daal4py; print('Using daal4py from2:', daal4py.file)"
+
       make html 2>&1 | tee build.log
       cat build.log
       # check for autodoc warnings
@@ -81,7 +86,9 @@ jobs:
     displayName: 'Build daal4py documentation'
   - script: |
       export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
+      python -c "import daal4py; print('Using daal4py from3:', daal4py.file)"
       cd doc
+      python -c "import daal4py; print('Using daal4py from4:', daal4py.file)"
       ./build-doc.sh
     displayName: 'Build scikit-learn-intelex documentation'
   - script: |
