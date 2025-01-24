@@ -161,26 +161,26 @@ dal::table convert_to_table(py::object inp_obj, py::object queue) {
         return res;
     }
     if (is_array(obj)) {
-
 #ifdef ONEDAL_DATA_PARALLEL
-    if (!queue.is(py::none()) && !queue.attr("sycl_device").attr("has_aspect_fp64").cast<bool>()) {
-        // If the queue exists, doesn't have the fp64 aspect, and the data is float64
-        // then cast it to float32
-        int type = reinterpret_cast<PyArray_Descr *>(inp_obj.attr("dtype").ptr())->type_num;
-        if (type == NPY_DOUBLE || type == NPY_DOUBLELTR) {
-            PyErr_WarnEx(
-                PyExc_RuntimeWarning,
-                "Data will be converted into float32 from float64 because device does not support it",
-                1);
-            // use astype instead of PyArray_Cast in order to support scipy sparse inputs
-            inp_obj = inp_obj.attr("astype")(py::dtype::of<float>());
-            res = convert_to_table(
-                inp_obj); // queue will be set to none, as this check is no longer necessary
-            return res;
+        if (!queue.is(py::none()) &&
+            !queue.attr("sycl_device").attr("has_aspect_fp64").cast<bool>()) {
+            // If the queue exists, doesn't have the fp64 aspect, and the data is float64
+            // then cast it to float32
+            int type = reinterpret_cast<PyArray_Descr *>(inp_obj.attr("dtype").ptr())->type_num;
+            if (type == NPY_DOUBLE || type == NPY_DOUBLELTR) {
+                PyErr_WarnEx(
+                    PyExc_RuntimeWarning,
+                    "Data will be converted into float32 from float64 because device does not support it",
+                    1);
+                // use astype instead of PyArray_Cast in order to support scipy sparse inputs
+                inp_obj = inp_obj.attr("astype")(py::dtype::of<float>());
+                res = convert_to_table(
+                    inp_obj); // queue will be set to none, as this check is no longer necessary
+                return res;
+            }
         }
-    }
 #endif // ONEDAL_DATA_PARALLEL
-        
+
         PyArrayObject *ary = reinterpret_cast<PyArrayObject *>(obj);
 
         if (!PyArray_ISCARRAY_RO(ary) && !PyArray_ISFARRAY_RO(ary)) {
