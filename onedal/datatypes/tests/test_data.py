@@ -453,9 +453,9 @@ def test_non_array(X, queue):
 
     if np.isscalar(X):
         if np.atleast_2d(X).dtype not in [np.float64, np.float32, np.int64]:
-            err_str = "[convert_to_table] Not available input format for convert Python object to onedal table."
+            err_str = "Found unsupported array type"
     elif not (X is None or isinstance(X, np.ndarray)):
-        err_str = "Found unsupported array type"
+        err_str = "[convert_to_table] Not available input format for convert Python object to onedal table."
 
     if err_str:
         with pytest.raises(ValueError, match=err_str):
