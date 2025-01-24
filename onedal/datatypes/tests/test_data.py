@@ -444,19 +444,32 @@ def test_low_precision_gpu_conversion(dtype, sparse):
         assert_allclose(X, from_table(X_table))
 
 
-@pytest.mark.parametrize("X", [None, 1, "test", [], np.pi, lambda: None])
+@pytest.mark.parametrize("X", [None, 5, "test", True, [], np.pi, lambda: None])
 @pytest.mark.parametrize("queue", get_queues())
 def test_non_array(X, queue):
     # Verify that to and from table doesn't raise errors
     # no guarantee is made about type or content
-    X_table = to_table(X, queue=queue)
-    from_table(X_table)
+    err_str = ""
+    if np.isscalar(X) or X is None:
+        temp = np.atleast_2d(X)
+        if temp.dtype not in [np.float64, np.float32, np.int64]:
+            err_str = "[convert_to_table] Not available input format for convert Python object to onedal table."
+
+    else:
+        err_str = "Found unsupported array type"
+
+    if err_str:
+        with pytest.raises(ValueError, match=err_str):
+            to_table(X)
+    else:
+        X_table = to_table(X, queue=queue)
+        from_table(X_table)
 
 
 @pytest.mark.skipif(
     not _is_dpc_backend, reason="Requires DPC backend for dtype conversion"
 )
-@pytest.mark.parametrize("X", [None, 1, "test", [], np.pi, lambda: None])
+@pytest.mark.parametrize("X", [None, 5, "test", True, [], np.pi, lambda: None])
 @pytest.mark.parametrize("sparse", [True, False])
 def test_low_precision_non_array(X, sparse):
     # Use a dummy queue as fp32 hardware is not in public testing
@@ -471,4 +484,4 @@ def test_low_precision_non_array(X, sparse):
         sycl_device = DummySyclDevice()
 
     queue = DummySyclQueue()
-    X_table = to_table(X, queue=queue)
+    test_non_array(X, queue)
