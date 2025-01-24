@@ -154,6 +154,25 @@ inline csr_table_t convert_to_csr_impl(PyObject *py_data,
 
 dal::table convert_to_table(py::object inp_obj, py::object queue) {
     dal::table res;
+#ifdef ONEDAL_DATA_PARALLEL
+    if (!queue.is(py::none()) && !queue.attr("sycl_device").attr("has_aspect_fp64").cast<bool>() &&
+        hasattr(inp_obj, "dtype")) {
+        // If the queue exists, doesn't have the fp64 aspect, and the data is float64
+        // then cast it to float32
+        int type = reinterpret_cast<PyArray_Descr *>(inp_obj.attr("dtype").ptr())->type_num;
+        if (type == NPY_DOUBLE || type == NPY_DOUBLELTR) {
+            PyErr_WarnEx(
+                PyExc_RuntimeWarning,
+                "Data will be converted into float32 from float64 because device does not support it",
+                1);
+            // use astype instead of PyArray_Cast in order to support scipy sparse inputs
+            inp_obj = inp_obj.attr("astype")(py::dtype::of<float>());
+            res = convert_to_table(
+                inp_obj); // queue will be set to none, as this check is no longer necessary
+            return res;
+        }
+    }
+#endif // ONEDAL_DATA_PARALLEL
 
     PyObject *obj = inp_obj.ptr();
 
@@ -161,26 +180,6 @@ dal::table convert_to_table(py::object inp_obj, py::object queue) {
         return res;
     }
     if (is_array(obj)) {
-#ifdef ONEDAL_DATA_PARALLEL
-        if (!queue.is(py::none()) &&
-            !queue.attr("sycl_device").attr("has_aspect_fp64").cast<bool>()) {
-            // If the queue exists, doesn't have the fp64 aspect, and the data is float64
-            // then cast it to float32
-            int type = reinterpret_cast<PyArray_Descr *>(inp_obj.attr("dtype").ptr())->type_num;
-            if (type == NPY_DOUBLE || type == NPY_DOUBLELTR) {
-                PyErr_WarnEx(
-                    PyExc_RuntimeWarning,
-                    "Data will be converted into float32 from float64 because device does not support it",
-                    1);
-                // use astype instead of PyArray_Cast in order to support scipy sparse inputs
-                inp_obj = inp_obj.attr("astype")(py::dtype::of<float>());
-                res = convert_to_table(
-                    inp_obj); // queue will be set to none, as this check is no longer necessary
-                return res;
-            }
-        }
-#endif // ONEDAL_DATA_PARALLEL
-
         PyArrayObject *ary = reinterpret_cast<PyArrayObject *>(obj);
 
         if (!PyArray_ISCARRAY_RO(ary) && !PyArray_ISFARRAY_RO(ary)) {
@@ -400,7 +399,8 @@ PyObject *convert_to_pyobject(const dal::table &input) {
     }
     if (input.get_kind() == dal::homogen_table::kind()) {
         const auto &homogen_input = static_cast<const dal::homogen_table &>(input);
-        const dal::data_type dtype = homogen_input.get_metadata().get_data_type(0);
+        if (homogen_input.get_data_layout() == dal::data_layout::row_major) {
+            const dal::data_type dtype = homogen_input.get_metadata().get_data_type(0);
 
 #define MAKE_NYMPY_FROM_HOMOGEN(NpType)                                        \
     {                                                                          \
@@ -409,10 +409,16 @@ PyObject *convert_to_pyobject(const dal::table &input) {
                                             homogen_input.get_row_count(),     \
                                             homogen_input.get_column_count()); \
     }
-        SET_CTYPE_NPY_FROM_DAL_TYPE(dtype,
-                                    MAKE_NYMPY_FROM_HOMOGEN,
-                                    throw std::invalid_argument("Unable to convert numpy object"));
+            SET_CTYPE_NPY_FROM_DAL_TYPE(
+                dtype,
+                MAKE_NYMPY_FROM_HOMOGEN,
+                throw std::invalid_argument("Not avalible to convert a numpy"));
 #undef MAKE_NYMPY_FROM_HOMOGEN
+        }
+        else {
+            throw std::invalid_argument(
+                "Output oneDAL table doesn't have row major format for homogen table");
+        }
     }
     else if (input.get_kind() == csr_table_t::kind()) {
         const auto &csr_input = static_cast<const csr_table_t &>(input);
@@ -422,7 +428,7 @@ PyObject *convert_to_pyobject(const dal::table &input) {
         SET_CTYPES_NPY_FROM_DAL_TYPE(
             dtype,
             MAKE_PY_FROM_CSR,
-            throw std::invalid_argument("Unable to convert scipy csr object"));
+            throw std::invalid_argument("Not avalible to convert a scipy.csr"));
 #undef MAKE_PY_FROM_CSR
     }
     else {
