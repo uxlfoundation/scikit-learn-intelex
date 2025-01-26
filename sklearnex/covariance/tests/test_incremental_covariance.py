@@ -43,6 +43,7 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
+from sklearnex import config_context
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -126,8 +127,16 @@ def test_sklearnex_fit_on_gold_data(dataframe, queue, batch_size, dtype):
 @pytest.mark.parametrize("row_count", [100, 1000])
 @pytest.mark.parametrize("column_count", [10, 100])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("use_raw_input", [True, False])
 def test_sklearnex_partial_fit_on_random_data(
-    dataframe, queue, num_batches, row_count, column_count, dtype
+    skip_unsupported_raw_input,
+    dataframe,
+    queue,
+    num_batches,
+    row_count,
+    column_count,
+    dtype,
+    use_raw_input,
 ):
     from sklearnex.covariance import IncrementalEmpiricalCovariance
 
@@ -138,17 +147,18 @@ def test_sklearnex_partial_fit_on_random_data(
     X_split = np.array_split(X, num_batches)
     inccov = IncrementalEmpiricalCovariance()
 
-    for i in range(num_batches):
-        X_split_df = _convert_to_dataframe(
-            X_split[i], sycl_queue=queue, target_df=dataframe
-        )
-        result = inccov.partial_fit(X_split_df)
+    with config_context(use_raw_input=use_raw_input):
+        for i in range(num_batches):
+            X_split_df = _convert_to_dataframe(
+                X_split[i], sycl_queue=queue, target_df=dataframe
+            )
+            result = inccov.partial_fit(X_split_df, check_input=not use_raw_input)
 
-    expected_covariance = np.cov(X.T, bias=1)
-    expected_means = np.mean(X, axis=0)
+        expected_covariance = np.cov(X.T, bias=1)
+        expected_means = np.mean(X, axis=0)
 
-    assert_allclose(expected_covariance, result.covariance_, atol=1e-6)
-    assert_allclose(expected_means, result.location_, atol=1e-6)
+        assert_allclose(expected_covariance, result.covariance_, atol=1e-6)
+        assert_allclose(expected_means, result.location_, atol=1e-6)
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())

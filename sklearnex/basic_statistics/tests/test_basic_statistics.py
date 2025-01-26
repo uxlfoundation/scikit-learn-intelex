@@ -24,6 +24,7 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
+from sklearnex._config import config_context
 from sklearnex.basic_statistics import BasicStatistics
 
 
@@ -96,8 +97,17 @@ def test_multiple_options_on_gold_data(dataframe, queue, weighted, dtype):
 @pytest.mark.parametrize("column_count", [10, 100])
 @pytest.mark.parametrize("weighted", [True, False])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("use_raw_input", [True, False])
 def test_single_option_on_random_data(
-    dataframe, queue, result_option, row_count, column_count, weighted, dtype
+    skip_unsupported_raw_input,
+    dataframe,
+    queue,
+    result_option,
+    row_count,
+    column_count,
+    weighted,
+    dtype,
+    use_raw_input,
 ):
     function, tols = options_and_tests[result_option]
     fp32tol, fp64tol = tols
@@ -112,10 +122,11 @@ def test_single_option_on_random_data(
         weights_df = _convert_to_dataframe(weights, sycl_queue=queue, target_df=dataframe)
     basicstat = BasicStatistics(result_options=result_option)
 
-    if weighted:
-        result = basicstat.fit(X_df, sample_weight=weights_df)
-    else:
-        result = basicstat.fit(X_df)
+    with config_context(use_raw_input=use_raw_input):
+        if weighted:
+            result = basicstat.fit(X_df, sample_weight=weights_df)
+        else:
+            result = basicstat.fit(X_df)
 
     res = getattr(result, result_option)
     if weighted:

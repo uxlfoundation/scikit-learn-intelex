@@ -17,6 +17,7 @@
 import logging
 
 from daal4py.sklearn._utils import daal_check_version
+from sklearnex._config import get_config
 
 if daal_check_version((2024, "P", 100)):
     import numbers
@@ -138,13 +139,23 @@ if daal_check_version((2024, "P", 100)):
             )
 
         def _onedal_fit(self, X, queue=None):
-            X = validate_data(
-                self,
-                X,
-                dtype=[np.float64, np.float32],
-                ensure_2d=True,
-                copy=self.copy,
-            )
+            if get_config()["use_raw_input"] is True:
+                # With `use_raw_input=True`` we never check for oneDAL compatibility and instead
+                # always dispatch to oneDAL.
+                # For this algorithm this means that `_is_solver_compatible_with_onedal()``
+                # never gets called, and therefore `self._fit_svd_solver` is not set.
+                # We therefore assert the solver compatibility here explictly to set all
+                # variables correctly.
+                assert self._is_solver_compatible_with_onedal(X.shape)
+            else:
+                # Compatibility is already asserted, continue with checking the provided data
+                X = validate_data(
+                    self,
+                    X,
+                    dtype=[np.float64, np.float32],
+                    ensure_2d=True,
+                    copy=self.copy,
+                )
 
             onedal_params = {
                 "n_components": self.n_components,
@@ -182,18 +193,19 @@ if daal_check_version((2024, "P", 100)):
             )
 
         def _onedal_transform(self, X, queue=None):
-            if sklearn_check_version("1.0"):
-                X = validate_data(
-                    self,
-                    X,
-                    dtype=[np.float64, np.float32],
-                    reset=False,
-                )
-            else:
-                X = check_array(
-                    X,
-                    dtype=[np.float64, np.float32],
-                )
+            if get_config()["use_raw_input"] is False:
+                if sklearn_check_version("1.0"):
+                    X = validate_data(
+                        self,
+                        X,
+                        dtype=[np.float64, np.float32],
+                        reset=False,
+                    )
+                else:
+                    X = check_array(
+                        X,
+                        dtype=[np.float64, np.float32],
+                    )
             self._validate_n_features_in_after_fitting(X)
 
             return self._onedal_estimator.predict(X, queue=queue)

@@ -15,10 +15,12 @@
 # ===============================================================================
 import numpy as np
 
-from daal4py.sklearn._utils import daal_check_version, get_dtype
+from daal4py.sklearn._utils import daal_check_version
 
+from .._config import _get_config
 from ..datatypes import from_table, to_table
 from ..utils import _check_array
+from ..utils._array_api import _get_sycl_namespace
 from .covariance import BaseEmpiricalCovariance
 
 
@@ -70,6 +72,7 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
         self.finalize_fit()
         data = self.__dict__.copy()
         data.pop("_queue", None)
+        data.pop("_input_xp", None)  # module cannot be pickled
 
         return data
 
@@ -95,10 +98,19 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
         self : object
             Returns the instance itself.
         """
-        X = _check_array(X, dtype=[np.float64, np.float32], ensure_2d=True)
+        # Saving input array namespace and sua_iface, that will be used in
+        # finalize_fit.
+        sua_iface, xp, _ = _get_sycl_namespace(X)
+        self._input_sua_iface = sua_iface
+        self._input_xp = xp
+
+        use_raw_input = _get_config().get("use_raw_input", False)
+        if use_raw_input and sua_iface:
+            queue = X.sycl_queue
+        if not use_raw_input:
+            X = _check_array(X, dtype=[np.float64, np.float32], ensure_2d=True)
 
         self._queue = queue
-
         policy = self._get_policy(queue, X)
 
         X_table = to_table(X, queue=queue)

@@ -23,6 +23,7 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
+from sklearnex._config import config_context
 from sklearnex.linear_model import IncrementalLinearRegression
 from sklearnex.tests.utils import _IS_INTEL
 
@@ -31,7 +32,16 @@ from sklearnex.tests.utils import _IS_INTEL
 @pytest.mark.parametrize("fit_intercept", [True, False])
 @pytest.mark.parametrize("macro_block", [None, 1024])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_sklearnex_fit_on_gold_data(dataframe, queue, fit_intercept, macro_block, dtype):
+@pytest.mark.parametrize("use_raw_input", [True, False])
+def test_sklearnex_fit_on_gold_data(
+    skip_unsupported_raw_input,
+    dataframe,
+    queue,
+    fit_intercept,
+    macro_block,
+    dtype,
+    use_raw_input,
+):
     X = np.array([[1], [2]])
     X = X.astype(dtype=dtype)
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
@@ -44,7 +54,8 @@ def test_sklearnex_fit_on_gold_data(dataframe, queue, fit_intercept, macro_block
         hparams = IncrementalLinearRegression.get_hyperparameters("fit")
         hparams.cpu_macro_block = macro_block
         hparams.gpu_macro_block = macro_block
-    inclin.fit(X_df, y_df)
+    with config_context(use_raw_input=use_raw_input):
+        inclin.fit(X_df, y_df)
 
     y_pred = inclin.predict(X_df)
     np_y_pred = _as_numpy(y_pred)
