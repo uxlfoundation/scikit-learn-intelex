@@ -245,7 +245,7 @@ class _BaseKMeans(onedal_BaseEstimator, TransformerMixin, ClusterMixin, ABC):
         self, X_table, centroids_table, module, policy, dtype=np.float32, is_csr=False
     ):
         params = self._get_onedal_params(is_csr, dtype)
-        
+
         assert X_table.dtype == dtype
 
         result = module.train(policy, params, X_table, centroids_table)
