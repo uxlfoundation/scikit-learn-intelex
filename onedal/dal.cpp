@@ -51,7 +51,6 @@ ONEDAL_PY_INIT_MODULE(sycl);
 ONEDAL_PY_INIT_MODULE(policy);
 /* datatypes*/
 ONEDAL_PY_INIT_MODULE(table);
-ONEDAL_PY_INIT_MODULE(table_metadata);
 
 /* primitives */
 ONEDAL_PY_INIT_MODULE(get_tree);
@@ -115,7 +114,6 @@ PYBIND11_MODULE(_onedal_py_host, m) {
 #endif
     init_policy(m);
     init_table(m);
-    init_table_metadata(m);
 
     init_linear_kernel(m);
     init_rbf_kernel(m);
