@@ -78,7 +78,7 @@ ONEDAL_PY_INIT_MODULE(table) {
     });
 
 #ifdef ONEDAL_DATA_PARALLEL
-    define_sycl_usm_array_property(table_obj);
+    sycl_usm::define_sycl_usm_array_property(table_obj);
 #endif // ONEDAL_DATA_PARALLEL
 
     m.def("to_table", [](py::object obj, py::object queue) {
