@@ -16,7 +16,7 @@
 
 #include "oneapi/dal/table/common.hpp"
 
-#include "onedal/datatypes/utils/numpy_helpers.hpp"
+#include "onedal/datatypes/numpy/numpy_helpers.hpp"
 #include "onedal/common/pybind11_helpers.hpp"
 #include "onedal/version.hpp"
 
@@ -38,7 +38,7 @@ ONEDAL_PY_INIT_MODULE(table_metadata) {
     table_metadata_obj.def("get_npy_dtype",
                            [](const table_metadata* const ptr, std::int64_t feature) {
                                const auto npy_type =
-                                   convert_dal_to_npy_type(ptr->get_data_type(feature));
+                                   numpy::convert_dal_to_npy_type(ptr->get_data_type(feature));
                                return py::dtype(npy_type);
                            });
 
