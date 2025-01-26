@@ -214,7 +214,7 @@ def test_options_csr(queue, option, dtype):
     fp32tol, fp64tol = tols
 
     if result_option == "max":
-        pytest.skip("There is a bug in oneDAL's max computations on GPU")
+        pytest.xfail("There is a bug in oneDAL's max computations on GPU")
 
     seed = 42
     row_count, column_count = 20046, 4007

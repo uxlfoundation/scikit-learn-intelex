@@ -118,7 +118,7 @@ def test_logistic_spmd_gold(dataframe, queue):
 def test_logistic_spmd_synthetic(n_samples, n_features, C, tol, dataframe, queue, dtype):
     # TODO: Resolve numerical issues when n_rows_rank < n_cols
     if n_samples <= n_features:
-        pytest.skip("Numerical issues when rank rows < columns")
+        pytest.xfail("Numerical issues when rank rows < columns")
 
     # Import spmd and batch algo
     from sklearnex.linear_model import LogisticRegression as LogisticRegression_Batch

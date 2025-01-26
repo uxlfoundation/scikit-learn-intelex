@@ -91,7 +91,7 @@ def test_rfcls_spmd_gold(dataframe, queue):
     spmd_result = spmd_model.predict(local_dpt_X_test)
     batch_result = batch_model.predict(X_test)
 
-    pytest.skip("SPMD and batch random forest results not aligned")
+    pytest.xfail("SPMD and batch random forest results not aligned")
     _spmd_assert_allclose(spmd_result, batch_result)
 
 
@@ -144,7 +144,7 @@ def test_rfcls_spmd_synthetic(
     spmd_result = spmd_model.predict(local_dpt_X_test)
     batch_result = batch_model.predict(X_test)
 
-    pytest.skip("SPMD and batch random forest results not aligned")
+    pytest.xfail("SPMD and batch random forest results not aligned")
     _spmd_assert_allclose(spmd_result, batch_result)
 
 
@@ -208,7 +208,7 @@ def test_rfreg_spmd_gold(dataframe, queue):
     spmd_result = spmd_model.predict(local_dpt_X_test)
     batch_result = batch_model.predict(X_test)
 
-    pytest.skip("SPMD and batch random forest results not aligned")
+    pytest.xfail("SPMD and batch random forest results not aligned")
     _spmd_assert_allclose(spmd_result, batch_result)
 
 
@@ -261,5 +261,5 @@ def test_rfreg_spmd_synthetic(
     batch_result = batch_model.predict(X_test)
 
     # TODO: remove skips when SPMD and batch are aligned
-    pytest.skip("SPMD and batch random forest results not aligned")
+    pytest.xfail("SPMD and batch random forest results not aligned")
     _spmd_assert_allclose(spmd_result, batch_result)

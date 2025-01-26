@@ -110,7 +110,7 @@ def _test_diabetes_compare_with_sklearn(queue, kernel):
 @pytest.mark.parametrize("kernel", ["linear", "rbf", "poly", "sigmoid"])
 def test_diabetes_compare_with_sklearn(queue, kernel):
     if kernel == "sigmoid":
-        pytest.skip("Sparse sigmoid kernel function is buggy.")
+        pytest.xfail("Sparse sigmoid kernel function is buggy.")
     _test_diabetes_compare_with_sklearn(queue, kernel)
 
 

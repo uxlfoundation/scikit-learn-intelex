@@ -28,7 +28,7 @@ from onedal.tests.utils._dataframes_support import (
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 def test_sklearnex_import_svc(dataframe, queue):
     if queue and queue.sycl_device.is_gpu:
-        pytest.skip("SVC fit for the GPU sycl_queue is buggy.")
+        pytest.xfail("SVC fit for the GPU sycl_queue is buggy.")
     from sklearnex.svm import SVC
 
     X = np.array([[-2, -1], [-1, -1], [-1, -2], [+1, +1], [+1, +2], [+2, +1]])
@@ -44,7 +44,7 @@ def test_sklearnex_import_svc(dataframe, queue):
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 def test_sklearnex_import_nusvc(dataframe, queue):
     if queue and queue.sycl_device.is_gpu:
-        pytest.skip("NuSVC fit for the GPU sycl_queue is buggy.")
+        pytest.xfail("NuSVC fit for the GPU sycl_queue is buggy.")
     from sklearnex.svm import NuSVC
 
     X = np.array([[-2, -1], [-1, -1], [-1, -2], [+1, +1], [+1, +2], [+2, +1]])
@@ -62,7 +62,7 @@ def test_sklearnex_import_nusvc(dataframe, queue):
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 def test_sklearnex_import_svr(dataframe, queue):
     if queue and queue.sycl_device.is_gpu:
-        pytest.skip("SVR fit for the GPU sycl_queue is buggy.")
+        pytest.xfail("SVR fit for the GPU sycl_queue is buggy.")
     from sklearnex.svm import SVR
 
     X = np.array([[-2, -1], [-1, -1], [-1, -2], [+1, +1], [+1, +2], [+2, +1]])
@@ -78,7 +78,7 @@ def test_sklearnex_import_svr(dataframe, queue):
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 def test_sklearnex_import_nusvr(dataframe, queue):
     if queue and queue.sycl_device.is_gpu:
-        pytest.skip("NuSVR fit for the GPU sycl_queue is buggy.")
+        pytest.xfail("NuSVR fit for the GPU sycl_queue is buggy.")
     from sklearnex.svm import NuSVR
 
     X = np.array([[-2, -1], [-1, -1], [-1, -2], [+1, +1], [+1, +2], [+2, +1]])

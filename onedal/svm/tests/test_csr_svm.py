@@ -143,7 +143,7 @@ def _test_iris(queue, kernel):
 @pytest.mark.parametrize("kernel", ["linear", "rbf", "poly", "sigmoid"])
 def test_iris(queue, kernel):
     if kernel == "rbf":
-        pytest.skip("RBF CSR SVM test failing in 2025.0.")
+        pytest.xfail("RBF CSR SVM test failing in 2025.0.")
     _test_iris(queue, kernel)
 
 
@@ -163,7 +163,7 @@ def _test_diabetes(queue, kernel):
 @pytest.mark.parametrize("kernel", ["linear", "rbf", "poly", "sigmoid"])
 def test_diabetes(queue, kernel):
     if kernel == "sigmoid":
-        pytest.skip("Sparse sigmoid kernel function is buggy.")
+        pytest.xfail("Sparse sigmoid kernel function is buggy.")
     _test_diabetes(queue, kernel)
 
 

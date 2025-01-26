@@ -34,7 +34,7 @@ def test_iris(queue):
 @pytest.mark.parametrize("queue", get_queues())
 def test_pickle(queue):
     if queue and queue.sycl_device.is_gpu:
-        pytest.skip("KNN classifier pickling for the GPU sycl_queue is buggy.")
+        pytest.xfail("KNN classifier pickling for the GPU sycl_queue is buggy.")
     iris = datasets.load_iris()
     clf = KNeighborsClassifier(2).fit(iris.data, iris.target, queue=queue)
     expected = clf.predict(iris.data, queue=queue)
