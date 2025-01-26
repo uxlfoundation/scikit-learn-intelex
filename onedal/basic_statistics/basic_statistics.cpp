@@ -216,7 +216,7 @@ void init_partial_compute_result(py::module_& m) {
                     py::cast<py::object>(numpy::convert_to_pyobject(res.get_partial_sum())),
                     py::cast<py::object>(numpy::convert_to_pyobject(res.get_partial_sum_squares())),
                     py::cast<py::object>(
-                        convert_to_pyobject(res.get_partial_sum_squares_centered())));
+                        numpy::convert_to_pyobject(res.get_partial_sum_squares_centered())));
             },
             [](py::tuple t) {
                 if (t.size() != 6)
