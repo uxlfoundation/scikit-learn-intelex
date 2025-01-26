@@ -162,8 +162,6 @@ def _test_diabetes(queue, kernel):
 @pytest.mark.parametrize("queue", get_queues())
 @pytest.mark.parametrize("kernel", ["linear", "rbf", "poly", "sigmoid"])
 def test_diabetes(queue, kernel):
-    if kernel == "sigmoid":
-        pytest.skip("Sparse sigmoid kernel function is buggy.")
     _test_diabetes(queue, kernel)
 
 
