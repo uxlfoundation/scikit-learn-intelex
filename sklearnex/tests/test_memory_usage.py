@@ -32,6 +32,8 @@ from sklearn.model_selection import KFold
 from onedal import _is_dpc_backend
 from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
+    dpctl_available,
+    dpnp_available,
     get_dataframes_and_queues,
 )
 from onedal.tests.utils._device_selection import get_queues, is_dpctl_device_available
@@ -167,10 +169,13 @@ def take(x, index, axis=0, queue=None):
         return xp.take(
             x, xp.asarray(index, usm_type="device", sycl_queue=x.sycl_queue), axis=axis
         )
+    # TODO:
+    # re-impl _is_numpy_namespace
+    # elif array_api and not isinstance(x, np.ndarray):
     elif array_api:
         return xp.take(x, xp.asarray(index, device=x.device), axis=axis)
     else:
-        return x.take(index, axis=axis)
+        return xp.take(x, xp.asarray(index), axis=axis)
 
 
 def split_train_inference(kf, x, y, estimator, queue=None):
@@ -288,7 +293,7 @@ def _kfold_function_template(
 
 @pytest.mark.parametrize("order", ["F", "C"])
 @pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("numpy,pandas,dpctl", "cpu")
+    "dataframe,queue", get_dataframes_and_queues("numpy,pandas,dpctl,array_api", "cpu")
 )
 @pytest.mark.parametrize("estimator", CPU_ESTIMATORS.keys())
 @pytest.mark.parametrize("data_shape", data_shapes)
