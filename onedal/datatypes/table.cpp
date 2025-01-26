@@ -74,7 +74,7 @@ ONEDAL_PY_INIT_MODULE(table) {
     });
     table_obj.def_property_readonly("dtype", [](const table& t) {
         // returns a numpy dtype, even if source was not from numpy
-        return py::dtype(convert_dal_to_npy_type(t.get_metadata().get_data_type(0)));
+        return py::dtype(numpy::convert_dal_to_npy_type(t.get_metadata().get_data_type(0)));
     });
 
 #ifdef ONEDAL_DATA_PARALLEL
