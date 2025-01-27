@@ -22,7 +22,7 @@
 #include "oneapi/dal/detail/common.hpp"
 
 #include "onedal/datatypes/sycl_usm/dtype_conversion.hpp"
-#include "onedal/datatypes/sycl_usm/dtype_dispatcher.hpp"
+#include "onedal/datatypes/dtype_dispatcher.hpp"
 
 namespace oneapi::dal::python::sycl_usm {
 
