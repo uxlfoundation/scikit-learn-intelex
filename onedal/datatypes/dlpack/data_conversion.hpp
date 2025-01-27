@@ -21,10 +21,6 @@
 
 #ifdef ONEDAL_DATA_PARALLEL
 #include <sycl/sycl.hpp>
-#else // ONEDAL_DATA_PARALLEL
-namespace sycl {
-    class queue;
-} // namespace sycl
 #endif // ONEDAL_DATA_PARALLEL
 
 #include <pybind11/pybind11.h>
@@ -33,27 +29,20 @@ namespace sycl {
 #include "onedal/datatypes/dlpack/dlpack_utils.hpp"
 #include "onedal/datatypes/dlpack/dtype_conversion.hpp"
 
-namespace py = pybind11;
+#include "oneapi/dal/table/common.hpp"
 
-namespace oneapi::dal::python::interop::dlpack {
+namespace oneapi::dal::python:::dlpack {
+
+namespace py = pybind11;
 
 using tensor_t = const DLTensor;
 using managed_t = const DLManagedTensor;
 
-template <std::int64_t dim>
-struct dlpack_interface {
-    dal::data_type dtype;
-    std::uint64_t offset;
-    std::shared_ptr<sycl::queue> queue;
-    std::array<std::int64_t, dim> shape;
-    std::array<std::int64_t, dim> strides;
-    std::pair<std::uintptr_t, bool> data;
-};
+dal::table convert_to_table(py::object obj, py::object queue = py::none());
 
-template <std::int64_t dim>
-DLTensor produce_unmanaged(std::shared_ptr<dlpack_interface<dim>> ptr);
+py::capsule construct_dlpack_capsule(const dal::table& input);
 
-template <std::int64_t dim>
-std::shared_ptr<dlpack_interface<dim>> get_dlpack_interface(py::capsule caps); 
+// Adding `__dlpack__` attribute to python oneDAL table.
+void define_dlpack_attribute(py::class_<dal::table>& t);
 
-} // namespace oneapi::dal::python::interop::dlpack
+} // namespace oneapi::dal::python::dlpack

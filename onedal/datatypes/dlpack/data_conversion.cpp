@@ -14,37 +14,37 @@
 * limitations under the License.
 *******************************************************************************/
 
-#include <pybind11/pybind11.h>
-
-#include "onedal/datatypes/dlpack/dlpack.h"
-#include "onedal/datatypes/dlpack/dlpack_utils.hpp"
 #include "onedal/datatypes/dlpack/data_conversion.hpp"
-#include "onedal/datatypes/dlpack/device_conversion.hpp"
-#include "onedal/datatypes/dlpack/dtype_conversion.hpp"
-
 
 namespace oneapi::dal::python::dlpack {
 
-template <std::int64_t dim>
-DLTensor produce_unmanaged(std::shared_ptr<dlpack_interface<dim>> ptr) {
-    DLTensor result;
+dal::table convert_to_homogen_impl(py::object inp_obj) {
 
-    result.byte_offset = ptr->offset;
-    result.shape = ptr->shape.data();
-    result.strides = ptr->strides.data();
-    result.device = get_device(ptr->queue);
-    result.dtype = convert_dal_to_dlpack_type(ptr->dtype);
-    result.ndim = detail::integral_cast<std::int32_t>(dim);
-    result.data = reinterpret_cast<void*>(ptr->data.second);
 
-    return result;
+// Get and check `__sycl_usm_array_interface__` number of dimensions.
+
 }
+
+dal::table convert_to_table(py::object inp_obj) {
+    dal::table res;
+
+    // extract __dlpack__ attribute from the inp_obj
+    py::capsule 
+
+    // Get `DLTensor` struct.
+    const DLTensor& tensor = managed.dl_tensor;
+
+
+}
+
+
 
 template <std::int64_t dim, typename Deleter>
 inline std::shared_ptr<dlpack_interface<dim>> convert(const DLManagedTensor& managed,
                                                       Deleter&& deleter) {
-    auto* const ptr = new dlpack_interface<dim>{};
-    const auto& tensor = managed.dl_tensor;
+
+    // Get `DLTensor` struct.
+    const DLTensor& tensor = managed.dl_tensor;
 
     ptr->data.second = true;
     ptr->queue = get_queue(tensor.device);
