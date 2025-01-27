@@ -1,6 +1,6 @@
 alabaster==1.0.0
 async-generator==1.10
-attrs==24.3.0
+attrs==25.1.0
 Babel==2.16.0
 backcall==0.2.0
 beautifulsoup4==4.12.3

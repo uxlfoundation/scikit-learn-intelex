@@ -82,7 +82,13 @@ class BasicStatistics(BaseBasicStatistics):
             sample_weight = _check_array(sample_weight, ensure_2d=False)
 
         is_single_dim = data.ndim == 1
-        data_table, weights_table = to_table(data, sample_weight, queue=queue)
+
+        data_table = to_table(data, queue=queue)
+        weights_table = (
+            to_table(sample_weight, queue=queue)
+            if sample_weight is not None
+            else to_table(None)
+        )
 
         dtype = data_table.dtype
         raw_result = self._compute_raw(data_table, weights_table, policy, dtype, is_csr)
