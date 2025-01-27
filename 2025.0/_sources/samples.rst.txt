@@ -53,6 +53,13 @@ If you want to run them locally, refer to `these instructions
    Kmeans for spoken arabic digit dataset <samples/kmeans.ipynb>
    DBSCAN for spoken arabic digit dataset <samples/dbscan.ipynb>
 
+.. rubric:: Dimensionality Reduction Tasks
+
+.. toctree::
+   :maxdepth: 1
+
+   Intel® Extension for Scikit-learn TSNE example <samples/tsne.ipynb>
+
 .. rubric:: Jupyter Notebook Samples
 
 .. toctree::

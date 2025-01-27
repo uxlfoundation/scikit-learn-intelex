@@ -113,7 +113,7 @@ MultiClass Classification
        - training and prediction using scikit-learn-intelex
        - search for optimal paramters using Optuna
        - performance comparison to scikit-learn
-   * - `Support Vector Classification (SVC) for MultiClass Classification
+   * - `Support Vector Classification (SVC) for MultiClass Classification (example 1)
        <https://www.kaggle.com/napetrov/svm-tps-may-2021-with-scikit-learn-intelex>`_
        
        **Data:** [TPS May 2021] Synthetic eCommerce data
@@ -135,7 +135,7 @@ MultiClass Classification
        - searching for optimal parameters for the stacking classifier
        - training and prediction using scikit-learn-intelex
        - performance comparison to scikit-learn
-   * - `Support Vector Classification (SVC) for MultiClass Classification
+   * - `Support Vector Classification (SVC) for MultiClass Classification (example 2)
        <https://www.kaggle.com/code/alexeykolobyanin/tps-dec-svc-with-sklearnex-20x-speedup>`_
        
        **Data:** [TPS Dec 2021] Synthetic Forest Cover Type data
