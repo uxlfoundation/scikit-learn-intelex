@@ -1,15 +1,29 @@
 [
     {
-        "name": "2024.6 (latest)",
+        "name": "latest",
+        "version": "latest",
+        "url": "/scikit-learn-intelex/2025.1/"
+    },
+    {
+        "name": "2025.1",
+        "version": "2025.1",
+        "url": "/scikit-learn-intelex/2025.1/"
+    },
+    {
+        "name": "2025.0",
+        "version": "2025.0",
+        "url": "/scikit-learn-intelex/2025.0/"
+    },
+    {
         "version": "2024.6",
-        "url": "https:///intel.github.io/scikit-learn-intelex/2024.6/"
+        "url": "/scikit-learn-intelex/2024.6/"
     },
     {
         "version": "2024.3",
-        "url": "https:///intel.github.io/scikit-learn-intelex/2024.3/"
-    }, 
+        "url": "/scikit-learn-intelex/2024.3/"
+    },
     {
         "version": "2023.2",
-        "url": "https:///intel.github.io/scikit-learn-intelex/2023.2/"
+        "url": "/scikit-learn-intelex/2023.2/"
     }
 ]
