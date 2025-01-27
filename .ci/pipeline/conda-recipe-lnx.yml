@@ -20,7 +20,7 @@ steps:
       conda update -y -q --all
     displayName: "Conda update"
   - script: |
-      conda create -y -q -n build-env conda-build conda-verify py-lief=0.14
+      conda create -y -q -n build-env conda-build conda-verify
     displayName: "Conda create"
   - script: |
       . /usr/share/miniconda/etc/profile.d/conda.sh
