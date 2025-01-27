@@ -22,13 +22,10 @@
 #include "oneapi/dal/common.hpp"
 #include "oneapi/dal/detail/common.hpp"
 
-#include "onedal/common/dtype_dispatcher.hpp"
+#include "onedal/datatypes/dlpack/dlpack.h"
+#include "onedal/datatypes/dlpack/dtype_conversion.hpp"
 
-#include "onedal/interop/common.hpp"
-#include "onedal/interop/dlpack/api/dlpack.h"
-#include "onedal/interop/dlpack/dtype_conversion.hpp"
-
-namespace oneapi::dal::python::interop::dlpack {
+namespace oneapi::dal::python::dlpack {
 
 union type_hash_union {
     std::uint8_t bytes[4];
@@ -156,4 +153,4 @@ DLDataType convert_dal_to_dlpack_type(dal::data_type dtype) {
     }
 }
 
-} // namespace oneapi::dal::python::interop::dlpack
+} // namespace oneapi::dal::python::dlpack

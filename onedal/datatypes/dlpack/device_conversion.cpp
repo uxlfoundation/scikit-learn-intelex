@@ -22,13 +22,13 @@
 
 #include <pybind11/pybind11.h>
 
-#include "onedal/common/device_lookup.hpp"
-#include "onedal/interop/dlpack/api/dlpack.h"
-#include "onedal/interop/dlpack/device_conversion.hpp"
+#include "onedal/common/sycl_interfaces.hpp"
+#include "onedal/datatypes/dlpack.h"
+#include "onedal/datatypes/dlpack/device_conversion.hpp"
 
 namespace py = pybind11;
 
-namespace oneapi::dal::python::interop::dlpack {
+namespace oneapi::dal::python::dlpack {
 
 constexpr inline auto cpu = DLDeviceType::kDLCPU;
 constexpr inline auto oneapi = DLDeviceType::kDLOneAPI;
@@ -156,4 +156,4 @@ void instantiate_convert_to_policy(py::module& pm) {
     });
 }
 
-} // namespace oneapi::dal::python::interop::dlpack
+} // namespace oneapi::dal::python::dlpack

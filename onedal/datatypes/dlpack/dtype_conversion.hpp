@@ -23,11 +23,11 @@
 #include "oneapi/dal/common.hpp"
 #include "oneapi/dal/detail/common.hpp"
 
-#include "onedal/interop/dlpack/api/dlpack.h"
+#include "onedal/datatypes/dlpack/dlpack.h"
 
 namespace py = pybind11;
 
-namespace oneapi::dal::python::interop::dlpack {
+namespace oneapi::dal::python::dlpack {
 
 // DLDataType is only 64 bits in size. Not expensive
 dal::data_type convert_dlpack_to_dal_type(DLDataType dt);
@@ -39,4 +39,4 @@ inline DLDataType make_data_type(Type tag = {}) {
     return convert_dlpack_to_dal_type(dt);
 }
 
-} // namespace oneapi::dal::python::interop::dlpack
+} // namespace oneapi::dal::python::dlpack

@@ -16,15 +16,13 @@
 
 #include <pybind11/pybind11.h>
 
-#include "onedal/interop/utils/common.hpp"
+#include "onedal/datatypes/dlpack/dlpack.h"
+#include "onedal/datatypes/dlpack/dlpack_utils.hpp"
+#include "onedal/datatypes/dlpack/dtype_conversion.hpp"
+#include "onedal/datatypes/dlpack/dlpack_interface.hpp"
+#include "onedal/datatypes/dlpack/device_conversion.hpp"
 
-#include "onedal/interop/dlpack/api/dlpack.h"
-#include "onedal/interop/dlpack/dlpack_utils.hpp"
-#include "onedal/interop/dlpack/dtype_conversion.hpp"
-#include "onedal/interop/dlpack/dlpack_interface.hpp"
-#include "onedal/interop/dlpack/device_conversion.hpp"
-
-namespace oneapi::dal::python::interop::dlpack {
+namespace oneapi::dal::python::dlpack {
 
 template <std::int64_t dim>
 DLTensor produce_unmanaged(std::shared_ptr<dlpack_interface<dim>> ptr) {
@@ -96,4 +94,4 @@ std::shared_ptr<dlpack_interface<dim>> get_dlpack_interface(py::capsule capsule)
 INSTANTIATE_DIM(1)
 INSTANTIATE_DIM(2)
 
-} // namespace oneapi::dal::python::interop::dlpack
+} // namespace oneapi::dal::python::dlpack

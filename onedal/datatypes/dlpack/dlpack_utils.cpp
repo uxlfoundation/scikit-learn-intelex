@@ -19,13 +19,13 @@
 #include "oneapi/dal/common.hpp"
 #include "oneapi/dal/detail/common.hpp"
 
-#include "onedal/interop/dlpack/api/dlpack.h"
-#include "onedal/interop/dlpack/dlpack_utils.hpp"
-#include "onedal/interop/dlpack/dtype_conversion.hpp"
+#include "onedal/datatypes/dlpack/dlpack.h"
+#include "onedal/datatypes/dlpack/dlpack_utils.hpp"
+#include "onedal/datatypes/dlpack/dtype_conversion.hpp"
 
 namespace py = pybind11;
 
-namespace oneapi::dal::python::interop::dlpack {
+namespace oneapi::dal::python::dlpack {
 
 managed_t& get_managed(const py::capsule& caps) {
     return *caps.get_pointer<managed_t>();
@@ -180,4 +180,4 @@ void delete_dlpack(const py::capsule& caps) {
     delete_dlpack(ptr);
 }
 
-} // namespace oneapi::dal::python::interop::dlpack
+} // namespace oneapi::dal::python::dlpack

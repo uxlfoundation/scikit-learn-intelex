@@ -24,17 +24,15 @@
 
 #include "onedal/common/dtype_dispatcher.hpp"
 
-#include "onedal/interop/utils/tensor_and_table.hpp"
-
-#include "onedal/interop/dlpack/api/dlpack.h"
-#include "onedal/interop/dlpack/dlpack_utils.hpp"
-#include "onedal/interop/dlpack/dtype_conversion.hpp"
-#include "onedal/interop/dlpack/dlpack_interface.hpp"
-#include "onedal/interop/dlpack/device_conversion.hpp"
+#include "onedal/datatypes/dlpack/dlpack.h"
+#include "onedal/datatypes/dlpack/dlpack_utils.hpp"
+#include "onedal/datatypes/dlpack/dtype_conversion.hpp"
+#include "onedal/datatypes/dlpack/dlpack_interface.hpp"
+#include "onedal/datatypes/dlpack/device_conversion.hpp"
 
 namespace py = pybind11;
 
-namespace oneapi::dal::python::interop::dlpack {
+namespace oneapi::dal::python::dlpack {
 
 py::object wrap_to_homogen_table(py::capsule buffer) {
     auto tensor = get_dlpack_interface<2l>(buffer);
@@ -60,4 +58,4 @@ void instantiate_dlpack_and_table(py::module& pm) {
     instantiate_wrap_to_homogen_table(pm);
 }
 
-} // namespace oneapi::dal::python::interop::dlpack
+} // namespace oneapi::dal::python::dlpack

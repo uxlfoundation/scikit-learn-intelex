@@ -18,12 +18,12 @@
 
 #include <pybind11/pybind11.h>
 
-#include "onedal/interop/dlpack/api/dlpack.h"
-#include "onedal/interop/dlpack/dtype_conversion.hpp"
+#include "onedal/datatypes/dlpack/dlpack.h"
+#include "onedal/datatypes/dlpack/dtype_conversion.hpp"
 
 namespace py = pybind11;
 
-namespace oneapi::dal::python::interop::dlpack {
+namespace oneapi::dal::python::dlpack {
 
 using tensor_t = const DLTensor;
 using managed_t = const DLManagedTensor;
@@ -73,4 +73,4 @@ inline Type* get_ptr(const py::capsule& caps) {
     return ptr;
 }
 
-} // namespace oneapi::dal::python::interop::dlpack
+} // namespace oneapi::dal::python::dlpack

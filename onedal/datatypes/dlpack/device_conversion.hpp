@@ -30,11 +30,11 @@ namespace sycl {
 
 #include "oneapi/dal/array.hpp"
 
-#include "onedal/interop/dlpack/api/dlpack.h"
+#include "onedal/datatypes/dlpack/api/dlpack.h"
 
 namespace py = pybind11;
 
-namespace oneapi::dal::python::interop::dlpack {
+namespace oneapi::dal::python::dlpack {
 
 DLDevice get_cpu_device();
 
@@ -68,4 +68,4 @@ std::shared_ptr<sycl::queue> get_queue(DLDevice device);
 
 void instantiate_convert_to_policy(py::module& pm);
 
-} // namespace oneapi::dal::python::interop::dlpack
+} // namespace oneapi::dal::python::dlpack

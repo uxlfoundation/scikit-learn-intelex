@@ -20,11 +20,11 @@
 
 namespace py = pybind11;
 
-namespace oneapi::dal::python::interop::dlpack {
+namespace oneapi::dal::python::dlpack {
 
 py::object wrap_to_homogen_table(py::capsule buffer);
 
 void instantiate_wrap_to_homogen_table(py::module& pm);
 void instantiate_dlpack_and_table(py::module& pm);
 
-} // namespace oneapi::dal::python::interop::dlpack
+} // namespace oneapi::dal::python::dlpack
