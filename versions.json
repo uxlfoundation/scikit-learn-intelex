@@ -1,11 +1,6 @@
 [
     {
-        "name": "latest",
-        "version": "latest",
-        "url": "/scikit-learn-intelex/2025.1/"
-    },
-    {
-        "name": "2025.1",
+        "name": "2025.1 (latest)",
         "version": "2025.1",
         "url": "/scikit-learn-intelex/2025.1/"
     },
