@@ -1,0 +1,1241 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Non-Scikit-Learn Algorithms &mdash; Intel(R) Extension for Scikit-learn* 2025.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=132153fd" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+    <link rel="shortcut icon" href="_static/favicons.png"/>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=aa5d0537"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="_static/copybutton.js?v=f281be69"></script>
+      <script src="_static/version_switcher.js?v=107152b5"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Supported input types" href="input-types.html" />
+    <link rel="prev" title="Distributed Mode" href="distributed-mode.html" />
+    <script defer type="text/javascript" src="https://www.intel.com/content/dam/www/global/wap/performance-config.js" ></script>
+    <script type="text/javascript">
+        fetch("/scikit-learn-intelex/versions.json").then(response => response.text()).then(respText=> load_versions(respText));
+        // Configure TMS settings
+        var wapLocalCode = 'us-en'; // Dynamically set per localized site, see mapping table for values
+        var wapSection = "scikit-learn"; // WAP team will give you a unique section for your site
+        // Load TMS
+        if(document.location.href.includes("intel.github.io/scikit-learn-intelex")){
+          (function () {
+            var url = 'https://www.intel.com/content/dam/www/global/wap/tms-loader.js'; // WAP file URL
+            var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true; po.src = url;
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+          })();
+      }
+      </script>
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Intel(R) Extension for Scikit-learn*
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+  <div class="version-switcher__container dropdown">
+    <script>
+      current_version = "2025.1"
+      project_name = "scikit-learn-intelex"
+    </script>
+    <div id="version-switcher-button"
+      class="version-switcher__button"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="version-switcher-dropdown"
+      aria-label="Version switcher list"
+      style="display:inline-block;padding-left:10px;padding-right:10px;"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </div>
+    <div id="version-switcher-dropdown"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+  
+  
+              <p class="caption" role="heading"><span class="caption-text">Get Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quick-start.html">Quick Start</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="quick-start.html#compatibility-with-scikit-learn">Compatibility with Scikit-learn*</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quick-start.html#integrate-intelex">Integrate Intel® Extension for Scikit-learn*</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="quick-start.html#patching">Patching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="quick-start.html#global-patching">Global Patching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="quick-start.html#unpatching">Unpatching</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="quick-start.html#installation">Installation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="quick-start.html#install-from-pypi">Install from PyPI</a></li>
+<li class="toctree-l3"><a class="reference internal" href="quick-start.html#install-from-anaconda-cloud">Install from Anaconda* Cloud</a></li>
+<li class="toctree-l3"><a class="reference internal" href="quick-start.html#build-from-sources">Build from Sources</a></li>
+<li class="toctree-l3"><a class="reference internal" href="quick-start.html#install-intel-r-ai-tools">Install Intel*(R) AI Tools</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="quick-start.html#release-notes">Release Notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quick-start.html#system-requirements">System Requirements</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="quick-start.html#hardware-requirements">Hardware Requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="quick-start.html#software-requirements">Software Requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="quick-start.html#memory-requirements">Memory Requirements</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="samples.html">Samples</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="samples/knn_mnist.html">k-Nearest Neighbors (kNN) for MNIST dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="samples/knn_mnist.html#Download-the-data">Download the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/knn_mnist.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/knn_mnist.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="samples/logistictic_regression_cifar.html">Logistic Regression for Cifar dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="samples/logistictic_regression_cifar.html#Download-the-data">Download the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/logistictic_regression_cifar.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/logistictic_regression_cifar.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="samples/svc_adult.html">Support Vector Classification (SVC) for Adult dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="samples/svc_adult.html#Download-the-data">Download the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/svc_adult.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/svc_adult.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="samples/ElasticNet.html">ElasticNet for Airlines DepDelay dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="samples/ElasticNet.html#Download-the-data">Download the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/ElasticNet.html#Preprocessing">Preprocessing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/ElasticNet.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/ElasticNet.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="samples/lasso_regression.html">Lasso Regression for YearPredictionMSD dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="samples/lasso_regression.html#Download-the-data">Download the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/lasso_regression.html#Normalize-the-data">Normalize the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/lasso_regression.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/lasso_regression.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="samples/linear_regression.html">Linear Regression for YearPredictionMSD dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="samples/linear_regression.html#Download-the-data">Download the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/linear_regression.html#Normalize-the-data">Normalize the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/linear_regression.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/linear_regression.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="samples/nusvr_medical_charges.html">Nu-Support Vector Regression (NuSVR) for Medical Charges dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="samples/nusvr_medical_charges.html#Download-the-data">Download the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/nusvr_medical_charges.html#Preprocessing">Preprocessing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/nusvr_medical_charges.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/nusvr_medical_charges.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="samples/random_forest_yolanda.html">Random Forest for Yolanda dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="samples/random_forest_yolanda.html#Download-the-data">Download the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/random_forest_yolanda.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/random_forest_yolanda.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="samples/ridge_regression.html">Rigde Regression for Airlines DepDelay dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="samples/ridge_regression.html#Download-the-data">Download the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/ridge_regression.html#Preprocessing">Preprocessing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/ridge_regression.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/ridge_regression.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="samples/kmeans.html">Kmeans for spoken arabic digit dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="samples/kmeans.html#Download-the-data">Download the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/kmeans.html#Preprocessing">Preprocessing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/kmeans.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/kmeans.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="samples/dbscan.html">DBSCAN for spoken arabic digit dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="samples/dbscan.html#Download-the-data">Download the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/dbscan.html#Preprocessing">Preprocessing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/dbscan.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/dbscan.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="samples/tsne.html">Intel® Extension for Scikit-learn TSNE example</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="samples/tsne.html#Generate-the-data">Generate the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/tsne.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="samples/tsne.html#Plot-embeddings-original-scikit-learn-and-Intel®-extension">Plot embeddings original scikit-learn and Intel® extension</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference external" href="https://github.com/oneapi-src/oneAPI-samples/tree/master/AI-and-Analytics/Getting-Started-Samples/Intel_Extension_For_SKLearn_GettingStarted">Intel® Extension for Scikit-Learn* Getting Started Sample</a></li>
+<li class="toctree-l2"><a class="reference external" href="https://github.com/oneapi-src/oneAPI-samples/tree/master/AI-and-Analytics/Features-and-Functionality/Intel_Extension_For_SKLearn_Performance_SVC_Adult">Intel® Extension for Scikit-Learn*: SVC for Adult dataset Performance Sample</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="kaggle.html">Kaggle Kernels</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="kaggle.html#acceleration">Acceleration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="kaggle.html#machine-learning-workflows">Machine Learning Workflows</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kaggle.html#kaggle-kernels-that-use-scikit-learn-and-intelex">Kaggle kernels that use scikit-learn and Intel® Extension for Scikit-learn*:</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="kaggle/classification.html">Classification Tasks</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="kaggle/classification.html#binary-classification">Binary Classification</a></li>
+<li class="toctree-l5"><a class="reference internal" href="kaggle/classification.html#multiclass-classification">MultiClass Classification</a></li>
+<li class="toctree-l5"><a class="reference internal" href="kaggle/classification.html#classification-tasks-in-computer-vision">Classification Tasks in Computer Vision</a></li>
+<li class="toctree-l5"><a class="reference internal" href="kaggle/classification.html#classification-tasks-in-natural-language-processing">Classification Tasks in Natural Language Processing</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="kaggle/regression.html">Regression Tasks</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="kaggle/regression.html#using-a-single-regressor">Using a Single Regressor</a></li>
+<li class="toctree-l5"><a class="reference internal" href="kaggle/regression.html#stacking-regressors">Stacking Regressors</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="kaggle.html#kaggle-kernels-that-use-automl-with-intelex">Kaggle kernels that use AutoML with Intel® Extension for Scikit-learn*:</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="kaggle/automl.html">AutoML Workflows</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="algorithms.html">Supported Algorithms</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="algorithms.html#on-cpu">on CPU</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms.html#classification">Classification</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms.html#regression">Regression</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms.html#clustering">Clustering</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms.html#dimensionality-reduction">Dimensionality Reduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms.html#nearest-neighbors">Nearest Neighbors</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms.html#other-tasks">Other Tasks</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms.html#on-gpu">on GPU</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms.html#id1">Classification</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms.html#id2">Regression</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms.html#id3">Clustering</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms.html#id4">Dimensionality Reduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms.html#id5">Nearest Neighbors</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms.html#id6">Other Tasks</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms.html#spmd-support">SPMD Support</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="algorithms.html#id7">Classification</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms.html#id8">Regression</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms.html#id9">Clustering</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms.html#id10">Dimensionality Reduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms.html#id11">Nearest Neighbors</a></li>
+<li class="toctree-l3"><a class="reference internal" href="algorithms.html#id12">Other Tasks</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="algorithms.html#scikit-learn-tests">Scikit-learn Tests</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="oneapi-gpu.html">oneAPI and GPU support</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="oneapi-gpu.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="oneapi-gpu.html#device-offloading">Device offloading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="oneapi-gpu.html#example">Example</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="distributed-mode.html">Distributed Mode</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Non-Scikit-Learn Algorithms</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#basicstatistics">BasicStatistics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#sklearnex.basic_statistics.BasicStatistics"><code class="docutils literal notranslate"><span class="pre">BasicStatistics</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#sklearnex.basic_statistics.BasicStatistics.min_"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.min_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sklearnex.basic_statistics.BasicStatistics.max_"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.max_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sklearnex.basic_statistics.BasicStatistics.sum_"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.sum_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sklearnex.basic_statistics.BasicStatistics.mean_"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.mean_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sklearnex.basic_statistics.BasicStatistics.variance_"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.variance_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sklearnex.basic_statistics.BasicStatistics.variation_"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.variation_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sklearnex.basic_statistics.BasicStatistics.sum_squares_"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.sum_squares_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sklearnex.basic_statistics.BasicStatistics.standard_deviation_"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.standard_deviation_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sklearnex.basic_statistics.BasicStatistics.sum_squares_centered_"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.sum_squares_centered_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sklearnex.basic_statistics.BasicStatistics.second_order_raw_moment_"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.second_order_raw_moment_</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#sklearnex.basic_statistics.BasicStatistics.fit"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.fit()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#incrementalbasicstatistics">IncrementalBasicStatistics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#sklearnex.basic_statistics.IncrementalBasicStatistics"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.min_"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.min_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.max_"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.max_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.sum_"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.sum_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.mean_"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.mean_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.variance_"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.variance_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.variation_"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.variation_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.sum_squares_"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.sum_squares_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.standard_deviation_"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.standard_deviation_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.sum_squares_centered_"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.sum_squares_centered_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.second_order_raw_moment_"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.second_order_raw_moment_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.n_samples_seen_"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.n_samples_seen_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.batch_size_"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.batch_size_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.n_features_in_"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.n_features_in_</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.fit"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.fit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.partial_fit"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.partial_fit()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#incrementalempiricalcovariance">IncrementalEmpiricalCovariance</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#sklearnex.covariance.IncrementalEmpiricalCovariance"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#sklearnex.covariance.IncrementalEmpiricalCovariance.location_"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance.location_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sklearnex.covariance.IncrementalEmpiricalCovariance.covariance_"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance.covariance_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sklearnex.covariance.IncrementalEmpiricalCovariance.n_samples_seen_"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance.n_samples_seen_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sklearnex.covariance.IncrementalEmpiricalCovariance.batch_size_"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance.batch_size_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sklearnex.covariance.IncrementalEmpiricalCovariance.n_features_in_"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance.n_features_in_</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#sklearnex.covariance.IncrementalEmpiricalCovariance.fit"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance.fit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sklearnex.covariance.IncrementalEmpiricalCovariance.partial_fit"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance.partial_fit()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#incrementallinearregression">IncrementalLinearRegression</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#sklearnex.linear_model.IncrementalLinearRegression"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#sklearnex.linear_model.IncrementalLinearRegression.coef_"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.coef_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sklearnex.linear_model.IncrementalLinearRegression.intercept_"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.intercept_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sklearnex.linear_model.IncrementalLinearRegression.n_samples_seen_"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.n_samples_seen_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sklearnex.linear_model.IncrementalLinearRegression.batch_size_"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.batch_size_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sklearnex.linear_model.IncrementalLinearRegression.n_features_in_"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.n_features_in_</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#sklearnex.linear_model.IncrementalLinearRegression.fit"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.fit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sklearnex.linear_model.IncrementalLinearRegression.partial_fit"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.partial_fit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sklearnex.linear_model.IncrementalLinearRegression.predict"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.predict()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="input-types.html">Supported input types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="array_api.html">Array API support</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="array_api.html#support-for-dpnp-and-dpctl">Support for DPNP and DPCTL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="array_api.html#support-for-array-api-compatible-inputs">Support for Array API-compatible inputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="array_api.html#example-usage">Example usage</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="array_api.html#dpnp-ndarrays">DPNP ndarrays</a></li>
+<li class="toctree-l3"><a class="reference internal" href="array_api.html#dpctl-usm-ndarrays">DPCTL usm_ndarrays</a></li>
+<li class="toctree-l3"><a class="reference internal" href="array_api.html#use-of-array-api-strict">Use of <cite>array-api-strict</cite></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="verbose.html">Verbose Mode</a></li>
+<li class="toctree-l1"><a class="reference internal" href="preview.html">Preview Functionality</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deprecation.html">Deprecation Notice</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="deprecation.html#macos-support">macOS* Support</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Performance</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="guide/acceleration.html">Tuning Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="guide/acceleration.html#tsne">TSNE</a></li>
+<li class="toctree-l2"><a class="reference internal" href="guide/acceleration.html#random-forest">Random Forest</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Learn</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials &amp; Case Studies</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorials">Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials.html#case-studies">Case Studies</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="blogs.html">Medium Blogs</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">More</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="support.html">Support</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="support.html#issues">Issues</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="contribute.html">How to Contribute</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="contribute.html#licensing">Licensing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="contribute.html#pull-requests">Pull Requests</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="contribute.html#before-contributing-changes">Before Contributing Changes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="contribute.html#code-style">Code Style</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Intel(R) Extension for Scikit-learn*</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Non-Scikit-Learn Algorithms</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/non-scikit-algorithms.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="non-scikit-learn-algorithms">
+<h1>Non-Scikit-Learn Algorithms<a class="headerlink" href="#non-scikit-learn-algorithms" title="Link to this heading"></a></h1>
+<p>Algorithms not presented in the original scikit-learn are described here. All algorithms are
+available for both CPU and GPU (including distributed mode)</p>
+<section id="basicstatistics">
+<h2>BasicStatistics<a class="headerlink" href="#basicstatistics" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="sklearnex.basic_statistics.BasicStatistics">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sklearnex.basic_statistics.</span></span><span class="sig-name descname"><span class="pre">BasicStatistics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result_options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'all'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/basic_statistics/basic_statistics.html#BasicStatistics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics" title="Link to this definition"></a></dt>
+<dd><p>Estimator for basic statistics.
+Allows to compute basic statistics for provided data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>result_options</strong> (<em>string</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><em>list</em></a><em>, </em><em>default='all'</em>) – Used to set statistics to calculate. Possible values are <code class="docutils literal notranslate"><span class="pre">'min'</span></code>, <code class="docutils literal notranslate"><span class="pre">'max'</span></code>, <code class="docutils literal notranslate"><span class="pre">'sum'</span></code>, <code class="docutils literal notranslate"><span class="pre">'mean'</span></code>, <code class="docutils literal notranslate"><span class="pre">'variance'</span></code>,
+<code class="docutils literal notranslate"><span class="pre">'variation'</span></code>, <code class="docutils literal notranslate"><span class="pre">sum_squares'</span></code>, <code class="docutils literal notranslate"><span class="pre">sum_squares_centered'</span></code>, <code class="docutils literal notranslate"><span class="pre">'standard_deviation'</span></code>, <code class="docutils literal notranslate"><span class="pre">'second_order_raw_moment'</span></code>
+or a list containing any of these values. If set to <code class="docutils literal notranslate"><span class="pre">'all'</span></code> then all possible statistics will be
+calculated.</p></li>
+<li><p><strong>n_jobs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em>, </em><em>default=None</em>) – The number of jobs to use in parallel for the computation.
+<code class="docutils literal notranslate"><span class="pre">None</span></code> means using all physical cores
+unless in a <a class="reference external" href="https://joblib.readthedocs.io/en/latest/generated/joblib.parallel_backend.html#joblib.parallel_backend" title="(in joblib v1.5.dev0)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">joblib.parallel_backend</span></code></a> context.
+<code class="docutils literal notranslate"><span class="pre">-1</span></code> means using all logical cores.
+See <a class="reference external" href="https://scikit-learn.org/stable/glossary.html#term-n_jobs" title="(in scikit-learn v1.6)"><span class="xref std std-term">Glossary</span></a> for more details.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sklearnex.basic_statistics.BasicStatistics.min_">
+<span class="sig-name descname"><span class="pre">min_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics.min_" title="Link to this definition"></a></dt>
+<dd><p>Minimum of each feature over all samples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray of shape (n_features,)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sklearnex.basic_statistics.BasicStatistics.max_">
+<span class="sig-name descname"><span class="pre">max_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics.max_" title="Link to this definition"></a></dt>
+<dd><p>Maximum of each feature over all samples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray of shape (n_features,)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sklearnex.basic_statistics.BasicStatistics.sum_">
+<span class="sig-name descname"><span class="pre">sum_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics.sum_" title="Link to this definition"></a></dt>
+<dd><p>Sum of each feature over all samples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray of shape (n_features,)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sklearnex.basic_statistics.BasicStatistics.mean_">
+<span class="sig-name descname"><span class="pre">mean_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics.mean_" title="Link to this definition"></a></dt>
+<dd><p>Mean of each feature over all samples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray of shape (n_features,)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sklearnex.basic_statistics.BasicStatistics.variance_">
+<span class="sig-name descname"><span class="pre">variance_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics.variance_" title="Link to this definition"></a></dt>
+<dd><p>Variance of each feature over all samples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray of shape (n_features,)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sklearnex.basic_statistics.BasicStatistics.variation_">
+<span class="sig-name descname"><span class="pre">variation_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics.variation_" title="Link to this definition"></a></dt>
+<dd><p>Variation of each feature over all samples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray of shape (n_features,)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sklearnex.basic_statistics.BasicStatistics.sum_squares_">
+<span class="sig-name descname"><span class="pre">sum_squares_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics.sum_squares_" title="Link to this definition"></a></dt>
+<dd><p>Sum of squares for each feature over all samples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray of shape (n_features,)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sklearnex.basic_statistics.BasicStatistics.standard_deviation_">
+<span class="sig-name descname"><span class="pre">standard_deviation_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics.standard_deviation_" title="Link to this definition"></a></dt>
+<dd><p>Standard deviation of each feature over all samples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray of shape (n_features,)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sklearnex.basic_statistics.BasicStatistics.sum_squares_centered_">
+<span class="sig-name descname"><span class="pre">sum_squares_centered_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics.sum_squares_centered_" title="Link to this definition"></a></dt>
+<dd><p>Centered sum of squares for each feature over all samples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray of shape (n_features,)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sklearnex.basic_statistics.BasicStatistics.second_order_raw_moment_">
+<span class="sig-name descname"><span class="pre">second_order_raw_moment_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics.second_order_raw_moment_" title="Link to this definition"></a></dt>
+<dd><p>Second order moment of each feature over all samples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray of shape (n_features,)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Attribute exists only if corresponding result option has been provided.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Names of attributes without the trailing underscore are
+supported currently but deprecated in 2025.1 and will be removed in 2026.0</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Some results can exhibit small variations due to
+floating point error accumulation and multithreading.</p>
+</div>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearnex.basic_statistics</span> <span class="kn">import</span> <span class="n">BasicStatistics</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bs</span> <span class="o">=</span> <span class="n">BasicStatistics</span><span class="p">(</span><span class="n">result_options</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sum&#39;</span><span class="p">,</span> <span class="s1">&#39;min&#39;</span><span class="p">,</span> <span class="s1">&#39;max&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bs</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bs</span><span class="o">.</span><span class="n">sum_</span>
+<span class="go">np.array([4., 6.])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bs</span><span class="o">.</span><span class="n">min_</span>
+<span class="go">np.array([1., 2.])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sklearnex.basic_statistics.BasicStatistics.fit">
+<span class="sig-prename descclassname"><span class="pre">BasicStatistics.</span></span><span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/basic_statistics/basic_statistics.html#BasicStatistics.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics.fit" title="Link to this definition"></a></dt>
+<dd><p>Calculate statistics of X.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>array-like</em><em> of </em><em>shape</em><em> (</em><em>n_samples</em><em>, </em><em>n_features</em><em>)</em>) – Data for compute, where <code class="docutils literal notranslate"><span class="pre">n_samples</span></code> is the number of samples and
+<code class="docutils literal notranslate"><span class="pre">n_features</span></code> is the number of features.</p></li>
+<li><p><strong>y</strong> (<em>Ignored</em>) – Not used, present for API consistency by convention.</p></li>
+<li><p><strong>sample_weight</strong> (<em>array-like</em><em> of </em><em>shape</em><em> (</em><em>n_samples</em><em>,</em><em>)</em><em>, </em><em>default=None</em>) – Weights for compute weighted statistics, where <code class="docutils literal notranslate"><span class="pre">n_samples</span></code> is the number of samples.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>self</strong> – Returns the instance itself.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)">object</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="incrementalbasicstatistics">
+<h2>IncrementalBasicStatistics<a class="headerlink" href="#incrementalbasicstatistics" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="sklearnex.basic_statistics.IncrementalBasicStatistics">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sklearnex.basic_statistics.</span></span><span class="sig-name descname"><span class="pre">IncrementalBasicStatistics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result_options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'all'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/basic_statistics/incremental_basic_statistics.html#IncrementalBasicStatistics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics" title="Link to this definition"></a></dt>
+<dd><p>Calculates basic statistics on the given data, allows for computation when the data are split into
+batches. The user can use <code class="docutils literal notranslate"><span class="pre">partial_fit</span></code> method to provide a single batch of data or use the <code class="docutils literal notranslate"><span class="pre">fit</span></code> method to provide
+the entire dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>result_options</strong> (<em>string</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><em>list</em></a><em>, </em><em>default='all'</em>) – List of statistics to compute</p></li>
+<li><p><strong>batch_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em>, </em><em>default=None</em>) – The number of samples to use for each batch. Only used when calling
+<code class="docutils literal notranslate"><span class="pre">fit</span></code>. If <code class="docutils literal notranslate"><span class="pre">batch_size</span></code> is <code class="docutils literal notranslate"><span class="pre">None</span></code>, then <code class="docutils literal notranslate"><span class="pre">batch_size</span></code>
+is inferred from the data and set to <code class="docutils literal notranslate"><span class="pre">5</span> <span class="pre">*</span> <span class="pre">n_features</span></code>.</p></li>
+<li><p><strong>n_jobs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em>, </em><em>default=None</em>) – The number of jobs to use in parallel for the computation.
+<code class="docutils literal notranslate"><span class="pre">None</span></code> means using all physical cores
+unless in a <a class="reference external" href="https://joblib.readthedocs.io/en/latest/generated/joblib.parallel_backend.html#joblib.parallel_backend" title="(in joblib v1.5.dev0)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">joblib.parallel_backend</span></code></a> context.
+<code class="docutils literal notranslate"><span class="pre">-1</span></code> means using all logical cores.
+See <a class="reference external" href="https://scikit-learn.org/stable/glossary.html#term-n_jobs" title="(in scikit-learn v1.6)"><span class="xref std std-term">Glossary</span></a> for more details.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sklearnex.basic_statistics.IncrementalBasicStatistics.min_">
+<span class="sig-name descname"><span class="pre">min_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.min_" title="Link to this definition"></a></dt>
+<dd><p>Minimum of each feature over all samples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray of shape (n_features,)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sklearnex.basic_statistics.IncrementalBasicStatistics.max_">
+<span class="sig-name descname"><span class="pre">max_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.max_" title="Link to this definition"></a></dt>
+<dd><p>Maximum of each feature over all samples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray of shape (n_features,)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sklearnex.basic_statistics.IncrementalBasicStatistics.sum_">
+<span class="sig-name descname"><span class="pre">sum_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.sum_" title="Link to this definition"></a></dt>
+<dd><p>Sum of each feature over all samples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray of shape (n_features,)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sklearnex.basic_statistics.IncrementalBasicStatistics.mean_">
+<span class="sig-name descname"><span class="pre">mean_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.mean_" title="Link to this definition"></a></dt>
+<dd><p>Mean of each feature over all samples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray of shape (n_features,)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sklearnex.basic_statistics.IncrementalBasicStatistics.variance_">
+<span class="sig-name descname"><span class="pre">variance_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.variance_" title="Link to this definition"></a></dt>
+<dd><p>Variance of each feature over all samples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray of shape (n_features,)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sklearnex.basic_statistics.IncrementalBasicStatistics.variation_">
+<span class="sig-name descname"><span class="pre">variation_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.variation_" title="Link to this definition"></a></dt>
+<dd><p>Variation of each feature over all samples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray of shape (n_features,)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sklearnex.basic_statistics.IncrementalBasicStatistics.sum_squares_">
+<span class="sig-name descname"><span class="pre">sum_squares_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.sum_squares_" title="Link to this definition"></a></dt>
+<dd><p>Sum of squares for each feature over all samples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray of shape (n_features,)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sklearnex.basic_statistics.IncrementalBasicStatistics.standard_deviation_">
+<span class="sig-name descname"><span class="pre">standard_deviation_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.standard_deviation_" title="Link to this definition"></a></dt>
+<dd><p>Standard deviation of each feature over all samples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray of shape (n_features,)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sklearnex.basic_statistics.IncrementalBasicStatistics.sum_squares_centered_">
+<span class="sig-name descname"><span class="pre">sum_squares_centered_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.sum_squares_centered_" title="Link to this definition"></a></dt>
+<dd><p>Centered sum of squares for each feature over all samples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray of shape (n_features,)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sklearnex.basic_statistics.IncrementalBasicStatistics.second_order_raw_moment_">
+<span class="sig-name descname"><span class="pre">second_order_raw_moment_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.second_order_raw_moment_" title="Link to this definition"></a></dt>
+<dd><p>Second order moment of each feature over all samples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray of shape (n_features,)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sklearnex.basic_statistics.IncrementalBasicStatistics.n_samples_seen_">
+<span class="sig-name descname"><span class="pre">n_samples_seen_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.n_samples_seen_" title="Link to this definition"></a></dt>
+<dd><p>The number of samples processed by the estimator. Will be reset on
+new calls to <code class="docutils literal notranslate"><span class="pre">fit</span></code>, but increments across <code class="docutils literal notranslate"><span class="pre">partial_fit</span></code> calls.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sklearnex.basic_statistics.IncrementalBasicStatistics.batch_size_">
+<span class="sig-name descname"><span class="pre">batch_size_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.batch_size_" title="Link to this definition"></a></dt>
+<dd><p>Inferred batch size from <code class="docutils literal notranslate"><span class="pre">batch_size</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sklearnex.basic_statistics.IncrementalBasicStatistics.n_features_in_">
+<span class="sig-name descname"><span class="pre">n_features_in_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.n_features_in_" title="Link to this definition"></a></dt>
+<dd><p>Number of features seen during <code class="docutils literal notranslate"><span class="pre">fit</span></code> or  <code class="docutils literal notranslate"><span class="pre">partial_fit</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Attribute exists only if corresponding result option has been provided.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Names of attributes without the trailing underscore are
+supported currently but deprecated in 2025.1 and will be removed in 2026.0</p>
+</div>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearnex.basic_statistics</span> <span class="kn">import</span> <span class="n">IncrementalBasicStatistics</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">incbs</span> <span class="o">=</span> <span class="n">IncrementalBasicStatistics</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">incbs</span><span class="o">.</span><span class="n">partial_fit</span><span class="p">(</span><span class="n">X</span><span class="p">[:</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">incbs</span><span class="o">.</span><span class="n">partial_fit</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">incbs</span><span class="o">.</span><span class="n">sum_</span>
+<span class="go">np.array([4., 6.])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">incbs</span><span class="o">.</span><span class="n">min_</span>
+<span class="go">np.array([1., 2.])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">incbs</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">incbs</span><span class="o">.</span><span class="n">sum_</span>
+<span class="go">np.array([4., 6.])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">incbs</span><span class="o">.</span><span class="n">max_</span>
+<span class="go">np.array([3., 4.])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sklearnex.basic_statistics.IncrementalBasicStatistics.fit">
+<span class="sig-prename descclassname"><span class="pre">IncrementalBasicStatistics.</span></span><span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/basic_statistics/incremental_basic_statistics.html#IncrementalBasicStatistics.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.fit" title="Link to this definition"></a></dt>
+<dd><p>Calculate statistics of X using minibatches of size batch_size.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>array-like</em><em> of </em><em>shape</em><em> (</em><em>n_samples</em><em>, </em><em>n_features</em><em>)</em>) – Data for compute, where <code class="docutils literal notranslate"><span class="pre">n_samples</span></code> is the number of samples and
+<code class="docutils literal notranslate"><span class="pre">n_features</span></code> is the number of features.</p></li>
+<li><p><strong>y</strong> (<em>Ignored</em>) – Not used, present for API consistency by convention.</p></li>
+<li><p><strong>sample_weight</strong> (<em>array-like</em><em> of </em><em>shape</em><em> (</em><em>n_samples</em><em>,</em><em>)</em><em>, </em><em>default=None</em>) – Weights for compute weighted statistics, where <code class="docutils literal notranslate"><span class="pre">n_samples</span></code> is the number of samples.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>self</strong> – Returns the instance itself.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)">object</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sklearnex.basic_statistics.IncrementalBasicStatistics.partial_fit">
+<span class="sig-prename descclassname"><span class="pre">IncrementalBasicStatistics.</span></span><span class="sig-name descname"><span class="pre">partial_fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_input</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/basic_statistics/incremental_basic_statistics.html#IncrementalBasicStatistics.partial_fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.partial_fit" title="Link to this definition"></a></dt>
+<dd><p>Incremental fit with X. All of X is processed as a single batch.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>array-like</em><em> of </em><em>shape</em><em> (</em><em>n_samples</em><em>, </em><em>n_features</em><em>)</em>) – Data for compute, where <code class="docutils literal notranslate"><span class="pre">n_samples</span></code> is the number of samples and
+<code class="docutils literal notranslate"><span class="pre">n_features</span></code> is the number of features.</p></li>
+<li><p><strong>y</strong> (<em>Ignored</em>) – Not used, present for API consistency by convention.</p></li>
+<li><p><strong>sample_weight</strong> (<em>array-like</em><em> of </em><em>shape</em><em> (</em><em>n_samples</em><em>,</em><em>)</em><em>, </em><em>default=None</em>) – Weights for compute weighted statistics, where <code class="docutils literal notranslate"><span class="pre">n_samples</span></code> is the number of samples.</p></li>
+<li><p><strong>check_input</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>default=True</em>) – Run <code class="docutils literal notranslate"><span class="pre">check_array</span></code> on X.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>self</strong> – Returns the instance itself.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)">object</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="incrementalempiricalcovariance">
+<h2>IncrementalEmpiricalCovariance<a class="headerlink" href="#incrementalempiricalcovariance" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="sklearnex.covariance.IncrementalEmpiricalCovariance">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sklearnex.covariance.</span></span><span class="sig-name descname"><span class="pre">IncrementalEmpiricalCovariance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store_precision</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assume_centered</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/covariance/incremental_covariance.html#IncrementalEmpiricalCovariance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.covariance.IncrementalEmpiricalCovariance" title="Link to this definition"></a></dt>
+<dd><p>Maximum likelihood covariance estimator that allows for the estimation when the data are split into
+batches. The user can use the <code class="docutils literal notranslate"><span class="pre">partial_fit</span></code> method to provide a single batch of data or use the <code class="docutils literal notranslate"><span class="pre">fit</span></code> method to provide
+the entire dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>store_precision</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>default=False</em>) – Specifies if the estimated precision is stored.</p></li>
+<li><p><strong>assume_centered</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>default=False</em>) – If True, data are not centered before computation.
+Useful when working with data whose mean is almost, but not exactly
+zero.
+If False (default), data are centered before computation.</p></li>
+<li><p><strong>batch_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em>, </em><em>default=None</em>) – The number of samples to use for each batch. Only used when calling
+<code class="docutils literal notranslate"><span class="pre">fit</span></code>. If <code class="docutils literal notranslate"><span class="pre">batch_size</span></code> is <code class="docutils literal notranslate"><span class="pre">None</span></code>, then <code class="docutils literal notranslate"><span class="pre">batch_size</span></code>
+is inferred from the data and set to <code class="docutils literal notranslate"><span class="pre">5</span> <span class="pre">*</span> <span class="pre">n_features</span></code>, to provide a
+balance between approximation accuracy and memory consumption.</p></li>
+<li><p><strong>copy</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>default=True</em>) – If False, X will be overwritten. <code class="docutils literal notranslate"><span class="pre">copy=False</span></code> can be used to
+save memory but is unsafe for general use.</p></li>
+<li><p><strong>n_jobs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em>, </em><em>default=None</em>) – The number of jobs to use in parallel for the computation.
+<code class="docutils literal notranslate"><span class="pre">None</span></code> means using all physical cores
+unless in a <a class="reference external" href="https://joblib.readthedocs.io/en/latest/generated/joblib.parallel_backend.html#joblib.parallel_backend" title="(in joblib v1.5.dev0)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">joblib.parallel_backend</span></code></a> context.
+<code class="docutils literal notranslate"><span class="pre">-1</span></code> means using all logical cores.
+See <a class="reference external" href="https://scikit-learn.org/stable/glossary.html#term-n_jobs" title="(in scikit-learn v1.6)"><span class="xref std std-term">Glossary</span></a> for more details.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sklearnex.covariance.IncrementalEmpiricalCovariance.location_">
+<span class="sig-name descname"><span class="pre">location_</span></span><a class="headerlink" href="#sklearnex.covariance.IncrementalEmpiricalCovariance.location_" title="Link to this definition"></a></dt>
+<dd><p>Estimated location, i.e. the estimated mean.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray of shape (n_features,)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sklearnex.covariance.IncrementalEmpiricalCovariance.covariance_">
+<span class="sig-name descname"><span class="pre">covariance_</span></span><a class="headerlink" href="#sklearnex.covariance.IncrementalEmpiricalCovariance.covariance_" title="Link to this definition"></a></dt>
+<dd><p>Estimated covariance matrix</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ndarray of shape (n_features, n_features)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sklearnex.covariance.IncrementalEmpiricalCovariance.n_samples_seen_">
+<span class="sig-name descname"><span class="pre">n_samples_seen_</span></span><a class="headerlink" href="#sklearnex.covariance.IncrementalEmpiricalCovariance.n_samples_seen_" title="Link to this definition"></a></dt>
+<dd><p>The number of samples processed by the estimator. Will be reset on
+new calls to <code class="docutils literal notranslate"><span class="pre">fit</span></code>, but increments across <code class="docutils literal notranslate"><span class="pre">partial_fit</span></code> calls.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sklearnex.covariance.IncrementalEmpiricalCovariance.batch_size_">
+<span class="sig-name descname"><span class="pre">batch_size_</span></span><a class="headerlink" href="#sklearnex.covariance.IncrementalEmpiricalCovariance.batch_size_" title="Link to this definition"></a></dt>
+<dd><p>Inferred batch size from <code class="docutils literal notranslate"><span class="pre">batch_size</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sklearnex.covariance.IncrementalEmpiricalCovariance.n_features_in_">
+<span class="sig-name descname"><span class="pre">n_features_in_</span></span><a class="headerlink" href="#sklearnex.covariance.IncrementalEmpiricalCovariance.n_features_in_" title="Link to this definition"></a></dt>
+<dd><p>Number of features seen during <code class="docutils literal notranslate"><span class="pre">fit</span></code> or <code class="docutils literal notranslate"><span class="pre">partial_fit</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearnex.covariance</span> <span class="kn">import</span> <span class="n">IncrementalEmpiricalCovariance</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inccov</span> <span class="o">=</span> <span class="n">IncrementalEmpiricalCovariance</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inccov</span><span class="o">.</span><span class="n">partial_fit</span><span class="p">(</span><span class="n">X</span><span class="p">[:</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inccov</span><span class="o">.</span><span class="n">partial_fit</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inccov</span><span class="o">.</span><span class="n">covariance_</span>
+<span class="go">np.array([[1., 1.],[1., 1.]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inccov</span><span class="o">.</span><span class="n">location_</span>
+<span class="go">np.array([2., 3.])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inccov</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inccov</span><span class="o">.</span><span class="n">covariance_</span>
+<span class="go">np.array([[1., 1.],[1., 1.]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inccov</span><span class="o">.</span><span class="n">location_</span>
+<span class="go">np.array([2., 3.])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sklearnex.covariance.IncrementalEmpiricalCovariance.fit">
+<span class="sig-prename descclassname"><span class="pre">IncrementalEmpiricalCovariance.</span></span><span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/covariance/incremental_covariance.html#IncrementalEmpiricalCovariance.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.covariance.IncrementalEmpiricalCovariance.fit" title="Link to this definition"></a></dt>
+<dd><p>Fit the model with X, using minibatches of size batch_size.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>array-like</em><em> of </em><em>shape</em><em> (</em><em>n_samples</em><em>, </em><em>n_features</em><em>)</em>) – Training data, where <cite>n_samples</cite> is the number of samples and
+<cite>n_features</cite> is the number of features.</p></li>
+<li><p><strong>y</strong> (<em>Ignored</em>) – Not used, present for API consistency by convention.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>self</strong> – Returns the instance itself.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)">object</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sklearnex.covariance.IncrementalEmpiricalCovariance.partial_fit">
+<span class="sig-prename descclassname"><span class="pre">IncrementalEmpiricalCovariance.</span></span><span class="sig-name descname"><span class="pre">partial_fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_input</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/covariance/incremental_covariance.html#IncrementalEmpiricalCovariance.partial_fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.covariance.IncrementalEmpiricalCovariance.partial_fit" title="Link to this definition"></a></dt>
+<dd><p>Incremental fit with X. All of X is processed as a single batch.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>array-like</em><em> of </em><em>shape</em><em> (</em><em>n_samples</em><em>, </em><em>n_features</em><em>)</em>) – Training data, where <cite>n_samples</cite> is the number of samples and
+<cite>n_features</cite> is the number of features.</p></li>
+<li><p><strong>y</strong> (<em>Ignored</em>) – Not used, present for API consistency by convention.</p></li>
+<li><p><strong>check_input</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>default=True</em>) – Run check_array on X.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>self</strong> – Returns the instance itself.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)">object</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="incrementallinearregression">
+<h2>IncrementalLinearRegression<a class="headerlink" href="#incrementallinearregression" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="sklearnex.linear_model.IncrementalLinearRegression">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sklearnex.linear_model.</span></span><span class="sig-name descname"><span class="pre">IncrementalLinearRegression</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_intercept</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy_X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/linear_model/incremental_linear.html#IncrementalLinearRegression"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.linear_model.IncrementalLinearRegression" title="Link to this definition"></a></dt>
+<dd><p>Trains a linear regression model, allows for computation if the data are split into
+batches. The user can use the <code class="docutils literal notranslate"><span class="pre">partial_fit</span></code> method to provide a single batch of data or use the <code class="docutils literal notranslate"><span class="pre">fit</span></code> method to provide
+the entire dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fit_intercept</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>default=True</em>)</p></li>
+<li><p><strong>set</strong> (<em>Whether to calculate the intercept for this model. If</em>)</p></li>
+<li><p><strong>False</strong> (<em>to</em>)</p></li>
+<li><p><strong>calculations</strong> (<em>no intercept will be used in</em>)</p></li>
+<li><p><strong>centered</strong><strong>)</strong><strong>.</strong> (<em>(</em><em>i.e. data is expected to be</em>)</p></li>
+<li><p><strong>copy_X</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>default=True</em>) – If True, X will be copied; else, it may be overwritten.</p></li>
+<li><p><strong>n_jobs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em>, </em><em>default=None</em>) – The number of jobs to use for the computation.</p></li>
+<li><p><strong>batch_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em>, </em><em>default=None</em>) – The number of samples to use for each batch. Only used when calling
+<code class="docutils literal notranslate"><span class="pre">fit</span></code>. If <code class="docutils literal notranslate"><span class="pre">batch_size</span></code> is <code class="docutils literal notranslate"><span class="pre">None</span></code>, then <code class="docutils literal notranslate"><span class="pre">batch_size</span></code>
+is inferred from the data and set to <code class="docutils literal notranslate"><span class="pre">5</span> <span class="pre">*</span> <span class="pre">n_features</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sklearnex.linear_model.IncrementalLinearRegression.coef_">
+<span class="sig-name descname"><span class="pre">coef_</span></span><a class="headerlink" href="#sklearnex.linear_model.IncrementalLinearRegression.coef_" title="Link to this definition"></a></dt>
+<dd><p>Estimated coefficients for the linear regression problem.
+If multiple targets are passed during the fit (y 2D), this
+is a 2D array of shape (n_targets, n_features), while if only
+one target is passed, this is a 1D array of length n_features.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>array of shape (n_features, ) or (n_targets, n_features)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sklearnex.linear_model.IncrementalLinearRegression.intercept_">
+<span class="sig-name descname"><span class="pre">intercept_</span></span><a class="headerlink" href="#sklearnex.linear_model.IncrementalLinearRegression.intercept_" title="Link to this definition"></a></dt>
+<dd><p>Independent term in the linear model. Set to 0.0 if
+<cite>fit_intercept = False</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)">float</a> or array of shape (n_targets,)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sklearnex.linear_model.IncrementalLinearRegression.n_samples_seen_">
+<span class="sig-name descname"><span class="pre">n_samples_seen_</span></span><a class="headerlink" href="#sklearnex.linear_model.IncrementalLinearRegression.n_samples_seen_" title="Link to this definition"></a></dt>
+<dd><p>The number of samples processed by the estimator. Will be reset on
+new calls to <code class="docutils literal notranslate"><span class="pre">fit</span></code>, but increments across <code class="docutils literal notranslate"><span class="pre">partial_fit</span></code> calls.
+It should be not less than <cite>n_features_in_</cite> if <cite>fit_intercept</cite>
+is False and not less than <cite>n_features_in_</cite> + 1 if <cite>fit_intercept</cite>
+is True to obtain regression coefficients.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sklearnex.linear_model.IncrementalLinearRegression.batch_size_">
+<span class="sig-name descname"><span class="pre">batch_size_</span></span><a class="headerlink" href="#sklearnex.linear_model.IncrementalLinearRegression.batch_size_" title="Link to this definition"></a></dt>
+<dd><p>Inferred batch size from <code class="docutils literal notranslate"><span class="pre">batch_size</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="sklearnex.linear_model.IncrementalLinearRegression.n_features_in_">
+<span class="sig-name descname"><span class="pre">n_features_in_</span></span><a class="headerlink" href="#sklearnex.linear_model.IncrementalLinearRegression.n_features_in_" title="Link to this definition"></a></dt>
+<dd><p>Number of features seen during <code class="docutils literal notranslate"><span class="pre">fit</span></code> or <code class="docutils literal notranslate"><span class="pre">partial_fit</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearnex.linear_model</span> <span class="kn">import</span> <span class="n">IncrementalLinearRegression</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inclr</span> <span class="o">=</span> <span class="n">IncrementalLinearRegression</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">],</span> <span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="mi">10</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.5</span><span class="p">,</span> <span class="mf">3.5</span><span class="p">,</span> <span class="mf">5.5</span><span class="p">,</span> <span class="mf">8.5</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inclr</span><span class="o">.</span><span class="n">partial_fit</span><span class="p">(</span><span class="n">X</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span> <span class="n">y</span><span class="p">[:</span><span class="mi">2</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inclr</span><span class="o">.</span><span class="n">partial_fit</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="mi">2</span><span class="p">:],</span> <span class="n">y</span><span class="p">[</span><span class="mi">2</span><span class="p">:])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inclr</span><span class="o">.</span><span class="n">coef_</span>
+<span class="go">np.array([0.5., 0.5.])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inclr</span><span class="o">.</span><span class="n">intercept_</span>
+<span class="go">np.array(0.)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inclr</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inclr</span><span class="o">.</span><span class="n">coef_</span>
+<span class="go">np.array([0.5., 0.5.])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inclr</span><span class="o">.</span><span class="n">intercept_</span>
+<span class="go">np.array(0.)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sklearnex.linear_model.IncrementalLinearRegression.fit">
+<span class="sig-prename descclassname"><span class="pre">IncrementalLinearRegression.</span></span><span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/linear_model/incremental_linear.html#IncrementalLinearRegression.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.linear_model.IncrementalLinearRegression.fit" title="Link to this definition"></a></dt>
+<dd><p>Fit the model with X and y, using minibatches of size <code class="docutils literal notranslate"><span class="pre">batch_size</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>array-like</em><em> of </em><em>shape</em><em> (</em><em>n_samples</em><em>, </em><em>n_features</em><em>)</em>) – Training data, where <code class="docutils literal notranslate"><span class="pre">n_samples</span></code> is the number of samples and
+<code class="docutils literal notranslate"><span class="pre">n_features</span></code> is the number of features. It is necessary for
+<code class="docutils literal notranslate"><span class="pre">n_samples</span></code> to be not less than <code class="docutils literal notranslate"><span class="pre">n_features</span></code> if <code class="docutils literal notranslate"><span class="pre">fit_intercept</span></code>
+is False and not less than <code class="docutils literal notranslate"><span class="pre">n_features</span> <span class="pre">+</span> <span class="pre">1</span></code> if <code class="docutils literal notranslate"><span class="pre">fit_intercept</span></code>
+is True</p></li>
+<li><p><strong>y</strong> (<em>array-like</em><em> of </em><em>shape</em><em> (</em><em>n_samples</em><em>,</em><em>) or </em><em>(</em><em>n_samples</em><em>, </em><em>n_targets</em><em>)</em>) – Target values, where <code class="docutils literal notranslate"><span class="pre">n_samples</span></code> is the number of samples and
+<code class="docutils literal notranslate"><span class="pre">n_targets</span></code> is the number of targets.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>self</strong> – Returns the instance itself.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)">object</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sklearnex.linear_model.IncrementalLinearRegression.partial_fit">
+<span class="sig-prename descclassname"><span class="pre">IncrementalLinearRegression.</span></span><span class="sig-name descname"><span class="pre">partial_fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_input</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/linear_model/incremental_linear.html#IncrementalLinearRegression.partial_fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.linear_model.IncrementalLinearRegression.partial_fit" title="Link to this definition"></a></dt>
+<dd><p>Incremental fit linear model with X and y. All of X and y is
+processed as a single batch.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>array-like</em><em> of </em><em>shape</em><em> (</em><em>n_samples</em><em>, </em><em>n_features</em><em>)</em>) – Training data, where <code class="docutils literal notranslate"><span class="pre">n_samples</span></code> is the number of samples and
+<cite>n_features</cite> is the number of features.</p></li>
+<li><p><strong>y</strong> (<em>array-like</em><em> of </em><em>shape</em><em> (</em><em>n_samples</em><em>,</em><em>) or </em><em>(</em><em>n_samples</em><em>, </em><em>n_targets</em><em>)</em>) – Target values, where <code class="docutils literal notranslate"><span class="pre">n_samples</span></code> is the number of samples and
+<code class="docutils literal notranslate"><span class="pre">n_targets</span></code> is the number of targets.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>self</strong> – Returns the instance itself.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)">object</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sklearnex.linear_model.IncrementalLinearRegression.predict">
+<span class="sig-prename descclassname"><span class="pre">IncrementalLinearRegression.</span></span><span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/linear_model/incremental_linear.html#IncrementalLinearRegression.predict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.linear_model.IncrementalLinearRegression.predict" title="Link to this definition"></a></dt>
+<dd><p>Predict using the linear model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>array-like</em><em> or </em><em>sparse matrix</em><em>, </em><em>shape</em><em> (</em><em>n_samples</em><em>, </em><em>n_features</em><em>)</em>) – Samples.</p></li>
+<li><p><strong>y</strong> (<em>Ignored</em>) – Not used, present for API consistency by convention.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>C</strong> – Returns predicted values.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>array, shape (n_samples, n_targets)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="distributed-mode.html" class="btn btn-neutral float-left" title="Distributed Mode" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="input-types.html" class="btn btn-neutral float-right" title="Supported input types" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+<jinja2.runtime.BlockReference object at 0x7f04b5f79010>
+<a href=
+    "https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html" data-cookie-notice="true">
+    Cookies
+</a>
+<a href=
+    "https://www.intel.com/content/www/us/en/privacy/intel-privacy-notice.html">
+    Privacy
+</a>
+<a data-wap_ref="dns" id="wap_dns" href="https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html">
+    Do Not Share My Personal Information
+</a>
+
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="version-switcher__container dropdown">
+    <script>
+      current_version = "2025.1"
+      project_name = "scikit-learn-intelex"
+    </script>
+    <div id="version-switcher-button"
+      class="version-switcher__button"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="version-switcher-dropdown"
+      aria-label="Version switcher list"
+      style="display:inline-block;padding-left:10px;padding-right:10px;"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </div>
+    <div id="version-switcher-dropdown"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

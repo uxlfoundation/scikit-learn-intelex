@@ -1,0 +1,973 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>sklearnex.linear_model.incremental_linear &mdash; Intel(R) Extension for Scikit-learn* 2025.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=132153fd" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicons.png"/>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=aa5d0537"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../../_static/copybutton.js?v=f281be69"></script>
+      <script src="../../../_static/version_switcher.js?v=107152b5"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <script defer type="text/javascript" src="https://www.intel.com/content/dam/www/global/wap/performance-config.js" ></script>
+    <script type="text/javascript">
+        fetch("/scikit-learn-intelex/versions.json").then(response => response.text()).then(respText=> load_versions(respText));
+        // Configure TMS settings
+        var wapLocalCode = 'us-en'; // Dynamically set per localized site, see mapping table for values
+        var wapSection = "scikit-learn"; // WAP team will give you a unique section for your site
+        // Load TMS
+        if(document.location.href.includes("intel.github.io/scikit-learn-intelex")){
+          (function () {
+            var url = 'https://www.intel.com/content/dam/www/global/wap/tms-loader.js'; // WAP file URL
+            var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true; po.src = url;
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+          })();
+      }
+      </script>
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Intel(R) Extension for Scikit-learn*
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+  <div class="version-switcher__container dropdown">
+    <script>
+      current_version = "2025.1"
+      project_name = "scikit-learn-intelex"
+    </script>
+    <div id="version-switcher-button"
+      class="version-switcher__button"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="version-switcher-dropdown"
+      aria-label="Version switcher list"
+      style="display:inline-block;padding-left:10px;padding-right:10px;"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </div>
+    <div id="version-switcher-dropdown"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+  
+  
+              <p class="caption" role="heading"><span class="caption-text">Get Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../quick-start.html">Quick Start</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../quick-start.html#compatibility-with-scikit-learn">Compatibility with Scikit-learn*</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../quick-start.html#integrate-intelex">Integrate Intel® Extension for Scikit-learn*</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../quick-start.html#patching">Patching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../quick-start.html#global-patching">Global Patching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../quick-start.html#unpatching">Unpatching</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../quick-start.html#installation">Installation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../quick-start.html#install-from-pypi">Install from PyPI</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../quick-start.html#install-from-anaconda-cloud">Install from Anaconda* Cloud</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../quick-start.html#build-from-sources">Build from Sources</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../quick-start.html#install-intel-r-ai-tools">Install Intel*(R) AI Tools</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../quick-start.html#release-notes">Release Notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../quick-start.html#system-requirements">System Requirements</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../quick-start.html#hardware-requirements">Hardware Requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../quick-start.html#software-requirements">Software Requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../quick-start.html#memory-requirements">Memory Requirements</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../samples.html">Samples</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../samples/knn_mnist.html">k-Nearest Neighbors (kNN) for MNIST dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/knn_mnist.html#Download-the-data">Download the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/knn_mnist.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/knn_mnist.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../samples/logistictic_regression_cifar.html">Logistic Regression for Cifar dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/logistictic_regression_cifar.html#Download-the-data">Download the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/logistictic_regression_cifar.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/logistictic_regression_cifar.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../samples/svc_adult.html">Support Vector Classification (SVC) for Adult dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/svc_adult.html#Download-the-data">Download the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/svc_adult.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/svc_adult.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../samples/ElasticNet.html">ElasticNet for Airlines DepDelay dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/ElasticNet.html#Download-the-data">Download the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/ElasticNet.html#Preprocessing">Preprocessing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/ElasticNet.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/ElasticNet.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../samples/lasso_regression.html">Lasso Regression for YearPredictionMSD dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/lasso_regression.html#Download-the-data">Download the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/lasso_regression.html#Normalize-the-data">Normalize the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/lasso_regression.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/lasso_regression.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../samples/linear_regression.html">Linear Regression for YearPredictionMSD dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/linear_regression.html#Download-the-data">Download the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/linear_regression.html#Normalize-the-data">Normalize the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/linear_regression.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/linear_regression.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../samples/nusvr_medical_charges.html">Nu-Support Vector Regression (NuSVR) for Medical Charges dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/nusvr_medical_charges.html#Download-the-data">Download the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/nusvr_medical_charges.html#Preprocessing">Preprocessing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/nusvr_medical_charges.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/nusvr_medical_charges.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../samples/random_forest_yolanda.html">Random Forest for Yolanda dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/random_forest_yolanda.html#Download-the-data">Download the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/random_forest_yolanda.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/random_forest_yolanda.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../samples/ridge_regression.html">Rigde Regression for Airlines DepDelay dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/ridge_regression.html#Download-the-data">Download the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/ridge_regression.html#Preprocessing">Preprocessing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/ridge_regression.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/ridge_regression.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../samples/kmeans.html">Kmeans for spoken arabic digit dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/kmeans.html#Download-the-data">Download the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/kmeans.html#Preprocessing">Preprocessing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/kmeans.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/kmeans.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../samples/dbscan.html">DBSCAN for spoken arabic digit dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/dbscan.html#Download-the-data">Download the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/dbscan.html#Preprocessing">Preprocessing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/dbscan.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/dbscan.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../samples/tsne.html">Intel® Extension for Scikit-learn TSNE example</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/tsne.html#Generate-the-data">Generate the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/tsne.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../samples/tsne.html#Plot-embeddings-original-scikit-learn-and-Intel®-extension">Plot embeddings original scikit-learn and Intel® extension</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference external" href="https://github.com/oneapi-src/oneAPI-samples/tree/master/AI-and-Analytics/Getting-Started-Samples/Intel_Extension_For_SKLearn_GettingStarted">Intel® Extension for Scikit-Learn* Getting Started Sample</a></li>
+<li class="toctree-l2"><a class="reference external" href="https://github.com/oneapi-src/oneAPI-samples/tree/master/AI-and-Analytics/Features-and-Functionality/Intel_Extension_For_SKLearn_Performance_SVC_Adult">Intel® Extension for Scikit-Learn*: SVC for Adult dataset Performance Sample</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../kaggle.html">Kaggle Kernels</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../kaggle.html#acceleration">Acceleration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../kaggle.html#machine-learning-workflows">Machine Learning Workflows</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../kaggle.html#kaggle-kernels-that-use-scikit-learn-and-intelex">Kaggle kernels that use scikit-learn and Intel® Extension for Scikit-learn*:</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../kaggle/classification.html">Classification Tasks</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="../../../kaggle/classification.html#binary-classification">Binary Classification</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../../kaggle/classification.html#multiclass-classification">MultiClass Classification</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../../kaggle/classification.html#classification-tasks-in-computer-vision">Classification Tasks in Computer Vision</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../../kaggle/classification.html#classification-tasks-in-natural-language-processing">Classification Tasks in Natural Language Processing</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="../../../kaggle/regression.html">Regression Tasks</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="../../../kaggle/regression.html#using-a-single-regressor">Using a Single Regressor</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../../../kaggle/regression.html#stacking-regressors">Stacking Regressors</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../kaggle.html#kaggle-kernels-that-use-automl-with-intelex">Kaggle kernels that use AutoML with Intel® Extension for Scikit-learn*:</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../kaggle/automl.html">AutoML Workflows</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../algorithms.html">Supported Algorithms</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../algorithms.html#on-cpu">on CPU</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../algorithms.html#classification">Classification</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../algorithms.html#regression">Regression</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../algorithms.html#clustering">Clustering</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../algorithms.html#dimensionality-reduction">Dimensionality Reduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../algorithms.html#nearest-neighbors">Nearest Neighbors</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../algorithms.html#other-tasks">Other Tasks</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../algorithms.html#on-gpu">on GPU</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../algorithms.html#id1">Classification</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../algorithms.html#id2">Regression</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../algorithms.html#id3">Clustering</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../algorithms.html#id4">Dimensionality Reduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../algorithms.html#id5">Nearest Neighbors</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../algorithms.html#id6">Other Tasks</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../algorithms.html#spmd-support">SPMD Support</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../algorithms.html#id7">Classification</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../algorithms.html#id8">Regression</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../algorithms.html#id9">Clustering</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../algorithms.html#id10">Dimensionality Reduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../algorithms.html#id11">Nearest Neighbors</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../algorithms.html#id12">Other Tasks</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../algorithms.html#scikit-learn-tests">Scikit-learn Tests</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../oneapi-gpu.html">oneAPI and GPU support</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../oneapi-gpu.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../oneapi-gpu.html#device-offloading">Device offloading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../oneapi-gpu.html#example">Example</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../distributed-mode.html">Distributed Mode</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../non-scikit-algorithms.html">Non-Scikit-Learn Algorithms</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../non-scikit-algorithms.html#basicstatistics">BasicStatistics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.basic_statistics.BasicStatistics"><code class="docutils literal notranslate"><span class="pre">BasicStatistics</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.basic_statistics.BasicStatistics.min_"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.min_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.basic_statistics.BasicStatistics.max_"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.max_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.basic_statistics.BasicStatistics.sum_"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.sum_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.basic_statistics.BasicStatistics.mean_"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.mean_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.basic_statistics.BasicStatistics.variance_"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.variance_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.basic_statistics.BasicStatistics.variation_"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.variation_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.basic_statistics.BasicStatistics.sum_squares_"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.sum_squares_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.basic_statistics.BasicStatistics.standard_deviation_"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.standard_deviation_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.basic_statistics.BasicStatistics.sum_squares_centered_"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.sum_squares_centered_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.basic_statistics.BasicStatistics.second_order_raw_moment_"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.second_order_raw_moment_</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.basic_statistics.BasicStatistics.fit"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.fit()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../non-scikit-algorithms.html#incrementalbasicstatistics">IncrementalBasicStatistics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.basic_statistics.IncrementalBasicStatistics"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.basic_statistics.IncrementalBasicStatistics.min_"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.min_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.basic_statistics.IncrementalBasicStatistics.max_"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.max_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.basic_statistics.IncrementalBasicStatistics.sum_"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.sum_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.basic_statistics.IncrementalBasicStatistics.mean_"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.mean_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.basic_statistics.IncrementalBasicStatistics.variance_"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.variance_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.basic_statistics.IncrementalBasicStatistics.variation_"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.variation_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.basic_statistics.IncrementalBasicStatistics.sum_squares_"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.sum_squares_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.basic_statistics.IncrementalBasicStatistics.standard_deviation_"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.standard_deviation_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.basic_statistics.IncrementalBasicStatistics.sum_squares_centered_"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.sum_squares_centered_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.basic_statistics.IncrementalBasicStatistics.second_order_raw_moment_"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.second_order_raw_moment_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.basic_statistics.IncrementalBasicStatistics.n_samples_seen_"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.n_samples_seen_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.basic_statistics.IncrementalBasicStatistics.batch_size_"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.batch_size_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.basic_statistics.IncrementalBasicStatistics.n_features_in_"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.n_features_in_</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.basic_statistics.IncrementalBasicStatistics.fit"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.fit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.basic_statistics.IncrementalBasicStatistics.partial_fit"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.partial_fit()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../non-scikit-algorithms.html#incrementalempiricalcovariance">IncrementalEmpiricalCovariance</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.covariance.IncrementalEmpiricalCovariance"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.covariance.IncrementalEmpiricalCovariance.location_"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance.location_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.covariance.IncrementalEmpiricalCovariance.covariance_"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance.covariance_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.covariance.IncrementalEmpiricalCovariance.n_samples_seen_"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance.n_samples_seen_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.covariance.IncrementalEmpiricalCovariance.batch_size_"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance.batch_size_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.covariance.IncrementalEmpiricalCovariance.n_features_in_"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance.n_features_in_</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.covariance.IncrementalEmpiricalCovariance.fit"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance.fit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.covariance.IncrementalEmpiricalCovariance.partial_fit"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance.partial_fit()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../non-scikit-algorithms.html#incrementallinearregression">IncrementalLinearRegression</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.linear_model.IncrementalLinearRegression"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.linear_model.IncrementalLinearRegression.coef_"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.coef_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.linear_model.IncrementalLinearRegression.intercept_"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.intercept_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.linear_model.IncrementalLinearRegression.n_samples_seen_"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.n_samples_seen_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.linear_model.IncrementalLinearRegression.batch_size_"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.batch_size_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.linear_model.IncrementalLinearRegression.n_features_in_"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.n_features_in_</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.linear_model.IncrementalLinearRegression.fit"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.fit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.linear_model.IncrementalLinearRegression.partial_fit"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.partial_fit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../non-scikit-algorithms.html#sklearnex.linear_model.IncrementalLinearRegression.predict"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.predict()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../input-types.html">Supported input types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../array_api.html">Array API support</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../array_api.html#support-for-dpnp-and-dpctl">Support for DPNP and DPCTL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../array_api.html#support-for-array-api-compatible-inputs">Support for Array API-compatible inputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../array_api.html#example-usage">Example usage</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../array_api.html#dpnp-ndarrays">DPNP ndarrays</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../array_api.html#dpctl-usm-ndarrays">DPCTL usm_ndarrays</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../array_api.html#use-of-array-api-strict">Use of <cite>array-api-strict</cite></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../verbose.html">Verbose Mode</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../preview.html">Preview Functionality</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deprecation.html">Deprecation Notice</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../deprecation.html#macos-support">macOS* Support</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Performance</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/acceleration.html">Tuning Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/acceleration.html#tsne">TSNE</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/acceleration.html#random-forest">Random Forest</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Learn</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Tutorials &amp; Case Studies</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../tutorials.html#tutorials">Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../tutorials.html#case-studies">Case Studies</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../blogs.html">Medium Blogs</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">More</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../support.html">Support</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../support.html#issues">Issues</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contribute.html">How to Contribute</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../contribute.html#licensing">Licensing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../contribute.html#pull-requests">Pull Requests</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../contribute.html#before-contributing-changes">Before Contributing Changes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../contribute.html#code-style">Code Style</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../license.html">License</a></li>
+</ul>
+
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Intel(R) Extension for Scikit-learn*</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">sklearnex.linear_model.incremental_linear</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for sklearnex.linear_model.incremental_linear</h1><div class="highlight"><pre>
+<span></span><span class="c1"># ===============================================================================</span>
+<span class="c1"># Copyright 2024 Intel Corporation</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1"># ===============================================================================</span>
+
+<span class="kn">import</span> <span class="nn">numbers</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">sklearn.base</span> <span class="kn">import</span> <span class="n">BaseEstimator</span><span class="p">,</span> <span class="n">MultiOutputMixin</span><span class="p">,</span> <span class="n">RegressorMixin</span>
+<span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">r2_score</span>
+<span class="kn">from</span> <span class="nn">sklearn.utils</span> <span class="kn">import</span> <span class="n">check_array</span><span class="p">,</span> <span class="n">gen_batches</span>
+<span class="kn">from</span> <span class="nn">sklearn.utils.validation</span> <span class="kn">import</span> <span class="n">check_is_fitted</span>
+
+<span class="kn">from</span> <span class="nn">daal4py.sklearn._n_jobs_support</span> <span class="kn">import</span> <span class="n">control_n_jobs</span>
+<span class="kn">from</span> <span class="nn">daal4py.sklearn._utils</span> <span class="kn">import</span> <span class="n">sklearn_check_version</span>
+<span class="kn">from</span> <span class="nn">onedal.linear_model</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">IncrementalLinearRegression</span> <span class="k">as</span> <span class="n">onedal_IncrementalLinearRegression</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="k">if</span> <span class="n">sklearn_check_version</span><span class="p">(</span><span class="s2">&quot;1.2&quot;</span><span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">sklearn.utils._param_validation</span> <span class="kn">import</span> <span class="n">Interval</span>
+
+<span class="k">if</span> <span class="n">sklearn_check_version</span><span class="p">(</span><span class="s2">&quot;1.6&quot;</span><span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">sklearn.utils.validation</span> <span class="kn">import</span> <span class="n">validate_data</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">validate_data</span> <span class="o">=</span> <span class="n">BaseEstimator</span><span class="o">.</span><span class="n">_validate_data</span>
+
+<span class="kn">from</span> <span class="nn">onedal.common.hyperparameters</span> <span class="kn">import</span> <span class="n">get_hyperparameters</span>
+
+<span class="kn">from</span> <span class="nn">.._device_offload</span> <span class="kn">import</span> <span class="n">dispatch</span><span class="p">,</span> <span class="n">wrap_output_data</span>
+<span class="kn">from</span> <span class="nn">.._utils</span> <span class="kn">import</span> <span class="n">IntelEstimator</span><span class="p">,</span> <span class="n">PatchingConditionsChain</span><span class="p">,</span> <span class="n">register_hyperparameters</span>
+
+
+<div class="viewcode-block" id="IncrementalLinearRegression">
+<a class="viewcode-back" href="../../../non-scikit-algorithms.html#sklearnex.linear_model.IncrementalLinearRegression">[docs]</a>
+<span class="nd">@register_hyperparameters</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;fit&quot;</span><span class="p">:</span> <span class="n">get_hyperparameters</span><span class="p">(</span><span class="s2">&quot;linear_regression&quot;</span><span class="p">,</span> <span class="s2">&quot;train&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;partial_fit&quot;</span><span class="p">:</span> <span class="n">get_hyperparameters</span><span class="p">(</span><span class="s2">&quot;linear_regression&quot;</span><span class="p">,</span> <span class="s2">&quot;train&quot;</span><span class="p">),</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+<span class="nd">@control_n_jobs</span><span class="p">(</span>
+    <span class="n">decorated_methods</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;fit&quot;</span><span class="p">,</span> <span class="s2">&quot;partial_fit&quot;</span><span class="p">,</span> <span class="s2">&quot;predict&quot;</span><span class="p">,</span> <span class="s2">&quot;score&quot;</span><span class="p">,</span> <span class="s2">&quot;_onedal_finalize_fit&quot;</span><span class="p">]</span>
+<span class="p">)</span>
+<span class="k">class</span> <span class="nc">IncrementalLinearRegression</span><span class="p">(</span>
+    <span class="n">IntelEstimator</span><span class="p">,</span> <span class="n">MultiOutputMixin</span><span class="p">,</span> <span class="n">RegressorMixin</span><span class="p">,</span> <span class="n">BaseEstimator</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Trains a linear regression model, allows for computation if the data are split into</span>
+<span class="sd">    batches. The user can use the ``partial_fit`` method to provide a single batch of data or use the ``fit`` method to provide</span>
+<span class="sd">    the entire dataset.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fit_intercept : bool, default=True</span>
+<span class="sd">    Whether to calculate the intercept for this model. If set</span>
+<span class="sd">    to False, no intercept will be used in calculations</span>
+<span class="sd">    (i.e. data is expected to be centered).</span>
+
+<span class="sd">    copy_X : bool, default=True</span>
+<span class="sd">        If True, X will be copied; else, it may be overwritten.</span>
+
+<span class="sd">    n_jobs : int, default=None</span>
+<span class="sd">        The number of jobs to use for the computation.</span>
+
+<span class="sd">    batch_size : int, default=None</span>
+<span class="sd">        The number of samples to use for each batch. Only used when calling</span>
+<span class="sd">        ``fit``. If ``batch_size`` is ``None``, then ``batch_size``</span>
+<span class="sd">        is inferred from the data and set to ``5 * n_features``.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    coef_ : array of shape (n_features, ) or (n_targets, n_features)</span>
+<span class="sd">        Estimated coefficients for the linear regression problem.</span>
+<span class="sd">        If multiple targets are passed during the fit (y 2D), this</span>
+<span class="sd">        is a 2D array of shape (n_targets, n_features), while if only</span>
+<span class="sd">        one target is passed, this is a 1D array of length n_features.</span>
+
+<span class="sd">    intercept_ : float or array of shape (n_targets,)</span>
+<span class="sd">        Independent term in the linear model. Set to 0.0 if</span>
+<span class="sd">        `fit_intercept = False`.</span>
+
+<span class="sd">    n_samples_seen_ : int</span>
+<span class="sd">        The number of samples processed by the estimator. Will be reset on</span>
+<span class="sd">        new calls to ``fit``, but increments across ``partial_fit`` calls.</span>
+<span class="sd">        It should be not less than `n_features_in_` if `fit_intercept`</span>
+<span class="sd">        is False and not less than `n_features_in_` + 1 if `fit_intercept`</span>
+<span class="sd">        is True to obtain regression coefficients.</span>
+
+<span class="sd">    batch_size_ : int</span>
+<span class="sd">        Inferred batch size from ``batch_size``.</span>
+
+<span class="sd">    n_features_in_ : int</span>
+<span class="sd">        Number of features seen during ``fit`` or ``partial_fit``.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">    &gt;&gt;&gt; from sklearnex.linear_model import IncrementalLinearRegression</span>
+<span class="sd">    &gt;&gt;&gt; inclr = IncrementalLinearRegression(batch_size=2)</span>
+<span class="sd">    &gt;&gt;&gt; X = np.array([[1, 2], [3, 4], [5, 6], [7, 10]])</span>
+<span class="sd">    &gt;&gt;&gt; y = np.array([1.5, 3.5, 5.5, 8.5])</span>
+<span class="sd">    &gt;&gt;&gt; inclr.partial_fit(X[:2], y[:2])</span>
+<span class="sd">    &gt;&gt;&gt; inclr.partial_fit(X[2:], y[2:])</span>
+<span class="sd">    &gt;&gt;&gt; inclr.coef_</span>
+<span class="sd">    np.array([0.5., 0.5.])</span>
+<span class="sd">    &gt;&gt;&gt; inclr.intercept_</span>
+<span class="sd">    np.array(0.)</span>
+<span class="sd">    &gt;&gt;&gt; inclr.fit(X)</span>
+<span class="sd">    &gt;&gt;&gt; inclr.coef_</span>
+<span class="sd">    np.array([0.5., 0.5.])</span>
+<span class="sd">    &gt;&gt;&gt; inclr.intercept_</span>
+<span class="sd">    np.array(0.)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_onedal_incremental_linear</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="n">onedal_IncrementalLinearRegression</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">sklearn_check_version</span><span class="p">(</span><span class="s2">&quot;1.2&quot;</span><span class="p">):</span>
+        <span class="n">_parameter_constraints</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;fit_intercept&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;boolean&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;copy_X&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;boolean&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;n_jobs&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">Interval</span><span class="p">(</span><span class="n">numbers</span><span class="o">.</span><span class="n">Integral</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">closed</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">),</span> <span class="kc">None</span><span class="p">],</span>
+            <span class="s2">&quot;batch_size&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">Interval</span><span class="p">(</span><span class="n">numbers</span><span class="o">.</span><span class="n">Integral</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">closed</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">),</span> <span class="kc">None</span><span class="p">],</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">fit_intercept</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">copy_X</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fit_intercept</span> <span class="o">=</span> <span class="n">fit_intercept</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">copy_X</span> <span class="o">=</span> <span class="n">copy_X</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span> <span class="o">=</span> <span class="n">n_jobs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch_size</span>
+
+    <span class="k">def</span> <span class="nf">_onedal_supported</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method_name</span><span class="p">,</span> <span class="o">*</span><span class="n">data</span><span class="p">):</span>
+        <span class="n">patching_status</span> <span class="o">=</span> <span class="n">PatchingConditionsChain</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;sklearn.linear_model.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">method_name</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">patching_status</span>
+
+    <span class="n">_onedal_cpu_supported</span> <span class="o">=</span> <span class="n">_onedal_supported</span>
+    <span class="n">_onedal_gpu_supported</span> <span class="o">=</span> <span class="n">_onedal_supported</span>
+
+    <span class="k">def</span> <span class="nf">_onedal_predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">queue</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">sklearn_check_version</span><span class="p">(</span><span class="s2">&quot;1.2&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validate_params</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">sklearn_check_version</span><span class="p">(</span><span class="s2">&quot;1.0&quot;</span><span class="p">):</span>
+            <span class="n">X</span> <span class="o">=</span> <span class="n">validate_data</span><span class="p">(</span>
+                <span class="bp">self</span><span class="p">,</span>
+                <span class="n">X</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">],</span>
+                <span class="n">copy</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">copy_X</span><span class="p">,</span>
+                <span class="n">reset</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">X</span> <span class="o">=</span> <span class="n">check_array</span><span class="p">(</span>
+                <span class="n">X</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">],</span>
+                <span class="n">copy</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">copy_X</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_onedal_estimator&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_need_to_finalize</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_onedal_finalize_fit</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_onedal_estimator</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">queue</span><span class="o">=</span><span class="n">queue</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_onedal_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">queue</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">r2_score</span><span class="p">(</span>
+            <span class="n">y</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_onedal_predict</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">queue</span><span class="o">=</span><span class="n">queue</span><span class="p">),</span> <span class="n">sample_weight</span><span class="o">=</span><span class="n">sample_weight</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_onedal_partial_fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">check_input</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">queue</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">first_pass</span> <span class="o">=</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;n_samples_seen_&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_samples_seen_</span> <span class="o">==</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="n">sklearn_check_version</span><span class="p">(</span><span class="s2">&quot;1.2&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validate_params</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">check_input</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">sklearn_check_version</span><span class="p">(</span><span class="s2">&quot;1.0&quot;</span><span class="p">):</span>
+                <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">validate_data</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="p">,</span>
+                    <span class="n">X</span><span class="p">,</span>
+                    <span class="n">y</span><span class="p">,</span>
+                    <span class="n">dtype</span><span class="o">=</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">],</span>
+                    <span class="n">reset</span><span class="o">=</span><span class="n">first_pass</span><span class="p">,</span>
+                    <span class="n">copy</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">copy_X</span><span class="p">,</span>
+                    <span class="n">multi_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">force_all_finite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">X</span> <span class="o">=</span> <span class="n">check_array</span><span class="p">(</span>
+                    <span class="n">X</span><span class="p">,</span>
+                    <span class="n">dtype</span><span class="o">=</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">],</span>
+                    <span class="n">copy</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">copy_X</span><span class="p">,</span>
+                    <span class="n">force_all_finite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">y</span> <span class="o">=</span> <span class="n">check_array</span><span class="p">(</span>
+                    <span class="n">y</span><span class="p">,</span>
+                    <span class="n">dtype</span><span class="o">=</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">],</span>
+                    <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                    <span class="n">ensure_2d</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                    <span class="n">force_all_finite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">first_pass</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">n_samples_seen_</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">n_features_in_</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">n_samples_seen_</span> <span class="o">+=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">onedal_params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;fit_intercept&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit_intercept</span><span class="p">,</span> <span class="s2">&quot;copy_X&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_X</span><span class="p">}</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_onedal_estimator&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_onedal_estimator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_onedal_incremental_linear</span><span class="p">(</span><span class="o">**</span><span class="n">onedal_params</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_onedal_estimator</span><span class="o">.</span><span class="n">partial_fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">queue</span><span class="o">=</span><span class="n">queue</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_need_to_finalize</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">_onedal_finalize_fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">queue</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_onedal_estimator&quot;</span><span class="p">)</span>
+        <span class="n">is_underdetermined</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_samples_seen_</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_features_in_</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fit_intercept</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">is_underdetermined</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Not enough samples to finalize&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_onedal_estimator</span><span class="o">.</span><span class="n">finalize_fit</span><span class="p">(</span><span class="n">queue</span><span class="o">=</span><span class="n">queue</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_need_to_finalize</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="nf">_onedal_fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">queue</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">sklearn_check_version</span><span class="p">(</span><span class="s2">&quot;1.2&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validate_params</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">sklearn_check_version</span><span class="p">(</span><span class="s2">&quot;1.0&quot;</span><span class="p">):</span>
+            <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">validate_data</span><span class="p">(</span>
+                <span class="bp">self</span><span class="p">,</span>
+                <span class="n">X</span><span class="p">,</span>
+                <span class="n">y</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">],</span>
+                <span class="n">copy</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">copy_X</span><span class="p">,</span>
+                <span class="n">multi_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">ensure_2d</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">X</span> <span class="o">=</span> <span class="n">check_array</span><span class="p">(</span>
+                <span class="n">X</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">],</span>
+                <span class="n">copy</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">copy_X</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">check_array</span><span class="p">(</span>
+                <span class="n">y</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">],</span>
+                <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">ensure_2d</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="n">n_samples</span><span class="p">,</span> <span class="n">n_features</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="n">is_underdetermined</span> <span class="o">=</span> <span class="n">n_samples</span> <span class="o">&lt;</span> <span class="n">n_features</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fit_intercept</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">is_underdetermined</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Not enough samples to run oneDAL backend&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">batch_size_</span> <span class="o">=</span> <span class="mi">5</span> <span class="o">*</span> <span class="n">n_features</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">batch_size_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_samples_seen_</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_onedal_estimator&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_onedal_estimator</span><span class="o">.</span><span class="n">_reset</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">gen_batches</span><span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size_</span><span class="p">):</span>
+            <span class="n">X_batch</span><span class="p">,</span> <span class="n">y_batch</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">batch</span><span class="p">],</span> <span class="n">y</span><span class="p">[</span><span class="n">batch</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_onedal_partial_fit</span><span class="p">(</span><span class="n">X_batch</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">,</span> <span class="n">check_input</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">queue</span><span class="o">=</span><span class="n">queue</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">sklearn_check_version</span><span class="p">(</span><span class="s2">&quot;1.2&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validate_params</span><span class="p">()</span>
+
+        <span class="c1"># finite check occurs on onedal side</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_features_in_</span> <span class="o">=</span> <span class="n">n_features</span>
+
+        <span class="k">if</span> <span class="n">n_samples</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;Only one sample available. You may want to reshape your data array&quot;</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_onedal_finalize_fit</span><span class="p">(</span><span class="n">queue</span><span class="o">=</span><span class="n">queue</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">intercept_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_onedal_estimator&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_need_to_finalize</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_onedal_finalize_fit</span><span class="p">()</span>
+
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_onedal_estimator</span><span class="o">.</span><span class="n">intercept_</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&#39; object has no attribute &#39;intercept_&#39;&quot;</span>
+            <span class="p">)</span>
+
+    <span class="nd">@intercept_</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">intercept_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="s2">&quot;intercept_&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_onedal_estimator&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_onedal_estimator</span><span class="o">.</span><span class="n">intercept_</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_onedal_estimator</span><span class="o">.</span><span class="n">_onedal_model</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">coef_</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_onedal_estimator&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_need_to_finalize</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_onedal_finalize_fit</span><span class="p">()</span>
+
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_onedal_estimator</span><span class="o">.</span><span class="n">coef_</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&#39; object has no attribute &#39;coef_&#39;&quot;</span>
+            <span class="p">)</span>
+
+    <span class="nd">@coef_</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">coef_</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="s2">&quot;coef_&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_onedal_estimator&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_onedal_estimator</span><span class="o">.</span><span class="n">coef_</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_onedal_estimator</span><span class="o">.</span><span class="n">_onedal_model</span>
+
+<div class="viewcode-block" id="IncrementalLinearRegression.partial_fit">
+<a class="viewcode-back" href="../../../non-scikit-algorithms.html#sklearnex.linear_model.IncrementalLinearRegression.partial_fit">[docs]</a>
+    <span class="k">def</span> <span class="nf">partial_fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">check_input</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Incremental fit linear model with X and y. All of X and y is</span>
+<span class="sd">        processed as a single batch.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X : array-like of shape (n_samples, n_features)</span>
+<span class="sd">            Training data, where ``n_samples`` is the number of samples and</span>
+<span class="sd">            `n_features` is the number of features.</span>
+
+<span class="sd">        y : array-like of shape (n_samples,) or (n_samples, n_targets)</span>
+<span class="sd">            Target values, where ``n_samples`` is the number of samples and</span>
+<span class="sd">            ``n_targets`` is the number of targets.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        self : object</span>
+<span class="sd">            Returns the instance itself.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">dispatch</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="s2">&quot;partial_fit&quot;</span><span class="p">,</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;onedal&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="n">_onedal_partial_fit</span><span class="p">,</span>
+                <span class="s2">&quot;sklearn&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="n">X</span><span class="p">,</span>
+            <span class="n">y</span><span class="p">,</span>
+            <span class="n">check_input</span><span class="o">=</span><span class="n">check_input</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+<div class="viewcode-block" id="IncrementalLinearRegression.fit">
+<a class="viewcode-back" href="../../../non-scikit-algorithms.html#sklearnex.linear_model.IncrementalLinearRegression.fit">[docs]</a>
+    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fit the model with X and y, using minibatches of size ``batch_size``.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X : array-like of shape (n_samples, n_features)</span>
+<span class="sd">            Training data, where ``n_samples`` is the number of samples and</span>
+<span class="sd">            ``n_features`` is the number of features. It is necessary for</span>
+<span class="sd">            ``n_samples`` to be not less than ``n_features`` if ``fit_intercept``</span>
+<span class="sd">            is False and not less than ``n_features + 1`` if ``fit_intercept``</span>
+<span class="sd">            is True</span>
+
+<span class="sd">        y : array-like of shape (n_samples,) or (n_samples, n_targets)</span>
+<span class="sd">            Target values, where ``n_samples`` is the number of samples and</span>
+<span class="sd">            ``n_targets`` is the number of targets.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        self : object</span>
+<span class="sd">            Returns the instance itself.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">dispatch</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="s2">&quot;fit&quot;</span><span class="p">,</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;onedal&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="n">_onedal_fit</span><span class="p">,</span>
+                <span class="s2">&quot;sklearn&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="n">X</span><span class="p">,</span>
+            <span class="n">y</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+<div class="viewcode-block" id="IncrementalLinearRegression.predict">
+<a class="viewcode-back" href="../../../non-scikit-algorithms.html#sklearnex.linear_model.IncrementalLinearRegression.predict">[docs]</a>
+    <span class="nd">@wrap_output_data</span>
+    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Predict using the linear model.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X : array-like or sparse matrix, shape (n_samples, n_features)</span>
+<span class="sd">            Samples.</span>
+
+<span class="sd">        y : Ignored</span>
+<span class="sd">            Not used, present for API consistency by convention.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        C : array, shape (n_samples, n_targets)</span>
+<span class="sd">            Returns predicted values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">check_is_fitted</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">dispatch</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="s2">&quot;predict&quot;</span><span class="p">,</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;onedal&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="n">_onedal_predict</span><span class="p">,</span>
+                <span class="s2">&quot;sklearn&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="n">X</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+    <span class="nd">@wrap_output_data</span>
+    <span class="k">def</span> <span class="nf">score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the coefficient of determination of the prediction.</span>
+
+<span class="sd">        The coefficient of determination :math:`R^2` is defined as</span>
+<span class="sd">        :math:`(1 - \\frac{u}{v})`, where :math:`u` is the residual</span>
+<span class="sd">        sum of squares ``((y_true - y_pred)** 2).sum()`` and :math:`v`</span>
+<span class="sd">        is the total sum of squares ``((y_true - y_true.mean()) ** 2).sum()``.</span>
+<span class="sd">        The best possible score is 1.0 and it can be negative (because the</span>
+<span class="sd">        model can be arbitrarily worse). A constant model that always predicts</span>
+<span class="sd">        the expected value of `y`, disregarding the input features, would get</span>
+<span class="sd">        a :math:`R^2` score of 0.0.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X : array-like of shape (n_samples, n_features)</span>
+<span class="sd">            Test samples. For some estimators this may be a precomputed</span>
+<span class="sd">            kernel matrix or a list of generic objects instead with shape</span>
+<span class="sd">            ``(n_samples, n_samples_fitted)``, where ``n_samples_fitted``</span>
+<span class="sd">            is the number of samples used in the fitting for the estimator.</span>
+
+<span class="sd">        y : array-like of shape (n_samples,) or (n_samples, n_outputs)</span>
+<span class="sd">            True values for `X`.</span>
+
+<span class="sd">        sample_weight : array-like of shape (n_samples,), default=None</span>
+<span class="sd">            Sample weights.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        score : float</span>
+<span class="sd">            :math:`R^2` of ``self.predict(X)`` w.r.t. `y`.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        The :math:`R^2` score used when calling ``score`` on a regressor uses</span>
+<span class="sd">        ``multioutput=&#39;uniform_average&#39;`` from version 0.23 to keep consistent</span>
+<span class="sd">        with default value of :func:`~sklearn.metrics.r2_score`.</span>
+<span class="sd">        This influences the ``score`` method of all the multioutput</span>
+<span class="sd">        regressors (except for</span>
+<span class="sd">        :class:`~sklearn.multioutput.MultiOutputRegressor`).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">check_is_fitted</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">dispatch</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="s2">&quot;score&quot;</span><span class="p">,</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;onedal&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="n">_onedal_score</span><span class="p">,</span>
+                <span class="s2">&quot;sklearn&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="n">X</span><span class="p">,</span>
+            <span class="n">y</span><span class="p">,</span>
+            <span class="n">sample_weight</span><span class="o">=</span><span class="n">sample_weight</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+<jinja2.runtime.BlockReference object at 0x7f04b63847d0>
+<a href=
+    "https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html" data-cookie-notice="true">
+    Cookies
+</a>
+<a href=
+    "https://www.intel.com/content/www/us/en/privacy/intel-privacy-notice.html">
+    Privacy
+</a>
+<a data-wap_ref="dns" id="wap_dns" href="https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html">
+    Do Not Share My Personal Information
+</a>
+
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="version-switcher__container dropdown">
+    <script>
+      current_version = "2025.1"
+      project_name = "scikit-learn-intelex"
+    </script>
+    <div id="version-switcher-button"
+      class="version-switcher__button"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="version-switcher-dropdown"
+      aria-label="Version switcher list"
+      style="display:inline-block;padding-left:10px;padding-right:10px;"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </div>
+    <div id="version-switcher-dropdown"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
