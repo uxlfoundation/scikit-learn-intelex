@@ -1,0 +1,642 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Intel® Extension for Scikit-learn Lasso Regression for YearPredictionMSD dataset &mdash; Intel(R) Extension for Scikit-learn* 2024.7 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/copybutton.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/tabs.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css" />
+
+  
+    <link rel="shortcut icon" href="../_static/favicons.png"/>
+      <script src="../_static/jquery.js"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+      <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+      <script src="../_static/doctools.js"></script>
+      <script src="../_static/sphinx_highlight.js"></script>
+      <script src="../_static/clipboard.min.js"></script>
+      <script src="../_static/copybutton.js"></script>
+      <script src="../_static/version_switcher.js"></script>
+      <script src="../_static/design-tabs.js"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Intel® Extension for Scikit-learn Linear Regression for YearPredictionMSD dataset" href="linear_regression.html" />
+    <link rel="prev" title="Intel® Extension for Scikit-learn ElasticNet for Airlines DepDelay dataset" href="ElasticNet.html" />
+    <script defer type="text/javascript" src="https://www.intel.com/content/dam/www/global/wap/performance-config.js" ></script>
+    <script type="text/javascript">
+        fetch("/scikit-learn-intelex/versions.json").then(response => response.text()).then(respText=> load_versions(respText));
+        // Configure TMS settings
+        var wapLocalCode = 'us-en'; // Dynamically set per localized site, see mapping table for values
+        var wapSection = "scikit-learn"; // WAP team will give you a unique section for your site
+        // Load TMS
+        if(document.location.href.includes("intel.github.io/scikit-learn-intelex")){
+          (function () {
+            var url = 'https://www.intel.com/content/dam/www/global/wap/tms-loader.js'; // WAP file URL
+            var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true; po.src = url;
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+          })();
+      }
+      </script>
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Intel(R) Extension for Scikit-learn*
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+  <div class="version-switcher__container dropdown">
+    <script>
+      current_version = "2024.7"
+      project_name = "scikit-learn-intelex"
+    </script>
+    <div id="version-switcher-button"
+      class="version-switcher__button"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="version-switcher-dropdown"
+      aria-label="Version switcher list"
+      style="display:inline-block;padding-left:10px;padding-right:10px;"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </div>
+    <div id="version-switcher-dropdown"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+  
+  
+              <p class="caption" role="heading"><span class="caption-text">Get Started</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../quick-start.html">Quick Start</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../quick-start.html#compatibility-with-scikit-learn">Compatibility with Scikit-learn*</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../quick-start.html#integrate-intelex">Integrate Intel® Extension for Scikit-learn*</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../quick-start.html#patching">Patching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../quick-start.html#global-patching">Global Patching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../quick-start.html#unpatching">Unpatching</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../quick-start.html#installation">Installation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../quick-start.html#install-from-pypi">Install from PyPI</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../quick-start.html#install-from-anaconda-cloud">Install from Anaconda* Cloud</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../quick-start.html#build-from-sources">Build from Sources</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../quick-start.html#install-intel-r-ai-tools">Install Intel*(R) AI Tools</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../quick-start.html#release-notes">Release Notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../quick-start.html#system-requirements">System Requirements</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../quick-start.html#hardware-requirements">Hardware Requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../quick-start.html#software-requirements">Software Requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../quick-start.html#memory-requirements">Memory Requirements</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="../samples.html">Samples</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="knn_mnist.html">k-Nearest Neighbors (kNN) for MNIST dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="knn_mnist.html#Download-the-data">Download the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="knn_mnist.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="knn_mnist.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="logistictic_regression_cifar.html">Logistic Regression for Cifar dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="logistictic_regression_cifar.html#Download-the-data">Download the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="logistictic_regression_cifar.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="logistictic_regression_cifar.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="svc_adult.html">Support Vector Classification (SVC) for Adult dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="svc_adult.html#Download-the-data">Download the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="svc_adult.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="svc_adult.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ElasticNet.html">ElasticNet for Airlines DepDelay dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ElasticNet.html#Download-the-data">Download the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ElasticNet.html#Preprocessing">Preprocessing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ElasticNet.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ElasticNet.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Lasso Regression for YearPredictionMSD dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Download-the-data">Download the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Normalize-the-data">Normalize the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="linear_regression.html">Linear Regression for YearPredictionMSD dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="linear_regression.html#Download-the-data">Download the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="linear_regression.html#Normalize-the-data">Normalize the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="linear_regression.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="linear_regression.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="nusvr_medical_charges.html">Nu-Support Vector Regression (NuSVR) for Medical Charges dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="nusvr_medical_charges.html#Download-the-data">Download the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="nusvr_medical_charges.html#Preprocessing">Preprocessing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="nusvr_medical_charges.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="nusvr_medical_charges.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="random_forest_yolanda.html">Random Forest for Yolanda dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="random_forest_yolanda.html#Download-the-data">Download the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="random_forest_yolanda.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="random_forest_yolanda.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ridge_regression.html">Rigde Regression for Airlines DepDelay dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ridge_regression.html#Download-the-data">Download the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ridge_regression.html#Preprocessing">Preprocessing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ridge_regression.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ridge_regression.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kmeans.html">Kmeans for spoken arabic digit dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kmeans.html#Download-the-data">Download the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="kmeans.html#Preprocessing">Preprocessing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="kmeans.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="kmeans.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="dbscan.html">DBSCAN for spoken arabic digit dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="dbscan.html#Download-the-data">Download the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dbscan.html#Preprocessing">Preprocessing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dbscan.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dbscan.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference external" href="https://github.com/oneapi-src/oneAPI-samples/tree/master/AI-and-Analytics/Getting-Started-Samples/Intel_Extension_For_SKLearn_GettingStarted">Intel® Extension for Scikit-Learn* Getting Started Sample</a></li>
+<li class="toctree-l2"><a class="reference external" href="https://github.com/oneapi-src/oneAPI-samples/tree/master/AI-and-Analytics/Features-and-Functionality/Intel_Extension_For_SKLearn_Performance_SVC_Adult">Intel® Extension for Scikit-Learn*: SVC for Adult dataset Performance Sample</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../kaggle.html">Kaggle Kernels</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../kaggle.html#acceleration">Acceleration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../kaggle.html#machine-learning-workflows">Machine Learning Workflows</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../kaggle.html#kaggle-kernels-that-use-scikit-learn-and-intelex">Kaggle kernels that use scikit-learn and Intel® Extension for Scikit-learn*:</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../kaggle/classification.html">Classification Tasks</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="../kaggle/classification.html#binary-classification">Binary Classification</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../kaggle/classification.html#multiclass-classification">MultiClass Classification</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../kaggle/classification.html#classification-tasks-in-computer-vision">Classification Tasks in Computer Vision</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../kaggle/classification.html#classification-tasks-in-natural-language-processing">Classification Tasks in Natural Language Processing</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="../kaggle/regression.html">Regression Tasks</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="../kaggle/regression.html#using-a-single-regressor">Using a Single Regressor</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../kaggle/regression.html#stacking-regressors">Stacking Regressors</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../kaggle.html#kaggle-kernels-that-use-automl-with-intelex">Kaggle kernels that use AutoML with Intel® Extension for Scikit-learn*:</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../kaggle/automl.html">AutoML Workflows</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../algorithms.html">Supported Algorithms</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../algorithms.html#on-cpu">on CPU</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../algorithms.html#classification">Classification</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../algorithms.html#regression">Regression</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../algorithms.html#clustering">Clustering</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../algorithms.html#dimensionality-reduction">Dimensionality reduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../algorithms.html#nearest-neighbors">Nearest Neighbors</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../algorithms.html#other-tasks">Other tasks</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../algorithms.html#on-gpu">on GPU</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../algorithms.html#id1">Classification</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../algorithms.html#id2">Regression</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../algorithms.html#id3">Clustering</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../algorithms.html#id4">Dimensionality reduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../algorithms.html#id5">Nearest Neighbors</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../algorithms.html#scikit-learn-tests">Scikit-learn tests</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../oneapi-gpu.html">oneAPI and GPU support</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../oneapi-gpu.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../oneapi-gpu.html#device-offloading">Device offloading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../oneapi-gpu.html#example">Example</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../distributed-mode.html">Distributed Mode</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../verbose.html">Verbose Mode</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../deprecation.html">Deprecation Notice</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../deprecation.html#macos-support">macOS* Support</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Performance</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../guide/acceleration.html">Tuning Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../guide/acceleration.html#tsne">TSNE</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guide/acceleration.html#random-forest">Random Forest</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Learn</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">Tutorials &amp; Case Studies</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#tutorials">Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials.html#case-studies">Case Studies</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../blogs.html">Medium Blogs</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">More</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../support.html">Support</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../support.html#issues">Issues</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../contribute.html">How to Contribute</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../contribute.html#licensing">Licensing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../contribute.html#pull-requests">Pull Requests</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../contribute.html#before-contributing-changes">Before Contributing Changes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../contribute.html#code-style">Code Style</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+</ul>
+
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Intel(R) Extension for Scikit-learn*</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../samples.html">Samples</a></li>
+      <li class="breadcrumb-item active">Intel® Extension for Scikit-learn Lasso Regression for YearPredictionMSD dataset</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/samples/lasso_regression.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="Intel®-Extension-for-Scikit-learn-Lasso-Regression-for-YearPredictionMSD-dataset">
+<h1>Intel® Extension for Scikit-learn Lasso Regression for YearPredictionMSD dataset<a class="headerlink" href="#Intel®-Extension-for-Scikit-learn-Lasso-Regression-for-YearPredictionMSD-dataset" title="Permalink to this heading"></a></h1>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">timeit</span> <span class="kn">import</span> <span class="n">default_timer</span> <span class="k">as</span> <span class="n">timer</span>
+<span class="kn">from</span> <span class="nn">sklearn</span> <span class="kn">import</span> <span class="n">metrics</span>
+<span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="kn">import</span> <span class="n">train_test_split</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">HTML</span>
+
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<section id="Download-the-data">
+<h2>Download the data<a class="headerlink" href="#Download-the-data" title="Permalink to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset_dir</span> <span class="o">=</span> <span class="s2">&quot;data&quot;</span>
+<span class="n">dataset_name</span> <span class="o">=</span> <span class="s2">&quot;year_prediction_msd&quot;</span>
+<span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;https://archive.ics.uci.edu/ml/machine-learning-databases/00203/YearPredictionMSD.txt.zip&quot;</span>
+
+<span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">dataset_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">local_url</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dataset_dir</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">url</span><span class="p">))</span>
+
+<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">local_url</span><span class="p">):</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">local_url</span><span class="p">,</span> <span class="s2">&quot;wb+&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">iter_content</span><span class="p">(</span><span class="mi">8192</span><span class="p">):</span>
+            <span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+<span class="n">year</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">local_url</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">year</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">year</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Split the data into train and test sets</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">x_train</span><span class="p">,</span> <span class="n">x_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">x_train</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">x_test</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">y_train</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">y_test</span><span class="o">.</span><span class="n">shape</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+((463810, 90), (51535, 90), (463810,), (51535,))
+</pre></div></div>
+</div>
+</section>
+<section id="Normalize-the-data">
+<h2>Normalize the data<a class="headerlink" href="#Normalize-the-data" title="Permalink to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sklearn.preprocessing</span> <span class="kn">import</span> <span class="n">MinMaxScaler</span><span class="p">,</span> <span class="n">StandardScaler</span>
+
+<span class="n">scaler_x</span> <span class="o">=</span> <span class="n">MinMaxScaler</span><span class="p">()</span>
+<span class="n">scaler_y</span> <span class="o">=</span> <span class="n">StandardScaler</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">scaler_x</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x_train</span><span class="p">)</span>
+<span class="n">x_train</span> <span class="o">=</span> <span class="n">scaler_x</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">x_train</span><span class="p">)</span>
+<span class="n">x_test</span> <span class="o">=</span> <span class="n">scaler_x</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">x_test</span><span class="p">)</span>
+
+<span class="n">scaler_y</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">y_train</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">y_train</span> <span class="o">=</span> <span class="n">scaler_y</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">y_train</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+<span class="n">y_test</span> <span class="o">=</span> <span class="n">scaler_y</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">y_test</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">
+<h2>Patch original Scikit-learn with Intel® Extension for Scikit-learn<a class="headerlink" href="#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn" title="Permalink to this heading"></a></h2>
+<p>Intel® Extension for Scikit-learn (previously known as daal4py) contains drop-in replacement functionality for the stock Scikit-learn package. You can take advantage of the performance optimizations of Intel® Extension for Scikit-learn by adding just two lines of code before the usual Scikit-learn imports:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sklearnex</span> <span class="kn">import</span> <span class="n">patch_sklearn</span>
+
+<span class="n">patch_sklearn</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+Intel(R) Extension for Scikit-learn* enabled (https://github.com/intel/scikit-learn-intelex)
+</pre></div></div>
+</div>
+<p>Intel® Extension for Scikit-learn patching affects performance of specific Scikit-learn functionality. Refer to the <a class="reference external" href="https://intel.github.io/scikit-learn-intelex/latest/algorithms.html">list of supported algorithms and parameters</a> for details. In cases when unsupported parameters are used, the package fallbacks into original Scikit-learn. If the patching does not cover your scenarios, <a class="reference external" href="https://github.com/intel/scikit-learn-intelex/issues">submit an issue on GitHub</a>.</p>
+<p>Training of the Lasso algorithm with Intel® Extension for Scikit-learn for YearPredictionMSD dataset</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sklearn.linear_model</span> <span class="kn">import</span> <span class="n">Lasso</span>
+
+<span class="n">params</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;alpha&quot;</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">,</span>
+    <span class="s2">&quot;fit_intercept&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="s2">&quot;random_state&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="s2">&quot;copy_X&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">}</span>
+<span class="n">start</span> <span class="o">=</span> <span class="n">timer</span><span class="p">()</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">Lasso</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
+<span class="n">train_patched</span> <span class="o">=</span> <span class="n">timer</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span>
+<span class="sa">f</span><span class="s2">&quot;Intel® extension for Scikit-learn time: </span><span class="si">{</span><span class="n">train_patched</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> s&quot;</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;Intel® extension for Scikit-learn time: 0.06 s&#39;
+</pre></div></div>
+</div>
+<p>Predict and get a result of the Lasso algorithm with Intel® Extension for Scikit-learn</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">y_predict</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x_test</span><span class="p">)</span>
+<span class="n">mse_metric_opt</span> <span class="o">=</span> <span class="n">metrics</span><span class="o">.</span><span class="n">mean_squared_error</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">y_predict</span><span class="p">)</span>
+<span class="sa">f</span><span class="s2">&quot;Patched Scikit-learn MSE: </span><span class="si">{</span><span class="n">mse_metric_opt</span><span class="si">}</span><span class="s2">&quot;</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;Patched Scikit-learn MSE: 0.9676607251167297&#39;
+</pre></div></div>
+</div>
+</section>
+<section id="Train-the-same-algorithm-with-original-Scikit-learn">
+<h2>Train the same algorithm with original Scikit-learn<a class="headerlink" href="#Train-the-same-algorithm-with-original-Scikit-learn" title="Permalink to this heading"></a></h2>
+<p>In order to cancel optimizations, we use <em>unpatch_sklearn</em> and reimport the class Lasso</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sklearnex</span> <span class="kn">import</span> <span class="n">unpatch_sklearn</span>
+
+<span class="n">unpatch_sklearn</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>Training of the Lasso algorithm with original Scikit-learn library for YearPredictionMSD dataset</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sklearn.linear_model</span> <span class="kn">import</span> <span class="n">Lasso</span>
+
+<span class="n">start</span> <span class="o">=</span> <span class="n">timer</span><span class="p">()</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">Lasso</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
+<span class="n">train_unpatched</span> <span class="o">=</span> <span class="n">timer</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span>
+<span class="sa">f</span><span class="s2">&quot;Original Scikit-learn time: </span><span class="si">{</span><span class="n">train_unpatched</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> s&quot;</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;Original Scikit-learn time: 0.83 s&#39;
+</pre></div></div>
+</div>
+<p>Predict and get a result of the Lasso algorithm with original Scikit-learn</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">y_predict</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x_test</span><span class="p">)</span>
+<span class="n">mse_metric_original</span> <span class="o">=</span> <span class="n">metrics</span><span class="o">.</span><span class="n">mean_squared_error</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">y_predict</span><span class="p">)</span>
+<span class="sa">f</span><span class="s2">&quot;Original Scikit-learn MSE: </span><span class="si">{</span><span class="n">mse_metric_original</span><span class="si">}</span><span class="s2">&quot;</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;Original Scikit-learn MSE: 0.9676599502563477&#39;
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">HTML</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s2">&quot;&lt;h3&gt;Compare MSE metric of patched Scikit-learn and original&lt;/h3&gt;&quot;</span>
+    <span class="sa">f</span><span class="s2">&quot;MSE metric of patched Scikit-learn: </span><span class="si">{</span><span class="n">mse_metric_opt</span><span class="si">}</span><span class="s2"> &lt;br&gt;&quot;</span>
+    <span class="sa">f</span><span class="s2">&quot;MSE metric of unpatched Scikit-learn: </span><span class="si">{</span><span class="n">mse_metric_original</span><span class="si">}</span><span class="s2"> &lt;br&gt;&quot;</span>
+    <span class="sa">f</span><span class="s2">&quot;Metrics ratio: </span><span class="si">{</span><span class="n">mse_metric_opt</span><span class="o">/</span><span class="n">mse_metric_original</span><span class="si">}</span><span class="s2"> &lt;br&gt;&quot;</span>
+    <span class="sa">f</span><span class="s2">&quot;&lt;h3&gt;With Scikit-learn-intelex patching you can:&lt;/h3&gt;&quot;</span>
+    <span class="sa">f</span><span class="s2">&quot;&lt;ul&gt;&quot;</span>
+    <span class="sa">f</span><span class="s2">&quot;&lt;li&gt;Use your Scikit-learn code for training and prediction with minimal changes (a couple of lines of code);&lt;/li&gt;&quot;</span>
+    <span class="sa">f</span><span class="s2">&quot;&lt;li&gt;Fast execution training and prediction of Scikit-learn models;&lt;/li&gt;&quot;</span>
+    <span class="sa">f</span><span class="s2">&quot;&lt;li&gt;Get the similar quality&lt;/li&gt;&quot;</span>
+    <span class="sa">f</span><span class="s2">&quot;&lt;li&gt;Get speedup in &lt;strong&gt;</span><span class="si">{</span><span class="p">(</span><span class="n">train_unpatched</span><span class="o">/</span><span class="n">train_patched</span><span class="p">)</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&lt;/strong&gt; times.&lt;/li&gt;&quot;</span>
+    <span class="sa">f</span><span class="s2">&quot;&lt;/ul&gt;&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<h3>Compare MSE metric of patched Scikit-learn and original</h3>MSE metric of patched Scikit-learn: 0.9676607251167297 <br>MSE metric of unpatched Scikit-learn: 0.9676599502563477 <br>Metrics ratio: 1.0000008344650269 <br><h3>With Scikit-learn-intelex patching you can:</h3><ul><li>Use your Scikit-learn code for training and prediction with minimal changes (a couple of lines of code);</li><li>Fast execution training and prediction of Scikit-learn models;</li><li>Get the similar quality</li><li>Get speedup in <strong>13.7</strong> times.</li></ul></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="ElasticNet.html" class="btn btn-neutral float-left" title="Intel® Extension for Scikit-learn ElasticNet for Airlines DepDelay dataset" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="linear_regression.html" class="btn btn-neutral float-right" title="Intel® Extension for Scikit-learn Linear Regression for YearPredictionMSD dataset" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+<jinja2.runtime.BlockReference object at 0x7f03d54c4210>
+<a href=
+    "https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html" data-cookie-notice="true">
+    Cookies
+</a>
+<a href=
+    "https://www.intel.com/content/www/us/en/privacy/intel-privacy-notice.html">
+    Privacy
+</a>
+<a data-wap_ref="dns" id="wap_dns" href="https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html">
+    Do Not Share My Personal Information
+</a>
+
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="version-switcher__container dropdown">
+    <script>
+      current_version = "2024.7"
+      project_name = "scikit-learn-intelex"
+    </script>
+    <div id="version-switcher-button"
+      class="version-switcher__button"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="version-switcher-dropdown"
+      aria-label="Version switcher list"
+      style="display:inline-block;padding-left:10px;padding-right:10px;"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </div>
+    <div id="version-switcher-dropdown"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,362 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "3768ec43",
+   "metadata": {},
+   "source": [
+    "# Intel® Extension for Scikit-learn Kmeans for spoken arabic digit dataset"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "b1b922d1",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from timeit import default_timer as timer\n",
+    "from sklearn.model_selection import train_test_split\n",
+    "from sklearn.datasets import fetch_openml\n",
+    "from IPython.display import HTML\n",
+    "import warnings\n",
+    "\n",
+    "warnings.filterwarnings(\"ignore\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "be391256",
+   "metadata": {},
+   "source": [
+    "### Download the data"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "7e73dc65",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "x, y = fetch_openml(name=\"spoken-arabic-digit\", return_X_y=True)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "0cdcb77d",
+   "metadata": {},
+   "source": [
+    "### Preprocessing\n",
+    "Split the data into train and test sets"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "0d332789",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "((236930, 14), (26326, 14), (236930,), (26326,))"
+      ]
+     },
+     "execution_count": 3,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.1, random_state=123)\n",
+    "x_train.shape, x_test.shape, y_train.shape, y_test.shape"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "246f819f",
+   "metadata": {},
+   "source": [
+    "Normalize the data"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "454a341c",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from sklearn.preprocessing import MinMaxScaler\n",
+    "\n",
+    "scaler_x = MinMaxScaler()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "02a779e9",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "scaler_x.fit(x_train)\n",
+    "x_train = scaler_x.transform(x_train)\n",
+    "x_test = scaler_x.transform(x_test)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "fe1d4fac",
+   "metadata": {},
+   "source": [
+    "### Patch original Scikit-learn with Intel® Extension for Scikit-learn\n",
+    "Intel® Extension for Scikit-learn (previously known as daal4py) contains drop-in replacement functionality for the stock Scikit-learn package. You can take advantage of the performance optimizations of Intel® Extension for Scikit-learn by adding just two lines of code before the usual Scikit-learn imports:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "ef6938df",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "Intel(R) Extension for Scikit-learn* enabled (https://github.com/intel/scikit-learn-intelex)\n"
+     ]
+    }
+   ],
+   "source": [
+    "from sklearnex import patch_sklearn\n",
+    "\n",
+    "patch_sklearn()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "20c5ab48",
+   "metadata": {},
+   "source": [
+    "Intel® Extension for Scikit-learn patching affects performance of specific Scikit-learn functionality. Refer to the [list of supported algorithms and parameters](https://intel.github.io/scikit-learn-intelex/latest/algorithms.html) for details. In cases when unsupported parameters are used, the package fallbacks into original Scikit-learn. If the patching does not cover your scenarios, [submit an issue on GitHub](https://github.com/intel/scikit-learn-intelex/issues)."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "f80273e7",
+   "metadata": {},
+   "source": [
+    "Training of the KMeans algorithm with Intel® Extension for Scikit-learn for spoken arabic digit dataset"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "1ffc93c7",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "'Intel® extension for Scikit-learn time: 7.36 s'"
+      ]
+     },
+     "execution_count": 7,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "from sklearn.cluster import KMeans\n",
+    "\n",
+    "params = {\n",
+    "    \"n_clusters\": 128,\n",
+    "    \"random_state\": 123,\n",
+    "    \"copy_x\": False,\n",
+    "}\n",
+    "start = timer()\n",
+    "model = KMeans(**params).fit(x_train, y_train)\n",
+    "train_patched = timer() - start\n",
+    "f\"Intel® extension for Scikit-learn time: {train_patched:.2f} s\""
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "f10b51fc",
+   "metadata": {},
+   "source": [
+    "Let's take a look at inertia and number of iterations of the KMeans algorithm with Intel® Extension for Scikit-learn"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "id": "d4295a26",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Intel® extension for Scikit-learn inertia: 13346.641333761074\n",
+      "Intel® extension for Scikit-learn number of iterations: 274\n"
+     ]
+    }
+   ],
+   "source": [
+    "inertia_opt = model.inertia_\n",
+    "n_iter_opt = model.n_iter_\n",
+    "print(f\"Intel® extension for Scikit-learn inertia: {inertia_opt}\")\n",
+    "print(f\"Intel® extension for Scikit-learn number of iterations: {n_iter_opt}\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "cbe6db0d",
+   "metadata": {},
+   "source": [
+    "### Train the same algorithm with original Scikit-learn\n",
+    "In order to cancel optimizations, we use *unpatch_sklearn* and reimport the class KMeans"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "id": "6f64ba97",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from sklearnex import unpatch_sklearn\n",
+    "\n",
+    "unpatch_sklearn()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "f242c6da",
+   "metadata": {},
+   "source": [
+    "Training of the KMeans algorithm with original Scikit-learn library for spoken arabic digit dataset"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "id": "67243849",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "'Original Scikit-learn time: 192.14 s'"
+      ]
+     },
+     "execution_count": 10,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "from sklearn.cluster import KMeans\n",
+    "\n",
+    "start = timer()\n",
+    "model = KMeans(**params).fit(x_train, y_train)\n",
+    "train_unpatched = timer() - start\n",
+    "f\"Original Scikit-learn time: {train_unpatched:.2f} s\""
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "c85a125c",
+   "metadata": {},
+   "source": [
+    "Let's take a look at inertia and number of iterations of the KMeans algorithm with original Scikit-learn"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "id": "cd9e726c",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Original Scikit-learn inertia: 13352.813785961785\n",
+      "Original Scikit-learn number of iterations: 212\n"
+     ]
+    }
+   ],
+   "source": [
+    "inertia_original = model.inertia_\n",
+    "n_iter_original = model.n_iter_\n",
+    "print(f\"Original Scikit-learn inertia: {inertia_original}\")\n",
+    "print(f\"Original Scikit-learn number of iterations: {n_iter_original}\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "id": "3639eef9",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<h3>Compare inertia and number of iterations of patched Scikit-learn and original</h3><br><strong>Inertia:</strong><br>Patched Scikit-learn: 13346.641333761074 <br>Unpatched Scikit-learn: 13352.813785961785 <br>Ratio: 0.9995377414603653 <br><br><strong>Number of iterations:</strong><br>Patched Scikit-learn: 274 <br>Unpatched Scikit-learn: 212 <br>Ratio: 1.29 <br><br>Number of iterations is bigger but algorithm is much faster and inertia is lower<h3>With Scikit-learn-intelex patching you can:</h3><ul><li>Use your Scikit-learn code for training and prediction with minimal changes (a couple of lines of code);</li><li>Fast execution training and prediction of Scikit-learn models;</li><li>Get speedup in <strong>26.1</strong> times.</li></ul>"
+      ],
+      "text/plain": [
+       "<IPython.core.display.HTML object>"
+      ]
+     },
+     "execution_count": 12,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "HTML(\n",
+    "    f\"<h3>Compare inertia and number of iterations of patched Scikit-learn and original</h3><br>\"\n",
+    "    f\"<strong>Inertia:</strong><br>\"\n",
+    "    f\"Patched Scikit-learn: {inertia_opt} <br>\"\n",
+    "    f\"Unpatched Scikit-learn: {inertia_original} <br>\"\n",
+    "    f\"Ratio: {inertia_opt/inertia_original} <br><br>\"\n",
+    "    f\"<strong>Number of iterations:</strong><br>\"\n",
+    "    f\"Patched Scikit-learn: {n_iter_opt} <br>\"\n",
+    "    f\"Unpatched Scikit-learn: {n_iter_original} <br>\"\n",
+    "    f\"Ratio: {(n_iter_opt/n_iter_original):.2f} <br><br>\"\n",
+    "    f\"Number of iterations is bigger but algorithm is much faster and inertia is lower\"\n",
+    "    f\"<h3>With Scikit-learn-intelex patching you can:</h3>\"\n",
+    "    f\"<ul>\"\n",
+    "    f\"<li>Use your Scikit-learn code for training and prediction with minimal changes (a couple of lines of code);</li>\"\n",
+    "    f\"<li>Fast execution training and prediction of Scikit-learn models;</li>\"\n",
+    "    f\"<li>Get speedup in <strong>{(train_unpatched/train_patched):.1f}</strong> times.</li>\"\n",
+    "    f\"</ul>\"\n",
+    ")"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.8.12"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
