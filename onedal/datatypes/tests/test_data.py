@@ -442,3 +442,44 @@ def test_low_precision_gpu_conversion(dtype, sparse):
     assert X_table.dtype == np.float32
     if dtype == np.float32 and not sparse:
         assert_allclose(X, from_table(X_table))
+
+
+@pytest.mark.parametrize("X", [None, 5, "test", True, [], np.pi, lambda: None])
+@pytest.mark.parametrize("queue", get_queues())
+def test_non_array(X, queue):
+    # Verify that to and from table doesn't raise errors
+    # no guarantee is made about type or content
+    err_str = ""
+
+    if np.isscalar(X):
+        if np.atleast_2d(X).dtype not in [np.float64, np.float32, np.int64, np.int32]:
+            err_str = "Found unsupported array type"
+    elif not (X is None or isinstance(X, np.ndarray)):
+        err_str = r"\[convert_to_table\] Not available input format for convert Python object to onedal table."
+
+    if err_str:
+        with pytest.raises(ValueError, match=err_str):
+            to_table(X)
+    else:
+        X_table = to_table(X, queue=queue)
+        from_table(X_table)
+
+
+@pytest.mark.skipif(
+    not _is_dpc_backend, reason="Requires DPC backend for dtype conversion"
+)
+@pytest.mark.parametrize("X", [None, 5, "test", True, [], np.pi, lambda: None])
+def test_low_precision_non_array(X):
+    # Use a dummy queue as fp32 hardware is not in public testing
+
+    class DummySyclQueue:
+        """This class is designed to act like dpctl.SyclQueue
+        to force dtype conversion"""
+
+        class DummySyclDevice:
+            has_aspect_fp64 = False
+
+        sycl_device = DummySyclDevice()
+
+    queue = DummySyclQueue()
+    test_non_array(X, queue)
