@@ -29,5 +29,28 @@ rsync -a --exclude='daal4py_data_science.ipynb' examples/notebooks/*.ipynb doc/$
 
 # build the documentation
 cd doc
-export O="-W"
-make html
+export SPHINXOPTS="-W" # used by sphinx-build
+export O=${SPHINXOPTS} # makefile overrides SPHINXOPTS
+
+# Build comes in two variants:
+# - As a standalone doc (for local development and CI)
+# - As a versioned build (for the deployed docs), triggerable by
+#   passing argument '--gh-pages'.
+# In the first case, it will generate a page under '_build' with
+# an 'html' folder and a separate 'doctrees'. Only the 'html' part
+# is needed to render the docs locally.
+# In the second case, it will generate a versioned entry (year.month)
+# under '_build', with the doctrees inside that versioned folder.
+# Those are directly copyable to the 'gh-pages' branch to be deployed.
+if [[ "$*" == *"--gh-pages"* ]]; then
+    export DOC_VERSION=$(python -c "from sources.conf import version; print(version)")
+    export SPHINXPROJ=scikit-learn-intelex
+    export BUILDDIR=_build
+    export SOURCEDIR=sources
+
+    sphinx-build -b html $SOURCEDIR $BUILDDIR/$SPHINXPROJ/$DOC_VERSION
+    cp versions.json $BUILDDIR/$SPHINXPROJ
+    echo "<meta http-equiv=\"refresh\" content=\"0; URL='/$SPHINXPROJ/$DOC_VERSION/'\" / >" >> $BUILDDIR/$SPHINXPROJ/index.html
+else
+    make html
+fi
