@@ -1,29 +1,29 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html5" lang="en">
+<html class="writer-html5" lang="en" data-content_root="./">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Array API support &mdash; Intel(R) Extension for Scikit-learn* 2025.1.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css" />
-      <link rel="stylesheet" type="text/css" href="_static/copybutton.css" />
-      <link rel="stylesheet" type="text/css" href="_static/custom.css" />
-      <link rel="stylesheet" type="text/css" href="_static/tabs.css" />
-      <link rel="stylesheet" type="text/css" href="_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css" />
+  <title>Array API support &mdash; Intel(R) Extension for Scikit-learn* 2025.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=132153fd" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
 
   
     <link rel="shortcut icon" href="_static/favicons.png"/>
-      <script src="_static/jquery.js"></script>
-      <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-      <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-      <script src="_static/doctools.js"></script>
-      <script src="_static/sphinx_highlight.js"></script>
-      <script src="_static/clipboard.min.js"></script>
-      <script src="_static/copybutton.js"></script>
-      <script src="_static/design-tabs.js"></script>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=aa5d0537"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="_static/copybutton.js?v=f281be69"></script>
+      <script src="_static/version_switcher.js?v=107152b5"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -32,6 +32,7 @@
     <link rel="prev" title="Supported input types" href="input-types.html" />
     <script defer type="text/javascript" src="https://www.intel.com/content/dam/www/global/wap/performance-config.js" ></script>
     <script type="text/javascript">
+        fetch("/scikit-learn-intelex/versions.json").then(response => response.text()).then(respText=> load_versions(respText));
         // Configure TMS settings
         var wapLocalCode = 'us-en'; // Dynamically set per localized site, see mapping table for values
         var wapSection = "scikit-learn"; // WAP team will give you a unique section for your site
@@ -66,6 +67,30 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+  <div class="version-switcher__container dropdown">
+    <script>
+      current_version = "2025.1"
+      project_name = "scikit-learn-intelex"
+    </script>
+    <div id="version-switcher-button"
+      class="version-switcher__button"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="version-switcher-dropdown"
+      aria-label="Version switcher list"
+      style="display:inline-block;padding-left:10px;padding-right:10px;"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </div>
+    <div id="version-switcher-dropdown"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+  
+  
               <p class="caption" role="heading"><span class="caption-text">Get Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="quick-start.html">Quick Start</a><ul>
@@ -256,9 +281,9 @@
 <li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.basic_statistics.BasicStatistics.standard_deviation_"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.standard_deviation_</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.basic_statistics.BasicStatistics.sum_squares_centered_"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.sum_squares_centered_</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.basic_statistics.BasicStatistics.second_order_raw_moment_"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.second_order_raw_moment_</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.basic_statistics.BasicStatistics.fit"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.fit()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.basic_statistics.BasicStatistics.fit"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.fit()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="non-scikit-algorithms.html#incrementalbasicstatistics">IncrementalBasicStatistics</a><ul>
@@ -276,10 +301,10 @@
 <li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.basic_statistics.IncrementalBasicStatistics.n_samples_seen_"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.n_samples_seen_</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.basic_statistics.IncrementalBasicStatistics.batch_size_"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.batch_size_</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.basic_statistics.IncrementalBasicStatistics.n_features_in_"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.n_features_in_</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.basic_statistics.IncrementalBasicStatistics.fit"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.fit()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.basic_statistics.IncrementalBasicStatistics.partial_fit"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.partial_fit()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.basic_statistics.IncrementalBasicStatistics.fit"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.fit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.basic_statistics.IncrementalBasicStatistics.partial_fit"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.partial_fit()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="non-scikit-algorithms.html#incrementalempiricalcovariance">IncrementalEmpiricalCovariance</a><ul>
@@ -289,10 +314,10 @@
 <li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.covariance.IncrementalEmpiricalCovariance.n_samples_seen_"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance.n_samples_seen_</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.covariance.IncrementalEmpiricalCovariance.batch_size_"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance.batch_size_</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.covariance.IncrementalEmpiricalCovariance.n_features_in_"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance.n_features_in_</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.covariance.IncrementalEmpiricalCovariance.fit"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance.fit()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.covariance.IncrementalEmpiricalCovariance.partial_fit"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance.partial_fit()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.covariance.IncrementalEmpiricalCovariance.fit"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance.fit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.covariance.IncrementalEmpiricalCovariance.partial_fit"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance.partial_fit()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="non-scikit-algorithms.html#incrementallinearregression">IncrementalLinearRegression</a><ul>
@@ -302,11 +327,11 @@
 <li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.linear_model.IncrementalLinearRegression.n_samples_seen_"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.n_samples_seen_</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.linear_model.IncrementalLinearRegression.batch_size_"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.batch_size_</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.linear_model.IncrementalLinearRegression.n_features_in_"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.n_features_in_</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.linear_model.IncrementalLinearRegression.fit"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.fit()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.linear_model.IncrementalLinearRegression.partial_fit"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.partial_fit()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.linear_model.IncrementalLinearRegression.predict"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.predict()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.linear_model.IncrementalLinearRegression.fit"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.fit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.linear_model.IncrementalLinearRegression.partial_fit"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.partial_fit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.linear_model.IncrementalLinearRegression.predict"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.predict()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -365,6 +390,7 @@
 <li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
 </ul>
 
+
         </div>
       </div>
     </nav>
@@ -390,7 +416,7 @@
            <div itemprop="articleBody">
              
   <section id="array-api-support">
-<span id="array-api"></span><h1>Array API support<a class="headerlink" href="#array-api-support" title="Permalink to this heading"></a></h1>
+<span id="array-api"></span><h1>Array API support<a class="headerlink" href="#array-api-support" title="Link to this heading"></a></h1>
 <p>The <a class="reference external" href="https://data-apis.org/array-api/latest/">Array API</a> specification defines
 a standard API for all array manipulation libraries with a NumPy-like API.
 Intel(R) Extension for Scikit-Learn doesn’t require
@@ -414,7 +440,7 @@ and <a class="reference external" href="https://numpy.org/">numpy</a> are known 
 <p>Stock Scikit-learn’s array API support requires <a class="reference external" href="https://github.com/data-apis/array-api-compat">array-api-compat</a> to be installed.</p>
 </div>
 <section id="support-for-dpnp-and-dpctl">
-<h2>Support for DPNP and DPCTL<a class="headerlink" href="#support-for-dpnp-and-dpctl" title="Permalink to this heading"></a></h2>
+<h2>Support for DPNP and DPCTL<a class="headerlink" href="#support-for-dpnp-and-dpctl" title="Link to this heading"></a></h2>
 <p>The functional support of input data for sklearnex estimators also extended for SYCL USM array types.
 These include SYCL USM arrays <a class="reference external" href="https://github.com/IntelPython/dpnp">dpnp’s</a> ndarray and
 <a class="reference external" href="https://intelpython.github.io/dpctl/latest/index.html">Data Parallel Control usm_ndarray</a>.
@@ -435,7 +461,7 @@ of data to the targeted device.</p>
 </div>
 </section>
 <section id="support-for-array-api-compatible-inputs">
-<h2>Support for Array API-compatible inputs<a class="headerlink" href="#support-for-array-api-compatible-inputs" title="Permalink to this heading"></a></h2>
+<h2>Support for Array API-compatible inputs<a class="headerlink" href="#support-for-array-api-compatible-inputs" title="Link to this heading"></a></h2>
 <p>All patched estimators, metrics, tools and non-scikit-learn estimators functionally support Array API standard.
 Intel(R) Extension for scikit-Learn preserves input data format for all outputs. For all array inputs except
 SYCL USM arrays <a class="reference external" href="https://github.com/IntelPython/dpnp">dpnp’s</a> ndarray and
@@ -457,9 +483,9 @@ will also be from the same namespace as the training data.</p>
 </div>
 </section>
 <section id="example-usage">
-<h2>Example usage<a class="headerlink" href="#example-usage" title="Permalink to this heading"></a></h2>
+<h2>Example usage<a class="headerlink" href="#example-usage" title="Link to this heading"></a></h2>
 <section id="dpnp-ndarrays">
-<h3>DPNP ndarrays<a class="headerlink" href="#dpnp-ndarrays" title="Permalink to this heading"></a></h3>
+<h3>DPNP ndarrays<a class="headerlink" href="#dpnp-ndarrays" title="Link to this heading"></a></h3>
 <p>Here is an example code to demonstrate how to use <a class="reference external" href="https://github.com/IntelPython/dpnp">dpnp</a> arrays to
 run <cite>RandomForestRegressor</cite> on a GPU without <cite>config_context(array_api_dispatch=True)</cite>:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># ==============================================================================</span>
@@ -519,7 +545,7 @@ will also be from the same namespace as the training data.</p>
 then fitted attributes will be on the CPU and <cite>numpy.ndarray</cite> data format.</p>
 </section>
 <section id="dpctl-usm-ndarrays">
-<h3>DPCTL usm_ndarrays<a class="headerlink" href="#dpctl-usm-ndarrays" title="Permalink to this heading"></a></h3>
+<h3>DPCTL usm_ndarrays<a class="headerlink" href="#dpctl-usm-ndarrays" title="Link to this heading"></a></h3>
 <p>Here is an example code to demonstrate how to use <a class="reference external" href="https://intelpython.github.io/dpctl/latest/index.html">dpctl</a>
 arrays to run <cite>RandomForestClassifier</cite> on a GPU witout <cite>config_context(array_api_dispatch=True)</cite>:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># ==============================================================================</span>
@@ -581,7 +607,7 @@ arrays to run <cite>RandomForestClassifier</cite> on a GPU witout <cite>config_c
 used for training, then fitted attributes will be on the CPU and <cite>numpy.ndarray</cite> data format.</p>
 </section>
 <section id="use-of-array-api-strict">
-<h3>Use of <cite>array-api-strict</cite><a class="headerlink" href="#use-of-array-api-strict" title="Permalink to this heading"></a></h3>
+<h3>Use of <cite>array-api-strict</cite><a class="headerlink" href="#use-of-array-api-strict" title="Link to this heading"></a></h3>
 <p>Here is an example code to demonstrate how to use <a class="reference external" href="https://github.com/data-apis/array-api-strict">array-api-strict</a>
 arrays to run <cite>DBSCAN</cite>.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># ==============================================================================</span>
@@ -637,7 +663,7 @@ arrays to run <cite>DBSCAN</cite>.</p>
   <hr/>
 
   <div role="contentinfo">
-<jinja2.runtime.BlockReference object at 0x7fba35c8d990>
+<jinja2.runtime.BlockReference object at 0x7f04b5f23020>
 <a href=
     "https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html" data-cookie-notice="true">
     Cookies
@@ -661,6 +687,28 @@ arrays to run <cite>DBSCAN</cite>.</p>
         </div>
       </div>
     </section>
+  </div>
+  <div class="version-switcher__container dropdown">
+    <script>
+      current_version = "2025.1"
+      project_name = "scikit-learn-intelex"
+    </script>
+    <div id="version-switcher-button"
+      class="version-switcher__button"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="version-switcher-dropdown"
+      aria-label="Version switcher list"
+      style="display:inline-block;padding-left:10px;padding-right:10px;"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </div>
+    <div id="version-switcher-dropdown"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
   </div>
   <script>
       jQuery(function () {

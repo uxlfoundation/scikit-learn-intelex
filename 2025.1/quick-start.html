@@ -1,31 +1,32 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html5" lang="en">
+<html class="writer-html5" lang="en" data-content_root="./">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Quick Start &mdash; Intel(R) Extension for Scikit-learn* 2025.1.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css" />
-      <link rel="stylesheet" type="text/css" href="_static/copybutton.css" />
-      <link rel="stylesheet" type="text/css" href="_static/custom.css" />
-      <link rel="stylesheet" type="text/css" href="_static/tabs.css" />
-      <link rel="stylesheet" type="text/css" href="_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css" />
+  <title>Quick Start &mdash; Intel(R) Extension for Scikit-learn* 2025.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=132153fd" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+      <link rel="stylesheet" type="text/css" href="_static/tabs.css?v=a5c4661c" />
 
   
     <link rel="shortcut icon" href="_static/favicons.png"/>
-      <script src="_static/jquery.js"></script>
-      <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-      <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-      <script src="_static/doctools.js"></script>
-      <script src="_static/sphinx_highlight.js"></script>
-      <script src="_static/clipboard.min.js"></script>
-      <script src="_static/copybutton.js"></script>
-      <script src="_static/tabs.js"></script>
-      <script src="_static/design-tabs.js"></script>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=aa5d0537"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="_static/copybutton.js?v=f281be69"></script>
+      <script src="_static/version_switcher.js?v=107152b5"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script src="_static/tabs.js?v=3030b3cb"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -33,6 +34,7 @@
     <link rel="prev" title="Intel® Extension for Scikit-learn*" href="index.html" />
     <script defer type="text/javascript" src="https://www.intel.com/content/dam/www/global/wap/performance-config.js" ></script>
     <script type="text/javascript">
+        fetch("/scikit-learn-intelex/versions.json").then(response => response.text()).then(respText=> load_versions(respText));
         // Configure TMS settings
         var wapLocalCode = 'us-en'; // Dynamically set per localized site, see mapping table for values
         var wapSection = "scikit-learn"; // WAP team will give you a unique section for your site
@@ -67,6 +69,30 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+  <div class="version-switcher__container dropdown">
+    <script>
+      current_version = "2025.1"
+      project_name = "scikit-learn-intelex"
+    </script>
+    <div id="version-switcher-button"
+      class="version-switcher__button"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="version-switcher-dropdown"
+      aria-label="Version switcher list"
+      style="display:inline-block;padding-left:10px;padding-right:10px;"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </div>
+    <div id="version-switcher-dropdown"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+  
+  
               <p class="caption" role="heading"><span class="caption-text">Get Started</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Quick Start</a><ul>
@@ -257,9 +283,9 @@
 <li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.basic_statistics.BasicStatistics.standard_deviation_"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.standard_deviation_</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.basic_statistics.BasicStatistics.sum_squares_centered_"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.sum_squares_centered_</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.basic_statistics.BasicStatistics.second_order_raw_moment_"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.second_order_raw_moment_</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.basic_statistics.BasicStatistics.fit"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.fit()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.basic_statistics.BasicStatistics.fit"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.fit()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="non-scikit-algorithms.html#incrementalbasicstatistics">IncrementalBasicStatistics</a><ul>
@@ -277,10 +303,10 @@
 <li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.basic_statistics.IncrementalBasicStatistics.n_samples_seen_"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.n_samples_seen_</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.basic_statistics.IncrementalBasicStatistics.batch_size_"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.batch_size_</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.basic_statistics.IncrementalBasicStatistics.n_features_in_"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.n_features_in_</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.basic_statistics.IncrementalBasicStatistics.fit"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.fit()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.basic_statistics.IncrementalBasicStatistics.partial_fit"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.partial_fit()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.basic_statistics.IncrementalBasicStatistics.fit"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.fit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.basic_statistics.IncrementalBasicStatistics.partial_fit"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.partial_fit()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="non-scikit-algorithms.html#incrementalempiricalcovariance">IncrementalEmpiricalCovariance</a><ul>
@@ -290,10 +316,10 @@
 <li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.covariance.IncrementalEmpiricalCovariance.n_samples_seen_"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance.n_samples_seen_</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.covariance.IncrementalEmpiricalCovariance.batch_size_"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance.batch_size_</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.covariance.IncrementalEmpiricalCovariance.n_features_in_"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance.n_features_in_</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.covariance.IncrementalEmpiricalCovariance.fit"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance.fit()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.covariance.IncrementalEmpiricalCovariance.partial_fit"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance.partial_fit()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.covariance.IncrementalEmpiricalCovariance.fit"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance.fit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.covariance.IncrementalEmpiricalCovariance.partial_fit"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance.partial_fit()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="non-scikit-algorithms.html#incrementallinearregression">IncrementalLinearRegression</a><ul>
@@ -303,11 +329,11 @@
 <li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.linear_model.IncrementalLinearRegression.n_samples_seen_"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.n_samples_seen_</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.linear_model.IncrementalLinearRegression.batch_size_"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.batch_size_</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.linear_model.IncrementalLinearRegression.n_features_in_"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.n_features_in_</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.linear_model.IncrementalLinearRegression.fit"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.fit()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.linear_model.IncrementalLinearRegression.partial_fit"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.partial_fit()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.linear_model.IncrementalLinearRegression.predict"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.predict()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.linear_model.IncrementalLinearRegression.fit"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.fit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.linear_model.IncrementalLinearRegression.partial_fit"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.partial_fit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="non-scikit-algorithms.html#sklearnex.linear_model.IncrementalLinearRegression.predict"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.predict()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -366,6 +392,7 @@
 <li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
 </ul>
 
+
         </div>
       </div>
     </nav>
@@ -391,16 +418,16 @@
            <div itemprop="articleBody">
              
   <section id="quick-start">
-<h1>Quick Start<a class="headerlink" href="#quick-start" title="Permalink to this heading"></a></h1>
+<h1>Quick Start<a class="headerlink" href="#quick-start" title="Link to this heading"></a></h1>
 <p>Get ready to elevate your scikit-learn code with Intel® Extension for Scikit-learn* and experience the benefits of accelerated performance in just a few simple steps.</p>
 <section id="compatibility-with-scikit-learn">
-<h2>Compatibility with Scikit-learn*<a class="headerlink" href="#compatibility-with-scikit-learn" title="Permalink to this heading"></a></h2>
+<h2>Compatibility with Scikit-learn*<a class="headerlink" href="#compatibility-with-scikit-learn" title="Link to this heading"></a></h2>
 <p>Intel(R) Extension for Scikit-learn is compatible with the last four versions of scikit-learn.</p>
 </section>
 <section id="integrate-intelex">
-<h2>Integrate Intel® Extension for Scikit-learn*<a class="headerlink" href="#integrate-intelex" title="Permalink to this heading"></a></h2>
+<h2>Integrate Intel® Extension for Scikit-learn*<a class="headerlink" href="#integrate-intelex" title="Link to this heading"></a></h2>
 <section id="patching">
-<h3>Patching<a class="headerlink" href="#patching" title="Permalink to this heading"></a></h3>
+<h3>Patching<a class="headerlink" href="#patching" title="Link to this heading"></a></h3>
 <p>Once you install Intel*(R) Extension for Scikit-learn*, you replace algorithms that exist in the scikit-learn package with their optimized versions from the extension.
 This action is called <code class="docutils literal notranslate"><span class="pre">patching</span></code>. This is not a permanent change so you can always undo the patching if necessary.</p>
 <p>To patch Intel® Extension for Scikit-learn, use one of these methods:</p>
@@ -440,7 +467,7 @@ They support different enabling scenarios while producing the same result.</p>
 <p><strong>Example</strong></p>
 <p>This example shows how to patch Intel(R) extension for Scikit-Learn by modifing your script. To make sure that patching is registered by the scikit-learn estimators, always import scikit-learn after these lines.</p>
 <div class="literal-block-wrapper docutils container" id="id2">
-<div class="code-block-caption"><span class="caption-text">Example: Drop-In Patching</span><a class="headerlink" href="#id2" title="Permalink to this code"></a></div>
+<div class="code-block-caption"><span class="caption-text">Example: Drop-In Patching</span><a class="headerlink" href="#id2" title="Link to this code"></a></div>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span>  <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
   <span class="kn">from</span> <span class="nn">sklearnex</span> <span class="kn">import</span> <span class="n">patch_sklearn</span>
   <span class="n">patch_sklearn</span><span class="p">()</span>
@@ -458,7 +485,7 @@ They support different enabling scenarios while producing the same result.</p>
 </div>
 </section>
 <section id="global-patching">
-<h3>Global Patching<a class="headerlink" href="#global-patching" title="Permalink to this heading"></a></h3>
+<h3>Global Patching<a class="headerlink" href="#global-patching" title="Link to this heading"></a></h3>
 <p>You can also use global patching to patch all your scikit-learn applications without any additional actions.</p>
 <p>Before you begin, make sure that you have read and write permissions for Scikit-learn files.</p>
 <p>With global patching, you can:</p>
@@ -529,7 +556,7 @@ They support different enabling scenarios while producing the same result.</p>
 </div>
 </section>
 <section id="unpatching">
-<h3>Unpatching<a class="headerlink" href="#unpatching" title="Permalink to this heading"></a></h3>
+<h3>Unpatching<a class="headerlink" href="#unpatching" title="Link to this heading"></a></h3>
 <p>To undo the patch (also called <cite>unpatching</cite>) is to return scikit-learn to original implementation and
 replace patched algorithms with the stock scikit-learn algorithms.</p>
 <p>To unpatch successfully, you must reimport the scikit-learn package:</p>
@@ -541,7 +568,7 @@ replace patched algorithms with the stock scikit-learn algorithms.</p>
 </section>
 </section>
 <section id="installation">
-<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this heading"></a></h2>
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
 <nav class="contents local" id="contents">
 <ul class="simple">
 <li><p><a class="reference internal" href="#install-from-pypi" id="id6">Install from PyPI</a></p></li>
@@ -555,7 +582,7 @@ replace patched algorithms with the stock scikit-learn algorithms.</p>
 <p>To prevent version conflicts, we recommend creating and activating a new environment for Intel® Extension for Scikit-learn*.</p>
 </div>
 <section id="install-from-pypi">
-<h3><a class="toc-backref" href="#id6" role="doc-backlink">Install from PyPI</a><a class="headerlink" href="#install-from-pypi" title="Permalink to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id6" role="doc-backlink">Install from PyPI</a><a class="headerlink" href="#install-from-pypi" title="Link to this heading"></a></h3>
 <p>Recommended by default.</p>
 <p>To install Intel® Extension for Scikit-learn*, run:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">scikit</span><span class="o">-</span><span class="n">learn</span><span class="o">-</span><span class="n">intelex</span>
@@ -588,7 +615,7 @@ replace patched algorithms with the stock scikit-learn algorithms.</p>
 </table>
 </section>
 <section id="install-from-anaconda-cloud">
-<h3><a class="toc-backref" href="#id7" role="doc-backlink">Install from Anaconda* Cloud</a><a class="headerlink" href="#install-from-anaconda-cloud" title="Permalink to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id7" role="doc-backlink">Install from Anaconda* Cloud</a><a class="headerlink" href="#install-from-anaconda-cloud" title="Link to this heading"></a></h3>
 <p>To prevent version conflicts, we recommend installing <cite>scikit-learn-intelex</cite> into a new conda environment.</p>
 <div class="sphinx-tabs docutils container">
 <div aria-label="Tabbed content" class="closeable" role="tablist"><button aria-controls="panel-0-0-0" aria-selected="true" class="sphinx-tabs-tab" id="tab-0-0-0" name="0-0" role="tab" tabindex="0">Conda-Forge channel</button><button aria-controls="panel-0-0-1" aria-selected="false" class="sphinx-tabs-tab" id="tab-0-0-1" name="0-1" role="tab" tabindex="-1">Intel channel</button><button aria-controls="panel-0-0-2" aria-selected="false" class="sphinx-tabs-tab" id="tab-0-0-2" name="0-2" role="tab" tabindex="-1">Main channel</button></div><div aria-labelledby="tab-0-0-0" class="sphinx-tabs-panel" id="panel-0-0-0" name="0-0" role="tabpanel" tabindex="0"><p>Recommended by default.</p>
@@ -597,7 +624,7 @@ replace patched algorithms with the stock scikit-learn algorithms.</p>
 </pre></div>
 </div>
 <table class="docutils align-left" id="id3">
-<caption><span class="caption-text"><strong>Supported Configurations</strong></span><a class="headerlink" href="#id3" title="Permalink to this table"></a></caption>
+<caption><span class="caption-text"><strong>Supported Configurations</strong></span><a class="headerlink" href="#id3" title="Link to this table"></a></caption>
 <thead>
 <tr class="row-odd"><th class="head"><p>OS / Python version</p></th>
 <th class="head"><p>Python 3.9</p></th>
@@ -627,7 +654,7 @@ replace patched algorithms with the stock scikit-learn algorithms.</p>
 </pre></div>
 </div>
 <table class="docutils align-left" id="id4">
-<caption><span class="caption-text"><strong>Supported Configurations</strong></span><a class="headerlink" href="#id4" title="Permalink to this table"></a></caption>
+<caption><span class="caption-text"><strong>Supported Configurations</strong></span><a class="headerlink" href="#id4" title="Link to this table"></a></caption>
 <thead>
 <tr class="row-odd"><th class="head"><p>OS / Python version</p></th>
 <th class="head"><p>Python 3.9</p></th>
@@ -656,7 +683,7 @@ replace patched algorithms with the stock scikit-learn algorithms.</p>
 </pre></div>
 </div>
 <table class="docutils align-left" id="id5">
-<caption><span class="caption-text"><strong>Supported Configurations</strong></span><a class="headerlink" href="#id5" title="Permalink to this table"></a></caption>
+<caption><span class="caption-text"><strong>Supported Configurations</strong></span><a class="headerlink" href="#id5" title="Link to this table"></a></caption>
 <thead>
 <tr class="row-odd"><th class="head"><p>OS / Python version</p></th>
 <th class="head"><p>Python 3.9</p></th>
@@ -683,22 +710,22 @@ replace patched algorithms with the stock scikit-learn algorithms.</p>
 </div></div>
 </section>
 <section id="build-from-sources">
-<h3><a class="toc-backref" href="#id8" role="doc-backlink">Build from Sources</a><a class="headerlink" href="#build-from-sources" title="Permalink to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id8" role="doc-backlink">Build from Sources</a><a class="headerlink" href="#build-from-sources" title="Link to this heading"></a></h3>
 <p>See <a class="reference external" href="https://github.com/intel/scikit-learn-intelex/blob/main/INSTALL.md">Installation instructions</a> to build Intel® Extension for Scikit-learn* from the sources.</p>
 </section>
 <section id="install-intel-r-ai-tools">
-<h3><a class="toc-backref" href="#id9" role="doc-backlink">Install Intel*(R) AI Tools</a><a class="headerlink" href="#install-intel-r-ai-tools" title="Permalink to this heading"></a></h3>
+<h3><a class="toc-backref" href="#id9" role="doc-backlink">Install Intel*(R) AI Tools</a><a class="headerlink" href="#install-intel-r-ai-tools" title="Link to this heading"></a></h3>
 <p>Download the Intel AI Tools <a class="reference external" href="https://www.intel.com/content/www/us/en/developer/tools/oneapi/ai-tools-selector.html">here</a>. The extension is already included.</p>
 </section>
 </section>
 <section id="release-notes">
-<h2>Release Notes<a class="headerlink" href="#release-notes" title="Permalink to this heading"></a></h2>
+<h2>Release Notes<a class="headerlink" href="#release-notes" title="Link to this heading"></a></h2>
 <p>See the <a class="reference external" href="https://github.com/intel/scikit-learn-intelex/releases">Release Notes</a> for each version of Intel® Extension for Scikit-learn*.</p>
 </section>
 <section id="system-requirements">
-<h2>System Requirements<a class="headerlink" href="#system-requirements" title="Permalink to this heading"></a></h2>
+<h2>System Requirements<a class="headerlink" href="#system-requirements" title="Link to this heading"></a></h2>
 <section id="hardware-requirements">
-<h3>Hardware Requirements<a class="headerlink" href="#hardware-requirements" title="Permalink to this heading"></a></h3>
+<h3>Hardware Requirements<a class="headerlink" href="#hardware-requirements" title="Link to this heading"></a></h3>
 <div class="sphinx-tabs docutils container">
 <div aria-label="Tabbed content" class="closeable" role="tablist"><button aria-controls="panel-1-1-0" aria-selected="true" class="sphinx-tabs-tab" id="tab-1-1-0" name="1-0" role="tab" tabindex="0">CPU</button><button aria-controls="panel-1-1-1" aria-selected="false" class="sphinx-tabs-tab" id="tab-1-1-1" name="1-1" role="tab" tabindex="-1">GPU</button></div><div aria-labelledby="tab-1-1-0" class="sphinx-tabs-panel" id="panel-1-1-0" name="1-0" role="tabpanel" tabindex="0"><p>All processors with <code class="docutils literal notranslate"><span class="pre">x86</span></code> architecture with at least one of the following instruction sets:</p>
 <blockquote>
@@ -724,7 +751,7 @@ replace patched algorithms with the stock scikit-learn algorithms.</p>
 </div>
 </section>
 <section id="software-requirements">
-<h3>Software Requirements<a class="headerlink" href="#software-requirements" title="Permalink to this heading"></a></h3>
+<h3>Software Requirements<a class="headerlink" href="#software-requirements" title="Link to this heading"></a></h3>
 <div class="sphinx-tabs docutils container">
 <div aria-label="Tabbed content" class="closeable" role="tablist"><button aria-controls="panel-2-2-0" aria-selected="true" class="sphinx-tabs-tab" id="tab-2-2-0" name="2-0" role="tab" tabindex="0">CPU</button><button aria-controls="panel-2-2-1" aria-selected="false" class="sphinx-tabs-tab" id="tab-2-2-1" name="2-1" role="tab" tabindex="-1">GPU</button></div><div aria-labelledby="tab-2-2-0" class="sphinx-tabs-panel" id="panel-2-2-0" name="2-0" role="tabpanel" tabindex="0"><ul class="simple">
 <li><p>Linux* OS: Ubuntu* 18.04 or newer</p></li>
@@ -750,7 +777,7 @@ replace patched algorithms with the stock scikit-learn algorithms.</p>
 </ul>
 </section>
 <section id="memory-requirements">
-<h3>Memory Requirements<a class="headerlink" href="#memory-requirements" title="Permalink to this heading"></a></h3>
+<h3>Memory Requirements<a class="headerlink" href="#memory-requirements" title="Link to this heading"></a></h3>
 <p>By default, algorithms in Intel® Extension for Scikit-learn* run in the multi-thread mode. This mode uses all available threads.
 Optimized scikit-learn algorithms can consume more RAM than their corresponding unoptimized versions.</p>
 <table class="docutils align-left">
@@ -789,7 +816,7 @@ You may also require additional device memory for internal arrays that are used 
   <hr/>
 
   <div role="contentinfo">
-<jinja2.runtime.BlockReference object at 0x7fba35c6d4d0>
+<jinja2.runtime.BlockReference object at 0x7f04b6245f40>
 <a href=
     "https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html" data-cookie-notice="true">
     Cookies
@@ -813,6 +840,28 @@ You may also require additional device memory for internal arrays that are used 
         </div>
       </div>
     </section>
+  </div>
+  <div class="version-switcher__container dropdown">
+    <script>
+      current_version = "2025.1"
+      project_name = "scikit-learn-intelex"
+    </script>
+    <div id="version-switcher-button"
+      class="version-switcher__button"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="version-switcher-dropdown"
+      aria-label="Version switcher list"
+      style="display:inline-block;padding-left:10px;padding-right:10px;"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </div>
+    <div id="version-switcher-dropdown"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
   </div>
   <script>
       jQuery(function () {

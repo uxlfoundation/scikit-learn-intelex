@@ -1,29 +1,29 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html5" lang="en">
+<html class="writer-html5" lang="en" data-content_root="./">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Non-Scikit-Learn Algorithms &mdash; Intel(R) Extension for Scikit-learn* 2025.1.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css" />
-      <link rel="stylesheet" type="text/css" href="_static/copybutton.css" />
-      <link rel="stylesheet" type="text/css" href="_static/custom.css" />
-      <link rel="stylesheet" type="text/css" href="_static/tabs.css" />
-      <link rel="stylesheet" type="text/css" href="_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css" />
+  <title>Non-Scikit-Learn Algorithms &mdash; Intel(R) Extension for Scikit-learn* 2025.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=132153fd" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
 
   
     <link rel="shortcut icon" href="_static/favicons.png"/>
-      <script src="_static/jquery.js"></script>
-      <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-      <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-      <script src="_static/doctools.js"></script>
-      <script src="_static/sphinx_highlight.js"></script>
-      <script src="_static/clipboard.min.js"></script>
-      <script src="_static/copybutton.js"></script>
-      <script src="_static/design-tabs.js"></script>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=aa5d0537"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="_static/copybutton.js?v=f281be69"></script>
+      <script src="_static/version_switcher.js?v=107152b5"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -32,6 +32,7 @@
     <link rel="prev" title="Distributed Mode" href="distributed-mode.html" />
     <script defer type="text/javascript" src="https://www.intel.com/content/dam/www/global/wap/performance-config.js" ></script>
     <script type="text/javascript">
+        fetch("/scikit-learn-intelex/versions.json").then(response => response.text()).then(respText=> load_versions(respText));
         // Configure TMS settings
         var wapLocalCode = 'us-en'; // Dynamically set per localized site, see mapping table for values
         var wapSection = "scikit-learn"; // WAP team will give you a unique section for your site
@@ -66,6 +67,30 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+  <div class="version-switcher__container dropdown">
+    <script>
+      current_version = "2025.1"
+      project_name = "scikit-learn-intelex"
+    </script>
+    <div id="version-switcher-button"
+      class="version-switcher__button"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="version-switcher-dropdown"
+      aria-label="Version switcher list"
+      style="display:inline-block;padding-left:10px;padding-right:10px;"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </div>
+    <div id="version-switcher-dropdown"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+  
+  
               <p class="caption" role="heading"><span class="caption-text">Get Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="quick-start.html">Quick Start</a><ul>
@@ -256,9 +281,9 @@
 <li class="toctree-l4"><a class="reference internal" href="#sklearnex.basic_statistics.BasicStatistics.standard_deviation_"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.standard_deviation_</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#sklearnex.basic_statistics.BasicStatistics.sum_squares_centered_"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.sum_squares_centered_</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#sklearnex.basic_statistics.BasicStatistics.second_order_raw_moment_"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.second_order_raw_moment_</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#sklearnex.basic_statistics.BasicStatistics.fit"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.fit()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="#sklearnex.basic_statistics.BasicStatistics.fit"><code class="docutils literal notranslate"><span class="pre">BasicStatistics.fit()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#incrementalbasicstatistics">IncrementalBasicStatistics</a><ul>
@@ -276,10 +301,10 @@
 <li class="toctree-l4"><a class="reference internal" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.n_samples_seen_"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.n_samples_seen_</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.batch_size_"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.batch_size_</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.n_features_in_"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.n_features_in_</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.fit"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.fit()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.partial_fit"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.partial_fit()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.fit"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.fit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.partial_fit"><code class="docutils literal notranslate"><span class="pre">IncrementalBasicStatistics.partial_fit()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#incrementalempiricalcovariance">IncrementalEmpiricalCovariance</a><ul>
@@ -289,10 +314,10 @@
 <li class="toctree-l4"><a class="reference internal" href="#sklearnex.covariance.IncrementalEmpiricalCovariance.n_samples_seen_"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance.n_samples_seen_</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#sklearnex.covariance.IncrementalEmpiricalCovariance.batch_size_"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance.batch_size_</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#sklearnex.covariance.IncrementalEmpiricalCovariance.n_features_in_"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance.n_features_in_</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#sklearnex.covariance.IncrementalEmpiricalCovariance.fit"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance.fit()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#sklearnex.covariance.IncrementalEmpiricalCovariance.partial_fit"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance.partial_fit()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="#sklearnex.covariance.IncrementalEmpiricalCovariance.fit"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance.fit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sklearnex.covariance.IncrementalEmpiricalCovariance.partial_fit"><code class="docutils literal notranslate"><span class="pre">IncrementalEmpiricalCovariance.partial_fit()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#incrementallinearregression">IncrementalLinearRegression</a><ul>
@@ -302,11 +327,11 @@
 <li class="toctree-l4"><a class="reference internal" href="#sklearnex.linear_model.IncrementalLinearRegression.n_samples_seen_"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.n_samples_seen_</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#sklearnex.linear_model.IncrementalLinearRegression.batch_size_"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.batch_size_</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#sklearnex.linear_model.IncrementalLinearRegression.n_features_in_"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.n_features_in_</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#sklearnex.linear_model.IncrementalLinearRegression.fit"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.fit()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#sklearnex.linear_model.IncrementalLinearRegression.partial_fit"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.partial_fit()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#sklearnex.linear_model.IncrementalLinearRegression.predict"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.predict()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="#sklearnex.linear_model.IncrementalLinearRegression.fit"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.fit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sklearnex.linear_model.IncrementalLinearRegression.partial_fit"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.partial_fit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sklearnex.linear_model.IncrementalLinearRegression.predict"><code class="docutils literal notranslate"><span class="pre">IncrementalLinearRegression.predict()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -365,6 +390,7 @@
 <li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
 </ul>
 
+
         </div>
       </div>
     </nav>
@@ -390,14 +416,14 @@
            <div itemprop="articleBody">
              
   <section id="non-scikit-learn-algorithms">
-<h1>Non-Scikit-Learn Algorithms<a class="headerlink" href="#non-scikit-learn-algorithms" title="Permalink to this heading"></a></h1>
+<h1>Non-Scikit-Learn Algorithms<a class="headerlink" href="#non-scikit-learn-algorithms" title="Link to this heading"></a></h1>
 <p>Algorithms not presented in the original scikit-learn are described here. All algorithms are
 available for both CPU and GPU (including distributed mode)</p>
 <section id="basicstatistics">
-<h2>BasicStatistics<a class="headerlink" href="#basicstatistics" title="Permalink to this heading"></a></h2>
+<h2>BasicStatistics<a class="headerlink" href="#basicstatistics" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="sklearnex.basic_statistics.BasicStatistics">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sklearnex.basic_statistics.</span></span><span class="sig-name descname"><span class="pre">BasicStatistics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result_options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'all'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/basic_statistics/basic_statistics.html#BasicStatistics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sklearnex.basic_statistics.</span></span><span class="sig-name descname"><span class="pre">BasicStatistics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result_options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'all'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/basic_statistics/basic_statistics.html#BasicStatistics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics" title="Link to this definition"></a></dt>
 <dd><p>Estimator for basic statistics.
 Allows to compute basic statistics for provided data.</p>
 <dl class="field-list simple">
@@ -417,7 +443,7 @@ See <a class="reference external" href="https://scikit-learn.org/stable/glossary
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="sklearnex.basic_statistics.BasicStatistics.min_">
-<span class="sig-name descname"><span class="pre">min_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics.min_" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">min_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics.min_" title="Link to this definition"></a></dt>
 <dd><p>Minimum of each feature over all samples.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -428,7 +454,7 @@ See <a class="reference external" href="https://scikit-learn.org/stable/glossary
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="sklearnex.basic_statistics.BasicStatistics.max_">
-<span class="sig-name descname"><span class="pre">max_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics.max_" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">max_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics.max_" title="Link to this definition"></a></dt>
 <dd><p>Maximum of each feature over all samples.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -439,7 +465,7 @@ See <a class="reference external" href="https://scikit-learn.org/stable/glossary
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="sklearnex.basic_statistics.BasicStatistics.sum_">
-<span class="sig-name descname"><span class="pre">sum_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics.sum_" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">sum_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics.sum_" title="Link to this definition"></a></dt>
 <dd><p>Sum of each feature over all samples.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -450,7 +476,7 @@ See <a class="reference external" href="https://scikit-learn.org/stable/glossary
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="sklearnex.basic_statistics.BasicStatistics.mean_">
-<span class="sig-name descname"><span class="pre">mean_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics.mean_" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">mean_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics.mean_" title="Link to this definition"></a></dt>
 <dd><p>Mean of each feature over all samples.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -461,7 +487,7 @@ See <a class="reference external" href="https://scikit-learn.org/stable/glossary
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="sklearnex.basic_statistics.BasicStatistics.variance_">
-<span class="sig-name descname"><span class="pre">variance_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics.variance_" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">variance_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics.variance_" title="Link to this definition"></a></dt>
 <dd><p>Variance of each feature over all samples.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -472,7 +498,7 @@ See <a class="reference external" href="https://scikit-learn.org/stable/glossary
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="sklearnex.basic_statistics.BasicStatistics.variation_">
-<span class="sig-name descname"><span class="pre">variation_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics.variation_" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">variation_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics.variation_" title="Link to this definition"></a></dt>
 <dd><p>Variation of each feature over all samples.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -483,7 +509,7 @@ See <a class="reference external" href="https://scikit-learn.org/stable/glossary
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="sklearnex.basic_statistics.BasicStatistics.sum_squares_">
-<span class="sig-name descname"><span class="pre">sum_squares_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics.sum_squares_" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">sum_squares_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics.sum_squares_" title="Link to this definition"></a></dt>
 <dd><p>Sum of squares for each feature over all samples.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -494,7 +520,7 @@ See <a class="reference external" href="https://scikit-learn.org/stable/glossary
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="sklearnex.basic_statistics.BasicStatistics.standard_deviation_">
-<span class="sig-name descname"><span class="pre">standard_deviation_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics.standard_deviation_" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">standard_deviation_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics.standard_deviation_" title="Link to this definition"></a></dt>
 <dd><p>Standard deviation of each feature over all samples.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -505,7 +531,7 @@ See <a class="reference external" href="https://scikit-learn.org/stable/glossary
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="sklearnex.basic_statistics.BasicStatistics.sum_squares_centered_">
-<span class="sig-name descname"><span class="pre">sum_squares_centered_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics.sum_squares_centered_" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">sum_squares_centered_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics.sum_squares_centered_" title="Link to this definition"></a></dt>
 <dd><p>Centered sum of squares for each feature over all samples.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -516,7 +542,7 @@ See <a class="reference external" href="https://scikit-learn.org/stable/glossary
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="sklearnex.basic_statistics.BasicStatistics.second_order_raw_moment_">
-<span class="sig-name descname"><span class="pre">second_order_raw_moment_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics.second_order_raw_moment_" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">second_order_raw_moment_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics.second_order_raw_moment_" title="Link to this definition"></a></dt>
 <dd><p>Second order moment of each feature over all samples.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -555,7 +581,7 @@ floating point error accumulation and multithreading.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="sklearnex.basic_statistics.BasicStatistics.fit">
-<span class="sig-prename descclassname"><span class="pre">BasicStatistics.</span></span><span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/basic_statistics/basic_statistics.html#BasicStatistics.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics.fit" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">BasicStatistics.</span></span><span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/basic_statistics/basic_statistics.html#BasicStatistics.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.basic_statistics.BasicStatistics.fit" title="Link to this definition"></a></dt>
 <dd><p>Calculate statistics of X.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -577,10 +603,10 @@ floating point error accumulation and multithreading.</p>
 
 </section>
 <section id="incrementalbasicstatistics">
-<h2>IncrementalBasicStatistics<a class="headerlink" href="#incrementalbasicstatistics" title="Permalink to this heading"></a></h2>
+<h2>IncrementalBasicStatistics<a class="headerlink" href="#incrementalbasicstatistics" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="sklearnex.basic_statistics.IncrementalBasicStatistics">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sklearnex.basic_statistics.</span></span><span class="sig-name descname"><span class="pre">IncrementalBasicStatistics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result_options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'all'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/basic_statistics/incremental_basic_statistics.html#IncrementalBasicStatistics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sklearnex.basic_statistics.</span></span><span class="sig-name descname"><span class="pre">IncrementalBasicStatistics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result_options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'all'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/basic_statistics/incremental_basic_statistics.html#IncrementalBasicStatistics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics" title="Link to this definition"></a></dt>
 <dd><p>Calculates basic statistics on the given data, allows for computation when the data are split into
 batches. The user can use <code class="docutils literal notranslate"><span class="pre">partial_fit</span></code> method to provide a single batch of data or use the <code class="docutils literal notranslate"><span class="pre">fit</span></code> method to provide
 the entire dataset.</p>
@@ -601,7 +627,7 @@ See <a class="reference external" href="https://scikit-learn.org/stable/glossary
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="sklearnex.basic_statistics.IncrementalBasicStatistics.min_">
-<span class="sig-name descname"><span class="pre">min_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.min_" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">min_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.min_" title="Link to this definition"></a></dt>
 <dd><p>Minimum of each feature over all samples.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -612,7 +638,7 @@ See <a class="reference external" href="https://scikit-learn.org/stable/glossary
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="sklearnex.basic_statistics.IncrementalBasicStatistics.max_">
-<span class="sig-name descname"><span class="pre">max_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.max_" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">max_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.max_" title="Link to this definition"></a></dt>
 <dd><p>Maximum of each feature over all samples.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -623,7 +649,7 @@ See <a class="reference external" href="https://scikit-learn.org/stable/glossary
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="sklearnex.basic_statistics.IncrementalBasicStatistics.sum_">
-<span class="sig-name descname"><span class="pre">sum_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.sum_" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">sum_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.sum_" title="Link to this definition"></a></dt>
 <dd><p>Sum of each feature over all samples.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -634,7 +660,7 @@ See <a class="reference external" href="https://scikit-learn.org/stable/glossary
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="sklearnex.basic_statistics.IncrementalBasicStatistics.mean_">
-<span class="sig-name descname"><span class="pre">mean_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.mean_" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">mean_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.mean_" title="Link to this definition"></a></dt>
 <dd><p>Mean of each feature over all samples.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -645,7 +671,7 @@ See <a class="reference external" href="https://scikit-learn.org/stable/glossary
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="sklearnex.basic_statistics.IncrementalBasicStatistics.variance_">
-<span class="sig-name descname"><span class="pre">variance_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.variance_" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">variance_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.variance_" title="Link to this definition"></a></dt>
 <dd><p>Variance of each feature over all samples.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -656,7 +682,7 @@ See <a class="reference external" href="https://scikit-learn.org/stable/glossary
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="sklearnex.basic_statistics.IncrementalBasicStatistics.variation_">
-<span class="sig-name descname"><span class="pre">variation_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.variation_" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">variation_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.variation_" title="Link to this definition"></a></dt>
 <dd><p>Variation of each feature over all samples.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -667,7 +693,7 @@ See <a class="reference external" href="https://scikit-learn.org/stable/glossary
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="sklearnex.basic_statistics.IncrementalBasicStatistics.sum_squares_">
-<span class="sig-name descname"><span class="pre">sum_squares_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.sum_squares_" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">sum_squares_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.sum_squares_" title="Link to this definition"></a></dt>
 <dd><p>Sum of squares for each feature over all samples.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -678,7 +704,7 @@ See <a class="reference external" href="https://scikit-learn.org/stable/glossary
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="sklearnex.basic_statistics.IncrementalBasicStatistics.standard_deviation_">
-<span class="sig-name descname"><span class="pre">standard_deviation_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.standard_deviation_" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">standard_deviation_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.standard_deviation_" title="Link to this definition"></a></dt>
 <dd><p>Standard deviation of each feature over all samples.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -689,7 +715,7 @@ See <a class="reference external" href="https://scikit-learn.org/stable/glossary
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="sklearnex.basic_statistics.IncrementalBasicStatistics.sum_squares_centered_">
-<span class="sig-name descname"><span class="pre">sum_squares_centered_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.sum_squares_centered_" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">sum_squares_centered_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.sum_squares_centered_" title="Link to this definition"></a></dt>
 <dd><p>Centered sum of squares for each feature over all samples.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -700,7 +726,7 @@ See <a class="reference external" href="https://scikit-learn.org/stable/glossary
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="sklearnex.basic_statistics.IncrementalBasicStatistics.second_order_raw_moment_">
-<span class="sig-name descname"><span class="pre">second_order_raw_moment_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.second_order_raw_moment_" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">second_order_raw_moment_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.second_order_raw_moment_" title="Link to this definition"></a></dt>
 <dd><p>Second order moment of each feature over all samples.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -711,7 +737,7 @@ See <a class="reference external" href="https://scikit-learn.org/stable/glossary
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="sklearnex.basic_statistics.IncrementalBasicStatistics.n_samples_seen_">
-<span class="sig-name descname"><span class="pre">n_samples_seen_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.n_samples_seen_" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">n_samples_seen_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.n_samples_seen_" title="Link to this definition"></a></dt>
 <dd><p>The number of samples processed by the estimator. Will be reset on
 new calls to <code class="docutils literal notranslate"><span class="pre">fit</span></code>, but increments across <code class="docutils literal notranslate"><span class="pre">partial_fit</span></code> calls.</p>
 <dl class="field-list simple">
@@ -723,7 +749,7 @@ new calls to <code class="docutils literal notranslate"><span class="pre">fit</s
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="sklearnex.basic_statistics.IncrementalBasicStatistics.batch_size_">
-<span class="sig-name descname"><span class="pre">batch_size_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.batch_size_" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">batch_size_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.batch_size_" title="Link to this definition"></a></dt>
 <dd><p>Inferred batch size from <code class="docutils literal notranslate"><span class="pre">batch_size</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -734,7 +760,7 @@ new calls to <code class="docutils literal notranslate"><span class="pre">fit</s
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="sklearnex.basic_statistics.IncrementalBasicStatistics.n_features_in_">
-<span class="sig-name descname"><span class="pre">n_features_in_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.n_features_in_" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">n_features_in_</span></span><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.n_features_in_" title="Link to this definition"></a></dt>
 <dd><p>Number of features seen during <code class="docutils literal notranslate"><span class="pre">fit</span></code> or  <code class="docutils literal notranslate"><span class="pre">partial_fit</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -774,7 +800,7 @@ supported currently but deprecated in 2025.1 and will be removed in 2026.0</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="sklearnex.basic_statistics.IncrementalBasicStatistics.fit">
-<span class="sig-prename descclassname"><span class="pre">IncrementalBasicStatistics.</span></span><span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/basic_statistics/incremental_basic_statistics.html#IncrementalBasicStatistics.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.fit" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">IncrementalBasicStatistics.</span></span><span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/basic_statistics/incremental_basic_statistics.html#IncrementalBasicStatistics.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.fit" title="Link to this definition"></a></dt>
 <dd><p>Calculate statistics of X using minibatches of size batch_size.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -796,7 +822,7 @@ supported currently but deprecated in 2025.1 and will be removed in 2026.0</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="sklearnex.basic_statistics.IncrementalBasicStatistics.partial_fit">
-<span class="sig-prename descclassname"><span class="pre">IncrementalBasicStatistics.</span></span><span class="sig-name descname"><span class="pre">partial_fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_input</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/basic_statistics/incremental_basic_statistics.html#IncrementalBasicStatistics.partial_fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.partial_fit" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">IncrementalBasicStatistics.</span></span><span class="sig-name descname"><span class="pre">partial_fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_input</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/basic_statistics/incremental_basic_statistics.html#IncrementalBasicStatistics.partial_fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.basic_statistics.IncrementalBasicStatistics.partial_fit" title="Link to this definition"></a></dt>
 <dd><p>Incremental fit with X. All of X is processed as a single batch.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -819,10 +845,10 @@ supported currently but deprecated in 2025.1 and will be removed in 2026.0</p>
 
 </section>
 <section id="incrementalempiricalcovariance">
-<h2>IncrementalEmpiricalCovariance<a class="headerlink" href="#incrementalempiricalcovariance" title="Permalink to this heading"></a></h2>
+<h2>IncrementalEmpiricalCovariance<a class="headerlink" href="#incrementalempiricalcovariance" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="sklearnex.covariance.IncrementalEmpiricalCovariance">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sklearnex.covariance.</span></span><span class="sig-name descname"><span class="pre">IncrementalEmpiricalCovariance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store_precision</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assume_centered</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/covariance/incremental_covariance.html#IncrementalEmpiricalCovariance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.covariance.IncrementalEmpiricalCovariance" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sklearnex.covariance.</span></span><span class="sig-name descname"><span class="pre">IncrementalEmpiricalCovariance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store_precision</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assume_centered</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/covariance/incremental_covariance.html#IncrementalEmpiricalCovariance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.covariance.IncrementalEmpiricalCovariance" title="Link to this definition"></a></dt>
 <dd><p>Maximum likelihood covariance estimator that allows for the estimation when the data are split into
 batches. The user can use the <code class="docutils literal notranslate"><span class="pre">partial_fit</span></code> method to provide a single batch of data or use the <code class="docutils literal notranslate"><span class="pre">fit</span></code> method to provide
 the entire dataset.</p>
@@ -850,7 +876,7 @@ See <a class="reference external" href="https://scikit-learn.org/stable/glossary
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="sklearnex.covariance.IncrementalEmpiricalCovariance.location_">
-<span class="sig-name descname"><span class="pre">location_</span></span><a class="headerlink" href="#sklearnex.covariance.IncrementalEmpiricalCovariance.location_" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">location_</span></span><a class="headerlink" href="#sklearnex.covariance.IncrementalEmpiricalCovariance.location_" title="Link to this definition"></a></dt>
 <dd><p>Estimated location, i.e. the estimated mean.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -861,7 +887,7 @@ See <a class="reference external" href="https://scikit-learn.org/stable/glossary
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="sklearnex.covariance.IncrementalEmpiricalCovariance.covariance_">
-<span class="sig-name descname"><span class="pre">covariance_</span></span><a class="headerlink" href="#sklearnex.covariance.IncrementalEmpiricalCovariance.covariance_" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">covariance_</span></span><a class="headerlink" href="#sklearnex.covariance.IncrementalEmpiricalCovariance.covariance_" title="Link to this definition"></a></dt>
 <dd><p>Estimated covariance matrix</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -872,7 +898,7 @@ See <a class="reference external" href="https://scikit-learn.org/stable/glossary
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="sklearnex.covariance.IncrementalEmpiricalCovariance.n_samples_seen_">
-<span class="sig-name descname"><span class="pre">n_samples_seen_</span></span><a class="headerlink" href="#sklearnex.covariance.IncrementalEmpiricalCovariance.n_samples_seen_" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">n_samples_seen_</span></span><a class="headerlink" href="#sklearnex.covariance.IncrementalEmpiricalCovariance.n_samples_seen_" title="Link to this definition"></a></dt>
 <dd><p>The number of samples processed by the estimator. Will be reset on
 new calls to <code class="docutils literal notranslate"><span class="pre">fit</span></code>, but increments across <code class="docutils literal notranslate"><span class="pre">partial_fit</span></code> calls.</p>
 <dl class="field-list simple">
@@ -884,7 +910,7 @@ new calls to <code class="docutils literal notranslate"><span class="pre">fit</s
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="sklearnex.covariance.IncrementalEmpiricalCovariance.batch_size_">
-<span class="sig-name descname"><span class="pre">batch_size_</span></span><a class="headerlink" href="#sklearnex.covariance.IncrementalEmpiricalCovariance.batch_size_" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">batch_size_</span></span><a class="headerlink" href="#sklearnex.covariance.IncrementalEmpiricalCovariance.batch_size_" title="Link to this definition"></a></dt>
 <dd><p>Inferred batch size from <code class="docutils literal notranslate"><span class="pre">batch_size</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -895,7 +921,7 @@ new calls to <code class="docutils literal notranslate"><span class="pre">fit</s
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="sklearnex.covariance.IncrementalEmpiricalCovariance.n_features_in_">
-<span class="sig-name descname"><span class="pre">n_features_in_</span></span><a class="headerlink" href="#sklearnex.covariance.IncrementalEmpiricalCovariance.n_features_in_" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">n_features_in_</span></span><a class="headerlink" href="#sklearnex.covariance.IncrementalEmpiricalCovariance.n_features_in_" title="Link to this definition"></a></dt>
 <dd><p>Number of features seen during <code class="docutils literal notranslate"><span class="pre">fit</span></code> or <code class="docutils literal notranslate"><span class="pre">partial_fit</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -926,7 +952,7 @@ new calls to <code class="docutils literal notranslate"><span class="pre">fit</s
 
 <dl class="py method">
 <dt class="sig sig-object py" id="sklearnex.covariance.IncrementalEmpiricalCovariance.fit">
-<span class="sig-prename descclassname"><span class="pre">IncrementalEmpiricalCovariance.</span></span><span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/covariance/incremental_covariance.html#IncrementalEmpiricalCovariance.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.covariance.IncrementalEmpiricalCovariance.fit" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">IncrementalEmpiricalCovariance.</span></span><span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/covariance/incremental_covariance.html#IncrementalEmpiricalCovariance.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.covariance.IncrementalEmpiricalCovariance.fit" title="Link to this definition"></a></dt>
 <dd><p>Fit the model with X, using minibatches of size batch_size.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -947,7 +973,7 @@ new calls to <code class="docutils literal notranslate"><span class="pre">fit</s
 
 <dl class="py method">
 <dt class="sig sig-object py" id="sklearnex.covariance.IncrementalEmpiricalCovariance.partial_fit">
-<span class="sig-prename descclassname"><span class="pre">IncrementalEmpiricalCovariance.</span></span><span class="sig-name descname"><span class="pre">partial_fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_input</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/covariance/incremental_covariance.html#IncrementalEmpiricalCovariance.partial_fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.covariance.IncrementalEmpiricalCovariance.partial_fit" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">IncrementalEmpiricalCovariance.</span></span><span class="sig-name descname"><span class="pre">partial_fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_input</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/covariance/incremental_covariance.html#IncrementalEmpiricalCovariance.partial_fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.covariance.IncrementalEmpiricalCovariance.partial_fit" title="Link to this definition"></a></dt>
 <dd><p>Incremental fit with X. All of X is processed as a single batch.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -969,21 +995,21 @@ new calls to <code class="docutils literal notranslate"><span class="pre">fit</s
 
 </section>
 <section id="incrementallinearregression">
-<h2>IncrementalLinearRegression<a class="headerlink" href="#incrementallinearregression" title="Permalink to this heading"></a></h2>
+<h2>IncrementalLinearRegression<a class="headerlink" href="#incrementallinearregression" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="sklearnex.linear_model.IncrementalLinearRegression">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sklearnex.linear_model.</span></span><span class="sig-name descname"><span class="pre">IncrementalLinearRegression</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_intercept</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy_X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/linear_model/incremental_linear.html#IncrementalLinearRegression"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.linear_model.IncrementalLinearRegression" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sklearnex.linear_model.</span></span><span class="sig-name descname"><span class="pre">IncrementalLinearRegression</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_intercept</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy_X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/linear_model/incremental_linear.html#IncrementalLinearRegression"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.linear_model.IncrementalLinearRegression" title="Link to this definition"></a></dt>
 <dd><p>Trains a linear regression model, allows for computation if the data are split into
 batches. The user can use the <code class="docutils literal notranslate"><span class="pre">partial_fit</span></code> method to provide a single batch of data or use the <code class="docutils literal notranslate"><span class="pre">fit</span></code> method to provide
 the entire dataset.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>fit_intercept</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>default=True</em>) – </p></li>
-<li><p><strong>set</strong> (<em>Whether to calculate the intercept for this model. If</em>) – </p></li>
-<li><p><strong>False</strong> (<em>to</em>) – </p></li>
-<li><p><strong>calculations</strong> (<em>no intercept will be used in</em>) – </p></li>
-<li><p><strong>centered</strong><strong>)</strong><strong>.</strong> (<em>(</em><em>i.e. data is expected to be</em>) – </p></li>
+<li><p><strong>fit_intercept</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>default=True</em>)</p></li>
+<li><p><strong>set</strong> (<em>Whether to calculate the intercept for this model. If</em>)</p></li>
+<li><p><strong>False</strong> (<em>to</em>)</p></li>
+<li><p><strong>calculations</strong> (<em>no intercept will be used in</em>)</p></li>
+<li><p><strong>centered</strong><strong>)</strong><strong>.</strong> (<em>(</em><em>i.e. data is expected to be</em>)</p></li>
 <li><p><strong>copy_X</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>default=True</em>) – If True, X will be copied; else, it may be overwritten.</p></li>
 <li><p><strong>n_jobs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em>, </em><em>default=None</em>) – The number of jobs to use for the computation.</p></li>
 <li><p><strong>batch_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em>, </em><em>default=None</em>) – The number of samples to use for each batch. Only used when calling
@@ -994,7 +1020,7 @@ is inferred from the data and set to <code class="docutils literal notranslate">
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="sklearnex.linear_model.IncrementalLinearRegression.coef_">
-<span class="sig-name descname"><span class="pre">coef_</span></span><a class="headerlink" href="#sklearnex.linear_model.IncrementalLinearRegression.coef_" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">coef_</span></span><a class="headerlink" href="#sklearnex.linear_model.IncrementalLinearRegression.coef_" title="Link to this definition"></a></dt>
 <dd><p>Estimated coefficients for the linear regression problem.
 If multiple targets are passed during the fit (y 2D), this
 is a 2D array of shape (n_targets, n_features), while if only
@@ -1008,7 +1034,7 @@ one target is passed, this is a 1D array of length n_features.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="sklearnex.linear_model.IncrementalLinearRegression.intercept_">
-<span class="sig-name descname"><span class="pre">intercept_</span></span><a class="headerlink" href="#sklearnex.linear_model.IncrementalLinearRegression.intercept_" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">intercept_</span></span><a class="headerlink" href="#sklearnex.linear_model.IncrementalLinearRegression.intercept_" title="Link to this definition"></a></dt>
 <dd><p>Independent term in the linear model. Set to 0.0 if
 <cite>fit_intercept = False</cite>.</p>
 <dl class="field-list simple">
@@ -1020,7 +1046,7 @@ one target is passed, this is a 1D array of length n_features.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="sklearnex.linear_model.IncrementalLinearRegression.n_samples_seen_">
-<span class="sig-name descname"><span class="pre">n_samples_seen_</span></span><a class="headerlink" href="#sklearnex.linear_model.IncrementalLinearRegression.n_samples_seen_" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">n_samples_seen_</span></span><a class="headerlink" href="#sklearnex.linear_model.IncrementalLinearRegression.n_samples_seen_" title="Link to this definition"></a></dt>
 <dd><p>The number of samples processed by the estimator. Will be reset on
 new calls to <code class="docutils literal notranslate"><span class="pre">fit</span></code>, but increments across <code class="docutils literal notranslate"><span class="pre">partial_fit</span></code> calls.
 It should be not less than <cite>n_features_in_</cite> if <cite>fit_intercept</cite>
@@ -1035,7 +1061,7 @@ is True to obtain regression coefficients.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="sklearnex.linear_model.IncrementalLinearRegression.batch_size_">
-<span class="sig-name descname"><span class="pre">batch_size_</span></span><a class="headerlink" href="#sklearnex.linear_model.IncrementalLinearRegression.batch_size_" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">batch_size_</span></span><a class="headerlink" href="#sklearnex.linear_model.IncrementalLinearRegression.batch_size_" title="Link to this definition"></a></dt>
 <dd><p>Inferred batch size from <code class="docutils literal notranslate"><span class="pre">batch_size</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -1046,7 +1072,7 @@ is True to obtain regression coefficients.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="sklearnex.linear_model.IncrementalLinearRegression.n_features_in_">
-<span class="sig-name descname"><span class="pre">n_features_in_</span></span><a class="headerlink" href="#sklearnex.linear_model.IncrementalLinearRegression.n_features_in_" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">n_features_in_</span></span><a class="headerlink" href="#sklearnex.linear_model.IncrementalLinearRegression.n_features_in_" title="Link to this definition"></a></dt>
 <dd><p>Number of features seen during <code class="docutils literal notranslate"><span class="pre">fit</span></code> or <code class="docutils literal notranslate"><span class="pre">partial_fit</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -1078,7 +1104,7 @@ is True to obtain regression coefficients.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="sklearnex.linear_model.IncrementalLinearRegression.fit">
-<span class="sig-prename descclassname"><span class="pre">IncrementalLinearRegression.</span></span><span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/linear_model/incremental_linear.html#IncrementalLinearRegression.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.linear_model.IncrementalLinearRegression.fit" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">IncrementalLinearRegression.</span></span><span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/linear_model/incremental_linear.html#IncrementalLinearRegression.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.linear_model.IncrementalLinearRegression.fit" title="Link to this definition"></a></dt>
 <dd><p>Fit the model with X and y, using minibatches of size <code class="docutils literal notranslate"><span class="pre">batch_size</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1103,7 +1129,7 @@ is True</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="sklearnex.linear_model.IncrementalLinearRegression.partial_fit">
-<span class="sig-prename descclassname"><span class="pre">IncrementalLinearRegression.</span></span><span class="sig-name descname"><span class="pre">partial_fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_input</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/linear_model/incremental_linear.html#IncrementalLinearRegression.partial_fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.linear_model.IncrementalLinearRegression.partial_fit" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">IncrementalLinearRegression.</span></span><span class="sig-name descname"><span class="pre">partial_fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_input</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/linear_model/incremental_linear.html#IncrementalLinearRegression.partial_fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.linear_model.IncrementalLinearRegression.partial_fit" title="Link to this definition"></a></dt>
 <dd><p>Incremental fit linear model with X and y. All of X and y is
 processed as a single batch.</p>
 <dl class="field-list simple">
@@ -1126,7 +1152,7 @@ processed as a single batch.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="sklearnex.linear_model.IncrementalLinearRegression.predict">
-<span class="sig-prename descclassname"><span class="pre">IncrementalLinearRegression.</span></span><span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/linear_model/incremental_linear.html#IncrementalLinearRegression.predict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.linear_model.IncrementalLinearRegression.predict" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">IncrementalLinearRegression.</span></span><span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/sklearnex/linear_model/incremental_linear.html#IncrementalLinearRegression.predict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sklearnex.linear_model.IncrementalLinearRegression.predict" title="Link to this definition"></a></dt>
 <dd><p>Predict using the linear model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1158,7 +1184,7 @@ processed as a single batch.</p>
   <hr/>
 
   <div role="contentinfo">
-<jinja2.runtime.BlockReference object at 0x7fba35b33110>
+<jinja2.runtime.BlockReference object at 0x7f04b5f79010>
 <a href=
     "https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html" data-cookie-notice="true">
     Cookies
@@ -1182,6 +1208,28 @@ processed as a single batch.</p>
         </div>
       </div>
     </section>
+  </div>
+  <div class="version-switcher__container dropdown">
+    <script>
+      current_version = "2025.1"
+      project_name = "scikit-learn-intelex"
+    </script>
+    <div id="version-switcher-button"
+      class="version-switcher__button"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="version-switcher-dropdown"
+      aria-label="Version switcher list"
+      style="display:inline-block;padding-left:10px;padding-right:10px;"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </div>
+    <div id="version-switcher-dropdown"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
   </div>
   <script>
       jQuery(function () {

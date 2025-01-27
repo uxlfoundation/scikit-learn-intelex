@@ -50,10 +50,10 @@ Then, you can import Scikit-learn estimator patched with a preview one from `skl
 
      from sklearnex import patch_sklearn
      patch_sklearn()
-     from sklearn.linear_model import Ridge
-     print(Ridge.__module__)
+     from sklearn.decomposition import IncrementalPCA
+     print(IncrementalPCA.__module__)
      # output:
-     # sklearnex.preview.linear_model.ridge
+     # sklearnex.preview.decomposition.incremental_pca
 
 Current list of preview estimators:
 
@@ -70,7 +70,4 @@ Current list of preview estimators:
      - Yes
    * - IncrementalPCA
      - sklearnex.preview.decomposition
-     - Yes
-   * - Ridge
-     - sklearnex.preview.linear_model
      - Yes
