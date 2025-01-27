@@ -1,26 +1,29 @@
+
+
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en">
 <head>
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Intel® Extension for Scikit-learn KNN for MNIST dataset &mdash; Intel(R) Extension for Scikit-learn* 2023.2 documentation</title>
-      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/tabs.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/nbsphinx-code-cells.css" type="text/css" />
-    <link rel="shortcut icon" href="../_static/favicons.png"/>
-  <!--[if lt IE 9]>
-    <script src="../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/tabs.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css" />
+
   
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-        <script src="../_static/doctools.js"></script>
-        <script src="../_static/sphinx_highlight.js"></script>
-        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
-        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="shortcut icon" href="../_static/favicons.png"/>
+      <script src="../_static/jquery.js"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+      <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+      <script src="../_static/doctools.js"></script>
+      <script src="../_static/sphinx_highlight.js"></script>
+      <script src="../_static/version_switcher.js"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -28,6 +31,7 @@
     <link rel="prev" title="Samples" href="../samples.html" />
     <script defer type="text/javascript" src="https://www.intel.com/content/dam/www/global/wap/performance-config.js" ></script>
     <script type="text/javascript">
+        fetch("/scikit-learn-intelex/versions.json").then(response => response.text()).then(respText=> load_versions(respText));
         // Configure TMS settings
         var wapLocalCode = 'us-en'; // Dynamically set per localized site, see mapping table for values
         var wapSection = "scikit-learn"; // WAP team will give you a unique section for your site
@@ -53,11 +57,8 @@
           
           <a href="../index.html" class="icon icon-home">
             Intel(R) Extension for Scikit-learn*
+              <img src="../_static/oneAPI-rgb-rev-100.png" class="logo" alt="Logo"/>
           </a>
-              <div class="version">
-                <a href="../../versions.html">2023.2 ▼</a>
-                <p>Click link above to switch version</p>
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -66,32 +67,42 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption" role="heading"><span class="caption-text">Get Started</span></p>
+  <div class="version-switcher__container dropdown">
+    <script>
+      current_version = "2023.2"
+      project_name = "scikit-learn-intelex"
+    </script>
+    <div id="version-switcher-button"
+      class="version-switcher__button"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="version-switcher-dropdown"
+      aria-label="Version switcher list"
+      style="display:inline-block;padding-left:10px;padding-right:10px;"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </div>
+    <div id="version-switcher-dropdown"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+  
+  
+              <p class="caption" role="heading"><span class="caption-text">About</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../quick-start.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../acceleration.html">Acceleration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../what-is-patching.html">Patching</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../support.html">Support</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Features</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../algorithms.html">Supported Algorithms</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../oneapi-gpu.html">oneAPI and GPU support</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../distributed-mode.html">Distributed Mode</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../verbose.html">Verbose Mode</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Releases</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../releases.html">Release Notes</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../deprecation.html">Deprecation Notice</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Installation Guide</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../blogs.html">Medium Blogs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../system-requirements.html">System Requirements</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../memory-requirements.html">Memory Requirements</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
+<p class="caption" role="heading"><span class="caption-text">Get Started</span></p>
 <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quick-start.html">Quick Start</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../samples.html">Samples</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">k-Nearest Neighbors (kNN) for MNIST dataset</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#Download-the-data">Download the data</a></li>
@@ -109,29 +120,25 @@
 <li class="toctree-l2"><a class="reference internal" href="ridge_regression.html">Rigde Regression for Airlines DepDelay dataset</a></li>
 <li class="toctree-l2"><a class="reference internal" href="kmeans.html">Kmeans for spoken arabic digit dataset</a></li>
 <li class="toctree-l2"><a class="reference internal" href="dbscan.html">DBSCAN for spoken arabic digit dataset</a></li>
-<li class="toctree-l2"><a class="reference external" href="https://github.com/oneapi-src/oneAPI-samples/tree/master/AI-and-Analytics/Getting-Started-Samples/Intel_Extension_For_SKLearn_GettingStarted">Intel® Extension for Scikit-Learn* Getting Started Sample</a></li>
-<li class="toctree-l2"><a class="reference external" href="https://github.com/oneapi-src/oneAPI-samples/tree/master/AI-and-Analytics/Features-and-Functionality/Intel_Extension_For_SKLearn_Performance_SVC_Adult">Intel® Extension for Scikit-Learn*: SVC for Adult dataset Performance Sample</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../kaggle.html">Kaggle Kernels</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Performance</span></p>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../acceleration.html">Acceleration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guide/acceleration.html">Performance Tuning Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../algorithms.html">Supported Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/acceleration.html">Acceleration Details</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../global-patching.html">Global Patching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../verbose.html">Verbose Mode</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../distributed-mode.html">Distributed Mode</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../oneapi-gpu.html">oneAPI and GPU support</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Blogs &amp; Publications</span></p>
+<p class="caption" role="heading"><span class="caption-text">Community</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../blogs.html">Medium Blogs</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">How to contribute</span></p>
-<ul>
+<li class="toctree-l1"><a class="reference internal" href="../support.html">Support</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contribute.html">How to Contribute</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">License</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
-</ul>
+
 
         </div>
       </div>
@@ -223,7 +230,7 @@
 Intel(R) Extension for Scikit-learn* enabled (https://github.com/intel/scikit-learn-intelex)
 </pre></div></div>
 </div>
-<p>Intel® Extension for Scikit-learn patching affects performance of specific Scikit-learn functionality. Refer to the <a class="reference external" href="https://intel.github.io/scikit-learn-intelex/algorithms.html">list of supported algorithms and parameters</a> for details. In cases when unsupported parameters are used, the package fallbacks into original Scikit-learn. If the patching does not cover your scenarios, <a class="reference external" href="https://github.com/intel/scikit-learn-intelex/issues">submit an issue on GitHub</a>.</p>
+<p>Intel® Extension for Scikit-learn patching affects performance of specific Scikit-learn functionality. Refer to the <a class="reference external" href="https://intel.github.io/scikit-learn-intelex/latest/algorithms.html">list of supported algorithms and parameters</a> for details. In cases when unsupported parameters are used, the package fallbacks into original Scikit-learn. If the patching does not cover your scenarios, <a class="reference external" href="https://github.com/intel/scikit-learn-intelex/issues">submit an issue on GitHub</a>.</p>
 <p>Training and predict KNN algorithm with Intel® Extension for Scikit-learn for MNIST dataset</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
@@ -396,19 +403,7 @@ weighted avg       0.96      0.96      0.96     14000
   <hr/>
 
   <div role="contentinfo">
-<jinja2.runtime.BlockReference object at 0x7f57afd15430>
-<a href=
-    "https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html" data-cookie-notice="true">
-    Cookies
-</a>
-<a href=
-    "https://www.intel.com/content/www/us/en/privacy/intel-privacy-notice.html">
-    Privacy
-</a>
-<a data-wap_ref="dns" id="wap_dns" href="https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html">
-    Do Not Share My Personal Information
-</a>
-
+    <p>&#169; Copyright 2022, Intel.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
@@ -420,6 +415,28 @@ weighted avg       0.96      0.96      0.96     14000
         </div>
       </div>
     </section>
+  </div>
+  <div class="version-switcher__container dropdown">
+    <script>
+      current_version = "2023.2"
+      project_name = "scikit-learn-intelex"
+    </script>
+    <div id="version-switcher-button"
+      class="version-switcher__button"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="version-switcher-dropdown"
+      aria-label="Version switcher list"
+      style="display:inline-block;padding-left:10px;padding-right:10px;"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </div>
+    <div id="version-switcher-dropdown"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
   </div>
   <script>
       jQuery(function () {

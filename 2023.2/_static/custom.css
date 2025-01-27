@@ -1,25 +1,131 @@
-/* make the page 1000px */
-.wy-nav-content {
-   max-width: 1200px;
+/* override table width restrictions */
+@media screen and (min-width: 767px) {
+
+   .wy-table-responsive table td {
+      /* !important prevents the common CSS stylesheets from overriding
+         this as on RTD they are loaded after this stylesheet */
+
+      white-space: normal !important;
+   }
 }
 
-/* code block highlight color in rtd changed to lime green, no no no */
+.code-block-caption {
+    color: #000;
+    font: italic 85%/1 arial,sans-serif;
+    padding: 1em 0;
+    text-align: center;
+}
 
+
+.collapsible {
+  margin-left: -10px;
+  background-color: #f1f1f1;
+  cursor: pointer;
+  padding: 18px 18px 18px 10px;
+  width: 100%;
+  border: none;
+  text-align: left;
+  outline: none;
+  font-weight: 700;
+  font-family: "Roboto Slab","ff-tisa-web-pro","Georgia",Arial,sans-serif;
+}
+
+code.sig-name.descname {
+   white-space: initial;
+}
+
+table.optimization-notice td {
+   white-space: initial;
+}
+
+table.optimization-notice td p:last-child {
+   text-align: right;
+}
+
+img.with-border {
+   border:1px solid #021a40;
+}
+
+div.column {
+   float: left;
+   width: 50%;
+   padding: 10px;
+ }
+
+/* Clear floats after the columns */
+.column:after {
+ content: "";
+ display: table;
+ clear: both;
+}
+
+.comparison:after {
+   content: "";
+   display: table;
+   clear: both;
+  }
+
+div.admonition-container {
+ width: 49%;
+ padding: 0 3px 0 0;
+}
+
+/* Clear floats after the columns */
+.admonition-container:after {
+ content: "";
+ display: table;
+ clear: both;
+}
+
+div.quotation {
+  background-color: #fffff1;
+  padding: 1em 0 0 1em;
+}
+
+.rst-content div[class^='highlight'] pre {
+   white-space: pre-wrap;
+}
+
+/* A workaround for https://github.com/readthedocs/sphinx_rtd_theme/issues/647
+ * Override display for function signatures so that there is spacing between
+ * types and arguments */
+ .rst-content dl:not(.docutils) dt {
+   display: table-cell !important;
+}
+.rst-content dl:not(.docutils) dd {
+   margin-top: 6px;
+}
+
+/*
 .rst-content tt.literal, .rst-content code.literal, .highlight {
    background: #f0f0f0;
 }
 .rst-content tt.literal, .rst-content code.literal {
     color: #000000;
+}*/
+
+
+.eqno {
+   margin-left: 5px;
+   float: right;
 }
-/* set color of version navigator to yellow */
-div.version a {
-    color: hsla(0,0%,100%,.3);
+.math .headerlink {
+   display: none;
+   visibility: hidden;
 }
-div.version p {
-    color: #FFFF00;
+.math:hover .headerlink {
+   display: inline-block;
+   visibility: visible;
+   margin-right: -0.7em;
 }
-section {
-    display:block;
-    float: left;
-    top: 0;
+
+a#wap_dns {display: none;}
+
+
+button#version-switcher-button {
+   background-color:  #2980b9;
+}
+
+div#version-switcher-dropdown {
+   display: inline;
 }
