@@ -18,9 +18,10 @@
 
 #include "onedal/datatypes/dlpack/dlpack.h"
 #include "onedal/datatypes/dlpack/dlpack_utils.hpp"
-#include "onedal/datatypes/dlpack/dtype_conversion.hpp"
-#include "onedal/datatypes/dlpack/dlpack_interface.hpp"
+#include "onedal/datatypes/dlpack/data_conversion.hpp"
 #include "onedal/datatypes/dlpack/device_conversion.hpp"
+#include "onedal/datatypes/dlpack/dtype_conversion.hpp"
+
 
 namespace oneapi::dal::python::dlpack {
 

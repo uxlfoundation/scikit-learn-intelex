@@ -30,7 +30,7 @@ namespace sycl {
 
 #include "oneapi/dal/array.hpp"
 
-#include "onedal/datatypes/dlpack/api/dlpack.h"
+#include "onedal/datatypes/dlpack.h"
 
 namespace py = pybind11;
 
