@@ -29,7 +29,6 @@
 #include "onedal/common/sycl_interfaces.hpp"
 #include "onedal/datatypes/sycl_usm/data_conversion.hpp"
 #include "onedal/datatypes/sycl_usm/dtype_conversion.hpp"
-#include "onedal/datatypes/sycl_usm/dtype_dispatcher.hpp"
 #include "onedal/datatypes/sycl_usm/sycl_usm_helpers.hpp"
 
 namespace oneapi::dal::python::sycl_usm {
