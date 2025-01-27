@@ -217,36 +217,9 @@ Install from Anaconda* Cloud
 
 To prevent version conflicts, we recommend installing `scikit-learn-intelex` into a new conda environment.
 
+*Note: the main Anaconda channel also provides distributions of scikit-learn-intelex, but it does not provide the latest versions, nor does it provide GPU-enabled builds. It is highly recommended to install it from either Intel's channel or conda-forge instead.*
+
 .. tabs::
-
-   .. tab:: Conda-Forge channel
-
-      Recommended by default.
-
-      To install, run::
-
-        conda install scikit-learn-intelex -c conda-forge
-
-      .. list-table:: **Supported Configurations**
-         :header-rows: 1
-         :align: left
-
-         * - OS / Python version
-           - Python 3.9
-           - Python 3.10
-           - Python 3.11
-           - Python 3.12
-         * - Linux* OS
-           - [CPU]
-           - [CPU]
-           - [CPU]
-           - [CPU]
-         * - Windows* OS
-           - [CPU]
-           - [CPU]
-           - [CPU]
-           - [CPU]
-
 
    .. tab:: Intel channel
 
@@ -277,12 +250,11 @@ To prevent version conflicts, we recommend installing `scikit-learn-intelex` int
            - [CPU, GPU]
 
 
-
-   .. tab:: Main channel
+   .. tab:: Conda-Forge channel
 
       To install, run::
 
-        conda install scikit-learn-intelex
+        conda install scikit-learn-intelex -c conda-forge
 
       .. list-table:: **Supported Configurations**
          :header-rows: 1
@@ -370,12 +342,15 @@ Software Requirements
 
          If you use accelerators, refer to `oneAPI DPC++/C++ Compiler System Requirements <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`_.
 
-Intel(R) Extension for Scikit-learn is compatible with the last four versions of scikit-learn:
+Intel(R) Extension for Scikit-learn is compatible with the last stable releases of scikit-learn:
 
 * 1.0.X
 * 1.1.X
 * 1.2.X
 * 1.3.X
+* 1.4.X
+* 1.5.X
+* 1.6.X
 
 Memory Requirements
 **********************
