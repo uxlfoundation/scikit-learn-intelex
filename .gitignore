@@ -12,6 +12,8 @@ daal4py.egg-info
 doc/_build
 doc/sources/samples/*.ipynb
 doc/daal4py/_build/
+doc/build.log
+doc/daal4py/build.log
 *.obj
 *.pyd
 build_oneapi_backend

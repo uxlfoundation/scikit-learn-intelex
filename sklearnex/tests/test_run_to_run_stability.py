@@ -34,6 +34,7 @@ from sklearn.datasets import (
 import daal4py as d4p
 from daal4py.sklearn._utils import daal_check_version
 from onedal.tests.utils._dataframes_support import _as_numpy, get_dataframes_and_queues
+from sklearnex.basic_statistics import BasicStatistics
 from sklearnex.cluster import DBSCAN, KMeans
 from sklearnex.decomposition import PCA
 from sklearnex.metrics import pairwise_distances, roc_auc_score
@@ -117,6 +118,12 @@ def _run_test(estimator, method, datasets):
 
 
 _sparse_instances = [SVC()]
+if daal_check_version((2025, "P", 200)):  # Test for >= 2025.2.0
+    _sparse_instances.extend(
+        [
+            BasicStatistics(result_options=["sum", "min"]),
+        ]
+    )
 if daal_check_version((2024, "P", 700)):  # Test for > 2024.7.0
     _sparse_instances.extend(
         [
