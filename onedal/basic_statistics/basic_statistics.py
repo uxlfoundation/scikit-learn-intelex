@@ -83,12 +83,7 @@ class BasicStatistics(BaseBasicStatistics):
 
         is_single_dim = data.ndim == 1
 
-        data_table = to_table(data, queue=queue)
-        weights_table = (
-            to_table(sample_weight, queue=queue)
-            if sample_weight is not None
-            else to_table(None)
-        )
+        data_table, weights_table = to_table(data, sample_weight, queue=queue)
 
         dtype = data_table.dtype
         raw_result = self._compute_raw(data_table, weights_table, policy, dtype, is_csr)
