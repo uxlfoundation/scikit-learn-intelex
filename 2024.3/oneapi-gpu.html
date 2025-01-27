@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en">
 <head>
@@ -7,27 +9,18 @@
   <title>oneAPI and GPU support in Intel® Extension for Scikit-learn* &mdash; Intel(R) Extension for Scikit-learn* 2024.3 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css" />
-      <link rel="stylesheet" type="text/css" href="_static/copybutton.css" />
       <link rel="stylesheet" type="text/css" href="_static/custom.css" />
       <link rel="stylesheet" type="text/css" href="_static/tabs.css" />
-      <link rel="stylesheet" type="text/css" href="_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css" />
 
   
     <link rel="shortcut icon" href="_static/favicons.png"/>
-  <!--[if lt IE 9]>
-    <script src="_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="_static/jquery.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
-        <script src="_static/clipboard.min.js"></script>
-        <script src="_static/copybutton.js"></script>
-        <script src="_static/version_switcher.js"></script>
-        <script src="_static/design-tabs.js"></script>
-        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script src="_static/jquery.js"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+      <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+      <script src="_static/doctools.js"></script>
+      <script src="_static/sphinx_highlight.js"></script>
+      <script src="_static/version_switcher.js"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -35,6 +28,7 @@
     <link rel="prev" title="Supported Algorithms" href="algorithms.html" />
     <script defer type="text/javascript" src="https://www.intel.com/content/dam/www/global/wap/performance-config.js" ></script>
     <script type="text/javascript">
+        fetch("/scikit-learn-intelex/versions.json").then(response => response.text()).then(respText=> load_versions(respText));
         // Configure TMS settings
         var wapLocalCode = 'us-en'; // Dynamically set per localized site, see mapping table for values
         var wapSection = "scikit-learn"; // WAP team will give you a unique section for your site
@@ -61,9 +55,6 @@
           <a href="index.html" class="icon icon-home">
             Intel(R) Extension for Scikit-learn*
           </a>
-              <div class="version">
-                2024.3
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
@@ -95,160 +86,16 @@
     </div>
   </div>
   
+  
               <p class="caption" role="heading"><span class="caption-text">Get Started</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="quick-start.html">Quick Start</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="quick-start.html#compatibility-with-scikit-learn">Compatibility with Scikit-learn*</a></li>
-<li class="toctree-l2"><a class="reference internal" href="quick-start.html#integrate-intelex">Integrate Intel® Extension for Scikit-learn*</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="quick-start.html#patching">Patching</a></li>
-<li class="toctree-l3"><a class="reference internal" href="quick-start.html#global-patching">Global Patching</a></li>
-<li class="toctree-l3"><a class="reference internal" href="quick-start.html#unpatching">Unpatching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quick-start.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="what-is-patching.html">Patching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="support.html">Support</a></li>
 </ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="quick-start.html#installation">Installation</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="quick-start.html#install-from-pypi">Install from PyPI</a></li>
-<li class="toctree-l3"><a class="reference internal" href="quick-start.html#install-from-anaconda-cloud">Install from Anaconda* Cloud</a></li>
-<li class="toctree-l3"><a class="reference internal" href="quick-start.html#build-from-sources">Build from Sources</a></li>
-<li class="toctree-l3"><a class="reference internal" href="quick-start.html#install-intel-r-ai-tools">Install Intel*(R) AI Tools</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="quick-start.html#release-notes">Release Notes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="quick-start.html#system-requirements">System Requirements</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="quick-start.html#hardware-requirements">Hardware Requirements</a></li>
-<li class="toctree-l3"><a class="reference internal" href="quick-start.html#software-requirements">Software Requirements</a></li>
-<li class="toctree-l3"><a class="reference internal" href="quick-start.html#memory-requirements">Memory Requirements</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="samples.html">Samples</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="samples/knn_mnist.html">k-Nearest Neighbors (kNN) for MNIST dataset</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="samples/knn_mnist.html#Download-the-data">Download the data</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samples/knn_mnist.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samples/knn_mnist.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="samples/logistictic_regression_cifar.html">Logistic Regression for Cifar dataset</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="samples/logistictic_regression_cifar.html#Download-the-data">Download the data</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samples/logistictic_regression_cifar.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samples/logistictic_regression_cifar.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="samples/svc_adult.html">Support Vector Classification (SVC) for Adult dataset</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="samples/svc_adult.html#Download-the-data">Download the data</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samples/svc_adult.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samples/svc_adult.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="samples/ElasticNet.html">ElasticNet for Airlines DepDelay dataset</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="samples/ElasticNet.html#Download-the-data">Download the data</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samples/ElasticNet.html#Preprocessing">Preprocessing</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samples/ElasticNet.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samples/ElasticNet.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="samples/lasso_regression.html">Lasso Regression for YearPredictionMSD dataset</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="samples/lasso_regression.html#Download-the-data">Download the data</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samples/lasso_regression.html#Normalize-the-data">Normalize the data</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samples/lasso_regression.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samples/lasso_regression.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="samples/linear_regression.html">Linear Regression for YearPredictionMSD dataset</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="samples/linear_regression.html#Download-the-data">Download the data</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samples/linear_regression.html#Normalize-the-data">Normalize the data</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samples/linear_regression.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samples/linear_regression.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="samples/nusvr_medical_charges.html">Nu-Support Vector Regression (NuSVR) for Medical Charges dataset</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="samples/nusvr_medical_charges.html#Download-the-data">Download the data</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samples/nusvr_medical_charges.html#Preprocessing">Preprocessing</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samples/nusvr_medical_charges.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samples/nusvr_medical_charges.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="samples/random_forest_yolanda.html">Random Forest for Yolanda dataset</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="samples/random_forest_yolanda.html#Download-the-data">Download the data</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samples/random_forest_yolanda.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samples/random_forest_yolanda.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="samples/ridge_regression.html">Rigde Regression for Airlines DepDelay dataset</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="samples/ridge_regression.html#Download-the-data">Download the data</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samples/ridge_regression.html#Preprocessing">Preprocessing</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samples/ridge_regression.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samples/ridge_regression.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="samples/kmeans.html">Kmeans for spoken arabic digit dataset</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="samples/kmeans.html#Download-the-data">Download the data</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samples/kmeans.html#Preprocessing">Preprocessing</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samples/kmeans.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samples/kmeans.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="samples/dbscan.html">DBSCAN for spoken arabic digit dataset</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="samples/dbscan.html#Download-the-data">Download the data</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samples/dbscan.html#Preprocessing">Preprocessing</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samples/dbscan.html#Patch-original-Scikit-learn-with-Intel®-Extension-for-Scikit-learn">Patch original Scikit-learn with Intel® Extension for Scikit-learn</a></li>
-<li class="toctree-l3"><a class="reference internal" href="samples/dbscan.html#Train-the-same-algorithm-with-original-Scikit-learn">Train the same algorithm with original Scikit-learn</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference external" href="https://github.com/oneapi-src/oneAPI-samples/tree/master/AI-and-Analytics/Getting-Started-Samples/Intel_Extension_For_SKLearn_GettingStarted">Intel® Extension for Scikit-Learn* Getting Started Sample</a></li>
-<li class="toctree-l2"><a class="reference external" href="https://github.com/oneapi-src/oneAPI-samples/tree/master/AI-and-Analytics/Features-and-Functionality/Intel_Extension_For_SKLearn_Performance_SVC_Adult">Intel® Extension for Scikit-Learn*: SVC for Adult dataset Performance Sample</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="kaggle.html">Kaggle Kernels</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="kaggle.html#acceleration">Acceleration</a></li>
-<li class="toctree-l2"><a class="reference internal" href="kaggle.html#machine-learning-workflows">Machine Learning Workflows</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="kaggle.html#kaggle-kernels-that-use-scikit-learn-and-intelex">Kaggle kernels that use scikit-learn and Intel® Extension for Scikit-learn*:</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="kaggle/classification.html">Classification Tasks</a><ul>
-<li class="toctree-l5"><a class="reference internal" href="kaggle/classification.html#binary-classification">Binary Classification</a></li>
-<li class="toctree-l5"><a class="reference internal" href="kaggle/classification.html#multiclass-classification">MultiClass Classification</a></li>
-<li class="toctree-l5"><a class="reference internal" href="kaggle/classification.html#classification-tasks-in-computer-vision">Classification Tasks in Computer Vision</a></li>
-<li class="toctree-l5"><a class="reference internal" href="kaggle/classification.html#classification-tasks-in-natural-language-processing">Classification Tasks in Natural Language Processing</a></li>
-</ul>
-</li>
-<li class="toctree-l4"><a class="reference internal" href="kaggle/regression.html">Regression Tasks</a><ul>
-<li class="toctree-l5"><a class="reference internal" href="kaggle/regression.html#using-a-single-regressor">Using a Single Regressor</a></li>
-<li class="toctree-l5"><a class="reference internal" href="kaggle/regression.html#stacking-regressors">Stacking Regressors</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="kaggle.html#kaggle-kernels-that-use-automl-with-intelex">Kaggle kernels that use AutoML with Intel® Extension for Scikit-learn*:</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="kaggle/automl.html">AutoML Workflows</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="algorithms.html">Supported Algorithms</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="algorithms.html#on-cpu">on CPU</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="algorithms.html#classification">Classification</a></li>
-<li class="toctree-l3"><a class="reference internal" href="algorithms.html#regression">Regression</a></li>
-<li class="toctree-l3"><a class="reference internal" href="algorithms.html#clustering">Clustering</a></li>
-<li class="toctree-l3"><a class="reference internal" href="algorithms.html#dimensionality-reduction">Dimensionality reduction</a></li>
-<li class="toctree-l3"><a class="reference internal" href="algorithms.html#nearest-neighbors">Nearest Neighbors</a></li>
-<li class="toctree-l3"><a class="reference internal" href="algorithms.html#other-tasks">Other tasks</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="algorithms.html#on-gpu">on GPU</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="algorithms.html#id1">Classification</a></li>
-<li class="toctree-l3"><a class="reference internal" href="algorithms.html#id2">Regression</a></li>
-<li class="toctree-l3"><a class="reference internal" href="algorithms.html#id3">Clustering</a></li>
-<li class="toctree-l3"><a class="reference internal" href="algorithms.html#id4">Dimensionality reduction</a></li>
-<li class="toctree-l3"><a class="reference internal" href="algorithms.html#id5">Nearest Neighbors</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="algorithms.html#scikit-learn-tests">Scikit-learn tests</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="algorithms.html">Supported Algorithms</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">oneAPI and GPU support</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#device-offloading">Device offloading</a></li>
@@ -257,43 +104,38 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="distributed-mode.html">Distributed Mode</a></li>
 <li class="toctree-l1"><a class="reference internal" href="verbose.html">Verbose Mode</a></li>
-<li class="toctree-l1"><a class="reference internal" href="deprecation.html">Deprecation Notice</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="deprecation.html#macos-support">macOS* Support</a></li>
 </ul>
-</li>
+<p class="caption" role="heading"><span class="caption-text">Releases</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="releases.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deprecation.html">Deprecation Notice</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Installation Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="system-requirements.html">System Requirements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="memory-requirements.html">Memory Requirements</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="samples.html">Samples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kaggle.html">Kaggle Kernels</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Performance</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="guide/acceleration.html">Tuning Guide</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="guide/acceleration.html#tsne">TSNE</a></li>
-<li class="toctree-l2"><a class="reference internal" href="guide/acceleration.html#random-forest">Random Forest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="acceleration.html">Acceleration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guide/acceleration.html">Performance Tuning Guide</a></li>
 </ul>
-</li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Learn</span></p>
+<p class="caption" role="heading"><span class="caption-text">Blogs &amp; Publications</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials &amp; Case Studies</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="tutorials.html#tutorials">Tutorials</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorials.html#case-studies">Case Studies</a></li>
-</ul>
-</li>
 <li class="toctree-l1"><a class="reference internal" href="blogs.html">Medium Blogs</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">More</span></p>
+<p class="caption" role="heading"><span class="caption-text">How to contribute</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="support.html">Support</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="support.html#issues">Issues</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contribute.html">How to Contribute</a></li>
 </ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="contribute.html">How to Contribute</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="contribute.html#licensing">Licensing</a></li>
-<li class="toctree-l2"><a class="reference internal" href="contribute.html#pull-requests">Pull Requests</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="contribute.html#before-contributing-changes">Before Contributing Changes</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="contribute.html#code-style">Code Style</a></li>
-</ul>
-</li>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
 </ul>
 
@@ -431,7 +273,7 @@ target_offload=”gpu:0” throws an error if the inference is made outside the 
   <hr/>
 
   <div role="contentinfo">
-<jinja2.runtime.BlockReference object at 0x7f1245784b20>
+<jinja2.runtime.BlockReference object at 0x7fca671370d0>
 <a href=
     "https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html" data-cookie-notice="true">
     Cookies
@@ -477,7 +319,8 @@ target_offload=”gpu:0” throws an error if the inference is made outside the 
       role="listbox" aria-labelledby="">
       <!-- dropdown will be populated by javascript on page load -->
     </div>
-  </div><script>
+  </div>
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });

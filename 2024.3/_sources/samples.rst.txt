@@ -17,7 +17,7 @@
 .. _samples:
 
 #######
-Samples 
+Samples
 #######
 
 The following samples are also provided as Jupyter notebooks in |intelex| repository.
