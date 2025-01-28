@@ -26,7 +26,7 @@ using namespace pybind11::literals;
 namespace oneapi::dal::python::dlpack {
 
 template <typename T, typename managed_t>
-inline dal::homogen_table convert_to_homogen_impl(const managed_t& dlm_tensor, py::object q_obj) {
+inline dal::homogen_table convert_to_homogen_impl(py::object obj, const managed_t& dlm_tensor, py::object q_obj) {
     dal::table res{};
     DLTensor tensor = dlm_tensor.tensor;
     // Versioned has a readonly flag that can be used to block modification
@@ -85,8 +85,7 @@ inline dal::homogen_table convert_to_homogen_impl(const managed_t& dlm_tensor, p
         else {
             throw std::runtime_error("Wrong strides");
         }
-        res = convert_to_table(copy);
-        copy.dec_ref();
+        res = convert_to_homogen_impl<Type, managed_t>(copy, dlm_tensor, q_obj);
         return res;
     }
 
@@ -191,7 +190,7 @@ dal::table convert_to_table(py::object obj, py::object q_obj) {
 #endif // ONEDAL_DATA_PARALLEL
 
     if (versioned) {
-#define MAKE_HOMOGEN_TABLE(CType) res = convert_to_homogen_impl<CType, DLManagedTensor>(dml, q_obj);
+#define MAKE_HOMOGEN_TABLE(CType) res = convert_to_homogen_impl<CType, DLManagedTensorVersioned>(dmlv, q_obj);
         SET_CTYPE_FROM_DAL_TYPE(dtype,
                                 MAKE_HOMOGEN_TABLE,
                                 throw std::invalid_argument("Found unsupported array type"));
@@ -199,7 +198,7 @@ dal::table convert_to_table(py::object obj, py::object q_obj) {
     }
     else {
 #define MAKE_HOMOGEN_TABLE(CType) \
-    res = convert_to_homogen_impl<CType, DLManagedTensorVersioned>(dmlv, q_obj);
+    res = convert_to_homogen_impl<CType, DLManagedTensor>(dml, q_obj);
         SET_CTYPE_FROM_DAL_TYPE(dtype,
                                 MAKE_HOMOGEN_TABLE,
                                 throw std::invalid_argument("Found unsupported array type"));
@@ -210,60 +209,4 @@ dal::table convert_to_table(py::object obj, py::object q_obj) {
     dlpack_take_ownership(caps);
     return res;
 }
-
-template <std::int64_t dim, typename Deleter>
-inline std::shared_ptr<dlpack_interface<dim>> convert(const DLManagedTensor& managed,
-                                                      Deleter&& deleter) {
-    // Get `DLTensor` struct.
-    const DLTensor& tensor = managed.dl_tensor;
-
-    ptr->data.second = true;
-    ptr->queue = get_queue(tensor.device);
-    ptr->dtype = convert_dlpack_to_dal_type(tensor.dtype);
-    ptr->data.first = reinterpret_cast<std::uintptr_t>(tensor.data);
-
-    if (tensor.ndim != static_cast<std::int32_t>(dim)) {
-        throw std::runtime_error("Inconsistent dimensions");
-    }
-
-    for (std::int64_t d = 0l; d < dim; ++d) {
-        ptr->shape.at(d) = tensor.shape[d];
-    }
-
-    if (tensor.strides == NULL) {
-        ptr->strides = utils::get_c_strides(ptr->shape);
-    }
-    else {
-        for (std::int64_t d = 0l; d < dim; ++d) {
-            ptr->strides.at(d) = tensor.strides[d];
-        }
-    }
-
-    return std::shared_ptr<dlpack_interface<dim>>( //
-        ptr,
-        std::forward<Deleter>(deleter));
-}
-
-template <std::int64_t dim>
-std::shared_ptr<dlpack_interface<dim>> get_dlpack_interface(py::capsule capsule) {
-    static const char new_name[] = "used_dltensor";
-
-    capsule.inc_ref();
-    capsule.set_name(new_name);
-    const auto& ref = *capsule.get_pointer<DLManagedTensor>();
-
-    auto deleter = [capsule](auto* ptr) {
-        capsule.dec_ref();
-    };
-
-    return convert<dim>(ref, std::move(deleter));
-}
-
-#define INSTANTIATE_DIM(DIM)                                                     \
-    template DLTensor produce_unmanaged(std::shared_ptr<dlpack_interface<DIM>>); \
-    template std::shared_ptr<dlpack_interface<DIM>> get_dlpack_interface<DIM>(py::capsule);
-
-INSTANTIATE_DIM(1)
-INSTANTIATE_DIM(2)
-
 } // namespace oneapi::dal::python::dlpack
