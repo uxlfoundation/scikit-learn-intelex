@@ -27,7 +27,7 @@ namespace py = pybind11;
 
 namespace oneapi::dal::python::dlpack {
 
-void dlpack_take_ownership(const py::capsule& caps) {
+void dlpack_take_ownership(py::capsule& caps) {
     // retrieves the dlpack tensor and sets bool for if it is readonly
     PyObject* capsule = caps.ptr();
     if (PyCapsule_IsValid(capsule, "dltensor")) {
@@ -37,7 +37,7 @@ void dlpack_take_ownership(const py::capsule& caps) {
         caps.set_name("used_dltensor_versioned");
     }
     else {
-        throw std::runtime_error("unable to extract dltensor")
+        throw std::runtime_error("unable to extract dltensor");
     }
 }
 

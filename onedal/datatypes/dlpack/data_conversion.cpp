@@ -33,7 +33,7 @@ inline dal::homogen_table convert_to_homogen_impl(py::object obj, const managed_
     dal::table res{};
     DLTensor tensor = dlm_tensor.tensor;
     // Versioned has a readonly flag that can be used to block modification
-    bool readonly = std::is_same_v<managed_t, DLManagedTensorVersioned>::value &&
+    bool readonly = std::is_same_v<managed_t, DLManagedTensorVersioned> &&
                     reinterpret_cast<bool>(dlm_tensor.flags & DLPACK_FLAG_BITMASK_READ_ONLY);
 
     // generate queue from dlpack device information
@@ -67,8 +67,8 @@ inline dal::homogen_table convert_to_homogen_impl(py::object obj, const managed_
 
     // get shape, if 1 dimensional, force col count to 1
     std::int64_t row_count, col_count;
-    row_count = shape[0];
-    col_count = ndim == 1 ? 1l : shape[1];
+    row_count = tensor.shape[0];
+    col_count = ndim == 1 ? 1l : tensor.shape[1];
 
     // get data layout for homogeneous check
     const dal::data_layout layout = get_dlpack_layout(tensor, row_count, col_count);
@@ -88,7 +88,7 @@ inline dal::homogen_table convert_to_homogen_impl(py::object obj, const managed_
         else {
             throw std::runtime_error("Wrong strides");
         }
-        res = convert_to_homogen_impl<Type, managed_t>(copy, dlm_tensor, q_obj);
+        res = convert_to_homogen_impl<T, managed_t>(copy, dlm_tensor, q_obj);
         return res;
     }
 
@@ -103,7 +103,7 @@ inline dal::homogen_table convert_to_homogen_impl(py::object obj, const managed_
 
     // create the dlpack deleter, which requires calling the deleter in the dlpackmanagedtensor
     // and decreasing the object's reference count
-    const auto deleter = [dlm_tensor](const Type*) {
+    const auto deleter = [dlm_tensor](const T *data) {
         if (dlm_tensor.deleter != nullptr) {
             dlm_tensor.deleter(dlm_tensor);
         }
