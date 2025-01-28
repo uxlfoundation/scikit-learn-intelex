@@ -29,7 +29,6 @@
 #include "onedal/common/sycl_interfaces.hpp"
 #include "onedal/datatypes/sycl_usm/data_conversion.hpp"
 #include "onedal/datatypes/sycl_usm/dtype_conversion.hpp"
-#include "onedal/datatypes/sycl_usm/dtype_dispatcher.hpp"
 
 /* __sycl_usm_array_interface__
  *
