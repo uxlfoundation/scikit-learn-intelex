@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include <Python.h>
 #include <pybind11/pybind11.h>
 
 #include "onedal/datatypes/dlpack/dtype_conversion.hpp"
