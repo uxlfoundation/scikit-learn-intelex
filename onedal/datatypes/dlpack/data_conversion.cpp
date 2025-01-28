@@ -32,7 +32,7 @@ namespace oneapi::dal::python::dlpack {
 template <typename T, typename managed_t>
 inline dal::homogen_table convert_to_homogen_impl(py::object obj, const managed_t& dlm_tensor, py::object q_obj) {
     dal::homogen_table res{};
-    DLTensor tensor = dlm_tensor.tensor;
+    DLTensor tensor = dlm_tensor.dl_tensor;
     // Versioned has a readonly flag that can be used to block modification
     bool readonly = std::is_same_v<managed_t, DLManagedTensorVersioned> &&
                     reinterpret_cast<bool>(dlm_tensor.flags & DLPACK_FLAG_BITMASK_READ_ONLY);

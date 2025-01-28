@@ -60,7 +60,7 @@ dal::data_layout get_dlpack_layout(const DLTensor& tensor,
         return dal::data_layout::row_major;
     }
     else if (strides[0] == r_count && strides[1] == 1) {
-        return dal::data_layout::col_major;
+        return dal::data_layout::column_major;
     }
     else {
         return dal::data_layout::unknown;
