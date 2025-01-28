@@ -200,7 +200,7 @@ dal::table convert_to_table(py::object obj, py::object q_obj) {
 #endif // ONEDAL_DATA_PARALLEL
 
     if (versioned) {
-#define MAKE_HOMOGEN_TABLE(CType) res = convert_to_homogen_impl<CType, DLManagedTensorVersioned>(dlmv, q_obj);
+#define MAKE_HOMOGEN_TABLE(CType) res = convert_to_homogen_impl<CType, DLManagedTensorVersioned>(obj, dlmv, q_obj);
         SET_CTYPE_FROM_DAL_TYPE(dtype,
                                 MAKE_HOMOGEN_TABLE,
                                 throw std::invalid_argument("Found unsupported array type"));
@@ -208,7 +208,7 @@ dal::table convert_to_table(py::object obj, py::object q_obj) {
     }
     else {
 #define MAKE_HOMOGEN_TABLE(CType) \
-    res = convert_to_homogen_impl<CType, DLManagedTensor>(dlm, q_obj);
+    res = convert_to_homogen_impl<CType, DLManagedTensor>(obj, dlm, q_obj);
         SET_CTYPE_FROM_DAL_TYPE(dtype,
                                 MAKE_HOMOGEN_TABLE,
                                 throw std::invalid_argument("Found unsupported array type"));
