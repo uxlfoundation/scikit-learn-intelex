@@ -191,26 +191,14 @@ To install |intelex|, run:
 **Supported Configurations**
 
 .. list-table::
-   :header-rows: 1
    :align: left
 
-   * - OS / Python version
-     - Python 3.9
-     - Python 3.10
-     - Python 3.11
-     - Python 3.12
-   * - Linux* OS
+   * - Operating systems
+     - Windows*, Linux*
+   * - Python versions
+     - 3.9, 3.10, 3.11, 3.12, 3.13
+   * - Devices
      - [CPU, GPU]
-     - [CPU, GPU]
-     - [CPU, GPU]
-     - [CPU, GPU]
-   * - Windows* OS
-     - [CPU, GPU]
-     - [CPU, GPU]
-     - [CPU, GPU]
-     - [CPU, GPU]
-
-
 
 Install from Anaconda* Cloud
 ********************************************
@@ -233,20 +221,11 @@ To prevent version conflicts, we recommend installing `scikit-learn-intelex` int
          :header-rows: 1
          :align: left
 
-         * - OS / Python version
-           - Python 3.9
-           - Python 3.10
-           - Python 3.11
-           - Python 3.12
-         * - Linux* OS
-           - [CPU, GPU]
-           - [CPU, GPU]
-           - [CPU, GPU]
-           - [CPU, GPU]
-         * - Windows* OS
-           - [CPU, GPU]
-           - [CPU, GPU]
-           - [CPU, GPU]
+         * - Operating systems
+           - Windows*, Linux*
+         * - Python versions
+           - 3.9, 3.10, 3.11, 3.12, 3.13
+         * - Devices
            - [CPU, GPU]
 
 
@@ -260,20 +239,11 @@ To prevent version conflicts, we recommend installing `scikit-learn-intelex` int
          :header-rows: 1
          :align: left
 
-         * - OS / Python version
-           - Python 3.9
-           - Python 3.10
-           - Python 3.11
-           - Python 3.12
-         * - Linux* OS
-           - [CPU]
-           - [CPU]
-           - [CPU]
-           - [CPU]
-         * - Windows* OS
-           - [CPU]
-           - [CPU]
-           - [CPU]
+         * - Operating systems
+           - Windows*, Linux*
+         * - Python versions
+           - 3.9, 3.10, 3.11, 3.12, 3.13
+         * - Devices
            - [CPU]
 
 
