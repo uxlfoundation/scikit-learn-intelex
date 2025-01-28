@@ -25,7 +25,7 @@ namespace py = pybind11;
 namespace oneapi::dal::python::dlpack {
 
 void dlpack_take_ownership(py::capsule& caps);
-std::int64_t get_ndim(const DLTensor& caps);
+std::int32_t get_ndim(const DLTensor& caps);
 dal::data_layout get_dlpack_layout(const DLTensor& tensor);
 bool check_dlpack_oneAPI_device(const DLDeviceType& device);
 py::object regenerate_layout(const py::object& obj);
