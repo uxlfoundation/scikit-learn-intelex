@@ -30,12 +30,12 @@ using namespace pybind11::literals;
 namespace oneapi::dal::python::dlpack {
 
 template <typename T, typename managed_t>
-inline dal::homogen_table convert_to_homogen_impl(py::object obj,   managed_t& dlm_tensor, py::object q_obj) {
+inline dal::homogen_table convert_to_homogen_impl(py::object obj, managed_t* dlm_tensor, py::object q_obj) {
     dal::homogen_table res{};
-    DLTensor tensor = dlm_tensor.dl_tensor;
+    DLTensor tensor = dlm_tensor->dl_tensor;
     // Versioned has a readonly flag that can be used to block modification
-    bool readonly = std::is_same_v<managed_t, DLManagedTensorVersioned> &&
-                    (dlm_tensor.flags & DLPACK_FLAG_BITMASK_READ_ONLY != 0);
+    bool readonly = false;
+    if (std::is_same_v<managed_t, DLManagedTensorVersioned>) readonly = (dlm_tensor->flags & DLPACK_FLAG_BITMASK_READ_ONLY != 0);
 
     // generate queue from dlpack device information
 #ifdef ONEDAL_DATA_PARALLEL
@@ -105,8 +105,8 @@ inline dal::homogen_table convert_to_homogen_impl(py::object obj,   managed_t& d
     // create the dlpack deleter, which requires calling the deleter in the dlpackmanagedtensor
     // and decreasing the object's reference count
     const auto deleter = [dlm_tensor](const T *data) {
-        if (dlm_tensor.deleter != nullptr) {
-            dlm_tensor.deleter(&dlm_tensor);
+        if (dlm_tensor->deleter != nullptr) {
+            dlm_tensor->deleter(dlm_tensor);
         }
     };
 
@@ -152,8 +152,8 @@ inline dal::homogen_table convert_to_homogen_impl(py::object obj,   managed_t& d
 dal::table convert_to_table(py::object obj, py::object q_obj) {
     dal::table res;
     bool versioned = false;
-    DLManagedTensor dlm;
-    DLManagedTensorVersioned dlmv;
+    DLManagedTensor *dlm;
+    DLManagedTensorVersioned *dlmv;
     dal::data_type dtype;
     // extract __dlpack__ attribute from the inp_obj
     // this function should only be called if already checked to have this attr
@@ -162,16 +162,16 @@ dal::table convert_to_table(py::object obj, py::object q_obj) {
 
     PyObject* capsule = caps.ptr();
     if (PyCapsule_IsValid(capsule, "dltensor")) {
-        dlm = *caps.get_pointer<DLManagedTensor>();
-        dtype = convert_dlpack_to_dal_type(dlm.dl_tensor.dtype);
+        dlm = caps.get_pointer<DLManagedTensor>();
+        dtype = convert_dlpack_to_dal_type(dlm->dl_tensor.dtype);
     }
     else if (PyCapsule_IsValid(capsule, "dltensor_versioned")) {
-        dlmv = *caps.get_pointer<DLManagedTensorVersioned>();
-        if (dlmv.version.major > DLPACK_MAJOR_VERSION) {
+        dlmv = caps.get_pointer<DLManagedTensorVersioned>();
+        if (dlmv->version.major > DLPACK_MAJOR_VERSION) {
             throw std::runtime_error("dlpack tensor version newer than supported");
         }
         versioned = true;
-        dtype = convert_dlpack_to_dal_type(dlmv.dl_tensor.dtype);
+        dtype = convert_dlpack_to_dal_type(dlmv->dl_tensor.dtype);
     }
     else {
         throw std::runtime_error("unable to extract dltensor");
