@@ -18,6 +18,7 @@
 
 #include "oneapi/dal/table/homogen.hpp"
 #include "oneapi/dal/table/detail/homogen_utils.hpp"
+
 #include "onedal/datatypes/dlpack/data_conversion.hpp"
 
 #ifdef ONEDAL_DATA_PARALLEL
@@ -30,7 +31,7 @@ namespace oneapi::dal::python::dlpack {
 
 template <typename T, typename managed_t>
 inline dal::homogen_table convert_to_homogen_impl(py::object obj, const managed_t& dlm_tensor, py::object q_obj) {
-    dal::table res{};
+    dal::homogen_table res{};
     DLTensor tensor = dlm_tensor.tensor;
     // Versioned has a readonly flag that can be used to block modification
     bool readonly = std::is_same_v<managed_t, DLManagedTensorVersioned> &&
@@ -121,7 +122,7 @@ inline dal::homogen_table convert_to_homogen_impl(py::object obj, const managed_
                                      layout);
         }
         else {
-            auto* const mut_ptr = const_cast<Type*>(ptr);
+            auto* const mut_ptr = const_cast<T*>(ptr);
             res = dal::homogen_table(queue,
                                      mut_ptr,
                                      row_count,
@@ -136,11 +137,11 @@ inline dal::homogen_table convert_to_homogen_impl(py::object obj, const managed_
 #endif
 
     if (readonly) {
-        res = dal::homogen_table(ptr, row_count, column_count, deleter, layout);
+        res = dal::homogen_table(ptr, row_count, col_count, deleter, layout);
     }
     else {
-        auto* const mut_ptr = const_cast<Type*>(ptr);
-        res = dal::homogen_table(mut_ptr, row_count, column_count, deleter, layout);
+        auto* const mut_ptr = const_cast<T*>(ptr);
+        res = dal::homogen_table(mut_ptr, row_count, col_count, deleter, layout);
     }
     // Towards the python object memory model increment the python object reference
     // count due to new reference by oneDAL table pointing to that object.
@@ -199,7 +200,7 @@ dal::table convert_to_table(py::object obj, py::object q_obj) {
 #endif // ONEDAL_DATA_PARALLEL
 
     if (versioned) {
-#define MAKE_HOMOGEN_TABLE(CType) res = convert_to_homogen_impl<CType, DLManagedTensorVersioned>(dmlv, q_obj);
+#define MAKE_HOMOGEN_TABLE(CType) res = convert_to_homogen_impl<CType, DLManagedTensorVersioned>(dlmv, q_obj);
         SET_CTYPE_FROM_DAL_TYPE(dtype,
                                 MAKE_HOMOGEN_TABLE,
                                 throw std::invalid_argument("Found unsupported array type"));
@@ -207,7 +208,7 @@ dal::table convert_to_table(py::object obj, py::object q_obj) {
     }
     else {
 #define MAKE_HOMOGEN_TABLE(CType) \
-    res = convert_to_homogen_impl<CType, DLManagedTensor>(dml, q_obj);
+    res = convert_to_homogen_impl<CType, DLManagedTensor>(dlm, q_obj);
         SET_CTYPE_FROM_DAL_TYPE(dtype,
                                 MAKE_HOMOGEN_TABLE,
                                 throw std::invalid_argument("Found unsupported array type"));

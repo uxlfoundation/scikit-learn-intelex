@@ -20,7 +20,7 @@
 
 #include <pybind11/pybind11.h>
 
-#include "oneapi/dal/common.hpp"
+#include "oneapi/dal/table/common.hpp"
 #include "onedal/datatypes/dtype_dispatcher.hpp"
 
 #include "onedal/datatypes/dlpack/dlpack.h"
