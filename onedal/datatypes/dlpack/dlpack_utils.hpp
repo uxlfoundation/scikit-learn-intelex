@@ -25,9 +25,6 @@ namespace py = pybind11;
 
 namespace oneapi::dal::python::dlpack {
 
-using tensor_t = const DLTensor;
-using managed_t = const DLManagedTensor;
-
 bool check_dlpack(const py::capsule& caps);
 void assert_dlpack(const py::capsule& caps);
 

@@ -38,7 +38,7 @@ namespace py = pybind11;
 using tensor_t = const DLTensor;
 using managed_t = const DLManagedTensor;
 
-dal::table convert_to_table(py::object obj, py::object queue = py::none());
+dal::table convert_to_table(py::object obj, py::object q_obj = py::none());
 
 py::capsule construct_dlpack_capsule(const dal::table& input);
 

@@ -66,6 +66,4 @@ inline DLDevice make_device(const dal::array<Type>& arr) {
 DLDevice get_device(std::shared_ptr<sycl::queue> ptr);
 std::shared_ptr<sycl::queue> get_queue(DLDevice device);
 
-void instantiate_convert_to_policy(py::module& pm);
-
 } // namespace oneapi::dal::python::dlpack

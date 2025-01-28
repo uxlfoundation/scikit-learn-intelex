@@ -30,9 +30,6 @@ namespace py = pybind11;
 
 namespace oneapi::dal::python::dlpack {
 
-constexpr inline auto cpu = DLDeviceType::kDLCPU;
-constexpr inline auto oneapi = DLDeviceType::kDLOneAPI;
-
 DLDevice get_cpu_device() {
     return DLDevice{ cpu, 0 };
 }
@@ -89,24 +86,6 @@ std::optional<DLDevice> convert_from_sycl(sycl::device device) {
 
 #endif // ONEDAL_DATA_PARALLEL
 
-py::object to_policy(DLDevice device) {
-    if (is_cpu_device(device)) {
-        detail::default_host_policy pol{};
-        return py::cast(std::move(pol));
-    }
-#ifdef ONEDAL_DATA_PARALLEL
-    else if (is_oneapi_device(device)) {
-        auto dev = convert_to_sycl(device);
-        sycl::queue queue{ dev.value() };
-        detail::data_parallel_policy pol{ queue };
-        return py::cast(std::move(pol));
-    }
-#endif // ONEDAL_DATA_PARALLEL
-    else {
-        throw std::runtime_error("Unknown device");
-    }
-}
-
 DLDevice get_device(std::shared_ptr<sycl::queue> ptr) {
 #ifdef ONEDAL_DATA_PARALLEL
     if (ptr.get() != nullptr) {
@@ -136,24 +115,5 @@ std::shared_ptr<sycl::queue> get_queue(DLDevice device) {
     }
 }
 
-py::object to_policy(py::tuple tp) {
-    constexpr const char err[] = "Ill-formed device tuple";
-
-    if (tp.size() != py::ssize_t{ 2ul }) {
-        throw std::runtime_error(err);
-    }
-
-    auto type = tp[0ul].cast<std::int32_t>();
-
-    DLDevice desc{ static_cast<DLDeviceType>(type), tp[1].cast<std::int32_t>() };
-
-    return to_policy(std::move(desc));
-}
-
-void instantiate_convert_to_policy(py::module& pm) {
-    pm.def("convert_to_policy", [](py::tuple tp) -> py::object {
-        return to_policy(std::move(tp));
-    });
-}
 
 } // namespace oneapi::dal::python::dlpack

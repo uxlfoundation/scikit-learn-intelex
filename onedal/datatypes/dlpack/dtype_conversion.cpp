@@ -17,12 +17,6 @@
 #include <type_traits>
 #include <unordered_map>
 
-#include <pybind11/pybind11.h>
-
-#include "oneapi/dal/common.hpp"
-#include "oneapi/dal/detail/common.hpp"
-
-#include "onedal/datatypes/dlpack/dlpack.h"
 #include "onedal/datatypes/dlpack/dtype_conversion.hpp"
 
 namespace oneapi::dal::python::dlpack {

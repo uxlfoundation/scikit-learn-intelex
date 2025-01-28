@@ -27,25 +27,64 @@ namespace py = pybind11;
 
 namespace oneapi::dal::python::dlpack {
 
-DLManagedTensor& get_dlpack_interface(const py::capsule& caps) {
-    static const char new_name[] = "used_dltensor";
+DLTensor& get_dlpack_interface(const py::capsule& caps, bool& readonly) {
+    PyObject* capsule = caps.ptr();
+    DLTensor tensor;
+    if(PyCapsule_IsValid(capsule, "dltensor")){
+        const DLManagedTensor& ref = *capsule.get_pointer<DLManagedTensor>();
+        tensor = ref.dl_tensor;
+        caps.set_name("used_dltensor");
+    }
+    else if (PyCapsule_IsValid(capsule, "dltensor_versioned")){
+        const DLManagedTensorVersioned& ref = *capsule.get_pointer<DLManagedTensorVersioned>();
+        if (ref.version.major > DLPACK_MAJOR_VERSION){
+            throw std::runtime_error("dlpack tensor version newer than supported")
 
-    capsule.inc_ref();
-    capsule.set_name(new_name);
-    const auto& ref = *capsule.get_pointer<DLManagedTensor>();
-    return ref;
+        }
+        readonly = ref.flags & DLPACK_FLAG_BITMASK_READ_ONLY != 0;
+        tensor = ref.dl_tensor;
+        caps.set_name("used_dltensor_versioned");
+    }
+    else{
+        throw std::runtime_error("unable to extract dltensor")
+    }
+
+    return tensor;
 }
 
 // Convert a string encoding elemental data type of the array to oneDAL homogen table data type.
-dal::data_type get_dlpack_dtype(const DLManagedTensor& tensor) {
-    auto dtype = tensor.dl_tensor.dtype;
+dal::data_type get_dlpack_dtype(const DLTensor& tensor) {
+    auto dtype = tensor.dtype;
     return convert_dlpack_to_dal_type(std::move(dtype));
 }
 
 
-std::int64_t get_dim_count(tensor_t& tensor) {
-    const std::int32_t raw = tensor.ndim;
-    return detail::integral_cast<std::int64_t>(raw);
+inline std::int32_t get_ndim(const DLTensor& tensor) {
+    const std::int32_t ndim = tensor.ndim;
+    if (ndim > 2)
+    {
+        throw std::runtime_error("Input array has wrong dimensionality (must be 2d).");
+    }
+    return ndim;
+}
+
+dal::data_layout get_dlpack_layout(const DLTensor& tensor,
+                                   const std::int64_t& r_count,
+                                   const std::int64_t& c_count) {
+    const std:int64_t *strides = tensor.strides;
+    // if NULL then row major contiguous (see dlpack.h)
+    // if 1 column array, also row major
+    // if strides of rows = 1 element, and columns = c_count, also row major
+    if (strides == NULL || c_count == 1 || (strides[0] == 1 && strides[1] == c_count)){
+        return dal::data_layout::row_major;
+    }
+    else if (strides[0] == r_count && strides[1] == 1){
+        return dal::data_layout::col_major;
+    }
+    else{
+        return dal::data_layout::unknown;
+    }
+
 }
 
 bool check_dlpack(tensor_t& tensor) {
@@ -83,31 +122,6 @@ void assert_dlpack(const py::capsule& caps) {
     }
 }
 
-std::int64_t get_dim_count(managed_t& managed) {
-    return get_dim_count(managed.dl_tensor);
-}
-
-std::int64_t get_dim_count(const py::capsule& caps) {
-    assert_dlpack(caps);
-    return get_dim_count(get_managed(caps));
-}
-
-std::int64_t get_count_by_dim(std::int64_t dim, tensor_t& tensor) {
-    constexpr const char err[] = "Out of the number of dimensions";
-    if (dim < 0l || get_dim_count(tensor) <= dim) {
-        throw std::out_of_range(err);
-    }
-    return tensor.shape[dim];
-}
-
-std::int64_t get_count_by_dim(std::int64_t dim, managed_t& managed) {
-    return get_count_by_dim(dim, managed.dl_tensor);
-}
-
-std::int64_t get_count_by_dim(std::int64_t dim, const py::capsule& caps) {
-    assert_dlpack(caps);
-    return get_count_by_dim(dim, get_managed(caps));
-}
 
 std::int64_t get_stride_by_dim(std::int64_t dim, tensor_t& tensor) {
     constexpr const char err[] = "Out of the number of dimensions";
@@ -129,20 +143,6 @@ std::int64_t get_stride_by_dim(std::int64_t dim, managed_t& managed) {
 std::int64_t get_stride_by_dim(std::int64_t dim, const py::capsule& caps) {
     assert_dlpack(caps);
     return get_stride_by_dim(dim, get_managed(caps));
-}
-
-dal::data_type get_dtype(tensor_t& tensor) {
-    const auto& dt = tensor.dtype;
-    return convert_dlpack_to_dal_type(dt);
-}
-
-dal::data_type get_dtype(managed_t& managed) {
-    return get_dtype(managed.dl_tensor);
-}
-
-dal::data_type get_dtype(const py::capsule& caps) {
-    assert_dlpack(caps);
-    return get_dtype(get_managed(caps));
 }
 
 void assert_pointer(dal::data_type dt, void* ptr, const py::capsule& caps) {
