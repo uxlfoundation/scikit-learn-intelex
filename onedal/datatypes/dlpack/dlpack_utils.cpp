@@ -14,7 +14,6 @@
 * limitations under the License.
 *******************************************************************************/
 
-#include <Python.h>
 #include <pybind11/pybind11.h>
 
 #include "oneapi/dal/common.hpp"
@@ -44,7 +43,7 @@ void dlpack_take_ownership(py::capsule& caps) {
     }
 }
 
-inline std::int32_t get_ndim(const DLTensor& tensor) {
+std::int32_t get_ndim(const DLTensor& tensor) {
     const std::int32_t ndim = tensor.ndim;
     if (ndim != 2 && ndim != 1) {
         throw std::runtime_error("Input array has wrong dimensionality (must be 2d).");
