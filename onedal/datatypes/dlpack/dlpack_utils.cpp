@@ -26,9 +26,9 @@
 
 namespace py = pybind11;
 
-using namespace pybind11::literals;
-
 namespace oneapi::dal::python::dlpack {
+
+using namespace pybind11::literals;
 
 void dlpack_take_ownership(py::capsule& caps) {
     // retrieves the dlpack tensor and sets bool for if it is readonly
