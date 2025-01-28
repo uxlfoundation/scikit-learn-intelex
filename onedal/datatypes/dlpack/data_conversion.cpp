@@ -35,7 +35,7 @@ inline dal::homogen_table convert_to_homogen_impl(py::object obj, managed_t* dlm
     DLTensor tensor = dlm_tensor->dl_tensor;
     // Versioned has a readonly flag that can be used to block modification
     bool readonly = false;
-    if (std::is_same_v<managed_t, DLManagedTensorVersioned>) readonly = (dlm_tensor->flags & DLPACK_FLAG_BITMASK_READ_ONLY != 0);
+    if (false) readonly = (dlm_tensor->flags & DLPACK_FLAG_BITMASK_READ_ONLY != 0);
 
     // generate queue from dlpack device information
 #ifdef ONEDAL_DATA_PARALLEL
