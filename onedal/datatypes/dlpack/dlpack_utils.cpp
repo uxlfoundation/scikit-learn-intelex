@@ -88,4 +88,38 @@ bool check_dlpack_oneAPI_device(const DLDeviceType& device) {
     return false;
 }
 
+inline py::object regenerate_layout(const py::object& obj) {
+    py::object copy;
+    if (py::hasattr(obj, "copy")) {
+        copy = obj.attr("copy")();
+    }
+    else if (py::hasattr(obj, "__array_namespace__")) {
+        const auto space = obj.attr("__array_namespace__")();
+        copy = space.attr("asarray")(obj, "copy"_a = true);
+    }
+    else {
+        throw std::runtime_error("Wrong strides");
+    }
+    return copy;
+}
+
+inline py::object reduce_precision(const py::object& obj) {
+    py::object copy;
+
+    // If the queue exists, doesn't have the fp64 aspect, and the data is float64
+    // then cast it to float32
+    if (hasattr(obj, "__array_namespace__")) {
+        PyErr_WarnEx(
+            PyExc_RuntimeWarning,
+            "Data will be converted into float32 from float64 because device does not support it",
+            1);
+        const auto space = obj.attr("__array_namespace__")();
+        copy = space.attr("astype")(obj, space.attr("float32"));
+    }
+    else {
+        throw std::runtime_error("Data has higher precision than the supported device");
+    }
+    return copy;
+}
+
 } // namespace oneapi::dal::python::dlpack
