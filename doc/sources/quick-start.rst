@@ -198,7 +198,7 @@ To install |intelex|, run:
    * - Python versions
      - 3.9, 3.10, 3.11, 3.12, 3.13
    * - Devices
-     - [CPU, GPU]
+     - CPU, GPU
 
 Install from Anaconda* Cloud
 ********************************************
@@ -218,7 +218,6 @@ To prevent version conflicts, we recommend installing `scikit-learn-intelex` int
         conda install scikit-learn-intelex -c https://software.repos.intel.com/python/conda/
 
       .. list-table:: **Supported Configurations**
-         :header-rows: 1
          :align: left
 
          * - Operating systems
@@ -226,7 +225,7 @@ To prevent version conflicts, we recommend installing `scikit-learn-intelex` int
          * - Python versions
            - 3.9, 3.10, 3.11, 3.12, 3.13
          * - Devices
-           - [CPU, GPU]
+           - CPU, GPU
 
 
    .. tab:: Conda-Forge channel
@@ -236,7 +235,6 @@ To prevent version conflicts, we recommend installing `scikit-learn-intelex` int
         conda install scikit-learn-intelex -c conda-forge
 
       .. list-table:: **Supported Configurations**
-         :header-rows: 1
          :align: left
 
          * - Operating systems
@@ -244,7 +242,7 @@ To prevent version conflicts, we recommend installing `scikit-learn-intelex` int
          * - Python versions
            - 3.9, 3.10, 3.11, 3.12, 3.13
          * - Devices
-           - [CPU]
+           - CPU
 
 
 
