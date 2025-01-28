@@ -27,13 +27,13 @@ namespace py = pybind11;
 
 namespace oneapi::dal::python::dlpack {
 
-DLTensor& get_dlpack_interface(const py::capsule& caps, bool& readonly) {
+DLTensor get_dlpack_tensor(const py::capsule& caps, bool& readonly) {
+    // retrieves the dlpack tensor and sets bool for if it is readonly
     PyObject* capsule = caps.ptr();
     DLTensor tensor;
     if(PyCapsule_IsValid(capsule, "dltensor")){
         const DLManagedTensor& ref = *capsule.get_pointer<DLManagedTensor>();
         tensor = ref.dl_tensor;
-        caps.set_name("used_dltensor");
     }
     else if (PyCapsule_IsValid(capsule, "dltensor_versioned")){
         const DLManagedTensorVersioned& ref = *capsule.get_pointer<DLManagedTensorVersioned>();
@@ -41,22 +41,38 @@ DLTensor& get_dlpack_interface(const py::capsule& caps, bool& readonly) {
             throw std::runtime_error("dlpack tensor version newer than supported")
 
         }
-        readonly = ref.flags & DLPACK_FLAG_BITMASK_READ_ONLY != 0;
+        // if the value is non-zero cast it to a bool true
+        readonly = reinterpret_cast<bool>(ref.flags & DLPACK_FLAG_BITMASK_READ_ONLY)
         tensor = ref.dl_tensor;
-        caps.set_name("used_dltensor_versioned");
     }
     else{
         throw std::runtime_error("unable to extract dltensor")
     }
-
-    return tensor;
+    return tensor
 }
 
-// Convert a string encoding elemental data type of the array to oneDAL homogen table data type.
-dal::data_type get_dlpack_dtype(const DLTensor& tensor) {
+dal::data_type get_dlpack_dtype_from_capsule(const py::capsule& caps) {
+    bool throwaway;
+    DLTensor tensor = get_dlpack_tensor(caps, throwaway);
     auto dtype = tensor.dtype;
     return convert_dlpack_to_dal_type(std::move(dtype));
 }
+
+
+void dlpack_take_ownership(const py::capsule& caps) {
+    // retrieves the dlpack tensor and sets bool for if it is readonly
+    PyObject* capsule = caps.ptr();
+    if(PyCapsule_IsValid(capsule, "dltensor")){
+        caps.set_name("used_dltensor")        
+    }
+    else if (PyCapsule_IsValid(capsule, "dltensor_versioned")){
+        caps.set_name("used_dltensor_versioned")
+    }
+    else{
+        throw std::runtime_error("unable to extract dltensor")
+    }
+}
+
 
 
 inline std::int32_t get_ndim(const DLTensor& tensor) {

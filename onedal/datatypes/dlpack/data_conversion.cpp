@@ -14,6 +14,7 @@
 * limitations under the License.
 *******************************************************************************/
 
+#include <type_traits>
 #include "onedal/datatypes/dlpack/data_conversion.hpp"
 
 #ifdef ONEDAL_DATA_PARALLEL
@@ -24,9 +25,12 @@ using namespace pybind11::literals;
 
 namespace oneapi::dal::python::dlpack {
 
-template <typename T>
-inline dal::homogen_table convert_to_homogen_impl(py::object inp_obj, const DLTensor& tensor, py::object q_obj, bool readonly) { 
+template <typename T, typename managed_t>
+inline dal::homogen_table convert_to_homogen_impl(const managed_t& dlm_tensor, py::object q_obj) { 
     dal::table res{};
+    DLTensor tensor = dlm_tensor.tensor;
+    // Versioned has a readonly flag that can be used to block modification
+    bool readonly = std::is_same_v< managed_t, DLManagedTensorVersioned>::value && reinterpret_cast<bool>(dlm_tensor.flags & DLPACK_FLAG_BITMASK_READ_ONLY);
 
     // generate queue from dlpack device information
 #ifdef ONEDAL_DATA_PARALLEL
@@ -155,17 +159,31 @@ inline dal::homogen_table convert_to_homogen_impl(py::object inp_obj, const DLTe
 
 dal::table convert_to_table(py::object obj, py::object q_obj) {
     dal::table res;
-
+    bool versioned = false;
+    DLManagedTensor dlm;
+    DLManagedTensorVersioned dlmv;
     // extract __dlpack__ attribute from the inp_obj
     // this function should only be called if already checked to have this attr
+    // Extract and convert a DLpack data type into a oneDAL dtype.
     py::capsule caps = obj.attr("__dlpack__");
-    bool readonly = false;
-    
-    const DLTensor& tensor = get_dlpack_interface(caps, readonly);
 
+    PyObject* capsule = caps.ptr();
+    if(PyCapsule_IsValid(capsule, "dltensor")){
+        dlm = *capsule.get_pointer<DLManagedTensor>();
+    }
+    else if (PyCapsule_IsValid(capsule, "dltensor_versioned")){
+        dlmv = *capsule.get_pointer<DLManagedTensorVersioned>();
+        if (dmlv.version.major > DLPACK_MAJOR_VERSION){
+            throw std::runtime_error("dlpack tensor version newer than supported")
 
-    // Convert a DLPack data type into a oneDAL dtype.
-    const auto dtype = get_dlpack_dtype(tensor);
+        }
+        versioned = true;
+    }
+    else{
+        throw std::runtime_error("unable to extract dltensor")
+    }
+
+    const auto dtype = get_dlpack_dtype_from_capsule(caps);
 
     // if there is a queue, check that the data matches the necessary precision.
 #ifdef ONEDAL_DATA_PARALLEL
@@ -179,7 +197,6 @@ dal::table convert_to_table(py::object obj, py::object q_obj) {
                 "Data will be converted into float32 from float64 because device does not support it",
                 1);
             const auto space = obj.attr("__array_namespace__")();
-            caps.dec_ref();
             obj = space.attr("astype")(obj, space.attr("float32"));
             res = convert_to_table(obj, queue);
             return res;
@@ -190,12 +207,25 @@ dal::table convert_to_table(py::object obj, py::object q_obj) {
     }
 #endif // ONEDAL_DATA_PARALLEL
 
-#define MAKE_HOMOGEN_TABLE(CType) res = convert_to_homogen_impl<CType>(obj, managed, q_obj, readonly);
+    if(versioned)
+    {
+#define MAKE_HOMOGEN_TABLE(CType) res = convert_to_homogen_impl<CType, DLManagedTensor>(dml, q_obj);
+        SET_CTYPE_FROM_DAL_TYPE(dtype,
+                        MAKE_HOMOGEN_TABLE,
+                        throw std::invalid_argument("Found unsupported array type"));
+#undef MAKE_HOMOGEN_TABLE
+    } else 
+    {
+#define MAKE_HOMOGEN_TABLE(CType) res = convert_to_homogen_impl<CType, DLManagedTensorVersioned>(dmlv, q_obj);
         SET_CTYPE_FROM_DAL_TYPE(dtype,
                         MAKE_HOMOGEN_TABLE,
                         throw std::invalid_argument("Found unsupported array type"));
 #undef MAKE_HOMOGEN_TABLE
 
+    }
+
+    // take ownership of the capsule
+    dlpack_take_ownership(caps);
     return res;
 
 }
