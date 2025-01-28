@@ -18,7 +18,8 @@
 
 namespace oneapi::dal::python::dlpack {
 
-dal::table convert_to_homogen_impl(py::object inp_obj) {
+template <typename T>
+inline dal::homogen_table convert_to_homogen_impl(py::object inp_obj, managed_t tensor) {
 
 
 // Get and check `__sycl_usm_array_interface__` number of dimensions.
@@ -29,11 +30,20 @@ dal::table convert_to_table(py::object inp_obj) {
     dal::table res;
 
     // extract __dlpack__ attribute from the inp_obj
-    py::capsule 
+    // this function should only be called if already checked to have this attr
+    managed_t managed = get_dlpack_interface(inp_obj.attr("__dlpack__"));
 
-    // Get `DLTensor` struct.
-    const DLTensor& tensor = managed.dl_tensor;
+    // Convert a DLPack data type into a oneDAL dtype.
+    const auto dtype = get_dlpack_dtype(managed);
 
+
+#define MAKE_HOMOGEN_TABLE(CType) res = convert_to_homogen_impl<CType>(inp_obj, managed);
+        SET_CTYPE_FROM_DAL_TYPE(dtype,
+                        MAKE_HOMOGEN_TABLE,
+                        throw std::invalid_argument("Found unsupported array type"));
+#undef MAKE_HOMOGEN_TABLE
+
+    return res;
 
 }
 

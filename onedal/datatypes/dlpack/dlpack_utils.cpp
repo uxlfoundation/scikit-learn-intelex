@@ -27,9 +27,21 @@ namespace py = pybind11;
 
 namespace oneapi::dal::python::dlpack {
 
-managed_t& get_managed(const py::capsule& caps) {
-    return *caps.get_pointer<managed_t>();
+DLManagedTensor& get_dlpack_interface(const py::capsule& caps) {
+    static const char new_name[] = "used_dltensor";
+
+    capsule.inc_ref();
+    capsule.set_name(new_name);
+    const auto& ref = *capsule.get_pointer<DLManagedTensor>();
+    return ref;
 }
+
+// Convert a string encoding elemental data type of the array to oneDAL homogen table data type.
+dal::data_type get_dlpack_dtype(const DLManagedTensor& tensor) {
+    auto dtype = tensor.dl_tensor.dtype;
+    return convert_dlpack_to_dal_type(std::move(dtype));
+}
+
 
 std::int64_t get_dim_count(tensor_t& tensor) {
     const std::int32_t raw = tensor.ndim;
