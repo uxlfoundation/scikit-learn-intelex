@@ -67,4 +67,23 @@ dal::data_layout get_dlpack_layout(const DLTensor& tensor,
     }
 }
 
+bool check_dlpack_oneAPI_device(DLDeviceType& device) {
+    if (device == DLDeviceType::kDLOneAPI) {
+#if ONEDAL_DATA_PARALLEL
+        return true;
+#else
+        throw std::runtime_error(
+            "Input array located on a oneAPI device, but sklearnex installation does not have SYCL support.");
+#endif // ONEDAL_DATA_PARALLEL
+    }
+    else if (tensor.device.device_type != DLDeviceType::kDLCPU) {
+#if ONEDAL_DATA_PARALLEL
+        throw std::runtime_error("Input array not located on a supported device or CPU");
+#else
+        throw std::runtime_error("Input array not located on CPU");
+#endif // ONEDAL_DATA_PARALLEL
+    }
+    return false;
+}
+
 } // namespace oneapi::dal::python::dlpack

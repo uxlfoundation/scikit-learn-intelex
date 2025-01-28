@@ -29,4 +29,5 @@ std::int64_t get_ndim(DLTensor& caps);
 dal::data_layout get_dlpack_layout(const DLTensor& tensor,
                                    const std::int64_t& r_count,
                                    const std::int64_t& c_count);
+bool check_dlpack_oneAPI_device(DLDeviceType& device);
 } // namespace oneapi::dal::python::dlpack

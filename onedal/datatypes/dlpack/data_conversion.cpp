@@ -30,38 +30,24 @@ using namespace pybind11::literals;
 namespace oneapi::dal::python::dlpack {
 
 template <typename T, typename managed_t>
-inline dal::homogen_table convert_to_homogen_impl(py::object obj, managed_t* dlm_tensor, py::object q_obj) {
+inline dal::homogen_table convert_to_homogen_impl(py::object obj,
+                                                  managed_t* dlm_tensor,
+                                                  bool readonly,
+                                                  py::object q_obj) {
     dal::homogen_table res{};
     DLTensor tensor = dlm_tensor->dl_tensor;
-    // Versioned has a readonly flag that can be used to block modification
-    bool readonly = false;
-    if (false) readonly = (dlm_tensor->flags & DLPACK_FLAG_BITMASK_READ_ONLY != 0);
 
     // generate queue from dlpack device information
 #ifdef ONEDAL_DATA_PARALLEL
     sycl::queue queue;
+#endif // ONEDAL_DATA_PARALLEL
 
-    if (tensor.device.device_type == DLDeviceType::kDLOneAPI) {
+    if (check_dlpack_oneAPI_device(tensor.device.device_type)) {
+#ifdef ONEDAL_DATA_PARALLEL
         queue = q_obj != py::none() ? get_queue_from_python(q_obj)
                                     : get_queue_by_device_id(tensor.device.device_id);
-    }
-    else if (tensor.device.device_type != DLDeviceType::kDLCPU) {
-        throw std::runtime_error("Input array not located on a supported device or CPU");
-    }
-#else
-    // check device, if device is not a oneAPI device or cpu, throw an error. There is no standardized way to move data
-    // across devices (even though the 'to_device' function exists in the array_api standard) as devices are not standardized.
-    // They are standardized in dlpack, but conversion must be done at a higher level in a case-by-case basis and is therefore
-    // outside the scope of to_table. If it is a oneAPI device but sklearnex is not using the dpc backend throw a special error.
-    if (tensor.device.device_type == DLDeviceType::kDLOneAPI) {
-        throw std::runtime_error(
-            "Input array located on a oneAPI device, but sklearnex installation does not have SYCL support.");
-    }
-    else if (tensor.device.device_type != DLDeviceType::kDLCPU) {
-        throw std::runtime_error("Input array not located on CPU");
-    }
-
 #endif // ONEDAL_DATA_PARALLEL
+    }
 
     // get and check dimensions
     const std::int32_t ndim = get_ndim(tensor);
@@ -95,16 +81,15 @@ inline dal::homogen_table convert_to_homogen_impl(py::object obj, managed_t* dlm
 
     // Get pointer to the data following dlpack.h conventions.
     const auto* const ptr = reinterpret_cast<const T*>(tensor.data); //+ tensor.byte_offset);
-    
+
     // if a nullptr, return an empty.
-    if (!ptr)
-    {
+    if (!ptr) {
         return res;
     }
 
     // create the dlpack deleter, which requires calling the deleter in the dlpackmanagedtensor
     // and decreasing the object's reference count
-    const auto deleter = [dlm_tensor](const T *data) {
+    const auto deleter = [dlm_tensor](const T* data) {
         if (dlm_tensor->deleter != nullptr) {
             dlm_tensor->deleter(dlm_tensor);
         }
@@ -152,8 +137,10 @@ inline dal::homogen_table convert_to_homogen_impl(py::object obj, managed_t* dlm
 dal::table convert_to_table(py::object obj, py::object q_obj) {
     dal::table res;
     bool versioned = false;
-    DLManagedTensor *dlm;
-    DLManagedTensorVersioned *dlmv;
+    // Versioned has a readonly flag that can be used to block modification
+    bool readonly = false;
+    DLManagedTensor* dlm;
+    DLManagedTensorVersioned* dlmv;
     dal::data_type dtype;
     // extract __dlpack__ attribute from the inp_obj
     // this function should only be called if already checked to have this attr
@@ -171,6 +158,7 @@ dal::table convert_to_table(py::object obj, py::object q_obj) {
             throw std::runtime_error("dlpack tensor version newer than supported");
         }
         versioned = true;
+        readonly = (dlmv->flags & DLPACK_FLAG_BITMASK_READ_ONLY != 0);
         dtype = convert_dlpack_to_dal_type(dlmv->dl_tensor.dtype);
     }
     else {
@@ -200,7 +188,8 @@ dal::table convert_to_table(py::object obj, py::object q_obj) {
 #endif // ONEDAL_DATA_PARALLEL
 
     if (versioned) {
-#define MAKE_HOMOGEN_TABLE(CType) res = convert_to_homogen_impl<CType, DLManagedTensorVersioned>(obj, dlmv, q_obj);
+#define MAKE_HOMOGEN_TABLE(CType) \
+    res = convert_to_homogen_impl<CType, DLManagedTensorVersioned>(obj, dlmv, readonly, q_obj);
         SET_CTYPE_FROM_DAL_TYPE(dtype,
                                 MAKE_HOMOGEN_TABLE,
                                 throw std::invalid_argument("Found unsupported array type"));
@@ -208,7 +197,7 @@ dal::table convert_to_table(py::object obj, py::object q_obj) {
     }
     else {
 #define MAKE_HOMOGEN_TABLE(CType) \
-    res = convert_to_homogen_impl<CType, DLManagedTensor>(obj, dlm, q_obj);
+    res = convert_to_homogen_impl<CType, DLManagedTensor>(obj, dlm, readonly, q_obj);
         SET_CTYPE_FROM_DAL_TYPE(dtype,
                                 MAKE_HOMOGEN_TABLE,
                                 throw std::invalid_argument("Found unsupported array type"));
