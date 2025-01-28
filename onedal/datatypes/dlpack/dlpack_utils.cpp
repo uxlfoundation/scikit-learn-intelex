@@ -30,7 +30,9 @@ namespace oneapi::dal::python::dlpack {
 using namespace pybind11::literals;
 
 void dlpack_take_ownership(py::capsule& caps) {
-    // retrieves the dlpack tensor and sets bool for if it is readonly
+    // take a dlpack tensor and claim ownership by changing its name
+    // this will block the destructor of the managed dlpack tensor
+    // unless the dal table calls it.
     PyObject* capsule = caps.ptr();
     if (PyCapsule_IsValid(capsule, "dltensor")) {
         caps.set_name("used_dltensor");
@@ -44,6 +46,7 @@ void dlpack_take_ownership(py::capsule& caps) {
 }
 
 std::int32_t get_ndim(const DLTensor& tensor) {
+    // check if 1 or 2 dimensional, and return the number of dimensions
     const std::int32_t ndim = tensor.ndim;
     if (ndim != 2 && ndim != 1) {
         throw std::runtime_error("Input array has wrong dimensionality (must be 2d).");
@@ -52,6 +55,7 @@ std::int32_t get_ndim(const DLTensor& tensor) {
 }
 
 dal::data_layout get_dlpack_layout(const DLTensor& tensor) {
+    // determine the layout of a dlpack tensor
     // get shape, if 1 dimensional, force col count to 1
     std::int64_t r_count, c_count;
     c_count = get_ndim(tensor) == 1 ? 1l : tensor.shape[1];
@@ -72,6 +76,7 @@ dal::data_layout get_dlpack_layout(const DLTensor& tensor) {
 }
 
 bool check_dlpack_oneAPI_device(const DLDeviceType& device) {
+    // check if dlpack tensor is 1) supported and 2) on a SYCL device
 #if ONEDAL_DATA_PARALLEL
     if (device == DLDeviceType::kDLOneAPI) {
         return true;
@@ -93,6 +98,7 @@ bool check_dlpack_oneAPI_device(const DLDeviceType& device) {
 }
 
 py::object regenerate_layout(const py::object& obj) {
+    // attempt to use native python commands to get a C- or F-contiguous array
     py::object copy;
     if (py::hasattr(obj, "copy")) {
         copy = obj.attr("copy")();
@@ -108,10 +114,8 @@ py::object regenerate_layout(const py::object& obj) {
 }
 
 py::object reduce_precision(const py::object& obj) {
+    // attempt to use native python commands to down convert fp64 data to fp32
     py::object copy;
-
-    // If the queue exists, doesn't have the fp64 aspect, and the data is float64
-    // then cast it to float32
     if (hasattr(obj, "__array_namespace__")) {
         PyErr_WarnEx(
             PyExc_RuntimeWarning,

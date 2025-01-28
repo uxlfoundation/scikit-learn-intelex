@@ -72,6 +72,7 @@ inline dal::homogen_table convert_to_homogen_impl(managed_t* dlm_tensor,
 
 #ifdef ONEDAL_DATA_PARALLEL
     if (tensor.device.device_type == DLDeviceType::kDLOneAPI) {
+        // if located on a SYCL device, use the queue.
         if (readonly) {
             res = dal::homogen_table(queue,
                                      ptr,
@@ -120,6 +121,9 @@ dal::table convert_to_table(py::object obj, py::object q_obj) {
     // Extract and convert a DLpack data type into a oneDAL dtype.
     py::capsule caps = obj.attr("__dlpack__");
 
+    // two different types of dlpack managed tensors are possible, with
+    // DLManagedTensor likely to be removed from future versions of dlpack.
+    // collect important aspects necessary for the macro offloading.
     PyObject* capsule = caps.ptr();
     if (PyCapsule_IsValid(capsule, "dltensor")) {
         dlm = caps.get_pointer<DLManagedTensor>();
@@ -145,6 +149,8 @@ dal::table convert_to_table(py::object obj, py::object q_obj) {
 #ifdef ONEDAL_DATA_PARALLEL
     if (!q_obj.is(py::none()) && !q_obj.attr("sycl_device").attr("has_aspect_fp64").cast<bool>() &&
         dtype == dal::data_type::float64) {
+        // If the queue exists, doesn't have the fp64 aspect, and the data is float64
+        // then cast it to float32
         py::object copy = reduce_precision(obj);
         res = convert_to_table(copy, q_obj);
         return res;
