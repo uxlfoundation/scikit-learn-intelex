@@ -23,7 +23,7 @@
 #include "oneapi/dal/table/detail/homogen_utils.hpp"
 
 #include "onedal/datatypes/numpy/data_conversion.hpp"
-#include "onedal/datatypes/numpy/numpy_helpers.hpp"
+#include "onedal/datatypes/numpy/numpy_utils.hpp"
 #include "onedal/version.hpp"
 
 #if ONEDAL_VERSION <= 20230100

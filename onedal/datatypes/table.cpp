@@ -22,7 +22,7 @@
 #endif // ONEDAL_DATA_PARALLEL
 
 #include "onedal/datatypes/numpy/data_conversion.hpp"
-#include "onedal/datatypes/numpy/numpy_helpers.hpp"
+#include "onedal/datatypes/numpy/numpy_utils.hpp"
 #include "onedal/common/pybind11_helpers.hpp"
 #include "onedal/version.hpp"
 
