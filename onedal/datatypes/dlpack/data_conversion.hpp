@@ -31,7 +31,7 @@
 
 #include "oneapi/dal/table/common.hpp"
 
-namespace oneapi::dal::python:: : dlpack {
+namespace oneapi::dal::python:::dlpack {
 
     namespace py = pybind11;
 

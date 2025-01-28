@@ -15,6 +15,9 @@
 *******************************************************************************/
 
 #include <type_traits>
+
+#include "oneapi/dal/table/homogen.hpp"
+#include "oneapi/dal/table/detail/homogen_utils.hpp"
 #include "onedal/datatypes/dlpack/data_conversion.hpp"
 
 #ifdef ONEDAL_DATA_PARALLEL
@@ -91,6 +94,12 @@ inline dal::homogen_table convert_to_homogen_impl(py::object obj, const managed_
 
     // Get pointer to the data following dlpack.h conventions.
     const auto* const ptr = reinterpret_cast<const T*>(tensor.data + tensor.byte_offset);
+    
+    // if a nullptr, return an empty.
+    if (!ptr)
+    {
+        return res;
+    }
 
     // create the dlpack deleter, which requires calling the deleter in the dlpackmanagedtensor
     // and decreasing the object's reference count
@@ -152,19 +161,19 @@ dal::table convert_to_table(py::object obj, py::object q_obj) {
 
     PyObject* capsule = caps.ptr();
     if (PyCapsule_IsValid(capsule, "dltensor")) {
-        dlm = *capsule.get_pointer<DLManagedTensor>();
+        dlm = *caps.get_pointer<DLManagedTensor>();
         dtype = convert_dlpack_to_dal_type(dlm.dl_tensor.dtype);
     }
     else if (PyCapsule_IsValid(capsule, "dltensor_versioned")) {
-        dlmv = *capsule.get_pointer<DLManagedTensorVersioned>();
-        if (dmlv.version.major > DLPACK_MAJOR_VERSION) {
-            throw std::runtime_error("dlpack tensor version newer than supported")
+        dlmv = *caps.get_pointer<DLManagedTensorVersioned>();
+        if (dlmv.version.major > DLPACK_MAJOR_VERSION) {
+            throw std::runtime_error("dlpack tensor version newer than supported");
         }
         versioned = true;
         dtype = convert_dlpack_to_dal_type(dlmv.dl_tensor.dtype);
     }
     else {
-        throw std::runtime_error("unable to extract dltensor")
+        throw std::runtime_error("unable to extract dltensor");
     }
 
     // if there is a queue, check that the data matches the necessary precision.
