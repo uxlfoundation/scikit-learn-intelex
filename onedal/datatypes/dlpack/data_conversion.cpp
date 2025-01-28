@@ -34,26 +34,14 @@ inline dal::homogen_table convert_to_homogen_impl(const managed_t& dlm_tensor, p
 
     // generate queue from dlpack device information
 #ifdef ONEDAL_DATA_PARALLEL
-    // if built with dpc backend check the queue against the dlpack device and if the same device use the queue instead
-    // of generating a new one, otherwise throw an error. If data is on the cpu, modify datatype to match device precision.
-    // It must be emphasized that external functionality (i.e. python-side) is required to deliver the queue to to_table.
+    sycl::queue queue;
 
     if( tensor.device.device_type == DLDeviceType::kDLOneAPI ){
-
-        if (q_obj != py::none()){
-
-
-        }
-        else {
-            sycl::queue queue = get_queue_by_device_id(tensor.device.device_id);
-        }
-
+        queue = q_obj != py::none() ? get_queue_from_python(q_obj) : get_queue_by_device_id(tensor.device.device_id);
     }
     else if (tensor.device.device_type != DLDeviceType::kDLCPU){
         throw std::runtime_error("Input array not located on a supported device or CPU");
     }
-
-
 #else
     // check device, if device is not a oneAPI device or cpu, throw an error. There is no standardized way to move data
     // across devices (even though the 'to_device' function exists in the array_api standard) as devices are not standardized.
@@ -67,9 +55,6 @@ inline dal::homogen_table convert_to_homogen_impl(const managed_t& dlm_tensor, p
     }
 
 #endif // ONEDAL_DATA_PARALLEL
-
-
-
 
     // get and check dimensions
     const std::int32_t ndim = get_ndim(tensor);
@@ -106,10 +91,14 @@ inline dal::homogen_table convert_to_homogen_impl(const managed_t& dlm_tensor, p
 
     // create the dlpack deleter, which requires calling the deleter in the dlpackmanagedtensor
     // and decreasing the object's reference count
-
+    const auto deleter = [dlm_tensor](const Type*) {
+        if (dlm_tensor.deleter != nullptr) {
+            dlm_tensor.deleter(dlm_tensor);
+        }
+    };
 
 #ifdef ONEDAL_DATA_PARALLEL
-    if( queue ){
+    if( tensor.device.device_type == DLDeviceType::kDLOneAPI ){
         if (readonly){
             res = dal::homogen_table(queue,
                                      ptr,
@@ -162,6 +151,7 @@ dal::table convert_to_table(py::object obj, py::object q_obj) {
     bool versioned = false;
     DLManagedTensor dlm;
     DLManagedTensorVersioned dlmv;
+    dal::data_type dtype;
     // extract __dlpack__ attribute from the inp_obj
     // this function should only be called if already checked to have this attr
     // Extract and convert a DLpack data type into a oneDAL dtype.
@@ -170,6 +160,7 @@ dal::table convert_to_table(py::object obj, py::object q_obj) {
     PyObject* capsule = caps.ptr();
     if(PyCapsule_IsValid(capsule, "dltensor")){
         dlm = *capsule.get_pointer<DLManagedTensor>();
+        dtype = convert_dlpack_to_dal_type(dlm.dl_tensor.dtype);
     }
     else if (PyCapsule_IsValid(capsule, "dltensor_versioned")){
         dlmv = *capsule.get_pointer<DLManagedTensorVersioned>();
@@ -178,12 +169,11 @@ dal::table convert_to_table(py::object obj, py::object q_obj) {
 
         }
         versioned = true;
+        dtype = convert_dlpack_to_dal_type(dlmv.dl_tensor.dtype);
     }
     else{
         throw std::runtime_error("unable to extract dltensor")
     }
-
-    const auto dtype = get_dlpack_dtype_from_capsule(caps);
 
     // if there is a queue, check that the data matches the necessary precision.
 #ifdef ONEDAL_DATA_PARALLEL
