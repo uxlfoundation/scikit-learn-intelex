@@ -25,6 +25,8 @@
 
 namespace py = pybind11;
 
+using namespace pybind11::literals;
+
 namespace oneapi::dal::python::dlpack {
 
 void dlpack_take_ownership(py::capsule& caps) {
@@ -43,7 +45,7 @@ void dlpack_take_ownership(py::capsule& caps) {
 
 inline std::int32_t get_ndim(const DLTensor& tensor) {
     const std::int32_t ndim = tensor.ndim;
-    if (ndim > 2) {
+    if (ndim != 2 && ndim != 1) {
         throw std::runtime_error("Input array has wrong dimensionality (must be 2d).");
     }
     return ndim;
@@ -51,9 +53,9 @@ inline std::int32_t get_ndim(const DLTensor& tensor) {
 
 dal::data_layout get_dlpack_layout(const DLTensor& tensor) {
     // get shape, if 1 dimensional, force col count to 1
-    std::int64_t row_count, col_count;
-    col_count = get_ndim(tensor) == 1 ? 1l : tensor.shape[1];
-    row_count = tensor.shape[0];
+    std::int64_t r_count, c_count;
+    c_count = get_ndim(tensor) == 1 ? 1l : tensor.shape[1];
+    r_count = tensor.shape[0];
     const std::int64_t* strides = tensor.strides;
     // if NULL then row major contiguous (see dlpack.h)
     // if 1 column array, also row major

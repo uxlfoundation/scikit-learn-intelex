@@ -25,8 +25,6 @@
 #include "onedal/common/sycl_interfaces.hpp"
 #endif // ONEDAL_DATA_PARALLEL
 
-using namespace pybind11::literals;
-
 namespace oneapi::dal::python::dlpack {
 
 template <typename T, typename managed_t>
