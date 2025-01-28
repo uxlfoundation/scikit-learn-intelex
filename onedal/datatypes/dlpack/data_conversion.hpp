@@ -31,18 +31,18 @@
 
 #include "oneapi/dal/table/common.hpp"
 
-namespace oneapi::dal::python:::dlpack {
+namespace oneapi::dal::python:: : dlpack {
 
-namespace py = pybind11;
+    namespace py = pybind11;
 
-using tensor_t = const DLTensor;
-using managed_t = const DLManagedTensor;
+    using tensor_t = const DLTensor;
+    using managed_t = const DLManagedTensor;
 
-dal::table convert_to_table(py::object obj, py::object q_obj = py::none());
+    dal::table convert_to_table(py::object obj, py::object q_obj = py::none());
 
-py::capsule construct_dlpack_capsule(const dal::table& input);
+    py::capsule construct_dlpack_capsule(const dal::table& input);
 
-// Adding `__dlpack__` attribute to python oneDAL table.
-void define_dlpack_attribute(py::class_<dal::table>& t);
+    // Adding `__dlpack__` attribute to python oneDAL table.
+    void define_dlpack_attribute(py::class_<dal::table> & t);
 
-} // namespace oneapi::dal::python::dlpack
+} // namespace oneapi::dal::python:::dlpack

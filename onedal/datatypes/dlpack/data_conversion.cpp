@@ -26,20 +26,22 @@ using namespace pybind11::literals;
 namespace oneapi::dal::python::dlpack {
 
 template <typename T, typename managed_t>
-inline dal::homogen_table convert_to_homogen_impl(const managed_t& dlm_tensor, py::object q_obj) { 
+inline dal::homogen_table convert_to_homogen_impl(const managed_t& dlm_tensor, py::object q_obj) {
     dal::table res{};
     DLTensor tensor = dlm_tensor.tensor;
     // Versioned has a readonly flag that can be used to block modification
-    bool readonly = std::is_same_v< managed_t, DLManagedTensorVersioned>::value && reinterpret_cast<bool>(dlm_tensor.flags & DLPACK_FLAG_BITMASK_READ_ONLY);
+    bool readonly = std::is_same_v<managed_t, DLManagedTensorVersioned>::value &&
+                    reinterpret_cast<bool>(dlm_tensor.flags & DLPACK_FLAG_BITMASK_READ_ONLY);
 
     // generate queue from dlpack device information
 #ifdef ONEDAL_DATA_PARALLEL
     sycl::queue queue;
 
-    if( tensor.device.device_type == DLDeviceType::kDLOneAPI ){
-        queue = q_obj != py::none() ? get_queue_from_python(q_obj) : get_queue_by_device_id(tensor.device.device_id);
+    if (tensor.device.device_type == DLDeviceType::kDLOneAPI) {
+        queue = q_obj != py::none() ? get_queue_from_python(q_obj)
+                                    : get_queue_by_device_id(tensor.device.device_id);
     }
-    else if (tensor.device.device_type != DLDeviceType::kDLCPU){
+    else if (tensor.device.device_type != DLDeviceType::kDLCPU) {
         throw std::runtime_error("Input array not located on a supported device or CPU");
     }
 #else
@@ -47,10 +49,11 @@ inline dal::homogen_table convert_to_homogen_impl(const managed_t& dlm_tensor, p
     // across devices (even though the 'to_device' function exists in the array_api standard) as devices are not standardized.
     // They are standardized in dlpack, but conversion must be done at a higher level in a case-by-case basis and is therefore
     // outside the scope of to_table. If it is a oneAPI device but sklearnex is not using the dpc backend throw a special error.
-    if( tensor.device.device_type == DLDeviceType::kDLOneAPI ){
-        throw std::runtime_error("Input array located on a oneAPI device, but sklearnex installation does not have SYCL support.");
+    if (tensor.device.device_type == DLDeviceType::kDLOneAPI) {
+        throw std::runtime_error(
+            "Input array located on a oneAPI device, but sklearnex installation does not have SYCL support.");
     }
-    else if (tensor.device.device_type != DLDeviceType::kDLCPU){
+    else if (tensor.device.device_type != DLDeviceType::kDLCPU) {
         throw std::runtime_error("Input array not located on CPU");
     }
 
@@ -62,11 +65,12 @@ inline dal::homogen_table convert_to_homogen_impl(const managed_t& dlm_tensor, p
     // get shape, if 1 dimensional, force col count to 1
     std::int64_t row_count, col_count;
     row_count = shape[0];
-    col_count = ndim == 1 ? 1l: shape[1];
+    col_count = ndim == 1 ? 1l : shape[1];
 
     // get data layout for homogeneous check
     const dal::data_layout layout = get_dlpack_layout(tensor, row_count, col_count);
 
+    // unusual data format found, try to make contiguous, otherwise throw error
     if (layout == dal::data_layout::unknown) {
         // NOTE: this will make a C-contiguous deep copy of the data
         // if possible, this is expected to be a special case
@@ -86,8 +90,8 @@ inline dal::homogen_table convert_to_homogen_impl(const managed_t& dlm_tensor, p
         return res;
     }
 
-   // Get pointer to the data following dlpack.h conventions.
-    const auto* const ptr = reinterpret_cast<const T*>(tensor.data);
+    // Get pointer to the data following dlpack.h conventions.
+    const auto* const ptr = reinterpret_cast<const T*>(tensor.data + tensor.byte_offset);
 
     // create the dlpack deleter, which requires calling the deleter in the dlpackmanagedtensor
     // and decreasing the object's reference count
@@ -98,8 +102,8 @@ inline dal::homogen_table convert_to_homogen_impl(const managed_t& dlm_tensor, p
     };
 
 #ifdef ONEDAL_DATA_PARALLEL
-    if( tensor.device.device_type == DLDeviceType::kDLOneAPI ){
-        if (readonly){
+    if (tensor.device.device_type == DLDeviceType::kDLOneAPI) {
+        if (readonly) {
             res = dal::homogen_table(queue,
                                      ptr,
                                      row_count,
@@ -107,11 +111,10 @@ inline dal::homogen_table convert_to_homogen_impl(const managed_t& dlm_tensor, p
                                      deleter,
                                      std::vector<sycl::event>{},
                                      layout);
-
         }
         else {
-              auto* const mut_ptr = const_cast<Type*>(ptr);
-              res = dal::homogen_table(queue,
+            auto* const mut_ptr = const_cast<Type*>(ptr);
+            res = dal::homogen_table(queue,
                                      mut_ptr,
                                      row_count,
                                      col_count,
@@ -124,21 +127,12 @@ inline dal::homogen_table convert_to_homogen_impl(const managed_t& dlm_tensor, p
     }
 #endif
 
-    if (readonly){
-    res = dal::homogen_table(ptr,
-                             row_count,
-                             column_count,
-                             deleter,
-                             layout);
+    if (readonly) {
+        res = dal::homogen_table(ptr, row_count, column_count, deleter, layout);
     }
-    else{
+    else {
         auto* const mut_ptr = const_cast<Type*>(ptr);
-        res = dal::homogen_table(mut_ptr,
-                                row_count,
-                                column_count,
-                                deleter,
-                                layout);
-
+        res = dal::homogen_table(mut_ptr, row_count, column_count, deleter, layout);
     }
     // Towards the python object memory model increment the python object reference
     // count due to new reference by oneDAL table pointing to that object.
@@ -158,20 +152,19 @@ dal::table convert_to_table(py::object obj, py::object q_obj) {
     py::capsule caps = obj.attr("__dlpack__");
 
     PyObject* capsule = caps.ptr();
-    if(PyCapsule_IsValid(capsule, "dltensor")){
+    if (PyCapsule_IsValid(capsule, "dltensor")) {
         dlm = *capsule.get_pointer<DLManagedTensor>();
         dtype = convert_dlpack_to_dal_type(dlm.dl_tensor.dtype);
     }
-    else if (PyCapsule_IsValid(capsule, "dltensor_versioned")){
+    else if (PyCapsule_IsValid(capsule, "dltensor_versioned")) {
         dlmv = *capsule.get_pointer<DLManagedTensorVersioned>();
-        if (dmlv.version.major > DLPACK_MAJOR_VERSION){
+        if (dmlv.version.major > DLPACK_MAJOR_VERSION) {
             throw std::runtime_error("dlpack tensor version newer than supported")
-
         }
         versioned = true;
         dtype = convert_dlpack_to_dal_type(dlmv.dl_tensor.dtype);
     }
-    else{
+    else {
         throw std::runtime_error("unable to extract dltensor")
     }
 
@@ -191,41 +184,36 @@ dal::table convert_to_table(py::object obj, py::object q_obj) {
             res = convert_to_table(obj, queue);
             return res;
         }
-        else{
+        else {
             throw std::runtime_error("Data has higher precision than the supported device");
         }
     }
 #endif // ONEDAL_DATA_PARALLEL
 
-    if(versioned)
-    {
+    if (versioned) {
 #define MAKE_HOMOGEN_TABLE(CType) res = convert_to_homogen_impl<CType, DLManagedTensor>(dml, q_obj);
         SET_CTYPE_FROM_DAL_TYPE(dtype,
-                        MAKE_HOMOGEN_TABLE,
-                        throw std::invalid_argument("Found unsupported array type"));
+                                MAKE_HOMOGEN_TABLE,
+                                throw std::invalid_argument("Found unsupported array type"));
 #undef MAKE_HOMOGEN_TABLE
-    } else 
-    {
-#define MAKE_HOMOGEN_TABLE(CType) res = convert_to_homogen_impl<CType, DLManagedTensorVersioned>(dmlv, q_obj);
+    }
+    else {
+#define MAKE_HOMOGEN_TABLE(CType) \
+    res = convert_to_homogen_impl<CType, DLManagedTensorVersioned>(dmlv, q_obj);
         SET_CTYPE_FROM_DAL_TYPE(dtype,
-                        MAKE_HOMOGEN_TABLE,
-                        throw std::invalid_argument("Found unsupported array type"));
+                                MAKE_HOMOGEN_TABLE,
+                                throw std::invalid_argument("Found unsupported array type"));
 #undef MAKE_HOMOGEN_TABLE
-
     }
 
     // take ownership of the capsule
     dlpack_take_ownership(caps);
     return res;
-
 }
-
-
 
 template <std::int64_t dim, typename Deleter>
 inline std::shared_ptr<dlpack_interface<dim>> convert(const DLManagedTensor& managed,
                                                       Deleter&& deleter) {
-
     // Get `DLTensor` struct.
     const DLTensor& tensor = managed.dl_tensor;
 

@@ -25,49 +25,9 @@ namespace py = pybind11;
 
 namespace oneapi::dal::python::dlpack {
 
-bool check_dlpack(const py::capsule& caps);
-void assert_dlpack(const py::capsule& caps);
-
-void* get_raw_ptr(const py::capsule& caps);
-dal::data_type get_dtype(const py::capsule& caps);
-std::int64_t get_dim_count(const py::capsule& caps);
-std::int64_t get_count_by_dim(std::int64_t dim, const py::capsule& caps);
-std::int64_t get_stride_by_dim(std::int64_t dim, const py::capsule& caps);
-
-void* get_raw_ptr(tensor_t& caps);
-dal::data_type get_dtype(tensor_t& caps);
-std::int64_t get_dim_count(tensor_t& caps);
-std::int64_t get_count_by_dim(std::int64_t dim, tensor_t& caps);
-std::int64_t get_stride_by_dim(std::int64_t dim, tensor_t& caps);
-
-void delete_dlpack(const py::capsule& caps);
-
-void assert_pointer(dal::data_type dt, void* ptr, const py::capsule& caps);
-
-template <typename Type>
-inline void assert_pointer(Type* ptr, const py::capsule& caps) {
-    constexpr auto dt = detail::make_data_type<Type>();
-    auto* raw = reinterpret_cast<void*>(ptr);
-    return assert_pointer(dt, raw, caps);
-}
-
-template <typename Type>
-inline void assert_pointer(const Type* ptr, const py::capsule& caps) {
-    return assert_pointer<Type>(const_cast<Type*>(ptr), caps);
-}
-
-template <typename Type>
-inline Type* get_ptr(tensor_t& tensor) {
-    void* raw = get_raw_ptr(tensor);
-    return reinterpret_cast<Type*>(raw);
-}
-
-template <typename Type>
-inline Type* get_ptr(const py::capsule& caps) {
-    void* raw = get_raw_ptr(caps);
-    Type* ptr = reinterpret_cast<Type*>(raw);
-    assert_pointer<Type>(ptr, caps);
-    return ptr;
-}
-
+void dlpack_take_ownership(const py::capsule& caps);
+std::int64_t get_ndim(tensor_t& caps);
+dal::data_layout get_dlpack_layout(const DLTensor& tensor,
+                                   const std::int64_t& r_count,
+                                   const std::int64_t& c_count)
 } // namespace oneapi::dal::python::dlpack
