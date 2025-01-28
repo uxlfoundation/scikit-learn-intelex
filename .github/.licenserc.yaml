@@ -49,7 +49,6 @@ header:
     - 'doc/daal4py/_static/style.css'
     - 'doc/daal4py/_templates/layout.html'
     - 'doc/sources/_static/custom.css'
-    - 'doc/sources/_static/version_switcher.js'
     - 'doc/sources/_templates/footer.html'
     - 'doc/sources/_templates/layout.html'
     - 'doc/sources/_templates/versions.html'
