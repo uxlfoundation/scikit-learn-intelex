@@ -52,7 +52,7 @@ inline std::int32_t get_ndim(const DLTensor& tensor) {
 dal::data_layout get_dlpack_layout(const DLTensor& tensor,
                                    const std::int64_t& r_count,
                                    const std::int64_t& c_count) {
-    const std : int64_t* strides = tensor.strides;
+    const std::int64_t* strides = tensor.strides;
     // if NULL then row major contiguous (see dlpack.h)
     // if 1 column array, also row major
     // if strides of rows = 1 element, and columns = c_count, also row major
