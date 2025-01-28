@@ -49,9 +49,11 @@ inline std::int32_t get_ndim(const DLTensor& tensor) {
     return ndim;
 }
 
-dal::data_layout get_dlpack_layout(const DLTensor& tensor,
-                                   const std::int64_t& r_count,
-                                   const std::int64_t& c_count) {
+dal::data_layout get_dlpack_layout(const DLTensor& tensor) {
+    // get shape, if 1 dimensional, force col count to 1
+    std::int64_t row_count, col_count;
+    col_count = get_ndim(tensor) == 1 ? 1l : tensor.shape[1];
+    row_count = tensor.shape[0];
     const std::int64_t* strides = tensor.strides;
     // if NULL then row major contiguous (see dlpack.h)
     // if 1 column array, also row major
@@ -67,7 +69,7 @@ dal::data_layout get_dlpack_layout(const DLTensor& tensor,
     }
 }
 
-bool check_dlpack_oneAPI_device(DLDeviceType& device) {
+bool check_dlpack_oneAPI_device(const DLDeviceType& device) {
     if (device == DLDeviceType::kDLOneAPI) {
 #if ONEDAL_DATA_PARALLEL
         return true;
@@ -76,7 +78,7 @@ bool check_dlpack_oneAPI_device(DLDeviceType& device) {
             "Input array located on a oneAPI device, but sklearnex installation does not have SYCL support.");
 #endif // ONEDAL_DATA_PARALLEL
     }
-    else if (tensor.device.device_type != DLDeviceType::kDLCPU) {
+    else if (device != DLDeviceType::kDLCPU) {
 #if ONEDAL_DATA_PARALLEL
         throw std::runtime_error("Input array not located on a supported device or CPU");
 #else
