@@ -113,6 +113,7 @@ dal::table convert_to_table(py::object obj, py::object q_obj) {
     bool readonly = false;
     DLManagedTensor* dlm;
     DLManagedTensorVersioned* dlmv;
+    DLTensor tensor;
     dal::data_type dtype;
     // extract __dlpack__ attribute from the inp_obj
     // this function should only be called if already checked to have this attr
@@ -122,6 +123,7 @@ dal::table convert_to_table(py::object obj, py::object q_obj) {
     PyObject* capsule = caps.ptr();
     if (PyCapsule_IsValid(capsule, "dltensor")) {
         dlm = caps.get_pointer<DLManagedTensor>();
+        tensor = dlm->dl_tensor;
         dtype = convert_dlpack_to_dal_type(dlm->dl_tensor.dtype);
     }
     else if (PyCapsule_IsValid(capsule, "dltensor_versioned")) {
@@ -129,13 +131,15 @@ dal::table convert_to_table(py::object obj, py::object q_obj) {
         if (dlmv->version.major > DLPACK_MAJOR_VERSION) {
             throw std::runtime_error("dlpack tensor version newer than supported");
         }
+        tensor = dlmv->dl_tensor;
         versioned = true;
         readonly = (dlmv->flags & DLPACK_FLAG_BITMASK_READ_ONLY != 0);
-        dtype = convert_dlpack_to_dal_type(dlmv->dl_tensor.dtype);
     }
     else {
         throw std::runtime_error("unable to extract dltensor");
     }
+
+    dtype = convert_dlpack_to_dal_type(tensor.dtype);
 
     // if there is a queue, check that the data matches the necessary precision.
 #ifdef ONEDAL_DATA_PARALLEL
