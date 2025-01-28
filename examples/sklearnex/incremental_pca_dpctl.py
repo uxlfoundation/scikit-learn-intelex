@@ -23,7 +23,8 @@ import dpctl.tensor as dpt
 # Import estimator via sklearnex's patch mechanism from sklearn
 from sklearnex import patch_sklearn, sklearn_is_patched
 
-patch_sklearn()
+# IncrementalPCA is currently in preview module, so extra flag is required
+patch_sklearn(preview=True)
 
 # Function that can validate current state of patching
 sklearn_is_patched()
