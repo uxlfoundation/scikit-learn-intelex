@@ -91,7 +91,7 @@ bool check_dlpack_oneAPI_device(const DLDeviceType& device) {
     return false;
 }
 
-inline py::object regenerate_layout(const py::object& obj) {
+py::object regenerate_layout(const py::object& obj) {
     py::object copy;
     if (py::hasattr(obj, "copy")) {
         copy = obj.attr("copy")();
@@ -106,7 +106,7 @@ inline py::object regenerate_layout(const py::object& obj) {
     return copy;
 }
 
-inline py::object reduce_precision(const py::object& obj) {
+py::object reduce_precision(const py::object& obj) {
     py::object copy;
 
     // If the queue exists, doesn't have the fp64 aspect, and the data is float64

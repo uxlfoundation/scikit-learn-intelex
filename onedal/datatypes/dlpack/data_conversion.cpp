@@ -133,7 +133,7 @@ dal::table convert_to_table(py::object obj, py::object q_obj) {
         }
         tensor = dlmv->dl_tensor;
         versioned = true;
-        readonly = (dlmv->flags & DLPACK_FLAG_BITMASK_READ_ONLY != 0);
+        readonly = (dlmv->flags & DLPACK_FLAG_BITMASK_READ_ONLY) != 0;
     }
     else {
         throw std::runtime_error("unable to extract dltensor");
