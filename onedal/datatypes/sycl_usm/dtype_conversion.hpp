@@ -23,7 +23,6 @@
 #include "oneapi/dal/common.hpp"
 #include "onedal/datatypes/dtype_dispatcher.hpp"
 
-
 namespace py = pybind11;
 
 namespace oneapi::dal::python::sycl_usm {
