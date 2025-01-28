@@ -30,12 +30,12 @@ using namespace pybind11::literals;
 namespace oneapi::dal::python::dlpack {
 
 template <typename T, typename managed_t>
-inline dal::homogen_table convert_to_homogen_impl(py::object obj, const managed_t& dlm_tensor, py::object q_obj) {
+inline dal::homogen_table convert_to_homogen_impl(py::object obj,   managed_t& dlm_tensor, py::object q_obj) {
     dal::homogen_table res{};
     DLTensor tensor = dlm_tensor.dl_tensor;
     // Versioned has a readonly flag that can be used to block modification
     bool readonly = std::is_same_v<managed_t, DLManagedTensorVersioned> &&
-                    reinterpret_cast<bool>(dlm_tensor.flags & DLPACK_FLAG_BITMASK_READ_ONLY);
+                    (dlm_tensor.flags & DLPACK_FLAG_BITMASK_READ_ONLY != 0);
 
     // generate queue from dlpack device information
 #ifdef ONEDAL_DATA_PARALLEL
@@ -94,7 +94,7 @@ inline dal::homogen_table convert_to_homogen_impl(py::object obj, const managed_
     }
 
     // Get pointer to the data following dlpack.h conventions.
-    const auto* const ptr = reinterpret_cast<const T*>(tensor.data + tensor.byte_offset);
+    const auto* const ptr = reinterpret_cast<const T*>(tensor.data); //+ tensor.byte_offset);
     
     // if a nullptr, return an empty.
     if (!ptr)
@@ -106,7 +106,7 @@ inline dal::homogen_table convert_to_homogen_impl(py::object obj, const managed_
     // and decreasing the object's reference count
     const auto deleter = [dlm_tensor](const T *data) {
         if (dlm_tensor.deleter != nullptr) {
-            dlm_tensor.deleter(dlm_tensor);
+            dlm_tensor.deleter(&dlm_tensor);
         }
     };
 
