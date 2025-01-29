@@ -373,7 +373,6 @@ Software Requirements
       - Windows* Server 2019 or newer
       - Intel® GPU drivers
       - DPC++ runtime libraries
-      - Python package ``dpctl``
 
       .. important::
 

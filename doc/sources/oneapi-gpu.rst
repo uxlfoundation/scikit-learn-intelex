@@ -18,16 +18,16 @@
 oneAPI and GPU support in |intelex|
 ##############################################################
 
-|intelex| supports oneAPI concepts, which
-means that algorithms can be executed on different devices: CPUs and GPUs.
-This is done via integration with
-`dpctl <https://intelpython.github.io/dpctl/latest/index.html>`_ package that
-implements core oneAPI concepts like queues and devices.
+|intelex| can execute computations on different devices (CPUs, GPUs, FPGAs) through the SYCL framework in oneAPI.
+
+The device used for computations can be controlled through the target offloading functionality (e.g. through ``config_context(target_offload="gpu")``), but for finer-grained controlled (e.g. operating on arrays that are already in a given device's memory), it can also interact with objects from package `dpctl <https://intelpython.github.io/dpctl/latest/index.html>`_ , which offers Python bindings for SYCL concepts such as devices, queues, and USM (unified shared memory) arrays.
+
+While not strictly required, package ``dpctl`` is recommended for a better experience on GPUs.
 
 Prerequisites
 -------------
 
-For execution on GPU, DPC++ compiler runtime and driver are required, as well as Python package ``dpctl``. Refer to `DPC++ system
+For execution on GPUs and FPGAs, DPC++ compiler runtime and driver are required. Refer to `DPC++ system
 requirements <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`_ for details.
 
 DPC++ compiler runtime can be installed either from PyPI or Conda:
@@ -44,23 +44,52 @@ DPC++ compiler runtime can be installed either from PyPI or Conda:
 
      conda install dpcpp_cpp_rt -c conda-forge
 
-Likewise for ``dpctl``:
-
-- Install from PyPI::
-
-     pip install dpctl
-
-- Install using Conda from Intel's repository::
-
-     conda install dpctl -c https://software.repos.intel.com/python/conda/
-
-*(Package dpctl is not yet available in conda-forge)*
 
 Device offloading
 -----------------
 
-|intelex| offers two options for running an algorithm on a
-specific device with the help of dpctl:
+|intelex| offers two options for running an algorithm on a specified device:
+
+- Use global configurations of |intelex|\*:
+
+  1. The :code:`target_offload` argument (in ``config_context`` and in ``set_config`` / ``get_config``)
+     can be used to set the device primarily used to perform computations. Accepted data types are
+     :code:`str` and :code:`dpctl.SyclQueue`. Strings must match to device names recognized by
+     the SYCL* device filter selector - for example, ``"gpu"``. If passing ``"auto"``,
+     the device will be deduced from the location of the input data. Examples:
+
+     .. code-block:: python
+        
+        from sklearnex import config_context
+        from sklearnex.linear_model import LinearRegression
+        
+        with config_context(target_offload="gpu"):
+            model = LinearRegression().fit(X, y)
+
+     .. code-block:: python
+        
+        from sklearnex import set_config
+        from sklearnex.linear_model import LinearRegression
+        
+        set_config(target_offload="gpu")
+        model = LinearRegression().fit(X, y)
+
+
+     If passing a string different than ``"auto"``,
+     it must be a device 
+
+  2. The :code:`allow_fallback_to_host` argument in those same configuration functions
+     is a Boolean flag. If set to :code:`True`, the computation is allowed
+     to fallback to the host device when a particular estimator does not support
+     the selected device. The default value is :code:`False`.
+
+These options can be set using :code:`sklearnex.set_config()` function or
+:code:`sklearnex.config_context`. To obtain the current values of these options,
+call :code:`sklearnex.get_config()`.
+
+.. note::
+     Functions :code:`set_config`, :code:`get_config` and :code:`config_context`
+     are always patched after the :code:`sklearnex.patch_sklearn()` call.
 
 - Pass input data as `dpctl.tensor.usm_ndarray <https://intelpython.github.io/dpctl/latest/docfiles/dpctl/usm_ndarray.html#dpctl.tensor.usm_ndarray>`_ to the algorithm.
 
@@ -77,27 +106,6 @@ specific device with the help of dpctl:
     Note that only the algorithms in |intelex| support
     :code:`usm_ndarray`. The algorithms from the stock version of scikit-learn
     do not support this feature.
-- Use global configurations of |intelex|\*:
-
-  1. The :code:`target_offload` option can be used to set the device primarily
-     used to perform computations. Accepted data types are :code:`str` and
-     :code:`dpctl.SyclQueue`. If you pass a string to :code:`target_offload`,
-     it should either be ``"auto"``, which means that the execution
-     context is deduced from the location of input data, or a string
-     with SYCL* filter selector. The default value is ``"auto"``.
-
-  2. The :code:`allow_fallback_to_host` option
-     is a Boolean flag. If set to :code:`True`, the computation is allowed
-     to fallback to the host device when a particular estimator does not support
-     the selected device. The default value is :code:`False`.
-
-These options can be set using :code:`sklearnex.set_config()` function or
-:code:`sklearnex.config_context`. To obtain the current values of these options,
-call :code:`sklearnex.get_config()`.
-
-.. note::
-     Functions :code:`set_config`, :code:`get_config` and :code:`config_context`
-     are always patched after the :code:`sklearnex.patch_sklearn()` call.
 
 .. rubric:: Compatibility considerations
 
@@ -108,7 +116,7 @@ described above for device offloading instead of using :code:`sycl_context`.
 Example
 -------
 
-An example on how to patch your code with Intel CPU/GPU optimizations:
+A full example of how to patch your code with Intel CPU/GPU optimizations:
 
 .. code-block:: python
 
