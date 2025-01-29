@@ -211,6 +211,10 @@ To install |intelex|, run:
      - [CPU, GPU]
 
 
+.. tip:: Running on GPU requires additional dependencies, see :doc:`oneapi-gpu`.
+
+.. note:: Wheels are only available for x86-64 architecture.
+
 
 Install from Anaconda* Cloud
 ********************************************
@@ -304,7 +308,9 @@ To prevent version conflicts, we recommend installing `scikit-learn-intelex` int
            - [CPU]
            - [CPU]
 
+.. tip:: Running on GPU requires additional dependencies, see :doc:`oneapi-gpu`.
 
+.. note:: Packages are only available for x86-64 architecture.
 
 Build from Sources
 **********************
@@ -331,19 +337,19 @@ Hardware Requirements
 
    .. tab:: CPU
 
-      All processors with ``x86`` architecture with at least one of the following instruction sets:
+      Any processors with ``x86`` architecture with at least one of the following instruction sets:
 
         - SSE2
         - SSE4.2
         - AVX2
         - AVX512
 
-      .. note:: ARM* architecture is not supported.
+      .. note::
+        Note: pre-built packages are not provided for other CPU architectures. See :ref:`Build from Sources` for ARM.
 
    .. tab:: GPU
 
-      - All Intel® integrated and discrete GPUs
-      - Intel® GPU drivers
+      - Any Intel® integrated and discrete GPUs
 
 
 .. tip:: Intel(R) processors provide better performance than other CPUs. Read more about hardware comparison in our :ref:`blogs <blogs>`.
@@ -365,6 +371,9 @@ Software Requirements
       - Linux* OS: Ubuntu* 18.04 or newer
       - Windows* OS 10 or newer
       - Windows* Server 2019 or newer
+      - Intel® GPU drivers
+      - DPC++ runtime libraries
+      - Python package ``dpctl``
 
       .. important::
 

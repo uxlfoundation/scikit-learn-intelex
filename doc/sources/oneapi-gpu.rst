@@ -27,18 +27,34 @@ implements core oneAPI concepts like queues and devices.
 Prerequisites
 -------------
 
-For execution on GPU, DPC++ compiler runtime and driver are required. Refer to `DPC++ system
+For execution on GPU, DPC++ compiler runtime and driver are required, as well as Python package ``dpctl``. Refer to `DPC++ system
 requirements <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`_ for details.
 
-DPC++ compiler runtime can be installed either from PyPI or Anaconda:
+DPC++ compiler runtime can be installed either from PyPI or Conda:
 
 - Install from PyPI::
 
      pip install dpcpp-cpp-rt
 
-- Install using Conda via the Intel repository::
+- Install using Conda from Intel's repository::
 
      conda install dpcpp_cpp_rt -c https://software.repos.intel.com/python/conda/
+
+- Install using Conda from the conda-forge channel::
+
+     conda install dpcpp_cpp_rt -c conda-forge
+
+Likewise for ``dpctl``:
+
+- Install from PyPI::
+
+     pip install dpctl
+
+- Install using Conda from Intel's repository::
+
+     conda install dpctl -c https://software.repos.intel.com/python/conda/
+
+*(Package dpctl is not yet available in conda-forge)*
 
 Device offloading
 -----------------
