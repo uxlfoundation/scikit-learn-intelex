@@ -31,7 +31,7 @@ if dpctl_available:
 
 from onedal.primitives import linear_kernel
 from onedal.tests.utils._dataframes_support import (
-    array_api_modules
+    array_api_modules,
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
