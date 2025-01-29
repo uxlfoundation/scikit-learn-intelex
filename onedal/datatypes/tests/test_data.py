@@ -323,32 +323,25 @@ def test_table_conversions_sycl_usm(dataframe, queue, order, data_shape, dtype):
     )
 
 
-@pytest.mark.skipif(
-    not _is_dpc_backend,
-    reason="__sycl_usm_array_interface__ support requires DPC backend.",
-)
 @pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("dpctl,dpnp", "cpu,gpu")
+    "dataframe,queue", get_dataframes_and_queues("numpy,dpctl,dpnp,array_api", "cpu,gpu")
 )
 @pytest.mark.parametrize("data_shape", unsupported_data_shapes)
-def test_interop_invalid_shape_sycl_usm(dataframe, queue, data_shape):
+def test_interop_invalid_shape(dataframe, queue, data_shape):
     X = np.zeros(data_shape)
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    sua_iface, _, _ = _get_sycl_namespace(X)
 
-    expected_err_msg = (
-        "Unable to convert from SUA interface: only 1D & 2D tensors are allowed"
-    )
+    expected_err_msg = r"Input array has wrong dimensionality \(must be 2d\)."
+    if dataframe in "dpctl,dpnp":
+        expected_err_msg = (
+            "Unable to convert from SUA interface: only 1D & 2D tensors are allowed"
+        )
     with pytest.raises(ValueError, match=expected_err_msg):
         to_table(X)
 
 
-@pytest.mark.skipif(
-    not _is_dpc_backend,
-    reason="__sycl_usm_array_interface__ support requires DPC backend.",
-)
 @pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("dpctl,dpnp", "cpu,gpu")
+    "dataframe,queue", get_dataframes_and_queues("numpy,dpctl,dpnp,array_api", "cpu,gpu")
 )
 @pytest.mark.parametrize(
     "dtype",
@@ -358,22 +351,22 @@ def test_interop_invalid_shape_sycl_usm(dataframe, queue, data_shape):
         pytest.param(np.uint64, id=np.dtype(np.uint64).name),
     ],
 )
-def test_interop_unsupported_dtypes_sycl_usm(dataframe, queue, dtype):
+def test_interop_unsupported_dtypes(dataframe, queue, dtype):
     # sua iface interobility supported only for oneDAL supported dtypes
     # for input data: int32, int64, float32, float64.
     # Checking some common dtypes supported by dpctl, dpnp for exception
     # raise.
     X = np.zeros((10, 20), dtype=dtype)
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    sua_iface, _, _ = _get_sycl_namespace(X)
-
-    expected_err_msg = "Unable to convert from SUA interface: unknown data type"
+    expected_err_msg = "Found unsupported array type"
+    if dataframe in "dpctl,dpnp":
+        expected_err_msg = "Unable to convert from SUA interface: unknown data type"
     with pytest.raises(ValueError, match=expected_err_msg):
         to_table(X)
 
 
 @pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("numpy,dpctl,dpnp,array_api", "cpu,gpu")
+    "dataframe,queue", get_dataframes_and_queues("numpy,dpctl,dpnp", "cpu,gpu")
 )
 def test_to_table_non_contiguous_input(dataframe, queue):
     if dataframe in "dpnp,dpctl" and not _is_dpc_backend:
@@ -381,7 +374,6 @@ def test_to_table_non_contiguous_input(dataframe, queue):
     X, _ = np.mgrid[:10, :10]
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     X = X[:, :3]
-    sua_iface, _, _ = _get_sycl_namespace(X)
     # X expected to be non-contiguous.
     assert not X.flags.c_contiguous and not X.flags.f_contiguous
     X_t = to_table(X)
