@@ -85,7 +85,7 @@ This example shows how to patch Intel(R) extension for Scikit-Learn by modifing 
 
     # The use of the original Scikit-learn is not changed
     X = np.array([[1,  2], [1,  4], [1,  0],
-                [10, 2], [10, 4], [10, 0]])
+                  [10, 2], [10, 4], [10, 0]])
     kmeans = KMeans(n_clusters=2, random_state=0).fit(X)
     print(f"kmeans.labels_ = {kmeans.labels_}")
 
@@ -316,9 +316,7 @@ Software Requirements
 
    .. tab:: GPU
 
-      - Linux* OS: Ubuntu* 18.04 or newer
-      - Windows* OS 10 or newer
-      - Windows* Server 2019 or newer
+      - A Linux* pr Windows* version supported by DPC++
       - Intel® GPGPU drivers
       - DPC++ runtime libraries
 
