@@ -91,7 +91,7 @@ inline dal::homogen_table convert_to_homogen_impl(managed_t* dlm_tensor,
         }
         return res;
 #else
-        throw std::runtime_error(
+        throw std::invalid_argument(
             "Input array located on a oneAPI device, but sklearnex installation does not have SYCL support.");
 #endif
     }

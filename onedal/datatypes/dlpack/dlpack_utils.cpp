@@ -49,7 +49,7 @@ std::int32_t get_ndim(const DLTensor& tensor) {
     // check if 1 or 2 dimensional, and return the number of dimensions
     const std::int32_t ndim = tensor.ndim;
     if (ndim != 2 && ndim != 1) {
-        throw std::runtime_error("Input array has wrong dimensionality (must be 2d).");
+        throw std::invalid_argument("Input array has wrong dimensionality (must be 2d).");
     }
     return ndim;
 }
@@ -83,9 +83,9 @@ bool check_dlpack_oneAPI_device(const DLDeviceType& device) {
     }
     else if (device != DLDeviceType::kDLCPU) {
 #if ONEDAL_DATA_PARALLEL
-        throw std::runtime_error("Input array not located on a supported device or CPU");
+        throw std::invalid_argument("Input array not located on a supported device or CPU");
 #else
-        throw std::runtime_error("Input array not located on CPU");
+        throw std::invalid_argument("Input array not located on CPU");
 #endif
     }
     return false;
@@ -119,7 +119,7 @@ py::object reduce_precision(const py::object& obj) {
         copy = space.attr("astype")(obj, space.attr("float32"));
     }
     else {
-        throw std::runtime_error("Data has higher precision than the supported device");
+        throw std::invalid_argument("Data has higher precision than the supported device");
     }
     return copy;
 }

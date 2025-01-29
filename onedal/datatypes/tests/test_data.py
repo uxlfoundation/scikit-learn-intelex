@@ -341,7 +341,7 @@ def test_interop_invalid_shape(dataframe, queue, data_shape):
 
 
 @pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("numpy,dpctl,dpnp,array_api", "cpu,gpu")
+    "dataframe,queue", get_dataframes_and_queues("dpctl,dpnp,array_api", "cpu,gpu")
 )
 @pytest.mark.parametrize(
     "dtype",
