@@ -15,7 +15,6 @@
 # ===============================================================================
 
 import numpy as np
-
 from daal4py.sklearn._utils import get_dtype, make2d
 
 from .._config import _get_config
@@ -60,7 +59,7 @@ class BaseDBSCAN(BaseEstimator, ClusterMixin):
 
     def _fit(self, X, y, sample_weight, module, queue):
         use_raw_input = _get_config().get("use_raw_input", False) is True
-        sua_iface, _, _ = _get_sycl_namespace(X)
+        sua_iface, xp, _ = _get_sycl_namespace(X)
 
         if not use_raw_input:
             X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
@@ -83,8 +82,12 @@ class BaseDBSCAN(BaseEstimator, ClusterMixin):
                 sycl_queue=queue,
             ).ravel()
         else:
-            self.core_sample_indices_ = np.array([], dtype=np.intc)
-        self.components_ = np.take(X, self.core_sample_indices_, axis=0)
+            # construct keyword arguments for different namespaces (dptcl takes sycl_queue)
+            kwargs = {"dtype": xp.int32}  # always the same
+            if xp is not np:
+                kwargs["sycl_queue"] = queue
+            self.core_sample_indices_ = xp.empty((0,), **kwargs)
+        self.components_ = xp.take(X, self.core_sample_indices_, axis=0)
         self.n_features_in_ = X.shape[1]
         return self
 
