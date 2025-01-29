@@ -33,7 +33,7 @@ inline dal::homogen_table convert_to_homogen_impl(managed_t* dlm_tensor,
 
     DLTensor tensor = dlm_tensor->dl_tensor;
 #ifdef ONEDAL_DATA_PARALLEL
-    
+
 #endif // ONEDAL_DATA_PARALLEL
 
     // get shape, if 1 dimensional, force col count to 1
