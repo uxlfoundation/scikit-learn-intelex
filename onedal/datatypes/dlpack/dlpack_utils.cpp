@@ -77,23 +77,17 @@ dal::data_layout get_dlpack_layout(const DLTensor& tensor) {
 
 bool check_dlpack_oneAPI_device(const DLDeviceType& device) {
     // check if dlpack tensor is 1) supported and 2) on a SYCL device
-#if ONEDAL_DATA_PARALLEL
+
     if (device == DLDeviceType::kDLOneAPI) {
         return true;
     }
     else if (device != DLDeviceType::kDLCPU) {
+#if ONEDAL_DATA_PARALLEL
         throw std::runtime_error("Input array not located on a supported device or CPU");
-    }
 #else
-    if (device == DLDeviceType::kDLOneAPI) {
-        throw std::runtime_error(
-            "Input array located on a oneAPI device, but sklearnex installation does not have SYCL support.");
-    }
-    else if (device != DLDeviceType::kDLCPU) {
         throw std::runtime_error("Input array not located on CPU");
+#endif
     }
-#endif // ONEDAL_DATA_PARALLEL
-
     return false;
 }
 

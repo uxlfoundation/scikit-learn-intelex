@@ -33,14 +33,6 @@ inline dal::homogen_table convert_to_homogen_impl(managed_t* dlm_tensor,
 
     DLTensor tensor = dlm_tensor->dl_tensor;
 
-    // get shape, if 1 dimensional, force col count to 1
-    std::int64_t row_count, col_count;
-    row_count = tensor.shape[0];
-    col_count = get_ndim(tensor) == 1 ? 1l : tensor.shape[1];
-
-    // get data layout for homogeneous check
-    const dal::data_layout layout = get_dlpack_layout(tensor);
-
     // Get pointer to the data following dlpack.h conventions.
     const auto* const ptr = reinterpret_cast<const T*>(tensor.data); //+ tensor.byte_offset);
 
@@ -49,18 +41,25 @@ inline dal::homogen_table convert_to_homogen_impl(managed_t* dlm_tensor,
         return res;
     }
 
+    // get shape, if 1 dimensional, force col count to 1
+    std::int64_t row_count, col_count;
+    row_count = tensor.shape[0];
+    col_count = get_ndim(tensor) == 1 ? 1l : tensor.shape[1];
+
+    // get data layout for homogeneous check
+    const dal::data_layout layout = get_dlpack_layout(tensor);
+
     // create the dlpack deleter, which requires calling the deleter from the managed DL tensor.
     // This must be done instead of a decref, as the data doesn't necessarily come from python,
-    // It ies expected that deleter handles memory cleanup (including possible
-    // python decrefs)
+    // It is expected that deleter handles memory cleanup (including possible python decrefs)
     const auto deleter = [dlm_tensor](const T* data) {
         if (dlm_tensor->deleter != nullptr) {
             dlm_tensor->deleter(dlm_tensor);
         }
     };
 
-    // check_dlpack_oneAPI_device will check if on a supported device, and will throw an error
-    // if not.  If no error is thrown, it returns true if data is on a oneAPI device.
+    // check_dlpack_oneAPI_device will check if data is on a oneAPI device. If it is on an 
+    // unsupported device it will throw an error.
     if (check_dlpack_oneAPI_device(tensor.device.device_type)) {
 #ifdef ONEDAL_DATA_PARALLEL
         // if located on a SYCL device, use the queue.
@@ -87,6 +86,9 @@ inline dal::homogen_table convert_to_homogen_impl(managed_t* dlm_tensor,
             MAKE_QUEUED_HOMOGEN(mut_ptr);
         }
         return res;
+#else 
+        throw std::runtime_error(
+            "Input array located on a oneAPI device, but sklearnex installation does not have SYCL support.");
 #endif
     }
 
@@ -122,7 +124,6 @@ dal::table convert_to_table(py::object obj, py::object q_obj) {
     if (PyCapsule_IsValid(capsule, "dltensor")) {
         dlm = caps.get_pointer<DLManagedTensor>();
         tensor = dlm->dl_tensor;
-        dtype = convert_dlpack_to_dal_type(dlm->dl_tensor.dtype);
     }
     else if (PyCapsule_IsValid(capsule, "dltensor_versioned")) {
         dlmv = caps.get_pointer<DLManagedTensorVersioned>();
@@ -145,7 +146,7 @@ dal::table convert_to_table(py::object obj, py::object q_obj) {
     if (!q_obj.is(py::none()) && !q_obj.attr("sycl_device").attr("has_aspect_fp64").cast<bool>() &&
         dtype == dal::data_type::float64) {
         // If the queue exists, doesn't have the fp64 aspect, and the data is float64
-        // then cast it to float32
+        // then cast it to float32 (using reduce_precision)
         py::object copy = reduce_precision(obj);
         res = convert_to_table(copy, q_obj);
         return res;
@@ -155,7 +156,7 @@ dal::table convert_to_table(py::object obj, py::object q_obj) {
     // unusual data format found, try to make contiguous, otherwise throw error
     // error throw located in regenerate_layout
     if (get_dlpack_layout(tensor) == dal::data_layout::unknown) {
-        // NOTE: this attempts to make a C-contiguous deep copy of the data
+        // NOTE: this attempts to make a contiguous deep copy of the data
         // if possible, this is expected to be a special case
         py::object copy = regenerate_layout(obj);
         res = convert_to_table(copy, q_obj);
