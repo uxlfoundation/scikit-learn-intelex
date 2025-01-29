@@ -202,7 +202,7 @@ To install |intelex|, run:
    * - Modes
      - Single, SPMD
 
-.. tip:: Running on GPU requires additional dependencies, see :doc:`oneapi-gpu`. SPMD mode additionally requires package ``dpctl``, and package `mpi4py <https://mpi4py.readthedocs.io/en/stable/install.html#using-pip>`_ built with Intel's MPI as backed.
+.. tip:: Running on GPU involves additional dependencies, see :doc:`oneapi-gpu`. SPMD mode additionally requires package ``dpctl``, and package `mpi4py <https://mpi4py.readthedocs.io/en/stable/install.html#using-pip>`_ built with Intel's MPI as backed.
 
 .. note:: Wheels are only available for x86-64 architecture.
 
@@ -254,7 +254,7 @@ To prevent version conflicts, we recommend installing `scikit-learn-intelex` int
          * - Modes
            - Single, SPMD
 
-.. tip:: Running on GPU requires additional dependencies, see :doc:`oneapi-gpu`. SPMD mode additionally requires package ``dpctl``, and package `mpi4py <https://mpi4py.readthedocs.io/en/stable/install.html#using-conda>`_ built with Intel's MPI as backend (``conda install -c https://software.repos.intel.com/python/conda/ mpi4py``).
+.. tip:: Running on GPU involves additional dependencies, see :doc:`oneapi-gpu`. SPMD mode additionally requires package ``dpctl``, and package `mpi4py <https://mpi4py.readthedocs.io/en/stable/install.html#using-conda>`_ built with Intel's MPI as backend (``conda install -c https://software.repos.intel.com/python/conda/ mpi4py``).
 
 .. note:: Packages are only available for x86-64 architecture.
 

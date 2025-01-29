@@ -20,7 +20,7 @@ oneAPI and GPU support in |intelex|
 
 |intelex| can execute computations on different devices (CPUs, GPUs, FPGAs) through the SYCL framework in oneAPI.
 
-The device used for computations can be controlled through the target offloading functionality (e.g. through ``config_context(target_offload="gpu")``), but for finer-grained controlled (e.g. operating on arrays that are already in a given device's memory), it can also interact with objects from package `dpctl <https://intelpython.github.io/dpctl/latest/index.html>`_ , which offers Python bindings for SYCL concepts such as devices, queues, and USM (unified shared memory) arrays.
+The device used for computations can be controlled through the target offloading functionality (e.g. through ``sklearnex.config_context(target_offload="gpu")``), but for finer-grained controlled (e.g. operating on arrays that are already in a given device's memory), it can also interact with objects from package `dpctl <https://intelpython.github.io/dpctl/latest/index.html>`_ , which offers a Python interface over SYCL concepts such as devices, queues, and USM (unified shared memory) arrays.
 
 While not strictly required, package ``dpctl`` is recommended for a better experience on GPUs.
 
@@ -128,7 +128,7 @@ A full example of how to patch your code with Intel CPU/GPU optimizations:
    from sklearn.cluster import DBSCAN
 
    X = np.array([[1., 2.], [2., 2.], [2., 3.],
-               [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
+                [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
    with config_context(target_offload="gpu:0"):
       clustering = DBSCAN(eps=3, min_samples=2).fit(X)
 
