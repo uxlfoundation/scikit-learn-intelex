@@ -49,7 +49,7 @@ std::int32_t get_ndim(const DLTensor& tensor) {
     // check if 1 or 2 dimensional, and return the number of dimensions
     const std::int32_t ndim = tensor.ndim;
     if (ndim != 2 && ndim != 1) {
-        throw std::invalid_argument("Input array has wrong dimensionality (must be 2d).");
+        throw std::length_error("Input array has wrong dimensionality (must be 2d).");
     }
     return ndim;
 }
