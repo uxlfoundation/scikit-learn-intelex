@@ -60,6 +60,7 @@ jobs:
       - name: Get run ID of "Nightly-build" workflow
         id: get-run-id
         run: |
+          bash .github/scripts/install_gh_cli.sh
           OTHER_REPO="uxlfoundation/oneDAL"
           WF_NAME="Nightly-build"
           JQ_QUERY='map(select(.event == "workflow_dispatch" or .event == "schedule")) | .[0].databaseId'
