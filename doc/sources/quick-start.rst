@@ -295,7 +295,7 @@ Hardware Requirements
 
    .. tab:: GPU
 
-      - Any Intel® integrated or discrete GPU
+      - Any Intel® accelerator device (GPU, FPGA) `supported by DPC++ <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`_
 
 
 .. tip:: Intel(R) processors provide better performance than other CPUs. Read more about hardware comparison in our :ref:`blogs <blogs>`.
@@ -317,7 +317,7 @@ Software Requirements
       - Linux* OS: Ubuntu* 18.04 or newer
       - Windows* OS 10 or newer
       - Windows* Server 2019 or newer
-      - Intel® GPU drivers
+      - Intel® GPGPU drivers
       - DPC++ runtime libraries
 
       .. important::

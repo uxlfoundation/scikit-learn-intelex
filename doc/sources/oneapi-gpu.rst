@@ -24,11 +24,12 @@ The device used for computations can be controlled through the target offloading
 
 While not strictly required, package ``dpctl`` is recommended for a better experience on GPUs.
 
+.. important:: Be aware that GPU usage requires non-Python dependencies on your system, such as the `Intel(R) GPGPU Drivers <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`_.
+
 Prerequisites
 -------------
 
-For execution on GPUs and FPGAs, DPC++ compiler runtime and driver are required. Refer to `DPC++ system
-requirements <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`_ for details.
+For execution on GPUs and FPGAs, DPC++ runtime and GPGPU drivers are required.
 
 DPC++ compiler runtime can be installed either from PyPI or Conda:
 
@@ -44,6 +45,7 @@ DPC++ compiler runtime can be installed either from PyPI or Conda:
 
      conda install dpcpp_cpp_rt -c conda-forge
 
+For GPGPU driver installation instructions, see the general `DPC++ system requirements <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`_ sections corresponding to your operating system.
 
 Device offloading
 -----------------
