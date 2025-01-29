@@ -192,7 +192,7 @@ To install |intelex|, run:
 
 .. list-table::
    :align: left
-   
+
    * - Operating systems
      - Windows*, Linux*
    * - Python versions
@@ -202,7 +202,7 @@ To install |intelex|, run:
    * - Modes
      - Single, SPMD
 
-.. tip:: Running on GPU requires additional dependencies, see :doc:`oneapi-gpu`.
+.. tip:: Running on GPU requires additional dependencies, see :doc:`oneapi-gpu`. SPMD mode additionally requires package ``dpctl``, and package `mpi4py <https://mpi4py.readthedocs.io/en/stable/install.html#using-pip>`_ built with Intel's MPI as backed.
 
 .. note:: Wheels are only available for x86-64 architecture.
 
@@ -221,7 +221,7 @@ To prevent version conflicts, we recommend installing `scikit-learn-intelex` int
 
       To install, run::
 
-        conda install scikit-learn-intelex -c https://software.repos.intel.com/python/conda/
+        conda install -c https://software.repos.intel.com/python/conda/ scikit-learn-intelex
 
       .. list-table:: **Supported Configurations**
          :align: left
@@ -240,7 +240,7 @@ To prevent version conflicts, we recommend installing `scikit-learn-intelex` int
 
       To install, run::
 
-        conda install scikit-learn-intelex -c conda-forge
+        conda install -c conda-forge scikit-learn-intelex
 
       .. list-table:: **Supported Configurations**
          :align: left
@@ -250,11 +250,11 @@ To prevent version conflicts, we recommend installing `scikit-learn-intelex` int
          * - Python versions
            - 3.9, 3.10, 3.11, 3.12, 3.13
          * - Devices
-           - CPU
+           - CPU, GPU, FPGA
          * - Modes
-           - Single
+           - Single, SPMD
 
-.. tip:: Running on GPU requires additional dependencies, see :doc:`oneapi-gpu`.
+.. tip:: Running on GPU requires additional dependencies, see :doc:`oneapi-gpu`. SPMD mode additionally requires package ``dpctl``, and package `mpi4py <https://mpi4py.readthedocs.io/en/stable/install.html#using-conda>`_ built with Intel's MPI as backend (``conda install -c https://software.repos.intel.com/python/conda/ mpi4py``).
 
 .. note:: Packages are only available for x86-64 architecture.
 
@@ -324,7 +324,7 @@ Software Requirements
 
          If you use accelerators, refer to `oneAPI DPC++/C++ Compiler System Requirements <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`_.
 
-Intel(R) Extension for Scikit-learn is compatible with the last stable releases of scikit-learn:
+Intel(R) Extension for Scikit-learn is compatible with the latest stable releases of scikit-learn:
 
 * 1.0.X
 * 1.1.X
