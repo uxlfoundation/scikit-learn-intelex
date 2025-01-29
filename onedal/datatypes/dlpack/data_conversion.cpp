@@ -73,24 +73,21 @@ inline dal::homogen_table convert_to_homogen_impl(managed_t* dlm_tensor,
 #ifdef ONEDAL_DATA_PARALLEL
     if (tensor.device.device_type == DLDeviceType::kDLOneAPI) {
         // if located on a SYCL device, use the queue.
+#define MAKE_QUEUED_HOMOGEN(pointer)                     \
+    res = dal::homogen_table(queue,                      \
+                             pointer,                    \
+                             row_count,                  \
+                             col_count,                  \
+                             deleter,                    \
+                             std::vector<sycl::event>{}, \
+                             layout);
+
         if (readonly) {
-            res = dal::homogen_table(queue,
-                                     ptr,
-                                     row_count,
-                                     col_count,
-                                     deleter,
-                                     std::vector<sycl::event>{},
-                                     layout);
+            MAKE_QUEUED_HOMOGEN(ptr);
         }
         else {
             auto* const mut_ptr = const_cast<T*>(ptr);
-            res = dal::homogen_table(queue,
-                                     mut_ptr,
-                                     row_count,
-                                     col_count,
-                                     deleter,
-                                     std::vector<sycl::event>{},
-                                     layout);
+            MAKE_QUEUED_HOMOGEN(mut_ptr);
         }
         return res;
     }
