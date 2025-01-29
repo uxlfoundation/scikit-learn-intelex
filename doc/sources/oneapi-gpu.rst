@@ -39,11 +39,11 @@ DPC++ compiler runtime can be installed either from PyPI or Conda:
 
 - Install using Conda from Intel's repository::
 
-     conda install dpcpp_cpp_rt -c https://software.repos.intel.com/python/conda/
+     conda install -c https://software.repos.intel.com/python/conda/ dpcpp_cpp_rt
 
 - Install using Conda from the conda-forge channel::
 
-     conda install dpcpp_cpp_rt -c conda-forge
+     conda install -c conda-forge dpcpp_cpp_rt
 
 For GPGPU driver installation instructions, see the general `DPC++ system requirements <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`_ sections corresponding to your operating system.
 
