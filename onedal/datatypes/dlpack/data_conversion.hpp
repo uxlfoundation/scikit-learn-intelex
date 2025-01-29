@@ -35,6 +35,4 @@ namespace py = pybind11;
 
 dal::table convert_to_table(py::object obj, py::object q_obj = py::none());
 
-py::capsule construct_dlpack_capsule(const dal::table& input);
-
 } // namespace oneapi::dal::python::dlpack

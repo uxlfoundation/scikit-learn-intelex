@@ -32,9 +32,6 @@ inline dal::homogen_table convert_to_homogen_impl(managed_t* dlm_tensor,
     dal::homogen_table res{};
 
     DLTensor tensor = dlm_tensor->dl_tensor;
-#ifdef ONEDAL_DATA_PARALLEL
-
-#endif // ONEDAL_DATA_PARALLEL
 
     // get shape, if 1 dimensional, force col count to 1
     std::int64_t row_count, col_count;
@@ -174,7 +171,7 @@ dal::table convert_to_table(py::object obj, py::object q_obj) {
                             throw std::invalid_argument("Found unsupported array type"));
 #undef MAKE_HOMOGEN_TABLE
 
-    // take ownership of the capsule
+    // take ownership of the capsule, this is important to prevent data deletion
     dlpack_take_ownership(caps);
     return res;
 }
