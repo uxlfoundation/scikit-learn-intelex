@@ -198,7 +198,9 @@ To install |intelex|, run:
    * - Python versions
      - 3.9, 3.10, 3.11, 3.12, 3.13
    * - Devices
-     - CPU, GPU
+     - CPU, GPU, FPGA
+   * - Modes
+     - Single, SPMD
 
 Install from Anaconda* Cloud
 ********************************************
@@ -225,7 +227,9 @@ To prevent version conflicts, we recommend installing `scikit-learn-intelex` int
          * - Python versions
            - 3.9, 3.10, 3.11, 3.12, 3.13
          * - Devices
-           - CPU, GPU
+           - CPU, GPU, FPGA
+         * - Modes
+           - Single, SPMD
 
 
    .. tab:: Conda-Forge channel
@@ -243,6 +247,8 @@ To prevent version conflicts, we recommend installing `scikit-learn-intelex` int
            - 3.9, 3.10, 3.11, 3.12, 3.13
          * - Devices
            - CPU
+         * - Modes
+           - Single
 
 
 
