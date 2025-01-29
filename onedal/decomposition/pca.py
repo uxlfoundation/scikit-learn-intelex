@@ -141,8 +141,7 @@ class BasePCA(BaseEstimator, metaclass=ABCMeta):
         )
         return from_table(result.transformed_data)
     
-    def transform(self, X, queue=None):
-        return self.predict(X, queue=queue)
+    transform = predict
 
 
 class PCA(BasePCA):
