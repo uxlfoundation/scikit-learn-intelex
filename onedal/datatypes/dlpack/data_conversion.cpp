@@ -14,8 +14,6 @@
 * limitations under the License.
 *******************************************************************************/
 
-#include <type_traits>
-
 #include "oneapi/dal/table/homogen.hpp"
 #include "oneapi/dal/table/detail/homogen_utils.hpp"
 
@@ -32,18 +30,11 @@ inline dal::homogen_table convert_to_homogen_impl(managed_t* dlm_tensor,
                                                   bool readonly,
                                                   py::object q_obj) {
     dal::homogen_table res{};
-    DLTensor tensor = dlm_tensor->dl_tensor;
-    // generate queue from dlpack device information
-#ifdef ONEDAL_DATA_PARALLEL
-    sycl::queue queue;
-#endif // ONEDAL_DATA_PARALLEL
 
-    if (check_dlpack_oneAPI_device(tensor.device.device_type)) {
+    DLTensor tensor = dlm_tensor->dl_tensor;
 #ifdef ONEDAL_DATA_PARALLEL
-        queue = !q_obj.is(py::none()) ? get_queue_from_python(q_obj)
-                                      : get_queue_by_device_id(tensor.device.device_id);
+    
 #endif // ONEDAL_DATA_PARALLEL
-    }
 
     // get shape, if 1 dimensional, force col count to 1
     std::int64_t row_count, col_count;
@@ -61,8 +52,9 @@ inline dal::homogen_table convert_to_homogen_impl(managed_t* dlm_tensor,
         return res;
     }
 
-    // create the dlpack deleter, which requires calling the deleter. As the data doesn't
-    // necessarily come from python, the deleter handles memory cleanup (including possible
+    // create the dlpack deleter, which requires calling the deleter from the managed DL tensor.
+    // This must be done instead of a decref, as the data doesn't necessarily come from python,
+    // It ies expected that deleter handles memory cleanup (including possible
     // python decrefs)
     const auto deleter = [dlm_tensor](const T* data) {
         if (dlm_tensor->deleter != nullptr) {
@@ -70,8 +62,10 @@ inline dal::homogen_table convert_to_homogen_impl(managed_t* dlm_tensor,
         }
     };
 
+    // check_dlpack_oneAPI_device will check if on a supported device, and will throw an error
+    // if not.  If no error is thrown, it returns true if data is on a oneAPI device.
+    if (check_dlpack_oneAPI_device(tensor.device.device_type)) {
 #ifdef ONEDAL_DATA_PARALLEL
-    if (tensor.device.device_type == DLDeviceType::kDLOneAPI) {
         // if located on a SYCL device, use the queue.
 #define MAKE_QUEUED_HOMOGEN(pointer)                     \
     res = dal::homogen_table(queue,                      \
@@ -81,6 +75,12 @@ inline dal::homogen_table convert_to_homogen_impl(managed_t* dlm_tensor,
                              deleter,                    \
                              std::vector<sycl::event>{}, \
                              layout);
+        // generate queue from dlpack device information
+        // If a queue is given, it will override the general queue that would be generated
+        // from get_queue_by_device_id. Note, this behavior only occurs if on a oneAPI device.
+        sycl::queue queue;
+        queue = !q_obj.is(py::none()) ? get_queue_from_python(q_obj)
+                                      : get_queue_by_device_id(tensor.device.device_id);
 
         if (readonly) {
             MAKE_QUEUED_HOMOGEN(ptr);
@@ -90,8 +90,8 @@ inline dal::homogen_table convert_to_homogen_impl(managed_t* dlm_tensor,
             MAKE_QUEUED_HOMOGEN(mut_ptr);
         }
         return res;
-    }
 #endif
+    }
 
     if (readonly) {
         res = dal::homogen_table(ptr, row_count, col_count, deleter, layout);
@@ -113,10 +113,10 @@ dal::table convert_to_table(py::object obj, py::object q_obj) {
     DLManagedTensorVersioned* dlmv;
     DLTensor tensor;
     dal::data_type dtype;
-    // extract __dlpack__ attribute from the inp_obj
-    // this function should only be called if already checked to have this attr
-    // Extract and convert a DLpack data type into a oneDAL dtype.
-    py::capsule caps = obj.attr("__dlpack__");
+
+    // extract __dlpack__ attribute from the input obj. This function should
+    // only be called if the attribute has been checked.
+    py::capsule caps = obj.attr("__dlpack__")();
 
     // two different types of dlpack managed tensors are possible, with
     // DLManagedTensor likely to be removed from future versions of dlpack.
@@ -140,6 +140,7 @@ dal::table convert_to_table(py::object obj, py::object q_obj) {
         throw std::runtime_error("unable to extract dltensor");
     }
 
+    // Extract and convert a DLpack data type into a oneDAL dtype.
     dtype = convert_dlpack_to_dal_type(tensor.dtype);
 
     // if there is a queue, check that the data matches the necessary precision.
@@ -155,6 +156,7 @@ dal::table convert_to_table(py::object obj, py::object q_obj) {
 #endif // ONEDAL_DATA_PARALLEL
 
     // unusual data format found, try to make contiguous, otherwise throw error
+    // error throw located in regenerate_layout
     if (get_dlpack_layout(tensor) == dal::data_layout::unknown) {
         // NOTE: this attempts to make a C-contiguous deep copy of the data
         // if possible, this is expected to be a special case
