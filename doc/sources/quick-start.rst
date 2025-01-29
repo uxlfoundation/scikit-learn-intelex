@@ -337,7 +337,7 @@ Hardware Requirements
 
    .. tab:: CPU
 
-      Any processors with ``x86`` architecture with at least one of the following instruction sets:
+      Any processor with ``x86`` architecture with at least one of the following instruction sets:
 
         - SSE2
         - SSE4.2
@@ -349,7 +349,7 @@ Hardware Requirements
 
    .. tab:: GPU
 
-      - Any Intel® integrated and discrete GPUs
+      - Any Intel® integrated or discrete GPU
 
 
 .. tip:: Intel(R) processors provide better performance than other CPUs. Read more about hardware comparison in our :ref:`blogs <blogs>`.
