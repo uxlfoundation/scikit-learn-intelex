@@ -33,13 +33,17 @@ inline dal::homogen_table convert_to_homogen_impl(managed_t* dlm_tensor,
 
     DLTensor tensor = dlm_tensor->dl_tensor;
 
-    // Get pointer to the data following dlpack.h conventions.
-    const auto* const ptr = reinterpret_cast<const T*>(tensor.data); //+ tensor.byte_offset);
-
     // if a nullptr, return an empty.
-    if (!ptr) {
+    if (!tensor.data) {
         return res;
     }
+
+    // Get pointer to the data following dlpack.h conventions.
+    // use static cast because data is known to be void*, and reintrepret_cast
+    // since we know that T* is of a set specific types that we will guarantee
+    // for the compiler.
+    const auto* const ptr =
+        reinterpret_cast<const T*>(static_cast<char*> tensor.data + tensor.byte_offset);
 
     // get shape, if 1 dimensional, force col count to 1
     std::int64_t row_count, col_count;
@@ -58,7 +62,7 @@ inline dal::homogen_table convert_to_homogen_impl(managed_t* dlm_tensor,
         }
     };
 
-    // check_dlpack_oneAPI_device will check if data is on a oneAPI device. If it is on an 
+    // check_dlpack_oneAPI_device will check if data is on a oneAPI device. If it is on an
     // unsupported device it will throw an error.
     if (check_dlpack_oneAPI_device(tensor.device.device_type)) {
 #ifdef ONEDAL_DATA_PARALLEL
@@ -86,7 +90,7 @@ inline dal::homogen_table convert_to_homogen_impl(managed_t* dlm_tensor,
             MAKE_QUEUED_HOMOGEN(mut_ptr);
         }
         return res;
-#else 
+#else
         throw std::runtime_error(
             "Input array located on a oneAPI device, but sklearnex installation does not have SYCL support.");
 #endif
