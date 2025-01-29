@@ -366,7 +366,7 @@ def test_interop_unsupported_dtypes(dataframe, queue, dtype):
 
 
 @pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("numpy,dpctl,dpnp", "cpu,gpu")
+    "dataframe,queue", get_dataframes_and_queues("numpy,dpctl,dpnp,arra_api", "cpu,gpu")
 )
 def test_to_table_non_contiguous_input(dataframe, queue):
     if dataframe in "dpnp,dpctl" and not _is_dpc_backend:
@@ -375,7 +375,8 @@ def test_to_table_non_contiguous_input(dataframe, queue):
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     X = X[:, :3]
     # X expected to be non-contiguous.
-    assert not X.flags.c_contiguous and not X.flags.f_contiguous
+    if hasattr(X, "flags"):
+        assert not X.flags.c_contiguous and not X.flags.f_contiguous
     X_t = to_table(X)
     assert X_t and X_t.shape == (10, 3) and X_t.has_data
 
