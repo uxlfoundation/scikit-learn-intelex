@@ -31,6 +31,7 @@ if dpctl_available:
 
 from onedal.primitives import linear_kernel
 from onedal.tests.utils._dataframes_support import (
+    array_api_modules
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
@@ -444,7 +445,8 @@ def test_low_precision_gpu_conversion_numpy(dtype, sparse):
 
 
 @pytest.mark.skipif(
-    not _is_dpc_backend, reason="Requires DPC backend for dtype conversion"
+    not _is_dpc_backend or "array_api" not in array_api_modules,
+    reason="Requires DPC backend and array_api_strict for the test",
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_low_precision_gpu_conversion_array_api(dtype):
