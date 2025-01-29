@@ -258,6 +258,8 @@ To prevent version conflicts, we recommend installing `scikit-learn-intelex` int
 
 .. note:: Packages are only available for x86-64 architecture.
 
+.. _build-from-sources:
+
 Build from Sources
 **********************
 
@@ -291,7 +293,7 @@ Hardware Requirements
         - AVX512
 
       .. note::
-        Note: pre-built packages are not provided for other CPU architectures. See :ref:`Build from Sources` for ARM.
+        Note: pre-built packages are not provided for other CPU architectures. See :ref:`build-from-sources` for ARM.
 
    .. tab:: GPU
 
