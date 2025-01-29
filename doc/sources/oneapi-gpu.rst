@@ -56,7 +56,7 @@ Device offloading
 
   1. The :code:`target_offload` argument (in ``config_context`` and in ``set_config`` / ``get_config``)
      can be used to set the device primarily used to perform computations. Accepted data types are
-     :code:`str` and :code:`dpctl.SyclQueue`. Strings must match to device names recognized by
+     :code:`str` and :obj:`dpctl.SyclQueue`. Strings must match to device names recognized by
      the SYCL* device filter selector - for example, ``"gpu"``. If passing ``"auto"``,
      the device will be deduced from the location of the input data. Examples:
 
@@ -93,7 +93,7 @@ call :code:`sklearnex.get_config()`.
      Functions :code:`set_config`, :code:`get_config` and :code:`config_context`
      are always patched after the :code:`sklearnex.patch_sklearn()` call.
 
-- Pass input data as `dpctl.tensor.usm_ndarray <https://intelpython.github.io/dpctl/latest/docfiles/dpctl/usm_ndarray.html#dpctl.tensor.usm_ndarray>`_ to the algorithm.
+- Pass input data as :obj:`dpctl.tensor.usm_ndarray` to the algorithm.
 
   The computation will run on the device where the input data is
   located, and the result will be returned as :code:`usm_ndarray` to the same
