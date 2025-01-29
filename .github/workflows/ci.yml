@@ -47,7 +47,7 @@ jobs:
           - PYTHON_VERSION: "3.11"
             SKLEARN_VERSION: "1.3"
     name: LinuxNightly/pip Python${{ matrix.PYTHON_VERSION }}_Sklearn${{ matrix.SKLEARN_VERSION }}
-    runs-on: ubuntu-24.04
+    runs-on: uxl-gpu-xlarge
     timeout-minutes: 120
 
     steps:
@@ -56,7 +56,7 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.PYTHON_VERSION }}  
+          python-version: ${{ matrix.PYTHON_VERSION }}
       - name: Get run ID of "Nightly-build" workflow
         id: get-run-id
         run: |
@@ -251,7 +251,7 @@ jobs:
           pip install cpufeature clang-format pyyaml
           pip install -r dependencies-dev
           for /f "delims=" %%c in ('python -m pip freeze ^| grep numpy') do echo NUMPY_BUILD=%%c>> %GITHUB_ENV%
-      - name: System info 
+      - name: System info
         shell: cmd
         run: |
           call .\venv\Scripts\activate.bat
