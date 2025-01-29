@@ -39,11 +39,9 @@ inline dal::homogen_table convert_to_homogen_impl(managed_t* dlm_tensor,
     }
 
     // Get pointer to the data following dlpack.h conventions.
-    // use static cast because data is known to be void*, and reintrepret_cast
-    // since we know that T* is of a set specific types that we will guarantee
-    // for the compiler.
+    // use static cast because data is known to be void*, or other basic datatypes
     const auto* const ptr =
-        reinterpret_cast<const T*>(static_cast<char*> tensor.data + tensor.byte_offset);
+        static_cast<const T*>(static_cast<char*>(tensor.data) + tensor.byte_offset);
 
     // get shape, if 1 dimensional, force col count to 1
     std::int64_t row_count, col_count;
