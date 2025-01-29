@@ -239,7 +239,7 @@ def test_conversion_to_table(dtype):
 )
 @pytest.mark.parametrize("order", ["C", "F"])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.int32, np.int64])
-def test_input_sua_iface_zero_copy(dataframe, queue, order, dtype):
+def test_input_zero_copy_sycl_usm(dataframe, queue, order, dtype):
     """Checking that values ​​representing USM allocations `__sycl_usm_array_interface__`
     are preserved during conversion to onedal table.
     """
@@ -276,7 +276,7 @@ def test_input_sua_iface_zero_copy(dataframe, queue, order, dtype):
 @pytest.mark.parametrize("order", ["F", "C"])
 @pytest.mark.parametrize("data_shape", data_shapes)
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_table_conversions(dataframe, queue, order, data_shape, dtype):
+def test_table_conversions_sycl_usm(dataframe, queue, order, data_shape, dtype):
     """Checking that values ​​representing USM allocations `__sycl_usm_array_interface__`
     are preserved during conversion to onedal table and from onedal table to
     sycl usm array dataformat.
@@ -331,7 +331,7 @@ def test_table_conversions(dataframe, queue, order, data_shape, dtype):
     "dataframe,queue", get_dataframes_and_queues("dpctl,dpnp", "cpu,gpu")
 )
 @pytest.mark.parametrize("data_shape", unsupported_data_shapes)
-def test_sua_iface_interop_invalid_shape(dataframe, queue, data_shape):
+def test_interop_invalid_shape_sycl_usm(dataframe, queue, data_shape):
     X = np.zeros(data_shape)
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     sua_iface, _, _ = _get_sycl_namespace(X)
@@ -358,7 +358,7 @@ def test_sua_iface_interop_invalid_shape(dataframe, queue, data_shape):
         pytest.param(np.uint64, id=np.dtype(np.uint64).name),
     ],
 )
-def test_sua_iface_interop_unsupported_dtypes(dataframe, queue, dtype):
+def test_interop_unsupported_dtypes_sycl_usm(dataframe, queue, dtype):
     # sua iface interobility supported only for oneDAL supported dtypes
     # for input data: int32, int64, float32, float64.
     # Checking some common dtypes supported by dpctl, dpnp for exception
@@ -373,7 +373,7 @@ def test_sua_iface_interop_unsupported_dtypes(dataframe, queue, dtype):
 
 
 @pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("numpy,dpctl,dpnp", "cpu,gpu")
+    "dataframe,queue", get_dataframes_and_queues("numpy,dpctl,dpnp,array_api", "cpu,gpu")
 )
 def test_to_table_non_contiguous_input(dataframe, queue):
     if dataframe in "dpnp,dpctl" and not _is_dpc_backend:
@@ -396,7 +396,7 @@ def test_to_table_non_contiguous_input(dataframe, queue):
     "dataframe,queue", get_dataframes_and_queues("dpctl,dpnp", "cpu,gpu")
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_sua_iface_interop_if_no_dpc_backend(dataframe, queue, dtype):
+def test_interop_if_no_dpc_backend_sycl_usm(dataframe, queue, dtype):
     X = np.zeros((10, 20), dtype=dtype)
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     sua_iface, _, _ = _get_sycl_namespace(X)
@@ -406,12 +406,7 @@ def test_sua_iface_interop_if_no_dpc_backend(dataframe, queue, dtype):
         to_table(X)
 
 
-@pytest.mark.skipif(
-    not _is_dpc_backend, reason="Requires DPC backend for dtype conversion"
-)
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
-@pytest.mark.parametrize("sparse", [True, False])
-def test_low_precision_gpu_conversion(dtype, sparse):
+def _test_low_precision_gpu_conversion(dtype, sparse, dataframe):
     # Use a dummy queue as fp32 hardware is not in public testing
 
     class DummySyclQueue:
@@ -428,7 +423,9 @@ def test_low_precision_gpu_conversion(dtype, sparse):
     if sparse:
         X = sp.random(100, 100, format="csr", dtype=dtype)
     else:
-        X = np.random.rand(100, 100).astype(dtype)
+        X = _convert_to_dataframe(
+            np.random.rand(100, 100).astype(dtype), target_df=dataframe
+        )
 
     if dtype == np.float64:
         with pytest.warns(
@@ -442,6 +439,23 @@ def test_low_precision_gpu_conversion(dtype, sparse):
     assert X_table.dtype == np.float32
     if dtype == np.float32 and not sparse:
         assert_allclose(X, from_table(X_table))
+
+
+@pytest.mark.skipif(
+    not _is_dpc_backend, reason="Requires DPC backend for dtype conversion"
+)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("sparse", [True, False])
+def test_low_precision_gpu_conversion_numpy(dtype, sparse):
+    _test_low_precision_gpu_conversion(dtype, sparse, "numpy")
+
+
+@pytest.mark.skipif(
+    not _is_dpc_backend, reason="Requires DPC backend for dtype conversion"
+)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_low_precision_gpu_conversion_array_api(dtype):
+    _test_low_precision_gpu_conversion(dtype, False, "array_api")
 
 
 @pytest.mark.parametrize("X", [None, 5, "test", True, [], np.pi, lambda: None])
