@@ -306,9 +306,6 @@ deselected_tests:
   # Fails in stock scikit-learn: checks that data is modified in-place when not strictly required
   - linear_model/tests/test_base.py::test_inplace_data_preprocessing
 
-  # Failure occurs in python3.9 on windows CPU only - not easy to reproduce
-  - ensemble/tests/test_weight_boosting.py::test_estimator >= 1.4 win32
-
   # --------------------------------------------------------
   # No need to test daal4py patching
 reduced_tests:
