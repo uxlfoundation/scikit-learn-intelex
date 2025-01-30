@@ -61,7 +61,7 @@ jobs:
         id: get-run-id
         run: |
           bash .github/scripts/install_gh_cli.sh
-          OTHER_REPO="uxlfoundation/oneDAL"
+          OTHER_REPO="icfaust/oneDAL"
           WF_NAME="Nightly-build"
           JQ_QUERY='map(select(.event == "workflow_dispatch" or .event == "schedule")) | .[0].databaseId'
           RUN_ID=`gh run --repo ${OTHER_REPO} list --workflow "${WF_NAME}" --json databaseId,event --status success --jq "${JQ_QUERY}"`
@@ -74,7 +74,7 @@ jobs:
         with:
           name: __release_lnx
           github-token: ${{ github.token }}
-          repository: uxlfoundation/oneDAL
+          repository: icfaust/oneDAL
           run-id: ${{ steps.get-run-id.outputs.run-id }}
           path: ./__release_lnx
       - name: Download oneDAL environment artifact
@@ -187,7 +187,7 @@ jobs:
         id: get-run-id
         shell: bash
         run: |
-          OTHER_REPO="uxlfoundation/oneDAL"
+          OTHER_REPO="icfaust/oneDAL"
           WF_NAME="Nightly-build"
           JQ_QUERY='map(select(.event == "workflow_dispatch" or .event == "schedule")) | .[0].databaseId'
           RUN_ID=`gh run --repo ${OTHER_REPO} list --workflow "${WF_NAME}" --json databaseId,event --status success --jq "${JQ_QUERY}"`
@@ -200,7 +200,7 @@ jobs:
         with:
           name: __release_win
           github-token: ${{ github.token }}
-          repository: uxlfoundation/oneDAL
+          repository: icfaust/oneDAL
           run-id: ${{ steps.get-run-id.outputs.run-id }}
           path: ./__release_win
       - name: Download Intel BaseKit artifact
