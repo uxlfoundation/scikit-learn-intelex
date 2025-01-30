@@ -44,7 +44,7 @@ jobs:
             SKLEARN_VERSION: "1.3"
     name: LinuxNightly/pip Python${{ matrix.PYTHON_VERSION }}_Sklearn${{ matrix.SKLEARN_VERSION }}
     runs-on: uxl-gpu-xlarge
-    timeout-minutes: 120
+    timeout-minutes: 240
 
     steps:
       - name: Checkout Scikit-learn-intelex
