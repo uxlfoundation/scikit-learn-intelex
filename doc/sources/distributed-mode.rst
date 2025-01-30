@@ -29,12 +29,28 @@ via ``impi_rt`` python package) and the |mpi4py| python package. If using |intel
 ensure that the spmd_backend is built.
 
 .. important::
-  SMPD mode requires the |mpi4py| package used at runtime to be compiled with the same backend as the |intelex|. The PyPI and Conda distributions of |intelex| both use Intel's MPI as backend, and hence require an |mpi4py| also built with Intel's MPI - it can be easily installed from Intel's conda channel as follows::
+  SMPD mode requires the |mpi4py| package used at runtime to be compiled with the same MPI backend as the |intelex|. The PyPI and Conda distributions of |intelex| both use Intel's MPI as backend, and hence require an |mpi4py| also built with Intel's MPI - it can be easily installed from Intel's conda channel as follows::
     
     conda install -c https://software.repos.intel.com/python/conda/ mpi4py
 
-Note that |intelex| now supports GPU offloading to speed up MPI operations. This is supported automatically with
-some MPI backends, but in order to use GPU offloading with Intel MPI, set the environment variable ``I_MPI_OFFLOAD`` to ``1`` (providing
+  It also requires the MPI runtime executable (``mpiexec`` / ``mpirun``) to be from the same library that was used to compile the |intelex| - Intel's MPI runtime library is offered as a Python package ``impi_rt`` and will be installed together with the ``mpi4py`` package if executing the command above, but otherwise, it can be installed separately from different distribution channels:
+
+  - Intel's conda channel (recommended)::
+
+      conda install -c https://software.repos.intel.com/python/conda/ impi_rt
+
+  - Conda-Forge::
+
+      conda install -c conda-forge impi_rt
+
+  - PyPI (not recommended, might require setting additional environment variables)::
+
+      pip install impi_rt
+
+  Using other MPI backends (e.g. OpenMPI) requires building |intelex| from source with that backend.
+
+Note that |intelex| supports GPU offloading to speed up MPI operations. This is supported automatically with
+some MPI backends, but in order to use GPU offloading with Intel MPI, it is required to set the environment variable ``I_MPI_OFFLOAD`` to ``1`` (providing
 data on device without this may lead to a runtime error):
 
 - On Linux*::
@@ -46,9 +62,13 @@ data on device without this may lead to a runtime error):
     set I_MPI_OFFLOAD=1
 
 Estimators can be imported from the ``sklearnex.spmd`` module. Data should be distributed across multiple nodes as
-desired, and should be transfered to a |dpctl| or dpnp array before being passed to the estimator. View a full
-example of this process in the |intelex| repository, where many examples of our SPMD-supported estimators are
-available: https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/sklearnex/. To run:
+desired, and should be transfered to a |dpctl| or `dpnp <https://github.com/IntelPython/dpnp>`__ array before being passed to the estimator.
+
+Examples of SPMD usage can be found in the GitHub repository for the |intelex|: https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/sklearnex/.
+
+To run on SPMD mode, first create a python file using SPMD estimators from ``sklearnex.spmd``, such as `linear_regression_spmd.py <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/sklearnex/linear_regression_spmd.py>`__.
+
+Then, execute the file through MPI under multiple ranks - for example:
 
 - On Linux*::
     
@@ -58,7 +78,7 @@ available: https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examp
     
     mpiexec -n 4 python linear_regression_spmd.py
 
-Note that additional mpirun arguments can be added as desired. SPMD-supported estimators are listed in the :ref:`spmd-support` section.
+Note that additional ``mpirun`` arguments can be added as desired. SPMD-supported estimators are listed in the :ref:`spmd-support` section.
 
-Additionally, daal4py offers some distributed functionality, see
+Additionally, ``daal4py`` (previously a separate package, now an importable module within ``scikit-learn-intelex``) offers some distributed functionality, see
 `documentation <https://intelpython.github.io/daal4py/scaling.html>`_ for further details.

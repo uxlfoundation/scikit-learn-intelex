@@ -262,7 +262,7 @@ To prevent version conflicts, we recommend installing `scikit-learn-intelex` int
 Build from Sources
 **********************
 
-See `Installation instructions <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/INSTALL.md>`_ to build |intelex| from the sources.
+See `Installation instructions <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/INSTALL.md#build-from-sources>`_ to build |intelex| from the sources.
 
 Install Intel*(R) AI Tools
 ****************************
