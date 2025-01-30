@@ -61,7 +61,7 @@ data on device without this may lead to a runtime error):
     
     set I_MPI_OFFLOAD=1
 
-Estimators can be imported from the ``sklearnex.spmd`` module. Data should be distributed across multiple nodes as
+SMPD-aware versions of estimators can be imported from the ``sklearnex.spmd`` module. Data should be distributed across multiple nodes as
 desired, and should be transfered to a |dpctl| or `dpnp <https://github.com/IntelPython/dpnp>`__ array before being passed to the estimator.
 
 Examples of SPMD usage can be found in the GitHub repository for the |intelex|: https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/sklearnex/.
