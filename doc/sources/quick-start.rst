@@ -284,7 +284,7 @@ Hardware Requirements
 
    .. tab:: CPU
 
-      Any processor with ``x86`` architecture with at least one of the following instruction sets:
+      Any processor with ``x86-64`` architecture with at least one of the following instruction sets:
 
         - SSE2
         - SSE4.2

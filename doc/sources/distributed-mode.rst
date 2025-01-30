@@ -64,7 +64,19 @@ data on device without this may lead to a runtime error):
 SMPD-aware versions of estimators can be imported from the ``sklearnex.spmd`` module. Data should be distributed across multiple nodes as
 desired, and should be transfered to a |dpctl| or `dpnp <https://github.com/IntelPython/dpnp>`__ array before being passed to the estimator.
 
-Examples of SPMD usage can be found in the GitHub repository for the |intelex|: https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/sklearnex/.
+Note that SPMD estimators allow an additional argument ``queue`` in their ``.fit`` / ``.predict`` methods, which accept :obj:`dpctl.SyclQueue` objects. For example, while the signature for :obj:`sklearn.linear_model.LinearRegression.predict` would be
+
+.. code-block:: python
+
+    def predict(self, X): ...
+
+The signature for the corresponding predict method in ``sklearnex.spmd.linear_model.LinearRegression.predict`` is:
+
+.. code-block:: python
+
+    def predict(self, X, queue=None): ...
+
+Examples of SPMD usage can be found in the GitHub repository for the |intelex| under `examples/sklearnex <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/sklearnex>`__.
 
 To run on SPMD mode, first create a python file using SPMD estimators from ``sklearnex.spmd``, such as `linear_regression_spmd.py <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/sklearnex/linear_regression_spmd.py>`__.
 
