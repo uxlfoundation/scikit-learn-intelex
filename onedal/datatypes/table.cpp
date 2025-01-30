@@ -86,15 +86,15 @@ ONEDAL_PY_INIT_MODULE(table) {
         if (py::isinstance<py::array>(obj)) {
             return numpy::convert_to_table(obj, queue);
         }
-        if (py::hasattr(obj, "__dlpack__")) {
-            return dlpack::convert_to_table(obj, queue);
-        }
 #ifdef ONEDAL_DATA_PARALLEL
         if (py::hasattr(obj, "__sycl_usm_array_interface__")) {
             return sycl_usm::convert_to_table(obj);
         }
-#endif // ONEDAL_DATA_PARALLEL
-        // assume to be sparse (handled in numpy)
+        if (py::hasattr(obj, "__dlpack__")) {
+            return dlpack::convert_to_table(obj, queue);
+        }
+#endif // ONEDAL_DATA_PARALLEL \
+    // assume to be sparse (handled in numpy)
         return numpy::convert_to_table(obj, queue);
     });
 

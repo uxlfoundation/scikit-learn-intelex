@@ -85,6 +85,19 @@ if _is_dpc_backend:
                 xp=xp,
             )
             return X_table, result_responses_table, result_responses_df
+        
+    class _OnlyDLTensor:
+        """This is a temporary class to prevent use of `__sycl_usm_array_interface__`
+        logic in `to_table` as `__dlpack__` conversion is lower priority by design.
+        dpctl data with CPU SyclQueues are shown as on KDLOneAPI devices, which serve
+        to test the SYCL device support in `__dlpack__` logic without GPU hardware.
+        This takes inspiration from sklearn's `_NotAnArray`."""
+
+        def __init__(self, data):
+            self.data = data
+
+        def __dlpack__(self):
+            return self.data.__dlpack__()
 
 else:
 
