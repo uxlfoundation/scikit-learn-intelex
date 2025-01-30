@@ -297,7 +297,7 @@ Hardware Requirements
 
    .. tab:: GPU
 
-      - Any Intel® GPU (discrete or integrated) supported by both `DPC++ <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`_ and `oneMath <https://github.com/uxlfoundation/oneMath#hardware-platform-support>`_
+      - Any Intel® GPU supported by both `DPC++ <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`_ and `oneMath <https://github.com/uxlfoundation/oneMath#hardware-platform-support>`_
 
 
 .. tip:: Intel(R) processors provide better performance than other CPUs. Read more about hardware comparison in our :ref:`blogs <blogs>`.
