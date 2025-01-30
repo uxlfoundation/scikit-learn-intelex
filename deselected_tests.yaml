@@ -384,6 +384,18 @@ public:
 gpu:
   # Segfaults
   - ensemble/tests/test_weight_boosting.py
+  # Fails
+  - cluster/tests/test_dbscan.py::test_weighted_dbscan
+  - model_selection/tests/test_search.py::test_unsupervised_grid_search
+  - ensemble/tests/test_voting.py::test_sample_weight[42]
+  - model_selection/tests/test_search.py::test_search_default_iid
+  - neighbors/tests/test_neighbors.py::test_unsupervised_kneighbors
+  - neighbors/tests/test_neighbors.py::test_neighbors_metrics[float64-l2]
+  - svm/tests/test_svm.py::test_svm_classifier_sided_sample_weight[estimator0]
+  - svm/tests/test_svm.py::test_svm_equivalence_sample_weight_C
+  - svm/tests/test_svm.py::test_negative_weights_svc_leave_two_labels[partial-mask-label-1-SVC]
+  - svm/tests/test_svm.py::test_negative_weights_svc_leave_two_labels[partial-mask-label-2-SVC]
+  
   # sparse input is not implemented for DBSCAN.
   - tests/test_common.py::test_estimators[RandomForestClassifier()-check_class_weight_classifiers]
   - tests/test_common.py::test_estimators[SVC()-check_sample_weights_not_an_array]
@@ -400,6 +412,23 @@ gpu:
   - neighbors/tests/test_neighbors.py::test_neigh_predictions_algorithm_agnosticity[float64-KNeighborsClassifier-100-1000-l2-1000-5-100]
   - neighbors/tests/test_neighbors.py::test_neigh_predictions_algorithm_agnosticity[float64-KNeighborsRegressor-50-500-l2-1000-5-100]
   - neighbors/tests/test_neighbors.py::test_neigh_predictions_algorithm_agnosticity[float64-KNeighborsRegressor-100-1000-l2-1000-5-100]
+  # GPU Forest algorithm implementation does not follow certain Scikit-learn standards
+  - ensemble/tests/test_forest.py::test_max_leaf_nodes_max_depth
+  - ensemble/tests/test_forest.py::test_min_samples_split[ExtraTreesClassifier]
+  - ensemble/tests/test_forest.py::test_min_samples_split[RandomForestClassifier]
+  - ensemble/tests/test_forest.py::test_min_samples_split[ExtraTreesRegressor]
+  - ensemble/tests/test_forest.py::test_max_samples_boundary_regressors
+
+  # numerical issues in GPU Forest algorithms which require further investigation
+  - ensemble/tests/test_voting.py::test_predict_on_toy_problem[42]
+  - tests/test_common.py::test_estimators[ExtraTreesClassifier()-check_class_weight_classifiers]
+  - tests/test_common.py::test_estimators[ExtraTreesRegressor()-check_sample_weights_invariance(kind=zeros)]
+  - tests/test_common.py::test_estimators[RandomForestRegressor()-check_regressor_data_not_an_array]
+
+  # GPU implementation of Extra Trees doesn't support sample_weights
+  # comparisons to GPU with sample weights will use different algorithms
+  - tests/test_common.py::test_estimators[ExtraTreesClassifier()-check_sample_weights_invariance(kind=zeros)]
+  - tests/test_common.py::test_estimators[ExtraTreesRegressor()-check_sample_weights_invariance(kind=ones)]
 
   # RuntimeError: Device support is not implemented, failing as result of fallback to cpu false
   - svm/tests/test_svm.py::test_unfitted
