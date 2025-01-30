@@ -198,7 +198,7 @@ To install |intelex|, run:
    * - Python versions
      - 3.9, 3.10, 3.11, 3.12, 3.13
    * - Devices
-     - CPU, GPU, FPGA
+     - CPU, GPU
    * - Modes
      - Single, SPMD
 
@@ -231,7 +231,7 @@ To prevent version conflicts, we recommend installing `scikit-learn-intelex` int
          * - Python versions
            - 3.9, 3.10, 3.11, 3.12, 3.13
          * - Devices
-           - CPU, GPU, FPGA
+           - CPU, GPU
          * - Modes
            - Single, SPMD
 
@@ -250,7 +250,7 @@ To prevent version conflicts, we recommend installing `scikit-learn-intelex` int
          * - Python versions
            - 3.9, 3.10, 3.11, 3.12, 3.13
          * - Devices
-           - CPU, GPU, FPGA
+           - CPU, GPU
          * - Modes
            - Single, SPMD
 
@@ -297,7 +297,7 @@ Hardware Requirements
 
    .. tab:: GPU
 
-      - Any Intel® accelerator device (GPU, FPGA) `supported by DPC++ <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`_
+      - Any Intel® GPU (discrete or integrated) supported by both `DPC++ <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`_ and `oneMath <https://github.com/uxlfoundation/oneMath#hardware-platform-support>`_
 
 
 .. tip:: Intel(R) processors provide better performance than other CPUs. Read more about hardware comparison in our :ref:`blogs <blogs>`.
@@ -322,7 +322,7 @@ Software Requirements
 
       .. important::
 
-         If you use accelerators, refer to `oneAPI DPC++/C++ Compiler System Requirements <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`_.
+         If you use accelerators (e.g. GPUs), refer to `oneAPI DPC++/C++ Compiler System Requirements <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`_.
 
 Intel(R) Extension for Scikit-learn is compatible with the latest stable releases of scikit-learn:
 

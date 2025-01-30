@@ -18,7 +18,7 @@
 oneAPI and GPU support in |intelex|
 ##############################################################
 
-|intelex| can execute computations on different devices (CPUs, GPUs, FPGAs) through the SYCL framework in oneAPI.
+|intelex| can execute computations on different devices (CPUs, GPUs) through the SYCL framework in oneAPI.
 
 The device used for computations can be easily controlled through the target offloading functionality (e.g. through ``sklearnex.config_context(target_offload="gpu")`` - see rest of this page for more details), but for finer-grained controlled (e.g. operating on arrays that are already in a given device's memory), it can also interact with objects from package `dpctl <https://intelpython.github.io/dpctl/latest/index.html>`_ , which offers a Python interface over SYCL concepts such as devices, queues, and USM (unified shared memory) arrays.
 
@@ -29,7 +29,7 @@ While not strictly required, package ``dpctl`` is recommended for a better exper
 Prerequisites
 -------------
 
-For execution on GPUs and FPGAs, DPC++ runtime and GPGPU drivers are required.
+For execution on GPUs, DPC++ runtime and GPGPU drivers are required.
 
 DPC++ compiler runtime can be installed either from PyPI or Conda:
 
