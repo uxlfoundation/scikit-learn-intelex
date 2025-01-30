@@ -12,8 +12,7 @@
 .. See the License for the specific language governing permissions and
 .. limitations under the License.
 
-.. |intelex_repo| replace:: |intelex| repository
-.. _intelex_repo: https://github.com/uxlfoundation/scikit-learn-intelex
+.. include:: substitutions.rst
 
 ####################
 Quick Start
@@ -202,7 +201,7 @@ To install |intelex|, run:
    * - Modes
      - Single, SPMD
 
-.. tip:: Running on GPU involves additional dependencies, see :doc:`oneapi-gpu`. SPMD mode additionally requires package `mpi4py <https://mpi4py.readthedocs.io/en/stable/install.html#using-pip>`__ built with Intel's MPI as backed.
+.. tip:: Running on GPU involves additional dependencies, see :doc:`oneapi-gpu`. SPMD mode has additional requirements on top of GPU ones, see :doc:`distributed-mode` for details.
 
 .. note:: Wheels are only available for x86-64 architecture.
 
@@ -254,7 +253,7 @@ To prevent version conflicts, we recommend installing `scikit-learn-intelex` int
          * - Modes
            - Single, SPMD
 
-.. tip:: Running on GPU involves additional dependencies, see :doc:`oneapi-gpu`. SPMD mode additionally requires package `mpi4py <https://mpi4py.readthedocs.io/en/stable/install.html#using-conda>`__ built with Intel's MPI as backend (``conda install -c https://software.repos.intel.com/python/conda/ mpi4py``).
+.. tip:: Running on GPU involves additional dependencies, see :doc:`oneapi-gpu`.  SPMD mode has additional requirements on top of GPU ones, see :doc:`distributed-mode` for details.
 
 .. note:: Packages are only available for x86-64 architecture.
 

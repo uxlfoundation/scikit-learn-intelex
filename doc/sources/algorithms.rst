@@ -380,6 +380,8 @@ Other Tasks
      - All parameters are supported
      - Only dense data is supported
 
+.. _spmd-support:
+
 SPMD Support
 ------------
 

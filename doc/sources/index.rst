@@ -12,8 +12,7 @@
 .. See the License for the specific language governing permissions and
 .. limitations under the License.
 
-.. |intelex_repo| replace:: |intelex| repository
-.. _intelex_repo: https://github.com/uxlfoundation/scikit-learn-intelex
+.. include:: substitutions.rst
 
 .. _index:
 

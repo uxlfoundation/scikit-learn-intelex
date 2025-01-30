@@ -12,7 +12,7 @@
 .. See the License for the specific language governing permissions and
 .. limitations under the License.
 
-.. |dpctl| replace:: :external+dpctl:doc:`dpctl <index>`
+.. include:: substitutions.rst
 .. _oneapi_gpu:
 
 ##############################################################
