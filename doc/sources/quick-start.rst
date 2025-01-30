@@ -315,7 +315,7 @@ Software Requirements
 
    .. tab:: GPU
 
-      - A Linux* or Windows* version supported by DPC++
+      - A Linux* or Windows* version supported by DPC++ and oneMKL
       - Intel® GPGPU drivers
       - DPC++ runtime libraries
 
