@@ -520,11 +520,11 @@ def test_to_table_non_contiguous_input_dlpack(dataframe, queue, can_copy):
 
     # give the _OnlyDLTensor the ability to copy
     if can_copy:
-        X.copy = lambda: _OnlyDLTensor(X.copy())
-        to_table(X)
+        X_tens.copy = lambda: _OnlyDLTensor(X.copy())
+        to_table(X_tens)
     else:
         with pytest.raises(RuntimeError, match="Wrong strides"):
-            to_table(X)
+            to_table(X_tens)
 
 
 @pytest.mark.parametrize(
