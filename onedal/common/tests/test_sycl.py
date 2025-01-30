@@ -135,7 +135,7 @@ def test_backend_device_id():
     """verify dpctl device id matches our internal device id"""
     import dpctl
 
-    for i in range(dpctl.get_num_devices):
+    for i in range(dpctl.get_num_devices()):
         device = dpctl.SyclDevice(str(i))
         if device.is_gpu or device.is_cpu:
             backend_device = _backend.SyclDevice(i)
