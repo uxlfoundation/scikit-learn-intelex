@@ -63,11 +63,11 @@ dal::data_layout get_dlpack_layout(const DLTensor& tensor) {
     const std::int64_t* strides = tensor.strides;
     // if NULL then row major contiguous (see dlpack.h)
     // if 1 column array, also row major
-    // if strides of rows = 1 element, and columns = c_count, also row major
-    if (strides == NULL || c_count == 1 || (strides[0] == 1 && strides[1] == c_count)) {
+    // if strides of rows = c_count elements, and columns = 1, also row major
+    if (strides == NULL || c_count == 1 || (strides[0] == c_count && strides[1] == 1)) {
         return dal::data_layout::row_major;
     }
-    else if (strides[0] == r_count && strides[1] == 1) {
+    else if (strides[0] == 1 && strides[1] == r_count) {
         return dal::data_layout::column_major;
     }
     else {
