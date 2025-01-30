@@ -395,7 +395,6 @@ gpu:
   - svm/tests/test_svm.py::test_svm_equivalence_sample_weight_C
   - svm/tests/test_svm.py::test_negative_weights_svc_leave_two_labels[partial-mask-label-1-SVC]
   - svm/tests/test_svm.py::test_negative_weights_svc_leave_two_labels[partial-mask-label-2-SVC]
-  
   # sparse input is not implemented for DBSCAN.
   - tests/test_common.py::test_estimators[RandomForestClassifier()-check_class_weight_classifiers]
   - tests/test_common.py::test_estimators[SVC()-check_sample_weights_not_an_array]
@@ -427,6 +426,7 @@ gpu:
 
   # GPU implementation of Extra Trees doesn't support sample_weights
   # comparisons to GPU with sample weights will use different algorithms
+  - tests/test_common.py::test_estimators[ExtraTreesClassifier()-check_sample_weights_invariance(kind=ones)]
   - tests/test_common.py::test_estimators[ExtraTreesClassifier()-check_sample_weights_invariance(kind=zeros)]
   - tests/test_common.py::test_estimators[ExtraTreesRegressor()-check_sample_weights_invariance(kind=ones)]
 
