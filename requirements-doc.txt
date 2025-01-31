@@ -44,7 +44,7 @@ Pygments==2.18.0
 pyparsing==3.2.1
 pyrsistent==0.20.0
 python-dateutil==2.9.0.post0
-pytz==2024.2
+pytz==2025.1
 PyYAML==6.0.2
 pyzmq==26.2.0
 requests==2.32.3
