@@ -43,7 +43,6 @@ from sklearnex.tests.utils import (
     SPECIAL_INSTANCES,
     DummyEstimator,
 )
-from sklearnex.utils._array_api import get_namespace
 
 if dpctl_available:
     from dpctl.tensor import usm_ndarray
@@ -156,7 +155,8 @@ def get_traced_memory(queue=None):
 
 
 def take(x, index, axis=0, queue=None):
-    xp, array_api = get_namespace(x)
+    # do not use get_namespace, because sklearn array_api setting is default off
+    xp = getattr(x, "__array_namespace__", None)
     if (
         dpnp_available
         and isinstance(x, dpnp.ndarray)
@@ -167,7 +167,7 @@ def take(x, index, axis=0, queue=None):
         return xp.take(
             x, xp.asarray(index, usm_type="device", sycl_queue=x.sycl_queue), axis=axis
         )
-    elif array_api:
+    elif xp:
         return xp.take(x, xp.asarray(index, device=x.device), axis=axis)
     else:
         return x.take(index, axis=axis)
