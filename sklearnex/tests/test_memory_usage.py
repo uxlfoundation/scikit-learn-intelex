@@ -156,7 +156,7 @@ def get_traced_memory(queue=None):
 
 def take(x, index, axis=0, queue=None):
     # do not use get_namespace, because sklearn array_api setting is default off
-    xp = getattr(x, "__array_namespace__", None)
+    xp = getattr(x, "__array_namespace__", lambda: None)()
     if (
         dpnp_available
         and isinstance(x, dpnp.ndarray)
