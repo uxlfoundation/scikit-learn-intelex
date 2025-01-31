@@ -415,17 +415,6 @@ class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
         return params
 
     def _onedal_fit(self, X, y, queue):
-        gpu_device = queue is not None and queue.sycl_device.is_gpu
-        if self.effective_metric_ == "euclidean" and not gpu_device:
-            params = self._get_daal_params(X)
-            if self._fit_method == "brute":
-                train_alg = bf_knn_classification_training
-
-            else:
-                train_alg = kdtree_knn_classification_training
-
-            return train_alg(**params).compute(X, y).model
-
         policy = self._get_policy(queue, X, y)
         X_table, y_table = to_table(X, y, queue=queue)
         params = self._get_onedal_params(X_table, y)
@@ -436,11 +425,6 @@ class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
         return train_alg.model
 
     def _onedal_predict(self, model, X, params, queue):
-        if type(self._onedal_model) is kdtree_knn_classification_model:
-            return kdtree_knn_classification_prediction(**params).compute(X, model)
-        elif type(self._onedal_model) is bf_knn_classification_model:
-            return bf_knn_classification_prediction(**params).compute(X, model)
-
         policy = self._get_policy(queue, X)
         X = to_table(X, queue=queue)
         if hasattr(self, "_onedal_model"):
