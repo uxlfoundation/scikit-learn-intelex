@@ -92,7 +92,7 @@ def test_assert_finite_random_location(
 @pytest.mark.parametrize("check", ["inf", "NaN", None])
 @pytest.mark.parametrize("seed", [0, 123456])
 @pytest.mark.parametrize(
-    "dataframe, queue", get_dataframes_and_queues("numpy,dpnp,dpctl")
+    "dataframe, queue", get_dataframes_and_queues("numpy,dpnp,dpctl,array_api")
 )
 def test_assert_finite_random_shape_and_location(
     dtype, allow_nan, check, seed, dataframe, queue
