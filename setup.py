@@ -92,7 +92,12 @@ no_dpc = True if "NO_DPC" in os.environ and os.environ["NO_DPC"] in trues else F
 no_stream = "NO_STREAM" in os.environ and os.environ["NO_STREAM"] in trues
 use_gcov = "SKLEARNEX_GCOV" in os.environ and os.environ["SKLEARNEX_GCOV"] in trues
 debug_build = os.getenv("DEBUG_BUILD") == "1"
-mpi_root = None if no_dist else os.environ["MPIROOT"]
+mpi_root = None if no_dist else os.environ.get("MPIROOT", os.environ.get("I_MPI_ROOT"))
+if (not no_dist) and (mpi_root is None):
+    raise ValueError(
+        "'MPIROOT' is not set, cannot build with distributed mode."
+        " Use 'NO_DIST=1' to build without distributed mode."
+    )
 dpcpp = (
     shutil.which("icpx") is not None
     and "onedal_dpc" in get_onedal_shared_libs(dal_root)
