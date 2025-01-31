@@ -324,7 +324,7 @@ def test_gpu_memory_leaks(estimator, queue, order, data_shape):
     reason="__sycl_usm_array_interface__ support requires DPC backend.",
 )
 @pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("dpctl,dpnp", "cpu,gpu")
+    "dataframe,queue", get_dataframes_and_queues("dpctl,dpnp,array_api", "cpu,gpu")
 )
 @pytest.mark.parametrize("order", ["F", "C"])
 @pytest.mark.parametrize("data_shape", data_shapes)
@@ -332,10 +332,11 @@ def test_gpu_memory_leaks(estimator, queue, order, data_shape):
 def test_table_conversions_memory_leaks(dataframe, queue, order, data_shape, dtype):
     func = ORDER_DICT[order]
 
-    if queue.sycl_device.is_gpu and (
-        os.getenv("ZES_ENABLE_SYSMAN") is None or not is_dpctl_device_available("gpu")
-    ):
-        pytest.skip("SYCL device memory leak check requires the level zero sysman")
+    if queue:
+        if queue.sycl_device.is_gpu and (
+            os.getenv("ZES_ENABLE_SYSMAN") is None or not is_dpctl_device_available("gpu")
+        ):
+            pytest.skip("SYCL device memory leak check requires the level zero sysman")
 
     _kfold_function_template(
         DummyEstimator,
