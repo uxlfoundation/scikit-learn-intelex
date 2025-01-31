@@ -140,8 +140,8 @@ jobs:
           source venv/bin/activate
           source .github/scripts/activate_components.sh
           export COVERAGE_FILE=$(pwd)/.coverage.sklearn
-          if [ "${{ steps.set-env.outputs.DPCFLAG }}" == "" ]; then export CPU=cpu; fi
-          bash .ci/scripts/run_sklearn_tests.sh $CPU
+          if [ "${{ steps.set-env.outputs.DPCFLAG }}" == "" ]; then export GPU=gpu; fi
+          bash .ci/scripts/run_sklearn_tests.sh $GPU
       - name: Create coverage report
         run: |
           source venv/bin/activate
@@ -157,9 +157,9 @@ jobs:
         run: |
           source venv/bin/activate
           source .github/scripts/activate_components.sh
-          if [ "${{ steps.set-env.outputs.DPCFLAG }}" == "" ]; then export CPU=cpu; fi
+          if [ "${{ steps.set-env.outputs.DPCFLAG }}" == "" ]; then export GPU=gpu; fi
           export SKLEARNEX_PREVIEW='YES'
-          bash .ci/scripts/run_sklearn_tests.sh $CPU
+          bash .ci/scripts/run_sklearn_tests.sh $GPU
 
   sklearn_win:
     strategy:
