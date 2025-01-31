@@ -35,6 +35,7 @@ from onedal.tests.utils._dataframes_support import (
     get_dataframes_and_queues,
 )
 from onedal.tests.utils._device_selection import get_queues, is_dpctl_device_available
+from onedal.utils._array_api import _get_sycl_namespace
 from onedal.utils._dpep_helpers import dpctl_available, dpnp_available
 from sklearnex import config_context
 from sklearnex.tests.utils import (
@@ -155,19 +156,15 @@ def get_traced_memory(queue=None):
 
 
 def take(x, index, axis=0, queue=None):
-    # do not use get_namespace, because sklearn array_api setting is default off
-    xp = getattr(x, "__array_namespace__", lambda: None)()
-    if (
-        dpnp_available
-        and isinstance(x, dpnp.ndarray)
-        or dpctl_available
-        and isinstance(x, usm_ndarray)
-    ):
+    sycl_usm, xp, _ = _get_sycl_namespace(x)
+    if sycl_usm:
         # Using the same sycl queue for dpnp.ndarray or usm_ndarray.
         return xp.take(
             x, xp.asarray(index, usm_type="device", sycl_queue=x.sycl_queue), axis=axis
         )
-    elif xp:
+    elif hasattr(x, "__array_namespace__"):
+        # check explicitly instead of sklearn's `get_namespace` as array_api is off by default
+        xp = x.__array_namespace__()
         return xp.take(x, xp.asarray(index, device=x.device), axis=axis)
     else:
         return x.take(index, axis=axis)
@@ -328,11 +325,14 @@ def test_gpu_memory_leaks(estimator, queue, order, data_shape):
 def test_table_conversions_memory_leaks(dataframe, queue, order, data_shape, dtype):
     func = ORDER_DICT[order]
 
-    if queue:
-        if queue.sycl_device.is_gpu and (
+    if (
+        queue
+        and queue.sycl_device.is_gpu
+        and (
             os.getenv("ZES_ENABLE_SYSMAN") is None or not is_dpctl_device_available("gpu")
-        ):
-            pytest.skip("SYCL device memory leak check requires the level zero sysman")
+        )
+    ):
+        pytest.skip("SYCL device memory leak check requires the level zero sysman")
 
     _kfold_function_template(
         DummyEstimator,
