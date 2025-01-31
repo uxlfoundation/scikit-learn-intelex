@@ -35,6 +35,7 @@ from onedal.tests.utils._dataframes_support import (
     get_dataframes_and_queues,
 )
 from onedal.tests.utils._device_selection import get_queues, is_dpctl_device_available
+from onedal.utils._array_api import _get_sycl_namespace
 from onedal.utils._dpep_helpers import dpctl_available, dpnp_available
 from sklearnex import config_context
 from sklearnex.tests.utils import (
@@ -43,7 +44,6 @@ from sklearnex.tests.utils import (
     SPECIAL_INSTANCES,
     DummyEstimator,
 )
-from sklearnex.utils._array_api import get_namespace
 
 if dpctl_available:
     from dpctl.tensor import usm_ndarray
@@ -156,18 +156,15 @@ def get_traced_memory(queue=None):
 
 
 def take(x, index, axis=0, queue=None):
-    xp, array_api = get_namespace(x)
-    if (
-        dpnp_available
-        and isinstance(x, dpnp.ndarray)
-        or dpctl_available
-        and isinstance(x, usm_ndarray)
-    ):
+    sycl_usm, xp, _ = _get_sycl_namespace(x)
+    if sycl_usm:
         # Using the same sycl queue for dpnp.ndarray or usm_ndarray.
         return xp.take(
             x, xp.asarray(index, usm_type="device", sycl_queue=x.sycl_queue), axis=axis
         )
-    elif array_api:
+    elif hasattr(x, "__array_namespace__"):
+        # check explicitly instead of sklearn's `get_namespace` as array_api is off by default
+        xp = x.__array_namespace__()
         return xp.take(x, xp.asarray(index, device=x.device), axis=axis)
     else:
         return x.take(index, axis=axis)
@@ -319,12 +316,8 @@ def test_gpu_memory_leaks(estimator, queue, order, data_shape):
         _kfold_function_template(GPU_ESTIMATORS[estimator], None, data_shape, queue, func)
 
 
-@pytest.mark.skipif(
-    not _is_dpc_backend,
-    reason="__sycl_usm_array_interface__ support requires DPC backend.",
-)
 @pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("dpctl,dpnp", "cpu,gpu")
+    "dataframe,queue", get_dataframes_and_queues("dpctl,dpnp,array_api", "cpu,gpu")
 )
 @pytest.mark.parametrize("order", ["F", "C"])
 @pytest.mark.parametrize("data_shape", data_shapes)
@@ -332,8 +325,12 @@ def test_gpu_memory_leaks(estimator, queue, order, data_shape):
 def test_table_conversions_memory_leaks(dataframe, queue, order, data_shape, dtype):
     func = ORDER_DICT[order]
 
-    if queue.sycl_device.is_gpu and (
-        os.getenv("ZES_ENABLE_SYSMAN") is None or not is_dpctl_device_available("gpu")
+    if (
+        queue
+        and queue.sycl_device.is_gpu
+        and (
+            os.getenv("ZES_ENABLE_SYSMAN") is None or not is_dpctl_device_available("gpu")
+        )
     ):
         pytest.skip("SYCL device memory leak check requires the level zero sysman")
 

@@ -71,7 +71,7 @@ inline dal::homogen_table convert_to_homogen_impl(PyArrayObject *np_data) {
     std::int64_t column_count = 1;
 
     if (array_numdims(np_data) > 2) {
-        throw std::runtime_error("Input array has wrong dimensionality (must be 2d).");
+        throw std::length_error("Input array has wrong dimensionality (must be 2d).");
     }
     T *const data_pointer = reinterpret_cast<T *const>(array_data(np_data));
     // TODO: check safe cast from int to std::int64_t
