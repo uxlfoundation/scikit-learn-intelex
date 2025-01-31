@@ -20,20 +20,20 @@
 |intelex|
 #########
 
-Intel(R) Extension for Scikit-learn is a **free software AI accelerator** designed to deliver up to **100X** faster performance for your existing scikit-learn code.
+|intelex| is a **free software AI accelerator** designed to deliver up to **100X** faster performance for your existing |sklearn| code.
 The software acceleration is achieved with vector instructions, AI hardware-specific memory optimizations, threading, and optimizations for all upcoming Intel(R) platforms at launch time.
 
 .. rubric:: Designed for Data Scientists and Framework Designers
 
 
-Use Intel(R) Extension for Scikit-learn, to:
+Use |intelex|, to:
 
 * Speed up training and inference by up to 100x with equivalent mathematical accuracy
 * Benefit from performance improvements across different x86-64 CPUs or Intel(R) GPUs
-* Integrate the extension into your existing Scikit-learn applications without code modifications
+* Integrate the extension into your existing |sklearn| applications without code modifications
 * Enable and disable the extension with a couple of lines of code or at the command line
 
-Intel(R) Extension for Scikit-learn is also a part of `Intel(R) AI Tools <https://www.intel.com/content/www/us/en/developer/tools/oneapi/ai-analytics-toolkit.html>`_.
+|intelex| is also a part of `Intel(R) AI Tools <https://www.intel.com/content/www/us/en/developer/tools/oneapi/ai-analytics-toolkit.html>`_.
 
 
 .. image:: _static/scikit-learn-acceleration.PNG

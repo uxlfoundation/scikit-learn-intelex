@@ -12,13 +12,14 @@
 .. See the License for the specific language governing permissions and
 .. limitations under the License.
 
+.. include:: substitutions.rst
 .. _sklearn_algorithms:
 
 ####################
 Supported Algorithms
 ####################
 
-Applying |intelex| impacts the following scikit-learn algorithms:
+Applying |intelex| impacts the following |sklearn| estimators:
 
 on CPU
 ------

@@ -18,12 +18,12 @@
 Quick Start
 ####################
 
-Get ready to elevate your scikit-learn code with |intelex| and experience the benefits of accelerated performance in just a few simple steps.
+Get ready to elevate your |sklearn| code with |intelex| and experience the benefits of accelerated performance in just a few simple steps.
 
 Compatibility with Scikit-learn*
 ---------------------------------
 
-Intel(R) Extension for Scikit-learn is compatible with the last four versions of scikit-learn.
+|intelex| is compatible with the latest stable releases of |sklearn| - see :ref:`software-requirements` for more details.
 
 Integrate |intelex|
 --------------------
@@ -31,10 +31,10 @@ Integrate |intelex|
 Patching
 **********************
 
-Once you install Intel*(R) Extension for Scikit-learn*, you replace algorithms that exist in the scikit-learn package with their optimized versions from the extension.
-This action is called ``patching``. This is not a permanent change so you can always undo the patching if necessary.
+Once you install the |intelex|, you can replace estimator classes (algorithms) that exist in the ``sklearn`` module from |sklearn| with their optimized versions from the extension.
+This action is called `patching`. This is not a permanent change so you can always undo the patching if necessary.
 
-To patch Intel® Extension for Scikit-learn, use one of these methods:
+To patch |sklearn| with the |intelex|, the following methods can be used:
 
 .. list-table::
    :header-rows: 1
@@ -70,7 +70,7 @@ They support different enabling scenarios while producing the same result.
 
 **Example**
 
-This example shows how to patch Intel(R) extension for Scikit-Learn by modifing your script. To make sure that patching is registered by the scikit-learn estimators, always import scikit-learn after these lines.
+This example shows how to patch |sklearn| by modifing your script. To make sure that patching is registered by the scikit-learn estimators, always import module ``sklearn`` after these lines.
 
 .. code-block:: python
   :caption: Example: Drop-In Patching
@@ -92,7 +92,7 @@ This example shows how to patch Intel(R) extension for Scikit-Learn by modifing 
 Global Patching
 **********************
 
-You can also use global patching to patch all your scikit-learn applications without any additional actions.
+You can also use global patching to patch all your |sklearn| applications without any additional actions.
 
 Before you begin, make sure that you have read and write permissions for Scikit-learn files.
 
@@ -159,10 +159,10 @@ With global patching, you can:
 Unpatching
 **********************
 
-To undo the patch (also called `unpatching`) is to return scikit-learn to original implementation and
-replace patched algorithms with the stock scikit-learn algorithms.
+To undo the patch (also called `unpatching`) is to return the ``sklearn`` module to the original implementation and
+replace patched estimators with the stock |sklearn| estimators.
 
-To unpatch successfully, you must reimport the scikit-learn package::
+To unpatch successfully, you must reimport the ``sklearn`` module(s)::
 
   sklearnex.unpatch_sklearn()
   # Re-import scikit-learn algorithms after the unpatch
@@ -272,7 +272,7 @@ Download the Intel AI Tools `here <https://www.intel.com/content/www/us/en/devel
 Release Notes
 -------------------
 
-See the `Release Notes <https://github.com/uxlfoundation/scikit-learn-intelex/releases>`_ for each version of Intel® Extension for Scikit-learn*.  
+See the `Release Notes <https://github.com/uxlfoundation/scikit-learn-intelex/releases>`_ for each version of |intelex|.
 
 System Requirements
 --------------------
@@ -301,6 +301,7 @@ Hardware Requirements
 
 .. tip:: Intel(R) processors provide better performance than other CPUs. Read more about hardware comparison in our :ref:`blogs <blogs>`.
 
+.. _software-requirements:
 
 Software Requirements
 **********************
@@ -323,7 +324,7 @@ Software Requirements
 
          If you use accelerators (e.g. GPUs), refer to `oneAPI DPC++/C++ Compiler System Requirements <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`_.
 
-Intel(R) Extension for Scikit-learn is compatible with the latest stable releases of scikit-learn:
+|intelex| is compatible with the latest stable releases of |sklearn|:
 
 * 1.0.X
 * 1.1.X
@@ -336,7 +337,7 @@ Intel(R) Extension for Scikit-learn is compatible with the latest stable release
 Memory Requirements
 **********************
 By default, algorithms in |intelex| run in the multi-thread mode. This mode uses all available threads.
-Optimized scikit-learn algorithms can consume more RAM than their corresponding unoptimized versions.
+Optimized scikit-learn estimators can consume more RAM than their corresponding unoptimized versions.
 
 .. list-table::
    :header-rows: 1
@@ -346,7 +347,7 @@ Optimized scikit-learn algorithms can consume more RAM than their corresponding 
      - Single-thread mode
      - Multi-thread mode
    * - SVM
-     - Both Scikit-learn and |intelex| consume approximately the same amount of RAM.
+     - Both |sklearn| and |intelex| consume approximately the same amount of RAM.
      - In |intelex|, an algorithm with ``N`` threads consumes ``N`` times more RAM.
 
 In all |intelex| algorithms with GPU support, computations run on device memory.

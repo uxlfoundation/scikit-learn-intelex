@@ -107,14 +107,9 @@ call :code:`sklearnex.get_config()`.
     The :code:`usm_ndarray` can only be consumed by the base methods
     like :code:`fit`, :code:`predict`, and :code:`transform`.
     Note that only the algorithms in |intelex| support
-    :code:`usm_ndarray`. The algorithms from the stock version of scikit-learn
+    :code:`usm_ndarray`. The algorithms from the stock version of |sklearn|
     do not support this feature.
 
-.. rubric:: Compatibility considerations
-
-For compatibility reasons, algorithms in |intelex| may be offloaded to the device using
-:code:`daal4py.oneapi.sycl_context`. However, it is recommended to use one of the options
-described above for device offloading instead of using :code:`sycl_context`.
 
 Example
 -------
@@ -134,6 +129,6 @@ A full example of how to patch your code with Intel CPU/GPU optimizations:
       clustering = DBSCAN(eps=3, min_samples=2).fit(X)
 
 
-.. note:: Current offloading behavior restricts fitting and inference of any models to be
-     in the same context or absence of context. For example, a model trained in the GPU context with
-     target_offload="gpu:0" throws an error if the inference is made outside the same GPU context.
+.. note:: Current offloading behavior restricts fitting and predictions (a.k.a. inference) of any models to be
+     in the same context or absence of context. For example, a model whose ``.fit()`` method was called in a GPU context with
+     ``target_offload="gpu:0"`` will throw an error if a ``.predict()`` call is then made outside the same GPU context.
