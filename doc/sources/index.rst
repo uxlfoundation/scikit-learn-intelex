@@ -28,8 +28,8 @@ The software acceleration is achieved with vector instructions, AI hardware-spec
 
 Use Intel(R) Extension for Scikit-learn, to:
 
-* Speed up training and inference by up to 100x with the equivalent mathematical accuracy
-* Benefit from performance improvements across different x86-compatible CPUs or Intel(R) GPUs
+* Speed up training and inference by up to 100x with equivalent mathematical accuracy
+* Benefit from performance improvements across different x86-64 CPUs or Intel(R) GPUs
 * Integrate the extension into your existing Scikit-learn applications without code modifications
 * Enable and disable the extension with a couple of lines of code or at the command line
 
@@ -64,11 +64,14 @@ Enable Intel(R) CPU Optimizations
    from sklearn.cluster import DBSCAN
 
    X = np.array([[1., 2.], [2., 2.], [2., 3.],
-               [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
+                 [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
    clustering = DBSCAN(eps=3, min_samples=2).fit(X)
 
 Enable Intel(R) GPU optimizations
 *********************************
+
+Note: executing on GPU has `additional system software requirements <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`__ - see :doc:`oneapi-gpu`.
+
 ::
 
    import numpy as np
@@ -79,7 +82,7 @@ Enable Intel(R) GPU optimizations
    from sklearn.cluster import DBSCAN
 
    X = np.array([[1., 2.], [2., 2.], [2., 3.],
-               [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
+                 [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
    with config_context(target_offload="gpu:0"):
        clustering = DBSCAN(eps=3, min_samples=2).fit(X)
 
@@ -100,7 +103,7 @@ Enable Intel(R) GPU optimizations
    :maxdepth: 2
 
    algorithms.rst
-   oneAPI and GPU support <oneapi-gpu.rst>
+   oneapi-gpu.rst
    distributed-mode.rst
    non-scikit-algorithms.rst
    input-types.rst
