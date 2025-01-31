@@ -75,6 +75,7 @@ extensions = [
 
 intersphinx_mapping = {
     "sklearn": ("https://scikit-learn.org/stable/", None),
+    "dpctl": ("https://intelpython.github.io/dpctl/latest", None),
     # from scikit-learn, in case some object in sklearnex points to them:
     # https://github.com/scikit-learn/scikit-learn/blob/main/doc/conf.py
     "python": ("https://docs.python.org/{.major}".format(sys.version_info), None),
