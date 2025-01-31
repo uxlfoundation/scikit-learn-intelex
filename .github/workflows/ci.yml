@@ -93,6 +93,10 @@ jobs:
           # enable coverage report generation
           echo "COVERAGE_RCFILE=$(readlink -f .coveragerc)" >> "$GITHUB_ENV"
           if [[ -z $DPCFLAG ]]; then echo "SKLEARNEX_GCOV=1" >> "$GITHUB_ENV"; fi
+          echo "NEOReadDebugKeys=1" >> "$GITHUB_ENV"; fi
+          echo "EnableRecoverablePageFaults=1" >> "$GITHUB_ENV"; fi
+          echo "DisableScratchPages=0" >> "$GITHUB_ENV"; fi
+          echo "GpuFaultCheckThreshold=0" >> "$GITHUB_ENV"; fi
       - name: apt-get
         run: sudo apt-get update && sudo apt-get install -y clang-format
       - name: dpcpp installation
