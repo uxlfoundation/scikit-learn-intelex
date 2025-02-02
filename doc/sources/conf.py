@@ -42,9 +42,11 @@ copyright = "Intel"
 author = "Intel"
 
 # The short X.Y version
-version = "2025.0.0"
+# Note: it should not have more than  two parts (year.month), otherwise the
+# version switcher will not be able to pick it.
+version = "2025.2"
 # The full version, including alpha/beta/rc tags
-release = "2025.0.0"
+release = "2025.2"
 
 
 # -- General configuration ---------------------------------------------------
@@ -131,10 +133,9 @@ rst_prolog = """
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-# html_theme = 'alabaster'
 html_theme = "sphinx_rtd_theme"
-html_logo = ""
-html_favicon = "_static/favicons.png"
+html_logo = "_static/uxl-foundation-logo-horizontal-color.png"
+html_favicon = "_static/favicon.png"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -154,6 +155,14 @@ html_theme_options = {
     "titles_only": False,
 }
 
+switcher_url = "/scikit-learn-intelex/versions.json"
+
+html_context = {
+    "current_version": version,
+    "project_name": "scikit-learn-intelex",
+    "switcher_url": switcher_url,
+}
+
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -163,6 +172,7 @@ html_static_path = ["_static"]
 
 def setup(app):
     app.add_css_file("custom.css")
+    app.add_js_file("version_switcher.js")
 
 
 # -- Options for HTMLHelp output ---------------------------------------------
