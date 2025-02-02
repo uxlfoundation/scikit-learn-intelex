@@ -202,7 +202,7 @@ py::object dlpack_memory_order(py::capsule dlpack) {
         throw std::runtime_error("unable to extract dltensor");
     }
 
-    switch (convert_dlpack_to_dal_type(tensor.dtype)) {
+    switch (get_dlpack_layout(tensor)) {
         case dal::data_layout::row_major: return py::str("C"); break;
         case dal::data_layout::column_major: return py::str("F"); break;
         default: return py::none();
