@@ -35,4 +35,6 @@ namespace py = pybind11;
 
 dal::table convert_to_table(py::object obj, py::object q_obj = py::none());
 
+py::object dlpack_memory_order(py::capsule dlpack);
+
 } // namespace oneapi::dal::python::dlpack
