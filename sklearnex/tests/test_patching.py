@@ -237,7 +237,7 @@ def test_standard_estimator_init_signatures(estimator):
     unpatched_sig = str(signature(UNPATCHED_MODELS[estimator].__init__))
 
     # Sklearnex allows for positional kwargs and n_jobs, when sklearn doesn't
-    for kwarg in ["n_jobs=None", "*"]:
+    for kwarg in ["n_jobs=4", "*"]:
         patched_sig = patched_sig.replace(", " + kwarg, "")
         unpatched_sig = unpatched_sig.replace(", " + kwarg, "")
 
