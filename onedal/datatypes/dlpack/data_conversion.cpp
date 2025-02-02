@@ -181,7 +181,7 @@ dal::table convert_to_table(py::object obj, py::object q_obj) {
     return res;
 }
 
-py::object dlpack_memory_order(py::capsule dlpack){
+py::object dlpack_memory_order(py::capsule dlpack) {
     DLManagedTensor* dlm;
     DLManagedTensorVersioned* dlmv;
     DLTensor tensor;
@@ -202,19 +202,11 @@ py::object dlpack_memory_order(py::capsule dlpack){
         throw std::runtime_error("unable to extract dltensor");
     }
 
-    switch(convert_dlpack_to_dal_type(tensor.dtype)) {
-        case dal::data_layout::row_major:
-            return py::str("C")
-        break;
-        case dal::data_layout::column_major:
-            return py::str("F");
-        break;
-        default:
-            return py::none();
-}
-
+    switch (convert_dlpack_to_dal_type(tensor.dtype)) {
+        case dal::data_layout::row_major: return py::str("C") break;
+        case dal::data_layout::column_major: return py::str("F"); break;
+        default: return py::none();
+    }
 };
-
-
 
 } // namespace oneapi::dal::python::dlpack
