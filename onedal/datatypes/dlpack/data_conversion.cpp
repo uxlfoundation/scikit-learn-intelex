@@ -186,13 +186,13 @@ py::object dlpack_memory_order(py::capsule dlpack) {
     DLManagedTensorVersioned* dlmv;
     DLTensor tensor;
 
-    PyObject* capsule = caps.ptr();
+    PyObject* capsule = dlpack.ptr();
     if (PyCapsule_IsValid(capsule, "dltensor")) {
-        dlm = caps.get_pointer<DLManagedTensor>();
+        dlm = dlpack.get_pointer<DLManagedTensor>();
         tensor = dlm->dl_tensor;
     }
     else if (PyCapsule_IsValid(capsule, "dltensor_versioned")) {
-        dlmv = caps.get_pointer<DLManagedTensorVersioned>();
+        dlmv = dlpack.get_pointer<DLManagedTensorVersioned>();
         if (dlmv->version.major > DLPACK_MAJOR_VERSION) {
             throw std::runtime_error("dlpack tensor version newer than supported");
         }
@@ -203,7 +203,7 @@ py::object dlpack_memory_order(py::capsule dlpack) {
     }
 
     switch (convert_dlpack_to_dal_type(tensor.dtype)) {
-        case dal::data_layout::row_major: return py::str("C") break;
+        case dal::data_layout::row_major: return py::str("C"); break;
         case dal::data_layout::column_major: return py::str("F"); break;
         default: return py::none();
     }
