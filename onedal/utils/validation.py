@@ -470,4 +470,4 @@ def is_contiguous(X):
     elif hasattr(X, "__dlpack__"):
         return _backend.dlpack_memory_order(X.__dlpack__()) is not None
     else:
-        raise TypeError(f"layout of {type(X)} object cannot be checked")
+        return False
