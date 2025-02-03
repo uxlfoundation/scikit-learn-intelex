@@ -133,4 +133,5 @@ Enable Intel(R) GPU optimizations
 
    Support <support.rst>
    contribute.rst
+   ideas.rst
    license.rst
