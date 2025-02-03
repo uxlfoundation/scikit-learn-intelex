@@ -26,6 +26,7 @@ from .base import (
     call_method,
     gen_dataset,
     gen_models_info,
+    gen_sparse_dataset,
     sklearn_clone_dict,
 )
 
@@ -39,6 +40,7 @@ __all__ = [
     "call_method",
     "gen_models_info",
     "gen_dataset",
+    "gen_sparse_dataset",
     "sklearn_clone_dict",
     "DummyEstimator",
 ]

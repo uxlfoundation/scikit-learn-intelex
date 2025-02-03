@@ -27,9 +27,8 @@
 #include "oneapi/dal/table/detail/homogen_utils.hpp"
 
 #include "onedal/common/sycl_interfaces.hpp"
-#include "onedal/datatypes/data_conversion_sua_iface.hpp"
-#include "onedal/datatypes/utils/dtype_conversions.hpp"
-#include "onedal/datatypes/utils/dtype_dispatcher.hpp"
+#include "onedal/datatypes/sycl_usm/data_conversion.hpp"
+#include "onedal/datatypes/sycl_usm/dtype_conversion.hpp"
 
 /* __sycl_usm_array_interface__
  *
@@ -53,7 +52,7 @@
  * api_reference/dpctl/sycl_usm_array_interface.html#sycl-usm-array-interface-attribute>
 */
 
-namespace oneapi::dal::python {
+namespace oneapi::dal::python::sycl_usm {
 
 // Convert a string encoding elemental data type of the array to oneDAL homogen table data type.
 dal::data_type get_sua_dtype(const py::dict& sua) {
@@ -197,6 +196,6 @@ py::tuple get_npy_strides(const dal::data_layout& data_layout,
     return strides;
 }
 
-} // namespace oneapi::dal::python
+} // namespace oneapi::dal::python::sycl_usm
 
 #endif // ONEDAL_DATA_PARALLEL

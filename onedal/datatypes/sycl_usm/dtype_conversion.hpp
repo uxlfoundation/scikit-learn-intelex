@@ -16,25 +16,18 @@
 
 #pragma once
 
-#define PY_ARRAY_UNIQUE_SYMBOL ONEDAL_PY_ARRAY_API
+#include <string>
 
 #include <pybind11/pybind11.h>
-#include <numpy/arrayobject.h>
 
-#include "oneapi/dal/table/common.hpp"
-
-namespace oneapi::dal::python {
+#include "oneapi/dal/common.hpp"
+#include "onedal/datatypes/dtype_dispatcher.hpp"
 
 namespace py = pybind11;
 
-// Convert oneDAL table with zero-copy by use of `__sycl_usm_array_interface__` protocol.
-dal::table convert_from_sua_iface(py::object obj);
+namespace oneapi::dal::python::sycl_usm {
 
-// Create a dictionary for `__sycl_usm_array_interface__` protocol from oneDAL table properties.
-py::dict construct_sua_iface(const dal::table& input);
+dal::data_type convert_sua_to_dal_type(std::string dtype);
+std::string convert_dal_to_sua_type(dal::data_type dtype);
 
-// Adding `__sycl_usm_array_interface__` attribute to python oneDAL table, that representing
-// USM allocations.
-void define_sycl_usm_array_property(py::class_<dal::table>& t);
-
-} // namespace oneapi::dal::python
+} // namespace oneapi::dal::python::sycl_usm

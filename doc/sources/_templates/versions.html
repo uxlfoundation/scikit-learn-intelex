@@ -1,0 +1,22 @@
+<div class="version-switcher__container dropdown">
+    <script>
+      current_version = "{{current_version}}"
+      project_name = "{{project_name}}"
+    </script>
+    <div id="version-switcher-button"
+      class="version-switcher__button"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="version-switcher-dropdown"
+      aria-label="Version switcher list"
+      style="display:inline-block;padding-left:10px;padding-right:10px;"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </div>
+    <div id="version-switcher-dropdown"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="{{ button_id }}">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>

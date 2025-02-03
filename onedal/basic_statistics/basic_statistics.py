@@ -82,6 +82,7 @@ class BasicStatistics(BaseBasicStatistics):
             sample_weight = _check_array(sample_weight, ensure_2d=False)
 
         is_single_dim = data.ndim == 1
+
         data_table, weights_table = to_table(data, sample_weight, queue=queue)
 
         dtype = data_table.dtype
