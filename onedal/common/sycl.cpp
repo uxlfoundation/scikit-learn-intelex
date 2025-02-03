@@ -77,7 +77,7 @@ void instantiate_sycl_interfaces(py::module& m) {
                                })
         .def("get_device_id",
              [](const sycl::device& device) {
-                return get_device_id(device).value();
+                 return get_device_id(device).value();
              })
         .def_property_readonly("is_cpu", &sycl::device::is_cpu)
         .def_property_readonly("is_gpu", &sycl::device::is_gpu);
