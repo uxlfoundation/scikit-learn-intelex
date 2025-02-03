@@ -12,9 +12,9 @@
 .. See the License for the specific language governing permissions and
 .. limitations under the License.
 
-##################
+#####
 Ideas
-##################
+#####
 
 As an open-source project, we welcome community contributions to Intel(R) Extension for Scikit-learn.
 This document suggests contribution directions which we consider good introductory projects with meaningful
@@ -30,7 +30,7 @@ in-depth C++ coding). Each idea has a linked GitHub issue, a description, a diff
 extended goal. They are grouped into relative similarity to allow for easy combinations.
 
 Implement Covariance Estimators for Supercomputers
-----------------------------------
+--------------------------------------------------
 
 The Intel(R) Extension for Scikit-learn contains an MPI-enabled covariance algorithm, showing high performance
 from SBCs to multi-node clusters. It directly matches the capabilities of Scikit-Learn's EmpiricalCovariance
@@ -41,7 +41,7 @@ in their analyses. The total combined work of the two sub-projects is an easy di
 requirement. With the extended goals, it becomes a hard difficulty with large time requirement.
 
 Oracle Approximating Shrinkage Estimator (small)
-********************************************
+************************************************
 
 The output of EmpiricalCovariance is regularized by a shrinkage value impacted by the overall mean of the data.
 The goal would be to implement this estimator with post-processing changes to the fitted empirical covariance.
@@ -55,7 +55,7 @@ used for our Ridge Regression estimator.
 
 
 ShrunkCovariance Estimator (small)
-********************************************
+**********************************
 
 The output of EmpiricalCovariance is regularized by a shrinkage value impacted by the overall mean of the data.
 The goal would be to implement this estimator with post-processing changes to the fitted empirical covariance.
@@ -69,7 +69,7 @@ used for our Ridge Regression estimator.
 
 
 Implement the Preprocessing Estimators for Supercomputers
-----------------------------------
+---------------------------------------------------------
 
 The Intel(R) Extension for Scikit-learn contains two unique estimators used to get vital metrics from large datasets,
 known as BasicStatistics and IncrementalBasicStatistics. They generate relevant values like 'min', 'max', 'mean' 
@@ -82,7 +82,7 @@ with a combined time commitment of a large project. It does not have any extende
 
 
 StandardScaler Estimator (small)
-********************************************
+********************************
 
 The StandardScaler estimator scales the data to zero mean and unit variance. Use the IncrementalBasicStatistics estimator
 to generate the mean and variance to scale the data. Investigate where the new implementation may be low performance and 
@@ -93,7 +93,7 @@ when combined with other pre-processing projects.
 
 
 MaxAbsScaler Estimator (small)
-********************************************
+******************************
 
 The MaxAbScaler estimator scales the data by its maximum absolute value. Use the IncrementalBasicStatistics estimator
 to generate the min and max to scale the data. Investigate where the new implementation may be low performance and 
@@ -103,7 +103,7 @@ calculators in IncrementalBasicStatistics. This is similar to the MinMaxScaler a
 This is an easy difficulty project.
 
 MinMaxScaler Estimator (small)
-********************************************
+******************************
 
 The MinMaxScaler estimator scales the data to a range set by the minimum and maximum. Use the IncrementalBasicStatistics 
 estimator to generate the min and max to scale the data. Investigate where the new implementation may be low performance and 
@@ -114,7 +114,7 @@ This is an easy difficulty project.
 
 
 Normalizer Estimator (small)
-********************************************
+****************************
 
 The normalizer estimator scales the samples independently by the sample's norm (l1, l2). Use the IncrementalBasicStatistics 
 estimator to generate the sum squared data and use it for generating only the l2 version of the normalizer. Investigate where 
@@ -125,7 +125,7 @@ and would be a medium time commmitment when combined with other pre-processing p
 
 
 Expose Accelerated Kernel Distance Functions
-----------------------------------
+--------------------------------------------
 
 The Intel(R) Extension for Scikit-learn contains several kernel functions which have not been made available in our public API but
 are available in our onedal package.  Making these available to the users is an easy, python-only project good for learning about 
@@ -135,7 +135,7 @@ number of other estimators (see the Kernel trick).
 
 
 sigmoid_kernel Function (small)
-********************************************
+*******************************
 
 The sigmoid kernel converts data via tanh into a new space. This is easy difficulty, but requires significant benchmarking to find when
 the scikit-learn-intelex implementation provides better performance. This project will focus on the public API and including the benchmarking 
@@ -143,7 +143,7 @@ results for a seamless, high-performance user experience. Combines with the othe
 
 
 polynomial_kernel Function (small)
-********************************************
+**********************************
 
 The polynomial kernel converts data via a polynomial into a new space. This is easy difficulty, but requires significant benchmarking to find when
 the scikit-learn-intelex implementation provides better performance. This project will focus on the public API and including the benchmarking 
@@ -151,7 +151,7 @@ results for a seamless, high-performance user experience. Combines with the othe
 
 
 rbf_kernel Function (small)
-********************************************
+***************************
 
 The rbf kernel converts data via a radial basis function into a new space. This is easy difficulty, but requires significant benchmarking to find when
 the scikit-learn-intelex implementation provides better performance. This project will focus on the public API and including the benchmarking 
