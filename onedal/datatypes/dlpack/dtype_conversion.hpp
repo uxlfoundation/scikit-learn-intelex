@@ -33,10 +33,4 @@ namespace oneapi::dal::python::dlpack {
 dal::data_type convert_dlpack_to_dal_type(DLDataType dt);
 DLDataType convert_dal_to_dlpack_type(dal::data_type dt);
 
-template <typename Type>
-inline DLDataType make_data_type(Type tag = {}) {
-    constexpr auto dt = detail::make_data_type<Type>();
-    return convert_dlpack_to_dal_type(dt);
-}
-
 } // namespace oneapi::dal::python::dlpack
