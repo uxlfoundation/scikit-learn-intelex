@@ -137,10 +137,17 @@ class BasePCA(BaseEstimator, metaclass=ABCMeta):
 
         # Not supported with spmd policy so BasePCA must be specified
         result = BasePCA._get_backend(
-            BasePCA, "decomposition", "dim_reduction", "infer", policy, params, model, X_table
+            BasePCA,
+            "decomposition",
+            "dim_reduction",
+            "infer",
+            policy,
+            params,
+            model,
+            X_table,
         )
         return from_table(result.transformed_data)
-    
+
     transform = predict
 
 
