@@ -75,12 +75,10 @@ void instantiate_sycl_interfaces(py::module& m) {
                                    }
                                    return py::str(filter + ":") + py::str(py::int_(outidx));
                                })
-        .def_property_readonly("device_id",
-                               [](const sycl::device& device) {
-                                   // assumes we are not working with accelerators
-                                   std::string filter = get_device_name(device);
-                                   return get_device_id(device).value();
-                               })
+        .def("get_device_id",
+             [](const sycl::device& device) {
+                 return get_device_id(device).value();
+             })
         .def_property_readonly("is_cpu", &sycl::device::is_cpu)
         .def_property_readonly("is_gpu", &sycl::device::is_gpu);
 }
