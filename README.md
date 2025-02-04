@@ -46,7 +46,7 @@ The software acceleration is achieved with vector instructions, AI hardware-spec
 With Intel(R) Extension for Scikit-learn, you can:
 
 * Speed up training and inference by up to 100x with equivalent mathematical accuracy
-* Benefit from performance improvements across different Intel(R) hardware configurations, including GPUs
+* Benefit from performance improvements across different Intel(R) hardware configurations, including GPUs and multi-GPU configurations
 * Integrate the extension into your existing Scikit-learn applications without code modifications
 * Continue to use the open-source scikit-learn API
 * Enable and disable the extension with a couple of lines of code or at the command line

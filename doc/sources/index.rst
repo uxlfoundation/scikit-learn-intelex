@@ -29,7 +29,7 @@ The software acceleration is achieved with vector instructions, AI hardware-spec
 Use |intelex|, to:
 
 * Speed up training and inference by up to 100x with equivalent mathematical accuracy
-* Benefit from performance improvements across different x86-64 CPUs or Intel(R) GPUs
+* Benefit from performance improvements across different x86-64 CPUs and Intel(R) GPUs
 * Integrate the extension into your existing |sklearn| applications without code modifications
 * Enable and disable the extension with a couple of lines of code or at the command line
 
