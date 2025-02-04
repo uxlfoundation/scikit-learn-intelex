@@ -91,7 +91,7 @@ inline dal::homogen_table convert_to_homogen_impl(managed_t* dlm_tensor, py::obj
     return res;
 }
 
-dal::table convert_to_table(py::object obj, py::object q_obj) {
+dal::table convert_to_table(py::object obj, py::object q_obj, bool recursed) {
     dal::table res;
     bool versioned = false;
     DLManagedTensor* dlm;
@@ -132,8 +132,13 @@ dal::table convert_to_table(py::object obj, py::object q_obj) {
         dtype == dal::data_type::float64) {
         // If the queue exists, doesn't have the fp64 aspect, and the data is float64
         // then cast it to float32 (using reduce_precision), error raised in reduce_precision
-        py::object copy = reduce_precision(obj);
-        res = convert_to_table(copy, q_obj);
+        if (!recursed) {
+            py::object copy = reduce_precision(obj);
+            res = convert_to_table(copy, q_obj, true);
+        }
+        else {
+            throw std::invalid_argument("dlpack input could not be converted into onedal table.");
+        }
         return res;
     }
 #endif // ONEDAL_DATA_PARALLEL
@@ -143,8 +148,13 @@ dal::table convert_to_table(py::object obj, py::object q_obj) {
     if (get_dlpack_layout(tensor) == dal::data_layout::unknown) {
         // NOTE: this attempts to make a contiguous deep copy of the data
         // if possible, this is expected to be a special case
-        py::object copy = regenerate_layout(obj);
-        res = convert_to_table(copy, q_obj);
+        if (!recursed) {
+            py::object copy = regenerate_layout(obj);
+            res = convert_to_table(copy, q_obj, true);
+        }
+        else {
+            throw std::invalid_argument("dlpack input could not be converted into onedal table.");
+        }
         return res;
     }
 

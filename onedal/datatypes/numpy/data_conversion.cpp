@@ -152,7 +152,7 @@ inline csr_table_t convert_to_csr_impl(PyObject *py_data,
     return res_table;
 }
 
-dal::table convert_to_table(py::object inp_obj, py::object queue) {
+dal::table convert_to_table(py::object inp_obj, py::object queue, bool recursed) {
     dal::table res;
 
     PyObject *obj = inp_obj.ptr();
@@ -168,14 +168,19 @@ dal::table convert_to_table(py::object inp_obj, py::object queue) {
         // then cast it to float32
         int type = reinterpret_cast<PyArray_Descr *>(inp_obj.attr("dtype").ptr())->type_num;
         if (type == NPY_DOUBLE || type == NPY_DOUBLELTR) {
-            PyErr_WarnEx(
-                PyExc_RuntimeWarning,
-                "Data will be converted into float32 from float64 because device does not support it",
-                1);
             // use astype instead of PyArray_Cast in order to support scipy sparse inputs
-            inp_obj = inp_obj.attr("astype")(py::dtype::of<float>());
-            res = convert_to_table(
-                inp_obj); // queue will be set to none, as this check is no longer necessary
+            if (!recursed) {
+                PyErr_WarnEx(
+                    PyExc_RuntimeWarning,
+                    "Data will be converted into float32 from float64 because device does not support it",
+                    1);
+                inp_obj = inp_obj.attr("astype")(py::dtype::of<float>());
+                res = convert_to_table(inp_obj, queue, true);
+            }
+            else {
+                throw std::invalid_argument(
+                    "[convert_to_table] Numpy input could not be converted into onedal table.");
+            }
             return res;
         }
     }
@@ -188,8 +193,8 @@ dal::table convert_to_table(py::object inp_obj, py::object queue) {
             // NOTE: this will make a C-contiguous deep copy of the data
             // this is expected to be a special case
             obj = reinterpret_cast<PyObject *>(PyArray_GETCONTIGUOUS(ary));
-            if (obj) {
-                res = convert_to_table(py::cast<py::object>(obj), queue);
+            if (obj && !recursed) {
+                res = convert_to_table(py::cast<py::object>(obj), queue, true);
                 Py_DECREF(obj);
                 return res;
             }
