@@ -140,5 +140,5 @@ def test_backend_device_id():
         if device.is_gpu or device.is_cpu:
             backend_device = _backend.SyclDevice(i)
             assert (
-                device.get_device_id() == backend_device.get_device_id()
+                i == backend_device.get_device_id()
             ), f"_backend id does not match device_id: {i}"
