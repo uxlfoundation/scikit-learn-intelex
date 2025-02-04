@@ -122,7 +122,7 @@ class BaseLinearRegression(BaseEstimator, metaclass=ABCMeta):
         _check_is_fitted(self)
 
         sua_iface, xp, _ = _get_sycl_namespace(X)
-        use_raw_input = _get_config().get("use_raw_input") is True
+        use_raw_input = _get_config().get("use_raw_input", False) is True
         if use_raw_input:
             queue = X.sycl_queue
         policy = self._get_policy(queue, X)
@@ -315,7 +315,7 @@ class Ridge(BaseLinearRegression):
             dtype = np.float64
             X = X.astype(dtype, copy=self.copy_X)
 
-        use_raw_input = _get_config().get("use_raw_input") is True
+        use_raw_input = _get_config().get("use_raw_input", False) is True
         if not use_raw_input:
             X = _check_array(
                 X,

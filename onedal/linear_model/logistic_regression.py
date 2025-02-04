@@ -66,7 +66,7 @@ class BaseLogisticRegression(onedal_BaseEstimator, metaclass=ABCMeta):
         }
 
     def _fit(self, X, y, module, queue):
-        use_raw_input = _get_config().get("use_raw_input") is True
+        use_raw_input = _get_config().get("use_raw_input", False) is True
         sua_iface = _get_sycl_namespace(X, y)[0]
         if use_raw_input and sua_iface is not None:
             queue = X.sycl_queue
@@ -166,7 +166,7 @@ class BaseLogisticRegression(onedal_BaseEstimator, metaclass=ABCMeta):
     def _infer(self, X, module, queue, sua_iface):
         _check_is_fitted(self)
 
-        use_raw_input = _get_config().get("use_raw_input") is True
+        use_raw_input = _get_config().get("use_raw_input", False) is True
         if use_raw_input and _get_sycl_namespace(X)[0] is not None:
             queue = X.sycl_queue
 
@@ -200,7 +200,7 @@ class BaseLogisticRegression(onedal_BaseEstimator, metaclass=ABCMeta):
         return result
 
     def _predict(self, X, module, queue):
-        use_raw_input = _get_config().get("use_raw_input") is True
+        use_raw_input = _get_config().get("use_raw_input", False) is True
         sua_iface, xp, _ = _get_sycl_namespace(X)
         if use_raw_input and sua_iface is not None:
             queue = X.sycl_queue
@@ -211,7 +211,7 @@ class BaseLogisticRegression(onedal_BaseEstimator, metaclass=ABCMeta):
         return y
 
     def _predict_proba(self, X, module, queue):
-        use_raw_input = _get_config().get("use_raw_input") is True
+        use_raw_input = _get_config().get("use_raw_input", False) is True
         sua_iface, xp, _ = _get_sycl_namespace(X)
         if use_raw_input and sua_iface is not None:
             queue = X.sycl_queue

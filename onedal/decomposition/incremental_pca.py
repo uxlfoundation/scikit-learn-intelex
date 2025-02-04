@@ -134,7 +134,7 @@ class IncrementalPCA(BasePCA):
             Returns the instance itself.
         """
 
-        use_raw_input = _get_config()["use_raw_input"]
+        use_raw_input = _get_config().get("use_raw_input", False) is True
         sua_iface, xp, _ = _get_sycl_namespace(X)
         # Saving input array namespace and sua_iface, that will be used in
         # finalize_fit.

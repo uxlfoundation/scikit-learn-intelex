@@ -104,7 +104,7 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
         self._input_sua_iface = sua_iface
         self._input_xp = xp
 
-        use_raw_input = _get_config().get("use_raw_input", False)
+        use_raw_input = _get_config().get("use_raw_input", False) is True
         if use_raw_input and sua_iface:
             queue = X.sycl_queue
         if not use_raw_input:

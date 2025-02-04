@@ -241,7 +241,7 @@ class IncrementalRidge(BaseLinearRegression):
         module = self._get_backend("linear_model", "regression")
 
         self._sua_iface, self._xp, _ = _get_sycl_namespace(X)
-        use_raw_input = _get_config().get("use_raw_input") is True
+        use_raw_input = _get_config().get("use_raw_input", False) is True
         if use_raw_input and self._sua_iface is not None:
             queue = X.sycl_queue
 

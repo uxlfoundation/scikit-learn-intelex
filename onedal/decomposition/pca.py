@@ -144,7 +144,7 @@ class BasePCA(BaseEstimator, metaclass=ABCMeta):
 class PCA(BasePCA):
 
     def fit(self, X, y=None, queue=None):
-        use_raw_input = _get_config()["use_raw_input"]
+        use_raw_input = _get_config().get("use_raw_input", False) is True
         sua_iface, xp, _ = _get_sycl_namespace(X)
         if use_raw_input and sua_iface:
             queue = X.sycl_queue
