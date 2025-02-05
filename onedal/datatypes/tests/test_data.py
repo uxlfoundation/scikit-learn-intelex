@@ -458,7 +458,7 @@ def test_low_precision_gpu_conversion_array_api(dtype):
 
 @pytest.mark.parametrize("X", [None, 5, "test", True, [], np.pi, lambda: None])
 @pytest.mark.parametrize("queue", get_queues())
-def test_non_array(X, queue):
+def test_non_array_numpy(X, queue):
     # Verify that to and from table doesn't raise errors
     # no guarantee is made about type or content
     err_str = ""
@@ -481,7 +481,7 @@ def test_non_array(X, queue):
     not _is_dpc_backend, reason="Requires DPC backend for dtype conversion"
 )
 @pytest.mark.parametrize("X", [None, 5, "test", True, [], np.pi, lambda: None])
-def test_low_precision_non_array(X):
+def test_low_precision_non_array_numpy(X):
     # Use a dummy queue as fp32 hardware is not in public testing
 
     class DummySyclQueue:
@@ -537,3 +537,12 @@ def test_table_conversions_dlpack(dataframe, queue, order, data_shape, dtype):
     X = _OnlyDLTensor(X)
 
     to_table(X)
+
+
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+def test_empty_and_scalars(dataframe, queue):
+    # Verify that the various supported basic types (similar to non-array, with
+    # only those that are supported)
+    for x in [[], 5, 3.141, True]:
+        X = _convert_to_dataframe(x, sycl_queue=queue, dataframe=dataframe)
+        to_table(X)

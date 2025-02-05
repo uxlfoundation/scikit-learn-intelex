@@ -40,8 +40,8 @@ inline dal::homogen_table convert_to_homogen_impl(managed_t* dlm_tensor, py::obj
     // use static cast because data is known to be void*, and reintrepret_cast
     // since we know that T* is of a set specific types that we will guarantee
     // for the compiler.
-    char* raw_ptr = static_cast<char*>(tensor.data);
-    const T* const ptr = reinterpret_cast<const T*>(raw_ptr + tensor.byte_offset);
+    const char* raw_ptr = static_cast<const char*>(tensor.data);
+    const T* ptr = reinterpret_cast<const T*>(raw_ptr + tensor.byte_offset);
 
     // get shape, if 1 dimensional, force col count to 1
     std::int64_t row_count = tensor.shape[0];
