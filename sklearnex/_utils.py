@@ -16,8 +16,12 @@
 
 import logging
 import os
+import re
 import warnings
 from abc import ABC
+
+import sklearn
+from sklearn.utils._estimator_html_repr import _HTMLDocumentationLinkMixin
 
 from daal4py.sklearn._utils import (
     PatchingConditionsChain as daal4py_PatchingConditionsChain,
@@ -128,10 +132,8 @@ def register_hyperparameters(hyperparameters_map):
 
 
 # This abstract class is meant to generate a clickable doc link for classses
-# in sklearnex that are not part of base scikit-learn. It should be inherited
-# before inheriting from a scikit-learn estimator, otherwise will get overriden
-# by the estimator's original.
-class IntelEstimator(ABC):
+# in sklearnex that are not part of base scikit-learn.
+class IntelEstimator(_HTMLDocumentationLinkMixin):
     @property
     def _doc_link_module(self) -> str:
         return "sklearnex"
@@ -141,3 +143,23 @@ class IntelEstimator(ABC):
         module_path, _ = self.__class__.__module__.rsplit(".", 1)
         class_name = self.__class__.__name__
         return f"https://uxlfoundation.github.io/scikit-learn-intelex/latest/non-scikit-algorithms.html#{module_path}.{class_name}"
+
+
+# This abstract class is meant to generate a clickable doc link for classses
+# in sklearnex that have counterparts in scikit-learn.
+class PatchableEstimator(_HTMLDocumentationLinkMixin):
+    @property
+    def _doc_link_module(self) -> str:
+        return "sklearnex"
+
+    @property
+    def _doc_link_template(self) -> str:
+        if re.search(r"^\d\.\d\.\d$", sklearn.__version__):
+            sklearn_version_parts = sklearn.__version__.split(".")
+            doc_version_url = sklearn_version_parts[0] + "." + sklearn_version_parts[1]
+        else:
+            doc_version_url = "stable"
+        module_path, _ = self.__class__.__module__.rsplit(".", 1)
+        module_path = re.sub("sklearnex", "sklearn", module_path)
+        class_name = self.__class__.__name__
+        return f"https://scikit-learn.org/{doc_version_url}/modules/generated/{module_path}.{class_name}.html"

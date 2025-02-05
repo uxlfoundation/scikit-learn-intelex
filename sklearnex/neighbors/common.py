@@ -27,11 +27,11 @@ from sklearn.utils.validation import check_is_fitted
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal.utils import _check_array, _num_features, _num_samples
 
-from .._utils import PatchingConditionsChain
+from .._utils import PatchableEstimator, PatchingConditionsChain
 from ..utils._array_api import get_namespace
 
 
-class KNeighborsDispatchingBase:
+class KNeighborsDispatchingBase(PatchableEstimator):
     def _fit_validation(self, X, y=None):
         if sklearn_check_version("1.2"):
             self._validate_params()

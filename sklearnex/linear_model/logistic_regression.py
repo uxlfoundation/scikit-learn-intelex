@@ -38,7 +38,7 @@ if daal_check_version((2024, "P", 1)):
 
     from .._config import get_config
     from .._device_offload import dispatch, wrap_output_data
-    from .._utils import PatchingConditionsChain, get_patch_message
+    from .._utils import PatchableEstimator, PatchingConditionsChain, get_patch_message
 
     if sklearn_check_version("1.6"):
         from sklearn.utils.validation import validate_data
@@ -65,7 +65,9 @@ if daal_check_version((2024, "P", 1)):
             "score",
         ]
     )
-    class LogisticRegression(_sklearn_LogisticRegression, BaseLogisticRegression):
+    class LogisticRegression(
+        PatchableEstimator, _sklearn_LogisticRegression, BaseLogisticRegression
+    ):
         __doc__ = _sklearn_LogisticRegression.__doc__
 
         if sklearn_check_version("1.2"):

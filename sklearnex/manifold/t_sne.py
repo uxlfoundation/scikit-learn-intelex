@@ -14,8 +14,15 @@
 # limitations under the License.
 # ===============================================================================
 
-from daal4py.sklearn.manifold import TSNE
+from daal4py.sklearn.manifold import TSNE as _d4p_TSNE
 from onedal._device_offload import support_input_format
+
+from .._utils import PatchableEstimator
+
+
+class TSNE(PatchableEstimator, _d4p_TSNE):
+    pass
+
 
 TSNE.fit = support_input_format(queue_param=False)(TSNE.fit)
 TSNE.fit_transform = support_input_format(queue_param=False)(TSNE.fit_transform)

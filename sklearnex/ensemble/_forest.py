@@ -61,7 +61,7 @@ from sklearnex import get_hyperparameters
 from sklearnex._utils import register_hyperparameters
 
 from .._device_offload import dispatch, wrap_output_data
-from .._utils import PatchingConditionsChain
+from .._utils import PatchableEstimator, PatchingConditionsChain
 from ..utils._array_api import get_namespace
 
 if sklearn_check_version("1.2"):
@@ -75,7 +75,7 @@ else:
     validate_data = BaseEstimator._validate_data
 
 
-class BaseForest(ABC):
+class BaseForest(PatchableEstimator, ABC):
     _onedal_factory = None
 
     def _onedal_fit(self, X, y, sample_weight=None, queue=None):
