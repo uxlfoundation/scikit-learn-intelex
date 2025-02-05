@@ -21,12 +21,22 @@ import warnings
 from abc import ABC
 
 import sklearn
-from sklearn.utils._estimator_html_repr import _HTMLDocumentationLinkMixin
 
 from daal4py.sklearn._utils import (
     PatchingConditionsChain as daal4py_PatchingConditionsChain,
 )
-from daal4py.sklearn._utils import daal_check_version
+from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+
+# Note: if inheriting from '_HTMLDocumentationLinkMixin' here, it then doesn't matter
+# the order of inheritance of classes for estimators when this is later subclassed,
+# whereas if inheriting from something else, the subclass that inherits from this needs
+# to be the first inherited class in estimators in order for it to take effect.
+if sklearn_check_version("1.4"):
+    from sklearn.utils._estimator_html_repr import _HTMLDocumentationLinkMixin
+
+    BaseForHTMLDocLink = _HTMLDocumentationLinkMixin
+else:
+    BaseForHTMLDocLink = ABC
 
 
 class PatchingConditionsChain(daal4py_PatchingConditionsChain):
@@ -133,7 +143,7 @@ def register_hyperparameters(hyperparameters_map):
 
 # This abstract class is meant to generate a clickable doc link for classses
 # in sklearnex that are not part of base scikit-learn.
-class IntelEstimator(_HTMLDocumentationLinkMixin):
+class IntelEstimator(BaseForHTMLDocLink):
     @property
     def _doc_link_module(self) -> str:
         return "sklearnex"
@@ -147,7 +157,7 @@ class IntelEstimator(_HTMLDocumentationLinkMixin):
 
 # This abstract class is meant to generate a clickable doc link for classses
 # in sklearnex that have counterparts in scikit-learn.
-class PatchableEstimator(_HTMLDocumentationLinkMixin):
+class PatchableEstimator(BaseForHTMLDocLink):
     @property
     def _doc_link_module(self) -> str:
         return "sklearnex"
