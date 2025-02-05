@@ -40,3 +40,10 @@ IncrementalLinearRegression
 .. automethod:: sklearnex.linear_model.IncrementalLinearRegression.fit
 .. automethod:: sklearnex.linear_model.IncrementalLinearRegression.partial_fit
 .. automethod:: sklearnex.linear_model.IncrementalLinearRegression.predict
+
+IncrementalRidge
+----------------
+.. autoclass:: sklearnex.linear_model.IncrementalRidge
+.. automethod:: sklearnex.linear_model.IncrementalRidge.fit
+.. automethod:: sklearnex.linear_model.IncrementalRidge.partial_fit
+.. automethod:: sklearnex.linear_model.IncrementalRidge.predict
