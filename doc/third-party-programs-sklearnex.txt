@@ -421,7 +421,7 @@ DAMAGE.
 
 -------------------------------------------------------------
 
-3. DLPack
+4. DLPack
                                 Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
