@@ -15,16 +15,12 @@
 # ===============================================================================
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
-from daal4py.sklearn.manifold import TSNE as _d4p_TSNE
+from daal4py.sklearn.manifold import TSNE
 from onedal._device_offload import support_input_format
 
 from .._utils import PatchableEstimator
 
-
-@control_n_jobs(decorated_methods=["fit", "fit_transform"])
-class TSNE(PatchableEstimator, _d4p_TSNE):
-    pass
-
-
 TSNE.fit = support_input_format(queue_param=False)(TSNE.fit)
 TSNE.fit_transform = support_input_format(queue_param=False)(TSNE.fit_transform)
+TSNE._doc_link_module = "daal4py"
+TSNE._doc_link_template = PatchableEstimator._doc_link_template

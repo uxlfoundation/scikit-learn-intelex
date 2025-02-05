@@ -172,4 +172,6 @@ class PatchableEstimator(BaseForHTMLDocLink):
         module_path, _ = self.__class__.__module__.rsplit(".", 1)
         module_path = re.sub("sklearnex", "sklearn", module_path)
         class_name = self.__class__.__name__
+        # for TSNE, which re-uses daal4py
+        module_path = re.sub(r"daal4py\.", "", module_path)
         return f"https://scikit-learn.org/{doc_version_url}/modules/generated/{module_path}.{class_name}.html"
