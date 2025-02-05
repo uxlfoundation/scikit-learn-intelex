@@ -37,7 +37,7 @@ def test_sklearnex_import(dataframe, queue):
     tsne = TSNE(n_components=2, perplexity=2.0, random_state=42, init="pca").fit(X_df)
     embedding = tsne.fit_transform(X_df)
     embedding = _as_numpy(embedding)
-    assert "daal4py" in tsne.__module__
+    assert "sklearnex" in tsne.__module__
     assert tsne.n_components == 2
     assert tsne.perplexity == 2.0
     assert tsne.random_state == 42
