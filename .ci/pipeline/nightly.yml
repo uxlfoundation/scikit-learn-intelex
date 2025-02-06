@@ -61,8 +61,6 @@ jobs:
     vmImage: 'ubuntu-22.04'
   steps:
   - script: |
-      conda config --append channels conda-forge
-      conda config --remove channels defaults
       conda update -y -q conda
       conda create -y -q -n CB -c conda-forge python=$(python.version) dal-devel impi-devel
     displayName: 'Conda create'
