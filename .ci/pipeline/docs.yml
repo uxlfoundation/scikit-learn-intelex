@@ -15,10 +15,10 @@
 #===============================================================================
 
 trigger:
-  branches:
+  #doc build trigger by a release tag
+  tags:
     include:
-    - main
-    - rls/*
+      - "release*" 
   paths:
     include:
     - requirements-doc.txt
