@@ -134,7 +134,7 @@ dal::data_type convert_dlpack_to_dal_type(DLDataType dtype) {
         return get_fwd_map().at(dtype);
     }
     else {
-        throw std::runtime_error("Not a known \"dlpack\" type");
+        throw std::runtime_error("Found unsupported tensor type");
     }
 }
 
@@ -143,7 +143,7 @@ DLDataType convert_dal_to_dlpack_type(dal::data_type dtype) {
         return get_inv_map().at(dtype);
     }
     else {
-        throw std::runtime_error("Not a known \"dal\" type");
+        throw std::runtime_error("Found unsupported dal type");
     }
 }
 

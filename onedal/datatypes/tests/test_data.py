@@ -106,7 +106,7 @@ class _OnlyDLTensor:
         return self.data.__dlpack__()
 
 
-def _to_table_suppored(array):
+def _to_table_supported(array):
     return (
         isinstance(array, np.ndarray)
         or hasattr(array, "__sycl_usm_ndarray_interface__")
@@ -471,11 +471,17 @@ def test_non_array(X, queue):
     # Verify that to and from table doesn't raise errors
     # no guarantee is made about type or content
     err_str = ""
+    types = ["float64", "float32", "int64", "int32"]
 
     if np.isscalar(X):
-        if np.atleast_2d(X).dtype not in [np.float64, np.float32, np.int64, np.int32]:
-            err_str = "Found unsupported array type"
-    elif not (X is None or _to_table_suppored(X)):
+        if np.atleast_2d(X).dtype.__name__ not in types:
+            err_str = r"Found unsupported array type"
+    elif _to_table_supported(X):
+        if 0 in X.shape:
+            err_str = r".*count is lower than or equal to zero"
+        if X.dtype.__name__ not in types:
+            err_str = r"Found unsupported (array|tensor) type"
+    elif X is not None:
         err_str = r"\[convert_to_table\] Not available input format for convert Python object to onedal table."
 
     if err_str:
@@ -507,7 +513,9 @@ def test_low_precision_non_array_numpy(X):
 
 
 @pytest.mark.parametrize("X", [5, True, [], [[]], np.pi])
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("numpy,dpctl,dpnp,array_api"))
+@pytest.mark.parametrize(
+    "dataframe,queue", get_dataframes_and_queues("numpy,dpctl,dpnp,array_api")
+)
 def test_basic_and_scalar_array_types(X, dataframe, queue):
     # Verify that the various supported basic types (similar to non-array, with
     # only those that are supported)

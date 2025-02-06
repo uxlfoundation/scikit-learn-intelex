@@ -57,8 +57,9 @@ std::int32_t get_ndim(const DLTensor& tensor) {
 dal::data_layout get_dlpack_layout(const DLTensor& tensor) {
     // determine the layout of a dlpack tensor
     // get shape, if 1 dimensional, force col count to 1
-    std::int64_t r_count = tensor.shape[0] ? tensor.shape[0] : 1l;
+    std::int64_t r_count = tensor.shape[0];
     std::int64_t c_count = get_ndim(tensor) > 1 ? tensor.shape[1] : 1l;
+
     const std::int64_t* strides = tensor.strides;
     // if NULL then row major contiguous (see dlpack.h)
     // if 1 column array, also row major
@@ -68,6 +69,13 @@ dal::data_layout get_dlpack_layout(const DLTensor& tensor) {
     }
     else if (strides[0] == 1 && strides[1] == r_count) {
         return dal::data_layout::column_major;
+    }
+    else if (r_count < 1){
+        // match numpy checks for empty arrays
+        throw std::length_error("Row count is lower than or equal to zero")
+    }
+    else if (c_count < 1){
+        throw std::length_error("Column count is lower than or equal to zero")
     }
     else {
         return dal::data_layout::unknown;

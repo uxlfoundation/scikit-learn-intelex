@@ -45,7 +45,7 @@ inline dal::homogen_table convert_to_homogen_impl(managed_t* dlm_tensor, py::obj
 
     // get shape, if 0 or 1 dimensional, force col and row count to at least 1
     // this will force the output dal table to be 2d
-    std::int64_t row_count = tensor.shape[0] ? tensor.shape[0] : 1l;
+    std::int64_t row_count = tensor.shape[0];
     std::int64_t col_count = get_ndim(tensor) > 1 ? tensor.shape[1] : 1l;
 
     // get data layout for homogeneous check
@@ -164,7 +164,7 @@ dal::table convert_to_table(py::object obj, py::object q_obj, bool recursed) {
                     : convert_to_homogen_impl<CType, DLManagedTensor>(dlm, q_obj);
     SET_CTYPE_FROM_DAL_TYPE(dtype,
                             MAKE_HOMOGEN_TABLE,
-                            throw std::invalid_argument("Found unsupported array type"));
+                            throw std::invalid_argument("Found unsupported tensor type"));
 #undef MAKE_HOMOGEN_TABLE
 
     // take ownership of the capsule, this is important to prevent data deletion
