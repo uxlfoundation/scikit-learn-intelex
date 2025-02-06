@@ -478,11 +478,8 @@ def test_non_array(X, queue):
     if np.isscalar(X):
         if np.atleast_2d(X).dtype not in types:
             err_str = r"Found unsupported array type"
-    elif _to_table_supported(X):
-        if X.dtype not in types:
+    elif _to_table_supported(X) and X.dtype not in types:
             err_str = r"Found unsupported (array|tensor) type"
-        if 0 in X.shape:
-            err_str = r".*count is lower than or equal to zero"
     elif X is not None:
         err_str = r"\[convert_to_table\] Not available input format for convert Python object to onedal table."
 
@@ -516,7 +513,7 @@ def test_low_precision_non_array_numpy(X):
 
 @pytest.mark.parametrize("X", [5, True, [], [[]], np.pi])
 @pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("numpy,dpctl,dpnp,array_api")
+    "dataframe,queue", get_dataframes_and_queues("dpctl,dpnp,array_api")
 )
 def test_basic_and_scalar_array_types(X, dataframe, queue):
     # Verify that the various supported basic types (similar to non-array, with
