@@ -188,7 +188,7 @@ def control_n_jobs(decorated_methods: list = []):
                 parameter_constraints["n_jobs"] = [Integral, None]
 
         @wraps(original_init)
-        def init_with_n_jobs(self, *args, n_jobs=4, **kwargs):
+        def init_with_n_jobs(self, *args, n_jobs=None, **kwargs):
             original_init(self, *args, **kwargs)
             self.n_jobs = n_jobs
 
@@ -200,7 +200,7 @@ def control_n_jobs(decorated_methods: list = []):
             params_copy.update(
                 {
                     "n_jobs": Parameter(
-                        name="n_jobs", kind=Parameter.KEYWORD_ONLY, default=4
+                        name="n_jobs", kind=Parameter.KEYWORD_ONLY, default=None
                     )
                 }
             )
