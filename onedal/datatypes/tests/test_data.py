@@ -471,15 +471,17 @@ def test_non_array(X, queue):
     # Verify that to and from table doesn't raise errors
     # no guarantee is made about type or content
     err_str = ""
-    types = ["float64", "float32", "int64", "int32"]
+
+    xp = X.__array_namespace__() if hasattr(X, "__array_namepspace__") else np
+    types = [xp.float64, xp.float32, xp.int64, xp.int32]
 
     if np.isscalar(X):
-        if np.atleast_2d(X).dtype.__name__ not in types:
+        if np.atleast_2d(X).dtype not in types:
             err_str = r"Found unsupported array type"
     elif _to_table_supported(X):
         if 0 in X.shape:
             err_str = r".*count is lower than or equal to zero"
-        if X.dtype.__name__ not in types:
+        if X.dtype not in types:
             err_str = r"Found unsupported (array|tensor) type"
     elif X is not None:
         err_str = r"\[convert_to_table\] Not available input format for convert Python object to onedal table."
