@@ -108,8 +108,6 @@ def _test_input_format_c_contiguous_numpy(queue, dtype):
 @pytest.mark.parametrize("queue", get_queues())
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_input_format_c_contiguous_numpy(queue, dtype):
-    if queue and queue.sycl_device.is_gpu:
-        pytest.skip("Sporadic failures on GPU sycl_queue.")
     _test_input_format_c_contiguous_numpy(queue, dtype)
 
 
@@ -130,8 +128,6 @@ def _test_input_format_f_contiguous_numpy(queue, dtype):
 @pytest.mark.parametrize("queue", get_queues())
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_input_format_f_contiguous_numpy(queue, dtype):
-    if queue and queue.sycl_device.is_gpu:
-        pytest.skip("Sporadic failures on GPU sycl_queue.")
     _test_input_format_f_contiguous_numpy(queue, dtype)
 
 
@@ -156,8 +152,6 @@ def _test_input_format_c_not_contiguous_numpy(queue, dtype):
 @pytest.mark.parametrize("queue", get_queues())
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_input_format_c_not_contiguous_numpy(queue, dtype):
-    if queue and queue.sycl_device.is_gpu:
-        pytest.skip("Sporadic failures on GPU sycl_queue.")
     _test_input_format_c_not_contiguous_numpy(queue, dtype)
 
 
@@ -180,8 +174,6 @@ def _test_input_format_c_contiguous_pandas(queue, dtype):
 @pytest.mark.parametrize("queue", get_queues())
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_input_format_c_contiguous_pandas(queue, dtype):
-    if queue and queue.sycl_device.is_gpu:
-        pytest.skip("Sporadic failures on GPU sycl_queue.")
     _test_input_format_c_contiguous_pandas(queue, dtype)
 
 
@@ -204,8 +196,6 @@ def _test_input_format_f_contiguous_pandas(queue, dtype):
 @pytest.mark.parametrize("queue", get_queues())
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_input_format_f_contiguous_pandas(queue, dtype):
-    if queue and queue.sycl_device.is_gpu:
-        pytest.skip("Sporadic failures on GPU sycl_queue.")
     _test_input_format_f_contiguous_pandas(queue, dtype)
 
 
