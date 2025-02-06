@@ -106,6 +106,15 @@ class _OnlyDLTensor:
         return self.data.__dlpack__()
 
 
+def _to_table_suppored(array):
+    return (
+        isinstance(array, np.ndarray)
+        or hasattr(array, "__sycl_usm_ndarray_interface__")
+        or hasattr(array, "__dlpack__")
+        or sp.issparse(array)
+    )
+
+
 def _test_input_format_c_contiguous_numpy(queue, dtype):
     rng = np.random.RandomState(0)
     x_default = np.array(5 * rng.random_sample((10, 4)), dtype=dtype)
@@ -466,7 +475,7 @@ def test_non_array(X, queue):
     if np.isscalar(X):
         if np.atleast_2d(X).dtype not in [np.float64, np.float32, np.int64, np.int32]:
             err_str = "Found unsupported array type"
-    elif not (X is None or isinstance(X, np.ndarray)):
+    elif not (X is None or _to_table_suppored(X)):
         err_str = r"\[convert_to_table\] Not available input format for convert Python object to onedal table."
 
     if err_str:
@@ -498,7 +507,7 @@ def test_low_precision_non_array_numpy(X):
 
 
 @pytest.mark.parametrize("X", [5, True, [], [[]], np.pi])
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("numpy,dpctl,dpnp,array_api"))
 def test_basic_and_scalar_array_types(X, dataframe, queue):
     # Verify that the various supported basic types (similar to non-array, with
     # only those that are supported)
