@@ -10,7 +10,7 @@ scikit-learn==1.5.2 ; python_version <= '3.9'
 scikit-learn==1.6.1 ; python_version >= '3.10'
 pandas==2.1.3 ; python_version < '3.11'
 pandas==2.2.3 ; python_version >= '3.11'
-xgboost==2.1.3
+xgboost==2.1.4
 lightgbm==4.5.0
 catboost==1.2.7 ; python_version < '3.11' # TODO: Remove 3.11 condition when catboost supports numpy 2.0
 shap==0.46.0 ; python_version < '3.13'
