@@ -43,9 +43,10 @@ inline dal::homogen_table convert_to_homogen_impl(managed_t* dlm_tensor, py::obj
     const char* raw_ptr = static_cast<const char*>(tensor.data);
     const T* ptr = reinterpret_cast<const T*>(raw_ptr + tensor.byte_offset);
 
-    // get shape, if 1 dimensional, force col count to 1
-    std::int64_t row_count = tensor.shape[0];
-    std::int64_t col_count = get_ndim(tensor) == 1 ? 1l : tensor.shape[1];
+    // get shape, if 0 or 1 dimensional, force col and row count to at least 1
+    // this will force the output dal table to be 2d
+    std::int64_t row_count = tensor.shape[0] ? tensor.shape[0] : 1l;
+    std::int64_t col_count = get_ndim(tensor) > 1 ? tensor.shape[1] : 1l;
 
     // get data layout for homogeneous check
     const dal::data_layout layout = get_dlpack_layout(tensor);

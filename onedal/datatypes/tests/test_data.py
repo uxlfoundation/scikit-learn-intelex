@@ -497,7 +497,7 @@ def test_low_precision_non_array_numpy(X):
     test_non_array(X, queue)
 
 
-@pytest.mark.parametrize("X", [None, 5, True, [], np.pi])
+@pytest.mark.parametrize("X", [5, True, [], [[]], np.pi])
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 def test_basic_and_scalar_array_types(X, dataframe, queue):
     # Verify that the various supported basic types (similar to non-array, with

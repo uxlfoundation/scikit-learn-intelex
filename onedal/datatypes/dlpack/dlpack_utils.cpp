@@ -46,7 +46,7 @@ void dlpack_take_ownership(py::capsule& caps) {
 }
 
 std::int32_t get_ndim(const DLTensor& tensor) {
-    // check if 1 or 2 dimensional, and return the number of dimensions
+    // check if > 2 dimensional, and return the number of dimensions
     const std::int32_t ndim = tensor.ndim;
     if (ndim > 2) {
         throw std::length_error("Input array has wrong dimensionality (must be 2d).");
@@ -57,9 +57,8 @@ std::int32_t get_ndim(const DLTensor& tensor) {
 dal::data_layout get_dlpack_layout(const DLTensor& tensor) {
     // determine the layout of a dlpack tensor
     // get shape, if 1 dimensional, force col count to 1
-    std::int64_t r_count, c_count;
-    c_count = get_ndim(tensor) == 1 ? 1l : tensor.shape[1];
-    r_count = tensor.shape[0];
+    std::int64_t r_count = tensor.shape[0] ? tensor.shape[0] : 1l;
+    std::int64_t c_count = get_ndim(tensor) > 1 ? tensor.shape[1] : 1l;
     const std::int64_t* strides = tensor.strides;
     // if NULL then row major contiguous (see dlpack.h)
     // if 1 column array, also row major
