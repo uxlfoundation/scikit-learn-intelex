@@ -19,11 +19,11 @@ import sys
 import threading
 from functools import wraps
 from inspect import Parameter, signature
-from joblib import cpu_count
 from numbers import Integral
 from warnings import warn
 
 import threadpoolctl
+from joblib import cpu_count
 
 from daal4py import _get__daal_link_version__, daalinit, num_threads
 
