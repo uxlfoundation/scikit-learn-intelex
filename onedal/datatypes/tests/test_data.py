@@ -484,6 +484,7 @@ def test_non_array(X, queue):
     elif X is not None:
         err_str = r"\[convert_to_table\] Not available input format for convert Python object to onedal table."
 
+    print(err_str)
     if err_str:
         with pytest.raises(ValueError, match=err_str):
             to_table(X)
