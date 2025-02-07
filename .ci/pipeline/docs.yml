@@ -61,16 +61,8 @@ jobs:
       git tag --list
  
       # Extract the version from the triggering tag
-      DOC_VERSION=$(git describe --tags --abbrev=0)
+      export DOC_VERSION=${GITHUB_REF#refs/tags/}
       echo "DOC_VERSION1: $DOC_VERSION"
-
-      # If no tag is found, fetch the latest version from PyPI
-      if [ -z "$DOC_VERSION" ]; then
-          DOC_VERSION=$(curl -s https://pypi.org/pypi/scikit-learn-intelex/json | jq -r '.info.version')
-          echo "DOC_VERSION2: $DOC_VERSION"
-
-      #export env var to use in conf
-      export DOC_VERSION="$DOC_VERSION"
 
       # Still cannot find version generate error
       if [ -z "$DOC_VERSION" ]; then
@@ -78,12 +70,6 @@ jobs:
         exit 1
       fi
       echo "doc version can be found"
-
-      # Checkout the correct commit based on the tag
-      git fetch --tags origin
-
-      echo "Available tags:"
-      git tag --list
 
       if git checkout $DOC_VERSION 2>/dev/null; then
         echo "Successfully checked out tag $DOC_VERSION."
