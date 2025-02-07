@@ -73,7 +73,7 @@ jobs:
     displayName: 'Get correct doc version'
   - script: |
     # Checkout the correct commit based on the tag
-    git fetch --tags origin
+    # git fetch --tags origin
     # Get commit id and checkout to the commit that has doc version tag
     COMMIT_HASH=$(git rev-list -n 1 $DOC_VERSION 2>/dev/null)
     if [ -z "$COMMIT_HASH" ]; then
