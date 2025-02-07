@@ -141,7 +141,7 @@ dal::table convert_to_table(py::object obj) {
 
     SET_CTYPE_FROM_DAL_TYPE(type,
                             MAKE_HOMOGEN_TABLE,
-                            py::type_error("Found unsupported array type"));
+                            std::runtime_error("Found unsupported array type"));
 
 #undef MAKE_HOMOGEN_TABLE
 
