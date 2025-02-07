@@ -55,43 +55,6 @@ jobs:
         --form description="$(DESCRIPTION)" \
         $(COVERITY_URL)
     displayName: 'Upload results of Coverity scan'
-- job: Jupyter
-  timeoutInMinutes: 0
-  pool:
-    vmImage: 'ubuntu-22.04'
-  steps:
-  - script: |
-      conda config --show channels
-      conda config --remove channels https://repo.anaconda.com/pkgs/main
-      conda config --remove channels https://repo.anaconda.com/pkgs/r
-      conda config --append channels conda-forge
-      conda update -y -q conda
-      conda create -y -q -n CB python=$(python.version) dal-devel impi-devel
-    displayName: 'Conda create'
-  - script: |
-      bash .ci/scripts/describe_system.sh
-    displayName: 'System info'
-  - script: |
-      . /usr/share/miniconda/etc/profile.d/conda.sh
-      conda activate CB
-      pip install -r dependencies-dev
-      pip install -r requirements-doc.txt
-      pip install -r requirements-test.txt
-      pip install jupyter matplotlib requests
-    displayName: 'Install requirements'
-  - script: |
-      . /usr/share/miniconda/etc/profile.d/conda.sh
-      conda activate CB
-      export DALROOT=$CONDA_PREFIX
-      ./conda-recipe/build.sh
-    displayName: 'Build daal4py/sklearnex'
-  - script: |
-      . /usr/share/miniconda/etc/profile.d/conda.sh
-      conda activate CB
-      cd examples/notebooks
-      jupyter nbconvert --execute --ExecutePreprocessor.timeout=10900 --to notebook $(ls | grep -E '.*\.ipynb' | grep -v "dbscan.*")
-    timeoutInMinutes: 180
-    displayName: 'Run jupyter notebook demo'
 
 - job: LinuxNightly
   timeoutInMinutes: 120
