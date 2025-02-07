@@ -77,6 +77,9 @@ jobs:
       # Checkout the correct commit based on the tag
       git fetch --tags origin
 
+      echo "Available tags:"
+      git tag --list
+
       if git checkout $DOC_VERSION 2>/dev/null; then
         echo "Successfully checked out tag $DOC_VERSION."
       else
