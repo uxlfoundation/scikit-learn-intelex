@@ -71,7 +71,7 @@ jobs:
       fi
       echo "doc version can be found"
     displayName: 'Get correct doc version'
-  - script: |
+  # - script: |
     # Checkout the correct commit based on the tag
     # git fetch --tags origin
     # Get commit id and checkout to the commit that has doc version tag
@@ -81,8 +81,8 @@ jobs:
     #     exit 1
     # fi
     # git checkout --detach $COMMIT_HASH
-    echo "can get to the correct commit"
-  displayName: 'Checkout to corresponding release commit'
+    # echo "can get to the correct commit"
+  # displayName: 'Checkout to corresponding release commit'
 
   - script: sudo apt-get update && sudo apt-get install -y clang-format pandoc 
     displayName: 'apt-get'
