@@ -70,13 +70,6 @@ dal::data_layout get_dlpack_layout(const DLTensor& tensor) {
     else if (strides[0] == 1 && strides[1] == r_count) {
         return dal::data_layout::column_major;
     }
-    else if (r_count < 1){
-        // match numpy checks for empty arrays
-        throw std::length_error("Row count is lower than or equal to zero");
-    }
-    else if (c_count < 1){
-        throw std::length_error("Column count is lower than or equal to zero");
-    }
     else {
         return dal::data_layout::unknown;
     }
