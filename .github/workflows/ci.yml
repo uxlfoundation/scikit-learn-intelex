@@ -17,10 +17,10 @@
 name: CI
 on:
   pull_request:
-    branches: [ "master" ]
+    branches: [ "main" ]
   push:
     branches:
-      - master
+      - main
   workflow_dispatch:
 
 permissions: read-all
@@ -60,7 +60,7 @@ jobs:
       - name: Get run ID of "Nightly-build" workflow
         id: get-run-id
         run: |
-          OTHER_REPO="icfaust/oneDAL"
+          OTHER_REPO="uxlfoundation/oneDAL"
           WF_NAME="Nightly-build"
           JQ_QUERY='map(select(.event == "workflow_dispatch" or .event == "schedule")) | .[0].databaseId'
           RUN_ID=`gh run --repo ${OTHER_REPO} list --workflow "${WF_NAME}" --json databaseId,event --status success --jq "${JQ_QUERY}"`
@@ -73,7 +73,7 @@ jobs:
         with:
           name: __release_lnx
           github-token: ${{ github.token }}
-          repository: icfaust/oneDAL
+          repository: uxlfoundation/oneDAL
           run-id: ${{ steps.get-run-id.outputs.run-id }}
           path: ./__release_lnx
       - name: Download oneDAL environment artifact
@@ -81,7 +81,7 @@ jobs:
         with:
           name: oneDAL_env
           github-token: ${{ github.token }}
-          repository: icfaust/oneDAL
+          repository: uxlfoundation/oneDAL
           run-id: ${{ steps.get-run-id.outputs.run-id }}
           path: .ci/env
       - name: Set Environment Variables
@@ -186,7 +186,7 @@ jobs:
         id: get-run-id
         shell: bash
         run: |
-          OTHER_REPO="icfaust/oneDAL"
+          OTHER_REPO="uxlfoundation/oneDAL"
           WF_NAME="Nightly-build"
           JQ_QUERY='map(select(.event == "workflow_dispatch" or .event == "schedule")) | .[0].databaseId'
           RUN_ID=`gh run --repo ${OTHER_REPO} list --workflow "${WF_NAME}" --json databaseId,event --status success --jq "${JQ_QUERY}"`
@@ -199,7 +199,7 @@ jobs:
         with:
           name: __release_win
           github-token: ${{ github.token }}
-          repository: icfaust/oneDAL
+          repository: uxlfoundation/oneDAL
           run-id: ${{ steps.get-run-id.outputs.run-id }}
           path: ./__release_win
       - name: Download Intel BaseKit artifact
@@ -207,7 +207,7 @@ jobs:
         with:
           name: intel_oneapi_basekit
           github-token: ${{ github.token }}
-          repository: icfaust/oneDAL
+          repository: uxlfoundation/oneDAL
           run-id: ${{ steps.get-run-id.outputs.run-id }}
       - name: Decompress Intel BaseKit
         shell: cmd
