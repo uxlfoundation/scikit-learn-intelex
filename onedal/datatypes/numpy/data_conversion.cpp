@@ -69,13 +69,15 @@ static dal::array<T> transfer_to_host(const dal::array<T> &array) {
 template <typename T>
 inline dal::homogen_table convert_to_homogen_impl(PyArrayObject *np_data) {
     std::int64_t column_count = 1;
-    if (array_numdims(np_data) > 2) {
+    const std::int32_t ndims = array_numdims(np_data);
+    if (ndims > 2) {
         throw std::length_error("Input array has wrong dimensionality (must be 2d).");
     }
     T *const data_pointer = reinterpret_cast<T *const>(array_data(np_data));
     // TODO: check safe cast from int to std::int64_t
-    const std::int64_t row_count = static_cast<std::int64_t>(array_size(np_data, 0));
-    if (array_numdims(np_data) == 2) {
+    // if 0 dimensional numpy array, force to 2d
+    const std::int64_t row_count = ndims ? static_cast<std::int64_t>(array_size(np_data, 0)) : 1l;
+    if (ndims == 2) {
         // TODO: check safe cast from int to std::int64_t
         column_count = static_cast<std::int64_t>(array_size(np_data, 1));
     }
