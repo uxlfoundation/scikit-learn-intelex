@@ -36,9 +36,11 @@ if sklearn_check_version("1.2"):
 
 
 class oneDALLibController(threadpoolctl.LibController):
-    user_api="onedal"
-    internal_api="onedal"
-
+    user_api="oneDAL"
+    internal_api="oneDAL"
+    
+    filename_prefixes = ("libonedal_thread", "libonedal")
+    
     def get_num_threads(self):
         return get_n_threads()
 
