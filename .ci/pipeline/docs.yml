@@ -61,7 +61,7 @@ jobs:
       git tag --list
  
       # Extract the version from the triggering tag
-      export DOC_VERSION=${GITHUB_REF#refs/tags/}
+      export DOC_VERSION=${{github.ref_name}}
       echo "DOC_VERSION1: $DOC_VERSION"
 
       # Still cannot find version generate error
