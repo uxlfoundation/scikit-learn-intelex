@@ -26,6 +26,8 @@ trigger:
     - .ci/pipeline/docs.yml
     - .github/Pull_Request_template.md
 
+pr: none
+
 variables:
   - name: 'PYTHON'
     value: python
@@ -47,9 +49,6 @@ jobs:
       git tag --list
       echo "BUILD_SOURCEBRANCH: $BUILD_SOURCEBRANCH"
       echo "BUILD_SOURCEBRANCHNAME: $BUILD_SOURCEBRANCHNAME"
-      echo "GITHUB_REF: $GITHUB_REF"
-      echo "GITHUB_REF_NAME: $GITHUB_REF_NAME"
-      echo "GITHUB_EVENT_NAME: $GITHUB_EVENT_NAME"
 
       # Extract the version from the triggering tag
       DOC_VERSION=$(echo "$BUILD_SOURCEBRANCH" | sed 's#refs/tags/##')
