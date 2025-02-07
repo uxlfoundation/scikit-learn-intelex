@@ -147,4 +147,5 @@ std::string convert_dal_to_sua_type(dal::data_type dtype) {
     else {
         throw py::type_error("Found unsupported dal type");
     }
+}
 } // namespace oneapi::dal::python::sycl_usm
