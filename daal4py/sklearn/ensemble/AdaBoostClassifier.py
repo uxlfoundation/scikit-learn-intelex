@@ -41,7 +41,7 @@ class AdaBoostClassifier(ClassifierMixin, BaseEstimator):
 
     if sklearn_check_version("1.2"):
         _parameter_constraints = {}
-    
+
     def __init__(
         self,
         split_criterion="gini",

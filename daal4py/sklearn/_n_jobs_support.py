@@ -32,16 +32,20 @@ from ._utils import sklearn_check_version
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import validate_parameter_constraints
 else:
+
     def validate_parameter_constraints(n_jobs):
         if n_jobs is not None and n_jobs.__class__ != int:
-            raise TypeError(f"n_jobs must be an instance of int, not {n_jobs.__class__.__name__}.")
+            raise TypeError(
+                f"n_jobs must be an instance of int, not {n_jobs.__class__.__name__}."
+            )
+
 
 class oneDALLibController(threadpoolctl.LibController):
-    user_api="oneDAL"
-    internal_api="oneDAL"
-    
+    user_api = "oneDAL"
+    internal_api = "oneDAL"
+
     filename_prefixes = ("libonedal_thread", "libonedal")
-    
+
     def get_num_threads(self):
         return num_threads()
 
@@ -51,6 +55,7 @@ class oneDALLibController(threadpoolctl.LibController):
     def get_version(self):
         return _get__daal_link_version__
 
+
 threadpoolctl.register(oneDALLibController)
 
 # Note: getting controller in global scope of this module is required
@@ -58,6 +63,7 @@ threadpoolctl.register(oneDALLibController)
 threadpool_controller = threadpoolctl.ThreadpoolController()
 # similarly the number of cpus is not expected to change after import
 _cpu_count = cpu_count()
+
 
 def _run_with_n_jobs(method):
     """
@@ -93,7 +99,9 @@ def _run_with_n_jobs(method):
         if not self.n_jobs:
             n_jobs = _cpu_count
         else:
-            n_jobs = self.n_jobs if self.n_jobs > 0 else max(1, _cpu_count + self.n_jobs + 1)
+            n_jobs = (
+                self.n_jobs if self.n_jobs > 0 else max(1, _cpu_count + self.n_jobs + 1)
+            )
 
         if (old_n_threads := num_threads()) != n_jobs:
             logger = logging.getLogger("sklearnex")
@@ -102,10 +110,11 @@ def _run_with_n_jobs(method):
                 f"{cl.__module__}.{cl.__name__}.{method.__name__}: "
                 f"setting {n_jobs} threads (previous - {old_n_threads})"
             )
-            with threadpool_controller.limit(limits=n_jobs, user_api='oneDAL'):
+            with threadpool_controller.limit(limits=n_jobs, user_api="oneDAL"):
                 return method(self, *args, **kwargs)
         else:
             return method(self, *args, **kwargs)
+
     return n_jobs_wrapper
 
 
