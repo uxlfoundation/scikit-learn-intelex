@@ -374,8 +374,8 @@ def test_interop_unsupported_dtypes(dataframe, queue, dtype):
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     expected_err_msg = r"Found unsupported (array|tensor) type"
 
-    # with pytest.raises(TypeError, match=expected_err_msg):
-    to_table(X)
+    with pytest.raises(TypeError, match=expected_err_msg):
+        to_table(X)
 
 
 @pytest.mark.parametrize(
@@ -488,7 +488,6 @@ def test_non_array(X, queue):
     elif X is not None:
         err_str = r"\[convert_to_table\] Not available input format for convert Python object to onedal table."
 
-    print(err_str)
     if err_str:
         with pytest.raises(error, match=err_str):
             to_table(X)
