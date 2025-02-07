@@ -77,16 +77,13 @@ jobs:
       # Checkout the correct commit based on the tag
       git fetch --tags origin
 
-      Get commit id and checkout to the commit that has doc version tag
-      COMMIT_HASH=$(git rev-list -n 1 $DOC_VERSION 2>/dev/null)
-
-      if [ -z "$COMMIT_HASH" ]; then
+      if git checkout $DOC_VERSION 2>/dev/null; then
+        echo "Successfully checked out tag $DOC_VERSION."
+      else
           echo "ERROR: Tag $DOC_VERSION does not exist."
           exit 1
       fi
 
-      git checkout --detach $COMMIT_HASH
-      
       echo "can get to the correct commit"
     displayName: 'Get correct doc version'
   - script: sudo apt-get update && sudo apt-get install -y clang-format pandoc 
