@@ -71,20 +71,20 @@ jobs:
       fi
       echo "doc version can be found"
     displayName: 'Get correct doc version'
-  # - script: |
-  #   # Checkout the correct commit based on the tag
-  #   git fetch --tags origin
-  #   # Get commit id and checkout to the commit that has doc version tag
-  #   if git rev-parse "refs/tags/$DOC_VERSION" >/dev/null 2>&1; then
-  #       echo "Tag $DOC_VERSION exists. Checking out the corresponding commit..."
-  #       git checkout tags/$DOC_VERSION
-  #   else
-  #       echo "ERROR: Tag $DOC_VERSION does not exist."
-  #       exit 1
-  #   fi
-  #   echo "can get to the correct commit"
-  #   echo "test"
-  # displayName: 'Checkout to corresponding release commit'
+  - script: |
+    # Checkout the correct commit based on the tag
+    git fetch --tags origin
+    # Get commit id and checkout to the commit that has doc version tag
+    if git rev-parse "refs/tags/$DOC_VERSION" >/dev/null 2>&1; then
+        echo "Tag $DOC_VERSION exists. Checking out the corresponding commit..."
+        git checkout tags/$DOC_VERSION
+    else
+        echo "ERROR: Tag $DOC_VERSION does not exist."
+        exit 1
+    fi
+    echo "can get to the correct commit"
+    echo "test"
+  displayName: 'Checkout to corresponding release commit'
 
   - script: sudo apt-get update && sudo apt-get install -y clang-format pandoc 
     displayName: 'apt-get'
