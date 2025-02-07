@@ -19,12 +19,13 @@ import sys
 import threading
 from functools import wraps
 from inspect import Parameter, signature
-from multiprocessing import cpu_count
+from joblib import cpu_count
 from numbers import Integral
 from warnings import warn
 
 import threadpoolctl
 
+from daal4py import _get__daal_link_version__
 from daal4py import daalinit as set_n_threads
 from daal4py import num_threads as get_n_threads
 
@@ -34,10 +35,24 @@ if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import validate_parameter_constraints
 
 
+class oneDALLibController(threadpoolctl.LibController):
+    user_api="onedal"
+    internal_api="onedal"
+
+    def get_num_threads(self):
+        return get_n_threads()
+
+    def set_num_threads(self, num_threads):
+        set_n_threads(num_threads)
+
+    def get_version(self):
+        return _get__daal_link_version__
+
+threadpoolctl.register(oneDALLibController)
+
 # Note: getting controller in global scope of this module is required
 # to avoid overheads by its initialization per each function call
 threadpool_controller = threadpoolctl.ThreadpoolController()
-
 
 def get_suggested_n_threads(n_cpus):
     """
