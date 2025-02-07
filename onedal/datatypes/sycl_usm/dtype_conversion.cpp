@@ -135,7 +135,7 @@ dal::data_type convert_sua_to_dal_type(std::string dtype) {
         return get_fwd_map().at(dtype);
     }
     else {
-        throw std::type_error("Found unsupported array type");
+        throw py::type_error("Found unsupported array type");
     }
 }
 
@@ -145,6 +145,6 @@ std::string convert_dal_to_sua_type(dal::data_type dtype) {
         return get_inv_map().at(dtype);
     }
     else {
-        throw std::type_error("Found unsupported dal type");
+        throw py::type_error("Found unsupported dal type");
     }
 } // namespace oneapi::dal::python::sycl_usm

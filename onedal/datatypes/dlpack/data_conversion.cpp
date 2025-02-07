@@ -164,7 +164,7 @@ dal::table convert_to_table(py::object obj, py::object q_obj, bool recursed) {
                     : convert_to_homogen_impl<CType, DLManagedTensor>(dlm, q_obj);
     SET_CTYPE_FROM_DAL_TYPE(dtype,
                             MAKE_HOMOGEN_TABLE,
-                            throw std::invalid_argument("Found unsupported tensor type"));
+                            throw py::type_error("Found unsupported tensor type"));
 #undef MAKE_HOMOGEN_TABLE
 
     // take ownership of the capsule, this is important to prevent data deletion

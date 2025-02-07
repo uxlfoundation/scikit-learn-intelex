@@ -208,7 +208,7 @@ dal::table convert_to_table(py::object inp_obj, py::object queue, bool recursed)
         SET_NPY_FEATURE(array_type(ary),
                         array_type_sizeof(ary),
                         MAKE_HOMOGEN_TABLE,
-                        throw std::type_error("Found unsupported array type"));
+                        throw py::type_error("Found unsupported array type"));
 #undef MAKE_HOMOGEN_TABLE
     }
     else if (strcmp(Py_TYPE(obj)->tp_name, "csr_matrix") == 0 ||
