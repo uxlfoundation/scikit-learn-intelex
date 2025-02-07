@@ -55,11 +55,13 @@ jobs:
       versionSpec: '3.11'
       addToPath: true
   - script: |
-      echo "fetch tags"
-      git fetch --tags
       echo "list tags"
       git tag --list
-      echo "Tag name from GITHUB_REF_NAME: $GITHUB_REF_NAME"
+      echo "GITHUB_REF: $GITHUB_REF"
+      echo "GITHUB_REF_NAME: $GITHUB_REF_NAME"
+      echo "GITHUB_EVENT_NAME: $GITHUB_EVENT_NAME"
+      echo "GITHUB_EVENT_NAME1: ${GITHUB_REF#refs/tags/}"
+
       # Extract the version from the triggering tag
       export DOC_VERSION=${GITHUB_REF#refs/tags/}
       echo "DOC_VERSION1: $DOC_VERSION"
