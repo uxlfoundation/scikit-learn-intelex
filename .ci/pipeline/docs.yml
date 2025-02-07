@@ -69,6 +69,7 @@ jobs:
         echo "ERROR: Failed to determine documentation version."
         exit 1
       fi
+      echo "doc version can be found"
     displayName: 'Get correct doc version'
   - script: |
     # Checkout the correct commit based on the tag
@@ -81,6 +82,7 @@ jobs:
         echo "ERROR: Tag $DOC_VERSION does not exist."
         exit 1
     fi
+    echo "can get to the correct commit"
   displayName: 'Checkout to corresponding release commit'
 
   - script: sudo apt-get update && sudo apt-get install -y clang-format pandoc 
