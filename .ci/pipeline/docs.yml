@@ -58,32 +58,37 @@ jobs:
       # Extract the version from the triggering tag
       DOC_VERSION=$(git describe --tags --abbrev=0)
       echo "DOC_VERSION1: $DOC_VERSION"
+
       # If no tag is found, fetch the latest version from PyPI
       if [ -z "$DOC_VERSION" ]; then
           DOC_VERSION=$(curl -s https://pypi.org/pypi/scikit-learn-intelex/json | jq -r '.info.version')
           echo "DOC_VERSION2: $DOC_VERSION"
+
       #export env var to use in conf
       export DOC_VERSION="$DOC_VERSION"
+
       # Still cannot find version generate error
       if [ -z "$DOC_VERSION" ]; then
         echo "ERROR: Failed to determine documentation version."
         exit 1
       fi
       echo "doc version can be found"
-    displayName: 'Get correct doc version'
-  # - script: |
-    # Checkout the correct commit based on the tag
-    # git fetch --tags origin
-    # Get commit id and checkout to the commit that has doc version tag
-    # COMMIT_HASH=$(git rev-list -n 1 $DOC_VERSION 2>/dev/null)
-    # if [ -z "$COMMIT_HASH" ]; then
-    #     echo "ERROR: Tag $DOC_VERSION does not exist."
-    #     exit 1
-    # fi
-    # git checkout --detach $COMMIT_HASH
-    # echo "can get to the correct commit"
-  # displayName: 'Checkout to corresponding release commit'
 
+      # Checkout the correct commit based on the tag
+      git fetch --tags origin
+
+      Get commit id and checkout to the commit that has doc version tag
+      COMMIT_HASH=$(git rev-list -n 1 $DOC_VERSION 2>/dev/null)
+
+      if [ -z "$COMMIT_HASH" ]; then
+          echo "ERROR: Tag $DOC_VERSION does not exist."
+          exit 1
+      fi
+
+      git checkout --detach $COMMIT_HASH
+      
+      echo "can get to the correct commit"
+    displayName: 'Get correct doc version'
   - script: sudo apt-get update && sudo apt-get install -y clang-format pandoc 
     displayName: 'apt-get'
   - script: |
