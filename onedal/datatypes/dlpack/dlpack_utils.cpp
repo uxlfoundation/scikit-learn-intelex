@@ -48,7 +48,7 @@ void dlpack_take_ownership(py::capsule& caps) {
 std::int32_t get_ndim(const DLTensor& tensor) {
     // check if > 2 dimensional, and return the number of dimensions
     const std::int32_t ndim = tensor.ndim;
-    if (ndim > 2) {
+    if (ndim != 2 && ndim != 1) {
         throw std::length_error("Input array has wrong dimensionality (must be 2d).");
     }
     return ndim;

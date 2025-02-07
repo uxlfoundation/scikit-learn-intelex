@@ -517,16 +517,10 @@ def test_low_precision_non_array_numpy(X):
     test_non_array(X, queue)
 
 
-@pytest.mark.parametrize("X", [5, True, [], [[]], np.pi])
-@pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("numpy,dpctl,dpnp,array_api")
-)
-def test_basic_and_scalar_array_types(X, dataframe, queue):
-    # Verify that the various supported basic types (similar to non-array, with
-    # only those that are supported), note that scalars array/tensor types are
-    # not currently supported by to_table for any framework
-    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    test_non_array(X, queue)
+@pytest.mark.parametrize("X", [5, True, np.pi])
+def test_basic_ndarray_types_numpy(X):
+    # Verify that the various supported basic types can go in and out of tables
+    test_non_array(np.asarray(X), None)
 
 
 @pytest.mark.parametrize(
