@@ -62,6 +62,8 @@ jobs:
       if [ -z "$DOC_VERSION" ]; then
           DOC_VERSION=$(curl -s https://pypi.org/pypi/scikit-learn-intelex/json | jq -r '.info.version')
           echo "DOC_VERSION2: $DOC_VERSION"
+      #export env var to use in conf
+      export DOC_VERSION="$DOC_VERSION"
       # Still cannot find version generate error
       if [ -z "$DOC_VERSION" ]; then
         echo "ERROR: Failed to determine documentation version."
