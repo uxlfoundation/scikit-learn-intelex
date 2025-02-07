@@ -482,7 +482,7 @@ def test_non_array(X, queue):
         if X.dtype not in types:
             error = TypeError
             err_str = r"Found unsupported (array|tensor) type"
-        if 0 in X.shape or len(X.shape) == 0:
+        if 0 in X.shape:
             # not set to a consistent string between the various conversions
             err_str = r".*"
     elif X is not None:
