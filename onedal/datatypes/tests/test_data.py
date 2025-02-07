@@ -372,11 +372,9 @@ def test_interop_unsupported_dtypes(dataframe, queue, dtype):
     # raise.
     X = np.zeros((10, 20), dtype=dtype)
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    expected_err_msg = "Unable to convert from SUA interface: unknown data type"
-    if dataframe in "array_api":
-        expected_err_msg = "Found unsupported tensor type"
+    expected_err_msg = r"Found unsupported (array|tensor) type"
 
-    with pytest.raises(ValueError, match=expected_err_msg):
+    with pytest.raises(TypeError, match=expected_err_msg):
         to_table(X)
 
 
@@ -490,6 +488,7 @@ def test_non_array(X, queue):
     elif X is not None:
         err_str = r"\[convert_to_table\] Not available input format for convert Python object to onedal table."
 
+    print(err_str)
     if err_str:
         with pytest.raises(error, match=err_str):
             to_table(X)
