@@ -55,6 +55,11 @@ jobs:
       versionSpec: '3.11'
       addToPath: true
   - script: |
+      echo "fetch tags"
+      git fetch --tags
+      echo "list tags"
+      git tag --list
+ 
       # Extract the version from the triggering tag
       DOC_VERSION=$(git describe --tags --abbrev=0)
       echo "DOC_VERSION1: $DOC_VERSION"
