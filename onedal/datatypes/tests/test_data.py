@@ -472,7 +472,7 @@ def test_non_array(X, queue):
     # no guarantee is made about type or content
     err_str = ""
 
-    xp = X.__array_namespace__() if hasattr(X, "__array_namepspace__") else np
+    xp = X.__array_namespace__() if hasattr(X, "__array_namespace__") else np
     types = [xp.float64, xp.float32, xp.int64, xp.int32]
 
     if np.isscalar(X):
