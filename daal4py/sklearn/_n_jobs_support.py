@@ -31,6 +31,8 @@ from ._utils import sklearn_check_version
 
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import validate_parameter_constraints
+else:
+    validate_parameter_constraints = None
 
 
 class oneDALLibController(threadpoolctl.LibController):
@@ -73,7 +75,7 @@ def _run_with_n_jobs(method):
         # preemptive validation of n_jobs parameter is required
         # because '_run_with_n_jobs' decorator is applied on top of method
         # where validation takes place
-        if sklearn_check_version("1.2") and hasattr(self, "_parameter_constraints"):
+        if validate_parameter_constraints:
             validate_parameter_constraints(
                 parameter_constraints={"n_jobs": self._parameter_constraints["n_jobs"]},
                 params={"n_jobs": self.n_jobs},
@@ -90,7 +92,7 @@ def _run_with_n_jobs(method):
         else:
             n_jobs = self.n_jobs if self.n_jobs > 0 else max(1, _cpu_count + self.n_jobs + 1)
 
-        if (old_n_threads := threadpool_controller.lib_controllers['oneDAL'].num_threads) != n_jobs:
+        if (old_n_threads := num_threads()) != n_jobs:
             logger = logging.getLogger("sklearnex")
             cl = self.__class__
             logger.debug(
