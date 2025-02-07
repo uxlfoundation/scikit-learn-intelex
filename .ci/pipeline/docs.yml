@@ -57,11 +57,11 @@ jobs:
   - script: |
       echo "list tags"
       git tag --list
-      echo "BUILD_SOURCEBRANCH: $(BUILD_SOURCEBRANCH)"
-      echo "BUILD_SOURCEBRANCHNAME: $(BUILD_SOURCEBRANCHNAME)"
+      echo "BUILD_SOURCEBRANCH: $BUILD_SOURCEBRANCH"
+      echo "BUILD_SOURCEBRANCHNAME: $BUILD_SOURCEBRANCHNAME"
 
       # Extract the version from the triggering tag
-      DOC_VERSION=$(echo "$(BUILD_SOURCEBRANCH)" | sed 's#refs/tags/##')
+      DOC_VERSION=$(echo "$BUILD_SOURCEBRANCH" | sed 's#refs/tags/##')
       echo "DOC_VERSION: $DOC_VERSION"
 
       # Still cannot find version generate error
