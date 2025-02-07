@@ -478,7 +478,8 @@ def test_non_array(X, queue):
     if np.isscalar(X):
         if np.atleast_2d(X).dtype not in types:
             err_str = r"Found unsupported array type"
-    elif _to_table_supported(X) and X.dtype not in types:
+    elif _to_table_supported(X):
+        if X.dtype not in types:
             err_str = r"Found unsupported (array|tensor) type"
     elif X is not None:
         err_str = r"\[convert_to_table\] Not available input format for convert Python object to onedal table."
