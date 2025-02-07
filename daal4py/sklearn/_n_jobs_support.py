@@ -32,8 +32,9 @@ from ._utils import sklearn_check_version
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import validate_parameter_constraints
 else:
-    validate_parameter_constraints = None
-
+    def validate_parameter_constraints(n_jobs):
+        if n_jobs.__class__ != int:
+            raise TypeError(f"n_jobs must be an instance of int, not {n_jobs.__class__.__name__}.")
 
 class oneDALLibController(threadpoolctl.LibController):
     user_api="oneDAL"
@@ -75,12 +76,14 @@ def _run_with_n_jobs(method):
         # preemptive validation of n_jobs parameter is required
         # because '_run_with_n_jobs' decorator is applied on top of method
         # where validation takes place
-        if validate_parameter_constraints:
+        if sklearn_check_version("1.2"):
             validate_parameter_constraints(
                 parameter_constraints={"n_jobs": self._parameter_constraints["n_jobs"]},
                 params={"n_jobs": self.n_jobs},
                 caller_name=self.__class__.__name__,
             )
+        else:
+            validate_parameter_constraints(self.n_jobs)
 
         # receive n_threads limitation from upper parallelism context
         # using `threadpoolctl.ThreadpoolController`
