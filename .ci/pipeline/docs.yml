@@ -54,23 +54,23 @@ jobs:
     inputs:
       versionSpec: '3.11'
       addToPath: true
-  # - script: |
-  #     # Extract the version from the triggering tag
-  #     DOC_VERSION=$(git describe --tags --abbrev=0)
-  #     echo "DOC_VERSION1: $DOC_VERSION"
-  #     # If no tag is found, fetch the latest version from PyPI
-  #     if [ -z "$DOC_VERSION" ]; then
-  #         DOC_VERSION=$(curl -s https://pypi.org/pypi/scikit-learn-intelex/json | jq -r '.info.version')
-  #         echo "DOC_VERSION2: $DOC_VERSION"
-  #     #export env var to use in conf
-  #     export DOC_VERSION="$DOC_VERSION"
-  #     # Still cannot find version generate error
-  #     if [ -z "$DOC_VERSION" ]; then
-  #       echo "ERROR: Failed to determine documentation version."
-  #       exit 1
-  #     fi
-  #     echo "doc version can be found"
-  #   displayName: 'Get correct doc version'
+  - script: |
+      # Extract the version from the triggering tag
+      DOC_VERSION=$(git describe --tags --abbrev=0)
+      echo "DOC_VERSION1: $DOC_VERSION"
+      # If no tag is found, fetch the latest version from PyPI
+      if [ -z "$DOC_VERSION" ]; then
+          DOC_VERSION=$(curl -s https://pypi.org/pypi/scikit-learn-intelex/json | jq -r '.info.version')
+          echo "DOC_VERSION2: $DOC_VERSION"
+      #export env var to use in conf
+      export DOC_VERSION="$DOC_VERSION"
+      # Still cannot find version generate error
+      if [ -z "$DOC_VERSION" ]; then
+        echo "ERROR: Failed to determine documentation version."
+        exit 1
+      fi
+      echo "doc version can be found"
+    displayName: 'Get correct doc version'
   # - script: |
   #   # Checkout the correct commit based on the tag
   #   git fetch --tags origin
