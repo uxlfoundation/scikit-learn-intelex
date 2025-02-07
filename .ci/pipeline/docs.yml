@@ -83,6 +83,7 @@ jobs:
         exit 1
     fi
     echo "can get to the correct commit"
+    echo "test"
   displayName: 'Checkout to corresponding release commit'
 
   - script: sudo apt-get update && sudo apt-get install -y clang-format pandoc 
