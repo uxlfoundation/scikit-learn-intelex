@@ -25,9 +25,7 @@ from warnings import warn
 
 import threadpoolctl
 
-from daal4py import _get__daal_link_version__
-from daal4py import daalinit as set_n_threads
-from daal4py import num_threads as get_n_threads
+from daal4py import _get__daal_link_version__, daalinit, num_threads
 
 from ._utils import sklearn_check_version
 
@@ -42,10 +40,10 @@ class oneDALLibController(threadpoolctl.LibController):
     filename_prefixes = ("libonedal_thread", "libonedal")
     
     def get_num_threads(self):
-        return get_n_threads()
+        return num_threads()
 
-    def set_num_threads(self, num_threads):
-        set_n_threads(num_threads)
+    def set_num_threads(self, nthreads):
+        daalinit(nthreads)
 
     def get_version(self):
         return _get__daal_link_version__
@@ -55,33 +53,8 @@ threadpoolctl.register(oneDALLibController)
 # Note: getting controller in global scope of this module is required
 # to avoid overheads by its initialization per each function call
 threadpool_controller = threadpoolctl.ThreadpoolController()
-
-def get_suggested_n_threads(n_cpus):
-    """
-    Function to get `n_threads` limit
-    if `n_jobs` is set in upper parallelization context.
-    Usually, limit is equal to `n_logical_cpus` // `n_jobs`.
-    Returns None if limit is not set.
-    """
-    n_threads_map = {
-        lib_ctl.internal_api: lib_ctl.get_num_threads()
-        for lib_ctl in threadpool_controller.lib_controllers
-        if lib_ctl.internal_api != "mkl"
-    }
-    # openBLAS is limited to 24, 64 or 128 threads by default
-    # depending on SW/HW configuration.
-    # thus, these numbers of threads from openBLAS are uninformative
-    if "openblas" in n_threads_map and n_threads_map["openblas"] in [24, 64, 128]:
-        del n_threads_map["openblas"]
-    # remove default values equal to n_cpus as uninformative
-    for backend in list(n_threads_map.keys()):
-        if n_threads_map[backend] == n_cpus:
-            del n_threads_map[backend]
-    if len(n_threads_map) > 0:
-        return min(n_threads_map.values())
-    else:
-        return None
-
+# similarly the number of cpus is not expected to change after import
+_cpu_count = cpu_count()
 
 def _run_with_n_jobs(method):
     """
@@ -96,14 +69,6 @@ def _run_with_n_jobs(method):
     @wraps(method)
     def n_jobs_wrapper(self, *args, **kwargs):
         # threading parallel backend branch
-        if not isinstance(threading.current_thread(), threading._MainThread):
-            warn(
-                "'Threading' parallel backend is not supported by "
-                "Intel(R) Extension for Scikit-learn*. "
-                "Falling back to usage of all available threads."
-            )
-            result = method(self, *args, **kwargs)
-            return result
         # multiprocess parallel backends branch
         # preemptive validation of n_jobs parameter is required
         # because '_run_with_n_jobs' decorator is applied on top of method
@@ -114,42 +79,28 @@ def _run_with_n_jobs(method):
                 params={"n_jobs": self.n_jobs},
                 caller_name=self.__class__.__name__,
             )
-        # search for specified n_jobs
-        n_jobs = self.n_jobs
-        n_cpus = cpu_count()
+
         # receive n_threads limitation from upper parallelism context
         # using `threadpoolctl.ThreadpoolController`
-        n_threads = get_suggested_n_threads(n_cpus)
         # get real `n_jobs` number of threads for oneDAL
         # using sklearn rules and `n_threads` from upper parallelism context
-        if n_jobs is None or n_jobs == 0:
-            if n_threads is None:
-                # default branch with no setting for n_jobs
-                return method(self, *args, **kwargs)
-            else:
-                n_jobs = n_threads
-        elif n_jobs < 0:
-            if n_threads is None:
-                n_jobs = max(1, n_cpus + n_jobs + 1)
-            else:
-                n_jobs = max(1, n_threads + n_jobs + 1)
-        # branch with set n_jobs
-        old_n_threads = get_n_threads()
-        if n_jobs == old_n_threads:
-            return method(self, *args, **kwargs)
 
-        try:
+        if not self.n_jobs:
+            n_jobs = _cpu_count
+        else:
+            n_jobs = self.n_jobs if self.n_jobs > 0 else max(1, _cpu_count + self.n_jobs + 1)
+
+        if (old_n_threads := threadpool_controller.lib_controllers['oneDAL'].num_threads) != n_jobs:
             logger = logging.getLogger("sklearnex")
             cl = self.__class__
             logger.debug(
                 f"{cl.__module__}.{cl.__name__}.{method.__name__}: "
                 f"setting {n_jobs} threads (previous - {old_n_threads})"
             )
-            set_n_threads(n_jobs)
+            with threadpool_controller.limit(limits=n_jobs, user_api='oneDAL'):
+                return method(self, *args, **kwargs)
+        else:
             return method(self, *args, **kwargs)
-        finally:
-            set_n_threads(old_n_threads)
-
     return n_jobs_wrapper
 
 
