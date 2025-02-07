@@ -59,9 +59,11 @@ jobs:
       git fetch --tags
       echo "list tags"
       git tag --list
- 
+      echo "Tag name from GITHUB_REF_NAME: $GITHUB_REF_NAME"
+      echo "Tag name from github.ref_name: ${{  github.ref_name }}"
+      echo ${{ github.ref_name }}
       # Extract the version from the triggering tag
-      export DOC_VERSION=${{github.ref_name}}
+      export DOC_VERSION=${GITHUB_REF#refs/tags/}
       echo "DOC_VERSION1: $DOC_VERSION"
 
       # Still cannot find version generate error
