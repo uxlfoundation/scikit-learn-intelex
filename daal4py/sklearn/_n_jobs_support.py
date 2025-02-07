@@ -33,7 +33,7 @@ if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import validate_parameter_constraints
 else:
     def validate_parameter_constraints(n_jobs):
-        if n_jobs.__class__ != int:
+        if n_jobs is not None and n_jobs.__class__ != int:
             raise TypeError(f"n_jobs must be an instance of int, not {n_jobs.__class__.__name__}.")
 
 class oneDALLibController(threadpoolctl.LibController):
