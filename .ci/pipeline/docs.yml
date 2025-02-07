@@ -57,14 +57,12 @@ jobs:
   - script: |
       echo "list tags"
       git tag --list
-      echo "GITHUB_REF: $GITHUB_REF"
-      echo "GITHUB_REF_NAME: $GITHUB_REF_NAME"
-      echo "GITHUB_EVENT_NAME: $GITHUB_EVENT_NAME"
-      echo "GITHUB_EVENT_NAME1: ${GITHUB_REF#refs/tags/}"
+      echo "BUILD_SOURCEBRANCH: $(BUILD_SOURCEBRANCH)"
+      echo "BUILD_SOURCEBRANCHNAME: $(BUILD_SOURCEBRANCHNAME)"
 
       # Extract the version from the triggering tag
-      export DOC_VERSION=${GITHUB_REF#refs/tags/}
-      echo "DOC_VERSION1: $DOC_VERSION"
+      DOC_VERSION=$(echo "$(BUILD_SOURCEBRANCH)" | sed 's#refs/tags/##')
+      echo "DOC_VERSION: $DOC_VERSION"
 
       # Still cannot find version generate error
       if [ -z "$DOC_VERSION" ]; then
