@@ -470,6 +470,7 @@ def test_low_precision_gpu_conversion_array_api(dtype):
 def test_non_array(X, queue):
     # Verify that to and from table doesn't raise errors
     # no guarantee is made about type or content
+    error = ValueError
     err_str = ""
 
     xp = X.__array_namespace__() if hasattr(X, "__array_namespace__") else np
@@ -477,18 +478,20 @@ def test_non_array(X, queue):
 
     if np.isscalar(X):
         if np.atleast_2d(X).dtype not in types:
+            error = TypeError
             err_str = r"Found unsupported array type"
     elif _to_table_supported(X):
         if X.dtype not in types:
+            error = TypeError
             err_str = r"Found unsupported (array|tensor) type"
-        if 0 in X.shape:
-            err_str = r".*count is lower than or equal to zero"
+        if 0 in X.shape or len(X.shape) == 0:
+            # not set to a consistent string between the various conversions
+            err_str = r".*"
     elif X is not None:
         err_str = r"\[convert_to_table\] Not available input format for convert Python object to onedal table."
 
-    print(err_str)
     if err_str:
-        with pytest.raises(ValueError, match=err_str):
+        with pytest.raises(error, match=err_str):
             to_table(X)
     else:
         X_table = to_table(X, queue=queue)
