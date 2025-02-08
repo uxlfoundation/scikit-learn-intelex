@@ -16,6 +16,9 @@
 
 trigger:
   #doc build trigger by a release tag
+  branches:
+    include:
+      - "*"
   tags:
     include:
       - "[0-9]*.[0-9]*.[0-9]*"
