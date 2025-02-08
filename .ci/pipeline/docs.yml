@@ -26,7 +26,17 @@ trigger:
     - .ci/pipeline/docs.yml
     - .github/Pull_Request_template.md
 
-pr: none
+pr:
+  branches:
+    include:
+    - main
+    - rls/*
+  paths:
+    include:
+    - requirements-doc.txt
+    - doc/
+    - .ci/pipeline/docs.yml
+    - .github/Pull_Request_template.md
 
 variables:
   - name: 'PYTHON'
@@ -47,6 +57,7 @@ jobs:
   - script: |
       echo "list tags"
       git tag --list
+      echo "BUILD_REASON: $BUILD_REASON"
       echo "BUILD_SOURCEBRANCH: $BUILD_SOURCEBRANCH"
       echo "BUILD_SOURCEBRANCHNAME: $BUILD_SOURCEBRANCHNAME"
 
