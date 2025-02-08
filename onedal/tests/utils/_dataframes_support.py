@@ -84,6 +84,7 @@ def get_dataframes_and_queues(
     dataframes_and_queues = []
 
     if "numpy" in dataframe_filter_:
+        # sycl queue param is None.
         dataframes_and_queues.append(pytest.param("numpy", None, id="numpy"))
     if "pandas" in dataframe_filter_:
         dataframes_and_queues.append(pytest.param("pandas", None, id="pandas"))
@@ -96,6 +97,11 @@ def get_dataframes_and_queues(
                 df_and_q.append(pytest.param(dataframe, queue.values[0], id=id))
         return df_and_q
 
+    if "np_sycl" in dataframe_filter_:
+        # sycl queue param is not None.
+        # Designed for interfaces that utilize NumPy inputs with a DPCTL queue,
+        # enabling offloading to specific SYCL devices.
+        dataframes_and_queues.extend(get_df_and_q("numpy_and_queue"))
     if dpctl_available and "dpctl" in dataframe_filter_:
         dataframes_and_queues.extend(get_df_and_q("dpctl"))
     if dpnp_available and "dpnp" in dataframe_filter_:
@@ -127,7 +133,7 @@ def _convert_to_dataframe(obj, sycl_queue=None, target_df=None, *args, **kwargs)
     """Converted input object to certain dataframe format."""
     if target_df is None:
         return obj
-    elif target_df == "numpy":
+    elif target_df in "numpy,numpy_and_queue":
         # Numpy ndarray.
         # `sycl_queue` arg is ignored.
         return np.asarray(obj, *args, **kwargs)

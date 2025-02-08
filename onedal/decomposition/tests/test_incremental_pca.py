@@ -21,25 +21,34 @@ from numpy.testing import assert_allclose
 from daal4py.sklearn._utils import daal_check_version
 from onedal.datatypes import from_table
 from onedal.decomposition import IncrementalPCA
+from onedal.tests.utils._dataframes_support import (
+    _as_numpy,
+    _convert_to_dataframe,
+    get_dataframes_and_queues,
+)
 from onedal.tests.utils._device_selection import get_queues
 
 
-@pytest.mark.parametrize("queue", get_queues())
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("numpy,np_sycl"))
 @pytest.mark.parametrize("is_deterministic", [True, False])
 @pytest.mark.parametrize("whiten", [True, False])
 @pytest.mark.parametrize("num_blocks", [1, 2, 3])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_on_gold_data(queue, is_deterministic, whiten, num_blocks, dtype):
+def test_on_gold_data(dataframe, queue, is_deterministic, whiten, num_blocks, dtype):
     X = np.array([[-1, -1], [-2, -1], [-3, -2], [1, 1], [2, 1], [3, 2]])
     X = X.astype(dtype=dtype)
     X_split = np.array_split(X, num_blocks)
     incpca = IncrementalPCA(is_deterministic=is_deterministic, whiten=whiten)
 
     for i in range(num_blocks):
-        incpca.partial_fit(X_split[i], queue=queue)
+        X_split_i = _convert_to_dataframe(
+            X_split[i], sycl_queue=queue, target_df=dataframe
+        )
+        incpca.partial_fit(X_split_i, queue=queue)
 
     result = incpca.finalize_fit()
 
+    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     transformed_data = incpca.predict(X, queue=queue)
 
     expected_n_components_ = 2
@@ -73,21 +82,28 @@ def test_on_gold_data(queue, is_deterministic, whiten, num_blocks, dtype):
         )
     )
 
+    transformed_data = _as_numpy(transformed_data)
     tol = 1e-7
     if transformed_data.dtype == np.float32:
         tol = 7e-6 if whiten else 1e-6
 
     assert result.n_components_ == expected_n_components_
 
-    assert_allclose(result.singular_values_, expected_singular_values_, atol=tol)
-    assert_allclose(result.mean_, expected_mean_, atol=tol)
-    assert_allclose(result.var_, expected_var_, atol=tol)
-    assert_allclose(result.explained_variance_, expected_explained_variance_, atol=tol)
     assert_allclose(
-        result.explained_variance_ratio_, expected_explained_variance_ratio_, atol=tol
+        _as_numpy(result.singular_values_), expected_singular_values_, atol=tol
+    )
+    assert_allclose(_as_numpy(result.mean_), expected_mean_, atol=tol)
+    assert_allclose(_as_numpy(result.var_), expected_var_, atol=tol)
+    assert_allclose(
+        _as_numpy(result.explained_variance_), expected_explained_variance_, atol=tol
+    )
+    assert_allclose(
+        _as_numpy(result.explained_variance_ratio_),
+        expected_explained_variance_ratio_,
+        atol=tol,
     )
     if is_deterministic and daal_check_version((2024, "P", 500)):
-        assert_allclose(result.components_, expected_components_, atol=tol)
+        assert_allclose(_as_numpy(result.components_), expected_components_, atol=tol)
         assert_allclose(transformed_data, expected_transformed_data, atol=tol)
     else:
         for i in range(result.n_components_):
@@ -106,7 +122,7 @@ def test_on_gold_data(queue, is_deterministic, whiten, num_blocks, dtype):
                 )
 
 
-@pytest.mark.parametrize("queue", get_queues())
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("numpy,np_sycl"))
 @pytest.mark.parametrize("n_components", [None, 1, 5])
 @pytest.mark.parametrize("whiten", [True, False])
 @pytest.mark.parametrize("num_blocks", [1, 10])
@@ -114,33 +130,41 @@ def test_on_gold_data(queue, is_deterministic, whiten, num_blocks, dtype):
 @pytest.mark.parametrize("column_count", [10, 100])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_on_random_data(
-    queue, n_components, whiten, num_blocks, row_count, column_count, dtype
+    dataframe, queue, n_components, whiten, num_blocks, row_count, column_count, dtype
 ):
     seed = 78
     gen = np.random.default_rng(seed)
     X = gen.uniform(low=-0.3, high=+0.7, size=(row_count, column_count))
     X = X.astype(dtype=dtype)
     X_split = np.array_split(X, num_blocks)
+
+    expected_n_samples_seen = X.shape[0]
+    expected_n_features_in = X.shape[1]
+
     incpca = IncrementalPCA(n_components=n_components, whiten=whiten)
 
     for i in range(num_blocks):
-        incpca.partial_fit(X_split[i], queue=queue)
+        X_split_i = _convert_to_dataframe(
+            X_split[i], sycl_queue=queue, target_df=dataframe
+        )
+        incpca.partial_fit(X_split_i, queue=queue)
 
     incpca.finalize_fit()
 
+    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     transformed_data = incpca.predict(X, queue=queue)
+
+    transformed_data = _as_numpy(transformed_data)
     tol = 3e-3 if transformed_data.dtype == np.float32 else 2e-6
 
-    n_components = incpca.n_components_
-    expected_n_samples_seen = X.shape[0]
-    expected_n_features_in = X.shape[1]
-    n_samples_seen = incpca.n_samples_seen_
-    n_features_in = incpca.n_features_in_
+    n_components = _as_numpy(incpca.n_components_)
+    n_samples_seen = _as_numpy(incpca.n_samples_seen_)
+    n_features_in = _as_numpy(incpca.n_features_in_)
     assert n_samples_seen == expected_n_samples_seen
     assert n_features_in == expected_n_features_in
 
-    components = incpca.components_
-    singular_values = incpca.singular_values_
+    components = _as_numpy(incpca.components_)
+    singular_values = _as_numpy(incpca.singular_values_)
     centered_data = X - np.mean(X, axis=0)
     cov_eigenvalues, cov_eigenvectors = np.linalg.eig(
         centered_data.T @ centered_data / (n_samples_seen - 1)
@@ -163,19 +187,23 @@ def test_on_random_data(
         assert np.abs(abs_dot_product - 1.0) < tol
 
     expected_mean = np.mean(X, axis=0)
-    assert_allclose(incpca.mean_, expected_mean, atol=tol)
+    assert_allclose(_as_numpy(incpca.mean_), expected_mean, atol=tol)
 
     expected_var_ = np.var(X, ddof=1, axis=0)
-    assert_allclose(incpca.var_, expected_var_, atol=tol)
+    assert_allclose(_as_numpy(incpca.var_), expected_var_, atol=tol)
 
     expected_explained_variance = sorted_eigenvalues[:n_components]
-    assert_allclose(incpca.explained_variance_, expected_explained_variance, atol=tol)
+    assert_allclose(
+        _as_numpy(incpca.explained_variance_), expected_explained_variance, atol=tol
+    )
 
     expected_explained_variance_ratio = expected_explained_variance / np.sum(
         sorted_eigenvalues
     )
     assert_allclose(
-        incpca.explained_variance_ratio_, expected_explained_variance_ratio, atol=tol
+        _as_numpy(incpca.explained_variance_ratio_),
+        expected_explained_variance_ratio,
+        atol=tol,
     )
 
     expected_noise_variance = (
@@ -188,7 +216,7 @@ def test_on_random_data(
 
     expected_transformed_data = centered_data @ components.T
     if whiten:
-        scale = np.sqrt(incpca.explained_variance_)
+        scale = np.sqrt(_as_numpy(incpca.explained_variance_))
         min_scale = np.finfo(scale.dtype).eps
         scale[scale < min_scale] = np.inf
         expected_transformed_data /= scale
