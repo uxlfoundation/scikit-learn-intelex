@@ -16,9 +16,9 @@
 
 trigger:
   #doc build trigger by a release tag
-  branches:
+  tags:
     include:
-      - refs/tags/[0-9]*.[0-9]*.[0-9]*
+      - "[0-9]*.[0-9]*.[0-9]*"
   paths:
     include:
     - requirements-doc.txt
@@ -26,17 +26,7 @@ trigger:
     - .ci/pipeline/docs.yml
     - .github/Pull_Request_template.md
 
-pr:
-  branches:
-    include:
-    - main
-    - rls/*
-  paths:
-    include:
-    - requirements-doc.txt
-    - doc/
-    - .ci/pipeline/docs.yml
-    - .github/Pull_Request_template.md
+pr: none
 
 variables:
   - name: 'PYTHON'
