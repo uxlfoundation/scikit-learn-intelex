@@ -24,7 +24,7 @@
 
 #include "onedal/common.hpp"
 #include "onedal/version.hpp"
-#include "onedal/datatypes/utils/dtype_conversions.hpp"
+#include "onedal/datatypes/numpy/dtype_conversions.hpp"
 
 namespace py = pybind11;
 
