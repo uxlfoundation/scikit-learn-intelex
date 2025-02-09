@@ -1220,9 +1220,17 @@ def gen_daal4py(dalroot, outdir, version, warn_all=False, no_dist=False, no_stre
     algo_path = jp(head_path, "algorithms")
     rmtree(head_path, ignore_errors=True)
     copytree(orig_path, head_path)
+    formatfile = jp("src", ".clang-format")
     for dirpath, dirnames, filenames in os.walk(algo_path):
         for filename in filenames:
-            call([shutil.which("clang-format"), "-i", jp(dirpath, filename)])
+            call(
+                [
+                    shutil.which("clang-format"),
+                    "-i",
+                    jp(dirpath, filename),
+                    "-style=file:" + formatfile,
+                ]
+            )
     iface = cython_interface(algo_path)
     iface.read()
     print("Generating sources...")

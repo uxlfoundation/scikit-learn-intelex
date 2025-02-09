@@ -1,14 +1,15 @@
 # Infra and tools
+.*                            @napetrov @Alexsandruss @homksei @ahuber21 @ethanglaser
 .ci/                          @napetrov @Alexsandruss @homksei @ahuber21 @ethanglaser
-.github/                      @napetrov @Alexsandruss @homksei @ahuber21 @ethanglaser @samir-nasibli @icfaust
 .circleci/                    @napetrov @Alexsandruss @homksei @ahuber21 @ethanglaser
+.github/                      @napetrov @Alexsandruss @homksei @ahuber21 @ethanglaser @samir-nasibli @icfaust
 
 # Docs
 *.md                          @maria-Petrova @napetrov @Alexsandruss @samir-nasibli @icfaust @david-cortes-intel
 doc/                          @maria-Petrova @napetrov @Alexsandruss @samir-nasibli @icfaust @david-cortes-intel
 requirements-doc.txt          @Alexsandruss @samir-nasibli @icfaust @david-cortes-intel
 
-# DPC++
+# sklearnex
 onedal/                       @Alexsandruss @samir-nasibli @icfaust
 sklearnex/                    @Alexsandruss @samir-nasibli @icfaust
 
@@ -16,10 +17,11 @@ sklearnex/                    @Alexsandruss @samir-nasibli @icfaust
 examples/                     @maria-Petrova @Alexsandruss @samir-nasibli @napetrov
 
 # Dependencies
-setup.py                      @napetrov @Alexsandruss @samir-nasibli @icfaust
-requirements*                 @napetrov @Alexsandruss @samir-nasibli @homksei @ahuber21 @ethanglaser
-dependencies-dev              @napetrov @Alexsandruss @samir-nasibli @homksei @ahuber21 @ethanglaser
 conda-recipe/                 @napetrov @Alexsandruss
+dependencies-dev              @napetrov @Alexsandruss @samir-nasibli @homksei @ahuber21 @ethanglaser
+pyproject.toml                @napetrov @Alexsandruss @samir-nasibli @homksei @ahuber21 @ethanglaser
+requirements*                 @napetrov @Alexsandruss @samir-nasibli @homksei @ahuber21 @ethanglaser
+setup.*                       @napetrov @Alexsandruss @samir-nasibli @icfaust
 
 # Model builders
 *model_builders*              @razdoburdin @ahuber21 @avolkov-intel
@@ -29,13 +31,16 @@ conda-recipe/                 @napetrov @Alexsandruss
 
 # Testing
 **/test*.py                   @Alexsandruss @samir-nasibli @icfaust
+deselected_tests.yaml         @Alexsandruss @samir-nasibli @icfaust
+tests/                        @Alexsandruss @samir-nasibli @icfaust
 
 # Distributed
 *spmd*                        @samir-nasibli @ethanglaser
 
-# Scikit-learn patching
+# daal4py
 daal4py/sklearn/              @Alexsandruss @samir-nasibli @icfaust
 
 # Core
-src/                          @Alexsandruss @samir-nasibli @icfaust
 generator/                    @Alexsandruss @samir-nasibli @icfaust
+scripts/                      @Alexsandruss @samir-nasibli @icfaust
+src/                          @Alexsandruss @samir-nasibli @icfaust

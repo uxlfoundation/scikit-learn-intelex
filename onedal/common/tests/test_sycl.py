@@ -109,7 +109,11 @@ def test_sycl_device_attributes(queue):
 
 @pytest.mark.skipif(not _is_dpc_backend, reason="requires dpc backend")
 def test_backend_queue():
-    q = _backend.SyclQueue("cpu")
+    try:
+        q = _backend.SyclQueue("cpu")
+    except RuntimeError:
+        pytest.skip("OpenCL CPU runtime not installed")
+
     # verify copying via a py capsule object is functional
     q2 = _backend.SyclQueue(q._get_capsule())
     # verify copying via the _get_capsule attribute

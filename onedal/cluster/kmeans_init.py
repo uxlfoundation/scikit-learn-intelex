@@ -21,7 +21,7 @@ from sklearn.utils import check_random_state
 from daal4py.sklearn._utils import daal_check_version, get_dtype
 
 from ..common._base import BaseEstimator as onedal_BaseEstimator
-from ..datatypes import _convert_to_supported, from_table, to_table
+from ..datatypes import from_table, to_table
 from ..utils import _check_array
 
 if daal_check_version((2023, "P", 200)):
@@ -50,26 +50,23 @@ if daal_check_version((2023, "P", 200)):
 
         def _get_onedal_params(self, dtype=np.float32):
             return {
-                "fptype": "float" if dtype == np.float32 else "double",
+                "fptype": dtype,
                 "local_trials_count": self.local_trials_count,
                 "method": self.algorithm,
                 "seed": self.seed,
                 "cluster_count": self.cluster_count,
             }
 
-        def _get_params_and_input(self, X, policy):
+        def _get_params_and_input(self, X, queue):
             X = _check_array(
                 X,
                 dtype=[np.float64, np.float32],
                 accept_sparse="csr",
                 force_all_finite=False,
             )
-
-            X = _convert_to_supported(policy, X)
-
-            dtype = get_dtype(X)
-            params = self._get_onedal_params(dtype)
-            return (params, to_table(X), dtype)
+            X = to_table(X, queue=queue)
+            params = self._get_onedal_params(X.dtype)
+            return (params, X, X.dtype)
 
         def _compute_raw(self, X_table, module, policy, dtype=np.float32):
             params = self._get_onedal_params(dtype)
@@ -83,7 +80,7 @@ if daal_check_version((2023, "P", 200)):
             # oneDAL KMeans Init for sparse data does not have GPU support
             if issparse(X):
                 policy = self._get_policy(None, None)
-            _, X_table, dtype = self._get_params_and_input(X, policy)
+            _, X_table, dtype = self._get_params_and_input(X, queue)
 
             centroids = self._compute_raw(X_table, module, policy, dtype)
 

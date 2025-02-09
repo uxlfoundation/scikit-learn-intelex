@@ -17,7 +17,7 @@ import numpy as np
 
 from daal4py.sklearn._utils import daal_check_version, get_dtype
 
-from ..datatypes import _convert_to_supported, from_table, to_table
+from ..datatypes import from_table, to_table
 from ..utils import _check_array
 from .covariance import BaseEmpiricalCovariance
 
@@ -57,9 +57,21 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
         self._reset()
 
     def _reset(self):
+        self._need_to_finalize = False
         self._partial_result = self._get_backend(
             "covariance", None, "partial_compute_result"
         )
+
+    def __getstate__(self):
+        # Since finalize_fit can't be dispatched without directly provided queue
+        # and the dispatching policy can't be serialized, the computation is finalized
+        # here and the policy is not saved in serialized data.
+
+        self.finalize_fit()
+        data = self.__dict__.copy()
+        data.pop("_queue", None)
+
+        return data
 
     def partial_fit(self, X, y=None, queue=None):
         """
@@ -89,13 +101,12 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
 
         policy = self._get_policy(queue, X)
 
-        X = _convert_to_supported(policy, X)
+        X_table = to_table(X, queue=queue)
 
         if not hasattr(self, "_dtype"):
-            self._dtype = get_dtype(X)
+            self._dtype = X_table.dtype
 
         params = self._get_onedal_params(self._dtype)
-        table_X = to_table(X)
         self._partial_result = self._get_backend(
             "covariance",
             None,
@@ -103,8 +114,9 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
             policy,
             params,
             self._partial_result,
-            table_X,
+            X_table,
         )
+        self._need_to_finalize = True
 
     def finalize_fit(self, queue=None):
         """
@@ -121,26 +133,29 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
         self : object
             Returns the instance itself.
         """
-        params = self._get_onedal_params(self._dtype)
-        if queue is not None:
-            policy = self._get_policy(queue)
-        else:
-            policy = self._get_policy(self._queue)
+        if self._need_to_finalize:
+            params = self._get_onedal_params(self._dtype)
+            if queue is not None:
+                policy = self._get_policy(queue)
+            else:
+                policy = self._get_policy(self._queue)
 
-        result = self._get_backend(
-            "covariance",
-            None,
-            "finalize_compute",
-            policy,
-            params,
-            self._partial_result,
-        )
-        if daal_check_version((2024, "P", 1)) or (not self.bias):
-            self.covariance_ = from_table(result.cov_matrix)
-        else:
-            n_rows = self._partial_result.partial_n_rows
-            self.covariance_ = from_table(result.cov_matrix) * (n_rows - 1) / n_rows
+            result = self._get_backend(
+                "covariance",
+                None,
+                "finalize_compute",
+                policy,
+                params,
+                self._partial_result,
+            )
+            if daal_check_version((2024, "P", 1)) or (not self.bias):
+                self.covariance_ = from_table(result.cov_matrix)
+            else:
+                n_rows = self._partial_result.partial_n_rows
+                self.covariance_ = from_table(result.cov_matrix) * (n_rows - 1) / n_rows
 
-        self.location_ = from_table(result.means).ravel()
+            self.location_ = from_table(result.means).ravel()
+
+            self._need_to_finalize = False
 
         return self

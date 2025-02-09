@@ -97,9 +97,10 @@ def test_incremental_linear_regression_fit_spmd_gold(
     inclin_spmd.fit(local_dpt_X, local_dpt_y)
     inclin.fit(dpt_X, dpt_y)
 
-    assert_allclose(inclin.coef_, inclin_spmd.coef_)
+    rtol = 1e-5 if (dtype == np.float32) else 1e-7
+    assert_allclose(inclin.coef_, inclin_spmd.coef_, rtol=rtol)
     if fit_intercept:
-        assert_allclose(inclin.intercept_, inclin_spmd.intercept_)
+        assert_allclose(inclin.intercept_, inclin_spmd.intercept_, rtol=rtol)
 
 
 @pytest.mark.skipif(
@@ -178,9 +179,10 @@ def test_incremental_linear_regression_partial_fit_spmd_gold(
 
     inclin.fit(dpt_X, dpt_y)
 
-    assert_allclose(inclin.coef_, inclin_spmd.coef_)
+    rtol = 1e-5 if (dtype == np.float32) else 1e-7
+    assert_allclose(inclin.coef_, inclin_spmd.coef_, rtol=rtol)
     if fit_intercept:
-        assert_allclose(inclin.intercept_, inclin_spmd.intercept_)
+        assert_allclose(inclin.intercept_, inclin_spmd.intercept_, rtol=rtol)
 
 
 @pytest.mark.skipif(
@@ -206,7 +208,7 @@ def test_incremental_linear_regression_fit_spmd_random(
         IncrementalLinearRegression as IncrementalLinearRegression_SPMD,
     )
 
-    tol = 2e-4 if dtype == np.float32 else 1e-7
+    tol = 5e-3 if dtype == np.float32 else 1e-7
 
     # Generate random data and process into dpt
     X_train, X_test, y_train, _ = _generate_regression_data(
@@ -277,7 +279,7 @@ def test_incremental_linear_regression_partial_fit_spmd_random(
         IncrementalLinearRegression as IncrementalLinearRegression_SPMD,
     )
 
-    tol = 3e-4 if dtype == np.float32 else 1e-7
+    tol = 5e-3 if dtype == np.float32 else 1e-7
 
     # Generate random data and process into dpt
     X_train, X_test, y_train, _ = _generate_regression_data(

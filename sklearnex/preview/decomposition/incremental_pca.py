@@ -226,7 +226,18 @@ class IncrementalPCA(_sklearn_IncrementalPCA):
             X,
         )
 
-    __doc__ = _sklearn_IncrementalPCA.__doc__
+    __doc__ = (
+        _sklearn_IncrementalPCA.__doc__
+        + """
+
+    Note
+    ----
+    Serializing instances of this class will trigger a forced finalization of calculations.
+    Since finalize_fit can't be dispatched without directly provided queue
+    and the dispatching policy can't be serialized, the computation is finalized
+    during serialization call and the policy is not saved in serialized data.
+    """
+    )
     fit.__doc__ = _sklearn_IncrementalPCA.fit.__doc__
     fit_transform.__doc__ = _sklearn_IncrementalPCA.fit_transform.__doc__
     transform.__doc__ = _sklearn_IncrementalPCA.transform.__doc__

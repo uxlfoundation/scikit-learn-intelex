@@ -14,6 +14,17 @@
 # limitations under the License.
 # ===============================================================================
 
+from os import environ
+
+from daal4py.sklearn._utils import sklearn_check_version
+
+# sklearn requires manual enabling of Scipy array API support
+# if `array-api-compat` package is present in environment
+# TODO: create generic approach to handle this for all tests
+if sklearn_check_version("1.6"):
+    environ["SCIPY_ARRAY_API"] = "1"
+
+
 import numpy as np
 import pytest
 from numpy.linalg import slogdet
@@ -207,6 +218,56 @@ def test_whitened_toy_score(dataframe, queue):
     # expected_result = -14.1780602988
     result = _as_numpy(est.score(X_df))
     assert_allclose(expected_result, result, atol=1e-6)
+
+
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_sklearnex_incremental_estimatior_pickle(dataframe, queue, dtype):
+    import pickle
+
+    from sklearnex.covariance import IncrementalEmpiricalCovariance
+
+    inccov = IncrementalEmpiricalCovariance()
+
+    # Check that estimator can be serialized without any data.
+    dump = pickle.dumps(inccov)
+    inccov_loaded = pickle.loads(dump)
+
+    seed = 77
+    gen = np.random.default_rng(seed)
+    X = gen.uniform(low=-0.3, high=+0.7, size=(10, 10))
+    X = X.astype(dtype)
+    X_split = np.array_split(X, 2)
+    X_split_df = _convert_to_dataframe(X_split[0], sycl_queue=queue, target_df=dataframe)
+    inccov.partial_fit(X_split_df)
+    inccov_loaded.partial_fit(X_split_df)
+
+    # Check that estimator can be serialized after partial_fit call.
+    dump = pickle.dumps(inccov_loaded)
+    inccov_loaded = pickle.loads(dump)
+
+    assert inccov.batch_size == inccov_loaded.batch_size
+    assert inccov.n_features_in_ == inccov_loaded.n_features_in_
+    assert inccov.n_samples_seen_ == inccov_loaded.n_samples_seen_
+    if hasattr(inccov, "_parameter_constraints"):
+        assert inccov._parameter_constraints == inccov_loaded._parameter_constraints
+    assert inccov.n_jobs == inccov_loaded.n_jobs
+
+    X_split_df = _convert_to_dataframe(X_split[1], sycl_queue=queue, target_df=dataframe)
+    inccov.partial_fit(X_split_df)
+    inccov_loaded.partial_fit(X_split_df)
+    dump = pickle.dumps(inccov)
+    inccov_loaded = pickle.loads(dump)
+
+    assert_allclose(inccov.location_, inccov_loaded.location_, atol=1e-6)
+    assert_allclose(inccov.covariance_, inccov_loaded.covariance_, atol=1e-6)
+
+    # Check that finalized estimator can be serialized.
+    dump = pickle.dumps(inccov_loaded)
+    inccov_loaded = pickle.loads(dump)
+
+    assert_allclose(inccov.location_, inccov_loaded.location_, atol=1e-6)
+    assert_allclose(inccov.covariance_, inccov_loaded.covariance_, atol=1e-6)
 
 
 # Monkeypatch IncrementalEmpiricalCovariance into relevant sklearn.covariance tests

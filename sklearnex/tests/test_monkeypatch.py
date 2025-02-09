@@ -208,11 +208,10 @@ def test_preview_namespace():
         from sklearn.cluster import DBSCAN
         from sklearn.decomposition import PCA
         from sklearn.ensemble import RandomForestClassifier
-        from sklearn.linear_model import LinearRegression, Ridge
+        from sklearn.linear_model import LinearRegression
         from sklearn.svm import SVC
 
         return (
-            Ridge(),
             LinearRegression(),
             PCA(),
             DBSCAN(),
@@ -227,11 +226,8 @@ def test_preview_namespace():
 
         assert _is_preview_enabled()
 
-        ridge, lr, pca, dbscan, svc, rfc = get_estimators()
+        lr, pca, dbscan, svc, rfc = get_estimators()
         assert "sklearnex" in rfc.__module__
-
-        if daal_check_version((2024, "P", 600)):
-            assert "sklearnex.preview" in ridge.__module__
 
         if daal_check_version((2023, "P", 100)):
             assert "sklearnex" in lr.__module__
@@ -246,8 +242,7 @@ def test_preview_namespace():
         sklearnex.unpatch_sklearn()
 
     # no patching behavior
-    ridge, lr, pca, dbscan, svc, rfc = get_estimators()
-    assert "sklearn." in ridge.__module__ and "daal4py" not in ridge.__module__
+    lr, pca, dbscan, svc, rfc = get_estimators()
     assert "sklearn." in lr.__module__ and "daal4py" not in lr.__module__
     assert "sklearn." in pca.__module__ and "daal4py" not in pca.__module__
     assert "sklearn." in dbscan.__module__ and "daal4py" not in dbscan.__module__
@@ -259,9 +254,7 @@ def test_preview_namespace():
         sklearnex.patch_sklearn()
         assert not _is_preview_enabled()
 
-        ridge, lr, pca, dbscan, svc, rfc = get_estimators()
-
-        assert "daal4py" in ridge.__module__
+        lr, pca, dbscan, svc, rfc = get_estimators()
 
         if daal_check_version((2023, "P", 100)):
             assert "sklearnex" in lr.__module__

@@ -17,13 +17,15 @@
 import warnings
 
 import numpy as np
+from scipy.sparse import issparse
 from sklearn.base import BaseEstimator
 from sklearn.utils import check_array
 from sklearn.utils.validation import _check_sample_weight
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
-from daal4py.sklearn._utils import sklearn_check_version
+from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal.basic_statistics import BasicStatistics as onedal_BasicStatistics
+from onedal.utils import _is_csr
 
 from .._device_offload import dispatch
 from .._utils import IntelEstimator, PatchingConditionsChain
@@ -62,13 +64,13 @@ class BasicStatistics(IntelEstimator, BaseEstimator):
         mean_ : ndarray of shape (n_features,)
             Mean of each feature over all samples.
         variance_ : ndarray of shape (n_features,)
-            Variance of each feature over all samples.
+            Variance of each feature over all samples. Bessel's correction is used.
         variation_ : ndarray of shape (n_features,)
-            Variation of each feature over all samples.
+            Variation of each feature over all samples. Bessel's correction is used.
         sum_squares_ : ndarray of shape (n_features,)
             Sum of squares for each feature over all samples.
         standard_deviation_ : ndarray of shape (n_features,)
-            Standard deviation of each feature over all samples.
+            Unbiased standard deviation of each feature over all samples. Bessel's correction is used.
         sum_squares_centered_ : ndarray of shape (n_features,)
             Centered sum of squares for each feature over all samples.
         second_order_raw_moment_ : ndarray of shape (n_features,)
@@ -166,21 +168,50 @@ class BasicStatistics(IntelEstimator, BaseEstimator):
             f"'{self.__class__.__name__}' object has no attribute '{attr}'"
         )
 
-    def _onedal_supported(self, method_name, *data):
+    def _onedal_cpu_supported(self, method_name, *data):
         patching_status = PatchingConditionsChain(
             f"sklearnex.basic_statistics.{self.__class__.__name__}.{method_name}"
         )
         return patching_status
 
-    _onedal_cpu_supported = _onedal_supported
-    _onedal_gpu_supported = _onedal_supported
+    def _onedal_gpu_supported(self, method_name, *data):
+        patching_status = PatchingConditionsChain(
+            f"sklearnex.basic_statistics.{self.__class__.__name__}.{method_name}"
+        )
+        X, sample_weight = data
+
+        is_data_supported = not issparse(X) or (
+            _is_csr(X) and daal_check_version((2025, "P", 200))
+        )
+
+        is_sample_weight_supported = sample_weight is None or not issparse(X)
+
+        patching_status.and_conditions(
+            [
+                (
+                    is_sample_weight_supported,
+                    "Sample weights are not supported for CSR data format",
+                ),
+                (
+                    is_data_supported,
+                    "Supported data formats: Dense, CSR (oneDAL version >= 2025.2.0).",
+                ),
+            ]
+        )
+        return patching_status
 
     def _onedal_fit(self, X, sample_weight=None, queue=None):
         if sklearn_check_version("1.2"):
             self._validate_params()
 
         if sklearn_check_version("1.0"):
-            X = validate_data(self, X, dtype=[np.float64, np.float32], ensure_2d=False)
+            X = validate_data(
+                self,
+                X,
+                dtype=[np.float64, np.float32],
+                ensure_2d=False,
+                accept_sparse="csr",
+            )
         else:
             X = check_array(X, dtype=[np.float64, np.float32])
 

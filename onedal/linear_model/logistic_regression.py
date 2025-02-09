@@ -24,7 +24,7 @@ from daal4py.sklearn._utils import daal_check_version, get_dtype, make2d
 from ..common._base import BaseEstimator as onedal_BaseEstimator
 from ..common._estimator_checks import _check_is_fitted
 from ..common._mixin import ClassifierMixin
-from ..datatypes import _convert_to_supported, from_table, to_table
+from ..datatypes import from_table, to_table
 from ..utils import (
     _check_array,
     _check_n_features,
@@ -48,7 +48,7 @@ class BaseLogisticRegression(onedal_BaseEstimator, metaclass=ABCMeta):
     def _get_onedal_params(self, is_csr, dtype=np.float32):
         intercept = "intercept|" if self.fit_intercept else ""
         return {
-            "fptype": "float" if dtype == np.float32 else "double",
+            "fptype": dtype,
             "method": "sparse" if is_csr else self.algorithm,
             "intercept": self.fit_intercept,
             "tol": self.tol,
@@ -83,9 +83,8 @@ class BaseLogisticRegression(onedal_BaseEstimator, metaclass=ABCMeta):
         y = y.astype(dtype=np.int32)
 
         policy = self._get_policy(queue, X, y)
-        X, y = _convert_to_supported(policy, X, y)
-        params = self._get_onedal_params(is_csr, get_dtype(X))
-        X_table, y_table = to_table(X, y)
+        X_table, y_table = to_table(X, y, queue=queue)
+        params = self._get_onedal_params(is_csr, X_table.dtype)
 
         result = module.train(policy, params, X_table, y_table)
 
@@ -144,9 +143,9 @@ class BaseLogisticRegression(onedal_BaseEstimator, metaclass=ABCMeta):
         if self.fit_intercept:
             packed_coefficients[:, 0][:, np.newaxis] = intercept
 
-        packed_coefficients = _convert_to_supported(policy, packed_coefficients)
-
-        m.packed_coefficients = to_table(packed_coefficients)
+        m.packed_coefficients = to_table(
+            packed_coefficients, queue=getattr(policy, "_queue", None)
+        )
 
         self._onedal_model = m
 
@@ -175,10 +174,9 @@ class BaseLogisticRegression(onedal_BaseEstimator, metaclass=ABCMeta):
         else:
             model = self._create_model(module, policy)
 
-        X = _convert_to_supported(policy, X)
-        params = self._get_onedal_params(is_csr, get_dtype(X))
+        X_table = to_table(X, queue=queue)
+        params = self._get_onedal_params(is_csr, X.dtype)
 
-        X_table = to_table(X)
         result = module.infer(policy, params, model, X_table)
         return result
 

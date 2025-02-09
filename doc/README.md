@@ -25,7 +25,7 @@ To build Intel(R) Extension for Scikit-Learn documentation locally:
 
 1. Clone the repository:
 
-		git clone https://github.com/intel/scikit-learn-intelex.git
+		git clone https://github.com/uxlfoundation/scikit-learn-intelex.git
 
 2. Install required Python packages using `pip`:
 

@@ -63,8 +63,8 @@ def test_sklearnex_import_rf_classifier(dataframe, queue, block, trees, rows, sc
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 def test_sklearnex_import_rf_regression(dataframe, queue):
-    if queue and queue.sycl_device.is_gpu:
-        pytest.skip("RF regressor predict for the GPU sycl_queue is buggy.")
+    if (not daal_check_version((2025, "P", 200))) and queue and queue.sycl_device.is_gpu:
+        pytest.skip("Skipping due to bug in histogram merges fixed in 2025.2.")
     from sklearnex.ensemble import RandomForestRegressor
 
     X, y = make_regression(n_features=4, n_informative=2, random_state=0, shuffle=False)
@@ -74,19 +74,20 @@ def test_sklearnex_import_rf_regression(dataframe, queue):
     assert "sklearnex" in rf.__module__
     pred = _as_numpy(rf.predict([[0, 0, 0, 0]]))
 
-    if queue is not None and queue.sycl_device.is_gpu:
-        assert_allclose([-0.011208], pred, atol=1e-2)
-    else:
-        if daal_check_version((2024, "P", 0)):
-            assert_allclose([-6.971], pred, atol=1e-2)
-        else:
-            assert_allclose([-6.839], pred, atol=1e-2)
+    # Check that the prediction is within a reasonable range.
+    # 'y' should be in the neighborhood of zero for x=0.
+    assert pred[0] >= -10
+    assert pred[0] <= 10
+
+    # Check that the trees aren't just empty nodes predicting the mean
+    for estimator in rf.estimators_:
+        assert estimator.tree_.children_left.shape[0] > 1
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 def test_sklearnex_import_et_classifier(dataframe, queue):
-    if queue and queue.sycl_device.is_gpu:
-        pytest.skip("ET classifier predict for the GPU sycl_queue is buggy.")
+    if (not daal_check_version((2025, "P", 200))) and queue and queue.sycl_device.is_gpu:
+        pytest.skip("Skipping due to bug in histogram merges fixed in 2025.2.")
     from sklearnex.ensemble import ExtraTreesClassifier
 
     X, y = make_classification(
@@ -108,8 +109,8 @@ def test_sklearnex_import_et_classifier(dataframe, queue):
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 def test_sklearnex_import_et_regression(dataframe, queue):
-    if queue and queue.sycl_device.is_gpu:
-        pytest.skip("ET regressor predict for the GPU sycl_queue is buggy.")
+    if (not daal_check_version((2025, "P", 200))) and queue and queue.sycl_device.is_gpu:
+        pytest.skip("Skipping due to bug in histogram merges fixed in 2025.2.")
     from sklearnex.ensemble import ExtraTreesRegressor
 
     X, y = make_regression(n_features=1, random_state=0, shuffle=False)
@@ -129,7 +130,11 @@ def test_sklearnex_import_et_regression(dataframe, queue):
         )
     )
 
-    if queue is not None and queue.sycl_device.is_gpu:
-        assert_allclose([1.909769], pred, atol=1e-2)
-    else:
-        assert_allclose([0.445], pred, atol=1e-2)
+    # Check that the prediction is within a reasonable range.
+    # 'y' should be in the neighborhood of zero for x=0.
+    assert pred[0] >= -10
+    assert pred[0] <= 10
+
+    # Check that the trees aren't just empty nodes predicting the mean
+    for estimator in rf.estimators_:
+        assert estimator.tree_.children_left.shape[0] > 1

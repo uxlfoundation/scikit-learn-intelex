@@ -19,12 +19,13 @@ from daal4py.sklearn._utils import get_dtype
 from ...basic_statistics import (
     IncrementalBasicStatistics as base_IncrementalBasicStatistics,
 )
-from ...datatypes import _convert_to_supported, to_table
+from ...datatypes import to_table
 from .._base import BaseEstimatorSPMD
 
 
 class IncrementalBasicStatistics(BaseEstimatorSPMD, base_IncrementalBasicStatistics):
     def _reset(self):
+        self._need_to_finalize = False
         self._partial_result = super(base_IncrementalBasicStatistics, self)._get_backend(
             "basic_statistics", None, "partial_compute_result"
         )
@@ -50,13 +51,11 @@ class IncrementalBasicStatistics(BaseEstimatorSPMD, base_IncrementalBasicStatist
         """
         self._queue = queue
         policy = super(base_IncrementalBasicStatistics, self)._get_policy(queue, X)
-        X, weights = _convert_to_supported(policy, X, weights)
+        X_table, weights_table = to_table(X, weights, queue=queue)
 
         if not hasattr(self, "_onedal_params"):
-            dtype = get_dtype(X)
-            self._onedal_params = self._get_onedal_params(False, dtype=dtype)
+            self._onedal_params = self._get_onedal_params(False, dtype=X_table.dtype)
 
-        X_table, weights_table = to_table(X, weights)
         self._partial_result = super(base_IncrementalBasicStatistics, self)._get_backend(
             "basic_statistics",
             None,
@@ -67,3 +66,6 @@ class IncrementalBasicStatistics(BaseEstimatorSPMD, base_IncrementalBasicStatist
             X_table,
             weights_table,
         )
+
+        self._need_to_finalize = True
+        return self

@@ -1,24 +1,22 @@
-.. ******************************************************************************
-.. * Copyright 2023 Intel Corporation
-.. *
-.. * Licensed under the Apache License, Version 2.0 (the "License");
-.. * you may not use this file except in compliance with the License.
-.. * You may obtain a copy of the License at
-.. *
-.. *     http://www.apache.org/licenses/LICENSE-2.0
-.. *
-.. * Unless required by applicable law or agreed to in writing, software
-.. * distributed under the License is distributed on an "AS IS" BASIS,
-.. * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-.. * See the License for the specific language governing permissions and
-.. * limitations under the License.
-.. *******************************************************************************/
+.. Copyright 2023 Intel Corporation
+..
+.. Licensed under the Apache License, Version 2.0 (the "License");
+.. you may not use this file except in compliance with the License.
+.. You may obtain a copy of the License at
+..
+..     http://www.apache.org/licenses/LICENSE-2.0
+..
+.. Unless required by applicable law or agreed to in writing, software
+.. distributed under the License is distributed on an "AS IS" BASIS,
+.. WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+.. See the License for the specific language governing permissions and
+.. limitations under the License.
 
 .. _model-builders:
 
-###############################################
+###################################################
 Model Builders for the Gradient Boosting Frameworks
-###############################################
+###################################################
 
 .. include:: note.rst
 
@@ -39,7 +37,7 @@ for the best performance on the Intel(R) Architecture.
 .. note::
 
    Currently, experimental support for XGBoost* and LightGBM* categorical data is not supported.
-   For the model conversion to work with daal4py, convert non-numeric data to numeric data 
+   For the model conversion to work with daal4py, convert non-numeric data to numeric data
    before training and converting the model.
 
 Conversion
@@ -90,8 +88,9 @@ For these models, the ``predict()`` method takes additional keyword arguments:
 
 The returned prediction has the shape:
 
-   * ``(n_rows, n_features + 1)``  for SHAP contributions 
+   * ``(n_rows, n_features + 1)``  for SHAP contributions
    * ``(n_rows, n_features + 1, n_features + 1)`` for SHAP interactions
+
 Here, ``n_rows`` is the number of rows (i.e., observations) in
 ``test_data``, and ``n_features`` is the number of features in the dataset.
 
@@ -130,10 +129,10 @@ Examples
 ---------------------------------
 Model Builders models conversion
 
-- `XGBoost model conversion <https://github.com/intel/scikit-learn-intelex/blob/main/examples/daal4py/model_builders_xgboost.py>`_
-- `SHAP value prediction from an XGBoost model <https://github.com/intel/scikit-learn-intelex/blob/main/examples/daal4py/model_builders_xgboost_shap.py>`_
-- `LightGBM model conversion <https://github.com/intel/scikit-learn-intelex/blob/main/examples/daal4py/model_builders_lightgbm.py>`_
-- `CatBoost model conversion <https://github.com/intel/scikit-learn-intelex/blob/main/examples/daal4py/model_builders_catboost.py>`_
+- `XGBoost model conversion <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/daal4py/model_builders_xgboost.py>`_
+- `SHAP value prediction from an XGBoost model <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/daal4py/model_builders_xgboost_shap.py>`_
+- `LightGBM model conversion <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/daal4py/model_builders_lightgbm.py>`_
+- `CatBoost model conversion <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/daal4py/model_builders_catboost.py>`_
 
 Articles and Blog Posts
 ---------------------------------

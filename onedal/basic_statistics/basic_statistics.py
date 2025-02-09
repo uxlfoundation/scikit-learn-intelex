@@ -20,7 +20,7 @@ from abc import ABCMeta, abstractmethod
 import numpy as np
 
 from ..common._base import BaseEstimator
-from ..datatypes import _convert_to_supported, from_table, to_table
+from ..datatypes import from_table, to_table
 from ..utils import _is_csr
 from ..utils.validation import _check_array
 
@@ -57,7 +57,7 @@ class BaseBasicStatistics(BaseEstimator, metaclass=ABCMeta):
     def _get_onedal_params(self, is_csr, dtype=np.float32):
         options = self._get_result_options(self.options)
         return {
-            "fptype": "float" if dtype == np.float32 else "double",
+            "fptype": dtype,
             "method": "sparse" if is_csr else self.algorithm,
             "result_option": options,
         }
@@ -81,11 +81,11 @@ class BasicStatistics(BaseBasicStatistics):
         if sample_weight is not None:
             sample_weight = _check_array(sample_weight, ensure_2d=False)
 
-        data, sample_weight = _convert_to_supported(policy, data, sample_weight)
         is_single_dim = data.ndim == 1
-        data_table, weights_table = to_table(data, sample_weight)
 
-        dtype = data.dtype
+        data_table, weights_table = to_table(data, sample_weight, queue=queue)
+
+        dtype = data_table.dtype
         raw_result = self._compute_raw(data_table, weights_table, policy, dtype, is_csr)
         for opt, raw_value in raw_result.items():
             value = from_table(raw_value).ravel()

@@ -22,17 +22,17 @@
 #include "oneapi/dal/table/homogen.hpp"
 #include "oneapi/dal/table/detail/homogen_utils.hpp"
 
-#include "onedal/datatypes/data_conversion.hpp"
-#include "onedal/datatypes/utils/numpy_helpers.hpp"
+#include "onedal/datatypes/numpy/data_conversion.hpp"
+#include "onedal/datatypes/numpy/numpy_utils.hpp"
 #include "onedal/version.hpp"
 
 #if ONEDAL_VERSION <= 20230100
-    #include "oneapi/dal/table/detail/csr.hpp"
+#include "oneapi/dal/table/detail/csr.hpp"
 #else
-    #include "oneapi/dal/table/csr.hpp"
+#include "oneapi/dal/table/csr.hpp"
 #endif
 
-namespace oneapi::dal::python {
+namespace oneapi::dal::python::numpy {
 
 #if ONEDAL_VERSION <= 20230100
 typedef oneapi::dal::detail::csr_table csr_table_t;
@@ -41,13 +41,13 @@ typedef oneapi::dal::csr_table csr_table_t;
 #endif
 
 template <typename T>
-static dal::array<T> transfer_to_host(const dal::array<T>& array) {
-    #ifdef ONEDAL_DATA_PARALLEL
+static dal::array<T> transfer_to_host(const dal::array<T> &array) {
+#ifdef ONEDAL_DATA_PARALLEL
     auto opt_queue = array.get_queue();
     if (opt_queue.has_value()) {
         auto device = opt_queue->get_device();
         if (!device.is_cpu()) {
-            const auto* device_data = array.get_data();
+            const auto *device_data = array.get_data();
 
             auto memory_kind = sycl::get_pointer_type(device_data, opt_queue->get_context());
             if (memory_kind == sycl::usm::alloc::unknown) {
@@ -61,7 +61,7 @@ static dal::array<T> transfer_to_host(const dal::array<T>& array) {
             }
         }
     }
-    #endif
+#endif
 
     return array;
 }
@@ -73,23 +73,26 @@ inline dal::homogen_table convert_to_homogen_impl(PyArrayObject *np_data) {
     if (array_numdims(np_data) > 2) {
         throw std::runtime_error("Input array has wrong dimensionality (must be 2d).");
     }
-    T* const data_pointer = reinterpret_cast<T* const>(array_data(np_data));
+    T *const data_pointer = reinterpret_cast<T *const>(array_data(np_data));
     // TODO: check safe cast from int to std::int64_t
     const std::int64_t row_count = static_cast<std::int64_t>(array_size(np_data, 0));
     if (array_numdims(np_data) == 2) {
         // TODO: check safe cast from int to std::int64_t
         column_count = static_cast<std::int64_t>(array_size(np_data, 1));
     }
-    // If both array_is_behaved_C(np_data) and array_is_behaved_F(np_data) are true 
+    // If both array_is_behaved_C(np_data) and array_is_behaved_F(np_data) are true
     // (for example, if the array has only one column), then row-major layout will be chosen
     // which is default on oneDAL side.
     const auto layout =
         array_is_behaved_C(np_data) ? dal::data_layout::row_major : dal::data_layout::column_major;
-    auto res_table = dal::homogen_table(data_pointer,
-                                        row_count,
-                                        column_count,
-                                        [np_data](const T* data) { Py_DECREF(np_data); },
-                                        layout);
+    auto res_table = dal::homogen_table(
+        data_pointer,
+        row_count,
+        column_count,
+        [np_data](const T *data) {
+            Py_DECREF(np_data);
+        },
+        layout);
 
     // we need to increment the ref-count as we use the input array in-place
     Py_INCREF(np_data);
@@ -97,9 +100,9 @@ inline dal::homogen_table convert_to_homogen_impl(PyArrayObject *np_data) {
 }
 
 template <typename T>
-inline csr_table_t convert_to_csr_impl(PyObject* py_data,
-                                       PyObject* py_column_indices,
-                                       PyObject* py_row_indices,
+inline csr_table_t convert_to_csr_impl(PyObject *py_data,
+                                       PyObject *py_column_indices,
+                                       PyObject *py_row_indices,
                                        std::int64_t row_count,
                                        std::int64_t column_count) {
     PyArrayObject *np_data = reinterpret_cast<PyArrayObject *>(py_data);
@@ -130,45 +133,80 @@ inline csr_table_t convert_to_csr_impl(PyObject* py_data,
     const T *data_pointer = static_cast<T *>(array_data(np_data));
     const std::int64_t data_count = static_cast<std::int64_t>(array_size(np_data, 0));
 
-    auto res_table = csr_table_t(dal::array<T>(data_pointer,
-                                               data_count,
-                                               [np_data](const T*) {
-                                                   Py_DECREF(np_data);
-                                               }),
-                                 column_indices_one_based,
-                                 row_indices_one_based,
+    auto res_table = csr_table_t(
+        dal::array<T>(data_pointer,
+                      data_count,
+                      [np_data](const T *) {
+                          Py_DECREF(np_data);
+                      }),
+        column_indices_one_based,
+        row_indices_one_based,
 #if ONEDAL_VERSION <= 20230100
-// row_count parameter is present in csr_table's constructor only in older versions of oneDAL
-                                 row_count,
+        // row_count parameter is present in csr_table's constructor only in older versions of oneDAL
+        row_count,
 #endif
-                                 column_count);
+        column_count);
 
     // we need to increment the ref-count as we use the input array in-place
     Py_INCREF(np_data);
     return res_table;
 }
 
-dal::table convert_to_table(PyObject *obj) {
+dal::table convert_to_table(py::object inp_obj, py::object queue) {
     dal::table res;
+
+    PyObject *obj = inp_obj.ptr();
+
     if (obj == nullptr || obj == Py_None) {
         return res;
     }
-    if (is_array(obj)) {
-        PyArrayObject *ary = reinterpret_cast<PyArrayObject *>(obj);
-        if (array_is_behaved_C(ary) || array_is_behaved_F(ary)) {
-#define MAKE_HOMOGEN_TABLE(CType) res = convert_to_homogen_impl<CType>(ary);
-            SET_NPY_FEATURE(array_type(ary),
-                            array_type_sizeof(ary),
-                            MAKE_HOMOGEN_TABLE,
-                            throw std::invalid_argument("Found unsupported array type"));
-#undef MAKE_HOMOGEN_TABLE
-        }
-        else {
-            throw std::invalid_argument(
-                "[convert_to_table] Numpy input Could not convert Python object to onedal table.");
+
+#ifdef ONEDAL_DATA_PARALLEL
+    if (!queue.is(py::none()) && !queue.attr("sycl_device").attr("has_aspect_fp64").cast<bool>() &&
+        hasattr(inp_obj, "dtype")) {
+        // If the queue exists, doesn't have the fp64 aspect, and the data is float64
+        // then cast it to float32
+        int type = reinterpret_cast<PyArray_Descr *>(inp_obj.attr("dtype").ptr())->type_num;
+        if (type == NPY_DOUBLE || type == NPY_DOUBLELTR) {
+            PyErr_WarnEx(
+                PyExc_RuntimeWarning,
+                "Data will be converted into float32 from float64 because device does not support it",
+                1);
+            // use astype instead of PyArray_Cast in order to support scipy sparse inputs
+            inp_obj = inp_obj.attr("astype")(py::dtype::of<float>());
+            res = convert_to_table(
+                inp_obj); // queue will be set to none, as this check is no longer necessary
+            return res;
         }
     }
-    else if (strcmp(Py_TYPE(obj)->tp_name, "csr_matrix") == 0 || strcmp(Py_TYPE(obj)->tp_name, "csr_array") == 0) {
+#endif // ONEDAL_DATA_PARALLEL
+
+    if (is_array(obj)) {
+        PyArrayObject *ary = reinterpret_cast<PyArrayObject *>(obj);
+
+        if (!PyArray_ISCARRAY_RO(ary) && !PyArray_ISFARRAY_RO(ary)) {
+            // NOTE: this will make a C-contiguous deep copy of the data
+            // this is expected to be a special case
+            obj = reinterpret_cast<PyObject *>(PyArray_GETCONTIGUOUS(ary));
+            if (obj) {
+                res = convert_to_table(py::cast<py::object>(obj), queue);
+                Py_DECREF(obj);
+                return res;
+            }
+            else {
+                throw std::invalid_argument(
+                    "[convert_to_table] Numpy input could not be converted into onedal table.");
+            }
+        }
+#define MAKE_HOMOGEN_TABLE(CType) res = convert_to_homogen_impl<CType>(ary);
+        SET_NPY_FEATURE(array_type(ary),
+                        array_type_sizeof(ary),
+                        MAKE_HOMOGEN_TABLE,
+                        throw std::invalid_argument("Found unsupported array type"));
+#undef MAKE_HOMOGEN_TABLE
+    }
+    else if (strcmp(Py_TYPE(obj)->tp_name, "csr_matrix") == 0 ||
+             strcmp(Py_TYPE(obj)->tp_name, "csr_array") == 0) {
         PyObject *py_data = PyObject_GetAttrString(obj, "data");
         PyObject *py_column_indices = PyObject_GetAttrString(obj, "indices");
         PyObject *py_row_indices = PyObject_GetAttrString(obj, "indptr");
@@ -242,12 +280,9 @@ static PyObject *convert_to_numpy_impl(const dal::array<T> &array,
     npy_intp dims[2] = { static_cast<npy_intp>(row_count), static_cast<npy_intp>(column_count) };
     auto host_array = transfer_to_host(array);
     host_array.need_mutable_data();
-    auto* bytes = host_array.get_mutable_data();
+    auto *bytes = host_array.get_mutable_data();
 
-    PyObject *obj = PyArray_SimpleNewFromData(size_dims,
-                                              dims,
-                                              NpType,
-                                              static_cast<void *>(bytes));
+    PyObject *obj = PyArray_SimpleNewFromData(size_dims, dims, NpType, static_cast<void *>(bytes));
     if (!obj)
         throw std::invalid_argument("Conversion to numpy array failed");
 
@@ -262,39 +297,39 @@ static PyObject *convert_to_numpy_impl(const dal::array<T> &array,
 // dal::detail::csr_table class is valid
 // only one-based indeices are supported
 template <int NpType, typename T>
-static PyObject* convert_to_py_from_csr_impl(const detail::csr_table& table) {
-    PyObject* result = PyTuple_New(3);
+static PyObject *convert_to_py_from_csr_impl(const detail::csr_table &table) {
+    PyObject *result = PyTuple_New(3);
     const std::int64_t rows_indices_count = table.get_row_count() + 1;
 
-    const std::int64_t* row_indices_one_based = table.get_row_indices();
-    std::uint64_t* row_indices_zero_based_data =
+    const std::int64_t *row_indices_one_based = table.get_row_indices();
+    std::uint64_t *row_indices_zero_based_data =
         detail::host_allocator<std::uint64_t>().allocate(rows_indices_count);
     for (std::int64_t i = 0; i < rows_indices_count; ++i)
         row_indices_zero_based_data[i] = row_indices_one_based[i] - 1;
 
     auto row_indices_zero_based_array =
         dal::array<std::uint64_t>::wrap(row_indices_zero_based_data, rows_indices_count);
-    PyObject* py_row =
+    PyObject *py_row =
         convert_to_numpy_impl<NPY_UINT64, std::uint64_t>(row_indices_zero_based_array,
                                                          rows_indices_count);
     PyTuple_SetItem(result, 2, py_row);
 
     const std::int64_t non_zero_count = row_indices_zero_based_data[rows_indices_count - 1];
-    const T* data = reinterpret_cast<const T*>(table.get_data());
+    const T *data = reinterpret_cast<const T *>(table.get_data());
     auto data_array = dal::array<T>::wrap(data, non_zero_count);
 
-    PyObject* py_data = convert_to_numpy_impl<NpType, T>(data_array, non_zero_count);
+    PyObject *py_data = convert_to_numpy_impl<NpType, T>(data_array, non_zero_count);
     PyTuple_SetItem(result, 0, py_data);
 
-    const std::int64_t* column_indices_one_based = table.get_column_indices();
-    std::uint64_t* column_indices_zero_based_data =
+    const std::int64_t *column_indices_one_based = table.get_column_indices();
+    std::uint64_t *column_indices_zero_based_data =
         detail::host_allocator<std::uint64_t>().allocate(non_zero_count);
     for (std::int64_t i = 0; i < non_zero_count; ++i)
         column_indices_zero_based_data[i] = column_indices_one_based[i] - 1;
 
     auto column_indices_zero_based_array =
         dal::array<std::uint64_t>::wrap(column_indices_zero_based_data, non_zero_count);
-    PyObject* py_col =
+    PyObject *py_col =
         convert_to_numpy_impl<NPY_UINT64, std::uint64_t>(column_indices_zero_based_array,
                                                          non_zero_count);
     PyTuple_SetItem(result, 1, py_col);
@@ -306,21 +341,21 @@ static PyObject* convert_to_py_from_csr_impl(const detail::csr_table& table) {
 // dal::csr_table class is valid
 // zero- and one-based indeices are supported
 template <int NpType, typename T>
-static PyObject* convert_to_py_from_csr_impl(const csr_table& table) {
-    PyObject* result = PyTuple_New(3);
+static PyObject *convert_to_py_from_csr_impl(const csr_table &table) {
+    PyObject *result = PyTuple_New(3);
     const std::int64_t rows_indices_count = table.get_row_count() + 1;
     const std::int64_t non_zero_count = table.get_non_zero_count();
-    const std::int64_t* row_offsets = table.get_row_offsets();
-    const std::int64_t* column_indices = table.get_column_indices();
+    const std::int64_t *row_offsets = table.get_row_offsets();
+    const std::int64_t *column_indices = table.get_column_indices();
 
-    std::uint64_t* column_indices_zero_based_data = nullptr;
-    std::uint64_t* row_offsets_zero_based_data = nullptr;
+    std::uint64_t *column_indices_zero_based_data = nullptr;
+    std::uint64_t *row_offsets_zero_based_data = nullptr;
 
     if (table.get_indexing() == sparse_indexing::zero_based) {
         column_indices_zero_based_data =
-            const_cast<std::uint64_t*>(reinterpret_cast<const std::uint64_t*>(column_indices));
+            const_cast<std::uint64_t *>(reinterpret_cast<const std::uint64_t *>(column_indices));
         row_offsets_zero_based_data =
-            const_cast<std::uint64_t*>(reinterpret_cast<const std::uint64_t*>(row_offsets));
+            const_cast<std::uint64_t *>(reinterpret_cast<const std::uint64_t *>(row_offsets));
     }
     else { // table.get_indexing() == sparse_indexing::one_based
         column_indices_zero_based_data =
@@ -335,21 +370,21 @@ static PyObject* convert_to_py_from_csr_impl(const csr_table& table) {
             row_offsets_zero_based_data[i] = row_offsets[i] - 1;
     }
 
-    const T* data = table.get_data<T>();
+    const T *data = table.get_data<T>();
     auto data_array = dal::array<T>::wrap(data, non_zero_count);
 
-    PyObject* py_data = convert_to_numpy_impl<NpType, T>(data_array, non_zero_count);
+    PyObject *py_data = convert_to_numpy_impl<NpType, T>(data_array, non_zero_count);
     PyTuple_SetItem(result, 0, py_data);
 
     auto column_indices_zero_based_array =
         dal::array<std::uint64_t>::wrap(column_indices_zero_based_data, non_zero_count);
-    PyObject* py_col =
+    PyObject *py_col =
         convert_to_numpy_impl<NPY_UINT64, std::uint64_t>(column_indices_zero_based_array,
                                                          non_zero_count);
     PyTuple_SetItem(result, 1, py_col);
     auto row_indices_zero_based_array =
         dal::array<std::uint64_t>::wrap(row_offsets_zero_based_data, rows_indices_count);
-    PyObject* py_row =
+    PyObject *py_row =
         convert_to_numpy_impl<NPY_UINT64, std::uint64_t>(row_indices_zero_based_array,
                                                          rows_indices_count);
     PyTuple_SetItem(result, 2, py_row);
@@ -366,8 +401,7 @@ PyObject *convert_to_pyobject(const dal::table &input) {
     }
     if (input.get_kind() == dal::homogen_table::kind()) {
         const auto &homogen_input = static_cast<const dal::homogen_table &>(input);
-        if (homogen_input.get_data_layout() == dal::data_layout::row_major) {
-            const dal::data_type dtype = homogen_input.get_metadata().get_data_type(0);
+        const dal::data_type dtype = homogen_input.get_metadata().get_data_type(0);
 
 #define MAKE_NYMPY_FROM_HOMOGEN(NpType)                                        \
     {                                                                          \
@@ -376,16 +410,10 @@ PyObject *convert_to_pyobject(const dal::table &input) {
                                             homogen_input.get_row_count(),     \
                                             homogen_input.get_column_count()); \
     }
-            SET_CTYPE_NPY_FROM_DAL_TYPE(
-                dtype,
-                MAKE_NYMPY_FROM_HOMOGEN,
-                throw std::invalid_argument("Not avalible to convert a numpy"));
+        SET_CTYPE_NPY_FROM_DAL_TYPE(dtype,
+                                    MAKE_NYMPY_FROM_HOMOGEN,
+                                    throw std::invalid_argument("Unable to convert numpy object"));
 #undef MAKE_NYMPY_FROM_HOMOGEN
-        }
-        else {
-            throw std::invalid_argument(
-                "Output oneDAL table doesn't have row major format for homogen table");
-        }
     }
     else if (input.get_kind() == csr_table_t::kind()) {
         const auto &csr_input = static_cast<const csr_table_t &>(input);
@@ -395,7 +423,7 @@ PyObject *convert_to_pyobject(const dal::table &input) {
         SET_CTYPES_NPY_FROM_DAL_TYPE(
             dtype,
             MAKE_PY_FROM_CSR,
-            throw std::invalid_argument("Not avalible to convert a scipy.csr"));
+            throw std::invalid_argument("Unable to convert scipy csr object"));
 #undef MAKE_PY_FROM_CSR
     }
     else {
@@ -404,4 +432,4 @@ PyObject *convert_to_pyobject(const dal::table &input) {
     return res;
 }
 
-} // namespace oneapi::dal::python
+} // namespace oneapi::dal::python::numpy

@@ -18,7 +18,7 @@ import numpy as np
 
 from daal4py.sklearn._utils import get_dtype
 
-from ..datatypes import _convert_to_supported, from_table, to_table
+from ..datatypes import from_table, to_table
 from ..utils import _check_array
 from .pca import BasePCA
 
@@ -99,11 +99,22 @@ class IncrementalPCA(BasePCA):
         self._reset()
 
     def _reset(self):
-        self._partial_result = self._get_backend(
-            "decomposition", "dim_reduction", "partial_train_result"
-        )
+        self._need_to_finalize = False
+        module = self._get_backend("decomposition", "dim_reduction")
         if hasattr(self, "components_"):
             del self.components_
+        self._partial_result = module.partial_train_result()
+
+    def __getstate__(self):
+        # Since finalize_fit can't be dispatched without directly provided queue
+        # and the dispatching policy can't be serialized, the computation is finalized
+        # here and the policy is not saved in serialized data.
+
+        self.finalize_fit()
+        data = self.__dict__.copy()
+        data.pop("_queue", None)
+
+        return data
 
     def partial_fit(self, X, queue):
         """Incremental fit with X. All of X is processed as a single batch.
@@ -144,13 +155,12 @@ class IncrementalPCA(BasePCA):
         self._queue = queue
 
         policy = self._get_policy(queue, X)
-        X = _convert_to_supported(policy, X)
+        X_table = to_table(X, queue=queue)
 
         if not hasattr(self, "_dtype"):
-            self._dtype = get_dtype(X)
-            self._params = self._get_onedal_params(X)
+            self._dtype = X_table.dtype
+            self._params = self._get_onedal_params(X_table)
 
-        X_table = to_table(X)
         self._partial_result = self._get_backend(
             "decomposition",
             "dim_reduction",
@@ -160,6 +170,7 @@ class IncrementalPCA(BasePCA):
             self._partial_result,
             X_table,
         )
+        self._need_to_finalize = True
         return self
 
     def finalize_fit(self, queue=None):
@@ -177,28 +188,27 @@ class IncrementalPCA(BasePCA):
         self : object
             Returns the instance itself.
         """
-        if queue is not None:
-            policy = self._get_policy(queue)
-        else:
-            policy = self._get_policy(self._queue)
-        result = self._get_backend(
-            "decomposition",
-            "dim_reduction",
-            "finalize_train",
-            policy,
-            self._params,
-            self._partial_result,
-        )
-        self.mean_ = from_table(result.means).ravel()
-        self.var_ = from_table(result.variances).ravel()
-        self.components_ = from_table(result.eigenvectors)
-        self.singular_values_ = np.nan_to_num(from_table(result.singular_values).ravel())
-        self.explained_variance_ = np.maximum(from_table(result.eigenvalues).ravel(), 0)
-        self.explained_variance_ratio_ = from_table(
-            result.explained_variances_ratio
-        ).ravel()
-        self.noise_variance_ = self._compute_noise_variance(
-            self.n_components_, min(self.n_samples_seen_, self.n_features_in_)
-        )
-
+        if self._need_to_finalize:
+            module = self._get_backend("decomposition", "dim_reduction")
+            if queue is not None:
+                policy = self._get_policy(queue)
+            else:
+                policy = self._get_policy(self._queue)
+            result = module.finalize_train(policy, self._params, self._partial_result)
+            self.mean_ = from_table(result.means).ravel()
+            self.var_ = from_table(result.variances).ravel()
+            self.components_ = from_table(result.eigenvectors)
+            self.singular_values_ = np.nan_to_num(
+                from_table(result.singular_values).ravel()
+            )
+            self.explained_variance_ = np.maximum(
+                from_table(result.eigenvalues).ravel(), 0
+            )
+            self.explained_variance_ratio_ = from_table(
+                result.explained_variances_ratio
+            ).ravel()
+            self.noise_variance_ = self._compute_noise_variance(
+                self.n_components_, min(self.n_samples_seen_, self.n_features_in_)
+            )
+        self._need_to_finalize = False
         return self

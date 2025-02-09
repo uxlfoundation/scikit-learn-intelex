@@ -25,7 +25,7 @@ from onedal import _backend
 from ..common._estimator_checks import _check_is_fitted
 from ..common._mixin import ClassifierMixin, RegressorMixin
 from ..common._policy import _get_policy
-from ..datatypes import _convert_to_supported, from_table, to_table
+from ..datatypes import from_table, to_table
 from ..utils import (
     _check_array,
     _check_n_features,
@@ -96,7 +96,7 @@ class BaseSVM(metaclass=ABCMeta):
         self.n_iter_ = 1 if max_iter < 1 else max_iter
         class_count = 0 if self.classes_ is None else len(self.classes_)
         return {
-            "fptype": "float" if data.dtype == np.float32 else "double",
+            "fptype": data.dtype,
             "method": self.algorithm,
             "kernel": self.kernel,
             "c": self.C,
@@ -174,9 +174,9 @@ class BaseSVM(metaclass=ABCMeta):
             self._scale_, self._sigma_ = _gamma, np.sqrt(0.5 / _gamma)
 
         policy = _get_policy(queue, *data)
-        X = _convert_to_supported(policy, X)
-        params = self._get_onedal_params(X)
-        result = module.train(policy, params, *to_table(*data))
+        data = to_table(*data, queue=queue)
+        params = self._get_onedal_params(data[0])
+        result = module.train(policy, params, *data)
 
         if self._sparse:
             self.dual_coef_ = sp.csr_matrix(from_table(result.coeffs).T)
@@ -253,14 +253,14 @@ class BaseSVM(metaclass=ABCMeta):
                 )
 
             policy = _get_policy(queue, X)
-            X = _convert_to_supported(policy, X)
+            X = to_table(X, queue=queue)
             params = self._get_onedal_params(X)
 
             if hasattr(self, "_onedal_model"):
                 model = self._onedal_model
             else:
                 model = self._create_model(module)
-            result = module.infer(policy, params, model, to_table(X))
+            result = module.infer(policy, params, model, X)
             y = from_table(result.responses)
         return y
 
@@ -310,14 +310,14 @@ class BaseSVM(metaclass=ABCMeta):
                 )
 
         policy = _get_policy(queue, X)
-        X = _convert_to_supported(policy, X)
+        X = to_table(X, queue=queue)
         params = self._get_onedal_params(X)
 
         if hasattr(self, "_onedal_model"):
             model = self._onedal_model
         else:
             model = self._create_model(module)
-        result = module.infer(policy, params, model, to_table(X))
+        result = module.infer(policy, params, model, X)
         decision_function = from_table(result.decision_function)
 
         if len(self.classes_) == 2:

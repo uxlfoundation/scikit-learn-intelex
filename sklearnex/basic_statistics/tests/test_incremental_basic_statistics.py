@@ -397,3 +397,59 @@ def test_warning():
             assert len(warn_record) == 0, i
         else:
             assert len(warn_record) == 1, i
+
+
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_sklearnex_incremental_estimatior_pickle(dataframe, queue, dtype):
+    import pickle
+
+    from sklearnex.basic_statistics import IncrementalBasicStatistics
+
+    incbs = IncrementalBasicStatistics()
+
+    # Check that estimator can be serialized without any data.
+    dump = pickle.dumps(incbs)
+    incbs_loaded = pickle.loads(dump)
+    seed = 77
+    gen = np.random.default_rng(seed)
+    X = gen.uniform(low=-0.3, high=+0.7, size=(10, 10))
+    X = X.astype(dtype)
+    X_split = np.array_split(X, 2)
+    X_split_df = _convert_to_dataframe(X_split[0], sycl_queue=queue, target_df=dataframe)
+    incbs.partial_fit(X_split_df)
+    incbs_loaded.partial_fit(X_split_df)
+
+    # Check that estimator can be serialized after partial_fit call.
+    dump = pickle.dumps(incbs_loaded)
+    incbs_loaded = pickle.loads(dump)
+
+    X_split_df = _convert_to_dataframe(X_split[1], sycl_queue=queue, target_df=dataframe)
+    incbs.partial_fit(X_split_df)
+    incbs_loaded.partial_fit(X_split_df)
+    dump = pickle.dumps(incbs)
+    incbs_loaded = pickle.loads(dump)
+    assert incbs.batch_size == incbs_loaded.batch_size
+    assert incbs.n_features_in_ == incbs_loaded.n_features_in_
+    assert incbs.n_samples_seen_ == incbs_loaded.n_samples_seen_
+    if hasattr(incbs, "_parameter_constraints"):
+        assert incbs._parameter_constraints == incbs_loaded._parameter_constraints
+    assert incbs.n_jobs == incbs_loaded.n_jobs
+    for result_option in options_and_tests:
+        _, tols = options_and_tests[result_option]
+        fp32tol, fp64tol = tols
+        res = getattr(incbs, result_option)
+        res_loaded = getattr(incbs_loaded, result_option)
+        tol = fp32tol if res.dtype == np.float32 else fp64tol
+        assert_allclose(res, res_loaded, atol=tol)
+
+    # Check that finalized estimator can be serialized.
+    dump = pickle.dumps(incbs_loaded)
+    incbs_loaded = pickle.loads(dump)
+    for result_option in options_and_tests:
+        _, tols = options_and_tests[result_option]
+        fp32tol, fp64tol = tols
+        res = getattr(incbs, result_option)
+        res_loaded = getattr(incbs_loaded, result_option)
+        tol = fp32tol if res.dtype == np.float32 else fp64tol
+        assert_allclose(res, res_loaded, atol=tol)

@@ -20,7 +20,7 @@ from daal4py.sklearn._utils import get_dtype, make2d
 
 from ..common._base import BaseEstimator
 from ..common._mixin import ClusterMixin
-from ..datatypes import _convert_to_supported, from_table, to_table
+from ..datatypes import from_table, to_table
 from ..utils import _check_array
 
 
@@ -48,7 +48,7 @@ class BaseDBSCAN(BaseEstimator, ClusterMixin):
 
     def _get_onedal_params(self, dtype=np.float32):
         return {
-            "fptype": "float" if dtype == np.float32 else "double",
+            "fptype": dtype,
             "method": "by_default",
             "min_observations": int(self.min_samples),
             "epsilon": float(self.eps),
@@ -60,15 +60,10 @@ class BaseDBSCAN(BaseEstimator, ClusterMixin):
         policy = self._get_policy(queue, X)
         X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
         sample_weight = make2d(sample_weight) if sample_weight is not None else None
-        X = make2d(X)
+        X_table, sample_weight_table = to_table(X, sample_weight, queue=queue)
 
-        types = [np.float32, np.float64]
-        if get_dtype(X) not in types:
-            X = X.astype(np.float64)
-        X = _convert_to_supported(policy, X)
-        dtype = get_dtype(X)
-        params = self._get_onedal_params(dtype)
-        result = module.compute(policy, params, to_table(X), to_table(sample_weight))
+        params = self._get_onedal_params(X_table.dtype)
+        result = module.compute(policy, params, X_table, sample_weight_table)
 
         self.labels_ = from_table(result.responses).ravel()
         if result.core_observation_indices is not None:

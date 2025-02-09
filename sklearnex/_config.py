@@ -15,10 +15,12 @@
 # ==============================================================================
 
 from contextlib import contextmanager
+from os import environ
 
 from sklearn import get_config as skl_get_config
 from sklearn import set_config as skl_set_config
 
+from daal4py.sklearn._utils import sklearn_check_version
 from onedal._config import _get_config as onedal_get_config
 
 
@@ -65,6 +67,11 @@ def set_config(
     config_context : Context manager for global configuration.
     get_config : Retrieve current values of the global configuration.
     """
+
+    array_api_dispatch = sklearn_configs.get("array_api_dispatch", False)
+    if array_api_dispatch and sklearn_check_version("1.6"):
+        environ["SCIPY_ARRAY_API"] = "1"
+
     skl_set_config(**sklearn_configs)
 
     local_config = onedal_get_config(copy=False)

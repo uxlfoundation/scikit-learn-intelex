@@ -148,7 +148,7 @@ class LinearRegression(_sklearn_LinearRegression):
             f"sklearn.linear_model.{self.__class__.__name__}.{method_name}"
         )
 
-        if method_name == "fit":
+        if method_name == "fit" and not daal_check_version((2025, "P", 200)):
             n_samples = _num_samples(data[0])
             n_features = _num_features(data[0], fallback_1d=True)
             is_underdetermined = n_samples < (n_features + int(self.fit_intercept))

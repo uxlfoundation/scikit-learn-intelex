@@ -1,18 +1,16 @@
-.. ******************************************************************************
-.. * Copyright 2020 Intel Corporation
-.. *
-.. * Licensed under the Apache License, Version 2.0 (the "License");
-.. * you may not use this file except in compliance with the License.
-.. * You may obtain a copy of the License at
-.. *
-.. *     http://www.apache.org/licenses/LICENSE-2.0
-.. *
-.. * Unless required by applicable law or agreed to in writing, software
-.. * distributed under the License is distributed on an "AS IS" BASIS,
-.. * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-.. * See the License for the specific language governing permissions and
-.. * limitations under the License.
-.. *******************************************************************************/
+.. Copyright 2020 Intel Corporation
+..
+.. Licensed under the Apache License, Version 2.0 (the "License");
+.. you may not use this file except in compliance with the License.
+.. You may obtain a copy of the License at
+..
+..     http://www.apache.org/licenses/LICENSE-2.0
+..
+.. Unless required by applicable law or agreed to in writing, software
+.. distributed under the License is distributed on an "AS IS" BASIS,
+.. WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+.. See the License for the specific language governing permissions and
+.. limitations under the License.
 
 .. _oneapi_gpu:
 
@@ -64,16 +62,16 @@ specific device with the help of dpctl:
     :code:`usm_ndarray`. The algorithms from the stock version of scikit-learn
     do not support this feature.
 - Use global configurations of |intelex|\*:
-  
+
   1. The :code:`target_offload` option can be used to set the device primarily
      used to perform computations. Accepted data types are :code:`str` and
      :code:`dpctl.SyclQueue`. If you pass a string to :code:`target_offload`,
      it should either be ``"auto"``, which means that the execution
      context is deduced from the location of input data, or a string
      with SYCL* filter selector. The default value is ``"auto"``.
-  
+
   2. The :code:`allow_fallback_to_host` option
-     is a Boolean flag. If set to :code:`True`, the computation is allowed 
+     is a Boolean flag. If set to :code:`True`, the computation is allowed
      to fallback to the host device when a particular estimator does not support
      the selected device. The default value is :code:`False`.
 

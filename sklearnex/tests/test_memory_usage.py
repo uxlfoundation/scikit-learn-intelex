@@ -35,10 +35,14 @@ from onedal.tests.utils._dataframes_support import (
     get_dataframes_and_queues,
 )
 from onedal.tests.utils._device_selection import get_queues, is_dpctl_device_available
-from onedal.utils._array_api import _get_sycl_namespace
 from onedal.utils._dpep_helpers import dpctl_available, dpnp_available
 from sklearnex import config_context
-from sklearnex.tests.utils import PATCHED_FUNCTIONS, PATCHED_MODELS, SPECIAL_INSTANCES
+from sklearnex.tests.utils import (
+    PATCHED_FUNCTIONS,
+    PATCHED_MODELS,
+    SPECIAL_INSTANCES,
+    DummyEstimator,
+)
 from sklearnex.utils._array_api import get_namespace
 
 if dpctl_available:
@@ -72,7 +76,6 @@ GPU_SKIP_LIST = (
     "config_context",  # does not malloc
     "get_config",  # does not malloc
     "set_config",  # does not malloc
-    "Ridge",  # does not support GPU offloading (fails silently)
     "ElasticNet",  # does not support GPU offloading (fails silently)
     "Lasso",  # does not support GPU offloading (fails silently)
     "SVR",  # does not support GPU offloading (fails silently)
@@ -130,41 +133,6 @@ EXTRA_MEMORY_THRESHOLD = 0.15
 EXTRA_MEMORY_THRESHOLD_PANDAS = 0.25
 N_SPLITS = 10
 ORDER_DICT = {"F": np.asfortranarray, "C": np.ascontiguousarray}
-
-
-if _is_dpc_backend:
-
-    from sklearn.utils.validation import check_is_fitted
-
-    from onedal.datatypes import from_table, to_table
-
-    class DummyEstimatorWithTableConversions(BaseEstimator):
-
-        def fit(self, X, y=None):
-            sua_iface, xp, _ = _get_sycl_namespace(X)
-            X_table = to_table(X)
-            y_table = to_table(y)
-            # The presence of the fitted attributes (ending with a trailing
-            # underscore) is required for the correct check. The cleanup of
-            # the memory will occur at the estimator instance deletion.
-            self.x_attr_ = from_table(
-                X_table, sua_iface=sua_iface, sycl_queue=X.sycl_queue, xp=xp
-            )
-            self.y_attr_ = from_table(
-                y_table, sua_iface=sua_iface, sycl_queue=X.sycl_queue, xp=xp
-            )
-            return self
-
-        def predict(self, X):
-            # Checks if the estimator is fitted by verifying the presence of
-            # fitted attributes (ending with a trailing underscore).
-            check_is_fitted(self)
-            sua_iface, xp, _ = _get_sycl_namespace(X)
-            X_table = to_table(X)
-            returned_X = from_table(
-                X_table, sua_iface=sua_iface, sycl_queue=X.sycl_queue, xp=xp
-            )
-            return returned_X
 
 
 def gen_clsf_data(n_samples, n_features, dtype=None):
@@ -370,7 +338,7 @@ def test_table_conversions_memory_leaks(dataframe, queue, order, data_shape, dty
         pytest.skip("SYCL device memory leak check requires the level zero sysman")
 
     _kfold_function_template(
-        DummyEstimatorWithTableConversions,
+        DummyEstimator,
         dataframe,
         data_shape,
         queue,

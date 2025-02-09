@@ -264,3 +264,73 @@ def test_sklearnex_partial_fit_on_random_data(
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     transformed_data = incpca.transform(X_df)
     check_pca(incpca, dtype, whiten, X, transformed_data)
+
+
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_sklearnex_incremental_estimatior_pickle(dataframe, queue, dtype):
+    import pickle
+
+    incpca = IncrementalPCA()
+
+    # Check that estimator can be serialized without any data.
+    dump = pickle.dumps(incpca)
+    incpca_loaded = pickle.loads(dump)
+
+    seed = 77
+    gen = np.random.default_rng(seed)
+    X = gen.uniform(low=-0.3, high=+0.7, size=(10, 10))
+    X = X.astype(dtype)
+    X_split = np.array_split(X, 2)
+    X_split_df = _convert_to_dataframe(X_split[0], sycl_queue=queue, target_df=dataframe)
+    incpca.partial_fit(X_split_df)
+    incpca_loaded.partial_fit(X_split_df)
+    dump = pickle.dumps(incpca_loaded)
+    incpca_loaded = pickle.loads(dump)
+    assert incpca.batch_size == incpca_loaded.batch_size
+    assert incpca.n_features_in_ == incpca_loaded.n_features_in_
+    assert incpca.n_samples_seen_ == incpca_loaded.n_samples_seen_
+    if hasattr(incpca, "_parameter_constraints"):
+        assert incpca._parameter_constraints == incpca_loaded._parameter_constraints
+    assert incpca.n_jobs == incpca_loaded.n_jobs
+    X_split_df = _convert_to_dataframe(X_split[1], sycl_queue=queue, target_df=dataframe)
+    incpca.partial_fit(X_split_df)
+    incpca_loaded.partial_fit(X_split_df)
+
+    # Check that estimator can be serialized after partial_fit call.
+    dump = pickle.dumps(incpca)
+    incpca_loaded = pickle.loads(dump)
+
+    assert_allclose(incpca.singular_values_, incpca_loaded.singular_values_, atol=1e-6)
+    assert_allclose(incpca.n_samples_seen_, incpca_loaded.n_samples_seen_, atol=1e-6)
+    assert_allclose(incpca.n_features_in_, incpca_loaded.n_features_in_, atol=1e-6)
+    assert_allclose(incpca.mean_, incpca_loaded.mean_, atol=1e-6)
+    assert_allclose(incpca.var_, incpca_loaded.var_, atol=1e-6)
+    assert_allclose(
+        incpca.explained_variance_, incpca_loaded.explained_variance_, atol=1e-6
+    )
+    assert_allclose(incpca.components_, incpca_loaded.components_, atol=1e-6)
+    assert_allclose(
+        incpca.explained_variance_ratio_,
+        incpca_loaded.explained_variance_ratio_,
+        atol=1e-6,
+    )
+
+    # Check that finalized estimator can be serialized.
+    dump = pickle.dumps(incpca_loaded)
+    incpca_loaded = pickle.loads(dump)
+
+    assert_allclose(incpca.singular_values_, incpca_loaded.singular_values_, atol=1e-6)
+    assert_allclose(incpca.n_samples_seen_, incpca_loaded.n_samples_seen_, atol=1e-6)
+    assert_allclose(incpca.n_features_in_, incpca_loaded.n_features_in_, atol=1e-6)
+    assert_allclose(incpca.mean_, incpca_loaded.mean_, atol=1e-6)
+    assert_allclose(incpca.var_, incpca_loaded.var_, atol=1e-6)
+    assert_allclose(
+        incpca.explained_variance_, incpca_loaded.explained_variance_, atol=1e-6
+    )
+    assert_allclose(incpca.components_, incpca_loaded.components_, atol=1e-6)
+    assert_allclose(
+        incpca.explained_variance_ratio_,
+        incpca_loaded.explained_variance_ratio_,
+        atol=1e-6,
+    )

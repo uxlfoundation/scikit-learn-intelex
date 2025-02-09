@@ -1,18 +1,16 @@
-.. ******************************************************************************
-.. * Copyright 2024 Intel Corporation
-.. *
-.. * Licensed under the Apache License, Version 2.0 (the "License");
-.. * you may not use this file except in compliance with the License.
-.. * You may obtain a copy of the License at
-.. *
-.. *     http://www.apache.org/licenses/LICENSE-2.0
-.. *
-.. * Unless required by applicable law or agreed to in writing, software
-.. * distributed under the License is distributed on an "AS IS" BASIS,
-.. * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-.. * See the License for the specific language governing permissions and
-.. * limitations under the License.
-.. *******************************************************************************/
+.. Copyright 2024 Intel Corporation
+..
+.. Licensed under the Apache License, Version 2.0 (the "License");
+.. you may not use this file except in compliance with the License.
+.. You may obtain a copy of the License at
+..
+..     http://www.apache.org/licenses/LICENSE-2.0
+..
+.. Unless required by applicable law or agreed to in writing, software
+.. distributed under the License is distributed on an "AS IS" BASIS,
+.. WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+.. See the License for the specific language governing permissions and
+.. limitations under the License.
 
 .. _preview:
 
@@ -50,10 +48,10 @@ Then, you can import Scikit-learn estimator patched with a preview one from `skl
 
      from sklearnex import patch_sklearn
      patch_sklearn()
-     from sklearn.linear_model import Ridge
-     print(Ridge.__module__)
+     from sklearn.decomposition import IncrementalPCA
+     print(IncrementalPCA.__module__)
      # output:
-     # sklearnex.preview.linear_model.ridge
+     # sklearnex.preview.decomposition.incremental_pca
 
 Current list of preview estimators:
 
@@ -70,7 +68,4 @@ Current list of preview estimators:
      - Yes
    * - IncrementalPCA
      - sklearnex.preview.decomposition
-     - Yes
-   * - Ridge
-     - sklearnex.preview.linear_model
      - Yes

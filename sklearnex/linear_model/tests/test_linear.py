@@ -21,10 +21,6 @@ from scipy.linalg import lstsq
 from sklearn.datasets import make_regression
 
 from daal4py.sklearn._utils import daal_check_version
-from daal4py.sklearn.linear_model.tests.test_ridge import (
-    _test_multivariate_ridge_alpha_shape,
-    _test_multivariate_ridge_coefficients,
-)
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
@@ -41,15 +37,20 @@ from sklearnex.tests.utils import _IS_INTEL
 def test_sklearnex_import_linear(
     dataframe, queue, dtype, macro_block, overdetermined, multi_output
 ):
-    if (overdetermined or multi_output) and not daal_check_version((2025, "P", 1)):
-        pytest.skip()
-    if overdetermined and queue and queue.sycl_device.is_gpu:
-        pytest.skip()
+    if (not overdetermined or multi_output) and not daal_check_version((2025, "P", 1)):
+        pytest.skip("Functionality introduced in later versions")
+    if (
+        not overdetermined
+        and queue
+        and queue.sycl_device.is_gpu
+        and not daal_check_version((2025, "P", 200))
+    ):
+        pytest.skip("Functionality introduced in later versions")
 
     from sklearnex.linear_model import LinearRegression
 
     rng = np.random.default_rng(seed=123)
-    X = rng.standard_normal(size=(10, 20) if overdetermined else (20, 5))
+    X = rng.standard_normal(size=(10, 20) if not overdetermined else (20, 5))
     y = rng.standard_normal(size=(X.shape[0], 3) if multi_output else X.shape[0])
 
     Xi = np.c_[X, np.ones((X.shape[0], 1))]
@@ -84,20 +85,6 @@ def test_sklearnex_import_linear(
         linreg_list = LinearRegression().fit(X, y_list)
         assert_allclose(linreg_list.coef_, linreg.coef_)
         assert_allclose(linreg_list.intercept_, linreg.intercept_)
-
-
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_sklearnex_import_ridge(dataframe, queue):
-    from sklearnex.linear_model import Ridge
-
-    X = np.array([[1, 1], [1, 2], [2, 2], [2, 3]])
-    y = np.dot(X, np.array([1, 2])) + 3
-    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    y = _convert_to_dataframe(y, sycl_queue=queue, target_df=dataframe)
-    ridgereg = Ridge().fit(X, y)
-    assert "daal4py" in ridgereg.__module__
-    assert_allclose(ridgereg.intercept_, 4.5)
-    assert_allclose(ridgereg.coef_, [0.8, 1.4])
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -153,15 +140,3 @@ def test_sklearnex_reconstruct_model(dataframe, queue, dtype):
 
     tol = 1e-5 if _as_numpy(y_pred).dtype == np.float32 else 1e-7
     assert_allclose(gtr, _as_numpy(y_pred), rtol=tol)
-
-
-def test_sklearnex_multivariate_ridge_coefs():
-    from sklearnex.linear_model import Ridge
-
-    _test_multivariate_ridge_coefficients(Ridge, random_state=0)
-
-
-def test_sklearnex_multivariate_ridge_alpha_shape():
-    from sklearnex.linear_model import Ridge
-
-    _test_multivariate_ridge_alpha_shape(Ridge, random_state=0)

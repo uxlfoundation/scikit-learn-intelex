@@ -135,7 +135,6 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
             elif queue.sycl_device.is_gpu and estimator in [
                 "ElasticNet",
                 "Lasso",
-                "Ridge",
             ]:
                 pytest.skip(f"{estimator} does not support GPU queues")
 
@@ -144,13 +143,6 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
 
         if estimator == "TSNE" and method == "fit_transform":
             pytest.skip("TSNE.fit_transform is too slow for common testing")
-        elif (
-            estimator == "Ridge"
-            and method in ["predict", "score"]
-            and sys.platform == "win32"
-            and dtype in [np.uint32, np.uint64]
-        ):
-            pytest.skip("Windows segmentation fault for Ridge.predict for unsigned ints")
         elif estimator == "IncrementalLinearRegression" and np.issubdtype(
             dtype, np.integer
         ):

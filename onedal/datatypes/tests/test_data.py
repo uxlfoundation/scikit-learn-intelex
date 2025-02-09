@@ -16,6 +16,7 @@
 
 import numpy as np
 import pytest
+import scipy.sparse as sp
 from numpy.testing import assert_allclose
 
 from onedal import _backend, _is_dpc_backend
@@ -107,8 +108,6 @@ def _test_input_format_c_contiguous_numpy(queue, dtype):
 @pytest.mark.parametrize("queue", get_queues())
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_input_format_c_contiguous_numpy(queue, dtype):
-    if queue and queue.sycl_device.is_gpu:
-        pytest.skip("Sporadic failures on GPU sycl_queue.")
     _test_input_format_c_contiguous_numpy(queue, dtype)
 
 
@@ -129,8 +128,6 @@ def _test_input_format_f_contiguous_numpy(queue, dtype):
 @pytest.mark.parametrize("queue", get_queues())
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_input_format_f_contiguous_numpy(queue, dtype):
-    if queue and queue.sycl_device.is_gpu:
-        pytest.skip("Sporadic failures on GPU sycl_queue.")
     _test_input_format_f_contiguous_numpy(queue, dtype)
 
 
@@ -155,8 +152,6 @@ def _test_input_format_c_not_contiguous_numpy(queue, dtype):
 @pytest.mark.parametrize("queue", get_queues())
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_input_format_c_not_contiguous_numpy(queue, dtype):
-    if queue and queue.sycl_device.is_gpu:
-        pytest.skip("Sporadic failures on GPU sycl_queue.")
     _test_input_format_c_not_contiguous_numpy(queue, dtype)
 
 
@@ -179,8 +174,6 @@ def _test_input_format_c_contiguous_pandas(queue, dtype):
 @pytest.mark.parametrize("queue", get_queues())
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_input_format_c_contiguous_pandas(queue, dtype):
-    if queue and queue.sycl_device.is_gpu:
-        pytest.skip("Sporadic failures on GPU sycl_queue.")
     _test_input_format_c_contiguous_pandas(queue, dtype)
 
 
@@ -203,8 +196,6 @@ def _test_input_format_f_contiguous_pandas(queue, dtype):
 @pytest.mark.parametrize("queue", get_queues())
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_input_format_f_contiguous_pandas(queue, dtype):
-    if queue and queue.sycl_device.is_gpu:
-        pytest.skip("Sporadic failures on GPU sycl_queue.")
     _test_input_format_f_contiguous_pandas(queue, dtype)
 
 
@@ -377,23 +368,14 @@ def test_sua_iface_interop_unsupported_dtypes(dataframe, queue, dtype):
 def test_to_table_non_contiguous_input(dataframe, queue):
     if dataframe in "dpnp,dpctl" and not _is_dpc_backend:
         pytest.skip("__sycl_usm_array_interface__ support requires DPC backend.")
-    X = np.mgrid[:10, :10]
+    X, _ = np.mgrid[:10, :10]
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     X = X[:, :3]
     sua_iface, _, _ = _get_sycl_namespace(X)
     # X expected to be non-contiguous.
     assert not X.flags.c_contiguous and not X.flags.f_contiguous
-
-    # TODO:
-    # consistent error message.
-    if dataframe in "dpnp,dpctl":
-        expected_err_msg = (
-            "Unable to convert from SUA interface: only 1D & 2D tensors are allowed"
-        )
-    else:
-        expected_err_msg = "Numpy input Could not convert Python object to onedal table."
-    with pytest.raises(ValueError, match=expected_err_msg):
-        to_table(X)
+    X_t = to_table(X)
+    assert X_t and X_t.shape == (10, 3) and X_t.has_data
 
 
 @pytest.mark.skipif(
@@ -412,3 +394,82 @@ def test_sua_iface_interop_if_no_dpc_backend(dataframe, queue, dtype):
     expected_err_msg = "SYCL usm array conversion to table requires the DPC backend"
     with pytest.raises(RuntimeError, match=expected_err_msg):
         to_table(X)
+
+
+@pytest.mark.skipif(
+    not _is_dpc_backend, reason="Requires DPC backend for dtype conversion"
+)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("sparse", [True, False])
+def test_low_precision_gpu_conversion(dtype, sparse):
+    # Use a dummy queue as fp32 hardware is not in public testing
+
+    class DummySyclQueue:
+        """This class is designed to act like dpctl.SyclQueue
+        to force dtype conversion"""
+
+        class DummySyclDevice:
+            has_aspect_fp64 = False
+
+        sycl_device = DummySyclDevice()
+
+    queue = DummySyclQueue()
+
+    if sparse:
+        X = sp.random(100, 100, format="csr", dtype=dtype)
+    else:
+        X = np.random.rand(100, 100).astype(dtype)
+
+    if dtype == np.float64:
+        with pytest.warns(
+            RuntimeWarning,
+            match="Data will be converted into float32 from float64 because device does not support it",
+        ):
+            X_table = to_table(X, queue=queue)
+    else:
+        X_table = to_table(X, queue=queue)
+
+    assert X_table.dtype == np.float32
+    if dtype == np.float32 and not sparse:
+        assert_allclose(X, from_table(X_table))
+
+
+@pytest.mark.parametrize("X", [None, 5, "test", True, [], np.pi, lambda: None])
+@pytest.mark.parametrize("queue", get_queues())
+def test_non_array(X, queue):
+    # Verify that to and from table doesn't raise errors
+    # no guarantee is made about type or content
+    err_str = ""
+
+    if np.isscalar(X):
+        if np.atleast_2d(X).dtype not in [np.float64, np.float32, np.int64, np.int32]:
+            err_str = "Found unsupported array type"
+    elif not (X is None or isinstance(X, np.ndarray)):
+        err_str = r"\[convert_to_table\] Not available input format for convert Python object to onedal table."
+
+    if err_str:
+        with pytest.raises(ValueError, match=err_str):
+            to_table(X)
+    else:
+        X_table = to_table(X, queue=queue)
+        from_table(X_table)
+
+
+@pytest.mark.skipif(
+    not _is_dpc_backend, reason="Requires DPC backend for dtype conversion"
+)
+@pytest.mark.parametrize("X", [None, 5, "test", True, [], np.pi, lambda: None])
+def test_low_precision_non_array(X):
+    # Use a dummy queue as fp32 hardware is not in public testing
+
+    class DummySyclQueue:
+        """This class is designed to act like dpctl.SyclQueue
+        to force dtype conversion"""
+
+        class DummySyclDevice:
+            has_aspect_fp64 = False
+
+        sycl_device = DummySyclDevice()
+
+    queue = DummySyclQueue()
+    test_non_array(X, queue)
