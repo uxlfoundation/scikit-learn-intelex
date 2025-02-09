@@ -16,7 +16,7 @@
 
 from daal4py.sklearn._utils import sklearn_check_version
 
-from .validation import _assert_all_finite
+from .validation import assert_all_finite
 
 # Not an ideal solution, but this converts the outputs of newer sklearnex tags
 # into dicts to match how tags had been used. Someone more clever than me will
@@ -33,4 +33,4 @@ else:
 
     get_tags = BaseEstimator._get_tags
 
-__all__ = ["_assert_all_finite", "get_tags"]
+__all__ = ["assert_all_finite", "get_tags"]
