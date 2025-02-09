@@ -1,18 +1,16 @@
-.. ******************************************************************************
-.. * Copyright 2024 Intel Corporation
-.. *
-.. * Licensed under the Apache License, Version 2.0 (the "License");
-.. * you may not use this file except in compliance with the License.
-.. * You may obtain a copy of the License at
-.. *
-.. *     http://www.apache.org/licenses/LICENSE-2.0
-.. *
-.. * Unless required by applicable law or agreed to in writing, software
-.. * distributed under the License is distributed on an "AS IS" BASIS,
-.. * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-.. * See the License for the specific language governing permissions and
-.. * limitations under the License.
-.. *******************************************************************************/
+.. Copyright 2024 Intel Corporation
+..
+.. Licensed under the Apache License, Version 2.0 (the "License");
+.. you may not use this file except in compliance with the License.
+.. You may obtain a copy of the License at
+..
+..     http://www.apache.org/licenses/LICENSE-2.0
+..
+.. Unless required by applicable law or agreed to in writing, software
+.. distributed under the License is distributed on an "AS IS" BASIS,
+.. WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+.. See the License for the specific language governing permissions and
+.. limitations under the License.
 
 
 ################################################
@@ -35,20 +33,20 @@ Tutorials
    .. grid-item-card:: Advanced scikit-learn* Essentials for Machine Learning
       :link: https://www.intel.com/content/www/us/en/developer/videos/advanced-scikit-learn-essentials-for-ml.html
       :padding: 1
-      
-      Special technique to perform scikit-learn computation on Intel GPUs. 
-   
+
+      Special technique to perform scikit-learn computation on Intel GPUs.
+
    .. grid-item-card:: Develop Efficient AI Solutions with Accelerated Machine Learning
       :link: https://www.intel.com/content/www/us/en/developer/videos/accelerated-machine-learning-for-ai-solutions.html
       :padding: 1
 
-      Techniques for maximizing Intel® Extension for Scikit-learn*. 
+      Techniques for maximizing Intel® Extension for Scikit-learn*.
 
    .. grid-item-card:: Getting started with classical Machine Learning Frameworks using Google Colaboratory
       :link: https://community.intel.com/t5/Blogs/Tech-Innovation/Artificial-Intelligence-AI/Getting-started-with-classical-Machine-Learning-Frameworks-using/post/1450139
       :padding: 1
 
-      Simple Installation of Intel® Extension for Scikit-learn* on Google Colaboratory.     
+      Simple Installation of Intel® Extension for Scikit-learn* on Google Colaboratory.
 
    .. grid-item-card:: Accelerate Machine Learning Workloads: K-means and GPairs Algorithms
       :link: https://www.intel.com/content/www/us/en/developer/videos/accelerate-ml-workloads-k-means-gpairs-algorithms.html
@@ -68,7 +66,7 @@ Tutorials
 
       An overview of scikit-learn essentials.
 
-Case Studies 
+Case Studies
 ----------------------------------
 
 .. grid:: 3

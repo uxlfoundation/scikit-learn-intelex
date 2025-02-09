@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright 2021 Intel Corporation
+* Copyright 2024 Intel Corporation
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -16,17 +16,18 @@
 
 #pragma once
 
-#define PY_ARRAY_UNIQUE_SYMBOL ONEDAL_PY_ARRAY_API
+#include <string>
 
-#include <Python.h>
-#include <numpy/arrayobject.h>
+#include <pybind11/pybind11.h>
 
-#include "oneapi/dal/table/common.hpp"
+#include "oneapi/dal/common.hpp"
+#include "onedal/datatypes/dtype_dispatcher.hpp"
 
-namespace oneapi::dal::python {
+namespace py = pybind11;
 
-PyObject *convert_to_pyobject(const dal::table &input);
-dal::table convert_to_table(PyObject *obj);
+namespace oneapi::dal::python::sycl_usm {
 
-} // namespace oneapi::dal::python
+dal::data_type convert_sua_to_dal_type(std::string dtype);
+std::string convert_dal_to_sua_type(dal::data_type dtype);
 
+} // namespace oneapi::dal::python::sycl_usm

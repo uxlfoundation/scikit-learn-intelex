@@ -29,7 +29,7 @@ from sklearnex import get_hyperparameters
 from ..common._base import BaseEstimator
 from ..common._estimator_checks import _check_is_fitted
 from ..common._mixin import ClassifierMixin, RegressorMixin
-from ..datatypes import _convert_to_supported, from_table, to_table
+from ..datatypes import from_table, to_table
 from ..utils import (
     _check_array,
     _check_n_features,
@@ -306,9 +306,9 @@ class BaseForest(BaseEstimator, BaseEnsemble, metaclass=ABCMeta):
         else:
             data = (X, y)
         policy = self._get_policy(queue, *data)
-        data = _convert_to_supported(policy, *data)
+        data = to_table(*data, queue=queue)
         params = self._get_onedal_params(data[0])
-        train_result = module.train(policy, params, *to_table(*data))
+        train_result = module.train(policy, params, *data)
 
         self._onedal_model = train_result.model
 
@@ -354,12 +354,12 @@ class BaseForest(BaseEstimator, BaseEnsemble, metaclass=ABCMeta):
         policy = self._get_policy(queue, X)
 
         model = self._onedal_model
-        X = _convert_to_supported(policy, X)
+        X = to_table(X, queue=queue)
         params = self._get_onedal_params(X)
         if hparams is not None and not hparams.is_default:
-            result = module.infer(policy, params, hparams.backend, model, to_table(X))
+            result = module.infer(policy, params, hparams.backend, model, X)
         else:
-            result = module.infer(policy, params, model, to_table(X))
+            result = module.infer(policy, params, model, X)
 
         y = from_table(result.responses)
         return y
@@ -371,15 +371,15 @@ class BaseForest(BaseEstimator, BaseEnsemble, metaclass=ABCMeta):
         )
         _check_n_features(self, X, False)
         policy = self._get_policy(queue, X)
-        X = _convert_to_supported(policy, X)
+        X = to_table(X, queue=queue)
         params = self._get_onedal_params(X)
         params["infer_mode"] = "class_probabilities"
 
         model = self._onedal_model
         if hparams is not None and not hparams.is_default:
-            result = module.infer(policy, params, hparams.backend, model, to_table(X))
+            result = module.infer(policy, params, hparams.backend, model, X)
         else:
-            result = module.infer(policy, params, model, to_table(X))
+            result = module.infer(policy, params, model, X)
 
         y = from_table(result.probabilities)
         return y

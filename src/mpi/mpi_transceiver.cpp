@@ -25,10 +25,11 @@ void mpi_transceiver::init()
     int is_mpi_initialized = 0;
     MPI_Initialized(&is_mpi_initialized);
     // protect against double-init
-    if(!is_mpi_initialized) {
+    if (!is_mpi_initialized)
+    {
         MPI_Init(NULL, NULL);
     }
-    transceiver_impl::init();	
+    transceiver_impl::init();
 }
 
 void mpi_transceiver::fini()
@@ -50,7 +51,7 @@ size_t mpi_transceiver::me()
     return me;
 }
 
-void mpi_transceiver::send(const void* buff, size_t N, size_t recpnt, size_t tag)
+void mpi_transceiver::send(const void * buff, size_t N, size_t recpnt, size_t tag)
 {
     MPI_Send(buff, (int)N, MPI_CHAR, recpnt, tag, MPI_COMM_WORLD);
 }
@@ -67,17 +68,20 @@ size_t mpi_transceiver::recv(void * buff, size_t N, int sender, int tag)
 void * mpi_transceiver::gather(const void * ptr, size_t N, size_t root, const size_t * sizes, bool varying)
 {
     char * buff = NULL;
-    if(varying) {
+    if (varying)
+    {
         // -> gatherv
-        if(m_me == root) {
+        if (m_me == root)
+        {
             int * offsets = static_cast<int *>(daal::services::daal_malloc(m_nMembers * sizeof(int)));
             DAAL4PY_CHECK_MALLOC(offsets);
             DAAL4PY_CHECK_BAD_CAST(sizes[0] <= std::numeric_limits<int>::max());
             int tot_sz = sizes[0];
             offsets[0] = 0;
-            for(int i = 1; i < m_nMembers; ++i) {
-                DAAL4PY_OVERFLOW_CHECK_BY_ADDING(int, offsets[i-1], sizes[i-1]);
-                offsets[i] = offsets[i-1] + sizes[i-1];
+            for (int i = 1; i < m_nMembers; ++i)
+            {
+                DAAL4PY_OVERFLOW_CHECK_BY_ADDING(int, offsets[i - 1], sizes[i - 1]);
+                offsets[i] = offsets[i - 1] + sizes[i - 1];
                 DAAL4PY_OVERFLOW_CHECK_BY_ADDING(int, tot_sz, sizes[i]);
                 tot_sz += sizes[i];
             }
@@ -85,27 +89,26 @@ void * mpi_transceiver::gather(const void * ptr, size_t N, size_t root, const si
             DAAL4PY_CHECK_MALLOC(buff);
             int * szs = static_cast<int *>(daal::services::daal_malloc(m_nMembers * sizeof(int)));
             DAAL4PY_CHECK_MALLOC(szs);
-            for(size_t i=0; i<m_nMembers; ++i)
+            for (size_t i = 0; i < m_nMembers; ++i)
             {
                 szs[i] = static_cast<int>(sizes[i]);
             }
-            MPI_Gatherv(ptr, N, MPI_CHAR,
-                        buff, szs, offsets, MPI_CHAR,
-                        root, MPI_COMM_WORLD);
+            MPI_Gatherv(ptr, N, MPI_CHAR, buff, szs, offsets, MPI_CHAR, root, MPI_COMM_WORLD);
             daal::services::daal_free(szs);
             szs = NULL;
             daal::services::daal_free(offsets);
             offsets = NULL;
-
-        } else {
-            MPI_Gatherv(ptr, N, MPI_CHAR,
-                        NULL, NULL, NULL, MPI_CHAR,
-                        root, MPI_COMM_WORLD);
         }
-    } else {
-        if(m_me == root)
+        else
         {
-            buff = static_cast<char *>(daal::services::daal_malloc(m_nMembers*N));
+            MPI_Gatherv(ptr, N, MPI_CHAR, NULL, NULL, NULL, MPI_CHAR, root, MPI_COMM_WORLD);
+        }
+    }
+    else
+    {
+        if (m_me == root)
+        {
+            buff = static_cast<char *>(daal::services::daal_malloc(m_nMembers * N));
             DAAL4PY_CHECK_MALLOC(buff);
         }
         // -> gather with same size on all procs
@@ -117,15 +120,16 @@ void * mpi_transceiver::gather(const void * ptr, size_t N, size_t root, const si
 
 static MPI_Datatype to_mpi(transceiver_iface::type_type T)
 {
-    switch(T) {
-    case transceiver_iface::BOOL:   return MPI_C_BOOL;
-    case transceiver_iface::INT8:   return MPI_INT8_T;
-    case transceiver_iface::UINT8:  return MPI_UINT8_T;
-    case transceiver_iface::INT32:  return MPI_INT32_T;
+    switch (T)
+    {
+    case transceiver_iface::BOOL: return MPI_C_BOOL;
+    case transceiver_iface::INT8: return MPI_INT8_T;
+    case transceiver_iface::UINT8: return MPI_UINT8_T;
+    case transceiver_iface::INT32: return MPI_INT32_T;
     case transceiver_iface::UINT32: return MPI_INT32_T;
-    case transceiver_iface::INT64:  return MPI_INT64_T;
+    case transceiver_iface::INT64: return MPI_INT64_T;
     case transceiver_iface::UINT64: return MPI_INT64_T;
-    case transceiver_iface::FLOAT:  return MPI_FLOAT;
+    case transceiver_iface::FLOAT: return MPI_FLOAT;
     case transceiver_iface::DOUBLE: return MPI_DOUBLE;
     default: throw std::logic_error("unsupported data type");
     }
@@ -133,15 +137,16 @@ static MPI_Datatype to_mpi(transceiver_iface::type_type T)
 
 static MPI_Op to_mpi(transceiver_iface::operation_type o)
 {
-    switch(o) {
-    case transceiver_iface::OP_MAX:  return MPI_MAX;
-    case transceiver_iface::OP_MIN:  return MPI_MIN;
-    case transceiver_iface::OP_SUM:  return MPI_SUM;
+    switch (o)
+    {
+    case transceiver_iface::OP_MAX: return MPI_MAX;
+    case transceiver_iface::OP_MIN: return MPI_MIN;
+    case transceiver_iface::OP_SUM: return MPI_SUM;
     case transceiver_iface::OP_PROD: return MPI_PROD;
     case transceiver_iface::OP_LAND: return MPI_LAND;
     case transceiver_iface::OP_BAND: return MPI_BAND;
-    case transceiver_iface::OP_LOR:  return MPI_LOR;
-    case transceiver_iface::OP_BOR:  return MPI_BOR;
+    case transceiver_iface::OP_LOR: return MPI_LOR;
+    case transceiver_iface::OP_BOR: return MPI_BOR;
     case transceiver_iface::OP_LXOR: return MPI_LXOR;
     case transceiver_iface::OP_BXOR: return MPI_BXOR;
     default: throw std::logic_error("unsupported operation type");
@@ -170,13 +175,14 @@ extern "C" PyMODINIT_FUNC PyInit_mpi_transceiver(void)
 {
     // shared pointer, will GC transceiver when shutting down
     static std::shared_ptr<mpi_transceiver> s_smt;
-    PyObject *m;
-    static struct PyModuleDef moduledef = { PyModuleDef_HEAD_INIT, "daal4py.mpi_transceiver", "No docs", -1, NULL, };
+    PyObject * m;
+    static struct PyModuleDef moduledef = {
+        PyModuleDef_HEAD_INIT, "daal4py.mpi_transceiver", "No docs", -1, NULL,
+    };
     m = PyModule_Create(&moduledef);
-    if (m == NULL)
-        return NULL;
+    if (m == NULL) return NULL;
 
     s_smt.reset(new mpi_transceiver);
-    PyObject_SetAttrString(m, "transceiver", PyLong_FromVoidPtr((void*)(&s_smt)));
+    PyObject_SetAttrString(m, "transceiver", PyLong_FromVoidPtr((void *)(&s_smt)));
     return m;
 }

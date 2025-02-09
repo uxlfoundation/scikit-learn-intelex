@@ -1,29 +1,27 @@
-.. ******************************************************************************
-.. * Copyright 2022 Intel Corporation
-.. *
-.. * Licensed under the Apache License, Version 2.0 (the "License");
-.. * you may not use this file except in compliance with the License.
-.. * You may obtain a copy of the License at
-.. *
-.. *     http://www.apache.org/licenses/LICENSE-2.0
-.. *
-.. * Unless required by applicable law or agreed to in writing, software
-.. * distributed under the License is distributed on an "AS IS" BASIS,
-.. * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-.. * See the License for the specific language governing permissions and
-.. * limitations under the License.
-.. *******************************************************************************/
+.. Copyright 2022 Intel Corporation
+..
+.. Licensed under the Apache License, Version 2.0 (the "License");
+.. you may not use this file except in compliance with the License.
+.. You may obtain a copy of the License at
+..
+..     http://www.apache.org/licenses/LICENSE-2.0
+..
+.. Unless required by applicable law or agreed to in writing, software
+.. distributed under the License is distributed on an "AS IS" BASIS,
+.. WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+.. See the License for the specific language governing permissions and
+.. limitations under the License.
 
 ##################
 How to Contribute
 ##################
 
-As an open source project, we welcome community contributions to Intel(R) Extension for Scikit-learn. 
+As an open source project, we welcome community contributions to Intel(R) Extension for Scikit-learn.
 This document explains how to participate in project conversations, log bugs and enhancement requests, and submit code patches.
 
 Licensing
 ----------------------------------
-Intel(R) Extension for Scikit-learn uses the `Apache 2.0 License <https://github.com/intel/scikit-learn-intelex/blob/master/LICENSE>`_. By contributing to the project, you agree to the license and copyright terms and release your own contributions under these terms.
+Intel(R) Extension for Scikit-learn uses the `Apache 2.0 License <https://github.com/uxlfoundation/scikit-learn-intelex/blob/master/LICENSE>`_. By contributing to the project, you agree to the license and copyright terms and release your own contributions under these terms.
 
 Pull Requests
 ----------------------------------
@@ -49,8 +47,8 @@ Continuous Integration (CI) testing is enabled for the repository. Your pull req
 Code Style
 -------------------
 
-We use `black <https://black.readthedocs.io/en/stable/>`_ and `isort <https://pycqa.github.io/isort/>`_ formatters for Python* code. 
-The line length is 90 characters; use default options otherwise. You can find the linter configuration in `.pyproject.toml <https://github.com/intel/scikit-learn-intelex/blob/master/pyproject.toml>`_.
+We use `black <https://black.readthedocs.io/en/stable/>`_ and `isort <https://pycqa.github.io/isort/>`_ formatters for Python* code.
+The line length is 90 characters; use default options otherwise. You can find the linter configuration in `.pyproject.toml <https://github.com/uxlfoundation/scikit-learn-intelex/blob/master/pyproject.toml>`_.
 
 A GitHub* Action verifies if your changes comply with the output of the auto-formatting tools.
 

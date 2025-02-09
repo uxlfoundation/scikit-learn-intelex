@@ -1003,12 +1003,11 @@ cdef extern from "daal4py_cpp.h":
 
 # this is our actual algorithm class for Python
 cdef class {{algo}}{{'('+iface[0]|lower+'__iface__)' if iface[0] else ''}}:
-    cdef tuple _params
-
     '''
     {{algo}}
     {{params_all|fmt('{}', 'sphinx', sep='\n')|indent(4)}}
     '''
+    cdef tuple _params
     # Init simply forwards to the C++ construction function
     def __cinit__(self,
                   {{params_all|fmt('{}', 'decl_dflt_cy', sep=',\n')|indent(18)}}):

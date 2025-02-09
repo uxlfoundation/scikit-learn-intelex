@@ -25,6 +25,20 @@
 #  will exclude deselection in versions 0.18.1, and 0.18.2 only.
 
 deselected_tests:
+  # sklearn 1.6 unsupported features
+  - linear_model/tests/test_base.py::test_linear_regression_sample_weight_consistency[42-True-None-X_shape1]
+  - linear_model/tests/test_base.py::test_linear_regression_sample_weight_consistency[42-True-None-X_shape2]
+  - linear_model/tests/test_ridge.py::test_ridge_shapes_type
+  - linear_model/tests/test_ridge.py::test_ridge_cv_results_predictions[2-False-False]
+  - linear_model/tests/test_ridge.py::test_ridge_cv_results_predictions[2-False-True]
+  - neighbors/tests/test_neighbors.py::test_nan_euclidean_support[KNeighborsClassifier-params0]
+  - neighbors/tests/test_neighbors.py::test_nan_euclidean_support[KNeighborsRegressor-params1]
+  - neighbors/tests/test_neighbors.py::test_nan_euclidean_support[LocalOutlierFactor-params6]
+  - neighbors/tests/test_neighbors.py::test_neighbor_classifiers_loocv[ball_tree-nn_model0]
+  - neighbors/tests/test_neighbors.py::test_neighbor_classifiers_loocv[brute-nn_model0]
+  - neighbors/tests/test_neighbors.py::test_neighbor_classifiers_loocv[kd_tree-nn_model0]
+  - neighbors/tests/test_neighbors.py::test_neighbor_classifiers_loocv[auto-nn_model0]
+
   # Array API support
   # sklearnex functional Array API support doesn't guaranty namespace consistency for the estimator's array attributes.
   - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_input_and_values-array_api_strict-None-None]
@@ -162,7 +176,7 @@ deselected_tests:
   - ensemble/tests/test_stacking.py::test_stacking_with_sample_weight[StackingClassifier]
 
   # Insufficient accuracy of "coefs" and "intercept" in Elastic Net for multi-target problems
-  # https://github.com/oneapi-src/oneDAL/issues/494
+  # https://github.com/uxlfoundation/oneDAL/issues/494
   - linear_model/tests/test_coordinate_descent.py::test_enet_multitarget
 
   # oneAPI Data Analytics Library (oneDAL) doesn't support sample_weight (back to scikit-learn),
@@ -276,16 +290,7 @@ deselected_tests:
   - tests/test_common.py::test_estimators[LogisticRegression()-check_sample_weights_invariance(kind=zeros)] >=1.4
   - tests/test_multioutput.py::test_classifier_chain_fit_and_predict_with_sparse_data >=1.4
 
-  # Deselected tests for incremental algorithms
-  # Need to rework getting policy to correctly obtain it for method without data (finalize_fit)
-  # and avoid keeping it in class attribute, also need to investigate how to implement
-  # partial result serialization
-  - tests/test_common.py::test_estimators[IncrementalLinearRegression()-check_estimators_pickle]
-  - tests/test_common.py::test_estimators[IncrementalLinearRegression()-check_estimators_pickle(readonly_memmap=True)]
-  - tests/test_common.py::test_estimators[IncrementalRidge()-check_estimators_pickle]
-  - tests/test_common.py::test_estimators[IncrementalRidge()-check_estimators_pickle(readonly_memmap=True)]
   # There are not enough data to run onedal backend
-  - tests/test_common.py::test_estimators[IncrementalLinearRegression()-check_fit2d_1sample]
   - tests/test_common.py::test_estimators[IncrementalRidge()-check_fit2d_1sample]
 
   # Deselection of LogisticRegression tests over accuracy comparisons with sample_weights
@@ -381,24 +386,15 @@ gpu:
   - ensemble/tests/test_weight_boosting.py
   # Fails
   - cluster/tests/test_dbscan.py::test_weighted_dbscan
-  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[42-1e-100-sparse-normal]
   - model_selection/tests/test_search.py::test_unsupervised_grid_search
-  - ensemble/tests/test_bagging.py::test_estimators_samples
-  - ensemble/tests/test_voting.py::test_sample_weight
-  - metrics/tests/test_score_objects.py::test_average_precision_pos_label
+  - ensemble/tests/test_voting.py::test_sample_weight[42]
   - model_selection/tests/test_search.py::test_search_default_iid
   - neighbors/tests/test_neighbors.py::test_unsupervised_kneighbors
-  - neighbors/tests/test_neighbors.py::test_neighbors_metrics
-  - svm/tests/test_sparse.py::test_svc
-  - svm/tests/test_sparse.py::test_svc_iris
-  - svm/tests/test_sparse.py::test_sparse_realdata
-  - svm/tests/test_svm.py::test_precomputed
-  - svm/tests/test_svm.py::test_tweak_params
+  - neighbors/tests/test_neighbors.py::test_neighbors_metrics[float64-l2]
   - svm/tests/test_svm.py::test_svm_classifier_sided_sample_weight[estimator0]
   - svm/tests/test_svm.py::test_svm_equivalence_sample_weight_C
   - svm/tests/test_svm.py::test_negative_weights_svc_leave_two_labels[partial-mask-label-1-SVC]
   - svm/tests/test_svm.py::test_negative_weights_svc_leave_two_labels[partial-mask-label-2-SVC]
-  - svm/tests/test_svm.py::test_svc_clone_with_callable_kernel
   # sparse input is not implemented for DBSCAN.
   - tests/test_common.py::test_estimators[RandomForestClassifier()-check_class_weight_classifiers]
   - tests/test_common.py::test_estimators[SVC()-check_sample_weights_not_an_array]
@@ -410,28 +406,11 @@ gpu:
   # Segmentation faults on GPU
   - tests/test_common.py::test_search_cv
 
-  # Other device issues
-  - tests/test_multioutput.py::test_classifier_chain_tuple_order[list]
-  - tests/test_multioutput.py::test_classifier_chain_tuple_order[tuple]
   # KD Tree (not implemented for GPU)
   - neighbors/tests/test_neighbors.py::test_neigh_predictions_algorithm_agnosticity[float64-KNeighborsClassifier-50-500-l2-1000-5-100]
   - neighbors/tests/test_neighbors.py::test_neigh_predictions_algorithm_agnosticity[float64-KNeighborsClassifier-100-1000-l2-1000-5-100]
   - neighbors/tests/test_neighbors.py::test_neigh_predictions_algorithm_agnosticity[float64-KNeighborsRegressor-50-500-l2-1000-5-100]
   - neighbors/tests/test_neighbors.py::test_neigh_predictions_algorithm_agnosticity[float64-KNeighborsRegressor-100-1000-l2-1000-5-100]
-  # failing due to numeric/code error
-  - linear_model/tests/test_common.py::test_balance_property[42-False-LogisticRegressionCV]
-  - sklearn/manifold/tests/test_t_sne.py::test_n_iter_without_progress
-  - model_selection/tests/test_search.py::test_searchcv_raise_warning_with_non_finite_score[RandomizedSearchCV-specialized_params1-False]
-  - model_selection/tests/test_search.py::test_searchcv_raise_warning_with_non_finite_score[RandomizedSearchCV-specialized_params1-True]
-  - tests/test_calibration.py::test_calibrated_classifier_cv_double_sample_weights_equivalence
-  - tests/test_calibration.py::test_calibrated_classifier_cv_zeros_sample_weights_equivalence
-  - tests/test_common.py::test_estimators[FeatureAgglomeration()-check_parameters_default_constructible]
-  - neighbors/tests/test_lof.py::test_novelty_true_common_tests[LocalOutlierFactor(novelty=True)-check_methods_subset_invariance]
-  - tests/test_common.py::test_transformers_get_feature_names_out[StackingRegressor(estimators=[('est1',Ridge(alpha=0.1)),('est2',Ridge(alpha=1))])]
-  - tests/test_common.py::test_transformers_get_feature_names_out[VotingRegressor(estimators=[('est1',Ridge(alpha=0.1)),('est2',Ridge(alpha=1))])]
-  - tests/test_common.py::test_f_contiguous_array_estimator[TSNE]
-  - manifold/tests/test_t_sne.py::test_tsne_works_with_pandas_output
-
   # GPU Forest algorithm implementation does not follow certain Scikit-learn standards
   - ensemble/tests/test_forest.py::test_max_leaf_nodes_max_depth
   - ensemble/tests/test_forest.py::test_min_samples_split[ExtraTreesClassifier]
@@ -444,13 +423,6 @@ gpu:
   - tests/test_common.py::test_estimators[ExtraTreesClassifier()-check_class_weight_classifiers]
   - tests/test_common.py::test_estimators[ExtraTreesRegressor()-check_sample_weights_invariance(kind=zeros)]
   - tests/test_common.py::test_estimators[RandomForestRegressor()-check_regressor_data_not_an_array]
-  - ensemble/tests/test_forest.py::test_max_samples_boundary_classifiers[ExtraTreesClassifier]
-  - tests/test_common.py::test_estimators[ExtraTreesClassifier()-check_classifier_data_not_an_array]
-  - tests/test_common.py::test_estimators[ExtraTreesClassifier()-check_classifiers_train]
-  - tests/test_common.py::test_estimators[ExtraTreesClassifier()-check_classifiers_train(readonly_memmap=True)]
-  - tests/test_common.py::test_estimators[ExtraTreesClassifier()-check_fit_idempotent]
-  - tests/test_common.py::test_estimators[ExtraTreesRegressor()-check_fit_idempotent]
-  - tests/test_common.py::test_estimators[ExtraTreesRegressor()-check_regressor_data_not_an_array]
 
   # GPU implementation of Extra Trees doesn't support sample_weights
   # comparisons to GPU with sample weights will use different algorithms
