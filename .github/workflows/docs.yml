@@ -1,0 +1,68 @@
+name: Docs Build
+
+on:
+  push:
+    tags:
+      - "[0-9]*.[0-9]*.[0-9]*"  # trigger on tag pushes
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Ensures all tags are fetched
+
+    - name: Set Up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+
+    - name: Install System Dependencies
+      run: sudo apt-get update && sudo apt-get install -y clang-format pandoc
+
+    - name: Install Python Dependencies
+      run: |
+        pip install daal-devel impi-devel
+        pip install -r dependencies-dev
+        pip install -r requirements-doc.txt
+        pip install -r requirements-test.txt
+        pip list
+
+    - name: Extract Tag Version
+      run: |
+        echo "GITHUB_REF: $GITHUB_REF"
+        DOC_VERSION="${GITHUB_REF#refs/tags/}"
+        echo "DOC_VERSION: $DOC_VERSION"
+        echo "DOC_VERSION=$DOC_VERSION" >> $GITHUB_ENV
+
+    - name: Build daal4py/sklearnex
+      run: |
+        export DALROOT=$(dirname $(dirname $(which python)))
+        export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
+        ./conda-recipe/build.sh
+
+    - name: Build daal4py Documentation
+      run: |
+        export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
+        cd doc/daal4py
+        make html 2>&1 | tee build.log
+        cat build.log
+        if grep -i "autodoc" build.log; then
+          echo "Autodoc Warnings detected, build failed!"
+          exit 1
+        fi
+
+    - name: Build scikit-learn-intelex Documentation
+      run: |
+        export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
+        cd doc
+        ./build-doc.sh
+
+    - name: Upload Documentation Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: documentation-${{ env.DOC_VERSION }}
+        path: doc/_build/html
