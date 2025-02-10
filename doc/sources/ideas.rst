@@ -53,7 +53,7 @@ would require implementing the regularization in C++ in oneDAL both for CPU and 
 available in Scikit-learn-intelex for making a new estimator. This would hopefully follow the design strategy 
 used for our Ridge Regression estimator.
 
-Questions, status, and additional information can be tracked on `GitHub <https://github.com/uxlfoundation/scikit-learn-intelex/issues/2305>`__ .
+Questions, status, and additional information can be tracked on `GitHub <https://github.com/uxlfoundation/scikit-learn-intelex/issues/2305>`__.
 
 
 ShrunkCovariance Estimator (small)
@@ -69,7 +69,7 @@ would require implementing the regularization in C++ in oneDAL both for CPU and 
 available in Scikit-learn-intelex for making a new estimator. This would hopefully follow the design strategy 
 used for our Ridge Regression estimator.
 
-Questions, status, and additional information can be tracked on `GitHub <https://github.com/uxlfoundation/scikit-learn-intelex/issues/2306>`__ .
+Questions, status, and additional information can be tracked on `GitHub <https://github.com/uxlfoundation/scikit-learn-intelex/issues/2306>`__.
 
 
 Implement the Preprocessing Estimators for Supercomputers
@@ -95,7 +95,7 @@ interfaces which are effective on MPI-enabled supercomputers, this will use the 
 calculators in IncrementalBasicStatistics. This is an easy difficulty project, and would be a medium time commitment 
 when combined with other pre-processing projects.
 
-Questions, status, and additional information can be tracked on `GitHub <https://github.com/uxlfoundation/scikit-learn-intelex/issues/2307>`__ .
+Questions, status, and additional information can be tracked on `GitHub <https://github.com/uxlfoundation/scikit-learn-intelex/issues/2307>`__.
 
 
 MaxAbsScaler Estimator (small)
@@ -108,7 +108,7 @@ interfaces which are effective on MPI-enabled supercomputers, this will use the 
 calculators in IncrementalBasicStatistics. This is similar to the MinMaxScaler and can be combined into a small project.
 This is an easy difficulty project.
 
-Questions, status, and additional information can be tracked on `GitHub <https://github.com/uxlfoundation/scikit-learn-intelex/issues/2308>`__ .
+Questions, status, and additional information can be tracked on `GitHub <https://github.com/uxlfoundation/scikit-learn-intelex/issues/2308>`__.
 
 MinMaxScaler Estimator (small)
 ******************************
@@ -120,7 +120,7 @@ interfaces which are effective on MPI-enabled supercomputers, this will use the 
 calculators in IncrementalBasicStatistics. This is similar to the MaxAbsScaler and can be combined into a small project.
 This is an easy difficulty project.
 
-Questions, status, and additional information can be tracked on `GitHub <https://github.com/uxlfoundation/scikit-learn-intelex/issues/2309>`__ .
+Questions, status, and additional information can be tracked on `GitHub <https://github.com/uxlfoundation/scikit-learn-intelex/issues/2309>`__.
 
 Normalizer Estimator (small)
 ****************************
@@ -132,7 +132,7 @@ deliverable would be to add this estimator to the 'spmd' interfaces which are ef
 will use the underlying MPI-enabled mean and variance calculators in IncrementalBasicStatistics. This is an easy difficulty project, 
 and would be a medium time commitment when combined with other pre-processing projects.
 
-Questions, status, and additional information can be tracked on `GitHub <https://github.com/uxlfoundation/scikit-learn-intelex/issues/2310>`__ .
+Questions, status, and additional information can be tracked on `GitHub <https://github.com/uxlfoundation/scikit-learn-intelex/issues/2310>`__.
 
 
 Expose Accelerated Kernel Distance Functions
@@ -152,7 +152,7 @@ The sigmoid kernel converts data via tanh into a new space. This is easy difficu
 the scikit-learn-intelex implementation provides better performance. This project will focus on the public API and including the benchmarking 
 results for a seamless, high-performance user experience. Combines with the other kernel projects to a medium time commitment.
 
-Questions, status, and additional information can be tracked on `GitHub <https://github.com/uxlfoundation/scikit-learn-intelex/issues/2311>`__ .
+Questions, status, and additional information can be tracked on `GitHub <https://github.com/uxlfoundation/scikit-learn-intelex/issues/2311>`__.
 
 
 polynomial_kernel Function (small)
@@ -162,7 +162,7 @@ The polynomial kernel converts data via a polynomial into a new space. This is e
 the scikit-learn-intelex implementation provides better performance. This project will focus on the public API and including the benchmarking 
 results for a seamless, high-performance user experience. Combines with the other kernel projects to a medium time commitment.
 
-Questions, status, and additional information can be tracked on `GitHub <https://github.com/uxlfoundation/scikit-learn-intelex/issues/2312>`__ .
+Questions, status, and additional information can be tracked on `GitHub <https://github.com/uxlfoundation/scikit-learn-intelex/issues/2312>`__.
 
 
 rbf_kernel Function (small)
@@ -172,4 +172,4 @@ The rbf kernel converts data via a radial basis function into a new space. This 
 the scikit-learn-intelex implementation provides better performance. This project will focus on the public API and including the benchmarking 
 results for a seamless, high-performance user experience. Combines with the other kernel projects to a medium time commitment.
 
-Questions, status, and additional information can be tracked on `GitHub <https://github.com/uxlfoundation/scikit-learn-intelex/issues/2313>`__ .
+Questions, status, and additional information can be tracked on `GitHub <https://github.com/uxlfoundation/scikit-learn-intelex/issues/2313>`__.
