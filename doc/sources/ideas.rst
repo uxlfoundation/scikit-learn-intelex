@@ -48,10 +48,12 @@ The goal would be to implement this estimator with post-processing changes to th
 This project is very similar to the ShrunkCovariance project and would combine into a medium project.
 When implemented in python re-using our EmpiricalCovariance estimator, this would be an easy project with a 
 small time commitment. Implementing the super-computing distributed version using python would only work for
-distributed-aware frameworks. Extended goals would make this a hard difficulty, medium commmitment project. This
+distributed-aware frameworks. Extended goals would make this a hard difficulty, medium commitment project. This
 would require implementing the regularization in C++ in oneDAL both for CPU and GPU. Then this must be made 
 available in Scikit-learn-intelex for making a new estimator. This would hopefully follow the design strategy 
 used for our Ridge Regression estimator.
+
+Questions, status, and additional information can be tracked on `GitHub <https://github.com/uxlfoundation/scikit-learn-intelex/issues/2305>`_ 
 
 
 ShrunkCovariance Estimator (small)
@@ -62,10 +64,12 @@ The goal would be to implement this estimator with post-processing changes to th
 This is very similar to the OAS project and would combine into a medium project.
 When implemented in python re-using our EmpiricalCovariance estimator, this would be an easy project with a 
 small time commitment. Implementing the super-computing distributed version using python would only work for
-distributed-aware frameworks. Extended goals would make this a hard difficulty, medium commmitment project. This
+distributed-aware frameworks. Extended goals would make this a hard difficulty, medium commitment project. This
 would require implementing the regularization in C++ in oneDAL both for CPU and GPU. Then this must be made 
 available in Scikit-learn-intelex for making a new estimator. This would hopefully follow the design strategy 
 used for our Ridge Regression estimator.
+
+Questions, status, and additional information can be tracked on `GitHub <https://github.com/uxlfoundation/scikit-learn-intelex/issues/2306>`_ 
 
 
 Implement the Preprocessing Estimators for Supercomputers
@@ -88,8 +92,10 @@ The StandardScaler estimator scales the data to zero mean and unit variance. Use
 to generate the mean and variance to scale the data. Investigate where the new implementation may be low performance and 
 include guards in the code to use Scikit-learn as necessary. The final deliverable would be to add this estimator to the 'spmd'
 interfaces which are effective on MPI-enabled supercomputers, this will use the underlying MPI-enabled mean and variance 
-calculators in IncrementalBasicStatistics. This is an easy difficulty project, and would be a medium time commmitment 
+calculators in IncrementalBasicStatistics. This is an easy difficulty project, and would be a medium time commitment 
 when combined with other pre-processing projects.
+
+Questions, status, and additional information can be tracked on `GitHub <https://github.com/uxlfoundation/scikit-learn-intelex/issues/2307>`_ 
 
 
 MaxAbsScaler Estimator (small)
@@ -102,6 +108,8 @@ interfaces which are effective on MPI-enabled supercomputers, this will use the 
 calculators in IncrementalBasicStatistics. This is similar to the MinMaxScaler and can be combined into a small project.
 This is an easy difficulty project.
 
+Questions, status, and additional information can be tracked on `GitHub <https://github.com/uxlfoundation/scikit-learn-intelex/issues/2308>`_ 
+
 MinMaxScaler Estimator (small)
 ******************************
 
@@ -112,6 +120,7 @@ interfaces which are effective on MPI-enabled supercomputers, this will use the 
 calculators in IncrementalBasicStatistics. This is similar to the MaxAbsScaler and can be combined into a small project.
 This is an easy difficulty project.
 
+Questions, status, and additional information can be tracked on `GitHub <https://github.com/uxlfoundation/scikit-learn-intelex/issues/2309>`_ 
 
 Normalizer Estimator (small)
 ****************************
@@ -121,7 +130,9 @@ estimator to generate the sum squared data and use it for generating only the l2
 the new implementation may be low performance and include guards in the code to use Scikit-learn as necessary.  The final 
 deliverable would be to add this estimator to the 'spmd' interfaces which are effective on MPI-enabled supercomputers, this 
 will use the underlying MPI-enabled mean and variance calculators in IncrementalBasicStatistics. This is an easy difficulty project, 
-and would be a medium time commmitment when combined with other pre-processing projects.
+and would be a medium time commitment when combined with other pre-processing projects.
+
+Questions, status, and additional information can be tracked on `GitHub <https://github.com/uxlfoundation/scikit-learn-intelex/issues/2310>`_ 
 
 
 Expose Accelerated Kernel Distance Functions
@@ -141,6 +152,8 @@ The sigmoid kernel converts data via tanh into a new space. This is easy difficu
 the scikit-learn-intelex implementation provides better performance. This project will focus on the public API and including the benchmarking 
 results for a seamless, high-performance user experience. Combines with the other kernel projects to a medium time commitment.
 
+Questions, status, and additional information can be tracked on `GitHub <https://github.com/uxlfoundation/scikit-learn-intelex/issues/2311>`_ 
+
 
 polynomial_kernel Function (small)
 **********************************
@@ -149,6 +162,8 @@ The polynomial kernel converts data via a polynomial into a new space. This is e
 the scikit-learn-intelex implementation provides better performance. This project will focus on the public API and including the benchmarking 
 results for a seamless, high-performance user experience. Combines with the other kernel projects to a medium time commitment.
 
+Questions, status, and additional information can be tracked on `GitHub <https://github.com/uxlfoundation/scikit-learn-intelex/issues/2312>`_ 
+
 
 rbf_kernel Function (small)
 ***************************
@@ -156,3 +171,5 @@ rbf_kernel Function (small)
 The rbf kernel converts data via a radial basis function into a new space. This is easy difficulty, but requires significant benchmarking to find when
 the scikit-learn-intelex implementation provides better performance. This project will focus on the public API and including the benchmarking 
 results for a seamless, high-performance user experience. Combines with the other kernel projects to a medium time commitment.
+
+Questions, status, and additional information can be tracked on `GitHub <https://github.com/uxlfoundation/scikit-learn-intelex/issues/2313>`_ 
