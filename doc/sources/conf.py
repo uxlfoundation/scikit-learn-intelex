@@ -46,7 +46,7 @@ author = "Intel"
 # version switcher will not be able to pick it.
 version = os.environ.get("SHORT_DOC_VERSION", "")
 if not version:
-    print("ERROR: DOC_VERSION is not set.")
+    print("ERROR: SHORT_DOC_VERSION is not set.")
     sys.exit(1)
 # Short version
 release = version
