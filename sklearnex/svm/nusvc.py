@@ -39,13 +39,13 @@ from onedal.svm import NuSVC as onedal_NuSVC
 if sklearn_check_version("1.6"):
     from sklearn.utils.validation import validate_data
 else:
-    validate_data = BaseSVC._validate_data
+    validate_data = _sklearn_NuSVC._validate_data
 
 
 @control_n_jobs(
     decorated_methods=["fit", "predict", "_predict_proba", "decision_function", "score"]
 )
-class NuSVC(_sklearn_NuSVC, BaseSVC):
+class NuSVC(BaseSVC, _sklearn_NuSVC):
     __doc__ = _sklearn_NuSVC.__doc__
 
     if sklearn_check_version("1.2"):

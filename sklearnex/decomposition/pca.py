@@ -32,6 +32,7 @@ if daal_check_version((2024, "P", 100)):
 
     from .._device_offload import dispatch, wrap_output_data
     from .._utils import PatchingConditionsChain
+    from ..base import IntelEstimator
     from ..utils._array_api import get_namespace
 
     if sklearn_check_version("1.1") and not sklearn_check_version("1.2"):
@@ -50,7 +51,7 @@ if daal_check_version((2024, "P", 100)):
         validate_data = _sklearn_PCA._validate_data
 
     @control_n_jobs(decorated_methods=["fit", "transform", "fit_transform"])
-    class PCA(_sklearn_PCA):
+    class PCA(IntelEstimator, _sklearn_PCA):
         __doc__ = _sklearn_PCA.__doc__
 
         if sklearn_check_version("1.2"):

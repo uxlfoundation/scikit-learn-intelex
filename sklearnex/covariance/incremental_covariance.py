@@ -33,7 +33,8 @@ from onedal.covariance import (
 from sklearnex import config_context
 
 from .._device_offload import dispatch, wrap_output_data
-from .._utils import IntelEstimator, PatchingConditionsChain, register_hyperparameters
+from .._utils import PatchingConditionsChain, register_hyperparameters
+from ..base import IntelEstimator
 from ..metrics import pairwise_distances
 from ..utils._array_api import get_namespace
 

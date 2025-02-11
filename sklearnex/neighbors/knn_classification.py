@@ -26,6 +26,7 @@ from daal4py.sklearn._utils import sklearn_check_version
 from onedal.neighbors import KNeighborsClassifier as onedal_KNeighborsClassifier
 
 from .._device_offload import dispatch, wrap_output_data
+from ..utils import get_tags
 from .common import KNeighborsDispatchingBase
 
 if sklearn_check_version("1.6"):
@@ -184,7 +185,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         }
 
         try:
-            requires_y = self._get_tags()["requires_y"]
+            requires_y = get_tags(self)["requires_y"]
         except KeyError:
             requires_y = False
 

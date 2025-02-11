@@ -27,6 +27,7 @@ from onedal.cluster import DBSCAN as onedal_DBSCAN
 
 from .._device_offload import dispatch
 from .._utils import PatchingConditionsChain
+from ..base import IntelEstimator
 
 if sklearn_check_version("1.1") and not sklearn_check_version("1.2"):
     from sklearn.utils import check_scalar
@@ -37,7 +38,7 @@ else:
     validate_data = _sklearn_DBSCAN._validate_data
 
 
-class BaseDBSCAN(ABC):
+class BaseDBSCAN(IntelEstimator):
     def _onedal_dbscan(self, **onedal_params):
         return onedal_DBSCAN(**onedal_params)
 
@@ -51,7 +52,7 @@ class BaseDBSCAN(ABC):
 
 
 @control_n_jobs(decorated_methods=["fit"])
-class DBSCAN(_sklearn_DBSCAN, BaseDBSCAN):
+class DBSCAN(BaseDBSCAN, _sklearn_DBSCAN):
     __doc__ = _sklearn_DBSCAN.__doc__
 
     if sklearn_check_version("1.2"):

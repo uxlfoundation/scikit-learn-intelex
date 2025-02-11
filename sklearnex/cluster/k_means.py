@@ -40,6 +40,7 @@ if daal_check_version((2023, "P", 200)):
 
     from .._device_offload import dispatch, wrap_output_data
     from .._utils import PatchingConditionsChain
+    from ..base import IntelEstimator
 
     if sklearn_check_version("1.6"):
         from sklearn.utils.validation import validate_data
@@ -47,7 +48,7 @@ if daal_check_version((2023, "P", 200)):
         validate_data = _sklearn_KMeans._validate_data
 
     @control_n_jobs(decorated_methods=["fit", "fit_transform", "predict", "score"])
-    class KMeans(_sklearn_KMeans):
+    class KMeans(IntelEstimator, _sklearn_KMeans):
         __doc__ = _sklearn_KMeans.__doc__
 
         if sklearn_check_version("1.2"):

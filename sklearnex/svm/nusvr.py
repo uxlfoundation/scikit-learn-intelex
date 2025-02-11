@@ -32,11 +32,11 @@ from ._common import BaseSVR
 if sklearn_check_version("1.6"):
     from sklearn.utils.validation import validate_data
 else:
-    validate_data = BaseSVR._validate_data
+    validate_data = _sklearn_NuSVR._validate_data
 
 
 @control_n_jobs(decorated_methods=["fit", "predict", "score"])
-class NuSVR(_sklearn_NuSVR, BaseSVR):
+class NuSVR(BaseSVR, _sklearn_NuSVR):
     __doc__ = _sklearn_NuSVR.__doc__
 
     if sklearn_check_version("1.2"):

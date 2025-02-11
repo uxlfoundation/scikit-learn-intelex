@@ -30,6 +30,8 @@ from onedal.utils import _check_array, _check_X_y, _column_or_1d
 
 from .._config import config_context, get_config
 from .._utils import PatchingConditionsChain
+from ..base import IntelEstimator
+from ..utils import get_tags
 
 if sklearn_check_version("1.6"):
     from sklearn.utils.validation import validate_data
@@ -37,7 +39,7 @@ else:
     validate_data = BaseEstimator._validate_data
 
 
-class BaseSVM(BaseEstimator, ABC):
+class BaseSVM(IntelEstimator):
 
     @property
     def _dual_coef_(self):
@@ -156,7 +158,7 @@ class BaseSVM(BaseEstimator, ABC):
                 )
 
         if y is None:
-            if self._get_tags()["requires_y"]:
+            if get_tags(self)["requires_y"]:
                 raise ValueError(
                     f"This {self.__class__.__name__} estimator "
                     f"requires y to be passed, but the target y is None."

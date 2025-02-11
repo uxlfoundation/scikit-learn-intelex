@@ -39,6 +39,7 @@ if daal_check_version((2024, "P", 1)):
     from .._config import get_config
     from .._device_offload import dispatch, wrap_output_data
     from .._utils import PatchingConditionsChain, get_patch_message
+    from ..base import IntelEstimator
 
     if sklearn_check_version("1.6"):
         from sklearn.utils.validation import validate_data
@@ -47,7 +48,7 @@ if daal_check_version((2024, "P", 1)):
 
     _sparsity_enabled = daal_check_version((2024, "P", 700))
 
-    class BaseLogisticRegression(ABC):
+    class BaseLogisticRegression(IntelEstimator):
         def _onedal_gpu_save_attributes(self):
             assert hasattr(self, "_onedal_estimator")
             self.classes_ = self._onedal_estimator.classes_
@@ -65,7 +66,7 @@ if daal_check_version((2024, "P", 1)):
             "score",
         ]
     )
-    class LogisticRegression(_sklearn_LogisticRegression, BaseLogisticRegression):
+    class LogisticRegression(BaseLogisticRegression, _sklearn_LogisticRegression):
         __doc__ = _sklearn_LogisticRegression.__doc__
 
         if sklearn_check_version("1.2"):

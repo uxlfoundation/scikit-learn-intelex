@@ -28,6 +28,7 @@ from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from .._config import get_config
 from .._device_offload import dispatch, wrap_output_data
 from .._utils import PatchingConditionsChain, get_patch_message, register_hyperparameters
+from ..base import IntelEstimator
 
 if sklearn_check_version("1.0") and not sklearn_check_version("1.2"):
     from sklearn.linear_model._base import _deprecate_normalize
@@ -47,7 +48,7 @@ else:
 
 @register_hyperparameters({"fit": get_hyperparameters("linear_regression", "train")})
 @control_n_jobs(decorated_methods=["fit", "predict", "score"])
-class LinearRegression(_sklearn_LinearRegression):
+class LinearRegression(IntelEstimator, _sklearn_LinearRegression):
     __doc__ = _sklearn_LinearRegression.__doc__
 
     if sklearn_check_version("1.2"):

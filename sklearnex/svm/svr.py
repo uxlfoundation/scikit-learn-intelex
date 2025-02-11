@@ -28,11 +28,11 @@ from ._common import BaseSVR
 if sklearn_check_version("1.6"):
     from sklearn.utils.validation import validate_data
 else:
-    validate_data = BaseSVR._validate_data
+    validate_data = _sklearn_SVR._validate_data
 
 
 @control_n_jobs(decorated_methods=["fit", "predict", "score"])
-class SVR(_sklearn_SVR, BaseSVR):
+class SVR(BaseSVR, _sklearn_SVR):
     __doc__ = _sklearn_SVR.__doc__
 
     if sklearn_check_version("1.2"):

@@ -22,6 +22,7 @@ from daal4py.sklearn._utils import sklearn_check_version
 from onedal.neighbors import NearestNeighbors as onedal_NearestNeighbors
 
 from .._device_offload import dispatch, wrap_output_data
+from ..utils import get_tags
 from .common import KNeighborsDispatchingBase
 
 if sklearn_check_version("1.6"):
@@ -140,7 +141,7 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         }
 
         try:
-            requires_y = self._get_tags()["requires_y"]
+            requires_y = get_tags(self)["requires_y"]
         except KeyError:
             requires_y = False
 

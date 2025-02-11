@@ -40,7 +40,8 @@ else:
 from onedal.common.hyperparameters import get_hyperparameters
 
 from .._device_offload import dispatch, wrap_output_data
-from .._utils import IntelEstimator, PatchingConditionsChain, register_hyperparameters
+from .._utils import PatchingConditionsChain, register_hyperparameters
+from ..base import IntelEstimator
 
 
 @register_hyperparameters(

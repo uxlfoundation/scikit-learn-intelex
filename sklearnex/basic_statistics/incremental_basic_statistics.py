@@ -26,7 +26,8 @@ from onedal.basic_statistics import (
 )
 
 from .._device_offload import dispatch
-from .._utils import IntelEstimator, PatchingConditionsChain
+from .._utils import PatchingConditionsChain
+from ..base import IntelEstimator
 
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import Interval, StrOptions

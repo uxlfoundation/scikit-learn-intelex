@@ -28,7 +28,8 @@ from onedal.basic_statistics import BasicStatistics as onedal_BasicStatistics
 from onedal.utils import _is_csr
 
 from .._device_offload import dispatch
-from .._utils import IntelEstimator, PatchingConditionsChain
+from .._utils import PatchingConditionsChain
+from ..base import IntelEstimator
 
 if sklearn_check_version("1.6"):
     from sklearn.utils.validation import validate_data

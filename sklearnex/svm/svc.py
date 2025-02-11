@@ -41,13 +41,13 @@ from onedal.svm import SVC as onedal_SVC
 if sklearn_check_version("1.6"):
     from sklearn.utils.validation import validate_data
 else:
-    validate_data = BaseSVC._validate_data
+    validate_data = _sklearn_SVC._validate_data
 
 
 @control_n_jobs(
     decorated_methods=["fit", "predict", "_predict_proba", "decision_function", "score"]
 )
-class SVC(_sklearn_SVC, BaseSVC):
+class SVC(BaseSVC, _sklearn_SVC):
     __doc__ = _sklearn_SVC.__doc__
 
     if sklearn_check_version("1.2"):
