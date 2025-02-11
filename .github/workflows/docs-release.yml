@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #===============================================================================
-name: Docs Build
+name: Docs Release
 
 on:
   push:
@@ -41,14 +41,14 @@ jobs:
     - name: Extract Tag Version
       run: |
         echo "GITHUB_REF: $GITHUB_REF"
-        DOC_VERSION="${GITHUB_REF#refs/tags/}"
-        echo "DOC_VERSION: $DOC_VERSION"
-        echo "DOC_VERSION=$DOC_VERSION" >> $GITHUB_ENV
+        export DOC_VERSION="${GITHUB_REF#refs/tags/}"
         # Error iif cannot find version
         if [ -z "$DOC_VERSION" ]; then
           echo "ERROR: Failed to determine documentation version."
           exit 1
         fi
+        export SHORT_DOC_VERSION=$(echo "$DOC_VERSION" | awk -F'.' '{print $1"."$2}')
+        echo "DOC_VERSION: $DOC_VERSION"
         echo "doc version can be found"
 
     - name: Checkout release brance
@@ -87,20 +87,6 @@ jobs:
           exit 1
         fi
 
-    - name: Modify version json file
-      run: |
-        VERSIONS_FILE="versions.json"
-        if [ ! -f "$VERSIONS_FILE" ]; then
-          echo "ERROR: $VERSIONS_FILE does not exist!"
-          exit 1
-        fi
-        VERSION=$(echo "$DOC_VERSION" | awk -F'.' '{print $1"."$2}')
-        jq --arg version "$VERSION" '. |= [{"name": $version, "version": $version, "url": ("/scikit-learn-intelex/" + $version + "/")}] + .' "$VERSIONS_FILE" > tmp.json && mv tmp.json "$VERSIONS_FILE"
-        jq --arg version "$VERSION" '(.[] | select(.name == "latest")) .version = $version' "$VERSIONS_FILE" > tmp.json && mv tmp.json "$VERSIONS_FILE"
-
-        echo "Updated versions.json:"
-        cat "$VERSIONS_FILE"
-
     - name: Build scikit-learn-intelex Documentation
       run: |
         export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
@@ -109,19 +95,31 @@ jobs:
         echo "doc build folder"
         ls doc/_build/
         echo "doc folder"
+        ls doc
 
-    # Upload doc for download
-    - name: Upload Documentation Artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: documentation-${{ env.DOC_VERSION }}
-        path: doc/_build/html
+    - name: Modify version json file
+      run: |
+        export BUILDDIR="doc/_build/scikit-learn-intelex"
+        export VERSIONS_FILE="$BUILDDIR/versions.json"
+        
+        if [ ! -f "$VERSIONS_FILE" ]; then
+          echo "ERROR: $VERSIONS_FILE does not exist!"
+          exit 1
+        fi
+
+        export HTML_FOLDER="$BUILDDIR/$SHORT_DOC_VERSION"
+        export INDEX_HTML_FILE="$BUILDDIR/index.html"
+
+        jq --arg version "$SHORT_DOC_VERSION" '. |= [{"name": $version, "version": $version, "url": ("/scikit-learn-intelex/" + $version + "/")}] + .' "$VERSIONS_FILE" > tmp.json && mv tmp.json "$VERSIONS_FILE"
+        jq --arg version "$SHORT_DOC_VERSION" '(.[] | select(.name == "latest")) .version = $version' "$VERSIONS_FILE" > tmp.json && mv tmp.json "$VERSIONS_FILE"
+
+        echo "Updated versions.json:"
+        cat "$VERSIONS_FILE"
 
 
     - name: Deploy Documentation to gh-pages
       run: |
         # Define paths
-        BUILD_DIR="doc/_build/"
         DEPLOY_DIR="/tmp/gh-pages-deploy"
 
         # Ensure the build directory exists
