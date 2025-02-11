@@ -48,8 +48,13 @@ jobs:
           exit 1
         fi
         export SHORT_DOC_VERSION=$(echo "$DOC_VERSION" | awk -F'.' '{print $1"."$2}')
-        echo "DOC_VERSION: $DOC_VERSION"
+        echo "DOC_VERSION: $DOC_VERSION $SHORT_DOC_VERSION"
         echo "doc version can be found"
+        # export env var in other files
+        echo "SHORT_DOC_VERSION=$SHORT_DOC_VERSION" >> $GITHUB_ENV
+        echo "DOC_VERSION=$DOC_VERSION" >> $GITHUB_ENV
+        echo "can set short doc version"
+
 
     - name: Checkout release brance
       run: |
