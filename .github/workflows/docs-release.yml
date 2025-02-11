@@ -98,9 +98,8 @@ jobs:
         cd doc
         ./build-doc.sh --gh-pages
         echo "doc build folder"
-        ls doc/_build/
-        echo "doc folder"
         ls doc
+        ls doc/_build/scikit-learn-intelex
 
     - name: Modify version json file
       run: |
