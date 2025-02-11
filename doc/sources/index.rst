@@ -12,8 +12,7 @@
 .. See the License for the specific language governing permissions and
 .. limitations under the License.
 
-.. |intelex_repo| replace:: |intelex| repository
-.. _intelex_repo: https://github.com/uxlfoundation/scikit-learn-intelex
+.. include:: substitutions.rst
 
 .. _index:
 
@@ -21,20 +20,20 @@
 |intelex|
 #########
 
-Intel(R) Extension for Scikit-learn is a **free software AI accelerator** designed to deliver up to **100X** faster performance for your existing scikit-learn code.
+|intelex| is a **free software AI accelerator** designed to deliver up to **100X** faster performance for your existing |sklearn| code.
 The software acceleration is achieved with vector instructions, AI hardware-specific memory optimizations, threading, and optimizations for all upcoming Intel(R) platforms at launch time.
 
 .. rubric:: Designed for Data Scientists and Framework Designers
 
 
-Use Intel(R) Extension for Scikit-learn, to:
+Use |intelex|, to:
 
-* Speed up training and inference by up to 100x with the equivalent mathematical accuracy
-* Benefit from performance improvements across different x86-compatible CPUs or Intel(R) GPUs
-* Integrate the extension into your existing Scikit-learn applications without code modifications
+* Speed up training and inference by up to 100x with equivalent mathematical accuracy
+* Benefit from performance improvements across different x86-64 CPUs and Intel(R) GPUs
+* Integrate the extension into your existing |sklearn| applications without code modifications
 * Enable and disable the extension with a couple of lines of code or at the command line
 
-Intel(R) Extension for Scikit-learn is also a part of `Intel(R) AI Tools <https://www.intel.com/content/www/us/en/developer/tools/oneapi/ai-analytics-toolkit.html>`_.
+|intelex| is also a part of `Intel(R) AI Tools <https://www.intel.com/content/www/us/en/developer/tools/oneapi/ai-analytics-toolkit.html>`_.
 
 
 .. image:: _static/scikit-learn-acceleration.PNG
@@ -65,11 +64,14 @@ Enable Intel(R) CPU Optimizations
    from sklearn.cluster import DBSCAN
 
    X = np.array([[1., 2.], [2., 2.], [2., 3.],
-               [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
+                 [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
    clustering = DBSCAN(eps=3, min_samples=2).fit(X)
 
 Enable Intel(R) GPU optimizations
 *********************************
+
+Note: executing on GPU has `additional system software requirements <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`__ - see :doc:`oneapi-gpu`.
+
 ::
 
    import numpy as np
@@ -80,7 +82,7 @@ Enable Intel(R) GPU optimizations
    from sklearn.cluster import DBSCAN
 
    X = np.array([[1., 2.], [2., 2.], [2., 3.],
-               [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
+                 [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
    with config_context(target_offload="gpu:0"):
        clustering = DBSCAN(eps=3, min_samples=2).fit(X)
 
@@ -101,7 +103,7 @@ Enable Intel(R) GPU optimizations
    :maxdepth: 2
 
    algorithms.rst
-   oneAPI and GPU support <oneapi-gpu.rst>
+   oneapi-gpu.rst
    distributed-mode.rst
    non-scikit-algorithms.rst
    input-types.rst
