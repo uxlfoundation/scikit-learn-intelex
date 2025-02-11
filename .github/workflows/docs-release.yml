@@ -52,7 +52,6 @@ jobs:
         echo "doc version can be found"
         # export env var in other files
         echo "SHORT_DOC_VERSION=$SHORT_DOC_VERSION" >> $GITHUB_ENV
-        echo "DOC_VERSION=$DOC_VERSION" >> $GITHUB_ENV
         echo "can set short doc version"
 
 
@@ -102,23 +101,20 @@ jobs:
 
     - name: Modify version json file
       run: |
-        export BUILDDIR="doc/_build/scikit-learn-intelex"
-        export VERSIONS_FILE="$BUILDDIR/versions.json"
+        export BUILD_DIR="doc/_build/scikit-learn-intelex"
+        export VERSIONS_FILE="$BUILD_DIR/versions.json"
         
         if [ ! -f "$VERSIONS_FILE" ]; then
           echo "ERROR: $VERSIONS_FILE does not exist!"
           exit 1
         fi
 
-        export HTML_FOLDER="$BUILDDIR/$SHORT_DOC_VERSION"
-        export INDEX_HTML_FILE="$BUILDDIR/index.html"
-
         jq --arg version "$SHORT_DOC_VERSION" '. |= [{"name": $version, "version": $version, "url": ("/scikit-learn-intelex/" + $version + "/")}] + .' "$VERSIONS_FILE" > tmp.json && mv tmp.json "$VERSIONS_FILE"
         jq --arg version "$SHORT_DOC_VERSION" '(.[] | select(.name == "latest")) .version = $version' "$VERSIONS_FILE" > tmp.json && mv tmp.json "$VERSIONS_FILE"
 
         echo "Updated versions.json:"
         cat "$VERSIONS_FILE"
-
+        ls
 
     - name: Deploy Documentation to gh-pages
       run: |
@@ -131,23 +127,31 @@ jobs:
             exit 1
         fi
 
+        # Copy built documentation to a temp location
+        mkdir -p "$DEPLOY_DIR"
+        cp -R "$BUILD_DIR"/* "$DEPLOY_DIR"
         ls $DEPLOY_DIR
 
-
-        # Copy built documentation to a temp location
-        # mkdir -p "$DEPLOY_DIR"
-        # cp -R "$BUILD_DIR"/* "$DEPLOY_DIR"
-
-        echo "Copied generated documentation to $DEPLOY_DIR"
-
         # Checkout gh-pages branch
-        # git fetch origin gh-pages
-        # git checkout gh-pages
+        git fetch origin gh-pages
+        git checkout gh-pages
 
-        # Copy docs to gh-pages branch
-        # cp -R "$DEPLOY_DIR"/* .
+
+        echo "cur after checkout to gh-pages"
+        ls
+
+        # Move the new versioned folder to the correct location
+        rm -rf latest
+        cp -R "$DEPLOY_DIR/$SHORT_DOC_VERSION" latest
+        cp "$DEPLOY_DIR/index.html" .
+        cp "$DEPLOY_DIR/versions.json" .
+
+        echo "cur after move folder in"
+        ls
+        cat versions.json
+        ls latest
 
         # Commit and push changes
         # git add .
-        # git commit -m "Update documentation for version $DOC_VERSION"
+        # git commit -m "Automatic doc update for version $DOC_VERSION"
         # git push origin gh-pages
