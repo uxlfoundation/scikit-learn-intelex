@@ -44,9 +44,16 @@ author = "Intel"
 # The short X.Y version
 # Note: it should not have more than  two parts (year.month), otherwise the
 # version switcher will not be able to pick it.
-version = os.environ.get("DOC_VERSION", "")
-# The full version, including alpha/beta/rc tags
-release = version
+version_full = os.environ.get("DOC_VERSION", "")
+if not version_full:
+    print("ERROR: DOC_VERSION is not set.")
+    sys.exit(1)
+version_parts = version_full.split(".")
+if len(version_parts) < 2:
+    print(f"ERROR: Invalid DOC_VERSION format: {version_full}. Should have at least year and month")
+    sys.exit(1)
+# Short version
+version = release = ".".join(version_parts[:2])
 
 
 # -- General configuration ---------------------------------------------------
