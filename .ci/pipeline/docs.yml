@@ -15,13 +15,10 @@
 #===============================================================================
 
 trigger:
-  #doc build trigger by a release tag
   branches:
     include:
-      - "*"
-  tags:
-    include:
-      - "[0-9]*.[0-9]*.[0-9]*"
+    - main
+    - rls/*
   paths:
     include:
     - requirements-doc.txt
@@ -29,7 +26,17 @@ trigger:
     - .ci/pipeline/docs.yml
     - .github/Pull_Request_template.md
 
-pr: none
+pr:
+  branches:
+    include:
+    - main
+    - rls/*
+  paths:
+    include:
+    - requirements-doc.txt
+    - doc/
+    - .ci/pipeline/docs.yml
+    - .github/Pull_Request_template.md
 
 variables:
   - name: 'PYTHON'
@@ -47,33 +54,6 @@ jobs:
     inputs:
       versionSpec: '3.11'
       addToPath: true
-  - script: |
-      echo "list tags"
-      git tag --list
-      echo "BUILD_REASON: $BUILD_REASON"
-      echo "BUILD_SOURCEBRANCH: $BUILD_SOURCEBRANCH"
-      echo "BUILD_SOURCEBRANCHNAME: $BUILD_SOURCEBRANCHNAME"
-
-      # Extract the version from the triggering tag
-      DOC_VERSION=$(echo "$BUILD_SOURCEBRANCH" | sed 's#refs/tags/##')
-      echo "DOC_VERSION: $DOC_VERSION"
-
-      # Still cannot find version generate error
-      if [ -z "$DOC_VERSION" ]; then
-        echo "ERROR: Failed to determine documentation version."
-        exit 1
-      fi
-      echo "doc version can be found"
-
-      if git checkout $DOC_VERSION 2>/dev/null; then
-        echo "Successfully checked out tag $DOC_VERSION."
-      else
-          echo "ERROR: Tag $DOC_VERSION does not exist."
-          exit 1
-      fi
-
-      echo "can get to the correct commit"
-    displayName: 'Get correct doc version'
   - script: sudo apt-get update && sudo apt-get install -y clang-format pandoc 
     displayName: 'apt-get'
   - script: |

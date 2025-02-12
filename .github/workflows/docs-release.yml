@@ -51,6 +51,7 @@ jobs:
         echo "DOC_VERSION: $DOC_VERSION $SHORT_DOC_VERSION"
         echo "doc version can be found"
         # export env var in other files
+        echo "DOC_VERSION=$DOC_VERSION" >> $GITHUB_ENV
         echo "SHORT_DOC_VERSION=$SHORT_DOC_VERSION" >> $GITHUB_ENV
         echo "can set short doc version"
 
@@ -101,7 +102,9 @@ jobs:
 
     - name: Modify version json file
       run: |
-        export BUILD_DIR="doc/_build/scikit-learn-intelex"
+        BUILD_DIR="doc/_build/scikit-learn-intelex"
+        echo "BUILD_DIR=$BUILD_DIR" >> $GITHUB_ENV
+
         export VERSIONS_FILE="$BUILD_DIR/versions.json"
         
         if [ ! -f "$VERSIONS_FILE" ]; then
