@@ -22,9 +22,7 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
+  
 jobs:
   build-docs:
     runs-on: ubuntu-latest
@@ -125,8 +123,6 @@ jobs:
         ls
 
     - name: Deploy Documentation to gh-pages
-      permissions:
-        content: write
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
