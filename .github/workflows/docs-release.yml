@@ -145,8 +145,11 @@ jobs:
         ls $DEPLOY_DIR
 
         # Checkout gh-pages branch
-        git fetch origin gh-pages
-        git checkout gh-pages
+        if git fetch origin gh-pages; then
+          git checkout gh-pages
+        else
+          git checkout -b gh-pages
+        fi
 
         #TODO delete this temp code
         BACKUP_DIR="backup"
