@@ -123,6 +123,10 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
+        # Set git auth for push changes 
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
         # Define paths
         DEPLOY_DIR="/tmp/gh-pages-deploy"
 
