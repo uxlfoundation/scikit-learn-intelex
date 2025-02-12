@@ -29,7 +29,7 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
+import os
 import sys
 
 # sys.path.insert(0, os.path.abspath("../"))
@@ -44,9 +44,12 @@ author = "Intel"
 # The short X.Y version
 # Note: it should not have more than  two parts (year.month), otherwise the
 # version switcher will not be able to pick it.
-version = "2025.2"
-# The full version, including alpha/beta/rc tags
-release = "2025.2"
+version = os.environ.get("SHORT_DOC_VERSION", "")
+if not version:
+    print("ERROR: SHORT_DOC_VERSION is not set.")
+    sys.exit(1)
+# Short version
+release = version
 
 
 # -- General configuration ---------------------------------------------------
