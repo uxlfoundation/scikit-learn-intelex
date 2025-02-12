@@ -120,6 +120,8 @@ jobs:
         ls
 
     - name: Deploy Documentation to gh-pages
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         # Define paths
         DEPLOY_DIR="/tmp/gh-pages-deploy"
@@ -139,6 +141,13 @@ jobs:
         git fetch origin gh-pages
         git checkout gh-pages
 
+        #TODO delete this temp code
+        BACKUP_DIR="backup"
+        cp -R latest "$BACKUP_DIR/latest_backup"
+        cp versions.json "$BACKUP_DIR/versions.json_backup"
+        cp index.html "$BACKUP_DIR/index.html_backup"
+
+
 
         echo "cur after checkout to gh-pages"
         ls
@@ -155,6 +164,6 @@ jobs:
         ls latest
 
         # Commit and push changes
-        # git add .
-        # git commit -m "Automatic doc update for version $DOC_VERSION"
-        # git push origin gh-pages
+        git add .
+        git commit -m "Automatic doc update for version $DOC_VERSION"
+        git push origin gh-pages
