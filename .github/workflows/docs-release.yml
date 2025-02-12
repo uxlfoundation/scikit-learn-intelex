@@ -143,6 +143,7 @@ jobs:
 
         #TODO delete this temp code
         BACKUP_DIR="backup"
+        mkdir -p "$BACKUP_DIR"
         cp -R latest "$BACKUP_DIR/latest_backup"
         cp versions.json "$BACKUP_DIR/versions.json_backup"
         cp index.html "$BACKUP_DIR/index.html_backup"
