@@ -20,6 +20,11 @@ on:
     tags:
       - "[0-9]*.[0-9]*.[0-9]*"  # Trigger on tag pushes
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   build-docs:
     runs-on: ubuntu-latest
@@ -119,56 +124,70 @@ jobs:
         cat "$VERSIONS_FILE"
         ls
 
-    - name: Deploy Documentation to gh-pages
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        # Set git auth for push changes 
-        git config --global user.name "GitHub Actions"
-        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
 
-        # Define paths
-        DEPLOY_DIR="/tmp/gh-pages-deploy"
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: ${{ env.BUILD_DIR }}
 
-        # Ensure the build directory exists
-        if [ ! -d "$BUILD_DIR" ]; then
-            echo "ERROR: Documentation build directory not found!"
-            exit 1
-        fi
+    - name: Deploy to GitHub Pages
+      uses: actions/deploy-pages@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
 
-        # Copy built documentation to a temp location
-        mkdir -p "$DEPLOY_DIR"
-        cp -R "$BUILD_DIR"/* "$DEPLOY_DIR"
-        ls $DEPLOY_DIR
+    # - name: Deploy Documentation to gh-pages
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #   run: |
+    #     # Set git auth for push changes 
+    #     git config --global user.name "GitHub Actions"
+    #     git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-        # Checkout gh-pages branch
-        git fetch origin gh-pages
-        git checkout gh-pages
+    #     # Define paths
+    #     DEPLOY_DIR="/tmp/gh-pages-deploy"
 
-        #TODO delete this temp code
-        BACKUP_DIR="backup"
-        mkdir -p "$BACKUP_DIR"
-        cp -R latest "$BACKUP_DIR/latest_backup"
-        cp versions.json "$BACKUP_DIR/versions.json_backup"
-        cp index.html "$BACKUP_DIR/index.html_backup"
+    #     # Ensure the build directory exists
+    #     if [ ! -d "$BUILD_DIR" ]; then
+    #         echo "ERROR: Documentation build directory not found!"
+    #         exit 1
+    #     fi
+
+    #     # Copy built documentation to a temp location
+    #     mkdir -p "$DEPLOY_DIR"
+    #     cp -R "$BUILD_DIR"/* "$DEPLOY_DIR"
+    #     ls $DEPLOY_DIR
+
+    #     # Checkout gh-pages branch
+    #     git fetch origin gh-pages
+    #     git checkout gh-pages
+
+    #     #TODO delete this temp code
+    #     BACKUP_DIR="backup"
+    #     mkdir -p "$BACKUP_DIR"
+    #     cp -R latest "$BACKUP_DIR/latest_backup"
+    #     cp versions.json "$BACKUP_DIR/versions.json_backup"
+    #     cp index.html "$BACKUP_DIR/index.html_backup"
 
 
 
-        echo "cur after checkout to gh-pages"
-        ls
+    #     echo "cur after checkout to gh-pages"
+    #     ls
 
-        # Move the new versioned folder to the correct location
-        rm -rf latest
-        cp -R "$DEPLOY_DIR/$SHORT_DOC_VERSION" latest
-        cp "$DEPLOY_DIR/index.html" .
-        cp "$DEPLOY_DIR/versions.json" .
+    #     # Move the new versioned folder to the correct location
+    #     rm -rf latest
+    #     cp -R "$DEPLOY_DIR/$SHORT_DOC_VERSION" latest
+    #     cp "$DEPLOY_DIR/index.html" .
+    #     cp "$DEPLOY_DIR/versions.json" .
 
-        echo "cur after move folder in"
-        ls
-        cat versions.json
-        ls latest
+    #     echo "cur after move folder in"
+    #     ls
+    #     cat versions.json
+    #     ls latest
 
-        # Commit and push changes
-        git add .
-        git commit -m "Automatic doc update for version $DOC_VERSION"
-        git push origin gh-pages
+    #     # Commit and push changes
+    #     git add .
+    #     git commit -m "Automatic doc update for version $DOC_VERSION"
+    #     git push origin gh-pages
+
