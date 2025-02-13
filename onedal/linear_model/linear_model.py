@@ -123,7 +123,7 @@ class BaseLinearRegression(BaseEstimator, metaclass=ABCMeta):
 
         sua_iface, xp, _ = _get_sycl_namespace(X)
         use_raw_input = _get_config().get("use_raw_input", False) is True
-        if use_raw_input:
+        if use_raw_input and sua_iface is not None:
             queue = X.sycl_queue
         policy = self._get_policy(queue, X)
 
@@ -201,6 +201,10 @@ class LinearRegression(BaseLinearRegression):
         """
         module = self._get_backend("linear_model", "regression")
 
+        sua_iface, xp, _ = _get_sycl_namespace(X)
+        use_raw_input = _get_config().get("use_raw_input", False) is True
+        if use_raw_input and sua_iface is not None:
+            queue = X.sycl_queue
         if _get_config()["use_raw_input"] is False:
             if not isinstance(X, np.ndarray):
                 X = np.asarray(X)
@@ -215,15 +219,12 @@ class LinearRegression(BaseLinearRegression):
             X, y = _check_X_y(X, y, force_all_finite=False, accept_2d_y=True)
 
         policy = self._get_policy(queue, X, y)
-        if _get_config()["use_raw_input"] is True:
-            # make sure we are using the queue from the on-device provided data
-            queue = getattr(policy, "_queue", queue)
-
-        X_table, y_table = to_table(X, y, queue=queue)
 
         self.n_features_in_ = _num_features(X, fallback_1d=True)
 
+        X_table, y_table = to_table(X, y, queue=queue)
         params = self._get_onedal_params(X_table.dtype)
+
         hparams = get_hyperparameters("linear_regression", "train")
         if hparams is not None and not hparams.is_default:
             result = module.train(policy, params, hparams.backend, X_table, y_table)
@@ -241,7 +242,7 @@ class LinearRegression(BaseLinearRegression):
         )
 
         if self.coef_.shape[0] == 1 and y.ndim == 1:
-            self.coef_ = np.reshape(self.coef_, (-1,))
+            self.coef_ = xp.reshape(self.coef_, (-1,))
             self.intercept_ = self.intercept_[0]
 
         return self
@@ -302,10 +303,7 @@ class Ridge(BaseLinearRegression):
         self : object
             Fitted Estimator.
         """
-        sua_iface, xp, _ = _get_sycl_namespace(X)
-
         module = self._get_backend("linear_model", "regression")
-        _, xp, _ = _get_sycl_namespace(X)
 
         if not isinstance(X, np.ndarray):
             X = np.asarray(X)
@@ -315,17 +313,9 @@ class Ridge(BaseLinearRegression):
             dtype = np.float64
             X = X.astype(dtype, copy=self.copy_X)
 
-        use_raw_input = _get_config().get("use_raw_input", False) is True
-        if not use_raw_input:
-            X = _check_array(
-                X,
-                dtype=[np.float64, np.float32],
-                force_all_finite=False,
-                ensure_2d=False,
-                copy=self.copy_X,
-            )
-            X, y = _check_X_y(X, y, force_all_finite=False, accept_2d_y=True)
-            y = np.asarray(y).astype(dtype=get_dtype(X))
+        y = np.asarray(y).astype(dtype=dtype)
+
+        X, y = _check_X_y(X, y, force_all_finite=False, accept_2d_y=True)
 
         policy = self._get_policy(queue, X, y)
 
@@ -337,16 +327,14 @@ class Ridge(BaseLinearRegression):
         result = module.train(policy, params, X_table, y_table)
         self._onedal_model = result.model
 
-        packed_coefficients = from_table(
-            result.model.packed_coefficients, sua_iface=sua_iface, sycl_queue=queue, xp=xp
-        )
+        packed_coefficients = from_table(result.model.packed_coefficients)
         self.coef_, self.intercept_ = (
             packed_coefficients[:, 1:],
             packed_coefficients[:, 0],
         )
 
         if self.coef_.shape[0] == 1 and y.ndim == 1:
-            self.coef_ = xp.reshape(self.coef_, (-1,))
+            self.coef_ = self.coef_.ravel()
             self.intercept_ = self.intercept_[0]
 
         return self

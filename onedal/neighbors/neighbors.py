@@ -467,7 +467,8 @@ class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
         return super()._fit(X, y, queue=queue)
 
     def predict(self, X, queue=None):
-        if not _get_config()["use_raw_input"]:
+        use_raw_input = _get_config().get("use_raw_input", False) is True
+        if not use_raw_input:
             X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
         onedal_model = getattr(self, "_onedal_model", None)
         n_features = getattr(self, "n_features_in_", None)
@@ -629,7 +630,8 @@ class KNeighborsRegressor(NeighborsBase, RegressorMixin):
         return super()._kneighbors(X, n_neighbors, return_distance, queue=queue)
 
     def _predict_gpu(self, X, queue=None):
-        if _get_config()["use_raw_input"] is False:
+        use_raw_input = _get_config().get("use_raw_input", False) is True
+        if not use_raw_input:
             X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
         onedal_model = getattr(self, "_onedal_model", None)
         n_features = getattr(self, "n_features_in_", None)

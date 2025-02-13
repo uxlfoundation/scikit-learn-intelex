@@ -16,14 +16,14 @@
 
 import numpy as np
 
-from daal4py.sklearn._utils import get_dtype, make2d
+from daal4py.sklearn._utils import make2d
 
 from .._config import _get_config
 from ..common._base import BaseEstimator
 from ..common._mixin import ClusterMixin
 from ..datatypes import from_table, to_table
 from ..utils import _check_array
-from ..utils._array_api import _asarray, _get_sycl_namespace
+from ..utils._array_api import _get_sycl_namespace
 
 
 class BaseDBSCAN(BaseEstimator, ClusterMixin):
@@ -64,12 +64,13 @@ class BaseDBSCAN(BaseEstimator, ClusterMixin):
 
         if not use_raw_input:
             X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
-            sample_weight = make2d(sample_weight) if sample_weight is not None else None
             X = make2d(X)
         elif sua_iface is not None:
             queue = X.sycl_queue
         policy = self._get_policy(queue, X)
+        sample_weight = make2d(sample_weight) if sample_weight is not None else None
         X_table, sample_weight_table = to_table(X, sample_weight, queue=queue)
+
         params = self._get_onedal_params(X_table.dtype)
         result = module.compute(policy, params, X_table, sample_weight_table)
 

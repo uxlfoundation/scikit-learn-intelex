@@ -292,11 +292,7 @@ class BaseForest(BaseEstimator, BaseEnsemble, metaclass=ABCMeta):
 
     def _fit(self, X, y, sample_weight, module, queue):
         use_raw_input = _get_config().get("use_raw_input", False) is True
-        sua_iface, xp, _ = _get_sycl_namespace(X)
-
-        # All data should use the same sycl queue
-        if use_raw_input and sua_iface is not None:
-            queue = X.sycl_queue
+        _, xp, _ = _get_sycl_namespace(X)
 
         if not use_raw_input:
             X, y = _check_X_y(
@@ -394,11 +390,6 @@ class BaseForest(BaseEstimator, BaseEnsemble, metaclass=ABCMeta):
     def _predict_proba(self, X, module, queue, hparams=None):
         _check_is_fitted(self)
         use_raw_input = _get_config().get("use_raw_input", False) is True
-        sua_iface, xp, _ = _get_sycl_namespace(X)
-
-        # All data should use the same sycl queue
-        if use_raw_input and sua_iface is not None:
-            queue = X.sycl_queue
 
         if not use_raw_input:
             X = _check_array(
@@ -591,14 +582,10 @@ class RandomForestRegressor(RegressorMixin, BaseForest, metaclass=ABCMeta):
         )
 
     def fit(self, X, y, sample_weight=None, queue=None):
-        use_raw_input = _get_config().get("use_raw_input", False) is True
-        # TODO:
-        # check if required.
-        if not use_raw_input:
-            if sample_weight is not None:
-                if hasattr(sample_weight, "__array__"):
-                    sample_weight[sample_weight == 0.0] = 1.0
-                sample_weight = [sample_weight]
+        if sample_weight is not None:
+            if hasattr(sample_weight, "__array__"):
+                sample_weight[sample_weight == 0.0] = 1.0
+            sample_weight = [sample_weight]
         return super()._fit(
             X,
             y,

@@ -22,7 +22,6 @@ from .._config import _get_config
 from ..common._base import BaseEstimator
 from ..datatypes import from_table, to_table
 from ..utils import _is_csr
-from ..utils._array_api import _get_sycl_namespace
 from ..utils.validation import _check_array
 
 
