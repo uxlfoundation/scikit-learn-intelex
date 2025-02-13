@@ -117,20 +117,14 @@ jobs:
         else
           git checkout -b gh-pages
         fi
-        # Read current version from versions.json
-        CURRENT_VERSION=$(jq -r '.[] | select(.name == "latest") | .version' versions.json)
-        echo "Current version is: $CURRENT_VERSION"
-        # Rename current latest to its version number
-        if [ -d "latest" ] && [ ! -z "$CURRENT_VERSION" ]; then
-          mv latest "$CURRENT_VERSION"
-          # Add old latest version to git
-          git add $CURRENT_VERSION
-        fi
         # Move the new versioned folder to the correct location
+        rm -rf latest 
         cp -R "$DEPLOY_DIR/$SHORT_DOC_VERSION" latest
+        cp -R "$DEPLOY_DIR/$SHORT_DOC_VERSION" "$SHORT_DOC_VERSION"
         cp "$DEPLOY_DIR/index.html" .
         cp "$DEPLOY_DIR/versions.json" .
         # Commit and push changes
+        git add "$SHORT_DOC_VERSION"
         git commit . -m "Automatic doc update for version $DOC_VERSION"
         git push origin gh-pages
 
