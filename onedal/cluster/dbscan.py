@@ -15,6 +15,7 @@
 # ===============================================================================
 
 import numpy as np
+
 from daal4py.sklearn._utils import get_dtype, make2d
 
 from .._config import _get_config
