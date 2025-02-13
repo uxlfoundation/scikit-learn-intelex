@@ -18,7 +18,7 @@ name: Docs Release
 on:
   push:
     tags:
-      - '[0-9][0-9][0-9][0-9].[0-9][0-9]?.[0-9]'  # Trigger on tag pushes
+      - '[0-9][0-9][0-9][0-9]\.[0-9][0-9]?\.[0-9]' # Trigger on tag pushes
 
 permissions:
   contents: write
@@ -67,8 +67,6 @@ jobs:
         pip install daal-devel impi-devel
         pip install -r dependencies-dev
         pip install -r requirements-doc.txt
-        pip install -r requirements-test.txt
-        pip list
     - name: Build daal4py/sklearnex
       run: |
         export DALROOT=$(dirname $(dirname $(which python)))

@@ -45,12 +45,7 @@ author = "Intel"
 # Note: it should not have more than  two parts (year.month), otherwise the
 # version switcher will not be able to pick it.
 version = os.environ.get("SHORT_DOC_VERSION", "latest")
-if not version:
-    print("ERROR: SHORT_DOC_VERSION is not set.")
-    sys.exit(1)
-# Short version
 release = version
-
 
 # -- General configuration ---------------------------------------------------
 
