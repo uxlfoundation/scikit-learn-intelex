@@ -30,7 +30,11 @@ from sklearnex.metrics import pairwise_distances
 
 from ..._config import get_config
 from ..._device_offload import dispatch, wrap_output_data
-from ..._utils import PatchingConditionsChain, register_hyperparameters
+from ..._utils import (
+    PatchableEstimator,
+    PatchingConditionsChain,
+    register_hyperparameters,
+)
 
 if sklearn_check_version("1.6"):
     from sklearn.utils.validation import validate_data
@@ -40,7 +44,7 @@ else:
 
 @register_hyperparameters({"fit": get_hyperparameters("covariance", "compute")})
 @control_n_jobs(decorated_methods=["fit", "mahalanobis"])
-class EmpiricalCovariance(_sklearn_EmpiricalCovariance):
+class EmpiricalCovariance(PatchableEstimator, _sklearn_EmpiricalCovariance):
     __doc__ = _sklearn_EmpiricalCovariance.__doc__
 
     if sklearn_check_version("1.2"):

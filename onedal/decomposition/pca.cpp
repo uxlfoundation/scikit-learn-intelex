@@ -16,7 +16,7 @@
 #include "oneapi/dal/algo/pca.hpp"
 #include "onedal/common.hpp"
 #define NO_IMPORT_ARRAY // import_array called in table.cpp
-#include "onedal/datatypes/data_conversion.hpp"
+#include "onedal/datatypes/numpy/data_conversion.hpp"
 
 namespace py = pybind11;
 
@@ -134,12 +134,13 @@ void init_partial_train_result(py::module_& m) {
                 int auxiliary_size = res.get_auxiliary_table_count();
                 for (int i = 0; i < auxiliary_size; i++) {
                     auto aux_table = res.get_auxiliary_table(i);
-                    auxiliary.append(py::cast<py::object>(convert_to_pyobject(aux_table)));
+                    auxiliary.append(py::cast<py::object>(numpy::convert_to_pyobject(aux_table)));
                 }
                 return py::make_tuple(
-                    py::cast<py::object>(convert_to_pyobject(res.get_partial_n_rows())),
-                    py::cast<py::object>(convert_to_pyobject(res.get_partial_crossproduct())),
-                    py::cast<py::object>(convert_to_pyobject(res.get_partial_sum())),
+                    py::cast<py::object>(numpy::convert_to_pyobject(res.get_partial_n_rows())),
+                    py::cast<py::object>(
+                        numpy::convert_to_pyobject(res.get_partial_crossproduct())),
+                    py::cast<py::object>(numpy::convert_to_pyobject(res.get_partial_sum())),
                     auxiliary);
             },
             [](py::tuple t) {
@@ -147,14 +148,14 @@ void init_partial_train_result(py::module_& m) {
                     throw std::runtime_error("Invalid state!");
                 result_t res;
                 if (py::cast<int>(t[0].attr("size")) != 0)
-                    res.set_partial_n_rows(convert_to_table(t[0]));
+                    res.set_partial_n_rows(numpy::convert_to_table(t[0]));
                 if (py::cast<int>(t[1].attr("size")) != 0)
-                    res.set_partial_crossproduct(convert_to_table(t[1]));
+                    res.set_partial_crossproduct(numpy::convert_to_table(t[1]));
                 if (py::cast<int>(t[2].attr("size")) != 0)
-                    res.set_partial_sum(convert_to_table(t[2]));
+                    res.set_partial_sum(numpy::convert_to_table(t[2]));
                 py::list aux_list = t[3].cast<py::list>();
                 for (int i = 0; i < aux_list.size(); i++) {
-                    res.set_auxiliary_table(convert_to_table(aux_list[i]));
+                    res.set_auxiliary_table(numpy::convert_to_table(aux_list[i]));
                 }
                 return res;
             }));

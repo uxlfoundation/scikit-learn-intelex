@@ -140,7 +140,7 @@
 #define array_data(a)      PyArray_DATA((PyArrayObject *)a)
 #define array_size(a, i)   PyArray_DIM((PyArrayObject *)a, i)
 
-namespace oneapi::dal::python {
+namespace oneapi::dal::python::numpy {
 
 using npy_dtype_t = decltype(NPY_FLOAT);
 using npy_to_dal_t = std::map<npy_dtype_t, dal::data_type>;
@@ -152,4 +152,4 @@ const dal_to_npy_t &get_dal_to_npy_map();
 dal::data_type convert_npy_to_dal_type(npy_dtype_t);
 npy_dtype_t convert_dal_to_npy_type(dal::data_type);
 
-} // namespace oneapi::dal::python
+} // namespace oneapi::dal::python::numpy

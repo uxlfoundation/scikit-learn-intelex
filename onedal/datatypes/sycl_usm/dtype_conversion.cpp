@@ -21,10 +21,10 @@
 #include "oneapi/dal/common.hpp"
 #include "oneapi/dal/detail/common.hpp"
 
-#include "onedal/datatypes/utils/dtype_conversions.hpp"
-#include "onedal/datatypes/utils/dtype_dispatcher.hpp"
+#include "onedal/datatypes/sycl_usm/dtype_conversion.hpp"
+#include "onedal/datatypes/dtype_dispatcher.hpp"
 
-namespace oneapi::dal::python {
+namespace oneapi::dal::python::sycl_usm {
 
 using fwd_map_t = std::unordered_map<std::string, dal::data_type>;
 using inv_map_t = std::unordered_map<dal::data_type, std::string>;
@@ -139,4 +139,4 @@ std::string convert_dal_to_sua_type(dal::data_type dtype) {
     return get_inv_map().at(dtype);
 }
 
-} // namespace oneapi::dal::python
+} // namespace oneapi::dal::python::sycl_usm

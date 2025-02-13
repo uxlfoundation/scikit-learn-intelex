@@ -21,8 +21,11 @@
 [![PyPI Version](https://img.shields.io/pypi/v/daal4py)](https://pypi.org/project/daal4py/)
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/daal4py)](https://anaconda.org/conda-forge/daal4py)
 
+**IMPORTANT NOTICE**: `daal4py` has been merged into `scikit-learn-intelex`. As of version 2025.0, it is distributed as an additional importable module within the package `scikit-learn-intelex` instead of being a separate package. The last standalone release of `daal4py` was version 2024.7, and this standalone package will not receive further updates.
 
 A simplified API to Intel(R) oneAPI Data Analytics Library that allows for fast usage of the framework suited for Data Scientists or Machine Learning users.  Built to help provide an abstraction to Intel(R) oneAPI Data Analytics Library for either direct usage or integration into one's own framework.
+
+Note: For the most part, `daal4py` is used as an internal backend within the Intel(R) Scikit-Learn extension, and it is highly recommended to use `sklearnex` instead. Nevertheless, some functionalities from `daal4py` can still be of use, and the module can still be imported directly (`import daal4py`) after installing `scikit-learn-intelex`.
 
 ## 👀 Follow us on Medium
 
@@ -53,80 +56,38 @@ Report issues, ask questions, and provide suggestions using:
 You may reach out to project maintainers privately at onedal.maintainers@intel.com
 
 # 🛠 Installation
-daal4py is available at the [Python Package Index](https://pypi.org/project/daal4py/),
-on Anaconda Cloud in [Conda-Forge channel](https://anaconda.org/conda-forge/daal4py)
-and in [Intel channel](https://anaconda.org/intel/daal4py).
 
-```bash
-# PyPI (recommended by default)
-pip install daal4py
-```
+Daal4Py is distributed as part of scikit-learn-intelex, which itself is distributed under different channels.
 
-```bash
-# Anaconda Cloud from Conda-Forge channel (recommended for conda users by default)
-conda install daal4py -c conda-forge
-```
-
-```bash
-# Intel channel (recommended for Intel® Distribution for Python users)
-conda install daal4py -c https://software.repos.intel.com/python/conda/
-```
+See the [installation instructions for scikit-learn-intelex](https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/INSTALL.md) for details.
 
 ⚠️ Note: *GPU and MPI support are optional dependencies.
 Required dependencies for GPU and MPI support will not be downloaded.
-You need to manually install ***dpcpp_cpp_rt*** package for GPU support and ***impi_rt*** package for MPI support.*
+You need to manually install `dpcpp_cpp_rt` and `dpctl` packages for GPU support, and `mpi4py` with `impi_rt` as backend package for MPI support.*
 
 <details><summary>[Click to expand] ℹ️ How to install dpcpp_cpp_rt and impi_rt packages </summary>
 
-```bash
+```shell
 # PyPi for dpcpp
-pip install --upgrade dpcpp_cpp_rt
+pip install -U dpcpp_cpp_rt dpctl
 ```
 
-```bash
+```shell
 # PyPi for MPI
-pip install --upgrade impi_rt
+pip install -U mpi4py impi_rt
 ```
 
-```bash
-# Anaconda Cloud for dpcpp
-conda install dpcpp_cpp_rt -c intel
+```shell
+# Anaconda Cloud for dpcpp
+conda install dpcpp_cpp_rt dpctl -c https://software.repos.intel.com/python/conda/
 ```
 
-```bash
-# Anaconda Cloud for MPI
-conda install impi_rt -c intel
+```shell
+# Anaconda Cloud for MPI
+conda install mpi4py impi_rt -c https://software.repos.intel.com/python/conda/
 ```
-
-<details><summary>[Click to expand] ℹ️ Supported configurations </summary>
-
-#### 📦 PyPi channel
-
-| OS / Python version     | **Python 3.6** | **Python 3.7** | **Python 3.8**| **Python 3.9**|
-| :-----------------------| :------------: | :-------------:| :------------:| :------------:|
-|    **Linux**            |    [CPU, GPU]  |  [CPU, GPU]    |   [CPU, GPU]  |  [CPU, GPU]|  |
-|    **Windows**          |    [CPU, GPU]  |  [CPU, GPU]    |   [CPU, GPU]  |  [CPU, GPU]|  |
-|    **OsX**              |    [CPU]       |  [CPU]         |    [CPU]      |    [CPU]      |
-
-#### 📦 Anaconda Cloud: Conda-Forge channel
-
-| OS / Python version     | **Python 3.6** | **Python 3.7** | **Python 3.8**| **Python 3.9**|
-| :-----------------------| :------------: | :------------: | :------------:| :------------:|
-|    **Linux**            |   [CPU]        |   [CPU]        |     [CPU]     |     [CPU]     |
-|    **Windows**          |   [CPU]        |   [CPU]        |     [CPU]     |     [CPU]     |
-|    **OsX**              |   ❌           |     ❌        |     ❌        |       ❌     |
-
-#### 📦 Anaconda Cloud: Intel channel
-
-| OS / Python version     | **Python 3.6** | **Python 3.7** | **Python 3.8**| **Python 3.9**|
-| :-----------------------| :------------: | :-------------:| :------------:| :------------:|
-|    **Linux**            |   ❌          |     [CPU, GPU]  |     ❌       |      ❌       |
-|    **Windows**          |   ❌          |     [CPU, GPU]  |     ❌       |      ❌       |
-|    **OsX**              |   ❌          |     [CPU]       |     ❌       |      ❌       |
 
 </details>
-
-You can [build daal4py from sources](https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/INSTALL.md) as well.
 
 
 # ⚠️ Scikit-learn patching

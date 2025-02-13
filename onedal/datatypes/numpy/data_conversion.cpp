@@ -22,8 +22,8 @@
 #include "oneapi/dal/table/homogen.hpp"
 #include "oneapi/dal/table/detail/homogen_utils.hpp"
 
-#include "onedal/datatypes/data_conversion.hpp"
-#include "onedal/datatypes/utils/numpy_helpers.hpp"
+#include "onedal/datatypes/numpy/data_conversion.hpp"
+#include "onedal/datatypes/numpy/numpy_utils.hpp"
 #include "onedal/version.hpp"
 
 #if ONEDAL_VERSION <= 20230100
@@ -32,7 +32,7 @@
 #include "oneapi/dal/table/csr.hpp"
 #endif
 
-namespace oneapi::dal::python {
+namespace oneapi::dal::python::numpy {
 
 #if ONEDAL_VERSION <= 20230100
 typedef oneapi::dal::detail::csr_table csr_table_t;
@@ -154,8 +154,16 @@ inline csr_table_t convert_to_csr_impl(PyObject *py_data,
 
 dal::table convert_to_table(py::object inp_obj, py::object queue) {
     dal::table res;
+
+    PyObject *obj = inp_obj.ptr();
+
+    if (obj == nullptr || obj == Py_None) {
+        return res;
+    }
+
 #ifdef ONEDAL_DATA_PARALLEL
-    if (!queue.is(py::none()) && !queue.attr("sycl_device").attr("has_aspect_fp64").cast<bool>()) {
+    if (!queue.is(py::none()) && !queue.attr("sycl_device").attr("has_aspect_fp64").cast<bool>() &&
+        hasattr(inp_obj, "dtype")) {
         // If the queue exists, doesn't have the fp64 aspect, and the data is float64
         // then cast it to float32
         int type = reinterpret_cast<PyArray_Descr *>(inp_obj.attr("dtype").ptr())->type_num;
@@ -173,11 +181,6 @@ dal::table convert_to_table(py::object inp_obj, py::object queue) {
     }
 #endif // ONEDAL_DATA_PARALLEL
 
-    PyObject *obj = inp_obj.ptr();
-
-    if (obj == nullptr || obj == Py_None) {
-        return res;
-    }
     if (is_array(obj)) {
         PyArrayObject *ary = reinterpret_cast<PyArrayObject *>(obj);
 
@@ -429,4 +432,4 @@ PyObject *convert_to_pyobject(const dal::table &input) {
     return res;
 }
 
-} // namespace oneapi::dal::python
+} // namespace oneapi::dal::python::numpy

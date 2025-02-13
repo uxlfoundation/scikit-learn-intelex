@@ -339,6 +339,27 @@ def gen_dataset(
     return output
 
 
+def gen_sparse_dataset(row_count, column_count, **kwargs):
+    """Generate sparse dataset for pytest testing.
+
+    Parameters
+    ----------
+    row_count : number of rows in dataset
+
+    column_count: number of columns in dataset
+
+    kwargs: keyword arguments for scipy.sparse.random_array or scipy.sparse.random
+
+    Returns
+    -------
+    scipy.sparse random matrix or array depending on scipy version
+    """
+    if hasattr(sp, "random_array"):
+        return sp.random_array((row_count, column_count), **kwargs)
+    else:
+        return sp.random(row_count, column_count, **kwargs)
+
+
 DTYPES = [
     np.int8,
     np.int16,

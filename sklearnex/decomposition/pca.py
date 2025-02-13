@@ -19,6 +19,8 @@ import logging
 from daal4py.sklearn._utils import daal_check_version
 from sklearnex._config import get_config
 
+from .._utils import PatchableEstimator
+
 if daal_check_version((2024, "P", 100)):
     import numbers
     from math import sqrt
@@ -51,7 +53,7 @@ if daal_check_version((2024, "P", 100)):
         validate_data = _sklearn_PCA._validate_data
 
     @control_n_jobs(decorated_methods=["fit", "transform", "fit_transform"])
-    class PCA(_sklearn_PCA):
+    class PCA(PatchableEstimator, _sklearn_PCA):
         __doc__ = _sklearn_PCA.__doc__
 
         if sklearn_check_version("1.2"):
