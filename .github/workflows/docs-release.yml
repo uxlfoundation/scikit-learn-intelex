@@ -123,7 +123,8 @@ jobs:
         # Rename current latest to its version number
         if [ -d "latest" ] && [ ! -z "$CURRENT_VERSION" ]; then
           mv latest "$CURRENT_VERSION"
-          echo "Renamed latest to $CURRENT_VERSION"
+          # Add old latest version to git
+          git add $CURRENT_VERSION
         fi
         # Move the new versioned folder to the correct location
         cp -R "$DEPLOY_DIR/$SHORT_DOC_VERSION" latest
