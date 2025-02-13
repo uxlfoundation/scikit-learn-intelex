@@ -18,7 +18,7 @@ name: Docs Release
 on:
   push:
     tags:
-      - "[0-9]*.[0-9]*.[0-9]*"  # Trigger on tag pushes
+      - "\d{4}\.\d{1,2}\.\d"  # Trigger on tag pushes
 
 permissions:
   contents: write
@@ -43,23 +43,17 @@ jobs:
 
     - name: Extract Tag Version
       run: |
-        echo "GITHUB_REF: $GITHUB_REF"
         export DOC_VERSION="${GITHUB_REF#refs/tags/}"
-        # Error iif cannot find version
+        # Error out if cannot find version
         if [ -z "$DOC_VERSION" ]; then
           echo "ERROR: Failed to determine documentation version."
           exit 1
         fi
         export SHORT_DOC_VERSION=$(echo "$DOC_VERSION" | awk -F'.' '{print $1"."$2}')
-        echo "DOC_VERSION: $DOC_VERSION $SHORT_DOC_VERSION"
-        echo "doc version can be found"
         # export env var in other files
         echo "DOC_VERSION=$DOC_VERSION" >> $GITHUB_ENV
         echo "SHORT_DOC_VERSION=$SHORT_DOC_VERSION" >> $GITHUB_ENV
-        echo "can set short doc version"
-
-
-    - name: Checkout release brance
+    - name: Checkout release branch
       run: |
         if git checkout $DOC_VERSION 2>/dev/null; then
           echo "Successfully checked out tag $DOC_VERSION."
@@ -68,8 +62,6 @@ jobs:
             exit 1
         fi
         git branch
-        echo "Can checkout release brance"
-    
     - name: Install Python Dependencies
       run: |
         pip install daal-devel impi-devel
@@ -77,51 +69,30 @@ jobs:
         pip install -r requirements-doc.txt
         pip install -r requirements-test.txt
         pip list
-
     - name: Build daal4py/sklearnex
       run: |
         export DALROOT=$(dirname $(dirname $(which python)))
         export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
         ./conda-recipe/build.sh
-
-    - name: Build daal4py Documentation
-      run: |
-        export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
-        cd doc/daal4py
-        make html 2>&1 | tee build.log
-        cat build.log
-        if grep -i "autodoc" build.log; then
-          echo "Autodoc Warnings detected, build failed!"
-          exit 1
-        fi
-
     - name: Build scikit-learn-intelex Documentation
       run: |
         export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
         cd doc
         ./build-doc.sh --gh-pages
-        echo "doc build folder"
         ls _build/scikit-learn-intelex
-
     - name: Modify version json file
       run: |
         BUILD_DIR="doc/_build/scikit-learn-intelex"
         echo "BUILD_DIR=$BUILD_DIR" >> $GITHUB_ENV
-
         export VERSIONS_FILE="$BUILD_DIR/versions.json"
-        
+        # Exit if cannot get versions file in build
         if [ ! -f "$VERSIONS_FILE" ]; then
           echo "ERROR: $VERSIONS_FILE does not exist!"
           exit 1
         fi
-
+        # Add new section in versions file and replace latest with new version
         jq --arg version "$SHORT_DOC_VERSION" '. |= [{"name": $version, "version": $version, "url": ("/scikit-learn-intelex/" + $version + "/")}] + .' "$VERSIONS_FILE" > tmp.json && mv tmp.json "$VERSIONS_FILE"
         jq --arg version "$SHORT_DOC_VERSION" '(.[] | select(.name == "latest")) .version = $version' "$VERSIONS_FILE" > tmp.json && mv tmp.json "$VERSIONS_FILE"
-
-        echo "Updated versions.json:"
-        cat "$VERSIONS_FILE"
-        ls
-
     - name: Deploy Documentation to gh-pages
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -129,53 +100,36 @@ jobs:
         # Set git auth for push changes 
         git config --global user.name "GitHub Actions"
         git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
         # Define paths
         DEPLOY_DIR="/tmp/gh-pages-deploy"
-
         # Ensure the build directory exists
         if [ ! -d "$BUILD_DIR" ]; then
             echo "ERROR: Documentation build directory not found!"
             exit 1
         fi
-
         # Copy built documentation to a temp location
         mkdir -p "$DEPLOY_DIR"
         cp -R "$BUILD_DIR"/* "$DEPLOY_DIR"
         ls $DEPLOY_DIR
-
         # Checkout gh-pages branch
         if git fetch origin gh-pages; then
           git checkout gh-pages
         else
           git checkout -b gh-pages
         fi
-
-        #TODO delete this temp code
-        BACKUP_DIR="backup"
-        mkdir -p "$BACKUP_DIR"
-        cp -R latest "$BACKUP_DIR/latest_backup"
-        cp versions.json "$BACKUP_DIR/versions.json_backup"
-        cp index.html "$BACKUP_DIR/index.html_backup"
-
-
-
-        echo "cur after checkout to gh-pages"
-        ls
-
+        # Read current version from versions.json
+        CURRENT_VERSION=$(jq -r '.[] | select(.name == "latest") | .version' versions.json)
+        echo "Current version is: $CURRENT_VERSION"
+        # Rename current latest to its version number
+        if [ -d "latest" ] && [ ! -z "$CURRENT_VERSION" ]; then
+          mv latest "$CURRENT_VERSION"
+          echo "Renamed latest to $CURRENT_VERSION"
+        fi
         # Move the new versioned folder to the correct location
-        rm -rf latest
         cp -R "$DEPLOY_DIR/$SHORT_DOC_VERSION" latest
         cp "$DEPLOY_DIR/index.html" .
         cp "$DEPLOY_DIR/versions.json" .
-
-        echo "cur after move folder in"
-        ls
-        cat versions.json
-        ls latest
-
         # Commit and push changes
-        git add .
-        git commit -m "Automatic doc update for version $DOC_VERSION"
+        git commit . -m "Automatic doc update for version $DOC_VERSION"
         git push origin gh-pages
 
