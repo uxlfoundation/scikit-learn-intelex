@@ -106,8 +106,9 @@ jobs:
         fi
         
         # Move the new versioned folder to the correct location
-        rm -rf latest && cp -R "$DEPLOY_DIR/$SHORT_DOC_VERSION" latest # Make sure delete finish before cp
+        rm -rf latest
         cp -R "$DEPLOY_DIR/$SHORT_DOC_VERSION" "$SHORT_DOC_VERSION"
+        cp -R "$SHORT_DOC_VERSION" latest
         cp "$DEPLOY_DIR/index.html" .
         
         # Generate versions.json by scanning for year.month folders
