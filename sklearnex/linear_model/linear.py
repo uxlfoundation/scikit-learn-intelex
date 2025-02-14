@@ -255,11 +255,10 @@ class LinearRegression(PatchableEstimator, _sklearn_LinearRegression):
             "multi_output": supports_multi_output,
         }
 
-        if get_config()["use_raw_input"] is False:
-            if sklearn_check_version("1.0"):
-                X, y = validate_data(self, **check_params)
-            else:
-                X, y = check_X_y(**check_params)
+        if sklearn_check_version("1.0"):
+            X, y = validate_data(self, **check_params)
+        else:
+            X, y = check_X_y(**check_params)
 
         if sklearn_check_version("1.0") and not sklearn_check_version("1.2"):
             self._normalize = _deprecate_normalize(

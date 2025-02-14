@@ -23,6 +23,7 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
+from sklearnex import set_config
 from sklearnex.tests.utils.spmd import (
     _generate_classification_data,
     _get_local_tensor,
@@ -114,8 +115,11 @@ def test_logistic_spmd_gold(dataframe, queue):
     get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("use_raw_input", [True, False])
 @pytest.mark.mpi
-def test_logistic_spmd_synthetic(n_samples, n_features, C, tol, dataframe, queue, dtype):
+def test_logistic_spmd_synthetic(
+    n_samples, n_features, C, tol, dataframe, queue, dtype, use_raw_input
+):
     # TODO: Resolve numerical issues when n_rows_rank < n_cols
     if n_samples <= n_features:
         pytest.skip("Numerical issues when rank rows < columns")
@@ -123,6 +127,9 @@ def test_logistic_spmd_synthetic(n_samples, n_features, C, tol, dataframe, queue
     # Import spmd and batch algo
     from sklearnex.linear_model import LogisticRegression as LogisticRegression_Batch
     from sklearnex.spmd.linear_model import LogisticRegression as LogisticRegression_SPMD
+
+    # Set config to use raw input
+    set_config(use_raw_input=use_raw_input)
 
     # Generate data and convert to dataframe
     X_train, X_test, y_train, _ = _generate_classification_data(

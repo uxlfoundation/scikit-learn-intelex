@@ -24,17 +24,13 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
-from sklearnex._config import config_context
 from sklearnex.basic_statistics import IncrementalBasicStatistics
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 @pytest.mark.parametrize("weighted", [True, False])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-@pytest.mark.parametrize("use_raw_input", [True, False])
-def test_partial_fit_multiple_options_on_gold_data(
-    skip_unsupported_raw_input, dataframe, queue, weighted, dtype, use_raw_input
-):
+def test_partial_fit_multiple_options_on_gold_data(dataframe, queue, weighted, dtype):
     X = np.array([[0, 0], [1, 1]])
     X = X.astype(dtype=dtype)
     X_split = np.array_split(X, 2)
@@ -44,18 +40,17 @@ def test_partial_fit_multiple_options_on_gold_data(
         weights_split = np.array_split(weights, 2)
 
     incbs = IncrementalBasicStatistics()
-    with config_context(use_raw_input=use_raw_input):
-        for i in range(2):
-            X_split_df = _convert_to_dataframe(
-                X_split[i], sycl_queue=queue, target_df=dataframe
+    for i in range(2):
+        X_split_df = _convert_to_dataframe(
+            X_split[i], sycl_queue=queue, target_df=dataframe
+        )
+        if weighted:
+            weights_split_df = _convert_to_dataframe(
+                weights_split[i], sycl_queue=queue, target_df=dataframe
             )
-            if weighted:
-                weights_split_df = _convert_to_dataframe(
-                    weights_split[i], sycl_queue=queue, target_df=dataframe
-                )
-                result = incbs.partial_fit(X_split_df, sample_weight=weights_split_df)
-            else:
-                result = incbs.partial_fit(X_split_df)
+            result = incbs.partial_fit(X_split_df, sample_weight=weights_split_df)
+        else:
+            result = incbs.partial_fit(X_split_df)
 
     if weighted:
         expected_weighted_mean = np.array([0.25, 0.25])

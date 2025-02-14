@@ -23,6 +23,7 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
+from sklearnex import set_config
 from sklearnex.tests.utils.spmd import (
     _generate_statistic_data,
     _get_local_tensor,
@@ -80,11 +81,17 @@ def test_basic_stats_spmd_gold(dataframe, queue):
     "dataframe,queue",
     get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
 )
+@pytest.mark.parametrize("use_raw_input", [True, False])
 @pytest.mark.mpi
-def test_basic_stats_spmd_synthetic(n_samples, n_features, dataframe, queue, dtype):
+def test_basic_stats_spmd_synthetic(
+    n_samples, n_features, dataframe, queue, dtype, use_raw_input
+):
     # Import spmd and batch algo
     from onedal.basic_statistics import BasicStatistics as BasicStatistics_Batch
     from sklearnex.spmd.basic_statistics import BasicStatistics as BasicStatistics_SPMD
+
+    # Set config to use raw input
+    set_config(use_raw_input=use_raw_input)
 
     # Generate data and convert to dataframe
     data = _generate_statistic_data(n_samples, n_features, dtype=dtype)

@@ -27,7 +27,6 @@ from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal.basic_statistics import BasicStatistics as onedal_BasicStatistics
 from onedal.utils import _is_csr
 
-from .._config import get_config
 from .._device_offload import dispatch
 from .._utils import IntelEstimator, PatchingConditionsChain
 
@@ -205,20 +204,19 @@ class BasicStatistics(IntelEstimator, BaseEstimator):
         if sklearn_check_version("1.2"):
             self._validate_params()
 
-        if get_config()["use_raw_input"] is False:
-            if sklearn_check_version("1.0"):
-                X = validate_data(
-                    self,
-                    X,
-                    dtype=[np.float64, np.float32],
-                    ensure_2d=False,
-                    accept_sparse="csr",
-                )
-            else:
-                X = check_array(X, dtype=[np.float64, np.float32])
+        if sklearn_check_version("1.0"):
+            X = validate_data(
+                self,
+                X,
+                dtype=[np.float64, np.float32],
+                ensure_2d=False,
+                accept_sparse="csr",
+            )
+        else:
+            X = check_array(X, dtype=[np.float64, np.float32])
 
-            if sample_weight is not None:
-                sample_weight = _check_sample_weight(sample_weight, X)
+        if sample_weight is not None:
+            sample_weight = _check_sample_weight(sample_weight, X)
 
         onedal_params = {
             "result_options": self.result_options,

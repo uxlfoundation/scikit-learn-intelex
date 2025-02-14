@@ -22,6 +22,7 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
+from sklearnex import set_config
 from sklearnex.tests.utils.spmd import (
     _assert_unordered_allclose,
     _generate_classification_data,
@@ -111,6 +112,7 @@ def test_knncls_spmd_gold(dataframe, queue):
     get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("use_raw_input", [True, False])
 @pytest.mark.mpi
 def test_knncls_spmd_synthetic(
     n_samples,
@@ -120,12 +122,16 @@ def test_knncls_spmd_synthetic(
     dataframe,
     queue,
     dtype,
+    use_raw_input,
     metric="euclidean",
 ):
     n_features, n_classes = n_features_and_classes
     # Import spmd and batch algo
     from sklearnex.neighbors import KNeighborsClassifier as KNeighborsClassifier_Batch
     from sklearnex.spmd.neighbors import KNeighborsClassifier as KNeighborsClassifier_SPMD
+
+    # Set config to use raw input
+    set_config(use_raw_input=use_raw_input)
 
     # Generate data and convert to dataframe
     X_train, X_test, y_train, _ = _generate_classification_data(
@@ -244,13 +250,25 @@ def test_knnreg_spmd_gold(dataframe, queue):
     get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("use_raw_input", [True, False])
 @pytest.mark.mpi
 def test_knnreg_spmd_synthetic(
-    n_samples, n_features, n_neighbors, weights, metric, dataframe, queue, dtype
+    n_samples,
+    n_features,
+    n_neighbors,
+    weights,
+    metric,
+    dataframe,
+    queue,
+    dtype,
+    use_raw_input,
 ):
     # Import spmd and batch algo
     from sklearnex.neighbors import KNeighborsRegressor as KNeighborsRegressor_Batch
     from sklearnex.spmd.neighbors import KNeighborsRegressor as KNeighborsRegressor_SPMD
+
+    # Set config to use raw input
+    set_config(use_raw_input=use_raw_input)
 
     # Generate data and convert to dataframe
     X_train, X_test, y_train, _ = _generate_regression_data(

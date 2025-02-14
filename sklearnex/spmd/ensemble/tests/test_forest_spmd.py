@@ -22,6 +22,7 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
+from sklearnex import set_config
 from sklearnex.tests.utils.spmd import (
     _generate_classification_data,
     _generate_regression_data,
@@ -108,9 +109,17 @@ def test_rfcls_spmd_gold(dataframe, queue):
     get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("use_raw_input", [True, False])
 @pytest.mark.mpi
 def test_rfcls_spmd_synthetic(
-    n_samples, n_features_and_classes, n_estimators, max_depth, dataframe, queue, dtype
+    n_samples,
+    n_features_and_classes,
+    n_estimators,
+    max_depth,
+    dataframe,
+    queue,
+    dtype,
+    use_raw_input,
 ):
     n_features, n_classes = n_features_and_classes
     # Import spmd and batch algo
@@ -118,6 +127,9 @@ def test_rfcls_spmd_synthetic(
     from sklearnex.spmd.ensemble import (
         RandomForestClassifier as RandomForestClassifier_SPMD,
     )
+
+    # Set config to use raw input
+    set_config(use_raw_input=use_raw_input)
 
     # Generate data and convert to dataframe
     X_train, X_test, y_train, _ = _generate_classification_data(
@@ -225,15 +237,19 @@ def test_rfreg_spmd_gold(dataframe, queue):
     get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("use_raw_input", [True, False])
 @pytest.mark.mpi
 def test_rfreg_spmd_synthetic(
-    n_samples, n_features, n_estimators, max_depth, dataframe, queue, dtype
+    n_samples, n_features, n_estimators, max_depth, dataframe, queue, dtype, use_raw_input
 ):
     # Import spmd and batch algo
     from sklearnex.ensemble import RandomForestRegressor as RandomForestRegressor_Batch
     from sklearnex.spmd.ensemble import (
         RandomForestRegressor as RandomForestRegressor_SPMD,
     )
+
+    # Set config to use raw input
+    set_config(use_raw_input=use_raw_input)
 
     # Generate data and convert to dataframe
     X_train, X_test, y_train, _ = _generate_regression_data(
