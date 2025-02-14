@@ -81,7 +81,7 @@ class BaseForest(PatchableEstimator, ABC):
     _onedal_factory = None
 
     def _onedal_fit(self, X, y, sample_weight=None, queue=None):
-        use_raw_input = get_config()["use_raw_input"]
+        use_raw_input = get_config().get("use_raw_input", False) is True]
         xp, _ = get_namespace(X)
         if not use_raw_input:
             X, y = validate_data(
@@ -169,10 +169,7 @@ class BaseForest(PatchableEstimator, ABC):
 
         # Compute
         self._onedal_estimator = self._onedal_factory(**onedal_params)
-        if use_raw_input:
-            self._onedal_estimator.fit(X, y, sample_weight, queue=queue)
-        else:
-            self._onedal_estimator.fit(X, np.ravel(y), sample_weight, queue=queue)
+        self._onedal_estimator.fit(X, np.ravel(y), sample_weight, queue=queue)
 
         self._save_attributes()
 
@@ -845,6 +842,7 @@ class ForestClassifier(_sklearn_ForestClassifier, BaseForest):
             self._check_n_features(X, reset=False)
 
         res = self._onedal_estimator.predict(X, queue=queue)
+        # TODO: clean up before merge
         try:
             return xp.take(
                 self.classes_, xp.astype(xp.reshape(res, -1), xp.int64, casting="unsafe")
@@ -853,8 +851,7 @@ class ForestClassifier(_sklearn_ForestClassifier, BaseForest):
             return np.take(self.classes_, res.ravel().astype(np.int64, casting="unsafe"))
 
     def _onedal_predict_proba(self, X, queue=None):
-        xp, _ = get_namespace(X)
-        use_raw_input = get_config()["use_raw_input"]
+        use_raw_input = get_config().get("use_raw_input", False) is True]
         if not use_raw_input:
             if sklearn_check_version("1.0"):
                 X = validate_data(
@@ -865,14 +862,13 @@ class ForestClassifier(_sklearn_ForestClassifier, BaseForest):
                     reset=False,
                     ensure_2d=True,
                 )
-            # sklearn version < 1.0 is not supported
-            # else:
-            #     X = check_array(
-            #         X,
-            #         dtype=[np.float64, np.float32],
-            #         force_all_finite=False,
-            #     )  # Warning, order of dtype matters
-            #     self._check_n_features(X, reset=False)
+            else:
+                X = check_array(
+                    X,
+                    dtype=[np.float64, np.float32],
+                    force_all_finite=False,
+                )  # Warning, order of dtype matters
+                self._check_n_features(X, reset=False)
 
         return self._onedal_estimator.predict_proba(X, queue=queue)
 
@@ -1161,7 +1157,7 @@ class ForestRegressor(_sklearn_ForestRegressor, BaseForest):
 
     def _onedal_predict(self, X, queue=None):
         check_is_fitted(self, "_onedal_estimator")
-        use_raw_input = get_config()["use_raw_input"]
+        use_raw_input = get_config().get("use_raw_input", False) is True]
 
         if not use_raw_input:
             if sklearn_check_version("1.0"):
@@ -1173,11 +1169,10 @@ class ForestRegressor(_sklearn_ForestRegressor, BaseForest):
                     reset=False,
                     ensure_2d=True,
                 )  # Warning, order of dtype matters
-            # sklearn version < 1.0 is not supported
-            # else:
-            #     X = check_array(
-            #         X, dtype=[np.float64, np.float32], force_all_finite=False
-            #     )  # Warning, order of dtype matters
+            else:
+                X = check_array(
+                    X, dtype=[np.float64, np.float32], force_all_finite=False
+                )  # Warning, order of dtype matters
 
         return self._onedal_estimator.predict(X, queue=queue)
 
