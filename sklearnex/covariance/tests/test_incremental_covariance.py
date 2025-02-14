@@ -43,7 +43,6 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
-from sklearnex import config_context
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -143,7 +142,7 @@ def test_sklearnex_partial_fit_on_random_data(
         X_split_df = _convert_to_dataframe(
             X_split[i], sycl_queue=queue, target_df=dataframe
         )
-        result = inccov.partial_fit(X_split_df, check_input=not use_raw_input)
+        result = inccov.partial_fit(X_split_df)
 
     expected_covariance = np.cov(X.T, bias=1)
     expected_means = np.mean(X, axis=0)

@@ -254,7 +254,6 @@ class LinearRegression(PatchableEstimator, _sklearn_LinearRegression):
             "y_numeric": True,
             "multi_output": supports_multi_output,
         }
-
         if sklearn_check_version("1.0"):
             X, y = validate_data(self, **check_params)
         else:
