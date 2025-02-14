@@ -99,14 +99,13 @@ jobs:
         ls $DEPLOY_DIR
         
         # Checkout gh-pages branch
-        if git fetch origin gh-pages; then
-          git checkout gh-pages
-        else
-          git checkout -b gh-pages
+        if ! git checkout gh-pages; then
+            echo "ERROR: Could not checkout gh-pages branch!"
+            exit 1
         fi
         
         # Move the new versioned folder to the correct location
-        rm -rf latest
+        rm -Rf latest
         cp -R "$DEPLOY_DIR/$SHORT_DOC_VERSION" "$SHORT_DOC_VERSION"
         cp -R "$DEPLOY_DIR/$SHORT_DOC_VERSION" latest
         cp "$DEPLOY_DIR/index.html" .
@@ -127,6 +126,8 @@ jobs:
         # Commit and push changes
         git add "$SHORT_DOC_VERSION"
         git add latest
+        git add versions.json
+        git add index.html
         git commit . -m "Automatic doc update for version $DOC_VERSION"
         git push origin gh-pages
 
