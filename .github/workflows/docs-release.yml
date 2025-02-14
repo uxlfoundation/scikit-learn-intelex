@@ -107,17 +107,8 @@ jobs:
         
         # Move the new versioned folder to the correct location
         rm -rf latest
-        mkdir latest
         cp -R "$DEPLOY_DIR/$SHORT_DOC_VERSION" "$SHORT_DOC_VERSION"
-        rsync -av --delete --copy-links --copy-dirlinks "$SHORT_DOC_VERSION/" latest/
-        # Verify directories are identical
-        if ! diff -r "$SHORT_DOC_VERSION" latest; then
-            echo "ERROR: Directories are not identical after sync!"
-            echo "Differences found:"
-            diff -r "$SHORT_DOC_VERSION" latest
-            exit 1
-        fi
-
+        cp -R "$DEPLOY_DIR/$SHORT_DOC_VERSION" latest
         cp "$DEPLOY_DIR/index.html" .
         
         # Generate versions.json by scanning for year.month folders
@@ -135,6 +126,7 @@ jobs:
         
         # Commit and push changes
         git add "$SHORT_DOC_VERSION"
+        git add latest
         git commit . -m "Automatic doc update for version $DOC_VERSION"
         git push origin gh-pages
 
