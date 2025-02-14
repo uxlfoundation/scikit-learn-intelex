@@ -109,6 +109,12 @@ jobs:
         cp -R "$DEPLOY_DIR/$SHORT_DOC_VERSION" "$SHORT_DOC_VERSION"
         cp -R "$DEPLOY_DIR/$SHORT_DOC_VERSION" latest
         cp "$DEPLOY_DIR/index.html" .
+        if ! diff -r "$SHORT_DOC_VERSION" latest > /dev/null; then
+            echo "ERROR: Content mismatch between $SHORT_DOC_VERSION and latest directories"
+            echo "Differences found:"
+            diff -r "$SHORT_DOC_VERSION" latest
+            exit 1
+        fi
         
         # Generate versions.json by scanning for year.month folders
         echo "[" > versions.json
@@ -124,8 +130,8 @@ jobs:
         cat versions.json
         
         # Commit and push changes
-        git add "$SHORT_DOC_VERSION"
-        git add latest
+        git add -A "$SHORT_DOC_VERSION"
+        git add -A latest
         git add versions.json
         git add index.html
         git commit . -m "Automatic doc update for version $DOC_VERSION"

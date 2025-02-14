@@ -45,7 +45,6 @@ author = "Intel"
 # Note: it should not have more than  two parts (year.month), otherwise the
 # version switcher will not be able to pick it.
 version = os.environ.get("SHORT_DOC_VERSION", "latest")
-print(version)
 release = version
 
 # -- General configuration ---------------------------------------------------
