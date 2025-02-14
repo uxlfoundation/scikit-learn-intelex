@@ -107,7 +107,7 @@ jobs:
         
         # Move the new versioned folder to the correct location
         cp -R "$DEPLOY_DIR/$SHORT_DOC_VERSION" "$SHORT_DOC_VERSION"
-        rsync -av --delete "$SHORT_DOC_VERSION/" latest/
+        rsync -av --delete --copy-links --copy-dirlinks "$SHORT_DOC_VERSION/" latest/
         cp "$DEPLOY_DIR/index.html" .
         
         # Generate versions.json by scanning for year.month folders
