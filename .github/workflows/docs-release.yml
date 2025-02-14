@@ -78,19 +78,6 @@ jobs:
         cd doc
         ./build-doc.sh --gh-pages
         ls _build/scikit-learn-intelex
-    - name: Modify version json file
-      run: |
-        BUILD_DIR="doc/_build/scikit-learn-intelex"
-        echo "BUILD_DIR=$BUILD_DIR" >> $GITHUB_ENV
-        export VERSIONS_FILE="$BUILD_DIR/versions.json"
-        # Exit if cannot get versions file in build
-        if [ ! -f "$VERSIONS_FILE" ]; then
-          echo "ERROR: $VERSIONS_FILE does not exist!"
-          exit 1
-        fi
-        # Add new section in versions file and replace latest with new version
-        jq --arg version "$SHORT_DOC_VERSION" '. |= [{"name": $version, "version": $version, "url": ("/scikit-learn-intelex/" + $version + "/")}] + .' "$VERSIONS_FILE" > tmp.json && mv tmp.json "$VERSIONS_FILE"
-        jq --arg version "$SHORT_DOC_VERSION" '(.[] | select(.name == "latest")) .version = $version' "$VERSIONS_FILE" > tmp.json && mv tmp.json "$VERSIONS_FILE"
     - name: Deploy Documentation to gh-pages
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -98,6 +85,7 @@ jobs:
         # Set git auth for push changes 
         git config --global user.name "GitHub Actions"
         git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        
         # Define paths
         DEPLOY_DIR="/tmp/gh-pages-deploy"
         # Ensure the build directory exists
@@ -105,22 +93,38 @@ jobs:
             echo "ERROR: Documentation build directory not found!"
             exit 1
         fi
+        
         # Copy built documentation to a temp location
         mkdir -p "$DEPLOY_DIR"
         cp -R "$BUILD_DIR"/* "$DEPLOY_DIR"
         ls $DEPLOY_DIR
+        
         # Checkout gh-pages branch
         if git fetch origin gh-pages; then
           git checkout gh-pages
         else
           git checkout -b gh-pages
         fi
+        
         # Move the new versioned folder to the correct location
         rm -rf latest 
         cp -R "$DEPLOY_DIR/$SHORT_DOC_VERSION" latest
         cp -R "$DEPLOY_DIR/$SHORT_DOC_VERSION" "$SHORT_DOC_VERSION"
         cp "$DEPLOY_DIR/index.html" .
-        cp "$DEPLOY_DIR/versions.json" .
+        
+        # Generate versions.json by scanning for year.month folders
+        echo "[" > versions.json
+        # Add latest entry first
+        echo '  {"name": "latest", "version": "'$SHORT_DOC_VERSION'", "url": "/scikit-learn-intelex/latest/"},' >> versions.json
+        # Add all year.month folders
+        for version in $(ls -d [0-9][0-9][0-9][0-9].[0-9]* 2>/dev/null || true); do
+          echo '  {"name": "'$version'", "version": "'$version'", "url": "/scikit-learn-intelex/'$version'/"},'
+        done | sort -u >> versions.json
+        # Remove trailing comma and close array
+        sed -i '$ s/,$//' versions.json
+        echo "]" >> versions.json
+        cat versions.json
+        
         # Commit and push changes
         git add "$SHORT_DOC_VERSION"
         git commit . -m "Automatic doc update for version $DOC_VERSION"

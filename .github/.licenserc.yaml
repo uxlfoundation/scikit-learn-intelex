@@ -54,7 +54,6 @@ header:
     - 'doc/sources/_templates/versions.html'
     - 'doc/daal4py/third-party-programs.txt'
     - 'doc/third-party-programs-sklearnex.txt'
-    - 'doc/versions.json'
     # requirements
     - 'dependencies-dev'
     - 'requirements*.txt'

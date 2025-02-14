@@ -153,12 +153,10 @@ html_theme_options = {
     "titles_only": False,
 }
 
-switcher_url = "/scikit-learn-intelex/versions.json"
 
 html_context = {
     "current_version": version,
     "project_name": "scikit-learn-intelex",
-    "switcher_url": switcher_url,
 }
 
 
