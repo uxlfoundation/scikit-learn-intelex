@@ -22,6 +22,7 @@ from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal.decomposition import IncrementalPCA as onedal_IncrementalPCA
 
+from ..._config import get_config
 from ..._device_offload import dispatch, wrap_output_data
 from ..._utils import IntelEstimator, PatchingConditionsChain
 
@@ -36,21 +37,22 @@ else:
 )
 class IncrementalPCA(IntelEstimator, _sklearn_IncrementalPCA):
 
+    _need_to_finalize_attrs = {
+        "mean_",
+        "explained_variance_",
+        "explained_variance_ratio_",
+        "n_components_",
+        "components_",
+        "noise_variance_",
+        "singular_values_",
+        "var_",
+    }
+
     def __init__(self, n_components=None, *, whiten=False, copy=True, batch_size=None):
         super().__init__(
             n_components=n_components, whiten=whiten, copy=copy, batch_size=batch_size
         )
         self._need_to_finalize = False
-        self._need_to_finalize_attrs = {
-            "mean_",
-            "explained_variance_",
-            "explained_variance_ratio_",
-            "n_components_",
-            "components_",
-            "noise_variance_",
-            "singular_values_",
-            "var_",
-        }
 
     _onedal_incremental_pca = staticmethod(onedal_IncrementalPCA)
 
@@ -58,7 +60,9 @@ class IncrementalPCA(IntelEstimator, _sklearn_IncrementalPCA):
         assert hasattr(self, "_onedal_estimator")
         if self._need_to_finalize:
             self._onedal_finalize_fit()
-        X = check_array(X, dtype=[np.float64, np.float32])
+        use_raw_input = get_config().get("use_raw_input", False) is True
+        if not use_raw_input:
+            X = check_array(X, dtype=[np.float64, np.float32])
         return self._onedal_estimator.predict(X, queue)
 
     def _onedal_fit_transform(self, X, queue=None):
@@ -68,6 +72,9 @@ class IncrementalPCA(IntelEstimator, _sklearn_IncrementalPCA):
     def _onedal_partial_fit(self, X, check_input=True, queue=None):
         first_pass = not hasattr(self, "_onedal_estimator")
 
+        use_raw_input = get_config().get("use_raw_input", False) is True
+        # never check input when using raw input
+        check_input &= use_raw_input is False
         if check_input:
             if sklearn_check_version("1.0"):
                 X = validate_data(
@@ -120,17 +127,19 @@ class IncrementalPCA(IntelEstimator, _sklearn_IncrementalPCA):
         self._need_to_finalize = False
 
     def _onedal_fit(self, X, queue=None):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
+        use_raw_input = get_config().get("use_raw_input", False) is True
+        if not use_raw_input:
+            if sklearn_check_version("1.2"):
+                self._validate_params()
 
-        if sklearn_check_version("1.0"):
-            X = validate_data(self, X, dtype=[np.float64, np.float32], copy=self.copy)
-        else:
-            X = check_array(
-                X,
-                dtype=[np.float64, np.float32],
-                copy=self.copy,
-            )
+            if sklearn_check_version("1.0"):
+                X = validate_data(self, X, dtype=[np.float64, np.float32], copy=self.copy)
+            else:
+                X = check_array(
+                    X,
+                    dtype=[np.float64, np.float32],
+                    copy=self.copy,
+                )
 
         n_samples, n_features = X.shape
 
@@ -161,18 +170,20 @@ class IncrementalPCA(IntelEstimator, _sklearn_IncrementalPCA):
     _onedal_gpu_supported = _onedal_supported
 
     def __getattr__(self, attr):
-        if attr in self._need_to_finalize_attrs:
-            if hasattr(self, "_onedal_estimator"):
-                if self._need_to_finalize:
-                    self._onedal_finalize_fit()
-                return getattr(self._onedal_estimator, attr)
-            else:
+        # finalize the fit if requested attribute requires it
+        if attr in IncrementalPCA._need_to_finalize_attrs:
+            if "_onedal_estimator" not in self.__dict__:
+                # _onedal_estimator required to finalize the fit
                 raise AttributeError(
-                    f"'{self.__class__.__name__}' object has no attribute '{attr}'"
+                    f"Requested postfit attribute '{attr}' before fitting the model."
                 )
-        if attr in self.__dict__:
-            return self.__dict__[attr]
-
+            if self.__dict__["_need_to_finalize"]:
+                self._onedal_finalize_fit()
+        # join attributes of the class and the onedal_estimator to provide common interface
+        joined = self.__dict__ | self.__dict__.get("_onedal_estimator", {}).__dict__
+        if attr in joined:
+            return joined[attr]
+        # raise AttributeError if attribute is neither in this class nor in _onedal_estimator
         raise AttributeError(
             f"'{self.__class__.__name__}' object has no attribute '{attr}'"
         )

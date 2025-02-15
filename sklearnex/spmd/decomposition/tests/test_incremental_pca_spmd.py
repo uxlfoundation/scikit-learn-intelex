@@ -23,6 +23,7 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
+from sklearnex import set_config
 from sklearnex.tests.utils.spmd import (
     _generate_statistic_data,
     _get_local_tensor,
@@ -218,6 +219,7 @@ def test_incremental_pca_fit_spmd_random(
 @pytest.mark.parametrize("num_samples", [200, 400])
 @pytest.mark.parametrize("num_features", [10, 20])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("use_raw_input", [True, False])
 @pytest.mark.mpi
 def test_incremental_pca_partial_fit_spmd_random(
     dataframe,
@@ -228,10 +230,14 @@ def test_incremental_pca_partial_fit_spmd_random(
     num_samples,
     num_features,
     dtype,
+    use_raw_input,
 ):
     # Import spmd and non-SPMD algo
     from sklearnex.preview.decomposition import IncrementalPCA
     from sklearnex.spmd.decomposition import IncrementalPCA as IncrementalPCA_SPMD
+
+    # Set config to use raw input
+    set_config(use_raw_input=use_raw_input)
 
     tol = 3e-4 if dtype == np.float32 else 1e-7
 

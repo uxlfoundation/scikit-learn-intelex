@@ -44,6 +44,7 @@ def set_config(
     target_offload=None,
     allow_fallback_to_host=None,
     allow_sklearn_after_onedal=None,
+    use_raw_input=None,
     **sklearn_configs,
 ):
     """Set global configuration
@@ -82,6 +83,8 @@ def set_config(
         local_config["allow_fallback_to_host"] = allow_fallback_to_host
     if allow_sklearn_after_onedal is not None:
         local_config["allow_sklearn_after_onedal"] = allow_sklearn_after_onedal
+    if use_raw_input is not None:
+        local_config["use_raw_input"] = use_raw_input
 
 
 @contextmanager

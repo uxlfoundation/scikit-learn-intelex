@@ -16,10 +16,10 @@
 
 import numpy as np
 
-from daal4py.sklearn._utils import get_dtype
-
+from .._config import _get_config
 from ..datatypes import from_table, to_table
 from ..utils import _check_array
+from ..utils._array_api import _get_sycl_namespace
 from .pca import BasePCA
 
 
@@ -113,7 +113,7 @@ class IncrementalPCA(BasePCA):
         self.finalize_fit()
         data = self.__dict__.copy()
         data.pop("_queue", None)
-
+        data.pop("_input_xp", None)  # module cannot be pickled
         return data
 
     def partial_fit(self, X, queue):
@@ -133,9 +133,21 @@ class IncrementalPCA(BasePCA):
         self : object
             Returns the instance itself.
         """
-        X = _check_array(X)
-        n_samples, n_features = X.shape
 
+        use_raw_input = _get_config().get("use_raw_input", False) is True
+        sua_iface, xp, _ = _get_sycl_namespace(X)
+        # Saving input array namespace and sua_iface, that will be used in
+        # finalize_fit.
+        self._input_sua_iface = sua_iface
+        self._input_xp = xp
+
+        # All data should use the same sycl queue
+        if use_raw_input and sua_iface:
+            queue = X.sycl_queue
+        if not use_raw_input:
+            X = _check_array(X, dtype=[np.float64, np.float32], ensure_2d=True)
+
+        n_samples, n_features = X.shape
         first_pass = not hasattr(self, "components_")
         if first_pass:
             self.components_ = None
@@ -210,5 +222,5 @@ class IncrementalPCA(BasePCA):
             self.noise_variance_ = self._compute_noise_variance(
                 self.n_components_, min(self.n_samples_seen_, self.n_features_in_)
             )
-        self._need_to_finalize = False
+            self._need_to_finalize = False
         return self

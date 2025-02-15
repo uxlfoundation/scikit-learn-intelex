@@ -32,6 +32,7 @@ from sklearn.exceptions import ConvergenceWarning
 from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.utils import check_random_state
 
+from .._config import _get_config
 from ..common._base import BaseEstimator as onedal_BaseEstimator
 from ..common._mixin import ClusterMixin, TransformerMixin
 from ..datatypes import from_table, to_table
@@ -260,9 +261,14 @@ class _BaseKMeans(onedal_BaseEstimator, TransformerMixin, ClusterMixin, ABC):
     def _fit(self, X, module, queue=None):
         policy = self._get_policy(queue, X)
         is_csr = _is_csr(X)
-        X = _check_array(
-            X, dtype=[np.float64, np.float32], accept_sparse="csr", force_all_finite=False
-        )
+
+        if _get_config()["use_raw_input"] is False:
+            X = _check_array(
+                X,
+                dtype=[np.float64, np.float32],
+                accept_sparse="csr",
+                force_all_finite=False,
+            )
         X_table = to_table(X, queue=queue)
         dtype = X_table.dtype
 

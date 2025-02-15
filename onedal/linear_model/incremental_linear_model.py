@@ -16,11 +16,11 @@
 
 import numpy as np
 
-from daal4py.sklearn._utils import get_dtype
-
+from .._config import _get_config
 from ..common.hyperparameters import get_hyperparameters
 from ..datatypes import from_table, to_table
 from ..utils import _check_X_y, _num_features
+from ..utils._array_api import _get_sycl_namespace
 from .linear_model import BaseLinearRegression
 
 
@@ -60,6 +60,7 @@ class IncrementalLinearRegression(BaseLinearRegression):
         self.finalize_fit()
         data = self.__dict__.copy()
         data.pop("_queue", None)
+        data.pop("_input_xp", None)  # module cannot be pickled
 
         return data
 
@@ -84,23 +85,36 @@ class IncrementalLinearRegression(BaseLinearRegression):
         self : object
             Returns the instance itself.
         """
+        # Saving input array namespace and sua_iface, that will be used in
+        # finalize_fit.
+        sua_iface, xp, _ = _get_sycl_namespace(X)
+        self._input_sua_iface = sua_iface
+        self._input_xp = xp
+
+        use_raw_input = _get_config().get("use_raw_input", False) is True
+        if use_raw_input and sua_iface:
+            queue = X.sycl_queue
+        if not use_raw_input:
+            X, y = _check_X_y(
+                X,
+                y,
+                dtype=[np.float64, np.float32],
+                accept_2d_y=True,
+                force_all_finite=False,
+            )
+            y = np.asarray(y, dtype=X.dtype)
+
+        if not hasattr(self, "_params"):
+            self._params = self._get_onedal_params(X.dtype)
+
         module = self._get_backend("linear_model", "regression")
 
         self._queue = queue
         policy = self._get_policy(queue, X)
 
-        X, y = _check_X_y(
-            X, y, dtype=[np.float64, np.float32], accept_2d_y=True, force_all_finite=False
-        )
-        y = np.asarray(y, dtype=X.dtype)
-
         self.n_features_in_ = _num_features(X, fallback_1d=True)
 
         X_table, y_table = to_table(X, y, queue=queue)
-
-        if not hasattr(self, "_dtype"):
-            self._dtype = X_table.dtype
-            self._params = self._get_onedal_params(self._dtype)
 
         hparams = get_hyperparameters("linear_regression", "train")
         if hparams is not None and not hparams.is_default:
@@ -153,12 +167,13 @@ class IncrementalLinearRegression(BaseLinearRegression):
 
             self._onedal_model = result.model
 
-            packed_coefficients = from_table(result.model.packed_coefficients)
+            packed_coefficients = from_table(
+                result.model.packed_coefficients, sycl_queue=self._queue
+            )
             self.coef_, self.intercept_ = (
                 packed_coefficients[:, 1:].squeeze(),
                 packed_coefficients[:, 0].squeeze(),
             )
-
             self._need_to_finalize = False
 
         return self

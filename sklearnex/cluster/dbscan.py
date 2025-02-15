@@ -25,6 +25,7 @@ from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal.cluster import DBSCAN as onedal_DBSCAN
 
+from .._config import get_config
 from .._device_offload import dispatch
 from .._utils import PatchableEstimator, PatchingConditionsChain
 
@@ -89,8 +90,9 @@ class DBSCAN(PatchableEstimator, _sklearn_DBSCAN, BaseDBSCAN):
         self.n_jobs = n_jobs
 
     def _onedal_fit(self, X, y, sample_weight=None, queue=None):
-        if sklearn_check_version("1.0"):
-            X = validate_data(self, X, force_all_finite=False)
+        if get_config()["use_raw_input"] is False:
+            if sklearn_check_version("1.0"):
+                X = validate_data(self, X, force_all_finite=False)
 
         onedal_params = {
             "eps": self.eps,
@@ -178,7 +180,8 @@ class DBSCAN(PatchableEstimator, _sklearn_DBSCAN, BaseDBSCAN):
             if self.eps <= 0.0:
                 raise ValueError(f"eps == {self.eps}, must be > 0.0.")
 
-        if sample_weight is not None:
+        use_raw_input = get_config().get("use_raw_input", False) is True
+        if not use_raw_input and sample_weight is not None:
             sample_weight = _check_sample_weight(sample_weight, X)
         dispatch(
             self,

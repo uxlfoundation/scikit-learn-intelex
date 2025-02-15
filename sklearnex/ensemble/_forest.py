@@ -17,6 +17,7 @@
 import numbers
 import warnings
 from abc import ABC
+from collections.abc import Iterable
 
 import numpy as np
 from scipy import sparse as sp
@@ -60,6 +61,7 @@ from onedal.utils import _num_features, _num_samples
 from sklearnex import get_hyperparameters
 from sklearnex._utils import register_hyperparameters
 
+from .._config import get_config
 from .._device_offload import dispatch, wrap_output_data
 from .._utils import PatchableEstimator, PatchingConditionsChain
 from ..utils._array_api import get_namespace
@@ -79,19 +81,25 @@ class BaseForest(PatchableEstimator, ABC):
     _onedal_factory = None
 
     def _onedal_fit(self, X, y, sample_weight=None, queue=None):
-        X, y = validate_data(
-            self,
-            X,
-            y,
-            multi_output=True,
-            accept_sparse=False,
-            dtype=[np.float64, np.float32],
-            force_all_finite=False,
-            ensure_2d=True,
-        )
+        use_raw_input = get_config().get("use_raw_input", False) is True
+        xp, _ = get_namespace(X)
+        if not use_raw_input:
+            X, y = validate_data(
+                self,
+                X,
+                y,
+                multi_output=True,
+                accept_sparse=False,
+                dtype=[np.float64, np.float32],
+                force_all_finite=False,
+                ensure_2d=True,
+            )
 
-        if sample_weight is not None:
-            sample_weight = _check_sample_weight(sample_weight, X)
+            if sample_weight is not None:
+                sample_weight = _check_sample_weight(sample_weight, X)
+        else:
+            self.classes_ = xp.unique_all(y).values
+            self.n_classes_ = len(self.classes_)
 
         if y.ndim == 2 and y.shape[1] == 1:
             warnings.warn(
@@ -102,22 +110,28 @@ class BaseForest(PatchableEstimator, ABC):
                 stacklevel=2,
             )
 
+        if not use_raw_input:
+            if y.ndim == 1:
+                # reshape is necessary to preserve the data contiguity against vs
+                # [:, np.newaxis] that does not.
+                y = xp.reshape(y, (-1, 1))
+
         if y.ndim == 1:
-            # reshape is necessary to preserve the data contiguity against vs
-            # [:, np.newaxis] that does not.
-            y = np.reshape(y, (-1, 1))
+            self._n_samples, self.n_outputs_ = y.shape[0], 1
+        else:
+            self._n_samples, self.n_outputs_ = y.shape
 
-        self._n_samples, self.n_outputs_ = y.shape
+        if not use_raw_input:
+            y, expanded_class_weight = self._validate_y_class_weight(y)
 
-        y, expanded_class_weight = self._validate_y_class_weight(y)
-
-        if expanded_class_weight is not None:
+            if expanded_class_weight is not None:
+                if sample_weight is not None:
+                    sample_weight = sample_weight * expanded_class_weight
+                else:
+                    sample_weight = expanded_class_weight
             if sample_weight is not None:
-                sample_weight = sample_weight * expanded_class_weight
-            else:
-                sample_weight = expanded_class_weight
-        if sample_weight is not None:
-            sample_weight = [sample_weight]
+                sample_weight = [sample_weight]
+        self.n_features_in_ = X.shape[1]
 
         onedal_params = {
             "n_estimators": self.n_estimators,
@@ -161,7 +175,11 @@ class BaseForest(PatchableEstimator, ABC):
 
         # Decapsulate classes_ attributes
         if hasattr(self, "classes_") and self.n_outputs_ == 1:
-            self.n_classes_ = self.n_classes_[0]
+            self.n_classes_ = (
+                self.n_classes_[0]
+                if isinstance(self.n_classes_, Iterable)
+                else self.n_classes_
+            )
             self.classes_ = self.classes_[0]
 
         return self
@@ -371,6 +389,7 @@ class BaseForest(PatchableEstimator, ABC):
                 "nodes": check_tree_nodes(tree_i_state_class.node_ar),
                 "values": tree_i_state_class.value_ar,
             }
+            # Note: only on host.
             est_i.tree_ = Tree(
                 self.n_features_in_,
                 np.array([n_classes_], dtype=np.intp),
@@ -790,22 +809,23 @@ class ForestClassifier(_sklearn_ForestClassifier, BaseForest):
         return patching_status
 
     def _onedal_predict(self, X, queue=None):
-
-        if sklearn_check_version("1.0"):
-            X = validate_data(
-                self,
-                X,
-                dtype=[np.float64, np.float32],
-                force_all_finite=False,
-                reset=False,
-                ensure_2d=True,
-            )
-        else:
-            X = check_array(
-                X,
-                dtype=[np.float64, np.float32],
-                force_all_finite=False,
-            )  # Warning, order of dtype matters
+        xp, _ = get_namespace(X)
+        if not get_config()["use_raw_input"]:
+            if sklearn_check_version("1.0"):
+                X = validate_data(
+                    self,
+                    X,
+                    dtype=[np.float64, np.float32],
+                    force_all_finite=False,
+                    reset=False,
+                    ensure_2d=True,
+                )
+            else:
+                X = check_array(
+                    X,
+                    dtype=[np.float64, np.float32],
+                    force_all_finite=False,
+                )  # Warning, order of dtype matters
             if hasattr(self, "n_features_in_"):
                 try:
                     num_features = _num_features(X)
@@ -822,26 +842,33 @@ class ForestClassifier(_sklearn_ForestClassifier, BaseForest):
             self._check_n_features(X, reset=False)
 
         res = self._onedal_estimator.predict(X, queue=queue)
-        return np.take(self.classes_, res.ravel().astype(np.int64, casting="unsafe"))
+        # TODO: clean up before merge
+        try:
+            return xp.take(
+                self.classes_, xp.astype(xp.reshape(res, -1), xp.int64, casting="unsafe")
+            )
+        except:
+            return np.take(self.classes_, res.ravel().astype(np.int64, casting="unsafe"))
 
     def _onedal_predict_proba(self, X, queue=None):
-
-        if sklearn_check_version("1.0"):
-            X = validate_data(
-                self,
-                X,
-                dtype=[np.float64, np.float32],
-                force_all_finite=False,
-                reset=False,
-                ensure_2d=True,
-            )
-        else:
-            X = check_array(
-                X,
-                dtype=[np.float64, np.float32],
-                force_all_finite=False,
-            )  # Warning, order of dtype matters
-            self._check_n_features(X, reset=False)
+        use_raw_input = get_config().get("use_raw_input", False) is True
+        if not use_raw_input:
+            if sklearn_check_version("1.0"):
+                X = validate_data(
+                    self,
+                    X,
+                    dtype=[np.float64, np.float32],
+                    force_all_finite=False,
+                    reset=False,
+                    ensure_2d=True,
+                )
+            else:
+                X = check_array(
+                    X,
+                    dtype=[np.float64, np.float32],
+                    force_all_finite=False,
+                )  # Warning, order of dtype matters
+                self._check_n_features(X, reset=False)
 
         return self._onedal_estimator.predict_proba(X, queue=queue)
 
@@ -1130,24 +1157,28 @@ class ForestRegressor(_sklearn_ForestRegressor, BaseForest):
 
     def _onedal_predict(self, X, queue=None):
         check_is_fitted(self, "_onedal_estimator")
+        use_raw_input = get_config().get("use_raw_input", False) is True
 
-        if sklearn_check_version("1.0"):
-            X = validate_data(
-                self,
-                X,
-                dtype=[np.float64, np.float32],
-                force_all_finite=False,
-                reset=False,
-                ensure_2d=True,
-            )  # Warning, order of dtype matters
-        else:
-            X = check_array(
-                X, dtype=[np.float64, np.float32], force_all_finite=False
-            )  # Warning, order of dtype matters
+        if not use_raw_input:
+            if sklearn_check_version("1.0"):
+                X = validate_data(
+                    self,
+                    X,
+                    dtype=[np.float64, np.float32],
+                    force_all_finite=False,
+                    reset=False,
+                    ensure_2d=True,
+                )  # Warning, order of dtype matters
+            else:
+                X = check_array(
+                    X, dtype=[np.float64, np.float32], force_all_finite=False
+                )  # Warning, order of dtype matters
 
         return self._onedal_estimator.predict(X, queue=queue)
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
+        # TODO:
+        # should be checked for dpctl/dpnp inputs.
         return r2_score(
             y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
         )

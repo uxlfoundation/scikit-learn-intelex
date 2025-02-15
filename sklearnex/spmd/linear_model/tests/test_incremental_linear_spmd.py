@@ -23,6 +23,7 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
+from sklearnex import set_config
 from sklearnex.tests.utils.spmd import (
     _generate_regression_data,
     _get_local_tensor,
@@ -115,15 +116,19 @@ def test_incremental_linear_regression_fit_spmd_gold(
 @pytest.mark.parametrize("num_blocks", [1, 2])
 @pytest.mark.parametrize("macro_block", [None, 1024])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("use_raw_input", [True, False])
 @pytest.mark.mpi
 def test_incremental_linear_regression_partial_fit_spmd_gold(
-    dataframe, queue, fit_intercept, num_blocks, macro_block, dtype
+    dataframe, queue, fit_intercept, num_blocks, macro_block, dtype, use_raw_input
 ):
     # Import spmd and non-SPMD algo
     from sklearnex.linear_model import IncrementalLinearRegression
     from sklearnex.spmd.linear_model import (
         IncrementalLinearRegression as IncrementalLinearRegression_SPMD,
     )
+
+    # Set config to use raw input
+    set_config(use_raw_input=use_raw_input)
 
     # Create gold data and process into dpt
     X = np.array(

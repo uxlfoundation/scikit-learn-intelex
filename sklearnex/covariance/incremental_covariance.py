@@ -32,6 +32,7 @@ from onedal.covariance import (
 )
 from sklearnex import config_context
 
+from .._config import get_config
 from .._device_offload import dispatch, wrap_output_data
 from .._utils import IntelEstimator, PatchingConditionsChain, register_hyperparameters
 from ..metrics import pairwise_distances
@@ -184,9 +185,11 @@ class IncrementalEmpiricalCovariance(IntelEstimator, BaseEstimator):
             )
 
     def _onedal_partial_fit(self, X, queue=None, check_input=True):
-
         first_pass = not hasattr(self, "n_samples_seen_") or self.n_samples_seen_ == 0
 
+        use_raw_input = get_config().get("use_raw_input", False) is True
+        # never check input when using raw input
+        check_input &= use_raw_input is False
         # finite check occurs on onedal side
         if check_input:
             if sklearn_check_version("1.2"):
@@ -334,23 +337,28 @@ class IncrementalEmpiricalCovariance(IntelEstimator, BaseEstimator):
         if hasattr(self, "_onedal_estimator"):
             self._onedal_estimator._reset()
 
-        if sklearn_check_version("1.2"):
-            self._validate_params()
+        use_raw_input = get_config().get("use_raw_input", False) is True
+        if not use_raw_input:
+            if sklearn_check_version("1.2"):
+                self._validate_params()
 
-        # finite check occurs on onedal side
-        if sklearn_check_version("1.0"):
-            X = validate_data(
-                self,
-                X,
-                dtype=[np.float64, np.float32],
-                copy=self.copy,
-                force_all_finite=False,
-            )
-        else:
-            X = check_array(
-                X, dtype=[np.float64, np.float32], copy=self.copy, force_all_finite=False
-            )
-            self.n_features_in_ = X.shape[1]
+            # finite check occurs on onedal side
+            if sklearn_check_version("1.0"):
+                X = validate_data(
+                    self,
+                    X,
+                    dtype=[np.float64, np.float32],
+                    copy=self.copy,
+                    force_all_finite=False,
+                )
+            else:
+                X = check_array(
+                    X,
+                    dtype=[np.float64, np.float32],
+                    copy=self.copy,
+                    force_all_finite=False,
+                )
+                self.n_features_in_ = X.shape[1]
 
         self.batch_size_ = self.batch_size if self.batch_size else 5 * self.n_features_in_
 

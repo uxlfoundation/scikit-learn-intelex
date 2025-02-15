@@ -80,3 +80,23 @@ def with_array_api():
 def without_allow_sklearn_after_onedal():
     with config_context(allow_sklearn_after_onedal=False):
         yield
+
+
+@pytest.fixture
+def skip_unsupported_raw_input(request):
+    # lookup if use_raw_input and dataframe are used in the test
+    use_raw_input = (
+        request.getfixturevalue("use_raw_input")
+        if "use_raw_input" in request.fixturenames
+        else False
+    )
+    dataframe = (
+        request.getfixturevalue("dataframe")
+        if "dataframe" in request.fixturenames
+        else None
+    )
+
+    # skip tests of unsupported dataframes when using use_raw_input=True
+    if use_raw_input is True and dataframe not in ["numpy", "dpnp", "dpctl"]:
+        pytest.skip(f"use_raw_input is not supported for {dataframe}")
+    yield
