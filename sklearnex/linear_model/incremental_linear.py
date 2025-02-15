@@ -192,7 +192,7 @@ class IncrementalLinearRegression(
         if sklearn_check_version("1.2"):
             self._validate_params()
 
-        use_raw_input = get_config().get("use_raw_input", False) is True]
+        use_raw_input = get_config().get("use_raw_input", False) is True
         # never check input when using raw input
         check_input &= use_raw_input is False
         if check_input:

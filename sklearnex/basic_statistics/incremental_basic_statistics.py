@@ -195,7 +195,7 @@ class IncrementalBasicStatistics(IntelEstimator, BaseEstimator):
     def _onedal_partial_fit(self, X, sample_weight=None, queue=None, check_input=True):
         first_pass = not hasattr(self, "n_samples_seen_") or self.n_samples_seen_ == 0
 
-        use_raw_input = get_config().get("use_raw_input", False) is True]
+        use_raw_input = get_config().get("use_raw_input", False) is True
         # never check input when using raw input
         check_input &= use_raw_input is False
         if check_input:
@@ -232,7 +232,7 @@ class IncrementalBasicStatistics(IntelEstimator, BaseEstimator):
         self._need_to_finalize = True
 
     def _onedal_fit(self, X, sample_weight=None, queue=None):
-        use_raw_input = get_config().get("use_raw_input", False) is True]
+        use_raw_input = get_config().get("use_raw_input", False) is True
         if not use_raw_input:
             if sklearn_check_version("1.2"):
                 self._validate_params()

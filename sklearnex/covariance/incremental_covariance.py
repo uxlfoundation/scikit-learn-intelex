@@ -187,7 +187,7 @@ class IncrementalEmpiricalCovariance(IntelEstimator, BaseEstimator):
     def _onedal_partial_fit(self, X, queue=None, check_input=True):
         first_pass = not hasattr(self, "n_samples_seen_") or self.n_samples_seen_ == 0
 
-        use_raw_input = get_config().get("use_raw_input", False) is True]
+        use_raw_input = get_config().get("use_raw_input", False) is True
         # never check input when using raw input
         check_input &= use_raw_input is False
         # finite check occurs on onedal side
@@ -337,7 +337,7 @@ class IncrementalEmpiricalCovariance(IntelEstimator, BaseEstimator):
         if hasattr(self, "_onedal_estimator"):
             self._onedal_estimator._reset()
 
-        use_raw_input = get_config().get("use_raw_input", False) is True]
+        use_raw_input = get_config().get("use_raw_input", False) is True
         if not use_raw_input:
             if sklearn_check_version("1.2"):
                 self._validate_params()
