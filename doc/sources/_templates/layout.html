@@ -3,21 +3,7 @@
 <script defer type="text/javascript"
   src="https://www.intel.com/content/dam/www/global/wap/performance-config.js"></script>
 <script type="text/javascript">
-  <!-- fetch("{{ switcher_url }}").then(response => response.text()).then(respText=> load_versions(respText)); -->
-  document.addEventListener('DOMContentLoaded', function () {
-    // Make sure the dropdown exists
-    if (document.getElementById('version-switcher-dropdown')) {
-      fetch("/scikit-learn-intelex/versions.json")
-        .then(response => response.text())
-        .then(respText => {
-          console.log('Fetched versions:', respText);  // Debug log
-          load_versions(respText);
-        })
-        .catch(error => console.error('Error loading versions:', error));
-    } else {
-      console.error('Version switcher dropdown not found');
-    }
-  });
+  fetch("{{ switcher_url }}").then(response => response.text()).then(respText => load_versions(respText));
   // Configure TMS settings
   var wapLocalCode = 'us-en'; // Dynamically set per localized site, see mapping table for values
   var wapSection = "scikit-learn"; // WAP team will give you a unique section for your site
