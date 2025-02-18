@@ -57,8 +57,8 @@ std::int32_t get_ndim(const DLTensor& tensor) {
 dal::data_layout get_dlpack_layout(const DLTensor& tensor) {
     // determine the layout of a dlpack tensor
     // get shape, if 1 dimensional, force col count to 1
-    std::int64_t r_count = tensor.shape[0];
-    std::int64_t c_count = get_ndim(tensor) > 1 ? tensor.shape[1] : 1l;
+    const std::int64_t r_count = tensor.shape[0];
+    const std::int64_t c_count = get_ndim(tensor) > 1 ? tensor.shape[1] : 1l;
 
     const std::int64_t* strides = tensor.strides;
     // if NULL then row major contiguous (see dlpack.h)
