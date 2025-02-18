@@ -565,4 +565,5 @@ def test_table_conversions_dlpack(dataframe, queue, order, data_shape, dtype):
 
     X_table = to_table(X_tens)
     X_out = from_table(X_table)
+    print(X_table.shape, X_tens.data.shape)
     assert_allclose(np.atleast_2d(X), X_out)
