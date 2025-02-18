@@ -39,7 +39,7 @@ from .._n_jobs_support import control_n_jobs
 from ..neighbors import NearestNeighbors
 
 
-@control_n_jobs(decorated_methods=["fit"])
+@control_n_jobs(decorated_methods=["fit", "fit_transform"])
 class TSNE(BaseTSNE):
     __doc__ = BaseTSNE.__doc__
 
