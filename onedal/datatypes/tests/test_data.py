@@ -528,16 +528,18 @@ def test_basic_ndarray_types_numpy(X):
 @pytest.mark.parametrize("can_copy", [True, False])
 def test_to_table_non_contiguous_input_dlpack(dataframe, queue, can_copy):
     X, _ = np.mgrid[:10, :10]
-    X = _convert_to_dataframe(X, sycl_queue=queue, dataframe=dataframe)
-    if not hasattr(X, "__dlpack__"):
+    X_df = _convert_to_dataframe(X, sycl_queue=queue, dataframe=dataframe)
+    if not hasattr(X_df, "__dlpack__"):
         pytest.skip("underlying array doesn't support dlpack")
 
-    X_tens = _OnlyDLTensor(X[:, :3])
+    X_tens = _OnlyDLTensor(X_df[:, :3])
 
     # give the _OnlyDLTensor the ability to copy
     if can_copy:
         X_tens.copy = lambda: _OnlyDLTensor(X.copy())
-        to_table(X_tens)
+        X_table = to_table(X_tens)
+        X_out = from_table(X_table)
+        assert_allclose(X[:, :3], X_out)
     else:
         with pytest.raises(RuntimeError, match="Wrong strides"):
             to_table(X_tens)
@@ -558,7 +560,9 @@ def test_table_conversions_dlpack(dataframe, queue, order, data_shape, dtype):
 
     X = ORDER_DICT[order](X)
 
-    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    X = _OnlyDLTensor(X)
+    X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+    X_tens = _OnlyDLTensor(X_df)
 
-    to_table(X)
+    X_table = to_table(X_tens)
+    X_out = from_table(X_table)
+    assert_allclose(X, X_out)
