@@ -23,7 +23,7 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
-from sklearnex import set_config
+from sklearnex import config_context
 from sklearnex.tests.utils.spmd import (
     _generate_classification_data,
     _get_local_tensor,
@@ -128,9 +128,6 @@ def test_logistic_spmd_synthetic(
     from sklearnex.linear_model import LogisticRegression as LogisticRegression_Batch
     from sklearnex.spmd.linear_model import LogisticRegression as LogisticRegression_SPMD
 
-    # Set config to use raw input
-    set_config(use_raw_input=use_raw_input)
-
     # Generate data and convert to dataframe
     X_train, X_test, y_train, _ = _generate_classification_data(
         n_samples, n_features, dtype=dtype
@@ -150,9 +147,10 @@ def test_logistic_spmd_synthetic(
     dpt_X_test = _convert_to_dataframe(X_test, sycl_queue=queue, target_df=dataframe)
 
     # Ensure trained model of batch algo matches spmd
-    spmd_model = LogisticRegression_SPMD(
-        random_state=0, solver="newton-cg", C=C, tol=tol
-    ).fit(local_dpt_X_train, local_dpt_y_train)
+    spmd_model = LogisticRegression_SPMD(random_state=0, solver="newton-cg", C=C, tol=tol)
+    # Configure raw input status for spmd estimator
+    with config_context(use_raw_input=use_raw_input):
+        spmd_model.fit(local_dpt_X_train, local_dpt_y_train)
     batch_model = LogisticRegression_Batch(
         random_state=0, solver="newton-cg", C=C, tol=tol
     ).fit(dpt_X_train, dpt_y_train)
@@ -163,7 +161,9 @@ def test_logistic_spmd_synthetic(
     assert_allclose(spmd_model.intercept_, batch_model.intercept_, rtol=tol, atol=tol)
 
     # Ensure predictions of batch algo match spmd
-    spmd_result = spmd_model.predict(local_dpt_X_test)
+    # Configure raw input status for spmd estimator
+    with config_context(use_raw_input=use_raw_input):
+        spmd_result = spmd_model.predict(local_dpt_X_test)
     batch_result = batch_model.predict(dpt_X_test)
 
     _spmd_assert_allclose(spmd_result, _as_numpy(batch_result))

@@ -23,7 +23,7 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
-from sklearnex import set_config
+from sklearnex import config_context
 from sklearnex.tests.utils.spmd import (
     _generate_regression_data,
     _get_local_tensor,
@@ -127,9 +127,6 @@ def test_incremental_linear_regression_partial_fit_spmd_gold(
         IncrementalLinearRegression as IncrementalLinearRegression_SPMD,
     )
 
-    # Set config to use raw input
-    set_config(use_raw_input=use_raw_input)
-
     # Create gold data and process into dpt
     X = np.array(
         [
@@ -180,7 +177,9 @@ def test_incremental_linear_regression_partial_fit_spmd_gold(
         local_dpt_y = _convert_to_dataframe(
             split_local_y[i], sycl_queue=queue, target_df=dataframe
         )
-        inclin_spmd.partial_fit(local_dpt_X, local_dpt_y)
+        # Configure raw input status for spmd estimator
+        with config_context(use_raw_input=use_raw_input):
+            inclin_spmd.partial_fit(local_dpt_X, local_dpt_y)
 
     inclin.fit(dpt_X, dpt_y)
 

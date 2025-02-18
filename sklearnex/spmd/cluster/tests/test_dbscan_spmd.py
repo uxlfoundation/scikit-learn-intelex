@@ -21,7 +21,7 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
-from sklearnex import set_config
+from sklearnex import config_context
 from sklearnex.tests.utils.spmd import (
     _generate_clustering_data,
     _get_local_tensor,
@@ -87,9 +87,6 @@ def test_dbscan_spmd_synthetic(
     from sklearnex.cluster import DBSCAN as DBSCAN_Batch
     from sklearnex.spmd.cluster import DBSCAN as DBSCAN_SPMD
 
-    # Set config to use raw input
-    set_config(use_raw_input=use_raw_input)
-
     data, _ = _generate_clustering_data(
         n_samples, n_features, centers=centers, dtype=dtype
     )
@@ -99,7 +96,9 @@ def test_dbscan_spmd_synthetic(
     )
 
     # Ensure labels from fit of batch algo matches spmd
-    spmd_model = DBSCAN_SPMD(eps=eps, min_samples=min_samples).fit(local_dpt_data)
+    # Configure raw input status for spmd estimator
+    with config_context(use_raw_input=use_raw_input):
+        spmd_model = DBSCAN_SPMD(eps=eps, min_samples=min_samples).fit(local_dpt_data)
     batch_model = DBSCAN_Batch(eps=eps, min_samples=min_samples).fit(data)
 
     _spmd_assert_allclose(spmd_model.labels_, batch_model.labels_)

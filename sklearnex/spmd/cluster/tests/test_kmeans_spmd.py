@@ -22,7 +22,7 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
-from sklearnex import set_config
+from sklearnex import config_context
 from sklearnex.tests.utils.spmd import (
     _assert_kmeans_labels_allclose,
     _assert_unordered_allclose,
@@ -118,9 +118,6 @@ def test_kmeans_spmd_synthetic(
     from sklearnex.cluster import KMeans as KMeans_Batch
     from sklearnex.spmd.cluster import KMeans as KMeans_SPMD
 
-    # Set config to use raw input
-    set_config(use_raw_input=use_raw_input)
-
     # TODO: investigate issues when centers != n_clusters (spmd and batch results don't match for all values of K)
     X_train, X_test = _generate_clustering_data(
         n_samples, n_features, centers=n_clusters, dtype=dtype
@@ -146,7 +143,10 @@ def test_kmeans_spmd_synthetic(
     # Ensure labels from fit of batch algo matches spmd, using same init
     spmd_model = KMeans_SPMD(
         n_clusters=n_clusters, init=spmd_model_init.cluster_centers_, random_state=0
-    ).fit(local_dpt_X_train)
+    )
+    # Configure raw input status for spmd estimator
+    with config_context(use_raw_input=use_raw_input):
+        spmd_model.fit(local_dpt_X_train)
     batch_model = KMeans_Batch(
         n_clusters=n_clusters, init=spmd_model_init.cluster_centers_, random_state=0
     ).fit(X_train)
@@ -166,7 +166,9 @@ def test_kmeans_spmd_synthetic(
     # assert_allclose(spmd_model.n_iter_, batch_model.n_iter_, atol=1)
 
     # Ensure predictions of batch algo match spmd
-    spmd_result = spmd_model.predict(local_dpt_X_test)
+    # Configure raw input status for spmd estimator
+    with config_context(use_raw_input=use_raw_input):
+        spmd_result = spmd_model.predict(local_dpt_X_test)
     batch_result = batch_model.predict(X_test)
 
     _assert_kmeans_labels_allclose(

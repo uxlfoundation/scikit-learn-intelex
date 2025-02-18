@@ -22,7 +22,7 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
-from sklearnex import set_config
+from sklearnex import config_context
 from sklearnex.tests.utils.spmd import (
     _assert_unordered_allclose,
     _generate_classification_data,
@@ -130,9 +130,6 @@ def test_knncls_spmd_synthetic(
     from sklearnex.neighbors import KNeighborsClassifier as KNeighborsClassifier_Batch
     from sklearnex.spmd.neighbors import KNeighborsClassifier as KNeighborsClassifier_SPMD
 
-    # Set config to use raw input
-    set_config(use_raw_input=use_raw_input)
-
     # Generate data and convert to dataframe
     X_train, X_test, y_train, _ = _generate_classification_data(
         n_samples, n_features, n_classes, dtype=dtype
@@ -151,13 +148,18 @@ def test_knncls_spmd_synthetic(
     # Ensure predictions of batch algo match spmd
     spmd_model = KNeighborsClassifier_SPMD(
         n_neighbors=n_neighbors, weights=weights, metric=metric, algorithm="brute"
-    ).fit(local_dpt_X_train, local_dpt_y_train)
+    )
+    # Configure raw input status for spmd estimator
+    with config_context(use_raw_input=use_raw_input):
+        spmd_model.fit(local_dpt_X_train, local_dpt_y_train)
     batch_model = KNeighborsClassifier_Batch(
         n_neighbors=n_neighbors, weights=weights, metric=metric, algorithm="brute"
     ).fit(X_train, y_train)
     spmd_dists, spmd_indcs = spmd_model.kneighbors(local_dpt_X_test)
     batch_dists, batch_indcs = batch_model.kneighbors(X_test)
-    spmd_result = spmd_model.predict(local_dpt_X_test)
+    # Configure raw input status for spmd estimator
+    with config_context(use_raw_input=use_raw_input):
+        spmd_result = spmd_model.predict(local_dpt_X_test)
     batch_result = batch_model.predict(X_test)
 
     tol = 1e-4
@@ -267,9 +269,6 @@ def test_knnreg_spmd_synthetic(
     from sklearnex.neighbors import KNeighborsRegressor as KNeighborsRegressor_Batch
     from sklearnex.spmd.neighbors import KNeighborsRegressor as KNeighborsRegressor_SPMD
 
-    # Set config to use raw input
-    set_config(use_raw_input=use_raw_input)
-
     # Generate data and convert to dataframe
     X_train, X_test, y_train, _ = _generate_regression_data(
         n_samples, n_features, dtype=dtype
@@ -288,13 +287,18 @@ def test_knnreg_spmd_synthetic(
     # Ensure predictions of batch algo match spmd
     spmd_model = KNeighborsRegressor_SPMD(
         n_neighbors=n_neighbors, weights=weights, metric=metric, algorithm="brute"
-    ).fit(local_dpt_X_train, local_dpt_y_train)
+    )
+    # Configure raw input status for spmd estimator
+    with config_context(use_raw_input=use_raw_input):
+        spmd_model.fit(local_dpt_X_train, local_dpt_y_train)
     batch_model = KNeighborsRegressor_Batch(
         n_neighbors=n_neighbors, weights=weights, metric=metric, algorithm="brute"
     ).fit(X_train, y_train)
     spmd_dists, spmd_indcs = spmd_model.kneighbors(local_dpt_X_test)
     batch_dists, batch_indcs = batch_model.kneighbors(X_test)
-    spmd_result = spmd_model.predict(local_dpt_X_test)
+    # Configure raw input status for spmd estimator
+    with config_context(use_raw_input=use_raw_input):
+        spmd_result = spmd_model.predict(local_dpt_X_test)
     batch_result = batch_model.predict(X_test)
 
     tol = 0.005 if dtype == np.float32 else 1e-4

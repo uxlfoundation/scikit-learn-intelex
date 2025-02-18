@@ -23,7 +23,7 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
-from sklearnex import set_config
+from sklearnex import config_context
 from sklearnex.tests.utils.spmd import (
     _generate_statistic_data,
     _get_local_tensor,
@@ -262,9 +262,6 @@ def test_incremental_basic_statistics_partial_fit_spmd_synthetic(
         IncrementalBasicStatistics as IncrementalBasicStatistics_SPMD,
     )
 
-    # Set config to use raw input
-    set_config(use_raw_input=use_raw_input)
-
     tol = 2e-3 if dtype == np.float32 else 1e-7
 
     # Create gold data and process into dpt
@@ -297,9 +294,11 @@ def test_incremental_basic_statistics_partial_fit_spmd_synthetic(
             dpt_weights = _convert_to_dataframe(
                 split_weights[i], sycl_queue=queue, target_df=dataframe
             )
-        incbs_spmd.partial_fit(
-            local_dpt_data, sample_weight=local_dpt_weights if weighted else None
-        )
+        # Configure raw input status for spmd estimator
+        with config_context(use_raw_input=use_raw_input):
+            incbs_spmd.partial_fit(
+                local_dpt_data, sample_weight=local_dpt_weights if weighted else None
+            )
         incbs.partial_fit(dpt_data, sample_weight=dpt_weights if weighted else None)
 
     for option in options_and_tests:

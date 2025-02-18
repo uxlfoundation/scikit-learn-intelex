@@ -22,7 +22,7 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
-from sklearnex import set_config
+from sklearnex import config_context
 from sklearnex.tests.utils.spmd import (
     _generate_classification_data,
     _generate_regression_data,
@@ -128,9 +128,6 @@ def test_rfcls_spmd_synthetic(
         RandomForestClassifier as RandomForestClassifier_SPMD,
     )
 
-    # Set config to use raw input
-    set_config(use_raw_input=use_raw_input)
-
     # Generate data and convert to dataframe
     X_train, X_test, y_train, _ = _generate_classification_data(
         n_samples, n_features, n_classes, dtype=dtype
@@ -149,11 +146,16 @@ def test_rfcls_spmd_synthetic(
     # Ensure predictions of batch algo match spmd
     spmd_model = RandomForestClassifier_SPMD(
         n_estimators=n_estimators, max_depth=max_depth, random_state=0
-    ).fit(local_dpt_X_train, local_dpt_y_train)
+    )
+    # Configure raw input status for spmd estimator
+    with config_context(use_raw_input=use_raw_input):
+        spmd_model.fit(local_dpt_X_train, local_dpt_y_train)
     batch_model = RandomForestClassifier_Batch(
         n_estimators=n_estimators, max_depth=max_depth, random_state=0
     ).fit(X_train, y_train)
-    spmd_result = spmd_model.predict(local_dpt_X_test)
+    # Configure raw input status for spmd estimator
+    with config_context(use_raw_input=use_raw_input):
+        spmd_result = spmd_model.predict(local_dpt_X_test)
     batch_result = batch_model.predict(X_test)
 
     pytest.skip("SPMD and batch random forest results not aligned")
@@ -248,9 +250,6 @@ def test_rfreg_spmd_synthetic(
         RandomForestRegressor as RandomForestRegressor_SPMD,
     )
 
-    # Set config to use raw input
-    set_config(use_raw_input=use_raw_input)
-
     # Generate data and convert to dataframe
     X_train, X_test, y_train, _ = _generate_regression_data(
         n_samples, n_features, dtype=dtype
@@ -267,13 +266,15 @@ def test_rfreg_spmd_synthetic(
     )
 
     # Ensure predictions of batch algo match spmd
-    spmd_model = RandomForestRegressor_Batch(
-        n_estimators=n_estimators, max_depth=max_depth, random_state=0
-    ).fit(local_dpt_X_train, local_dpt_y_train)
+    with config_context(use_raw_input=use_raw_input):
+        spmd_model = RandomForestRegressor_Batch(
+            n_estimators=n_estimators, max_depth=max_depth, random_state=0
+        ).fit(local_dpt_X_train, local_dpt_y_train)
     batch_model = RandomForestRegressor_Batch(
         n_estimators=n_estimators, max_depth=max_depth, random_state=0
     ).fit(X_train, y_train)
-    spmd_result = spmd_model.predict(local_dpt_X_test)
+    with config_context(use_raw_input=use_raw_input):
+        spmd_result = spmd_model.predict(local_dpt_X_test)
     batch_result = batch_model.predict(X_test)
 
     # TODO: remove skips when SPMD and batch are aligned

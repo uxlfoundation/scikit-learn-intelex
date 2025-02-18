@@ -22,7 +22,7 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
-from sklearnex import set_config
+from sklearnex import config_context
 from sklearnex.tests.utils.spmd import (
     _generate_statistic_data,
     _get_local_tensor,
@@ -91,9 +91,6 @@ def test_covariance_spmd_synthetic(
     from onedal.covariance import EmpiricalCovariance as EmpiricalCovariance_Batch
     from sklearnex.spmd.covariance import EmpiricalCovariance as EmpiricalCovariance_SPMD
 
-    # Set config to use raw input
-    set_config(use_raw_input=use_raw_input)
-
     # Generate data and convert to dataframe
     data = _generate_statistic_data(n_samples, n_features, dtype=dtype)
 
@@ -102,9 +99,10 @@ def test_covariance_spmd_synthetic(
     )
 
     # Ensure results of batch algo match spmd
-    spmd_result = EmpiricalCovariance_SPMD(assume_centered=assume_centered).fit(
-        local_dpt_data
-    )
+    with config_context(use_raw_input=use_raw_input):
+        spmd_result = EmpiricalCovariance_SPMD(assume_centered=assume_centered).fit(
+            local_dpt_data
+        )
     batch_result = EmpiricalCovariance_Batch(assume_centered=assume_centered).fit(data)
 
     atol = 1e-5 if dtype == np.float32 else 1e-7

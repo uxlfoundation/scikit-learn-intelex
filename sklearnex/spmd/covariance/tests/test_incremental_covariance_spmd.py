@@ -22,7 +22,7 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
-from sklearnex import set_config
+from sklearnex import config_context
 from sklearnex.tests.utils.spmd import (
     _generate_statistic_data,
     _get_local_tensor,
@@ -168,9 +168,6 @@ def test_incremental_covariance_partial_fit_spmd_synthetic(
         IncrementalEmpiricalCovariance as IncrementalEmpiricalCovariance_SPMD,
     )
 
-    # Set config to use raw input
-    set_config(use_raw_input=use_raw_input)
-
     # Generate data and process into dpt
     data = _generate_statistic_data(n_samples, n_features, dtype=dtype)
 
@@ -186,7 +183,9 @@ def test_incremental_covariance_partial_fit_spmd_synthetic(
         local_dpt_data = _convert_to_dataframe(
             split_local_data[i], sycl_queue=queue, target_df=dataframe
         )
-        inccov_spmd.partial_fit(local_dpt_data)
+        # Configure raw input status for spmd estimator
+        with config_context(use_raw_input=use_raw_input):
+            inccov_spmd.partial_fit(local_dpt_data)
 
     inccov.fit(dpt_data)
 

@@ -23,7 +23,7 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
-from sklearnex import set_config
+from sklearnex import config_context
 from sklearnex.tests.utils.spmd import (
     _generate_statistic_data,
     _get_local_tensor,
@@ -90,9 +90,6 @@ def test_basic_stats_spmd_synthetic(
     from onedal.basic_statistics import BasicStatistics as BasicStatistics_Batch
     from sklearnex.spmd.basic_statistics import BasicStatistics as BasicStatistics_SPMD
 
-    # Set config to use raw input
-    set_config(use_raw_input=use_raw_input)
-
     # Generate data and convert to dataframe
     data = _generate_statistic_data(n_samples, n_features, dtype=dtype)
 
@@ -101,7 +98,9 @@ def test_basic_stats_spmd_synthetic(
     )
 
     # Ensure results of batch algo match spmd
-    spmd_result = BasicStatistics_SPMD().fit(local_dpt_data)
+    # Configure raw input status for spmd estimator
+    with config_context(use_raw_input=use_raw_input):
+        spmd_result = BasicStatistics_SPMD().fit(local_dpt_data)
     batch_result = BasicStatistics_Batch().fit(data)
 
     tol = 1e-5 if dtype == np.float32 else 1e-7

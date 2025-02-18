@@ -23,7 +23,7 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
-from sklearnex import set_config
+from sklearnex import config_context
 from sklearnex.tests.utils.spmd import (
     _generate_statistic_data,
     _get_local_tensor,
@@ -236,9 +236,6 @@ def test_incremental_pca_partial_fit_spmd_random(
     from sklearnex.preview.decomposition import IncrementalPCA
     from sklearnex.spmd.decomposition import IncrementalPCA as IncrementalPCA_SPMD
 
-    # Set config to use raw input
-    set_config(use_raw_input=use_raw_input)
-
     tol = 3e-4 if dtype == np.float32 else 1e-7
 
     # Create data and process into dpt
@@ -258,7 +255,9 @@ def test_incremental_pca_partial_fit_spmd_random(
             split_local_X[i], sycl_queue=queue, target_df=dataframe
         )
         dpt_X = _convert_to_dataframe(X_split[i], sycl_queue=queue, target_df=dataframe)
-        incpca_spmd.partial_fit(local_dpt_X)
+        # Configure raw input status for spmd estimator
+        with config_context(use_raw_input=use_raw_input):
+            incpca_spmd.partial_fit(local_dpt_X)
         incpca.partial_fit(dpt_X)
 
     for attribute in attributes_to_compare:
@@ -269,7 +268,9 @@ def test_incremental_pca_partial_fit_spmd_random(
             err_msg=f"{attribute} is incorrect",
         )
 
-    y_trans_spmd = incpca_spmd.transform(dpt_X_test)
+    # Configure raw input status for spmd estimator
+    with config_context(use_raw_input=use_raw_input):
+        y_trans_spmd = incpca_spmd.transform(dpt_X_test)
     y_trans = incpca.transform(dpt_X_test)
 
     assert_allclose(_as_numpy(y_trans_spmd), _as_numpy(y_trans), atol=tol)

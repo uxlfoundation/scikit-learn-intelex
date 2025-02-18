@@ -22,7 +22,7 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
-from sklearnex import set_config
+from sklearnex import config_context
 from sklearnex.tests.utils.spmd import (
     _generate_regression_data,
     _get_local_tensor,
@@ -113,9 +113,6 @@ def test_linear_spmd_synthetic(
     from sklearnex.linear_model import LinearRegression as LinearRegression_Batch
     from sklearnex.spmd.linear_model import LinearRegression as LinearRegression_SPMD
 
-    # Set config to use raw input
-    set_config(use_raw_input=use_raw_input)
-
     # Generate data and convert to dataframe
     X_train, X_test, y_train, _ = _generate_regression_data(
         n_samples, n_features, dtype=dtype
@@ -138,7 +135,10 @@ def test_linear_spmd_synthetic(
         )
 
     # ensure trained model of batch algo matches spmd
-    spmd_model = LinearRegression_SPMD().fit(local_dpt_X_train, local_dpt_y_train)
+    # Configure raw input status for spmd estimator
+    spmd_model = LinearRegression_SPMD()
+    with config_context(use_raw_input=use_raw_input):
+        spmd_model.fit(local_dpt_X_train, local_dpt_y_train)
     batch_model = LinearRegression_Batch().fit(X_train, y_train)
 
     tol = 1e-3 if dtype == np.float32 else 1e-7
@@ -146,7 +146,9 @@ def test_linear_spmd_synthetic(
     assert_allclose(spmd_model.intercept_, batch_model.intercept_, rtol=tol, atol=tol)
 
     # ensure predictions of batch algo match spmd
-    spmd_result = spmd_model.predict(local_dpt_X_test)
+    # Configure raw input status for spmd estimator
+    with config_context(use_raw_input=use_raw_input):
+        spmd_result = spmd_model.predict(local_dpt_X_test)
     batch_result = batch_model.predict(X_test)
 
     _spmd_assert_allclose(spmd_result, batch_result, rtol=tol, atol=tol)
