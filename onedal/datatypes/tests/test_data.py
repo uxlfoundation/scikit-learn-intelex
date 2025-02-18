@@ -536,7 +536,7 @@ def test_to_table_non_contiguous_input_dlpack(dataframe, queue, can_copy):
 
     # give the _OnlyDLTensor the ability to copy
     if can_copy:
-        X_tens.copy = lambda: _OnlyDLTensor(X.copy())
+        X_tens.copy = lambda: _OnlyDLTensor(X_tens.data.copy())
         X_table = to_table(X_tens)
         X_out = from_table(X_table)
         assert_allclose(X[:, :3], X_out)
