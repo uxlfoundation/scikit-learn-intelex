@@ -283,8 +283,12 @@ static PyObject *convert_to_numpy_impl(const dal::array<T> &array,
                                        std::int64_t column_count = 0,
                                        const dal::data_layout& layout = dal::data_layout::row_major) {
     const int size_dims = column_count == 0 ? 1 : 2;
-    // for column_major (fortran order) use a transpose to return in proper format, start with reversed indices
-    npy_intp dims[2] = layout == dal::data_layout::row_major ? {static_cast<npy_intp>(row_count), static_cast<npy_intp>(column_count)} : {static_cast<npy_intp>(column_count), static_cast<npy_intp>(row_count)};
+    npy_intp dims[2] = { static_cast<npy_intp>(row_count), static_cast<npy_intp>(column_count) };
+    // for column_major start with reversed indices, col major conversion seldomly occurs in sklearnex
+    if (layout == dal::data_layout::column_major){
+        dims[0] = static_cast<npy_intp>(column_count);
+        dims[1] = static_cast<npy_intp>(row_count);
+    }
     auto host_array = transfer_to_host(array);
     host_array.need_mutable_data();
     auto *bytes = host_array.get_mutable_data();
@@ -293,8 +297,11 @@ static PyObject *convert_to_numpy_impl(const dal::array<T> &array,
     if (!obj)
         throw std::invalid_argument("Conversion to numpy array failed");
     // set column major data to the proper format using transpose
-    if (layout == dal::data_layout::column_major) obj = PyArray_Transpose(obj, NULL);
-    
+    if (layout == dal::data_layout::column_major){
+        obj = PyArray_Transpose(obj, NULL);
+        if (!obj)
+            throw std::invalid_argument("Conversion to numpy array failed");
+    }
     void *opaque_value = static_cast<void *>(new dal::array<T>(host_array));
     PyObject *cap = PyCapsule_New(opaque_value, NULL, free_capsule);
     PyArray_SetBaseObject(reinterpret_cast<PyArrayObject *>(obj), cap);
