@@ -35,6 +35,7 @@ from ..utils import (
     _type_of_target,
 )
 from ..utils._array_api import _get_sycl_namespace
+from ..utils._dpep_helpers import get_unique_values_with_dpep
 
 
 class BaseLogisticRegression(onedal_BaseEstimator, metaclass=ABCMeta):
@@ -77,16 +78,19 @@ class BaseLogisticRegression(onedal_BaseEstimator, metaclass=ABCMeta):
                 accept_2d_y=False,
                 dtype=[np.float64, np.float32],
             )
+            if _type_of_target(y) != "binary":
+                raise ValueError("Only binary classification is supported")
+
+            self.classes_, y = np.unique(y, return_inverse=True)
+            y = y.astype(dtype=np.int32)
+        else:
+            self.classes_ = get_unique_values_with_dpep(y)
+            n_classes = len(self.classes_)
+            if n_classes != 2:
+                raise ValueError("Only binary classification is supported")
         is_csr = _is_csr(X)
 
         self.n_features_in_ = _num_features(X, fallback_1d=True)
-
-        if _type_of_target(y) != "binary":
-            raise ValueError("Only binary classification is supported")
-
-        self.classes_, y = np.unique(y, return_inverse=True)
-        y = y.astype(dtype=np.int32)
-
         policy = self._get_policy(queue, X, y)
         X_table, y_table = to_table(X, y, queue=queue)
         params = self._get_onedal_params(is_csr, X_table.dtype)
