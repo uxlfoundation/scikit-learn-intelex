@@ -280,10 +280,11 @@ static void free_capsule(PyObject *cap) {
 template <int NpType, typename T = byte_t>
 static PyObject *convert_to_numpy_impl(const dal::array<T> &array,
                                        std::int64_t row_count,
-                                       std::int64_t column_count = 0) {
+                                       std::int64_t column_count = 0,
+                                       const dal::data_layout& layout = dal::data_layout::row_major) {
     const int size_dims = column_count == 0 ? 1 : 2;
-
-    npy_intp dims[2] = { static_cast<npy_intp>(row_count), static_cast<npy_intp>(column_count) };
+    // for column_major (fortran order) use a transpose to return in proper format, start with reversed indices
+    npy_intp dims[2] = layout == dal::data_layout::row_major ? {static_cast<npy_intp>(row_count), static_cast<npy_intp>(column_count)} : {static_cast<npy_intp>(column_count), static_cast<npy_intp>(row_count)};
     auto host_array = transfer_to_host(array);
     host_array.need_mutable_data();
     auto *bytes = host_array.get_mutable_data();
@@ -291,7 +292,9 @@ static PyObject *convert_to_numpy_impl(const dal::array<T> &array,
     PyObject *obj = PyArray_SimpleNewFromData(size_dims, dims, NpType, static_cast<void *>(bytes));
     if (!obj)
         throw std::invalid_argument("Conversion to numpy array failed");
-
+    // set column major data to the proper format using transpose
+    if (layout == dal::data_layout::column_major) obj = PyArray_Transpose(obj, NULL);
+    
     void *opaque_value = static_cast<void *>(new dal::array<T>(host_array));
     PyObject *cap = PyCapsule_New(opaque_value, NULL, free_capsule);
     PyArray_SetBaseObject(reinterpret_cast<PyArrayObject *>(obj), cap);
@@ -414,7 +417,8 @@ PyObject *convert_to_pyobject(const dal::table &input) {
         auto bytes_array = dal::detail::get_original_data(homogen_input);      \
         res = convert_to_numpy_impl<NpType>(bytes_array,                       \
                                             homogen_input.get_row_count(),     \
-                                            homogen_input.get_column_count()); \
+                                            homogen_input.get_column_count(),  \
+                                            homogen_input.get_layout());       \
     }
         SET_CTYPE_NPY_FROM_DAL_TYPE(dtype,
                                     MAKE_NYMPY_FROM_HOMOGEN,
