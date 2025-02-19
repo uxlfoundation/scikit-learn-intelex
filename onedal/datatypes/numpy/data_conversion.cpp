@@ -418,7 +418,7 @@ PyObject *convert_to_pyobject(const dal::table &input) {
         res = convert_to_numpy_impl<NpType>(bytes_array,                       \
                                             homogen_input.get_row_count(),     \
                                             homogen_input.get_column_count(),  \
-                                            homogen_input.get_layout());       \
+                                            homogen_input.get_data_layout());       \
     }
         SET_CTYPE_NPY_FROM_DAL_TYPE(dtype,
                                     MAKE_NYMPY_FROM_HOMOGEN,
