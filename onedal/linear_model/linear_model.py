@@ -242,7 +242,7 @@ class LinearRegression(BaseLinearRegression):
         )
 
         if self.coef_.shape[0] == 1 and y.ndim == 1:
-            self.coef_ = xp.reshape(self.coef_, (-1,))
+            self.coef_ = self.coef_.ravel()
             self.intercept_ = self.intercept_[0]
 
         return self

@@ -177,13 +177,8 @@ class PCA(BasePCA):
             "decomposition", "dim_reduction", "train", policy, params, X
         )
 
-        self.mean_ = xp.reshape(
-            from_table(result.means, sua_iface=sua_iface, sycl_queue=queue, xp=xp), -1
-        )
-        self.variances_ = from_table(
-            result.variances, sua_iface=sua_iface, sycl_queue=queue, xp=xp
-        )
-        # TODO: why are there errors when using sua_iface and sycl_queue on following from_table calls?
+        self.mean_ = from_table(result.means).ravel()
+        self.variances_ = from_table(result.variances)
         self.components_ = from_table(result.eigenvectors)
         self.singular_values_ = from_table(result.singular_values).ravel()
         self.explained_variance_ = np.maximum(from_table(result.eigenvalues).ravel(), 0)
