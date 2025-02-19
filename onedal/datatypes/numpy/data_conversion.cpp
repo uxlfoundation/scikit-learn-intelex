@@ -298,7 +298,7 @@ static PyObject *convert_to_numpy_impl(const dal::array<T> &array,
         throw std::invalid_argument("Conversion to numpy array failed");
     // set column major data to the proper format using transpose
     if (layout == dal::data_layout::column_major){
-        obj = PyArray_Transpose(obj, NULL);
+        obj = PyArray_Transpose(reinterpret_cast<PyArrayObject *>(obj), NULL);
         if (!obj)
             throw std::invalid_argument("Conversion to numpy array failed");
     }
