@@ -278,14 +278,15 @@ static void free_capsule(PyObject *cap) {
 }
 
 template <int NpType, typename T = byte_t>
-static PyObject *convert_to_numpy_impl(const dal::array<T> &array,
-                                       std::int64_t row_count,
-                                       std::int64_t column_count = 0,
-                                       const dal::data_layout& layout = dal::data_layout::row_major) {
+static PyObject *convert_to_numpy_impl(
+    const dal::array<T> &array,
+    std::int64_t row_count,
+    std::int64_t column_count = 0,
+    const dal::data_layout &layout = dal::data_layout::row_major) {
     const int size_dims = column_count == 0 ? 1 : 2;
     npy_intp dims[2] = { static_cast<npy_intp>(row_count), static_cast<npy_intp>(column_count) };
     // for column_major start with reversed indices, col major conversion seldomly occurs in sklearnex
-    if (layout == dal::data_layout::column_major){
+    if (layout == dal::data_layout::column_major) {
         dims[0] = static_cast<npy_intp>(column_count);
         dims[1] = static_cast<npy_intp>(row_count);
     }
@@ -297,7 +298,7 @@ static PyObject *convert_to_numpy_impl(const dal::array<T> &array,
     if (!obj)
         throw std::invalid_argument("Conversion to numpy array failed");
     // set column major data to the proper format using transpose
-    if (layout == dal::data_layout::column_major){
+    if (layout == dal::data_layout::column_major) {
         obj = PyArray_Transpose(reinterpret_cast<PyArrayObject *>(obj), NULL);
         if (!obj)
             throw std::invalid_argument("Conversion to numpy array failed");
@@ -419,13 +420,13 @@ PyObject *convert_to_pyobject(const dal::table &input) {
         const auto &homogen_input = static_cast<const dal::homogen_table &>(input);
         const dal::data_type dtype = homogen_input.get_metadata().get_data_type(0);
 
-#define MAKE_NYMPY_FROM_HOMOGEN(NpType)                                        \
-    {                                                                          \
-        auto bytes_array = dal::detail::get_original_data(homogen_input);      \
-        res = convert_to_numpy_impl<NpType>(bytes_array,                       \
-                                            homogen_input.get_row_count(),     \
-                                            homogen_input.get_column_count(),  \
-                                            homogen_input.get_data_layout());       \
+#define MAKE_NYMPY_FROM_HOMOGEN(NpType)                                       \
+    {                                                                         \
+        auto bytes_array = dal::detail::get_original_data(homogen_input);     \
+        res = convert_to_numpy_impl<NpType>(bytes_array,                      \
+                                            homogen_input.get_row_count(),    \
+                                            homogen_input.get_column_count(), \
+                                            homogen_input.get_data_layout()); \
     }
         SET_CTYPE_NPY_FROM_DAL_TYPE(dtype,
                                     MAKE_NYMPY_FROM_HOMOGEN,
