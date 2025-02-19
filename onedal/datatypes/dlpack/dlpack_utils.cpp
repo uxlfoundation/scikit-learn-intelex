@@ -15,7 +15,6 @@
 *******************************************************************************/
 
 #include <pybind11/pybind11.h>
-#include <iostream>
 
 #include "oneapi/dal/common.hpp"
 #include "oneapi/dal/detail/common.hpp"
@@ -62,14 +61,7 @@ dal::data_layout get_dlpack_layout(const DLTensor& tensor) {
     const std::int64_t c_count = get_ndim(tensor) > 1 ? tensor.shape[1] : 1l;
 
     const std::int64_t* strides = tensor.strides;
-    std::cout << "rowcolcounts:" << r_count << " " << c_count << std::endl;
-    if (strides){
-        std::cout << "strides:" << strides[0];
-        if (get_ndim(tensor) > 1){
-            std::cout << " " << strides[1];
-        }
-        std::cout << std::endl;
-    }
+
     // if NULL then row major contiguous (see dlpack.h)
     // if 1 column array, also row major
     // if strides of rows = c_count elements, and columns = 1, also row major
