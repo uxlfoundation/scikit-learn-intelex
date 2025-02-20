@@ -39,6 +39,7 @@ from ..utils import (
     _validate_targets,
 )
 from ..utils._array_api import _get_sycl_namespace
+from ..utils._dpep_helpers import get_unique_values_with_dpep
 
 
 class BaseForest(BaseEstimator, BaseEnsemble, metaclass=ABCMeta):
@@ -306,7 +307,7 @@ class BaseForest(BaseEstimator, BaseEnsemble, metaclass=ABCMeta):
         else:
             if sua_iface is not None:
                 queue = X.sycl_queue
-            self.classes_ = xp.unique_all(y).values
+            self.classes_ = get_unique_values_with_dpep(y)
 
         self.n_features_in_ = X.shape[1]
 
