@@ -30,6 +30,8 @@ namespace oneapi::dal::python::numpy {
 namespace py = pybind11;
 
 PyObject *convert_to_pyobject(const dal::table &input);
-dal::table convert_to_table(py::object inp_obj, py::object queue = py::none());
+dal::table convert_to_table(py::object inp_obj,
+                            py::object queue = py::none(),
+                            bool recursed = false);
 
 } // namespace oneapi::dal::python::numpy
