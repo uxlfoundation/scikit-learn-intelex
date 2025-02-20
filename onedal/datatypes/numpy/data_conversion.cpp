@@ -291,7 +291,15 @@ static PyObject *convert_to_numpy_impl(
     auto *bytes = host_array.get_mutable_data();
     // assumes that the array has writeable data (not clear if that is the case in oneDAL)
     int flags = layout == dal::data_layout::row_major ? NPY_ARRAY_CARRAY : NPY_ARRAY_FARRAY;
-    PyObject *obj = PyArray_New(&PyArray_Type, size_dims, dims, NpType, NULL, static_cast<void *>(bytes), 0, flags, NULL);
+    PyObject *obj = PyArray_New(&PyArray_Type,
+                                size_dims,
+                                dims,
+                                NpType,
+                                NULL,
+                                static_cast<void *>(bytes),
+                                0,
+                                flags,
+                                NULL);
     if (!obj)
         throw std::invalid_argument("Conversion to numpy array failed");
 
