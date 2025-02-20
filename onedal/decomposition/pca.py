@@ -144,8 +144,10 @@ class BasePCA(metaclass=ABCMeta):
         model = self._create_model()
         X_table = to_table(X, queue=queue)
         params = self._get_onedal_params(X_table, stage="predict")
-        result = self.infer(params, model, to_table(X))
+        result = self.infer(params, model, X_table)
         return from_table(result.transformed_data)
+
+    transform = predict
 
 
 class PCA(BasePCA):

@@ -2,6 +2,7 @@
 {% block extrahead %}
     <script defer type="text/javascript" src="https://www.intel.com/content/dam/www/global/wap/performance-config.js" ></script>
     <script type="text/javascript">
+        fetch("{{ switcher_url }}").then(response => response.text()).then(respText=> load_versions(respText));
         // Configure TMS settings
         var wapLocalCode = 'us-en'; // Dynamically set per localized site, see mapping table for values
         var wapSection = "scikit-learn"; // WAP team will give you a unique section for your site
@@ -14,4 +15,9 @@
           })();
       }
       </script>
+{% endblock %}
+
+{% block menu %}
+  {% include "versions.html" %}
+  {{ super() }}
 {% endblock %}

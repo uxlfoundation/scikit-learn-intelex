@@ -50,8 +50,8 @@ jobs:
           OWNER="${FULL_NAME%/$NAME}"
           if [ "${{ github.repository_owner }}" != "${OWNER}" ]; then BRANCH="${OWNER}:${BRANCH}"; fi
           if [ $(git branch --show-current) != $BRANCH ]; then PR=$(gh pr view $BRANCH --json number -q .number); fi
-          echo uploading $BRANCH
           SHA=${{ github.event.workflow_run.head_sha }}
+          echo uploading $BRANCH $SHA
           VARARGS="-C ${SHA} -n github-${SHA}"
           # if a PR, pass proper information to codecov-cli about the PR number
           if [ -n "${PR}" ]; then VARARGS="${VARARGS}-${PR} -P ${PR}"; fi

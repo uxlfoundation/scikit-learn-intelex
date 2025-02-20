@@ -239,8 +239,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
     def _fit_backend(self, X_table, centroids_table, dtype=np.float32, is_csr=False):
         params = self._get_onedal_params(is_csr, dtype)
 
-        meta = _default_backend.get_table_metadata(X_table)
-        assert meta.get_npy_dtype(0) == dtype
+        assert X_table.dtype == dtype
 
         result = self.train(params, X_table, centroids_table)
 

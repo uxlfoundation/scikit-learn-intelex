@@ -110,7 +110,10 @@ class IncrementalLinearRegression(BaseLinearRegression):
             )
         self._queue = queue
 
-    def finalize_fit(self):
+        self._need_to_finalize = True
+        return self
+
+    def finalize_fit(self, queue=None):
         """
         Finalizes linear regression computation and obtains coefficients
         from the current `_partial_result`.
@@ -126,24 +129,25 @@ class IncrementalLinearRegression(BaseLinearRegression):
             Returns the instance itself.
         """
 
-        hparams = get_hyperparameters("linear_regression", "train")
-        with SyclQueueManager.manage_global_queue(self._queue):
-            if hparams is not None and not hparams.is_default:
-                result = self.finalize_train(
-                    self._params, hparams.backend, self._partial_result
-                )
-            else:
-                result = self.finalize_train(self._params, self._partial_result)
+        if self._need_to_finalize:
+            hparams = get_hyperparameters("linear_regression", "train")
+            with SyclQueueManager.manage_global_queue(self._queue):
+                if hparams is not None and not hparams.is_default:
+                    result = self.finalize_train(
+                        self._params, hparams.backend, self._partial_result
+                    )
+                else:
+                    result = self.finalize_train(self._params, self._partial_result)
 
-        self._onedal_model = result.model
+            self._onedal_model = result.model
 
-        packed_coefficients = from_table(result.model.packed_coefficients)
-        self.coef_, self.intercept_ = (
-            packed_coefficients[:, 1:].squeeze(),
-            packed_coefficients[:, 0].squeeze(),
-        )
+            packed_coefficients = from_table(result.model.packed_coefficients)
+            self.coef_, self.intercept_ = (
+                packed_coefficients[:, 1:].squeeze(),
+                packed_coefficients[:, 0].squeeze(),
+            )
 
-        self._queue = None
+            self._need_to_finalize = False
 
         return self
 
@@ -237,7 +241,10 @@ class IncrementalRidge(BaseLinearRegression):
                 self._params, self._partial_result, X_table, y_table
             )
 
-    def finalize_fit(self):
+        self._need_to_finalize = True
+        return self
+
+    def finalize_fit(self, queue=None):
         """
         Finalizes ridge regression computation and obtains coefficients
         from the current `_partial_result`.
@@ -252,17 +259,18 @@ class IncrementalRidge(BaseLinearRegression):
         self : object
             Returns the instance itself.
         """
-        with SyclQueueManager.manage_global_queue(self._queue):
-            result = self.finalize_train(self._params, self._partial_result)
+        if self._need_to_finalize:
+            with SyclQueueManager.manage_global_queue(self._queue):
+                result = self.finalize_train(self._params, self._partial_result)
 
-        self._onedal_model = result.model
+                self._onedal_model = result.model
 
-        packed_coefficients = from_table(result.model.packed_coefficients)
-        self.coef_, self.intercept_ = (
-            packed_coefficients[:, 1:].squeeze(),
-            packed_coefficients[:, 0].squeeze(),
-        )
+            packed_coefficients = from_table(result.model.packed_coefficients)
+            self.coef_, self.intercept_ = (
+                packed_coefficients[:, 1:].squeeze(),
+                packed_coefficients[:, 0].squeeze(),
+            )
 
-        self._queue = None
+            self._need_to_finalize = False
 
         return self

@@ -117,7 +117,6 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
             self._dtype = X_table.dtype
 
         params = self._get_onedal_params(self._dtype)
-        table_X = to_table(X)
         self._partial_result = self.partial_compute(params, self._partial_result, table_X)
         self._need_to_finalize = True
         # store the queue for when we finalize

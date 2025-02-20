@@ -34,7 +34,7 @@ if "%PYTHON%"=="python" (
 
 set "PYTEST_ARGS= "
 
-IF DEFINED COVERAGE_RCFILE (set "PYTEST_ARGS=--cov=onedal --cov=sklearnex --cov-config=%COVERAGE_RCFILE% --cov-append --cov-report= %PYTEST_ARGS%")
+IF DEFINED COVERAGE_RCFILE (set "PYTEST_ARGS=--cov=onedal --cov=sklearnex --cov-config=%COVERAGE_RCFILE% --cov-append --cov-branch --cov-report= %PYTEST_ARGS%")
 
 rem Note: execute with argument --json-report as second argument
 rem in order to produce a JSON report under folder '.pytest_reports'.

@@ -147,8 +147,7 @@ Sources and build instructions are available in
 `daal4py repository <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/daal4py>`_.
 
 The daal4py package is available via same distribution channels and platforms as scikit-learn-intelex.
-See
-`scikit-learn-intelex requirements <https://uxlfoundation.github.io/scikit-learn-intelex/latest/system-requirements.html>` _
+See `scikit-learn-intelex requirements <https://uxlfoundation.github.io/scikit-learn-intelex/latest/system-requirements.html>`_
 
 - Install from PyPI::
 

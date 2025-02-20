@@ -48,11 +48,13 @@ header:
    # Something in doc/
     - 'doc/daal4py/_static/style.css'
     - 'doc/daal4py/_templates/layout.html'
-    - 'doc/sources/_static/style.css'
+    - 'doc/sources/_static/custom.css'
     - 'doc/sources/_templates/footer.html'
     - 'doc/sources/_templates/layout.html'
+    - 'doc/sources/_templates/versions.html'
     - 'doc/daal4py/third-party-programs.txt'
     - 'doc/third-party-programs-sklearnex.txt'
+    - 'doc/versions.json'
     # requirements
     - 'dependencies-dev'
     - 'requirements*.txt'

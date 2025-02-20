@@ -44,6 +44,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Validate
-        uses: suzuki-shunsuke/github-action-renovate-config-validator@v1.1.0
+        uses: suzuki-shunsuke/github-action-renovate-config-validator@v1.1.1
         with:
           config_file_path: .github/renovate.json

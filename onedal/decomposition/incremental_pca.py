@@ -165,13 +165,13 @@ class IncrementalPCA(BasePCA):
             self.n_components_ = self.n_components
 
         self._queue = queue
+
         X_table = to_table(X, queue=queue)
 
         if not hasattr(self, "_dtype"):
             self._dtype = X_table.dtype
             self._params = self._get_onedal_params(X_table)
 
-        X_table = to_table(X)
         self._partial_result = self.partial_train(
             self._params, self._partial_result, X_table
         )

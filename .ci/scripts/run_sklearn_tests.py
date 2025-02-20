@@ -58,6 +58,7 @@ if __name__ == "__main__":
         pytest_args += (
             "--cov=onedal",
             "--cov=sklearnex",
+            "--cov-branch",
             f"--cov-config={rc}",
             "--cov-report=",
         )

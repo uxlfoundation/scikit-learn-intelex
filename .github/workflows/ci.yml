@@ -95,6 +95,7 @@ jobs:
           echo "DPCFLAG=${DPCFLAG}" >> "$GITHUB_OUTPUT"
           # enable coverage report generation
           echo "COVERAGE_RCFILE=$(readlink -f .coveragerc)" >> "$GITHUB_ENV"
+          if [[ -z $DPCFLAG ]]; then echo "SKLEARNEX_GCOV=1" >> "$GITHUB_ENV"; fi
       - name: apt-get
         run: sudo apt-get update && sudo apt-get install -y clang-format
       - name: dpcpp installation
@@ -111,6 +112,7 @@ jobs:
           source venv/bin/activate
           pip install -r dependencies-dev
           pip list
+          echo "NUMPY_BUILD=$(python -m pip freeze | grep numpy)" >> "$GITHUB_ENV"
       - name: Build daal4py/sklearnex
         run: |
           source venv/bin/activate
@@ -142,13 +144,14 @@ jobs:
       - name: Create coverage report
         run: |
           source venv/bin/activate
-          coverage combine .coverage.sklearnex .coverage.sklearn
-          coverage json -o coverage.lnx${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.json
+          source .github/scripts/activate_components.sh ${{ steps.set-env.outputs.DPCFLAG }}
+          bash .github/scripts/generate_coverage_reports.sh lnx${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }} ${{ steps.set-env.outputs.DPCFLAG }}
       - name: Archive coverage report
         uses: actions/upload-artifact@v4
         with:
           name: coverage_lnx_Py${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}
-          path: coverage.lnx${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.json
+          path: |
+            *_lnx${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.info
       - name: Sklearn testing [preview]
         run: |
           source venv/bin/activate
@@ -218,7 +221,12 @@ jobs:
           echo C:\msys64\usr\bin;>> %GITHUB_PATH%
           echo NO_DIST=YES>> %GITHUB_ENV%
           set DPCTL_TEMP="${{ env.DPCTL_PY_VERSIONS }}"
-          if not %DPCTL_TEMP:${{ matrix.PYTHON_VERSION }}=%==%DPCTL_TEMP% (echo DPCFLAG=>> %GITHUB_OUTPUT%) else (echo DPCFLAG="0">> %GITHUB_OUTPUT%)
+          if not %DPCTL_TEMP:${{ matrix.PYTHON_VERSION }}=%==%DPCTL_TEMP% (
+            echo DPCFLAG=>> %GITHUB_OUTPUT%
+            echo SKLEARNEX_GCOV=YES>> %GITHUB_ENV%
+          ) else (
+            echo DPCFLAG="0">> %GITHUB_OUTPUT%
+          )
           echo COVERAGE_RCFILE=%cd%\.coveragerc>> %GITHUB_ENV%
       - name: Download Intel OpenCL CPU Runtime artifact
         if: ${{ steps.set-env.outputs.DPCFLAG == '' }}
@@ -242,6 +250,7 @@ jobs:
           pip install --upgrade setuptools
           pip install cpufeature clang-format pyyaml
           pip install -r dependencies-dev
+          for /f "delims=" %%c in ('python -m pip freeze ^| grep numpy') do echo NUMPY_BUILD=%%c>> %GITHUB_ENV%
       - name: System info 
         shell: cmd
         run: |
@@ -288,13 +297,14 @@ jobs:
         shell: cmd
         run: |
           call .\venv\Scripts\activate.bat
-          coverage combine .coverage.sklearnex .coverage.sklearn
-          coverage json -o coverage.win${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.json
+          call .\.github\scripts\activate_components.bat ${{ steps.set-env.outputs.DPCFLAG }}
+          bash .github/scripts/generate_coverage_reports.sh win${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}
       - name: Archive coverage report
         uses: actions/upload-artifact@v4
         with:
           name: coverage_win_Py${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}
-          path: coverage.win${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.json
+          path: |
+             *_win${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.info
       - name: Sklearn testing [preview]
         shell: cmd
         run: |
