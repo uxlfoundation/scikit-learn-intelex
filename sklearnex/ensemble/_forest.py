@@ -110,11 +110,10 @@ class BaseForest(PatchableEstimator, ABC):
                 stacklevel=2,
             )
 
-        if not use_raw_input:
-            if y.ndim == 1:
-                # reshape is necessary to preserve the data contiguity against vs
-                # [:, np.newaxis] that does not.
-                y = xp.reshape(y, (-1, 1))
+        if y.ndim == 1:
+            # reshape is necessary to preserve the data contiguity against vs
+            # [:, np.newaxis] that does not.
+            y = xp.reshape(y, (-1, 1))
 
         if y.ndim == 1:
             self._n_samples, self.n_outputs_ = y.shape[0], 1
@@ -169,7 +168,7 @@ class BaseForest(PatchableEstimator, ABC):
 
         # Compute
         self._onedal_estimator = self._onedal_factory(**onedal_params)
-        self._onedal_estimator.fit(X, np.ravel(y), sample_weight, queue=queue)
+        self._onedal_estimator.fit(X, y, sample_weight, queue=queue)
 
         self._save_attributes()
 

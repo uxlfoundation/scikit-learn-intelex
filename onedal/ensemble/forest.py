@@ -292,7 +292,7 @@ class BaseForest(BaseEstimator, BaseEnsemble, metaclass=ABCMeta):
 
     def _fit(self, X, y, sample_weight, module, queue):
         use_raw_input = _get_config().get("use_raw_input", False) is True
-        _, xp, _ = _get_sycl_namespace(X)
+        sua_iface, xp, _ = _get_sycl_namespace(X)
 
         if not use_raw_input:
             X, y = _check_X_y(
@@ -304,8 +304,8 @@ class BaseForest(BaseEstimator, BaseEnsemble, metaclass=ABCMeta):
             )
             y = self._validate_targets(y, X.dtype)
         else:
-            # TODO:
-            # check it first.
+            if sua_iface is not None:
+                queue = X.sycl_queue
             self.classes_ = xp.unique_all(y).values
 
         self.n_features_in_ = X.shape[1]

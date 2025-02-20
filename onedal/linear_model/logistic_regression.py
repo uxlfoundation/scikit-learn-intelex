@@ -35,7 +35,6 @@ from ..utils import (
     _type_of_target,
 )
 from ..utils._array_api import _get_sycl_namespace
-from ..utils._dpep_helpers import get_unique_values_with_dpep
 
 
 class BaseLogisticRegression(onedal_BaseEstimator, metaclass=ABCMeta):
@@ -84,7 +83,7 @@ class BaseLogisticRegression(onedal_BaseEstimator, metaclass=ABCMeta):
             self.classes_, y = np.unique(y, return_inverse=True)
             y = y.astype(dtype=np.int32)
         else:
-            self.classes_ = get_unique_values_with_dpep(y)
+            self.classes_ = xp.unique_all(y).values
             n_classes = len(self.classes_)
             if n_classes != 2:
                 raise ValueError("Only binary classification is supported")
