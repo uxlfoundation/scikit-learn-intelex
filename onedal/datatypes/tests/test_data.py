@@ -570,4 +570,6 @@ def test_table_conversions_dlpack(dataframe, queue, order, data_shape, dtype):
     X_table = to_table(X_tens)
     X_out = from_table(X_table)
     print(X_table.shape, X_tens.data.shape)
-    assert_allclose(np.atleast_2d(X), X_out)
+    # oneDAL table construction sets 1d arrays to 2d arrays with 1 col
+    # this is counter the numpy strategy, and requires numpy's squeeze
+    assert_allclose(np.squeeze(X), np.squeeze(X_out))
