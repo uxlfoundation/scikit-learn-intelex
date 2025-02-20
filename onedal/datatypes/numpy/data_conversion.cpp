@@ -285,24 +285,16 @@ static PyObject *convert_to_numpy_impl(
     const dal::data_layout &layout = dal::data_layout::row_major) {
     const int size_dims = column_count == 0 ? 1 : 2;
     npy_intp dims[2] = { static_cast<npy_intp>(row_count), static_cast<npy_intp>(column_count) };
-    // for column_major start with reversed indices, col major conversion seldomly occurs in sklearnex
-    if (layout == dal::data_layout::column_major) {
-        dims[0] = static_cast<npy_intp>(column_count);
-        dims[1] = static_cast<npy_intp>(row_count);
-    }
+
     auto host_array = transfer_to_host(array);
     host_array.need_mutable_data();
     auto *bytes = host_array.get_mutable_data();
-
-    PyObject *obj = PyArray_SimpleNewFromData(size_dims, dims, NpType, static_cast<void *>(bytes));
+    // assumes that the array has writeable data (not clear if that is the case in oneDAL)
+    int flags = layout == dal::data_layout::row_major ? NPY_ARRAY_CARRAY : NPY_ARRAY_FARRAY;
+    PyObject *obj = PyArray_New(&PyArray_Type, size_dims, dims, NpType, NULL, static_cast<void *>(bytes), 0, flags, NULL);
     if (!obj)
         throw std::invalid_argument("Conversion to numpy array failed");
-    // set column major data to the proper format using transpose
-    if (layout == dal::data_layout::column_major) {
-        obj = PyArray_Transpose(reinterpret_cast<PyArrayObject *>(obj), NULL);
-        if (!obj)
-            throw std::invalid_argument("Conversion to numpy array failed");
-    }
+
     void *opaque_value = static_cast<void *>(new dal::array<T>(host_array));
     PyObject *cap = PyCapsule_New(opaque_value, NULL, free_capsule);
     PyArray_SetBaseObject(reinterpret_cast<PyArrayObject *>(obj), cap);
