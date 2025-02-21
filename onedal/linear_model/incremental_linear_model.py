@@ -59,6 +59,7 @@ class IncrementalLinearRegression(BaseLinearRegression):
     def finalize_train(self, *args, **kwargs): ...
 
     def _reset(self):
+        self._need_to_finalize = False
         # Get the pointer to partial_result from backend
         self._queue = None
         self._partial_result = self.partial_train_result()
@@ -194,6 +195,7 @@ class IncrementalRidge(BaseLinearRegression):
         self._reset()
 
     def _reset(self):
+        self._need_to_finalize = False
         self._queue = None
         self._partial_result = self.partial_train_result()
 
