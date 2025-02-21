@@ -454,7 +454,7 @@ def test_non_array(X, queue):
 
 
 @pytest.mark.skipif(
-    not _is_dpc_backend, reason="Requires DPC backend for dtype conversion"
+    not backend.is_dpc, reason="Requires DPC backend for dtype conversion"
 )
 @pytest.mark.parametrize("X", [None, 5, "test", True, [], np.pi, lambda: None])
 def test_low_precision_non_array(X):
