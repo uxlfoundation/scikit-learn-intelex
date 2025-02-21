@@ -27,8 +27,8 @@ if dpnp_available:
 from ._config import get_config
 
 
-def _get_backend(obj, method_name, *data):
-    with SyclQueueManager.manage_global_queue(None, *data) as queue:
+def _get_backend(obj, queue, method_name, *data):
+    with SyclQueueManager.manage_global_queue(queue, *data) as queue:
         cpu_device = queue is None or getattr(queue.sycl_device, "is_cpu", True)
         gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
 
@@ -65,7 +65,7 @@ def dispatch(obj, method_name, branches, *args, **kwargs):
         has_usm_data_for_kwargs, hostvalues = _transfer_to_host(*kwargs.values())
         hostkwargs = dict(zip(kwargs.keys(), hostvalues))
 
-        backend, patching_status = _get_backend(obj, method_name, *hostargs)
+        backend, patching_status = _get_backend(obj, queue, method_name, *hostargs)
         has_usm_data = has_usm_data_for_args or has_usm_data_for_kwargs
         if backend == "onedal":
             # Host args only used before onedal backend call.
