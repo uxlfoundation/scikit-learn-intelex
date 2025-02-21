@@ -63,6 +63,17 @@ class IncrementalLinearRegression(BaseLinearRegression):
         self._queue = None
         self._partial_result = self.partial_train_result()
 
+    def __getstate__(self):
+        # Since finalize_fit can't be dispatched without directly provided queue
+        # and the dispatching policy can't be serialized, the computation is finalized
+        # here and the policy is not saved in serialized data.
+
+        self.finalize_fit()
+        data = self.__dict__.copy()
+        data.pop("_queue", None)
+
+        return data
+
     @supports_queue
     def partial_fit(self, X, y, queue=None):
         """
@@ -185,6 +196,17 @@ class IncrementalRidge(BaseLinearRegression):
     def _reset(self):
         self._queue = None
         self._partial_result = self.partial_train_result()
+
+    def __getstate__(self):
+        # Since finalize_fit can't be dispatched without directly provided queue
+        # and the dispatching policy can't be serialized, the computation is finalized
+        # here and the policy is not saved in serialized data.
+
+        self.finalize_fit()
+        data = self.__dict__.copy()
+        data.pop("_queue", None)
+
+        return data
 
     @bind_default_backend("linear_model.regression")
     def partial_train_result(self): ...

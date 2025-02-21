@@ -25,7 +25,7 @@ from sklearn.utils.validation import _check_sample_weight
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal.basic_statistics import BasicStatistics as onedal_BasicStatistics
-from onedal.utils import _is_csr
+from onedal.utils.validation import _is_csr
 
 from .._device_offload import dispatch
 from .._utils import IntelEstimator, PatchingConditionsChain
