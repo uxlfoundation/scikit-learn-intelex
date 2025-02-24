@@ -283,7 +283,7 @@ void init_train_hyperparameters(py::module_& m) {
                  [](train_hyperparams_t& self, int64_t cpu_macro_block) {
                      self.set_cpu_macro_block(cpu_macro_block);
                  })
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20250400
+#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20250500
             .def("set_cpu_max_cols_batched",
                  [](train_hyperparams_t& self, int64_t cpu_max_cols_batched) {
                      self.set_cpu_max_cols_batched(cpu_max_cols_batched);
@@ -296,7 +296,7 @@ void init_train_hyperparameters(py::module_& m) {
                  [](train_hyperparams_t& self, int64_t cpu_small_rows_max_cols_batched) {
                      self.set_cpu_small_rows_max_cols_batched(cpu_small_rows_max_cols_batched);
                  })
-#endif
+#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20250500
             .def("set_gpu_macro_block",
                  [](train_hyperparams_t& self, int64_t gpu_macro_block) {
                      self.set_gpu_macro_block(gpu_macro_block);
@@ -305,7 +305,7 @@ void init_train_hyperparameters(py::module_& m) {
                  [](const train_hyperparams_t& self) {
                      return self.get_cpu_macro_block();
                  })
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20250400
+#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20250500
             .def("get_cpu_max_cols_batched",
                  [](const train_hyperparams_t& self) {
                      return self.get_cpu_max_cols_batched();
@@ -318,7 +318,7 @@ void init_train_hyperparameters(py::module_& m) {
                  [](const train_hyperparams_t& self) {
                      return self.get_cpu_small_rows_max_cols_batched();
                  })
-#endif
+#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20250500
             .def("get_gpu_macro_block", [](const train_hyperparams_t& self) {
                 return self.get_gpu_macro_block();
             });
