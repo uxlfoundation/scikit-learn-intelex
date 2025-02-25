@@ -448,11 +448,13 @@ def _assert_all_finite(X, allow_nan=False, input_name=""):
         "method": "dense",
         "allow_nan": allow_nan,
     }
-    if not backend_method(params, X_t).finite:
-        type_err = "infinity" if allow_nan else "NaN, infinity"
-        padded_input_name = input_name + " " if input_name else ""
-        msg_err = f"Input {padded_input_name}contains {type_err}."
-        raise ValueError(msg_err)
+    with SyclQueueManager.manage_global_queue(None, X):
+        # Must use the queue provided by X
+        if not backend_method(params, X_t).finite:
+            type_err = "infinity" if allow_nan else "NaN, infinity"
+            padded_input_name = input_name + " " if input_name else ""
+            msg_err = f"Input {padded_input_name}contains {type_err}."
+            raise ValueError(msg_err)
 
 
 @supports_queue
