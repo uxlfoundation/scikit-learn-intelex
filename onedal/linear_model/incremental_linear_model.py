@@ -17,10 +17,12 @@
 import numpy as np
 
 from daal4py.sklearn._utils import get_dtype
+from onedal._device_offload import SyclQueueManager, supports_queue
+from onedal.common._backend import bind_default_backend
 
 from ..common.hyperparameters import get_hyperparameters
 from ..datatypes import from_table, to_table
-from ..utils import _check_X_y, _num_features
+from ..utils.validation import _check_X_y, _num_features
 from .linear_model import BaseLinearRegression
 
 
@@ -44,17 +46,23 @@ class IncrementalLinearRegression(BaseLinearRegression):
 
     def __init__(self, fit_intercept=True, copy_X=False, algorithm="norm_eq"):
         super().__init__(fit_intercept=fit_intercept, copy_X=copy_X, algorithm=algorithm)
+        self._queue = None
         self._reset()
+
+    @bind_default_backend("linear_model.regression")
+    def partial_train_result(self): ...
+
+    @bind_default_backend("linear_model.regression")
+    def partial_train(self, *args, **kwargs): ...
+
+    @bind_default_backend("linear_model.regression")
+    def finalize_train(self, *args, **kwargs): ...
 
     def _reset(self):
         self._need_to_finalize = False
-        # Not supported with spmd policy so IncrementalLinearRegression must be specified
-        self._partial_result = IncrementalLinearRegression._get_backend(
-            IncrementalLinearRegression,
-            "linear_model",
-            "regression",
-            "partial_train_result",
-        )
+        # Get the pointer to partial_result from backend
+        self._queue = None
+        self._partial_result = self.partial_train_result()
 
     def __getstate__(self):
         # Since finalize_fit can't be dispatched without directly provided queue
@@ -67,6 +75,7 @@ class IncrementalLinearRegression(BaseLinearRegression):
 
         return data
 
+    @supports_queue
     def partial_fit(self, X, y, queue=None):
         """
         Computes partial data for linear regression
@@ -88,17 +97,7 @@ class IncrementalLinearRegression(BaseLinearRegression):
         self : object
             Returns the instance itself.
         """
-        # Not supported with spmd policy so IncrementalLinearRegression must be specified
-        module = IncrementalLinearRegression._get_backend(
-            IncrementalLinearRegression, "linear_model", "regression"
-        )
-
         self._queue = queue
-        # Not supported with spmd policy so IncrementalLinearRegression must be specified
-        policy = IncrementalLinearRegression._get_policy(
-            IncrementalLinearRegression, queue, X
-        )
-
         X, y = _check_X_y(
             X, y, dtype=[np.float64, np.float32], accept_2d_y=True, force_all_finite=False
         )
@@ -114,18 +113,14 @@ class IncrementalLinearRegression(BaseLinearRegression):
 
         hparams = get_hyperparameters("linear_regression", "train")
         if hparams is not None and not hparams.is_default:
-            self._partial_result = module.partial_train(
-                policy,
-                self._params,
-                hparams.backend,
-                self._partial_result,
-                X_table,
-                y_table,
+            self._partial_result = self.partial_train(
+                self._params, hparams.backend, self._partial_result, X_table, y_table
             )
         else:
-            self._partial_result = module.partial_train(
-                policy, self._params, self._partial_result, X_table, y_table
+            self._partial_result = self.partial_train(
+                self._params, self._partial_result, X_table, y_table
             )
+        self._queue = queue
 
         self._need_to_finalize = True
         return self
@@ -147,19 +142,14 @@ class IncrementalLinearRegression(BaseLinearRegression):
         """
 
         if self._need_to_finalize:
-            if queue is not None:
-                policy = self._get_policy(queue)
-            else:
-                policy = self._get_policy(self._queue)
-
-            module = self._get_backend("linear_model", "regression")
             hparams = get_hyperparameters("linear_regression", "train")
-            if hparams is not None and not hparams.is_default:
-                result = module.finalize_train(
-                    policy, self._params, hparams.backend, self._partial_result
-                )
-            else:
-                result = module.finalize_train(policy, self._params, self._partial_result)
+            with SyclQueueManager.manage_global_queue(self._queue):
+                if hparams is not None and not hparams.is_default:
+                    result = self.finalize_train(
+                        self._params, hparams.backend, self._partial_result
+                    )
+                else:
+                    result = self.finalize_train(self._params, self._partial_result)
 
             self._onedal_model = result.model
 
@@ -201,12 +191,13 @@ class IncrementalRidge(BaseLinearRegression):
         super().__init__(
             fit_intercept=fit_intercept, alpha=alpha, copy_X=copy_X, algorithm=algorithm
         )
+        self._queue = None
         self._reset()
 
     def _reset(self):
-        module = self._get_backend("linear_model", "regression")
-        self._partial_result = module.partial_train_result()
         self._need_to_finalize = False
+        self._queue = None
+        self._partial_result = self.partial_train_result()
 
     def __getstate__(self):
         # Since finalize_fit can't be dispatched without directly provided queue
@@ -219,6 +210,16 @@ class IncrementalRidge(BaseLinearRegression):
 
         return data
 
+    @bind_default_backend("linear_model.regression")
+    def partial_train_result(self): ...
+
+    @bind_default_backend("linear_model.regression")
+    def partial_train(self, *args, **kwargs): ...
+
+    @bind_default_backend("linear_model.regression")
+    def finalize_train(self, *args, **kwargs): ...
+
+    @supports_queue
     def partial_fit(self, X, y, queue=None):
         """
         Computes partial data for ridge regression
@@ -240,11 +241,7 @@ class IncrementalRidge(BaseLinearRegression):
         self : object
             Returns the instance itself.
         """
-        module = self._get_backend("linear_model", "regression")
-
         self._queue = queue
-        policy = self._get_policy(queue, X)
-
         X, y = _check_X_y(
             X, y, dtype=[np.float64, np.float32], accept_2d_y=True, force_all_finite=False
         )
@@ -258,9 +255,15 @@ class IncrementalRidge(BaseLinearRegression):
             self._dtype = X_table.dtype
             self._params = self._get_onedal_params(self._dtype)
 
-        self._partial_result = module.partial_train(
-            policy, self._params, self._partial_result, X_table, y_table
-        )
+        hparams = get_hyperparameters("linear_regression", "train")
+        if hparams is not None and not hparams.is_default:
+            self._partial_result = self.partial_train(
+                self._params, hparams.backend, self._partial_result, X_table, y_table
+            )
+        else:
+            self._partial_result = self.partial_train(
+                self._params, self._partial_result, X_table, y_table
+            )
 
         self._need_to_finalize = True
         return self
@@ -280,16 +283,11 @@ class IncrementalRidge(BaseLinearRegression):
         self : object
             Returns the instance itself.
         """
-
         if self._need_to_finalize:
-            module = self._get_backend("linear_model", "regression")
-            if queue is not None:
-                policy = self._get_policy(queue)
-            else:
-                policy = self._get_policy(self._queue)
-            result = module.finalize_train(policy, self._params, self._partial_result)
+            with SyclQueueManager.manage_global_queue(self._queue):
+                result = self.finalize_train(self._params, self._partial_result)
 
-            self._onedal_model = result.model
+                self._onedal_model = result.model
 
             packed_coefficients = from_table(result.model.packed_coefficients)
             self.coef_, self.intercept_ = (

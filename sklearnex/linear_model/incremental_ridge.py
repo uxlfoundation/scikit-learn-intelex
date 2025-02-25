@@ -144,7 +144,7 @@ class IncrementalRidge(IntelEstimator, MultiOutputMixin, RegressorMixin, BaseEst
         assert hasattr(self, "_onedal_estimator")
         if self._need_to_finalize:
             self._onedal_finalize_fit()
-        return self._onedal_estimator.predict(X, queue)
+        return self._onedal_estimator.predict(X, queue=queue)
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
         return r2_score(
@@ -184,7 +184,7 @@ class IncrementalRidge(IntelEstimator, MultiOutputMixin, RegressorMixin, BaseEst
         }
         if not hasattr(self, "_onedal_estimator"):
             self._onedal_estimator = self._onedal_incremental_ridge(**onedal_params)
-        self._onedal_estimator.partial_fit(X, y, queue)
+        self._onedal_estimator.partial_fit(X, y, queue=queue)
         self._need_to_finalize = True
 
     def _onedal_finalize_fit(self):

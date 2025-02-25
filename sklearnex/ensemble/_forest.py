@@ -56,7 +56,7 @@ from onedal.ensemble import ExtraTreesRegressor as onedal_ExtraTreesRegressor
 from onedal.ensemble import RandomForestClassifier as onedal_RandomForestClassifier
 from onedal.ensemble import RandomForestRegressor as onedal_RandomForestRegressor
 from onedal.primitives import get_tree_state_cls, get_tree_state_reg
-from onedal.utils import _num_features, _num_samples
+from onedal.utils.validation import _num_features, _num_samples
 from sklearnex import get_hyperparameters
 from sklearnex._utils import register_hyperparameters
 

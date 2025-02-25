@@ -20,15 +20,16 @@ from numbers import Number
 import numpy as np
 
 from daal4py.sklearn._utils import daal_check_version, get_dtype, make2d
+from onedal._device_offload import SyclQueueManager, supports_queue
+from onedal.common._backend import bind_default_backend
 
-from ..common._base import BaseEstimator
 from ..common._estimator_checks import _check_is_fitted
 from ..common.hyperparameters import get_hyperparameters
 from ..datatypes import from_table, to_table
-from ..utils import _check_array, _check_n_features, _check_X_y, _num_features
+from ..utils.validation import _check_array, _check_n_features, _check_X_y, _num_features
 
 
-class BaseLinearRegression(BaseEstimator, metaclass=ABCMeta):
+class BaseLinearRegression(metaclass=ABCMeta):
     """
     Base class for LinearRegression oneDAL implementation.
     """
@@ -39,6 +40,16 @@ class BaseLinearRegression(BaseEstimator, metaclass=ABCMeta):
         self.alpha = alpha
         self.copy_X = copy_X
         self.algorithm = algorithm
+
+    @bind_default_backend("linear_model.regression")
+    def train(self, *args, **kwargs): ...
+
+    @bind_default_backend("linear_model.regression")
+    def infer(self, params, model, X): ...
+
+    # direct access to the backend model class
+    @bind_default_backend("linear_model.regression")
+    def model(self): ...
 
     def _get_onedal_params(self, dtype=np.float32):
         intercept = "intercept|" if self.fit_intercept else ""
@@ -53,9 +64,8 @@ class BaseLinearRegression(BaseEstimator, metaclass=ABCMeta):
 
         return params
 
-    def _create_model(self, policy):
-        module = self._get_backend("linear_model", "regression")
-        model = module.model()
+    def _create_model(self):
+        model = self.model()
 
         coefficients = self.coef_
         dtype = get_dtype(coefficients)
@@ -92,13 +102,14 @@ class BaseLinearRegression(BaseEstimator, metaclass=ABCMeta):
             packed_coefficients[:, 0][:, np.newaxis] = intercept
 
         model.packed_coefficients = to_table(
-            packed_coefficients, queue=getattr(policy, "_queue", None)
+            packed_coefficients, queue=SyclQueueManager.get_global_queue()
         )
 
         self._onedal_model = model
 
         return model
 
+    @supports_queue
     def predict(self, X, queue=None):
         """
         Predict using the linear model.
@@ -115,11 +126,8 @@ class BaseLinearRegression(BaseEstimator, metaclass=ABCMeta):
         C : array, shape (n_samples, n_targets)
             Returns predicted values.
         """
-        module = self._get_backend("linear_model", "regression")
 
         _check_is_fitted(self)
-
-        policy = self._get_policy(queue, X)
 
         X = _check_array(
             X, dtype=[np.float64, np.float32], force_all_finite=False, ensure_2d=False
@@ -129,12 +137,12 @@ class BaseLinearRegression(BaseEstimator, metaclass=ABCMeta):
         if hasattr(self, "_onedal_model"):
             model = self._onedal_model
         else:
-            model = self._create_model(policy)
+            model = self._create_model()
 
         X_table = to_table(X, queue=queue)
         params = self._get_onedal_params(X_table.dtype)
 
-        result = module.infer(policy, params, model, X_table)
+        result = self.infer(params, model, X_table)
         y = from_table(result.responses)
 
         if y.shape[1] == 1 and self.coef_.ndim == 1:
@@ -171,6 +179,7 @@ class LinearRegression(BaseLinearRegression):
     ):
         super().__init__(fit_intercept=fit_intercept, copy_X=copy_X, algorithm=algorithm)
 
+    @supports_queue
     def fit(self, X, y, queue=None):
         """
         Fit linear model.
@@ -190,7 +199,6 @@ class LinearRegression(BaseLinearRegression):
         self : object
             Fitted Estimator.
         """
-        module = self._get_backend("linear_model", "regression")
 
         # TODO Fix _check_X_y to make sure this conversion is there
         if not isinstance(X, np.ndarray):
@@ -205,8 +213,6 @@ class LinearRegression(BaseLinearRegression):
 
         X, y = _check_X_y(X, y, force_all_finite=False, accept_2d_y=True)
 
-        policy = self._get_policy(queue, X, y)
-
         self.n_features_in_ = _num_features(X, fallback_1d=True)
 
         X_table, y_table = to_table(X, y, queue=queue)
@@ -214,9 +220,9 @@ class LinearRegression(BaseLinearRegression):
 
         hparams = get_hyperparameters("linear_regression", "train")
         if hparams is not None and not hparams.is_default:
-            result = module.train(policy, params, hparams.backend, X_table, y_table)
+            result = self.train(params, hparams.backend, X_table, y_table)
         else:
-            result = module.train(policy, params, X_table, y_table)
+            result = self.train(params, X_table, y_table)
 
         self._onedal_model = result.model
 
@@ -269,6 +275,7 @@ class Ridge(BaseLinearRegression):
             fit_intercept=fit_intercept, alpha=alpha, copy_X=copy_X, algorithm=algorithm
         )
 
+    @supports_queue
     def fit(self, X, y, queue=None):
         """
         Fit linear model.
@@ -288,8 +295,13 @@ class Ridge(BaseLinearRegression):
         self : object
             Fitted Estimator.
         """
-        module = self._get_backend("linear_model", "regression")
-
+        X = _check_array(
+            X,
+            dtype=[np.float64, np.float32],
+            force_all_finite=False,
+            ensure_2d=False,
+            copy=self.copy_X,
+        )
         if not isinstance(X, np.ndarray):
             X = np.asarray(X)
 
@@ -302,14 +314,12 @@ class Ridge(BaseLinearRegression):
 
         X, y = _check_X_y(X, y, force_all_finite=False, accept_2d_y=True)
 
-        policy = self._get_policy(queue, X, y)
-
         self.n_features_in_ = _num_features(X, fallback_1d=True)
 
         X_table, y_table = to_table(X, y, queue=queue)
         params = self._get_onedal_params(X.dtype)
 
-        result = module.train(policy, params, X_table, y_table)
+        result = self.train(params, X_table, y_table)
         self._onedal_model = result.model
 
         packed_coefficients = from_table(result.model.packed_coefficients)

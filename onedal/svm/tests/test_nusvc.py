@@ -44,7 +44,7 @@ def _test_libsvm_parameters(queue, array_constr, dtype):
     assert_array_equal(clf.predict(X, queue=queue), y)
 
 
-@pass_if_not_implemented_for_gpu(reason="nusvc is not implemented")
+@pass_if_not_implemented_for_gpu(reason="not implemented")
 @pytest.mark.parametrize("queue", get_queues())
 @pytest.mark.parametrize("array_constr", [np.array])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
@@ -52,7 +52,7 @@ def test_libsvm_parameters(queue, array_constr, dtype):
     _test_libsvm_parameters(queue, array_constr, dtype)
 
 
-@pass_if_not_implemented_for_gpu(reason="nusvc is not implemented")
+@pass_if_not_implemented_for_gpu(reason="not implemented")
 @pytest.mark.parametrize("queue", get_queues())
 def test_class_weight(queue):
     X = np.array([[-2, -1], [-1, -1], [-1, -2], [1, 1], [1, 2], [2, 1]])
@@ -63,7 +63,7 @@ def test_class_weight(queue):
     assert_array_almost_equal(clf.predict(X, queue=queue), [2] * 6)
 
 
-@pass_if_not_implemented_for_gpu(reason="nusvc is not implemented")
+@pass_if_not_implemented_for_gpu(reason="not implemented")
 @pytest.mark.parametrize("queue", get_queues())
 def test_sample_weight(queue):
     X = np.array([[-2, 0], [-1, -1], [0, -2], [0, 2], [1, 1], [2, 2]])
@@ -74,7 +74,7 @@ def test_sample_weight(queue):
     assert_array_almost_equal(clf.intercept_, [0.0])
 
 
-@pass_if_not_implemented_for_gpu(reason="nusvc is not implemented")
+@pass_if_not_implemented_for_gpu(reason="not implemented")
 @pytest.mark.parametrize("queue", get_queues())
 def test_decision_function(queue):
     X = [[-2, -1], [-1, -1], [-1, -2], [1, 1], [1, 2], [2, 1]]
@@ -88,7 +88,7 @@ def test_decision_function(queue):
     assert_array_almost_equal(dec.ravel(), clf.decision_function(X, queue=queue))
 
 
-@pass_if_not_implemented_for_gpu(reason="nusvc is not implemented")
+@pass_if_not_implemented_for_gpu(reason="not implemented")
 @pytest.mark.parametrize("queue", get_queues())
 def test_iris(queue):
     iris = datasets.load_iris()
@@ -97,7 +97,7 @@ def test_iris(queue):
     assert_array_equal(clf.classes_, np.sort(clf.classes_))
 
 
-@pass_if_not_implemented_for_gpu(reason="nusvc is not implemented")
+@pass_if_not_implemented_for_gpu(reason="not implemented")
 @pytest.mark.parametrize("queue", get_queues())
 def test_decision_function_shape(queue):
     X, y = make_blobs(n_samples=80, centers=5, random_state=0)
@@ -114,7 +114,7 @@ def test_decision_function_shape(queue):
     #     SVC(decision_function_shape='bad').fit(X_train, y_train)
 
 
-@pass_if_not_implemented_for_gpu(reason="nusvc is not implemented")
+@pass_if_not_implemented_for_gpu(reason="not implemented")
 @pytest.mark.parametrize("queue", get_queues())
 def test_pickle(queue):
     iris = datasets.load_iris()
@@ -146,7 +146,7 @@ def _test_cancer_rbf_compare_with_sklearn(queue, nu, gamma):
     assert abs(result - expected) < 1e-4
 
 
-@pass_if_not_implemented_for_gpu(reason="nusvc is not implemented")
+@pass_if_not_implemented_for_gpu(reason="not implemented")
 @pytest.mark.parametrize("queue", get_queues())
 @pytest.mark.parametrize("gamma", ["scale", "auto"])
 @pytest.mark.parametrize("nu", [0.25, 0.5])
@@ -169,7 +169,7 @@ def _test_cancer_linear_compare_with_sklearn(queue, nu):
     assert abs(result - expected) < 1e-3
 
 
-@pass_if_not_implemented_for_gpu(reason="nusvc is not implemented")
+@pass_if_not_implemented_for_gpu(reason="not implemented")
 @pytest.mark.parametrize("queue", get_queues())
 @pytest.mark.parametrize("nu", [0.25, 0.5])
 def test_cancer_linear_compare_with_sklearn(queue, nu):
@@ -191,7 +191,7 @@ def _test_cancer_poly_compare_with_sklearn(queue, params):
     assert abs(result - expected) < 1e-4
 
 
-@pass_if_not_implemented_for_gpu(reason="nusvc is not implemented")
+@pass_if_not_implemented_for_gpu(reason="not implemented")
 @pytest.mark.parametrize("queue", get_queues())
 @pytest.mark.parametrize(
     "params",

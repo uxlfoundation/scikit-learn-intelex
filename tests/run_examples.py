@@ -246,7 +246,7 @@ def run(exdir, logdir, args):
                     )
                 else:
                     logfn = jp(logdir, script.replace(".py", ".res"))
-                    with open(logfn, "w") as logfile:
+                    with open(logfn, "w", encoding="utf-8") as logfile:
                         print("\n##### " + jp(dirpath, script))
                         execute_string = get_exe_cmd(jp(dirpath, script), args)
                         if execute_string:
@@ -267,7 +267,7 @@ def run(exdir, logdir, args):
                                 proc.kill()
                                 out = proc.communicate()[0]
                                 print("Process has timed out: " + str(execute_string))
-                            logfile.write(out.decode("ascii"))
+                            logfile.write(out.decode("utf-8"))
                             if proc.returncode:
                                 print(out)
                                 print(

@@ -145,9 +145,9 @@ class IncrementalEmpiricalCovariance(IntelEstimator, BaseEstimator):
         )
         return patching_status
 
-    def _onedal_finalize_fit(self, queue=None):
+    def _onedal_finalize_fit(self):
         assert hasattr(self, "_onedal_estimator")
-        self._onedal_estimator.finalize_fit(queue=queue)
+        self._onedal_estimator.finalize_fit()
         self._need_to_finalize = False
 
         if not daal_check_version((2024, "P", 400)) and self.assume_centered:
@@ -363,7 +363,7 @@ class IncrementalEmpiricalCovariance(IntelEstimator, BaseEstimator):
             X_batch = X[batch]
             self._onedal_partial_fit(X_batch, queue=queue, check_input=False)
 
-        self._onedal_finalize_fit(queue=queue)
+        self._onedal_finalize_fit()
 
         return self
 

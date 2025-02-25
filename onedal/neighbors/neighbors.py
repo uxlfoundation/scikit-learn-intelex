@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
-from abc import ABCMeta
+from abc import ABCMeta, abstractmethod
 from numbers import Integral
 
 import numpy as np
@@ -27,12 +27,13 @@ from daal4py import (
     kdtree_knn_classification_prediction,
     kdtree_knn_classification_training,
 )
+from onedal._device_offload import SyclQueueManager, supports_queue
+from onedal.common._backend import bind_default_backend
 
-from ..common._base import BaseEstimator
 from ..common._estimator_checks import _check_is_fitted, _is_classifier, _is_regressor
 from ..common._mixin import ClassifierMixin, RegressorMixin
 from ..datatypes import from_table, to_table
-from ..utils import (
+from ..utils.validation import (
     _check_array,
     _check_classification_targets,
     _check_n_features,
@@ -42,7 +43,18 @@ from ..utils import (
 )
 
 
-class NeighborsCommonBase(BaseEstimator, metaclass=ABCMeta):
+class NeighborsCommonBase(metaclass=ABCMeta):
+    def __init__(self):
+        self.requires_y = False
+        self.n_neighbors = None
+        self.metric = None
+        self.classes_ = None
+        self.effective_metric_ = None
+        self._fit_method = None
+        self.radius = None
+        self.effective_metric_params_ = None
+        self._onedal_model = None
+
     def _parse_auto_method(self, method, n_samples, n_features):
         result_method = method
 
@@ -60,8 +72,17 @@ class NeighborsCommonBase(BaseEstimator, metaclass=ABCMeta):
 
         return result_method
 
+    @abstractmethod
+    def train(self, *args, **kwargs): ...
+
+    @abstractmethod
+    def infer(self, *args, **kwargs): ...
+
+    @abstractmethod
+    def _onedal_fit(self, X, y): ...
+
     def _validate_data(
-        self, X, y=None, reset=True, validate_separately=False, **check_params
+        self, X, y=None, reset=True, validate_separately=None, **check_params
     ):
         if y is None:
             if self.requires_y:
@@ -188,13 +209,13 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
             return arr
 
     def _validate_n_classes(self):
-        if len(self.classes_) < 2:
+        length = 0 if self.classes_ is None else len(self.classes_)
+        if length < 2:
             raise ValueError(
-                "The number of classes has to be greater than one; got %d"
-                " class" % len(self.classes_)
+                f"The number of classes has to be greater than one; got {length}"
             )
 
-    def _fit(self, X, y, queue):
+    def _fit(self, X, y):
         self._onedal_model = None
         self._tree = None
         self._shape = None
@@ -253,11 +274,12 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         )
 
         _fit_y = None
+        queue = SyclQueueManager.get_global_queue()
         gpu_device = queue is not None and queue.sycl_device.is_gpu
 
         if _is_classifier(self) or (_is_regressor(self) and gpu_device):
             _fit_y = self._validate_targets(self._y, X.dtype).reshape((-1, 1))
-        result = self._onedal_fit(X, _fit_y, queue)
+        result = self._onedal_fit(X, _fit_y)
 
         if y is not None and _is_regressor(self):
             self._y = y if self._shape is None else y.reshape(self._shape)
@@ -267,7 +289,7 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
 
         return result
 
-    def _kneighbors(self, X=None, n_neighbors=None, return_distance=True, queue=None):
+    def _kneighbors(self, X=None, n_neighbors=None, return_distance=True):
         n_features = getattr(self, "n_features_in_", None)
         shape = getattr(X, "shape", None)
         if n_features and shape and len(shape) > 1 and shape[1] != n_features:
@@ -316,25 +338,21 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
             )
 
         chunked_results = None
-        method = super()._parse_auto_method(
+        method = self._parse_auto_method(
             self._fit_method, self.n_samples_fit_, n_features
         )
 
-        if (
-            type(self._onedal_model) is kdtree_knn_classification_model
-            or type(self._onedal_model) is bf_knn_classification_model
+        if type(self._onedal_model) in (
+            kdtree_knn_classification_model,
+            bf_knn_classification_model,
         ):
             params = super()._get_daal_params(X, n_neighbors=n_neighbors)
-            prediction_results = self._onedal_predict(
-                self._onedal_model, X, params, queue=queue
-            )
+            prediction_results = self._onedal_predict(self._onedal_model, X, params)
             distances = prediction_results.distances
             indices = prediction_results.indices
         else:
             params = super()._get_onedal_params(X, n_neighbors=n_neighbors)
-            prediction_results = self._onedal_predict(
-                self._onedal_model, X, params, queue=queue
-            )
+            prediction_results = self._onedal_predict(self._onedal_model, X, params)
             distances = from_table(prediction_results.distances)
             indices = from_table(prediction_results.indices)
 
@@ -408,14 +426,27 @@ class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
         )
         self.weights = weights
 
+    # direct access to the backend model constructor
+    @bind_default_backend("neighbors.classification")
+    def model(self): ...
+
+    # direct access to the backend model constructor
+    @bind_default_backend("neighbors.classification")
+    def train(self, *args, **kwargs): ...
+
+    @bind_default_backend("neighbors.classification")
+    def infer(self, *args, **kwargs): ...
+
     def _get_daal_params(self, data):
         params = super()._get_daal_params(data)
         params["resultsToEvaluate"] = "computeClassLabels"
         params["resultsToCompute"] = ""
         return params
 
-    def _onedal_fit(self, X, y, queue):
-        gpu_device = queue is not None and queue.sycl_device.is_gpu
+    def _onedal_fit(self, X, y):
+        # global queue is set as per user configuration (`target_offload`) or from data prior to calling this internal function
+        queue = SyclQueueManager.get_global_queue()
+        gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
         if self.effective_metric_ == "euclidean" and not gpu_device:
             params = self._get_daal_params(X)
             if self._fit_method == "brute":
@@ -425,42 +456,30 @@ class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
                 train_alg = kdtree_knn_classification_training
 
             return train_alg(**params).compute(X, y).model
+        else:
+            params = self._get_onedal_params(X, y)
+            X_table, y_table = to_table(X, y, queue=queue)
+            return self.train(params, X_table, y_table).model
 
-        policy = self._get_policy(queue, X, y)
-        X_table, y_table = to_table(X, y, queue=queue)
-        params = self._get_onedal_params(X_table, y)
-        train_alg = self._get_backend(
-            "neighbors", "classification", "train", policy, params, X_table, y_table
-        )
-
-        return train_alg.model
-
-    def _onedal_predict(self, model, X, params, queue):
+    def _onedal_predict(self, model, X, params):
         if type(self._onedal_model) is kdtree_knn_classification_model:
             return kdtree_knn_classification_prediction(**params).compute(X, model)
         elif type(self._onedal_model) is bf_knn_classification_model:
             return bf_knn_classification_prediction(**params).compute(X, model)
-
-        policy = self._get_policy(queue, X)
-        X = to_table(X, queue=queue)
-        if hasattr(self, "_onedal_model"):
-            model = self._onedal_model
         else:
-            model = self._create_model(
-                self._get_backend("neighbors", "classification", None)
-            )
-        if "responses" not in params["result_option"]:
-            params["result_option"] += "|responses"
-        params["fptype"] = X.dtype
-        result = self._get_backend(
-            "neighbors", "classification", "infer", policy, params, model, X
-        )
+            X = to_table(X, queue=SyclQueueManager.get_global_queue())
+            if "responses" not in params["result_option"]:
+                params["result_option"] += "|responses"
+            params["fptype"] = X.dtype
+            result = self.infer(params, model, X)
 
-        return result
+            return result
 
+    @supports_queue
     def fit(self, X, y, queue=None):
-        return super()._fit(X, y, queue=queue)
+        return self._fit(X, y)
 
+    @supports_queue
     def predict(self, X, queue=None):
         X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
         onedal_model = getattr(self, "_onedal_model", None)
@@ -478,7 +497,7 @@ class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
 
         _check_is_fitted(self)
 
-        self._fit_method = super()._parse_auto_method(
+        self._fit_method = self._parse_auto_method(
             self.algorithm, n_samples_fit_, n_features
         )
 
@@ -489,16 +508,17 @@ class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
             or type(onedal_model) is bf_knn_classification_model
         ):
             params = self._get_daal_params(X)
-            prediction_result = self._onedal_predict(onedal_model, X, params, queue=queue)
+            prediction_result = self._onedal_predict(onedal_model, X, params)
             responses = prediction_result.prediction
         else:
             params = self._get_onedal_params(X)
-            prediction_result = self._onedal_predict(onedal_model, X, params, queue=queue)
+            prediction_result = self._onedal_predict(onedal_model, X, params)
             responses = from_table(prediction_result.responses)
 
         result = self.classes_.take(np.asarray(responses.ravel(), dtype=np.intp))
         return result
 
+    @supports_queue
     def predict_proba(self, X, queue=None):
         neigh_dist, neigh_ind = self.kneighbors(X, queue=queue)
 
@@ -536,8 +556,9 @@ class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
 
         return probabilities
 
+    @supports_queue
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True, queue=None):
-        return super()._kneighbors(X, n_neighbors, return_distance, queue=queue)
+        return self._kneighbors(X, n_neighbors, return_distance)
 
 
 class KNeighborsRegressor(NeighborsBase, RegressorMixin):
@@ -562,67 +583,76 @@ class KNeighborsRegressor(NeighborsBase, RegressorMixin):
         )
         self.weights = weights
 
+    @bind_default_backend("neighbors.search", lookup_name="train")
+    def train_search(self, *args, **kwargs): ...
+
+    @bind_default_backend("neighbors.search", lookup_name="infer")
+    def infer_search(self, *args, **kwargs): ...
+
+    @bind_default_backend("neighbors.regression")
+    def train(self, *args, **kwargs): ...
+
+    @bind_default_backend("neighbors.regression")
+    def infer(self, *args, **kwargs): ...
+
     def _get_daal_params(self, data):
         params = super()._get_daal_params(data)
         params["resultsToCompute"] = "computeIndicesOfNeighbors|computeDistances"
         params["resultsToEvaluate"] = "none"
         return params
 
-    def _onedal_fit(self, X, y, queue):
-        gpu_device = queue is not None and queue.sycl_device.is_gpu
+    def _onedal_fit(self, X, y):
+        # global queue is set as per user configuration (`target_offload`) or from data prior to calling this internal function
+        queue = SyclQueueManager.get_global_queue()
+        gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
         if self.effective_metric_ == "euclidean" and not gpu_device:
             params = self._get_daal_params(X)
             if self._fit_method == "brute":
                 train_alg = bf_knn_classification_training
-
             else:
                 train_alg = kdtree_knn_classification_training
 
             return train_alg(**params).compute(X, y).model
 
-        policy = self._get_policy(queue, X, y)
         X_table, y_table = to_table(X, y, queue=queue)
         params = self._get_onedal_params(X_table, y)
-        train_alg_regr = self._get_backend("neighbors", "regression", None)
-        train_alg_srch = self._get_backend("neighbors", "search", None)
 
         if gpu_device:
-            return train_alg_regr.train(policy, params, X_table, y_table).model
-        return train_alg_srch.train(policy, params, X_table).model
+            return self.train(params, X_table, y_table).model
+        else:
+            return self.train_search(params, X_table).model
 
-    def _onedal_predict(self, model, X, params, queue):
+    def _onedal_predict(self, model, X, params):
+        assert self._onedal_model is not None, "Model is not trained"
+
         if type(model) is kdtree_knn_classification_model:
             return kdtree_knn_classification_prediction(**params).compute(X, model)
         elif type(model) is bf_knn_classification_model:
             return bf_knn_classification_prediction(**params).compute(X, model)
 
-        gpu_device = queue is not None and queue.sycl_device.is_gpu
-        policy = self._get_policy(queue, X)
+        # global queue is set as per user configuration (`target_offload`) or from data prior to calling this internal function
+        queue = SyclQueueManager.get_global_queue()
+        gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
         X = to_table(X, queue=queue)
-        backend = (
-            self._get_backend("neighbors", "regression", None)
-            if gpu_device
-            else self._get_backend("neighbors", "search", None)
-        )
 
-        if hasattr(self, "_onedal_model"):
-            model = self._onedal_model
-        else:
-            model = self._create_model(backend)
         if "responses" not in params["result_option"] and gpu_device:
             params["result_option"] += "|responses"
         params["fptype"] = X.dtype
-        result = backend.infer(policy, params, model, X)
 
-        return result
+        if gpu_device:
+            return self.infer(params, self._onedal_model, X)
+        else:
+            return self.infer_search(params, self._onedal_model, X)
 
+    @supports_queue
     def fit(self, X, y, queue=None):
-        return super()._fit(X, y, queue=queue)
+        return self._fit(X, y)
 
+    @supports_queue
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True, queue=None):
-        return super()._kneighbors(X, n_neighbors, return_distance, queue=queue)
+        return self._kneighbors(X, n_neighbors, return_distance)
 
-    def _predict_gpu(self, X, queue=None):
+    def _predict_gpu(self, X):
         X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
         onedal_model = getattr(self, "_onedal_model", None)
         n_features = getattr(self, "n_features_in_", None)
@@ -639,20 +669,20 @@ class KNeighborsRegressor(NeighborsBase, RegressorMixin):
 
         _check_is_fitted(self)
 
-        self._fit_method = super()._parse_auto_method(
+        self._fit_method = self._parse_auto_method(
             self.algorithm, n_samples_fit_, n_features
         )
 
         params = self._get_onedal_params(X)
 
-        prediction_result = self._onedal_predict(onedal_model, X, params, queue=queue)
+        prediction_result = self._onedal_predict(onedal_model, X, params)
         responses = from_table(prediction_result.responses)
         result = responses.ravel()
 
         return result
 
-    def _predict_skl(self, X, queue=None):
-        neigh_dist, neigh_ind = self.kneighbors(X, queue=queue)
+    def _predict_skl(self, X):
+        neigh_dist, neigh_ind = self.kneighbors(X)
 
         weights = self._get_weights(neigh_dist, self.weights)
 
@@ -675,14 +705,14 @@ class KNeighborsRegressor(NeighborsBase, RegressorMixin):
 
         return y_pred
 
+    @supports_queue
     def predict(self, X, queue=None):
-        gpu_device = queue is not None and queue.sycl_device.is_gpu
+        gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
         is_uniform_weights = getattr(self, "weights", "uniform") == "uniform"
-        return (
-            self._predict_gpu(X, queue=queue)
-            if gpu_device and is_uniform_weights
-            else self._predict_skl(X, queue=queue)
-        )
+        if gpu_device and is_uniform_weights:
+            return self._predict_gpu(X)
+        else:
+            return self._predict_skl(X)
 
 
 class NearestNeighbors(NeighborsBase):
@@ -707,6 +737,12 @@ class NearestNeighbors(NeighborsBase):
         )
         self.weights = weights
 
+    @bind_default_backend("neighbors.search")
+    def train(self, *args, **kwargs): ...
+
+    @bind_default_backend("neighbors.search")
+    def infer(self, *arg, **kwargs): ...
+
     def _get_daal_params(self, data):
         params = super()._get_daal_params(data)
         params["resultsToCompute"] = "computeIndicesOfNeighbors|computeDistances"
@@ -715,8 +751,10 @@ class NearestNeighbors(NeighborsBase):
         )
         return params
 
-    def _onedal_fit(self, X, y, queue):
-        gpu_device = queue is not None and queue.sycl_device.is_gpu
+    def _onedal_fit(self, X, y):
+        # global queue is set as per user configuration (`target_offload`) or from data prior to calling this internal function
+        queue = SyclQueueManager.get_global_queue()
+        gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
         if self.effective_metric_ == "euclidean" and not gpu_device:
             params = self._get_daal_params(X)
             if self._fit_method == "brute":
@@ -727,37 +765,26 @@ class NearestNeighbors(NeighborsBase):
 
             return train_alg(**params).compute(X, y).model
 
-        policy = self._get_policy(queue, X, y)
-        X_table = to_table(X, queue=queue)
-        params = self._get_onedal_params(X_table, y)
-        train_alg = self._get_backend(
-            "neighbors", "search", "train", policy, params, X_table
-        )
+        else:
+            params = self._get_onedal_params(X, y)
+            X, y = to_table(X, y, queue=queue)
+            return self.train(params, X).model
 
-        return train_alg.model
-
-    def _onedal_predict(self, model, X, params, queue):
+    def _onedal_predict(self, model, X, params):
         if type(self._onedal_model) is kdtree_knn_classification_model:
             return kdtree_knn_classification_prediction(**params).compute(X, model)
         elif type(self._onedal_model) is bf_knn_classification_model:
             return bf_knn_classification_prediction(**params).compute(X, model)
 
-        policy = self._get_policy(queue, X)
-        X = to_table(X, queue=queue)
-        if hasattr(self, "_onedal_model"):
-            model = self._onedal_model
-        else:
-            model = self._create_model(self._get_backend("neighbors", "search", None))
+        X = to_table(X, queue=SyclQueueManager.get_global_queue())
 
         params["fptype"] = X.dtype
-        result = self._get_backend(
-            "neighbors", "search", "infer", policy, params, model, X
-        )
+        return self.infer(params, model, X)
 
-        return result
-
+    @supports_queue
     def fit(self, X, y, queue=None):
-        return super()._fit(X, y, queue=queue)
+        return self._fit(X, y)
 
+    @supports_queue
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True, queue=None):
-        return super()._kneighbors(X, n_neighbors, return_distance, queue=queue)
+        return self._kneighbors(X, n_neighbors, return_distance)
