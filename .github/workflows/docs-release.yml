@@ -117,6 +117,7 @@ jobs:
         fi
         
         # Generate versions.json by scanning for year.month folders
+        rm -f doc/versions.json
         mkdir -p doc
         echo "[" > doc/versions.json
         # Add latest entry first
@@ -133,7 +134,7 @@ jobs:
         # Commit and push changes
         git add -A "$SHORT_DOC_VERSION"
         git add -A latest
-        git add versions.json
+        git add doc/versions.json
         git add index.html
         git commit . -m "Automatic doc update for version $DOC_VERSION"
         git push origin gh-pages
