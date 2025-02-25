@@ -44,10 +44,12 @@ def get_patch_map_core(preview=False):
         mapping = get_patch_map_core().copy()
 
         if _is_new_patching_available():
+            import sklearn.cluster as cluster_module
             import sklearn.covariance as covariance_module
             import sklearn.decomposition as decomposition_module
 
             # Preview classes for patching
+            from .preview.cluster import Louvain as Louvain_sklearnex
             from .preview.covariance import (
                 EmpiricalCovariance as EmpiricalCovariance_sklearnex,
             )
@@ -82,6 +84,17 @@ def get_patch_map_core(preview=False):
                 ]
             ]
 
+            # Louvain
+            mapping["louvain"] = [
+                [
+                    (
+                        cluster_module,
+                        "Louvain",
+                        Louvain_sklearnex,
+                    ),
+                    None,
+                ]
+            ]
         return mapping
 
     from daal4py.sklearn.monkeypatch.dispatcher import _get_map_of_algorithms
