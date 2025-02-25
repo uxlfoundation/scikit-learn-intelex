@@ -507,7 +507,7 @@ class RandomForestClassifier(ClassifierMixin, BaseForest, metaclass=ABCMeta):
         )
 
         try:
-            return xp.take(self.classes_, xp.astype(xp.reshape(pred, (-1,)), xp.int64))
+            return xp.take(xp.asarray(self.classes_), xp.astype(xp.reshape(pred, (-1,)), xp.int64))
         except AttributeError:
             return np.take(self.classes_, pred.ravel().astype(np.int64, casting="unsafe"))
 

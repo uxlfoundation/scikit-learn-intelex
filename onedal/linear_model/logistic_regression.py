@@ -211,8 +211,7 @@ class BaseLogisticRegression(onedal_BaseEstimator, metaclass=ABCMeta):
         result = self._infer(X, module, queue, use_raw_input=use_raw_input)
 
         y = from_table(result.probabilities, sua_iface=sua_iface, sycl_queue=queue, xp=xp)
-        y = xp.reshape(y, (-1, 1))
-        return xp.concat([1 - y, y], axis=0)
+        return xp.stack([1 - y, y], axis=1)
 
     def _predict_log_proba(self, X, module, queue):
         _, xp, _ = _get_sycl_namespace(X)

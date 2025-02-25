@@ -58,6 +58,7 @@ from onedal.ensemble import RandomForestClassifier as onedal_RandomForestClassif
 from onedal.ensemble import RandomForestRegressor as onedal_RandomForestRegressor
 from onedal.primitives import get_tree_state_cls, get_tree_state_reg
 from onedal.utils import _num_features, _num_samples
+from onedal.utils._dpep_helpers import get_unique_values_with_dpep
 from sklearnex import get_hyperparameters
 from sklearnex._utils import register_hyperparameters
 
@@ -128,7 +129,7 @@ class BaseForest(PatchableEstimator, ABC):
             if sample_weight is not None:
                 sample_weight = [sample_weight]
         else:
-            self.classes_ = xp.unique_all(y).values
+            self.classes_ = get_unique_values_with_dpep(y)
             self.n_classes_ = len(self.classes_)
         self.n_features_in_ = X.shape[1]
 
@@ -846,7 +847,7 @@ class ForestClassifier(_sklearn_ForestClassifier, BaseForest):
 
         res = self._onedal_estimator.predict(X, queue=queue)
         try:
-            return xp.take(self.classes_, xp.astype(xp.reshape(res, (-1,)), xp.int64))
+            return xp.take(xp.asarray(self.classes_), xp.astype(xp.reshape(res, (-1,)), xp.int64))
         except AttributeError:
             return np.take(self.classes_, res.ravel().astype(np.int64, casting="unsafe"))
 
