@@ -845,7 +845,10 @@ class ForestClassifier(_sklearn_ForestClassifier, BaseForest):
             self._check_n_features(X, reset=False)
 
         res = self._onedal_estimator.predict(X, queue=queue)
-        return xp.take(self.classes_, xp.astype(xp.reshape(res, (-1,)), xp.int64))
+        try:
+            return xp.take(self.classes_, xp.astype(xp.reshape(res, (-1,)), xp.int64))
+        except AttributeError:
+            return np.take(self.classes_, res.ravel().astype(np.int64, casting="unsafe"))
 
     def _onedal_predict_proba(self, X, queue=None):
         use_raw_input = get_config().get("use_raw_input", False) is True

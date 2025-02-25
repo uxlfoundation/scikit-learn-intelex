@@ -506,7 +506,10 @@ class RandomForestClassifier(ClassifierMixin, BaseForest, metaclass=ABCMeta):
             -1,
         )
 
-        return xp.take(self.classes_, xp.astype(xp.reshape(pred, (-1,)), xp.int64))
+        try:
+            return xp.take(self.classes_, xp.astype(xp.reshape(pred, (-1,)), xp.int64))
+        except AttributeError:
+            return np.take(self.classes_, pred.ravel().astype(np.int64, casting="unsafe"))
 
     def predict_proba(self, X, queue=None):
         hparams = get_hyperparameters("decision_forest", "infer")
