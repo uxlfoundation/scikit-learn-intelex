@@ -116,7 +116,6 @@ class IncrementalPCA(BasePCA):
         self.finalize_fit()
         data = self.__dict__.copy()
         data.pop("_queue", None)
-        data.pop("_input_xp", None)  # module cannot be pickled
         return data
 
     def partial_fit(self, X, queue):
@@ -138,11 +137,7 @@ class IncrementalPCA(BasePCA):
         """
 
         use_raw_input = _get_config().get("use_raw_input", False) is True
-        sua_iface, xp, _ = _get_sycl_namespace(X)
-        # Saving input array namespace and sua_iface, that will be used in
-        # finalize_fit.
-        self._input_sua_iface = sua_iface
-        self._input_xp = xp
+        sua_iface, _, _ = _get_sycl_namespace(X)
 
         # All data should use the same sycl queue
         if use_raw_input and sua_iface:
