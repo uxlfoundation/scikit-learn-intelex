@@ -97,9 +97,6 @@ class BaseForest(PatchableEstimator, ABC):
 
             if sample_weight is not None:
                 sample_weight = _check_sample_weight(sample_weight, X)
-        else:
-            self.classes_ = xp.unique_all(y).values
-            self.n_classes_ = len(self.classes_)
 
         if y.ndim == 2 and y.shape[1] == 1:
             warnings.warn(
@@ -130,6 +127,9 @@ class BaseForest(PatchableEstimator, ABC):
                     sample_weight = expanded_class_weight
             if sample_weight is not None:
                 sample_weight = [sample_weight]
+        else:
+            self.classes_ = xp.unique_all(y).values
+            self.n_classes_ = len(self.classes_)
         self.n_features_in_ = X.shape[1]
 
         onedal_params = {
@@ -179,7 +179,11 @@ class BaseForest(PatchableEstimator, ABC):
                 if isinstance(self.n_classes_, Iterable)
                 else self.n_classes_
             )
-            self.classes_ = self.classes_[0]
+            self.classes_ = (
+                self.classes_[0]
+                if isinstance(self.classes_[0], Iterable)
+                else self.classes_
+            )
 
         return self
 
@@ -841,13 +845,7 @@ class ForestClassifier(_sklearn_ForestClassifier, BaseForest):
             self._check_n_features(X, reset=False)
 
         res = self._onedal_estimator.predict(X, queue=queue)
-        # TODO: clean up before merge
-        try:
-            return xp.take(
-                self.classes_, xp.astype(xp.reshape(res, -1), xp.int64, casting="unsafe")
-            )
-        except:
-            return np.take(self.classes_, res.ravel().astype(np.int64, casting="unsafe"))
+        return xp.take(self.classes_, xp.astype(xp.reshape(res, (-1,)), xp.int64))
 
     def _onedal_predict_proba(self, X, queue=None):
         use_raw_input = get_config().get("use_raw_input", False) is True
