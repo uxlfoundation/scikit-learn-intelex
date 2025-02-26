@@ -113,10 +113,7 @@ class BaseForest(PatchableEstimator, ABC):
             # [:, np.newaxis] that does not.
             y = xp.reshape(y, (-1, 1))
 
-        if y.ndim == 1:
-            self._n_samples, self.n_outputs_ = y.shape[0], 1
-        else:
-            self._n_samples, self.n_outputs_ = y.shape
+        self._n_samples, self.n_outputs_ = y.shape
 
         if not use_raw_input:
             y, expanded_class_weight = self._validate_y_class_weight(y)
@@ -169,7 +166,7 @@ class BaseForest(PatchableEstimator, ABC):
 
         # Compute
         self._onedal_estimator = self._onedal_factory(**onedal_params)
-        self._onedal_estimator.fit(X, y, sample_weight, queue=queue)
+        self._onedal_estimator.fit(X, xp.reshape(y, (1,)), sample_weight, queue=queue)
 
         self._save_attributes()
 
