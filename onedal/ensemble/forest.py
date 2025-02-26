@@ -367,6 +367,7 @@ class BaseForest(BaseEstimator, BaseEnsemble, metaclass=ABCMeta):
         # All data should use the same sycl queue
         if use_raw_input and sua_iface is not None:
             queue = X.sycl_queue
+
         if not use_raw_input:
             X = _check_array(
                 X,
@@ -391,6 +392,11 @@ class BaseForest(BaseEstimator, BaseEnsemble, metaclass=ABCMeta):
     def _predict_proba(self, X, module, queue, hparams=None):
         _check_is_fitted(self)
         use_raw_input = _get_config().get("use_raw_input", False) is True
+        sua_iface, xp, _ = _get_sycl_namespace(X)
+
+        # All data should use the same sycl queue
+        if use_raw_input and sua_iface is not None:
+            queue = X.sycl_queue
 
         if not use_raw_input:
             X = _check_array(
