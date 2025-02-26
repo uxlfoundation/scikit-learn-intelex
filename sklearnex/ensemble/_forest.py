@@ -1180,8 +1180,6 @@ class ForestRegressor(_sklearn_ForestRegressor, BaseForest):
         return self._onedal_estimator.predict(X, queue=queue)
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
-        # TODO:
-        # should be checked for dpctl/dpnp inputs.
         return r2_score(
             y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
         )

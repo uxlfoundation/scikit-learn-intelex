@@ -99,8 +99,6 @@ def dispatch(obj, method_name, branches, *args, **kwargs):
         return branches["onedal"](obj, *args, **kwargs)
 
 
-# TODO:
-# wrap output.
 def wrap_output_data(func):
     """
     Converts and moves the output arrays of the decorated function
