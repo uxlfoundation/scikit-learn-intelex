@@ -14,5 +14,5 @@ xgboost==2.1.4
 lightgbm==4.6.0
 catboost==1.2.7 ; python_version < '3.11' # TODO: Remove 3.11 condition when catboost supports numpy 2.0
 shap==0.46.0 ; python_version < '3.13'
-array-api-compat==1.10.0
+array-api-compat==1.11
 array-api-strict==2.2
