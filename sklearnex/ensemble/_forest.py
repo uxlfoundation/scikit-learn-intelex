@@ -166,7 +166,7 @@ class BaseForest(PatchableEstimator, ABC):
 
         # Compute
         self._onedal_estimator = self._onedal_factory(**onedal_params)
-        self._onedal_estimator.fit(X, xp.reshape(y, (1,)), sample_weight, queue=queue)
+        self._onedal_estimator.fit(X, xp.reshape(y, (-1,)), sample_weight, queue=queue)
 
         self._save_attributes()
 
