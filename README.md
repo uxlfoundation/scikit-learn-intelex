@@ -81,7 +81,6 @@ Intel(R) Extension for Scikit-learn is also a part of [Intel(R) AI Tools](https:
 
     ```py
     import numpy as np
-    import dpctl
     from sklearnex import patch_sklearn, config_context
     patch_sklearn()
 

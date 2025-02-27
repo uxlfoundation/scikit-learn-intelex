@@ -75,7 +75,6 @@ Note: executing on GPU has `additional system software requirements <https://www
 ::
 
    import numpy as np
-   import dpctl
    from sklearnex import patch_sklearn, config_context
    patch_sklearn()
 
