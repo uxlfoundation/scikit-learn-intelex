@@ -1,27 +1,20 @@
 #!/bin/bash
 
-# Set git auth for push changes 
-git config --global user.name "GitHub Actions"
-git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-# Ensure the build directory exists
-BUILD_DIR="doc/_build/scikit-learn-intelex"
-if [ ! -d "$BUILD_DIR" ]; then
-    echo "::error: Documentation build directory not found!"
-    exit 1
-fi
-
-# Copy built documentation to a temp location
-DEPLOY_DIR="/tmp/gh-pages-deploy"
-mkdir -p "$DEPLOY_DIR"
-cp -R "$BUILD_DIR"/* "$DEPLOY_DIR"
-ls $DEPLOY_DIR
-
-# Checkout gh-pages branch
-if ! git checkout gh-pages; then
-    echo "::error:: Could not checkout gh-pages branch!"
-    exit 1
-fi
+#===============================================================================
+# Copyright 2024 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#===============================================================================
 
 # Move the new versioned folder to the correct location
 rm -Rf latest
