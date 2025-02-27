@@ -25,7 +25,7 @@ permissions:
   
 jobs:
   build-docs:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
     - name: Checkout Repository
@@ -46,7 +46,7 @@ jobs:
         export DOC_VERSION="${GITHUB_REF#refs/tags/}"
         # Error out if cannot find version
         if [ -z "$DOC_VERSION" ]; then
-          echo "ERROR: Failed to determine documentation version."
+          echo "::error: Failed to determine documentation version."
           exit 1
         fi
         export SHORT_DOC_VERSION=$(echo "$DOC_VERSION" | awk -F'.' '{print $1"."$2}')
@@ -58,7 +58,7 @@ jobs:
         if git checkout $DOC_VERSION 2>/dev/null; then
           echo "Successfully checked out tag $DOC_VERSION."
         else
-            echo "ERROR: Tag $DOC_VERSION does not exist."
+            echo "::error:: Tag $DOC_VERSION does not exist."
             exit 1
         fi
         git branch
@@ -81,14 +81,10 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        # Set git auth for push changes 
-        git config --global user.name "GitHub Actions"
-        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        
         # Ensure the build directory exists
         BUILD_DIR="doc/_build/scikit-learn-intelex"
         if [ ! -d "$BUILD_DIR" ]; then
-            echo "ERROR: Documentation build directory not found!"
+            echo "::error: Documentation build directory not found!"
             exit 1
         fi
         
@@ -100,7 +96,7 @@ jobs:
         
         # Checkout gh-pages branch
         if ! git checkout gh-pages; then
-            echo "ERROR: Could not checkout gh-pages branch!"
+            echo "::error:: Could not checkout gh-pages branch!"
             exit 1
         fi
         
@@ -110,7 +106,7 @@ jobs:
         cp -R "$DEPLOY_DIR/$SHORT_DOC_VERSION" latest
         cp "$DEPLOY_DIR/index.html" .
         if ! diff -r "$SHORT_DOC_VERSION" latest > /dev/null; then
-            echo "ERROR: Content mismatch between $SHORT_DOC_VERSION and latest directories"
+            echo "::error: Content mismatch between $SHORT_DOC_VERSION and latest directories"
             echo "Differences found:"
             diff -r "$SHORT_DOC_VERSION" latest
             exit 1
