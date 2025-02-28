@@ -45,6 +45,11 @@ header:
     # All .csv and .ipynb files
     - '**/*.csv'
     - '**/*.ipynb'
+   # Auto-generated files
+    - doc/Makefile
+    - doc/make.bat
+    - doc/daal4py/Makefile
+    - doc/daal4py/make.bat
    # Something in doc/
     - 'doc/daal4py/_static/style.css'
     - 'doc/daal4py/_templates/layout.html'
