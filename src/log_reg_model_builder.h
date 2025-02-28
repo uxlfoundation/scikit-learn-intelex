@@ -24,8 +24,7 @@
 typedef daal::algorithms::logistic_regression::ModelBuilder<DAAL_ALGORITHM_FP_TYPE> c_logistic_regression_model_builder;
 
 template <typename modelFPType = DAAL_ALGORITHM_FP_TYPE>
-static daal::algorithms::logistic_regression::ModelPtr * get_logistic_regression_model_builder_model(
-    daal::algorithms::logistic_regression::ModelBuilder<modelFPType> * obj_)
+static daal::algorithms::logistic_regression::ModelPtr * get_logistic_regression_model_builder_model(daal::algorithms::logistic_regression::ModelBuilder<modelFPType> * obj_)
 {
     return RAW<daal::algorithms::logistic_regression::ModelPtr>()(obj_->getModel());
 }

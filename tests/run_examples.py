@@ -207,8 +207,6 @@ def get_exe_cmd(ex, args):
             return None
         if not check_version(req_version[os.path.basename(ex)], get_daal_version()):
             return None
-        if not check_library(req_library[os.path.basename(ex)]):
-            return None
 
     if os.path.dirname(ex).endswith("sklearnex"):
         if args.nosklearnex:
@@ -269,7 +267,7 @@ def run(exdir, logdir, args):
                                 proc.kill()
                                 out = proc.communicate()[0]
                                 print("Process has timed out: " + str(execute_string))
-                            logfile.write(out.decode("ascii"))
+                            logfile.write(out.decode())
                             if proc.returncode:
                                 print(out)
                                 print(

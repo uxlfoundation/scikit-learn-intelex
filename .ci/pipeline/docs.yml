@@ -54,7 +54,7 @@ jobs:
     inputs:
       versionSpec: '3.11'
       addToPath: true
-  - script: sudo apt-get update && sudo apt-get install -y clang-format
+  - script: sudo apt-get update && sudo apt-get install -y clang-format pandoc 
     displayName: 'apt-get'
   - script: |
       pip install daal-devel impi-devel
@@ -64,18 +64,25 @@ jobs:
       pip list
     displayName: 'Install requirements'
   - script: |
-      export PREFIX=$(dirname $(dirname $(which python)))
-      export DALROOT=$PREFIX
+      export DALROOT=$(dirname $(dirname $(which python)))
+      export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
       ./conda-recipe/build.sh
     displayName: 'Build daal4py/sklearnex'
   - script: |
       export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
       cd doc/daal4py
-      make html
+      make html 2>&1 | tee build.log
+      cat build.log
+      # check for autodoc warnings
+      if grep -i "autodoc" build.log; then
+        echo "Autodoc Warnings detected, build failed!"
+        exit 1
+      fi
     displayName: 'Build daal4py documentation'
   - script: |
+      export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
       cd doc
-      make html
+      ./build-doc.sh
     displayName: 'Build scikit-learn-intelex documentation'
   - script: |
       mkdir $(Build.ArtifactStagingDirectory)/html/daal4py

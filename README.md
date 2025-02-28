@@ -1,7 +1,23 @@
+<!--
+  ~ Copyright 2018 Intel Corporation
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+-->
+
 <div align="center">
 
 
-# Intel(R) Extension for Scikit-learn* 
+# Intel(R) Extension for Scikit-learn*
 
 <h3> Speed up your scikit-learn applications for Intel(R) CPUs and GPUs across single- and multi-node configurations
 
@@ -14,7 +30,7 @@
 [![PyPI Version](https://img.shields.io/pypi/v/scikit-learn-intelex)](https://pypi.org/project/scikit-learn-intelex/)
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/scikit-learn-intelex)](https://anaconda.org/conda-forge/scikit-learn-intelex)
 [![python version](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)
-[![scikit-learn supported versions](https://img.shields.io/badge/sklearn-1.0%20%7C%201.2%20%7C%201.3%20%7C%201.4%20%7C%201.5-blue)](https://img.shields.io/badge/sklearn-1.0%20%7C%201.2%20%7C%201.3%20%7C%201.4%20%7C%201.5-blue)
+[![scikit-learn supported versions](https://img.shields.io/badge/sklearn-1.0%20%7C%201.2%20%7C%201.3%20%7C%201.4%20%7C%201.5%20%7C%201.6-blue)](https://img.shields.io/badge/sklearn-1.0%20%7C%201.2%20%7C%201.3%20%7C%201.4%20%7C%201.5%20%7C%201.6-blue)
 
 ---
 </h3>
@@ -29,13 +45,13 @@ The software acceleration is achieved with vector instructions, AI hardware-spec
 
 With Intel(R) Extension for Scikit-learn, you can:
 
-* Speed up training and inference by up to 100x with the equivalent mathematical accuracy
-* Benefit from performance improvements across different Intel(R) hardware configurations
+* Speed up training and inference by up to 100x with equivalent mathematical accuracy
+* Benefit from performance improvements across different Intel(R) hardware configurations, including GPUs and multi-GPU configurations
 * Integrate the extension into your existing Scikit-learn applications without code modifications
 * Continue to use the open-source scikit-learn API
 * Enable and disable the extension with a couple of lines of code or at the command line
 
-Intel(R) Extension for Scikit-learn is also a part of [Intel(R) AI Tools](https://www.intel.com/content/www/us/en/developer/tools/oneapi/ai-analytics-toolkit.html). 
+Intel(R) Extension for Scikit-learn is also a part of [Intel(R) AI Tools](https://www.intel.com/content/www/us/en/developer/tools/oneapi/ai-analytics-toolkit.html).
 
 ## Acceleration
 
@@ -55,22 +71,23 @@ Intel(R) Extension for Scikit-learn is also a part of [Intel(R) AI Tools](https:
     from sklearn.cluster import DBSCAN
 
     X = np.array([[1., 2.], [2., 2.], [2., 3.],
-                [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
+                  [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
     clustering = DBSCAN(eps=3, min_samples=2).fit(X)
     ```
 
 - **Enable Intel(R) GPU optimizations**
 
+    _Note: executing on GPU has [additional system software requirements](https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html) - see [details](https://uxlfoundation.github.io/scikit-learn-intelex/latest/oneapi-gpu.html)._
+
     ```py
     import numpy as np
-    import dpctl
     from sklearnex import patch_sklearn, config_context
     patch_sklearn()
 
     from sklearn.cluster import DBSCAN
 
     X = np.array([[1., 2.], [2., 2.], [2., 3.],
-                [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
+                  [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
     with config_context(target_offload="gpu:0"):
         clustering = DBSCAN(eps=3, min_samples=2).fit(X)
     ```
@@ -91,7 +108,7 @@ See all installation instructions in the [Installation Guide](https://uxlfoundat
 The software acceleration is achieved through patching. It means, replacing the stock scikit-learn algorithms with their optimized versions provided by the extension.
 
 The patching only affects [supported algorithms and their parameters](https://uxlfoundation.github.io/scikit-learn-intelex/latest/algorithms.html).
-You can still use not supported ones in your code, the package simply fallbacks into the stock version of scikit-learn. 
+You can still use not supported ones in your code, the package simply fallbacks into the stock version of scikit-learn.
 
 > **_TIP:_** Enable [verbose mode](https://uxlfoundation.github.io/scikit-learn-intelex/latest/verbose.html) to see which implementation of the algorithm is currently used.
 
@@ -106,7 +123,7 @@ To patch scikit-learn, you can:
   patch_sklearn()
   ```
 
-:eyes: Read about [other ways to patch scikit-learn](https://uxlfoundation.github.io/scikit-learn-intelex/index.html#usage). 
+:eyes: Read about [other ways to patch scikit-learn](https://uxlfoundation.github.io/scikit-learn-intelex/index.html#usage).
 
 ## Documentation
 
@@ -134,5 +151,5 @@ The acceleration is achieved through the use of the Intel(R) oneAPI Data Analyti
 We welcome community contributions, check our [Contributing Guidelines](https://github.com/uxlfoundation/scikit-learn-intelex/blob/master/CONTRIBUTING.md) to learn more.
 
 ------------------------------------------------------------------------
-\* The Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others. 
+\* The Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others.
 

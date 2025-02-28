@@ -99,7 +99,6 @@ public:
         return true;
     }
 
-
     std::size_t n_nodes;
     std::size_t depth;
     std::size_t n_leaf_nodes;
@@ -168,23 +167,25 @@ to_sklearn_tree_object_visitor<Task>::to_sklearn_tree_object_visitor(std::size_t
     OVERFLOW_CHECK_BY_MULTIPLICATION(std::size_t, this->node_count, this->class_count);
 
     this->node_ar_ptr = new skl_tree_node[this->node_count];
-    this->value_ar_ptr = new double[this->node_count*this->class_count]();
+    this->value_ar_ptr = new double[this->node_count * this->class_count]();
 
     // array_t doesn't initialize the underlying memory with the object's constructor
     // so the values will not match what is defined above, must be done on C++ side
 
-    py::capsule free_value_ar(this->value_ar_ptr, [](void* f){
-        double *value_ar_ptr = reinterpret_cast<double *>(f);
+    py::capsule free_value_ar(this->value_ar_ptr, [](void* f) {
+        double* value_ar_ptr = reinterpret_cast<double*>(f);
         delete[] value_ar_ptr;
     });
 
-    py::capsule free_node_ar(this->node_ar_ptr, [](void* f){
-        skl_tree_node *node_ar_ptr = reinterpret_cast<skl_tree_node *>(f);
+    py::capsule free_node_ar(this->node_ar_ptr, [](void* f) {
+        skl_tree_node* node_ar_ptr = reinterpret_cast<skl_tree_node*>(f);
         delete[] node_ar_ptr;
     });
 
-    this->node_ar = py::array_t<skl_tree_node>(node_ar_shape, node_ar_strides, this->node_ar_ptr, free_node_ar);
-    this->value_ar = py::array_t<double>(value_ar_shape, value_ar_strides, this->value_ar_ptr, free_value_ar);
+    this->node_ar =
+        py::array_t<skl_tree_node>(node_ar_shape, node_ar_strides, this->node_ar_ptr, free_node_ar);
+    this->value_ar =
+        py::array_t<double>(value_ar_shape, value_ar_strides, this->value_ar_ptr, free_value_ar);
 }
 
 template <typename Task>
@@ -206,7 +207,8 @@ bool to_sklearn_tree_object_visitor<Task>::call(const df::split_node_info<Task>&
     this->node_ar_ptr[node_id].threshold = info.get_feature_value();
     this->node_ar_ptr[node_id].impurity = info.get_impurity();
     this->node_ar_ptr[node_id].n_node_samples = info.get_sample_count();
-    this->node_ar_ptr[node_id].weighted_n_node_samples = static_cast<double>(info.get_sample_count());
+    this->node_ar_ptr[node_id].weighted_n_node_samples =
+        static_cast<double>(info.get_sample_count());
     this->node_ar_ptr[node_id].missing_go_to_left = false;
 
     // wrap-up
@@ -230,7 +232,8 @@ void to_sklearn_tree_object_visitor<Task>::_onLeafNode(const df::leaf_node_info<
 
     this->node_ar_ptr[node_id].impurity = info.get_impurity();
     this->node_ar_ptr[node_id].n_node_samples = info.get_sample_count();
-    this->node_ar_ptr[node_id].weighted_n_node_samples = static_cast<double>(info.get_sample_count());
+    this->node_ar_ptr[node_id].weighted_n_node_samples =
+        static_cast<double>(info.get_sample_count());
     this->node_ar_ptr[node_id].missing_go_to_left = false;
 }
 
@@ -250,13 +253,13 @@ bool to_sklearn_tree_object_visitor<df::task::regression>::call(
 template <>
 bool to_sklearn_tree_object_visitor<df::task::classification>::call(
     const df::leaf_node_info<df::task::classification>& info) {
-        
     std::size_t depth = static_cast<const std::size_t>(info.get_level());
-    const std::size_t label = info.get_response(); // these may be a slow accesses due to oneDAL abstraction
-    const double nNodeSampleCount = static_cast<const double>(info.get_sample_count()); // do them only once
+    const std::size_t label =
+        info.get_response(); // these may be a slow accesses due to oneDAL abstraction
+    const double nNodeSampleCount =
+        static_cast<const double>(info.get_sample_count()); // do them only once
 
-    while(depth--)
-    {
+    while (depth--) {
         const std::size_t id = parents[depth];
         const std::size_t row = id * this->class_count;
         this->value_ar_ptr[row + label] += nNodeSampleCount;
@@ -322,8 +325,8 @@ ONEDAL_PY_INIT_MODULE(get_tree) {
 
     using task_list = types<task::classification, task::regression>;
     auto sub = m.def_submodule("get_tree");
-    #ifndef ONEDAL_DATA_PARALLEL_SPMD
-        ONEDAL_PY_INSTANTIATE(init_get_tree_state, sub, task_list);
-    #endif
+#ifndef ONEDAL_DATA_PARALLEL_SPMD
+    ONEDAL_PY_INSTANTIATE(init_get_tree_state, sub, task_list);
+#endif
 }
 } // namespace oneapi::dal::python

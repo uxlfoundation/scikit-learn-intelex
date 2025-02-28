@@ -29,7 +29,7 @@ from daal4py.sklearn._utils import sklearn_check_version
 from onedal.utils import _check_array, _check_X_y, _column_or_1d
 
 from .._config import config_context, get_config
-from .._utils import PatchingConditionsChain
+from .._utils import PatchableEstimator, PatchingConditionsChain
 
 if sklearn_check_version("1.6"):
     from sklearn.utils.validation import validate_data
@@ -37,7 +37,7 @@ else:
     validate_data = BaseEstimator._validate_data
 
 
-class BaseSVM(BaseEstimator, ABC):
+class BaseSVM(PatchableEstimator, BaseEstimator, ABC):
 
     @property
     def _dual_coef_(self):

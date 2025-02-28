@@ -18,18 +18,18 @@
 #include "oneapi/dal/table/homogen.hpp"
 
 #ifdef ONEDAL_DATA_PARALLEL
-#include "onedal/datatypes/data_conversion_sua_iface.hpp"
+#include "onedal/datatypes/sycl_usm/data_conversion.hpp"
 #endif // ONEDAL_DATA_PARALLEL
 
-#include "onedal/datatypes/data_conversion.hpp"
-#include "onedal/datatypes/utils/numpy_helpers.hpp"
+#include "onedal/datatypes/numpy/data_conversion.hpp"
+#include "onedal/datatypes/numpy/numpy_utils.hpp"
 #include "onedal/common/pybind11_helpers.hpp"
 #include "onedal/version.hpp"
 
 #if ONEDAL_VERSION <= 20230100
-    #include "oneapi/dal/table/detail/csr.hpp"
+#include "oneapi/dal/table/detail/csr.hpp"
 #else
-    #include "oneapi/dal/table/csr.hpp"
+#include "oneapi/dal/table/csr.hpp"
 #endif
 
 namespace py = pybind11;
@@ -72,28 +72,27 @@ ONEDAL_PY_INIT_MODULE(table) {
         const auto column_count = t.get_column_count();
         return py::make_tuple(row_count, column_count);
     });
-    table_obj.def_property_readonly("dtype", [](const table& t){
+    table_obj.def_property_readonly("dtype", [](const table& t) {
         // returns a numpy dtype, even if source was not from numpy
-        return py::dtype(convert_dal_to_npy_type(t.get_metadata().get_data_type(0)));
+        return py::dtype(numpy::convert_dal_to_npy_type(t.get_metadata().get_data_type(0)));
     });
 
 #ifdef ONEDAL_DATA_PARALLEL
-    define_sycl_usm_array_property(table_obj);
+    sycl_usm::define_sycl_usm_array_property(table_obj);
 #endif // ONEDAL_DATA_PARALLEL
 
-    m.def("to_table", [](py::object obj) {
-        #ifdef ONEDAL_DATA_PARALLEL
+    m.def("to_table", [](py::object obj, py::object queue) {
+#ifdef ONEDAL_DATA_PARALLEL
         if (py::hasattr(obj, "__sycl_usm_array_interface__")) {
-            return convert_from_sua_iface(obj);
+            return sycl_usm::convert_to_table(obj);
         }
-        #endif // ONEDAL_DATA_PARALLEL
+#endif // ONEDAL_DATA_PARALLEL
 
-        auto* obj_ptr = obj.ptr();
-        return convert_to_table(obj_ptr);
+        return numpy::convert_to_table(obj, queue);
     });
 
     m.def("from_table", [](const dal::table& t) -> py::handle {
-        auto* obj_ptr = convert_to_pyobject(t);
+        auto* obj_ptr = numpy::convert_to_pyobject(t);
         return obj_ptr;
     });
 }

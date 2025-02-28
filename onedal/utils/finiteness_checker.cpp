@@ -16,9 +16,9 @@
 
 // fix error with missing headers
 #if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20250200
-    #include "oneapi/dal/algo/finiteness_checker.hpp"
+#include "oneapi/dal/algo/finiteness_checker.hpp"
 #else
-    #include "oneapi/dal/algo/finiteness_checker/compute.hpp"
+#include "oneapi/dal/algo/finiteness_checker/compute.hpp"
 #endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20250200
 
 #include "onedal/common.hpp"
@@ -59,16 +59,13 @@ struct params2desc {
 
 template <typename Policy, typename Task>
 void init_compute_ops(py::module_& m) {
-    m.def("compute",
-          [](const Policy& policy,
-             const py::dict& params,
-             const table& data) {
-              using namespace finiteness_checker;
-              using input_t = compute_input<Task>;
+    m.def("compute", [](const Policy& policy, const py::dict& params, const table& data) {
+        using namespace finiteness_checker;
+        using input_t = compute_input<Task>;
 
-              compute_ops ops(policy, input_t{ data }, params2desc{});
-              return fptype2t{ method2t{ Task{}, ops } }(params);
-          });
+        compute_ops ops(policy, input_t{ data }, params2desc{});
+        return fptype2t{ method2t{ Task{}, ops } }(params);
+    });
 }
 
 template <typename Task>
@@ -94,10 +91,10 @@ ONEDAL_PY_INIT_MODULE(finiteness_checker) {
     using task_list = types<task::compute>;
     auto sub = m.def_submodule("finiteness_checker");
 
-    #ifndef ONEDAL_DATA_PARALLEL_SPMD
-        ONEDAL_PY_INSTANTIATE(init_compute_ops, sub, policy_list, task_list);
-        ONEDAL_PY_INSTANTIATE(init_compute_result, sub, task_list);
-    #endif
+#ifndef ONEDAL_DATA_PARALLEL_SPMD
+    ONEDAL_PY_INSTANTIATE(init_compute_ops, sub, policy_list, task_list);
+    ONEDAL_PY_INSTANTIATE(init_compute_result, sub, task_list);
+#endif
 }
 
 } // namespace oneapi::dal::python

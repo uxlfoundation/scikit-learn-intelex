@@ -32,7 +32,7 @@ if sklearn_check_version("1.2"):
 from onedal.linear_model import IncrementalRidge as onedal_IncrementalRidge
 
 from .._device_offload import dispatch, wrap_output_data
-from .._utils import PatchingConditionsChain
+from .._utils import IntelEstimator, PatchingConditionsChain
 
 if sklearn_check_version("1.6"):
     from sklearn.utils.validation import validate_data
@@ -43,7 +43,7 @@ else:
 @control_n_jobs(
     decorated_methods=["fit", "partial_fit", "predict", "score", "_onedal_finalize_fit"]
 )
-class IncrementalRidge(MultiOutputMixin, RegressorMixin, BaseEstimator):
+class IncrementalRidge(IntelEstimator, MultiOutputMixin, RegressorMixin, BaseEstimator):
     """
     Incremental estimator for Ridge Regression.
     Allows to train Ridge Regression if data is splitted into batches.
@@ -51,14 +51,14 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, BaseEstimator):
     Parameters
     ----------
     fit_intercept : bool, default=True
-    Whether to calculate the intercept for this model. If set
-    to False, no intercept will be used in calculations
-    (i.e. data is expected to be centered).
+        Whether to calculate the intercept for this model. If set
+        to False, no intercept will be used in calculations
+        (i.e. data is expected to be centered).
 
     alpha : float, default=1.0
-    Regularization strength; must be a positive float. Regularization
-    improves the conditioning of the problem and reduces the variance of
-    the estimates. Larger values specify stronger regularization.
+        Regularization strength; must be a positive float. Regularization
+        improves the conditioning of the problem and reduces the variance of
+        the estimates. Larger values specify stronger regularization.
 
     copy_X : bool, default=True
         If True, X will be copied; else, it may be overwritten.
@@ -96,6 +96,13 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, BaseEstimator):
 
     batch_size_ : int
         Inferred batch size from ``batch_size``.
+
+    Note
+    ----
+    Serializing instances of this class will trigger a forced finalization of calculations.
+    Since finalize_fit can't be dispatched without directly provided queue
+    and the dispatching policy can't be serialized, the computation is finalized
+    during serialization call and the policy is not saved in serialized data.
     """
 
     _onedal_incremental_ridge = staticmethod(onedal_IncrementalRidge)
