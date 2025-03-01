@@ -16,10 +16,6 @@
 # limitations under the License.
 #===============================================================================
 
-# Set git auth for push changes 
-git config --global user.name "GitHub Actions"
-git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
 # Ensure the build directory exists
 BUILD_DIR="doc/_build/scikit-learn-intelex"
 if [ ! -d "$BUILD_DIR" ]; then

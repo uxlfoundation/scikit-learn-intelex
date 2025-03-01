@@ -84,5 +84,10 @@ jobs:
         # Copy the script to a temp location
         # Otherwise it will get lost after switch branch
         cp .github/scripts/doc_release.sh /tmp/doc_release.sh
+
+        # Set git auth for push changes 
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
         chmod +x /tmp/doc_release.sh
         /tmp/doc_release.sh
