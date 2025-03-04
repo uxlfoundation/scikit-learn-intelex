@@ -55,8 +55,6 @@ from sklearnex.tests.utils import (
     sklearn_clone_dict,
 )
 
-# to reproduce errors even in CI
-d4p.daalinit(nthreads=100)
 
 _dataset_dict = {
     "classification": [
