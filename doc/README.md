@@ -27,14 +27,28 @@ To build Intel(R) Extension for Scikit-Learn documentation locally:
 
 		git clone https://github.com/uxlfoundation/scikit-learn-intelex.git
 
-2. Install required Python packages using `pip`:
+2. Install the `scikit-learn-intelex` package.
+
+3. Install required documentation builder dependencies using `pip`:
 
 		pip install -r requirements-doc.txt
 
-3. Go to the `doc` folder:
+4. Go to the `doc` folder:
 
 		cd scikit-learn-intelex/doc
 
-4. Run the ``build-doc.sh`` script. 
+5. Run the ``build-doc.sh`` script. 
 
-You can find documentation in the `_build/html` folder.
+You will then find documentation under the `_build/html` folder.
+
+Additional documentation for the `daal4py` module can be built with the following steps (after having installed the `scikit-learn-intelex` packages and doc dependencies):
+
+1. Go to the `doc/daal4py` folder:
+
+		cd scikit-learn-intelex/doc/daal4py
+
+2. Run the makefile (assuming linux):
+
+		make html
+
+Documentation will similarly be built under `_build/html`.
