@@ -40,7 +40,7 @@ from onedal.utils.validation import assert_all_finite
 )
 @pytest.mark.parametrize("allow_nan", [False, True])
 @pytest.mark.parametrize(
-    "dataframe, queue", get_dataframes_and_queues("numpy,dpnp,dpctl")
+    "dataframe, queue", get_dataframes_and_queues("numpy,dpnp,dpctl,array_api")
 )
 def test_sum_infinite_actually_finite(dtype, shape, allow_nan, dataframe, queue):
     X = np.empty(shape, dtype=dtype)
@@ -65,7 +65,7 @@ def test_sum_infinite_actually_finite(dtype, shape, allow_nan, dataframe, queue)
 @pytest.mark.parametrize("check", ["inf", "NaN", None])
 @pytest.mark.parametrize("seed", [0, 123456])
 @pytest.mark.parametrize(
-    "dataframe, queue", get_dataframes_and_queues("numpy,dpnp,dpctl")
+    "dataframe, queue", get_dataframes_and_queues("numpy,dpnp,dpctl,array_api")
 )
 def test_assert_finite_random_location(
     dtype, shape, allow_nan, check, seed, dataframe, queue
@@ -92,7 +92,7 @@ def test_assert_finite_random_location(
 @pytest.mark.parametrize("check", ["inf", "NaN", None])
 @pytest.mark.parametrize("seed", [0, 123456])
 @pytest.mark.parametrize(
-    "dataframe, queue", get_dataframes_and_queues("numpy,dpnp,dpctl")
+    "dataframe, queue", get_dataframes_and_queues("numpy,dpnp,dpctl,array_api")
 )
 def test_assert_finite_random_shape_and_location(
     dtype, allow_nan, check, seed, dataframe, queue
