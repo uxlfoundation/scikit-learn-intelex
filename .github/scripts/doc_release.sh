@@ -69,4 +69,3 @@ git add doc/versions.json
 git add index.html
 git commit . -m "Automatic doc update for version $DOC_VERSION"
 git push origin gh-pages
-
