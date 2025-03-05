@@ -227,7 +227,7 @@ def _transfer_to_host(*data):
 
             buffer = as_usm_memory(item).copy_to_host()
             order = "C"
-            if usm_iface["strides"] is not None:
+            if usm_iface["strides"] is not None and len(usm_iface["strides"]) > 1:
                 if usm_iface["strides"][0] < usm_iface["strides"][1]:
                     order = "F"
             item = np.ndarray(
@@ -284,7 +284,20 @@ def support_input_format(func):
         else:
             self = None
 
-        if len(args) == 0 and len(kwargs) == 0:
+        # Check if the function is KNeighborsClassifier.fit
+        override_raw_input = (
+            self
+            and self.__class__.__name__ in ("KNeighborsClassifier", "KNeighborsRegressor")
+            and func.__name__ == "fit"
+        )
+        if _get_config()["use_raw_input"] is True and not override_raw_input:
+            if "queue" not in kwargs:
+                usm_iface = getattr(args[0], "__sycl_usm_array_interface__", None)
+                data_queue = usm_iface["syclobj"] if usm_iface is not None else None
+                kwargs["queue"] = data_queue
+            return invoke_func(self, *args, **kwargs)
+        elif len(args) == 0 and len(kwargs) == 0:
+            # no arguments, there's nothing we can deduce from them -> just call the function
             return invoke_func(self, *args, **kwargs)
 
         data = (*args, *kwargs.values())

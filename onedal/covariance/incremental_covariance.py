@@ -20,7 +20,9 @@ from daal4py.sklearn._utils import daal_check_version
 from onedal._device_offload import SyclQueueManager, supports_queue
 from onedal.common._backend import bind_default_backend
 
+from .._config import _get_config
 from ..datatypes import from_table, to_table
+from ..utils._array_api import _get_sycl_namespace
 from ..utils.validation import _check_array
 from .covariance import BaseEmpiricalCovariance
 
@@ -108,7 +110,13 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
         self : object
             Returns the instance itself.
         """
-        X = _check_array(X, dtype=[np.float64, np.float32], ensure_2d=True)
+        use_raw_input = _get_config()["use_raw_input"] is True
+        sua_iface, _, _ = _get_sycl_namespace(X)
+
+        if use_raw_input and sua_iface:
+            queue = X.sycl_queue
+        if not use_raw_input:
+            X = _check_array(X, dtype=[np.float64, np.float32], ensure_2d=True)
 
         self._queue = queue
         X_table = to_table(X, queue=queue)

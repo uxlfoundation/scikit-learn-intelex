@@ -17,13 +17,16 @@ from abc import ABCMeta
 
 import numpy as np
 
-from daal4py.sklearn._utils import daal_check_version, get_dtype
+from daal4py.sklearn._utils import daal_check_version
 from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
 from onedal.utils.validation import _check_array
 
+from .._config import _get_config
 from ..common.hyperparameters import get_hyperparameters
 from ..datatypes import from_table, to_table
+from ..utils import _check_array
+from ..utils._array_api import _get_sycl_namespace
 
 
 class BaseEmpiricalCovariance(metaclass=ABCMeta):
@@ -98,8 +101,15 @@ class EmpiricalCovariance(BaseEmpiricalCovariance):
         self : object
             Returns the instance itself.
         """
-        X = _check_array(X, dtype=[np.float64, np.float32])
+        use_raw_input = _get_config()["use_raw_input"] is True
+        sua_iface, _, _ = _get_sycl_namespace(X)
+        if use_raw_input and sua_iface:
+            queue = X.sycl_queue
+
+        if not use_raw_input:
+            X = _check_array(X, dtype=[np.float64, np.float32])
         X = to_table(X, queue=queue)
+
         params = self._get_onedal_params(X.dtype)
         hparams = get_hyperparameters("covariance", "compute")
         if hparams is not None and not hparams.is_default:
@@ -107,12 +117,14 @@ class EmpiricalCovariance(BaseEmpiricalCovariance):
         else:
             result = self.compute(params, X)
         if daal_check_version((2024, "P", 1)) or (not self.bias):
-            self.covariance_ = from_table(result.cov_matrix)
+            self.covariance_ = from_table(result.cov_matrix, sycl_queue=queue)
         else:
             self.covariance_ = (
-                from_table(result.cov_matrix) * (X.shape[0] - 1) / X.shape[0]
+                from_table(result.cov_matrix, sycl_queue=queue)
+                * (X.shape[0] - 1)
+                / X.shape[0]
             )
 
-        self.location_ = from_table(result.means).ravel()
+        self.location_ = from_table(result.means, sycl_queue=queue).ravel()
 
         return self

@@ -24,7 +24,9 @@ from sklearn.utils.extmath import stable_cumsum
 from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
 
+from .._config import _get_config
 from ..datatypes import from_table, to_table
+from ..utils._array_api import _get_sycl_namespace
 
 
 class BasePCA(metaclass=ABCMeta):
@@ -154,6 +156,11 @@ class PCA(BasePCA):
 
     @supports_queue
     def fit(self, X, y=None, queue=None):
+        use_raw_input = _get_config().get("use_raw_input", False) is True
+        sua_iface, xp, _ = _get_sycl_namespace(X)
+        if use_raw_input and sua_iface:
+            queue = X.sycl_queue
+
         n_samples, n_features = X.shape
         n_sf_min = min(n_samples, n_features)
         self._validate_n_components(self.n_components, n_samples, n_features)

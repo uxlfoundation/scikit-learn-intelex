@@ -16,7 +16,6 @@
 
 import numpy as np
 
-from daal4py.sklearn._utils import get_dtype
 from onedal._device_offload import SyclQueueManager, supports_queue
 from onedal.common._backend import bind_default_backend
 
@@ -97,6 +96,24 @@ class IncrementalLinearRegression(BaseLinearRegression):
         self : object
             Returns the instance itself.
         """
+        use_raw_input = _get_config().get("use_raw_input", False) is True
+        sua_iface, _, _ = _get_sycl_namespace(X)
+
+        if use_raw_input and sua_iface:
+            queue = X.sycl_queue
+        if not use_raw_input:
+            X, y = _check_X_y(
+                X,
+                y,
+                dtype=[np.float64, np.float32],
+                accept_2d_y=True,
+                force_all_finite=False,
+            )
+            y = np.asarray(y, dtype=X.dtype)
+
+        if not hasattr(self, "_params"):
+            self._params = self._get_onedal_params(X.dtype)
+
         self._queue = queue
         X, y = _check_X_y(
             X, y, dtype=[np.float64, np.float32], accept_2d_y=True, force_all_finite=False
@@ -106,10 +123,6 @@ class IncrementalLinearRegression(BaseLinearRegression):
         self.n_features_in_ = _num_features(X, fallback_1d=True)
 
         X_table, y_table = to_table(X, y, queue=queue)
-
-        if not hasattr(self, "_dtype"):
-            self._dtype = X_table.dtype
-            self._params = self._get_onedal_params(self._dtype)
 
         hparams = get_hyperparameters("linear_regression", "train")
         if hparams is not None and not hparams.is_default:
@@ -153,12 +166,13 @@ class IncrementalLinearRegression(BaseLinearRegression):
 
             self._onedal_model = result.model
 
-            packed_coefficients = from_table(result.model.packed_coefficients)
+            packed_coefficients = from_table(
+                result.model.packed_coefficients, sycl_queue=self._queue
+            )
             self.coef_, self.intercept_ = (
                 packed_coefficients[:, 1:].squeeze(),
                 packed_coefficients[:, 0].squeeze(),
             )
-
             self._need_to_finalize = False
 
         return self

@@ -33,8 +33,7 @@ from sklearn.exceptions import ConvergenceWarning
 from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.utils import check_random_state
 
-from onedal import _default_backend
-
+from .._config import _get_config
 from ..common._mixin import ClusterMixin, TransformerMixin
 from ..datatypes import from_table, to_table
 from ..utils.validation import _check_array, _is_arraylike_not_scalar, _is_csr
@@ -252,9 +251,14 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
 
     def _fit(self, X):
         is_csr = _is_csr(X)
-        X = _check_array(
-            X, dtype=[np.float64, np.float32], accept_sparse="csr", force_all_finite=False
-        )
+
+        if _get_config()["use_raw_input"] is False:
+            X = _check_array(
+                X,
+                dtype=[np.float64, np.float32],
+                accept_sparse="csr",
+                force_all_finite=False,
+            )
         X_table = to_table(X, queue=SyclQueueManager.get_global_queue())
         dtype = X_table.dtype
 

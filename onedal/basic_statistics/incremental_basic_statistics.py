@@ -1,4 +1,3 @@
-# ==============================================================================
 # Copyright 2024 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,7 +19,9 @@ from daal4py.sklearn._utils import get_dtype
 from onedal._device_offload import SyclQueueManager, supports_queue
 from onedal.common._backend import bind_default_backend
 
+from .._config import _get_config
 from ..datatypes import from_table, to_table
+from ..utils._array_api import _get_sycl_namespace
 from ..utils.validation import _check_array
 from .basic_statistics import BaseBasicStatistics
 
@@ -117,18 +118,26 @@ class IncrementalBasicStatistics(BaseBasicStatistics):
         self : object
             Returns the instance itself.
         """
+        use_raw_input = _get_config().get("use_raw_input", False) is True
+        sua_iface, _, _ = _get_sycl_namespace(X)
+
+        # All data should use the same sycl queue
+        if use_raw_input and sua_iface:
+            queue = X.sycl_queue
+
         self._queue = queue
 
-        X = _check_array(
-            X, dtype=[np.float64, np.float32], ensure_2d=False, force_all_finite=False
-        )
-        if weights is not None:
-            weights = _check_array(
-                weights,
-                dtype=[np.float64, np.float32],
-                ensure_2d=False,
-                force_all_finite=False,
+        if not use_raw_input:
+            X = _check_array(
+                X, dtype=[np.float64, np.float32], ensure_2d=False, force_all_finite=False
             )
+            if weights is not None:
+                weights = _check_array(
+                    weights,
+                    dtype=[np.float64, np.float32],
+                    ensure_2d=False,
+                    force_all_finite=False,
+                )
 
         if not hasattr(self, "_onedal_params"):
             dtype = get_dtype(X)

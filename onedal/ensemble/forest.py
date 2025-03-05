@@ -31,6 +31,8 @@ from sklearnex import get_hyperparameters
 from ..common._estimator_checks import _check_is_fitted
 from ..common._mixin import ClassifierMixin, RegressorMixin
 from ..datatypes import from_table, to_table
+from ..utils._array_api import _get_sycl_namespace
+from ..utils._dpep_helpers import get_unique_values_with_dpep
 from ..utils.validation import (
     _check_array,
     _check_n_features,
@@ -295,20 +297,29 @@ class BaseForest(BaseEnsemble, metaclass=ABCMeta):
 
         return sample_weight
 
-    def _fit(self, X, y, sample_weight):
-        X, y = _check_X_y(
-            X,
-            y,
-            dtype=[np.float64, np.float32],
-            force_all_finite=True,
-            accept_sparse="csr",
-        )
-        y = self._validate_targets(y, X.dtype)
+    def _fit(self, X, y, sample_weight, module, queue):
+        use_raw_input = _get_config().get("use_raw_input", False) is True
+        sua_iface, xp, _ = _get_sycl_namespace(X)
+
+        if not use_raw_input:
+            X, y = _check_X_y(
+                X,
+                y,
+                dtype=[np.float64, np.float32],
+                force_all_finite=True,
+                accept_sparse="csr",
+            )
+            y = self._validate_targets(y, X.dtype)
+        else:
+            if sua_iface is not None:
+                queue = X.sycl_queue
+            self.classes_ = get_unique_values_with_dpep(y)
 
         self.n_features_in_ = X.shape[1]
 
         if sample_weight is not None and len(sample_weight) > 0:
-            sample_weight = self._get_sample_weight(sample_weight, X)
+            if not use_raw_input:
+                sample_weight = self._get_sample_weight(sample_weight, X)
             data = (X, y, sample_weight)
         else:
             data = (X, y)
@@ -324,7 +335,7 @@ class BaseForest(BaseEnsemble, metaclass=ABCMeta):
                 self.oob_decision_function_ = from_table(
                     train_result.oob_err_decision_function
                 )
-                if np.any(self.oob_decision_function_ == 0):
+                if xp.any(self.oob_decision_function_ == 0):
                     warnings.warn(
                         "Some inputs do not have OOB scores. This probably means "
                         "too few trees were used to compute any reliable OOB "
@@ -353,10 +364,22 @@ class BaseForest(BaseEnsemble, metaclass=ABCMeta):
 
     def _predict(self, X, hparams=None):
         _check_is_fitted(self)
-        X = _check_array(
-            X, dtype=[np.float64, np.float32], force_all_finite=True, accept_sparse=False
-        )
-        _check_n_features(self, X, False)
+
+        use_raw_input = _get_config().get("use_raw_input", False) is True
+        sua_iface, xp, _ = _get_sycl_namespace(X)
+
+        # All data should use the same sycl queue
+        if use_raw_input and sua_iface is not None:
+            queue = X.sycl_queue
+
+        if not use_raw_input:
+            X = _check_array(
+                X,
+                dtype=[np.float64, np.float32],
+                force_all_finite=True,
+                accept_sparse=False,
+            )
+            _check_n_features(self, X, False)
 
         model = self._onedal_model
         X = to_table(X, queue=SyclQueueManager.get_global_queue())
@@ -366,16 +389,27 @@ class BaseForest(BaseEnsemble, metaclass=ABCMeta):
         else:
             result = self.infer(params, model, X)
 
-        y = from_table(result.responses)
+        y = from_table(result.responses, sua_iface=sua_iface, sycl_queue=queue, xp=xp)
         return y
 
     def _predict_proba(self, X, hparams=None):
         _check_is_fitted(self)
-        X = _check_array(
-            X, dtype=[np.float64, np.float32], force_all_finite=True, accept_sparse=False
-        )
-        _check_n_features(self, X, False)
-        X = to_table(X, queue=SyclQueueManager.get_global_queue())
+        use_raw_input = _get_config().get("use_raw_input", False) is True
+        sua_iface, xp, _ = _get_sycl_namespace(X)
+
+        # All data should use the same sycl queue
+        if use_raw_input and sua_iface is not None:
+            queue = X.sycl_queue
+
+        if not use_raw_input:
+            X = _check_array(
+                X,
+                dtype=[np.float64, np.float32],
+                force_all_finite=True,
+                accept_sparse=False,
+            )
+            _check_n_features(self, X, False)
+        X = to_table(X, queue=queue)
         params = self._get_onedal_params(X)
         params["infer_mode"] = "class_probabilities"
 
@@ -385,8 +419,7 @@ class BaseForest(BaseEnsemble, metaclass=ABCMeta):
         else:
             result = self.infer(params, model, X)
 
-        y = from_table(result.probabilities)
-        return y
+        return from_table(result.probabilities)
 
 
 class RandomForestClassifier(ClassifierMixin, BaseForest, metaclass=ABCMeta):
@@ -471,10 +504,16 @@ class RandomForestClassifier(ClassifierMixin, BaseForest, metaclass=ABCMeta):
 
     @supports_queue
     def predict(self, X, queue=None):
+        _, xp, _ = _get_sycl_namespace(X)
         hparams = get_hyperparameters("decision_forest", "infer")
-        pred = self._predict(X, hparams)
+        pred = xp.reshape(self._predict(X, hparams), -1)
 
-        return np.take(self.classes_, pred.ravel().astype(np.int64, casting="unsafe"))
+        try:
+            return xp.take(
+                xp.asarray(self.classes_), xp.astype(xp.reshape(pred, (-1,)), xp.int64)
+            )
+        except AttributeError:
+            return np.take(self.classes_, pred.ravel().astype(np.int64, casting="unsafe"))
 
     @supports_queue
     def predict_proba(self, X, queue=None):
@@ -557,7 +596,8 @@ class RandomForestRegressor(RegressorMixin, BaseForest, metaclass=ABCMeta):
 
     @supports_queue
     def predict(self, X, queue=None):
-        return self._predict(X).ravel()
+        _, xp, _ = _get_sycl_namespace(X)
+        return xp.reshape(self._predict(X).ravel() - 1)
 
 
 class ExtraTreesClassifier(ClassifierMixin, BaseForest, metaclass=ABCMeta):

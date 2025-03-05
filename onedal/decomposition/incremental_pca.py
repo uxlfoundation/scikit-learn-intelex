@@ -19,7 +19,9 @@ import numpy as np
 from onedal._device_offload import SyclQueueManager, supports_queue
 from onedal.common._backend import bind_default_backend
 
+from .._config import _get_config
 from ..datatypes import from_table, to_table
+from ..utils._array_api import _get_sycl_namespace
 from ..utils.validation import _check_array
 from .pca import BasePCA
 
@@ -124,7 +126,6 @@ class IncrementalPCA(BasePCA):
         self.finalize_fit()
         data = self.__dict__.copy()
         data.pop("_queue", None)
-
         return data
 
     @supports_queue
@@ -145,9 +146,17 @@ class IncrementalPCA(BasePCA):
         self : object
             Returns the instance itself.
         """
-        X = _check_array(X)
-        n_samples, n_features = X.shape
 
+        use_raw_input = _get_config().get("use_raw_input", False) is True
+        sua_iface, _, _ = _get_sycl_namespace(X)
+
+        # All data should use the same sycl queue
+        if use_raw_input and sua_iface:
+            queue = X.sycl_queue
+        if not use_raw_input:
+            X = _check_array(X, dtype=[np.float64, np.float32], ensure_2d=True)
+
+        n_samples, n_features = X.shape
         first_pass = not hasattr(self, "components_")
         if first_pass:
             self.components_ = None
