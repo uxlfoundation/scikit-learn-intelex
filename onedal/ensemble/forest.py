@@ -28,6 +28,7 @@ from onedal._device_offload import SyclQueueManager, supports_queue
 from onedal.common._backend import bind_default_backend
 from sklearnex import get_hyperparameters
 
+from .._config import _get_config
 from ..common._estimator_checks import _check_is_fitted
 from ..common._mixin import ClassifierMixin, RegressorMixin
 from ..datatypes import from_table, to_table
@@ -297,7 +298,7 @@ class BaseForest(BaseEnsemble, metaclass=ABCMeta):
 
         return sample_weight
 
-    def _fit(self, X, y, sample_weight, module, queue):
+    def _fit(self, X, y, sample_weight):
         use_raw_input = _get_config().get("use_raw_input", False) is True
         sua_iface, xp, _ = _get_sycl_namespace(X)
 
@@ -382,7 +383,8 @@ class BaseForest(BaseEnsemble, metaclass=ABCMeta):
             _check_n_features(self, X, False)
 
         model = self._onedal_model
-        X = to_table(X, queue=SyclQueueManager.get_global_queue())
+        queue = SyclQueueManager.get_global_queue()
+        X = to_table(X, queue=queue)
         params = self._get_onedal_params(X)
         if hparams is not None and not hparams.is_default:
             result = self.infer(params, hparams.backend, model, X)
@@ -400,6 +402,8 @@ class BaseForest(BaseEnsemble, metaclass=ABCMeta):
         # All data should use the same sycl queue
         if use_raw_input and sua_iface is not None:
             queue = X.sycl_queue
+        else:
+            queue = SyclQueueManager.get_global_queue()
 
         if not use_raw_input:
             X = _check_array(
@@ -597,7 +601,7 @@ class RandomForestRegressor(RegressorMixin, BaseForest, metaclass=ABCMeta):
     @supports_queue
     def predict(self, X, queue=None):
         _, xp, _ = _get_sycl_namespace(X)
-        return xp.reshape(self._predict(X).ravel() - 1)
+        return xp.reshape(self._predict(X).ravel(), -1)
 
 
 class ExtraTreesClassifier(ClassifierMixin, BaseForest, metaclass=ABCMeta):

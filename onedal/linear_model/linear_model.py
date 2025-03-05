@@ -27,7 +27,6 @@ from .._config import _get_config
 from ..common._estimator_checks import _check_is_fitted
 from ..common.hyperparameters import get_hyperparameters
 from ..datatypes import from_table, to_table
-from ..utils import _check_array, _check_n_features, _check_X_y, _num_features
 from ..utils._array_api import _get_sycl_namespace
 from ..utils.validation import _check_array, _check_n_features, _check_X_y, _num_features
 
@@ -136,7 +135,6 @@ class BaseLinearRegression(metaclass=ABCMeta):
         use_raw_input = _get_config().get("use_raw_input", False) is True
         if use_raw_input and sua_iface is not None:
             queue = X.sycl_queue
-        policy = self._get_policy(queue, X)
 
         if not use_raw_input:
             X = _check_array(

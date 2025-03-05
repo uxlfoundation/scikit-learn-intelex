@@ -19,8 +19,10 @@ import numpy as np
 from onedal._device_offload import SyclQueueManager, supports_queue
 from onedal.common._backend import bind_default_backend
 
+from .._config import _get_config
 from ..common.hyperparameters import get_hyperparameters
 from ..datatypes import from_table, to_table
+from ..utils._array_api import _get_sycl_namespace
 from ..utils.validation import _check_X_y, _num_features
 from .linear_model import BaseLinearRegression
 

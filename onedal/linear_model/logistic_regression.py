@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
+import queue
 from abc import ABCMeta, abstractmethod
 from numbers import Number
 
@@ -215,6 +216,7 @@ class BaseLogisticRegression(metaclass=ABCMeta):
     def _predict_proba(self, X):
         result = result = self._infer(X)
         sua_iface, xp, _ = _get_sycl_namespace(X)
+        queue = SyclQueueManager.get_global_queue()
         y = from_table(result.probabilities, sua_iface=sua_iface, sycl_queue=queue, xp=xp)
         return xp.stack([1 - y, y], axis=1)
 
