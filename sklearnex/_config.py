@@ -63,6 +63,11 @@ def set_config(
         If True, allows to fallback computation to sklearn after onedal
         backend in case of runtime error on onedal backend computations.
         Global default: True.
+    use_raw_input : bool, default=None
+        If True, uses the raw input data in the onedal backend computations
+        without any checks on data consistency or validity.
+        Note: This option is not recommended for general use.
+        Global default: False.
     See Also
     --------
     config_context : Context manager for global configuration.
@@ -100,6 +105,15 @@ def config_context(**new_config):
     allow_fallback_to_host : bool, default=None
         If True, allows to fallback computation to host device
         in case particular estimator does not support the selected one.
+        Global default: False.
+    allow_sklearn_after_onedal : bool, default=None
+        If True, allows to fallback computation to sklearn after onedal
+        backend in case of runtime error on onedal backend computations.
+        Global default: True.
+    use_raw_input : bool, default=None
+        If True, uses the raw input data in the onedal backend computations
+        without any checks on data consistency or validity.
+        Note: This option is not recommended for general use.
         Global default: False.
     Notes
     -----
