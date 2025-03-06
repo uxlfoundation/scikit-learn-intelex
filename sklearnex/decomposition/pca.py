@@ -35,6 +35,7 @@ if daal_check_version((2024, "P", 100)):
     from .._device_offload import dispatch, wrap_output_data
     from .._utils import PatchingConditionsChain
     from ..utils._array_api import get_namespace
+    from ..utils.validation import validate_data
 
     if sklearn_check_version("1.1") and not sklearn_check_version("1.2"):
         from sklearn.utils import check_scalar
@@ -45,11 +46,6 @@ if daal_check_version((2024, "P", 100)):
     from sklearn.decomposition import PCA as _sklearn_PCA
 
     from onedal.decomposition import PCA as onedal_PCA
-
-    if sklearn_check_version("1.6"):
-        from sklearn.utils.validation import validate_data
-    else:
-        validate_data = _sklearn_PCA._validate_data
 
     @control_n_jobs(decorated_methods=["fit", "transform", "fit_transform"])
     class PCA(PatchableEstimator, _sklearn_PCA):
@@ -184,18 +180,12 @@ if daal_check_version((2024, "P", 100)):
             )
 
         def _onedal_transform(self, X, queue=None):
-            if sklearn_check_version("1.0"):
-                X = validate_data(
-                    self,
-                    X,
-                    dtype=[np.float64, np.float32],
-                    reset=False,
-                )
-            else:
-                X = check_array(
-                    X,
-                    dtype=[np.float64, np.float32],
-                )
+            X = validate_data(
+                self,
+                X,
+                dtype=[np.float64, np.float32],
+                reset=False,
+            )
             self._validate_n_features_in_after_fitting(X)
 
             return self._onedal_estimator.predict(X, queue=queue)

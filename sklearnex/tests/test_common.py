@@ -415,11 +415,9 @@ def call_validate_data(text, estimator, method):
     except ValueError:
         pytest.skip("onedal backend not used in this function")
 
-    validate_data = "validate_data" if sklearn_check_version("1.6") else "_validate_data"
-
     assert (
-        validfuncs.count(validate_data) == 1
-    ), f"sklearn's {validate_data} should be called"
+        validfuncs.count("validate_data") + validfuncs.count("_validate_data") == 2
+    ), f"sklearn's validate_data should be called"
     assert (
         validfuncs.count("_check_feature_names") == 1
     ), "estimator should check feature names in validate_data"
@@ -467,11 +465,12 @@ def fit_check_before_support_check(text, estimator, method):
         pytest.skip(f"fitting occurs in {estimator}.{method}")
 
 
-DESIGN_RULES = [n_jobs_check, runtime_property_check, fit_check_before_support_check]
-
-
-if sklearn_check_version("1.0"):
-    DESIGN_RULES += [call_validate_data]
+DESIGN_RULES = [
+    n_jobs_check,
+    runtime_property_check,
+    fit_check_before_support_check,
+    call_validate_data,
+]
 
 
 @pytest.mark.parametrize("design_pattern", DESIGN_RULES)

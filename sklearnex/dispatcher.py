@@ -454,10 +454,10 @@ def get_patch_names():
 def patch_sklearn(name=None, verbose=True, global_patch=False, preview=False):
     if preview:
         os.environ["SKLEARNEX_PREVIEW"] = "enabled_via_patch_sklearn"
-    if not sklearn_check_version("0.24"):
+    if not sklearn_check_version("1.0"):
         raise NotImplementedError(
             "Extension for Scikit-learn* patches apply "
-            "for scikit-learn >= 0.24 only ..."
+            "for scikit-learn >= 1.0 only ..."
         )
 
     if global_patch:

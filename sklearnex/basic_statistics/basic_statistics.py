@@ -29,11 +29,7 @@ from onedal.utils.validation import _is_csr
 
 from .._device_offload import dispatch
 from .._utils import ExtensionEstimator, PatchingConditionsChain
-
-if sklearn_check_version("1.6"):
-    from sklearn.utils.validation import validate_data
-else:
-    validate_data = BaseEstimator._validate_data
+from ..utils.validation import validate_data
 
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import StrOptions
@@ -204,16 +200,13 @@ class BasicStatistics(ExtensionEstimator, BaseEstimator):
         if sklearn_check_version("1.2"):
             self._validate_params()
 
-        if sklearn_check_version("1.0"):
-            X = validate_data(
-                self,
-                X,
-                dtype=[np.float64, np.float32],
-                ensure_2d=False,
-                accept_sparse="csr",
-            )
-        else:
-            X = check_array(X, dtype=[np.float64, np.float32])
+        X = validate_data(
+            self,
+            X,
+            dtype=[np.float64, np.float32],
+            ensure_2d=False,
+            accept_sparse="csr",
+        )
 
         if sample_weight is not None:
             sample_weight = _check_sample_weight(sample_weight, X)

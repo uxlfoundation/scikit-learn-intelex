@@ -344,8 +344,9 @@ class Ridge(BaseLinearRegression):
             packed_coefficients[:, 0],
         )
 
-        if self.coef_.shape[0] == 1 and y.ndim == 1:
+        if self.coef_.shape[0] == 1:
             self.coef_ = self.coef_.ravel()
-            self.intercept_ = self.intercept_[0]
+            if y.ndim == 1:
+                self.intercept_ = self.intercept_[0]
 
         return self

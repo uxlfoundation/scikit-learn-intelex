@@ -35,6 +35,7 @@ from sklearn.utils.validation import (
 import daal4py
 
 from .._utils import PatchingConditionsChain, getFPType, make2d
+from ..utils.validation import validate_data
 
 
 def _get_libsvm_impl():
@@ -421,7 +422,8 @@ def fit(self, X, y, sample_weight=None):
     if callable(self.kernel):
         check_consistent_length(X, y)
     else:
-        X, y = self._validate_data(
+        X, y = validate_data(
+            self,
             X,
             y,
             dtype=np.float64,

@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
+import inspect
 import warnings
 from collections.abc import Sequence
 from numbers import Integral
@@ -129,6 +130,12 @@ def _validate_targets(y, class_weight, dtype):
     return np.asarray(y, dtype=dtype, order="C"), class_weight_res, classes
 
 
+def get_finite_keyword():
+    if "ensure_all_finite" in inspect.signature(check_array).parameters:
+        return "ensure_all_finite"
+    return "force_all_finite"
+
+
 def _check_array(
     array,
     dtype="numeric",
@@ -138,6 +145,7 @@ def _check_array(
     force_all_finite=True,
     ensure_2d=True,
     accept_large_sparse=True,
+    _finite_keyword=get_finite_keyword(),
 ):
     if force_all_finite:
         if sp.issparse(array):
@@ -147,15 +155,19 @@ def _check_array(
         else:
             _daal4py_assert_all_finite(array)
             force_all_finite = False
+    check_kwargs = {
+        "array": array,
+        "dtype": dtype,
+        "accept_sparse": accept_sparse,
+        "order": order,
+        "copy": copy,
+        "ensure_2d": ensure_2d,
+        "accept_large_sparse": accept_large_sparse,
+    }
+    check_kwargs[_finite_keyword] = force_all_finite
+
     array = check_array(
-        array=array,
-        dtype=dtype,
-        accept_sparse=accept_sparse,
-        order=order,
-        copy=copy,
-        force_all_finite=force_all_finite,
-        ensure_2d=ensure_2d,
-        accept_large_sparse=accept_large_sparse,
+        **check_kwargs,
     )
 
     if sp.issparse(array):
