@@ -37,7 +37,7 @@ allow_sklearn_after_onedal:
     backend in case of runtime error on onedal backend computations.
     Global default: True.
 use_raw_input:
-    If True, uses the raw input data in the onedal backend computations
+    If True, uses the raw input data in some SPMD onedal backend computations
     without any checks on data consistency or validity.
     Note: This option is not recommended for general use.
     Global default: False.
