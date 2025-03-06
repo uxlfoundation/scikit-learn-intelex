@@ -28,11 +28,7 @@ from sklearnex.neighbors.common import KNeighborsDispatchingBase
 from sklearnex.neighbors.knn_unsupervised import NearestNeighbors
 
 from ..utils._array_api import get_namespace
-
-if sklearn_check_version("1.6"):
-    from sklearn.utils.validation import validate_data
-else:
-    validate_data = _sklearn_LocalOutlierFactor._validate_data
+from ..utils.validation import check_feature_names
 
 
 @control_n_jobs(decorated_methods=["fit", "kneighbors", "_kneighbors"])
@@ -172,8 +168,8 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
 
     def _kneighbors(self, X=None, n_neighbors=None, return_distance=True):
         check_is_fitted(self)
-        if sklearn_check_version("1.0") and X is not None:
-            self._check_feature_names(X, reset=False)
+        if X is not None:
+            check_feature_names(self, X, reset=False)
         return dispatch(
             self,
             "kneighbors",

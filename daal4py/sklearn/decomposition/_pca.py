@@ -27,6 +27,7 @@ import daal4py
 
 from .._n_jobs_support import control_n_jobs
 from .._utils import PatchingConditionsChain, getFPType, sklearn_check_version
+from ..utils.validation import check_feature_names, validate_data
 
 if sklearn_check_version("1.4"):
     from sklearn.utils._array_api import get_namespace
@@ -223,7 +224,8 @@ class PCA(PCA_original):
                     "PCA with svd_solver='arpack' is not supported for Array API inputs."
                 )
 
-            X = self._validate_data(
+            X = validate_data(
+                self,
                 X,
                 dtype=[xp.float64, xp.float32],
                 accept_sparse=("csr", "csc"),
@@ -237,8 +239,8 @@ class PCA(PCA_original):
                     "PCA does not support sparse input. See "
                     "TruncatedSVD for a possible alternative."
                 )
-            X = self._validate_data(
-                X, dtype=[np.float64, np.float32], ensure_2d=True, copy=False
+            X = validate_data(
+                self, X, dtype=[np.float64, np.float32], ensure_2d=True, copy=False
             )
 
         if self.n_components is None:
@@ -291,9 +293,9 @@ class PCA(PCA_original):
 
         if not shape_good_for_daal or self._fit_svd_solver != "full":
             if sklearn_check_version("1.4"):
-                X = self._validate_data(X, copy=self.copy, accept_sparse=("csr", "csc"))
+                X = validate_data(self, X, copy=self.copy, accept_sparse=("csr", "csc"))
             else:
-                X = self._validate_data(X, copy=self.copy)
+                X = validate_data(self, X, copy=self.copy)
 
         _patching_status = PatchingConditionsChain("sklearn.decomposition.PCA.fit")
         _dal_ready = _patching_status.and_conditions(
@@ -333,9 +335,11 @@ class PCA(PCA_original):
     def _transform_daal4py(self, X, whiten=False, scale_eigenvalues=True, check_X=True):
         check_is_fitted(self)
 
-        if sklearn_check_version("1.0"):
-            self._check_feature_names(X, reset=False)
-        X = check_array(X, dtype=[np.float64, np.float32], force_all_finite=check_X)
+        check_feature_names(self, X, reset=False)
+        if sklearn_check_version("1.6"):
+            X = check_array(X, dtype=[np.float64, np.float32], ensure_all_finite=check_X)
+        else:
+            X = check_array(X, dtype=[np.float64, np.float32], force_all_finite=check_X)
         fpType = getFPType(X)
 
         tr_data = dict()
