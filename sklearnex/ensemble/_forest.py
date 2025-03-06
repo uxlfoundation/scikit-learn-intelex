@@ -90,6 +90,7 @@ class BaseForest(PatchableEstimator, ABC):
                 dtype=[np.float64, np.float32],
                 ensure_all_finite=False,
                 ensure_2d=True,
+                skip_y_conversion=True,
             )
 
             if sample_weight is not None:
@@ -814,6 +815,7 @@ class ForestClassifier(_sklearn_ForestClassifier, BaseForest):
                 ensure_all_finite=False,
                 reset=False,
                 ensure_2d=True,
+                skip_y_conversion=True,
             )
             if hasattr(self, "n_features_in_"):
                 try:
@@ -848,6 +850,7 @@ class ForestClassifier(_sklearn_ForestClassifier, BaseForest):
                 ensure_all_finite=False,
                 reset=False,
                 ensure_2d=True,
+                skip_y_conversion=True,
             )
 
         return self._onedal_estimator.predict_proba(X, queue=queue)
@@ -1157,6 +1160,7 @@ class ForestRegressor(_sklearn_ForestRegressor, BaseForest):
                 ensure_all_finite=False,
                 reset=False,
                 ensure_2d=True,
+                skip_y_conversion=True,
             )  # Warning, order of dtype matters
 
         return self._onedal_estimator.predict(X, queue=queue)
