@@ -64,10 +64,11 @@ def set_config(
         backend in case of runtime error on onedal backend computations.
         Global default: True.
     use_raw_input : bool, default=None
-        If True, uses the raw input data in the onedal backend computations
+        If True, uses the raw input data in some SPMD onedal backend computations
         without any checks on data consistency or validity.
         Note: This option is not recommended for general use.
         Global default: False.
+
     See Also
     --------
     config_context : Context manager for global configuration.
@@ -111,10 +112,11 @@ def config_context(**new_config):
         backend in case of runtime error on onedal backend computations.
         Global default: True.
     use_raw_input : bool, default=None
-        If True, uses the raw input data in the onedal backend computations
+        If True, uses the raw input data in some SPMD onedal backend computations
         without any checks on data consistency or validity.
         Note: This option is not recommended for general use.
         Global default: False.
+
     Notes
     -----
     All settings, not just those presently modified, will be returned to
