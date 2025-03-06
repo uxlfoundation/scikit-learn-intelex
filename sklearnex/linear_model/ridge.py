@@ -39,11 +39,7 @@ if daal_check_version((2024, "P", 600)):
 
     from .._device_offload import dispatch, wrap_output_data
     from .._utils import PatchableEstimator, PatchingConditionsChain
-
-    if sklearn_check_version("1.6"):
-        from sklearn.utils.validation import validate_data
-    else:
-        validate_data = _sklearn_Ridge._validate_data
+    from ..utils.validation import validate_data
 
     @control_n_jobs(decorated_methods=["fit", "predict", "score"])
     class Ridge(PatchableEstimator, _sklearn_Ridge):
@@ -307,15 +303,15 @@ if daal_check_version((2024, "P", 600)):
                         include_boundaries="left",
                     )
 
-            check_params = {
-                "X": X,
-                "y": y,
-                "dtype": [np.float64, np.float32],
-                "accept_sparse": ["csr", "csc", "coo"],
-                "y_numeric": True,
-                "multi_output": True,
-            }
-            X, y = validate_data(self, **check_params)
+            X, y = validate_data(
+                self,
+                X=X,
+                y=y,
+                dtype=[np.float64, np.float32],
+                accept_sparse=["csr", "csc", "coo"],
+                y_numeric=True,
+                multi_output=True,
+            )
 
             if not sklearn_check_version("1.2"):
                 self._normalize = _deprecate_normalize(

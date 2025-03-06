@@ -28,17 +28,13 @@ from onedal.basic_statistics import (
 from .._config import get_config
 from .._device_offload import dispatch
 from .._utils import IntelEstimator, PatchingConditionsChain
+from ..utils.validation import validate_data
 
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import Interval, StrOptions
 
 import numbers
 import warnings
-
-if sklearn_check_version("1.6"):
-    from sklearn.utils.validation import validate_data
-else:
-    validate_data = BaseEstimator._validate_data
 
 
 @control_n_jobs(decorated_methods=["partial_fit", "_onedal_finalize_fit"])
@@ -199,18 +195,12 @@ class IncrementalBasicStatistics(IntelEstimator, BaseEstimator):
         # never check input when using raw input
         check_input &= use_raw_input is False
         if check_input:
-            if sklearn_check_version("1.0"):
-                X = validate_data(
-                    self,
-                    X,
-                    dtype=[np.float64, np.float32],
-                    reset=first_pass,
-                )
-            else:
-                X = check_array(
-                    X,
-                    dtype=[np.float64, np.float32],
-                )
+            X = validate_data(
+                self,
+                X,
+                dtype=[np.float64, np.float32],
+                reset=first_pass,
+            )
 
         if not use_raw_input and sample_weight is not None:
             sample_weight = _check_sample_weight(sample_weight, X)
@@ -237,10 +227,7 @@ class IncrementalBasicStatistics(IntelEstimator, BaseEstimator):
             if sklearn_check_version("1.2"):
                 self._validate_params()
 
-            if sklearn_check_version("1.0"):
-                X = validate_data(self, X, dtype=[np.float64, np.float32])
-            else:
-                X = check_array(X, dtype=[np.float64, np.float32])
+            X = validate_data(self, X, dtype=[np.float64, np.float32])
 
             if sample_weight is not None:
                 sample_weight = _check_sample_weight(sample_weight, X)

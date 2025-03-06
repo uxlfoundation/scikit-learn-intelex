@@ -32,8 +32,9 @@ from daal4py.sklearn._utils import (
 )
 
 from .._n_jobs_support import control_n_jobs
+from ..utils.validation import check_feature_names
 
-if sklearn_check_version("1.0") and not sklearn_check_version("1.2"):
+if not sklearn_check_version("1.2"):
     from sklearn.linear_model._base import _deprecate_normalize
 if sklearn_check_version("1.1") and not sklearn_check_version("1.2"):
     from sklearn.utils import check_scalar
@@ -117,7 +118,7 @@ def _daal4py_fit_enet(self, X, y_, check_input):
     if sklearn_check_version("1.2"):
         _normalize = False
     else:
-        _normalize = self._normalize if sklearn_check_version("1.0") else self.normalize
+        _normalize = self._normalize
     if self.fit_intercept:
         X_offset = np.average(X, axis=0)
         if _normalize:
@@ -291,7 +292,7 @@ def _daal4py_fit_lasso(self, X, y_, check_input):
     if sklearn_check_version("1.2"):
         _normalize = False
     else:
-        _normalize = self._normalize if sklearn_check_version("1.0") else self.normalize
+        _normalize = self._normalize
     if self.fit_intercept:
         X_offset = np.average(X, axis=0)
         if _normalize:
@@ -434,8 +435,7 @@ def _daal4py_predict_lasso(self, X):
 
 
 def _fit(self, _X, _y, sample_weight=None, check_input=True):
-    if sklearn_check_version("1.0"):
-        self._check_feature_names(_X, reset=True)
+    check_feature_names(self, _X, reset=True)
     if sklearn_check_version("1.2"):
         self._validate_params()
     elif sklearn_check_version("1.1"):
@@ -534,7 +534,7 @@ def _fit(self, _X, _y, sample_weight=None, check_input=True):
             # print(X.flags)
             raise ValueError("ndarray is not Fortran contiguous")
 
-    if sklearn_check_version("1.0") and not sklearn_check_version("1.2"):
+    if not sklearn_check_version("1.2"):
         self._normalize = _deprecate_normalize(
             self.normalize, default=False, estimator_name=class_name
         )
@@ -661,7 +661,7 @@ class ElasticNet(ElasticNet_original):
             alpha=1.0,
             l1_ratio=0.5,
             fit_intercept=True,
-            normalize="deprecated" if sklearn_check_version("1.0") else False,
+            normalize="deprecated",
             precompute=False,
             max_iter=1000,
             copy_X=True,
@@ -690,8 +690,7 @@ class ElasticNet(ElasticNet_original):
         return _fit(self, X, y, sample_weight=sample_weight, check_input=check_input)
 
     def predict(self, X):
-        if sklearn_check_version("1.0"):
-            self._check_feature_names(X, reset=False)
+        check_feature_names(self, X, reset=False)
 
         _X = check_array(
             X, accept_sparse=["csr", "csc", "coo"], dtype=[np.float64, np.float32]
@@ -776,7 +775,7 @@ class Lasso(Lasso_original):
             self,
             alpha=1.0,
             fit_intercept=True,
-            normalize="deprecated" if sklearn_check_version("1.0") else False,
+            normalize="deprecated",
             precompute=False,
             copy_X=True,
             max_iter=1000,
@@ -805,8 +804,7 @@ class Lasso(Lasso_original):
         return _fit(self, X, y, sample_weight, check_input)
 
     def predict(self, X):
-        if sklearn_check_version("1.0"):
-            self._check_feature_names(X, reset=False)
+        check_feature_names(self, X, reset=False)
         _X = check_array(
             X, accept_sparse=["csr", "csc", "coo"], dtype=[np.float64, np.float32]
         )

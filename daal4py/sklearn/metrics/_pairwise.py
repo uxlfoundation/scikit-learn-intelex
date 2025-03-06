@@ -107,9 +107,14 @@ def _pairwise_distances(
             return _daal4py_correlation_distance_dense(X)
         raise ValueError(f"'{metric}' distance is wrong for daal4py.")
     if metric == "precomputed":
-        X, _ = check_pairwise_arrays(
-            X, Y, precomputed=True, force_all_finite=force_all_finite
-        )
+        if sklearn_check_version("1.6"):
+            X, _ = check_pairwise_arrays(
+                X, Y, precomputed=True, ensure_all_finite=force_all_finite
+            )
+        else:
+            X, _ = check_pairwise_arrays(
+                X, Y, precomputed=True, force_all_finite=force_all_finite
+            )
         whom = (
             "`pairwise_distances`. Precomputed distance "
             " need to have non-negative values."
@@ -119,9 +124,20 @@ def _pairwise_distances(
     if metric in PAIRWISE_DISTANCE_FUNCTIONS:
         func = PAIRWISE_DISTANCE_FUNCTIONS[metric]
     elif callable(metric):
-        func = partial(
-            _pairwise_callable, metric=metric, force_all_finite=force_all_finite, **kwds
-        )
+        if sklearn_check_version("1.6"):
+            func = partial(
+                _pairwise_callable,
+                metric=metric,
+                ensure_all_finite=force_all_finite,
+                **kwds,
+            )
+        else:
+            func = partial(
+                _pairwise_callable,
+                metric=metric,
+                force_all_finite=force_all_finite,
+                **kwds,
+            )
     else:
         if issparse(X) or issparse(Y):
             raise TypeError("scipy distance metrics do not" " support sparse matrices.")
@@ -132,7 +148,14 @@ def _pairwise_distances(
             msg = "Data was converted to boolean for metric %s" % metric
             warnings.warn(msg, DataConversionWarning)
 
-        X, Y = check_pairwise_arrays(X, Y, dtype=dtype, force_all_finite=force_all_finite)
+        if sklearn_check_version("1.6"):
+            X, Y = check_pairwise_arrays(
+                X, Y, dtype=dtype, ensure_all_finite=force_all_finite
+            )
+        else:
+            X, Y = check_pairwise_arrays(
+                X, Y, dtype=dtype, force_all_finite=force_all_finite
+            )
 
         # precompute data-derived metric params
         params = _precompute_metric_params(X, Y, metric=metric, **kwds)
