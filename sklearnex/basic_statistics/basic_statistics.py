@@ -25,7 +25,7 @@ from sklearn.utils.validation import _check_sample_weight
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal.basic_statistics import BasicStatistics as onedal_BasicStatistics
-from onedal.utils import _is_csr
+from onedal.utils.validation import _is_csr
 
 from .._device_offload import dispatch
 from .._utils import IntelEstimator, PatchingConditionsChain
@@ -224,7 +224,7 @@ class BasicStatistics(IntelEstimator, BaseEstimator):
 
         if not hasattr(self, "_onedal_estimator"):
             self._onedal_estimator = self._onedal_basic_statistics(**onedal_params)
-        self._onedal_estimator.fit(X, sample_weight, queue)
+        self._onedal_estimator.fit(X, sample_weight, queue=queue)
         self._save_attributes()
         self.n_features_in_ = X.shape[1] if len(X.shape) > 1 else 1
 

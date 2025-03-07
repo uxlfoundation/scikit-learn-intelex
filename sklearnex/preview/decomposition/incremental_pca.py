@@ -63,7 +63,7 @@ class IncrementalPCA(IntelEstimator, _sklearn_IncrementalPCA):
         use_raw_input = get_config().get("use_raw_input", False) is True
         if not use_raw_input:
             X = check_array(X, dtype=[np.float64, np.float32])
-        return self._onedal_estimator.predict(X, queue)
+        return self._onedal_estimator.predict(X, queue=queue)
 
     def _onedal_fit_transform(self, X, queue=None):
         self._onedal_fit(X, queue)
@@ -121,9 +121,9 @@ class IncrementalPCA(IntelEstimator, _sklearn_IncrementalPCA):
         self._onedal_estimator.partial_fit(X, queue=queue)
         self._need_to_finalize = True
 
-    def _onedal_finalize_fit(self, queue=None):
+    def _onedal_finalize_fit(self):
         assert hasattr(self, "_onedal_estimator")
-        self._onedal_estimator.finalize_fit(queue=queue)
+        self._onedal_estimator.finalize_fit()
         self._need_to_finalize = False
 
     def _onedal_fit(self, X, queue=None):
@@ -156,7 +156,7 @@ class IncrementalPCA(IntelEstimator, _sklearn_IncrementalPCA):
             X_batch = X[batch]
             self._onedal_partial_fit(X_batch, queue=queue)
 
-        self._onedal_finalize_fit(queue=queue)
+        self._onedal_finalize_fit()
 
         return self
 

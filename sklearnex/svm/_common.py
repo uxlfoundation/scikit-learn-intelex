@@ -26,7 +26,7 @@ from sklearn.metrics import r2_score
 from sklearn.preprocessing import LabelEncoder
 
 from daal4py.sklearn._utils import sklearn_check_version
-from onedal.utils import _check_array, _check_X_y, _column_or_1d
+from onedal.utils.validation import _check_array, _check_X_y, _column_or_1d
 
 from .._config import config_context, get_config
 from .._utils import PatchableEstimator, PatchingConditionsChain

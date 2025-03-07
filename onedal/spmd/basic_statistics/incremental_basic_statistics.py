@@ -14,11 +14,16 @@
 # limitations under the License.
 # ==============================================================================
 
+from onedal.common._backend import bind_spmd_backend
+
 from ...basic_statistics import (
     IncrementalBasicStatistics as base_IncrementalBasicStatistics,
 )
-from .._base import BaseEstimatorSPMD
 
 
-class IncrementalBasicStatistics(BaseEstimatorSPMD, base_IncrementalBasicStatistics):
-    pass
+class IncrementalBasicStatistics(base_IncrementalBasicStatistics):
+    @bind_spmd_backend("basic_statistics")
+    def compute(self, *args, **kwargs): ...
+
+    @bind_spmd_backend("basic_statistics")
+    def finalize_compute(self, *args, **kwargs): ...

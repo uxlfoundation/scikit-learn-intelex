@@ -63,7 +63,8 @@ def test_basic_stats_spmd_gold(dataframe, queue):
     )
 
     # Ensure results of batch algo match spmd
-    spmd_result = BasicStatistics_SPMD().fit(local_dpt_data)
+    spmd = BasicStatistics_SPMD()
+    spmd_result = spmd.fit(local_dpt_data)
     batch_result = BasicStatistics_Batch().fit(data)
 
     for option in options_and_tests:
