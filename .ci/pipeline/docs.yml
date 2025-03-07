@@ -26,8 +26,8 @@ trigger:
     - .ci/pipeline/docs.yml
     - .github/Pull_Request_template.md
     - .github/workflows/docs-release.yml
-    - '**/*.py'
-
+    - 'sklearnex/**/*.py'
+    - 'daal4py/**/*.py' 
 pr:
   branches:
     include:
@@ -40,7 +40,8 @@ pr:
     - .ci/pipeline/docs.yml
     - .github/Pull_Request_template.md
     - .github/workflows/docs-release.yml
-    - '**/*.py'
+    - 'sklearnex/**/*.py'
+    - 'daal4py/**/*.py' '
 
 variables:
   - name: 'PYTHON'
