@@ -16,7 +16,11 @@
 
 from daal4py.sklearn.metrics import pairwise_distances
 from onedal._device_offload import support_input_format
+from onedal.primitives import rbf_kernel as onedal_rbf_kernel
 
 pairwise_distances = support_input_format(freefunc=True, queue_param=False)(
     pairwise_distances
 )
+
+
+rbf_kernel = support_input_format(freefunc=True, queue_param=False)(onedal_rbf_kernel)

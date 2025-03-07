@@ -37,3 +37,16 @@ def test_sklearnex_import_pairwise_distances():
     x = np.vstack([x, x])
     res = pairwise_distances(x, metric="cosine")
     assert_allclose(res, [[0.0, 0.0], [0.0, 0.0]], atol=1e-2)
+
+
+def test_sklearnex_import_rbf_kernel():
+    from sklearnex.metrics.pairwise import rbf_kernel
+
+    rng = np.random.RandomState(0)
+    X = rng.rand(5, 3)
+    gamma = 0.5
+    res = rbf_kernel(X, gamma=gamma)
+    expected_res = np.exp(
+        -gamma * np.sum((X[:, np.newaxis] - X[np.newaxis, :]) ** 2, axis=-1)
+    )
+    assert_allclose(res, expected_res, atol=1e-6)
