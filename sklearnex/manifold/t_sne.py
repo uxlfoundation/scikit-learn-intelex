@@ -24,4 +24,3 @@ TSNE.fit = support_input_format(queue_param=False)(TSNE.fit)
 TSNE.fit_transform = support_input_format(queue_param=False)(TSNE.fit_transform)
 TSNE._doc_link_module = "daal4py"
 TSNE._doc_link_template = PatchableEstimator._doc_link_template
-print("test doc change")
