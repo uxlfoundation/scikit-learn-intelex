@@ -83,7 +83,7 @@ def set_config(
 
     See Also
     --------
-    set_config : Set global scikit-learn configuration.
+    config_context : Context manager for global configuration.
     get_config : Retrieve current values of the global configuration.
 
     Warnings
