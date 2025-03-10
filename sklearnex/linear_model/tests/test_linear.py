@@ -29,10 +29,28 @@ from onedal.tests.utils._dataframes_support import (
 from sklearnex.tests.utils import _IS_INTEL
 
 
+@pytest.fixture(params=[False, True])
+def non_batched_route(request):
+    if not daal_check_version((2025, "P", 500)):
+        return
+    if request.param:
+        LinearRegression.get_hyperparameters("fit").cpu_max_cols_batched = 1
+        LinearRegression.get_hyperparameters("fit").cpu_small_rows_threshold = 1
+        LinearRegression.get_hyperparameters("fit").cpu_small_rows_max_cols_batched = 1
+
+    def restore_params():
+        LinearRegression.get_hyperparameters("fit").cpu_max_cols_batched = 10_000
+        LinearRegression.get_hyperparameters("fit").cpu_small_rows_threshold = 10_000
+        LinearRegression.get_hyperparameters("fit").cpu_small_rows_max_cols_batched = (
+            10_000
+        )
+
+    request.add_finalizer(restore_params)
+
+
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("macro_block", [None, 1024])
-@pytest.mark.parametrize("non_batched_route", [False, True])
 @pytest.mark.parametrize("overdetermined", [False, True])
 @pytest.mark.parametrize("multi_output", [False, True])
 def test_sklearnex_import_linear(
@@ -48,7 +66,7 @@ def test_sklearnex_import_linear(
     ):
         pytest.skip("Functionality introduced in later versions")
     if non_batched_route:
-        if queue.sycl_device.is_gpu:
+        if queue and queue.sycl_device.is_gpu:
             pytest.skip("Test for CPU-only functionality")
         if not daal_check_version((2025, "P", 500)):
             pytest.skip("Functionality introduced in later versions")
