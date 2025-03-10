@@ -131,12 +131,21 @@ static const inv_map_t& get_inv_map() {
 
 // Convert a string encoding elemental data type of the array to oneDAL homogen table data type.
 dal::data_type convert_sua_to_dal_type(std::string dtype) {
-    return get_fwd_map().at(dtype);
+    if (get_fwd_map().count(dtype)) {
+        return get_fwd_map().at(dtype);
+    }
+    else {
+        throw py::type_error("Found unsupported array type");
+    }
 }
 
 // Convert oneDAL homogen table data type to a string encoding elemental data type of the array.
 std::string convert_dal_to_sua_type(dal::data_type dtype) {
-    return get_inv_map().at(dtype);
+    if (get_inv_map().count(dtype)) {
+        return get_inv_map().at(dtype);
+    }
+    else {
+        throw py::type_error("Found unsupported oneDAL type");
+    }
 }
-
 } // namespace oneapi::dal::python::sycl_usm

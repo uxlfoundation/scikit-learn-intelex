@@ -69,14 +69,15 @@ static dal::array<T> transfer_to_host(const dal::array<T> &array) {
 template <typename T>
 inline dal::homogen_table convert_to_homogen_impl(PyArrayObject *np_data) {
     std::int64_t column_count = 1;
-
-    if (array_numdims(np_data) > 2) {
-        throw std::runtime_error("Input array has wrong dimensionality (must be 2d).");
+    const std::int32_t ndims = array_numdims(np_data);
+    if (ndims > 2) {
+        throw std::length_error("Input array has wrong dimensionality (must be 2d).");
     }
     T *const data_pointer = reinterpret_cast<T *const>(array_data(np_data));
     // TODO: check safe cast from int to std::int64_t
-    const std::int64_t row_count = static_cast<std::int64_t>(array_size(np_data, 0));
-    if (array_numdims(np_data) == 2) {
+    // if 0 dimensional numpy array, force to 2d
+    const std::int64_t row_count = ndims ? static_cast<std::int64_t>(array_size(np_data, 0)) : 1l;
+    if (ndims == 2) {
         // TODO: check safe cast from int to std::int64_t
         column_count = static_cast<std::int64_t>(array_size(np_data, 1));
     }
@@ -152,7 +153,7 @@ inline csr_table_t convert_to_csr_impl(PyObject *py_data,
     return res_table;
 }
 
-dal::table convert_to_table(py::object inp_obj, py::object queue) {
+dal::table convert_to_table(py::object inp_obj, py::object queue, bool recursed) {
     dal::table res;
 
     PyObject *obj = inp_obj.ptr();
@@ -168,14 +169,19 @@ dal::table convert_to_table(py::object inp_obj, py::object queue) {
         // then cast it to float32
         int type = reinterpret_cast<PyArray_Descr *>(inp_obj.attr("dtype").ptr())->type_num;
         if (type == NPY_DOUBLE || type == NPY_DOUBLELTR) {
-            PyErr_WarnEx(
-                PyExc_RuntimeWarning,
-                "Data will be converted into float32 from float64 because device does not support it",
-                1);
             // use astype instead of PyArray_Cast in order to support scipy sparse inputs
-            inp_obj = inp_obj.attr("astype")(py::dtype::of<float>());
-            res = convert_to_table(
-                inp_obj); // queue will be set to none, as this check is no longer necessary
+            if (!recursed) {
+                PyErr_WarnEx(
+                    PyExc_RuntimeWarning,
+                    "Data will be converted into float32 from float64 because device does not support it",
+                    1);
+                inp_obj = inp_obj.attr("astype")(py::dtype::of<float>());
+                res = convert_to_table(inp_obj, queue, true);
+            }
+            else {
+                throw std::invalid_argument(
+                    "[convert_to_table] Numpy input could not be converted into onedal table.");
+            }
             return res;
         }
     }
@@ -188,8 +194,8 @@ dal::table convert_to_table(py::object inp_obj, py::object queue) {
             // NOTE: this will make a C-contiguous deep copy of the data
             // this is expected to be a special case
             obj = reinterpret_cast<PyObject *>(PyArray_GETCONTIGUOUS(ary));
-            if (obj) {
-                res = convert_to_table(py::cast<py::object>(obj), queue);
+            if (obj && !recursed) {
+                res = convert_to_table(py::cast<py::object>(obj), queue, true);
                 Py_DECREF(obj);
                 return res;
             }
@@ -202,7 +208,7 @@ dal::table convert_to_table(py::object inp_obj, py::object queue) {
         SET_NPY_FEATURE(array_type(ary),
                         array_type_sizeof(ary),
                         MAKE_HOMOGEN_TABLE,
-                        throw std::invalid_argument("Found unsupported array type"));
+                        throw py::type_error("Found unsupported array type"));
 #undef MAKE_HOMOGEN_TABLE
     }
     else if (strcmp(Py_TYPE(obj)->tp_name, "csr_matrix") == 0 ||
@@ -251,7 +257,7 @@ dal::table convert_to_table(py::object inp_obj, py::object queue) {
         SET_NPY_FEATURE(array_type(np_data),
                         array_type_sizeof(np_data),
                         MAKE_CSR_TABLE,
-                        throw std::invalid_argument("Found unsupported data type in csr_matrix"));
+                        throw py::type_error("Found unsupported data type in csr_matrix"));
 #undef MAKE_CSR_TABLE
         Py_DECREF(np_column_indices);
         Py_DECREF(np_row_indices);
@@ -272,17 +278,28 @@ static void free_capsule(PyObject *cap) {
 }
 
 template <int NpType, typename T = byte_t>
-static PyObject *convert_to_numpy_impl(const dal::array<T> &array,
-                                       std::int64_t row_count,
-                                       std::int64_t column_count = 0) {
+static PyObject *convert_to_numpy_impl(
+    const dal::array<T> &array,
+    std::int64_t row_count,
+    std::int64_t column_count = 0,
+    const dal::data_layout &layout = dal::data_layout::row_major) {
     const int size_dims = column_count == 0 ? 1 : 2;
-
     npy_intp dims[2] = { static_cast<npy_intp>(row_count), static_cast<npy_intp>(column_count) };
+
     auto host_array = transfer_to_host(array);
     host_array.need_mutable_data();
     auto *bytes = host_array.get_mutable_data();
-
-    PyObject *obj = PyArray_SimpleNewFromData(size_dims, dims, NpType, static_cast<void *>(bytes));
+    // assumes that the array has writeable data (not clear if that is the case in oneDAL)
+    int flags = layout == dal::data_layout::row_major ? NPY_ARRAY_CARRAY : NPY_ARRAY_FARRAY;
+    PyObject *obj = PyArray_New(&PyArray_Type,
+                                size_dims,
+                                dims,
+                                NpType,
+                                NULL,
+                                static_cast<void *>(bytes),
+                                0,
+                                flags,
+                                NULL);
     if (!obj)
         throw std::invalid_argument("Conversion to numpy array failed");
 
@@ -403,12 +420,13 @@ PyObject *convert_to_pyobject(const dal::table &input) {
         const auto &homogen_input = static_cast<const dal::homogen_table &>(input);
         const dal::data_type dtype = homogen_input.get_metadata().get_data_type(0);
 
-#define MAKE_NYMPY_FROM_HOMOGEN(NpType)                                        \
-    {                                                                          \
-        auto bytes_array = dal::detail::get_original_data(homogen_input);      \
-        res = convert_to_numpy_impl<NpType>(bytes_array,                       \
-                                            homogen_input.get_row_count(),     \
-                                            homogen_input.get_column_count()); \
+#define MAKE_NYMPY_FROM_HOMOGEN(NpType)                                       \
+    {                                                                         \
+        auto bytes_array = dal::detail::get_original_data(homogen_input);     \
+        res = convert_to_numpy_impl<NpType>(bytes_array,                      \
+                                            homogen_input.get_row_count(),    \
+                                            homogen_input.get_column_count(), \
+                                            homogen_input.get_data_layout()); \
     }
         SET_CTYPE_NPY_FROM_DAL_TYPE(dtype,
                                     MAKE_NYMPY_FROM_HOMOGEN,
