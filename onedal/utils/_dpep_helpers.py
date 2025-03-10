@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
-""" Utilities for Data Parallel Extensions libs, such as DPNP, DPCtl.
+"""Utilities for Data Parallel Extensions libs, such as DPNP, DPCtl.
 See `Data Parallel Extensions for Python <https://github.com/IntelPython/DPEP>`__
 """
 

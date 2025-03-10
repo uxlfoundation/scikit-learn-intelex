@@ -25,11 +25,7 @@ from onedal.decomposition import IncrementalPCA as onedal_IncrementalPCA
 from ..._config import get_config
 from ..._device_offload import dispatch, wrap_output_data
 from ..._utils import IntelEstimator, PatchingConditionsChain
-
-if sklearn_check_version("1.6"):
-    from sklearn.utils.validation import validate_data
-else:
-    validate_data = _sklearn_IncrementalPCA._validate_data
+from ...utils.validation import validate_data
 
 
 @control_n_jobs(
@@ -76,16 +72,7 @@ class IncrementalPCA(IntelEstimator, _sklearn_IncrementalPCA):
         # never check input when using raw input
         check_input &= use_raw_input is False
         if check_input:
-            if sklearn_check_version("1.0"):
-                X = validate_data(
-                    self, X, dtype=[np.float64, np.float32], reset=first_pass
-                )
-            else:
-                X = check_array(
-                    X,
-                    dtype=[np.float64, np.float32],
-                    copy=self.copy,
-                )
+            X = validate_data(self, X, dtype=[np.float64, np.float32], reset=first_pass)
 
         n_samples, n_features = X.shape
 
@@ -132,14 +119,7 @@ class IncrementalPCA(IntelEstimator, _sklearn_IncrementalPCA):
             if sklearn_check_version("1.2"):
                 self._validate_params()
 
-            if sklearn_check_version("1.0"):
-                X = validate_data(self, X, dtype=[np.float64, np.float32], copy=self.copy)
-            else:
-                X = check_array(
-                    X,
-                    dtype=[np.float64, np.float32],
-                    copy=self.copy,
-                )
+            X = validate_data(self, X, dtype=[np.float64, np.float32], copy=self.copy)
 
         n_samples, n_features = X.shape
 
