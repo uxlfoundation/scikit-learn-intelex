@@ -29,23 +29,61 @@ from onedal.tests.utils._dataframes_support import (
 from sklearnex.tests.utils import _IS_INTEL
 
 
+# Note: this is arranged as a fixture with a finalizer instead of as a parameter
+# 'True' / 'False' in order to undo the changes later so that it doesn't affect
+# other tests afterwards. It returns a function instead of making the change
+# directly, in order to avoid importing the estimato classr before the import test
+# itself, but it still needs to import the class inside the the function that it
+# returns due to serialization logic in pytest causing differences w.r.t. current
+# closure where the function is called.
 @pytest.fixture(params=[False, True])
 def non_batched_route(request):
-    if not daal_check_version((2025, "P", 500)):
-        return
-    if request.param:
-        LinearRegression.get_hyperparameters("fit").cpu_max_cols_batched = 1
-        LinearRegression.get_hyperparameters("fit").cpu_small_rows_threshold = 1
-        LinearRegression.get_hyperparameters("fit").cpu_small_rows_max_cols_batched = 1
+    def change_parameters(queue, macro_block):
+        if not daal_check_version((2025, "P", 500)):
+            pytest.skip("Functionality introduced in later versions")
+        if queue and queue.sycl_device.is_gpu:
+            pytest.skip("Test for CPU-only functionality")
+        if macro_block is not None:
+            pytest.skip("Parameter combination with no effect")
+
+        from sklearnex.linear_model import LinearRegression
+
+        if request.param and daal_check_version((2025, "P", 500)):
+            non_batched_route.curr_cpu_max_cols_batched = (
+                LinearRegression.get_hyperparameters("fit").cpu_max_cols_batched
+            )
+            non_batched_route.curr_cpu_small_rows_threshold = (
+                LinearRegression.get_hyperparameters("fit").cpu_small_rows_threshold
+            )
+            non_batched_route.curr_cpu_small_rows_max_cols_batched = (
+                LinearRegression.get_hyperparameters(
+                    "fit"
+                ).cpu_small_rows_max_cols_batched
+            )
+            LinearRegression.get_hyperparameters("fit").cpu_max_cols_batched = 1
+            LinearRegression.get_hyperparameters("fit").cpu_small_rows_threshold = 1
+            LinearRegression.get_hyperparameters(
+                "fit"
+            ).cpu_small_rows_max_cols_batched = 1
 
     def restore_params():
-        LinearRegression.get_hyperparameters("fit").cpu_max_cols_batched = 10_000
-        LinearRegression.get_hyperparameters("fit").cpu_small_rows_threshold = 10_000
-        LinearRegression.get_hyperparameters("fit").cpu_small_rows_max_cols_batched = (
-            10_000
-        )
+        from sklearnex.linear_model import LinearRegression
 
-    request.add_finalizer(restore_params)
+        if request.param and daal_check_version((2025, "P", 500)):
+            LinearRegression.get_hyperparameters("fit").cpu_max_cols_batched = (
+                non_batched_route.curr_cpu_max_cols_batched
+            )
+            LinearRegression.get_hyperparameters("fit").cpu_small_rows_threshold = (
+                non_batched_route.curr_cpu_small_rows_threshold
+            )
+            LinearRegression.get_hyperparameters(
+                "fit"
+            ).cpu_small_rows_max_cols_batched = (
+                non_batched_route.curr_cpu_small_rows_max_cols_batched
+            )
+
+    request.addfinalizer(restore_params)
+    return change_parameters
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -65,13 +103,6 @@ def test_sklearnex_import_linear(
         and not daal_check_version((2025, "P", 200))
     ):
         pytest.skip("Functionality introduced in later versions")
-    if non_batched_route:
-        if queue and queue.sycl_device.is_gpu:
-            pytest.skip("Test for CPU-only functionality")
-        if not daal_check_version((2025, "P", 500)):
-            pytest.skip("Functionality introduced in later versions")
-        if macro_block is not None:
-            pytest.skip("Parameter combination with no effect")
 
     from sklearnex.linear_model import LinearRegression
 
@@ -91,10 +122,7 @@ def test_sklearnex_import_linear(
         hparams = LinearRegression.get_hyperparameters("fit")
         hparams.cpu_macro_block = macro_block
         hparams.gpu_macro_block = macro_block
-    if daal_check_version((2025, "P", 500)) and non_batched_route:
-        LinearRegression.get_hyperparameters("fit").cpu_max_cols_batched = 1
-        LinearRegression.get_hyperparameters("fit").cpu_small_rows_threshold = 1
-        LinearRegression.get_hyperparameters("fit").cpu_small_rows_max_cols_batched = 1
+    non_batched_route(queue, macro_block)
 
     X = X.astype(dtype=dtype)
     y = y.astype(dtype=dtype)
