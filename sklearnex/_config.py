@@ -53,33 +53,28 @@ def set_config(
 
     Parameters
     ----------
-    target_offload : string or dpctl.SyclQueue, default=None
+    target_offload : string or dpctl.SyclQueue or None, default=None
         The device primarily used to perform computations.
         If string, expected to be "auto" (the execution context
         is deduced from input data location),
         or SYCL* filter selector string. Global default: "auto".
 
-    allow_fallback_to_host : bool, default=None
+    allow_fallback_to_host : bool or None, default=None
         If True, allows to fallback computation to host device
         in case particular estimator does not support the selected one.
         Global default: False.
 
-    allow_sklearn_after_onedal : bool, default=None
+    allow_sklearn_after_onedal : bool or None, default=None
         If True, allows to fallback computation to sklearn after onedal
         backend in case of runtime error on onedal backend computations.
         Global default: True.
 
-    use_raw_input : bool, default=None
+    use_raw_input : bool or None, default=None
         .. deprecated:: 2026.0
         If True, uses the raw input data in some SPMD onedal backend computations
         without any checks on data consistency or validity.
-        Note: This option is not recommended for general use.
+        Not recommended for general use.
         Global default: False.
-
-    Notes
-    -----
-    All settings, not just those presently modified, will be returned to
-    their previous values when the context manager is exited.
 
     See Also
     --------
@@ -116,30 +111,30 @@ def config_context(**new_config):
 
     Parameters
     ----------
-    target_offload : string or dpctl.SyclQueue, default=None
+    target_offload : string or dpctl.SyclQueue or None, default=None
         The device primarily used to perform computations.
         If string, expected to be "auto" (the execution context
         is deduced from input data location),
         or SYCL* filter selector string. Global default: "auto".
 
-    allow_fallback_to_host : bool, default=None
+    allow_fallback_to_host : bool or None, default=None
         If True, allows to fallback computation to host device
         in case particular estimator does not support the selected one.
         Global default: False.
 
-    allow_sklearn_after_onedal : bool, default=None
+    allow_sklearn_after_onedal : bool or None, default=None
         If True, allows to fallback computation to sklearn after onedal
         backend in case of runtime error on onedal backend computations.
         Global default: True.
 
-    use_raw_input : bool, default=None
+    use_raw_input : bool or None, default=None
         .. deprecated:: 2026.0
         If True, uses the raw input data in some SPMD onedal backend computations
         without any checks on data consistency or validity.
-        Note: This option is not recommended for general use.
+        Not recommended for general use.
         Global default: False.
 
-    Notes
+    Note
     -----
     All settings, not just those presently modified, will be returned to
     their previous values when the context manager is exited.
