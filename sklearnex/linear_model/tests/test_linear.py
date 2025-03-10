@@ -32,10 +32,11 @@ from sklearnex.tests.utils import _IS_INTEL
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("macro_block", [None, 1024])
+@pytest.mark.parametrize("non_batched_route", [False, True])
 @pytest.mark.parametrize("overdetermined", [False, True])
 @pytest.mark.parametrize("multi_output", [False, True])
 def test_sklearnex_import_linear(
-    dataframe, queue, dtype, macro_block, overdetermined, multi_output
+    dataframe, queue, dtype, macro_block, non_batched_route, overdetermined, multi_output
 ):
     if (not overdetermined or multi_output) and not daal_check_version((2025, "P", 1)):
         pytest.skip("Functionality introduced in later versions")
@@ -46,6 +47,13 @@ def test_sklearnex_import_linear(
         and not daal_check_version((2025, "P", 200))
     ):
         pytest.skip("Functionality introduced in later versions")
+    if non_batched_route:
+        if queue.sycl_device.is_gpu:
+            pytest.skip("Test for CPU-only functionality")
+        if not daal_check_version((2025, "P", 500)):
+            pytest.skip("Functionality introduced in later versions")
+        if macro_block is not None:
+            pytest.skip("Parameter combination with no effect")
 
     from sklearnex.linear_model import LinearRegression
 
@@ -65,6 +73,10 @@ def test_sklearnex_import_linear(
         hparams = LinearRegression.get_hyperparameters("fit")
         hparams.cpu_macro_block = macro_block
         hparams.gpu_macro_block = macro_block
+    if daal_check_version((2025, "P", 500)) and non_batched_route:
+        LinearRegression.get_hyperparameters("fit").cpu_max_cols_batched = 1
+        LinearRegression.get_hyperparameters("fit").cpu_small_rows_threshold = 1
+        LinearRegression.get_hyperparameters("fit").cpu_small_rows_max_cols_batched = 1
 
     X = X.astype(dtype=dtype)
     y = y.astype(dtype=dtype)
