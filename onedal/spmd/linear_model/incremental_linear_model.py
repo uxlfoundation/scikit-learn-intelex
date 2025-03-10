@@ -14,11 +14,20 @@
 # limitations under the License.
 # ==============================================================================
 
+
+from onedal.common._backend import bind_spmd_backend
+
 from ...linear_model import (
     IncrementalLinearRegression as base_IncrementalLinearRegression,
 )
-from .._base import BaseEstimatorSPMD
 
 
-class IncrementalLinearRegression(BaseEstimatorSPMD, base_IncrementalLinearRegression):
-    pass
+class IncrementalLinearRegression(base_IncrementalLinearRegression):
+    """
+    Distributed incremental Linear Regression oneDAL implementation.
+
+    API is the same as for `onedal.linear_model.IncrementalLinearRegression`.
+    """
+
+    @bind_spmd_backend("linear_model.regression")
+    def finalize_train(self, *args, **kwargs): ...

@@ -59,7 +59,7 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
         if sklearn_check_version("1.2"):
             self._validate_params()
 
-        self._onedal_knn_fit(X, y, queue)
+        self._onedal_knn_fit(X, y, queue=queue)
 
         if self.contamination != "auto":
             if not (0.0 < self.contamination <= 0.5):

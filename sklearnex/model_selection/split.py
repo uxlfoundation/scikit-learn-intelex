@@ -17,6 +17,4 @@
 from daal4py.sklearn.model_selection import train_test_split
 from onedal._device_offload import support_input_format
 
-train_test_split = support_input_format(freefunc=True, queue_param=False)(
-    train_test_split
-)
+train_test_split = support_input_format(train_test_split)
