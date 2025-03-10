@@ -23,6 +23,7 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
+from sklearnex import config_context
 from sklearnex.tests.utils.spmd import (
     _generate_statistic_data,
     _get_local_tensor,
@@ -218,6 +219,7 @@ def test_incremental_pca_fit_spmd_random(
 @pytest.mark.parametrize("num_samples", [200, 400])
 @pytest.mark.parametrize("num_features", [10, 20])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("use_raw_input", [True, False])
 @pytest.mark.mpi
 def test_incremental_pca_partial_fit_spmd_random(
     dataframe,
@@ -228,6 +230,7 @@ def test_incremental_pca_partial_fit_spmd_random(
     num_samples,
     num_features,
     dtype,
+    use_raw_input,
 ):
     # Import spmd and non-SPMD algo
     from sklearnex.preview.decomposition import IncrementalPCA
@@ -252,7 +255,9 @@ def test_incremental_pca_partial_fit_spmd_random(
             split_local_X[i], sycl_queue=queue, target_df=dataframe
         )
         dpt_X = _convert_to_dataframe(X_split[i], sycl_queue=queue, target_df=dataframe)
-        incpca_spmd.partial_fit(local_dpt_X)
+        # Configure raw input status for spmd estimator
+        with config_context(use_raw_input=use_raw_input):
+            incpca_spmd.partial_fit(local_dpt_X)
         incpca.partial_fit(dpt_X)
 
     for attribute in attributes_to_compare:
@@ -263,7 +268,9 @@ def test_incremental_pca_partial_fit_spmd_random(
             err_msg=f"{attribute} is incorrect",
         )
 
-    y_trans_spmd = incpca_spmd.transform(dpt_X_test)
+    # Configure raw input status for spmd estimator
+    with config_context(use_raw_input=use_raw_input):
+        y_trans_spmd = incpca_spmd.transform(dpt_X_test)
     y_trans = incpca.transform(dpt_X_test)
 
     assert_allclose(_as_numpy(y_trans_spmd), _as_numpy(y_trans), atol=tol)

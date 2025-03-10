@@ -21,6 +21,7 @@ import numpy as np
 
 from daal4py.sklearn._utils import daal_check_version, get_dtype, make2d
 
+from .._config import _get_config
 from ..common._base import BaseEstimator as onedal_BaseEstimator
 from ..common._estimator_checks import _check_is_fitted
 from ..common._mixin import ClassifierMixin
@@ -33,6 +34,8 @@ from ..utils import (
     _num_features,
     _type_of_target,
 )
+from ..utils._array_api import _get_sycl_namespace
+from ..utils._dpep_helpers import get_unique_values_with_dpep
 
 
 class BaseLogisticRegression(onedal_BaseEstimator, metaclass=ABCMeta):
@@ -63,25 +66,31 @@ class BaseLogisticRegression(onedal_BaseEstimator, metaclass=ABCMeta):
         }
 
     def _fit(self, X, y, module, queue):
+        use_raw_input = _get_config().get("use_raw_input", False) is True
+
         sparsity_enabled = daal_check_version((2024, "P", 700))
-        X, y = _check_X_y(
-            X,
-            y,
-            accept_sparse=sparsity_enabled,
-            force_all_finite=True,
-            accept_2d_y=False,
-            dtype=[np.float64, np.float32],
-        )
+        if not use_raw_input:
+            X, y = _check_X_y(
+                X,
+                y,
+                accept_sparse=sparsity_enabled,
+                force_all_finite=True,
+                accept_2d_y=False,
+                dtype=[np.float64, np.float32],
+            )
+            if _type_of_target(y) != "binary":
+                raise ValueError("Only binary classification is supported")
+
+            self.classes_, y = np.unique(y, return_inverse=True)
+            y = y.astype(dtype=np.int32)
+        else:
+            self.classes_ = get_unique_values_with_dpep(y)
+            n_classes = len(self.classes_)
+            if n_classes != 2:
+                raise ValueError("Only binary classification is supported")
         is_csr = _is_csr(X)
 
         self.n_features_in_ = _num_features(X, fallback_1d=True)
-
-        if _type_of_target(y) != "binary":
-            raise ValueError("Only binary classification is supported")
-
-        self.classes_, y = np.unique(y, return_inverse=True)
-        y = y.astype(dtype=np.int32)
-
         policy = self._get_policy(queue, X, y)
         X_table, y_table = to_table(X, y, queue=queue)
         params = self._get_onedal_params(is_csr, X_table.dtype)
@@ -151,18 +160,20 @@ class BaseLogisticRegression(onedal_BaseEstimator, metaclass=ABCMeta):
 
         return m
 
-    def _infer(self, X, module, queue):
+    def _infer(self, X, module, queue, use_raw_input=False):
         _check_is_fitted(self)
+
         sparsity_enabled = daal_check_version((2024, "P", 700))
 
-        X = _check_array(
-            X,
-            dtype=[np.float64, np.float32],
-            accept_sparse=sparsity_enabled,
-            force_all_finite=True,
-            ensure_2d=False,
-            accept_large_sparse=sparsity_enabled,
-        )
+        if not use_raw_input:
+            X = _check_array(
+                X,
+                dtype=[np.float64, np.float32],
+                accept_sparse=sparsity_enabled,
+                force_all_finite=True,
+                ensure_2d=False,
+                accept_large_sparse=sparsity_enabled,
+            )
         is_csr = _is_csr(X)
         _check_n_features(self, X, False)
 
@@ -181,21 +192,31 @@ class BaseLogisticRegression(onedal_BaseEstimator, metaclass=ABCMeta):
         return result
 
     def _predict(self, X, module, queue):
-        result = self._infer(X, module, queue)
-        y = from_table(result.responses)
-        y = np.take(self.classes_, y.ravel(), axis=0)
+        use_raw_input = _get_config().get("use_raw_input", False) is True
+        sua_iface, xp, _ = _get_sycl_namespace(X)
+        if use_raw_input and sua_iface is not None:
+            queue = X.sycl_queue
+
+        result = self._infer(X, module, queue, use_raw_input=use_raw_input)
+        y = from_table(result.responses, sua_iface=sua_iface, sycl_queue=queue, xp=xp)
+        y = xp.take(xp.asarray(self.classes_), xp.reshape(y, (-1,)), axis=0)
         return y
 
     def _predict_proba(self, X, module, queue):
-        result = self._infer(X, module, queue)
+        use_raw_input = _get_config().get("use_raw_input", False) is True
+        sua_iface, xp, _ = _get_sycl_namespace(X)
+        if use_raw_input and sua_iface is not None:
+            queue = X.sycl_queue
 
-        y = from_table(result.probabilities)
-        y = y.reshape(-1, 1)
-        return np.hstack([1 - y, y])
+        result = self._infer(X, module, queue, use_raw_input=use_raw_input)
+
+        y = from_table(result.probabilities, sua_iface=sua_iface, sycl_queue=queue, xp=xp)
+        return xp.stack([1 - y, y], axis=1)
 
     def _predict_log_proba(self, X, module, queue):
+        _, xp, _ = _get_sycl_namespace(X)
         y_proba = self._predict_proba(X, module, queue)
-        return np.log(y_proba)
+        return xp.log(y_proba)
 
 
 class LogisticRegression(ClassifierMixin, BaseLogisticRegression):

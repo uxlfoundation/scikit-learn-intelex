@@ -26,6 +26,7 @@ from sklearn.utils import check_random_state
 from daal4py.sklearn._utils import daal_check_version
 from sklearnex import get_hyperparameters
 
+from .._config import _get_config
 from ..common._base import BaseEstimator
 from ..common._estimator_checks import _check_is_fitted
 from ..common._mixin import ClassifierMixin, RegressorMixin
@@ -37,6 +38,8 @@ from ..utils import (
     _column_or_1d,
     _validate_targets,
 )
+from ..utils._array_api import _get_sycl_namespace
+from ..utils._dpep_helpers import get_unique_values_with_dpep
 
 
 class BaseForest(BaseEstimator, BaseEnsemble, metaclass=ABCMeta):
@@ -289,22 +292,32 @@ class BaseForest(BaseEstimator, BaseEnsemble, metaclass=ABCMeta):
         return sample_weight
 
     def _fit(self, X, y, sample_weight, module, queue):
-        X, y = _check_X_y(
-            X,
-            y,
-            dtype=[np.float64, np.float32],
-            force_all_finite=True,
-            accept_sparse="csr",
-        )
-        y = self._validate_targets(y, X.dtype)
+        use_raw_input = _get_config().get("use_raw_input", False) is True
+        sua_iface, xp, _ = _get_sycl_namespace(X)
+
+        if not use_raw_input:
+            X, y = _check_X_y(
+                X,
+                y,
+                dtype=[np.float64, np.float32],
+                force_all_finite=True,
+                accept_sparse="csr",
+            )
+            y = self._validate_targets(y, X.dtype)
+        else:
+            if sua_iface is not None:
+                queue = X.sycl_queue
+            self.classes_ = get_unique_values_with_dpep(y)
 
         self.n_features_in_ = X.shape[1]
 
         if sample_weight is not None and len(sample_weight) > 0:
-            sample_weight = self._get_sample_weight(sample_weight, X)
+            if not use_raw_input:
+                sample_weight = self._get_sample_weight(sample_weight, X)
             data = (X, y, sample_weight)
         else:
             data = (X, y)
+
         policy = self._get_policy(queue, *data)
         data = to_table(*data, queue=queue)
         params = self._get_onedal_params(data[0])
@@ -318,7 +331,7 @@ class BaseForest(BaseEstimator, BaseEnsemble, metaclass=ABCMeta):
                 self.oob_decision_function_ = from_table(
                     train_result.oob_err_decision_function
                 )
-                if np.any(self.oob_decision_function_ == 0):
+                if xp.any(self.oob_decision_function_ == 0):
                     warnings.warn(
                         "Some inputs do not have OOB scores. This probably means "
                         "too few trees were used to compute any reliable OOB "
@@ -347,10 +360,22 @@ class BaseForest(BaseEstimator, BaseEnsemble, metaclass=ABCMeta):
 
     def _predict(self, X, module, queue, hparams=None):
         _check_is_fitted(self)
-        X = _check_array(
-            X, dtype=[np.float64, np.float32], force_all_finite=True, accept_sparse=False
-        )
-        _check_n_features(self, X, False)
+
+        use_raw_input = _get_config().get("use_raw_input", False) is True
+        sua_iface, xp, _ = _get_sycl_namespace(X)
+
+        # All data should use the same sycl queue
+        if use_raw_input and sua_iface is not None:
+            queue = X.sycl_queue
+
+        if not use_raw_input:
+            X = _check_array(
+                X,
+                dtype=[np.float64, np.float32],
+                force_all_finite=True,
+                accept_sparse=False,
+            )
+            _check_n_features(self, X, False)
         policy = self._get_policy(queue, X)
 
         model = self._onedal_model
@@ -361,15 +386,26 @@ class BaseForest(BaseEstimator, BaseEnsemble, metaclass=ABCMeta):
         else:
             result = module.infer(policy, params, model, X)
 
-        y = from_table(result.responses)
+        y = from_table(result.responses, sua_iface=sua_iface, sycl_queue=queue, xp=xp)
         return y
 
     def _predict_proba(self, X, module, queue, hparams=None):
         _check_is_fitted(self)
-        X = _check_array(
-            X, dtype=[np.float64, np.float32], force_all_finite=True, accept_sparse=False
-        )
-        _check_n_features(self, X, False)
+        use_raw_input = _get_config().get("use_raw_input", False) is True
+        sua_iface, xp, _ = _get_sycl_namespace(X)
+
+        # All data should use the same sycl queue
+        if use_raw_input and sua_iface is not None:
+            queue = X.sycl_queue
+
+        if not use_raw_input:
+            X = _check_array(
+                X,
+                dtype=[np.float64, np.float32],
+                force_all_finite=True,
+                accept_sparse=False,
+            )
+            _check_n_features(self, X, False)
         policy = self._get_policy(queue, X)
         X = to_table(X, queue=queue)
         params = self._get_onedal_params(X)
@@ -381,8 +417,7 @@ class BaseForest(BaseEstimator, BaseEnsemble, metaclass=ABCMeta):
         else:
             result = module.infer(policy, params, model, X)
 
-        y = from_table(result.probabilities)
-        return y
+        return from_table(result.probabilities)
 
 
 class RandomForestClassifier(ClassifierMixin, BaseForest, metaclass=ABCMeta):
@@ -465,15 +500,24 @@ class RandomForestClassifier(ClassifierMixin, BaseForest, metaclass=ABCMeta):
         )
 
     def predict(self, X, queue=None):
+        _, xp, _ = _get_sycl_namespace(X)
         hparams = get_hyperparameters("decision_forest", "infer")
-        pred = super()._predict(
-            X,
-            self._get_backend("decision_forest", "classification", None),
-            queue,
-            hparams,
+        pred = xp.reshape(
+            super()._predict(
+                X,
+                self._get_backend("decision_forest", "classification", None),
+                queue,
+                hparams,
+            ),
+            -1,
         )
 
-        return np.take(self.classes_, pred.ravel().astype(np.int64, casting="unsafe"))
+        try:
+            return xp.take(
+                xp.asarray(self.classes_), xp.astype(xp.reshape(pred, (-1,)), xp.int64)
+            )
+        except AttributeError:
+            return np.take(self.classes_, pred.ravel().astype(np.int64, casting="unsafe"))
 
     def predict_proba(self, X, queue=None):
         hparams = get_hyperparameters("decision_forest", "infer")
@@ -558,10 +602,12 @@ class RandomForestRegressor(RegressorMixin, BaseForest, metaclass=ABCMeta):
         )
 
     def predict(self, X, queue=None):
-        return (
-            super()
-            ._predict(X, self._get_backend("decision_forest", "regression", None), queue)
-            .ravel()
+        _, xp, _ = _get_sycl_namespace(X)
+        return xp.reshape(
+            super()._predict(
+                X, self._get_backend("decision_forest", "regression", None), queue
+            ),
+            -1,
         )
 
 

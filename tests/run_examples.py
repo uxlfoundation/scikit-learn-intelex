@@ -267,7 +267,7 @@ def run(exdir, logdir, args):
                                 proc.kill()
                                 out = proc.communicate()[0]
                                 print("Process has timed out: " + str(execute_string))
-                            logfile.write(out.decode("ascii"))
+                            logfile.write(out.decode())
                             if proc.returncode:
                                 print(out)
                                 print(

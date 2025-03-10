@@ -162,7 +162,7 @@ The build-process (using setup.py) happens in 4 stages:
 ### Configure the Build with Environment Variables
 * ``SKLEARNEX_VERSION``: sets the package version
 * ``DALROOT``: sets the oneAPI Data Analytics Library path
-* ``MPIROOT``: sets the path to the MPI library that will be used for distributed mode support. Not used when using `NO_DIST=1`
+* ``MPIROOT``: sets the path to the MPI library that will be used for distributed mode support. If this variable is not set but `I_MPI_ROOT` is found, will use `I_MPI_ROOT` instead. Not used when using `NO_DIST=1`
 * ``NO_DIST``: set to '1', 'yes' or alike to build without support for distributed mode
 * ``NO_STREAM``: set to '1', 'yes' or alike to build without support for streaming mode
 * ``NO_DPC``: set to '1', 'yes' or alike to build without support of oneDAL DPC++ interfaces

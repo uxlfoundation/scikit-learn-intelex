@@ -45,8 +45,8 @@ The software acceleration is achieved with vector instructions, AI hardware-spec
 
 With Intel(R) Extension for Scikit-learn, you can:
 
-* Speed up training and inference by up to 100x with the equivalent mathematical accuracy
-* Benefit from performance improvements across different Intel(R) hardware configurations
+* Speed up training and inference by up to 100x with equivalent mathematical accuracy
+* Benefit from performance improvements across different Intel(R) hardware configurations, including GPUs and multi-GPU configurations
 * Integrate the extension into your existing Scikit-learn applications without code modifications
 * Continue to use the open-source scikit-learn API
 * Enable and disable the extension with a couple of lines of code or at the command line
@@ -71,22 +71,23 @@ Intel(R) Extension for Scikit-learn is also a part of [Intel(R) AI Tools](https:
     from sklearn.cluster import DBSCAN
 
     X = np.array([[1., 2.], [2., 2.], [2., 3.],
-                [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
+                  [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
     clustering = DBSCAN(eps=3, min_samples=2).fit(X)
     ```
 
 - **Enable Intel(R) GPU optimizations**
 
+    _Note: executing on GPU has [additional system software requirements](https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html) - see [details](https://uxlfoundation.github.io/scikit-learn-intelex/latest/oneapi-gpu.html)._
+
     ```py
     import numpy as np
-    import dpctl
     from sklearnex import patch_sklearn, config_context
     patch_sklearn()
 
     from sklearn.cluster import DBSCAN
 
     X = np.array([[1., 2.], [2., 2.], [2., 3.],
-                [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
+                  [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
     with config_context(target_offload="gpu:0"):
         clustering = DBSCAN(eps=3, min_samples=2).fit(X)
     ```
@@ -100,7 +101,7 @@ To install Intel(R) Extension for Scikit-learn, run:
 pip install scikit-learn-intelex
 ```
 
-See all installation instructions in the [Installation Guide](https://uxlfoundation.github.io/scikit-learn-intelex/latest/installation.html).
+See all installation instructions in the [Installation Guide](https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/INSTALL.md).
 
 ## Integration
 
