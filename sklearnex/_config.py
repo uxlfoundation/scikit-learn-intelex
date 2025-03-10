@@ -88,7 +88,7 @@ def set_config(
 
     Warnings
     --------
-    Using `use_raw_input=True` is not recommended for general use as it
+    Using ``use_raw_input=True`` is not recommended for general use as it
     bypasses data consistency checks, which may lead to unexpected behavior.
     """
 
