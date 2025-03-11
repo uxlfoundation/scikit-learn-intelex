@@ -21,7 +21,7 @@ from numbers import Integral
 import numpy as np
 from scipy import sparse as sp
 
-from onedal._device_offload import supports_queue
+from onedal._device_offload import SyclQueueManager, supports_queue
 from onedal.common._backend import BackendFunction
 
 if np.lib.NumpyVersion(np.__version__) >= np.lib.NumpyVersion("2.0.0a0"):
