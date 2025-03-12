@@ -46,7 +46,6 @@ class RBFKernel:
         patching_status = PatchingConditionsChain(
             f"sklearn.metrics.pairwise.{method_name}"
         )
-        print(f"patching_status.get_status() = {patching_status.get_status()}")
         return patching_status
 
     def _onedal_cpu_supported(self, method_name, *data):
@@ -56,7 +55,6 @@ class RBFKernel:
         return self._onedal_supported(method_name, *data)
 
     def _onedal_rbf_kernel(self, X, Y=None, gamma=None, queue=None):
-        print(f"queue = {queue}")
         return _onedal_rbf_kernel(X, Y, gamma, queue)
 
     def compute(self, X, Y=None, gamma=None):
