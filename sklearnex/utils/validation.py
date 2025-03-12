@@ -21,14 +21,11 @@ from sklearn.utils.validation import _assert_all_finite as _sklearn_assert_all_f
 from sklearn.utils.validation import _num_samples, check_array, check_non_negative
 
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from daal4py.sklearn.utils.validation import check_feature_names, check_n_features
 
 from ._array_api import get_namespace
 
 if sklearn_check_version("1.6"):
-    from sklearn.utils.validation import (
-        _check_feature_names as _sklearn_check_feature_names,
-    )
-    from sklearn.utils.validation import _check_n_features as _sklearn_check_n_features
     from sklearn.utils.validation import validate_data as _sklearn_validate_data
 
     _finite_keyword = "ensure_all_finite"
@@ -36,8 +33,6 @@ else:
     from sklearn.base import BaseEstimator
 
     _sklearn_validate_data = BaseEstimator._validate_data
-    _sklearn_check_feature_names = BaseEstimator._check_feature_names
-    _sklearn_check_n_features = BaseEstimator._check_n_features
     _finite_keyword = "force_all_finite"
 
 
@@ -105,7 +100,7 @@ def validate_data(
     /,
     X="no_validation",
     y="no_validation",
-    skip_y_conversion=False,
+    ensure_y_dtype=False,
     **kwargs,
 ):
     # force finite check to not occur in sklearn, default is True
@@ -139,7 +134,7 @@ def validate_data(
         if check_y:
             assert_all_finite(next(arg), allow_nan=allow_nan, input_name="y")
 
-    if check_y and "dtype" in kwargs and not skip_y_conversion:
+    if ensure_y_dtype and check_y and "dtype" in kwargs:
         # validate_data does not do full dtype conversions, as it uses check_X_y
         # oneDAL can make tables from [int32, float32, float64], requiring
         # a dtype check and conversion. This will query the array_namespace and
@@ -212,11 +207,3 @@ def _check_sample_weight(
         check_non_negative(sample_weight, "`sample_weight`")
 
     return sample_weight
-
-
-def check_feature_names(*args, **kwargs):
-    _sklearn_check_feature_names(*args, **kwargs)
-
-
-def check_n_features(*args, **kwargs):
-    _sklearn_check_n_features(*args, **kwargs)

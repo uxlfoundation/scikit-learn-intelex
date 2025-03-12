@@ -285,7 +285,6 @@ class NuSVC(_sklearn_NuSVC, BaseSVC):
             ensure_2d=False,
             accept_sparse="csr",
             reset=False,
-            skip_y_conversion=True,
         )
 
         return self._onedal_estimator.predict(X, queue=queue)
@@ -312,7 +311,6 @@ class NuSVC(_sklearn_NuSVC, BaseSVC):
             ensure_all_finite=False,
             accept_sparse="csr",
             reset=False,
-            skip_y_conversion=True,
         )
 
         return self._onedal_estimator.decision_function(X, queue=queue)

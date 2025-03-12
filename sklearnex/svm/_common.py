@@ -165,7 +165,6 @@ class BaseSVM(PatchableEstimator, BaseEstimator, ABC):
             dtype=[np.float64, np.float32],
             ensure_all_finite=False,
             accept_sparse="csr",
-            skip_y_conversion=True,
         )
         y = self._validate_targets(y)
         sample_weight = self._get_sample_weight(X, y, sample_weight)
