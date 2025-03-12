@@ -14,13 +14,66 @@
 # limitations under the License.
 # ===============================================================================
 
+from sklearn.base import BaseEstimator
+from sklearn.metrics.pairwise import rbf_kernel as _sklearn_rbf_kernel
+
+from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.metrics import pairwise_distances
 from onedal._device_offload import support_input_format
-from onedal.primitives import rbf_kernel as onedal_rbf_kernel
+from onedal.primitives import rbf_kernel as _onedal_rbf_kernel
+
+from .._device_offload import dispatch
+from .._utils import PatchingConditionsChain
 
 pairwise_distances = support_input_format(freefunc=True, queue_param=False)(
     pairwise_distances
 )
 
 
-rbf_kernel = support_input_format(freefunc=True, queue_param=False)(onedal_rbf_kernel)
+if sklearn_check_version("1.6"):
+    from sklearn.utils.validation import validate_data
+else:
+    validate_data = BaseEstimator._validate_data
+
+
+class RBFKernel:
+    __doc__ = _sklearn_rbf_kernel.__doc__
+
+    def __init__(self):
+        pass
+
+    def _onedal_supported(self, method_name, *data):
+        patching_status = PatchingConditionsChain(
+            f"sklearn.metrics.pairwise.{method_name}"
+        )
+        print(f"patching_status.get_status() = {patching_status.get_status()}")
+        return patching_status
+
+    def _onedal_cpu_supported(self, method_name, *data):
+        return self._onedal_supported(method_name, *data)
+
+    def _onedal_gpu_supported(self, method_name, *data):
+        return self._onedal_supported(method_name, *data)
+
+    def _onedal_rbf_kernel(self, X, Y=None, gamma=None, queue=None):
+        print(f"queue = {queue}")
+        return _onedal_rbf_kernel(X, Y, gamma, queue)
+
+    def compute(self, X, Y=None, gamma=None):
+        result = dispatch(
+            self,
+            "rbf_kernel",
+            {
+                "onedal": self.__class__._onedal_rbf_kernel,
+                "sklearn": _sklearn_rbf_kernel,
+            },
+            X,
+            Y,
+            gamma,
+        )
+
+        return result
+
+
+def rbf_kernel(X, Y=None, gamma=None):
+    return RBFKernel().compute(X, Y, gamma)
