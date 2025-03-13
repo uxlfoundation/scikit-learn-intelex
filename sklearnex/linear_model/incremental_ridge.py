@@ -43,7 +43,9 @@ else:
 @control_n_jobs(
     decorated_methods=["fit", "partial_fit", "predict", "score", "_onedal_finalize_fit"]
 )
-class IncrementalRidge(ExtensionEstimator, MultiOutputMixin, RegressorMixin, BaseEstimator):
+class IncrementalRidge(
+    ExtensionEstimator, MultiOutputMixin, RegressorMixin, BaseEstimator
+):
     """
     Incremental estimator for Ridge Regression.
     Allows to train Ridge Regression if data is splitted into batches.
