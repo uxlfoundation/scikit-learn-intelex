@@ -51,7 +51,7 @@ class PatchingConditionsChain(daal4py_PatchingConditionsChain):
         else:
             self.logger.debug(
                 f"{self.scope_name}: debugging for the patch is enabled to track"
-                " the usage of Intel® oneAPI Data Analytics Library (oneDAL)"
+                " the usage of oneAPI Data Analytics Library (oneDAL)"
             )
             for message in self.messages:
                 self.logger.debug(

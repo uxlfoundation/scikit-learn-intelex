@@ -30,7 +30,7 @@ def _main():
     parser = argparse.ArgumentParser(
         prog="python -m sklearnex.glob",
         description="""
-            Patch all your Scikit-learn applications using Intel(R) Extension for
+            Patch all your Scikit-learn applications using Extension for
             scikit-learn.""",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
