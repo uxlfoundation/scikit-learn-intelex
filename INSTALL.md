@@ -23,9 +23,9 @@ To install Extension for Scikit-learn*, use one of the following scenarios:
 - [Before You Begin](#before-you-begin)
 - [Install via PIP](#install-via-pip)
   - [Install from PyPI Channel (recommended by default)](#install-from-pypi-channel-recommended-by-default)
-- [Install from Anaconda Cloud](#install-from-anaconda-cloud)
-  - [Install from Conda-Forge Channel](#install-via-anaconda-cloud-from-conda-forge-channel)
-  - [Install from Intel conda Channel](#install-via-anaconda-cloud-from-intel-channel)
+- [Install via conda](#install-via-conda)
+  - [Install from Conda-Forge Channel](#install-from-conda-forge-channel)
+  - [Install from Intel conda Channel](#install-from-intel-conda-channel)
 - [Build from Sources](#build-from-sources)
   - [Prerequisites](#prerequisites)
   - [Configure the Build with Environment Variables](#configure-the-build-with-environment-variables)
@@ -76,11 +76,11 @@ Install `scikit-learn-intelex`:
    pip install scikit-learn-intelex
    ```
 
-## Install from Anaconda Cloud
+## Install via conda
 
 To prevent version conflicts, we recommend to create and activate a new environment. 
 
-### Install via Anaconda Cloud from Conda-Forge Channel
+### Install from Conda-Forge Channel
 
 - Install into a newly created environment (recommended):
 
@@ -100,7 +100,7 @@ To prevent version conflicts, we recommend to create and activate a new environm
   conda install scikit-learn-intelex
   ```
 
-### Install via Anaconda Cloud from Intel Channel
+### Install Intel conda Channel
 
 We recommend this installation for the users of Intel® Distribution for Python.
 
