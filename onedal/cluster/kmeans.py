@@ -83,8 +83,13 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
                 f"match the number of features of the data {X.shape[1]}."
             )
 
-    def _get_kmeans_init(self, cluster_count, seed, algorithm):
-        return KMeansInit(cluster_count=cluster_count, seed=seed, algorithm=algorithm)
+    def _get_kmeans_init(self, cluster_count, seed, algorithm, is_csr):
+        return KMeansInit(
+            cluster_count=cluster_count,
+            seed=seed,
+            algorithm=algorithm,
+            is_csr=is_csr,
+        )
 
     # Get appropriate backend (required for SPMD)
     def _get_basic_statistics_backend(self, result_options):
@@ -178,13 +183,19 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         if isinstance(init, str) and init == "k-means++":
             algorithm = "plus_plus_dense" if not is_csr else "plus_plus_csr"
             alg = self._get_kmeans_init(
-                cluster_count=n_clusters, seed=random_seed, algorithm=algorithm
+                cluster_count=n_clusters,
+                seed=random_seed,
+                algorithm=algorithm,
+                is_csr=is_csr,
             )
             centers_table = alg.compute_raw(X_table, dtype)
         elif isinstance(init, str) and init == "random":
             algorithm = "random_dense" if not is_csr else "random_csr"
             alg = self._get_kmeans_init(
-                cluster_count=n_clusters, seed=random_seed, algorithm=algorithm
+                cluster_count=n_clusters,
+                seed=random_seed,
+                algorithm=algorithm,
+                is_csr=is_csr,
             )
             centers_table = alg.compute_raw(X_table, dtype)
         elif _is_arraylike_not_scalar(init):

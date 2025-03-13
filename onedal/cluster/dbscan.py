@@ -73,8 +73,6 @@ class DBSCAN(ClusterMixin):
         elif sua_iface is not None:
             queue = X.sycl_queue
 
-        X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
-        sample_weight = make2d(sample_weight) if sample_weight is not None else None
         X_table, sample_weight_table = to_table(X, sample_weight, queue=queue)
 
         params = self._get_onedal_params(X_table.dtype)

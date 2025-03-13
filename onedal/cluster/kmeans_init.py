@@ -20,11 +20,30 @@ from sklearn.utils import check_random_state
 from daal4py.sklearn._utils import daal_check_version
 from onedal._device_offload import SyclQueueManager, supports_queue
 from onedal.common._backend import bind_default_backend
+from sklearnex._config import config_context, get_config
 
 from ..datatypes import from_table, to_table
 from ..utils.validation import _check_array
 
 if daal_check_version((2023, "P", 200)):
+
+    def force_host_if_csr(func):
+        """CSR init is not supported on GPU. In this config context we provide the necessary manipulations to force
+        running on host. We clean up upon exit and restore the original configuration."""
+        config = get_config()
+        config["target_offload"] = "cpu"
+
+        def wrapper(self, *args, **kwargs):
+            if self.is_csr:
+                with (
+                    config_context(**config),
+                    SyclQueueManager.manage_global_queue(None, None),
+                ):
+                    return func(self, *args, **kwargs)
+            else:
+                return func(self, *args, **kwargs)
+
+        return wrapper
 
     class KMeansInit:
         """
@@ -37,11 +56,13 @@ if daal_check_version((2023, "P", 200)):
             seed=777,
             local_trials_count=None,
             algorithm="plus_plus_dense",
+            is_csr=False,
         ):
             self.cluster_count = cluster_count
             self.seed = seed
             self.local_trials_count = local_trials_count
             self.algorithm = algorithm
+            self.is_csr = is_csr
 
             if local_trials_count is None:
                 self.local_trials_count = 2 + int(np.log(cluster_count))
@@ -83,9 +104,12 @@ if daal_check_version((2023, "P", 200)):
             centroids = self._compute_raw(X_table, dtype)
             return from_table(centroids)
 
+        @force_host_if_csr
+        @supports_queue
         def compute_raw(self, X_table, dtype=np.float32, queue=None):
             return self._compute_raw(X_table, dtype)
 
+        @force_host_if_csr
         @supports_queue
         def compute(self, X, queue=None):
             return self._compute(X)
