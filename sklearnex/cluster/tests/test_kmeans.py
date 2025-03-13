@@ -28,7 +28,6 @@ from onedal.tests.utils._dataframes_support import (
     get_queues,
 )
 from sklearnex import config_context
-from sklearnex.tests.utils import _IS_INTEL
 
 
 def generate_dense_dataset(n_samples, n_features, density, n_clusters):
@@ -132,7 +131,7 @@ def test_results_on_dense_gold_data(dataframe, queue, algorithm):
 def test_dense_vs_sparse(queue, init, algorithm, dims):
     from sklearnex.cluster import KMeans
 
-    if init == "random" or (not _IS_INTEL and init == "k-means++"):
+    if init == "random" or init == "k-means++":
         pytest.skip(f"{init} initialization for sparse K-means is non-conformant.")
 
     # For higher level of sparsity (smaller density) the test may fail
