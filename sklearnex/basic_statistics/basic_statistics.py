@@ -28,7 +28,7 @@ from onedal.basic_statistics import BasicStatistics as onedal_BasicStatistics
 from onedal.utils import _is_csr
 
 from .._device_offload import dispatch
-from .._utils import IntelEstimator, PatchingConditionsChain
+from .._utils import ExtensionEstimator, PatchingConditionsChain
 
 if sklearn_check_version("1.6"):
     from sklearn.utils.validation import validate_data
@@ -40,7 +40,7 @@ if sklearn_check_version("1.2"):
 
 
 @control_n_jobs(decorated_methods=["fit"])
-class BasicStatistics(IntelEstimator, BaseEstimator):
+class BasicStatistics(ExtensionEstimator, BaseEstimator):
     """
     Estimator for basic statistics.
     Allows to compute basic statistics for provided data.
