@@ -143,7 +143,7 @@ def register_hyperparameters(hyperparameters_map):
 
 # This abstract class is meant to generate a clickable doc link for classses
 # in sklearnex that are not part of base scikit-learn.
-class IntelEstimator(BaseForHTMLDocLink):
+class ExtensionEstimator(BaseForHTMLDocLink):
     @property
     def _doc_link_module(self) -> str:
         return "sklearnex"
