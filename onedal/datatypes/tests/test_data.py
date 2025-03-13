@@ -199,21 +199,23 @@ def test_input_format_f_contiguous_pandas(queue, dtype):
     _test_input_format_f_contiguous_pandas(queue, dtype)
 
 
-def _test_conversion_to_table(dtype):
+def _test_conversion_to_table(dtype, order):
     np.random.seed()
     if dtype in [np.int32, np.int64]:
         x = np.random.randint(0, 10, (15, 3), dtype=dtype)
     else:
         x = np.random.uniform(-2, 2, (18, 6)).astype(dtype)
+    x = ORDER_DICT[order](x)
     x_table = to_table(x)
     x2 = from_table(x_table)
     assert x.dtype == x2.dtype
     assert np.array_equal(x, x2)
 
 
+@pytest.mark.parametrize("order", ["F", "C"])
 @pytest.mark.parametrize("dtype", [np.int32, np.int64, np.float32, np.float64])
-def test_conversion_to_table(dtype):
-    _test_conversion_to_table(dtype)
+def test_conversion_to_table(dtype, order):
+    _test_conversion_to_table(dtype, order)
 
 
 @pytest.mark.skipif(
@@ -440,15 +442,16 @@ def test_non_array(X, queue):
     # Verify that to and from table doesn't raise errors
     # no guarantee is made about type or content
     err_str = ""
-
+    error = ValueError
     if np.isscalar(X):
         if np.atleast_2d(X).dtype not in [np.float64, np.float32, np.int64, np.int32]:
+            error = TypeError
             err_str = "Found unsupported array type"
     elif not (X is None or isinstance(X, np.ndarray)):
         err_str = r"\[convert_to_table\] Not available input format for convert Python object to onedal table."
 
     if err_str:
-        with pytest.raises(ValueError, match=err_str):
+        with pytest.raises(error, match=err_str):
             to_table(X)
     else:
         X_table = to_table(X, queue=queue)
