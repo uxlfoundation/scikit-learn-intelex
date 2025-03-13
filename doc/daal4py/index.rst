@@ -141,8 +141,8 @@ Oracle Linux Server release 7.4, using 64-bit floating point numbers
 Getting daal4py
 ---------------
 daal4py is available at the `Python Package Index <https://pypi.org/project/daal4py/>`_,
-on Anaconda Cloud in `Conda Forge channel <https://anaconda.org/conda-forge/daal4py>`_
-and in `Intel channel <https://anaconda.org/intel/daal4py>`_.
+on `Conda Forge channel <https://anaconda.org/conda-forge/daal4py>`_
+and on `Intel channel <https://anaconda.org/intel/daal4py>`_.
 Sources and build instructions are available in
 `daal4py repository <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/daal4py>`_.
 
@@ -153,7 +153,7 @@ See `scikit-learn-intelex requirements <https://uxlfoundation.github.io/scikit-l
 
      pip install daal4py
 
-- Install from Anaconda Cloud: Conda-Forge channel::
+- Install via conda: Conda-Forge channel::
 
      сonda install daal4py -c conda-forge
 
@@ -163,7 +163,7 @@ See `scikit-learn-intelex requirements <https://uxlfoundation.github.io/scikit-l
 
 We recommend to use **PyPi**. If you are using Intel® Distribution for Python,
 we recommend using **conda from the Intel Repository**.
-In other cases, use **Anaconda Cloud: conda-forge channel**.
+In other cases, use **conda: conda-forge channel**.
 
 
 Overview

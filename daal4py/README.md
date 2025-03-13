@@ -78,12 +78,12 @@ pip install -U mpi4py impi_rt
 ```
 
 ```shell
-# Anaconda Cloud for dpcpp
+# conda for dpcpp
 conda install dpcpp_cpp_rt dpctl -c https://software.repos.intel.com/python/conda/
 ```
 
 ```shell
-# Anaconda Cloud for MPI
+# conda for MPI
 conda install mpi4py impi_rt -c https://software.repos.intel.com/python/conda/
 ```
 
