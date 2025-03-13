@@ -100,6 +100,12 @@ Regression
        - ``normalize`` != `False`
        - ``sample_weight`` != `None`
      - Only dense data is supported.
+   * - `IncrementalLinearRegression`
+     - All parameters are supported except:
+
+       - ``normalize`` != `False`
+       - ``sample_weight`` != `None`
+     - Only dense data is supported.
    * - `Ridge`
      - All parameters are supported except:
 
@@ -204,6 +210,15 @@ Other Tasks
    * - `EmpiricalCovariance`
      - All parameters are supported
      - Only dense data is supported
+   * - `IncrementalCovariance`
+     - All parameters are supported
+     - Only dense data is supported
+   * - `BasicStatistics`
+     - All parameters are supported
+     - Only dense data is supported
+   * - `IncrementalBasicStatistics`
+     - All parameters are supported
+     - Only dense data is supported
    * - `train_test_split`
      - All parameters are supported
      - Only dense data is supported
@@ -304,6 +319,12 @@ Regression
        - ``normalize`` != `False`
        - ``sample_weight`` != `None`
      - Only dense data is supported.
+   * - `IncrementalLinearRegression`
+     - All parameters are supported except:
+
+       - ``normalize`` != `False`
+       - ``sample_weight`` != `None`
+     - Only dense data is supported.
 
 Clustering
 **********
@@ -346,6 +367,9 @@ Dimensionality Reduction
 
        - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`]
      - Sparse data is not supported
+   * - `IncrementalPCA`
+     - All parameters are supported
+     - Sparse data is not supported
 
 Nearest Neighbors
 *****************
@@ -378,6 +402,15 @@ Other Tasks
      - Parameters
      - Data formats
    * - `EmpiricalCovariance`
+     - All parameters are supported
+     - Only dense data is supported
+   * - `IncrementalCovariance`
+     - All parameters are supported
+     - Only dense data is supported
+   * - `BasicStatistics`
+     - All parameters are supported
+     - Only dense data is supported
+   * - `IncrementalBasicStatistics`
      - All parameters are supported
      - Only dense data is supported
 
@@ -458,7 +491,13 @@ Regression
        - ``normalize`` != `False`
        - ``sample_weight`` != `None`
      - Only dense data is supported.
+   * - `IncrementalLinearRegression`
+     - All parameters are supported except:
 
+       - ``normalize`` != `False`
+       - ``sample_weight`` != `None`
+     - Only dense data is supported.
+     
 Clustering
 **********
 
@@ -501,6 +540,9 @@ Dimensionality Reduction
        - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`]
        - ``fit`` is the only method supported
      - Sparse data is not supported
+   * - `IncrementalPCA`
+     - All parameters are supported
+     - Sparse data is not supported
 
 Nearest Neighbors
 *****************
@@ -533,6 +575,15 @@ Other Tasks
      - Parameters
      - Data formats
    * - `EmpiricalCovariance`
+     - All parameters are supported
+     - Only dense data is supported
+   * - `IncrementalCovariance`
+     - All parameters are supported
+     - Only dense data is supported
+   * - `BasicStatistics`
+     - All parameters are supported
+     - Only dense data is supported
+   * - `IncrementalBasicStatistics`
      - All parameters are supported
      - Only dense data is supported
 
