@@ -37,7 +37,6 @@ else:
 
 
 class RBFKernel:
-    __doc__ = _sklearn_rbf_kernel.__doc__
 
     def __init__(self):
         pass
