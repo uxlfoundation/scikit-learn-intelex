@@ -30,6 +30,7 @@ If you want to run them locally, refer to `these instructions
    k-Nearest Neighbors (kNN) for MNIST dataset <samples/knn_mnist.ipynb>
    Logistic Regression for Cifar dataset <samples/logistictic_regression_cifar.ipynb>
    Support Vector Classification (SVC) for Adult dataset <samples/svc_adult.ipynb>
+   Random Forest Classification on rain in Australia dataset <samples/random_forest_rain.ipynb>
 
 .. rubric:: Regression Tasks
 
@@ -42,6 +43,9 @@ If you want to run them locally, refer to `these instructions
    Nu-Support Vector Regression (NuSVR) for Medical Charges dataset <samples/nusvr_medical_charges.ipynb>
    Random Forest for Yolanda dataset <samples/random_forest_yolanda.ipynb>
    Rigde Regression for Airlines DepDelay dataset <samples/ridge_regression.ipynb>
+   Ridge Regression on New York City Bike Share dataset <samples/ridge_regression_bike_sharing.ipynb>
+   Ridge Regression on IEEE-CIS Fraud Detection dataset <samples/ridge_regression_fraud_detection.ipynb>
+   Ridge Regression on Higgs dataset <samples/ridge_regression_higgs.ipynb>
 
 .. rubric:: Clustering Tasks
 
