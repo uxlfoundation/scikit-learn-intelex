@@ -568,7 +568,7 @@ def _daal4py_predict(self, X, is_decision_function=False):
         res = -predictionRes.decisionFunction
 
     if num_classes == 2 and not is_decision_function:
-        # Convert from Intel(R) oneAPI Data Analytics Library format back to
+        # Convert from oneAPI Data Analytics Library format back to
         # original classes
         np.greater(res, 0, out=res)
 

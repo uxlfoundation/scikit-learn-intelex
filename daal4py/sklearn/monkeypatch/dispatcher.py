@@ -171,7 +171,7 @@ def enable(name=None, verbose=True, deprecation=True, get_map=_get_map_of_algori
         warnings.warn_explicit(
             "\nScikit-learn patching with daal4py is deprecated "
             "and will be removed in the future.\n"
-            "Use Intel(R) Extension "
+            "Use Extension "
             "for Scikit-learn* module instead "
             "(pip install scikit-learn-intelex).\n"
             "To enable patching, please use one of the "
@@ -187,7 +187,7 @@ def enable(name=None, verbose=True, deprecation=True, get_map=_get_map_of_algori
         )
     if verbose and deprecation and sys.stderr is not None:
         sys.stderr.write(
-            "Intel(R) oneAPI Data Analytics Library solvers for sklearn enabled: "
+            "oneAPI Data Analytics Library solvers for sklearn enabled: "
             "https://intelpython.github.io/daal4py/sklearn.html\n"
         )
 

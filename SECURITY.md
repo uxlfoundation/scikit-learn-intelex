@@ -19,13 +19,13 @@
 
 As an open-source project, we understand the importance of and responsibility
 for security. This Security Policy outlines our guidelines and procedures to
-ensure the highest level of security and trust for Intel(R) Extension for Scikit-learn* users. 
+ensure the highest level of security and trust for Extension for Scikit-learn* users. 
 
 ## Supported Versions
 
 Security vulnerabilities are fixed in the [latest version][1]
 and delivered as a patch release. We don't guarantee security fixes to be
-back-ported to older Intel(R) Extension for Scikit-learn* versions.
+back-ported to older Extension for Scikit-learn* versions.
 
 ## Report a Vulnerability
 
@@ -52,16 +52,16 @@ Along with the report, provide the following info:
 
 ### When Should I Report a Vulnerability?
 
-* You think you discovered a potential security vulnerability in Intel(R) Extension for Scikit-learn*.
-* You are unsure how the potential vulnerability affects Intel(R) Extension for Scikit-learn*.
+* You think you discovered a potential security vulnerability in Extension for Scikit-learn*.
+* You are unsure how the potential vulnerability affects Extension for Scikit-learn*.
 * You think you discovered a vulnerability in another project or 3rd party
-component on which Intel(R) Extension for Scikit-learn* depends. If the issue is not fixed in the 3rd party
+component on which Extension for Scikit-learn* depends. If the issue is not fixed in the 3rd party
 component, try to report directly there first.
 
 ### When Should I NOT Report a Vulnerability?
 
 * You got an automated scan hit and are unable to provide details.
-* You need help using Intel(R) Extension for Scikit-learn* for security.
+* You need help using Extension for Scikit-learn* for security.
 * You need help applying security-related updates.
 * Your issue is not security-related.
 
@@ -69,7 +69,7 @@ component, try to report directly there first.
 
 We aim to respond quickly to your inquiry and coordinate a fix and
 disclosure with you. All confirmed security vulnerabilities will be addressed
-according to severity level and impact on Intel(R) Extension for Scikit-learn*. Normally, security issues
+according to severity level and impact on Extension for Scikit-learn*. Normally, security issues
 are fixed in the next planned release.
 
 ## Disclosure Policy
