@@ -125,6 +125,7 @@ pygments_style = "sphinx"
 rst_prolog = """
 .. |reg| unicode:: U+000AE
 .. |intelex| replace:: Extension for Scikit-learn*
+.. |onedal| replace:: oneAPI Data Analytics Library
 """
 
 # -- Options for HTML output -------------------------------------------------
