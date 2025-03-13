@@ -406,7 +406,8 @@ def estimator_trace(estimator, method, cache, isolated_trace):
 
 
 def call_validate_data(text, estimator, method):
-    """test that the sklearn function/attribute validate_data is
+    """test that both sklearnex wrapper for validate_data and
+    original sklearn function/method validate_data are
     called once before offloading to oneDAL in sklearnex"""
     try:
         # get last to_table call showing end of oneDAL input portion of code
@@ -415,9 +416,19 @@ def call_validate_data(text, estimator, method):
     except ValueError:
         pytest.skip("onedal backend not used in this function")
 
-    assert (
-        validfuncs.count("validate_data") + validfuncs.count("_validate_data") == 2
-    ), f"sklearn's validate_data should be called"
+    if sklearn_check_version("1.6"):
+        # sklearn.utils.validation.validate_data is used in sklearn >= 1.6
+        assert (
+            validfuncs.count("validate_data") == 2
+        ), f"each sklearn's and sklearnex's validate_data should be called once"
+    else:
+        # sklearn.BaseEstimator._validate_data is used in sklearn < 1.6
+        assert validfuncs.count(
+            "validate_data"
+        ), f"sklearnex's validate_data wrapper should be called once"
+        assert validfuncs.count(
+            "_validate_data"
+        ), f"sklearn's validate_data should be called once"
     assert (
         validfuncs.count("_check_feature_names") == 1
     ), "estimator should check feature names in validate_data"
