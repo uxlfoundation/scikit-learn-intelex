@@ -28,8 +28,21 @@ from ..utils.validation import _check_array
 if daal_check_version((2023, "P", 200)):
 
     def force_host_if_csr(func):
-        """CSR init is not supported on GPU. In this config context we provide the necessary manipulations to force
-        running on host. We clean up upon exit and restore the original configuration."""
+        """
+        Decorator to force computation on the host if the input data is in CSR format.
+
+        CSR (Compressed Sparse Row) format is not supported on GPU. This decorator ensures that
+        the computation is performed on the host (CPU) when the input data is in CSR format.
+        It is necessary that `self.is_csr` is to the correct value (True or False) before calling.
+        It temporarily modifies the configuration to target the CPU and removes the global SYCL queue
+        to ensure the computation is executed on the host. The original configuration is restored upon exit.
+
+        Parameters:
+        func (function): The function to be decorated.
+
+        Returns:
+        function: The wrapped function with the modified configuration if the input data is in CSR format.
+        """
         config = get_config()
         config["target_offload"] = "cpu"
 
