@@ -23,7 +23,7 @@ Fast, Scalable and Easy Machine Learning With DAAL4PY
 Daal4py makes your Machine Learning algorithms in Python lightning fast and easy to use. It provides
 highly configurable Machine Learning kernels, some of which support streaming input data and/or can
 be easily and efficiently scaled out to clusters of workstations.  Internally it uses
-oneAPI Data Analytics Library to deliver the best performance.
+|onedal| to deliver the best performance.
 
 Designed for Data Scientists and Framework Designers
 ----------------------------------------------------
@@ -116,7 +116,7 @@ pickling and serialization.
 
 Built for Performance
 ---------------------
-Besides superior (e.g. close to native C++ oneAPI Data Analytics Library) performance on a
+Besides superior (e.g. close to native C++ |onedal|) performance on a
 single node, the distribution mechanics of daal4py provides excellent strong and weak scaling. It
 nicely handles distributing a fixed input size on increasing clusters sizes (strong scaling: orange)
 which addresses possible response time requirements. It also scales with growing input size (weak
