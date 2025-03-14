@@ -415,8 +415,8 @@ class DummyEstimator(BaseEstimator):
                 xp=xp,
             )
         else:
-            self.x_attr = from_table(X_table)
-            self.y_attr = from_table(y_table)
+            self.x_attr_ = from_table(X_table)
+            self.y_attr_ = from_table(y_table)
 
         return self
 
