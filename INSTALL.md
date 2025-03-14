@@ -158,6 +158,7 @@ The build-process (using setup.py) happens in 4 stages:
 * MPI (optional, needed for distributed mode)
   * You can use the pre-built `impi_rt` and `impi-devel` conda packages from conda-forge channel
 * A DPC++ compiler (optional, needed for DPC++ interfaces)
+  * Note that this also requires a oneDAL build with DPC++ enabled.
 
 ### Configure the Build with Environment Variables
 * ``SKLEARNEX_VERSION``: sets the package version

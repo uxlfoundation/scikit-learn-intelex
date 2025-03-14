@@ -48,6 +48,10 @@ DPC++ compiler runtime can be installed either from PyPI or Conda:
 
 For GPGPU driver installation instructions, see the general `DPC++ system requirements <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`_ sections corresponding to your operating system.
 
+.. note::
+
+    Executing computations on GPUs is only supported in DPC-enabled builds of |intelex|. Binary distributions of |intelex| in PyPI, conda-forge, and Intel's conda channel all come with DPC support, but if building from source, be sure to enable this functionality in both oneDAL and |intelex| if needed. See the `instructions for building from source <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/INSTALL.md#build-from-sources>`__ for more information.
+
 Device offloading
 -----------------
 
@@ -97,18 +101,17 @@ call :code:`sklearnex.get_config()`.
 - Pass input data as :obj:`dpctl.tensor.usm_ndarray` to the algorithm.
 
   The computation will run on the device where the input data is
-  located, and the result will be returned as :code:`usm_ndarray` to the same
+  located, and the result will be returned as :obj:`usm_ndarray <dpctl.tensor.usm_ndarray>` to the same
   device.
 
   .. note::
     All the input data for an algorithm must reside on the same device.
 
   .. warning::
-    The :code:`usm_ndarray` can only be consumed by the base methods
-    like :code:`fit`, :code:`predict`, and :code:`transform`.
-    Note that only the algorithms in |intelex| support
-    :code:`usm_ndarray`. The algorithms from the stock version of |sklearn|
-    do not support this feature.
+    Input of class :obj:`usm_ndarray <dpctl.tensor.usm_ndarray>` can only be consumed by the base methods
+    of |intelex| estimators like ``.fit()``, ``.predict()``, and ``.transform()``.
+    Be aware that the stock version of |sklearn| has only limited support for these,
+    and requires :external+sklearn:doc:`enabling the array API functionality <modules/array_api>` on it.
 
 
 Example
@@ -129,6 +132,6 @@ A full example of how to patch your code with Intel CPU/GPU optimizations:
       clustering = DBSCAN(eps=3, min_samples=2).fit(X)
 
 
-.. note:: Current offloading behavior restricts fitting and predictions (a.k.a. inference) of any models to be
+.. note:: Current offloading behavior restricts fitting and predictions (also referred to as "inference") of any models to be
      in the same context or absence of context. For example, a model whose ``.fit()`` method was called in a GPU context with
      ``target_offload="gpu:0"`` will throw an error if a ``.predict()`` call is then made outside the same GPU context.
