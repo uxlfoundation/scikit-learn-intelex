@@ -48,6 +48,13 @@ Classification
        - ``ccp_alpha`` != `0`
        - ``criterion`` != `'gini'`
      - Multi-output and sparse data are not supported
+   * - `ExtraTreesClassifier`
+     - All parameters are supported except:
+
+       - ``warm_start`` = `True`
+       - ``ccp_alpha`` != `0`
+       - ``criterion`` != `'gini'`
+     - Multi-output and sparse data are not supported
    * - `KNeighborsClassifier`
      -
        - For ``algorithm`` == `'kd_tree'`:
@@ -89,18 +96,19 @@ Regression
        - ``ccp_alpha`` != `0`
        - ``criterion`` != `'mse'`
      - Multi-output and sparse data are not supported
+   * - `ExtraTreesRegressor`
+     - All parameters are supported except:
+
+       - ``warm_start`` = `True`
+       - ``ccp_alpha`` != `0`
+       - ``criterion`` != `'mse'`
+     - Multi-output and sparse data are not supported
    * - `KNeighborsRegressor`
      - All parameters are supported except:
 
        - ``metric`` != `'euclidean'` or `'minkowski'` with ``p`` != `2`
      - Multi-output and sparse data are not supported
    * - `LinearRegression`
-     - All parameters are supported except:
-
-       - ``normalize`` != `False`
-       - ``sample_weight`` != `None`
-     - Only dense data is supported.
-   * - `IncrementalLinearRegression`
      - All parameters are supported except:
 
        - ``normalize`` != `False`
@@ -164,13 +172,12 @@ Dimensionality Reduction
 
        - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`]
      - Sparse data is not supported
-   * - `IncrementalPCA`
-     - All parameters are supported
-     - Sparse data is not supported
    * - `TSNE`
      - All parameters are supported except:
 
        - ``metric`` != 'euclidean' or `'minkowski'` with ``p`` != `2`
+
+       - ``n_components`` can only be `2`
 
        Refer to :ref:`TSNE acceleration details <acceleration_tsne>` to learn more.
      - Sparse data is not supported
@@ -210,13 +217,7 @@ Other Tasks
    * - `EmpiricalCovariance`
      - All parameters are supported
      - Only dense data is supported
-   * - `IncrementalCovariance`
-     - All parameters are supported
-     - Only dense data is supported
    * - `BasicStatistics`
-     - All parameters are supported
-     - Only dense data is supported
-   * - `IncrementalBasicStatistics`
      - All parameters are supported
      - Only dense data is supported
    * - `train_test_split`
@@ -270,6 +271,15 @@ Classification
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
      - Multi-output and sparse data are not supported
+   * - `ExtraTreesClassifier`
+     - All parameters are supported except:
+
+       - ``warm_start`` = `True`
+       - ``ccp_alpha`` != `0`
+       - ``criterion`` != `'gini'`
+       - ``oob_score`` = `True`
+       - ``sample_weight`` != `None`
+     - Multi-output and sparse data are not supported
    * - `KNeighborsClassifier`
      - All parameters are supported except:
 
@@ -306,6 +316,15 @@ Regression
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
      - Multi-output and sparse data are not supported
+   * - `ExtraTreesRegressor`
+     - All parameters are supported except:
+
+       - ``warm_start`` = `True`
+       - ``ccp_alpha`` != `0`
+       - ``criterion`` != `'mse'`
+       - ``oob_score`` = `True`
+       - ``sample_weight`` != `None`
+     - Multi-output and sparse data are not supported
    * - `KNeighborsRegressor`
      - All parameters are supported except:
 
@@ -314,12 +333,6 @@ Regression
        - ``metric`` != `'euclidean'` or `'minkowski'` with ``p`` != `2`
      - Only dense data is supported
    * - `LinearRegression`
-     - All parameters are supported except:
-
-       - ``normalize`` != `False`
-       - ``sample_weight`` != `None`
-     - Only dense data is supported.
-   * - `IncrementalLinearRegression`
      - All parameters are supported except:
 
        - ``normalize`` != `False`
@@ -367,9 +380,6 @@ Dimensionality Reduction
 
        - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`]
      - Sparse data is not supported
-   * - `IncrementalPCA`
-     - All parameters are supported
-     - Sparse data is not supported
 
 Nearest Neighbors
 *****************
@@ -404,13 +414,7 @@ Other Tasks
    * - `EmpiricalCovariance`
      - All parameters are supported
      - Only dense data is supported
-   * - `IncrementalCovariance`
-     - All parameters are supported
-     - Only dense data is supported
    * - `BasicStatistics`
-     - All parameters are supported
-     - Only dense data is supported
-   * - `IncrementalBasicStatistics`
      - All parameters are supported
      - Only dense data is supported
 
@@ -433,6 +437,15 @@ Classification
      - Parameters & Methods
      - Data formats
    * - `RandomForestClassifier`
+     - All parameters are supported except:
+
+       - ``warm_start`` = `True`
+       - ``ccp_alpha`` != `0`
+       - ``criterion`` != `'gini'`
+       - ``oob_score`` = `True`
+       - ``sample_weight`` != `None`
+     - Multi-output and sparse data are not supported
+   * - `ExtraTreesClassifier`
      - All parameters are supported except:
 
        - ``warm_start`` = `True`
@@ -478,6 +491,15 @@ Regression
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
      - Multi-output and sparse data are not supported
+   * - `ExtraTreesRegressor`
+     - All parameters are supported except:
+
+       - ``warm_start`` = `True`
+       - ``ccp_alpha`` != `0`
+       - ``criterion`` != `'mse'`
+       - ``oob_score`` = `True`
+       - ``sample_weight`` != `None`
+     - Multi-output and sparse data are not supported
    * - `KNeighborsRegressor`
      - All parameters are supported except:
 
@@ -486,12 +508,6 @@ Regression
        - ``metric`` != `'euclidean'` or `'minkowski'` with ``p`` != `2`
      - Only dense data is supported
    * - `LinearRegression`
-     - All parameters are supported except:
-
-       - ``normalize`` != `False`
-       - ``sample_weight`` != `None`
-     - Only dense data is supported.
-   * - `IncrementalLinearRegression`
      - All parameters are supported except:
 
        - ``normalize`` != `False`
@@ -540,9 +556,6 @@ Dimensionality Reduction
        - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`]
        - ``fit`` is the only method supported
      - Sparse data is not supported
-   * - `IncrementalPCA`
-     - All parameters are supported
-     - Sparse data is not supported
 
 Nearest Neighbors
 *****************
@@ -577,13 +590,7 @@ Other Tasks
    * - `EmpiricalCovariance`
      - All parameters are supported
      - Only dense data is supported
-   * - `IncrementalCovariance`
-     - All parameters are supported
-     - Only dense data is supported
    * - `BasicStatistics`
-     - All parameters are supported
-     - Only dense data is supported
-   * - `IncrementalBasicStatistics`
      - All parameters are supported
      - Only dense data is supported
 
