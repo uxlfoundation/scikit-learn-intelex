@@ -14,7 +14,12 @@
 # limitations under the License.
 # ==============================================================================
 
-from .validation import _daal_check_array, _daal_check_X_y
+from .validation import (
+    _daal_check_array,
+    _daal_check_X_y,
+    check_n_features,
+    get_requires_y_tag,
+)
 
 
 def _daal_validate_data(
@@ -50,7 +55,7 @@ def _daal_validate_data(
     """
 
     if y is None:
-        if self._get_tags()["requires_y"]:
+        if get_requires_y_tag(self):
             raise ValueError(
                 f"This {self.__class__.__name__} estimator "
                 f"requires y to be passed, but the target y is None."
@@ -71,5 +76,5 @@ def _daal_validate_data(
         out = X, y
 
     if check_params.get("ensure_2d", True):
-        self._check_n_features(X, reset=reset)
+        check_n_features(self, X, reset=reset)
     return out
