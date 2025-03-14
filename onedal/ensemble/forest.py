@@ -601,7 +601,7 @@ class RandomForestRegressor(RegressorMixin, BaseForest, metaclass=ABCMeta):
     @supports_queue
     def predict(self, X, queue=None):
         _, xp, _ = _get_sycl_namespace(X)
-        return xp.reshape(self._predict(X).ravel(), -1)
+        return xp.reshape(self._predict(X), -1)
 
 
 class ExtraTreesClassifier(ClassifierMixin, BaseForest, metaclass=ABCMeta):
