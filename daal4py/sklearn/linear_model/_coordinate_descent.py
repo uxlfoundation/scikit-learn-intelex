@@ -93,7 +93,7 @@ def _daal4py_fit_enet(self, X, y_, check_input):
     y = make2d(y_)
     _fptype = getFPType(X)
 
-    # only for dual_gap computation, it is not required for Intel(R) oneAPI
+    # only for dual_gap computation, it is not required for oneAPI
     # Data Analytics Library
     self._X = X
     self.n_features_in_ = X.shape[1]
@@ -274,7 +274,7 @@ def _daal4py_fit_lasso(self, X, y_, check_input):
     y = make2d(y_)
     _fptype = getFPType(X)
 
-    # only for dual_gap computation, it is not required for Intel(R) oneAPI
+    # only for dual_gap computation, it is not required for oneAPI
     # Data Analytics Library
     self._X = X
     self.n_features_in_ = X.shape[1]
@@ -527,7 +527,7 @@ def _fit(self, _X, _y, sample_weight=None, check_input=True):
 
     if not check_input:
         # only for compliance with Sklearn,
-        # this assert is not required for Intel(R) oneAPI Data
+        # this assert is not required for oneAPI Data
         # Analytics Library
         print(type(X), X.flags["F_CONTIGUOUS"])
         if isinstance(X, np.ndarray) and X.flags["F_CONTIGUOUS"] is False:

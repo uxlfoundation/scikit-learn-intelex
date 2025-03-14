@@ -70,7 +70,7 @@ def patch_sklearn_global(name=None, verbose=True):
         distributor_file.write(lines + "\n" + get_patch_str(name, verbose) + "\n")
         print(
             "Scikit-learn was successfully globally patched"
-            " by Intel(R) Extension for Scikit-learn"
+            " by Extension for Scikit-learn"
         )
         return
 

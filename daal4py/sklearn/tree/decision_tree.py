@@ -33,7 +33,7 @@ from .._utils import getFPType, make2d
 
 class DecisionTreeClassifier(BaseEstimator, ClassifierMixin):
     """
-    Decision tree classifier powered by Intel(R) oneAPI Data Analytics Library.
+    Decision tree classifier powered by oneAPI Data Analytics Library.
 
        https://www.intel.com/content/www/us/en/developer/tools/oneapi/
        onedal-documentation.html

@@ -24,7 +24,7 @@ from onedal.decomposition import IncrementalPCA as onedal_IncrementalPCA
 
 from ..._config import get_config
 from ..._device_offload import dispatch, wrap_output_data
-from ..._utils import IntelEstimator, PatchingConditionsChain
+from ..._utils import ExtensionEstimator, PatchingConditionsChain
 
 if sklearn_check_version("1.6"):
     from sklearn.utils.validation import validate_data
@@ -35,7 +35,7 @@ else:
 @control_n_jobs(
     decorated_methods=["fit", "partial_fit", "transform", "_onedal_finalize_fit"]
 )
-class IncrementalPCA(IntelEstimator, _sklearn_IncrementalPCA):
+class IncrementalPCA(ExtensionEstimator, _sklearn_IncrementalPCA):
 
     _need_to_finalize_attrs = {
         "mean_",

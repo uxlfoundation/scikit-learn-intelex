@@ -299,7 +299,7 @@ Hardware Requirements
       - Any Intel® GPU supported by both `DPC++ <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`_ and `oneMKL <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/oneapi-math-kernel-library-system-requirements.html>`_
 
 
-.. tip:: Intel(R) processors provide better performance than other CPUs. Read more about hardware comparison in our :ref:`blogs <blogs>`.
+.. tip:: Read more about hardware comparison in our :ref:`blogs <blogs>`.
 
 .. _software-requirements:
 

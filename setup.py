@@ -565,7 +565,7 @@ if build_distribute:
 
 setup(
     name="scikit-learn-intelex",
-    description="Intel(R) Extension for Scikit-learn is a "
+    description="Extension for Scikit-learn is a "
     "seamless way to speed up your Scikit-learn application.",
     long_description=long_description,
     long_description_content_type="text/markdown",

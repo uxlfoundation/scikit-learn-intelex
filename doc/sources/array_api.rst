@@ -19,7 +19,7 @@ Array API support
 =================
 The `Array API <https://data-apis.org/array-api/latest/>`_ specification defines
 a standard API for all array manipulation libraries with a NumPy-like API.
-Intel(R) Extension for Scikit-Learn doesn't require
+Extension for Scikit-learn doesn't require
 `array-api-compat <https://github.com/data-apis/array-api-compat>`__ to be installed for
 functional support of the array API standard.
 In the current implementation, the functional support of array api follows the functional
@@ -62,7 +62,7 @@ DPCTL or DPNP inputs are not required to use `config_context(target_offload=devi
 Support for Array API-compatible inputs
 =======================================
 All patched estimators, metrics, tools and non-scikit-learn estimators functionally support Array API standard.
-Intel(R) Extension for scikit-Learn preserves input data format for all outputs. For all array inputs except
+Extension for Scikit-learn preserves input data format for all outputs. For all array inputs except
 SYCL USM arrays `dpnp's <https://github.com/IntelPython/dpnp>`__ ndarray and
 `Data Parallel Control usm_ndarray <https://intelpython.github.io/dpctl/latest/index.html>`__ all computation
 will be only accomplished on CPU unless specified by a `config_context`` with an available GPU device.

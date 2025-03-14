@@ -82,7 +82,7 @@ def _run_with_n_jobs(method):
         if not isinstance(threading.current_thread(), threading._MainThread):
             warn(
                 "'Threading' parallel backend is not supported by "
-                "Intel(R) Extension for Scikit-learn*. "
+                "Extension for Scikit-learn*. "
                 "Falling back to usage of all available threads."
             )
             result = method(self, *args, **kwargs)
