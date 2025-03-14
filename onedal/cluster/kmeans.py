@@ -188,7 +188,9 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
                 algorithm=algorithm,
                 is_csr=is_csr,
             )
-            centers_table = alg.compute_raw(X_table, dtype)
+            # We pass down the queue that was set through the KMeans.fit()
+            queue = SyclQueueManager.get_global_queue()
+            centers_table = alg.compute_raw(X_table, dtype, queue=queue)
         elif isinstance(init, str) and init == "random":
             algorithm = "random_dense" if not is_csr else "random_csr"
             alg = self._get_kmeans_init(
@@ -197,7 +199,9 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
                 algorithm=algorithm,
                 is_csr=is_csr,
             )
-            centers_table = alg.compute_raw(X_table, dtype)
+            # We pass down the queue that was set through the KMeans.fit()
+            queue = SyclQueueManager.get_global_queue()
+            centers_table = alg.compute_raw(X_table, dtype, queue=queue)
         elif _is_arraylike_not_scalar(init):
             if _is_csr(init):
                 # oneDAL KMeans only supports Dense Centroids

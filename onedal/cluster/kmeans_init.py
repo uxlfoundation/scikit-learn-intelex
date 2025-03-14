@@ -118,8 +118,8 @@ if daal_check_version((2023, "P", 200)):
             return from_table(centroids)
 
         @force_host_if_csr
-        @supports_queue
         def compute_raw(self, X_table, dtype=np.float32, queue=None):
+            # no @supports_queue decorator here, because we only accept X_table that has no queue information
             return self._compute_raw(X_table, dtype)
 
         @force_host_if_csr
