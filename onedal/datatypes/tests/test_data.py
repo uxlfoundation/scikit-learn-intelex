@@ -108,8 +108,8 @@ class _OnlyDLTensor:
 
 def _to_table_supported(array):
     """This function provides a quick and easy way to determine characteristics
-    or behaviors of the to_table function.  For example, returned errors are 
-    tested and are firstly dependent if they are of a proper array type.  This is 
+    or behaviors of the to_table function.  For example, returned errors are
+    tested and are firstly dependent if they are of a proper array type.  This is
     pertinent for circumstances such as direct use of other dataframe types (e.g.
     Pandas)."""
     return (
