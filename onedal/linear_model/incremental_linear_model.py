@@ -117,11 +117,6 @@ class IncrementalLinearRegression(BaseLinearRegression):
             self._params = self._get_onedal_params(X.dtype)
 
         self._queue = queue
-        X, y = _check_X_y(
-            X, y, dtype=[np.float64, np.float32], accept_2d_y=True, force_all_finite=False
-        )
-        y = np.asarray(y, dtype=X.dtype)
-
         self.n_features_in_ = _num_features(X, fallback_1d=True)
 
         X_table, y_table = to_table(X, y, queue=queue)
@@ -135,7 +130,6 @@ class IncrementalLinearRegression(BaseLinearRegression):
             self._partial_result = self.partial_train(
                 self._params, self._partial_result, X_table, y_table
             )
-        self._queue = queue
 
         self._need_to_finalize = True
         return self

@@ -151,9 +151,8 @@ class BaseLinearRegression(metaclass=ABCMeta):
 
         X_table = to_table(X, queue=queue)
         params = self._get_onedal_params(X_table.dtype)
-
         result = self.infer(params, model, X_table)
-        y = from_table(result.responses)
+        y = from_table(result.responses, sua_iface=sua_iface, sycl_queue=queue, xp=xp)
 
         if y.shape[1] == 1 and self.coef_.ndim == 1:
             return xp.reshape(y, (-1,))
