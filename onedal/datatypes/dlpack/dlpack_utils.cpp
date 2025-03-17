@@ -120,7 +120,7 @@ py::object reduce_precision(const py::object& obj) {
         copy = space.attr("astype")(obj, space.attr("float32"));
     }
     else {
-        throw std::invalid_argument("Data has higher precision than the supported device");
+        throw std::invalid_argument("Data has higher precision than supported by the device");
     }
     return copy;
 }
