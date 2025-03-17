@@ -110,8 +110,8 @@ def test_n_jobs_support(estimator, n_jobs, caplog):
 )
 @pytest.mark.parametrize("estimator", {**PATCHED_MODELS, **SPECIAL_INSTANCES}.keys())
 def test_n_jobs_affinity(estimator, caplog):
-    # verify that n_jobs 1) starts at default value of cpu_count, 2) respects
-    # sched_setaffinity on supported machines
+    # verify that n_jobs 1) starts at default value of cpu_count
+    # 2) respects os.sched_setaffinity on supported machines
     n_t = next(i for i in threadpool_info() if i["user_api"] == "oneDAL")["num_threads"]
 
     # get affinity mask of calling process
