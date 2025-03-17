@@ -55,7 +55,6 @@ from sklearnex.tests.utils import (
     sklearn_clone_dict,
 )
 
-
 _dataset_dict = {
     "classification": [
         partial(load_iris, return_X_y=True),

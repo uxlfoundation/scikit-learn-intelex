@@ -16,9 +16,9 @@
 
 import inspect
 import logging
-from joblib import cpu_count
 
 import pytest
+from joblib import cpu_count
 from sklearn.datasets import make_classification
 from sklearn.exceptions import NotFittedError
 
