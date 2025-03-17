@@ -20,6 +20,7 @@ import scipy.sparse as sp
 from numpy.testing import assert_allclose
 
 from onedal import _default_backend, _dpc_backend
+from onedal._device_offload import supports_queue
 from onedal.datatypes import from_table, to_table
 from onedal.utils._dpep_helpers import dpctl_available
 
@@ -31,6 +32,8 @@ if dpctl_available:
         _assert_tensor_attr,
     )
 
+from daal4py.sklearn._utils import get_dtype
+from onedal.cluster.dbscan import DBSCAN
 from onedal.primitives import linear_kernel
 from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
@@ -55,38 +58,33 @@ unsupported_data_shapes = [
 ORDER_DICT = {"F": np.asfortranarray, "C": np.ascontiguousarray}
 
 
-if backend.is_dpc:
-    from daal4py.sklearn._utils import get_dtype
-    from onedal.cluster.dbscan import DBSCAN
+class DummyEstimatorWithTableConversions:
 
-    class DummyEstimatorWithTableConversions:
+    @supports_queue
+    def fit(self, X, y=None, queue=None):
+        if not backend.is_dpc:
+            raise RuntimeError("Table conversions should be done with DPC backend.")
 
-        def fit(self, X, y=None):
-            sua_iface, xp, _ = _get_sycl_namespace(X)
-            dbscan = DBSCAN()
-            types = [xp.float32, xp.float64]
-            if get_dtype(X) not in types:
-                X = xp.astype(X, dtype=xp.float64)
-            dtype = get_dtype(X)
-            params = dbscan._get_onedal_params(dtype)
-            X_table = to_table(X)
-            # TODO:
-            # check other candidates for the dummy base oneDAL func.
-            # oneDAL backend func is needed to check result table checks.
-            result = dbscan.compute(params, X_table, to_table(None))
-            result_responses_table = result.responses
-            result_responses_df = from_table(
-                result_responses_table,
-                sua_iface=sua_iface,
-                sycl_queue=X.sycl_queue,
-                xp=xp,
-            )
-            return X_table, result_responses_table, result_responses_df
-
-else:
-
-    class DummyEstimatorWithTableConversions:
-        pass
+        sua_iface, xp, _ = _get_sycl_namespace(X)
+        dbscan = DBSCAN()
+        types = [xp.float32, xp.float64]
+        if get_dtype(X) not in types:
+            X = xp.astype(X, dtype=xp.float64)
+        dtype = get_dtype(X)
+        params = dbscan._get_onedal_params(dtype)
+        X_table = to_table(X)
+        # TODO:
+        # check other candidates for the dummy base oneDAL func.
+        # oneDAL backend func is needed to check result table checks.
+        result = dbscan.compute(params, X_table, to_table(None))
+        result_responses_table = result.responses
+        result_responses_df = from_table(
+            result_responses_table,
+            sua_iface=sua_iface,
+            sycl_queue=X.sycl_queue,
+            xp=xp,
+        )
+        return X_table, result_responses_table, result_responses_df
 
 
 def _test_input_format_c_contiguous_numpy(queue, dtype):
