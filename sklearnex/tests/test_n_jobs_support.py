@@ -16,7 +16,7 @@
 
 import inspect
 import logging
-from multiprocessing import cpu_count
+from joblib import cpu_count
 
 import pytest
 from sklearn.datasets import make_classification
