@@ -118,14 +118,12 @@ def test_n_jobs_support(estimator, n_jobs, caplog):
 def test_n_jobs_affinity(estimator, caplog):
     # verify that n_jobs 1) starts at default value of cpu_count, 2) respects
     # sched_setaffinity on supported machines
-    oneDAL_threads = next(i for i in threadpool_info() if i["user_api"] == "oneDAL")[
-        "num_threads"
-    ]
+    n_t = next(i for i in threadpool_info() if i["user_api"] == "oneDAL")["num_threads"]
 
     # get affinity mask of calling process
     mask = os.sched_getaffinity(0)
     # by default, oneDAL should match the number of threads made available to the sklearnex pytest suite
-    assert len(mask) == oneDAL_threads
+    assert len(mask) == n_t
 
     try:
         # use half of the available threads
