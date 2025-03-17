@@ -24,11 +24,7 @@ from sklearn.datasets import make_classification
 from sklearn.exceptions import NotFittedError
 from threadpoolctl import threadpool_info
 
-from sklearnex.tests.utils import (
-    PATCHED_MODELS,
-    SPECIAL_INSTANCES,
-    call_method,
-)
+from sklearnex.tests.utils import PATCHED_MODELS, SPECIAL_INSTANCES, call_method
 
 _X, _Y = make_classification(n_samples=40, n_features=4, random_state=42)
 
