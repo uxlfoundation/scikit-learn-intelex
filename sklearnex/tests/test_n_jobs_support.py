@@ -28,8 +28,6 @@ from sklearnex.tests.utils import (
     PATCHED_MODELS,
     SPECIAL_INSTANCES,
     call_method,
-    gen_dataset,
-    gen_models_info,
 )
 
 _X, _Y = make_classification(n_samples=40, n_features=4, random_state=42)
