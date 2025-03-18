@@ -106,6 +106,20 @@ class _OnlyDLTensor:
         return self.data.__dlpack__()
 
 
+def _to_table_supported(array):
+    """This function provides a quick and easy way to determine characteristics
+    or behaviors of the to_table function.  For example, returned errors are
+    tested and are firstly dependent if they are of a proper array type.  This is
+    pertinent for circumstances such as direct use of other dataframe types (e.g.
+    Pandas)."""
+    return (
+        isinstance(array, np.ndarray)
+        or hasattr(array, "__sycl_usm_ndarray_interface__")
+        or hasattr(array, "__dlpack__")
+        or sp.issparse(array)
+    )
+
+
 def _test_input_format_c_contiguous_numpy(queue, dtype):
     rng = np.random.RandomState(0)
     x_default = np.array(5 * rng.random_sample((10, 4)), dtype=dtype)
@@ -363,11 +377,9 @@ def test_interop_unsupported_dtypes(dataframe, queue, dtype):
     # raise.
     X = np.zeros((10, 20), dtype=dtype)
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    expected_err_msg = "Unable to convert from SUA interface: unknown data type"
-    if dataframe in "array_api":
-        expected_err_msg = "Found unsupported array type"
+    expected_err_msg = r"Found unsupported (array|tensor) type"
 
-    with pytest.raises(ValueError, match=expected_err_msg):
+    with pytest.raises(TypeError, match=expected_err_msg):
         to_table(X)
 
 
@@ -461,16 +473,28 @@ def test_low_precision_gpu_conversion_array_api(dtype):
 def test_non_array(X, queue):
     # Verify that to and from table doesn't raise errors
     # no guarantee is made about type or content
+    error = ValueError
     err_str = ""
 
+    xp = X.__array_namespace__() if hasattr(X, "__array_namespace__") else np
+    types = [xp.float64, xp.float32, xp.int64, xp.int32]
+
     if np.isscalar(X):
-        if np.atleast_2d(X).dtype not in [np.float64, np.float32, np.int64, np.int32]:
-            err_str = "Found unsupported array type"
-    elif not (X is None or isinstance(X, np.ndarray)):
+        if np.atleast_2d(X).dtype not in types:
+            error = TypeError
+            err_str = r"Found unsupported array type"
+    elif _to_table_supported(X):
+        if X.dtype not in types:
+            error = TypeError
+            err_str = r"Found unsupported (array|tensor) type"
+        if 0 in X.shape:
+            # not set to a consistent string between the various conversions
+            err_str = r".*"
+    elif X is not None:
         err_str = r"\[convert_to_table\] Not available input format for convert Python object to onedal table."
 
     if err_str:
-        with pytest.raises(ValueError, match=err_str):
+        with pytest.raises(error, match=err_str):
             to_table(X)
     else:
         X_table = to_table(X, queue=queue)
@@ -481,7 +505,7 @@ def test_non_array(X, queue):
     not _is_dpc_backend, reason="Requires DPC backend for dtype conversion"
 )
 @pytest.mark.parametrize("X", [None, 5, "test", True, [], np.pi, lambda: None])
-def test_low_precision_non_array(X):
+def test_low_precision_non_array_numpy(X):
     # Use a dummy queue as fp32 hardware is not in public testing
 
     class DummySyclQueue:
@@ -497,22 +521,34 @@ def test_low_precision_non_array(X):
     test_non_array(X, queue)
 
 
+@pytest.mark.parametrize("X", [5, True, np.pi])
+def test_basic_ndarray_types_numpy(X):
+    # Verify that the various supported basic types can go in and out of tables
+    test_non_array(np.asarray(X), None)
+
+
 @pytest.mark.parametrize(
     "dataframe,queue", get_dataframes_and_queues("dpctl,numpy", "cpu,gpu")
 )
 @pytest.mark.parametrize("can_copy", [True, False])
 def test_to_table_non_contiguous_input_dlpack(dataframe, queue, can_copy):
     X, _ = np.mgrid[:10, :10]
-    X = _convert_to_dataframe(X, sycl_queue=queue, dataframe=dataframe)
-    if not hasattr(X, "__dlpack__"):
+    X_df = _convert_to_dataframe(X, sycl_queue=queue, dataframe=dataframe)
+    if not hasattr(X_df, "__dlpack__"):
         pytest.skip("underlying array doesn't support dlpack")
 
-    X_tens = _OnlyDLTensor(X[:, :3])
+    X_tens = _OnlyDLTensor(X_df[:, :3])
 
     # give the _OnlyDLTensor the ability to copy
     if can_copy:
-        X_tens.copy = lambda: _OnlyDLTensor(X.copy())
-        to_table(X_tens)
+        X_tens.copy = lambda: _OnlyDLTensor(
+            X_tens.data.__array_namespace__().copy(X_tens.data)
+            if hasattr(X_tens.data, "__array_namespace__")
+            else X_tens.data.copy()
+        )
+        X_table = to_table(X_tens)
+        X_out = from_table(X_table)
+        assert_allclose(X[:, :3], X_out)
     else:
         with pytest.raises(RuntimeError, match="Wrong strides"):
             to_table(X_tens)
@@ -533,7 +569,12 @@ def test_table_conversions_dlpack(dataframe, queue, order, data_shape, dtype):
 
     X = ORDER_DICT[order](X)
 
-    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    X = _OnlyDLTensor(X)
+    X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+    X_tens = _OnlyDLTensor(X_df)
 
-    to_table(X)
+    X_table = to_table(X_tens)
+    X_out = from_table(X_table)
+    print(X_table.shape, X_tens.data.shape)
+    # oneDAL table construction sets 1d arrays to 2d arrays with 1 col
+    # this is counter the numpy strategy, and requires numpy's squeeze
+    assert_allclose(np.squeeze(X), np.squeeze(X_out))

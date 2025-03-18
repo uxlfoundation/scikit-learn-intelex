@@ -1,0 +1,93 @@
+#===============================================================================
+# Copyright 2024 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#===============================================================================
+name: Docs Release
+
+on:
+  push:
+    tags:
+      - '[0-9][0-9][0-9][0-9]\.[0-9][0-9]?\.[0-9]' # Trigger on tag pushes
+
+permissions:
+  contents: write
+  
+jobs:
+  build-docs:
+    runs-on: ubuntu-24.04
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Ensures all tags are fetched
+
+    - name: Set Up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.13"
+
+    - name: Install System Dependencies
+      run: sudo apt-get update && sudo apt-get install -y clang-format pandoc
+
+    - name: Extract Tag Version
+      run: |
+        export DOC_VERSION="${GITHUB_REF#refs/tags/}"
+        # Error out if cannot find version
+        if [ -z "$DOC_VERSION" ]; then
+          echo "::error: Failed to determine documentation version."
+          exit 1
+        fi
+        export SHORT_DOC_VERSION=$(echo "$DOC_VERSION" | awk -F'.' '{print $1"."$2}')
+        # export env var in other files
+        echo "DOC_VERSION=$DOC_VERSION" >> $GITHUB_ENV
+        echo "SHORT_DOC_VERSION=$SHORT_DOC_VERSION" >> $GITHUB_ENV
+    - name: Checkout release branch
+      run: |
+        if git checkout $DOC_VERSION 2>/dev/null; then
+          echo "Successfully checked out tag $DOC_VERSION."
+        else
+            echo "::error:: Tag $DOC_VERSION does not exist."
+            exit 1
+        fi
+        git branch
+    - name: Install Python Dependencies
+      run: |
+        pip install daal-devel impi-devel
+        pip install -r dependencies-dev
+        pip install -r requirements-doc.txt
+    - name: Build daal4py/sklearnex
+      run: |
+        export DALROOT=$(dirname $(dirname $(which python)))
+        export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
+        ./conda-recipe/build.sh
+    - name: Build scikit-learn-intelex Documentation
+      run: |
+        export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
+        cd doc
+        ./build-doc.sh --gh-pages
+    - name: Deploy Documentation to gh-pages
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Copy the script to a temp location
+        # Otherwise it will get lost after switch branch
+        cp .github/scripts/doc_release.sh /tmp/doc_release.sh
+
+        # Set git auth for push changes 
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+        chmod +x /tmp/doc_release.sh
+        /tmp/doc_release.sh

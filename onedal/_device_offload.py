@@ -92,7 +92,7 @@ def _transfer_to_host(queue, *data):
 
             buffer = as_usm_memory(item).copy_to_host()
             order = "C"
-            if usm_iface["strides"] is not None:
+            if usm_iface["strides"] is not None and len(usm_iface["strides"]) > 1:
                 if usm_iface["strides"][0] < usm_iface["strides"][1]:
                     order = "F"
             item = np.ndarray(
@@ -162,30 +162,45 @@ def support_input_format(freefunc=False, queue_param=True):
 
     def decorator(func):
         def wrapper_impl(obj, *args, **kwargs):
-            if len(args) == 0 and len(kwargs) == 0:
+            # Check if the function is KNeighborsClassifier.fit
+            override_raw_input = (
+                obj.__class__.__name__ == "KNeighborsClassifier"
+                or obj.__class__.__name__ == "KNeighborsRegressor"
+            ) and func.__name__ == "fit"
+            if _get_config()["use_raw_input"] is True and not override_raw_input:
+                if "queue" not in kwargs:
+                    usm_iface = getattr(args[0], "__sycl_usm_array_interface__", None)
+                    data_queue = usm_iface["syclobj"] if usm_iface is not None else None
+                    kwargs["queue"] = data_queue
                 return _run_on_device(func, obj, *args, **kwargs)
-            data = (*args, *kwargs.values())
-            data_queue, hostargs, hostkwargs = _get_host_inputs(*args, **kwargs)
-            if queue_param and not (
-                "queue" in hostkwargs and hostkwargs["queue"] is not None
-            ):
-                hostkwargs["queue"] = data_queue
-            result = _run_on_device(func, obj, *hostargs, **hostkwargs)
-            usm_iface = getattr(data[0], "__sycl_usm_array_interface__", None)
-            if usm_iface is not None:
-                result = _copy_to_usm(data_queue, result)
-                if dpnp_available and isinstance(data[0], dpnp.ndarray):
-                    result = _convert_to_dpnp(result)
+
+            elif len(args) == 0 and len(kwargs) == 0:
+                return _run_on_device(func, obj, *args, **kwargs)
+
+            else:
+                data = (*args, *kwargs.values())
+                data_queue, hostargs, hostkwargs = _get_host_inputs(*args, **kwargs)
+                if queue_param and not (
+                    "queue" in hostkwargs and hostkwargs["queue"] is not None
+                ):
+                    hostkwargs["queue"] = data_queue
+                result = _run_on_device(func, obj, *hostargs, **hostkwargs)
+                usm_iface = getattr(data[0], "__sycl_usm_array_interface__", None)
+                if usm_iface is not None:
+                    result = _copy_to_usm(data_queue, result)
+                    if dpnp_available and isinstance(data[0], dpnp.ndarray):
+                        result = _convert_to_dpnp(result)
+                    return result
+                if not get_config().get("transform_output", False):
+                    input_array_api = getattr(
+                        data[0], "__array_namespace__", lambda: None
+                    )()
+                    if input_array_api:
+                        input_array_api_device = data[0].device
+                        result = _asarray(
+                            result, input_array_api, device=input_array_api_device
+                        )
                 return result
-            config = get_config()
-            if not ("transform_output" in config and config["transform_output"]):
-                input_array_api = getattr(data[0], "__array_namespace__", lambda: None)()
-                if input_array_api:
-                    input_array_api_device = data[0].device
-                    result = _asarray(
-                        result, input_array_api, device=input_array_api_device
-                    )
-            return result
 
         if freefunc:
 

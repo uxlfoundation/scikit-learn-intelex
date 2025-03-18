@@ -14,11 +14,11 @@
 # limitations under the License.
 # ==============================================================================
 
-import warnings
 from abc import ABCMeta, abstractmethod
 
 import numpy as np
 
+from .._config import _get_config
 from ..common._base import BaseEstimator
 from ..datatypes import from_table, to_table
 from ..utils import _is_csr
@@ -76,10 +76,12 @@ class BasicStatistics(BaseBasicStatistics):
 
         is_csr = _is_csr(data)
 
-        if data is not None and not is_csr:
-            data = _check_array(data, ensure_2d=False)
-        if sample_weight is not None:
-            sample_weight = _check_array(sample_weight, ensure_2d=False)
+        use_raw_input = _get_config().get("use_raw_input", False) is True
+        if not use_raw_input:
+            if data is not None and not is_csr:
+                data = _check_array(data, ensure_2d=False)
+            if sample_weight is not None:
+                sample_weight = _check_array(sample_weight, ensure_2d=False)
 
         is_single_dim = data.ndim == 1
 

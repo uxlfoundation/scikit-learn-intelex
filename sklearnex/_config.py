@@ -26,10 +26,12 @@ from onedal._config import _get_config as onedal_get_config
 
 def get_config():
     """Retrieve current values for configuration set by :func:`set_config`
+
     Returns
     -------
     config : dict
         Keys are parameter names that can be passed to :func:`set_config`.
+
     See Also
     --------
     config_context : Context manager for global configuration.
@@ -44,28 +46,45 @@ def set_config(
     target_offload=None,
     allow_fallback_to_host=None,
     allow_sklearn_after_onedal=None,
+    use_raw_input=None,
     **sklearn_configs,
 ):
     """Set global configuration
+
     Parameters
     ----------
-    target_offload : string or dpctl.SyclQueue, default=None
+    target_offload : string or dpctl.SyclQueue or None, default=None
         The device primarily used to perform computations.
         If string, expected to be "auto" (the execution context
         is deduced from input data location),
         or SYCL* filter selector string. Global default: "auto".
-    allow_fallback_to_host : bool, default=None
+
+    allow_fallback_to_host : bool or None, default=None
         If True, allows to fallback computation to host device
         in case particular estimator does not support the selected one.
         Global default: False.
-    allow_sklearn_after_onedal : bool, default=None
+
+    allow_sklearn_after_onedal : bool or None, default=None
         If True, allows to fallback computation to sklearn after onedal
         backend in case of runtime error on onedal backend computations.
         Global default: True.
+
+    use_raw_input : bool or None, default=None
+        .. deprecated:: 2026.0
+        If True, uses the raw input data in some SPMD onedal backend computations
+        without any checks on data consistency or validity.
+        Not recommended for general use.
+        Global default: False.
+
     See Also
     --------
     config_context : Context manager for global configuration.
     get_config : Retrieve current values of the global configuration.
+
+    Warnings
+    --------
+    Using ``use_raw_input=True`` is not recommended for general use as it
+    bypasses data consistency checks, which may lead to unexpected behavior.
     """
 
     array_api_dispatch = sklearn_configs.get("array_api_dispatch", False)
@@ -82,30 +101,53 @@ def set_config(
         local_config["allow_fallback_to_host"] = allow_fallback_to_host
     if allow_sklearn_after_onedal is not None:
         local_config["allow_sklearn_after_onedal"] = allow_sklearn_after_onedal
+    if use_raw_input is not None:
+        local_config["use_raw_input"] = use_raw_input
 
 
 @contextmanager
 def config_context(**new_config):
     """Context manager for global scikit-learn configuration
+
     Parameters
     ----------
-    target_offload : string or dpctl.SyclQueue, default=None
+    target_offload : string or dpctl.SyclQueue or None, default=None
         The device primarily used to perform computations.
         If string, expected to be "auto" (the execution context
         is deduced from input data location),
         or SYCL* filter selector string. Global default: "auto".
-    allow_fallback_to_host : bool, default=None
+
+    allow_fallback_to_host : bool or None, default=None
         If True, allows to fallback computation to host device
         in case particular estimator does not support the selected one.
         Global default: False.
-    Notes
+
+    allow_sklearn_after_onedal : bool or None, default=None
+        If True, allows to fallback computation to sklearn after onedal
+        backend in case of runtime error on onedal backend computations.
+        Global default: True.
+
+    use_raw_input : bool or None, default=None
+        .. deprecated:: 2026.0
+        If True, uses the raw input data in some SPMD onedal backend computations
+        without any checks on data consistency or validity.
+        Not recommended for general use.
+        Global default: False.
+
+    Note
     -----
     All settings, not just those presently modified, will be returned to
     their previous values when the context manager is exited.
+
     See Also
     --------
     set_config : Set global scikit-learn configuration.
     get_config : Retrieve current values of the global configuration.
+
+    Warnings
+    --------
+    Using ``use_raw_input=True`` is not recommended for general use as it
+    bypasses data consistency checks, which may lead to unexpected behavior.
     """
     old_config = get_config()
     set_config(**new_config)

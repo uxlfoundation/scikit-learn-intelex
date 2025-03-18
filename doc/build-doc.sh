@@ -49,7 +49,6 @@ if [[ "$*" == *"--gh-pages"* ]]; then
     export SOURCEDIR=sources
 
     sphinx-build -b html $SOURCEDIR $BUILDDIR/$SPHINXPROJ/$DOC_VERSION
-    cp versions.json $BUILDDIR/$SPHINXPROJ
     echo "<meta http-equiv=\"refresh\" content=\"0; URL='/$SPHINXPROJ/$DOC_VERSION/'\" / >" >> $BUILDDIR/$SPHINXPROJ/index.html
 else
     make html
