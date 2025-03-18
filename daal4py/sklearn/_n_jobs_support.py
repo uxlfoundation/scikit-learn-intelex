@@ -53,7 +53,7 @@ class oneDALLibController(threadpoolctl.LibController):
         daalinit(nthreads)
 
     def get_version(self):
-        return _get__daal_link_version__
+        return _get__daal_link_version__()
 
 
 threadpoolctl.register(oneDALLibController)
