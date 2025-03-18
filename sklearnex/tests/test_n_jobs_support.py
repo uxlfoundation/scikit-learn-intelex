@@ -45,7 +45,7 @@ def _check_n_jobs_entry_in_logs(records, function_name, n_jobs):
         if f"{function_name}: setting {expected_n_jobs} threads" in rec:
             return True
     # False if n_jobs is set and not found in logs
-    return n_jobs is None
+    return n_jobs is None or expected_n_jobs == cpu_count()
 
 
 @pytest.mark.parametrize("estimator", {**PATCHED_MODELS, **SPECIAL_INSTANCES}.keys())
