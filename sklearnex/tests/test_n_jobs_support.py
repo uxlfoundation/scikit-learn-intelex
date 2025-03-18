@@ -112,7 +112,7 @@ def test_n_jobs_support(estimator, n_jobs, caplog):
 def test_n_jobs_affinity(estimator, caplog):
     # verify that n_jobs 1) starts at default value of cpu_count
     # 2) respects os.sched_setaffinity on supported machines
-    n_t = next(i for i in threadpool_info() if i["user_api"] == "oneDAL")["num_threads"]
+    n_t = next(i for i in threadpool_info() if i["user_api"] == "onedal")["num_threads"]
 
     # get affinity mask of calling process
     mask = os.sched_getaffinity(0)
