@@ -171,4 +171,33 @@ dal::table convert_to_table(py::object obj, py::object q_obj, bool recursed) {
     dlpack_take_ownership(caps);
     return res;
 }
+
+py::object dlpack_memory_order(py::capsule dlpack) {
+    DLManagedTensor* dlm;
+    DLManagedTensorVersioned* dlmv;
+    DLTensor tensor;
+
+    PyObject* capsule = dlpack.ptr();
+    if (PyCapsule_IsValid(capsule, "dltensor")) {
+        dlm = dlpack.get_pointer<DLManagedTensor>();
+        tensor = dlm->dl_tensor;
+    }
+    else if (PyCapsule_IsValid(capsule, "dltensor_versioned")) {
+        dlmv = dlpack.get_pointer<DLManagedTensorVersioned>();
+        if (dlmv->version.major > DLPACK_MAJOR_VERSION) {
+            throw std::runtime_error("dlpack tensor version newer than supported");
+        }
+        tensor = dlmv->dl_tensor;
+    }
+    else {
+        throw std::runtime_error("unable to extract dltensor");
+    }
+
+    switch (get_dlpack_layout(tensor)) {
+        case dal::data_layout::row_major: return py::str("C"); break;
+        case dal::data_layout::column_major: return py::str("F"); break;
+        default: return py::none();
+    }
+};
+
 } // namespace oneapi::dal::python::dlpack
