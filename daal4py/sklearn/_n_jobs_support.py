@@ -30,7 +30,7 @@ from daal4py import _get__daal_link_version__, daalinit, num_threads
 from ._utils import sklearn_check_version
 
 if sklearn_check_version("1.2"):
-    from sklearn.utils._param_validation import validate_parameter_constraints
+    from sklearn.utils._param_validation import Interval, validate_parameter_constraints
 else:
 
     def validate_parameter_constraints(n_jobs):
@@ -41,8 +41,8 @@ else:
 
 
 class oneDALLibController(threadpoolctl.LibController):
-    user_api = "oneDAL"
-    internal_api = "oneDAL"
+    user_api = "onedal"
+    internal_api = "onedal"
 
     filename_prefixes = ("libonedal_thread", "libonedal")
 
@@ -94,8 +94,11 @@ def _run_with_n_jobs(method):
         # get real `n_jobs` number of threads for oneDAL
         # using sklearn rules and `n_threads` from upper parallelism context
 
-        if not self.n_jobs:
+        if self.n_jobs is None:
             n_jobs = cpu_count()
+        elif self.n_jobs == 0:
+            # This is a small variation on joblib's equivalent error
+            raise ValueError("n_jobs == 0 has no meaning")
         else:
             n_jobs = (
                 self.n_jobs if self.n_jobs > 0 else max(1, cpu_count() + self.n_jobs + 1)
@@ -165,6 +168,8 @@ def control_n_jobs(decorated_methods: list = []):
         ):
             parameter_constraints = original_class._parameter_constraints
             if "n_jobs" not in parameter_constraints:
+                # n_jobs = 0 is not allowed, but it is handled elsewhere
+                # This definition matches scikit-learn
                 parameter_constraints["n_jobs"] = [Integral, None]
 
         @wraps(original_init)
