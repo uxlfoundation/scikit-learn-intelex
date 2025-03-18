@@ -104,7 +104,7 @@ def test_n_jobs_support(estimator, n_jobs, caplog):
         assert _check_n_jobs_entry_in_logs(messages, method_name, n_jobs)
 
 
-@pytest.skipif(
+@pytest.mark.skipif(
     not hasattr(os, "sched_setaffinity") or len(os.sched_getaffinity(0)) < 2,
     reason="python CPU affinity control unavailable or too few threads",
 )
