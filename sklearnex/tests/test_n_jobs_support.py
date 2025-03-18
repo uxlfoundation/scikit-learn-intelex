@@ -123,7 +123,8 @@ def test_n_jobs_affinity(estimator, caplog):
         # use half of the available threads
         newmask = set(list(mask)[: len(mask) // 2])
         os.sched_setaffinity(0, newmask)
-        test_n_jobs_support(estimator, None, caplog)
+        # -2 is used as this forces n_jobs to be based on cpu_count and must value match in test
+        test_n_jobs_support(estimator, -2, caplog)
 
     finally:
         # reset affinity mask no matter what
