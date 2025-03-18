@@ -106,7 +106,7 @@ def test_n_jobs_support(estimator, n_jobs, caplog):
 
 @pytest.skipif(
     not hasattr(os, "sched_setaffinity") or len(os.sched_getaffinity(0)) < 2,
-    reason="python CPU affinity control unavailable",
+    reason="python CPU affinity control unavailable or too few threads",
 )
 @pytest.mark.parametrize("estimator", {**PATCHED_MODELS, **SPECIAL_INSTANCES}.keys())
 def test_n_jobs_affinity(estimator, caplog):
