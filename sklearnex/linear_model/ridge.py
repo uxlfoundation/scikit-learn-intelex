@@ -38,7 +38,7 @@ if daal_check_version((2024, "P", 600)):
     from onedal.utils import _num_features, _num_samples
 
     from .._device_offload import dispatch, wrap_output_data
-    from .._utils import PatchingConditionsChain
+    from .._utils import PatchableEstimator, PatchingConditionsChain
 
     if sklearn_check_version("1.6"):
         from sklearn.utils.validation import validate_data
@@ -46,7 +46,7 @@ if daal_check_version((2024, "P", 600)):
         validate_data = _sklearn_Ridge._validate_data
 
     @control_n_jobs(decorated_methods=["fit", "predict", "score"])
-    class Ridge(_sklearn_Ridge):
+    class Ridge(PatchableEstimator, _sklearn_Ridge):
         __doc__ = _sklearn_Ridge.__doc__
 
         if sklearn_check_version("1.2"):

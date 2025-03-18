@@ -21,8 +21,10 @@ import numpy as np
 from sklearn.decomposition._pca import _infer_dimension
 from sklearn.utils.extmath import stable_cumsum
 
+from .._config import _get_config
 from ..common._base import BaseEstimator
 from ..datatypes import from_table, to_table
+from ..utils._array_api import _get_sycl_namespace
 
 
 class BasePCA(BaseEstimator, metaclass=ABCMeta):
@@ -119,7 +121,8 @@ class BasePCA(BaseEstimator, metaclass=ABCMeta):
             return 0.0
 
     def _create_model(self):
-        m = self._get_backend("decomposition", "dim_reduction", "model")
+        # Not supported with spmd policy so BasePCA must be specified
+        m = BasePCA._get_backend(BasePCA, "decomposition", "dim_reduction", "model")
         m.eigenvectors = to_table(self.components_)
         m.means = to_table(self.mean_)
         if self.whiten:
@@ -128,20 +131,36 @@ class BasePCA(BaseEstimator, metaclass=ABCMeta):
         return m
 
     def predict(self, X, queue=None):
-        policy = self._get_policy(queue, X)
+        # Not supported with spmd policy so BasePCA must be specified
+        policy = BasePCA._get_policy(BasePCA, queue, X)
         model = self._create_model()
         X_table = to_table(X, queue=queue)
         params = self._get_onedal_params(X_table, stage="predict")
 
-        result = self._get_backend(
-            "decomposition", "dim_reduction", "infer", policy, params, model, X_table
+        # Not supported with spmd policy so BasePCA must be specified
+        result = BasePCA._get_backend(
+            BasePCA,
+            "decomposition",
+            "dim_reduction",
+            "infer",
+            policy,
+            params,
+            model,
+            X_table,
         )
         return from_table(result.transformed_data)
+
+    transform = predict
 
 
 class PCA(BasePCA):
 
     def fit(self, X, y=None, queue=None):
+        use_raw_input = _get_config().get("use_raw_input", False) is True
+        sua_iface, xp, _ = _get_sycl_namespace(X)
+        if use_raw_input and sua_iface:
+            queue = X.sycl_queue
+
         n_samples, n_features = X.shape
         n_sf_min = min(n_samples, n_features)
         self._validate_n_components(self.n_components, n_samples, n_features)

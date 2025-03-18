@@ -29,7 +29,7 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
+import os
 import sys
 
 # sys.path.insert(0, os.path.abspath("../"))
@@ -44,10 +44,8 @@ author = "Intel"
 # The short X.Y version
 # Note: it should not have more than  two parts (year.month), otherwise the
 # version switcher will not be able to pick it.
-version = "2025.2"
-# The full version, including alpha/beta/rc tags
-release = "2025.2"
-
+version = os.environ.get("SHORT_DOC_VERSION", "latest")
+release = version
 
 # -- General configuration ---------------------------------------------------
 
@@ -75,12 +73,13 @@ extensions = [
 
 intersphinx_mapping = {
     "sklearn": ("https://scikit-learn.org/stable/", None),
+    "dpctl": ("https://intelpython.github.io/dpctl/latest", None),
     # from scikit-learn, in case some object in sklearnex points to them:
     # https://github.com/scikit-learn/scikit-learn/blob/main/doc/conf.py
     "python": ("https://docs.python.org/{.major}".format(sys.version_info), None),
     "numpy": ("https://numpy.org/doc/stable", None),
     "scipy": ("https://docs.scipy.org/doc/scipy/", None),
-    "matplotlib": ("https://matplotlib.org/", None),
+    "matplotlib": ("https://matplotlib.org/stable/", None),
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
     "joblib": ("https://joblib.readthedocs.io/en/latest/", None),
     "seaborn": ("https://seaborn.pydata.org/", None),
@@ -155,12 +154,11 @@ html_theme_options = {
     "titles_only": False,
 }
 
-switcher_url = "/scikit-learn-intelex/versions.json"
 
 html_context = {
     "current_version": version,
     "project_name": "scikit-learn-intelex",
-    "switcher_url": switcher_url,
+    "switcher_url": "/scikit-learn-intelex/doc/versions.json",
 }
 
 

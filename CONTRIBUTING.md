@@ -53,6 +53,10 @@ A GitHub* Action verifies if your changes comply with the output of the auto-for
 
 Optionally, you can install pre-commit hooks that do the formatting for you. For this, run from the top level of the repository:
 
+## Ideas
+
+If you want to contribute but do not know where to start we maintain a [public list](https://uxlfoundation.github.io/scikit-learn-intelex/latest/ideas.html) of projects which include difficulty and effort in our documentation.  These ideas have linked issues on GitHub where you can message us for next steps.
+
 ```bash
 pip install pre-commit
 pre-commit install
