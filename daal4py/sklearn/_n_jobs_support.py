@@ -61,8 +61,6 @@ threadpoolctl.register(oneDALLibController)
 # Note: getting controller in global scope of this module is required
 # to avoid overheads by its initialization per each function call
 threadpool_controller = threadpoolctl.ThreadpoolController()
-# similarly the number of cpus is not expected to change after import
-_cpu_count = cpu_count()
 
 
 def _run_with_n_jobs(method):
@@ -97,7 +95,7 @@ def _run_with_n_jobs(method):
         # using sklearn rules and `n_threads` from upper parallelism context
 
         if not self.n_jobs:
-            n_jobs = _cpu_count
+            n_jobs = cpu_count()
         else:
             n_jobs = (
                 self.n_jobs if self.n_jobs > 0 else max(1, _cpu_count + self.n_jobs + 1)
