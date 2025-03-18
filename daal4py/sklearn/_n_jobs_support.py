@@ -30,7 +30,7 @@ from daal4py import _get__daal_link_version__, daalinit, num_threads
 from ._utils import sklearn_check_version
 
 if sklearn_check_version("1.2"):
-    from sklearn.utils._param_validation import Interval, validate_parameter_constraints
+    from sklearn.utils._param_validation import validate_parameter_constraints
 else:
 
     def validate_parameter_constraints(n_jobs):
