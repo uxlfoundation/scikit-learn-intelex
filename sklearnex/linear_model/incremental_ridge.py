@@ -112,7 +112,7 @@ class IncrementalRidge(IntelEstimator, MultiOutputMixin, RegressorMixin, BaseEst
             "fit_intercept": ["boolean"],
             "alpha": [Interval(numbers.Real, 0, None, closed="left")],
             "copy_X": ["boolean"],
-            "n_jobs": [Interval(numbers.Integral, -1, None, closed="left"), None],
+            "n_jobs": [numbers.Integral, None],
             "batch_size": [Interval(numbers.Integral, 1, None, closed="left"), None],
         }
 
