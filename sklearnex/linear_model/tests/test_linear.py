@@ -32,7 +32,7 @@ from sklearnex.tests.utils import _IS_INTEL
 # Note: this is arranged as a fixture with a finalizer instead of as a parameter
 # 'True' / 'False' in order to undo the changes later so that it doesn't affect
 # other tests afterwards. It returns a function instead of making the change
-# directly, in order to avoid importing the estimato classr before the import test
+# directly, in order to avoid importing the estimator class before the import test
 # itself, but it still needs to import the class inside the the function that it
 # returns due to serialization logic in pytest causing differences w.r.t. current
 # closure where the function is called.
