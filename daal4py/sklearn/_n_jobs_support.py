@@ -111,7 +111,7 @@ def _run_with_n_jobs(method):
                 f"{cl.__module__}.{cl.__name__}.{method.__name__}: "
                 f"setting {n_jobs} threads (previous - {old_n_threads})"
             )
-            with threadpool_controller.limit(limits=n_jobs, user_api="oneDAL"):
+            with threadpool_controller.limit(limits=n_jobs, user_api="onedal"):
                 return method(self, *args, **kwargs)
         else:
             return method(self, *args, **kwargs)
