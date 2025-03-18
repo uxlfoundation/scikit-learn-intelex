@@ -98,7 +98,7 @@ def _run_with_n_jobs(method):
             n_jobs = cpu_count()
         else:
             n_jobs = (
-                self.n_jobs if self.n_jobs > 0 else max(1, _cpu_count + self.n_jobs + 1)
+                self.n_jobs if self.n_jobs > 0 else max(1, cpu_count() + self.n_jobs + 1)
             )
 
         if (old_n_threads := num_threads()) != n_jobs:
