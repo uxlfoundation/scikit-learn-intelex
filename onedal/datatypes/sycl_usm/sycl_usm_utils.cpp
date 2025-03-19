@@ -94,7 +94,7 @@ bool is_sua_readonly(const py::dict& sua) {
 py::tuple get_sua_shape(const py::dict& sua) {
     py::tuple shape = sua["shape"].cast<py::tuple>();
     if (shape.size() == py::ssize_t{ 0ul }) {
-        throw std::runtime_error("Wrong number of dimensions");
+        throw std::length_error("Wrong number of dimensions");
     }
     return shape;
 }

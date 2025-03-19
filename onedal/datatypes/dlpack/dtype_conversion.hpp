@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright 2021 Intel Corporation
+* Copyright Contributors to the oneDAL project
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -16,22 +16,21 @@
 
 #pragma once
 
-#define PY_ARRAY_UNIQUE_SYMBOL ONEDAL_PY_ARRAY_API
+#include <string>
 
-#include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
-#include <Python.h>
-#include <numpy/arrayobject.h>
 
 #include "oneapi/dal/table/common.hpp"
+#include "onedal/datatypes/dtype_dispatcher.hpp"
 
-namespace oneapi::dal::python::numpy {
+#include "onedal/datatypes/dlpack/dlpack.h"
 
 namespace py = pybind11;
 
-PyObject *convert_to_pyobject(const dal::table &input);
-dal::table convert_to_table(py::object inp_obj,
-                            py::object queue = py::none(),
-                            bool recursed = false);
+namespace oneapi::dal::python::dlpack {
 
-} // namespace oneapi::dal::python::numpy
+// DLDataType is only 64 bits in size. Not expensive
+dal::data_type convert_dlpack_to_dal_type(DLDataType dt);
+DLDataType convert_dal_to_dlpack_type(dal::data_type dt);
+
+} // namespace oneapi::dal::python::dlpack

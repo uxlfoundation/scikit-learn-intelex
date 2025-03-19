@@ -32,7 +32,7 @@ Patching
 **********************
 
 Once you install the |intelex|, you can replace estimator classes (algorithms) that exist in the ``sklearn`` module from |sklearn| with their optimized versions from the extension.
-This action is called `patching`. This is not a permanent change so you can always undo the patching if necessary.
+This action is called `patching` or `monkey patching <https://en.wikipedia.org/wiki/Monkey_patch>`__. This is not a permanent change so you can always undo the patching if necessary.
 
 To patch |sklearn| with the |intelex|, the following methods can be used:
 
