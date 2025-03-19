@@ -17,16 +17,16 @@
 .. _index:
 
 #########
-|intelex|
+|sklearnex|
 #########
 
-|intelex| is a **free software AI accelerator** designed to deliver up to **100X** faster performance for your existing |sklearn| code.
+|sklearnex| is a **free software AI accelerator** designed to deliver up to **100X** faster performance for your existing |sklearn| code.
 The software acceleration is achieved with vector instructions, AI hardware-specific memory optimizations, threading, and optimizations.
 
 .. rubric:: Designed for Data Scientists and Framework Designers
 
 
-Use |intelex|, to:
+Use |sklearnex|, to:
 
 * Speed up training and inference by up to 100x with equivalent mathematical accuracy
 * Benefit from performance improvements across different x86-64 CPUs and Intel(R) GPUs

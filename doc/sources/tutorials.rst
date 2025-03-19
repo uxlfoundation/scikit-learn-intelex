@@ -14,10 +14,10 @@
 
 
 ################################################
-|intelex| Tutorials & Case Studies
+|sklearnex| Tutorials & Case Studies
 ################################################
 
-Explore the tutorials & case studies to help you to harness the full potential of |intelex|.
+Explore the tutorials & case studies to help you to harness the full potential of |sklearnex|.
 
 Tutorials
 ----------------------------------
@@ -87,4 +87,4 @@ Case Studies
       :link: https://www.intel.com/content/www/us/en/developer/articles/case-study/hipposcreen-boosts-ai-performance-2-4x-with-oneapi.html
       :padding: 1
 
-      The neurotechnology startup used |intelex| to the improve efficiency and build times of deep-learning models used in its Brain Waves AI system.
+      The neurotechnology startup used |sklearnex| to the improve efficiency and build times of deep-learning models used in its Brain Waves AI system.
