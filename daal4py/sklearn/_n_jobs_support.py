@@ -34,7 +34,7 @@ if sklearn_check_version("1.2"):
 else:
 
     def validate_parameter_constraints(n_jobs):
-        if n_jobs is not None and n_jobs.__class__ != int:
+        if n_jobs is not None and not isinstance(n_jobs, Integral):
             raise TypeError(
                 f"n_jobs must be an instance of int, not {n_jobs.__class__.__name__}."
             )
