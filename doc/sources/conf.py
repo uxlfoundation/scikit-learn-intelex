@@ -123,7 +123,6 @@ pygments_style = "sphinx"
 # substitutions
 
 rst_prolog = """
-.. |reg| unicode:: U+000AE
 .. |sklearnex| replace:: Extension for Scikit-learn*
 .. |onedal| replace:: oneAPI Data Analytics Library
 """
