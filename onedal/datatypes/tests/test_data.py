@@ -447,7 +447,7 @@ def _test_low_precision_gpu_conversion(dtype, sparse, dataframe):
 
 
 @pytest.mark.skipif(
-    not _is_dpc_backend, reason="Requires DPC backend for dtype conversion"
+    not backend.is_dpc, reason="Requires DPC backend for dtype conversion"
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("sparse", [True, False])
@@ -456,7 +456,7 @@ def test_low_precision_gpu_conversion_numpy(dtype, sparse):
 
 
 @pytest.mark.skipif(
-    not _is_dpc_backend or "array_api" not in array_api_modules,
+    not backend.is_dpc or "array_api" not in array_api_modules,
     reason="Requires DPC backend and array_api_strict for the test",
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
