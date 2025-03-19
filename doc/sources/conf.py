@@ -38,8 +38,8 @@ import sys
 # -- Project information -----------------------------------------------------
 
 project = "Extension for Scikit-learn*"
-copyright = "Intel"
-author = "Intel"
+copyright = "oneDAL project"
+author = "oneDAL project"
 
 # The short X.Y version
 # Note: it should not have more than  two parts (year.month), otherwise the
