@@ -102,7 +102,6 @@ def validate_data(
     /,
     X="no_validation",
     y="no_validation",
-    ensure_y_dtype=False,
     **kwargs,
 ):
     # force finite check to not occur in sklearn, default is True
@@ -135,22 +134,6 @@ def validate_data(
             assert_all_finite(next(arg), allow_nan=allow_nan, input_name="X")
         if check_y:
             assert_all_finite(next(arg), allow_nan=allow_nan, input_name="y")
-
-    if ensure_y_dtype and check_y and "dtype" in kwargs:
-        # validate_data does not do full dtype conversions, as it uses check_X_y
-        # oneDAL can make tables from [int32, float32, float64], requiring
-        # a dtype check and conversion. This will query the array_namespace and
-        # convert y as necessary. This is important especially for regressors.
-        dtype = kwargs["dtype"]
-        if not isinstance(dtype, (tuple, list)):
-            dtype = tuple(dtype)
-
-        outx, outy = out if check_x else (None, out)
-        if outy.dtype not in dtype:
-            yp, _ = get_namespace(outy)
-            # use asarray rather than astype because of numpy support
-            outy = yp.asarray(outy, dtype=dtype[0])
-            out = (outx, outy) if check_x else outy
 
     return out
 
