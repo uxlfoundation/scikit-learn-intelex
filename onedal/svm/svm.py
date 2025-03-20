@@ -90,10 +90,6 @@ class BaseSVM(metaclass=ABCMeta):
     @abstractmethod
     def infer(self, *args, **kwargs): ...
 
-    def _is_classification(self):
-        """helper function to determine if infer method was loaded from a classification module"""
-        return hasattr(self.infer, "name") and "classification" in self.infer.name
-
     def _validate_targets(self, y, dtype):
         self.class_weight_ = None
         self.classes_ = None
@@ -226,7 +222,7 @@ class BaseSVM(metaclass=ABCMeta):
                 "break_ties must be False when " "decision_function_shape is 'ovo'"
             )
 
-        if self._is_classification():
+        if isinstance(self, ClassifierMixin):
             sv = self.support_vectors_
             if not self._sparse and sv.size > 0 and self._n_support.sum() != sv.shape[0]:
                 raise ValueError(
@@ -308,7 +304,7 @@ class BaseSVM(metaclass=ABCMeta):
                 % type(self).__name__
             )
 
-        if self._is_classification():
+        if isinstance(self, ClassifierMixin):
             sv = self.support_vectors_
             if not self._sparse and sv.size > 0 and self._n_support.sum() != sv.shape[0]:
                 raise ValueError(

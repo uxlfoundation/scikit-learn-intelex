@@ -14,8 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 
-import queue
-
 import numpy as np
 
 from onedal import _default_backend as backend
