@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright 2021 Intel Corporation
+* Copyright Contributors to the oneDAL project
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -16,22 +16,23 @@
 
 #pragma once
 
-#define PY_ARRAY_UNIQUE_SYMBOL ONEDAL_PY_ARRAY_API
+#include <array>
+#include <cstdint>
 
-#include <pybind11/numpy.h>
+#ifdef ONEDAL_DATA_PARALLEL
+#include <sycl/sycl.hpp>
+#endif // ONEDAL_DATA_PARALLEL
+
 #include <pybind11/pybind11.h>
-#include <Python.h>
-#include <numpy/arrayobject.h>
+
+#include "onedal/datatypes/dlpack/dlpack_utils.hpp"
 
 #include "oneapi/dal/table/common.hpp"
 
-namespace oneapi::dal::python::numpy {
+namespace oneapi::dal::python::dlpack {
 
 namespace py = pybind11;
 
-PyObject *convert_to_pyobject(const dal::table &input);
-dal::table convert_to_table(py::object inp_obj,
-                            py::object queue = py::none(),
-                            bool recursed = false);
+dal::table convert_to_table(py::object obj, py::object q_obj = py::none(), bool recursed = false);
 
-} // namespace oneapi::dal::python::numpy
+} // namespace oneapi::dal::python::dlpack
