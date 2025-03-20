@@ -22,6 +22,7 @@ from sklearn.utils.validation import _deprecate_positional_args, check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
+from daal4py.sklearn.utils.validation import get_requires_y_tag
 from onedal.neighbors import KNeighborsRegressor as onedal_KNeighborsRegressor
 
 from .._device_offload import dispatch, wrap_output_data
@@ -130,7 +131,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         }
 
         self._onedal_estimator = onedal_KNeighborsRegressor(**onedal_params)
-        self._onedal_estimator.requires_y = self._get_requires_y()
+        self._onedal_estimator.requires_y = get_requires_y_tag(self)
         self._onedal_estimator.effective_metric_ = self.effective_metric_
         self._onedal_estimator.effective_metric_params_ = self.effective_metric_params_
         self._onedal_estimator.fit(X, y, queue=queue)

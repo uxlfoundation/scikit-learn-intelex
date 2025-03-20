@@ -26,6 +26,7 @@ from sklearn.metrics import r2_score
 from sklearn.preprocessing import LabelEncoder
 
 from daal4py.sklearn._utils import sklearn_check_version
+from daal4py.sklearn.utils.validation import get_requires_y_tag
 from onedal.utils.validation import _check_array, _check_X_y, _column_or_1d
 
 from .._config import config_context, get_config
@@ -152,7 +153,7 @@ class BaseSVM(PatchableEstimator, BaseEstimator, ABC):
                 )
 
         if y is None:
-            if self._get_tags()["requires_y"]:
+            if get_requires_y_tag(self):
                 raise ValueError(
                     f"This {self.__class__.__name__} estimator "
                     f"requires y to be passed, but the target y is None."

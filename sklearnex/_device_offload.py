@@ -61,6 +61,8 @@ def _get_backend(obj, queue, method_name, *data):
 
 
 def get_array_api_support_tag(estimator):
+    """Gets the value of the 'array_api_support' tag from the estimator
+    using correct code path depending on the scikit-learn version."""
     if hasattr(estimator, "__sklearn_tags__"):
         return estimator.__sklearn_tags__().array_api_support
     elif hasattr(estimator, "_get_tags"):
