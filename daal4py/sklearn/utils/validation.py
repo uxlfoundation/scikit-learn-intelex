@@ -16,6 +16,7 @@
 
 import warnings
 from contextlib import suppress
+from functools import wraps
 
 import numpy as np
 import scipy.sparse as sp
@@ -726,16 +727,45 @@ def get_requires_y_tag(estimator):
     return requires_y
 
 
-# simplified copy of similar function from sklearnex.utils.validation
+def add_dispatcher_docstring(original_function):
+    """Adds a note about the dispatcher function to the docstring of the original function."""
+
+    def wrapper(dispatcher_function):
+        @wraps(
+            original_function,
+            ["__name__", "__doc__", "__annotations__", "__type_params__"],
+        )
+        def new_function(*args, **kwargs):
+            return dispatcher_function(*args, **kwargs)
+
+        new_function.__doc__ = (
+            f"Sklearnex dispatcher for '{original_function.__qualname__}' "
+            f"from '{original_function.__module__}' module supporting "
+            "it's multiple implementations from different scikit-learn versions.\n\n"
+            + original_function.__doc__
+        )
+
+        return new_function
+
+    return wrapper
+
+
+# simplified copy of similar function from sklearnex.utils.validation,
+# ensures that the correct finiteness check argument is used
+@add_dispatcher_docstring(_sklearn_validate_data)
 def validate_data(*args, **kwargs):
     if not sklearn_check_version("1.6") and "ensure_all_finite" in kwargs:
         kwargs["force_all_finite"] = kwargs.pop("ensure_all_finite")
     return _sklearn_validate_data(*args, **kwargs)
 
 
+# dispatcher functions which use correct `check_feature_names`/`check_n_features` import
+# depending on the scikit-learn version
+@add_dispatcher_docstring(_sklearn_check_feature_names)
 def check_feature_names(*args, **kwargs):
     _sklearn_check_feature_names(*args, **kwargs)
 
 
+@add_dispatcher_docstring(_sklearn_check_n_features)
 def check_n_features(*args, **kwargs):
     _sklearn_check_n_features(*args, **kwargs)
