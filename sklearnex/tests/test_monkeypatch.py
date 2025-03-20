@@ -43,8 +43,7 @@ def test_monkey_patching():
 
             class_module = getattr(p, n).__module__
             assert any(
-                class_module.startswith(prefix)
-                for prefix in ["daal4py", "sklearnex", "onedal"]
+                class_module.startswith(prefix) for prefix in ["daal4py", "sklearnex"]
             ), "Patching has completed with error."
 
         for i, _ in enumerate(_tokens):
@@ -89,8 +88,7 @@ def test_monkey_patching():
 
             class_module = getattr(p, n).__module__
             assert any(
-                class_module.startswith(prefix)
-                for prefix in ["daal4py", "sklearnex", "onedal"]
+                class_module.startswith(prefix) for prefix in ["daal4py", "sklearnex"]
             ), "Patching has completed with error."
     finally:
         sklearnex.unpatch_sklearn()
