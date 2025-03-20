@@ -717,6 +717,8 @@ def _daal_num_features(X):
 
 
 def get_requires_y_tag(estimator):
+    """Gets the value of the 'requires_y' tag from the estimator
+    using correct code path depending on the scikit-learn version."""
     if sklearn_check_version("1.6"):
         requires_y = estimator.__sklearn_tags__().target_tags.required
     else:

@@ -308,13 +308,3 @@ class KNeighborsDispatchingBase(PatchableEstimator):
         return kneighbors_graph
 
     kneighbors_graph.__doc__ = KNeighborsMixin.kneighbors_graph.__doc__
-
-    def _get_requires_y(self):
-        if sklearn_check_version("1.6"):
-            requires_y = self.__sklearn_tags__().target_tags.required
-        else:
-            try:
-                requires_y = self._get_tags()["requires_y"]
-            except KeyError:
-                requires_y = False
-        return requires_y
