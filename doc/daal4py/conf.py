@@ -81,6 +81,12 @@ master_doc = "contents"
 # This pattern also affects html_static_path and html_extra_path .
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "note.rst"]
 
+# substitutions
+
+rst_prolog = """
+.. |onedal| replace:: oneAPI Data Analytics Library
+"""
+
 
 # -- Options for HTML output -------------------------------------------------
 
