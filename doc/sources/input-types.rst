@@ -18,7 +18,7 @@
 Supported input types
 =====================
 
-Just like Scikit-Learn estimators, estimators from Intel(R)'s Extension are able to accept
+Just like Scikit-Learn estimators, estimators from Extension are able to accept
 and work with different classes of input data, including:
 
 - `Numpy <https://numpy.org/>`__ arrays.
@@ -27,7 +27,7 @@ and work with different classes of input data, including:
 - `SciPy sparse arrays and sparse matrices <https://docs.scipy.org/doc/scipy/tutorial/sparse.html>`__ (depending on the estimator).
 - `Pandas <https://pandas.pydata.org>`__ ``DataFrame`` and ``Series`` classes.
 
-In addition, Intel(R)'s Extension also supports:
+In addition, Extension also supports:
 
 - `dpnp <https://github.com/IntelPython/dpnp>`__ arrays.
 - `dpctl <https://intelpython.github.io/dpctl/latest/index.html>`__ arrays.
@@ -36,6 +36,6 @@ Stock Scikit-Learn estimators, depending on the version, might offer support for
 input types beyond this list, such as ``DataFrame`` and ``Series`` classes from other libraries
 like `Polars <https://pola.rs>`__.
 
-Intel(R)'s Extension currently does not offer accelerated routines for input types not listed
+Extension currently does not offer accelerated routines for input types not listed
 here - when receiving an unsupported class, estimators will fall back to stock Scikit-Learn to
-handle it, so make sure to convert them to a supported type when using Intel(R)'s Extension.
+handle it, so make sure to convert them to a supported type when using Extension.

@@ -19,7 +19,7 @@
 Supported Algorithms
 ####################
 
-Applying |intelex| impacts the following |sklearn| estimators:
+Applying |sklearnex| impacts the following |sklearn| estimators:
 
 on CPU
 ------

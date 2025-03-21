@@ -17,7 +17,7 @@
 Follow us on Medium
 --------------------
 We publish blogs on Medium, so `follow us <https://medium.com/intel-analytics-software/tagged/machine-learning>`_
-to learn tips and tricks for more efficient data analysis the help of |intelex|.
+to learn tips and tricks for more efficient data analysis the help of |sklearnex|.
 Here are our latest blogs:
 
 - `Save Time and Money with Intel Extension for Scikit-learn <https://medium.com/intel-analytics-software/save-time-and-money-with-intel-extension-for-scikit-learn-33627425ae4>`_,

@@ -14,10 +14,10 @@
 
 
 ################################################
-|intelex| Tutorials & Case Studies
+|sklearnex| Tutorials & Case Studies
 ################################################
 
-Explore the tutorials & case studies to help you to harness the full potential of |intelex|.
+Explore the tutorials & case studies to help you to harness the full potential of |sklearnex|.
 
 Tutorials
 ----------------------------------
@@ -40,21 +40,21 @@ Tutorials
       :link: https://www.intel.com/content/www/us/en/developer/videos/accelerated-machine-learning-for-ai-solutions.html
       :padding: 1
 
-      Techniques for maximizing Intel® Extension for Scikit-learn*.
+      Techniques for maximizing Extension for Scikit-learn*.
 
    .. grid-item-card:: Getting started with classical Machine Learning Frameworks using Google Colaboratory
       :link: https://community.intel.com/t5/Blogs/Tech-Innovation/Artificial-Intelligence-AI/Getting-started-with-classical-Machine-Learning-Frameworks-using/post/1450139
       :padding: 1
 
-      Simple Installation of Intel® Extension for Scikit-learn* on Google Colaboratory.
+      Simple Installation of Extension for Scikit-learn* on Google Colaboratory.
 
    .. grid-item-card:: Accelerate Machine Learning Workloads: K-means and GPairs Algorithms
       :link: https://www.intel.com/content/www/us/en/developer/videos/accelerate-ml-workloads-k-means-gpairs-algorithms.html
       :padding: 1
 
-      An introduction to Intel® Extension for Scikit-learn*.
+      An introduction to Extension for Scikit-learn*.
 
-   .. grid-item-card:: Benchmarking Intel® Extension for Scikit-learn*: How Much Faster Is It?
+   .. grid-item-card:: Benchmarking Extension for Scikit-learn*: How Much Faster Is It?
       :link: https://www.intel.com/content/www/us/en/developer/articles/technical/benchmarking-intel-extension-for-scikit-learn.html
       :padding: 1
 
@@ -75,7 +75,7 @@ Case Studies
       :link: https://www.intel.com/content/www/us/en/developer/articles/case-study/greener-machine-learning-with-intel-ai.html
       :padding: 1
 
-      Lowering the Environmental Impact of AI Workloads by 7x using Intel® Extension for Scikit-learn*.
+      Lowering the Environmental Impact of AI Workloads by 7x using Extension for Scikit-learn*.
 
    .. grid-item-card:: Supply Chain Optimization at Enterprise Scale
       :link: https://www.intel.com/content/www/us/en/developer/articles/technical/supply-chain-optimization-at-enterprise-scale.html
@@ -87,4 +87,4 @@ Case Studies
       :link: https://www.intel.com/content/www/us/en/developer/articles/case-study/hipposcreen-boosts-ai-performance-2-4x-with-oneapi.html
       :padding: 1
 
-      The neurotechnology startup used |intelex| to the improve efficiency and build times of deep-learning models used in its Brain Waves AI system.
+      The neurotechnology startup used |sklearnex| to the improve efficiency and build times of deep-learning models used in its Brain Waves AI system.

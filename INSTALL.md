@@ -18,24 +18,22 @@
   
 # Installation  <!-- omit in toc -->
 
-To install Intel(R) Extension for Scikit-learn*, use one of the following scenarios:
+To install Extension for Scikit-learn*, use one of the following scenarios:
 
 - [Before You Begin](#before-you-begin)
 - [Install via PIP](#install-via-pip)
   - [Install from PyPI Channel (recommended by default)](#install-from-pypi-channel-recommended-by-default)
-- [Install from Anaconda Cloud](#install-from-anaconda-cloud)
-  - [Install via Anaconda Cloud from Conda-Forge Channel](#install-via-anaconda-cloud-from-conda-forge-channel)
-  - [Install via Anaconda Cloud from Intel Channel](#install-via-anaconda-cloud-from-intel-channel)
+- [Install via conda](#install-via-conda)
+  - [Install from Conda-Forge Channel](#install-from-conda-forge-channel)
+  - [Install from Intel conda Channel](#install-from-intel-conda-channel)
 - [Build from Sources](#build-from-sources)
   - [Prerequisites](#prerequisites)
   - [Configure the Build with Environment Variables](#configure-the-build-with-environment-variables)
-  - [Build Intel(R) Extension for Scikit-learn](#build-intelr-extension-for-scikit-learn)
+  - [Build Extension for Scikit-learn](#build-intelr-extension-for-scikit-learn)
 - [Build from Sources with `conda-build`](#build-from-sources-with-conda-build)
   - [Prerequisites for `conda-build`](#prerequisites-for-conda-build)
-  - [Build Intel(R) Extension for Scikit-learn with `conda-build`](#build-intelr-extension-for-scikit-learn-with-conda-build)
+  - [Build Extension for Scikit-learn with `conda-build`](#build-intelr-extension-for-scikit-learn-with-conda-build)
 - [Next Steps](#next-steps)
-
-> **_NOTE:_** Intel(R) Extension for Scikit-learn* is also available as a part of [Intel® AI Tools](https://www.intel.com/content/www/us/en/developer/tools/oneapi/ai-analytics-toolkit.html). If you already have it installed, you do not need to separately install the extension.
 
 
 ## Before You Begin
@@ -49,8 +47,8 @@ Check [System](https://uxlfoundation.github.io/scikit-learn-intelex/latest/syste
 * Devices: CPU, GPU
 * Distribution channels:
   * PyPI
-  * Anaconda Cloud from Conda-Forge Channel
-  * Anaconda Cloud from Intel Channel (https://software.repos.intel.com/python/conda/)
+  * Conda-Forge Channel
+  * Intel conda Channel (https://software.repos.intel.com/python/conda/)
 
 ## Install via PIP
 
@@ -78,11 +76,11 @@ Install `scikit-learn-intelex`:
    pip install scikit-learn-intelex
    ```
 
-## Install from Anaconda Cloud
+## Install via conda
 
 To prevent version conflicts, we recommend to create and activate a new environment. 
 
-### Install via Anaconda Cloud from Conda-Forge Channel
+### Install from Conda-Forge Channel
 
 - Install into a newly created environment (recommended):
 
@@ -102,7 +100,7 @@ To prevent version conflicts, we recommend to create and activate a new environm
   conda install scikit-learn-intelex
   ```
 
-### Install via Anaconda Cloud from Intel Channel
+### Install Intel conda Channel
 
 We recommend this installation for the users of Intel® Distribution for Python.
 
@@ -133,7 +131,7 @@ We recommend this installation for the users of Intel® Distribution for Python.
   ```
 
 ## Build from Sources
-Intel(R) Extension for Scikit-learn* is easily built from the sources with the majority of the necessary prerequisites available with conda or pip. 
+Extension for Scikit-learn* is easily built from the sources with the majority of the necessary prerequisites available with conda or pip. 
 
 The package is available for Windows* OS, Linux* OS, and macOS*.
 
@@ -153,7 +151,7 @@ The build-process (using setup.py) happens in 4 stages:
 * cmake and pybind11
 * A C++ compiler with C++11 support
 * Clang-Format version >=14
-* [Intel® oneAPI Data Analytics Library (oneDAL)](https://github.com/uxlfoundation/oneDAL) version 2021.1 or later, but be mindful that **the oneDAL version must be <= than that of scikit-learn-intelex** (it's backwards compatible but not forwards compatible).
+* [oneAPI Data Analytics Library (oneDAL)](https://github.com/uxlfoundation/oneDAL) version 2021.1 or later, but be mindful that **the oneDAL version must be <= than that of scikit-learn-intelex** (it's backwards compatible but not forwards compatible).
   * You can use the pre-built `dal-devel` conda package from conda-forge channel
 * MPI (optional, needed for distributed mode)
   * You can use the pre-built `impi_rt` and `impi-devel` conda packages from conda-forge channel
@@ -174,7 +172,7 @@ The build-process (using setup.py) happens in 4 stages:
 **Note:** The `-j` flag in the ``MAKEFLAGS`` environment variable is superseded in `setup.py` modes which support the ``--parallel`` and `-j` command line flags.
 
 
-### Build Intel(R) Extension for Scikit-learn
+### Build Extension for Scikit-learn
 
 - To install the package:
 
@@ -203,7 +201,7 @@ The build-process (using setup.py) happens in 4 stages:
 
 Where: 
 
-* Keys `--single-version-externally-managed` and `--no-deps` are required to not download daal4py after the installation of Intel(R) Extension for Scikit-learn. 
+* Keys `--single-version-externally-managed` and `--no-deps` are required to not download daal4py after the installation of Extension for Scikit-learn. 
 * The `develop` mode does not install the package but creates a `.egg-link` in the deployment directory
 back to the project source-code directory. That way, you can edit the source code and see the changes
 without reinstalling the package after a small change.
@@ -228,7 +226,7 @@ python setup.py build --abs-rpath
 
 ## Build from Sources with `conda-build`
 
-Intel(R) Extension for Scikit-learn* is easily built from the sources using only one command and `conda-build` utility. 
+Extension for Scikit-learn* is easily built from the sources using only one command and `conda-build` utility. 
 
 ### Prerequisites for `conda-build`
 
@@ -242,7 +240,7 @@ Intel(R) Extension for Scikit-learn* is easily built from the sources using only
 In order to enable DPC++ interfaces support on Windows, you need to set `DPCPPROOT` environment variable pointing to DPC++/C++ Compiler distribution.
 Conda-forge distribution of DPC++ compiler is used by default on Linux, but you still can set your own distribution via `DPCPPROOT` variable.
 
-### Build Intel(R) Extension for Scikit-learn with `conda-build`
+### Build Extension for Scikit-learn with `conda-build`
 
 Create and verify `scikit-learn-intelex` conda package with next command executed from root of sklearnex repo:
 

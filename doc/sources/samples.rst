@@ -18,7 +18,7 @@
 Samples
 #######
 
-The following samples are also provided as Jupyter notebooks in |intelex| repository.
+The following samples are also provided as Jupyter notebooks in |sklearnex| repository.
 If you want to run them locally, refer to `these instructions
 <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/notebooks#snake-intelr-extension-for-scikit-learn-notebooks>`_.
 
@@ -60,18 +60,18 @@ If you want to run them locally, refer to `these instructions
 .. toctree::
    :maxdepth: 1
 
-   Intel® Extension for Scikit-learn TSNE example <samples/tsne.ipynb>
+   Extension for Scikit-learn TSNE example <samples/tsne.ipynb>
 
 .. rubric:: Jupyter Notebook Samples
 
 .. toctree::
    :maxdepth: 1
 
-   Intel® Extension for Scikit-Learn* Getting Started Sample <https://github.com/oneapi-src/oneAPI-samples/tree/master/AI-and-Analytics/Getting-Started-Samples/Intel_Extension_For_SKLearn_GettingStarted>
-   Intel® Extension for Scikit-Learn*: SVC for Adult dataset Performance Sample <https://github.com/oneapi-src/oneAPI-samples/tree/master/AI-and-Analytics/Features-and-Functionality/Intel_Extension_For_SKLearn_Performance_SVC_Adult>
+   Extension for Scikit-Learn* Getting Started Sample <https://github.com/oneapi-src/oneAPI-samples/tree/master/AI-and-Analytics/Getting-Started-Samples/Intel_Extension_For_SKLearn_GettingStarted>
+   Extension for Scikit-Learn*: SVC for Adult dataset Performance Sample <https://github.com/oneapi-src/oneAPI-samples/tree/master/AI-and-Analytics/Features-and-Functionality/Intel_Extension_For_SKLearn_Performance_SVC_Adult>
 
 .. seealso::
 
-   There are also :ref:`Kaggle kernels <kaggle>` that use |intelex| for a variety of machine learning scenarios.
+   There are also :ref:`Kaggle kernels <kaggle>` that use |sklearnex| for a variety of machine learning scenarios.
 
 .. note:: Explore the complete list of oneAPI code samples in the `oneAPI Samples Catalog <https://oneapi-src.github.io/oneAPI-samples/>`_. These samples were designed to help you develop, offload, and optimize multiarchitecture applications targeting CPUs, GPUs, and FPGAs.

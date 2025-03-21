@@ -16,25 +16,22 @@
 
 .. _index:
 
-#########
-|intelex|
-#########
+###########
+|sklearnex|
+###########
 
-|intelex| is a **free software AI accelerator** designed to deliver up to **100X** faster performance for your existing |sklearn| code.
-The software acceleration is achieved with vector instructions, AI hardware-specific memory optimizations, threading, and optimizations for all upcoming Intel(R) platforms at launch time.
+|sklearnex| is a **free software AI accelerator** designed to deliver up to **100X** faster performance for your existing |sklearn| code.
+The software acceleration is achieved with vector instructions, AI hardware-specific memory optimizations, threading, and optimizations.
 
 .. rubric:: Designed for Data Scientists and Framework Designers
 
 
-Use |intelex|, to:
+Use |sklearnex|, to:
 
 * Speed up training and inference by up to 100x with equivalent mathematical accuracy
 * Benefit from performance improvements across different x86-64 CPUs and Intel(R) GPUs
 * Integrate the extension into your existing |sklearn| applications without code modifications
 * Enable and disable the extension with a couple of lines of code or at the command line
-
-|intelex| is also a part of `Intel(R) AI Tools <https://www.intel.com/content/www/us/en/developer/tools/oneapi/ai-analytics-toolkit.html>`_.
-
 
 .. image:: _static/scikit-learn-acceleration.PNG
   :width: 800
@@ -49,10 +46,10 @@ Supported Algorithms
 See all of the :ref:`sklearn_algorithms`.
 
 
-Intel(R) Optimizations
+Optimizations
 ----------------------------------
 
-Enable Intel(R) CPU Optimizations
+Enable CPU Optimizations
 *********************************
 
 ::
@@ -67,7 +64,7 @@ Enable Intel(R) CPU Optimizations
                  [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
    clustering = DBSCAN(eps=3, min_samples=2).fit(X)
 
-Enable Intel(R) GPU optimizations
+Enable GPU optimizations
 *********************************
 
 Note: executing on GPU has `additional system software requirements <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`__ - see :doc:`oneapi-gpu`.

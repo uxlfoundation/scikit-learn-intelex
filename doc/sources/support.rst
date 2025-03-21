@@ -13,11 +13,11 @@
 .. limitations under the License.
 
 ######################################################
-Intel(R) Extension for Scikit-learn Support
+Extension for Scikit-learn Support
 ######################################################
 
 
-We are committed to providing support and assistance to help you make the most out of Intel(R) Extension for Scikit-learn.
+We are committed to providing support and assistance to help you make the most out of Extension for Scikit-learn.
 
 Use the following methods if you face any challenges.
 

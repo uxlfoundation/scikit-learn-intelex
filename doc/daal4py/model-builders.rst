@@ -31,8 +31,7 @@ The most popular implementations of it are:
 * CatBoost*
 
 daal4py Model Builders deliver the accelerated
-models inference of those frameworks. The inference is performed by the oneDAL GBT implementation tuned
-for the best performance on the Intel(R) Architecture.
+models inference of those frameworks. The inference is performed by the oneDAL GBT implementation.
 
 .. note::
 

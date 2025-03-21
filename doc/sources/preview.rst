@@ -18,7 +18,7 @@
 Preview Functionality
 #####################
 
-Some of implemented functionality in |intelex| doesn't meet one or few of next requirements
+Some of implemented functionality in |sklearnex| doesn't meet one or few of next requirements
 for being enabled by default for all users:
 
 * The functionality API is not stable and can be changed in future
@@ -26,7 +26,7 @@ for being enabled by default for all users:
 * The functionality misses performance targets compared to stock Scikit-learn or previously available version of functionality
 * The functionality is not fully tested
 
-This type of functionality is available under **preview mode** of |intelex| and located in
+This type of functionality is available under **preview mode** of |sklearnex| and located in
 the corresponding module (`sklearnex.preview`).
 
 Preview functionality *may* or *may not* participate in patching of Scikit-learn.

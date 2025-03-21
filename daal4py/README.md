@@ -14,7 +14,7 @@
   ~ limitations under the License.
 -->
 
-# daal4py - A Convenient Python API to the Intel(R) oneAPI Data Analytics Library
+# daal4py - A Convenient Python API to the oneAPI Data Analytics Library
 [![Build Status](https://dev.azure.com/daal/daal4py/_apis/build/status/CI?branchName=main)](https://dev.azure.com/daal/daal4py/_build/latest?definitionId=9&branchName=main)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/21716/badge.svg)](https://scan.coverity.com/projects/daal4py)
 [![Join the community on GitHub Discussions](https://badgen.net/badge/join%20the%20discussion/on%20github/black?icon=github)](https://github.com/IntelPython/daal4py/discussions)
@@ -23,9 +23,9 @@
 
 **IMPORTANT NOTICE**: `daal4py` has been merged into `scikit-learn-intelex`. As of version 2025.0, it is distributed as an additional importable module within the package `scikit-learn-intelex` instead of being a separate package. The last standalone release of `daal4py` was version 2024.7, and this standalone package will not receive further updates.
 
-A simplified API to Intel(R) oneAPI Data Analytics Library that allows for fast usage of the framework suited for Data Scientists or Machine Learning users.  Built to help provide an abstraction to Intel(R) oneAPI Data Analytics Library for either direct usage or integration into one's own framework.
+A simplified API to oneAPI Data Analytics Library that allows for fast usage of the framework suited for Data Scientists or Machine Learning users.  Built to help provide an abstraction to oneAPI Data Analytics Library for either direct usage or integration into one's own framework.
 
-Note: For the most part, `daal4py` is used as an internal backend within the Intel(R) Scikit-Learn extension, and it is highly recommended to use `sklearnex` instead. Nevertheless, some functionalities from `daal4py` can still be of use, and the module can still be imported directly (`import daal4py`) after installing `scikit-learn-intelex`.
+Note: For the most part, `daal4py` is used as an internal backend within the Scikit-Learn extension, and it is highly recommended to use `sklearnex` instead. Nevertheless, some functionalities from `daal4py` can still be of use, and the module can still be imported directly (`import daal4py`) after installing `scikit-learn-intelex`.
 
 ## 👀 Follow us on Medium
 
@@ -43,7 +43,7 @@ We publish blogs on Medium, so [follow us](https://medium.com/intel-analytics-so
 - [Documentation](https://intelpython.github.io/daal4py/)
 - [scikit-learn API and patching](https://intelpython.github.io/daal4py/sklearn.html#sklearn)
 - [Building from Sources](https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/daal4py/INSTALL.md)
-- [About Intel(R) oneAPI Data Analytics Library](https://github.com/uxlfoundation/oneDAL)
+- [About oneAPI Data Analytics Library](https://github.com/uxlfoundation/oneDAL)
 
 ## 💬 Support
 
@@ -78,12 +78,12 @@ pip install -U mpi4py impi_rt
 ```
 
 ```shell
-# Anaconda Cloud for dpcpp
+# conda for dpcpp
 conda install dpcpp_cpp_rt dpctl -c https://software.repos.intel.com/python/conda/
 ```
 
 ```shell
-# Anaconda Cloud for MPI
+# conda for MPI
 conda install mpi4py impi_rt -c https://software.repos.intel.com/python/conda/
 ```
 
@@ -92,4 +92,4 @@ conda install mpi4py impi_rt -c https://software.repos.intel.com/python/conda/
 
 # ⚠️ Scikit-learn patching
 
-Scikit-learn patching functionality in daal4py was deprecated and moved to a separate package - [Intel(R) Extension for Scikit-learn*](https://github.com/uxlfoundation/scikit-learn-intelex). All future updates for the patching will be available in Intel(R) Extension for Scikit-learn only. Please use the package instead of daal4py for the Scikit-learn acceleration.
+Scikit-learn patching functionality in daal4py was deprecated and moved to a separate package - [Extension for Scikit-learn*](https://github.com/uxlfoundation/scikit-learn-intelex). All future updates for the patching will be available in Extension for Scikit-learn only. Please use the package instead of daal4py for the Scikit-learn acceleration.

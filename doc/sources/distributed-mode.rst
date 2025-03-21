@@ -19,21 +19,21 @@
 Distributed Mode (SPMD)
 =======================
 
-|intelex| offers Single Program, Multiple Data (SPMD) supported interfaces for distributed computing.
+|sklearnex| offers Single Program, Multiple Data (SPMD) supported interfaces for distributed computing.
 Several :doc:`GPU-supported algorithms <oneapi-gpu>`
 also provide distributed, multi-GPU computing capabilities via integration with |mpi4py|. The prerequisites
 match those of GPU computing, along with an MPI backend of your choice (`Intel MPI recommended
 <https://www.intel.com/content/www/us/en/developer/tools/oneapi/mpi-library.html#gs.dcan6r>`_, available
-via ``impi_rt`` python package) and the |mpi4py| python package. If using |intelex|
+via ``impi_rt`` python package) and the |mpi4py| python package. If using |sklearnex|
 `installed from sources <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/INSTALL.md#build-from-sources>`_,
 ensure that the spmd_backend is built.
 
 .. important::
-  SMPD mode requires the |mpi4py| package used at runtime to be compiled with the same MPI backend as the |intelex|. The PyPI and Conda distributions of |intelex| both use Intel's MPI as backend, and hence require an |mpi4py| also built with Intel's MPI - it can be easily installed from Intel's conda channel as follows::
+  SMPD mode requires the |mpi4py| package used at runtime to be compiled with the same MPI backend as the |sklearnex|. The PyPI and Conda distributions of |sklearnex| both use Intel's MPI as backend, and hence require an |mpi4py| also built with Intel's MPI - it can be easily installed from Intel's conda channel as follows::
     
     conda install -c https://software.repos.intel.com/python/conda/ mpi4py
 
-  It also requires the MPI runtime executable (``mpiexec`` / ``mpirun``) to be from the same library that was used to compile the |intelex| - Intel's MPI runtime library is offered as a Python package ``impi_rt`` and will be installed together with the ``mpi4py`` package if executing the command above, but otherwise, it can be installed separately from different distribution channels:
+  It also requires the MPI runtime executable (``mpiexec`` / ``mpirun``) to be from the same library that was used to compile the |sklearnex| - Intel's MPI runtime library is offered as a Python package ``impi_rt`` and will be installed together with the ``mpi4py`` package if executing the command above, but otherwise, it can be installed separately from different distribution channels:
 
   - Intel's conda channel (recommended)::
 
@@ -47,9 +47,9 @@ ensure that the spmd_backend is built.
 
       pip install impi_rt
 
-  Using other MPI backends (e.g. OpenMPI) requires building |intelex| from source with that backend.
+  Using other MPI backends (e.g. OpenMPI) requires building |sklearnex| from source with that backend.
 
-Note that |intelex| supports GPU offloading to speed up MPI operations. This is supported automatically with
+Note that |sklearnex| supports GPU offloading to speed up MPI operations. This is supported automatically with
 some MPI backends, but in order to use GPU offloading with Intel MPI, it is required to set the environment variable ``I_MPI_OFFLOAD`` to ``1`` (providing
 data on device without this may lead to a runtime error):
 
@@ -76,7 +76,7 @@ The signature for the corresponding predict method in ``sklearnex.spmd.linear_mo
 
     def predict(self, X, queue=None): ...
 
-Examples of SPMD usage can be found in the GitHub repository for the |intelex| under `examples/sklearnex <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/sklearnex>`__.
+Examples of SPMD usage can be found in the GitHub repository for the |sklearnex| under `examples/sklearnex <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/sklearnex>`__.
 
 To run on SPMD mode, first create a python file using SPMD estimators from ``sklearnex.spmd``, such as `linear_regression_spmd.py <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/sklearnex/linear_regression_spmd.py>`__.
 

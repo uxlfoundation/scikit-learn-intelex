@@ -16,12 +16,12 @@
 Deprecation Notice
 ==================
 
-This page provides information about the deprecations of a specific |intelex| functionality.
+This page provides information about the deprecations of a specific |sklearnex| functionality.
 
 macOS* Support
 **************
 
-**Deprecation:** macOS* support is deprecated for |intelex|. The 2023.x releases are the last to provide it.
+**Deprecation:** macOS* support is deprecated for |sklearnex|. The 2023.x releases are the last to provide it.
 
 **Reasons for deprecation:** No modern X86 macOS*-based systems are to be released.
 

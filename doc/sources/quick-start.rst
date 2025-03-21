@@ -18,23 +18,23 @@
 Quick Start
 ####################
 
-Get ready to elevate your |sklearn| code with |intelex| and experience the benefits of accelerated performance in just a few simple steps.
+Get ready to elevate your |sklearn| code with |sklearnex| and experience the benefits of accelerated performance in just a few simple steps.
 
 Compatibility with Scikit-learn*
 ---------------------------------
 
-|intelex| is compatible with the latest stable releases of |sklearn| - see :ref:`software-requirements` for more details.
+|sklearnex| is compatible with the latest stable releases of |sklearn| - see :ref:`software-requirements` for more details.
 
-Integrate |intelex|
---------------------
+Integrate |sklearnex|
+----------------------
 
 Patching
 **********************
 
-Once you install the |intelex|, you can replace estimator classes (algorithms) that exist in the ``sklearn`` module from |sklearn| with their optimized versions from the extension.
+Once you install the |sklearnex|, you can replace estimator classes (algorithms) that exist in the ``sklearn`` module from |sklearn| with their optimized versions from the extension.
 This action is called `patching` or `monkey patching <https://en.wikipedia.org/wiki/Monkey_patch>`__. This is not a permanent change so you can always undo the patching if necessary.
 
-To patch |sklearn| with the |intelex|, the following methods can be used:
+To patch |sklearn| with the |sklearnex|, the following methods can be used:
 
 .. list-table::
    :header-rows: 1
@@ -174,14 +174,14 @@ Installation
 
 .. contents:: :local:
 
-.. tip:: To prevent version conflicts, we recommend creating and activating a new environment for |intelex|.
+.. tip:: To prevent version conflicts, we recommend creating and activating a new environment for |sklearnex|.
 
 Install from PyPI
 **********************
 
 Recommended by default.
 
-To install |intelex|, run:
+To install |sklearnex|, run:
 
 ::
 
@@ -262,7 +262,7 @@ To prevent version conflicts, we recommend installing `scikit-learn-intelex` int
 Build from Sources
 **********************
 
-See `Installation instructions <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/INSTALL.md#build-from-sources>`_ to build |intelex| from the sources.
+See `Installation instructions <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/INSTALL.md#build-from-sources>`_ to build |sklearnex| from the sources.
 
 Install Intel*(R) AI Tools
 ****************************
@@ -272,7 +272,7 @@ Download the Intel AI Tools `here <https://www.intel.com/content/www/us/en/devel
 Release Notes
 -------------------
 
-See the `Release Notes <https://github.com/uxlfoundation/scikit-learn-intelex/releases>`_ for each version of |intelex|.
+See the `Release Notes <https://github.com/uxlfoundation/scikit-learn-intelex/releases>`_ for each version of |sklearnex|.
 
 System Requirements
 --------------------
@@ -299,7 +299,7 @@ Hardware Requirements
       - Any Intel® GPU supported by both `DPC++ <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`_ and `oneMKL <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/oneapi-math-kernel-library-system-requirements.html>`_
 
 
-.. tip:: Intel(R) processors provide better performance than other CPUs. Read more about hardware comparison in our :ref:`blogs <blogs>`.
+.. tip:: Read more about hardware comparison in our :ref:`blogs <blogs>`.
 
 .. _software-requirements:
 
@@ -324,7 +324,7 @@ Software Requirements
 
          If you use accelerators (e.g. GPUs), refer to `oneAPI DPC++/C++ Compiler System Requirements <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`_.
 
-|intelex| is compatible with the latest stable releases of |sklearn|:
+|sklearnex| is compatible with the latest stable releases of |sklearn|:
 
 * 1.0.X
 * 1.1.X
@@ -336,7 +336,7 @@ Software Requirements
 
 Memory Requirements
 **********************
-By default, algorithms in |intelex| run in the multi-thread mode. This mode uses all available threads.
+By default, algorithms in |sklearnex| run in the multi-thread mode. This mode uses all available threads.
 Optimized scikit-learn estimators can consume more RAM than their corresponding unoptimized versions.
 
 .. list-table::
@@ -347,10 +347,10 @@ Optimized scikit-learn estimators can consume more RAM than their corresponding 
      - Single-thread mode
      - Multi-thread mode
    * - SVM
-     - Both |sklearn| and |intelex| consume approximately the same amount of RAM.
-     - In |intelex|, an algorithm with ``N`` threads consumes ``N`` times more RAM.
+     - Both |sklearn| and |sklearnex| consume approximately the same amount of RAM.
+     - In |sklearnex|, an algorithm with ``N`` threads consumes ``N`` times more RAM.
 
-In all |intelex| algorithms with GPU support, computations run on device memory.
+In all |sklearnex| algorithms with GPU support, computations run on device memory.
 The device memory must be large enough to store a copy of the entire dataset.
 You may also require additional device memory for internal arrays that are used in computation.
 

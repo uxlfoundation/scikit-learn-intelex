@@ -19,7 +19,7 @@ Scikit-Learn API and patching
 #############################
 
 
-Python interface to efficient Intel(R) oneAPI Data Analytics Library provided by daal4py allows one
+Python interface to efficient |onedal| provided by daal4py allows one
 to create scikit-learn compatible estimators, transformers, clusterers, etc. powered by oneDAL which
 are nearly as efficient as native programs.
 
@@ -27,8 +27,8 @@ Deprecation Notice
 -------------------------------
 
 Scikit-learn patching functionality in daal4py was deprecated and moved to a separate
-package, `Intel(R) Extension for Scikit-learn* <https://github.com/uxlfoundation/scikit-learn-intelex>`_.
-All future patches will be available only in Intel(R) Extension for Scikit-learn*.
+package, `Extension for Scikit-learn* <https://github.com/uxlfoundation/scikit-learn-intelex>`_.
+All future patches will be available only in Extension for Scikit-learn*.
 Please use the scikit-learn-intelex package instead of daal4py for the scikit-learn acceleration.
 
 .. _sklearn_patches:
@@ -36,7 +36,7 @@ Please use the scikit-learn-intelex package instead of daal4py for the scikit-le
 oneDAL accelerated scikit-learn
 -------------------------------
 
-daal4py can dynamically patch scikit-learn estimators to use Intel(R) oneAPI Data Analytics Library
+daal4py can dynamically patch scikit-learn estimators to use |onedal|
 as the underlying solver, while getting the same solution faster.
 
 It is possible to enable those patches without editing the code of a scikit-learn application by
@@ -204,7 +204,7 @@ scikit-learn API
 ----------------
 
 The ``daal4py.sklearn`` package contains scikit-learn compatible API which
-implement a subset of scikit-learn algorithms using Intel(R) oneAPI Data Analytics Library.
+implement a subset of scikit-learn algorithms using |onedal|.
 
 Currently, these include:
 

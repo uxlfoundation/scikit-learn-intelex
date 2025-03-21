@@ -51,7 +51,7 @@ class PatchingConditionsChain(daal4py_PatchingConditionsChain):
         else:
             self.logger.debug(
                 f"{self.scope_name}: debugging for the patch is enabled to track"
-                " the usage of Intel® oneAPI Data Analytics Library (oneDAL)"
+                " the usage of oneAPI Data Analytics Library (oneDAL)"
             )
             for message in self.messages:
                 self.logger.debug(
@@ -143,7 +143,7 @@ def register_hyperparameters(hyperparameters_map):
 
 # This abstract class is meant to generate a clickable doc link for classses
 # in sklearnex that are not part of base scikit-learn.
-class IntelEstimator(BaseForHTMLDocLink):
+class ExtensionEstimator(BaseForHTMLDocLink):
     @property
     def _doc_link_module(self) -> str:
         return "sklearnex"

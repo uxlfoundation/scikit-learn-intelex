@@ -682,7 +682,7 @@ class RandomForestClassifier(RandomForestClassifier_original, RandomForestBase):
         if not sklearn_check_version("1.0"):
             params["min_impurity_split"] = self.min_impurity_split
         est = DecisionTreeClassifier(**params)
-        # we need to set est.tree_ field with Trees constructed from Intel(R)
+        # we need to set est.tree_ field with Trees constructed from
         # oneAPI Data Analytics Library solution
         estimators_ = []
         random_state_checked = check_random_state(self.random_state)
@@ -1249,7 +1249,7 @@ class RandomForestRegressor(RandomForestRegressor_original, RandomForestBase):
             params["min_impurity_split"] = self.min_impurity_split
         est = DecisionTreeRegressor(**params)
 
-        # we need to set est.tree_ field with Trees constructed from Intel(R)
+        # we need to set est.tree_ field with Trees constructed from
         # oneAPI Data Analytics Library solution
         estimators_ = []
         random_state_checked = check_random_state(self.random_state)
