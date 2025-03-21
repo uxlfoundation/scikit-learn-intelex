@@ -26,7 +26,7 @@ Compatibility with Scikit-learn*
 |sklearnex| is compatible with the latest stable releases of |sklearn| - see :ref:`software-requirements` for more details.
 
 Integrate |sklearnex|
---------------------
+----------------------
 
 Patching
 **********************

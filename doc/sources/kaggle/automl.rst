@@ -29,7 +29,7 @@
 
 
 Kaggle Kernels that use AutoML and |sklearnex|
---------------------------------------------
+----------------------------------------------
 
 The following Kaggle kernels show how to patch autoML frameworks with |sklearnex|.
 

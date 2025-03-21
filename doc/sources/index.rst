@@ -16,9 +16,9 @@
 
 .. _index:
 
-#########
+###########
 |sklearnex|
-#########
+###########
 
 |sklearnex| is a **free software AI accelerator** designed to deliver up to **100X** faster performance for your existing |sklearn| code.
 The software acceleration is achieved with vector instructions, AI hardware-specific memory optimizations, threading, and optimizations.
