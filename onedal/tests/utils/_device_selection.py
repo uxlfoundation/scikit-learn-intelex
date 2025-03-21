@@ -73,18 +73,6 @@ def is_dpctl_device_available(targets):
     return False
 
 
-def device_type_to_str(queue):
-    if queue is None:
-        return "cpu"
-
-    if dpctl_available:
-        if queue.sycl_device.is_cpu:
-            return "cpu"
-        if queue.sycl_device.is_gpu:
-            return "gpu"
-    return "unknown"
-
-
 def pass_if_not_implemented_for_gpu(reason=""):
     assert reason
 
@@ -92,7 +80,7 @@ def pass_if_not_implemented_for_gpu(reason=""):
         @functools.wraps(test)
         def wrapper(queue, *args, **kwargs):
             if queue is not None and queue.sycl_device.is_gpu:
-                with pytest.raises(RuntimeError, match="is not implemented for GPU"):
+                with pytest.raises(RuntimeError, match=reason):
                     test(queue, *args, **kwargs)
             else:
                 test(queue, *args, **kwargs)

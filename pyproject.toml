@@ -18,8 +18,13 @@
 [tool.black]
 line-length = 90
 target-version = ['py39', 'py310', 'py311', 'py312']
-extend-ignore = 'E203'
 
 [tool.isort]
 profile = "black"
 line_length = 90
+
+[tool.pytest.ini_options]
+log_cli = false
+log_cli_level = "INFO"
+log_cli_format = "%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)"
+log_cli_date_format = "%Y-%m-%d %H:%M:%S"

@@ -18,7 +18,6 @@ import gc
 import logging
 import os
 import tracemalloc
-import types
 import warnings
 from inspect import isclass
 
@@ -29,7 +28,7 @@ from sklearn.base import BaseEstimator, clone
 from sklearn.datasets import make_classification
 from sklearn.model_selection import KFold
 
-from onedal import _is_dpc_backend
+from onedal import _default_backend as backend
 from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
@@ -50,9 +49,6 @@ if dpctl_available:
 
 if dpnp_available:
     import dpnp
-
-if _is_dpc_backend:
-    from onedal import _backend
 
 
 CPU_SKIP_LIST = (
@@ -149,8 +145,8 @@ def gen_clsf_data(n_samples, n_features, dtype=None):
 
 
 def get_traced_memory(queue=None):
-    if _is_dpc_backend and queue and queue.sycl_device.is_gpu:
-        return _backend.get_used_memory(queue)
+    if backend.is_dpc and queue and queue.sycl_device.is_gpu:
+        return backend.get_used_memory(queue)
     else:
         return tracemalloc.get_traced_memory()[0]
 
