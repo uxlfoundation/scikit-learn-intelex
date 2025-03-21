@@ -468,6 +468,6 @@ def is_contiguous(X):
     if hasattr(X, "flags"):
         return X.flags["C_CONTIGUOUS"] or X.flags["F_CONTIGUOUS"]
     elif hasattr(X, "__dlpack__"):
-        return _backend.dlpack_memory_order(X.__dlpack__()) is not None
+        return _backend.dlpack_memory_order(X) is not None
     else:
         return False

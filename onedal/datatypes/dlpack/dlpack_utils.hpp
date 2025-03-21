@@ -28,6 +28,10 @@ namespace oneapi::dal::python::dlpack {
 void dlpack_take_ownership(py::capsule& caps);
 std::int32_t get_ndim(const DLTensor& caps);
 dal::data_layout get_dlpack_layout(const DLTensor& tensor);
+DLTensor get_dlpack_tensor(const py::capsule& caps,
+                           DLManagedTensor*& dlm,
+                           DLManagedTensorVersioned*& dlmv,
+                           bool& versioned);
 bool check_dlpack_oneAPI_device(const DLDeviceType& device);
 py::object regenerate_layout(const py::object& obj);
 py::object reduce_precision(const py::object& obj);
