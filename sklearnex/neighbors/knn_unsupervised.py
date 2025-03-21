@@ -19,15 +19,12 @@ from sklearn.utils.validation import _deprecate_positional_args, check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
+from daal4py.sklearn.utils.validation import get_requires_y_tag
 from onedal.neighbors import NearestNeighbors as onedal_NearestNeighbors
 
 from .._device_offload import dispatch, wrap_output_data
+from ..utils.validation import check_feature_names
 from .common import KNeighborsDispatchingBase
-
-if sklearn_check_version("1.6"):
-    from sklearn.utils.validation import validate_data
-else:
-    validate_data = _sklearn_NearestNeighbors._validate_data
 
 
 @control_n_jobs(decorated_methods=["fit", "kneighbors", "radius_neighbors"])
@@ -77,8 +74,8 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
     @wrap_output_data
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
         check_is_fitted(self)
-        if sklearn_check_version("1.0") and X is not None:
-            self._check_feature_names(X, reset=False)
+        if X is not None:
+            check_feature_names(self, X, reset=False)
         return dispatch(
             self,
             "kneighbors",
@@ -139,13 +136,8 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
             "p": self.effective_metric_params_["p"],
         }
 
-        try:
-            requires_y = self._get_tags()["requires_y"]
-        except KeyError:
-            requires_y = False
-
         self._onedal_estimator = onedal_NearestNeighbors(**onedal_params)
-        self._onedal_estimator.requires_y = requires_y
+        self._onedal_estimator.requires_y = get_requires_y_tag(self)
         self._onedal_estimator.effective_metric_ = self.effective_metric_
         self._onedal_estimator.effective_metric_params_ = self.effective_metric_params_
         self._onedal_estimator.fit(X, y, queue=queue)

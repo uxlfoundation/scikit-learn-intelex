@@ -30,11 +30,7 @@ from daal4py.sklearn._utils import sklearn_check_version
 
 from .._n_jobs_support import control_n_jobs
 from .._utils import getFPType
-
-if sklearn_check_version("1.6"):
-    from sklearn.utils.validation import validate_data
-else:
-    validate_data = BaseEstimator._validate_data
+from ..utils.validation import validate_data
 
 
 class GBTDAALBase(BaseEstimator, d4p.mb.GBTDAALBaseModel):
@@ -217,7 +213,7 @@ class GBTDAALClassifier(ClassifierMixin, GBTDAALBase):
             self,
             X,
             dtype=[np.float64, np.float32],
-            force_all_finite="allow-nan" if self.allow_nan_ else True,
+            ensure_all_finite="allow-nan" if self.allow_nan_ else True,
             reset=False,
         )
 
@@ -321,7 +317,7 @@ class GBTDAALRegressor(RegressorMixin, GBTDAALBase):
             self,
             X,
             dtype=[np.float64, np.float32],
-            force_all_finite="allow-nan" if self.allow_nan_ else True,
+            ensure_all_finite="allow-nan" if self.allow_nan_ else True,
             reset=False,
         )
 

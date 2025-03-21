@@ -23,12 +23,8 @@ from daal4py.sklearn._utils import sklearn_check_version
 from onedal.svm import SVR as onedal_SVR
 
 from .._device_offload import dispatch, wrap_output_data
+from ..utils.validation import validate_data
 from ._common import BaseSVR
-
-if sklearn_check_version("1.6"):
-    from sklearn.utils.validation import validate_data
-else:
-    validate_data = BaseSVR._validate_data
 
 
 @control_n_jobs(decorated_methods=["fit", "predict", "score"])
@@ -144,22 +140,14 @@ class SVR(_sklearn_SVR, BaseSVR):
         self._save_attributes()
 
     def _onedal_predict(self, X, queue=None):
-        if sklearn_check_version("1.0"):
-            X = validate_data(
-                self,
-                X,
-                dtype=[np.float64, np.float32],
-                force_all_finite=False,
-                accept_sparse="csr",
-                reset=False,
-            )
-        else:
-            X = check_array(
-                X,
-                dtype=[np.float64, np.float32],
-                force_all_finite=False,
-                accept_sparse="csr",
-            )
+        X = validate_data(
+            self,
+            X,
+            dtype=[np.float64, np.float32],
+            ensure_all_finite=False,
+            accept_sparse="csr",
+            reset=False,
+        )
         return self._onedal_estimator.predict(X, queue=queue)
 
     fit.__doc__ = _sklearn_SVR.fit.__doc__
