@@ -111,6 +111,8 @@ void init_train_result(py::module_& m) {
         .def_property_readonly("singular_values", &result_t::get_singular_values)
         .def_property_readonly("explained_variances_ratio",
                                &result_t::get_explained_variances_ratio)
+        .def_property_readonly("noise_variance",
+                                &result_t::get_noise_variance)                      
 #endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION>=20240100
         .def_property_readonly("means", &result_t::get_means)
         .def_property_readonly("variances", &result_t::get_variances);
