@@ -424,17 +424,21 @@ def call_validate_data(text, estimator, method):
 
     assert (
         len(validate_data_calls) == 2,
-        "validate_data should be called two times: once for sklearn and once for sklearnex"
+        "validate_data should be called two times: once for sklearn and once for sklearnex",
     )
     assert (
         validate_data_calls[0] == {"sklearnex.utils.validation", "validate_data"},
-        "sklearnex's validate_data should be called first"
+        "sklearnex's validate_data should be called first",
     )
     assert (
-        (validate_data_calls[1] == {"sklearn.utils.validation", "validate_data"})
-        if sklearn_check_version("1.6")
-        else (validate_data_calls[1] == {"sklearn.utils.validation", "_validate_data"}),
-        "sklearn's validate_data should be called second"
+        (
+            (validate_data_calls[1] == {"sklearn.utils.validation", "validate_data"})
+            if sklearn_check_version("1.6")
+            else (
+                validate_data_calls[1] == {"sklearn.utils.validation", "_validate_data"}
+            )
+        ),
+        "sklearn's validate_data should be called second",
     )
     assert (
         valid_funcs.count("_check_feature_names") == 1
