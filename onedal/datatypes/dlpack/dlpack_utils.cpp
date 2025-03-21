@@ -132,6 +132,7 @@ DLTensor get_dlpack_tensor(const py::capsule& caps,
     // two different types of dlpack managed tensors are possible, with
     // DLManagedTensor likely to be removed from future versions of dlpack.
     // collect important aspects necessary for use in conversion.
+    DLTensor tensor;
 
     PyObject* capsule = caps.ptr();
     if (PyCapsule_IsValid(capsule, "dltensor")) {
