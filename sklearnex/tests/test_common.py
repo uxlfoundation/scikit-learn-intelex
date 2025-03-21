@@ -412,25 +412,32 @@ def call_validate_data(text, estimator, method):
     try:
         # get last to_table call showing end of oneDAL input portion of code
         idx = len(text["funcs"]) - 1 - text["funcs"][::-1].index("to_table")
-        validfuncs = text["funcs"][:idx]
+        valid_funcs = text["funcs"][:idx]
+        valid_modules = text["modules"][:idx]
     except ValueError:
         pytest.skip("onedal backend not used in this function")
 
-    if sklearn_check_version("1.6"):
-        # sklearn.utils.validation.validate_data is used in sklearn >= 1.6
-        assert (
-            validfuncs.count("validate_data") == 2
-        ), f"each sklearn's and sklearnex's validate_data should be called once"
-    else:
-        # sklearn.BaseEstimator._validate_data is used in sklearn < 1.6
-        assert validfuncs.count(
-            "validate_data"
-        ), f"sklearnex's validate_data wrapper should be called once"
-        assert validfuncs.count(
-            "_validate_data"
-        ), f"sklearn's validate_data should be called once"
+    validate_data_calls = []
+    for func, module in zip(valid_funcs, valid_modules):
+        if func.endswith("validate_data"):
+            validate_data_calls.append({module, func})
+
     assert (
-        validfuncs.count("_check_feature_names") == 1
+        len(validate_data_calls) == 2,
+        "validate_data should be called two times: once for sklearn and once for sklearnex"
+    )
+    assert (
+        validate_data_calls[0] == {"sklearnex.utils.validation", "validate_data"},
+        "sklearnex's validate_data should be called first"
+    )
+    assert (
+        (validate_data_calls[1] == {"sklearn.utils.validation", "validate_data"})
+        if sklearn_check_version("1.6")
+        else (validate_data_calls[1] == {"sklearn.utils.validation", "_validate_data"}),
+        "sklearn's validate_data should be called second"
+    )
+    assert (
+        valid_funcs.count("_check_feature_names") == 1
     ), "estimator should check feature names in validate_data"
 
 
