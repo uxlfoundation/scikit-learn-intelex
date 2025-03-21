@@ -21,6 +21,7 @@ from sklearn.utils.validation import _assert_all_finite as _sklearn_assert_all_f
 from sklearn.utils.validation import _num_samples, check_array, check_non_negative
 
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from onedal.utils.validation import is_contiguous
 
 from ._array_api import get_namespace
 
@@ -48,11 +49,7 @@ if daal_check_version((2024, "P", 700)):
         # used for array_api inputs but will allow dpnp ndarrays and dpctl tensors.
         # only check contiguous arrays to prevent unnecessary copying of data, even if
         # non-contiguous arrays can now be converted to oneDAL tables.
-        return (
-            X.dtype in [xp.float32, xp.float64]
-            and hasattr(X, "flags")
-            and (X.flags["C_CONTIGUOUS"] or X.flags["F_CONTIGUOUS"])
-        )
+        return X.dtype in [xp.float32, xp.float64] and is_contiguous(X)
 
 else:
     from daal4py.utils.validation import _assert_all_finite as _onedal_assert_all_finite

@@ -94,7 +94,7 @@ inline dal::homogen_table convert_to_homogen_impl(managed_t* dlm_tensor, py::obj
 
 dal::table convert_to_table(py::object obj, py::object q_obj, bool recursed) {
     dal::table res;
-    bool versioned = false;
+    bool versioned;
     DLManagedTensor* dlm;
     DLManagedTensorVersioned* dlmv;
     DLTensor tensor;
@@ -104,25 +104,7 @@ dal::table convert_to_table(py::object obj, py::object q_obj, bool recursed) {
     // only be called if the attribute has been checked.
     py::capsule caps = obj.attr("__dlpack__")();
 
-    // two different types of dlpack managed tensors are possible, with
-    // DLManagedTensor likely to be removed from future versions of dlpack.
-    // collect important aspects necessary for the macro offloading.
-    PyObject* capsule = caps.ptr();
-    if (PyCapsule_IsValid(capsule, "dltensor")) {
-        dlm = caps.get_pointer<DLManagedTensor>();
-        tensor = dlm->dl_tensor;
-    }
-    else if (PyCapsule_IsValid(capsule, "dltensor_versioned")) {
-        dlmv = caps.get_pointer<DLManagedTensorVersioned>();
-        if (dlmv->version.major > DLPACK_MAJOR_VERSION) {
-            throw std::runtime_error("dlpack tensor version newer than supported");
-        }
-        tensor = dlmv->dl_tensor;
-        versioned = true;
-    }
-    else {
-        throw std::runtime_error("unable to extract dltensor");
-    }
+    tensor = get_dlpack_tensor(caps, dlm, dlmv, versioned);
 
     // Extract and convert a DLpack data type into a oneDAL dtype.
     dtype = convert_dlpack_to_dal_type(tensor.dtype);
@@ -171,4 +153,24 @@ dal::table convert_to_table(py::object obj, py::object q_obj, bool recursed) {
     dlpack_take_ownership(caps);
     return res;
 }
+
+py::object dlpack_memory_order(py::object obj) {
+    DLManagedTensor* dlm;
+    DLManagedTensorVersioned* dlmv;
+    DLTensor tensor;
+    bool versioned;
+
+    // extract __dlpack__ attribute from the input obj. This function should
+    // only be called if the attribute has been checked.
+    py::capsule caps = obj.attr("__dlpack__")();
+
+    tensor = get_dlpack_tensor(caps, dlm, dlmv, versioned);
+
+    switch (get_dlpack_layout(tensor)) {
+        case dal::data_layout::row_major: return py::str("C"); break;
+        case dal::data_layout::column_major: return py::str("F"); break;
+        default: return py::none();
+    }
+};
+
 } // namespace oneapi::dal::python::dlpack

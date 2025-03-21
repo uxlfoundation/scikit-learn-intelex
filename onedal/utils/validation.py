@@ -462,3 +462,12 @@ def assert_all_finite(
         allow_nan=allow_nan,
         input_name=input_name,
     )
+
+
+def is_contiguous(X):
+    if hasattr(X, "flags"):
+        return X.flags["C_CONTIGUOUS"] or X.flags["F_CONTIGUOUS"]
+    elif hasattr(X, "__dlpack__"):
+        return _backend.dlpack_memory_order(X) is not None
+    else:
+        return False
