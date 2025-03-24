@@ -276,23 +276,38 @@ void init_train_hyperparameters(py::module_& m) {
     using namespace dal::linear_regression::detail;
     using train_hyperparams_t = train_parameters<Task>;
 
-    auto cls = py::class_<train_hyperparams_t>(m, "train_hyperparameters")
-                   .def(py::init())
-                   .def("set_cpu_macro_block",
-                        [](train_hyperparams_t& self, int64_t cpu_macro_block) {
-                            self.set_cpu_macro_block(cpu_macro_block);
-                        })
-                   .def("set_gpu_macro_block",
-                        [](train_hyperparams_t& self, int64_t gpu_macro_block) {
-                            self.set_gpu_macro_block(gpu_macro_block);
-                        })
-                   .def("get_cpu_macro_block",
-                        [](const train_hyperparams_t& self) {
-                            return self.get_cpu_macro_block();
-                        })
-                   .def("get_gpu_macro_block", [](const train_hyperparams_t& self) {
-                       return self.get_gpu_macro_block();
-                   });
+    auto cls =
+        py::class_<train_hyperparams_t>(m, "train_hyperparameters")
+            .def(py::init())
+            .def("set_cpu_macro_block", &train_hyperparams_t::set_cpu_macro_block)
+#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20250500
+            .def("set_cpu_max_cols_batched", &train_hyperparams_t::set_cpu_max_cols_batched)
+            .def("set_cpu_small_rows_threshold", &train_hyperparams_t::set_cpu_small_rows_threshold)
+            .def("set_cpu_small_rows_max_cols_batched",
+                 &train_hyperparams_t::set_cpu_small_rows_max_cols_batched)
+#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20250500
+            .def("set_gpu_macro_block", &train_hyperparams_t::set_gpu_macro_block)
+            .def("get_cpu_macro_block",
+                 [](const train_hyperparams_t& self) {
+                     return self.get_cpu_macro_block();
+                 })
+#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20250500
+            .def("get_cpu_max_cols_batched",
+                 [](const train_hyperparams_t& self) {
+                     return self.get_cpu_max_cols_batched();
+                 })
+            .def("get_cpu_small_rows_threshold",
+                 [](const train_hyperparams_t& self) {
+                     return self.get_cpu_small_rows_threshold();
+                 })
+            .def("get_cpu_small_rows_max_cols_batched",
+                 [](const train_hyperparams_t& self) {
+                     return self.get_cpu_small_rows_max_cols_batched();
+                 })
+#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20250500
+            .def("get_gpu_macro_block", [](const train_hyperparams_t& self) {
+                return self.get_gpu_macro_block();
+            });
 }
 
 #endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240000
