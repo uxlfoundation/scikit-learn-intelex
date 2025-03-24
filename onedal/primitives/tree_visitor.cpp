@@ -34,6 +34,8 @@ namespace py = pybind11;
 namespace dal = oneapi::dal;
 namespace df = dal::decision_forest;
 
+using namespace pybind11::literals;
+
 namespace oneapi::dal::python {
 
 inline static const double get_nan64() {
@@ -161,6 +163,8 @@ to_sklearn_tree_object_visitor<Task>::to_sklearn_tree_object_visitor(std::size_t
     auto value_ar_shape = py::array::ShapeContainer({ static_cast<Py_ssize_t>(this->node_count),
                                                       1,
                                                       static_cast<Py_ssize_t>(this->class_count) });
+
+
     auto value_ar_strides = py::array::StridesContainer(
         { this->class_count * sizeof(double), this->class_count * sizeof(double), sizeof(double) });
 
@@ -294,7 +298,14 @@ void init_get_tree_state(py::module_& m) {
                                                      n_classes);
             node_visitor<Task, decltype(tsv)> tsv_decorator{ &tsv };
             model.traverse_depth_first(iTree, std::move(tsv_decorator));
-            return tree_state_t(tsv);
+            tree_state_t output = tree_state_t(tsv);
+            // convert the value_ar to fractional values, rather than total ones
+            // the last axis (2) is the n_classes, which must be summed for the
+            // fraction
+            if (output.class_count > 1){
+                output.value_ar = output.value_ar / output.value_ar.attr("sum")("axis"_a=2, "keepdims"_a=true);
+            }
+            return output;
         }))
         .def_readwrite("node_ar", &tree_state_t::node_ar, py::return_value_policy::take_ownership)
         .def_readwrite("value_ar", &tree_state_t::value_ar, py::return_value_policy::take_ownership)
