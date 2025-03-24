@@ -457,13 +457,11 @@ def _assert_all_finite(X, allow_nan=False, input_name=""):
             raise ValueError(msg_err)
 
 
-@supports_queue
 def assert_all_finite(
     X,
     *,
     allow_nan=False,
     input_name="",
-    queue=None,
 ):
     _assert_all_finite(
         X.data if sp.issparse(X) else X,
