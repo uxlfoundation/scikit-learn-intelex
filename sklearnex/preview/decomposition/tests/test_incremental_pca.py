@@ -167,8 +167,8 @@ def check_pca(incpca, dtype, whiten, data, transformed_data):
         if len(sorted_eigenvalues) > n_components
         else 0.0
     )
-    # TODO Fix noise variance computation (It is necessary to update C++ side)
-    # assert np.abs(incpca.noise_variance_ - expected_noise_variance) < tol
+
+    assert np.abs(incpca.noise_variance_ - expected_noise_variance) < tol
 
     expected_transformed_data = centered_data @ components.T
     if whiten:
