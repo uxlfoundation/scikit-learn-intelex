@@ -21,7 +21,7 @@ from numbers import Integral
 import numpy as np
 from scipy import sparse as sp
 
-from onedal._device_offload import SyclQueueManager, supports_queue
+from onedal._device_offload import SyclQueueManager
 from onedal.common._backend import BackendFunction
 
 if np.lib.NumpyVersion(np.__version__) >= np.lib.NumpyVersion("2.0.0a0"):
@@ -474,6 +474,6 @@ def is_contiguous(X):
     if hasattr(X, "flags"):
         return X.flags["C_CONTIGUOUS"] or X.flags["F_CONTIGUOUS"]
     elif hasattr(X, "__dlpack__"):
-        return _backend.dlpack_memory_order(X) is not None
+        return backend.dlpack_memory_order(X) is not None
     else:
         return False
