@@ -163,8 +163,6 @@ to_sklearn_tree_object_visitor<Task>::to_sklearn_tree_object_visitor(std::size_t
     auto value_ar_shape = py::array::ShapeContainer({ static_cast<Py_ssize_t>(this->node_count),
                                                       1,
                                                       static_cast<Py_ssize_t>(this->class_count) });
-
-
     auto value_ar_strides = py::array::StridesContainer(
         { this->class_count * sizeof(double), this->class_count * sizeof(double), sizeof(double) });
 
