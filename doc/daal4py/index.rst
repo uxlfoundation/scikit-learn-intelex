@@ -22,12 +22,12 @@ Fast, Scalable and Easy Machine Learning With DAAL4PY
 
 Daal4py makes your Machine Learning algorithms in Python lightning fast and easy to use. It provides
 highly configurable Machine Learning kernels, some of which support streaming input data and/or can
-be easily and efficiently scaled out to clusters of workstations.  Internally it uses Intel(R)
-oneAPI Data Analytics Library to deliver the best performance.
+be easily and efficiently scaled out to clusters of workstations.  Internally it uses
+|onedal| to deliver the best performance.
 
 Designed for Data Scientists and Framework Designers
 ----------------------------------------------------
-daal4py was created to give data scientists the easiest way to utilize Intel(R) oneAPI Data Analytics
+daal4py was created to give data scientists the easiest way to utilize oneAPI Data Analytics
 Library powerful machine learning building blocks directly in a high-productivity manner. A
 simplified API gives high-level abstractions to the user with minimal boilerplate, allowing for
 quick to write and easy to maintain code when utilizing Jupyter Notebooks. For scaling capabilities,
@@ -106,7 +106,7 @@ instead.
 
 Daal4py's Design
 ----------------
-The design of daal4py utilizes several different technologies to deliver Intel(R) oneAPI Data
+The design of daal4py utilizes several different technologies to deliver oneAPI Data
 Analytics Library performance in a flexible design to Data Scientists and Framework designers. The
 package uses Jinja templates to generate Cython-wrapped oneDAL C++ headers, with Cython as a bridge
 between the generated oneDAL code and the Python layer. This design allows for quicker development
@@ -116,7 +116,7 @@ pickling and serialization.
 
 Built for Performance
 ---------------------
-Besides superior (e.g. close to native C++ Intel(R) oneAPI Data Analytics Library) performance on a
+Besides superior (e.g. close to native C++ |onedal|) performance on a
 single node, the distribution mechanics of daal4py provides excellent strong and weak scaling. It
 nicely handles distributing a fixed input size on increasing clusters sizes (strong scaling: orange)
 which addresses possible response time requirements. It also scales with growing input size (weak
@@ -141,8 +141,8 @@ Oracle Linux Server release 7.4, using 64-bit floating point numbers
 Getting daal4py
 ---------------
 daal4py is available at the `Python Package Index <https://pypi.org/project/daal4py/>`_,
-on Anaconda Cloud in `Conda Forge channel <https://anaconda.org/conda-forge/daal4py>`_
-and in `Intel channel <https://anaconda.org/intel/daal4py>`_.
+on `Conda Forge channel <https://anaconda.org/conda-forge/daal4py>`_
+and on `Intel channel <https://anaconda.org/intel/daal4py>`_.
 Sources and build instructions are available in
 `daal4py repository <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/daal4py>`_.
 
@@ -153,7 +153,7 @@ See `scikit-learn-intelex requirements <https://uxlfoundation.github.io/scikit-l
 
      pip install daal4py
 
-- Install from Anaconda Cloud: Conda-Forge channel::
+- Install via conda: Conda-Forge channel::
 
      сonda install daal4py -c conda-forge
 
@@ -163,7 +163,7 @@ See `scikit-learn-intelex requirements <https://uxlfoundation.github.io/scikit-l
 
 We recommend to use **PyPi**. If you are using Intel® Distribution for Python,
 we recommend using **conda from the Intel Repository**.
-In other cases, use **Anaconda Cloud: conda-forge channel**.
+In other cases, use **conda: conda-forge channel**.
 
 
 Overview

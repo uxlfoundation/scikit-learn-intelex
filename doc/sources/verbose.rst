@@ -18,8 +18,8 @@
 Verbose Mode
 ############
 
-Use |intelex| in verbose mode to find out which implementation of the algorithm is currently used,
-|intelex| or original Scikit-learn.
+Use |sklearnex| in verbose mode to find out which implementation of the algorithm is currently used,
+|sklearnex| or original Scikit-learn.
 
 .. note:: Verbose mode is only available for :ref:`supported algorithms <sklearn_algorithms>`.
 
@@ -33,7 +33,7 @@ To enable verbose mode, set the ``SKLEARNEX_VERBOSE`` environment variable as sh
 
      set SKLEARNEX_VERBOSE=INFO
 
-Alternatively, get |intelex| logger and set its logging level in the Python code::
+Alternatively, get |sklearnex| logger and set its logging level in the Python code::
 
      import logging
      logger = logging.getLogger('sklearnex')

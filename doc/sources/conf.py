@@ -37,9 +37,9 @@ import sys
 
 # -- Project information -----------------------------------------------------
 
-project = "Intel(R) Extension for Scikit-learn*"
-copyright = "Intel"
-author = "Intel"
+project = "Extension for Scikit-learn*"
+copyright = "oneDAL project"
+author = "oneDAL project"
 
 # The short X.Y version
 # Note: it should not have more than  two parts (year.month), otherwise the
@@ -123,8 +123,8 @@ pygments_style = "sphinx"
 # substitutions
 
 rst_prolog = """
-.. |reg| unicode:: U+000AE
-.. |intelex| replace:: Intel\\ |reg|\\  Extension for Scikit-learn*
+.. |sklearnex| replace:: Extension for Scikit-learn*
+.. |onedal| replace:: oneAPI Data Analytics Library
 """
 
 # -- Options for HTML output -------------------------------------------------
@@ -204,7 +204,7 @@ latex_documents = [
     (
         master_doc,
         "scikit-learn-intelex.tex",
-        "Intel(R) Extension for Scikit-learn* Documentation",
+        "Extension for Scikit-learn* Documentation",
         "Intel",
         "manual",
     ),
@@ -219,7 +219,7 @@ man_pages = [
     (
         master_doc,
         "scikit-learn-intelex",
-        "Intel(R) Extension for Scikit-learn* Documentation",
+        "Extension for Scikit-learn* Documentation",
         [author],
         1,
     )
@@ -235,10 +235,10 @@ texinfo_documents = [
     (
         master_doc,
         "scikit-learn-intelex",
-        "Intel(R) Extension for Scikit-learn* Documentation",
+        "Extension for Scikit-learn* Documentation",
         author,
         "scikit-learn-intelex",
-        "Intel(R) Extension for Scikit-learn speeds up scikit-learn "
+        "Extension for Scikit-learn speeds up scikit-learn "
         "beyond by providing drop-in patching.",
         "Miscellaneous",
     ),
