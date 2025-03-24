@@ -300,8 +300,9 @@ void init_get_tree_state(py::module_& m) {
             // convert the value_ar to fractional values, rather than total ones
             // the last axis (2) is the n_classes, which must be summed for the
             // fraction
-            if (output.class_count > 1){
-                output.value_ar = output.value_ar / output.value_ar.attr("sum")("axis"_a=2, "keepdims"_a=true);
+            if (output.class_count > 1) {
+                output.value_ar = output.value_ar /
+                                  output.value_ar.attr("sum")("axis"_a = 2, "keepdims"_a = true);
             }
             return output;
         }))
