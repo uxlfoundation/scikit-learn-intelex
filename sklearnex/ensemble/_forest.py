@@ -476,9 +476,8 @@ class ForestClassifier(_sklearn_ForestClassifier, BaseForest):
 
     def _estimators_(self):
         super()._estimators_()
-        classes_ = self.classes_[0]
         for est in self._cached_estimators_:
-            est.classes_ = classes_
+            est.classes_ = self.classes_
 
     def fit(self, X, y, sample_weight=None):
         dispatch(
