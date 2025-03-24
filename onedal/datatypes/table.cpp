@@ -102,6 +102,7 @@ ONEDAL_PY_INIT_MODULE(table) {
         auto* obj_ptr = numpy::convert_to_pyobject(t);
         return obj_ptr;
     });
+    m.def("dlpack_memory_order", &dlpack::dlpack_memory_order);
 }
 
 } // namespace oneapi::dal::python

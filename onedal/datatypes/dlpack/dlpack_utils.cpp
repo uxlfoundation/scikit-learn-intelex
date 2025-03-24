@@ -125,4 +125,32 @@ py::object reduce_precision(const py::object& obj) {
     return copy;
 }
 
+DLTensor get_dlpack_tensor(const py::capsule& caps,
+                           DLManagedTensor*& dlm,
+                           DLManagedTensorVersioned*& dlmv,
+                           bool& versioned) {
+    // two different types of dlpack managed tensors are possible, with
+    // DLManagedTensor likely to be removed from future versions of dlpack.
+    // collect important aspects necessary for use in conversion.
+    DLTensor tensor;
+
+    PyObject* capsule = caps.ptr();
+    if (PyCapsule_IsValid(capsule, "dltensor")) {
+        dlm = caps.get_pointer<DLManagedTensor>();
+        tensor = dlm->dl_tensor;
+        versioned = false;
+    }
+    else if (PyCapsule_IsValid(capsule, "dltensor_versioned")) {
+        dlmv = caps.get_pointer<DLManagedTensorVersioned>();
+        if (dlmv->version.major > DLPACK_MAJOR_VERSION) {
+            throw std::runtime_error("dlpack tensor version newer than supported");
+        }
+        tensor = dlmv->dl_tensor;
+        versioned = true;
+    }
+    else {
+        throw std::runtime_error("unable to extract dltensor");
+    }
+    return tensor;
+}
 } // namespace oneapi::dal::python::dlpack
