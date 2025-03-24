@@ -15,8 +15,8 @@
 Kaggle Kernels for Regression Tasks
 ************************************
 
-The following Kaggle kernels show how to patch scikit-learn with |intelex| for various regression tasks.
-These kernels usually include a performance comparison between stock scikit-learn and scikit-learn patched with |intelex|.
+The following Kaggle kernels show how to patch scikit-learn with |sklearnex| for various regression tasks.
+These kernels usually include a performance comparison between stock scikit-learn and scikit-learn patched with |sklearnex|.
 
 .. include:: /kaggle/note-about-tps.rst
 
