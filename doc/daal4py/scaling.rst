@@ -62,13 +62,13 @@ That's all for the python code::
 To actually get it executed on several processes use standard MPI mechanics,
 like::
 
-  mpirun -n 4 python ./kmeans.py
+  mpirun -n 4 python kmeans.py
 
 .. important:: SPMD mode will only work with the same MPI library with which ``daal4py`` was compiled. PyPI and conda distributions of ``daal4py`` both are built with Intel's MPI as backend (package ``impi_rt``), and will thus not work under other MPI libraries such as OpenMPI. Using SPMD mode with OpenMPI requires building ``daal4py`` from source with that library as backend. The same requirement applies to ``mpi4py`` (must be built with the same backend as ``daal4py``) if using it for SMPD mode. Note that using an incompatible MPI library will not result in an explicit error, but will rather result in all processes running separately as the first rank without any communication, thereby producing incorrect results.
 
 Supported Algorithms and Examples
 ---------------------------------
-The following algorithms support distribution:
+The following algorithms support distributed mode:
 
 - PCA (pca)
 
