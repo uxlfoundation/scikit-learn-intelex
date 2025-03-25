@@ -21,7 +21,7 @@ Our documentation is written in restructured text markup and built with [Sphinx]
 
 ## Generate Documentation
 
-To build Intel(R) Extension for Scikit-Learn documentation locally:
+To build Extension for Scikit-Learn documentation locally:
 
 1. Clone the repository:
 

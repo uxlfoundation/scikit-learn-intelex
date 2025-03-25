@@ -456,7 +456,7 @@ def patch_sklearn(name=None, verbose=True, global_patch=False, preview=False):
         os.environ["SKLEARNEX_PREVIEW"] = "enabled_via_patch_sklearn"
     if not sklearn_check_version("0.24"):
         raise NotImplementedError(
-            "Intel(R) Extension for Scikit-learn* patches apply "
+            "Extension for Scikit-learn* patches apply "
             "for scikit-learn >= 0.24 only ..."
         )
 
@@ -482,7 +482,7 @@ def patch_sklearn(name=None, verbose=True, global_patch=False, preview=False):
 
     if verbose and sys.stderr is not None:
         sys.stderr.write(
-            "Intel(R) Extension for Scikit-learn* enabled "
+            "Extension for Scikit-learn* enabled "
             "(https://github.com/uxlfoundation/scikit-learn-intelex)\n"
         )
 

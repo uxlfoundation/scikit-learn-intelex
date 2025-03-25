@@ -15,9 +15,9 @@
 * limitations under the License.
 *******************************************************************************/-->
 
-# Intel(R) Extension for Scikit-learn Support
+# Extension for Scikit-learn Support
 
-We are committed to providing support and assistance to help you make the most out of Intel(R) Extension for Scikit-learn. 
+We are committed to providing support and assistance to help you make the most out of Extension for Scikit-learn. 
 Use the following methods if you face any challenges. 
 
 
@@ -34,7 +34,7 @@ Visit the [GitHub Discussions](https://github.com/uxlfoundation/scikit-learn-int
 
 ## Forum 
 
-Ask questions about Intel(R) Extension for Scikit-learn on our [Forum](https://community.intel.com/t5/Intel-Distribution-for-Python/bd-p/distribution-python).
+Ask questions about Extension for Scikit-learn on our [Forum](https://community.intel.com/t5/Intel-Distribution-for-Python/bd-p/distribution-python).
 Make sure to provide all relevant details, so we could help you as soon as possible. 
 
 ## Email

@@ -17,12 +17,12 @@
 
 # How to Contribute
 
-As an open source project, we welcome community contributions to Intel(R) Extension for Scikit-learn. 
+As an open source project, we welcome community contributions to Extension for Scikit-learn. 
 This document explains how to participate in project conversations, log bugs and enhancement requests, and submit code patches.
 
 ## Licensing 
 
-Intel(R) Extension for Scikit-learn uses the [Apache 2.0 License](https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/LICENSE). 
+Extension for Scikit-learn uses the [Apache 2.0 License](https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/LICENSE). 
 By contributing to the project, you agree to the license and copyright terms and release your own contributions under these terms. 
 
 ## Pull Requests 
