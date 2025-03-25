@@ -4,4 +4,4 @@ numpy==2.0.1 ; python_version <= '3.9'
 numpy==2.2.4 ; python_version > '3.9'
 pybind11==2.13.6
 cmake==3.31.6
-setuptools==78.0.2
+setuptools==78.1.0
