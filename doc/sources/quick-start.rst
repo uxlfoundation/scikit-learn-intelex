@@ -31,13 +31,8 @@ Integrate |sklearnex|
 Patching
 **********************
 
-<<<<<<< HEAD
-Once you install the |intelex|, you can replace estimator classes (algorithms) that exist in the ``sklearn`` module from |sklearn| with their optimized versions from the extension.
-This action is called `patching`. This is not a permanent change so you can always undo the patching if necessary.
-=======
 Once you install the |sklearnex|, you can replace estimator classes (algorithms) that exist in the ``sklearn`` module from |sklearn| with their optimized versions from the extension.
-This action is called `patching` or `monkey patching <https://en.wikipedia.org/wiki/Monkey_patch>`__. This is not a permanent change so you can always undo the patching if necessary.
->>>>>>> f89c9e2 (Update naming and dropping Intel specifics (#2355))
+This action is called `patching`. This is not a permanent change so you can always undo the patching if necessary.
 
 To patch |sklearn| with the |sklearnex|, the following methods can be used:
 
