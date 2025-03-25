@@ -106,11 +106,7 @@ call :code:`sklearnex.get_config()`.
   .. warning::
     The :code:`usm_ndarray` can only be consumed by the base methods
     like :code:`fit`, :code:`predict`, and :code:`transform`.
-<<<<<<< HEAD
-    Note that only the algorithms in |intelex| support
-=======
     Note that only the algorithms in |sklearnex| support
->>>>>>> f89c9e2 (Update naming and dropping Intel specifics (#2355))
     :code:`usm_ndarray`. The algorithms from the stock version of |sklearn|
     do not support this feature.
 
