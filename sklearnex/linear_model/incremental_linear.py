@@ -444,7 +444,8 @@ class IncrementalLinearRegression(
 
     @wrap_output_data
     def score(self, X, y, sample_weight=None):
-        """Return the coefficient of determination of the prediction.
+        """
+        Return the coefficient of determination of the prediction.
 
         The coefficient of determination :math:`R^2` is defined as
         :math:`(1 - \\frac{u}{v})`, where :math:`u` is the residual
