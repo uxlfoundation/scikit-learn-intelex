@@ -155,6 +155,16 @@ class ExtensionEstimator(BaseForHTMLDocLink):
         return f"https://uxlfoundation.github.io/scikit-learn-intelex/latest/non-scikit-algorithms.html#{module_path}.{class_name}"
 
 
+# A note about serialization for extension estimators that are incremental
+_inc_serialization_note = """Note
+    ----
+    Serializing instances of this class will trigger a forced finalization of calculations
+    when the inputs are in a sycl queue or when using GPUs. Since (internal method)
+    finalize_fit can't be dispatched without directly provided queue and the dispatching
+    policy can't be serialized, the computation is finalized during serialization call and
+    the policy is not saved in serialized data."""
+
+
 # This abstract class is meant to generate a clickable doc link for classses
 # in sklearnex that have counterparts in scikit-learn.
 class PatchableEstimator(BaseForHTMLDocLink):

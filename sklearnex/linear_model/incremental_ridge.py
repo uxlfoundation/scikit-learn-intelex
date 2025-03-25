@@ -32,7 +32,7 @@ if sklearn_check_version("1.2"):
 from onedal.linear_model import IncrementalRidge as onedal_IncrementalRidge
 
 from .._device_offload import dispatch, wrap_output_data
-from .._utils import ExtensionEstimator, PatchingConditionsChain
+from .._utils import ExtensionEstimator, PatchingConditionsChain, _inc_serialization_note
 
 if sklearn_check_version("1.6"):
     from sklearn.utils.validation import validate_data
@@ -46,7 +46,7 @@ else:
 class IncrementalRidge(
     ExtensionEstimator, MultiOutputMixin, RegressorMixin, BaseEstimator
 ):
-    """
+    __doc__ = f"""
     Incremental estimator for Ridge Regression.
     Allows to train Ridge Regression if data is splitted into batches.
 
@@ -99,12 +99,7 @@ class IncrementalRidge(
     batch_size_ : int
         Inferred batch size from ``batch_size``.
 
-    Note
-    ----
-    Serializing instances of this class will trigger a forced finalization of calculations.
-    Since finalize_fit can't be dispatched without directly provided queue
-    and the dispatching policy can't be serialized, the computation is finalized
-    during serialization call and the policy is not saved in serialized data.
+    {_inc_serialization_note}
     """
 
     _onedal_incremental_ridge = staticmethod(onedal_IncrementalRidge)

@@ -34,7 +34,12 @@ from sklearnex import config_context
 
 from .._config import get_config
 from .._device_offload import dispatch, wrap_output_data
-from .._utils import ExtensionEstimator, PatchingConditionsChain, register_hyperparameters
+from .._utils import (
+    ExtensionEstimator,
+    PatchingConditionsChain,
+    _inc_serialization_note,
+    register_hyperparameters,
+)
 from ..metrics import pairwise_distances
 from ..utils._array_api import get_namespace
 
@@ -49,7 +54,7 @@ else:
 
 @control_n_jobs(decorated_methods=["partial_fit", "fit", "_onedal_finalize_fit"])
 class IncrementalEmpiricalCovariance(ExtensionEstimator, BaseEstimator):
-    """
+    __doc__ = f"""
     Maximum likelihood covariance estimator that allows for the estimation when the data are split into
     batches. The user can use the ``partial_fit`` method to provide a single batch of data or use the ``fit`` method to provide
     the entire dataset.
@@ -93,12 +98,7 @@ class IncrementalEmpiricalCovariance(ExtensionEstimator, BaseEstimator):
     n_features_in_ : int
         Number of features seen during ``fit`` or ``partial_fit``.
 
-    Note
-    ----
-    Serializing instances of this class will trigger a forced finalization of calculations.
-    Since finalize_fit can't be dispatched without directly provided queue
-    and the dispatching policy can't be serialized, the computation is finalized
-    during serialization and the policy is not saved in serialized data.
+    {_inc_serialization_note}
 
     Examples
     --------

@@ -27,7 +27,7 @@ from onedal.basic_statistics import (
 
 from .._config import get_config
 from .._device_offload import dispatch
-from .._utils import ExtensionEstimator, PatchingConditionsChain
+from .._utils import ExtensionEstimator, PatchingConditionsChain, _inc_serialization_note
 
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import Interval, StrOptions
@@ -43,7 +43,7 @@ else:
 
 @control_n_jobs(decorated_methods=["partial_fit", "_onedal_finalize_fit"])
 class IncrementalBasicStatistics(ExtensionEstimator, BaseEstimator):
-    """
+    __doc__ = f"""
     Calculates basic statistics on the given data, allows for computation when the data are split into
     batches. The user can use ``partial_fit`` method to provide a single batch of data or use the ``fit`` method to provide
     the entire dataset.
@@ -104,12 +104,7 @@ class IncrementalBasicStatistics(ExtensionEstimator, BaseEstimator):
     ----
     Attribute exists only if corresponding result option has been provided.
 
-    Note
-    ----
-    Serializing instances of this class will trigger a forced finalization of calculations.
-    Since finalize_fit can't be dispatched without directly provided queue
-    and the dispatching policy can't be serialized, the computation is finalized
-    during serialization call and the policy is not saved in serialized data.
+    {_inc_serialization_note}
 
     Note
     ----
