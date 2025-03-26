@@ -33,7 +33,8 @@ from ..common._base import BaseEstimator
 from ..common._estimator_checks import _check_is_fitted, _is_classifier, _is_regressor
 from ..common._mixin import ClassifierMixin, RegressorMixin
 from ..datatypes import from_table, to_table
-from ..utils import (
+from ..utils._array_api import _get_sycl_namespace
+from ..utils.validation import (
     _check_array,
     _check_classification_targets,
     _check_n_features,
@@ -41,7 +42,6 @@ from ..utils import (
     _column_or_1d,
     _num_samples,
 )
-from ..utils._array_api import _get_sycl_namespace
 
 
 class NeighborsCommonBase(BaseEstimator, metaclass=ABCMeta):

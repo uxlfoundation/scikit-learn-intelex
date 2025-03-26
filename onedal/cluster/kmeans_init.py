@@ -22,7 +22,7 @@ from daal4py.sklearn._utils import daal_check_version, get_dtype
 
 from ..common._base import BaseEstimator as onedal_BaseEstimator
 from ..datatypes import from_table, to_table
-from ..utils import _check_array
+from ..utils.validation import _check_array
 
 if daal_check_version((2023, "P", 200)):
 

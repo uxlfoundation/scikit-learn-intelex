@@ -34,7 +34,7 @@ if daal_check_version((2024, "P", 1)):
     from daal4py.sklearn._utils import sklearn_check_version
     from daal4py.sklearn.linear_model.logistic_path import daal4py_fit, daal4py_predict
     from onedal.linear_model import LogisticRegression as onedal_LogisticRegression
-    from onedal.utils import _num_samples
+    from onedal.utils.validation import _num_samples
 
     from .._config import get_config
     from .._device_offload import dispatch, wrap_output_data

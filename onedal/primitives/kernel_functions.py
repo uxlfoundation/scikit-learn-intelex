@@ -20,7 +20,7 @@ from onedal import _backend
 
 from ..common._policy import _get_policy
 from ..datatypes import from_table, to_table
-from ..utils import _check_array
+from ..utils.validation import _check_array
 
 
 def _check_inputs(X, Y):

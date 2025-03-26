@@ -21,8 +21,7 @@ import numpy as np
 from .._config import _get_config
 from ..common._base import BaseEstimator
 from ..datatypes import from_table, to_table
-from ..utils import _is_csr
-from ..utils.validation import _check_array
+from ..utils.validation import _check_array, _is_csr
 
 
 class BaseBasicStatistics(BaseEstimator, metaclass=ABCMeta):

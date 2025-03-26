@@ -35,7 +35,7 @@ if daal_check_version((2024, "P", 600)):
         from sklearn.utils import check_scalar
 
     from onedal.linear_model import Ridge as onedal_Ridge
-    from onedal.utils import _num_features, _num_samples
+    from onedal.utils.validation import _num_features, _num_samples
 
     from .._device_offload import dispatch, wrap_output_data
     from .._utils import PatchableEstimator, PatchingConditionsChain

@@ -26,7 +26,9 @@ from ..common._base import BaseEstimator as onedal_BaseEstimator
 from ..common._estimator_checks import _check_is_fitted
 from ..common._mixin import ClassifierMixin
 from ..datatypes import from_table, to_table
-from ..utils import (
+from ..utils._array_api import _get_sycl_namespace
+from ..utils._dpep_helpers import get_unique_values_with_dpep
+from ..utils.validation import (
     _check_array,
     _check_n_features,
     _check_X_y,
@@ -34,8 +36,6 @@ from ..utils import (
     _num_features,
     _type_of_target,
 )
-from ..utils._array_api import _get_sycl_namespace
-from ..utils._dpep_helpers import get_unique_values_with_dpep
 
 
 class BaseLogisticRegression(onedal_BaseEstimator, metaclass=ABCMeta):

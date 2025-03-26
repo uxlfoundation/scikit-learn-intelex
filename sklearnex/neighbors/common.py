@@ -25,7 +25,7 @@ from sklearn.neighbors._kd_tree import KDTree
 from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._utils import sklearn_check_version
-from onedal.utils import _check_array, _num_features, _num_samples
+from onedal.utils.validation import _check_array, _num_features, _num_samples
 
 from .._utils import PatchableEstimator, PatchingConditionsChain
 from ..utils._array_api import get_namespace
