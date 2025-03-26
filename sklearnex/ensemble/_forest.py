@@ -391,14 +391,6 @@ class BaseForest(PatchableEstimator, ABC):
 
     if not sklearn_check_version("1.2"):
 
-        @deprecated(
-            "Attribute `n_features_` was deprecated in version 1.0 and will be "
-            "removed in 1.2. Use `n_features_in_` instead."
-        )
-        @property
-        def n_features_(self):
-            return self.n_features_in_
-
         @property
         def base_estimator(self):
             return self.estimator
