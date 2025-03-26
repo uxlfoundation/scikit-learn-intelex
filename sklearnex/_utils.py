@@ -174,6 +174,7 @@ the policy is not saved in serialized data."""
         inc_serialization_note = re.sub(
             r"^", " " * 4, inc_serialization_note, flags=re.MULTILINE
         )
+        inc_serialization_note = inc_serialization_note.strip()
     return class_docstrings.replace(
         r"%incremental_serialization_note%", inc_serialization_note
     )
