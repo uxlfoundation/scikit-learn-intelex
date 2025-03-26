@@ -21,7 +21,7 @@ from daal4py.sklearn._utils import daal_check_version
 
 
 class Backend:
-    """Encapsulates the backend module and provides a unified interface to it together with additional properties about dpc/spmd policies"""
+    """Encapsulates the oneDAL pybind11 modules and provides a unified interface to it together with additional properties about dpc/spmd policies"""
 
     def __init__(self, backend_module, is_dpc, is_spmd):
         self.backend = backend_module
