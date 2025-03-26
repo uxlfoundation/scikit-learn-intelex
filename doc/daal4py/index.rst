@@ -190,8 +190,9 @@ daal4py will work on the entire file content.
 Scikit-Learn API and patching
 -----------------------------
 .. tip::
-    We recommend using
-    the 'scikit-learn-intelex package patching <https://uxlfoundation.github.io/scikit-learn-intelex/latest/what-is-patching.html>' _ for the scikit-learn patching.
+    We recommend using the
+    `package patching mechanism <https://uxlfoundation.github.io/scikit-learn-intelex/latest/what-is-patching.html>`__
+    from the ``scikit-learn-intelex`` package to patch ``scikit-learn``.
 
 
 daal4py exposes some oneDAL solvers using a scikit-learn compatible API.
