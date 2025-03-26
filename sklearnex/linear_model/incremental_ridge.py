@@ -19,6 +19,7 @@ import warnings
 
 import numpy as np
 from sklearn.base import BaseEstimator, MultiOutputMixin, RegressorMixin
+from sklearn.linear_model import Ridge as _sklearn_Ridge
 from sklearn.metrics import r2_score
 from sklearn.utils import gen_batches
 from sklearn.utils.validation import check_is_fitted, check_X_y
@@ -268,7 +269,7 @@ class IncrementalRidge(
 
         Returns
         -------
-        self : object
+        self : IncrementalRidge
             Returns the instance itself.
         """
 
@@ -287,7 +288,7 @@ class IncrementalRidge(
 
     def fit(self, X, y):
         """
-        Fit the model with X and y, using minibatches of size batch_size.
+        Fit the model with X and y, using minibatches of size ``batch_size``.
 
         Parameters
         ----------
@@ -304,7 +305,7 @@ class IncrementalRidge(
 
         Returns
         -------
-        self : object
+        self : IncrementalRidge
             Returns the instance itself.
         """
 
@@ -322,19 +323,6 @@ class IncrementalRidge(
 
     @wrap_output_data
     def predict(self, X, y=None):
-        """
-        Predict using the linear model.
-
-        Parameters
-        ----------
-        X : {array-like, sparse matrix} of shape (n_samples, n_features)
-            Samples.
-
-        Returns
-        -------
-        array, shape (n_samples,) or (n_samples, n_targets)
-            Returns predicted values.
-        """
         check_is_fitted(
             self,
             msg=f"This {self.__class__.__name__} instance is not fitted yet. Call 'fit' with appropriate arguments before using this estimator.",
@@ -352,33 +340,6 @@ class IncrementalRidge(
 
     @wrap_output_data
     def score(self, X, y, sample_weight=None):
-        """
-        Return the coefficient of determination R^2 of the prediction.
-
-        The coefficient R^2 is defined as (1 - u/v), where u is the residual
-        sum of squares ((y_true - y_pred) ** 2).sum() and v is the total sum
-        of squares ((y_true - y_true.mean()) ** 2).sum().
-        The best possible score is 1.0 and it can be negative (because the
-        model can be arbitrarily worse). A constant model that always
-        predicts the expected value of y, disregarding the input features,
-        would get a R^2 score of 0.0.
-
-        Parameters
-        ----------
-        X : {array-like, sparse matrix} of shape (n_samples, n_features)
-            Test samples.
-
-        y : array-like of shape (n_samples,) or (n_samples, n_targets)
-            True values for X.
-
-        sample_weight : array-like of shape (n_samples,), default=None
-            Sample weights.
-
-        Returns
-        -------
-        score : float
-            R^2 of self.predict(X) wrt. y.
-        """
         check_is_fitted(
             self,
             msg=f"This {self.__class__.__name__} instance is not fitted yet. Call 'fit' with appropriate arguments before using this estimator.",
@@ -395,6 +356,9 @@ class IncrementalRidge(
             y,
             sample_weight=sample_weight,
         )
+
+    score.__doc__ = _sklearn_Ridge.score.__doc__
+    predict.__doc__ = _sklearn_Ridge.predict.__doc__
 
     @property
     def coef_(self):

@@ -289,7 +289,7 @@ class IncrementalEmpiricalCovariance(ExtensionEstimator, BaseEstimator):
 
         Returns
         -------
-        self : object
+        self : IncrementalEmpiricalCovariance
             Returns the instance itself.
         """
         return dispatch(
@@ -305,7 +305,7 @@ class IncrementalEmpiricalCovariance(ExtensionEstimator, BaseEstimator):
 
     def fit(self, X, y=None):
         """
-        Fit the model with X, using minibatches of size batch_size.
+        Fit the model with X, using minibatches of size ``batch_size``.
 
         Parameters
         ----------
@@ -318,7 +318,7 @@ class IncrementalEmpiricalCovariance(ExtensionEstimator, BaseEstimator):
 
         Returns
         -------
-        self : object
+        self : IncrementalEmpiricalCovariance
             Returns the instance itself.
         """
 

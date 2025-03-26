@@ -309,7 +309,7 @@ class IncrementalBasicStatistics(ExtensionEstimator, BaseEstimator):
 
         Returns
         -------
-        self : object
+        self : IncrementalBasicStatistics
             Returns the instance itself.
         """
         dispatch(
@@ -326,7 +326,7 @@ class IncrementalBasicStatistics(ExtensionEstimator, BaseEstimator):
         return self
 
     def fit(self, X, y=None, sample_weight=None):
-        """Calculate statistics of X using minibatches of size batch_size.
+        """Calculate statistics of X using minibatches of size ``batch_size``.
 
         Parameters
         ----------
@@ -342,7 +342,7 @@ class IncrementalBasicStatistics(ExtensionEstimator, BaseEstimator):
 
         Returns
         -------
-        self : object
+        self : IncrementalBasicStatistics
             Returns the instance itself.
         """
         dispatch(
