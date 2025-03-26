@@ -17,8 +17,9 @@
 import numpy as np
 
 from daal4py.sklearn._utils import daal_check_version
-from onedal._device_offload import SyclQueueManager, supports_queue
+from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
+from onedal.utils import _sycl_queue_manager as QM
 
 from .._config import _get_config
 from ..datatypes import from_table, to_table
@@ -147,7 +148,7 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
         """
         if self._need_to_finalize:
             params = self._get_onedal_params(self._dtype)
-            with SyclQueueManager.manage_global_queue(self._queue):
+            with QM.manage_global_queue(self._queue):
                 result = self.finalize_compute(params, self._partial_result)
 
             if daal_check_version((2024, "P", 1)) or (not self.bias):

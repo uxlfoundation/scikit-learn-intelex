@@ -17,8 +17,9 @@
 import numpy as np
 
 from onedal import _default_backend as backend
-from onedal._device_offload import SyclQueueManager, supports_queue
+from onedal._device_offload import supports_queue
 from onedal.common._backend import BackendFunction
+from onedal.utils import _sycl_queue_manager as QM
 
 from ..datatypes import from_table, to_table
 from ..utils.validation import _check_array
@@ -36,7 +37,7 @@ def _check_inputs(X, Y):
 def _compute_kernel(params, submodule, X, Y):
     # get policy for direct backend calls
 
-    queue = SyclQueueManager.get_global_queue()
+    queue = QM.get_global_queue()
     X, Y = to_table(X, Y, queue=queue)
     params["fptype"] = X.dtype
     compute_method = BackendFunction(

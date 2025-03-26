@@ -18,8 +18,9 @@ import numpy as np
 from sklearn.utils import check_random_state
 
 from daal4py.sklearn._utils import daal_check_version
-from onedal._device_offload import SyclQueueManager, supports_queue
+from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
+from onedal.utils import _sycl_queue_manager as QM
 from sklearnex._config import config_context, get_config
 
 from ..datatypes import from_table, to_table
@@ -50,7 +51,7 @@ if daal_check_version((2023, "P", 200)):
             if self.is_csr:
                 with (
                     config_context(**config),
-                    SyclQueueManager.manage_global_queue(None, None),
+                    QM.manage_global_queue(None, None),
                 ):
                     return func(self, *args, **kwargs)
             else:
@@ -111,9 +112,7 @@ if daal_check_version((2023, "P", 200)):
             return result.centroids
 
         def _compute(self, X):
-            _, X_table, dtype = self._get_params_and_input(
-                X, queue=SyclQueueManager().get_global_queue()
-            )
+            _, X_table, dtype = self._get_params_and_input(X, queue=QM.get_global_queue())
             centroids = self._compute_raw(X_table, dtype)
             return from_table(centroids)
 

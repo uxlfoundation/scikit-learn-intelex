@@ -20,8 +20,9 @@ from enum import Enum
 import numpy as np
 from scipy import sparse as sp
 
-from onedal._device_offload import SyclQueueManager, supports_queue
+from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
+from onedal.utils import _sycl_queue_manager as QM
 
 from ..common._estimator_checks import _check_is_fitted
 from ..common._mixin import ClassifierMixin, RegressorMixin
@@ -178,7 +179,7 @@ class BaseSVM(metaclass=ABCMeta):
                 _gamma = self.gamma
             self._scale_, self._sigma_ = _gamma, np.sqrt(0.5 / _gamma)
 
-        data = to_table(*data, queue=SyclQueueManager.get_global_queue())
+        data = to_table(*data, queue=QM.get_global_queue())
         params = self._get_onedal_params(data[0])
         result = self.train(params, *data)
 
@@ -256,7 +257,7 @@ class BaseSVM(metaclass=ABCMeta):
                     % type(self).__name__
                 )
 
-            X = to_table(X, queue=SyclQueueManager.get_global_queue())
+            X = to_table(X, queue=QM.get_global_queue())
             params = self._get_onedal_params(X)
 
             if hasattr(self, "_onedal_model"):
@@ -312,7 +313,7 @@ class BaseSVM(metaclass=ABCMeta):
                     f"of {self.__class__.__name__} was altered"
                 )
 
-        X = to_table(X, queue=SyclQueueManager.get_global_queue())
+        X = to_table(X, queue=QM.get_global_queue())
         params = self._get_onedal_params(X)
 
         if hasattr(self, "_onedal_model"):

@@ -16,7 +16,8 @@
 
 from functools import wraps
 
-from onedal._device_offload import SyclQueueManager, _copy_to_usm, _transfer_to_host
+from onedal._device_offload import _copy_to_usm, _transfer_to_host
+from onedal.utils import _sycl_queue_manager as QM
 from onedal.utils._array_api import _asarray
 from onedal.utils._dpep_helpers import dpnp_available
 
@@ -28,7 +29,7 @@ from ._config import get_config
 
 
 def _get_backend(obj, queue, method_name, *data):
-    with SyclQueueManager.manage_global_queue(queue, *data) as queue:
+    with QM.manage_global_queue(queue, *data) as queue:
         cpu_device = queue is None or getattr(queue.sycl_device, "is_cpu", True)
         gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
 
@@ -46,7 +47,7 @@ def _get_backend(obj, queue, method_name, *data):
             if patching_status.get_status():
                 return "onedal", patching_status
             else:
-                SyclQueueManager.remove_global_queue()
+                QM.remove_global_queue()
                 if allow_fallback_to_host:
                     patching_status = obj._onedal_cpu_supported(method_name, *data)
                     if patching_status.get_status():
@@ -61,7 +62,7 @@ def _get_backend(obj, queue, method_name, *data):
 
 def dispatch(obj, method_name, branches, *args, **kwargs):
     if get_config()["use_raw_input"] is False:
-        with SyclQueueManager.manage_global_queue(None, *args) as queue:
+        with QM.manage_global_queue(None, *args) as queue:
             has_usm_data_for_args, hostargs = _transfer_to_host(*args)
             has_usm_data_for_kwargs, hostvalues = _transfer_to_host(*kwargs.values())
             hostkwargs = dict(zip(kwargs.keys(), hostvalues))

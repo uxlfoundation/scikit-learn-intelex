@@ -20,8 +20,9 @@ from numbers import Number
 import numpy as np
 
 from daal4py.sklearn._utils import daal_check_version, get_dtype, make2d
-from onedal._device_offload import SyclQueueManager, supports_queue
+from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
+from onedal.utils import _sycl_queue_manager as QM
 
 from .._config import _get_config
 from ..common._estimator_checks import _check_is_fitted
@@ -104,7 +105,7 @@ class BaseLinearRegression(metaclass=ABCMeta):
             packed_coefficients[:, 0][:, np.newaxis] = intercept
 
         model.packed_coefficients = to_table(
-            packed_coefficients, queue=SyclQueueManager.get_global_queue()
+            packed_coefficients, queue=QM.get_global_queue()
         )
 
         self._onedal_model = model

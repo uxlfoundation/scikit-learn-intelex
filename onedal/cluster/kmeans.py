@@ -21,9 +21,10 @@ from abc import ABC
 import numpy as np
 
 from daal4py.sklearn._utils import daal_check_version
-from onedal._device_offload import SyclQueueManager, supports_queue
+from onedal._device_offload import supports_queue
 from onedal.basic_statistics import BasicStatistics
 from onedal.common._backend import bind_default_backend
+from onedal.utils import _sycl_queue_manager as QM
 
 if daal_check_version((2023, "P", 200)):
     from .kmeans_init import KMeansInit
@@ -189,7 +190,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
                 is_csr=is_csr,
             )
             # We pass down the queue that was set through the KMeans.fit()
-            queue = SyclQueueManager.get_global_queue()
+            queue = QM.get_global_queue()
             centers_table = alg.compute_raw(X_table, dtype, queue=queue)
         elif isinstance(init, str) and init == "random":
             algorithm = "random_dense" if not is_csr else "random_csr"
@@ -200,7 +201,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
                 is_csr=is_csr,
             )
             # We pass down the queue that was set through the KMeans.fit()
-            queue = SyclQueueManager.get_global_queue()
+            queue = QM.get_global_queue()
             centers_table = alg.compute_raw(X_table, dtype, queue=queue)
         elif _is_arraylike_not_scalar(init):
             if _is_csr(init):
@@ -212,7 +213,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
             assert centers.shape[1] == X_table.column_count
             # KMeans is implemented on both CPU and GPU for Dense and CSR data
             # The original policy can be used here
-            centers_table = to_table(centers, queue=SyclQueueManager.get_global_queue())
+            centers_table = to_table(centers, queue=QM.get_global_queue())
         else:
             raise TypeError("Unsupported type of the `init` value")
 
@@ -246,9 +247,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
                 f"callable, got '{ init }' instead."
             )
 
-        return to_table(
-            centers, queue=getattr(SyclQueueManager.get_global_queue(), "_queue", None)
-        )
+        return to_table(centers, queue=getattr(QM.get_global_queue(), "_queue", None))
 
     def _fit_backend(self, X_table, centroids_table, dtype=np.float32, is_csr=False):
         params = self._get_onedal_params(is_csr, dtype)
@@ -274,7 +273,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
                 accept_sparse="csr",
                 force_all_finite=False,
             )
-        X_table = to_table(X, queue=SyclQueueManager.get_global_queue())
+        X_table = to_table(X, queue=QM.get_global_queue())
         dtype = X_table.dtype
 
         self._check_params_vs_input(X_table, is_csr, dtype=dtype)
@@ -382,7 +381,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
     def _predict(self, X, result_options=None):
         is_csr = _is_csr(X)
 
-        X_table = to_table(X, queue=SyclQueueManager.get_global_queue())
+        X_table = to_table(X, queue=QM.get_global_queue())
         params = self._get_onedal_params(is_csr, X_table.dtype, result_options)
 
         result = self.infer(params, self.model_, X_table)

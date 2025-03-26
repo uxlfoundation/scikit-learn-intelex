@@ -16,8 +16,9 @@
 
 import numpy as np
 
-from onedal._device_offload import SyclQueueManager, supports_queue
+from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
+from onedal.utils import _sycl_queue_manager as QM
 
 from .._config import _get_config
 from ..common.hyperparameters import get_hyperparameters
@@ -152,7 +153,7 @@ class IncrementalLinearRegression(BaseLinearRegression):
 
         if self._need_to_finalize:
             hparams = get_hyperparameters("linear_regression", "train")
-            with SyclQueueManager.manage_global_queue(self._queue):
+            with QM.manage_global_queue(self._queue):
                 if hparams is not None and not hparams.is_default:
                     result = self.finalize_train(
                         self._params, hparams.backend, self._partial_result
@@ -294,7 +295,7 @@ class IncrementalRidge(BaseLinearRegression):
             Returns the instance itself.
         """
         if self._need_to_finalize:
-            with SyclQueueManager.manage_global_queue(self._queue):
+            with QM.manage_global_queue(self._queue):
                 result = self.finalize_train(self._params, self._partial_result)
 
                 self._onedal_model = result.model

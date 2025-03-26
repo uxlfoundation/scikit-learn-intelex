@@ -16,8 +16,9 @@
 
 import numpy as np
 
-from onedal._device_offload import SyclQueueManager, supports_queue
+from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
+from onedal.utils import _sycl_queue_manager as QM
 
 from .._config import _get_config
 from ..datatypes import from_table, to_table
@@ -204,7 +205,7 @@ class IncrementalPCA(BasePCA):
             Returns the instance itself.
         """
         if self._need_to_finalize:
-            with SyclQueueManager.manage_global_queue(self._queue):
+            with QM.manage_global_queue(self._queue):
                 result = self.finalize_train(self._params, self._partial_result)
             self.mean_ = from_table(result.means).ravel()
             self.var_ = from_table(result.variances).ravel()

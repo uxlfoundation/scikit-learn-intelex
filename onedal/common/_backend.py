@@ -18,7 +18,7 @@ import logging
 from typing import Any, Callable, Literal, Optional
 
 from onedal import Backend, _default_backend, _spmd_backend
-from onedal._device_offload import SyclQueueManager
+from onedal.utils import _sycl_queue_manager as QM
 
 logger = logging.getLogger(__name__)
 
@@ -97,7 +97,7 @@ class BackendFunction:
             return self.method(*args, **kwargs)
 
         # use globally configured queue (from `target_offload` configuration or provided data)
-        queue = SyclQueueManager.get_global_queue()
+        queue = QM.get_global_queue()
 
         if queue is not None and not (self.backend.is_dpc or self.backend.is_spmd):
             raise RuntimeError("Operations using queues require the DPC/SPMD backend")

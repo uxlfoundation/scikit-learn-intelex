@@ -21,8 +21,9 @@ from numbers import Number
 import numpy as np
 
 from daal4py.sklearn._utils import daal_check_version, get_dtype, make2d
-from onedal._device_offload import SyclQueueManager, supports_queue
+from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
+from onedal.utils import _sycl_queue_manager as QM
 
 from .._config import _get_config
 from ..common._estimator_checks import _check_is_fitted
@@ -103,7 +104,7 @@ class BaseLogisticRegression(metaclass=ABCMeta):
         is_csr = _is_csr(X)
 
         self.n_features_in_ = _num_features(X, fallback_1d=True)
-        X_table, y_table = to_table(X, y, queue=SyclQueueManager.get_global_queue())
+        X_table, y_table = to_table(X, y, queue=QM.get_global_queue())
         params = self._get_onedal_params(is_csr, X_table.dtype)
 
         result = self.train(params, X_table, y_table)
@@ -163,9 +164,7 @@ class BaseLogisticRegression(metaclass=ABCMeta):
         if self.fit_intercept:
             packed_coefficients[:, 0][:, np.newaxis] = intercept
 
-        m.packed_coefficients = to_table(
-            packed_coefficients, queue=SyclQueueManager.get_global_queue()
-        )
+        m.packed_coefficients = to_table(packed_coefficients, queue=QM.get_global_queue())
 
         self._onedal_model = m
 
@@ -195,7 +194,7 @@ class BaseLogisticRegression(metaclass=ABCMeta):
         else:
             model = self._create_model()
 
-        X_table = to_table(X, queue=SyclQueueManager.get_global_queue())
+        X_table = to_table(X, queue=QM.get_global_queue())
         params = self._get_onedal_params(is_csr, X.dtype)
 
         result = self.infer(params, model, X_table)
@@ -207,7 +206,7 @@ class BaseLogisticRegression(metaclass=ABCMeta):
         y = from_table(
             result.responses,
             sua_iface=sua_iface,
-            sycl_queue=SyclQueueManager.get_global_queue(),
+            sycl_queue=QM.get_global_queue(),
             xp=xp,
         )
         y = xp.take(xp.asarray(self.classes_), xp.reshape(y, (-1,)), axis=0)
@@ -216,7 +215,7 @@ class BaseLogisticRegression(metaclass=ABCMeta):
     def _predict_proba(self, X):
         result = result = self._infer(X)
         sua_iface, xp, _ = _get_sycl_namespace(X)
-        queue = SyclQueueManager.get_global_queue()
+        queue = QM.get_global_queue()
         y = from_table(result.probabilities, sua_iface=sua_iface, sycl_queue=queue, xp=xp)
         return xp.stack([1 - y, y], axis=1)
 

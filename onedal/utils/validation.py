@@ -21,8 +21,8 @@ from numbers import Integral
 import numpy as np
 from scipy import sparse as sp
 
-from onedal._device_offload import SyclQueueManager
 from onedal.common._backend import BackendFunction
+from onedal.utils import _sycl_queue_manager as QM
 
 if np.lib.NumpyVersion(np.__version__) >= np.lib.NumpyVersion("2.0.0a0"):
     # numpy_version >= 2.0
@@ -448,7 +448,7 @@ def _assert_all_finite(X, allow_nan=False, input_name=""):
         "method": "dense",
         "allow_nan": allow_nan,
     }
-    with SyclQueueManager.manage_global_queue(None, X):
+    with QM.manage_global_queue(None, X):
         # Must use the queue provided by X
         if not backend_method(params, X_t).finite:
             type_err = "infinity" if allow_nan else "NaN, infinity"

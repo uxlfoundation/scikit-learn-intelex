@@ -24,8 +24,9 @@ from sklearn.ensemble import BaseEnsemble
 from sklearn.utils import check_random_state
 
 from daal4py.sklearn._utils import daal_check_version
-from onedal._device_offload import SyclQueueManager, supports_queue
+from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
+from onedal.utils import _sycl_queue_manager as QM
 from sklearnex import get_hyperparameters
 
 from .._config import _get_config
@@ -324,7 +325,7 @@ class BaseForest(BaseEnsemble, metaclass=ABCMeta):
             data = (X, y, sample_weight)
         else:
             data = (X, y)
-        data = to_table(*data, queue=SyclQueueManager.get_global_queue())
+        data = to_table(*data, queue=QM.get_global_queue())
         params = self._get_onedal_params(data[0])
         train_result = self.train(params, *data)
 
@@ -383,7 +384,7 @@ class BaseForest(BaseEnsemble, metaclass=ABCMeta):
             _check_n_features(self, X, False)
 
         model = self._onedal_model
-        queue = SyclQueueManager.get_global_queue()
+        queue = QM.get_global_queue()
         X = to_table(X, queue=queue)
         params = self._get_onedal_params(X)
         if hparams is not None and not hparams.is_default:
@@ -403,7 +404,7 @@ class BaseForest(BaseEnsemble, metaclass=ABCMeta):
         if use_raw_input and sua_iface is not None:
             queue = X.sycl_queue
         else:
-            queue = SyclQueueManager.get_global_queue()
+            queue = QM.get_global_queue()
 
         if not use_raw_input:
             X = _check_array(
