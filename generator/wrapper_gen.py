@@ -171,6 +171,9 @@ def daalinit(nthreads: int = -1) -> None:
     This modifies the number of threads configured for daal4py, which is a
     global setting.
 
+    By default, if not otherwise configured, it will use the full number of threads
+    available in the system.
+
     :param int nthreads: [default: -1] Number of threads to use for further computations in daal4py. If this number is less or equal than zero, then settings will not be changed.
 
     :rtype: None
