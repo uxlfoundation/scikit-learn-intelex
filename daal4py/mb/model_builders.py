@@ -406,7 +406,10 @@ def convert_model(model) -> GBTDAALModel:
       It can work with either the base booster classes of those libraries or with their
       scikit-learn-compatible classes.
     - Do not use categorical features.
-    - Are for regression or classification (e.g. no ranking).
+    - Are for regression or classification (e.g. no ranking). In the case of regression, it will
+      **only** work with models that do not have a link function (e.g. squared loss works, but not
+      Poisson). Note that it will not raise an explicit error when trying to convert an unsupported
+      regression model, but the computed predictions will not be correct.
     - Are not multi-output models. Note that multi-class classification **is** supported.
 
     :param model: A model object from ``xgboost``, ``lightgbm``, or ``catboost``.
