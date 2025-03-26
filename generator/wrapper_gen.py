@@ -164,22 +164,89 @@ cdef extern from "daal4py_cpp.h":
     cdef void c_enable_thread_pinning(bool enabled) except +
 
 
-def daalinit(nthreads = -1):
+def daalinit(nthreads: int = -1) -> None:
+    '''
+    Set number of threads for daal4py
+
+    This modifies the number of threads configured for daal4py, which is a
+    global setting.
+
+    :param int nthreads: [default: -1] Number of threads to use for further computations in daal4py. If this number is less or equal than zero, then settings will not be changed.
+
+    :rtype: None
+    '''
     c_daalinit(nthreads)
 
-def daalfini():
+def daalfini() -> None:
+    '''
+    Finalize MPI environment
+
+    When using distributed mode without ``mpi4py``, this function must be called after
+    the distributed computation calls. It has no effect when the python process is not
+    run through MPI (used for distributed mode), and has no effect if the MPI environment
+    has already been finalized by calling this function before.
+
+    This is a wrapper over ``MPI_Finalize``. It does not need to be called if ``mpi4py``
+    was imported before, as ``mpi4py`` calls this function upon process exit.
+
+    :rtype: None
+    '''
     c_daalfini()
 
-def num_threads():
+def num_threads() -> int:
+    '''
+    Gets number of threads configured for daal4py.
+
+    .. note:: The number of threads for daal4py is a global setting, which can be changed through :obj:`daalinit`.
+
+    :rtype: int
+    '''
     return c_num_threads()
 
-def num_procs():
+def num_procs() -> int:
+    '''
+    Get number of MPI processes (in distributed mode)
+
+    If the python process is not run though MPI, this function will always return 1.
+
+    This is a wrapper over ``MPI_Comm_size``. Equivalent to :obj:`mpi4py.MPI.Comm.Get_size`,
+    but does not require ``mpi4py`` to be installed.
+
+    :rtype: int
+    '''
     return c_num_procs()
 
-def my_procid():
+def my_procid() -> int:
+    '''
+    Get MPI process rank
+
+    If the python process is not being run through MPI (used for distributed mode), this
+    will always return zero.
+
+    This is a wrapper over ``MPI_Comm_rank``. Equivalent to :obj:`mpi4py.MPI.Comm.Get_rank`,
+    but does not require ``mpi4py`` to be installed.
+
+    :rtype: int
+    '''
     return c_my_procid()
 
-def enable_thread_pinning(enabled=True):
+def enable_thread_pinning(enabled: bool = True) -> None:
+    '''
+    Enable or disable thread pinning
+
+    This function enables or disables binding of the threads that are used to parallelize
+    algorithms of the library to physical processing units for
+    possible performance improvement. Improper use of the method can
+    result in degradation of the application performance depending on
+    the system (machine) topology, application, and operating system.
+    By default, pinning is disabled.
+
+    .. note:: This is a global setting for daal4py.
+
+    :param bool enabled: [default: True] Whether to enable thread pinning or not.
+
+    :rtype: None
+    '''
     c_enable_thread_pinning(enabled)
 
 def get_data(x):
