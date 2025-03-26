@@ -37,7 +37,7 @@ from .._device_offload import dispatch, wrap_output_data
 from .._utils import (
     ExtensionEstimator,
     PatchingConditionsChain,
-    _inc_serialization_note,
+    _add_inc_serialization_note,
     register_hyperparameters,
 )
 from ..metrics import pairwise_distances
@@ -54,7 +54,7 @@ else:
 
 @control_n_jobs(decorated_methods=["partial_fit", "fit", "_onedal_finalize_fit"])
 class IncrementalEmpiricalCovariance(ExtensionEstimator, BaseEstimator):
-    __doc__ = f"""
+    """
     Maximum likelihood covariance estimator that allows for the estimation when the data are split into
     batches. The user can use the ``partial_fit`` method to provide a single batch of data or use the ``fit`` method to provide
     the entire dataset.
@@ -98,7 +98,7 @@ class IncrementalEmpiricalCovariance(ExtensionEstimator, BaseEstimator):
     n_features_in_ : int
         Number of features seen during ``fit`` or ``partial_fit``.
 
-    {_inc_serialization_note}
+    %incremental_serialization_note%
 
     Examples
     --------
@@ -118,6 +118,8 @@ class IncrementalEmpiricalCovariance(ExtensionEstimator, BaseEstimator):
     >>> inccov.location_
     np.array([2., 3.])
     """
+
+    __doc__ = _add_inc_serialization_note(__doc__)
 
     _onedal_incremental_covariance = staticmethod(onedal_IncrementalEmpiricalCovariance)
 

@@ -24,7 +24,11 @@ from onedal.decomposition import IncrementalPCA as onedal_IncrementalPCA
 
 from ..._config import get_config
 from ..._device_offload import dispatch, wrap_output_data
-from ..._utils import ExtensionEstimator, PatchingConditionsChain
+from ..._utils import (
+    ExtensionEstimator,
+    PatchingConditionsChain,
+    _add_inc_serialization_note,
+)
 
 if sklearn_check_version("1.6"):
     from sklearn.utils.validation import validate_data
@@ -237,17 +241,8 @@ class IncrementalPCA(ExtensionEstimator, _sklearn_IncrementalPCA):
             X,
         )
 
-    __doc__ = (
-        _sklearn_IncrementalPCA.__doc__
-        + """
-
-    Note
-    ----
-    Serializing instances of this class will trigger a forced finalization of calculations.
-    Since finalize_fit can't be dispatched without directly provided queue
-    and the dispatching policy can't be serialized, the computation is finalized
-    during serialization call and the policy is not saved in serialized data.
-    """
+    __doc__ = _add_inc_serialization_note(
+        _sklearn_IncrementalPCA.__doc__ + "\n" + r"%incremental_serialization_note%"
     )
     fit.__doc__ = _sklearn_IncrementalPCA.fit.__doc__
     fit_transform.__doc__ = _sklearn_IncrementalPCA.fit_transform.__doc__

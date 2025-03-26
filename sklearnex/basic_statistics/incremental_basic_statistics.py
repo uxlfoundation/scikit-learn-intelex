@@ -27,7 +27,11 @@ from onedal.basic_statistics import (
 
 from .._config import get_config
 from .._device_offload import dispatch
-from .._utils import ExtensionEstimator, PatchingConditionsChain, _inc_serialization_note
+from .._utils import (
+    ExtensionEstimator,
+    PatchingConditionsChain,
+    _add_inc_serialization_note,
+)
 
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import Interval, StrOptions
@@ -43,7 +47,7 @@ else:
 
 @control_n_jobs(decorated_methods=["partial_fit", "_onedal_finalize_fit"])
 class IncrementalBasicStatistics(ExtensionEstimator, BaseEstimator):
-    __doc__ = f"""
+    """
     Calculates basic statistics on the given data, allows for computation when the data are split into
     batches. The user can use ``partial_fit`` method to provide a single batch of data or use the ``fit`` method to provide
     the entire dataset.
@@ -104,12 +108,12 @@ class IncrementalBasicStatistics(ExtensionEstimator, BaseEstimator):
     ----
     Attribute exists only if corresponding result option has been provided.
 
-    {_inc_serialization_note}
-
     Note
     ----
     Names of attributes without the trailing underscore are
     supported currently but deprecated in 2025.1 and will be removed in 2026.0
+
+    %incremental_serialization_note%
 
     Examples
     --------
@@ -129,6 +133,8 @@ class IncrementalBasicStatistics(ExtensionEstimator, BaseEstimator):
     >>> incbs.max_
     np.array([3., 4.])
     """
+
+    __doc__ = _add_inc_serialization_note(__doc__)
 
     _onedal_incremental_basic_statistics = staticmethod(onedal_IncrementalBasicStatistics)
 

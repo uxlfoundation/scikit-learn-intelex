@@ -214,7 +214,11 @@ def control_n_jobs(decorated_methods: list = []):
             and "n_jobs : int" not in original_class.__doc__
         ):
             # Python 3.13 removed extra tab in class doc string
-            tab = "    " if sys.version_info.minor < 13 else ""
+            tab = (
+                "    "
+                if (sys.version_info.major == 3 and sys.version_info.minor < 13)
+                else ""
+            )
             parameters_doc_tail = f"\n{tab}Attributes"
             n_jobs_doc = f"""
 {tab}n_jobs : int, default=None

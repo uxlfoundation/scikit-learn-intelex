@@ -44,7 +44,7 @@ from .._device_offload import dispatch, wrap_output_data
 from .._utils import (
     ExtensionEstimator,
     PatchingConditionsChain,
-    _inc_serialization_note,
+    _add_inc_serialization_note,
     register_hyperparameters,
 )
 
@@ -61,7 +61,7 @@ from .._utils import (
 class IncrementalLinearRegression(
     ExtensionEstimator, MultiOutputMixin, RegressorMixin, BaseEstimator
 ):
-    __doc__ = f"""
+    """
     Trains a linear regression model, allows for computation if the data are split into
     batches. The user can use the ``partial_fit`` method to provide a single batch of data or use the ``fit`` method to provide
     the entire dataset.
@@ -109,7 +109,7 @@ class IncrementalLinearRegression(
     n_features_in_ : int
         Number of features seen during ``fit`` or ``partial_fit``.
 
-    {_inc_serialization_note}
+    %incremental_serialization_note%
 
     Examples
     --------
@@ -130,6 +130,8 @@ class IncrementalLinearRegression(
     >>> inclr.intercept_
     np.array(0.)
     """
+
+    __doc__ = _add_inc_serialization_note(__doc__)
 
     _onedal_incremental_linear = staticmethod(onedal_IncrementalLinearRegression)
 
