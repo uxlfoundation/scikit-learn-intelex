@@ -61,7 +61,7 @@ class LinearRegression(PatchableEstimator, _sklearn_LinearRegression):
                 self,
                 fit_intercept=True,
                 copy_X=True,
-                tol=1e-06,
+                tol=1e-06,  # for sparse solver only, not used by oneDAL
                 n_jobs=None,
                 positive=False,
             ):

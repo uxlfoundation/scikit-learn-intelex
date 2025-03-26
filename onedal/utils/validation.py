@@ -131,6 +131,10 @@ def _validate_targets(y, class_weight, dtype):
 
 
 def get_finite_keyword():
+    """Gets the argument name for scikit-learn's validation functions compatible with
+    the current version of scikit-learn and using function inspection instead of
+    `sklearn_check_version` due to `onedal` design rule: sklearn versioning should occur
+    in `sklearnex` module."""
     if "ensure_all_finite" in inspect.signature(check_array).parameters:
         return "ensure_all_finite"
     return "force_all_finite"
