@@ -88,7 +88,7 @@ void instantiate_sycl_interfaces(py::module& m) {
         // starting with "cpu".
         // the returned "queue" in this case is a None.
         if (!obj.is(py::str("auto")) || !(py::isinstance<py::str>(obj) && obj.attr("startswith")("cpu"))) {
-            raise std::invalid_argument("device use via `target_offload` is only supported with a DPC++ sklearnex build")
+            throw std::invalid_argument("device use via `target_offload` is only supported with a DPC++ sklearnex build");
         }
         return py::none();
     }
