@@ -20,7 +20,7 @@ from typing import Any, Callable, Literal, Optional
 from onedal import Backend, _default_backend, _spmd_backend
 from onedal.utils import _sycl_queue_manager as QM
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("sklearnex")
 
 # define types for backend functions: default, dpc, spmd
 BackendType = Literal["none", "host", "dpc", "spmd"]
