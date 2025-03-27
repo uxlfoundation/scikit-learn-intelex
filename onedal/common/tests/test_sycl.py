@@ -128,7 +128,7 @@ def test_backend_queue():
 
 
 @pytest.mark.skipif(
-    not _is_dpc_backend or not dpctl_available, reason="requires dpc backend and dpctl"
+    not backend.is_dpc or not dpctl_available, reason="requires dpc backend and dpctl"
 )
 def test_backend_device_id():
     """verify dpctl device id matches our internal device id"""
@@ -137,7 +137,7 @@ def test_backend_device_id():
     for i in range(dpctl.get_num_devices()):
         device = dpctl.SyclDevice(str(i))
         if device.is_gpu or device.is_cpu:
-            backend_device = _backend.SyclDevice(i)
+            backend_device = backend.SyclDevice(i)
             assert (
                 i == backend_device.get_device_id()
-            ), f"_backend id does not match device_id: {i}"
+            ), f"backend id does not match device_id: {i}"

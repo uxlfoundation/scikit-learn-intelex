@@ -14,7 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 
-import queue
 from abc import ABCMeta, abstractmethod
 from numbers import Number
 
