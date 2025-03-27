@@ -14,9 +14,9 @@
   ~ limitations under the License.
 -->
 
-# :snake: Intel(R) Extension for Scikit-learn* notebooks
+# :snake: Extension for Scikit-learn* notebooks
 
-This folder contains examples of python notebooks that use Intel(R) extension for Scikit-learn for popular datasets.
+This folder contains examples of python notebooks that use Extension for Scikit-learn for popular datasets.
 
 #### :rocket: Jupyter startup guide
 You can use python notebooks with the help of Jupyter* notebook to run the following files:

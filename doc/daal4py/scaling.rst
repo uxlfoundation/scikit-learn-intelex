@@ -23,10 +23,7 @@ Scaling on Distributed Memory (Multiprocessing)
 It's Easy
 ---------
 daal4py operates in SPMD style (Single Program Multiple Data), which means your
-program is executed on several processes (e.g. similar to MPI).  The use of MPI is
-not required for daal4py's SPMD-mode to work, all necessary communication and
-synchronization happens under the hood of daal4py. It is possible to use daal4py and
-mpi4py in the same program, though.
+program is executed on several processes, using MPI, optionally aided by ``mpi4py``.
 
 Only very minimal changes are needed to your daal4py code to allow daal4py to
 run on a cluster of workstations. Initialize the distribution engine::
@@ -41,10 +38,12 @@ When calling the actual computation each process expects an input file or input
 array/DataFrame. Your program needs to tell each process which
 file/array/DataFrame it should operate on. Like with other SPMD programs this is
 usually done conditionally on the process id/rank ('daal4py.my_procid()'). Assume
-we have one file for each process, all having the same prefix 'file' and being
+we have one file for each process, named as 'file0.csv', 'file1.csv', ...; all having the same prefix 'file' and being
 suffixed by a number. The code could then look like this::
 
-  result = kmi.compute("file{}.csv", daal4py.my_procid())
+  result = kmi.compute(f"file{daal4py.my_procid()}.csv", daal4py.my_procid())
+
+(can also use the MPI rank as obtained through ``mpi4py`` instead of ``daal4py.my_procid()``)
 
 The result of the computation will now be available on all processes.
 
@@ -54,23 +53,22 @@ Finally stop the distribution engine::
 
 That's all for the python code::
 
-  from daal4py import daalinit, daalfini, kmeans_init
+  from daal4py import daalinit, daalfini, kmeans_init, my_procid
   daalinit()
   kmi = kmeans_init(10, method="plusPlusDense", distributed=True)
-  result = kmi.compute("file{}.csv", daal4py.my_procid())
+  result = kmi.compute(f"file{my_procid()}.csv", my_procid())
   daalfini()
 
 To actually get it executed on several processes use standard MPI mechanics,
 like::
 
-  mpirun -n 4 python ./kmeans.py
+  mpirun -n 4 python kmeans.py
 
-The binaries provided by Intel use the Intel® MPI library, but
-daal4py can also be compiled for any other MPI implementation.
+.. important:: SPMD mode will only work with the same MPI library with which ``daal4py`` was compiled. PyPI and conda distributions of ``daal4py`` both are built with Intel's MPI as backend (package ``impi_rt``), and will thus not work under other MPI libraries such as OpenMPI. Using SPMD mode with OpenMPI requires building ``daal4py`` from source with that library as backend. The same requirement applies to ``mpi4py`` (must be built with the same backend as ``daal4py``) if using it for SMPD mode. Note that using an incompatible MPI library will not result in an explicit error, but will rather result in all processes running separately as the first rank without any communication, thereby producing incorrect results.
 
 Supported Algorithms and Examples
 ---------------------------------
-The following algorithms support distribution:
+The following algorithms support distributed mode:
 
 - PCA (pca)
 

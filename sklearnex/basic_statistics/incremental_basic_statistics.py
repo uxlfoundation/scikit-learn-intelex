@@ -27,7 +27,7 @@ from onedal.basic_statistics import (
 
 from .._config import get_config
 from .._device_offload import dispatch
-from .._utils import IntelEstimator, PatchingConditionsChain
+from .._utils import ExtensionEstimator, PatchingConditionsChain
 
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import Interval, StrOptions
@@ -42,7 +42,7 @@ else:
 
 
 @control_n_jobs(decorated_methods=["partial_fit", "_onedal_finalize_fit"])
-class IncrementalBasicStatistics(IntelEstimator, BaseEstimator):
+class IncrementalBasicStatistics(ExtensionEstimator, BaseEstimator):
     """
     Calculates basic statistics on the given data, allows for computation when the data are split into
     batches. The user can use ``partial_fit`` method to provide a single batch of data or use the ``fit`` method to provide
@@ -309,7 +309,7 @@ class IncrementalBasicStatistics(IntelEstimator, BaseEstimator):
 
         Returns
         -------
-        self : object
+        self : IncrementalBasicStatistics
             Returns the instance itself.
         """
         dispatch(
@@ -326,7 +326,7 @@ class IncrementalBasicStatistics(IntelEstimator, BaseEstimator):
         return self
 
     def fit(self, X, y=None, sample_weight=None):
-        """Calculate statistics of X using minibatches of size batch_size.
+        """Calculate statistics of X using minibatches of size ``batch_size``.
 
         Parameters
         ----------
@@ -342,7 +342,7 @@ class IncrementalBasicStatistics(IntelEstimator, BaseEstimator):
 
         Returns
         -------
-        self : object
+        self : IncrementalBasicStatistics
             Returns the instance itself.
         """
         dispatch(

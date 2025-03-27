@@ -27,7 +27,7 @@ def _main():
         description="""
             Run your Python script with Intel(R) Distribution for
             Python* patches of scikit-learn, optimizing solvers of
-            scikit-learn with Intel(R) oneAPI Data Analytics Library.
+            scikit-learn with oneAPI Data Analytics Library.
             """,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )

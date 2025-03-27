@@ -17,9 +17,9 @@
 <div align="center">
 
 
-# Intel(R) Extension for Scikit-learn*
+# Extension for Scikit-learn*
 
-<h3> Speed up your scikit-learn applications for Intel(R) CPUs and GPUs across single- and multi-node configurations
+<h3> Speed up your scikit-learn applications for CPUs and GPUs across single- and multi-node configurations
 
 [Releases](https://github.com/uxlfoundation/scikit-learn-intelex/releases)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Documentation](https://uxlfoundation.github.io/scikit-learn-intelex/)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Examples](https://github.com/uxlfoundation/scikit-learn-intelex/tree/master/examples/notebooks)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Support]()&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;[License](https://github.com/uxlfoundation/scikit-learn-intelex/blob/master/LICENSE)&nbsp;&nbsp;&nbsp;
 
@@ -39,19 +39,17 @@
 
 ## Overview
 
-Intel(R) Extension for Scikit-learn is a **free software AI accelerator** designed to deliver over **10-100X** acceleration to your existing scikit-learn code.
-The software acceleration is achieved with vector instructions, AI hardware-specific memory optimizations, threading, and optimizations for all upcoming Intel(R) platforms at launch time.
+Extension for Scikit-learn is a **free software AI accelerator** designed to deliver over **10-100X** acceleration to your existing scikit-learn code.
+The software acceleration is achieved with vector instructions, AI hardware-specific memory optimizations, threading, and optimizations.
 
 
-With Intel(R) Extension for Scikit-learn, you can:
+With Extension for Scikit-learn, you can:
 
 * Speed up training and inference by up to 100x with equivalent mathematical accuracy
-* Benefit from performance improvements across different Intel(R) hardware configurations, including GPUs and multi-GPU configurations
+* Benefit from performance improvements across different CPU hardware configurations, including GPUs and multi-GPU configurations
 * Integrate the extension into your existing Scikit-learn applications without code modifications
 * Continue to use the open-source scikit-learn API
 * Enable and disable the extension with a couple of lines of code or at the command line
-
-Intel(R) Extension for Scikit-learn is also a part of [Intel(R) AI Tools](https://www.intel.com/content/www/us/en/developer/tools/oneapi/ai-analytics-toolkit.html).
 
 ## Acceleration
 
@@ -59,9 +57,9 @@ Intel(R) Extension for Scikit-learn is also a part of [Intel(R) AI Tools](https:
 
 [Benchmarks code](https://github.com/IntelPython/scikit-learn_bench)
 
-## Intel(R) Optimizations
+## Optimizations
 
-- **Enable Intel(R) CPU optimizations**
+- **Enable CPU optimizations**
 
     ```py
     import numpy as np
@@ -75,7 +73,7 @@ Intel(R) Extension for Scikit-learn is also a part of [Intel(R) AI Tools](https:
     clustering = DBSCAN(eps=3, min_samples=2).fit(X)
     ```
 
-- **Enable Intel(R) GPU optimizations**
+- **Enable GPU optimizations**
 
     _Note: executing on GPU has [additional system software requirements](https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html) - see [details](https://uxlfoundation.github.io/scikit-learn-intelex/latest/oneapi-gpu.html)._
 
@@ -95,7 +93,7 @@ Intel(R) Extension for Scikit-learn is also a part of [Intel(R) AI Tools](https:
 
 ## Installation
 
-To install Intel(R) Extension for Scikit-learn, run:
+To install Extension for Scikit-learn, run:
 
 ```
 pip install scikit-learn-intelex
@@ -135,8 +133,8 @@ To patch scikit-learn, you can:
 
 ### daal4py and oneDAL
 
-The acceleration is achieved through the use of the Intel(R) oneAPI Data Analytics Library (oneDAL). Learn more:
-- [About Intel(R) oneAPI Data Analytics Library](https://github.com/uxlfoundation/oneDAL)
+The acceleration is achieved through the use of the oneAPI Data Analytics Library (oneDAL). Learn more:
+- [About oneAPI Data Analytics Library](https://github.com/uxlfoundation/oneDAL)
 - [About daal4py](https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/daal4py)
 
 ## Samples & Examples

@@ -364,7 +364,7 @@ class BaseForest(PatchableEstimator, ABC):
         if not sklearn_check_version("1.0"):
             params["min_impurity_split"] = self._onedal_estimator.min_impurity_split
         est = self.estimator.__class__(**params)
-        # we need to set est.tree_ field with Trees constructed from Intel(R)
+        # we need to set est.tree_ field with Trees constructed from
         # oneAPI Data Analytics Library solution
         estimators_ = []
 
@@ -476,9 +476,8 @@ class ForestClassifier(_sklearn_ForestClassifier, BaseForest):
 
     def _estimators_(self):
         super()._estimators_()
-        classes_ = self.classes_[0]
         for est in self._cached_estimators_:
-            est.classes_ = classes_
+            est.classes_ = self.classes_
 
     def fit(self, X, y, sample_weight=None):
         dispatch(
