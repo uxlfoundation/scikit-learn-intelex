@@ -156,10 +156,11 @@ class ExtensionEstimator(BaseForHTMLDocLink):
         return f"https://uxlfoundation.github.io/scikit-learn-intelex/latest/non-scikit-algorithms.html#{module_path}.{class_name}"
 
 
-# Adds a small note note about serialization for extension estimators that are incremental.
-# The class docstrings should leave a placeholder '%incremental_serialization_note%' inside
-# their docstrings, which will be replaced by this note.
 def _add_inc_serialization_note(class_docstrings: str) -> str:
+    """Adds a small note note about serialization for extension estimators that are incremental.
+    The class docstrings should leave a placeholder '%incremental_serialization_note%' inside
+    their docstrings, which will be replaced by this note.
+    """
     # In python versions >=3.13, leading whitespace in docstrings defined through
     # static strings (but **not through other ways**) is automatically removed
     # from the final docstrings, while in earlier versions is kept.
