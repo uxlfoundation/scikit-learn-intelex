@@ -352,8 +352,12 @@ class GBTDAALModel(GBTDAALBaseModel):
         Compute model predictions on new data
 
         Computes the predicted values of the response variable for new data given the features / covariates
-        for each row. In the case of classification models, this will output the most probable class
-        (see :meth:`predict_proba` for probability predictions).
+        for each row.
+
+        In the case of classification models, this will output the most probable class (see
+        :meth:`predict_proba` for probability predictions), while in the case of regression
+        models, will output values in the link scale (what XGBoost calls 'margin' and LightGBM
+        calls 'raw').
 
         :param X: The features covariates. Should be an array of shape ``[num_samples, num_features]``.
         :param bool pred_contribs: Whether to predict feature contributions. Result should have shape ``[num_samples, num_features+1]``, with the last column corresponding to the intercept. See :obj:`xgboost.Booster.predict` for more details about this type of computation.
@@ -406,10 +410,8 @@ def convert_model(model) -> GBTDAALModel:
       It can work with either the base booster classes of those libraries or with their
       scikit-learn-compatible classes.
     - Do not use categorical features.
-    - Are for regression or classification (e.g. no ranking). In the case of regression, it will
-      **only** work with models that do not have a link function (e.g. squared loss works, but not
-      Poisson). Note that it will not raise an explicit error when trying to convert an unsupported
-      regression model, but the computed predictions will not be correct.
+    - Are for regression or classification (e.g. no ranking). In the case of XGBoost objective
+      ``binary:logitraw``, it will create a classification model out of it.
     - Are not multi-output models. Note that multi-class classification **is** supported.
 
     :param model: A model object from ``xgboost``, ``lightgbm``, or ``catboost``.
