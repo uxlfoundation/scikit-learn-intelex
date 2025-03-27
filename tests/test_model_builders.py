@@ -368,6 +368,75 @@ class XGBoostClassificationModelBuilder(unittest.TestCase):
             np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=5e-2, atol=1e-6)
 
 
+@unittest.skipUnless(shap_supported, reason=shap_not_supported_str)
+class XGBoostGammaModelBuilder(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        X, y = make_regression(n_samples=2, n_features=10, random_state=42)
+        y = np.exp((y - y.mean()) / y.std())
+        cls.X_test = X[:2, :]
+        cls.X_nan = np.array([np.nan] * 20, dtype=np.float32).reshape(2, 10)
+        cls.xgb_model = xgb.XGBRegressor(
+            max_depth=5, n_estimators=50, random_state=42, objective="reg:gamma"
+        )
+        cls.xgb_model.fit(X, y)
+
+    def test_model_conversion(self):
+        m = d4p.mb.convert_model(self.xgb_model.get_booster())
+        self.assertEqual(m.model_type, "xgboost")
+        self.assertEqual(m.n_classes_, 0)
+        self.assertEqual(m.n_features_in_, 10)
+        self.assertTrue(m._is_regression)
+
+    def test_model_predict(self):
+        m = d4p.mb.convert_model(self.xgb_model.get_booster())
+        d4p_pred = m.predict(self.X_test)
+        xgboost_pred = self.xgb_model.predict(self.X_test, output_margin=True)
+        np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=1e-6)
+
+    def test_missing_value_support(self):
+        m = d4p.mb.convert_model(self.xgb_model.get_booster())
+        d4p_pred = m.predict(self.X_nan)
+        xgboost_pred = self.xgb_model.predict(self.X_nan, output_margin=True)
+        np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=1e-6)
+
+    def test_model_predict_shap_contribs(self):
+        booster = self.xgb_model.get_booster()
+        m = d4p.mb.convert_model(booster)
+        d4p_pred = m.predict(self.X_test, pred_contribs=True)
+        xgboost_pred = booster.predict(
+            xgb.DMatrix(self.X_test),
+            pred_contribs=True,
+            approx_contribs=False,
+            validate_features=False,
+        )
+        np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=1e-6)
+
+    def test_model_predict_shap_interactions(self):
+        booster = self.xgb_model.get_booster()
+        m = d4p.mb.convert_model(booster)
+        d4p_pred = m.predict(self.X_test, pred_interactions=True)
+        xgboost_pred = booster.predict(
+            xgb.DMatrix(self.X_test),
+            pred_interactions=True,
+            approx_contribs=False,
+            validate_features=False,
+        )
+        np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=1e-6)
+
+    def test_model_predict_shap_contribs_missing_values(self):
+        booster = self.xgb_model.get_booster()
+        m = d4p.mb.convert_model(booster)
+        d4p_pred = m.predict(self.X_nan, pred_contribs=True)
+        xgboost_pred = booster.predict(
+            xgb.DMatrix(self.X_nan),
+            pred_contribs=True,
+            approx_contribs=False,
+            validate_features=False,
+        )
+        np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=5e-6)
+
+
 # duplicate all tests for base_score=0.3
 @unittest.skipUnless(shap_supported, reason=shap_not_supported_str)
 class XGBoostClassificationModelBuilder_base_score03(XGBoostClassificationModelBuilder):
@@ -407,36 +476,38 @@ class XGBoostClassificationModelBuilder_objective_logitraw(
     """
     Caveat: logitraw is not per se supported in daal4py because we always
 
-                 1. apply the bias
-                 2. normalize to probabilities ("activation") using sigmoid
+                 1. normalize to probabilities ("activation") using sigmoid
                    (exception: SHAP values, the scores defining phi_ij are the raw class scores)
 
-    However, by undoing the activation and bias we can still compare if the original probas and SHAP values are aligned.
+    However, by undoing the activation we can still compare if the original probas and SHAP values are aligned.
     """
 
     @classmethod
     def setUpClass(cls):
         XGBoostClassificationModelBuilder.setUpClass(
-            base_score=0.5, n_classes=2, objective="binary:logitraw"
+            n_classes=2, objective="binary:logitraw"
         )
 
     def test_model_predict_proba(self):
-        # overload this function because daal4py always applies the sigmoid
-        # for bias 0.5, we can still check if the original scores are correct
         with self.assertWarns(UserWarning):
-            # expect a warning that logitraw behaves differently and/or
-            # that base_score is ignored / fixed to 0.5
+            # expect a warning that logitraw behaves differently
             m = d4p.mb.convert_model(self.xgb_model.get_booster())
         d4p_pred = m.predict_proba(self.X_test)
-        # undo sigmoid
-        d4p_pred = np.log(-d4p_pred / (d4p_pred - 1))
-        # undo bias
-        d4p_pred += 0.5
-        xgboost_pred = self.xgb_model.predict_proba(self.X_test)
+
+        # Note that XGBoost itself here will produce incorrect calculations for 'predict_proba'
+        # due to the intercept being misapplied, but probabilities can correctly be obtained
+        # by getting the raw prediction and transforming it to probabilities.
+        xgboost_pred_raw = self.xgb_model.get_booster().inplace_predict(
+            self.X_test, predict_type="margin"
+        )
+        xgboost_pred = 1 / (1 + np.exp(-xgboost_pred_raw))
+        xgboost_pred = xgboost_pred.reshape((-1, 1))
+        xgboost_pred = np.c_[1 - xgboost_pred, xgboost_pred]
+
         # calculating probas involves multiple exp / ln operations, therefore
         # they're quite susceptible to small numerical changes and we have to
-        # accept an rtol of 1e-5
-        np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=1e-5)
+        # accept an rtol of 1e-4
+        np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=1e-4)
 
     @unittest.skipUnless(shap_api_changed, reason=shap_api_change_str)
     def test_model_predict_shap_contribs(self):
@@ -452,8 +523,6 @@ class XGBoostClassificationModelBuilder_objective_logitraw(
             approx_contribs=False,
             validate_features=False,
         )
-        # undo bias
-        d4p_pred[:, -1] += 0.5
         np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=5e-6)
 
     @unittest.skipUnless(shap_api_changed, reason=shap_api_change_str)
@@ -470,8 +539,6 @@ class XGBoostClassificationModelBuilder_objective_logitraw(
             approx_contribs=False,
             validate_features=False,
         )
-        # undo bias
-        d4p_pred[:, -1, -1] += 0.5
         np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=5e-5)
 
 
