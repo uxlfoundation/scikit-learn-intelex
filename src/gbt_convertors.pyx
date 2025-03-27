@@ -450,6 +450,8 @@ def get_gbt_model_from_xgboost(booster: Any, xgb_config=None) -> Any:
     # it needs to be converted to the link scale.
     if objective_fun in ["count:poisson", "reg:gamma", "reg:tweedie", "survival:aft"]:
         base_score = float(np.log(base_score))
+    elif objective_fun == "reg:logistic":
+        base_score = float(np.log(base_score / (1 - base_score)))
     elif objective_fun.startswith("rank"):
         raise TypeError("Ranking objectives are not supported.")
 
