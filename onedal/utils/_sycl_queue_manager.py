@@ -77,8 +77,6 @@ def from_data(*data):
     """Extract the queue from provided data. This updates the global queue as well."""
     for item in data:
         # iterate through all data objects, extract the queue, and verify that all data objects are on the same device
-
-        # get the `usm_interface` - the C++ implementation might throw an exception if the data type is not supported
         try:
             usm_iface = getattr(item, "__sycl_usm_array_interface__", None)
         except RuntimeError as e:
