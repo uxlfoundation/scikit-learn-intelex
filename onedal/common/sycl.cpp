@@ -21,13 +21,12 @@ namespace py = pybind11;
 
 namespace oneapi::dal::python {
 
-#ifdef ONEDAL_DATA_PARALLEL
-
 void instantiate_sycl_interfaces(py::module& m) {
     // These classes mirror a subset of functionality of the dpctl python
     // package's `SyclQueue` and `SyclDevice` objects.  In the case that dpctl
     // is not installed, these classes will enable scikit-learn-intelex to still
     // properly offload to other devices when built with the dpc backend.
+#ifdef ONEDAL_DATA_PARALLEL
     py::class_<sycl::queue> syclqueue(m, "SyclQueue");
     syclqueue.def(py::init<const sycl::device&>())
         .def(py::init([](const std::string& filter) {
@@ -81,11 +80,24 @@ void instantiate_sycl_interfaces(py::module& m) {
              })
         .def_property_readonly("is_cpu", &sycl::device::is_cpu)
         .def_property_readonly("is_gpu", &sycl::device::is_gpu);
+#else
+    m.def("SyclQueue",[](py::object obj){
+        // this object is defined for the host build, where SYCL support is not available.
+        // This function acts as the failure point to target_offload, which will throw an
+        // error in all circumstances if any value but the default value ("auto"), or a string
+        // starting with "cpu".
+        // the returned "queue" in this case is a None.
+        if (!obj.is(py::str("auto")) || !(py::isinstance<py::str>(obj) && obj.attr("startswith")("cpu"))) {
+            raise std::invalid_argument("device use via `target_offload` is only supported with a DPC++ sklearnex build")
+        }
+        return py::none();
+    }
+#endif
 }
+
 
 ONEDAL_PY_INIT_MODULE(sycl) {
     instantiate_sycl_interfaces(m);
 }
-#endif
 
 } // namespace oneapi::dal::python
