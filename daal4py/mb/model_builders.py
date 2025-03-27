@@ -411,7 +411,8 @@ def convert_model(model) -> GBTDAALModel:
       scikit-learn-compatible classes.
     - Do not use categorical features.
     - Are for regression or classification (e.g. no ranking). In the case of XGBoost objective
-      ``binary:logitraw``, it will create a classification model out of it.
+      ``binary:logitraw``, it will create a classification model out of it, and in the case of
+      objective ``reg:logistic`, will create a regression model.
     - Are not multi-output models. Note that multi-class classification **is** supported.
 
     :param model: A model object from ``xgboost``, ``lightgbm``, or ``catboost``.
