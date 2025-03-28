@@ -86,7 +86,7 @@ void instantiate_sycl_interfaces(py::module& m) {
         // This function acts as the failure point to target_offload, which will throw an
         // error in all circumstances if any value but the default value ("auto"), or a string
         // starting with "cpu". The returned "queue" is a None.
-        if (!obj.is(py::str("auto")) || !(py::isinstance<py::str>(obj) && obj.attr("startswith")("cpu"))) {
+        if (!py::isinstance<py::str>(obj) || obj.cast<std::string>() != "auto" && !obj.attr("startswith")("cpu").cast<bool>()){
             throw std::invalid_argument("device use via `target_offload` is only supported with a DPC++ sklearnex build");
         }
         return py::none();
