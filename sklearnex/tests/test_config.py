@@ -124,10 +124,14 @@ def test_config_context_works():
         assert onedal_default_config_after_cc[param] == onedal_default_config[param]
 
 
-@pytest.mark.skipif(onedal._default_backend.is_dpc, reason="requires host default backend")
+@pytest.mark.skipif(
+    onedal._default_backend.is_dpc, reason="requires host default backend"
+)
 @pytest.mark.parametrize("target", ["auto", "cpu", "cpu:0", "gpu", 3])
 def test_host_backend_target_offload(target):
-    err_msg = "device use via `target_offload` is only supported with a DPC++ sklearnex build"
+    err_msg = (
+        "device use via `target_offload` is only supported with a DPC++ sklearnex build"
+    )
     if target != "auto" or not target.startswith("cpu"):
         with pytest.raises(ValueError, match=err_msg):
             with sklearnex.config_context(target_offload=target):

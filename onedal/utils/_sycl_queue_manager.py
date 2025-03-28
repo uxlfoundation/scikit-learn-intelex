@@ -23,8 +23,9 @@ if dpctl_available:
     from dpctl import SyclQueue
 else:
     from onedal import _default_backend
+
     # Use internally-defined SyclQueue defined in onedal/common/sycl.cpp
-    # the host backend SyclQueue will only accept "auto" or a string 
+    # the host backend SyclQueue will only accept "auto" or a string
     # beginning with "cpu" and will return a None, it is a function
     # in this case. No SyclDevice is defined.
     SyclQueue = _default_backend.SyclQueue

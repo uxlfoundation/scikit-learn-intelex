@@ -81,19 +81,20 @@ void instantiate_sycl_interfaces(py::module& m) {
         .def_property_readonly("is_cpu", &sycl::device::is_cpu)
         .def_property_readonly("is_gpu", &sycl::device::is_gpu);
 #else
-    m.def("SyclQueue",[](py::object obj){
+    m.def("SyclQueue", [](py::object obj) {
         // this object is defined for the host build, where SYCL support is not available.
         // This function acts as the failure point to target_offload, which will throw an
         // error in all circumstances if any value but the default value ("auto"), or a string
         // starting with "cpu". The returned "queue" is a None.
-        if (!py::isinstance<py::str>(obj) || obj.cast<std::string>() != "auto" && !obj.attr("startswith")("cpu").cast<bool>()){
-            throw std::invalid_argument("device use via `target_offload` is only supported with a DPC++ sklearnex build");
+        if (!py::isinstance<py::str>(obj) ||
+            obj.cast<std::string>() != "auto" && !obj.attr("startswith")("cpu").cast<bool>()) {
+            throw std::invalid_argument(
+                "device use via `target_offload` is only supported with a DPC++ sklearnex build");
         }
         return py::none();
     });
 #endif
 }
-
 
 ONEDAL_PY_INIT_MODULE(sycl) {
     instantiate_sycl_interfaces(m);
