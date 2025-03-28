@@ -133,7 +133,7 @@ def test_host_backend_target_offload(target):
     from sklearnex.neighbors import NearestNeighbors
 
     err_msg = (
-        "device use via `target_offload` is only supported with a DPC++ sklearnex build"
+        r"device use via \`target_offload\` is only supported with a DPC\+\+ sklearnex build"
     )
     est = NearestNeighbors()
     if target != "auto" and not (isinstance(target, str) and target.startswith("cpu")):
