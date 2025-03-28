@@ -132,9 +132,7 @@ def test_config_context_works():
 def test_host_backend_target_offload(target):
     from sklearnex.neighbors import NearestNeighbors
 
-    err_msg = (
-        r"device use via \`target_offload\` is only supported with a DPC\+\+ sklearnex build"
-    )
+    err_msg = r"device use via \`target_offload\` is only supported with a DPC\+\+ sklearnex build"
     est = NearestNeighbors()
     if target != "auto" and not (isinstance(target, str) and target.startswith("cpu")):
         with pytest.raises(ValueError, match=err_msg):
