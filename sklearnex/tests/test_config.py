@@ -129,7 +129,7 @@ def test_config_context_works():
 )
 @pytest.mark.parametrize("target", ["auto", "cpu", "cpu:0", "gpu", 3])
 def test_host_backend_target_offload(target):
-    from sklearnex.neighbors as NearestNeighbors
+    from sklearnex.neighbors import NearestNeighbors
     err_msg = (
         "device use via `target_offload` is only supported with a DPC++ sklearnex build"
     )
