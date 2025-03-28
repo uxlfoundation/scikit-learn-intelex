@@ -23,7 +23,6 @@
 #include "oneapi/dal/spmd/mpi/communicator.hpp"
 #endif // ONEDAL_DATA_PARALLEL_SPMD
 
-
 namespace py = pybind11;
 
 namespace oneapi::dal::python {
@@ -135,13 +134,13 @@ void instantiate_spmd_policy(py::module& m) {
 #endif // ONEDAL_DATA_PARALLEL_SPMD
 
 py::object get_policy(py::object obj) {
-    if(!obj.is(py::none())){
-        #ifdef ONEDAL_DATA_PARALLEL_SPMD
+    if (!obj.is(py::none())) {
+#ifdef ONEDAL_DATA_PARALLEL_SPMD
         return py::type::of<spmd_policy_t>()(obj);
-        #endif // ONEDAL_DATA_PARALLEL_SPMD
-        #ifdef ONEDAL_DATA_PARALLEL
+#endif // ONEDAL_DATA_PARALLEL_SPMD
+#ifdef ONEDAL_DATA_PARALLEL
         return py::type::of<dp_policy_t>()(obj);
-        #endif // ONEDAL_DATA_PARALLEL
+#endif // ONEDAL_DATA_PARALLEL
     }
     return py::type::of<host_policy_t>()();
 };
@@ -156,5 +155,5 @@ ONEDAL_PY_INIT_MODULE(policy) {
     instantiate_spmd_policy(m);
 #endif // ONEDAL_DATA_PARALLEL_SPMD
     m.def("get_policy", &get_policy, py::arg("queue") = py::none());
-} 
-}// namespace oneapi::dal::python
+}
+} // namespace oneapi::dal::python

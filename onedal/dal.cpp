@@ -82,7 +82,7 @@ ONEDAL_PY_INIT_MODULE(finiteness_checker);
 #endif // ONEDAL_DATA_PARALLEL_SPMD
 
 #ifdef ONEDAL_DATA_PARALLEL_SPMD
-PYBIND11_MODULE(_onedal_py_spmd_dpc, m) {   
+PYBIND11_MODULE(_onedal_py_spmd_dpc, m) {
     init_covariance(m);
     init_dbscan(m);
     init_decomposition(m);
