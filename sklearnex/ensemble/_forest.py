@@ -64,7 +64,8 @@ from sklearnex._utils import register_hyperparameters
 
 from .._config import get_config
 from .._device_offload import dispatch, wrap_output_data
-from .._utils import PatchableEstimator, PatchingConditionsChain
+from .._utils import PatchingConditionsChain
+from ..base import oneDALEstimator
 from ..utils._array_api import get_namespace
 from ..utils.validation import check_n_features, validate_data
 
@@ -74,7 +75,7 @@ if sklearn_check_version("1.4"):
     from daal4py.sklearn.utils import _assert_all_finite
 
 
-class BaseForest(PatchableEstimator, ABC):
+class BaseForest(oneDALEstimator):
     _onedal_factory = None
 
     def _onedal_fit(self, X, y, sample_weight=None, queue=None):

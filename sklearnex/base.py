@@ -19,10 +19,10 @@ from abc import ABC
 from daal4py.sklearn._utils import sklearn_check_version
 
 
-class IntelEstimator(ABC):
+class oneDALEstimator(ABC):
 
     if sklearn_check_version("1.6"):
-        # Starting in sklearn 1.6, _more_tags is deprecated. An IntelEstimator
+        # Starting in sklearn 1.6, _more_tags is deprecated. An oneDALEstimator
         # is defined to handle the various versioning issues with the tags and
         # with the ongoing rollout of sklearn's array_api support. This will make
         # maintenance easier, and centralize tag changes to a single location.

@@ -35,11 +35,11 @@ from sklearnex import config_context
 from .._config import get_config
 from .._device_offload import dispatch, wrap_output_data
 from .._utils import (
-    ExtensionEstimator,
     PatchingConditionsChain,
     _add_inc_serialization_note,
     register_hyperparameters,
 )
+from ..base import oneDALEstimator
 from ..metrics import pairwise_distances
 from ..utils._array_api import get_namespace
 from ..utils.validation import check_feature_names, validate_data
@@ -49,7 +49,7 @@ if sklearn_check_version("1.2"):
 
 
 @control_n_jobs(decorated_methods=["partial_fit", "fit", "_onedal_finalize_fit"])
-class IncrementalEmpiricalCovariance(ExtensionEstimator, BaseEstimator):
+class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
     """
     Maximum likelihood covariance estimator that allows for the estimation when the data are split into
     batches. The user can use the ``partial_fit`` method to provide a single batch of data or use the ``fit`` method to provide
