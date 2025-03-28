@@ -82,23 +82,25 @@ void instantiate_sycl_interfaces(py::module& m) {
         .def_property_readonly("is_gpu", &sycl::device::is_gpu);
 #else
     struct syclqueue {};
-
     py::class_<syclqueue> syclqueue(m, "SyclQueue");
-        // inspired from pybind11 PR#4698 which turns init into a no-op
-        syclqueue.def(py::init([]() { return nullptr; }))
+    // inspired from pybind11 PR#4698 which turns init into a no-op
+    syclqueue
+        .def(py::init([]() {
+            return nullptr;
+        }))
         .def_static("__new__", [](const py::object& cls, const py::object& obj) {
-        // this object is defined for the host build, where SYCL support is not available.
-        // This class acts as the failure point to target_offload, which will throw an
-        // error in all circumstances if any value but the default value ("auto"), or a string
-        // starting with "cpu". The returned "queue" is a None. Must be a class to work with
-        // isinstance
-        if (!py::isinstance<py::str>(obj) ||
-            obj.cast<std::string>() != "auto" && !obj.attr("startswith")("cpu").cast<bool>()) {
-            throw std::invalid_argument(
-                "device use via `target_offload` is only supported with a DPC++ sklearnex build");
-        }
-        return py::none();
-    });
+            // this object is defined for the host build, where SYCL support is not available.
+            // This class acts as the failure point to target_offload, which will throw an
+            // error in all circumstances if any value but the default value ("auto"), or a string
+            // starting with "cpu". The returned "queue" is a None. Must be a class to work with
+            // isinstance
+            if (!py::isinstance<py::str>(obj) ||
+                obj.cast<std::string>() != "auto" && !obj.attr("startswith")("cpu").cast<bool>()) {
+                throw std::invalid_argument(
+                    "device use via `target_offload` is only supported with a DPC++ sklearnex build");
+            }
+            return py::none();
+        });
 #endif
 }
 
