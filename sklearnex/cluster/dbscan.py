@@ -34,7 +34,7 @@ if sklearn_check_version("1.1") and not sklearn_check_version("1.2"):
     from sklearn.utils import check_scalar
 
 
-class BaseDBSCAN(IntelEstimator):
+class BaseDBSCAN(ABC):
     def _onedal_dbscan(self, **onedal_params):
         return onedal_DBSCAN(**onedal_params)
 
