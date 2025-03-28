@@ -106,10 +106,10 @@ PYBIND11_MODULE(_onedal_py_spmd_dpc, m) {
 #else
 #ifdef ONEDAL_DATA_PARALLEL
 PYBIND11_MODULE(_onedal_py_dpc, m) {
-    init_sycl(m);
 #else
 PYBIND11_MODULE(_onedal_py_host, m) {
 #endif
+    init_sycl(m);
     init_policy(m);
     init_table(m);
 
