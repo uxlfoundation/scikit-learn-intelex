@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
+import numpy as np
 import pytest
 import sklearn
 
@@ -130,6 +131,7 @@ def test_config_context_works():
 @pytest.mark.parametrize("target", ["auto", "cpu", "cpu:0", "gpu", 3])
 def test_host_backend_target_offload(target):
     from sklearnex.neighbors import NearestNeighbors
+
     err_msg = (
         "device use via `target_offload` is only supported with a DPC++ sklearnex build"
     )
@@ -137,7 +139,7 @@ def test_host_backend_target_offload(target):
     if target != "auto" and not (isinstance(target, str) and target.startswith("cpu")):
         with pytest.raises(ValueError, match=err_msg):
             with sklearnex.config_context(target_offload=target):
-                est.fit(np.eye(5,8))
+                est.fit(np.eye(5, 8))
     else:
         with sklearnex.config_context(target_offload=target):
-            est.fit(np.eye(5,8))
+            est.fit(np.eye(5, 8))
