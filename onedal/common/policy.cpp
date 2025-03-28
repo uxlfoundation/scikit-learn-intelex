@@ -137,9 +137,10 @@ py::object get_policy(py::object obj) {
     if (!obj.is(py::none())) {
 #ifdef ONEDAL_DATA_PARALLEL_SPMD
         return py::type::of<spmd_policy_t>()(obj);
-#endif // ONEDAL_DATA_PARALLEL_SPMD
-#ifdef ONEDAL_DATA_PARALLEL
+#elif ONEDAL_DATA_PARALLEL
         return py::type::of<dp_policy_t>()(obj);
+#else
+        throw std::invalid_argument("queues are not supported in the oneDAL backend");
 #endif // ONEDAL_DATA_PARALLEL
     }
     return py::type::of<host_policy_t>()();
