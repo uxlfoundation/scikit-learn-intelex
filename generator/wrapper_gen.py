@@ -186,12 +186,16 @@ def daalfini() -> None:
     Finalize MPI environment
 
     When using distributed mode without ``mpi4py``, this function must be called after
-    the distributed computation calls. It has no effect when the python process is not
-    run through MPI (used for distributed mode), and has no effect if the MPI environment
-    has already been finalized by calling this function before.
+    the distributed computation calls before accessing the result object from the algorithm
+    that was executed in distributed mode. It has no effect when the python process is not
+    run through MPI (used for distributed mode).
 
     This is a wrapper over ``MPI_Finalize``. It does not need to be called if ``mpi4py``
     was imported before, as ``mpi4py`` calls this function upon process exit.
+
+    Note that software ``mpi4py`` calls this function automatically if it is imported, but
+    it only does so upon process exit, so this still needs to be called before accessing
+    the result objects in the process/rank that will use them.
 
     :rtype: None
     '''
