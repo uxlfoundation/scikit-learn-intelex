@@ -132,7 +132,7 @@ def test_host_backend_target_offload(target):
     err_msg = (
         "device use via `target_offload` is only supported with a DPC++ sklearnex build"
     )
-    if target != "auto" or not target.startswith("cpu"):
+    if target != "auto" and not target.startswith("cpu"):
         with pytest.raises(ValueError, match=err_msg):
             with sklearnex.config_context(target_offload=target):
                 pass
