@@ -34,6 +34,7 @@ import daal4py as d4p
 
 from .._n_jobs_support import control_n_jobs
 from .._utils import PatchingConditionsChain, getFPType, sklearn_check_version
+from ..utils.validation import check_feature_names
 from .logistic_loss import (
     _daal4py_cross_entropy_loss_extra_args,
     _daal4py_grad_,
@@ -793,8 +794,7 @@ def daal4py_fit(self, X, y, sample_weight=None):
 
 def daal4py_predict(self, X, resultsToEvaluate):
     check_is_fitted(self)
-    if sklearn_check_version("1.0"):
-        self._check_feature_names(X, reset=False)
+    check_feature_names(self, X, reset=False)
     X = check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
     try:
         fptype = getFPType(X)
@@ -1005,8 +1005,7 @@ class LogisticRegression(LogisticRegression_original):
         self.l1_ratio = l1_ratio
 
     def fit(self, X, y, sample_weight=None):
-        if sklearn_check_version("1.0"):
-            self._check_feature_names(X, reset=True)
+        check_feature_names(self, X, reset=True)
         if sklearn_check_version("1.2"):
             self._validate_params()
         return daal4py_fit(self, X, y, sample_weight)

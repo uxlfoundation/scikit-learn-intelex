@@ -14,6 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 
-from .neighbors import KNeighborsClassifier, KNeighborsRegressor, NearestNeighbors
+from onedal.spmd.neighbors import KNeighborsClassifier, KNeighborsRegressor
 
-__all__ = ["KNeighborsClassifier", "KNeighborsRegressor", "NearestNeighbors"]
+__all__ = ["KNeighborsClassifier", "KNeighborsRegressor"]

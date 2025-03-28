@@ -25,9 +25,14 @@ from onedal.basic_statistics import (
     IncrementalBasicStatistics as onedal_IncrementalBasicStatistics,
 )
 
+from .._config import get_config
 from .._device_offload import dispatch
-from .._utils import PatchingConditionsChain
-from ..base import IntelEstimator
+from .._utils import (
+    ExtensionEstimator,
+    PatchingConditionsChain,
+    _add_inc_serialization_note,
+)
+from ..utils.validation import validate_data
 
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import Interval, StrOptions
@@ -35,14 +40,9 @@ if sklearn_check_version("1.2"):
 import numbers
 import warnings
 
-if sklearn_check_version("1.6"):
-    from sklearn.utils.validation import validate_data
-else:
-    validate_data = BaseEstimator._validate_data
-
 
 @control_n_jobs(decorated_methods=["partial_fit", "_onedal_finalize_fit"])
-class IncrementalBasicStatistics(IntelEstimator, BaseEstimator):
+class IncrementalBasicStatistics(ExtensionEstimator, BaseEstimator):
     """
     Calculates basic statistics on the given data, allows for computation when the data are split into
     batches. The user can use ``partial_fit`` method to provide a single batch of data or use the ``fit`` method to provide
@@ -106,15 +106,10 @@ class IncrementalBasicStatistics(IntelEstimator, BaseEstimator):
 
     Note
     ----
-    Serializing instances of this class will trigger a forced finalization of calculations.
-    Since finalize_fit can't be dispatched without directly provided queue
-    and the dispatching policy can't be serialized, the computation is finalized
-    during serialization call and the policy is not saved in serialized data.
-
-    Note
-    ----
     Names of attributes without the trailing underscore are
     supported currently but deprecated in 2025.1 and will be removed in 2026.0
+
+    %incremental_serialization_note%
 
     Examples
     --------
@@ -134,6 +129,8 @@ class IncrementalBasicStatistics(IntelEstimator, BaseEstimator):
     >>> incbs.max_
     np.array([3., 4.])
     """
+
+    __doc__ = _add_inc_serialization_note(__doc__)
 
     _onedal_incremental_basic_statistics = staticmethod(onedal_IncrementalBasicStatistics)
 
@@ -187,29 +184,26 @@ class IncrementalBasicStatistics(IntelEstimator, BaseEstimator):
         assert isinstance(onedal_options, str)
         return options
 
-    def _onedal_finalize_fit(self, queue=None):
+    def _onedal_finalize_fit(self):
         assert hasattr(self, "_onedal_estimator")
-        self._onedal_estimator.finalize_fit(queue=queue)
+        self._onedal_estimator.finalize_fit()
         self._need_to_finalize = False
 
     def _onedal_partial_fit(self, X, sample_weight=None, queue=None, check_input=True):
         first_pass = not hasattr(self, "n_samples_seen_") or self.n_samples_seen_ == 0
 
+        use_raw_input = get_config().get("use_raw_input", False) is True
+        # never check input when using raw input
+        check_input &= use_raw_input is False
         if check_input:
-            if sklearn_check_version("1.0"):
-                X = validate_data(
-                    self,
-                    X,
-                    dtype=[np.float64, np.float32],
-                    reset=first_pass,
-                )
-            else:
-                X = check_array(
-                    X,
-                    dtype=[np.float64, np.float32],
-                )
+            X = validate_data(
+                self,
+                X,
+                dtype=[np.float64, np.float32],
+                reset=first_pass,
+            )
 
-        if sample_weight is not None:
+        if not use_raw_input and sample_weight is not None:
             sample_weight = _check_sample_weight(sample_weight, X)
 
         if first_pass:
@@ -229,16 +223,15 @@ class IncrementalBasicStatistics(IntelEstimator, BaseEstimator):
         self._need_to_finalize = True
 
     def _onedal_fit(self, X, sample_weight=None, queue=None):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
+        use_raw_input = get_config().get("use_raw_input", False) is True
+        if not use_raw_input:
+            if sklearn_check_version("1.2"):
+                self._validate_params()
 
-        if sklearn_check_version("1.0"):
             X = validate_data(self, X, dtype=[np.float64, np.float32])
-        else:
-            X = check_array(X, dtype=[np.float64, np.float32])
 
-        if sample_weight is not None:
-            sample_weight = _check_sample_weight(sample_weight, X)
+            if sample_weight is not None:
+                sample_weight = _check_sample_weight(sample_weight, X)
 
         n_samples, n_features = X.shape
         if self.batch_size is None:
@@ -259,7 +252,7 @@ class IncrementalBasicStatistics(IntelEstimator, BaseEstimator):
 
         self.n_features_in_ = X.shape[1]
 
-        self._onedal_finalize_fit(queue=queue)
+        self._onedal_finalize_fit()
 
         return self
 
@@ -304,7 +297,7 @@ class IncrementalBasicStatistics(IntelEstimator, BaseEstimator):
 
         Returns
         -------
-        self : object
+        self : IncrementalBasicStatistics
             Returns the instance itself.
         """
         dispatch(
@@ -321,7 +314,7 @@ class IncrementalBasicStatistics(IntelEstimator, BaseEstimator):
         return self
 
     def fit(self, X, y=None, sample_weight=None):
-        """Calculate statistics of X using minibatches of size batch_size.
+        """Calculate statistics of X using minibatches of size ``batch_size``.
 
         Parameters
         ----------
@@ -337,7 +330,7 @@ class IncrementalBasicStatistics(IntelEstimator, BaseEstimator):
 
         Returns
         -------
-        self : object
+        self : IncrementalBasicStatistics
             Returns the instance itself.
         """
         dispatch(

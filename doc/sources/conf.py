@@ -29,7 +29,7 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
+import os
 import sys
 
 # sys.path.insert(0, os.path.abspath("../"))
@@ -37,17 +37,15 @@ import sys
 
 # -- Project information -----------------------------------------------------
 
-project = "Intel(R) Extension for Scikit-learn*"
-copyright = "Intel"
-author = "Intel"
+project = "Extension for Scikit-learn*"
+copyright = "oneDAL project"
+author = "oneDAL project"
 
 # The short X.Y version
 # Note: it should not have more than  two parts (year.month), otherwise the
 # version switcher will not be able to pick it.
-version = "2025.2"
-# The full version, including alpha/beta/rc tags
-release = "2025.2"
-
+version = os.environ.get("SHORT_DOC_VERSION", "latest")
+release = version
 
 # -- General configuration ---------------------------------------------------
 
@@ -75,12 +73,13 @@ extensions = [
 
 intersphinx_mapping = {
     "sklearn": ("https://scikit-learn.org/stable/", None),
+    "dpctl": ("https://intelpython.github.io/dpctl/latest", None),
     # from scikit-learn, in case some object in sklearnex points to them:
     # https://github.com/scikit-learn/scikit-learn/blob/main/doc/conf.py
     "python": ("https://docs.python.org/{.major}".format(sys.version_info), None),
     "numpy": ("https://numpy.org/doc/stable", None),
     "scipy": ("https://docs.scipy.org/doc/scipy/", None),
-    "matplotlib": ("https://matplotlib.org/", None),
+    "matplotlib": ("https://matplotlib.org/stable/", None),
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
     "joblib": ("https://joblib.readthedocs.io/en/latest/", None),
     "seaborn": ("https://seaborn.pydata.org/", None),
@@ -124,8 +123,8 @@ pygments_style = "sphinx"
 # substitutions
 
 rst_prolog = """
-.. |reg| unicode:: U+000AE
-.. |intelex| replace:: Intel\\ |reg|\\  Extension for Scikit-learn*
+.. |sklearnex| replace:: Extension for Scikit-learn*
+.. |onedal| replace:: oneAPI Data Analytics Library
 """
 
 # -- Options for HTML output -------------------------------------------------
@@ -155,12 +154,11 @@ html_theme_options = {
     "titles_only": False,
 }
 
-switcher_url = "/scikit-learn-intelex/versions.json"
 
 html_context = {
     "current_version": version,
     "project_name": "scikit-learn-intelex",
-    "switcher_url": switcher_url,
+    "switcher_url": "/scikit-learn-intelex/doc/versions.json",
 }
 
 
@@ -206,7 +204,7 @@ latex_documents = [
     (
         master_doc,
         "scikit-learn-intelex.tex",
-        "Intel(R) Extension for Scikit-learn* Documentation",
+        "Extension for Scikit-learn* Documentation",
         "Intel",
         "manual",
     ),
@@ -221,7 +219,7 @@ man_pages = [
     (
         master_doc,
         "scikit-learn-intelex",
-        "Intel(R) Extension for Scikit-learn* Documentation",
+        "Extension for Scikit-learn* Documentation",
         [author],
         1,
     )
@@ -237,10 +235,10 @@ texinfo_documents = [
     (
         master_doc,
         "scikit-learn-intelex",
-        "Intel(R) Extension for Scikit-learn* Documentation",
+        "Extension for Scikit-learn* Documentation",
         author,
         "scikit-learn-intelex",
-        "Intel(R) Extension for Scikit-learn speeds up scikit-learn "
+        "Extension for Scikit-learn speeds up scikit-learn "
         "beyond by providing drop-in patching.",
         "Miscellaneous",
     ),

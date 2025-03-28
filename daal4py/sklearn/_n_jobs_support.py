@@ -82,7 +82,7 @@ def _run_with_n_jobs(method):
         if not isinstance(threading.current_thread(), threading._MainThread):
             warn(
                 "'Threading' parallel backend is not supported by "
-                "Intel(R) Extension for Scikit-learn*. "
+                "Extension for Scikit-learn*. "
                 "Falling back to usage of all available threads."
             )
             result = method(self, *args, **kwargs)
@@ -214,7 +214,11 @@ def control_n_jobs(decorated_methods: list = []):
             and "n_jobs : int" not in original_class.__doc__
         ):
             # Python 3.13 removed extra tab in class doc string
-            tab = "    " if sys.version_info.minor < 13 else ""
+            tab = (
+                "    "
+                if (sys.version_info.major == 3 and sys.version_info.minor < 13)
+                else ""
+            )
             parameters_doc_tail = f"\n{tab}Attributes"
             n_jobs_doc = f"""
 {tab}n_jobs : int, default=None

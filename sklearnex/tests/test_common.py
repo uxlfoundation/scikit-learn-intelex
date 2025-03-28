@@ -406,22 +406,36 @@ def estimator_trace(estimator, method, cache, isolated_trace):
 
 
 def call_validate_data(text, estimator, method):
-    """test that the sklearn function/attribute validate_data is
+    """test that both sklearnex wrapper for validate_data and
+    original sklearn function/method validate_data are
     called once before offloading to oneDAL in sklearnex"""
     try:
         # get last to_table call showing end of oneDAL input portion of code
         idx = len(text["funcs"]) - 1 - text["funcs"][::-1].index("to_table")
-        validfuncs = text["funcs"][:idx]
+        valid_funcs = text["funcs"][:idx]
+        valid_modules = text["modules"][:idx]
     except ValueError:
         pytest.skip("onedal backend not used in this function")
 
-    validate_data = "validate_data" if sklearn_check_version("1.6") else "_validate_data"
+    validate_data_calls = []
+    for func, module in zip(valid_funcs, valid_modules):
+        if func.endswith("validate_data"):
+            validate_data_calls.append({module, func})
 
     assert (
-        validfuncs.count(validate_data) == 1
-    ), f"sklearn's {validate_data} should be called"
+        len(validate_data_calls) == 2
+    ), "validate_data should be called two times: once for sklearn and once for sklearnex"
+    assert validate_data_calls[0] == {
+        "sklearnex.utils.validation",
+        "validate_data",
+    }, "sklearnex's validate_data should be called first"
     assert (
-        validfuncs.count("_check_feature_names") == 1
+        (validate_data_calls[1] == {"sklearn.utils.validation", "validate_data"})
+        if sklearn_check_version("1.6")
+        else (validate_data_calls[1] == {"sklearn.base", "_validate_data"})
+    ), "sklearn's validate_data should be called second"
+    assert (
+        valid_funcs.count("_check_feature_names") == 1
     ), "estimator should check feature names in validate_data"
 
 
@@ -467,11 +481,12 @@ def fit_check_before_support_check(text, estimator, method):
         pytest.skip(f"fitting occurs in {estimator}.{method}")
 
 
-DESIGN_RULES = [n_jobs_check, runtime_property_check, fit_check_before_support_check]
-
-
-if sklearn_check_version("1.0"):
-    DESIGN_RULES += [call_validate_data]
+DESIGN_RULES = [
+    n_jobs_check,
+    runtime_property_check,
+    fit_check_before_support_check,
+    call_validate_data,
+]
 
 
 @pytest.mark.parametrize("design_pattern", DESIGN_RULES)

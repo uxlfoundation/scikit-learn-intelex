@@ -433,3 +433,6 @@ gpu:
   # RuntimeError: Device support is not implemented, failing as result of fallback to cpu false
   - svm/tests/test_svm.py::test_unfitted
   - tests/test_common.py::test_estimators[SVC()-check_estimators_unfitted]
+
+  # Introduced with RNG forest updates in oneDAL
+  - ensemble/tests/test_voting.py::test_set_estimator_drop

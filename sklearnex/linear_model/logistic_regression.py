@@ -34,17 +34,12 @@ if daal_check_version((2024, "P", 1)):
     from daal4py.sklearn._utils import sklearn_check_version
     from daal4py.sklearn.linear_model.logistic_path import daal4py_fit, daal4py_predict
     from onedal.linear_model import LogisticRegression as onedal_LogisticRegression
-    from onedal.utils import _num_samples
+    from onedal.utils.validation import _num_samples
 
     from .._config import get_config
     from .._device_offload import dispatch, wrap_output_data
-    from .._utils import PatchingConditionsChain, get_patch_message
-    from ..base import IntelEstimator
-
-    if sklearn_check_version("1.6"):
-        from sklearn.utils.validation import validate_data
-    else:
-        validate_data = _sklearn_LogisticRegression._validate_data
+    from .._utils import PatchableEstimator, PatchingConditionsChain, get_patch_message
+    from ..utils.validation import validate_data
 
     _sparsity_enabled = daal_check_version((2024, "P", 700))
 
@@ -66,7 +61,9 @@ if daal_check_version((2024, "P", 1)):
             "score",
         ]
     )
-    class LogisticRegression(BaseLogisticRegression, _sklearn_LogisticRegression):
+    class LogisticRegression(
+        PatchableEstimator, _sklearn_LogisticRegression, BaseLogisticRegression
+    ):
         __doc__ = _sklearn_LogisticRegression.__doc__
 
         if sklearn_check_version("1.2"):
@@ -292,23 +289,14 @@ if daal_check_version((2024, "P", 1)):
 
             assert sample_weight is None
 
-            if sklearn_check_version("1.0"):
-                X, y = validate_data(
-                    self,
-                    X,
-                    y,
-                    accept_sparse=_sparsity_enabled,
-                    accept_large_sparse=_sparsity_enabled,
-                    dtype=[np.float64, np.float32],
-                )
-            else:
-                X, y = check_X_y(
-                    X,
-                    y,
-                    accept_sparse=_sparsity_enabled,
-                    accept_large_sparse=_sparsity_enabled,
-                    dtype=[np.float64, np.float32],
-                )
+            X, y = validate_data(
+                self,
+                X,
+                y,
+                accept_sparse=_sparsity_enabled,
+                accept_large_sparse=_sparsity_enabled,
+                dtype=[np.float64, np.float32],
+            )
 
             self._onedal_gpu_initialize_estimator()
             try:
@@ -331,22 +319,14 @@ if daal_check_version((2024, "P", 1)):
             if queue is None or queue.sycl_device.is_cpu:
                 return daal4py_predict(self, X, "computeClassLabels")
 
-            if sklearn_check_version("1.0"):
-                X = validate_data(
-                    self,
-                    X,
-                    reset=False,
-                    accept_sparse=_sparsity_enabled,
-                    accept_large_sparse=_sparsity_enabled,
-                    dtype=[np.float64, np.float32],
-                )
-            else:
-                X = check_array(
-                    X,
-                    accept_sparse=_sparsity_enabled,
-                    accept_large_sparse=_sparsity_enabled,
-                    dtype=[np.float64, np.float32],
-                )
+            X = validate_data(
+                self,
+                X,
+                reset=False,
+                accept_sparse=_sparsity_enabled,
+                accept_large_sparse=_sparsity_enabled,
+                dtype=[np.float64, np.float32],
+            )
 
             assert hasattr(self, "_onedal_estimator")
             return self._onedal_estimator.predict(X, queue=queue)
@@ -355,22 +335,14 @@ if daal_check_version((2024, "P", 1)):
             if queue is None or queue.sycl_device.is_cpu:
                 return daal4py_predict(self, X, "computeClassProbabilities")
 
-            if sklearn_check_version("1.0"):
-                X = validate_data(
-                    self,
-                    X,
-                    reset=False,
-                    accept_sparse=_sparsity_enabled,
-                    accept_large_sparse=_sparsity_enabled,
-                    dtype=[np.float64, np.float32],
-                )
-            else:
-                X = check_array(
-                    X,
-                    accept_sparse=_sparsity_enabled,
-                    accept_large_sparse=_sparsity_enabled,
-                    dtype=[np.float64, np.float32],
-                )
+            X = validate_data(
+                self,
+                X,
+                reset=False,
+                accept_sparse=_sparsity_enabled,
+                accept_large_sparse=_sparsity_enabled,
+                dtype=[np.float64, np.float32],
+            )
 
             assert hasattr(self, "_onedal_estimator")
             return self._onedal_estimator.predict_proba(X, queue=queue)
@@ -379,22 +351,14 @@ if daal_check_version((2024, "P", 1)):
             if queue is None or queue.sycl_device.is_cpu:
                 return daal4py_predict(self, X, "computeClassLogProbabilities")
 
-            if sklearn_check_version("1.0"):
-                X = validate_data(
-                    self,
-                    X,
-                    reset=False,
-                    accept_sparse=_sparsity_enabled,
-                    accept_large_sparse=_sparsity_enabled,
-                    dtype=[np.float64, np.float32],
-                )
-            else:
-                X = check_array(
-                    X,
-                    accept_sparse=_sparsity_enabled,
-                    accept_large_sparse=_sparsity_enabled,
-                    dtype=[np.float64, np.float32],
-                )
+            X = validate_data(
+                self,
+                X,
+                reset=False,
+                accept_sparse=_sparsity_enabled,
+                accept_large_sparse=_sparsity_enabled,
+                dtype=[np.float64, np.float32],
+            )
 
             assert hasattr(self, "_onedal_estimator")
             return self._onedal_estimator.predict_log_proba(X, queue=queue)

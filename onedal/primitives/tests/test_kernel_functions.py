@@ -91,7 +91,7 @@ def test_dense_small_rbf_kernel(queue, gamma, dtype):
     _test_dense_small_rbf_kernel(queue, gamma, dtype)
 
 
-@pass_if_not_implemented_for_gpu(reason="poly kernel is not implemented")
+@pass_if_not_implemented_for_gpu(reason="Polynomial kernel is not implemented for GPU")
 @pytest.mark.parametrize("queue", get_queues())
 def test_dense_self_poly_kernel(queue):
     rng = np.random.RandomState(0)
@@ -116,7 +116,7 @@ def _test_dense_small_poly_kernel(queue, gamma, coef0, degree, dtype):
     assert_allclose(result, expected, rtol=tol)
 
 
-@pass_if_not_implemented_for_gpu(reason="poly kernel is not implemented")
+@pass_if_not_implemented_for_gpu(reason="Polynomial kernel is not implemented for GPU")
 @pytest.mark.parametrize("queue", get_queues())
 @pytest.mark.parametrize("gamma", [0.1, 1.0])
 @pytest.mark.parametrize("coef0", [0.0, 1.0])
@@ -126,7 +126,7 @@ def test_dense_small_poly_kernel(queue, gamma, coef0, degree, dtype):
     _test_dense_small_poly_kernel(queue, gamma, coef0, degree, dtype)
 
 
-@pass_if_not_implemented_for_gpu(reason="sigmoid kernel is not implemented")
+@pass_if_not_implemented_for_gpu(reason="Sigmoid kernel is not implemented for GPU")
 @pytest.mark.parametrize("queue", get_queues())
 def test_dense_self_sigmoid_kernel(queue):
     rng = np.random.RandomState(0)
@@ -150,7 +150,7 @@ def _test_dense_small_sigmoid_kernel(queue, gamma, coef0, dtype):
     assert_allclose(result, expected, rtol=tol)
 
 
-@pass_if_not_implemented_for_gpu(reason="sigmoid kernel is not implemented")
+@pass_if_not_implemented_for_gpu(reason="Sigmoid kernel is not implemented for GPU")
 @pytest.mark.parametrize("queue", get_queues())
 @pytest.mark.parametrize("gamma", [0.1, 1.0, 2.4])
 @pytest.mark.parametrize("coef0", [0.0, 1.0, 5.5])

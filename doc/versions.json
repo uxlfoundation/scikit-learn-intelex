@@ -1,38 +1,8 @@
 [
     {
         "name": "latest",
-        "version": "2025.2",
+        "version": "latest",
         "url": "/scikit-learn-intelex/latest/"
-    },
-    {
-        "name": "2025.2",
-        "version": "2025.2",
-        "url": "/scikit-learn-intelex/2025.2/"
-    },
-    {
-        "name": "2025.1",
-        "version": "2025.1",
-        "url": "/scikit-learn-intelex/2025.1/"
-    },
-    {
-        "name": "2025.0",
-        "version": "2025.0",
-        "url": "/scikit-learn-intelex/2025.0/"
-    },
-    {
-        "version": "2024.7",
-        "url": "/scikit-learn-intelex/2024.7/"
-    },
-    {
-        "version": "2024.6",
-        "url": "/scikit-learn-intelex/2024.6/"
-    },
-    {
-        "version": "2024.3",
-        "url": "/scikit-learn-intelex/2024.3/"
-    },
-    {
-        "version": "2023.2",
-        "url": "/scikit-learn-intelex/2023.2/"
     }
 ]
+
