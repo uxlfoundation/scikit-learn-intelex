@@ -36,17 +36,17 @@ from onedal.linear_model import IncrementalRidge as onedal_IncrementalRidge
 
 from .._device_offload import dispatch, wrap_output_data
 from .._utils import (
-    ExtensionEstimator,
     PatchingConditionsChain,
     _add_inc_serialization_note,
 )
+from ..base import oneDALEstimator
 
 
 @control_n_jobs(
     decorated_methods=["fit", "partial_fit", "predict", "score", "_onedal_finalize_fit"]
 )
 class IncrementalRidge(
-    ExtensionEstimator, MultiOutputMixin, RegressorMixin, BaseEstimator
+    oneDALEstimator, MultiOutputMixin, RegressorMixin, BaseEstimator
 ):
     """
     Incremental estimator for Ridge Regression.
