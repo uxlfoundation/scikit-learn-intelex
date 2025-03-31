@@ -26,8 +26,8 @@ else:
 
     # Use internally-defined SyclQueue defined in onedal/common/sycl.cpp
     # the host backend SyclQueue will only accept "auto" or a string
-    # beginning with "cpu" and will return a None, it is a function
-    # in this case. No SyclDevice is defined.
+    # beginning with "cpu" and will return a None, it acts as a function
+    # via `__new__`. No SyclDevice is defined.
     SyclQueue = _default_backend.SyclQueue
 
 # single instance of global queue
