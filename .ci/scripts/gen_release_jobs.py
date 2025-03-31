@@ -16,7 +16,7 @@
 # ==============================================================================
 
 import argparse
-import os.path
+import os
 import sys
 import re
 
@@ -47,7 +47,7 @@ def generate_python_versions(file="README.md"):
 
 PYTHON_VERSIONS = generate_python_versions()
 
-def collect_azp_CI_OS_images(file=".ci/pipeline/ci.yml"):
+def collect_azp_CI_OS_images(file=f".ci{os.sep}pipeline{os.sep}ci.yml"):
     """Attempt to centralize the supported version from the azp CI pipeline, which
     represents the currently tested versions in Azure Pipelines."""
     regex = r"(?<=vmImage: ').*(?=')"
