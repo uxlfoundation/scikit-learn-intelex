@@ -14,11 +14,6 @@
 # limitations under the License.
 #===============================================================================
 
-pr:
-  branches:
-    include:
-    - main
-
 variables:
   DESCRIPTION: ReleaseTesting
 
