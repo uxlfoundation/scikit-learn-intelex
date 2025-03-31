@@ -71,7 +71,7 @@ res_enum = {}
 for channel in CHANNELS:
     for python_version in PYTHON_VERSIONS:
         for vmOS in OS_VERSIONS:
-            res_key = channel + " - " + "python" + python_version + " - " + os
+            res_key = channel + " - " + "python" + python_version + " - " + vmOS
             res_enum[res_key] = {}
             res_enum[res_key]["python.version"] = python_version
             res_enum[res_key]["imageName"] = vmOS
