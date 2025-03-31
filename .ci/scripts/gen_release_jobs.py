@@ -36,7 +36,7 @@ print(CHANNELS)
 
 def generate_python_versions(file="README.md"):
     """Attempt to centralize the supported versions in the right location: the README.
-    Take it from a badge which lists the supported versions."
+    Take it from a badge which lists the supported versions."""
     regex = r"(?<=\[python version\]\(https://img.shields.io/badge/python-).*(?=-blue\)\])"
     sep = "%20%7C%20"
     pydefaults = ["3.9", "3.10", "3.11"]
