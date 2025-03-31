@@ -921,7 +921,9 @@ class ModelBuilderTreeView(unittest.TestCase):
                 ]
 
         mock = MockBooster()
-        result = gbt_convertors.TreeList.from_xgb_booster(mock, max_trees=0)
+        result = gbt_convertors.TreeList.from_xgb_booster(
+            mock, max_trees=0, feature_names_to_indices={"1": 1}
+        )
         self.assertEqual(len(result), 2)
 
         tree0 = result[0]
@@ -971,6 +973,63 @@ class ModelBuilderTreeView(unittest.TestCase):
         self.assertEqual(tree1.n_nodes, 1)
         self.assertEqual(tree1.cover, 42)
         self.assertEqual(tree1.value, 0.2)
+
+
+class TestXGBObjectIsNotCorrupted(unittest.TestCase):
+    def test_xgb_not_corrupted_no_names(self):
+        X, y = make_regression(n_samples=100, n_features=10, random_state=123)
+        X[:, 1] = X[:, 1].astype(int)
+        dm = xgb.DMatrix(X, y, feature_types=["q", "int"] + (["q"] * (X.shape[1] - 2)))
+        xgb_model = xgb.train(
+            params={"objective": "reg:squarederror", "seed": 123},
+            dtrain=dm,
+            num_boost_round=10,
+        )
+        model_bytes_before = xgb_model.save_raw()
+
+        d4p_model = d4p.mb.convert_model(xgb_model)
+
+        model_bytes_after = xgb_model.save_raw()
+        assert model_bytes_before == model_bytes_after
+
+        xgb_pred = xgb_pred = xgb_model.predict(dm)
+        xgb_pred_fresh = xgb.train(
+            params={"objective": "reg:squarederror", "seed": 123},
+            dtrain=xgb.DMatrix(X, y),
+            num_boost_round=10,
+        ).predict(xgb.DMatrix(X))
+        np.testing.assert_almost_equal(xgb_pred, xgb_pred_fresh)
+
+    def test_xgb_not_corrupted_with_names(self):
+        X, y = make_regression(n_samples=100, n_features=10, random_state=123)
+        X[:, 1] = X[:, 1].astype(int)
+        dm = xgb.DMatrix(
+            X,
+            y,
+            feature_types=["q", "int"] + (["q"] * (X.shape[1] - 2)),
+            feature_names=[f"col{i+1}" for i in range(X.shape[1])],
+        )
+        xgb_model = xgb.train(
+            params={"objective": "reg:squarederror", "seed": 123},
+            dtrain=dm,
+            num_boost_round=10,
+        )
+        model_bytes_before = xgb_model.save_raw()
+
+        d4p_model = d4p.mb.convert_model(xgb_model)
+
+        model_bytes_after = xgb_model.save_raw()
+        assert model_bytes_before == model_bytes_after
+
+        xgb_pred = xgb_pred = xgb_model.predict(dm)
+        xgb_pred_fresh = xgb.train(
+            params={"objective": "reg:squarederror", "seed": 123},
+            dtrain=xgb.DMatrix(X, y),
+            num_boost_round=10,
+        ).predict(xgb.DMatrix(X))
+        np.testing.assert_almost_equal(xgb_pred, xgb_pred_fresh)
+
+        np.testing.assert_allclose(d4p_model.predict(X), xgb_pred, rtol=1e-5)
 
 
 if __name__ == "__main__":

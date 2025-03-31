@@ -16,6 +16,7 @@
 
 import json
 from collections import deque
+from copy import deepcopy
 from tempfile import NamedTemporaryFile
 from typing import Any, Deque, Dict, List, Optional, Tuple
 from warnings import warn
@@ -141,10 +142,16 @@ class Node:
         self.position = position
 
     @staticmethod
-    def from_xgb_dict(input_dict: Dict[str, Any]) -> "Node":
+    def from_xgb_dict(
+        input_dict: Dict[str, Any], feature_names_to_indices: dict[str, int]
+    ) -> "Node":
         if "children" in input_dict:
-            left_child = Node.from_xgb_dict(input_dict["children"][0])
-            right_child = Node.from_xgb_dict(input_dict["children"][1])
+            left_child = Node.from_xgb_dict(
+                input_dict["children"][0], feature_names_to_indices
+            )
+            right_child = Node.from_xgb_dict(
+                input_dict["children"][1], feature_names_to_indices
+            )
             n_children = 2 + left_child.n_children + right_child.n_children
         else:
             left_child = None
@@ -152,11 +159,14 @@ class Node:
             n_children = 0
         is_leaf = "leaf" in input_dict
         default_left = "yes" in input_dict and input_dict["yes"] == input_dict["missing"]
+        feature = input_dict.get("split")
+        if feature:
+            feature = feature_names_to_indices[feature]
         return Node(
             cover=input_dict["cover"],
             is_leaf=is_leaf,
             default_left=default_left,
-            feature=input_dict.get("split"),
+            feature=feature,
             value=input_dict["leaf"] if is_leaf else input_dict["split_condition"],
             n_children=n_children,
             left_child=left_child,
@@ -253,30 +263,45 @@ class TreeList(list):
     model builders from various objects"""
 
     @staticmethod
-    def from_xgb_booster(booster, max_trees: int) -> "TreeList":
+    def from_xgb_booster(
+        booster, max_trees: int, feature_names_to_indices: dict[str, int]
+    ) -> "TreeList":
         """
         Load a TreeList from an xgb.Booster object
         Note: We cannot type-hint the xgb.Booster without loading xgb as dependency in pyx code,
               therefore not type hint is added.
         """
-        # dump_format="json" is affected by the integer-overflow error,
-        # since XGBoost doesn't control numeric limits of integer features.
-        # For correct conversion we manulally replace feature types from 'int'->'float;
-        if hasattr(booster, "feature_types"):
-            feature_types = booster.feature_types
-            if feature_types:
-                for i in range(len(feature_types)):
-                    if feature_types[i] == "int":
-                        feature_types[i] = "float"
-                booster.feature_types = feature_types
 
-        tl = TreeList()
-        dump = booster.get_dump(dump_format="json", with_stats=True)
+        # Note: in XGBoost, it's possible to use 'int' type for features that contain
+        # non-integer floating points. In such case, the training procedure and JSON
+        # export from XGBoost will not treat them any differently from 'q'-type
+        # (numeric) features, but the per-tree JSON text dumps used here will output
+        # a split threshold rounded to the nearest integer for those 'int' features,
+        # even if the booster internally has thresholds with decimal points and outputs
+        # them as such in the full-model JSON dumps. Hence the need for this override
+        # mechanism. If this behavior changes in XGBoost, then this conversion and
+        # override can be removed.
+        orig_feature_types = None
+        try:
+            if hasattr(booster, "feature_types"):
+                feature_types = booster.feature_types
+                orig_feature_types = deepcopy(feature_types)
+                if feature_types:
+                    for i in range(len(feature_types)):
+                        if feature_types[i] == "int":
+                            feature_types[i] = "float"
+                    booster.feature_types = feature_types
+
+            tl = TreeList()
+            dump = booster.get_dump(dump_format="json", with_stats=True)
+        finally:
+            if orig_feature_types:
+                booster.feature_types = orig_feature_types
         for tree_id, raw_tree in enumerate(dump):
             if max_trees > 0 and tree_id == max_trees:
                 break
             raw_tree_parsed = json.loads(raw_tree)
-            root_node = Node.from_xgb_dict(raw_tree_parsed)
+            root_node = Node.from_xgb_dict(raw_tree_parsed, feature_names_to_indices)
             tl.append(TreeView(tree_id=tree_id, root_node=root_node))
 
         return tl
@@ -433,10 +458,17 @@ def get_gbt_model_from_lightgbm(model: Any, booster=None) -> Any:
 
 
 def get_gbt_model_from_xgboost(booster: Any, xgb_config=None) -> Any:
-    # Release Note for XGBoost 1.5.0: Python interface now supports configuring
-    # constraints using feature names instead of feature indices. This also
-    # helps with pandas input with set feature names.
-    booster.feature_names = [str(i) for i in range(booster.num_features())]
+    # Note: in the absence of any feature names, XGBoost will generate
+    # tree json dumps where features are named 'f0..N'. While the JSONs
+    # of the whole model will have feature indices, the per-tree JSONs
+    # used here always use string names instead, hence the need for this.
+    feature_names = booster.feature_names
+    if feature_names:
+        feature_names_to_indices = {fname: ind for ind, fname in enumerate(feature_names)}
+    else:
+        feature_names_to_indices = {
+            f"f{ind}": ind for ind in range(booster.num_features())
+        }
 
     if xgb_config is None:
         xgb_config = get_xgboost_params(booster)
@@ -485,7 +517,7 @@ def get_gbt_model_from_xgboost(booster: Any, xgb_config=None) -> Any:
     max_trees = getattr(booster, "best_iteration", -1) + 1
     if n_classes > 2:
         max_trees *= n_classes
-    tree_list = TreeList.from_xgb_booster(booster, max_trees)
+    tree_list = TreeList.from_xgb_booster(booster, max_trees, feature_names_to_indices)
 
     if hasattr(booster, "best_iteration"):
         n_iterations = booster.best_iteration + 1
