@@ -32,6 +32,15 @@ except (ImportError, ModuleNotFoundError):
 
 from sklearn.utils.metaestimators import available_if
 
+from .gbt_convertors import (
+    get_catboost_params,
+    get_gbt_model_from_catboost,
+    get_gbt_model_from_lightgbm,
+    get_gbt_model_from_xgboost,
+    get_lightgbm_params,
+    get_xgboost_params,
+)
+
 
 def parse_dtype(dt):
     if dt == np.double:
@@ -85,18 +94,18 @@ class GBTDAALBaseModel:
         self.n_features_in_ = len(params["features_info"]["float_features"])
 
     def _convert_model_from_lightgbm(self, booster):
-        lgbm_params = d4p.get_lightgbm_params(booster)
-        self.daal_model_ = d4p.get_gbt_model_from_lightgbm(booster, lgbm_params)
+        lgbm_params = get_lightgbm_params(booster)
+        self.daal_model_ = get_gbt_model_from_lightgbm(booster, lgbm_params)
         self._get_params_from_lightgbm(lgbm_params)
 
     def _convert_model_from_xgboost(self, booster):
-        xgb_params = d4p.get_xgboost_params(booster)
-        self.daal_model_ = d4p.get_gbt_model_from_xgboost(booster, xgb_params)
+        xgb_params = get_xgboost_params(booster)
+        self.daal_model_ = get_gbt_model_from_xgboost(booster, xgb_params)
         self._get_params_from_xgboost(xgb_params)
 
     def _convert_model_from_catboost(self, booster):
-        catboost_params = d4p.get_catboost_params(booster)
-        self.daal_model_ = d4p.get_gbt_model_from_catboost(booster)
+        catboost_params = get_catboost_params(booster)
+        self.daal_model_ = get_gbt_model_from_catboost(booster)
         self._get_params_from_catboost(catboost_params)
 
     def _convert_model(self, model):

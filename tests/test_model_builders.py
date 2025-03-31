@@ -32,6 +32,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 
 import daal4py as d4p
+from daal4py.mb import gbt_convertors
 from daal4py.sklearn._utils import daal_check_version
 
 try:
@@ -920,18 +921,18 @@ class ModelBuilderTreeView(unittest.TestCase):
                 ]
 
         mock = MockBooster()
-        result = d4p.TreeList.from_xgb_booster(mock, max_trees=0)
+        result = gbt_convertors.TreeList.from_xgb_booster(mock, max_trees=0)
         self.assertEqual(len(result), 2)
 
         tree0 = result[0]
-        self.assertIsInstance(tree0, d4p.TreeView)
+        self.assertIsInstance(tree0, gbt_convertors.TreeView)
         self.assertFalse(tree0.is_leaf)
         with self.assertRaises(ValueError):
             tree0.cover
         with self.assertRaises(ValueError):
             tree0.value
 
-        self.assertIsInstance(tree0.root_node, d4p.Node)
+        self.assertIsInstance(tree0.root_node, gbt_convertors.Node)
 
         self.assertEqual(tree0.root_node.cover, 4)
         self.assertEqual(tree0.root_node.left_child.cover, 6)
@@ -965,7 +966,7 @@ class ModelBuilderTreeView(unittest.TestCase):
         self.assertIsNone(tree0.root_node.right_child.right_child)
 
         tree1 = result[1]
-        self.assertIsInstance(tree1, d4p.TreeView)
+        self.assertIsInstance(tree1, gbt_convertors.TreeView)
         self.assertTrue(tree1.is_leaf)
         self.assertEqual(tree1.n_nodes, 1)
         self.assertEqual(tree1.cover, 42)

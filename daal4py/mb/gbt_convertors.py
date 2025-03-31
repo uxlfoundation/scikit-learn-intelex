@@ -22,6 +22,8 @@ from warnings import warn
 
 import numpy as np
 
+from .. import gbt_clf_model_builder, gbt_reg_model_builder
+
 
 class CatBoostNode:
     def __init__(
@@ -37,6 +39,7 @@ class CatBoostNode:
         self.right = right
         self.left = left
         self.cover = cover
+
 
 class CatBoostModelData:
     """Wrapper around the CatBoost model dump for easier access to properties"""
