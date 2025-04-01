@@ -25,22 +25,18 @@ from sklearn.utils.validation import _check_sample_weight
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal.basic_statistics import BasicStatistics as onedal_BasicStatistics
-from onedal.utils import _is_csr
+from onedal.utils.validation import _is_csr
 
 from .._device_offload import dispatch
-from .._utils import IntelEstimator, PatchingConditionsChain
-
-if sklearn_check_version("1.6"):
-    from sklearn.utils.validation import validate_data
-else:
-    validate_data = BaseEstimator._validate_data
+from .._utils import ExtensionEstimator, PatchingConditionsChain
+from ..utils.validation import validate_data
 
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import StrOptions
 
 
 @control_n_jobs(decorated_methods=["fit"])
-class BasicStatistics(IntelEstimator, BaseEstimator):
+class BasicStatistics(ExtensionEstimator, BaseEstimator):
     """
     Estimator for basic statistics.
     Allows to compute basic statistics for provided data.
@@ -204,16 +200,13 @@ class BasicStatistics(IntelEstimator, BaseEstimator):
         if sklearn_check_version("1.2"):
             self._validate_params()
 
-        if sklearn_check_version("1.0"):
-            X = validate_data(
-                self,
-                X,
-                dtype=[np.float64, np.float32],
-                ensure_2d=False,
-                accept_sparse="csr",
-            )
-        else:
-            X = check_array(X, dtype=[np.float64, np.float32])
+        X = validate_data(
+            self,
+            X,
+            dtype=[np.float64, np.float32],
+            ensure_2d=False,
+            accept_sparse="csr",
+        )
 
         if sample_weight is not None:
             sample_weight = _check_sample_weight(sample_weight, X)
@@ -224,7 +217,7 @@ class BasicStatistics(IntelEstimator, BaseEstimator):
 
         if not hasattr(self, "_onedal_estimator"):
             self._onedal_estimator = self._onedal_basic_statistics(**onedal_params)
-        self._onedal_estimator.fit(X, sample_weight, queue)
+        self._onedal_estimator.fit(X, sample_weight, queue=queue)
         self._save_attributes()
         self.n_features_in_ = X.shape[1] if len(X.shape) > 1 else 1
 

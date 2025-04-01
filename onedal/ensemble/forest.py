@@ -24,25 +24,27 @@ from sklearn.ensemble import BaseEnsemble
 from sklearn.utils import check_random_state
 
 from daal4py.sklearn._utils import daal_check_version
+from onedal._device_offload import supports_queue
+from onedal.common._backend import bind_default_backend
+from onedal.utils import _sycl_queue_manager as QM
 from sklearnex import get_hyperparameters
 
 from .._config import _get_config
-from ..common._base import BaseEstimator
 from ..common._estimator_checks import _check_is_fitted
 from ..common._mixin import ClassifierMixin, RegressorMixin
 from ..datatypes import from_table, to_table
-from ..utils import (
+from ..utils._array_api import _get_sycl_namespace
+from ..utils._dpep_helpers import get_unique_values_with_dpep
+from ..utils.validation import (
     _check_array,
     _check_n_features,
     _check_X_y,
     _column_or_1d,
     _validate_targets,
 )
-from ..utils._array_api import _get_sycl_namespace
-from ..utils._dpep_helpers import get_unique_values_with_dpep
 
 
-class BaseForest(BaseEstimator, BaseEnsemble, metaclass=ABCMeta):
+class BaseForest(BaseEnsemble, metaclass=ABCMeta):
     @abstractmethod
     def __init__(
         self,
@@ -98,6 +100,12 @@ class BaseForest(BaseEstimator, BaseEnsemble, metaclass=ABCMeta):
         self.error_metric_mode = error_metric_mode
         self.variable_importance_mode = variable_importance_mode
         self.algorithm = algorithm
+
+    @abstractmethod
+    def train(self, *args, **kwargs): ...
+
+    @abstractmethod
+    def infer(self, *args, **kwargs): ...
 
     def _to_absolute_max_features(self, n_features):
         if self.max_features is None:
@@ -291,7 +299,7 @@ class BaseForest(BaseEstimator, BaseEnsemble, metaclass=ABCMeta):
 
         return sample_weight
 
-    def _fit(self, X, y, sample_weight, module, queue):
+    def _fit(self, X, y, sample_weight):
         use_raw_input = _get_config().get("use_raw_input", False) is True
         sua_iface, xp, _ = _get_sycl_namespace(X)
 
@@ -317,11 +325,9 @@ class BaseForest(BaseEstimator, BaseEnsemble, metaclass=ABCMeta):
             data = (X, y, sample_weight)
         else:
             data = (X, y)
-
-        policy = self._get_policy(queue, *data)
-        data = to_table(*data, queue=queue)
+        data = to_table(*data, queue=QM.get_global_queue())
         params = self._get_onedal_params(data[0])
-        train_result = module.train(policy, params, *data)
+        train_result = self.train(params, *data)
 
         self._onedal_model = train_result.model
 
@@ -358,7 +364,7 @@ class BaseForest(BaseEstimator, BaseEnsemble, metaclass=ABCMeta):
         # upate error msg.
         raise NotImplementedError("Creating model is not supported.")
 
-    def _predict(self, X, module, queue, hparams=None):
+    def _predict(self, X, hparams=None):
         _check_is_fitted(self)
 
         use_raw_input = _get_config().get("use_raw_input", False) is True
@@ -376,20 +382,20 @@ class BaseForest(BaseEstimator, BaseEnsemble, metaclass=ABCMeta):
                 accept_sparse=False,
             )
             _check_n_features(self, X, False)
-        policy = self._get_policy(queue, X)
 
         model = self._onedal_model
+        queue = QM.get_global_queue()
         X = to_table(X, queue=queue)
         params = self._get_onedal_params(X)
         if hparams is not None and not hparams.is_default:
-            result = module.infer(policy, params, hparams.backend, model, X)
+            result = self.infer(params, hparams.backend, model, X)
         else:
-            result = module.infer(policy, params, model, X)
+            result = self.infer(params, model, X)
 
         y = from_table(result.responses, sua_iface=sua_iface, sycl_queue=queue, xp=xp)
         return y
 
-    def _predict_proba(self, X, module, queue, hparams=None):
+    def _predict_proba(self, X, hparams=None):
         _check_is_fitted(self)
         use_raw_input = _get_config().get("use_raw_input", False) is True
         sua_iface, xp, _ = _get_sycl_namespace(X)
@@ -397,6 +403,8 @@ class BaseForest(BaseEstimator, BaseEnsemble, metaclass=ABCMeta):
         # All data should use the same sycl queue
         if use_raw_input and sua_iface is not None:
             queue = X.sycl_queue
+        else:
+            queue = QM.get_global_queue()
 
         if not use_raw_input:
             X = _check_array(
@@ -406,16 +414,15 @@ class BaseForest(BaseEstimator, BaseEnsemble, metaclass=ABCMeta):
                 accept_sparse=False,
             )
             _check_n_features(self, X, False)
-        policy = self._get_policy(queue, X)
         X = to_table(X, queue=queue)
         params = self._get_onedal_params(X)
         params["infer_mode"] = "class_probabilities"
 
         model = self._onedal_model
         if hparams is not None and not hparams.is_default:
-            result = module.infer(policy, params, hparams.backend, model, X)
+            result = self.infer(params, hparams.backend, model, X)
         else:
-            result = module.infer(policy, params, model, X)
+            result = self.infer(params, model, X)
 
         return from_table(result.probabilities)
 
@@ -478,6 +485,12 @@ class RandomForestClassifier(ClassifierMixin, BaseForest, metaclass=ABCMeta):
             algorithm=algorithm,
         )
 
+    @bind_default_backend("decision_forest.classification")
+    def train(self, *args, **kwargs): ...
+
+    @bind_default_backend("decision_forest.classification")
+    def infer(self, *args, **kwargs): ...
+
     def _validate_targets(self, y, dtype):
         y, self.class_weight_, self.classes_ = _validate_targets(
             y, self.class_weight, dtype
@@ -490,27 +503,15 @@ class RandomForestClassifier(ClassifierMixin, BaseForest, metaclass=ABCMeta):
         #    self.n_classes_ = self.classes_
         return y
 
+    @supports_queue
     def fit(self, X, y, sample_weight=None, queue=None):
-        return self._fit(
-            X,
-            y,
-            sample_weight,
-            self._get_backend("decision_forest", "classification", None),
-            queue,
-        )
+        return self._fit(X, y, sample_weight)
 
+    @supports_queue
     def predict(self, X, queue=None):
         _, xp, _ = _get_sycl_namespace(X)
         hparams = get_hyperparameters("decision_forest", "infer")
-        pred = xp.reshape(
-            super()._predict(
-                X,
-                self._get_backend("decision_forest", "classification", None),
-                queue,
-                hparams,
-            ),
-            -1,
-        )
+        pred = xp.reshape(self._predict(X, hparams), -1)
 
         try:
             return xp.take(
@@ -519,15 +520,11 @@ class RandomForestClassifier(ClassifierMixin, BaseForest, metaclass=ABCMeta):
         except AttributeError:
             return np.take(self.classes_, pred.ravel().astype(np.int64, casting="unsafe"))
 
+    @supports_queue
     def predict_proba(self, X, queue=None):
         hparams = get_hyperparameters("decision_forest", "infer")
 
-        return super()._predict_proba(
-            X,
-            self._get_backend("decision_forest", "classification", None),
-            queue,
-            hparams,
-        )
+        return super()._predict_proba(X, hparams)
 
 
 class RandomForestRegressor(RegressorMixin, BaseForest, metaclass=ABCMeta):
@@ -588,27 +585,24 @@ class RandomForestRegressor(RegressorMixin, BaseForest, metaclass=ABCMeta):
             algorithm=algorithm,
         )
 
+    @bind_default_backend("decision_forest.regression")
+    def train(self, *args, **kwargs): ...
+
+    @bind_default_backend("decision_forest.regression")
+    def infer(self, *args, **kwargs): ...
+
+    @supports_queue
     def fit(self, X, y, sample_weight=None, queue=None):
         if sample_weight is not None:
             if hasattr(sample_weight, "__array__"):
                 sample_weight[sample_weight == 0.0] = 1.0
             sample_weight = [sample_weight]
-        return super()._fit(
-            X,
-            y,
-            sample_weight,
-            self._get_backend("decision_forest", "regression", None),
-            queue,
-        )
+        return self._fit(X, y, sample_weight)
 
+    @supports_queue
     def predict(self, X, queue=None):
         _, xp, _ = _get_sycl_namespace(X)
-        return xp.reshape(
-            super()._predict(
-                X, self._get_backend("decision_forest", "regression", None), queue
-            ),
-            -1,
-        )
+        return xp.reshape(self._predict(X), -1)
 
 
 class ExtraTreesClassifier(ClassifierMixin, BaseForest, metaclass=ABCMeta):
@@ -669,6 +663,12 @@ class ExtraTreesClassifier(ClassifierMixin, BaseForest, metaclass=ABCMeta):
             algorithm=algorithm,
         )
 
+    @bind_default_backend("decision_forest.classification")
+    def train(self, *args, **kwargs): ...
+
+    @bind_default_backend("decision_forest.classification")
+    def infer(self, *args, **kwargs): ...
+
     def _validate_targets(self, y, dtype):
         y, self.class_weight_, self.classes_ = _validate_targets(
             y, self.class_weight, dtype
@@ -681,26 +681,19 @@ class ExtraTreesClassifier(ClassifierMixin, BaseForest, metaclass=ABCMeta):
         #    self.n_classes_ = self.classes_
         return y
 
+    @supports_queue
     def fit(self, X, y, sample_weight=None, queue=None):
-        return self._fit(
-            X,
-            y,
-            sample_weight,
-            self._get_backend("decision_forest", "classification", None),
-            queue,
-        )
+        return self._fit(X, y, sample_weight)
 
+    @supports_queue
     def predict(self, X, queue=None):
-        pred = super()._predict(
-            X, self._get_backend("decision_forest", "classification", None), queue
-        )
+        pred = self._predict(X)
 
         return np.take(self.classes_, pred.ravel().astype(np.int64, casting="unsafe"))
 
+    @supports_queue
     def predict_proba(self, X, queue=None):
-        return super()._predict_proba(
-            X, self._get_backend("decision_forest", "classification", None), queue
-        )
+        return super()._predict_proba(X)
 
 
 class ExtraTreesRegressor(RegressorMixin, BaseForest, metaclass=ABCMeta):
@@ -761,22 +754,20 @@ class ExtraTreesRegressor(RegressorMixin, BaseForest, metaclass=ABCMeta):
             algorithm=algorithm,
         )
 
+    @bind_default_backend("decision_forest.regression")
+    def train(self, *args, **kwargs): ...
+
+    @bind_default_backend("decision_forest.regression")
+    def infer(self, *args, **kwargs): ...
+
+    @supports_queue
     def fit(self, X, y, sample_weight=None, queue=None):
         if sample_weight is not None:
             if hasattr(sample_weight, "__array__"):
                 sample_weight[sample_weight == 0.0] = 1.0
             sample_weight = [sample_weight]
-        return super()._fit(
-            X,
-            y,
-            sample_weight,
-            self._get_backend("decision_forest", "regression", None),
-            queue,
-        )
+        return self._fit(X, y, sample_weight)
 
+    @supports_queue
     def predict(self, X, queue=None):
-        return (
-            super()
-            ._predict(X, self._get_backend("decision_forest", "regression", None), queue)
-            .ravel()
-        )
+        return self._predict(X).ravel()

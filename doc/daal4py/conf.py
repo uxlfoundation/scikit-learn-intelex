@@ -62,7 +62,13 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.githubpages",
     "sphinx.ext.autodoc",
+    "sphinx.ext.intersphinx",
 ]
+
+intersphinx_mapping = {
+    "mpi4py": ("https://mpi4py.readthedocs.io/en/stable/", None),
+    "xgboost": ("https://xgboost.readthedocs.io/en/stable/", None),
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -80,6 +86,12 @@ master_doc = "contents"
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path .
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "note.rst"]
+
+# substitutions
+
+rst_prolog = """
+.. |onedal| replace:: oneAPI Data Analytics Library
+"""
 
 
 # -- Options for HTML output -------------------------------------------------

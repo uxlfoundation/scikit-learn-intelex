@@ -32,6 +32,15 @@ except (ImportError, ModuleNotFoundError):
 
 from sklearn.utils.metaestimators import available_if
 
+from .gbt_convertors import (
+    get_catboost_params,
+    get_gbt_model_from_catboost,
+    get_gbt_model_from_lightgbm,
+    get_gbt_model_from_xgboost,
+    get_lightgbm_params,
+    get_xgboost_params,
+)
+
 
 def parse_dtype(dt):
     if dt == np.double:
@@ -85,18 +94,18 @@ class GBTDAALBaseModel:
         self.n_features_in_ = len(params["features_info"]["float_features"])
 
     def _convert_model_from_lightgbm(self, booster):
-        lgbm_params = d4p.get_lightgbm_params(booster)
-        self.daal_model_ = d4p.get_gbt_model_from_lightgbm(booster, lgbm_params)
+        lgbm_params = get_lightgbm_params(booster)
+        self.daal_model_ = get_gbt_model_from_lightgbm(booster, lgbm_params)
         self._get_params_from_lightgbm(lgbm_params)
 
     def _convert_model_from_xgboost(self, booster):
-        xgb_params = d4p.get_xgboost_params(booster)
-        self.daal_model_ = d4p.get_gbt_model_from_xgboost(booster, xgb_params)
+        xgb_params = get_xgboost_params(booster)
+        self.daal_model_ = get_gbt_model_from_xgboost(booster, xgb_params)
         self._get_params_from_xgboost(xgb_params)
 
     def _convert_model_from_catboost(self, booster):
-        catboost_params = d4p.get_catboost_params(booster)
-        self.daal_model_ = d4p.get_gbt_model_from_catboost(booster)
+        catboost_params = get_catboost_params(booster)
+        self.daal_model_ = get_gbt_model_from_catboost(booster)
         self._get_params_from_catboost(catboost_params)
 
     def _convert_model(self, model):
@@ -335,7 +344,36 @@ class GBTDAALBaseModel:
 
 
 class GBTDAALModel(GBTDAALBaseModel):
-    def predict(self, X, pred_contribs=False, pred_interactions=False):
+    """
+    Gradient Boosted Decision Tree Model
+
+    Model class offering accelerated predictions for gradient-boosted decision tree models
+    that were built using other libraries. See the documentation for :func:`convert_model`
+    for more details.
+
+    .. note:: This class cannot be instantiated directly. Use :func:`convert_model` to instantiate an object of this class.
+    """
+
+    def predict(
+        self, X, pred_contribs: bool = False, pred_interactions: bool = False
+    ) -> np.ndarray:
+        """
+        Compute model predictions on new data
+
+        Computes the predicted values of the response variable for new data given the features / covariates
+        for each row.
+
+        In the case of classification models, this will output the most probable class (see
+        :meth:`predict_proba` for probability predictions), while in the case of regression
+        models, will output values in the link scale (what XGBoost calls 'margin' and LightGBM
+        calls 'raw').
+
+        :param X: The features covariates. Should be an array of shape ``[num_samples, num_features]``.
+        :param bool pred_contribs: Whether to predict feature contributions. Result should have shape ``[num_samples, num_features+1]``, with the last column corresponding to the intercept. See :obj:`xgboost.Booster.predict` for more details about this type of computation.
+        :param bool pred_interactions: Whether to predict feature interactions. Result should have shape ``[num_samples, num_features+1, num_features+1]``, with the last position across the last two dimensions corresponding to the intercept. See :obj:`xgboost.Booster.predict` for more details about this type of computation.
+
+        :rtype: np.ndarray
+        """
         fptype = getFPType(X)
         if self._is_regression:
             return self._predict_regression(X, fptype, pred_contribs, pred_interactions)
@@ -352,12 +390,43 @@ class GBTDAALModel(GBTDAALBaseModel):
         return not self._is_regression
 
     @available_if(_check_proba)
-    def predict_proba(self, X):
+    def predict_proba(self, X) -> np.ndarray:
+        """
+        Predict class probabilities
+
+        Computes the predicted probabilities of belonging to each class for each row in the
+        input data given the features / covariates. Output shape is ``[num_samples, num_classes]``.
+
+        :param X: The features covariates. Should be an array of shape ``[num_samples, num_features]``.
+        :rtype: np.ndarray
+        """
         fptype = getFPType(X)
         return self._predict_classification(X, fptype, "computeClassProbabilities")
 
 
-def convert_model(model):
+def convert_model(model) -> GBTDAALModel:
+    """
+    Converts a GBT model from a different library to daal4py's :obj:`GBTDAALModel`
+
+    Converts a gradient-boosted decision tree model object created through a
+    different library to a daal4py GBT model object, from which predictions on
+    new data can be calculated faster than in the original library that created
+    the model.
+
+    Can convert models that meet all of the following criteria:
+
+    - Were produced from one of the following libraries: ``xgboost``, ``lightgbm``, or ``catboost``.
+      It can work with either the base booster classes of those libraries or with their
+      scikit-learn-compatible classes.
+    - Do not use categorical features.
+    - Are for regression or classification (e.g. no ranking). In the case of XGBoost objective
+      ``binary:logitraw``, it will create a classification model out of it, and in the case of
+      objective ``reg:logistic`, will create a regression model.
+    - Are not multi-output models. Note that multi-class classification **is** supported.
+
+    :param model: A model object from ``xgboost``, ``lightgbm``, or ``catboost``.
+    :rtype: GBTDAALModel
+    """
     try:
         gbm = GBTDAALModel()
         gbm._convert_model(model)

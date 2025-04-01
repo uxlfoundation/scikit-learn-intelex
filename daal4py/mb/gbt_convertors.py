@@ -22,6 +22,8 @@ from warnings import warn
 
 import numpy as np
 
+from .. import gbt_clf_model_builder, gbt_reg_model_builder
+
 
 class CatBoostNode:
     def __init__(
@@ -37,6 +39,7 @@ class CatBoostNode:
         self.right = right
         self.left = left
         self.cover = cover
+
 
 class CatBoostModelData:
     """Wrapper around the CatBoost model dump for easier access to properties"""
@@ -444,6 +447,17 @@ def get_gbt_model_from_xgboost(booster: Any, xgb_config=None) -> Any:
 
     is_regression = False
     objective_fun = xgb_config["learner"]["learner_train_param"]["objective"]
+
+    # Note: the base score from XGBoost is in the response scale, but the predictions
+    # are calculated in the link scale, so when there is a non-identity link function,
+    # it needs to be converted to the link scale.
+    if objective_fun in ["count:poisson", "reg:gamma", "reg:tweedie", "survival:aft"]:
+        base_score = float(np.log(base_score))
+    elif objective_fun == "reg:logistic":
+        base_score = float(np.log(base_score / (1 - base_score)))
+    elif objective_fun.startswith("rank"):
+        raise TypeError("Ranking objectives are not supported.")
+
     if n_classes > 2:
         if objective_fun not in ["multi:softprob", "multi:softmax"]:
             raise TypeError(
@@ -463,9 +477,7 @@ def get_gbt_model_from_xgboost(booster: Any, xgb_config=None) -> Any:
                 "XGBoost returns raw class scores when calling pred_proba()\n"
                 "whilst scikit-learn-intelex always uses binary:logistic\n"
             )
-            if base_score != 0.5:
-                warn("objective='binary:logitraw' ignores base_score, fixing base_score to 0.5")
-                base_score = 0.5
+            base_score = float(1 / (1 + np.exp(-base_score)))
     else:
         is_regression = True
 

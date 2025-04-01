@@ -14,43 +14,60 @@
 # limitations under the License.
 # ==============================================================================
 
-from onedal.cluster import KMeans as KMeans_Batch
-from onedal.cluster import KMeansInit as KMeansInit_Batch
-from onedal.spmd.basic_statistics import BasicStatistics
+import numpy as np
 
-from ..._device_offload import support_input_format
-from .._base import BaseEstimatorSPMD
+from ..._device_offload import support_input_format, supports_queue
+from ...cluster import KMeans as KMeans_Batch
+from ...cluster import KMeansInit as KMeansInit_Batch
+from ...common._backend import bind_spmd_backend
+from ...spmd.basic_statistics import BasicStatistics
 
 
-class KMeansInit(BaseEstimatorSPMD, KMeansInit_Batch):
+class KMeansInit(KMeansInit_Batch):
     """
     KMeansInit oneDAL implementation for SPMD iface.
+
+    Unlike the batch version, the SPMD library provides GPU support.
     """
 
-    pass
+    def compute_raw(self, X_table, dtype=np.float32, queue=None):
+        # no @supports_queue decorator here, because we only accept X_table that has no queue information
+        return self._compute_raw(X_table, dtype)
+
+    @supports_queue
+    def compute(self, X, queue=None):
+        return self._compute(X)
+
+    @bind_spmd_backend("kmeans_init.init", lookup_name="compute")
+    def backend_compute(self, params, data): ...
 
 
-class KMeans(BaseEstimatorSPMD, KMeans_Batch):
+class KMeans(KMeans_Batch):
     def _get_basic_statistics_backend(self, result_options):
         return BasicStatistics(result_options)
 
-    def _get_kmeans_init(self, cluster_count, seed, algorithm):
-        return KMeansInit(cluster_count=cluster_count, seed=seed, algorithm=algorithm)
+    def _get_kmeans_init(self, cluster_count, seed, algorithm, is_csr):
+        return KMeansInit(
+            cluster_count=cluster_count,
+            seed=seed,
+            algorithm=algorithm,
+            is_csr=is_csr,
+        )
 
-    @support_input_format()
+    @bind_spmd_backend("kmeans.clustering")
+    def train(self, params, X_table, centroids_table): ...
+
+    @bind_spmd_backend("kmeans.clustering")
+    def infer(self, params, model, centroids_table): ...
+
+    @support_input_format
     def fit(self, X, y=None, queue=None):
-        return super().fit(X, queue=queue)
+        return super().fit(X, y, queue=queue)
 
-    @support_input_format()
+    @support_input_format
     def predict(self, X, queue=None):
         return super().predict(X, queue=queue)
 
-    @support_input_format()
+    @support_input_format
     def fit_predict(self, X, y=None, queue=None):
         return super().fit_predict(X, queue=queue)
-
-    def transform(self, X):
-        return super().transform(X)
-
-    def fit_transform(self, X, queue=None):
-        return super().fit_transform(X, queue=queue)

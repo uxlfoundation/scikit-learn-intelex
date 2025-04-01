@@ -12,26 +12,26 @@
 .. See the License for the specific language governing permissions and
 .. limitations under the License.
 
-.. |automl_with_intelex_jun| replace:: AutoML MultiClass Classification (Gradient Boosting, Random Forest, kNN) using AutoGluon with |intelex|
+.. |automl_with_intelex_jun| replace:: AutoML MultiClass Classification (Gradient Boosting, Random Forest, kNN) using AutoGluon with |sklearnex|
 .. _automl_with_intelex_jun: https://www.kaggle.com/alex97andreev/tps-jun-autogluon-with-sklearnex
 
-.. |automl_with_intelex_tps_oct| replace:: AutoML Binary Classification (Gradient Boosting, Random Forest) using AutoGluon with |intelex|
+.. |automl_with_intelex_tps_oct| replace:: AutoML Binary Classification (Gradient Boosting, Random Forest) using AutoGluon with |sklearnex|
 .. _automl_with_intelex_tps_oct: https://www.kaggle.com/lordozvlad/fast-automl-with-intel-extension-for-scikit-learn/notebook
 
-.. |automl_with_intelex_tps_nov| replace:: AutoML Binary Classification (Gradient Boosting, Random Forest, kNN) using EvalML and AutoGluon with |intelex|
+.. |automl_with_intelex_tps_nov| replace:: AutoML Binary Classification (Gradient Boosting, Random Forest, kNN) using EvalML and AutoGluon with |sklearnex|
 .. _automl_with_intelex_tps_nov: https://www.kaggle.com/lordozvlad/tps-nov-automl-with-intel-extension
 
-.. |automl_with_intelex_titanic| replace:: AutoML Binary Classification (Gradient Boosting, Random Forest, kNN) using AutoGluon with |intelex|
+.. |automl_with_intelex_titanic| replace:: AutoML Binary Classification (Gradient Boosting, Random Forest, kNN) using AutoGluon with |sklearnex|
 .. _automl_with_intelex_titanic: https://www.kaggle.com/lordozvlad/titanic-automl-with-intel-extension-for-sklearn/notebook
 
-.. |automl_with_intelex_tps_jan| replace:: AutoML Binary Classification (Random Forest, SVR, Blending) using PyCaret with |intelex|
+.. |automl_with_intelex_tps_jan| replace:: AutoML Binary Classification (Random Forest, SVR, Blending) using PyCaret with |sklearnex|
 .. _automl_with_intelex_tps_jan: https://www.kaggle.com/code/lordozvlad/tps-jan-fast-pycaret-with-scikit-learn-intelex/notebook
 
 
-Kaggle Kernels that use AutoML and |intelex|
---------------------------------------------
+Kaggle Kernels that use AutoML and |sklearnex|
+----------------------------------------------
 
-The following Kaggle kernels show how to patch autoML frameworks with |intelex|.
+The following Kaggle kernels show how to patch autoML frameworks with |sklearnex|.
 
 .. include:: /kaggle/note-about-tps.rst
 

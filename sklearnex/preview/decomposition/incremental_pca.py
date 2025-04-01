@@ -24,18 +24,18 @@ from onedal.decomposition import IncrementalPCA as onedal_IncrementalPCA
 
 from ..._config import get_config
 from ..._device_offload import dispatch, wrap_output_data
-from ..._utils import IntelEstimator, PatchingConditionsChain
-
-if sklearn_check_version("1.6"):
-    from sklearn.utils.validation import validate_data
-else:
-    validate_data = _sklearn_IncrementalPCA._validate_data
+from ..._utils import (
+    ExtensionEstimator,
+    PatchingConditionsChain,
+    _add_inc_serialization_note,
+)
+from ...utils.validation import validate_data
 
 
 @control_n_jobs(
     decorated_methods=["fit", "partial_fit", "transform", "_onedal_finalize_fit"]
 )
-class IncrementalPCA(IntelEstimator, _sklearn_IncrementalPCA):
+class IncrementalPCA(ExtensionEstimator, _sklearn_IncrementalPCA):
 
     _need_to_finalize_attrs = {
         "mean_",
@@ -63,7 +63,7 @@ class IncrementalPCA(IntelEstimator, _sklearn_IncrementalPCA):
         use_raw_input = get_config().get("use_raw_input", False) is True
         if not use_raw_input:
             X = check_array(X, dtype=[np.float64, np.float32])
-        return self._onedal_estimator.predict(X, queue)
+        return self._onedal_estimator.predict(X, queue=queue)
 
     def _onedal_fit_transform(self, X, queue=None):
         self._onedal_fit(X, queue)
@@ -76,16 +76,7 @@ class IncrementalPCA(IntelEstimator, _sklearn_IncrementalPCA):
         # never check input when using raw input
         check_input &= use_raw_input is False
         if check_input:
-            if sklearn_check_version("1.0"):
-                X = validate_data(
-                    self, X, dtype=[np.float64, np.float32], reset=first_pass
-                )
-            else:
-                X = check_array(
-                    X,
-                    dtype=[np.float64, np.float32],
-                    copy=self.copy,
-                )
+            X = validate_data(self, X, dtype=[np.float64, np.float32], reset=first_pass)
 
         n_samples, n_features = X.shape
 
@@ -121,9 +112,9 @@ class IncrementalPCA(IntelEstimator, _sklearn_IncrementalPCA):
         self._onedal_estimator.partial_fit(X, queue=queue)
         self._need_to_finalize = True
 
-    def _onedal_finalize_fit(self, queue=None):
+    def _onedal_finalize_fit(self):
         assert hasattr(self, "_onedal_estimator")
-        self._onedal_estimator.finalize_fit(queue=queue)
+        self._onedal_estimator.finalize_fit()
         self._need_to_finalize = False
 
     def _onedal_fit(self, X, queue=None):
@@ -132,14 +123,7 @@ class IncrementalPCA(IntelEstimator, _sklearn_IncrementalPCA):
             if sklearn_check_version("1.2"):
                 self._validate_params()
 
-            if sklearn_check_version("1.0"):
-                X = validate_data(self, X, dtype=[np.float64, np.float32], copy=self.copy)
-            else:
-                X = check_array(
-                    X,
-                    dtype=[np.float64, np.float32],
-                    copy=self.copy,
-                )
+            X = validate_data(self, X, dtype=[np.float64, np.float32], copy=self.copy)
 
         n_samples, n_features = X.shape
 
@@ -156,7 +140,7 @@ class IncrementalPCA(IntelEstimator, _sklearn_IncrementalPCA):
             X_batch = X[batch]
             self._onedal_partial_fit(X_batch, queue=queue)
 
-        self._onedal_finalize_fit(queue=queue)
+        self._onedal_finalize_fit()
 
         return self
 
@@ -237,17 +221,8 @@ class IncrementalPCA(IntelEstimator, _sklearn_IncrementalPCA):
             X,
         )
 
-    __doc__ = (
-        _sklearn_IncrementalPCA.__doc__
-        + """
-
-    Note
-    ----
-    Serializing instances of this class will trigger a forced finalization of calculations.
-    Since finalize_fit can't be dispatched without directly provided queue
-    and the dispatching policy can't be serialized, the computation is finalized
-    during serialization call and the policy is not saved in serialized data.
-    """
+    __doc__ = _add_inc_serialization_note(
+        _sklearn_IncrementalPCA.__doc__ + "\n" + r"%incremental_serialization_note%"
     )
     fit.__doc__ = _sklearn_IncrementalPCA.fit.__doc__
     fit_transform.__doc__ = _sklearn_IncrementalPCA.fit_transform.__doc__

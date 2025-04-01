@@ -19,6 +19,7 @@ import warnings
 
 import numpy as np
 from sklearn.base import BaseEstimator, MultiOutputMixin, RegressorMixin
+from sklearn.linear_model import Ridge as _sklearn_Ridge
 from sklearn.metrics import r2_score
 from sklearn.utils import gen_batches
 from sklearn.utils.validation import check_is_fitted, check_X_y
@@ -26,24 +27,27 @@ from sklearn.utils.validation import check_is_fitted, check_X_y
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn.utils.validation import sklearn_check_version
 
+from ..utils.validation import validate_data
+
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import Interval
 
 from onedal.linear_model import IncrementalRidge as onedal_IncrementalRidge
 
 from .._device_offload import dispatch, wrap_output_data
-from .._utils import IntelEstimator, PatchingConditionsChain
-
-if sklearn_check_version("1.6"):
-    from sklearn.utils.validation import validate_data
-else:
-    validate_data = BaseEstimator._validate_data
+from .._utils import (
+    ExtensionEstimator,
+    PatchingConditionsChain,
+    _add_inc_serialization_note,
+)
 
 
 @control_n_jobs(
     decorated_methods=["fit", "partial_fit", "predict", "score", "_onedal_finalize_fit"]
 )
-class IncrementalRidge(IntelEstimator, MultiOutputMixin, RegressorMixin, BaseEstimator):
+class IncrementalRidge(
+    ExtensionEstimator, MultiOutputMixin, RegressorMixin, BaseEstimator
+):
     """
     Incremental estimator for Ridge Regression.
     Allows to train Ridge Regression if data is splitted into batches.
@@ -97,13 +101,10 @@ class IncrementalRidge(IntelEstimator, MultiOutputMixin, RegressorMixin, BaseEst
     batch_size_ : int
         Inferred batch size from ``batch_size``.
 
-    Note
-    ----
-    Serializing instances of this class will trigger a forced finalization of calculations.
-    Since finalize_fit can't be dispatched without directly provided queue
-    and the dispatching policy can't be serialized, the computation is finalized
-    during serialization call and the policy is not saved in serialized data.
+    %incremental_serialization_note%
     """
+
+    __doc__ = _add_inc_serialization_note(__doc__)
 
     _onedal_incremental_ridge = staticmethod(onedal_IncrementalRidge)
 
@@ -138,13 +139,12 @@ class IncrementalRidge(IntelEstimator, MultiOutputMixin, RegressorMixin, BaseEst
         if sklearn_check_version("1.2"):
             self._validate_params()
 
-        if sklearn_check_version("1.0"):
-            X = validate_data(self, X, accept_sparse=False, reset=False)
+        X = validate_data(self, X, accept_sparse=False, reset=False)
 
         assert hasattr(self, "_onedal_estimator")
         if self._need_to_finalize:
             self._onedal_finalize_fit()
-        return self._onedal_estimator.predict(X, queue)
+        return self._onedal_estimator.predict(X, queue=queue)
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
         return r2_score(
@@ -158,19 +158,16 @@ class IncrementalRidge(IntelEstimator, MultiOutputMixin, RegressorMixin, BaseEst
             self._validate_params()
 
         if check_input:
-            if sklearn_check_version("1.0"):
-                X, y = validate_data(
-                    self,
-                    X,
-                    y,
-                    dtype=[np.float64, np.float32],
-                    reset=first_pass,
-                    copy=self.copy_X,
-                    multi_output=True,
-                    force_all_finite=False,
-                )
-            else:
-                check_X_y(X, y, multi_output=True, y_numeric=True)
+            X, y = validate_data(
+                self,
+                X,
+                y,
+                dtype=[np.float64, np.float32],
+                reset=first_pass,
+                copy=self.copy_X,
+                multi_output=True,
+                ensure_all_finite=False,
+            )
 
         if first_pass:
             self.n_samples_seen_ = X.shape[0]
@@ -184,7 +181,7 @@ class IncrementalRidge(IntelEstimator, MultiOutputMixin, RegressorMixin, BaseEst
         }
         if not hasattr(self, "_onedal_estimator"):
             self._onedal_estimator = self._onedal_incremental_ridge(**onedal_params)
-        self._onedal_estimator.partial_fit(X, y, queue)
+        self._onedal_estimator.partial_fit(X, y, queue=queue)
         self._need_to_finalize = True
 
     def _onedal_finalize_fit(self):
@@ -202,18 +199,15 @@ class IncrementalRidge(IntelEstimator, MultiOutputMixin, RegressorMixin, BaseEst
         if sklearn_check_version("1.2"):
             self._validate_params()
 
-        if sklearn_check_version("1.0"):
-            X, y = validate_data(
-                self,
-                X,
-                y,
-                dtype=[np.float64, np.float32],
-                copy=self.copy_X,
-                multi_output=True,
-                ensure_2d=True,
-            )
-        else:
-            check_X_y(X, y, multi_output=True, y_numeric=True)
+        X, y = validate_data(
+            self,
+            X,
+            y,
+            dtype=[np.float64, np.float32],
+            copy=self.copy_X,
+            multi_output=True,
+            ensure_2d=True,
+        )
 
         n_samples, n_features = X.shape
 
@@ -266,7 +260,7 @@ class IncrementalRidge(IntelEstimator, MultiOutputMixin, RegressorMixin, BaseEst
 
         Returns
         -------
-        self : object
+        self : IncrementalRidge
             Returns the instance itself.
         """
 
@@ -285,7 +279,7 @@ class IncrementalRidge(IntelEstimator, MultiOutputMixin, RegressorMixin, BaseEst
 
     def fit(self, X, y):
         """
-        Fit the model with X and y, using minibatches of size batch_size.
+        Fit the model with X and y, using minibatches of size ``batch_size``.
 
         Parameters
         ----------
@@ -302,7 +296,7 @@ class IncrementalRidge(IntelEstimator, MultiOutputMixin, RegressorMixin, BaseEst
 
         Returns
         -------
-        self : object
+        self : IncrementalRidge
             Returns the instance itself.
         """
 
@@ -320,19 +314,6 @@ class IncrementalRidge(IntelEstimator, MultiOutputMixin, RegressorMixin, BaseEst
 
     @wrap_output_data
     def predict(self, X, y=None):
-        """
-        Predict using the linear model.
-
-        Parameters
-        ----------
-        X : {array-like, sparse matrix} of shape (n_samples, n_features)
-            Samples.
-
-        Returns
-        -------
-        array, shape (n_samples,) or (n_samples, n_targets)
-            Returns predicted values.
-        """
         check_is_fitted(
             self,
             msg=f"This {self.__class__.__name__} instance is not fitted yet. Call 'fit' with appropriate arguments before using this estimator.",
@@ -350,33 +331,6 @@ class IncrementalRidge(IntelEstimator, MultiOutputMixin, RegressorMixin, BaseEst
 
     @wrap_output_data
     def score(self, X, y, sample_weight=None):
-        """
-        Return the coefficient of determination R^2 of the prediction.
-
-        The coefficient R^2 is defined as (1 - u/v), where u is the residual
-        sum of squares ((y_true - y_pred) ** 2).sum() and v is the total sum
-        of squares ((y_true - y_true.mean()) ** 2).sum().
-        The best possible score is 1.0 and it can be negative (because the
-        model can be arbitrarily worse). A constant model that always
-        predicts the expected value of y, disregarding the input features,
-        would get a R^2 score of 0.0.
-
-        Parameters
-        ----------
-        X : {array-like, sparse matrix} of shape (n_samples, n_features)
-            Test samples.
-
-        y : array-like of shape (n_samples,) or (n_samples, n_targets)
-            True values for X.
-
-        sample_weight : array-like of shape (n_samples,), default=None
-            Sample weights.
-
-        Returns
-        -------
-        score : float
-            R^2 of self.predict(X) wrt. y.
-        """
         check_is_fitted(
             self,
             msg=f"This {self.__class__.__name__} instance is not fitted yet. Call 'fit' with appropriate arguments before using this estimator.",
@@ -393,6 +347,9 @@ class IncrementalRidge(IntelEstimator, MultiOutputMixin, RegressorMixin, BaseEst
             y,
             sample_weight=sample_weight,
         )
+
+    score.__doc__ = _sklearn_Ridge.score.__doc__
+    predict.__doc__ = _sklearn_Ridge.predict.__doc__
 
     @property
     def coef_(self):

@@ -18,6 +18,7 @@ import numpy as np
 from sklearn.exceptions import NotFittedError
 from sklearn.metrics import accuracy_score
 from sklearn.svm import NuSVC as _sklearn_NuSVC
+from sklearn.utils.metaestimators import available_if
 from sklearn.utils.validation import (
     _deprecate_positional_args,
     check_array,
@@ -26,20 +27,12 @@ from sklearn.utils.validation import (
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
+from onedal.svm import NuSVC as onedal_NuSVC
 
 from .._device_offload import dispatch, wrap_output_data
 from ..utils._array_api import get_namespace
+from ..utils.validation import validate_data
 from ._common import BaseSVC
-
-if sklearn_check_version("1.0"):
-    from sklearn.utils.metaestimators import available_if
-
-from onedal.svm import NuSVC as onedal_NuSVC
-
-if sklearn_check_version("1.6"):
-    from sklearn.utils.validation import validate_data
-else:
-    validate_data = BaseSVC._validate_data
 
 
 @control_n_jobs(
@@ -145,99 +138,77 @@ class NuSVC(_sklearn_NuSVC, BaseSVC):
             sample_weight=sample_weight,
         )
 
-    if sklearn_check_version("1.0"):
+    @available_if(_sklearn_NuSVC._check_proba)
+    def predict_proba(self, X):
+        """
+        Compute probabilities of possible outcomes for samples in X.
 
-        @available_if(_sklearn_NuSVC._check_proba)
-        def predict_proba(self, X):
-            """
-            Compute probabilities of possible outcomes for samples in X.
+        The model need to have probability information computed at training
+        time: fit with attribute `probability` set to True.
 
-            The model need to have probability information computed at training
-            time: fit with attribute `probability` set to True.
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+            For kernel="precomputed", the expected shape of X is
+            (n_samples_test, n_samples_train).
 
-            Parameters
-            ----------
-            X : array-like of shape (n_samples, n_features)
-                For kernel="precomputed", the expected shape of X is
-                (n_samples_test, n_samples_train).
+        Returns
+        -------
+        T : ndarray of shape (n_samples, n_classes)
+            Returns the probability of the sample for each class in
+            the model. The columns correspond to the classes in sorted
+            order, as they appear in the attribute :term:`classes_`.
 
-            Returns
-            -------
-            T : ndarray of shape (n_samples, n_classes)
-                Returns the probability of the sample for each class in
-                the model. The columns correspond to the classes in sorted
-                order, as they appear in the attribute :term:`classes_`.
+        Notes
+        -----
+        The probability model is created using cross validation, so
+        the results can be slightly different than those obtained by
+        predict. Also, it will produce meaningless results on very small
+        datasets.
+        """
+        check_is_fitted(self)
+        return self._predict_proba(X)
 
-            Notes
-            -----
-            The probability model is created using cross validation, so
-            the results can be slightly different than those obtained by
-            predict. Also, it will produce meaningless results on very small
-            datasets.
-            """
-            check_is_fitted(self)
-            return self._predict_proba(X)
+    @available_if(_sklearn_NuSVC._check_proba)
+    def predict_log_proba(self, X):
+        """Compute log probabilities of possible outcomes for samples in X.
 
-        @available_if(_sklearn_NuSVC._check_proba)
-        def predict_log_proba(self, X):
-            """Compute log probabilities of possible outcomes for samples in X.
+        The model need to have probability information computed at training
+        time: fit with attribute `probability` set to True.
 
-            The model need to have probability information computed at training
-            time: fit with attribute `probability` set to True.
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features) or \
+                (n_samples_test, n_samples_train)
+            For kernel="precomputed", the expected shape of X is
+            (n_samples_test, n_samples_train).
 
-            Parameters
-            ----------
-            X : array-like of shape (n_samples, n_features) or \
-                    (n_samples_test, n_samples_train)
-                For kernel="precomputed", the expected shape of X is
-                (n_samples_test, n_samples_train).
+        Returns
+        -------
+        T : ndarray of shape (n_samples, n_classes)
+            Returns the log-probabilities of the sample for each class in
+            the model. The columns correspond to the classes in sorted
+            order, as they appear in the attribute :term:`classes_`.
 
-            Returns
-            -------
-            T : ndarray of shape (n_samples, n_classes)
-                Returns the log-probabilities of the sample for each class in
-                the model. The columns correspond to the classes in sorted
-                order, as they appear in the attribute :term:`classes_`.
+        Notes
+        -----
+        The probability model is created using cross validation, so
+        the results can be slightly different than those obtained by
+        predict. Also, it will produce meaningless results on very small
+        datasets.
+        """
+        xp, _ = get_namespace(X)
 
-            Notes
-            -----
-            The probability model is created using cross validation, so
-            the results can be slightly different than those obtained by
-            predict. Also, it will produce meaningless results on very small
-            datasets.
-            """
-            xp, _ = get_namespace(X)
-
-            return xp.log(self.predict_proba(X))
-
-    else:
-
-        @property
-        def predict_proba(self):
-            self._check_proba()
-            check_is_fitted(self)
-            return self._predict_proba
-
-        def _predict_log_proba(self, X):
-            xp, _ = get_namespace(X)
-            return xp.log(self.predict_proba(X))
-
-        predict_proba.__doc__ = _sklearn_NuSVC.predict_proba.__doc__
+        return xp.log(self.predict_proba(X))
 
     @wrap_output_data
     def _predict_proba(self, X):
-        sklearn_pred_proba = (
-            _sklearn_NuSVC.predict_proba
-            if sklearn_check_version("1.0")
-            else _sklearn_NuSVC._predict_proba
-        )
-
         return dispatch(
             self,
             "predict_proba",
             {
                 "onedal": self.__class__._onedal_predict_proba,
-                "sklearn": sklearn_pred_proba,
+                "sklearn": _sklearn_NuSVC.predict_proba,
             },
             X,
         )
@@ -306,23 +277,15 @@ class NuSVC(_sklearn_NuSVC, BaseSVC):
         self._save_attributes()
 
     def _onedal_predict(self, X, queue=None):
-        if sklearn_check_version("1.0"):
-            validate_data(
-                self,
-                X,
-                dtype=[np.float64, np.float32],
-                force_all_finite=False,
-                ensure_2d=False,
-                accept_sparse="csr",
-                reset=False,
-            )
-        else:
-            X = check_array(
-                X,
-                dtype=[np.float64, np.float32],
-                force_all_finite=False,
-                accept_sparse="csr",
-            )
+        validate_data(
+            self,
+            X,
+            dtype=[np.float64, np.float32],
+            ensure_all_finite=False,
+            ensure_2d=False,
+            accept_sparse="csr",
+            reset=False,
+        )
 
         return self._onedal_estimator.predict(X, queue=queue)
 
@@ -341,22 +304,14 @@ class NuSVC(_sklearn_NuSVC, BaseSVC):
             return self.clf_prob.predict_proba(X)
 
     def _onedal_decision_function(self, X, queue=None):
-        if sklearn_check_version("1.0"):
-            validate_data(
-                self,
-                X,
-                dtype=[np.float64, np.float32],
-                force_all_finite=False,
-                accept_sparse="csr",
-                reset=False,
-            )
-        else:
-            X = check_array(
-                X,
-                dtype=[np.float64, np.float32],
-                force_all_finite=False,
-                accept_sparse="csr",
-            )
+        validate_data(
+            self,
+            X,
+            dtype=[np.float64, np.float32],
+            ensure_all_finite=False,
+            accept_sparse="csr",
+            reset=False,
+        )
 
         return self._onedal_estimator.decision_function(X, queue=queue)
 

@@ -26,13 +26,12 @@ Gradient boosting on decision trees is one of the most accurate and efficient
 machine learning algorithms for classification and regression.
 The most popular implementations of it are:
 
-* XGBoost*
-* LightGBM*
-* CatBoost*
+- XGBoost*
+- LightGBM*
+- CatBoost*
 
 daal4py Model Builders deliver the accelerated
-models inference of those frameworks. The inference is performed by the oneDAL GBT implementation tuned
-for the best performance on the Intel(R) Architecture.
+models inference of those frameworks. The inference is performed by the oneDAL GBT implementation.
 
 .. note::
 
@@ -120,9 +119,9 @@ Limitations
 ------------------
 Model Builders support only base inference with prediction and probabilities prediction. The functionality is to be extended.
 Therefore, there are the following limitations:
-- The categorical features are not supported for conversion and prediction.
-- The multioutput models are not supported for conversion and prediction.
-- SHAP values can be calculated for regression models only.
+
+- Categorical features are not supported for conversion and prediction.
+- Multioutput models are not supported for conversion and prediction.
 
 
 Examples
@@ -139,3 +138,10 @@ Articles and Blog Posts
 
 -  `Improving the Performance of XGBoost and LightGBM Inference <https://medium.com/intel-analytics-software/improving-the-performance-of-xgboost-and-lightgbm-inference-3b542c03447e>`_
 
+Full documentation
+------------------
+
+.. autofunction:: daal4py.mb.convert_model
+
+.. autoclass:: daal4py.mb.GBTDAALModel
+  :members:
