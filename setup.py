@@ -263,14 +263,21 @@ def get_build_options():
     # FIXME it is a wrong place for this dependency
     if not no_dist:
         include_dir_plat.append(mpi_root + "/include")
-    using_intel = os.environ.get("cc", "") in [
-        "icc",
-        "icpc",
-        "icl",
-        "dpcpp",
-        "icx",
-        "icpx",
-    ]
+
+    using_intel = any(
+        [
+            intel_exec in os.environ.get("CXX", "")
+            for intel_exec in [
+                "icc",
+                "icpc",
+                "icl",
+                "dpcpp",
+                "icx",
+                "icpx",
+            ]
+        ]
+    )
+
     eca = [
         "-DPY_ARRAY_UNIQUE_SYMBOL=daal4py_array_API",
         '-DD4P_VERSION="' + sklearnex_version + '"',
