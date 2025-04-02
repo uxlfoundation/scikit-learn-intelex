@@ -386,6 +386,16 @@ class GBTDAALModel(GBTDAALBaseModel):
                 X, fptype, "computeClassLabels", pred_contribs, pred_interactions
             )
 
+    @property
+    def is_classifier_(self) -> bool:
+        """Whether this is a classification model"""
+        return not self._is_regression
+
+    @property
+    def is_regressor_(self) -> bool:
+        """Whether this is a regression model"""
+        return self._is_regression
+
     def _check_proba(self):
         return not self._is_regression
 
