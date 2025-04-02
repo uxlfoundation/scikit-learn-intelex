@@ -45,6 +45,7 @@ def custom_build_cmake_clib(
     cxx=None,
     onedal_major_binary_version=1,
     no_dist=True,
+    mpi_root=None,
     use_parameters_lib=True,
     use_abs_rpath=False,
     use_gcov=False,
@@ -80,7 +81,6 @@ def custom_build_cmake_clib(
     logger.info(f"Build DPCPP SPMD functionality: {str(build_distribute)}")
 
     if build_distribute:
-        mpi_root = os.environ["MPIROOT"]
         MPI_INCDIRS = jp(mpi_root, "include")
         MPI_LIBDIRS = jp(mpi_root, "lib")
         MPI_LIBNAME = getattr(os.environ, "MPI_LIBNAME", None)

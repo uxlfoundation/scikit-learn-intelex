@@ -437,6 +437,7 @@ class onedal_build:
             iface=iface,
             cxx=cxx,
             onedal_major_binary_version=ONEDAL_MAJOR_BINARY_VERSION,
+            mpi_root=mpi_root,
             no_dist=no_dist,
             use_parameters_lib=use_parameters_lib,
             use_abs_rpath=USE_ABS_RPATH,
