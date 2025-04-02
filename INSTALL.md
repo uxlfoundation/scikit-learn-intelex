@@ -215,7 +215,9 @@ without reinstalling the package after a small change.
    python setup.py build
    ```
 
-**Note:** the `setup.py` file will accept an optional argument `--abs-rpath` on linux (for all of `build`/`install`/`develop`/etc.) which will make it add the absolute path to oneDAL's shared objects (.so files) to the rpath of the scikit-learn-intelex extension's shared object files in order to load them automatically. This is not necessary when installing from pip or conda, but can be helpful for development purposes when using a from-source build of oneDAL that resides in a custom folder, as it won't assume that oneDAL's files will be found under default system paths. Example:
+**Note1:** the `daal4py` extension module which is built through `build_ext` does not use any kind of build caching for incremental compilation. For development purposes, one might want to use it together with `ccache`, for example by setting `export CXX="ccache icpx"`.
+
+**Note2:** the `setup.py` file will accept an optional argument `--abs-rpath` on linux (for all of `build`/`install`/`develop`/etc.) which will make it add the absolute path to oneDAL's shared objects (.so files) to the rpath of the scikit-learn-intelex extension's shared object files in order to load them automatically. This is not necessary when installing from pip or conda, but can be helpful for development purposes when using a from-source build of oneDAL that resides in a custom folder, as it won't assume that oneDAL's files will be found under default system paths. Example:
 
 ```shell
 python setup.py build_ext --inplace --force --abs-rpath
