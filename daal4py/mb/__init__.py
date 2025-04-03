@@ -20,7 +20,7 @@ from .tree_based_builders import GBTDAALBaseModel, GBTDAALModel
 __all__ = ["LogisticDAALModel", "GBTDAALModel", "convert_model"]
 
 
-def convert_model(model) -> GBTDAALModel | LogisticDAALModel:
+def convert_model(model) -> "GBTDAALModel | LogisticDAALModel":
     """
     Convert GBT or LogReg models to Daal4Py
 
