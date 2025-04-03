@@ -22,6 +22,7 @@ jobs:
   steps:
   - bash: python .ci/scripts/gen_release_jobs.py
     name: MatrixGen
+
 - job: ReleasePyPi
   dependsOn: GeneratorPyPi
   strategy:
@@ -43,14 +44,16 @@ jobs:
   - script: |
       bash .ci/scripts/run_sklearn_tests.sh
     displayName: 'Sklearn testing'
+
 - job: GeneratorConda
   steps:
   - bash: python .ci/scripts/gen_release_jobs.py --channels conda-forge
     name: MatrixGen
+
 - job: ReleaseConda
   dependsOn: GeneratorConda
   strategy:
-    maxParallel: 5
+    maxParallel: 3
     matrix: $[ dependencies.GeneratorConda.outputs['MatrixGen.legs'] ]
   pool:
     vmImage: $(imageName)
@@ -62,11 +65,6 @@ jobs:
   - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
     condition: eq( variables['Agent.OS'], 'Windows_NT' )
     displayName: Add conda to PATH
-  - script: |
-      echo "##vso[task.prependpath]$CONDA/bin"
-      sudo chown -R $USER $CONDA
-    condition: eq( variables['Agent.OS'], 'Darwin')
-    displayName: Add sudo access
   - script: |
       conda config --append channels conda-forge
       conda config --remove channels defaults

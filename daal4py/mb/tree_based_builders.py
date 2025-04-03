@@ -32,6 +32,15 @@ except (ImportError, ModuleNotFoundError):
 
 from sklearn.utils.metaestimators import available_if
 
+from .gbt_convertors import (
+    get_catboost_params,
+    get_gbt_model_from_catboost,
+    get_gbt_model_from_lightgbm,
+    get_gbt_model_from_xgboost,
+    get_lightgbm_params,
+    get_xgboost_params,
+)
+
 
 def parse_dtype(dt):
     if dt == np.double:
@@ -85,18 +94,18 @@ class GBTDAALBaseModel:
         self.n_features_in_ = len(params["features_info"]["float_features"])
 
     def _convert_model_from_lightgbm(self, booster):
-        lgbm_params = d4p.get_lightgbm_params(booster)
-        self.daal_model_ = d4p.get_gbt_model_from_lightgbm(booster, lgbm_params)
+        lgbm_params = get_lightgbm_params(booster)
+        self.daal_model_ = get_gbt_model_from_lightgbm(booster, lgbm_params)
         self._get_params_from_lightgbm(lgbm_params)
 
     def _convert_model_from_xgboost(self, booster):
-        xgb_params = d4p.get_xgboost_params(booster)
-        self.daal_model_ = d4p.get_gbt_model_from_xgboost(booster, xgb_params)
+        xgb_params = get_xgboost_params(booster)
+        self.daal_model_ = get_gbt_model_from_xgboost(booster, xgb_params)
         self._get_params_from_xgboost(xgb_params)
 
     def _convert_model_from_catboost(self, booster):
-        catboost_params = d4p.get_catboost_params(booster)
-        self.daal_model_ = d4p.get_gbt_model_from_catboost(booster)
+        catboost_params = get_catboost_params(booster)
+        self.daal_model_ = get_gbt_model_from_catboost(booster)
         self._get_params_from_catboost(catboost_params)
 
     def _convert_model(self, model):
@@ -338,12 +347,37 @@ class GBTDAALModel(GBTDAALBaseModel):
     """
     Gradient Boosted Decision Tree Model
 
-    Model class offering accelerated predictions for gradient-boosted decision tree models
-    that were built using other libraries. See the documentation for :func:`convert_model`
-    for more details.
+    Model class offering accelerated predictions for gradient-boosted decision
+    tree models from other libraries.
 
-    .. note:: This class cannot be instantiated directly. Use :func:`convert_model` to instantiate an object of this class.
+    Objects of this class are meant to be initialized from GBT model objects
+    created through other libraries, returning a different class which can calculate
+    predictions faster than the original library that created said model.
+
+    Can be created from model objects that meet all of the following criteria:
+
+    - Were produced from one of the following libraries: ``xgboost``, ``lightgbm``, or ``catboost``.
+      It can work with either the base booster classes of those libraries or with their
+      scikit-learn-compatible classes.
+    - Do not use categorical features.
+    - Are for regression or classification (e.g. no ranking). In the case of XGBoost objective
+      ``binary:logitraw``, it will create a classification model out of it, and in the case of
+      objective ``reg:logistic``, will create a regression model.
+    - Are not multi-output models. Note that multi-class classification **is** supported.
+
+    Parameters
+    ----------
+    model : booster object from another library
+        The fitted GBT model from which this object will be created. See rest of the documentation
+        for supported input types.
     """
+
+    def __init__(self, model):
+        self._convert_model(model)
+        for type_str in ("xgboost", "lightgbm", "catboost"):
+            if type_str in str(type(model)):
+                self.model_type = type_str
+                break
 
     def predict(
         self, X, pred_contribs: bool = False, pred_interactions: bool = False
@@ -377,6 +411,16 @@ class GBTDAALModel(GBTDAALBaseModel):
                 X, fptype, "computeClassLabels", pred_contribs, pred_interactions
             )
 
+    @property
+    def is_classifier_(self) -> bool:
+        """Whether this is a classification model"""
+        return not self._is_regression
+
+    @property
+    def is_regressor_(self) -> bool:
+        """Whether this is a regression model"""
+        return self._is_regression
+
     def _check_proba(self):
         return not self._is_regression
 
@@ -393,45 +437,3 @@ class GBTDAALModel(GBTDAALBaseModel):
         """
         fptype = getFPType(X)
         return self._predict_classification(X, fptype, "computeClassProbabilities")
-
-
-def convert_model(model) -> GBTDAALModel:
-    """
-    Converts a GBT model from a different library to daal4py's :obj:`GBTDAALModel`
-
-    Converts a gradient-boosted decision tree model object created through a
-    different library to a daal4py GBT model object, from which predictions on
-    new data can be calculated faster than in the original library that created
-    the model.
-
-    Can convert models that meet all of the following criteria:
-
-    - Were produced from one of the following libraries: ``xgboost``, ``lightgbm``, or ``catboost``.
-      It can work with either the base booster classes of those libraries or with their
-      scikit-learn-compatible classes.
-    - Do not use categorical features.
-    - Are for regression or classification (e.g. no ranking). In the case of XGBoost objective
-      ``binary:logitraw``, it will create a classification model out of it, and in the case of
-      objective ``reg:logistic``, will create a regression model.
-    - Are not multi-output models. Note that multi-class classification **is** supported.
-
-    :param model: A model object from ``xgboost``, ``lightgbm``, or ``catboost``.
-    :rtype: GBTDAALModel
-    """
-    try:
-        gbm = GBTDAALModel()
-        gbm._convert_model(model)
-    except TypeError as err:
-        if "Only GBTDAALRegressor can be created" in str(err):
-            gbm = d4p.sklearn.ensemble.GBTDAALRegressor.convert_model(model)
-        elif "Only GBTDAALClassifier can be created" in str(err):
-            gbm = d4p.sklearn.ensemble.GBTDAALClassifier.convert_model(model)
-        else:
-            raise
-
-    for type_str in ("xgboost", "lightgbm", "catboost"):
-        if type_str in str(type(model)):
-            gbm.model_type = type_str
-            break
-
-    return gbm
