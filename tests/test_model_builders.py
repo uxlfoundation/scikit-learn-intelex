@@ -28,7 +28,7 @@ from sklearn.datasets import (
     make_classification,
     make_regression,
 )
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression, SGDClassifier
 from sklearn.model_selection import train_test_split
 
 import daal4py as d4p
@@ -1030,6 +1030,53 @@ class TestXGBObjectIsNotCorrupted(unittest.TestCase):
         np.testing.assert_almost_equal(xgb_pred, xgb_pred_fresh)
 
         np.testing.assert_allclose(d4p_model.predict(X), xgb_pred, rtol=1e-5)
+
+
+class TestLogRegBuilderClass(unittest.TestCase):
+    def test_logreg_binary(self):
+        X, y = make_classification(random_state=123)
+        model_skl = SGDClassifier(
+            loss="log_loss", fit_intercept=False, random_state=123
+        ).fit(X, y)
+        model_d4p = d4p.mb.convert_model(model_skl)
+        np.testing.assert_almost_equal(
+            model_d4p.predict(X[::-1]),
+            model_skl.predict(X[::-1]),
+        )
+        np.testing.assert_almost_equal(
+            model_d4p.predict_proba(X[::-1]),
+            model_skl.predict_proba(X[::-1]),
+        )
+        np.testing.assert_almost_equal(
+            model_d4p.predict_log_proba(X[::-1]),
+            model_skl.predict_log_proba(X[::-1]),
+        )
+
+    def test_logreg_multiclass(self):
+        X, y = make_classification(n_classes=3, n_informative=4, random_state=123)
+        model_skl = LogisticRegression().fit(X, y)
+        model_d4p = d4p.mb.convert_model(model_skl)
+        np.testing.assert_almost_equal(
+            model_d4p.predict(X[::-1]),
+            model_skl.predict(X[::-1]),
+        )
+        np.testing.assert_almost_equal(
+            model_d4p.predict_proba(X[::-1]),
+            model_skl.predict_proba(X[::-1]),
+        )
+        np.testing.assert_almost_equal(
+            model_d4p.predict_log_proba(X[::-1]),
+            model_skl.predict_log_proba(X[::-1]),
+        )
+
+    def test_error_on_nonlogistic(self):
+        X, y = make_classification(n_classes=3, n_informative=4, random_state=123)
+        model_skl = LogisticRegression(multi_class="ovr").fit(X, y)
+        try:
+            d4p.mb.convert_model(model_skl)
+            assert False
+        except TypeError:
+            assert True
 
 
 if __name__ == "__main__":
