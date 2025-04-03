@@ -142,20 +142,6 @@ def register_hyperparameters(hyperparameters_map):
     return decorator
 
 
-# This abstract class is meant to generate a clickable doc link for classses
-# in sklearnex that are not part of base scikit-learn.
-class ExtensionEstimator(BaseForHTMLDocLink):
-    @property
-    def _doc_link_module(self) -> str:
-        return "sklearnex"
-
-    @property
-    def _doc_link_template(self) -> str:
-        module_path, _ = self.__class__.__module__.rsplit(".", 1)
-        class_name = self.__class__.__name__
-        return f"https://uxlfoundation.github.io/scikit-learn-intelex/latest/non-scikit-algorithms.html#{module_path}.{class_name}"
-
-
 def _add_inc_serialization_note(class_docstrings: str) -> str:
     """Adds a small note note about serialization for extension estimators that are incremental.
     The class docstrings should leave a placeholder '%incremental_serialization_note%' inside
@@ -179,25 +165,3 @@ the policy is not saved in serialized data."""
     return class_docstrings.replace(
         r"%incremental_serialization_note%", inc_serialization_note
     )
-
-
-# This abstract class is meant to generate a clickable doc link for classses
-# in sklearnex that have counterparts in scikit-learn.
-class PatchableEstimator(BaseForHTMLDocLink):
-    @property
-    def _doc_link_module(self) -> str:
-        return "sklearnex"
-
-    @property
-    def _doc_link_template(self) -> str:
-        if re.search(r"^\d\.\d\.\d$", sklearn.__version__):
-            sklearn_version_parts = sklearn.__version__.split(".")
-            doc_version_url = sklearn_version_parts[0] + "." + sklearn_version_parts[1]
-        else:
-            doc_version_url = "stable"
-        module_path, _ = self.__class__.__module__.rsplit(".", 1)
-        module_path = re.sub("sklearnex", "sklearn", module_path)
-        class_name = self.__class__.__name__
-        # for TSNE, which re-uses daal4py
-        module_path = re.sub(r"daal4py\.", "", module_path)
-        return f"https://scikit-learn.org/{doc_version_url}/modules/generated/{module_path}.{class_name}.html"

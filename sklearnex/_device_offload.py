@@ -26,6 +26,7 @@ if dpnp_available:
     from onedal.utils._array_api import _convert_to_dpnp
 
 from ._config import get_config
+from .utils import get_tags
 
 
 def _get_backend(obj, queue, method_name, *data):
