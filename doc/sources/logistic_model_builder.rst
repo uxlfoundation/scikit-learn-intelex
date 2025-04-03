@@ -14,6 +14,8 @@
 
 .. include:: substitutions.rst
 
+.. _logistic_model_builder:
+
 Serving Logistic Regression from Other Libraries
 ================================================
 
@@ -24,10 +26,13 @@ can be used to accelerate calculations of predictions from logistic regression m
 Logistic regression models from |sklearn| (classes :obj:`sklearn.linear_model.LogisticRegression`
 and :obj:`sklearn.linear_model.SGDClassifier`) can be converted to daal4py's
 :obj:`daal4py.mb.LogisticDAALModel` through function :obj:`daal4py.mb.convert_model` in the
-model builders (``mb``) submodule. See :ref:`about_daal4py` for more information about the
+model builders (``mb``) submodule, which can also convert gradient-boosted decision tree models
+(:ref:`model_builders`). See :ref:`about_daal4py` for more information about the
 ``daal4py`` module.
 
-Example:
+Example
+-------
+
 .. code-block:: python
 
     from sklearn.linear_model import LogisticRegression
@@ -49,8 +54,13 @@ Example:
         model_skl.predict_proba(X),
     )
 
+Details
+-------
+
 Acceleration is achieved by leveraging the `MKL library <https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl.html>`__
-for both faster linear algebra operations and faster exponentials / logarithms on Intel hardware.
+for both faster linear algebra operations and faster exponentials / logarithms on Intel hardware,
+and optionally by using a lower-precision data type (``np.float32``) than what :obj:`sklearn.linear_model.LogisticRegression`
+uses.
 
 If you are already using Python libraries (NumPy and SciPy) linked against MKL - for example, by
 installing them from the Intel conda channel ``https://software.repos.intel.com/python/conda/`` - then
@@ -60,3 +70,9 @@ speed up inference by better utilizing capabilities of Intel hardware.
 Note that besides the :obj:`daal4py.mb.convert_model` function, class :obj:`daal4py.mb.LogisticDAALModel`
 can also be instantiated directly from arrays of fitted coefficients and intercepts, thereby allowing to
 create predictors out of models from other libraries beyond |sklearn|, such as `glum <https://glum.readthedocs.io/>`__.
+
+Documentation
+-------------
+
+See the section about :ref:`model builders <model_builders_docs>` in the ``daal4py`` API reference
+for full documentation.
