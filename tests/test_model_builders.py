@@ -1037,6 +1037,8 @@ class TestXGBObjectIsNotCorrupted(unittest.TestCase):
 
 class TestLogRegBuilderClass(unittest.TestCase):
     def test_logreg_binary(self):
+        if not sklearn_check_version("1.1"):
+            return
         X, y = make_classification(random_state=123)
         model_skl = SGDClassifier(
             loss="log_loss", fit_intercept=False, random_state=123
@@ -1082,6 +1084,8 @@ class TestLogRegBuilderClass(unittest.TestCase):
             assert True
 
     def test_serialization(self):
+        if not sklearn_check_version("1.1"):
+            return
         X, y = make_classification(random_state=123)
         model_skl = SGDClassifier(
             loss="log_loss", fit_intercept=False, random_state=123
