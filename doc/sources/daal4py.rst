@@ -686,6 +686,14 @@ Parameters and semantics are described in |onedal-dg-stochastic-average-gradient
 .. autoclass:: daal4py.optimization_solver_saga_result
    :members:
 
+Coordinate Descent
+""""""""""""""""""
+
+.. autoclass:: daal4py.optimization_solver_coordinate_descent
+   :members: compute
+.. autoclass:: daal4py.optimization_solver_coordinate_descent_result
+   :members:
+
 Recommender systems
 -------------------
 
