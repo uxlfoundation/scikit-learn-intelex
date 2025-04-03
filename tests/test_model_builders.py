@@ -15,6 +15,8 @@
 # ==============================================================================
 
 import contextlib
+import gc
+import pickle
 import unittest
 import warnings
 from datetime import datetime
@@ -22,6 +24,7 @@ from datetime import datetime
 import lightgbm as lgbm
 import numpy as np
 import xgboost as xgb
+from scipy.special import softmax
 from sklearn.datasets import (
     load_breast_cancer,
     load_iris,
@@ -1077,6 +1080,58 @@ class TestLogRegBuilderClass(unittest.TestCase):
             assert False
         except TypeError:
             assert True
+
+    def test_serialization(self):
+        X, y = make_classification(random_state=123)
+        model_skl = SGDClassifier(
+            loss="log_loss", fit_intercept=False, random_state=123
+        ).fit(X, y)
+        model_d4p_base = d4p.mb.convert_model(model_skl)
+        model_d4p = pickle.loads(pickle.dumps(model_d4p_base))
+        np.testing.assert_almost_equal(
+            model_d4p_base.predict_proba(X[::-1]),
+            model_d4p.predict_proba(X[::-1]),
+        )
+
+    def test_fp32(self):
+        X, y = make_classification(random_state=123)
+        model_skl = LogisticRegression().fit(X, y)
+        model_d4p = d4p.mb.LogisticDAALModel(
+            model_skl.coef_, model_skl.intercept_, dtype=np.float32
+        )
+        np.testing.assert_almost_equal(
+            model_d4p.predict(X[::-1]),
+            model_skl.predict(X[::-1]),
+        )
+        np.testing.assert_allclose(
+            model_d4p.predict_proba(X[::-1]),
+            model_skl.predict_proba(X[::-1]),
+            atol=1e-6,
+        )
+        np.testing.assert_allclose(
+            model_d4p.predict_log_proba(X[::-1]),
+            model_skl.predict_log_proba(X[::-1]),
+            rtol=1e-3,
+            atol=1e-6,
+        )
+
+    def test_with_deleted_arrays(self):
+        rng = np.random.default_rng(seed=123)
+        X = rng.standard_normal(size=(5, 10))
+        coefs = rng.standard_normal(size=(3, 10))
+        intercepts = np.zeros(3)
+        ref_pred = X @ coefs.T
+        ref_probs = softmax(ref_pred, axis=1)
+
+        model_d4p = d4p.mb.LogisticDAALModel(coefs, intercepts)
+        coefs[:, :] = 0
+        del coefs, intercepts
+        gc.collect()
+
+        np.testing.assert_almost_equal(
+            model_d4p.predict_proba(X),
+            ref_probs,
+        )
 
 
 if __name__ == "__main__":
