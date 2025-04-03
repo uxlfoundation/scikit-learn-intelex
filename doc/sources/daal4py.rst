@@ -57,6 +57,9 @@ Documentation for model builders, which allow computing fast predictions from GB
 .. autoclass:: daal4py.mb.GBTDAALModel
   :members:
 
+.. autoclass:: daal4py.mb.LogisticDAALModel
+  :members:
+
 Classification
 --------------
 
