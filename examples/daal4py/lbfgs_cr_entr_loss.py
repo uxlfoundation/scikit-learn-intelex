@@ -33,7 +33,7 @@ def main(readcsv=pd_read_csv):
     stepLength = 1.0e-4
 
     data_path = Path(__file__).parent / "data" / "batch"
-    infile = data_path / "logreg_train.csv"
+    infile = data_path / "lbfgs_cr_enr_loss.csv"
 
     # Read the data
     data = readcsv(infile, range(nFeatures))

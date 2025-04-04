@@ -303,7 +303,6 @@ examples = [
         "linear_regression_streaming", "linear_regression.csv", lambda r: r[1].prediction
     ),
     Config("linear_regression", "linear_regression.csv", lambda r: r[1].prediction),
-    Config("log_reg_binary_dense", "log_reg_binary_dense.csv", lambda r: r[1].prediction),
     Config("logitboost", required_version=(2020, "P", 0)),
     Config("low_order_moms_dense", "low_order_moms_dense.csv", low_order_moms_getter),
     Config("low_order_moms_streaming", "low_order_moms_dense.csv", low_order_moms_getter),

@@ -246,17 +246,8 @@ Logistic Regression
 ^^^^^^^^^^^^^^^^^^^
 Parameters and semantics are described in |onedal-dg-logistic-regression|_.
 
-.. rubric:: Examples:
+_Note: it is not possible to fit logistic regression models through ``daal4py``. Only model serving functionality is offered._
 
-- `Single-Process Binary Class Logistic Regression
-  <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/log_reg_binary_dense.py>`__
-- `Single-Process Logistic Regression
-  <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/log_reg_dense.py>`__
-
-.. autoclass:: daal4py.logistic_regression_training
-   :members: compute
-.. autoclass:: daal4py.logistic_regression_training_result
-   :members:
 .. autoclass:: daal4py.logistic_regression_prediction
    :members: compute
 .. autoclass:: daal4py.classifier_prediction_result

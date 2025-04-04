@@ -41,6 +41,7 @@ def wrap_algo(algo, ver):
             "algorithms",
             "algorithms::linear_model::prediction",
             "algorithms::linear_model::training",
+            "algorithms::logistic_regression::training",  # <- removed due to incorrect results
             "algorithms::classification::prediction",
             "algorithms::classification::training",
             "algorithms::tree_utils",
@@ -73,7 +74,6 @@ required = {
     "algorithms::multi_class_classifier::prediction": [("nClasses", "size_t")],
     "algorithms::gbt::classification::training": [("nClasses", "size_t")],
     "algorithms::gbt::classification::prediction": [("nClasses", "size_t")],
-    "algorithms::logistic_regression::training": [("nClasses", "size_t")],
     "algorithms::logistic_regression::prediction": [("nClasses", "size_t")],
     "algorithms::decision_tree::classification::training": [("nClasses", "size_t")],
     "algorithms::decision_forest::classification::training": [("nClasses", "size_t")],
@@ -316,7 +316,6 @@ defaults = {
     "algorithms::multinomial_naive_bayes::training": {"weights": True},
     "algorithms::gbt::regression::training": {"weights": True},
     "algorithms::gbt::classification::training": {"weights": True},
-    "algorithms::logistic_regression::training": {"weights": True},
     "algorithms::decision_tree::classification::training": {"weights": True},
     "algorithms::decision_tree::regression::training": {"weights": True},
     "algorithms::decision_forest::classification::training": {"weights": True},
