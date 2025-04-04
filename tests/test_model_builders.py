@@ -36,7 +36,7 @@ from sklearn.model_selection import train_test_split
 
 import daal4py as d4p
 from daal4py.mb import gbt_convertors
-from daal4py.sklearn._utils import daal_check_version
+from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 
 try:
     import catboost as cb
@@ -1037,6 +1037,8 @@ class TestXGBObjectIsNotCorrupted(unittest.TestCase):
 
 class TestLogRegBuilderClass(unittest.TestCase):
     def test_logreg_binary(self):
+        if not sklearn_check_version("1.1"):
+            return
         X, y = make_classification(random_state=123)
         model_skl = SGDClassifier(
             loss="log_loss", fit_intercept=False, random_state=123
@@ -1082,6 +1084,8 @@ class TestLogRegBuilderClass(unittest.TestCase):
             assert True
 
     def test_serialization(self):
+        if not sklearn_check_version("1.1"):
+            return
         X, y = make_classification(random_state=123)
         model_skl = SGDClassifier(
             loss="log_loss", fit_intercept=False, random_state=123
