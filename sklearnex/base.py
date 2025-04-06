@@ -19,7 +19,7 @@ from abc import ABC
 from daal4py.sklearn._utils import sklearn_check_version
 
 
-class oneDALEstimator(ABC):
+class oneDALEstimator:
 
     if sklearn_check_version("1.6"):
         # Starting in sklearn 1.6, _more_tags is deprecated. An oneDALEstimator
@@ -44,14 +44,30 @@ class oneDALEstimator(ABC):
 
     if sklearn_check_version("1.4"):
 
+        @property
+        def _doc_link_module(self) -> str:
+            return "sklearnex"
+
         def _get_doc_link(self) -> str:
             # This method is meant to generate a clickable doc link for classses
             # in sklearnex that are not part of base scikit-learn. It should be
             # inherited before inheriting from a scikit-learn estimator, otherwise
             # will get overriden by the estimator's original.
-            url = super()._get_doc_link()
-            if not url:
+
+            mro = self.__class__.__mro__
+            # The next object in the Estimators MRO after oneDALEstimator should be
+            # the equivalent sklearn estimator, if it is BaseEstimator, it is a
+            # sklearnex-only estimator.
+            if mro[mro.index(oneDALEstimator) + 1] is BaseEstimator:
                 module_path, _ = self.__class__.__module__.rsplit(".", 1)
                 class_name = self.__class__.__name__
                 url = f"https://intel.github.io/scikit-learn-intelex/latest/non-scikit-algorithms.html#{module_path}.{class_name}"
+            else:
+                url = (
+                    super()
+                    ._get_doc_link()
+                    .replace("sklearnex", "sklearn")
+                    .replace("daal4py", "sklearn")
+                )
+
             return url

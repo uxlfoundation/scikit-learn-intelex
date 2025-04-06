@@ -33,6 +33,7 @@ from onedal.tests.test_common import _check_primitive_usage_ban
 from sklearnex.tests.utils import (
     PATCHED_MODELS,
     SPECIAL_INSTANCES,
+    UNPATCHED_MODELS,
     call_method,
     gen_dataset,
     gen_models_info,
@@ -174,6 +175,26 @@ def test_all_estimators_covered(monkeypatch):
     assert (
         uncovered_estimators == []
     ), f"{uncovered_estimators} are currently not included"
+
+
+def test_oneDALEstimator_inheritance(monkeypatch):
+    """All sklearnex estimators should inherit the oneDALEstimator class, sklearnex-only
+    estimators should have it inherit oneDAL estimator one step before BaseEstimator in the
+    mro.  This is only strictly set for non-preview estimators"""
+    monkeypatch.setattr(pkgutil, "walk_packages", _sklearnex_walk(pkgutil.walk_packages))
+    estimators = all_estimators()  # list of tuples
+    incorrect_estimators = []
+    for name, obj in estimators:
+        if "preview" not in obj.__module__:
+            assert issubclass(
+                obj, oneDALEstimator
+            ), f"{obj} does not inherit the oneDALEstimator"
+            # if a sklearnex-only estimator (i.e. not in UNPATCHED_MODELS)
+            if not any([issubclass(est, obj) for est in UNPATCHED_MODELS.values()]):
+                mro = est.__mro__()
+                assert (
+                    mro[mro.index(oneDALEstimator) + 1] is BaseEstimator
+                ), "oneDALEstimator should be inherited just before BaseEstimator in sklearnex-only estimators"
 
 
 def _fullpath(path):

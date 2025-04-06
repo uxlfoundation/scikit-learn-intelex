@@ -46,6 +46,7 @@ from .._utils import (
 )
 from ..base import oneDALEstimator
 
+
 @register_hyperparameters(
     {
         "fit": get_hyperparameters("linear_regression", "train"),

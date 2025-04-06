@@ -43,7 +43,6 @@ if daal_check_version((2024, "P", 1)):
 
     _sparsity_enabled = daal_check_version((2024, "P", 700))
 
-
     @control_n_jobs(
         decorated_methods=[
             "fit",
