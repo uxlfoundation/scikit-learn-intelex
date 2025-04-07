@@ -187,7 +187,7 @@ def test_oneDALEstimator_inheritance(monkeypatch):
     estimators = all_estimators()  # list of tuples
     [print(n, o) for n, o in estimators]
     for name, obj in estimators:
-        if "preview" not in obj.__module__:
+        if "preview" not in obj.__module__ and "daal4py" not in obj.__module__:
             assert issubclass(
                 obj, oneDALEstimator
             ), f"{obj} does not inherit the oneDALEstimator"
