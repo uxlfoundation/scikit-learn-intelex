@@ -38,7 +38,8 @@ if daal_check_version((2024, "P", 1)):
 
     from .._config import get_config
     from .._device_offload import dispatch, wrap_output_data
-    from .._utils import PatchableEstimator, PatchingConditionsChain, get_patch_message
+    from .._utils import PatchingConditionsChain, get_patch_message
+    from ..base import oneDALEstimator
     from ..utils.validation import validate_data
 
     _sparsity_enabled = daal_check_version((2024, "P", 700))
