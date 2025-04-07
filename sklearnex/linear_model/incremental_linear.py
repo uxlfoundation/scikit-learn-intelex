@@ -57,7 +57,7 @@ from ..base import oneDALEstimator
     decorated_methods=["fit", "partial_fit", "predict", "score", "_onedal_finalize_fit"]
 )
 class IncrementalLinearRegression(
-    oneDALEstimator, MultiOutputMixin, RegressorMixin, BaseEstimator
+    MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEstimator
 ):
     """
     Trains a linear regression model, allows for computation if the data are split into

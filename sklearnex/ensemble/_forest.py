@@ -75,7 +75,7 @@ if sklearn_check_version("1.4"):
     from daal4py.sklearn.utils import _assert_all_finite
 
 
-class BaseForest(oneDALEstimator):
+class BaseForest(oneDALEstimator, ABC):
     _onedal_factory = None
 
     def _onedal_fit(self, X, y, sample_weight=None, queue=None):

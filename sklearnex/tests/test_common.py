@@ -193,7 +193,9 @@ def test_oneDALEstimator_inheritance(monkeypatch):
             ), f"{name} does not inherit the oneDALEstimator"
             # oneDAL estimator should be inherited from before BaseEstimator
             mro = obj.__mro__
-            assert mro.index(oneDALEstimator) < mro.index(BaseEstimator), f"incorrect mro in {name}"
+            assert mro.index(oneDALEstimator) < mro.index(
+                BaseEstimator
+            ), f"incorrect mro in {name}"
             if not any([issubclass(obj, est) for est in UNPATCHED_MODELS.values()]):
                 assert (
                     mro[mro.index(oneDALEstimator) + 1] is BaseEstimator
