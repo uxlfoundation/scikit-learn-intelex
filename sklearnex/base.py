@@ -66,8 +66,9 @@ class oneDALEstimator:
                 url = (
                     super()
                     ._get_doc_link()
-                    .replace("sklearnex", "sklearn")
-                    .replace("daal4py", "sklearn")
+                    .replace(self._doc_link_module, "sklearn")
+                    .replace("preview.", "")
+                    .replace("spmd.", "")
                 )
 
             return url

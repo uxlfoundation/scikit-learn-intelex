@@ -52,6 +52,7 @@ __all__ = [
     "unpatch_sklearn",
     "utils",
 ]
+__version__ = "2199.9.9"
 onedal_iface_flag = os.environ.get("OFF_ONEDAL_IFACE", "0")
 if onedal_iface_flag == "0":
     from onedal import _spmd_backend
