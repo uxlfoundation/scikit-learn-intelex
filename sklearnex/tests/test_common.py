@@ -190,14 +190,14 @@ def test_oneDALEstimator_inheritance(monkeypatch):
         if "preview" not in obj.__module__ and "daal4py" not in obj.__module__:
             assert issubclass(
                 obj, oneDALEstimator
-            ), f"{obj} does not inherit the oneDALEstimator"
+            ), f"{name} does not inherit the oneDALEstimator"
             # oneDAL estimator should be inherited from before BaseEstimator
             mro = obj.__mro__
-            assert mro.index(oneDALEstimator) < mro.index(BaseEstimator)
+            assert mro.index(oneDALEstimator) < mro.index(BaseEstimator), "incorrect mro in {name}"
             if not any([issubclass(obj, est) for est in UNPATCHED_MODELS.values()]):
                 assert (
                     mro[mro.index(oneDALEstimator) + 1] is BaseEstimator
-                ), "oneDALEstimator should be inherited just before BaseEstimator in sklearnex-only estimators"
+                ), "oneDALEstimator should be inherited just before BaseEstimator in {name}"
 
 
 def _fullpath(path):
