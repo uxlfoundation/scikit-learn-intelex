@@ -30,6 +30,7 @@ from sklearn.utils import all_estimators
 
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal.tests.test_common import _check_primitive_usage_ban
+from sklearnex.base import oneDALEstimator
 from sklearnex.tests.utils import (
     PATCHED_MODELS,
     SPECIAL_INSTANCES,
@@ -183,15 +184,15 @@ def test_oneDALEstimator_inheritance(monkeypatch):
     mro.  This is only strictly set for non-preview estimators"""
     monkeypatch.setattr(pkgutil, "walk_packages", _sklearnex_walk(pkgutil.walk_packages))
     estimators = all_estimators()  # list of tuples
-    incorrect_estimators = []
     for name, obj in estimators:
         if "preview" not in obj.__module__:
             assert issubclass(
                 obj, oneDALEstimator
             ), f"{obj} does not inherit the oneDALEstimator"
-            # if a sklearnex-only estimator (i.e. not in UNPATCHED_MODELS)
+            # oneDAL estimator should be inherited from before BaseEstimator
+            mro = est.__mro__()
+            assert mro.index(oneDALEstimator) < mro.index(BaseEstimator)
             if not any([issubclass(est, obj) for est in UNPATCHED_MODELS.values()]):
-                mro = est.__mro__()
                 assert (
                     mro[mro.index(oneDALEstimator) + 1] is BaseEstimator
                 ), "oneDALEstimator should be inherited just before BaseEstimator in sklearnex-only estimators"

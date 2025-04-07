@@ -50,9 +50,8 @@ class oneDALEstimator:
 
         def _get_doc_link(self) -> str:
             # This method is meant to generate a clickable doc link for classses
-            # in sklearnex that are not part of base scikit-learn. It should be
-            # inherited before inheriting from a scikit-learn estimator, otherwise
-            # will get overriden by the estimator's original.
+            # in sklearnex including those that are not part of base scikit-learn.
+            # It should be inherited before inheriting from a scikit-learn estimator.
 
             mro = self.__class__.__mro__
             # The next object in the Estimators MRO after oneDALEstimator should be
