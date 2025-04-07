@@ -194,7 +194,7 @@ def test_oneDALEstimator_inheritance(monkeypatch):
             # oneDAL estimator should be inherited from before BaseEstimator
             mro = obj.__mro__
             assert mro.index(oneDALEstimator) < mro.index(BaseEstimator)
-            if not any([issubclass(est, obj) for est in UNPATCHED_MODELS.values()]):
+            if not any([issubclass(obj, est) for est in UNPATCHED_MODELS.values()]):
                 assert (
                     mro[mro.index(oneDALEstimator) + 1] is BaseEstimator
                 ), "oneDALEstimator should be inherited just before BaseEstimator in sklearnex-only estimators"
