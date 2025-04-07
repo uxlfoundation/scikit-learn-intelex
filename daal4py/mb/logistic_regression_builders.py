@@ -68,6 +68,10 @@ class LogisticDAALModel:
         Number of features in the model.
     dtype_ : np.dtype
         The dtype of the model
+    coef_ : array(n_classes, n_features)
+        The model coefficients
+    intercept_ : array(n_classes)
+        The model intercepts
     """
 
     def __init__(self, coefs, intercepts, dtype=np.float64):
@@ -108,6 +112,14 @@ class LogisticDAALModel:
             fptype=self._fptype,
             resultsToEvaluate="computeClassLogProbabilities",
         )
+
+    @property
+    def coef_(self):
+        return self._model.Beta[:, 1:]
+
+    @property
+    def intercept_(self):
+        return self._model.Beta[:, 0]
 
     def predict(self, X) -> np.ndarray:
         """
