@@ -22,4 +22,4 @@ from ..base import oneDALEstimator
 TSNE.fit = support_input_format(TSNE.fit)
 TSNE.fit_transform = support_input_format(TSNE.fit_transform)
 TSNE._doc_link_module = "daal4py"
-TSNE._doc_link_template = oneDALEstimator._doc_link_template
+TSNE._get_doc_link = oneDALEstimator._get_doc_link
