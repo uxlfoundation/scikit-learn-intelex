@@ -117,85 +117,31 @@ class GBTDAALBaseModel:
 
         # Build GBTDAALClassifier from LightGBM
         if (submodule_name, class_name) == ("lightgbm.sklearn", "LGBMClassifier"):
-            if self_class_name == "GBTDAALClassifier":
-                self._convert_model_from_lightgbm(model.booster_)
-            else:
-                raise TypeError(
-                    f"Only GBTDAALClassifier can be created from\
-                                 {submodule_name}.{class_name} (got {self_class_name})"
-                )
+            self._convert_model_from_lightgbm(model.booster_)
         # Build GBTDAALClassifier from XGBoost
         elif (submodule_name, class_name) == ("xgboost.sklearn", "XGBClassifier"):
-            if self_class_name == "GBTDAALClassifier":
-                self._convert_model_from_xgboost(model.get_booster())
-            else:
-                raise TypeError(
-                    f"Only GBTDAALClassifier can be created from\
-                                 {submodule_name}.{class_name} (got {self_class_name})"
-                )
+            self._convert_model_from_xgboost(model.get_booster())
         # Build GBTDAALClassifier from CatBoost
         elif (submodule_name, class_name) == ("catboost.core", "CatBoostClassifier"):
-            if self_class_name == "GBTDAALClassifier":
-                self._convert_model_from_catboost(model)
-            else:
-                raise TypeError(
-                    f"Only GBTDAALClassifier can be created from\
-                                 {submodule_name}.{class_name} (got {self_class_name})"
-                )
+            self._convert_model_from_catboost(model)
         # Build GBTDAALRegressor from LightGBM
         elif (submodule_name, class_name) == ("lightgbm.sklearn", "LGBMRegressor"):
-            if self_class_name == "GBTDAALRegressor":
-                self._convert_model_from_lightgbm(model.booster_)
-            else:
-                raise TypeError(
-                    f"Only GBTDAALRegressor can be created from\
-                                 {submodule_name}.{class_name} (got {self_class_name})"
-                )
+            self._convert_model_from_lightgbm(model.booster_)
         # Build GBTDAALRegressor from XGBoost
         elif (submodule_name, class_name) == ("xgboost.sklearn", "XGBRegressor"):
-            if self_class_name == "GBTDAALRegressor":
-                self._convert_model_from_xgboost(model.get_booster())
-            else:
-                raise TypeError(
-                    f"Only GBTDAALRegressor can be created from\
-                                 {submodule_name}.{class_name} (got {self_class_name})"
-                )
+            self._convert_model_from_xgboost(model.get_booster())
         # Build GBTDAALRegressor from CatBoost
         elif (submodule_name, class_name) == ("catboost.core", "CatBoostRegressor"):
-            if self_class_name == "GBTDAALRegressor":
-                self._convert_model_from_catboost(model)
-            else:
-                raise TypeError(
-                    f"Only GBTDAALRegressor can be created from\
-                                 {submodule_name}.{class_name} (got {self_class_name})"
-                )
+            self._convert_model_from_catboost(model)
         # Build GBTDAALModel from LightGBM
         elif (submodule_name, class_name) == ("lightgbm.basic", "Booster"):
-            if self_class_name == "GBTDAALModel":
-                self._convert_model_from_lightgbm(model)
-            else:
-                raise TypeError(
-                    f"Only GBTDAALModel can be created from\
-                                 {submodule_name}.{class_name} (got {self_class_name})"
-                )
+            self._convert_model_from_lightgbm(model)
         # Build GBTDAALModel from XGBoost
         elif (submodule_name, class_name) == ("xgboost.core", "Booster"):
-            if self_class_name == "GBTDAALModel":
-                self._convert_model_from_xgboost(model)
-            else:
-                raise TypeError(
-                    f"Only GBTDAALModel can be created from\
-                                 {submodule_name}.{class_name} (got {self_class_name})"
-                )
+            self._convert_model_from_xgboost(model)
         # Build GBTDAALModel from CatBoost
         elif (submodule_name, class_name) == ("catboost.core", "CatBoost"):
-            if self_class_name == "GBTDAALModel":
-                self._convert_model_from_catboost(model)
-            else:
-                raise TypeError(
-                    f"Only GBTDAALModel can be created from\
-                                 {submodule_name}.{class_name} (got {self_class_name})"
-                )
+            self._convert_model_from_catboost(model)
         else:
             raise TypeError(f"Unknown model format {submodule_name}.{class_name}")
 
