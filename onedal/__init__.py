@@ -123,4 +123,3 @@ if _spmd_backend is not None:
         __all__ += ["spmd.cluster"]
 
 __version__ = "2199.9.9"
-
