@@ -185,6 +185,7 @@ def test_oneDALEstimator_inheritance(monkeypatch):
     mro.  This is only strictly set for non-preview estimators"""
     monkeypatch.setattr(pkgutil, "walk_packages", _sklearnex_walk(pkgutil.walk_packages))
     estimators = all_estimators()  # list of tuples
+    [print(n, o) for n, o in estimators]
     for name, obj in estimators:
         if "preview" not in obj.__module__:
             assert issubclass(
