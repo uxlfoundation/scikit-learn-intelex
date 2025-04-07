@@ -26,6 +26,7 @@ from contextlib import redirect_stdout
 from multiprocessing import Pipe, Process, get_context
 
 import pytest
+from sklearn.base import BaseEstimator
 from sklearn.utils import all_estimators
 
 from daal4py.sklearn._utils import sklearn_check_version
