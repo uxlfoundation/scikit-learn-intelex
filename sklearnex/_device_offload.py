@@ -30,88 +30,78 @@ from .utils import get_tags
 
 
 def _get_backend(obj, queue, method_name, *data):
-    with QM.manage_global_queue(queue, *data) as queue:
-        cpu_device = queue is None or getattr(queue.sycl_device, "is_cpu", True)
-        gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
+    """This function verifies the hardware conditions, data characteristics, and
+    estimator parameters necessary for offloading computation to oneDAL. The status
+    of this patching is returned as a PatchingConditionsChain object along with a
+    boolean flag determining if to be computed with oneDAL. It is assumed that the
+    queue (which determined what hardware to possibly use for oneDAL) has been
+    previously and extensively collected (i.e. the data has already been checked)."""
 
-        if cpu_device:
+    cpu_device = queue is None or getattr(queue.sycl_device, "is_cpu", True)
+    gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
+
+    if cpu_device:
+        patching_status = obj._onedal_cpu_supported(method_name, *data)
+        return patching_status.get_status(), patching_status
+
+    if gpu_device:
+        patching_status = obj._onedal_gpu_supported(method_name, *data)
+        if not patching_status.get_status() and get_config()["allow_fallback_to_host"]:
             patching_status = obj._onedal_cpu_supported(method_name, *data)
-            if patching_status.get_status():
-                return "onedal", patching_status
-            else:
-                return "sklearn", patching_status
 
-        allow_fallback_to_host = get_config()["allow_fallback_to_host"]
-
-        if gpu_device:
-            patching_status = obj._onedal_gpu_supported(method_name, *data)
-            if patching_status.get_status():
-                return "onedal", patching_status
-            else:
-                QM.remove_global_queue()
-                if allow_fallback_to_host:
-                    patching_status = obj._onedal_cpu_supported(method_name, *data)
-                    if patching_status.get_status():
-                        return "onedal", patching_status
-                    else:
-                        return "sklearn", patching_status
-                else:
-                    return "sklearn", patching_status
+        return patching_status.get_status(), patching_status
 
     raise RuntimeError("Device support is not implemented")
 
 
-def get_array_api_support_tag(estimator):
-    """Gets the value of the 'array_api_support' tag from the estimator
-    using correct code path depending on the scikit-learn version."""
-    if hasattr(estimator, "__sklearn_tags__"):
-        return estimator.__sklearn_tags__().array_api_support
-    elif hasattr(estimator, "_get_tags"):
-        tags = estimator._get_tags()
-        if "array_api_support" in tags:
-            return tags["array_api_support"]
-    return False
-
-
 def dispatch(obj, method_name, branches, *args, **kwargs):
-    if get_config()["use_raw_input"] is False:
-        with QM.manage_global_queue(None, *args) as queue:
-            has_usm_data_for_args, hostargs = _transfer_to_host(*args)
-            has_usm_data_for_kwargs, hostvalues = _transfer_to_host(*kwargs.values())
-            hostkwargs = dict(zip(kwargs.keys(), hostvalues))
-
-            backend, patching_status = _get_backend(obj, queue, method_name, *hostargs)
-            has_usm_data = has_usm_data_for_args or has_usm_data_for_kwargs
-            if backend == "onedal":
-                # Host args only used before onedal backend call.
-                # Device will be offloaded when onedal backend will be called.
-                patching_status.write_log(queue=queue, transferred_to_host=False)
-                return branches[backend](obj, *hostargs, **hostkwargs, queue=queue)
-            if backend == "sklearn":
-                if (
-                    "array_api_dispatch" in get_config()
-                    and get_config()["array_api_dispatch"]
-                    and get_array_api_support_tag(obj)
-                    and not has_usm_data
-                ):
-                    # USM ndarrays are also excluded for the fallback Array API. Currently, DPNP.ndarray is
-                    # not compliant with the Array API standard, and DPCTL usm_ndarray Array API is compliant,
-                    # except for the linalg module. There is no guarantee that stock scikit-learn will
-                    # work with such input data. The condition will be updated after DPNP.ndarray and
-                    # DPCTL usm_ndarray enabling for conformance testing and these arrays supportance
-                    # of the fallback cases.
-                    # If `array_api_dispatch` enabled and array api is supported for the stock scikit-learn,
-                    # then raw inputs are used for the fallback.
-                    patching_status.write_log(transferred_to_host=False)
-                    return branches[backend](obj, *args, **kwargs)
-                else:
-                    patching_status.write_log()
-                    return branches[backend](obj, *hostargs, **hostkwargs)
-        raise RuntimeError(
-            f"Undefined backend {backend} in " f"{obj.__class__.__name__}.{method_name}"
-        )
-    else:
+    if get_config()["use_raw_input"]:
         return branches["onedal"](obj, *args, **kwargs)
+
+    array_api_offload = (
+        "array_api_dispatch" in get_config() and get_config()["array_api_dispatch"]
+    )
+
+    onedal_array_api = array_api_offload and get_tags(obj)["onedal_array_api"]
+    sklearn_array_api = array_api_offload and get_tags(obj)["array_api_support"]
+
+    # We need to avoid a copy to host here if zero_copy supported
+    backend = None
+    with QM.manage_global_queue(None, *args) as queue:
+        if onedal_array_api:
+            backend, patching_status = _get_backend(obj, queue, method_name, *args)
+            if backend:
+                patching_status.write_log(queue=queue, transferred_to_host=False)
+                return branches[backend](obj, *args, **kwargs, queue=queue)
+            elif sklearn_array_api:
+                patching_status.write_log(transferred_to_host=False)
+                return branches[backend](obj, *args, **kwargs)
+
+        # move to host because it is necessary for checking
+        # we only guarantee onedal_cpu_supported and onedal_gpu_supported are generalized
+        # to non-numpy inputs for zero copy estimators. this will eventually be deprecated
+        # when all estimators are zero-copy generalized in onedal_cpu_supported and
+        # onedal_gpu_supported.
+        has_usm_data_for_args, hostargs = _transfer_to_host(*args)
+        has_usm_data_for_kwargs, hostvalues = _transfer_to_host(*kwargs.values())
+
+        hostkwargs = dict(zip(kwargs.keys(), hostvalues))
+        has_usm_data = has_usm_data_for_args or has_usm_data_for_kwargs
+
+        if backend is None:
+            backend, patching_status = _get_backend(obj, queue, method_name, *hostargs)
+
+        if backend:
+            patching_status.write_log(queue=queue, transferred_to_host=False)
+            return branches[backend](obj, *hostargs, **hostkwargs, queue=queue)
+        else:
+            if sklearn_array_api and not has_usm_data:
+                # dpnp fallback is not handled properly yet.
+                patching_status.write_log(transferred_to_host=False)
+                return branches[backend](obj, *args, **kwargs)
+            else:
+                patching_status.write_log()
+                return branches[backend](obj, *hostargs, **hostkwargs)
 
 
 def wrap_output_data(func):
