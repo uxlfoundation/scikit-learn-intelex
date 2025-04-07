@@ -90,6 +90,8 @@ The following algorithms support distributed mode:
 
   - `K-Means <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/kmeans_spmd.py>`_
 
+- DBSCAN
+
 - Correlation and Variance-Covariance Matrices (covariance)
 
   - `Covariance <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/covariance_spmd.py>`_

@@ -101,13 +101,23 @@ Note: executing on GPU has `additional system software requirements <https://www
    algorithms.rst
    oneapi-gpu.rst
    distributed-mode.rst
+   distributed_daal4py.rst
    non-scikit-algorithms.rst
+   non_sklearn_d4p.rst
+   model_builders.rst
+   logistic_model_builder.rst
    input-types.rst
    array_api.rst
    verbose.rst
    preview.rst
    deprecation.rst
 
+.. toctree::
+   :caption: daal4py
+   :hidden:
+
+   about_daal4py.rst
+   daal4py.rst
 
 .. toctree::
    :caption: Performance
