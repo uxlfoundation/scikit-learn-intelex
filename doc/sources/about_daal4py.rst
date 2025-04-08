@@ -36,7 +36,7 @@ exposes some additional functionalities from the |onedal| that ``sklearnex`` doe
 - Fast serving of gradient boosted decision trees from other libraries such as XGBoost
   (:ref:`model builders <model_builders>`).
 
-Previously, ``daal4py`` was distributed as a separate package, but it is now an importable module
+Previously ``daal4py`` was distributed as a separate package, but it is now an importable module
 within the ``scikit-learn-intelex`` package - meaning, after installing ``scikit-learn-intelex``,
 it can be imported as follows:
 
