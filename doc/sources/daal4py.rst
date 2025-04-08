@@ -630,6 +630,12 @@ Parameters and semantics are described in |onedal-dg-cross-entropy-loss|_.
 .. autoclass:: daal4py.optimization_solver_cross_entropy_loss_result
    :members:
 
+Sum of Functions
+""""""""""""""""
+
+.. autoclass:: daal4py.optimization_solver_sum_of_functions_result
+   :members:
+
 Iterative Solvers
 *****************
 
@@ -688,10 +694,20 @@ Parameters and semantics are described in |onedal-dg-stochastic-average-gradient
 
 Coordinate Descent
 """"""""""""""""""
+Parameters and semantics are described in |onedal-dg-coordinate-descent|_.
 
 .. autoclass:: daal4py.optimization_solver_coordinate_descent
    :members: compute
 .. autoclass:: daal4py.optimization_solver_coordinate_descent_result
+   :members:
+
+Precomputed Function
+""""""""""""""""""""
+Parameters and semantics are described in |onedal-dg-precomputed-objective-function|_.
+
+.. autoclass:: daal4py.optimization_solver_precomputed
+   :members: compute
+.. autoclass:: daal4py.optimization_solver_precomputed_result
    :members:
 
 Recommender systems
@@ -1170,6 +1186,12 @@ Parameters and semantics are described in |onedal-dg-sorting|_.
 
 .. |onedal-dg-stochastic-average-gradient-descent-saga| replace:: |onedal| Stochastic Average Gradient Descent SAGA
 .. _onedal-dg-stochastic-average-gradient-descent-saga: https://uxlfoundation.github.io/oneDAL/daal/algorithms/optimization-solvers/solvers/stochastic-average-gradient-accelerated-method.html
+
+.. |onedal-dg-coordinate-descent| replace:: |onedal| Coordinate Descent Algorithm
+.. _onedal-dg-coordinate-descent: https://uxlfoundation.github.io/oneDAL/daal/algorithms/optimization-solvers/solvers/coordinate-descent.html
+
+.. |onedal-dg-precomputed-objective-function| replace:: |onedal| Objective Function with Precomputed Characteristics
+.. _onedal-dg-precomputed-objective-function: https://uxlfoundation.github.io/oneDAL/daal/algorithms/optimization-solvers/objective-functions/with-precomputed-characteristics.html
 
 .. |onedal-dg-engines| replace:: |onedal| Engines
 .. _onedal-dg-engines: https://uxlfoundation.github.io/oneDAL/daal/algorithms/engines/index.html
