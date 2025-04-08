@@ -24,6 +24,7 @@ import pathlib
 import platform as plt
 import re
 import shutil
+import subprocess
 import sys
 import time
 from ctypes.util import find_library
@@ -80,11 +81,18 @@ is_onedal_iface = (
     os.environ.get("OFF_ONEDAL_IFACE", "0") == "0" and ONEDAL_VERSION >= ONEDAL_2021_3
 )
 
-sklearnex_version = (
-    os.environ["SKLEARNEX_VERSION"]
-    if "SKLEARNEX_VERSION" in os.environ
-    else time.strftime("%Y%m%d.%H%M%S")
-)
+
+def _gen_sklearnex_version():
+    if "SKLEARNEX_VERSION" in os.environ:
+        return os.environ["SKLEARNEX_VERSION"]
+    output = time.strftime("%Y%m%d+")
+    try:
+        return output + subprocess.check_output(["git", "rev-parse", "--short", "HEAD"]).decode("ascii").strip()
+    except subprocess.CalledProcessError:
+        return output + time.strftime("%H%M%S")   
+
+
+sklearnex_version = _gen_sklearnex_version()
 
 trues = ["true", "True", "TRUE", "1", "t", "T", "y", "Y", "Yes", "yes", "YES"]
 no_dist = True if "NO_DIST" in os.environ and os.environ["NO_DIST"] in trues else False
