@@ -26,11 +26,7 @@ from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 
 from .._config import get_config
 from .._device_offload import dispatch, wrap_output_data
-from .._utils import (
-    PatchingConditionsChain,
-    get_patch_message,
-    register_hyperparameters,
-)
+from .._utils import PatchingConditionsChain, get_patch_message, register_hyperparameters
 from ..base import oneDALEstimator
 from ..utils.validation import validate_data
 

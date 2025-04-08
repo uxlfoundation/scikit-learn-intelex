@@ -29,10 +29,7 @@ from sklearnex import config_context
 from sklearnex.metrics import pairwise_distances
 
 from ..._device_offload import dispatch, wrap_output_data
-from ..._utils import (
-    PatchingConditionsChain,
-    register_hyperparameters,
-)
+from ..._utils import PatchingConditionsChain, register_hyperparameters
 from ...base import oneDALEstimator
 from ...utils.validation import validate_data
 

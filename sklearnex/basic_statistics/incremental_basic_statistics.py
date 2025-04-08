@@ -27,10 +27,7 @@ from onedal.basic_statistics import (
 
 from .._config import get_config
 from .._device_offload import dispatch
-from .._utils import (
-    PatchingConditionsChain,
-    _add_inc_serialization_note,
-)
+from .._utils import PatchingConditionsChain, _add_inc_serialization_note
 from ..base import oneDALEstimator
 from ..utils.validation import validate_data
 

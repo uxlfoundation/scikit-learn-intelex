@@ -24,10 +24,7 @@ from onedal.decomposition import IncrementalPCA as onedal_IncrementalPCA
 
 from ..._config import get_config
 from ..._device_offload import dispatch, wrap_output_data
-from ..._utils import (
-    PatchingConditionsChain,
-    _add_inc_serialization_note,
-)
+from ..._utils import PatchingConditionsChain, _add_inc_serialization_note
 from ...base import oneDALEstimator
 from ...utils.validation import validate_data
 

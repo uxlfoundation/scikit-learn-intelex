@@ -26,10 +26,7 @@ import sklearn
 from daal4py.sklearn._utils import (
     PatchingConditionsChain as daal4py_PatchingConditionsChain,
 )
-from daal4py.sklearn._utils import (
-    daal_check_version,
-    sklearn_check_version,
-)
+from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 
 # Note: if inheriting from '_HTMLDocumentationLinkMixin' here, it then doesn't matter
 # the order of inheritance of classes for estimators when this is later subclassed,

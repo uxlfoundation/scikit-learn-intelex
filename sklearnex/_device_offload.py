@@ -54,18 +54,54 @@ def _get_backend(obj, queue, method_name, *data):
     raise RuntimeError("Device support is not implemented")
 
 
+if "array_api_dispatch" in get_config():
+    _array_api_offload = lambda: get_config()["array_api_dispatch"]
+else:
+    _array_api_offload = lambda: False
+
+
 def dispatch(obj, method_name, branches, *args, **kwargs):
+    """Dispatch object method call to oneDAL if conditionally possible. If
+    possible oneDAL will be called otherwise it will fall back to calling
+    scikit-learn.  Dispatching to oneDAL can be influenced by the
+    'use_raw_input' or 'allow_fallback_to_host' config parameters.
+
+    Parameters
+    ----------
+    obj: object
+        sklearnex object which contains `onedal_cpu_supported` and
+        `onedal_gpu_supported` methods which evaluate oneDAL support.
+
+    method_name: string
+        name of method to be evaluated for oneDAL support
+
+    branches: dict
+        dictionary containing functions to be called. Only keys 'sklearn' and
+        'onedal' are used which should contain the relevant scikit-learn and
+        onedal object methods respectively. All functions should accept the
+        inputs from *args and **kwargs. Additionally, the onedal object method
+        must additionally accept a 'queue' keyword.
+
+    *args: tuple
+        arguments to be supplied to the dispatched method
+
+    **kwargs: dict
+        keyword arguments to be supplied to the dispatched method
+
+    Returns
+    -------
+    unknown: object
+        return depenedent on the supplied branches. Implicitly the returned
+        object types should match for the sklearn and onedal object methods.
+    """
+
     if get_config()["use_raw_input"]:
         return branches["onedal"](obj, *args, **kwargs)
 
-    array_api_offload = (
-        "array_api_dispatch" in get_config() and get_config()["array_api_dispatch"]
-    )
+    # Determine if array_api dispatching is enabled, and if estimator is capable
+    onedal_array_api = _array_api_offload() and get_tags(obj).onedal_array_api
+    sklearn_array_api = _array_api_offload() and get_tags(obj).array_api_support
 
-    onedal_array_api = array_api_offload and get_tags(obj)["onedal_array_api"]
-    sklearn_array_api = array_api_offload and get_tags(obj)["array_api_support"]
-
-    # We need to avoid a copy to host here if zero_copy supported
     backend = None
     with QM.manage_global_queue(None, *args) as queue:
         if onedal_array_api:
@@ -77,7 +113,7 @@ def dispatch(obj, method_name, branches, *args, **kwargs):
                 patching_status.write_log(transferred_to_host=False)
                 return branches["sklearn"](obj, *args, **kwargs)
 
-        # move to host because it is necessary for checking
+        # move data to host because it is necessary for checking dispatch capability
         # we only guarantee onedal_cpu_supported and onedal_gpu_supported are generalized
         # to non-numpy inputs for zero copy estimators. this will eventually be deprecated
         # when all estimators are zero-copy generalized in onedal_cpu_supported and
