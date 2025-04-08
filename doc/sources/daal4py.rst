@@ -936,6 +936,22 @@ Parameters and semantics are described in |onedal-dg-mcg59|_.
 .. autoclass:: daal4py.engines_mcg59_result
    :members:
 
+mrg32k3a
+""""""""
+
+.. autoclass:: daal4py.engines_mrg32k3a
+   :members: compute
+.. autoclass:: daal4py.engines_mrg32k3a_result
+   :members:
+
+philox4x32x10
+"""""""""""""
+
+.. autoclass:: daal4py.engines_philox4x32x10
+   :members: compute
+.. autoclass:: daal4py.engines_philox4x32x10_result
+   :members:
+
 Distributions
 *************
 Parameters and semantics are described in |onedal-dg-distributions|_.
