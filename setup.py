@@ -449,10 +449,8 @@ class onedal_build:
         elif n_threads is True:
             n_threads = os.cpu_count() or 1
 
-        cxx = os.getenv("CXX", "cl" if IS_WIN else "g++")
         build_onedal = lambda iface: build_backend.custom_build_cmake_clib(
             iface=iface,
-            cxx=cxx,
             onedal_major_binary_version=ONEDAL_MAJOR_BINARY_VERSION,
             mpi_root=mpi_root,
             no_dist=no_dist,

@@ -42,7 +42,6 @@ elif sys.platform in ["win32", "cygwin"]:
 
 def custom_build_cmake_clib(
     iface,
-    cxx=None,
     onedal_major_binary_version=1,
     no_dist=True,
     mpi_root=None,
@@ -68,13 +67,16 @@ def custom_build_cmake_clib(
     python_library_dir = win_python_path_lib if IS_WIN else get_config_var("LIBDIR")
     numpy_include = np.get_include()
 
+    cxx = os.getenv("CXX")
     if iface in ["dpc", "spmd_dpc"]:
-        if IS_WIN:
-            cxx = "icx"
-        else:
-            cxx = "icpx"
-    elif cxx is None:
-        raise RuntimeError("CXX compiler shall be specified")
+        default_dpc_compiler = "icx" if IS_WIN else "icpx"
+        if not cxx:
+            cxx = default_dpc_compiler
+        elif not (default_dpc_compiler in cxx):
+            logger.warning(
+                "Trying to build DPC module with a potentially non-DPC-capable compiler. Will forcefully change compiler to ICX."
+            )
+            cxx = default_dpc_compiler
 
     build_distribute = iface == "spmd_dpc" and not no_dist and IS_LIN
 
@@ -101,12 +103,17 @@ def custom_build_cmake_clib(
     use_parameters_arg = "yes" if use_parameters_lib else "no"
     logger.info(f"Build using parameters library: {use_parameters_arg}")
 
+    # Note: this uses env. variable 'CXX' instead of option 'CMAKE_CXX_COMPILER',
+    # in order to propagate both potential user-passed arguments and flags, such as:
+    #     CXX="ccache icpx"
+    #     CXX="icpx -O0"
+    if cxx:
+        os.environ["CXX"] = cxx
     cmake_args = [
         "cmake",
         cmake_generator,
         "-S" + builder_directory,
         "-B" + abs_build_temp_path,
-        "-DCMAKE_CXX_COMPILER=" + cxx,
         "-DCMAKE_INSTALL_PREFIX=" + install_directory,
         "-DCMAKE_PREFIX_PATH=" + install_directory,
         "-DIFACE=" + iface,
