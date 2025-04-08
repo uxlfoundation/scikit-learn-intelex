@@ -1597,7 +1597,19 @@ class wrapper_gen(object):
             t = jenv.from_string(algo_wrapper_template)
             cpp_end += t.render(**jparams) + "\n"
 
+        for k, v in self.get_adhoc_doc_replacements().items():
+            pyx_end = pyx_end.replace(k, v)
+
         return (cpp_map, cpp_begin, cpp_end, pyx_map, pyx_begin, pyx_end, typesstr)
+
+    def get_adhoc_doc_replacements(self) -> dict[str, str]:
+        return {
+            "64 bit integer flag that indicates the results to compute": 'Type of results to compute or to evaluate. Can pass one of ``"computeClassLabels"``,'
+            ' ``"computeClassProbabilities"``, ``"computeClassLogProbabilities"``; or more than one by'
+            ' joining them with separator bars (e.g. ``"computeClassLabels|computeClassProbabilities"``).'
+            " Note that not all of these are supported on every class/method accepting this argument"
+            " (see docs for oneDAL for details on what this specific class/method supports)."
+        }
 
     ##################################################################################
     def gen_footers(

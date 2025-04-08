@@ -117,85 +117,31 @@ class GBTDAALBaseModel:
 
         # Build GBTDAALClassifier from LightGBM
         if (submodule_name, class_name) == ("lightgbm.sklearn", "LGBMClassifier"):
-            if self_class_name == "GBTDAALClassifier":
-                self._convert_model_from_lightgbm(model.booster_)
-            else:
-                raise TypeError(
-                    f"Only GBTDAALClassifier can be created from\
-                                 {submodule_name}.{class_name} (got {self_class_name})"
-                )
+            self._convert_model_from_lightgbm(model.booster_)
         # Build GBTDAALClassifier from XGBoost
         elif (submodule_name, class_name) == ("xgboost.sklearn", "XGBClassifier"):
-            if self_class_name == "GBTDAALClassifier":
-                self._convert_model_from_xgboost(model.get_booster())
-            else:
-                raise TypeError(
-                    f"Only GBTDAALClassifier can be created from\
-                                 {submodule_name}.{class_name} (got {self_class_name})"
-                )
+            self._convert_model_from_xgboost(model.get_booster())
         # Build GBTDAALClassifier from CatBoost
         elif (submodule_name, class_name) == ("catboost.core", "CatBoostClassifier"):
-            if self_class_name == "GBTDAALClassifier":
-                self._convert_model_from_catboost(model)
-            else:
-                raise TypeError(
-                    f"Only GBTDAALClassifier can be created from\
-                                 {submodule_name}.{class_name} (got {self_class_name})"
-                )
+            self._convert_model_from_catboost(model)
         # Build GBTDAALRegressor from LightGBM
         elif (submodule_name, class_name) == ("lightgbm.sklearn", "LGBMRegressor"):
-            if self_class_name == "GBTDAALRegressor":
-                self._convert_model_from_lightgbm(model.booster_)
-            else:
-                raise TypeError(
-                    f"Only GBTDAALRegressor can be created from\
-                                 {submodule_name}.{class_name} (got {self_class_name})"
-                )
+            self._convert_model_from_lightgbm(model.booster_)
         # Build GBTDAALRegressor from XGBoost
         elif (submodule_name, class_name) == ("xgboost.sklearn", "XGBRegressor"):
-            if self_class_name == "GBTDAALRegressor":
-                self._convert_model_from_xgboost(model.get_booster())
-            else:
-                raise TypeError(
-                    f"Only GBTDAALRegressor can be created from\
-                                 {submodule_name}.{class_name} (got {self_class_name})"
-                )
+            self._convert_model_from_xgboost(model.get_booster())
         # Build GBTDAALRegressor from CatBoost
         elif (submodule_name, class_name) == ("catboost.core", "CatBoostRegressor"):
-            if self_class_name == "GBTDAALRegressor":
-                self._convert_model_from_catboost(model)
-            else:
-                raise TypeError(
-                    f"Only GBTDAALRegressor can be created from\
-                                 {submodule_name}.{class_name} (got {self_class_name})"
-                )
+            self._convert_model_from_catboost(model)
         # Build GBTDAALModel from LightGBM
         elif (submodule_name, class_name) == ("lightgbm.basic", "Booster"):
-            if self_class_name == "GBTDAALModel":
-                self._convert_model_from_lightgbm(model)
-            else:
-                raise TypeError(
-                    f"Only GBTDAALModel can be created from\
-                                 {submodule_name}.{class_name} (got {self_class_name})"
-                )
+            self._convert_model_from_lightgbm(model)
         # Build GBTDAALModel from XGBoost
         elif (submodule_name, class_name) == ("xgboost.core", "Booster"):
-            if self_class_name == "GBTDAALModel":
-                self._convert_model_from_xgboost(model)
-            else:
-                raise TypeError(
-                    f"Only GBTDAALModel can be created from\
-                                 {submodule_name}.{class_name} (got {self_class_name})"
-                )
+            self._convert_model_from_xgboost(model)
         # Build GBTDAALModel from CatBoost
         elif (submodule_name, class_name) == ("catboost.core", "CatBoost"):
-            if self_class_name == "GBTDAALModel":
-                self._convert_model_from_catboost(model)
-            else:
-                raise TypeError(
-                    f"Only GBTDAALModel can be created from\
-                                 {submodule_name}.{class_name} (got {self_class_name})"
-                )
+            self._convert_model_from_catboost(model)
         else:
             raise TypeError(f"Unknown model format {submodule_name}.{class_name}")
 
@@ -347,12 +293,37 @@ class GBTDAALModel(GBTDAALBaseModel):
     """
     Gradient Boosted Decision Tree Model
 
-    Model class offering accelerated predictions for gradient-boosted decision tree models
-    that were built using other libraries. See the documentation for :func:`convert_model`
-    for more details.
+    Model class offering accelerated predictions for gradient-boosted decision
+    tree models from other libraries.
 
-    .. note:: This class cannot be instantiated directly. Use :func:`convert_model` to instantiate an object of this class.
+    Objects of this class are meant to be initialized from GBT model objects
+    created through other libraries, returning a different class which can calculate
+    predictions faster than the original library that created said model.
+
+    Can be created from model objects that meet all of the following criteria:
+
+    - Were produced from one of the following libraries: ``xgboost``, ``lightgbm``, or ``catboost``.
+      It can work with either the base booster classes of those libraries or with their
+      scikit-learn-compatible classes.
+    - Do not use categorical features.
+    - Are for regression or classification (e.g. no ranking). In the case of XGBoost objective
+      ``binary:logitraw``, it will create a classification model out of it, and in the case of
+      objective ``reg:logistic``, will create a regression model.
+    - Are not multi-output models. Note that multi-class classification **is** supported.
+
+    Parameters
+    ----------
+    model : booster object from another library
+        The fitted GBT model from which this object will be created. See rest of the documentation
+        for supported input types.
     """
+
+    def __init__(self, model):
+        self._convert_model(model)
+        for type_str in ("xgboost", "lightgbm", "catboost"):
+            if type_str in str(type(model)):
+                self.model_type = type_str
+                break
 
     def predict(
         self, X, pred_contribs: bool = False, pred_interactions: bool = False
@@ -412,45 +383,3 @@ class GBTDAALModel(GBTDAALBaseModel):
         """
         fptype = getFPType(X)
         return self._predict_classification(X, fptype, "computeClassProbabilities")
-
-
-def convert_model(model) -> GBTDAALModel:
-    """
-    Converts a GBT model from a different library to daal4py's :obj:`GBTDAALModel`
-
-    Converts a gradient-boosted decision tree model object created through a
-    different library to a daal4py GBT model object, from which predictions on
-    new data can be calculated faster than in the original library that created
-    the model.
-
-    Can convert models that meet all of the following criteria:
-
-    - Were produced from one of the following libraries: ``xgboost``, ``lightgbm``, or ``catboost``.
-      It can work with either the base booster classes of those libraries or with their
-      scikit-learn-compatible classes.
-    - Do not use categorical features.
-    - Are for regression or classification (e.g. no ranking). In the case of XGBoost objective
-      ``binary:logitraw``, it will create a classification model out of it, and in the case of
-      objective ``reg:logistic`, will create a regression model.
-    - Are not multi-output models. Note that multi-class classification **is** supported.
-
-    :param model: A model object from ``xgboost``, ``lightgbm``, or ``catboost``.
-    :rtype: GBTDAALModel
-    """
-    try:
-        gbm = GBTDAALModel()
-        gbm._convert_model(model)
-    except TypeError as err:
-        if "Only GBTDAALRegressor can be created" in str(err):
-            gbm = d4p.sklearn.ensemble.GBTDAALRegressor.convert_model(model)
-        elif "Only GBTDAALClassifier can be created" in str(err):
-            gbm = d4p.sklearn.ensemble.GBTDAALClassifier.convert_model(model)
-        else:
-            raise
-
-    for type_str in ("xgboost", "lightgbm", "catboost"):
-        if type_str in str(type(model)):
-            gbm.model_type = type_str
-            break
-
-    return gbm
