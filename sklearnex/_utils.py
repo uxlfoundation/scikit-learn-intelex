@@ -28,17 +28,6 @@ from daal4py.sklearn._utils import (
 )
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 
-# Note: if inheriting from '_HTMLDocumentationLinkMixin' here, it then doesn't matter
-# the order of inheritance of classes for estimators when this is later subclassed,
-# whereas if inheriting from something else, the subclass that inherits from this needs
-# to be the first inherited class in estimators in order for it to take effect.
-if sklearn_check_version("1.4"):
-    from sklearn.utils._estimator_html_repr import _HTMLDocumentationLinkMixin
-
-    BaseForHTMLDocLink = _HTMLDocumentationLinkMixin
-else:
-    BaseForHTMLDocLink = ABC
-
 
 class PatchingConditionsChain(daal4py_PatchingConditionsChain):
     def get_status(self):
