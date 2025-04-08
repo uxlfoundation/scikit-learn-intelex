@@ -51,12 +51,19 @@ Using daal4py
 -------------
 
 Unlike ``sklearnex``, ``daal4py``, being a lower-level interface, does not follow scikit-learn
-idioms - instead, algorithms from it are called by instantiating an 'algorithm' class, which
-returns an object with a 'compute' method to which data is passed, and this method in turn
-returning a 'result' object with the results of the computations. Example:
+idioms - instead, the process for calling procedures from the ``daal4py`` interface is as follows:
+
+- Instantiate an 'algorithm' class by calling its contructor, without any data - for example:
+  ``qr_algo = daal4py.qr()``.
+- Call the 'compute' method of that instantiated algorithm in order to obtain a 'result' object,
+  passing it the data on which it will operate - for example: ``qr_result = qr_algo.compute(X)``.
+- Access the relevant results in the 'result' object - for example: ``R = qr_result.matrixR``.
+
+
+Full example calling the QR algorithm:
 
 .. code::
-    
+
     import daal4py
     import numpy as np
 
