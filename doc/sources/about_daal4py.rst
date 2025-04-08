@@ -91,6 +91,10 @@ computations in a 'streaming' or 'online' fashion, by supplying it different sub
 one at a time (batches), instead of passing the whole data upfront, while still arriving at the
 same final result as if all the data had been passed at once.
 
+.. note::
+    The ``sklearnex`` module also offers incremental versions of some algorithms - see the docs
+    on :ref:`extension_estimators` for more details.
+
 This can be useful for executing algorithms on large datasets that don't fit in memory but which
 can still be loaded in smaller chunks, or for machine learning models that are constantly being
 updated as new data is collected, for example.
