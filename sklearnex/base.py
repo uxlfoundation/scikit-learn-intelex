@@ -14,7 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 
-from abc import ABC
 
 from daal4py.sklearn._utils import sklearn_check_version
 
