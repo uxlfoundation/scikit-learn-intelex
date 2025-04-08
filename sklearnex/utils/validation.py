@@ -21,6 +21,11 @@ from sklearn.utils.validation import _assert_all_finite as _sklearn_assert_all_f
 from sklearn.utils.validation import _num_samples, check_array, check_non_negative
 
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from daal4py.sklearn.utils.validation import (
+    add_dispatcher_docstring,
+    check_feature_names,
+    check_n_features,
+)
 from onedal.utils.validation import is_contiguous
 
 from ._array_api import get_namespace
@@ -29,7 +34,6 @@ if sklearn_check_version("1.6"):
     from sklearn.utils.validation import validate_data as _sklearn_validate_data
 
     _finite_keyword = "ensure_all_finite"
-
 else:
     from sklearn.base import BaseEstimator
 
@@ -92,6 +96,7 @@ def assert_all_finite(
     )
 
 
+@add_dispatcher_docstring(_sklearn_validate_data)
 def validate_data(
     _estimator,
     /,
@@ -129,22 +134,6 @@ def validate_data(
             assert_all_finite(next(arg), allow_nan=allow_nan, input_name="X")
         if check_y:
             assert_all_finite(next(arg), allow_nan=allow_nan, input_name="y")
-
-    if check_y and "dtype" in kwargs:
-        # validate_data does not do full dtype conversions, as it uses check_X_y
-        # oneDAL can make tables from [int32, float32, float64], requiring
-        # a dtype check and conversion. This will query the array_namespace and
-        # convert y as necessary. This is important especially for regressors.
-        dtype = kwargs["dtype"]
-        if not isinstance(dtype, (tuple, list)):
-            dtype = tuple(dtype)
-
-        outx, outy = out if check_x else (None, out)
-        if outy.dtype not in dtype:
-            yp, _ = get_namespace(outy)
-            # use asarray rather than astype because of numpy support
-            outy = yp.asarray(outy, dtype=dtype[0])
-            out = (outx, outy) if check_x else outy
 
     return out
 

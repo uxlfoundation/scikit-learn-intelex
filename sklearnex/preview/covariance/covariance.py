@@ -34,11 +34,7 @@ from ..._utils import (
     PatchingConditionsChain,
     register_hyperparameters,
 )
-
-if sklearn_check_version("1.6"):
-    from sklearn.utils.validation import validate_data
-else:
-    validate_data = _sklearn_EmpiricalCovariance._validate_data
+from ...utils.validation import validate_data
 
 
 @register_hyperparameters({"fit": get_hyperparameters("covariance", "compute")})
@@ -99,10 +95,7 @@ class EmpiricalCovariance(PatchableEstimator, _sklearn_EmpiricalCovariance):
     def fit(self, X, y=None):
         if sklearn_check_version("1.2"):
             self._validate_params()
-        if sklearn_check_version("0.23"):
-            X = validate_data(self, X, force_all_finite=False)
-        else:
-            X = check_array(X, force_all_finite=False)
+        X = validate_data(self, X, ensure_all_finite=False)
 
         dispatch(
             self,
@@ -119,10 +112,7 @@ class EmpiricalCovariance(PatchableEstimator, _sklearn_EmpiricalCovariance):
     # expose sklearnex pairwise_distances if mahalanobis distance eventually supported
     @wrap_output_data
     def mahalanobis(self, X):
-        if sklearn_check_version("1.0"):
-            X = validate_data(self, X, reset=False)
-        else:
-            X = check_array(X)
+        X = validate_data(self, X, reset=False)
 
         precision = self.get_precision()
         with config_context(assume_finite=True):

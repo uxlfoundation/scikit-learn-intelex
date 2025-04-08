@@ -42,14 +42,10 @@ from .._utils import (
 )
 from ..metrics import pairwise_distances
 from ..utils._array_api import get_namespace
+from ..utils.validation import check_feature_names, validate_data
 
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import Interval
-
-if sklearn_check_version("1.6"):
-    from sklearn.utils.validation import validate_data
-else:
-    validate_data = BaseEstimator._validate_data
 
 
 @control_n_jobs(decorated_methods=["partial_fit", "fit", "_onedal_finalize_fit"])
@@ -197,22 +193,14 @@ class IncrementalEmpiricalCovariance(ExtensionEstimator, BaseEstimator):
             if sklearn_check_version("1.2"):
                 self._validate_params()
 
-            if sklearn_check_version("1.0"):
-                X = validate_data(
-                    self,
-                    X,
-                    dtype=[np.float64, np.float32],
-                    reset=first_pass,
-                    copy=self.copy,
-                    force_all_finite=False,
-                )
-            else:
-                X = check_array(
-                    X,
-                    dtype=[np.float64, np.float32],
-                    copy=self.copy,
-                    force_all_finite=False,
-                )
+            X = validate_data(
+                self,
+                X,
+                dtype=[np.float64, np.float32],
+                reset=first_pass,
+                copy=self.copy,
+                ensure_all_finite=False,
+            )
 
         onedal_params = {
             "method": "dense",
@@ -240,18 +228,12 @@ class IncrementalEmpiricalCovariance(ExtensionEstimator, BaseEstimator):
 
         check_is_fitted(self)
         location = self.location_
-        if sklearn_check_version("1.0"):
-            X = validate_data(
-                self,
-                X_test,
-                dtype=[np.float64, np.float32],
-                reset=False,
-            )
-        else:
-            X = check_array(
-                X_test,
-                dtype=[np.float64, np.float32],
-            )
+        X = validate_data(
+            self,
+            X_test,
+            dtype=[np.float64, np.float32],
+            reset=False,
+        )
 
         if "numpy" not in xp.__name__:
             location = xp.asarray(location, device=X_test.device)
@@ -345,22 +327,13 @@ class IncrementalEmpiricalCovariance(ExtensionEstimator, BaseEstimator):
                 self._validate_params()
 
             # finite check occurs on onedal side
-            if sklearn_check_version("1.0"):
-                X = validate_data(
-                    self,
-                    X,
-                    dtype=[np.float64, np.float32],
-                    copy=self.copy,
-                    force_all_finite=False,
-                )
-            else:
-                X = check_array(
-                    X,
-                    dtype=[np.float64, np.float32],
-                    copy=self.copy,
-                    force_all_finite=False,
-                )
-                self.n_features_in_ = X.shape[1]
+            X = validate_data(
+                self,
+                X,
+                dtype=[np.float64, np.float32],
+                copy=self.copy,
+                ensure_all_finite=False,
+            )
 
         self.batch_size_ = self.batch_size if self.batch_size else 5 * self.n_features_in_
 
@@ -379,8 +352,7 @@ class IncrementalEmpiricalCovariance(ExtensionEstimator, BaseEstimator):
 
     # expose sklearnex pairwise_distances if mahalanobis distance eventually supported
     def mahalanobis(self, X):
-        if sklearn_check_version("1.0"):
-            self._check_feature_names(X, reset=False)
+        check_feature_names(self, X, reset=False)
 
         xp, _ = get_namespace(X)
         precision = self.get_precision()

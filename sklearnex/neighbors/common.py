@@ -29,14 +29,14 @@ from onedal.utils.validation import _check_array, _num_features, _num_samples
 
 from .._utils import PatchableEstimator, PatchingConditionsChain
 from ..utils._array_api import get_namespace
+from ..utils.validation import check_feature_names
 
 
 class KNeighborsDispatchingBase(PatchableEstimator):
     def _fit_validation(self, X, y=None):
         if sklearn_check_version("1.2"):
             self._validate_params()
-        if sklearn_check_version("1.0"):
-            self._check_feature_names(X, reset=True)
+        check_feature_names(self, X, reset=True)
         if self.metric_params is not None and "p" in self.metric_params:
             if self.p is not None:
                 warnings.warn(

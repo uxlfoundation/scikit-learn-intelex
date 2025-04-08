@@ -31,13 +31,10 @@ from onedal.linear_model import (
 )
 from sklearnex._config import get_config
 
+from ..utils.validation import validate_data
+
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import Interval
-
-if sklearn_check_version("1.6"):
-    from sklearn.utils.validation import validate_data
-else:
-    validate_data = BaseEstimator._validate_data
 
 from onedal.common.hyperparameters import get_hyperparameters
 
@@ -164,20 +161,13 @@ class IncrementalLinearRegression(
             if sklearn_check_version("1.2"):
                 self._validate_params()
 
-            if sklearn_check_version("1.0"):
-                X = validate_data(
-                    self,
-                    X,
-                    dtype=[np.float64, np.float32],
-                    copy=self.copy_X,
-                    reset=False,
-                )
-            else:
-                X = check_array(
-                    X,
-                    dtype=[np.float64, np.float32],
-                    copy=self.copy_X,
-                )
+            X = validate_data(
+                self,
+                X,
+                dtype=[np.float64, np.float32],
+                copy=self.copy_X,
+                reset=False,
+            )
 
         assert hasattr(self, "_onedal_estimator")
         if self._need_to_finalize:
@@ -199,31 +189,16 @@ class IncrementalLinearRegression(
         # never check input when using raw input
         check_input &= use_raw_input is False
         if check_input:
-            if sklearn_check_version("1.0"):
-                X, y = validate_data(
-                    self,
-                    X,
-                    y,
-                    dtype=[np.float64, np.float32],
-                    reset=first_pass,
-                    copy=self.copy_X,
-                    multi_output=True,
-                    force_all_finite=False,
-                )
-            else:
-                X = check_array(
-                    X,
-                    dtype=[np.float64, np.float32],
-                    copy=self.copy_X,
-                    force_all_finite=False,
-                )
-                y = check_array(
-                    y,
-                    dtype=[np.float64, np.float32],
-                    copy=False,
-                    ensure_2d=False,
-                    force_all_finite=False,
-                )
+            X, y = validate_data(
+                self,
+                X,
+                y,
+                dtype=[np.float64, np.float32],
+                reset=first_pass,
+                copy=self.copy_X,
+                multi_output=True,
+                ensure_all_finite=False,
+            )
 
         if first_pass:
             self.n_samples_seen_ = X.shape[0]
@@ -258,28 +233,15 @@ class IncrementalLinearRegression(
         if get_config()["use_raw_input"] is False:
             if sklearn_check_version("1.2"):
                 self._validate_params()
-            if sklearn_check_version("1.0"):
-                X, y = validate_data(
-                    self,
-                    X,
-                    y,
-                    dtype=[np.float64, np.float32],
-                    copy=self.copy_X,
-                    multi_output=True,
-                    ensure_2d=True,
-                )
-            else:
-                X = check_array(
-                    X,
-                    dtype=[np.float64, np.float32],
-                    copy=self.copy_X,
-                )
-                y = check_array(
-                    y,
-                    dtype=[np.float64, np.float32],
-                    copy=False,
-                    ensure_2d=False,
-                )
+            X, y = validate_data(
+                self,
+                X,
+                y,
+                dtype=[np.float64, np.float32],
+                copy=self.copy_X,
+                multi_output=True,
+                ensure_2d=True,
+            )
 
         n_samples, n_features = X.shape
 

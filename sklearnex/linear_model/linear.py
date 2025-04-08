@@ -32,8 +32,9 @@ from .._utils import (
     get_patch_message,
     register_hyperparameters,
 )
+from ..utils.validation import validate_data
 
-if sklearn_check_version("1.0") and not sklearn_check_version("1.2"):
+if not sklearn_check_version("1.2"):
     from sklearn.linear_model._base import _deprecate_normalize
 
 from scipy.sparse import issparse
@@ -42,11 +43,6 @@ from sklearn.utils.validation import check_is_fitted, check_X_y
 from onedal.common.hyperparameters import get_hyperparameters
 from onedal.linear_model import LinearRegression as onedal_LinearRegression
 from onedal.utils.validation import _num_features, _num_samples
-
-if sklearn_check_version("1.6"):
-    from sklearn.utils.validation import validate_data
-else:
-    validate_data = _sklearn_LinearRegression._validate_data
 
 
 @register_hyperparameters({"fit": get_hyperparameters("linear_regression", "train")})
@@ -59,26 +55,46 @@ class LinearRegression(PatchableEstimator, _sklearn_LinearRegression):
             **_sklearn_LinearRegression._parameter_constraints
         }
 
-        def __init__(
-            self,
-            fit_intercept=True,
-            copy_X=True,
-            n_jobs=None,
-            positive=False,
-        ):
-            super().__init__(
-                fit_intercept=fit_intercept,
-                copy_X=copy_X,
-                n_jobs=n_jobs,
-                positive=positive,
-            )
+        if sklearn_check_version("1.7"):
+
+            def __init__(
+                self,
+                fit_intercept=True,
+                copy_X=True,
+                tol=1e-06,  # for sparse solver only, not used by oneDAL
+                n_jobs=None,
+                positive=False,
+            ):
+                super().__init__(
+                    fit_intercept=fit_intercept,
+                    copy_X=copy_X,
+                    tol=tol,
+                    n_jobs=n_jobs,
+                    positive=positive,
+                )
+
+        else:
+
+            def __init__(
+                self,
+                fit_intercept=True,
+                copy_X=True,
+                n_jobs=None,
+                positive=False,
+            ):
+                super().__init__(
+                    fit_intercept=fit_intercept,
+                    copy_X=copy_X,
+                    n_jobs=n_jobs,
+                    positive=positive,
+                )
 
     else:
 
         def __init__(
             self,
             fit_intercept=True,
-            normalize="deprecated" if sklearn_check_version("1.0") else False,
+            normalize="deprecated",
             copy_X=True,
             n_jobs=None,
             positive=False,
@@ -245,20 +261,17 @@ class LinearRegression(PatchableEstimator, _sklearn_LinearRegression):
         assert sample_weight is None
 
         supports_multi_output = daal_check_version((2025, "P", 1))
-        check_params = {
-            "X": X,
-            "y": y,
-            "dtype": [np.float64, np.float32],
-            "accept_sparse": ["csr", "csc", "coo"],
-            "y_numeric": True,
-            "multi_output": supports_multi_output,
-        }
-        if sklearn_check_version("1.0"):
-            X, y = validate_data(self, **check_params)
-        else:
-            X, y = check_X_y(**check_params)
+        X, y = validate_data(
+            self,
+            X=X,
+            y=y,
+            dtype=[np.float64, np.float32],
+            accept_sparse=["csr", "csc", "coo"],
+            y_numeric=True,
+            multi_output=supports_multi_output,
+        )
 
-        if sklearn_check_version("1.0") and not sklearn_check_version("1.2"):
+        if not sklearn_check_version("1.2"):
             self._normalize = _deprecate_normalize(
                 self.normalize,
                 default=False,
@@ -286,10 +299,7 @@ class LinearRegression(PatchableEstimator, _sklearn_LinearRegression):
             self._save_attributes()
 
     def _onedal_predict(self, X, queue=None):
-        if sklearn_check_version("1.0"):
-            X = validate_data(self, X, accept_sparse=False, reset=False)
-        else:
-            X = check_array(X, accept_sparse=False)
+        X = validate_data(self, X, accept_sparse=False, reset=False)
 
         if not hasattr(self, "_onedal_estimator"):
             self._initialize_onedal_estimator()

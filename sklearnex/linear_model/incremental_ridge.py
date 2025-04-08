@@ -27,6 +27,8 @@ from sklearn.utils.validation import check_is_fitted, check_X_y
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn.utils.validation import sklearn_check_version
 
+from ..utils.validation import validate_data
+
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import Interval
 
@@ -38,11 +40,6 @@ from .._utils import (
     PatchingConditionsChain,
     _add_inc_serialization_note,
 )
-
-if sklearn_check_version("1.6"):
-    from sklearn.utils.validation import validate_data
-else:
-    validate_data = BaseEstimator._validate_data
 
 
 @control_n_jobs(
@@ -142,8 +139,7 @@ class IncrementalRidge(
         if sklearn_check_version("1.2"):
             self._validate_params()
 
-        if sklearn_check_version("1.0"):
-            X = validate_data(self, X, accept_sparse=False, reset=False)
+        X = validate_data(self, X, accept_sparse=False, reset=False)
 
         assert hasattr(self, "_onedal_estimator")
         if self._need_to_finalize:
@@ -162,19 +158,16 @@ class IncrementalRidge(
             self._validate_params()
 
         if check_input:
-            if sklearn_check_version("1.0"):
-                X, y = validate_data(
-                    self,
-                    X,
-                    y,
-                    dtype=[np.float64, np.float32],
-                    reset=first_pass,
-                    copy=self.copy_X,
-                    multi_output=True,
-                    force_all_finite=False,
-                )
-            else:
-                check_X_y(X, y, multi_output=True, y_numeric=True)
+            X, y = validate_data(
+                self,
+                X,
+                y,
+                dtype=[np.float64, np.float32],
+                reset=first_pass,
+                copy=self.copy_X,
+                multi_output=True,
+                ensure_all_finite=False,
+            )
 
         if first_pass:
             self.n_samples_seen_ = X.shape[0]
@@ -206,18 +199,15 @@ class IncrementalRidge(
         if sklearn_check_version("1.2"):
             self._validate_params()
 
-        if sklearn_check_version("1.0"):
-            X, y = validate_data(
-                self,
-                X,
-                y,
-                dtype=[np.float64, np.float32],
-                copy=self.copy_X,
-                multi_output=True,
-                ensure_2d=True,
-            )
-        else:
-            check_X_y(X, y, multi_output=True, y_numeric=True)
+        X, y = validate_data(
+            self,
+            X,
+            y,
+            dtype=[np.float64, np.float32],
+            copy=self.copy_X,
+            multi_output=True,
+            ensure_2d=True,
+        )
 
         n_samples, n_features = X.shape
 

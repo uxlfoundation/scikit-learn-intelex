@@ -122,7 +122,6 @@ Therefore, there are the following limitations:
 
 - Categorical features are not supported for conversion and prediction.
 - Multioutput models are not supported for conversion and prediction.
-- SHAP values can be calculated for regression models only.
 
 
 Examples
@@ -139,3 +138,10 @@ Articles and Blog Posts
 
 -  `Improving the Performance of XGBoost and LightGBM Inference <https://medium.com/intel-analytics-software/improving-the-performance-of-xgboost-and-lightgbm-inference-3b542c03447e>`_
 
+Full documentation
+------------------
+
+.. autofunction:: daal4py.mb.convert_model
+
+.. autoclass:: daal4py.mb.GBTDAALModel
+  :members:

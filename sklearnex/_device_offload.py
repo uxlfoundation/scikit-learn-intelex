@@ -60,6 +60,18 @@ def _get_backend(obj, queue, method_name, *data):
     raise RuntimeError("Device support is not implemented")
 
 
+def get_array_api_support_tag(estimator):
+    """Gets the value of the 'array_api_support' tag from the estimator
+    using correct code path depending on the scikit-learn version."""
+    if hasattr(estimator, "__sklearn_tags__"):
+        return estimator.__sklearn_tags__().array_api_support
+    elif hasattr(estimator, "_get_tags"):
+        tags = estimator._get_tags()
+        if "array_api_support" in tags:
+            return tags["array_api_support"]
+    return False
+
+
 def dispatch(obj, method_name, branches, *args, **kwargs):
     if get_config()["use_raw_input"] is False:
         with QM.manage_global_queue(None, *args) as queue:
@@ -78,8 +90,7 @@ def dispatch(obj, method_name, branches, *args, **kwargs):
                 if (
                     "array_api_dispatch" in get_config()
                     and get_config()["array_api_dispatch"]
-                    and "array_api_support" in obj._get_tags()
-                    and obj._get_tags()["array_api_support"]
+                    and get_array_api_support_tag(obj)
                     and not has_usm_data
                 ):
                     # USM ndarrays are also excluded for the fallback Array API. Currently, DPNP.ndarray is

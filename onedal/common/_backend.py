@@ -25,11 +25,6 @@ logger = logging.getLogger("sklearnex")
 # define types for backend functions: default, dpc, spmd
 BackendType = Literal["none", "host", "dpc", "spmd"]
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
-
 
 class BackendManager:
     def __init__(self, backend_module):
