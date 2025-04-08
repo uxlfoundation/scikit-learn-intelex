@@ -72,10 +72,10 @@ def dispatch(obj, method_name, branches, *args, **kwargs):
             backend, patching_status = _get_backend(obj, queue, method_name, *args)
             if backend:
                 patching_status.write_log(queue=queue, transferred_to_host=False)
-                return branches[backend](obj, *args, **kwargs, queue=queue)
+                return branches["onedal"](obj, *args, **kwargs, queue=queue)
             elif sklearn_array_api:
                 patching_status.write_log(transferred_to_host=False)
-                return branches[backend](obj, *args, **kwargs)
+                return branches["sklearn"](obj, *args, **kwargs)
 
         # move to host because it is necessary for checking
         # we only guarantee onedal_cpu_supported and onedal_gpu_supported are generalized
@@ -93,15 +93,15 @@ def dispatch(obj, method_name, branches, *args, **kwargs):
 
         if backend:
             patching_status.write_log(queue=queue, transferred_to_host=False)
-            return branches[backend](obj, *hostargs, **hostkwargs, queue=queue)
+            return branches["onedal"](obj, *hostargs, **hostkwargs, queue=queue)
         else:
             if sklearn_array_api and not has_usm_data:
                 # dpnp fallback is not handled properly yet.
                 patching_status.write_log(transferred_to_host=False)
-                return branches[backend](obj, *args, **kwargs)
+                return branches["sklearn"](obj, *args, **kwargs)
             else:
                 patching_status.write_log()
-                return branches[backend](obj, *hostargs, **hostkwargs)
+                return branches["sklearn"](obj, *hostargs, **hostkwargs)
 
 
 def wrap_output_data(func):
