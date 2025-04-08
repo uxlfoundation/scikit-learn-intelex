@@ -18,6 +18,14 @@
 from daal4py.sklearn._utils import sklearn_check_version
 
 
+if sklearn_check_version("1.6"):
+    from dataclasses import dataclass
+    from sklearn.utils import Tags as _sklearn_Tags
+
+    @dataclass
+    class Tags(_sklearn_Tags):
+        onedal_array_api: bool = False
+
 class oneDALEstimator:
 
     if sklearn_check_version("1.6"):
@@ -27,9 +35,16 @@ class oneDALEstimator:
         # maintenance easier, and centralize tag changes to a single location.
 
         def __sklearn_tags__(self):
-            tags = super().__sklearn_tags__()
-            tags.onedal_array_api = False
-            return tags
+            # This convention is unnecessarily restrictive with more performant
+            # alternatives but it best follows sklearn. Subclasses will now only need
+            # to set `onedal_array_api` to True to signify gpu zero-copy support
+            # and maintenance is smaller because of underlying sklearn infrastructure
+            sktags = super().__sklearn_tags__()
+            tag_dict = {
+                field.name: getattr(sktags, field.name)
+                for field in fields(sktags)
+            }
+            return Tags(**tag_dict)
 
     elif sklearn_check_version("1.3"):
 
