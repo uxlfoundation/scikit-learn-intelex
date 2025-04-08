@@ -130,7 +130,7 @@ Then execute as follows - example can be executed on a single machine after inst
     case for QR in most software, hence the example above takes the absolute values when comparing
     results from different libraries.
 
-In this simple example, all of the data was generated on each node and then subsetted;
+In this simple example, all of the data was generated on each node and then subdivided;
 and then the result was broadcasted to all nodes, but in practice:
 
 - One might want to collect and serialize the result on only one node, which could be
