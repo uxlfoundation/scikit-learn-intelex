@@ -15,6 +15,8 @@
 # ==============================================================================
 
 import contextlib
+import gc
+import pickle
 import unittest
 import warnings
 from datetime import datetime
@@ -22,17 +24,19 @@ from datetime import datetime
 import lightgbm as lgbm
 import numpy as np
 import xgboost as xgb
+from scipy.special import softmax
 from sklearn.datasets import (
     load_breast_cancer,
     load_iris,
     make_classification,
     make_regression,
 )
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression, SGDClassifier
 from sklearn.model_selection import train_test_split
 
 import daal4py as d4p
-from daal4py.sklearn._utils import daal_check_version
+from daal4py.mb import gbt_convertors
+from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 
 try:
     import catboost as cb
@@ -368,6 +372,75 @@ class XGBoostClassificationModelBuilder(unittest.TestCase):
             np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=5e-2, atol=1e-6)
 
 
+@unittest.skipUnless(shap_supported, reason=shap_not_supported_str)
+class XGBoostGammaModelBuilder(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        X, y = make_regression(n_samples=2, n_features=10, random_state=42)
+        y = np.exp((y - y.mean()) / y.std())
+        cls.X_test = X[:2, :]
+        cls.X_nan = np.array([np.nan] * 20, dtype=np.float32).reshape(2, 10)
+        cls.xgb_model = xgb.XGBRegressor(
+            max_depth=5, n_estimators=50, random_state=42, objective="reg:gamma"
+        )
+        cls.xgb_model.fit(X, y)
+
+    def test_model_conversion(self):
+        m = d4p.mb.convert_model(self.xgb_model.get_booster())
+        self.assertEqual(m.model_type, "xgboost")
+        self.assertEqual(m.n_classes_, 0)
+        self.assertEqual(m.n_features_in_, 10)
+        self.assertTrue(m._is_regression)
+
+    def test_model_predict(self):
+        m = d4p.mb.convert_model(self.xgb_model.get_booster())
+        d4p_pred = m.predict(self.X_test)
+        xgboost_pred = self.xgb_model.predict(self.X_test, output_margin=True)
+        np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=1e-6)
+
+    def test_missing_value_support(self):
+        m = d4p.mb.convert_model(self.xgb_model.get_booster())
+        d4p_pred = m.predict(self.X_nan)
+        xgboost_pred = self.xgb_model.predict(self.X_nan, output_margin=True)
+        np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=1e-6)
+
+    def test_model_predict_shap_contribs(self):
+        booster = self.xgb_model.get_booster()
+        m = d4p.mb.convert_model(booster)
+        d4p_pred = m.predict(self.X_test, pred_contribs=True)
+        xgboost_pred = booster.predict(
+            xgb.DMatrix(self.X_test),
+            pred_contribs=True,
+            approx_contribs=False,
+            validate_features=False,
+        )
+        np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=1e-6)
+
+    def test_model_predict_shap_interactions(self):
+        booster = self.xgb_model.get_booster()
+        m = d4p.mb.convert_model(booster)
+        d4p_pred = m.predict(self.X_test, pred_interactions=True)
+        xgboost_pred = booster.predict(
+            xgb.DMatrix(self.X_test),
+            pred_interactions=True,
+            approx_contribs=False,
+            validate_features=False,
+        )
+        np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=1e-6)
+
+    def test_model_predict_shap_contribs_missing_values(self):
+        booster = self.xgb_model.get_booster()
+        m = d4p.mb.convert_model(booster)
+        d4p_pred = m.predict(self.X_nan, pred_contribs=True)
+        xgboost_pred = booster.predict(
+            xgb.DMatrix(self.X_nan),
+            pred_contribs=True,
+            approx_contribs=False,
+            validate_features=False,
+        )
+        np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=5e-6)
+
+
 # duplicate all tests for base_score=0.3
 @unittest.skipUnless(shap_supported, reason=shap_not_supported_str)
 class XGBoostClassificationModelBuilder_base_score03(XGBoostClassificationModelBuilder):
@@ -407,36 +480,38 @@ class XGBoostClassificationModelBuilder_objective_logitraw(
     """
     Caveat: logitraw is not per se supported in daal4py because we always
 
-                 1. apply the bias
-                 2. normalize to probabilities ("activation") using sigmoid
+                 1. normalize to probabilities ("activation") using sigmoid
                    (exception: SHAP values, the scores defining phi_ij are the raw class scores)
 
-    However, by undoing the activation and bias we can still compare if the original probas and SHAP values are aligned.
+    However, by undoing the activation we can still compare if the original probas and SHAP values are aligned.
     """
 
     @classmethod
     def setUpClass(cls):
         XGBoostClassificationModelBuilder.setUpClass(
-            base_score=0.5, n_classes=2, objective="binary:logitraw"
+            n_classes=2, objective="binary:logitraw"
         )
 
     def test_model_predict_proba(self):
-        # overload this function because daal4py always applies the sigmoid
-        # for bias 0.5, we can still check if the original scores are correct
         with self.assertWarns(UserWarning):
-            # expect a warning that logitraw behaves differently and/or
-            # that base_score is ignored / fixed to 0.5
+            # expect a warning that logitraw behaves differently
             m = d4p.mb.convert_model(self.xgb_model.get_booster())
         d4p_pred = m.predict_proba(self.X_test)
-        # undo sigmoid
-        d4p_pred = np.log(-d4p_pred / (d4p_pred - 1))
-        # undo bias
-        d4p_pred += 0.5
-        xgboost_pred = self.xgb_model.predict_proba(self.X_test)
+
+        # Note that XGBoost itself here will produce incorrect calculations for 'predict_proba'
+        # due to the intercept being misapplied, but probabilities can correctly be obtained
+        # by getting the raw prediction and transforming it to probabilities.
+        xgboost_pred_raw = self.xgb_model.get_booster().inplace_predict(
+            self.X_test, predict_type="margin"
+        )
+        xgboost_pred = 1 / (1 + np.exp(-xgboost_pred_raw))
+        xgboost_pred = xgboost_pred.reshape((-1, 1))
+        xgboost_pred = np.c_[1 - xgboost_pred, xgboost_pred]
+
         # calculating probas involves multiple exp / ln operations, therefore
         # they're quite susceptible to small numerical changes and we have to
-        # accept an rtol of 1e-5
-        np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=1e-5)
+        # accept an rtol of 1e-4
+        np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=1e-4)
 
     @unittest.skipUnless(shap_api_changed, reason=shap_api_change_str)
     def test_model_predict_shap_contribs(self):
@@ -452,8 +527,6 @@ class XGBoostClassificationModelBuilder_objective_logitraw(
             approx_contribs=False,
             validate_features=False,
         )
-        # undo bias
-        d4p_pred[:, -1] += 0.5
         np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=5e-6)
 
     @unittest.skipUnless(shap_api_changed, reason=shap_api_change_str)
@@ -470,8 +543,6 @@ class XGBoostClassificationModelBuilder_objective_logitraw(
             approx_contribs=False,
             validate_features=False,
         )
-        # undo bias
-        d4p_pred[:, -1, -1] += 0.5
         np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=5e-5)
 
 
@@ -853,18 +924,20 @@ class ModelBuilderTreeView(unittest.TestCase):
                 ]
 
         mock = MockBooster()
-        result = d4p.TreeList.from_xgb_booster(mock, max_trees=0)
+        result = gbt_convertors.TreeList.from_xgb_booster(
+            mock, max_trees=0, feature_names_to_indices={"1": 1}
+        )
         self.assertEqual(len(result), 2)
 
         tree0 = result[0]
-        self.assertIsInstance(tree0, d4p.TreeView)
+        self.assertIsInstance(tree0, gbt_convertors.TreeView)
         self.assertFalse(tree0.is_leaf)
         with self.assertRaises(ValueError):
             tree0.cover
         with self.assertRaises(ValueError):
             tree0.value
 
-        self.assertIsInstance(tree0.root_node, d4p.Node)
+        self.assertIsInstance(tree0.root_node, gbt_convertors.Node)
 
         self.assertEqual(tree0.root_node.cover, 4)
         self.assertEqual(tree0.root_node.left_child.cover, 6)
@@ -898,11 +971,171 @@ class ModelBuilderTreeView(unittest.TestCase):
         self.assertIsNone(tree0.root_node.right_child.right_child)
 
         tree1 = result[1]
-        self.assertIsInstance(tree1, d4p.TreeView)
+        self.assertIsInstance(tree1, gbt_convertors.TreeView)
         self.assertTrue(tree1.is_leaf)
         self.assertEqual(tree1.n_nodes, 1)
         self.assertEqual(tree1.cover, 42)
         self.assertEqual(tree1.value, 0.2)
+
+
+class TestXGBObjectIsNotCorrupted(unittest.TestCase):
+    def test_xgb_not_corrupted_no_names(self):
+        X, y = make_regression(n_samples=100, n_features=10, random_state=123)
+        X[:, 1] = X[:, 1].astype(int)
+        dm = xgb.DMatrix(X, y, feature_types=["q", "int"] + (["q"] * (X.shape[1] - 2)))
+        xgb_model = xgb.train(
+            params={"objective": "reg:squarederror", "seed": 123},
+            dtrain=dm,
+            num_boost_round=10,
+        )
+        model_bytes_before = xgb_model.save_raw()
+
+        d4p_model = d4p.mb.convert_model(xgb_model)
+
+        model_bytes_after = xgb_model.save_raw()
+        assert model_bytes_before == model_bytes_after
+
+        xgb_pred = xgb_pred = xgb_model.predict(dm)
+        xgb_pred_fresh = xgb.train(
+            params={"objective": "reg:squarederror", "seed": 123},
+            dtrain=xgb.DMatrix(X, y),
+            num_boost_round=10,
+        ).predict(xgb.DMatrix(X))
+        np.testing.assert_almost_equal(xgb_pred, xgb_pred_fresh)
+
+    def test_xgb_not_corrupted_with_names(self):
+        X, y = make_regression(n_samples=100, n_features=10, random_state=123)
+        X[:, 1] = X[:, 1].astype(int)
+        dm = xgb.DMatrix(
+            X,
+            y,
+            feature_types=["q", "int"] + (["q"] * (X.shape[1] - 2)),
+            feature_names=[f"col{i+1}" for i in range(X.shape[1])],
+        )
+        xgb_model = xgb.train(
+            params={"objective": "reg:squarederror", "seed": 123},
+            dtrain=dm,
+            num_boost_round=10,
+        )
+        model_bytes_before = xgb_model.save_raw()
+
+        d4p_model = d4p.mb.convert_model(xgb_model)
+
+        model_bytes_after = xgb_model.save_raw()
+        assert model_bytes_before == model_bytes_after
+
+        xgb_pred = xgb_pred = xgb_model.predict(dm)
+        xgb_pred_fresh = xgb.train(
+            params={"objective": "reg:squarederror", "seed": 123},
+            dtrain=xgb.DMatrix(X, y),
+            num_boost_round=10,
+        ).predict(xgb.DMatrix(X))
+        np.testing.assert_almost_equal(xgb_pred, xgb_pred_fresh)
+
+        np.testing.assert_allclose(d4p_model.predict(X), xgb_pred, rtol=1e-5)
+
+
+class TestLogRegBuilderClass(unittest.TestCase):
+    def test_logreg_binary(self):
+        if not sklearn_check_version("1.1"):
+            return
+        X, y = make_classification(random_state=123)
+        model_skl = SGDClassifier(
+            loss="log_loss", fit_intercept=False, random_state=123
+        ).fit(X, y)
+        model_d4p = d4p.mb.convert_model(model_skl)
+        np.testing.assert_almost_equal(
+            model_d4p.predict(X[::-1]),
+            model_skl.predict(X[::-1]),
+        )
+        np.testing.assert_almost_equal(
+            model_d4p.predict_proba(X[::-1]),
+            model_skl.predict_proba(X[::-1]),
+        )
+        np.testing.assert_almost_equal(
+            model_d4p.predict_log_proba(X[::-1]),
+            model_skl.predict_log_proba(X[::-1]),
+        )
+
+    def test_logreg_multiclass(self):
+        X, y = make_classification(n_classes=3, n_informative=4, random_state=123)
+        model_skl = LogisticRegression().fit(X, y)
+        model_d4p = d4p.mb.convert_model(model_skl)
+        np.testing.assert_almost_equal(
+            model_d4p.predict(X[::-1]),
+            model_skl.predict(X[::-1]),
+        )
+        np.testing.assert_almost_equal(
+            model_d4p.predict_proba(X[::-1]),
+            model_skl.predict_proba(X[::-1]),
+        )
+        np.testing.assert_almost_equal(
+            model_d4p.predict_log_proba(X[::-1]),
+            model_skl.predict_log_proba(X[::-1]),
+        )
+
+    def test_error_on_nonlogistic(self):
+        X, y = make_classification(n_classes=3, n_informative=4, random_state=123)
+        model_skl = LogisticRegression(multi_class="ovr").fit(X, y)
+        try:
+            d4p.mb.convert_model(model_skl)
+            assert False
+        except TypeError:
+            assert True
+
+    def test_serialization(self):
+        if not sklearn_check_version("1.1"):
+            return
+        X, y = make_classification(random_state=123)
+        model_skl = SGDClassifier(
+            loss="log_loss", fit_intercept=False, random_state=123
+        ).fit(X, y)
+        model_d4p_base = d4p.mb.convert_model(model_skl)
+        model_d4p = pickle.loads(pickle.dumps(model_d4p_base))
+        np.testing.assert_almost_equal(
+            model_d4p_base.predict_proba(X[::-1]),
+            model_d4p.predict_proba(X[::-1]),
+        )
+
+    def test_fp32(self):
+        X, y = make_classification(random_state=123)
+        model_skl = LogisticRegression().fit(X, y)
+        model_d4p = d4p.mb.LogisticDAALModel(
+            model_skl.coef_, model_skl.intercept_, dtype=np.float32
+        )
+        np.testing.assert_almost_equal(
+            model_d4p.predict(X[::-1]),
+            model_skl.predict(X[::-1]),
+        )
+        np.testing.assert_allclose(
+            model_d4p.predict_proba(X[::-1]),
+            model_skl.predict_proba(X[::-1]),
+            atol=1e-6,
+        )
+        np.testing.assert_allclose(
+            model_d4p.predict_log_proba(X[::-1]),
+            model_skl.predict_log_proba(X[::-1]),
+            rtol=1e-3,
+            atol=1e-6,
+        )
+
+    def test_with_deleted_arrays(self):
+        rng = np.random.default_rng(seed=123)
+        X = rng.standard_normal(size=(5, 10))
+        coefs = rng.standard_normal(size=(3, 10))
+        intercepts = np.zeros(3)
+        ref_pred = X @ coefs.T
+        ref_probs = softmax(ref_pred, axis=1)
+
+        model_d4p = d4p.mb.LogisticDAALModel(coefs, intercepts)
+        coefs[:, :] = 0
+        del coefs, intercepts
+        gc.collect()
+
+        np.testing.assert_almost_equal(
+            model_d4p.predict_proba(X),
+            ref_probs,
+        )
 
 
 if __name__ == "__main__":

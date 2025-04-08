@@ -54,10 +54,10 @@ __all__ = [
 ]
 onedal_iface_flag = os.environ.get("OFF_ONEDAL_IFACE", "0")
 if onedal_iface_flag == "0":
-    from onedal import _is_spmd_backend
+    from onedal import _spmd_backend
     from onedal.common.hyperparameters import get_hyperparameters
 
-    if _is_spmd_backend:
+    if _spmd_backend is not None:
         __all__.append("spmd")
 
 

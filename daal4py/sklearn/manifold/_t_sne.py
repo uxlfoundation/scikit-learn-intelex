@@ -37,6 +37,7 @@ from daal4py.sklearn._utils import (
 
 from .._n_jobs_support import control_n_jobs
 from ..neighbors import NearestNeighbors
+from ..utils.validation import validate_data
 
 
 @control_n_jobs(decorated_methods=["fit"])
@@ -183,15 +184,19 @@ class TSNE(BaseTSNE):
                     )
 
         if self.method == "barnes_hut":
-            X = self._validate_data(
+            X = validate_data(
+                self,
                 X,
                 accept_sparse=["csr"],
                 ensure_min_samples=2,
                 dtype=[np.float32, np.float64],
             )
         else:
-            X = self._validate_data(
-                X, accept_sparse=["csr", "csc", "coo"], dtype=[np.float32, np.float64]
+            X = validate_data(
+                self,
+                X,
+                accept_sparse=["csr", "csc", "coo"],
+                dtype=[np.float32, np.float64],
             )
 
         if self.metric == "precomputed":

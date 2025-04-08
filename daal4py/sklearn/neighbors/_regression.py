@@ -20,6 +20,7 @@ from sklearn.base import RegressorMixin
 from sklearn.neighbors._regression import KNeighborsRegressor as BaseKNeighborsRegressor
 
 from .._utils import sklearn_check_version
+from ..utils.validation import check_feature_names
 from ._base import KNeighborsMixin, NeighborsBase
 
 if not sklearn_check_version("1.2"):
@@ -55,9 +56,7 @@ class KNeighborsRegressor(KNeighborsMixin, RegressorMixin, NeighborsBase):
             n_jobs=n_jobs,
             **kwargs,
         )
-        self.weights = (
-            weights if sklearn_check_version("1.0") else _check_weights(weights)
-        )
+        self.weights = weights
 
     def _more_tags(self):
         return BaseKNeighborsRegressor._more_tags(self)
@@ -66,8 +65,7 @@ class KNeighborsRegressor(KNeighborsMixin, RegressorMixin, NeighborsBase):
         return NeighborsBase._fit(self, X, y)
 
     def predict(self, X):
-        if sklearn_check_version("1.0"):
-            self._check_feature_names(X, reset=False)
+        check_feature_names(self, X, reset=False)
         return BaseKNeighborsRegressor.predict(self, X)
 
     fit.__doc__ = BaseKNeighborsRegressor.fit.__doc__

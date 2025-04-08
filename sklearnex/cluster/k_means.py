@@ -36,15 +36,11 @@ if daal_check_version((2023, "P", 200)):
     from daal4py.sklearn._n_jobs_support import control_n_jobs
     from daal4py.sklearn._utils import sklearn_check_version
     from onedal.cluster import KMeans as onedal_KMeans
-    from onedal.utils import _is_csr
+    from onedal.utils.validation import _is_csr
 
     from .._device_offload import dispatch, wrap_output_data
     from .._utils import PatchableEstimator, PatchingConditionsChain
-
-    if sklearn_check_version("1.6"):
-        from sklearn.utils.validation import validate_data
-    else:
-        validate_data = _sklearn_KMeans._validate_data
+    from ..utils.validation import validate_data
 
     @control_n_jobs(decorated_methods=["fit", "fit_transform", "predict", "score"])
     class KMeans(PatchableEstimator, _sklearn_KMeans):

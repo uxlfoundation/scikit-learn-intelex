@@ -14,16 +14,15 @@
 # limitations under the License.
 # ==============================================================================
 
-import numpy as np
 import pytest
 
-from onedal import _backend, _is_dpc_backend
+from onedal import _default_backend as backend
 from onedal.tests.utils._device_selection import get_queues
 from onedal.utils._dpep_helpers import dpctl_available
 
 
 @pytest.mark.skipif(
-    not _is_dpc_backend or not dpctl_available, reason="requires dpc backend and dpctl"
+    not backend.is_dpc or not dpctl_available, reason="requires dpc backend and dpctl"
 )
 @pytest.mark.parametrize("device_type", ["cpu", "gpu"])
 @pytest.mark.parametrize("device_number", [None, 0, 1, 2, 3])
@@ -32,7 +31,7 @@ def test_sycl_queue_string_creation(device_type, device_number):
     from dpctl import SyclQueue
     from dpctl._sycl_queue import SyclQueueCreationError
 
-    onedal_SyclQueue = _backend.SyclQueue
+    onedal_SyclQueue = backend.SyclQueue
 
     device = (
         ":".join([device_type, str(device_number)])
@@ -63,14 +62,14 @@ def test_sycl_queue_string_creation(device_type, device_number):
 
 
 @pytest.mark.skipif(
-    not _is_dpc_backend or not dpctl_available, reason="requires dpc backend and dpctl"
+    not backend.is_dpc or not dpctl_available, reason="requires dpc backend and dpctl"
 )
 @pytest.mark.parametrize("queue", get_queues())
 def test_sycl_queue_conversion(queue):
     if queue is None:
         pytest.skip("Not a dpctl queue")
     SyclQueue = queue.__class__
-    onedal_SyclQueue = _backend.SyclQueue
+    onedal_SyclQueue = backend.SyclQueue
 
     q = onedal_SyclQueue(queue)
 
@@ -83,7 +82,7 @@ def test_sycl_queue_conversion(queue):
 
 
 @pytest.mark.skipif(
-    not _is_dpc_backend or not dpctl_available, reason="requires dpc backend and dpctl"
+    not backend.is_dpc or not dpctl_available, reason="requires dpc backend and dpctl"
 )
 @pytest.mark.parametrize("queue", get_queues())
 def test_sycl_device_attributes(queue):
@@ -91,7 +90,7 @@ def test_sycl_device_attributes(queue):
 
     if queue is None:
         pytest.skip("Not a dpctl queue")
-    onedal_SyclQueue = _backend.SyclQueue
+    onedal_SyclQueue = backend.SyclQueue
 
     onedal_queue = onedal_SyclQueue(queue)
 
@@ -107,17 +106,17 @@ def test_sycl_device_attributes(queue):
     assert onedal_queue.sycl_device.filter_string in queue.sycl_device.filter_string
 
 
-@pytest.mark.skipif(not _is_dpc_backend, reason="requires dpc backend")
+@pytest.mark.skipif(not backend.is_dpc, reason="requires dpc backend")
 def test_backend_queue():
     try:
-        q = _backend.SyclQueue("cpu")
+        q = backend.SyclQueue("cpu")
     except RuntimeError:
         pytest.skip("OpenCL CPU runtime not installed")
 
     # verify copying via a py capsule object is functional
-    q2 = _backend.SyclQueue(q._get_capsule())
+    q2 = backend.SyclQueue(q._get_capsule())
     # verify copying via the _get_capsule attribute
-    q3 = _backend.SyclQueue(q)
+    q3 = backend.SyclQueue(q)
 
     q_array = [q, q2, q3]
 
@@ -129,7 +128,7 @@ def test_backend_queue():
 
 
 @pytest.mark.skipif(
-    not _is_dpc_backend or not dpctl_available, reason="requires dpc backend and dpctl"
+    not backend.is_dpc or not dpctl_available, reason="requires dpc backend and dpctl"
 )
 def test_backend_device_id():
     """verify dpctl device id matches our internal device id"""
@@ -138,7 +137,7 @@ def test_backend_device_id():
     for i in range(dpctl.get_num_devices()):
         device = dpctl.SyclDevice(str(i))
         if device.is_gpu or device.is_cpu:
-            backend_device = _backend.SyclDevice(i)
+            backend_device = backend.SyclDevice(i)
             assert (
                 i == backend_device.get_device_id()
-            ), f"_backend id does not match device_id: {i}"
+            ), f"backend id does not match device_id: {i}"

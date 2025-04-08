@@ -30,5 +30,6 @@ Contents
    Supported Algorithms <algorithms>
    Distributed Mode <scaling>
    Streaming Mode <streaming>
+   Thread control and MPI helpers <helpers>
    Examples <examples>
    Scikit-Learn API <sklearn>

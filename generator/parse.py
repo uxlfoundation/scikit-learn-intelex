@@ -684,6 +684,8 @@ def parse_header(header, ignores):
         if not re.search(r"https?://", elem):
             elem = elem.split("//")[0]
         # delete 'DAAL_DEPRECATED'
+        # Note that it might be prefixed with backslashes
+        elem = elem.replace("\\DAAL_DEPRECATED ", "")
         elem = elem.replace("DAAL_DEPRECATED ", "")
         # apply each parser, continue to next line if possible
         for p in parsers:

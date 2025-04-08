@@ -14,11 +14,9 @@
 # limitations under the License.
 # ==============================================================================
 
-import warnings
-
 import numpy as np
 
-from onedal import _backend, _is_dpc_backend
+from onedal import _default_backend as backend
 
 
 def _apply_and_pass(func, *args, **kwargs):
@@ -29,7 +27,7 @@ def _apply_and_pass(func, *args, **kwargs):
 
 def _convert_one_to_table(arg, queue=None):
     # All inputs for table conversion must be array-like or sparse, not scalars
-    return _backend.to_table(np.atleast_2d(arg) if np.isscalar(arg) else arg, queue)
+    return backend.to_table(np.atleast_2d(arg) if np.isscalar(arg) else arg, queue)
 
 
 def to_table(*args, queue=None):
@@ -54,7 +52,7 @@ def to_table(*args, queue=None):
     return _apply_and_pass(_convert_one_to_table, *args, queue=queue)
 
 
-if _is_dpc_backend:
+if backend.is_dpc:
 
     try:
         # try/catch is used here instead of dpep_helpers because
@@ -79,8 +77,6 @@ if _is_dpc_backend:
         def _table_to_array(table, xp=None):
             return xp.asarray(table)
 
-    from ..common._policy import _HostInteropPolicy
-
     def convert_one_from_table(table, sycl_queue=None, sua_iface=None, xp=None):
         # Currently only `__sycl_usm_array_interface__` protocol used to
         # convert into dpnp/dpctl tensors.
@@ -96,12 +92,12 @@ if _is_dpc_backend:
                 # Host tables first converted into numpy.narrays and then to array from xp
                 # namespace.
                 return xp.asarray(
-                    _backend.from_table(table), usm_type="device", sycl_queue=sycl_queue
+                    backend.from_table(table), usm_type="device", sycl_queue=sycl_queue
                 )
             else:
                 return _table_to_array(table, xp=xp)
 
-        return _backend.from_table(table)
+        return backend.from_table(table)
 
 else:
 
@@ -112,7 +108,7 @@ else:
             raise RuntimeError(
                 "SYCL usm array conversion from table requires the DPC backend"
             )
-        return _backend.from_table(table)
+        return backend.from_table(table)
 
 
 def from_table(*args, sycl_queue=None, sua_iface=None, xp=None):

@@ -166,7 +166,7 @@ dal::data_layout get_sua_iface_layout(const py::dict& sua_dict,
         }
     }
     else {
-        throw std::runtime_error("Unsupporterd data shape.`");
+        throw std::runtime_error("Unsupported data shape.`");
     }
 }
 
