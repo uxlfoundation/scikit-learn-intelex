@@ -85,7 +85,7 @@ is_onedal_iface = (
 def _gen_sklearnex_version():
     if "SKLEARNEX_VERSION" in os.environ:
         return os.environ["SKLEARNEX_VERSION"]
-    output = time.strftime("%Y%m%d+")
+    output = time.strftime("%Y.%#m.%#d+" if IS_WIN else "%Y.%-m.%-d+")
     try:
         return output + subprocess.check_output(["git", "rev-parse", "--short", "HEAD"]).decode("ascii").strip()
     except subprocess.CalledProcessError:
