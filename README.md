@@ -133,7 +133,7 @@ To patch scikit-learn, you can:
 
 ### Extension and oneDAL
 
-Acceleration in patched scikit-learn classes is achieved by replacing calls to scikit-learn with calls to oneDAL (oneAPI Data Analytics Library) behind the scenes.:
+Acceleration in patched scikit-learn classes is achieved by replacing calls to scikit-learn with calls to oneDAL (oneAPI Data Analytics Library) behind the scenes:
 - [oneAPI Data Analytics Library](https://github.com/uxlfoundation/oneDAL)
 
 ## Samples & Examples
