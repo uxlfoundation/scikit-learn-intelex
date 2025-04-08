@@ -131,8 +131,8 @@ void init_partial_train_result(py::module_& m) {
         .def(py::pickle(
             [](const result_t& res) {
                 py::list auxiliary;
-                int auxiliary_size = res.get_auxiliary_table_count();
-                for (int i = 0; i < auxiliary_size; i++) {
+                std::int64_t auxiliary_size = res.get_auxiliary_table_count();
+                for (std::int64_t i = 0; i < auxiliary_size; i++) {
                     auto aux_table = res.get_auxiliary_table(i);
                     auxiliary.append(py::cast<py::object>(numpy::convert_to_pyobject(aux_table)));
                 }

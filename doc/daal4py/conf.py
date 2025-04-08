@@ -62,7 +62,13 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.githubpages",
     "sphinx.ext.autodoc",
+    "sphinx.ext.intersphinx",
 ]
+
+intersphinx_mapping = {
+    "mpi4py": ("https://mpi4py.readthedocs.io/en/stable/", None),
+    "xgboost": ("https://xgboost.readthedocs.io/en/stable/", None),
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
