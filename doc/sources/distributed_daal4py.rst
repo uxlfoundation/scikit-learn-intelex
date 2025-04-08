@@ -133,7 +133,7 @@ Then execute as follows - example can be executed on a single machine after inst
 In this simple example, all of the data was generated on each node and then subsetted;
 and then the result was broadcasted to all nodes, but in practice:
 
-- One might want to collect and serialize the result in only one node, which could be
+- One might want to collect and serialize the result on only one node, which could be
   done for example by adding a condition like ``if THIS_NODE == 0``. For the particular
   case of QR, oftentimes only the R matrix is of interest, so it can be saved from only
   one of the nodes.
