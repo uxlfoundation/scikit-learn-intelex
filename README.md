@@ -59,6 +59,8 @@ With Extension for Scikit-learn, you can:
 
 ## Optimizations
 
+Easiest way to benefit from accelerations from the extension is by patching scikit-learn with it:
+
 - **Enable CPU optimizations**
 
     ```python
@@ -67,16 +69,6 @@ With Extension for Scikit-learn, you can:
     patch_sklearn()
 
     from sklearn.cluster import DBSCAN
-
-    X = np.array([[1., 2.], [2., 2.], [2., 3.],
-                  [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
-    clustering = DBSCAN(eps=3, min_samples=2).fit(X)
-    ```
-  - Or without patching:
-
-    ```python
-    import numpy as np
-    from sklearnex.cluster import DBSCAN
 
     X = np.array([[1., 2.], [2., 2.], [2., 3.],
                   [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
@@ -99,20 +91,36 @@ With Extension for Scikit-learn, you can:
     with config_context(target_offload="gpu:0"):
         clustering = DBSCAN(eps=3, min_samples=2).fit(X)
     ```
-    - Or without patching:
-
-    ```python
-    import numpy as np
-    from sklearnex import config_context
-    from sklearnex.cluster import DBSCAN
-
-    X = np.array([[1., 2.], [2., 2.], [2., 3.],
-                  [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
-    with config_context(target_offload="gpu:0"):
-        clustering = DBSCAN(eps=3, min_samples=2).fit(X)
-    ```
 
 :eyes: Check out available [notebooks](https://github.com/uxlfoundation/scikit-learn-intelex/tree/master/examples/notebooks) for more examples.
+
+### Usage without patching
+
+Alternatively, all functionalities are also available under a separate module which can be imported directly, without involving any patching.
+
+* To run on CPU:
+
+  ```python
+  import numpy as np
+  from sklearnex.cluster import DBSCAN
+
+  X = np.array([[1., 2.], [2., 2.], [2., 3.],
+                [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
+  clustering = DBSCAN(eps=3, min_samples=2).fit(X)
+  ```
+
+* To run on GPU:
+
+  ```python
+  import numpy as np
+  from sklearnex import config_context
+  from sklearnex.cluster import DBSCAN
+
+  X = np.array([[1., 2.], [2., 2.], [2., 3.],
+                [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
+  with config_context(target_offload="gpu:0"):
+      clustering = DBSCAN(eps=3, min_samples=2).fit(X)
+  ```
 
 ## Installation
 
@@ -146,7 +154,7 @@ To patch scikit-learn, you can:
 
 :eyes: Read about [other ways to patch scikit-learn](https://uxlfoundation.github.io/scikit-learn-intelex/latest/quick-start.html#patching).
 
-Alternatively, accelerated classes from the extension can also be imported directly without patching, thereby allowing to keep them separate from stock scikit-learn ones - for example:
+As an alternative, accelerated classes from the extension can also be imported directly without patching, thereby allowing to keep them separate from stock scikit-learn ones - for example:
 
 ```python
 from sklearnex.cluster import DBSCAN as exDBSCAN
