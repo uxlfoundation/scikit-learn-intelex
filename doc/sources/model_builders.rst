@@ -32,7 +32,7 @@ converting those models to class :obj:`daal4py.mb.GBTDAALModel` which offers fas
     Example speedups in predictions compared to prediction method in XGBoost
     on Intel Xeon Platinum 8275CL (see `blog post <https://medium.com/intel-analytics-software/improving-the-performance-of-xgboost-and-lightgbm-inference-3b542c03447e>`__).
 
-Conversion of model objects from other libraries is handled through function
+Model objects from other GBT libraries can be converted to this daal4py class through function
 :obj:`daal4py.mb.convert_model` in the model builders (``mb``) submodule, which can also convert
 logistic regression models (:ref:`logistic_model_builder`). See :ref:`about_daal4py`
 for more information about the ``daal4py`` module.
