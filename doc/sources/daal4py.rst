@@ -45,8 +45,8 @@ See :ref:`distributed_daal4py` for examples.
 
 .. _model_builders_docs:
 
-Model builders (GBT serving)
-----------------------------
+Model builders (GBT and LogReg serving)
+---------------------------------------
 
 Documentation for model builders, which allow computing fast predictions from GBT
 (gradient-boosted decision tree) models produced by other libraries. See article
