@@ -14,6 +14,8 @@
 # limitations under the License.
 # ==============================================================================
 
+import numpy as np
+import pytest
 import sklearn
 
 import onedal
@@ -121,3 +123,21 @@ def test_config_context_works():
         "allow_fallback_to_host",
     ]:
         assert onedal_default_config_after_cc[param] == onedal_default_config[param]
+
+
+@pytest.mark.skipif(
+    onedal._default_backend.is_dpc, reason="requires host default backend"
+)
+@pytest.mark.parametrize("target", ["auto", "cpu", "cpu:0", "gpu", 3])
+def test_host_backend_target_offload(target):
+    from sklearnex.neighbors import NearestNeighbors
+
+    err_msg = r"device use via \`target_offload\` is only supported with a DPC\+\+ sklearnex build"
+    est = NearestNeighbors()
+    if target != "auto" and not (isinstance(target, str) and target.startswith("cpu")):
+        with pytest.raises(ValueError, match=err_msg):
+            with sklearnex.config_context(target_offload=target):
+                est.fit(np.eye(5, 8))
+    else:
+        with sklearnex.config_context(target_offload=target):
+            est.fit(np.eye(5, 8))
