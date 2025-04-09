@@ -96,14 +96,15 @@ Example converting an XGBoost model:
 
 More examples:
 
-- `XGBoost model conversion <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/mb/model_builders_xgboost.py>`_
-- `SHAP value prediction from an XGBoost model <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/mb/model_builders_xgboost_shap.py>`_
-- `LightGBM model conversion <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/mb/model_builders_lightgbm.py>`_
-- `CatBoost model conversion <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/mb/model_builders_catboost.py>`_
+- `XGBoost model conversion <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/mb/model_builders_xgboost.py>`__
+- `SHAP value prediction from an XGBoost model <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/mb/model_builders_xgboost_shap.py>`__
+- `LightGBM model conversion <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/mb/model_builders_lightgbm.py>`__
+- `CatBoost model conversion <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/mb/model_builders_catboost.py>`__
 
-Blog post:
+Blog posts:
 
--  `Improving the Performance of XGBoost and LightGBM Inference <https://medium.com/intel-analytics-software/improving-the-performance-of-xgboost-and-lightgbm-inference-3b542c03447e>`_
+- `Faster XGBoost, LightGBM, and CatBoost Inference on the CPU <https://www.intel.com/content/www/us/en/developer/articles/technical/faster-xgboost-light-gbm-catboost-inference-on-cpu.html>`__
+- `Improving the Performance of XGBoost and LightGBM Inference <https://medium.com/intel-analytics-software/improving-the-performance-of-xgboost-and-lightgbm-inference-3b542c03447e>`__
 
 Notes about computed results
 ----------------------------
