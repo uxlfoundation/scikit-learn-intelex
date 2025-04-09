@@ -18,7 +18,7 @@
 from daal4py.sklearn._utils import sklearn_check_version
 
 if sklearn_check_version("1.6"):
-    from dataclasses import dataclass
+    from dataclasses import dataclass, fields
 
     from sklearn.utils import Tags as _sklearn_Tags
 
