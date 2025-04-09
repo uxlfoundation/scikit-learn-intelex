@@ -17,14 +17,15 @@
 
 from daal4py.sklearn._utils import sklearn_check_version
 
-
 if sklearn_check_version("1.6"):
     from dataclasses import dataclass
+
     from sklearn.utils import Tags as _sklearn_Tags
 
     @dataclass
     class Tags(_sklearn_Tags):
         onedal_array_api: bool = False
+
 
 class oneDALEstimator:
 
@@ -41,8 +42,7 @@ class oneDALEstimator:
             # and maintenance is smaller because of underlying sklearn infrastructure
             sktags = super().__sklearn_tags__()
             tag_dict = {
-                field.name: getattr(sktags, field.name)
-                for field in fields(sktags)
+                field.name: getattr(sktags, field.name) for field in fields(sktags)
             }
             return Tags(**tag_dict)
 
