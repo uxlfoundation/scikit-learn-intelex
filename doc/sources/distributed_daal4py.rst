@@ -15,7 +15,7 @@
 
 .. _distributed_daal4py:
 
-Distributed mode (daal4py, non-GPU)
+Distributed mode (daal4py, CPU)
 ===================================
 
 Introduction
