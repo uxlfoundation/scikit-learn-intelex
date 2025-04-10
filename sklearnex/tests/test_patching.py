@@ -20,7 +20,6 @@ import logging
 import os
 import re
 import sys
-from contextlib import nullcontext
 from inspect import signature
 
 import numpy as np
@@ -123,11 +122,8 @@ def test_roc_auc_score_patching(caplog, dataframe, queue, dtype):
 def _check_estimator_patching(caplog, dataframe, queue, dtype, est, method):
     # This should be modified as more array_api frameworks are tested and for
     # upcoming changes in dpnp and dpctl
-    array_api_dispatch = lambda: nullcontext()
-    if dataframe == "array_api":
-        array_api_dispatch = lambda: config_context(array_api_dispatch=True)
 
-    with caplog.at_level(logging.WARNING, logger="sklearnex"), array_api_dispatch():
+    with caplog.at_level(logging.WARNING, logger="sklearnex"):
         X, y = gen_dataset(est, queue=queue, target_df=dataframe, dtype=dtype)[0]
         est.fit(X, y)
 
@@ -172,7 +168,28 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
     elif method and not hasattr(est, method):
         pytest.skip(f"sklearn available_if prevents testing {estimator}.{method}")
 
-    _check_estimator_patching(caplog, dataframe, queue, dtype, est, method)
+    if dataframe == "array_api":
+        # as array_api dispatching is experimental, sklearn support isn't guaranteed.
+        # the infrastructure from sklearn that sklearnex depends on is also susceptible
+        # to failure. In this case compare to sklearn for the same failure. By design
+        # the patching of sklearn should act similarly. Technically this is conformance.
+        with config_context(array_api_dispatch=True):
+            try:
+                _check_estimator_patching(caplog, dataframe, queue, dtype, est, method)
+            except Exception as error0:
+                error1 = None
+                try:
+                    est0 = UNPATCHED_MODELS[estimator]()
+                    _check_estimator_patching(
+                        caplog, dataframe, queue, dtype, est0, method
+                    )
+                except Exception as e:
+                    error1 = e
+                if type(error0) != type(error1) or str(error0) != str(error1):
+                    raise error0
+
+    else:
+        _check_estimator_patching(caplog, dataframe, queue, dtype, est, method)
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
