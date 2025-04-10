@@ -29,23 +29,25 @@ from ._config import get_config
 from .utils import get_tags
 
 
-def _get_backend(obj, queue, method_name, *data):
+def _get_backend(obj, method_name, *data):
     """This function verifies the hardware conditions, data characteristics, and
     estimator parameters necessary for offloading computation to oneDAL. The status
     of this patching is returned as a PatchingConditionsChain object along with a
     boolean flag determining if to be computed with oneDAL. It is assumed that the
     queue (which determined what hardware to possibly use for oneDAL) has been
     previously and extensively collected (i.e. the data has already been checked)."""
-
+    queue = QM.get_global_queue()
     cpu_device = queue is None or getattr(queue.sycl_device, "is_cpu", True)
     gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
 
     if cpu_device:
         patching_status = obj._onedal_cpu_supported(method_name, *data)
-        return patching_status.get_status(), patching_status, queue
+        return patching_status.get_status(), patching_status
 
     if gpu_device:
         patching_status = obj._onedal_gpu_supported(method_name, *data)
+        if not patching_status.get_status() and get_config()["allow_fallback_to_host"]:
+            return None, patching_status
         return patching_status.get_status(), patching_status
 
     raise RuntimeError("Device support is not implemented")
@@ -100,35 +102,38 @@ def dispatch(obj, method_name, branches, *args, **kwargs):
     sklearn_array_api = _array_api_offload() and get_tags(obj).array_api_support
 
     backend = None
-    with QM.manage_global_queue(None, *args) as queue:
+    with QM.manage_global_queue(None, *args):
         if onedal_array_api:
             backend, patching_status = _get_backend(obj, method_name, *args)
             if backend:
+                queue = QM.get_global_queue()
                 patching_status.write_log(queue=queue, transferred_to_host=False)
                 return branches["onedal"](obj, *args, **kwargs, queue=queue)
-            elif get_config()["allow_fallback_to_host"]:
-                # if fallback to host is enabled, then reset and prepare for host check
+            elif backend is None:
+                # if fallback to host is enabled, then reset and prepare for host check.
+                # the fallback_to_host cannot occur in _get_backend, as it must trigger
+                # a data movement to host
                 QM.remove_global_queue()
-                backend, queue = None, None
             elif sklearn_array_api:
                 patching_status.write_log(transferred_to_host=False)
                 return branches["sklearn"](obj, *args, **kwargs)
 
-        # move data to host because it is necessary for checking dispatch capability
-        # we only guarantee onedal_cpu_supported and onedal_gpu_supported are generalized
-        # to non-numpy inputs for zero copy estimators. this will eventually be deprecated
-        # when all estimators are zero-copy generalized in onedal_cpu_supported and
-        # onedal_gpu_supported.
+        # move data to host because of multiple reasons: array_api fallback to host,
+        # non array_api supporing oneDAL code, issues with usm support in sklearn.
         has_usm_data_for_args, hostargs = _transfer_to_host(*args)
         has_usm_data_for_kwargs, hostvalues = _transfer_to_host(*kwargs.values())
 
         hostkwargs = dict(zip(kwargs.keys(), hostvalues))
         has_usm_data = has_usm_data_for_args or has_usm_data_for_kwargs
 
-        if backend is None:
-            backend, patching_status = _get_backend(obj, queue, method_name, *hostargs)
+        while backend is None:
+            backend, patching_status = _get_backend(obj, method_name, *hostargs)
+            if not backend:
+                # if onedal_array_api is enabled, then the fallback has already been accomplished
+                QM.remove_global_queue()
 
         if backend:
+            queue = QM.get_global_queue()
             patching_status.write_log(queue=queue, transferred_to_host=False)
             return branches["onedal"](obj, *hostargs, **hostkwargs, queue=queue)
         else:
