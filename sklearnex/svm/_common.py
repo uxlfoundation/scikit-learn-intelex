@@ -35,7 +35,7 @@ from ..base import oneDALEstimator
 from ..utils.validation import validate_data
 
 
-class BaseSVM(oneDALEstimator):
+class BaseSVM(oneDALEstimator, ABC):
 
     @property
     def _dual_coef_(self):
