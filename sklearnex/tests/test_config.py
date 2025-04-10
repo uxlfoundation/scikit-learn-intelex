@@ -136,9 +136,10 @@ def test_fallback_to_host(caplog):
     from sklearnex.basic_statistics import BasicStatistics
 
     est = BasicStatistics()
-    # set a queue which should persist
     start = 0
     sample_weights = np.ones((5,))
+
+    # set a queue which should persist
     with (
         caplog.at_level(logging.WARNING, logger="sklearnex"),
         config_context(target_offload="gpu"),
@@ -155,4 +156,4 @@ def test_fallback_to_host(caplog):
             start = len(caplog.records)
 
         # This should fail
-        est.fit(sp.eye(5,8), sample_weight=sample_weights)
+        est.fit(sp.eye(5, 8), sample_weight=sample_weights)
