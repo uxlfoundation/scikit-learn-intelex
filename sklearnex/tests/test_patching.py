@@ -16,11 +16,11 @@
 
 
 import importlib
-import inspect
 import logging
 import os
 import re
 import sys
+from contextlib import nullcontext
 from inspect import signature
 
 import numpy as np
@@ -33,7 +33,7 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
-from sklearnex import is_patched_instance
+from sklearnex import is_patched_instance, config_context
 from sklearnex.dispatcher import _is_preview_enabled
 from sklearnex.metrics import pairwise_distances, roc_auc_score
 from sklearnex.tests.utils import (
@@ -120,38 +120,14 @@ def test_roc_auc_score_patching(caplog, dataframe, queue, dtype):
     ), f"sklearnex patching issue in roc_auc_score with log: \n{caplog.text}"
 
 
-@pytest.mark.parametrize("dtype", DTYPES)
-@pytest.mark.parametrize("dataframe, queue", get_dataframes_and_queues())
-@pytest.mark.parametrize("estimator, method", gen_models_info(PATCHED_MODELS))
-def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator, method):
-    with caplog.at_level(logging.WARNING, logger="sklearnex"):
-        est = PATCHED_MODELS[estimator]()
+def _check_estimator_patching(caplog, dataframe, queue, dtype, est, method):
+    # This should be modified as more array_api frameworks are tested and for
+    # upcoming changes in dpnp and dpctl
+    array_api_dispatch = lambda: nullcontext()
+    if dataframe == "array_api":
+        array_api_dispatch = lambda: config_context(array_api_dispatch=True)
 
-        if queue:
-            if dtype == np.float16 and not queue.sycl_device.has_aspect_fp16:
-                pytest.skip("Hardware does not support fp16 SYCL testing")
-            elif dtype == np.float64 and not queue.sycl_device.has_aspect_fp64:
-                pytest.skip("Hardware does not support fp64 SYCL testing")
-            elif queue.sycl_device.is_gpu and estimator in [
-                "ElasticNet",
-                "Lasso",
-            ]:
-                pytest.skip(f"{estimator} does not support GPU queues")
-
-        if "NearestNeighbors" in estimator and "radius" in method:
-            pytest.skip(f"RadiusNeighbors estimator not implemented in sklearnex")
-
-        if estimator == "TSNE" and method == "fit_transform":
-            pytest.skip("TSNE.fit_transform is too slow for common testing")
-        elif estimator == "IncrementalLinearRegression" and np.issubdtype(
-            dtype, np.integer
-        ):
-            pytest.skip(
-                "IncrementalLinearRegression fails on oneDAL side with int types because dataset is filled by zeroes"
-            )
-        elif method and not hasattr(est, method):
-            pytest.skip(f"sklearn available_if prevents testing {estimator}.{method}")
-
+    with caplog.at_level(logging.WARNING, logger="sklearnex"), array_api_dispatch():
         X, y = gen_dataset(est, queue=queue, target_df=dataframe, dtype=dtype)[0]
         est.fit(X, y)
 
@@ -165,43 +141,57 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
             for i in caplog.records
         ]
     ), f"sklearnex patching issue in {estimator}.{method} with log: \n{caplog.text}"
+
+
+@pytest.mark.parametrize("dtype", DTYPES)
+@pytest.mark.parametrize("dataframe, queue", get_dataframes_and_queues())
+@pytest.mark.parametrize("estimator, method", gen_models_info(PATCHED_MODELS))
+def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator, method):
+    est = PATCHED_MODELS[estimator]()
+
+    if queue:
+        if dtype == np.float16 and not queue.sycl_device.has_aspect_fp16:
+            pytest.skip("Hardware does not support fp16 SYCL testing")
+        elif dtype == np.float64 and not queue.sycl_device.has_aspect_fp64:
+            pytest.skip("Hardware does not support fp64 SYCL testing")
+        elif queue.sycl_device.is_gpu and estimator in [
+            "ElasticNet",
+            "Lasso",
+        ]:
+            pytest.skip(f"{estimator} does not support GPU queues")
+
+    if "NearestNeighbors" in estimator and "radius" in method:
+        pytest.skip(f"RadiusNeighbors estimator not implemented in sklearnex")
+
+    if estimator == "TSNE" and method == "fit_transform":
+        pytest.skip("TSNE.fit_transform is too slow for common testing")
+    elif estimator == "IncrementalLinearRegression" and np.issubdtype(dtype, np.integer):
+        pytest.skip(
+            "IncrementalLinearRegression fails on oneDAL side with int types because dataset is filled by zeroes"
+        )
+    elif method and not hasattr(est, method):
+        pytest.skip(f"sklearn available_if prevents testing {estimator}.{method}")
+
+    _check_estimator_patching(caplog, dataframe, queue, dtype, est, method)
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
 @pytest.mark.parametrize("dataframe, queue", get_dataframes_and_queues())
 @pytest.mark.parametrize("estimator, method", gen_models_info(SPECIAL_INSTANCES))
 def test_special_estimator_patching(caplog, dataframe, queue, dtype, estimator, method):
-    # prepare logging
+    est = SPECIAL_INSTANCES[estimator]
 
-    with caplog.at_level(logging.WARNING, logger="sklearnex"):
-        est = SPECIAL_INSTANCES[estimator]
+    if queue:
+        # Its not possible to get the dpnp/dpctl arrays to be in the proper dtype
+        if dtype == np.float16 and not queue.sycl_device.has_aspect_fp16:
+            pytest.skip("Hardware does not support fp16 SYCL testing")
+        elif dtype == np.float64 and not queue.sycl_device.has_aspect_fp64:
+            pytest.skip("Hardware does not support fp64 SYCL testing")
 
-        if queue:
-            # Its not possible to get the dpnp/dpctl arrays to be in the proper dtype
-            if dtype == np.float16 and not queue.sycl_device.has_aspect_fp16:
-                pytest.skip("Hardware does not support fp16 SYCL testing")
-            elif dtype == np.float64 and not queue.sycl_device.has_aspect_fp64:
-                pytest.skip("Hardware does not support fp64 SYCL testing")
+    if "NearestNeighbors" in estimator and "radius" in method:
+        pytest.skip(f"RadiusNeighbors estimator not implemented in sklearnex")
 
-        if "NearestNeighbors" in estimator and "radius" in method:
-            pytest.skip(f"RadiusNeighbors estimator not implemented in sklearnex")
-
-        X, y = gen_dataset(est, queue=queue, target_df=dataframe, dtype=dtype)[0]
-        est.fit(X, y)
-
-        if method and not hasattr(est, method):
-            pytest.skip(f"sklearn available_if prevents testing {estimator}.{method}")
-
-        if method:
-            call_method(est, method, X, y)
-
-    assert all(
-        [
-            "running accelerated version" in i.message
-            or "fallback to original Scikit-learn" in i.message
-            for i in caplog.records
-        ]
-    ), f"sklearnex patching issue in {estimator}.{method} with log: \n{caplog.text}"
+    _check_estimator_patching(caplog, dataframe, queue, dtype, est, method)
 
 
 @pytest.mark.parametrize("estimator", UNPATCHED_MODELS.keys())
@@ -373,5 +363,5 @@ def test_docstring_patching_match(estimator):
 )
 def test_onedal_supported_member(name, member):
     patched = PATCHED_MODELS[name]
-    sig = str(inspect.signature(getattr(patched, member)))
+    sig = str(signature(getattr(patched, member)))
     assert "(self, method_name, *data)" == sig
