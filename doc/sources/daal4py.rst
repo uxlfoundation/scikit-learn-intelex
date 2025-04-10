@@ -19,7 +19,7 @@ daal4py API Reference
 
 This is the full documentation page for ``daal4py`` functions and classes. Note that for the most
 part, these are simple wrappers over equivalent functions and methods from the |onedal|. See also
-the `documentation of oneDAL <https://uxlfoundation.github.io/oneDAL/>`__ for more details.
+the `documentation of DAAL interfaces <https://uxlfoundation.github.io/oneDAL/daal-interfaces.html>`__ for more details.
 
 See :ref:`about_daal4py` for an example of how to use ``daal4py`` algorithms.
 
