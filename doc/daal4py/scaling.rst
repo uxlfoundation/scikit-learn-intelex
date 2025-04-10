@@ -92,6 +92,7 @@ The following algorithms support distributed mode:
 
 - DBSCAN
 
+  - `DBSCAN <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/dbscan_spmd.py>`_
 - Correlation and Variance-Covariance Matrices (covariance)
 
   - `Covariance <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/covariance_spmd.py>`_
