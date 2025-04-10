@@ -42,13 +42,10 @@ def _get_backend(obj, queue, method_name, *data):
 
     if cpu_device:
         patching_status = obj._onedal_cpu_supported(method_name, *data)
-        return patching_status.get_status(), patching_status
+        return patching_status.get_status(), patching_status, queue
 
     if gpu_device:
         patching_status = obj._onedal_gpu_supported(method_name, *data)
-        if not patching_status.get_status() and get_config()["allow_fallback_to_host"]:
-            patching_status = obj._onedal_cpu_supported(method_name, *data)
-
         return patching_status.get_status(), patching_status
 
     raise RuntimeError("Device support is not implemented")
@@ -105,10 +102,14 @@ def dispatch(obj, method_name, branches, *args, **kwargs):
     backend = None
     with QM.manage_global_queue(None, *args) as queue:
         if onedal_array_api:
-            backend, patching_status = _get_backend(obj, queue, method_name, *args)
+            backend, patching_status = _get_backend(obj, method_name, *args)
             if backend:
                 patching_status.write_log(queue=queue, transferred_to_host=False)
                 return branches["onedal"](obj, *args, **kwargs, queue=queue)
+            elif get_config()["allow_fallback_to_host"]:
+                # if fallback to host is enabled, then reset and prepare for host check
+                QM.remove_global_queue()
+                backend, queue = None, None
             elif sklearn_array_api:
                 patching_status.write_log(transferred_to_host=False)
                 return branches["sklearn"](obj, *args, **kwargs)

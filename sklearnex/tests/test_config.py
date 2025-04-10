@@ -14,10 +14,13 @@
 # limitations under the License.
 # ==============================================================================
 
+import pytest
+import scipy.sparse as sp
 import sklearn
 
 import onedal
 import sklearnex
+from onedal.tests.utils._device_selection import is_dpctl_device_available
 
 
 def test_get_config_contains_sklearn_params():
@@ -121,3 +124,31 @@ def test_config_context_works():
         "allow_fallback_to_host",
     ]:
         assert onedal_default_config_after_cc[param] == onedal_default_config[param]
+
+
+@pytest.mark.skipif(
+    not is_dpctl_device_available("gpu"), reason="Requires a gpu for fallback testing"
+)
+def test_fallback_to_host(caplog):
+    # force a fallback to cpu using sparse data and sample weights in BasicStatistics
+    # it should complete with allow_fallback_to_host. The queue should be preserved
+    # and properly used in the second round on gpu
+    from sklearnex.basic_statistics import BasicStatistics
+
+    est = BasicStatistics()
+    # set a queue which should persist
+    start = 0
+    with (
+        caplog.at_level(logging.WARNING, logger="sklearnex"),
+        config_context(target_offload="gpu"),
+    ):
+        # True == with cpu (eventually), False == with gpu
+        for fallback, data in [[True, sp.eye(5, 8)], [False, np.eye(5, 8)]]:
+            with config_context(allow_fallback_to_host=fallback):
+                est.fit(data, sample_weight=data)
+
+            assert (
+                f"running accelerated version on {'CPU' if fallback else 'GPU'}"
+                in caplog.records[start:]
+            ), "".join(caplog.records)
+            start = len(caplog.records)
