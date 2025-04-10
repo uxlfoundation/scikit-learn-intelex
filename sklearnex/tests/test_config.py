@@ -145,11 +145,11 @@ def test_fallback_to_host(caplog):
     # set a queue which should persist
     with (
         caplog.at_level(logging.WARNING, logger="sklearnex"),
-        config_context(target_offload="gpu"),
+        sklearnex.config_context(target_offload="gpu"),
     ):
         # True == with cpu (eventually), False == with gpu
         for fallback, data in [[True, sp.eye(5, 8, format="csr")], [False, np.eye(5, 8)]]:
-            with config_context(allow_fallback_to_host=fallback):
+            with sklearnex.config_context(allow_fallback_to_host=fallback):
                 est.fit(data, sample_weight=sample_weights)
 
             assert (
