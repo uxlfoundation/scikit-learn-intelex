@@ -138,17 +138,21 @@ def test_fallback_to_host(caplog):
     est = BasicStatistics()
     # set a queue which should persist
     start = 0
+    sample_weights = np.ones((5,))
     with (
         caplog.at_level(logging.WARNING, logger="sklearnex"),
         config_context(target_offload="gpu"),
     ):
         # True == with cpu (eventually), False == with gpu
-        for fallback, data in [[True, sp.eye(5, 8)], [False, np.eye(5, 8)]]:
+        for fallback, data in [[True, sp.eye(5, 8, format="csr")], [False, np.eye(5, 8)]]:
             with config_context(allow_fallback_to_host=fallback):
-                est.fit(data, sample_weight=data)
+                est.fit(data, sample_weight=sample_weights)
 
             assert (
                 f"running accelerated version on {'CPU' if fallback else 'GPU'}"
                 in caplog.records[start:]
             ), "".join(caplog.records)
             start = len(caplog.records)
+
+        # This should fail
+        est.fit(sp.eye(5,8), sample_weight=sample_weights)
