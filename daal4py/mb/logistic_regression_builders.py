@@ -40,7 +40,7 @@ class LogisticDAALModel:
     which can calculate fast predictions of different types (classes, probabilities,
     logarithms of probabilities), from fitted coefficients and intercepts obtained
     elsewhere (such as from :obj:`sklearn.linear_model.LogisticRegression`), making
-    the predictions either in double (:obj:`np.float64`) or single (:obj:`np.float32`)
+    the predictions either in double (``np.float64``) or single (``np.float32``)
     precision.
 
     See Also
