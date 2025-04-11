@@ -101,7 +101,7 @@ def make_xgb_model(
 ) -> "xgb.Booster | xgb.XGBRegressor | xgb.XGBClassifier":
     params_base_score = {"base_score": base_score} if base_score is not None else {}
     min_split_loss = 1e10 if empty_trees else 0.0
-    if objective.startswith("binary:") or objective == "reg:logistic":
+    if objective.startswith("binary:"):
         X, y = make_classification(
             n_samples=11,
             n_classes=2,
