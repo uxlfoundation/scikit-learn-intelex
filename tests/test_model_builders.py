@@ -562,9 +562,18 @@ def test_xgb_unsupported():
 
 
 def make_lgb_model(
-    objective: str, sklearn_class: bool, with_nan: bool, empty_trees: bool
+    objective: str,
+    sklearn_class: bool,
+    with_nan: bool,
+    empty_trees: bool,
+    boost_from_average: "None | bool" = None,
 ) -> "lgb.Booster | lgb.LGBMRegressor | lgb.LGBMClassifier":
     min_data_in_leaf = 5_000 if empty_trees else 2
+    params_boost_from_average = (
+        {"boost_from_average": boost_from_average}
+        if boost_from_average is not None
+        else {}
+    )
     if objective == "binary":
         X, y = make_classification(
             n_samples=11,
@@ -589,6 +598,7 @@ def make_lgb_model(
                 deterministic=True,
                 verbose=-1,
                 n_jobs=1,
+                **params_boost_from_average,
             ).fit(X, y)
         else:
             return lgb.train(
@@ -605,7 +615,8 @@ def make_lgb_model(
                     "verbose": -1,
                     "seed": 123,
                     "deterministic": True,
-                },
+                }
+                | params_boost_from_average,
             )
     elif objective == "multiclass":
         X, y = make_classification(
@@ -630,6 +641,7 @@ def make_lgb_model(
                 deterministic=True,
                 verbose=-1,
                 n_jobs=1,
+                **params_boost_from_average,
             ).fit(X, y)
         else:
             return lgb.train(
@@ -647,7 +659,8 @@ def make_lgb_model(
                     "verbose": -1,
                     "seed": 123,
                     "deterministic": True,
-                },
+                }
+                | params_boost_from_average,
             )
     else:
         X, y = make_regression(n_samples=10, n_features=4, random_state=123)
@@ -668,6 +681,7 @@ def make_lgb_model(
                 deterministic=True,
                 verbose=-1,
                 n_jobs=1,
+                **params_boost_from_average,
             ).fit(X, y)
         else:
             return lgb.train(
@@ -684,7 +698,8 @@ def make_lgb_model(
                     "verbose": -1,
                     "seed": 123,
                     "deterministic": True,
-                },
+                }
+                | params_boost_from_average,
             )
 
 
@@ -693,8 +708,13 @@ def make_lgb_model(
 @pytest.mark.parametrize("with_nan", [False, True])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("empty_trees", [False, True])
-def test_lgb_regression(objective, sklearn_class, with_nan, dtype, empty_trees):
-    lgb_model = make_lgb_model(objective, sklearn_class, with_nan, empty_trees)
+@pytest.mark.parametrize("boost_from_average", [False, True])
+def test_lgb_regression(
+    objective, sklearn_class, with_nan, dtype, empty_trees, boost_from_average
+):
+    lgb_model = make_lgb_model(
+        objective, sklearn_class, with_nan, empty_trees, boost_from_average
+    )
     d4p_model = d4p.mb.convert_model(lgb_model)
 
     if sklearn_class:
@@ -737,10 +757,13 @@ def test_lgb_regression(objective, sklearn_class, with_nan, dtype, empty_trees):
 @pytest.mark.parametrize("with_nan", [False, True])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("empty_trees", [False, True])
+@pytest.mark.parametrize("boost_from_average", [False, True])
 def test_lgb_regression_interactions(
-    objective, sklearn_class, with_nan, dtype, empty_trees
+    objective, sklearn_class, with_nan, dtype, empty_trees, boost_from_average
 ):
-    lgb_model = make_lgb_model(objective, sklearn_class, with_nan, empty_trees)
+    lgb_model = make_lgb_model(
+        objective, sklearn_class, with_nan, empty_trees, boost_from_average
+    )
     d4p_model = d4p.mb.convert_model(lgb_model)
 
     if sklearn_class:
@@ -775,8 +798,13 @@ def test_lgb_regression_interactions(
 @pytest.mark.parametrize("with_nan", [False, True])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("empty_trees", [False, True])
-def test_lgb_binary_classification(sklearn_class, with_nan, dtype, empty_trees):
-    lgb_model = make_lgb_model("binary", sklearn_class, with_nan, empty_trees)
+@pytest.mark.parametrize("boost_from_average", [False, True])
+def test_lgb_binary_classification(
+    sklearn_class, with_nan, dtype, empty_trees, boost_from_average
+):
+    lgb_model = make_lgb_model(
+        "binary", sklearn_class, with_nan, empty_trees, boost_from_average
+    )
     d4p_model = d4p.mb.convert_model(lgb_model)
 
     if sklearn_class:
@@ -828,8 +856,13 @@ def test_lgb_binary_classification(sklearn_class, with_nan, dtype, empty_trees):
 @pytest.mark.parametrize("with_nan", [False, True])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("empty_trees", [False, True])
-def test_lgb_multiclass_classification(sklearn_class, with_nan, dtype, empty_trees):
-    lgb_model = make_lgb_model("multiclass", sklearn_class, with_nan, empty_trees)
+@pytest.mark.parametrize("boost_from_average", [False, True])
+def test_lgb_multiclass_classification(
+    sklearn_class, with_nan, dtype, empty_trees, boost_from_average
+):
+    lgb_model = make_lgb_model(
+        "multiclass", sklearn_class, with_nan, empty_trees, boost_from_average
+    )
     d4p_model = d4p.mb.convert_model(lgb_model)
 
     if sklearn_class:
@@ -985,9 +1018,15 @@ def make_cb_model(
     nan_mode: str,
     sklearn_class: bool,
     empty_trees: bool = False,
+    boost_from_average: "None | bool" = None,
 ) -> "cb.CatBoostRegressor | cb.CatBoostClassifier | cb.CatBoost":
     with_nan = nan_mode != "Forbidden"
     depth = 0 if empty_trees else 3
+    params_boost_from_average = (
+        {"boost_from_average": boost_from_average}
+        if boost_from_average is not None
+        else {}
+    )
     if objective == "Logloss":
         X, y = make_classification(
             n_samples=11,
@@ -1004,6 +1043,7 @@ def make_cb_model(
                 objective=objective,
                 grow_policy=grow_policy,
                 nan_mode=nan_mode,
+                boost_from_average=boost_from_average,
                 depth=depth,
                 iterations=2,
                 random_seed=123,
@@ -1023,7 +1063,8 @@ def make_cb_model(
                     "random_seed": 123,
                     "thread_count": 1,
                     "allow_writing_files": False,
-                },
+                }
+                | params_boost_from_average,
                 num_boost_round=2,
                 verbose=0,
                 save_snapshot=False,
@@ -1044,6 +1085,7 @@ def make_cb_model(
                 objective=objective,
                 grow_policy=grow_policy,
                 nan_mode=nan_mode,
+                boost_from_average=boost_from_average,
                 depth=depth,
                 iterations=2,
                 random_seed=123,
@@ -1063,7 +1105,8 @@ def make_cb_model(
                     "random_seed": 123,
                     "thread_count": 1,
                     "allow_writing_files": False,
-                },
+                }
+                | params_boost_from_average,
                 num_boost_round=2,
                 verbose=0,
                 save_snapshot=False,
@@ -1080,6 +1123,7 @@ def make_cb_model(
                 objective=objective,
                 grow_policy=grow_policy,
                 nan_mode=nan_mode,
+                boost_from_average=boost_from_average,
                 depth=depth,
                 iterations=2,
                 random_seed=123,
@@ -1099,7 +1143,8 @@ def make_cb_model(
                     "random_seed": 123,
                     "thread_count": 1,
                     "allow_writing_files": False,
-                },
+                }
+                | params_boost_from_average,
                 num_boost_round=2,
                 verbose=0,
                 save_snapshot=False,
@@ -1108,6 +1153,7 @@ def make_cb_model(
 
 @pytest.mark.skipif(not cb_available, reason=cb_unavailable_str)
 @pytest.mark.parametrize("objective", ["RMSE", "Tweedie:variance_power=1.99"])
+@pytest.mark.parametrize("boost_from_average", [False, True])
 @pytest.mark.parametrize("grow_policy", ["SymmetricTree", "Lossguide"])
 @pytest.mark.parametrize("nan_mode", ["Forbidden", "Min", "Max"])
 @pytest.mark.parametrize("sklearn_class", [False, True])
@@ -1115,9 +1161,20 @@ def make_cb_model(
 @pytest.mark.parametrize("scale", [1.0, 2.5])
 @pytest.mark.parametrize("empty_trees", [False, True])
 def test_catboost_regression(
-    objective, grow_policy, nan_mode, sklearn_class, dtype, scale, empty_trees
+    objective,
+    boost_from_average,
+    grow_policy,
+    nan_mode,
+    sklearn_class,
+    dtype,
+    scale,
+    empty_trees,
 ):
-    cb_model = make_cb_model(objective, grow_policy, nan_mode, sklearn_class, empty_trees)
+    if boost_from_average and objective != "RMSE":
+        pytest.skip("Not implemented in catboost.")
+    cb_model = make_cb_model(
+        objective, grow_policy, nan_mode, sklearn_class, empty_trees, boost_from_average
+    )
     d4p.mb.convert_model(cb_model)
     if scale != 1:
         bias = cb_model.get_scale_and_bias()[1]
@@ -1154,14 +1211,24 @@ def test_catboost_regression(
 @pytest.mark.skipif(catboost_skip_shap, reason=catboost_skip_shap_msg)
 @pytest.mark.skipif(not shap_supported, reason=shap_not_supported_str)
 @pytest.mark.parametrize("objective", ["RMSE", "Tweedie:variance_power=1.99"])
+@pytest.mark.parametrize("boost_from_average", [False, True])
 @pytest.mark.parametrize("nan_mode", ["Forbidden", "Min", "Max"])
 @pytest.mark.parametrize("sklearn_class", [False, True])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("scale", [1.0, 2.5])
 @pytest.mark.parametrize("empty_trees", [False, True])
-def test_catboost_shap(objective, nan_mode, sklearn_class, dtype, scale, empty_trees):
+def test_catboost_shap(
+    objective, boost_from_average, nan_mode, sklearn_class, dtype, scale, empty_trees
+):
+    if boost_from_average and objective != "RMSE":
+        pytest.skip("Not implemented in catboost.")
     cb_model = make_cb_model(
-        objective, "SymmetricTree", nan_mode, sklearn_class, empty_trees
+        objective,
+        "SymmetricTree",
+        nan_mode,
+        sklearn_class,
+        empty_trees,
+        boost_from_average,
     )
     if scale != 1:
         bias = cb_model.get_scale_and_bias()[1]
