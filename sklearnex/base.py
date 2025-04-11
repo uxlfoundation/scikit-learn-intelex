@@ -14,6 +14,7 @@
 # limitations under the License.
 # ===============================================================================
 
+from sklearn.base import BaseEstimator
 
 from daal4py.sklearn._utils import sklearn_check_version
 
