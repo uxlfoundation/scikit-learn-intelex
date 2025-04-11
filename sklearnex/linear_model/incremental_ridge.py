@@ -35,19 +35,14 @@ if sklearn_check_version("1.2"):
 from onedal.linear_model import IncrementalRidge as onedal_IncrementalRidge
 
 from .._device_offload import dispatch, wrap_output_data
-from .._utils import (
-    ExtensionEstimator,
-    PatchingConditionsChain,
-    _add_inc_serialization_note,
-)
+from .._utils import PatchingConditionsChain, _add_inc_serialization_note
+from ..base import oneDALEstimator
 
 
 @control_n_jobs(
     decorated_methods=["fit", "partial_fit", "predict", "score", "_onedal_finalize_fit"]
 )
-class IncrementalRidge(
-    ExtensionEstimator, MultiOutputMixin, RegressorMixin, BaseEstimator
-):
+class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEstimator):
     """
     Incremental estimator for Ridge Regression.
     Allows to train Ridge Regression if data is splitted into batches.

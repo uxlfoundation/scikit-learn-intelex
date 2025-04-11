@@ -42,17 +42,23 @@ if dpnp_available:
 
 def _asarray(data, xp, *args, **kwargs):
     """Converted input object to array format of xp namespace provided."""
-    if hasattr(data, "__array_namespace__"):
+
+    try:
+        memoryview(data)
         return xp.asarray(data, *args, **kwargs)
-    elif isinstance(data, Iterable):
-        if isinstance(data, tuple):
-            result_data = []
-            for i in range(len(data)):
-                result_data.append(_asarray(data[i], xp, *args, **kwargs))
-            data = tuple(result_data)
-        else:
-            for i in range(len(data)):
-                data[i] = _asarray(data[i], xp, *args, **kwargs)
+    except TypeError:
+        if hasattr(data, "__array_namespace__") or hasattr(data, "__dlpack__"):
+            return xp.asarray(data, *args, **kwargs)
+
+        if isinstance(data, Iterable):
+            if isinstance(data, tuple):
+                result_data = []
+                for i in range(len(data)):
+                    result_data.append(_asarray(data[i], xp, *args, **kwargs))
+                data = tuple(result_data)
+            else:
+                for i in range(len(data)):
+                    data[i] = _asarray(data[i], xp, *args, **kwargs)
     return data
 
 

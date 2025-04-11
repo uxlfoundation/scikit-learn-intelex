@@ -30,16 +30,17 @@ from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal.covariance import (
     IncrementalEmpiricalCovariance as onedal_IncrementalEmpiricalCovariance,
 )
+from onedal.utils._array_api import _is_numpy_namespace
 from sklearnex import config_context
 
 from .._config import get_config
 from .._device_offload import dispatch, wrap_output_data
 from .._utils import (
-    ExtensionEstimator,
     PatchingConditionsChain,
     _add_inc_serialization_note,
     register_hyperparameters,
 )
+from ..base import oneDALEstimator
 from ..metrics import pairwise_distances
 from ..utils._array_api import get_namespace
 from ..utils.validation import check_feature_names, validate_data
@@ -49,7 +50,7 @@ if sklearn_check_version("1.2"):
 
 
 @control_n_jobs(decorated_methods=["partial_fit", "fit", "_onedal_finalize_fit"])
-class IncrementalEmpiricalCovariance(ExtensionEstimator, BaseEstimator):
+class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
     """
     Maximum likelihood covariance estimator that allows for the estimation when the data are split into
     batches. The user can use the ``partial_fit`` method to provide a single batch of data or use the ``fit`` method to provide
@@ -231,11 +232,11 @@ class IncrementalEmpiricalCovariance(ExtensionEstimator, BaseEstimator):
         X = validate_data(
             self,
             X_test,
-            dtype=[np.float64, np.float32],
+            dtype=[xp.float64, xp.float32],
             reset=False,
         )
 
-        if "numpy" not in xp.__name__:
+        if not _is_numpy_namespace(xp):
             location = xp.asarray(location, device=X_test.device)
             # depending on the sklearn version, check_array
             # and validate_data will return only numpy arrays
@@ -361,12 +362,13 @@ class IncrementalEmpiricalCovariance(ExtensionEstimator, BaseEstimator):
         # self.location_) , and will check for finiteness via check array
         # check_feature_names will match _validate_data functionally
         location = self.location_[np.newaxis, :]
-        if "numpy" not in xp.__name__:
+        if not _is_numpy_namespace(xp):
             # Guarantee that inputs to pairwise_distances match in type and location
             location = xp.asarray(location, device=X.device)
 
         try:
             dist = pairwise_distances(X, location, metric="mahalanobis", VI=precision)
+
         except ValueError as e:
             # Throw the expected sklearn error in an n_feature length violation
             if "Incompatible dimension for X and Y matrices: X.shape[1] ==" in str(e):
@@ -376,6 +378,9 @@ class IncrementalEmpiricalCovariance(ExtensionEstimator, BaseEstimator):
                 )
             else:
                 raise e
+
+        if not _is_numpy_namespace(xp):
+            dist = xp.asarray(dist, device=X.device)
 
         return (xp.reshape(dist, (-1,))) ** 2
 

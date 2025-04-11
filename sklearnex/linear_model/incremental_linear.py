@@ -40,11 +40,11 @@ from onedal.common.hyperparameters import get_hyperparameters
 
 from .._device_offload import dispatch, wrap_output_data
 from .._utils import (
-    ExtensionEstimator,
     PatchingConditionsChain,
     _add_inc_serialization_note,
     register_hyperparameters,
 )
+from ..base import oneDALEstimator
 
 
 @register_hyperparameters(
@@ -57,7 +57,7 @@ from .._utils import (
     decorated_methods=["fit", "partial_fit", "predict", "score", "_onedal_finalize_fit"]
 )
 class IncrementalLinearRegression(
-    ExtensionEstimator, MultiOutputMixin, RegressorMixin, BaseEstimator
+    MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEstimator
 ):
     """
     Trains a linear regression model, allows for computation if the data are split into
