@@ -16,9 +16,7 @@
 
 import logging
 
-import numpy as np
 import pytest
-import scipy.sparse as sp
 import sklearn
 
 import onedal
@@ -136,27 +134,49 @@ def test_fallback_to_host(caplog):
     # force a fallback to cpu using sparse data and sample weights in BasicStatistics
     # it should complete with allow_fallback_to_host. The queue should be preserved
     # and properly used in the second round on gpu
-    from sklearnex.basic_statistics import BasicStatistics
+    from onedal.utils import _sycl_queue_manager as QM
+    from sklearnex._device_offload import dispatch
+    from sklearnex._utils import PatchingConditionsChain
 
-    est = BasicStatistics()
+    class _Estimator:
+        def _onedal_gpu_supported(self, method_name, *data):
+            patching_status = PatchingConditionsChain("")
+            patching_status.and_condition(data[0] == "gpu", "")
+            return patching_status
+
+        def _onedal_cpu_supported(self, method_name, *data):
+            patching_status = PatchingConditionsChain("")
+            return patching_status
+
+        def _onedal_test(self, *args, queue=None):
+            assert (
+                queue is not None
+                or sklearnex.get_config()["target_offload"] == "auto"
+                and QM.get_global_queue() is None
+            )
+
     start = 0
-    sample_weights = np.ones((5,))
+    est = _Estimator()
 
     # set a queue which should persist
     with (
-        caplog.at_level(logging.WARNING, logger="sklearnex"),
+        caplog.at_level(logging.DEBUG, logger="sklearnex"),
         sklearnex.config_context(target_offload="gpu"),
     ):
         # True == with cpu (eventually), False == with gpu
-        for fallback, data in [[True, sp.eye(5, 8, format="csr")], [False, np.eye(5, 8)]]:
+        for fallback in [True, False]:
             with sklearnex.config_context(allow_fallback_to_host=fallback):
-                est.fit(data, sample_weight=sample_weights)
+                dispatch(
+                    est,
+                    "test",
+                    {"onedal": est._onedal_test, "sklearn": None},
+                    "cpu" if fallback else "gpu",
+                )
 
+            # verify that the target_offload has not changed
+            assert sklearnex.get_config()["target_offload"] == "gpu"
             assert (
-                f"running accelerated version on {'CPU' if fallback else 'GPU'}"
-                in caplog.records[start:]
-            ), "".join(caplog.records)
-            start = len(caplog.records)
-
-        # This should fail
-        est.fit(sp.eye(5, 8), sample_weight=sample_weights)
+                f": running accelerated version on {'CPU' if fallback else 'GPU'}"
+                in caplog.messages[start:]
+            )
+            start = len(caplog.messages)

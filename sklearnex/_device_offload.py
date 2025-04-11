@@ -16,6 +16,8 @@
 
 from functools import wraps
 
+from contextmanager import nullcontext
+
 from onedal._device_offload import _copy_to_usm, _transfer_to_host
 from onedal.utils import _sycl_queue_manager as QM
 from onedal.utils._array_api import _asarray
@@ -25,7 +27,7 @@ if dpnp_available:
     import dpnp
     from onedal.utils._array_api import _convert_to_dpnp
 
-from ._config import get_config
+from ._config import config_context, get_config, set_config
 from .utils import get_tags
 
 
@@ -47,6 +49,10 @@ def _get_backend(obj, method_name, *data):
     if gpu_device:
         patching_status = obj._onedal_gpu_supported(method_name, *data)
         if not patching_status.get_status() and get_config()["allow_fallback_to_host"]:
+            config = get_config()
+            config["target_offload"] = "auto"
+            set_config(**config)
+            QM.remove_global_queue()
             return None, patching_status
         return patching_status.get_status(), patching_status
 
@@ -102,7 +108,18 @@ def dispatch(obj, method_name, branches, *args, **kwargs):
     sklearn_array_api = _array_api_offload() and get_tags(obj).array_api_support
 
     backend = None
-    with QM.manage_global_queue(None, *args):
+    _save_context = lambda: (
+        config_context(**get_config())
+        if get_config()["allow_fallback_to_host"]
+        else nullcontext()
+    )
+    # config context needs to be saved, as the sycl_queue_manager interacts with
+    # target_offload, which can regenerate a GPU queue later on. Therefore if a
+    # fallback occurs, then the state of target_offload must be set to default
+    # so that later use of get_global_queue only sends to host. We must modify
+    # the target offload settings, but we must also set the original value at the
+    # end, hence the need of a contextmanager.
+    with QM.manage_global_queue(None, *args), _save_context():
         if onedal_array_api:
             backend, patching_status = _get_backend(obj, method_name, *args)
             if backend:
@@ -110,10 +127,8 @@ def dispatch(obj, method_name, branches, *args, **kwargs):
                 patching_status.write_log(queue=queue, transferred_to_host=False)
                 return branches["onedal"](obj, *args, **kwargs, queue=queue)
             elif backend is None:
-                # if fallback to host is enabled, then reset and prepare for host check.
-                # the fallback_to_host cannot occur in _get_backend, as it must trigger
-                # a data movement to host
-                QM.remove_global_queue()
+                # this signifies a fallback to host
+                pass
             elif sklearn_array_api:
                 patching_status.write_log(transferred_to_host=False)
                 return branches["sklearn"](obj, *args, **kwargs)
@@ -128,9 +143,6 @@ def dispatch(obj, method_name, branches, *args, **kwargs):
 
         while backend is None:
             backend, patching_status = _get_backend(obj, method_name, *hostargs)
-            if not backend:
-                # if onedal_array_api is enabled, then the fallback has already been accomplished
-                QM.remove_global_queue()
 
         if backend:
             queue = QM.get_global_queue()
