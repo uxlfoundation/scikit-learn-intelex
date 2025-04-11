@@ -81,6 +81,9 @@ def eval_method(X, y, est, method):
 
     if not isinstance(res, Iterable):
         results = [_as_numpy(res)] if res is not est else []
+    elif hasattr(res, "shape"):
+        # array_api inputs do not have an __iter__
+        results = [_as_numpy(res[i]) for i in range(res.shape[0])]
     else:
         results = [_as_numpy(i) for i in res]
 
