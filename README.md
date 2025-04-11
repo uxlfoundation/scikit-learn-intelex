@@ -59,9 +59,11 @@ With Extension for Scikit-learn, you can:
 
 ## Optimizations
 
+Easiest way to benefit from accelerations from the extension is by patching scikit-learn with it:
+
 - **Enable CPU optimizations**
 
-    ```py
+    ```python
     import numpy as np
     from sklearnex import patch_sklearn
     patch_sklearn()
@@ -77,7 +79,7 @@ With Extension for Scikit-learn, you can:
 
     _Note: executing on GPU has [additional system software requirements](https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html) - see [details](https://uxlfoundation.github.io/scikit-learn-intelex/latest/oneapi-gpu.html)._
 
-    ```py
+    ```python
     import numpy as np
     from sklearnex import patch_sklearn, config_context
     patch_sklearn()
@@ -89,21 +91,50 @@ With Extension for Scikit-learn, you can:
     with config_context(target_offload="gpu:0"):
         clustering = DBSCAN(eps=3, min_samples=2).fit(X)
     ```
+
 :eyes: Check out available [notebooks](https://github.com/uxlfoundation/scikit-learn-intelex/tree/master/examples/notebooks) for more examples.
+
+### Usage without patching
+
+Alternatively, all functionalities are also available under a separate module which can be imported directly, without involving any patching.
+
+* To run on CPU:
+
+  ```python
+  import numpy as np
+  from sklearnex.cluster import DBSCAN
+
+  X = np.array([[1., 2.], [2., 2.], [2., 3.],
+                [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
+  clustering = DBSCAN(eps=3, min_samples=2).fit(X)
+  ```
+
+* To run on GPU:
+
+  ```python
+  import numpy as np
+  from sklearnex import config_context
+  from sklearnex.cluster import DBSCAN
+
+  X = np.array([[1., 2.], [2., 2.], [2., 3.],
+                [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
+  with config_context(target_offload="gpu:0"):
+      clustering = DBSCAN(eps=3, min_samples=2).fit(X)
+  ```
 
 ## Installation
 
 To install Extension for Scikit-learn, run:
 
-```
+```shell
 pip install scikit-learn-intelex
 ```
 
-See all installation instructions in the [Installation Guide](https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/INSTALL.md).
+Package is also offered through other channels such as conda-forge. See all installation instructions in the [Installation Guide](https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/INSTALL.md).
 
 ## Integration
 
-The software acceleration is achieved through patching. It means, replacing the stock scikit-learn algorithms with their optimized versions provided by the extension.
+The easiest way of accelerating scikit-learn workflows with the extension is through through [patching](https://uxlfoundation.github.io/scikit-learn-intelex/latest/quick-start.html#patching), which replaces the stock scikit-learn algorithms with their optimized versions provided by the extension using the same namespaces in the same modules as scikit-learn.
 
 The patching only affects [supported algorithms and their parameters](https://uxlfoundation.github.io/scikit-learn-intelex/latest/algorithms.html).
 You can still use not supported ones in your code, the package simply fallbacks into the stock version of scikit-learn.
@@ -112,16 +143,25 @@ You can still use not supported ones in your code, the package simply fallbacks 
 
 To patch scikit-learn, you can:
 * Use the following command-line flag:
-  ```
+  ```shell
   python -m sklearnex my_application.py
   ```
 * Add the following lines to the script:
-  ```
+  ```python
   from sklearnex import patch_sklearn
   patch_sklearn()
   ```
 
-:eyes: Read about [other ways to patch scikit-learn](https://uxlfoundation.github.io/scikit-learn-intelex/index.html#usage).
+:eyes: Read about [other ways to patch scikit-learn](https://uxlfoundation.github.io/scikit-learn-intelex/latest/quick-start.html#patching).
+
+As an alternative, accelerated classes from the extension can also be imported directly without patching, thereby allowing to keep them separate from stock scikit-learn ones - for example:
+
+```python
+from sklearnex.cluster import DBSCAN as exDBSCAN
+from sklearn.cluster import DBSCAN as stockDBSCAN
+
+# ...
+```
 
 ## Documentation
 
