@@ -168,14 +168,15 @@ def wrap_output_data(func):
         result = func(self, *args, **kwargs)
         if not (len(args) == 0 and len(kwargs) == 0):
             data = (*args, *kwargs.values())
+
             usm_iface = getattr(data[0], "__sycl_usm_array_interface__", None)
             if usm_iface is not None:
                 result = _copy_to_usm(usm_iface["syclobj"], result)
                 if dpnp_available and isinstance(data[0], dpnp.ndarray):
                     result = _convert_to_dpnp(result)
                 return result
-            config = get_config()
-            if not ("transform_output" in config and config["transform_output"]):
+
+            if get_config().get("transform_output") == "default":
                 input_array_api = getattr(data[0], "__array_namespace__", lambda: None)()
                 if input_array_api:
                     input_array_api_device = data[0].device
