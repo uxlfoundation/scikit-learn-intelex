@@ -28,6 +28,7 @@ if sklearn_check_version("1.6"):
     from sklearn.utils import get_tags
 else:
     from sklearn.base import BaseEstimator
+
     get_tags = lambda obj: type("Tags", (), BaseEstimator._get_tags(obj))
 
 __all__ = ["assert_all_finite", "get_tags"]
