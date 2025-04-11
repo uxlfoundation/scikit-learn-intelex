@@ -1753,9 +1753,13 @@ def test_logreg_builder_with_deleted_arrays():
             2,
         ),
         # case below might change in the future if sklearn improves their modules
-        (
+        pytest.param(
             SGDClassifier(loss="log_loss"),
             3,
+            marks=pytest.mark.skipif(
+                not sklearn_check_version("1.1"),
+                reason="Requires higher sklearn version.",
+            ),
         ),
         (
             SGDClassifier(loss="hinge"),
