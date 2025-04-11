@@ -28,13 +28,6 @@ if sklearn_check_version("1.6"):
     from sklearn.utils import get_tags
 else:
     from sklearn.base import BaseEstimator
-
-    class get_tags:
-        def __init__(self, obj):
-            self._tags = BaseEstimator._get_tags(obj)
-
-        def __getattr__(self, inp):
-            return self._tags[inp]
-
+    get_tags = lambda obj: type("Tags", (), BaseEstimator._get_tags(obj))
 
 __all__ = ["assert_all_finite", "get_tags"]
