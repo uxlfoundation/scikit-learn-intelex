@@ -129,7 +129,7 @@ Examples
 Model Builders models conversion
 
 - `XGBoost model conversion <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/mb/model_builders_xgboost.py>`_
-- `SHAP value prediction from an XGBoost model <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/daal4py/model_builders_xgboost_shap.py>`_
+- `SHAP value prediction from an XGBoost model <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/mb/model_builders_xgboost_shap.py>`_
 - `LightGBM model conversion <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/mb/model_builders_lightgbm.py>`_
 - `CatBoost model conversion <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/mb/model_builders_catboost.py>`_
 
