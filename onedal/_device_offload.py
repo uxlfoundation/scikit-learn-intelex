@@ -190,7 +190,7 @@ def support_input_format(func):
                     result = _convert_to_dpnp(result)
                 return result
 
-        if not get_config().get("transform_output"):
+        if get_config().get("transform_output") == "default":
             input_array_api = getattr(data[0], "__array_namespace__", lambda: None)()
             if input_array_api:
                 input_array_api_device = data[0].device
