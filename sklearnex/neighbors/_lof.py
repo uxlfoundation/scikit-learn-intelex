@@ -15,6 +15,7 @@
 # ===============================================================================
 
 import warnings
+from functools import wraps
 
 import numpy as np
 from sklearn.neighbors import LocalOutlierFactor as _sklearn_LocalOutlierFactor
@@ -142,28 +143,9 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
     # This would cause issues in fit_predict. Also, available_if
     # is hard to unwrap, and this is the most straighforward way.
     @available_if(_sklearn_LocalOutlierFactor._check_novelty_fit_predict)
+    @wraps(_sklearn_LocalOutlierFactor.fit_predict, assigned=["__doc__"])
     @wrap_output_data
     def fit_predict(self, X, y=None):
-        """Fit the model to the training set X and return the labels.
-
-        **Not available for novelty detection (when novelty is set to True).**
-        Label is 1 for an inlier and -1 for an outlier according to the LOF
-        score and the contamination parameter.
-
-        Parameters
-        ----------
-        X : {array-like, sparse matrix} of shape (n_samples, n_features), default=None
-            The query sample or samples to compute the Local Outlier Factor
-            w.r.t. the training samples.
-
-        y : Ignored
-            Not used, present for API consistency by convention.
-
-        Returns
-        -------
-        is_inlier : ndarray of shape (n_samples,)
-            Returns -1 for anomalies/outliers and 1 for inliers.
-        """
         return self.fit(X)._predict()
 
     def _kneighbors(self, X=None, n_neighbors=None, return_distance=True):
@@ -185,34 +167,9 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
     kneighbors = wrap_output_data(_kneighbors)
 
     @available_if(_sklearn_LocalOutlierFactor._check_novelty_score_samples)
+    @wraps(_sklearn_LocalOutlierFactor.score_samples, assigned=["__doc__"])
     @wrap_output_data
     def score_samples(self, X):
-        """Opposite of the Local Outlier Factor of X.
-
-        It is the opposite as bigger is better, i.e. large values correspond
-        to inliers.
-
-        **Only available for novelty detection (when novelty is set to True).**
-        The argument X is supposed to contain *new data*: if X contains a
-        point from training, it considers the later in its own neighborhood.
-        Also, the samples in X are not considered in the neighborhood of any
-        point. Because of this, the scores obtained via ``score_samples`` may
-        differ from the standard LOF scores.
-        The standard LOF scores for the training data is available via the
-        ``negative_outlier_factor_`` attribute.
-
-        Parameters
-        ----------
-        X : {array-like, sparse matrix} of shape (n_samples, n_features)
-            The query sample or samples to compute the Local Outlier Factor
-            w.r.t. the training samples.
-
-        Returns
-        -------
-        opposite_lof_scores : ndarray of shape (n_samples,)
-            The opposite of the Local Outlier Factor of each input samples.
-            The lower, the more abnormal.
-        """
         check_is_fitted(self)
 
         distances_X, neighbors_indices_X = self._kneighbors(
