@@ -30,6 +30,7 @@ from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal.covariance import (
     IncrementalEmpiricalCovariance as onedal_IncrementalEmpiricalCovariance,
 )
+from onedal.utils._array_api import _is_numpy_namespace
 from sklearnex import config_context
 
 from .._config import get_config
@@ -231,11 +232,11 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         X = validate_data(
             self,
             X_test,
-            dtype=[np.float64, np.float32],
+            dtype=[xp.float64, xp.float32],
             reset=False,
         )
 
-        if "numpy" not in xp.__name__:
+        if not _is_numpy_namespace(xp):
             location = xp.asarray(location, device=X_test.device)
             # depending on the sklearn version, check_array
             # and validate_data will return only numpy arrays
@@ -361,12 +362,13 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         # self.location_) , and will check for finiteness via check array
         # check_feature_names will match _validate_data functionally
         location = self.location_[np.newaxis, :]
-        if "numpy" not in xp.__name__:
+        if not _is_numpy_namespace(xp):
             # Guarantee that inputs to pairwise_distances match in type and location
             location = xp.asarray(location, device=X.device)
 
         try:
             dist = pairwise_distances(X, location, metric="mahalanobis", VI=precision)
+
         except ValueError as e:
             # Throw the expected sklearn error in an n_feature length violation
             if "Incompatible dimension for X and Y matrices: X.shape[1] ==" in str(e):
@@ -376,6 +378,9 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
                 )
             else:
                 raise e
+
+        if not _is_numpy_namespace(xp):
+            dist = xp.asarray(dist, device=X.device)
 
         return (xp.reshape(dist, (-1,))) ** 2
 
