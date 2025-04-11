@@ -14,9 +14,8 @@
 # limitations under the License.
 # ==============================================================================
 
+from contextlib import nullcontext
 from functools import wraps
-
-from contextmanager import nullcontext
 
 from onedal._device_offload import _copy_to_usm, _transfer_to_host
 from onedal.utils import _sycl_queue_manager as QM
@@ -64,6 +63,12 @@ if "array_api_dispatch" in get_config():
 else:
     _array_api_offload = lambda: False
 
+_save_context = lambda: (
+    config_context(**get_config())
+    if get_config()["allow_fallback_to_host"]
+    else nullcontext()
+)
+
 
 def dispatch(obj, method_name, branches, *args, **kwargs):
     """Dispatch object method call to oneDAL if conditionally possible. If
@@ -107,12 +112,9 @@ def dispatch(obj, method_name, branches, *args, **kwargs):
     onedal_array_api = _array_api_offload() and get_tags(obj).onedal_array_api
     sklearn_array_api = _array_api_offload() and get_tags(obj).array_api_support
 
+    # backend can only be a boolean or None, None signifies an unverified backend
     backend = None
-    _save_context = lambda: (
-        config_context(**get_config())
-        if get_config()["allow_fallback_to_host"]
-        else nullcontext()
-    )
+
     # config context needs to be saved, as the sycl_queue_manager interacts with
     # target_offload, which can regenerate a GPU queue later on. Therefore if a
     # fallback occurs, then the state of target_offload must be set to default
@@ -126,10 +128,7 @@ def dispatch(obj, method_name, branches, *args, **kwargs):
                 queue = QM.get_global_queue()
                 patching_status.write_log(queue=queue, transferred_to_host=False)
                 return branches["onedal"](obj, *args, **kwargs, queue=queue)
-            elif backend is None:
-                # this signifies a fallback to host
-                pass
-            elif sklearn_array_api:
+            elif sklearn_array_api and backend is False:
                 patching_status.write_log(transferred_to_host=False)
                 return branches["sklearn"](obj, *args, **kwargs)
 
