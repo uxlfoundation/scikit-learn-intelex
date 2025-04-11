@@ -131,7 +131,7 @@ def test_config_context_works():
     not is_dpctl_device_available(["gpu"]), reason="Requires a gpu for fallback testing"
 )
 def test_fallback_to_host(caplog):
-    # force a fallback to cpu using sparse data and sample weights in BasicStatistics
+    # force a fallback to cpu with direct use of dispatch and PatchingConditionsChain
     # it should complete with allow_fallback_to_host. The queue should be preserved
     # and properly used in the second round on gpu
     from onedal.utils import _sycl_queue_manager as QM
