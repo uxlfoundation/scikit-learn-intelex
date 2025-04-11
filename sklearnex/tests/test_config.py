@@ -130,7 +130,7 @@ def test_config_context_works():
 
 
 @pytest.mark.skipif(
-    not is_dpctl_device_available("gpu"), reason="Requires a gpu for fallback testing"
+    not is_dpctl_device_available(["gpu"]), reason="Requires a gpu for fallback testing"
 )
 def test_fallback_to_host(caplog):
     # force a fallback to cpu using sparse data and sample weights in BasicStatistics
