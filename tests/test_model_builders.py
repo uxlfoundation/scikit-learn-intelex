@@ -761,6 +761,8 @@ def test_lgb_regression(
 def test_lgb_regression_interactions(
     objective, sklearn_class, with_nan, dtype, empty_trees, boost_from_average
 ):
+    if empty_trees:
+        pytest.skip("Case not supported by library 'shap'.")
     lgb_model = make_lgb_model(
         objective, sklearn_class, with_nan, empty_trees, boost_from_average
     )
