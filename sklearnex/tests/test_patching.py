@@ -179,12 +179,18 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
                 _check_estimator_patching(caplog, dataframe, queue, dtype, est, method)
             except Exception as e:
                 # if we are borrowing from sklearn and it fails, then this is something
-                # failing on sklearn-side. Only allowed to fail if the underlying sklearn
-                # function doesn't support array_api with the set parameters
+                # failing on sklearn-side. It is only allowed to fail if the underlying sklearn
+                # function doesn't support array_api with the set parameters and array_api
+                # support isn't promised by oneDAL
+                tags = get_tags(est)
+                array_api_check = (
+                                    hasattr(tags, "array_api_support") and tags.array_api_support
+                                    or hasattr(tags, "onedal_array_api") and tags.onedal_array_api
+                )
                 if (
                     getattr(PATCHED_MODELS[estimator], method)
-                    != getattr(UNPATCHED_MODELS[estimator], method)
-                    or get_tags(est).array_api_support
+                    != getattr(UNPATCHED_MODELS[estimator], method, None)
+                    or array_api_check
                 ):
                     raise e
 
