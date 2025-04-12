@@ -184,8 +184,10 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
                 # support isn't promised by oneDAL
                 tags = get_tags(est)
                 array_api_check = (
-                                    hasattr(tags, "array_api_support") and tags.array_api_support
-                                    or hasattr(tags, "onedal_array_api") and tags.onedal_array_api
+                    hasattr(tags, "array_api_support")
+                    and tags.array_api_support
+                    or hasattr(tags, "onedal_array_api")
+                    and tags.onedal_array_api
                 )
                 if (
                     getattr(PATCHED_MODELS[estimator], method)
