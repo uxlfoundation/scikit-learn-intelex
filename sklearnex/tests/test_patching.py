@@ -190,9 +190,10 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
                     and tags.onedal_array_api
                 )
                 if (
-                    getattr(PATCHED_MODELS[estimator], method)
+                    array_api_check
+                    or estimator in UNPATCHED_MODELS
+                    and getattr(PATCHED_MODELS[estimator], method)
                     != getattr(UNPATCHED_MODELS[estimator], method, None)
-                    or array_api_check
                 ):
                     raise e
 
