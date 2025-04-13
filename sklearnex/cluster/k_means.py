@@ -388,7 +388,6 @@ if daal_check_version((2023, "P", 200)):
 
         fit.__doc__ = _sklearn_KMeans.fit.__doc__
         predict.__doc__ = _sklearn_KMeans.predict.__doc__
-        transform.__doc__ = _sklearn_KMeans.transform.__doc__
         score.__doc__ = _sklearn_KMeans.score.__doc__
 
 else:
