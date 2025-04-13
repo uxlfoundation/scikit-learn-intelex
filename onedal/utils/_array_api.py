@@ -41,7 +41,7 @@ if dpnp_available:
 
 
 def _supports_buffer_protocol(obj):
-    # the array_api standard mandates conversion with the buffer protocol, 
+    # the array_api standard mandates conversion with the buffer protocol,
     # which can only be checked via a try-catch in native python
     try:
         memoryview(obj)
