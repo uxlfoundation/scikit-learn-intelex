@@ -332,7 +332,7 @@ if daal_check_version((2023, "P", 200)):
                 accept_large_sparse=False,
             )
             return X
-        
+
         _transform = support_input_format(_sklearn_KMeans._transform)
 
         @wrap_output_data
