@@ -191,8 +191,8 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
                 )
                 if (
                     array_api_check
-                    or estimator in UNPATCHED_MODELS
-                    and getattr(PATCHED_MODELS[estimator], method)
+                    or estimator not in UNPATCHED_MODELS
+                    or getattr(PATCHED_MODELS[estimator], method)
                     != getattr(UNPATCHED_MODELS[estimator], method, None)
                 ):
                     raise e
