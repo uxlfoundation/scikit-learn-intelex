@@ -19,7 +19,7 @@ from functools import wraps
 
 from onedal._device_offload import _copy_to_usm, _transfer_to_host
 from onedal.utils import _sycl_queue_manager as QM
-from onedal.utils._array_api import _asarray
+from onedal.utils._array_api import _asarray, _is_numpy_namespace
 from onedal.utils._dpep_helpers import dpnp_available
 
 if dpnp_available:
