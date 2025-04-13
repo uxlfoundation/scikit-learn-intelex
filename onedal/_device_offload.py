@@ -192,7 +192,7 @@ def support_input_format(func):
 
         if get_config().get("transform_output") == "default":
             input_array_api = getattr(data[0], "__array_namespace__", lambda: None)()
-            if input_array_api:
+            if input_array_api and not _is_numpy_namespace(input_array_api):
                 input_array_api_device = data[0].device
                 result = _asarray(result, input_array_api, device=input_array_api_device)
         return result
