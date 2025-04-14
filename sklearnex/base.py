@@ -63,7 +63,7 @@ class oneDALEstimator:
         def _doc_link_module(self) -> str:
             return "sklearnex"
 
-        def _doc_link_url_param_generator(self, *_) -> dict:
+        def _doc_link_url_param_generator(self, *_) -> dict[str, str]:
             return {
                 "estimator_module": "sklearn."
                 + self.__class__.__module__.rsplit(".", 2)[-2],
