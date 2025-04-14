@@ -272,20 +272,10 @@ Note: For the labels parameter, data is formatted as -1s and 1s
 .. autoclass:: daal4py.svm_model
    :members:
 
-Logistic Regression
-*******************
+Logistic Regression Predictions
+*******************************
 Parameters and semantics are described in |onedal-dg-logistic-regression|_.
 
-.. rubric:: Examples:
-
-- `Single-Process Binary Class Logistic Regression
-  <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/log_reg_binary_dense.py>`__
-- `Single-Process Logistic Regression
-  <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/log_reg_dense.py>`__
-
-.. autoclass:: daal4py.logistic_regression_training
-   :members: compute
-.. autoclass:: daal4py.logistic_regression_training_result
    :members:
 .. autoclass:: daal4py.logistic_regression_prediction
    :members: compute
