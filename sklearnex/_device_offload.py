@@ -85,10 +85,10 @@ def dispatch(
     *args,
     **kwargs,
 ) -> Any:
-    """Dispatch object method call to oneDAL if conditionally possible. If
-    possible oneDAL will be called otherwise it will fall back to calling
-    scikit-learn.  Dispatching to oneDAL can be influenced by the
-    'use_raw_input' or 'allow_fallback_to_host' config parameters.
+    """Dispatch object method call to oneDAL if conditionally possible. 
+    Depending on support conditions, oneDAL will be called otherwise it will
+    fall back to calling scikit-learn.  Dispatching to oneDAL can be influenced
+    by the 'use_raw_input' or 'allow_fallback_to_host' config parameters.
 
     Parameters
     ----------
