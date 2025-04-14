@@ -18,8 +18,6 @@ from sklearn.base import BaseEstimator
 
 from daal4py.sklearn._utils import sklearn_check_version
 
-from . import __version__
-
 if sklearn_check_version("1.6"):
     from dataclasses import dataclass, fields
 
