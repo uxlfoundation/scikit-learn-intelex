@@ -169,9 +169,18 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
     elif method and not hasattr(est, method):
         pytest.skip(f"sklearn available_if prevents testing {estimator}.{method}")
     elif dataframe == "array_api" and estimator == "PCA" and "score" in method:
-        pytest.skip(f"PCA.{method} has sklearn array_api support which breaks with array_api_dispatching")
-    elif dataframe == "array_api" and not sklearn_check_version("1.3") and estimator == "IncrementalEmpiricalCovariance" and method == "score":
-        pytest.skip(f"array checking in sklearn <1.3 does not fully support array_api inputs, causes sklearnex-only estimator failure")
+        pytest.skip(
+            f"PCA.{method} has sklearn array_api support which breaks with array_api_dispatching"
+        )
+    elif (
+        dataframe == "array_api"
+        and not sklearn_check_version("1.3")
+        and estimator == "IncrementalEmpiricalCovariance"
+        and method == "score"
+    ):
+        pytest.skip(
+            f"array checking in sklearn <1.3 does not fully support array_api inputs, causes sklearnex-only estimator failure"
+        )
 
     if dataframe == "array_api":
         # as array_api dispatching is experimental, sklearn support isn't guaranteed.
