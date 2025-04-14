@@ -25,9 +25,9 @@ General usage
 
 Building models from Gradient Boosting frameworks
 
-- `XGBoost* model conversion <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/daal4py/model_builders_xgboost.py>`_
-- `LightGBM* model conversion <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/daal4py/model_builders_lightgbm.py>`_
-- `CatBoost* model conversion <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/daal4py/model_builders_catboost.py>`_
+- `XGBoost* model conversion <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/mb/model_builders_xgboost.py>`_
+- `LightGBM* model conversion <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/mb/model_builders_lightgbm.py>`_
+- `CatBoost* model conversion <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/mb/model_builders_catboost.py>`_
 
 
 Principal Component Analysis (PCA) Transform
