@@ -14,8 +14,10 @@
 # limitations under the License.
 # ==============================================================================
 
+from collections.abc import Callable
 from contextlib import nullcontext
 from functools import wraps
+from typing import Any
 
 from onedal._device_offload import _copy_to_usm, _transfer_to_host
 from onedal.utils import _sycl_queue_manager as QM
@@ -27,10 +29,14 @@ if dpnp_available:
     from onedal.utils._array_api import _convert_to_dpnp
 
 from ._config import config_context, get_config, set_config
+from ._utils import PatchingConditionsChain
+from .base import oneDALEstimator
 from .utils import get_tags
 
 
-def _get_backend(obj, method_name, *data):
+def _get_backend(
+    obj: type[oneDALEstimator], method_name: str, *data
+) -> tuple[bool | None, PatchingConditionsChain]:
     """This function verifies the hardware conditions, data characteristics, and
     estimator parameters necessary for offloading computation to oneDAL. The status
     of this patching is returned as a PatchingConditionsChain object along with a
@@ -72,7 +78,13 @@ _save_context = lambda: (
 )
 
 
-def dispatch(obj, method_name, branches, *args, **kwargs):
+def dispatch(
+    obj: type[oneDALEstimator],
+    method_name: str,
+    branches: dict[Callable, Callable],
+    *args,
+    **kwargs,
+) -> Any:
     """Dispatch object method call to oneDAL if conditionally possible. If
     possible oneDAL will be called otherwise it will fall back to calling
     scikit-learn.  Dispatching to oneDAL can be influenced by the
@@ -80,29 +92,30 @@ def dispatch(obj, method_name, branches, *args, **kwargs):
 
     Parameters
     ----------
-    obj: object
-        sklearnex object which contains `onedal_cpu_supported` and
-        `onedal_gpu_supported` methods which evaluate oneDAL support.
+    obj : object
+        sklearnex object which inherits oneDALEstimator and contains
+        ``onedal_cpu_supported`` and ``onedal_gpu_supported`` methods which
+        evaluate oneDAL support.
 
-    method_name: string
+    method_name : string
         name of method to be evaluated for oneDAL support
 
-    branches: dict
+    branches : dict
         dictionary containing functions to be called. Only keys 'sklearn' and
         'onedal' are used which should contain the relevant scikit-learn and
         onedal object methods respectively. All functions should accept the
         inputs from *args and **kwargs. Additionally, the onedal object method
         must additionally accept a 'queue' keyword.
 
-    *args: tuple
+    *args : tuple
         arguments to be supplied to the dispatched method
 
-    **kwargs: dict
+    **kwargs : dict
         keyword arguments to be supplied to the dispatched method
 
     Returns
     -------
-    unknown: object
+    unknown : object
         Returned object dependent on the supplied branches. Implicitly the returned
         object types should match for the sklearn and onedal object methods.
     """
@@ -159,14 +172,14 @@ def dispatch(obj, method_name, branches, *args, **kwargs):
                 return branches["sklearn"](obj, *hostargs, **hostkwargs)
 
 
-def wrap_output_data(func):
+def wrap_output_data(func: Callable) -> Callable:
     """
     Converts and moves the output arrays of the decorated function
     to match the input array type and device.
     """
 
     @wraps(func)
-    def wrapper(self, *args, **kwargs):
+    def wrapper(self, *args, **kwargs) -> Any:
         result = func(self, *args, **kwargs)
         if not (len(args) == 0 and len(kwargs) == 0):
             data = (*args, *kwargs.values())

@@ -18,6 +18,8 @@ from sklearn.base import BaseEstimator
 
 from daal4py.sklearn._utils import sklearn_check_version
 
+from . import __version__
+
 if sklearn_check_version("1.6"):
     from dataclasses import dataclass, fields
 
@@ -36,7 +38,7 @@ class oneDALEstimator:
         # with the ongoing rollout of sklearn's array_api support. This will make
         # maintenance easier, and centralize tag changes to a single location.
 
-        def __sklearn_tags__(self):
+        def __sklearn_tags__(self) -> Tags:
             # This convention is unnecessarily restrictive with more performant
             # alternatives but it best follows sklearn. Subclasses will now only need
             # to set `onedal_array_api` to True to signify gpu zero-copy support
@@ -49,12 +51,12 @@ class oneDALEstimator:
 
     elif sklearn_check_version("1.3"):
 
-        def _more_tags(self):
+        def _more_tags(self) -> dict[bool]:
             return {"onedal_array_api": False}
 
     else:
         # array_api_support tag was added in sklearn 1.3 via scikit-learn/scikit-learn#26372
-        def _more_tags(self):
+        def _more_tags(self) -> dict[bool, bool]:
             return {"array_api_support": False, "onedal_array_api": False}
 
     if sklearn_check_version("1.4"):
