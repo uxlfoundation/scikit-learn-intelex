@@ -17,7 +17,7 @@
 from collections.abc import Callable
 from contextlib import nullcontext
 from functools import wraps
-from typing import Any
+from typing import Any, Union
 
 from onedal._device_offload import _copy_to_usm, _transfer_to_host
 from onedal.utils import _sycl_queue_manager as QM
@@ -36,7 +36,7 @@ from .utils import get_tags
 
 def _get_backend(
     obj: type[oneDALEstimator], method_name: str, *data
-) -> tuple[bool | None, PatchingConditionsChain]:
+) -> tuple[Union[bool, None], PatchingConditionsChain]:
     """This function verifies the hardware conditions, data characteristics, and
     estimator parameters necessary for offloading computation to oneDAL. The status
     of this patching is returned as a PatchingConditionsChain object along with a
