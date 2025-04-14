@@ -276,7 +276,8 @@ Logistic Regression Predictions
 *******************************
 Parameters and semantics are described in |onedal-dg-logistic-regression|_.
 
-   :members:
+_Note: it is not possible to fit logistic regression models through ``daal4py``. Only model serving functionality is offered._
+
 .. autoclass:: daal4py.logistic_regression_prediction
    :members: compute
 .. autoclass:: daal4py.logistic_regression_model
