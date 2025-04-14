@@ -905,11 +905,11 @@ def get_gbt_model_from_catboost(booster: Any) -> Any:
 
                 else:
                     # Tree has only one node
+                    # Note: the root node already has scale and bias added to it,
+                    # so no need to add them again here like it is done for the leafs.
                     mb.add_leaf(
                         tree_id=cur_tree_id,
-                        response=root_node.value[
-                            class_label
-                        ],  # <- root node already has scale and bias added
+                        response=root_node.value[class_label],
                         cover=0.0,
                     )
 
