@@ -16,10 +16,12 @@
 
 .. _distributed:
 
-Distributed Mode (SPMD)
-=======================
+SPMD (multi-GPU distributed mode)
+=================================
 
-|sklearnex| offers Single Program, Multiple Data (SPMD) supported interfaces for distributed computing.
+|sklearnex| offers Single Program, Multiple Data (SPMD) supported interfaces for distributed computations on multi-GPU setups
+(see the :ref:`distributed mode on daal4py <distributed_daal4py>` for distributed algorithms on CPU).
+
 Several :doc:`GPU-supported algorithms <oneapi-gpu>`
 also provide distributed, multi-GPU computing capabilities via integration with |mpi4py|. The prerequisites
 match those of GPU computing, along with an MPI backend of your choice (`Intel MPI recommended
@@ -90,7 +92,6 @@ Then, execute the file through MPI under multiple ranks - for example:
     
     mpiexec -n 4 python linear_regression_spmd.py
 
-Note that additional ``mpirun`` arguments can be added as desired. SPMD-supported estimators are listed in the :ref:`spmd-support` section.
+(and remember to set ``I_MPI_OFFLOAD=1`` for Intel's MPI before calling ``mpirun``/``mpiexec``)
 
-Additionally, ``daal4py`` (previously a separate package, now an importable module within ``scikit-learn-intelex``) offers some distributed functionality, see
-`documentation <https://intelpython.github.io/daal4py/scaling.html>`_ for further details.
+Note that additional ``mpirun`` arguments can be added as desired. SPMD-supported estimators are listed in the :ref:`spmd-support` section.

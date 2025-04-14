@@ -28,6 +28,8 @@ Compatibility with Scikit-learn*
 Integrate |sklearnex|
 ----------------------
 
+.. _patching:
+
 Patching
 **********************
 

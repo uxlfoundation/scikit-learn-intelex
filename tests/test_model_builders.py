@@ -15,6 +15,8 @@
 # ==============================================================================
 
 import contextlib
+import gc
+import pickle
 import unittest
 import warnings
 from datetime import datetime
@@ -22,18 +24,19 @@ from datetime import datetime
 import lightgbm as lgbm
 import numpy as np
 import xgboost as xgb
+from scipy.special import softmax
 from sklearn.datasets import (
     load_breast_cancer,
     load_iris,
     make_classification,
     make_regression,
 )
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression, SGDClassifier
 from sklearn.model_selection import train_test_split
 
 import daal4py as d4p
 from daal4py.mb import gbt_convertors
-from daal4py.sklearn._utils import daal_check_version
+from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 
 try:
     import catboost as cb
@@ -1030,6 +1033,109 @@ class TestXGBObjectIsNotCorrupted(unittest.TestCase):
         np.testing.assert_almost_equal(xgb_pred, xgb_pred_fresh)
 
         np.testing.assert_allclose(d4p_model.predict(X), xgb_pred, rtol=1e-5)
+
+
+class TestLogRegBuilderClass(unittest.TestCase):
+    def test_logreg_binary(self):
+        if not sklearn_check_version("1.1"):
+            return
+        X, y = make_classification(random_state=123)
+        model_skl = SGDClassifier(
+            loss="log_loss", fit_intercept=False, random_state=123
+        ).fit(X, y)
+        model_d4p = d4p.mb.convert_model(model_skl)
+        np.testing.assert_almost_equal(
+            model_d4p.predict(X[::-1]),
+            model_skl.predict(X[::-1]),
+        )
+        np.testing.assert_almost_equal(
+            model_d4p.predict_proba(X[::-1]),
+            model_skl.predict_proba(X[::-1]),
+        )
+        np.testing.assert_almost_equal(
+            model_d4p.predict_log_proba(X[::-1]),
+            model_skl.predict_log_proba(X[::-1]),
+        )
+
+    def test_logreg_multiclass(self):
+        X, y = make_classification(n_classes=3, n_informative=4, random_state=123)
+        model_skl = LogisticRegression().fit(X, y)
+        model_d4p = d4p.mb.convert_model(model_skl)
+        np.testing.assert_almost_equal(
+            model_d4p.predict(X[::-1]),
+            model_skl.predict(X[::-1]),
+        )
+        np.testing.assert_almost_equal(
+            model_d4p.predict_proba(X[::-1]),
+            model_skl.predict_proba(X[::-1]),
+        )
+        np.testing.assert_almost_equal(
+            model_d4p.predict_log_proba(X[::-1]),
+            model_skl.predict_log_proba(X[::-1]),
+        )
+
+    def test_error_on_nonlogistic(self):
+        X, y = make_classification(n_classes=3, n_informative=4, random_state=123)
+        model_skl = LogisticRegression(multi_class="ovr").fit(X, y)
+        try:
+            d4p.mb.convert_model(model_skl)
+            assert False
+        except TypeError:
+            assert True
+
+    def test_serialization(self):
+        if not sklearn_check_version("1.1"):
+            return
+        X, y = make_classification(random_state=123)
+        model_skl = SGDClassifier(
+            loss="log_loss", fit_intercept=False, random_state=123
+        ).fit(X, y)
+        model_d4p_base = d4p.mb.convert_model(model_skl)
+        model_d4p = pickle.loads(pickle.dumps(model_d4p_base))
+        np.testing.assert_almost_equal(
+            model_d4p_base.predict_proba(X[::-1]),
+            model_d4p.predict_proba(X[::-1]),
+        )
+
+    def test_fp32(self):
+        X, y = make_classification(random_state=123)
+        model_skl = LogisticRegression().fit(X, y)
+        model_d4p = d4p.mb.LogisticDAALModel(
+            model_skl.coef_, model_skl.intercept_, dtype=np.float32
+        )
+        np.testing.assert_almost_equal(
+            model_d4p.predict(X[::-1]),
+            model_skl.predict(X[::-1]),
+        )
+        np.testing.assert_allclose(
+            model_d4p.predict_proba(X[::-1]),
+            model_skl.predict_proba(X[::-1]),
+            atol=1e-6,
+        )
+        np.testing.assert_allclose(
+            model_d4p.predict_log_proba(X[::-1]),
+            model_skl.predict_log_proba(X[::-1]),
+            rtol=1e-3,
+            atol=1e-6,
+        )
+
+    def test_with_deleted_arrays(self):
+        rng = np.random.default_rng(seed=123)
+        X = rng.standard_normal(size=(5, 10))
+        coefs = rng.standard_normal(size=(3, 10))
+        intercepts = np.zeros(3)
+        ref_pred = X @ coefs.T
+        ref_probs = softmax(ref_pred, axis=1)
+
+        model_d4p = d4p.mb.LogisticDAALModel(coefs, intercepts)
+        coefs[:, :] = 0
+        del coefs, intercepts
+        gc.collect()
+
+        np.testing.assert_almost_equal(
+            model_d4p.predict_proba(X),
+            ref_probs,
+        )
 
 
 if __name__ == "__main__":
