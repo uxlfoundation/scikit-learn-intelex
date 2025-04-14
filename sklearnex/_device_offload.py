@@ -103,7 +103,7 @@ def dispatch(obj, method_name, branches, *args, **kwargs):
     Returns
     -------
     unknown: object
-        return depenedent on the supplied branches. Implicitly the returned
+        Returned object dependent on the supplied branches. Implicitly the returned
         object types should match for the sklearn and onedal object methods.
     """
 
