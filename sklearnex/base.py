@@ -63,6 +63,13 @@ class oneDALEstimator:
         def _doc_link_module(self) -> str:
             return "sklearnex"
 
+        def _doc_link_url_param_generator(self, _) -> dict:
+            return {
+                "estimator_module": "sklearn."
+                + self.__class__.__module__.rsplit(".", 2)[-2],
+                "estimator_name": self.__class__.__name__,
+            }
+
         def _get_doc_link(self) -> str:
             # This method is meant to generate a clickable doc link for classses
             # in sklearnex including those that are not part of base scikit-learn.
@@ -80,11 +87,6 @@ class oneDALEstimator:
                 class_name = self.__class__.__name__
                 url = f"https://uxlfoundation.github.io/scikit-learn-intelex/latest/non-scikit-algorithms.html#{module_path}.{class_name}"
             else:
-                url = (
-                    BaseEstimator._get_doc_link(self)
-                    .replace(self._doc_link_module, "sklearn")
-                    .replace("preview.", "")
-                    .replace("spmd.", "")
-                )
+                url = BaseEstimator._get_doc_link(self)
 
             return url

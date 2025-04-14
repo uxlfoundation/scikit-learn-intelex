@@ -27,7 +27,9 @@ ElasticNet.predict = support_input_format(ElasticNet.predict)
 ElasticNet.score = support_input_format(ElasticNet.score)
 if sklearn_check_version("1.4"):
     ElasticNet._doc_link_module = "daal4py"
-    ElasticNet._get_doc_link = oneDALEstimator._get_doc_link
+    ElasticNet._doc_link_url_param_generator = (
+        oneDALEstimator._doc_link_url_param_generator
+    )
 
 
 # Note: `sklearnex.linear_model.Lasso` only has functional
@@ -37,4 +39,4 @@ Lasso.predict = support_input_format(Lasso.predict)
 Lasso.score = support_input_format(Lasso.score)
 if sklearn_check_version("1.4"):
     Lasso._doc_link_module = "daal4py"
-    Lasso._get_doc_link = oneDALEstimator._get_doc_link
+    Lasso._doc_link_url_param_generator = oneDALEstimator._doc_link_url_param_generator

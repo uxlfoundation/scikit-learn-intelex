@@ -25,4 +25,4 @@ TSNE.fit_transform = support_input_format(TSNE.fit_transform)
 
 if sklearn_check_version("1.4"):
     TSNE._doc_link_module = "daal4py"
-    TSNE._get_doc_link = oneDALEstimator._get_doc_link
+    TSNE._doc_link_url_param_generator = oneDALEstimator._doc_link_url_param_generator

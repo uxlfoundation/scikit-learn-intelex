@@ -47,8 +47,10 @@ def _get_backend(obj, method_name, *data):
 
     if gpu_device:
         patching_status = obj._onedal_gpu_supported(method_name, *data)
-        if not patching_status.get_status() and get_config()["allow_fallback_to_host"]:
-            config = get_config()
+        if (
+            not patching_status.get_status()
+            and (config := get_config())["allow_fallback_to_host"]
+        ):
             config["target_offload"] = "auto"
             set_config(**config)
             QM.remove_global_queue()
@@ -176,7 +178,7 @@ def wrap_output_data(func):
                     result = _convert_to_dpnp(result)
                 return result
 
-            if get_config().get("transform_output") == "default":
+            if get_config().get("transform_output") in ["default", None]:
                 input_array_api = getattr(data[0], "__array_namespace__", lambda: None)()
                 if input_array_api and not _is_numpy_namespace(input_array_api):
                     input_array_api_device = data[0].device
