@@ -12,6 +12,8 @@
 .. See the License for the specific language governing permissions and
 .. limitations under the License.
 
+.. _extension_estimators:
+
 Non-Scikit-Learn Algorithms
 ===========================
 Algorithms not presented in the original scikit-learn are described here. All algorithms are

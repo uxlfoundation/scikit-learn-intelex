@@ -131,11 +131,10 @@ To patch scikit-learn, you can:
 * [Medium Blogs](https://uxlfoundation.github.io/scikit-learn-intelex/latest/blogs.html)
 * [Code of Conduct](https://github.com/uxlfoundation/scikit-learn-intelex/blob/master/CODE_OF_CONDUCT.md)
 
-### daal4py and oneDAL
+### Extension and oneDAL
 
-The acceleration is achieved through the use of the oneAPI Data Analytics Library (oneDAL). Learn more:
-- [About oneAPI Data Analytics Library](https://github.com/uxlfoundation/oneDAL)
-- [About daal4py](https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/daal4py)
+Acceleration in patched scikit-learn classes is achieved by replacing calls to scikit-learn with calls to oneDAL (oneAPI Data Analytics Library) behind the scenes:
+- [oneAPI Data Analytics Library](https://github.com/uxlfoundation/oneDAL)
 
 ## Samples & Examples
 
