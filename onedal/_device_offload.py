@@ -15,6 +15,7 @@
 # ==============================================================================
 
 import inspect
+import logging
 from collections.abc import Iterable
 from functools import wraps
 
@@ -33,6 +34,8 @@ else:
     from onedal import _dpc_backend
 
     SyclQueue = getattr(_dpc_backend, "SyclQueue", None)
+
+logger = logging.getLogger("sklearnex")
 
 
 def supports_queue(func):
@@ -158,12 +161,17 @@ def support_input_format(func):
         else:
             self = None
 
-        # Check if the function is KNeighborsClassifier.fit
+        # KNeighbors*.fit can not be used with raw inputs, ignore `use_raw_input=True`
         override_raw_input = (
             self
             and self.__class__.__name__ in ("KNeighborsClassifier", "KNeighborsRegressor")
             and func.__name__ == "fit"
         )
+        if override_raw_input:
+            pretty_name = f"{self.__class__.__name__}.{func.__name__}"
+            logger.warning(
+                f"Using raw inputs is not supported for {pretty_name}. Ignoring `use_raw_input=True` setting."
+            )
         if _get_config()["use_raw_input"] is True and not override_raw_input:
             if "queue" not in kwargs:
                 usm_iface = getattr(args[0], "__sycl_usm_array_interface__", None)
