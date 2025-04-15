@@ -169,9 +169,9 @@ DLTensor construct_dlpack_tensor(const dal::array<byte_t> &array,
 #ifdef ONEDAL_DATA_PARALLEL
     // std::optional<sycl::queue>
     auto queue = array.get_queue();
-    dl_tensor.device = queue.has_value() ? DLDevice{kDLOneAPI, get_device_id(queue.value())} : DLDevice{kDLCPU, std::int32_t(0)};
+    tensor.device = queue.has_value() ? DLDevice{kDLOneAPI, get_device_id(queue.value())} : DLDevice{kDLCPU, std::int32_t(0)};
 #else
-    dl_tensor.device = DLDevice{kDLCPU, std::int32_t(0)};
+    tensor.device = DLDevice{kDLCPU, std::int32_t(0)};
 #endif //ONEDAL_DATA_PARALLEL
 
     // set ndim (tables are always 2 dimensional)
@@ -213,10 +213,10 @@ py::capsule construct_dlpack(const dal::table& input){
         throw pybind11::type_error("Unsupported table type for dlpack conversion");
 
     auto homogen_input = reinterpret_cast<const dal::homogen_table&>(input);
-    auto array = dal::detail::get_original_data(homogen_input);
+    auto array = new dal::array<byte_t>(dal::detail::get_original_data(homogen_input));
 
     // set tensor
-    dlm.dl_tensor = construct_dlpack_tensor(input);
+    dlm.dl_tensor = construct_dlpack_tensor(array, homogen_input.get_row_count(), homogen_input.get_column_count(), homogen_input.get_metadata().get_data_type(0), homogen_input.get_data_layout());
 
     // generate tensor deleter
     dlm.deleter = [array](struct DLManagedTensor* self) {
@@ -224,8 +224,9 @@ py::capsule construct_dlpack(const dal::table& input){
     }
 
     // create capsule
-
-}
+    py::capsule capsule(reinterpret_cast<void*>(&dlm), free_capusle);
+    capsule.set_name("dltensor");
+    return capsule;}
 
 py::object dlpack_memory_order(py::object obj) {
     DLManagedTensor* dlm;
