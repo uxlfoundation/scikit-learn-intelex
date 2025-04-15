@@ -162,7 +162,7 @@ DLTensor construct_dlpack_tensor(const dal::array<byte_t>& array,
     DLTensor tensor;
 
     // set data
-    tensor.data = const_cast<byte_t *>(array.get_data());
+    tensor.data = const_cast<byte_t*>(array.get_data());
 #ifdef ONEDAL_DATA_PARALLEL
     // std::optional<sycl::queue>
     auto queue = array.get_queue();
@@ -225,7 +225,7 @@ py::capsule construct_dlpack(const dal::table& input) {
 
     // generate tensor deleter
     dlm->deleter = [](struct DLManagedTensor* self) -> void {
-        dal::array<byte_t>* stored_array = static_cast<dal::array<byte_t>*>(self->manager_ctx);
+        auto stored_array = static_cast<dal::array<byte_t>*>(self->manager_ctx);
         if (stored_array) {
             delete stored_array;
         }
