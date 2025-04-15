@@ -86,14 +86,14 @@ def dispatch(
     **kwargs,
 ) -> Any:
     """Dispatch object method call to oneDAL if conditionally possible.
-    Depending on support conditions, oneDAL will be called otherwise it will
+    Depending on support conditions, oneDAL will be called, otherwise it will
     fall back to calling scikit-learn.  Dispatching to oneDAL can be influenced
     by the 'use_raw_input' or 'allow_fallback_to_host' config parameters.
 
     Parameters
     ----------
     obj : object
-        sklearnex object which inherits oneDALEstimator and contains
+        sklearnex object which inherits from oneDALEstimator and contains
         ``onedal_cpu_supported`` and ``onedal_gpu_supported`` methods which
         evaluate oneDAL support.
 
@@ -105,7 +105,7 @@ def dispatch(
         'onedal' are used which should contain the relevant scikit-learn and
         onedal object methods respectively. All functions should accept the
         inputs from *args and **kwargs. Additionally, the onedal object method
-        must additionally accept a 'queue' keyword.
+        must accept a 'queue' keyword.
 
     *args : tuple
         arguments to be supplied to the dispatched method
@@ -128,7 +128,7 @@ def dispatch(
     sklearn_array_api = _array_api_offload() and get_tags(obj).array_api_support
 
     # backend can only be a boolean or None, None signifies an unverified backend
-    backend = None
+    backend: "bool | None" = None
 
     # config context needs to be saved, as the sycl_queue_manager interacts with
     # target_offload, which can regenerate a GPU queue later on. Therefore if a

@@ -21,7 +21,8 @@ from .validation import assert_all_finite
 # Not an ideal solution, but this allows for access to the outputs of older
 # sklearnex tag dictionaries in a way similar to the sklearn >=1.6 tag
 # dataclasses via duck-typing. At some point this must be removed for direct
-# use of get_tags in all circumstances, dictated by sklearn support.  This is
+# use of get_tags in all circumstances, dictated by sklearn support. This is
+
 # implemented in a way to minimally impact performance.
 
 if sklearn_check_version("1.6"):
@@ -31,4 +32,5 @@ else:
 
     get_tags = lambda obj: type("Tags", (), BaseEstimator._get_tags(obj))
 
-__all__ = ["assert_all_finite", "get_tags"]
+__all__ = ["assert_all_finite"]
+
