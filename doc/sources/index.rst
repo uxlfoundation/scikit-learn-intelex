@@ -52,7 +52,9 @@ Optimizations
 Enable CPU Optimizations
 *********************************
 
-::
+- By patching:
+
+.. code-block:: python
 
    import numpy as np
    from sklearnex import patch_sklearn
@@ -64,12 +66,23 @@ Enable CPU Optimizations
                  [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
    clustering = DBSCAN(eps=3, min_samples=2).fit(X)
 
+- Without patching:
+
+.. code-block:: python
+
+   import numpy as np
+   from sklearnex.cluster import DBSCAN
+
+   X = np.array([[1., 2.], [2., 2.], [2., 3.],
+                 [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
+   clustering = DBSCAN(eps=3, min_samples=2).fit(X)
+
 Enable GPU optimizations
 *********************************
 
 Note: executing on GPU has `additional system software requirements <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`__ - see :doc:`oneapi-gpu`.
 
-::
+.. code-block:: python
 
    import numpy as np
    from sklearnex import patch_sklearn, config_context
@@ -82,6 +95,8 @@ Note: executing on GPU has `additional system software requirements <https://www
    with config_context(target_offload="gpu:0"):
        clustering = DBSCAN(eps=3, min_samples=2).fit(X)
 
+
+See :ref:`oneapi_gpu` for other ways of executing on GPU.
 
 
 .. toctree::
