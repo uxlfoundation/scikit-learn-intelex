@@ -33,4 +33,3 @@ else:
     get_tags = lambda obj: type("Tags", (), BaseEstimator._get_tags(obj))
 
 __all__ = ["assert_all_finite"]
-
