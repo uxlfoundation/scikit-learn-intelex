@@ -154,6 +154,66 @@ dal::table convert_to_table(py::object obj, py::object q_obj, bool recursed) {
     return res;
 }
 
+
+DLTensor construct_dlpack_tensor(const dal::table& input){
+    DLTensor tensor;
+    // check table type and expose oneDAL array
+    if (input.get_kind() != dal::homogen_table::kind())
+        throw pybind11::type_error("Unsupported table type for dlpack conversion");
+
+    auto homogen_input = reinterpret_cast<const dal::homogen_table&>(input);
+    auto array = dal::detail::get_original_data(homogen_input);
+
+    // set data
+    tensor.data = array.has_mutable_data() ? static_cast<void *>(array.get_mutable_data())
+                                           : static_cast<void *>(array.get_data());
+    // set device
+#ifdef ONEDAL_DATA_PARALLEL
+    // std::optional<sycl::queue>
+    auto queue = array.get_queue();
+    dl_tensor.device = queue.has_value() ? DLDevice{kDLOneAPI, get_device_id(queue.value())} : DLDevice{kDLCPU, std::int32_t(0)};
+#else
+    dl_tensor.device = DLDevice{kDLCPU, std::int32_t(0)};
+#endif //ONEDAL_DATA_PARALLEL
+
+    // set ndim (tables are always 2 dimensional)
+    tensor.ndim = std::int32_t(2);
+
+    // set dtype
+    const dal::data_type dtype = homogen_input.get_metadata().get_data_type(0);
+    tensor.dtype = convert_dal_to_dlpack_type(dtype);
+
+    std::int64_t r_count = homogen_input.get_row_count();
+    std::int64_t c_count = homogen_input.get_column_count();
+    // set shape int64_t, which is the output type of a homogen table
+    tensor.shape = {r_count, c_count};
+
+    // set strides int64_t which can be reused from the set tensor shapes
+    tensor.strides = data_layout == dal::data_layout::row_major ? {c_count, std::int64_t(1)} : {std::int64_t(1), r_count};
+    // set offset
+    tensor.byte_offset = std::uint64_t(0);
+
+    return tensor;
+}
+
+py::capsule construct_dlpack(const dal::table& input){
+    DLManagedTensorVersioned dlmv;
+
+    // set version
+    dmlv.version = DLPackVersion{DLPACK_MAJOR_VERSION, DLPACK_MINOR_VERSION};
+
+    // set flags (not read only and not copied, default value)
+    dlmv.flags = 0;
+
+    // set tensor
+    dlmv.dl_tensor = construct_dlpack_tensor(input);
+
+    // generate capsule deleter
+
+    // create capsule
+
+}
+
 py::object dlpack_memory_order(py::object obj) {
     DLManagedTensor* dlm;
     DLManagedTensorVersioned* dlmv;
