@@ -31,7 +31,7 @@ def is_dpctl_available(version=None):
         import dpctl.tensor as dpt
 
         dpctl_available = True
-    except ImportError:
+    except ModuleNotFoundError:
         dpctl_available = False
     if dpctl_available and version is not None:
         dpctl_available = _package_check_version(version, dpctl.__version__)
@@ -45,7 +45,7 @@ def is_dpnp_available(version=None):
         import dpnp
 
         dpnp_available = True
-    except ImportError:
+    except ModuleNotFoundError:
         dpnp_available = False
     if dpnp_available and version is not None:
         dpnp_available = _package_check_version(version, dpnp.__version__)
