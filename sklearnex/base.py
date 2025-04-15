@@ -79,14 +79,14 @@ class oneDALEstimator:
             # The next object in the Estimators MRO after oneDALEstimator should be
             # the equivalent sklearn estimator, if it is BaseEstimator, it is a
             # sklearnex-only estimator.
-            if (
-                oneDALEstimator in mro
+            url = BaseEstimator._get_doc_link(self)
+            if ( 
+                url
+                and oneDALEstimator in mro
                 and mro[mro.index(oneDALEstimator) + 1] is BaseEstimator
             ):
                 module_path, _ = self.__class__.__module__.rsplit(".", 1)
                 class_name = self.__class__.__name__
-                url = f"https://uxlfoundation.github.io/scikit-learn-intelex/latest/non-scikit-algorithms.html#{module_path}.{class_name}"
-            else:
-                url = BaseEstimator._get_doc_link(self)
+                url = f"https://uxlfoundation.github.io/scikit-learn-intelex/latest/non-scikit-algorithms.html#{module_path}.{class_name}"                
 
             return url
