@@ -154,6 +154,31 @@ dal::table convert_to_table(py::object obj, py::object q_obj, bool recursed) {
     return res;
 }
 
+DLDevice get_dlpack_device(const dal::array<byte_t>& array) {
+    DLDevice device;
+#ifdef ONEDAL_DATA_PARALLEL
+    // std::optional<sycl::queue>
+    auto queue = array.get_queue();
+    device = queue.has_value()
+                 ? DLDevice{ kDLOneAPI, static_cast<std::int32_t>(get_device_id(queue.value())) }
+                 : DLDevice{ kDLCPU, std::int32_t(0) };
+#else
+    device = DLDevice{ kDLCPU, std::int32_t(0) };
+#endif //ONEDAL_DATA_PARALLEL
+    return device;
+}
+
+DLDevice get_dlpack_device(const dal::table& input) {
+    if (input.get_kind() == dal::homogen_table::kind()) {
+        auto homogen_input = reinterpret_cast<const dal::homogen_table&>(input);
+        dal::array<byte_t> array = dal::detail::get_original_data(homogen_input);
+        return get_dlpack_device(array);
+    }
+    else {
+        return DLDevice{ kDLCPU, std::int32_t(0) };
+    }
+}
+
 DLTensor construct_dlpack_tensor(const dal::array<byte_t>& array,
                                  std::int64_t row_count,
                                  std::int64_t column_count,
@@ -163,17 +188,7 @@ DLTensor construct_dlpack_tensor(const dal::array<byte_t>& array,
 
     // set data
     tensor.data = const_cast<byte_t*>(array.get_data());
-#ifdef ONEDAL_DATA_PARALLEL
-    // std::optional<sycl::queue>
-    auto queue = array.get_queue();
-    tensor.device =
-        queue.has_value()
-            ? DLDevice{ kDLOneAPI, static_cast<std::int32_t>(get_device_id(queue.value())) }
-            : DLDevice{ kDLCPU, std::int32_t(0) };
-#else
-    tensor.device = DLDevice{ kDLCPU, std::int32_t(0) };
-#endif //ONEDAL_DATA_PARALLEL
-
+    tensor.device = get_dlpack_device(array);
     tensor.ndim = std::int32_t(2);
     tensor.dtype = convert_dal_to_dlpack_type(dtype);
 
