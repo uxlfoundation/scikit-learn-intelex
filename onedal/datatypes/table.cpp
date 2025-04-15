@@ -77,6 +77,7 @@ ONEDAL_PY_INIT_MODULE(table) {
         // returns a numpy dtype, even if source was not from numpy
         return py::dtype(numpy::convert_dal_to_npy_type(t.get_metadata().get_data_type(0)));
     });
+    table_obj.def("__dlpack__", &dlpack::construct_dlpack);
 
 #ifdef ONEDAL_DATA_PARALLEL
     sycl_usm::define_sycl_usm_array_property(table_obj);
