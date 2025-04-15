@@ -154,58 +154,57 @@ dal::table convert_to_table(py::object obj, py::object q_obj, bool recursed) {
     return res;
 }
 
-
-DLTensor construct_dlpack_tensor(const dal::array<byte_t> &array,
-    std::int64_t row_count,
-    std::int64_t column_count,
-    const dal::data_type &dtype
-    const dal::data_layout &layout){
+DLTensor construct_dlpack_tensor(const dal::array<byte_t>& array,
+                                 std::int64_t row_count,
+                                 std::int64_t column_count,
+                                 const dal::data_type& dtype,
+                                 const dal::data_layout& layout) {
     DLTensor tensor;
 
-
     // set data
-    tensor.data = array.get_data();
+    tensor.data = array.get_mutable_data();
     // set device
 #ifdef ONEDAL_DATA_PARALLEL
     // std::optional<sycl::queue>
     auto queue = array.get_queue();
-    tensor.device = queue.has_value() ? DLDevice{kDLOneAPI, get_device_id(queue.value())} : DLDevice{kDLCPU, std::int32_t(0)};
+    tensor.device = queue.has_value() ? DLDevice{ kDLOneAPI, get_device_id(queue.value()) }
+                                      : DLDevice{ kDLCPU, std::int32_t(0) };
 #else
-    tensor.device = DLDevice{kDLCPU, std::int32_t(0)};
+    tensor.device = DLDevice{ kDLCPU, std::int32_t(0) };
 #endif //ONEDAL_DATA_PARALLEL
 
     // set ndim (tables are always 2 dimensional)
     tensor.ndim = std::int32_t(2);
 
     // set dtype
-    const dal::data_type dtype = homogen_input.get_metadata().get_data_type(0);
     tensor.dtype = convert_dal_to_dlpack_type(dtype);
 
     // set shape int64_t, which is the output type of a homogen table
-    tensor.shape = {row_count, column_count};
+    tensor.shape = layout == dal::data_layout::row_major ? new int64_t{ row_count, column_count} : new int64_t{ row_count, column_count, std::int64_t(1), row_count };
 
     // set strides int64_t which can be reused from the set tensor shapes, statically allocated
-    tensor.strides = homogen_input.get_data_layout() == dal::data_layout::row_major ? {column_count, std::int64_t(1)} : {std::int64_t(1), row_count};
+    // take strategy from dpctl tensors in having a single array allocation by tensor.shape.
+    tensor.strides = layout == dal::data_layout::row_major ? nullptr : tensor.shape + 2;
+
     // set offset
     tensor.byte_offset = std::uint64_t(0);
 
     return tensor;
 }
 
-
-static void free_capsule(PyObject *cap) {
-    DLManagedTensor *dlm = nullptr;
-    if PyCapsule_IsValid(cap, "dltensor"){
-        dlm = <DLManagedTensor*>PyCapsule_GetPointer(cap, "dltensor");
-        if (dlm->deleter){
+static void free_capsule(PyObject* cap) {
+    DLManagedTensor* dlm = nullptr;
+    if (PyCapsule_IsValid(cap, "dltensor")) {
+        dlm = <DLManagedTensor*> PyCapsule_GetPointer(cap, "dltensor");
+        if (dlm->deleter) {
             dlm->deleter(dlm);
         }
     }
 }
 
-py::capsule construct_dlpack(const dal::table& input){
+py::capsule construct_dlpack(const dal::table& input) {
     // DLManagedTensor is used instead of DLManagedTensorVersioned
-    // due to major frameworks not supporting the latter.
+    // due to major frameworks not yet supporting the latter.
     DLManagedTensor dlm;
 
     // check table type and expose oneDAL array
@@ -216,17 +215,25 @@ py::capsule construct_dlpack(const dal::table& input){
     auto array = new dal::array<byte_t>(dal::detail::get_original_data(homogen_input));
 
     // set tensor
-    dlm.dl_tensor = construct_dlpack_tensor(array, homogen_input.get_row_count(), homogen_input.get_column_count(), homogen_input.get_metadata().get_data_type(0), homogen_input.get_data_layout());
+    dlm.dl_tensor = construct_dlpack_tensor(array,
+                                            homogen_input.get_row_count(),
+                                            homogen_input.get_column_count(),
+                                            homogen_input.get_metadata().get_data_type(0),
+                                            homogen_input.get_data_layout());
 
     // generate tensor deleter
-    dlm.deleter = [array](struct DLManagedTensor* self) {
-        delete array;
-    }
+    dlm.deleter =
+        [array](struct DLManagedTensor* self) {
+            delete array;
+            delete [] self->dl_tensor.shape;
+            delete self;
+        }
 
     // create capsule
     py::capsule capsule(reinterpret_cast<void*>(&dlm), free_capusle);
     capsule.set_name("dltensor");
-    return capsule;}
+    return capsule;
+}
 
 py::object dlpack_memory_order(py::object obj) {
     DLManagedTensor* dlm;
