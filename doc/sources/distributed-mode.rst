@@ -25,7 +25,7 @@ SPMD (multi-GPU distributed mode)
 Several :doc:`GPU-supported algorithms <oneapi-gpu>`
 also provide distributed, multi-GPU computing capabilities via integration with |mpi4py|. The prerequisites
 match those of GPU computing, along with an MPI backend of your choice (`Intel MPI recommended
-<https://www.intel.com/content/www/us/en/developer/tools/oneapi/mpi-library.html#gs.dcan6r>`_, available
+<https://www.intel.com/content/www/us/en/developer/tools/oneapi/mpi-library.html>`_, available
 via ``impi_rt`` python package) and the |mpi4py| python package. If using |sklearnex|
 `installed from sources <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/INSTALL.md#build-from-sources>`_,
 ensure that the spmd_backend is built.

@@ -500,9 +500,9 @@ class build(onedal_build, orig_build.build):
 
 
 project_urls = {
-    "Bug Tracker": "https://github.com/uxlfoundation/scikit-learn-intelex",
-    "Documentation": "https://intelpython.github.io/daal4py/",
-    "Source Code": "https://github.com/uxlfoundation/scikit-learn-intelex/daal4py",
+    "Bug Tracker": "https://github.com/uxlfoundation/scikit-learn-intelex/issues",
+    "Documentation": "https://uxlfoundation.github.io/scikit-learn-intelex/",
+    "Source Code": "https://github.com/uxlfoundation/scikit-learn-intelex",
 }
 
 with open("README.md", "r", encoding="utf8") as f:
