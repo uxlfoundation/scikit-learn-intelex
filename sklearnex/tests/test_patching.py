@@ -46,7 +46,7 @@ from sklearnex.tests.utils import (
     gen_dataset,
     gen_models_info,
 )
-from sklearnex.utils import get_tags
+from sklearnex._utils import get_tags
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
