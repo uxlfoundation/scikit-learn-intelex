@@ -16,6 +16,7 @@
 
 # daal4py Model builders API
 
+import warnings
 from typing import Literal, Optional
 
 import numpy as np
@@ -91,21 +92,25 @@ class GBTDAALBaseModel:
     def _get_params_from_catboost(self, params):
         if "class_params" in params["model_info"]:
             self.n_classes_ = len(params["model_info"]["class_params"]["class_to_label"])
+        else:
+            self.n_classes_ = 1
         self.n_features_in_ = len(params["features_info"]["float_features"])
 
     def _convert_model_from_lightgbm(self, booster):
         lgbm_params = get_lightgbm_params(booster)
         self.daal_model_ = get_gbt_model_from_lightgbm(booster, lgbm_params)
         self._get_params_from_lightgbm(lgbm_params)
+        self.supports_shap_ = self.n_classes_ < 3
 
     def _convert_model_from_xgboost(self, booster):
         xgb_params = get_xgboost_params(booster)
         self.daal_model_ = get_gbt_model_from_xgboost(booster, xgb_params)
         self._get_params_from_xgboost(xgb_params)
+        self.supports_shap_ = self.n_classes_ < 3
 
     def _convert_model_from_catboost(self, booster):
         catboost_params = get_catboost_params(booster)
-        self.daal_model_ = get_gbt_model_from_catboost(booster)
+        self.daal_model_, self.supports_shap_ = get_gbt_model_from_catboost(booster)
         self._get_params_from_catboost(catboost_params)
 
     def _convert_model(self, model):
@@ -249,12 +254,13 @@ class GBTDAALBaseModel:
                 X, fptype, pred_contribs, pred_interactions
             )
         except TypeError as e:
-            if "unexpected keyword argument 'resultsToCompute'" in str(e):
-                if pred_contribs or pred_interactions:
-                    # SHAP values requested, but not supported by this version
-                    raise TypeError(
-                        f"{'pred_contribs' if pred_contribs else 'pred_interactions'} not supported by this version of daalp4y"
-                    ) from e
+            if "unexpected keyword argument 'resultsToCompute'" in str(e) and (
+                pred_contribs or pred_interactions
+            ):
+                # SHAP values requested, but not supported by this version
+                raise TypeError(
+                    f"{'pred_contribs' if pred_contribs else 'pred_interactions'} not supported by this version of daalp4y"
+                ) from e
             else:
                 # unknown type error
                 raise
@@ -316,6 +322,15 @@ class GBTDAALModel(GBTDAALBaseModel):
     model : booster object from another library
         The fitted GBT model from which this object will be created. See rest of the documentation
         for supported input types.
+
+    Attributes
+    ----------
+    is_classifier_ : bool
+        Whether this is a classification model.
+    is_regressor_ : bool
+        Whether this is a regression model.
+    supports_shap_ : bool
+        Whether the model supports SHAP calculations.
     """
 
     def __init__(self, model):
@@ -345,14 +360,19 @@ class GBTDAALModel(GBTDAALBaseModel):
 
         :rtype: np.ndarray
         """
+        if pred_contribs or pred_interactions:
+            if not self.supports_shap_:
+                raise TypeError("SHAP calculations are not available for this model.")
+            if self.model_type == "catboost":
+                warnings.warn(
+                    "SHAP values from models converted from CatBoost do not match "
+                    "against those of the original library. See "
+                    "https://github.com/catboost/catboost/issues/2556 for more details."
+                )
         fptype = getFPType(X)
         if self._is_regression:
             return self._predict_regression(X, fptype, pred_contribs, pred_interactions)
         else:
-            if (pred_contribs or pred_interactions) and self.model_type != "xgboost":
-                raise NotImplementedError(
-                    f"{'pred_contribs' if pred_contribs else 'pred_interactions'} is not implemented for classification models"
-                )
             return self._predict_classification(
                 X, fptype, "computeClassLabels", pred_contribs, pred_interactions
             )
