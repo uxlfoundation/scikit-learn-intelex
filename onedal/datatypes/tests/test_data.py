@@ -609,5 +609,5 @@ def test_table___dlpack__(dataframe, queue, order, data_shape, dtype):
     # important for testing ``dlpack::free_capsule``
     capsule = X_table.__dlpack__()
     assert_allclose(np.squeeze(from_table(X_table)), np.squeeze(X))
-    del capsule    
+    del capsule
     assert_allclose(np.squeeze(from_table(X_table)), np.squeeze(X))
