@@ -1355,6 +1355,30 @@ def test_catboost_multiclass_classification(
 
 
 @pytest.mark.skipif(not cb_available, reason=cb_unavailable_str)
+def test_catboost_default_objective():
+    X, y = make_regression(n_samples=12, n_features=3, random_state=123)
+    cb_model = cb.train(
+        pool=cb.Pool(X, y),
+        params={
+            "depth": 2,
+            "random_seed": 123,
+            "thread_count": 1,
+            "allow_writing_files": False,
+        },
+        num_boost_round=2,
+        verbose=0,
+        save_snapshot=False,
+    )
+    d4p_model = d4p.mb.convert_model(cb_model)
+    np.testing.assert_allclose(
+        d4p_model.predict(X),
+        cb_model.predict(X, prediction_type="RawFormulaVal"),
+        atol=1e-5,
+        rtol=1e-5,
+    )
+
+
+@pytest.mark.skipif(not cb_available, reason=cb_unavailable_str)
 def test_catboost_unsupported():
     X, y = make_regression(n_samples=10, n_features=2, n_targets=2, random_state=123)
     cb_model = cb.CatBoostRegressor(
