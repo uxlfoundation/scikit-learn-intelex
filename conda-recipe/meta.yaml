@@ -79,7 +79,6 @@ test:
     - pyyaml
     - impi_rt  # [not win]
     # DPC part of sklearnex is optional
-    - dpcpp-cpp-rt  # [linux64]
     # TODO: enable data parallel frameworks when they are available on conda-forge
     # - dpctl
     # - dpnp
