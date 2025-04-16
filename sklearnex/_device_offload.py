@@ -28,9 +28,8 @@ if dpnp_available:
     from onedal.utils._array_api import _convert_to_dpnp
 
 from ._config import config_context, get_config, set_config
-from ._utils import PatchingConditionsChain
+from ._utils import PatchingConditionsChain, get_tags
 from .base import oneDALEstimator
-from .utils import get_tags
 
 
 def _get_backend(
@@ -39,9 +38,10 @@ def _get_backend(
     """This function verifies the hardware conditions, data characteristics, and
     estimator parameters necessary for offloading computation to oneDAL. The status
     of this patching is returned as a PatchingConditionsChain object along with a
-    boolean flag signaling whether the computation can be offloaded to oneDAL or not. It is assumed that the
-    queue (which determined what hardware to possibly use for oneDAL) has been
-    previously and extensively collected (i.e. the data has already been checked)."""
+    boolean flag signaling whether the computation can be offloaded to oneDAL or not.
+    It is assumed that the queue (which determined what hardware to possibly use for
+    oneDAL) has been previously and extensively collected (i.e. the data has already
+    been checked using onedal's SyclQueueManager for queues)."""
     queue = QM.get_global_queue()
     cpu_device = queue is None or getattr(queue.sycl_device, "is_cpu", True)
     gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)

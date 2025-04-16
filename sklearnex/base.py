@@ -29,6 +29,22 @@ if sklearn_check_version("1.6"):
 
 
 class oneDALEstimator:
+    """Inherited class for all oneDAL-based estimators.
+
+    This class must be inherited before any scikit-learn estimator
+    classes (i.e. those who import scikit-learn's BaseEstimator).
+
+    It enables:
+    - dispatching to oneDAL
+    - html documentation
+
+    Notes
+    -----
+    Sklearnex-only estimators must inherit this class directly before
+    BaseEstimator in order to properly render documentation.  Other
+    sklearn classes like Mixins can be before this class in the MRO
+    without any impact on functionality.
+    """
 
     if sklearn_check_version("1.6"):
         # Starting in sklearn 1.6, _more_tags is deprecated. An oneDALEstimator

@@ -28,6 +28,20 @@ from daal4py.sklearn._utils import (
 )
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 
+# Not an ideal solution, but this allows for access to the outputs of older
+# sklearnex tag dictionaries in a way similar to the sklearn >=1.6 tag
+# dataclasses via duck-typing. At some point this must be removed for direct
+# use of get_tags in all circumstances, dictated by sklearn support. This is
+
+# implemented in a way to minimally impact performance.
+
+if sklearn_check_version("1.6"):
+    from sklearn.utils import get_tags
+else:
+    from sklearn.base import BaseEstimator
+
+    get_tags = lambda obj: type("Tags", (), BaseEstimator._get_tags(obj))
+
 
 class PatchingConditionsChain(daal4py_PatchingConditionsChain):
     def get_status(self):
