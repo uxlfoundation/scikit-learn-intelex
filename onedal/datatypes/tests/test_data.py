@@ -604,3 +604,10 @@ def test_table___dlpack__(dataframe, queue, order, data_shape, dtype):
     else:
         # only some numpy versions support array_api and from_dlpack
         pytest.skip(f"{dataframe} does not have an __array_namespace__ attribute")
+
+    # test capsule deletion, should have no impact on underlying memory
+    # important for testing ``dlpack::free_capsule``
+    capsule = X_table.__dlpack__()
+    assert_allclose(np.squeeze(from_table(X_table)), np.squeeze(X))
+    del capsule    
+    assert_allclose(np.squeeze(from_table(X_table)), np.squeeze(X))
