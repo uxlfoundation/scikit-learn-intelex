@@ -15,7 +15,6 @@
 # ==============================================================================
 
 from collections.abc import Callable
-from contextlib import nullcontext
 from functools import wraps
 from typing import Any, Union
 
@@ -57,9 +56,7 @@ def _get_backend(
             not patching_status.get_status()
             and (config := get_config())["allow_fallback_to_host"]
         ):
-            config["target_offload"] = "auto"
-            set_config(**config)
-            QM.remove_global_queue()
+            QM.fallback_to_host()
             return None, patching_status
         return patching_status.get_status(), patching_status
 
@@ -70,12 +67,6 @@ if "array_api_dispatch" in get_config():
     _array_api_offload = lambda: get_config()["array_api_dispatch"]
 else:
     _array_api_offload = lambda: False
-
-_save_context = lambda: (
-    config_context(**get_config())
-    if get_config()["allow_fallback_to_host"]
-    else nullcontext()
-)
 
 
 def dispatch(
@@ -136,7 +127,7 @@ def dispatch(
     # so that later use of get_global_queue only sends to host. We must modify
     # the target offload settings, but we must also set the original value at the
     # end, hence the need of a contextmanager.
-    with QM.manage_global_queue(None, *args), _save_context():
+    with QM.manage_global_queue(None, *args):
         if onedal_array_api:
             backend, patching_status = _get_backend(obj, method_name, *args)
             if backend:
