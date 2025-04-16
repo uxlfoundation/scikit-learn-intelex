@@ -571,7 +571,7 @@ def get_gbt_model_from_catboost(booster: Any) -> Any:
             "Categorical features are not supported in daal4py Gradient Boosting Trees"
         )
 
-    objective = booster.get_params().get("objective")
+    objective = booster.get_all_params()["objective"]
     if (
         "Rank" in objective
         or "Query" in objective
