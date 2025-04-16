@@ -39,7 +39,7 @@ def _get_backend(
     """This function verifies the hardware conditions, data characteristics, and
     estimator parameters necessary for offloading computation to oneDAL. The status
     of this patching is returned as a PatchingConditionsChain object along with a
-    boolean flag determining if to be computed with oneDAL. It is assumed that the
+    boolean flag signaling whether the computation can be offloaded to oneDAL or not. It is assumed that the
     queue (which determined what hardware to possibly use for oneDAL) has been
     previously and extensively collected (i.e. the data has already been checked)."""
     queue = QM.get_global_queue()
@@ -60,7 +60,7 @@ def _get_backend(
             return None, patching_status
         return patching_status.get_status(), patching_status
 
-    raise RuntimeError("Device support is not implemented")
+    raise RuntimeError("Device support is not implemented for the supplied data type.")
 
 
 if "array_api_dispatch" in get_config():
