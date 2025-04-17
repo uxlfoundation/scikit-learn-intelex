@@ -56,13 +56,13 @@ def to_table(*args, queue=None):
     return _apply_and_pass(_convert_one_to_table, *args, queue=queue)
 
 def return_type_constructor(array):
-    """generate function for converting oneDAL tables to arrays.
+    """generator function for converting oneDAL tables to arrays.
 
     Note: this implementation will convert any table to numpy ndarrays,
-    scipy csr_arrays, dpctl/dpnp usm_ndarrays, and array API standard 
+    scipy csr_arrays, dpctl/dpnp usm_ndarrays, and array API standard
     arrays of designated type. By default, from_table will return numpy
-    arrays and can only return other types when necessary object 
-    attributes exist (i.e. ``__sycl_usm_array_interface__`` or 
+    arrays and can only return other types when necessary object
+    attributes exist (i.e. ``__sycl_usm_array_interface__`` or
     ``__array_namespace__``).
 
     Parameters
@@ -72,7 +72,7 @@ def return_type_constructor(array):
         for converting oneDAL tables. Arrays are queried for conversion
         namespace when of sycl_usm_array type or array API standard type.
         When set to None, will return numpy arrays or scipy csr arrays.
-        
+
     Returns
     -------
     func: callable
@@ -105,10 +105,10 @@ def from_table(*args, array=None):
     """Create 2 dimensional arrays from oneDAL tables.
 
     Note: this implementation will convert any table to numpy ndarrays,
-    scipy csr_arrays, dpctl/dpnp usm_ndarrays, and array API standard 
+    scipy csr_arrays, dpctl/dpnp usm_ndarrays, and array API standard
     arrays of designated type. By default, from_table will return numpy
-    arrays and can only return other types when necessary object 
-    attributes exist (i.e. ``__sycl_usm_array_interface__`` or 
+    arrays and can only return other types when necessary object
+    attributes exist (i.e. ``__sycl_usm_array_interface__`` or
     ``__array_namespace__``).
 
     Parameters
@@ -122,7 +122,7 @@ def from_table(*args, array=None):
         desired type. Arrays are queried for conversion namespace when
         of sycl_usm_array type or array API standard type. When set to
         None, will return numpy arrays or scipy csr arrays.
-        
+
     Returns
     -------
     arrays: numpy arrays, sycl_usm_ndarrays, or array API standard arrays
