@@ -20,11 +20,13 @@ import glob
 
 # System imports
 import os
+import sys
+
+os.environ["CXX"] = "icx" if (sys.platform in ["win32", "cygwin"]) else "icpx"
 import pathlib
 import platform as plt
 import re
 import shutil
-import sys
 import time
 from ctypes.util import find_library
 from os.path import join as jp
