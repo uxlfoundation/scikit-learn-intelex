@@ -119,8 +119,11 @@ Limitations
 -----------
 
 - Models with categorical features are not supported.
+- Multi-class classification is only supported when the logic corresponds to multinomial logistic loss
+  instead of one-vs-rest.
 - Multioutput models are not supported.
-- SHAP values can be calculated for regression models only.
+- SHAP values cannot be calculated for multi-class classification models, nor for CatBoost regression models
+  from loss functions that involve link functions (e.g. can be calculated for 'RMSE', but not for 'Poisson').
 - Objectives that are not for regression nor classification (e.g. ranking) are not supported.
 
 Documentation
