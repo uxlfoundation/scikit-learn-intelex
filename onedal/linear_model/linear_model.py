@@ -153,7 +153,7 @@ class BaseLinearRegression(metaclass=ABCMeta):
         X_table = to_table(X, queue=queue)
         params = self._get_onedal_params(X_table.dtype)
         result = self.infer(params, model, X_table)
-        y = from_table(result.responses, sua_iface=sua_iface, sycl_queue=queue, xp=xp)
+        y = from_table(result.responses, like=X)
 
         if y.shape[1] == 1 and self.coef_.ndim == 1:
             return xp.reshape(y, (-1,))
@@ -241,7 +241,7 @@ class LinearRegression(BaseLinearRegression):
         self._onedal_model = result.model
 
         packed_coefficients = from_table(
-            result.model.packed_coefficients, sycl_queue=queue
+            result.model.packed_coefficients, like=X
         )
         self.coef_, self.intercept_ = (
             packed_coefficients[:, 1:],
