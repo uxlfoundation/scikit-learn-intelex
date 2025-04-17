@@ -35,7 +35,7 @@ class oneDALEstimator:
     classes (i.e. those which inherit from scikit-learn's BaseEstimator).
 
     It enables:
-    
+
       - dispatching to oneDAL
       - html documentation
 

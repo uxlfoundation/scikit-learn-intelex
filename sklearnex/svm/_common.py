@@ -15,7 +15,6 @@
 # ==============================================================================
 
 import warnings
-from abc import ABC
 from numbers import Number, Real
 
 import numpy as np
@@ -35,7 +34,7 @@ from ..base import oneDALEstimator
 from ..utils.validation import validate_data
 
 
-class BaseSVM(oneDALEstimator, ABC):
+class BaseSVM(oneDALEstimator):
 
     @property
     def _dual_coef_(self):
