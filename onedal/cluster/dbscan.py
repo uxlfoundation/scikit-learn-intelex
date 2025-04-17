@@ -78,14 +78,14 @@ class DBSCAN(ClusterMixin):
         params = self._get_onedal_params(X_table.dtype)
         result = self.compute(params, X_table, sample_weight_table)
 
-        self.labels_ = from_table(result.responses, sycl_queue=queue).ravel()
+        self.labels_ = from_table(result.responses, array=X).ravel()
         if (
             result.core_observation_indices is not None
             and not result.core_observation_indices.kind == "empty"
         ):
             self.core_sample_indices_ = from_table(
                 result.core_observation_indices,
-                sycl_queue=queue,
+                array=X,
             ).ravel()
         else:
             # construct keyword arguments for different namespaces (dptcl takes sycl_queue)
