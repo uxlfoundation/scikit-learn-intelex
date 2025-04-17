@@ -117,14 +117,14 @@ class EmpiricalCovariance(BaseEmpiricalCovariance):
         else:
             result = self.compute(params, X)
         if daal_check_version((2024, "P", 1)) or (not self.bias):
-            self.covariance_ = from_table(result.cov_matrix, sycl_queue=queue)
+            self.covariance_ = from_table(result.cov_matrix, like=X)
         else:
             self.covariance_ = (
-                from_table(result.cov_matrix, sycl_queue=queue)
+                from_table(result.cov_matrix, like=X)
                 * (X.shape[0] - 1)
                 / X.shape[0]
             )
 
-        self.location_ = from_table(result.means, sycl_queue=queue).ravel()
+        self.location_ = from_table(result.means, like=X).ravel()
 
         return self
