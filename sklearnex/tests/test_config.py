@@ -149,11 +149,14 @@ def test_fallback_to_host(caplog):
             return patching_status
 
         def _onedal_test(self, *args, queue=None):
-            assert (
-                queue is not None
-                or sklearnex.get_config()["target_offload"] == "auto"
-                and QM.get_global_queue() is None
-            )
+            if args[0] == "cpu":
+                assert (
+                    queue is None
+                    and QM.__global_queue == QM.__fallback_queue
+                    and QM.get_global_queue() is None
+                )
+            elif args[0] == "gpu":
+                assert queue is not None and QM.get_global_queue() is not None
 
     start = 0
     est = _Estimator()
