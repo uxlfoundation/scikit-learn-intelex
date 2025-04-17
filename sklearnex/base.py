@@ -32,11 +32,12 @@ class oneDALEstimator:
     """Inherited class for all oneDAL-based estimators.
 
     This class must be inherited before any scikit-learn estimator
-    classes (i.e. those who import scikit-learn's BaseEstimator).
+    classes (i.e. those which inherit from scikit-learn's BaseEstimator).
 
     It enables:
-    - dispatching to oneDAL
-    - html documentation
+    
+      - dispatching to oneDAL
+      - html documentation
 
     Notes
     -----
