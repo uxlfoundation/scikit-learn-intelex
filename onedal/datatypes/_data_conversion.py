@@ -55,43 +55,55 @@ def to_table(*args, queue=None):
     """
     return _apply_and_pass(_convert_one_to_table, *args, queue=queue)
 
+def return_type_constructor(array):
+    func = backend.from_table
+    if isintance(array, np.ndarray):
+        pass
+    elif hasattr(array, "__sycl_usm_array_interface__"):
+        # oneDAL returns tables without sycl queues for CPU sycl queue inputs.
+        # This workaround is necessary for the functional preservation
+        # of the compute-follows-data execution.
+        device = array.sycl_queue if array.sycl_device.is_cpu else None
+        # Its important to note why the __sycl_usm_array_interface__ is treated
+        # separately.  It provides finer-grained control of SYCL queues and the 
+        # related SYCL devices which are generally unavailable via DLPack
+        # representations (such as SYCL contexts, SYCL sub-devices, etc.).
+        if hasattr(array, "__array_namespace__"):
+            xp = array.__array_namespace__()
+            func = lambda x: xp.asarray(x, device=device)
+        elif hasattr(array, "_create_from_usm_ndarray"):  # signifier of dpnp < 0.19
+            xp = array._array_obj.__array_namespace__()
+            from_usm = array._create_from_usm_ndarray
+            func = lambda x: from_usm(xp.asarray(x, device=device))
+    elif hasattr(array, "__array_namespace__"):
+        func = array.__array_namespace__().from_dlpack
+    return func
 
 def from_table(*args, array=None):
     """Create 2 dimensional arrays from oneDAL tables.
 
     Note: this implementation will convert any table to numpy ndarrays,
-    dpctl/dpnp usm_ndarrays, and array API standard arrays of designated
-    type. By default, from_table will return numpy arrays and can only
-    return other types when necessary object attributes exist (i.e.
-    ``__sycl_usm_array_interface__`` or ``__array_namespace__``).
+    scipy csr_arrays, dpctl/dpnp usm_ndarrays, and array API standard 
+    arrays of designated type. By default, from_table will return numpy
+    arrays and can only return other types when necessary object 
+    attributes exist (i.e. ``__sycl_usm_array_interface__`` or 
+    ``__array_namespace__``).
 
     Parameters
     ----------
     *args : single or multiple python oneDAL tables
         arg1, arg2... The arrays should be given as arguments.
 
-    array : array-like or None, default=None
-        python object representing return type. Accessed for conversion
-        namespace when sycl_usm_array type or array API standard type
-
+    array : callable, array-like or None, default=None
+        python object representing an array instance of the return type
+        or function capable of converting oneDAL tables into arrays of
+        desired type. Arrays are queried for conversion namespace when
+        of sycl_usm_array type or array API standard type. When set to
+        None, will return numpy arrays or scipy csr arrays.
+        
     Returns
     -------
     arrays: numpy arrays, sycl_usm_ndarrays, or array API standard arrays
     """
-
-    func = backend.from_table
-    if isintance(array, np.ndarray):
-        pass
-    elif hasattr(array, "__sycl_usm_array_interface__"):
-        # oneDAL returns tables with None sycl queue for CPU sycl queue inputs.
-        # This workaround is necessary for the functional preservation
-        # of the compute-follows-data execution.
-        device = array.sycl_queue if array.sycl_device.is_cpu else None
-        if hasattr(array, "__array_namespace__"):
-            func = lambda x: array.__array_namespace__().asarray(x, device=device)
-        elif hasattr(array, "_create_from_usm_ndarray"):  # signifier of dpnp < 0.19
-            xp = array._array_obj.__array_namespace__()
-            func = lambda x: array._create_from_usm_ndarray(xp.asarray(x, device=device))
-    elif hasattr(array, "__array_namespace__"):
-        func = array.__array_namespace__().from_dlpack
+    func = array if callable(array) else return_type_constructor(array)
     return _apply_and_pass(func, *args)
