@@ -101,7 +101,7 @@ def return_type_constructor(array):
         func = array.__array_namespace__().from_dlpack
     return func
 
-def from_table(*args, array=None):
+def from_table(*args, like=None):
     """Create 2 dimensional arrays from oneDAL tables.
 
     Note: this implementation will convert any table to numpy ndarrays,
@@ -116,7 +116,7 @@ def from_table(*args, array=None):
     *args : single or multiple python oneDAL tables
         arg1, arg2... The arrays should be given as arguments.
 
-    array : callable, array-like or None, default=None
+    like : callable, array-like or None, default=None
         python object representing an array instance of the return type
         or function capable of converting oneDAL tables into arrays of
         desired type. Arrays are queried for conversion namespace when
@@ -127,5 +127,5 @@ def from_table(*args, array=None):
     -------
     arrays: numpy arrays, sycl_usm_ndarrays, or array API standard arrays
     """
-    func = array if callable(array) else return_type_constructor(array)
+    func = like if callable(like) else return_type_constructor(array)
     return _apply_and_pass(func, *args)
