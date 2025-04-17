@@ -49,6 +49,7 @@ sycl::queue get_queue_from_python(const py::object& syclobj);
 
 using dp_policy_t = detail::data_parallel_policy;
 
+std::uint32_t get_device_id(const sycl::queue& queue);
 std::uint32_t get_device_id(const dp_policy_t& policy);
 std::size_t get_used_memory(const py::object& syclobj);
 std::string get_device_name(const dp_policy_t& policy);
