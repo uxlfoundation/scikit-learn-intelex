@@ -204,9 +204,7 @@ class BaseLogisticRegression(metaclass=ABCMeta):
         sua_iface, xp, _ = _get_sycl_namespace(X)
         y = from_table(
             result.responses,
-            sua_iface=sua_iface,
-            sycl_queue=QM.get_global_queue(),
-            xp=xp,
+            like=X
         )
         y = xp.take(xp.asarray(self.classes_), xp.reshape(y, (-1,)), axis=0)
         return y
@@ -215,7 +213,7 @@ class BaseLogisticRegression(metaclass=ABCMeta):
         result = result = self._infer(X)
         sua_iface, xp, _ = _get_sycl_namespace(X)
         queue = QM.get_global_queue()
-        y = from_table(result.probabilities, sua_iface=sua_iface, sycl_queue=queue, xp=xp)
+        y = from_table(result.probabilities, like=X)
         return xp.stack([1 - y, y], axis=1)
 
     def _predict_log_proba(self, X):
