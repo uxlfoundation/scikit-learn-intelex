@@ -127,5 +127,5 @@ def from_table(*args, like=None):
     -------
     arrays: numpy arrays, sycl_usm_ndarrays, or array API standard arrays
     """
-    func = like if callable(like) else return_type_constructor(array)
+    func = like if callable(like) else return_type_constructor(like)
     return _apply_and_pass(func, *args)
