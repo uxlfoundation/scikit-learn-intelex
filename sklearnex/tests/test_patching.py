@@ -33,6 +33,7 @@ from onedal.tests.utils._dataframes_support import (
     get_dataframes_and_queues,
 )
 from sklearnex import config_context, is_patched_instance
+from sklearnex._utils import get_tags
 from sklearnex.dispatcher import _is_preview_enabled
 from sklearnex.metrics import pairwise_distances, roc_auc_score
 from sklearnex.tests.utils import (
@@ -46,7 +47,6 @@ from sklearnex.tests.utils import (
     gen_dataset,
     gen_models_info,
 )
-from sklearnex._utils import get_tags
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
