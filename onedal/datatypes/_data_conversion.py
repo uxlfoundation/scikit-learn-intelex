@@ -56,6 +56,28 @@ def to_table(*args, queue=None):
     return _apply_and_pass(_convert_one_to_table, *args, queue=queue)
 
 def return_type_constructor(array):
+    """generate function for converting oneDAL tables to arrays.
+
+    Note: this implementation will convert any table to numpy ndarrays,
+    scipy csr_arrays, dpctl/dpnp usm_ndarrays, and array API standard 
+    arrays of designated type. By default, from_table will return numpy
+    arrays and can only return other types when necessary object 
+    attributes exist (i.e. ``__sycl_usm_array_interface__`` or 
+    ``__array_namespace__``).
+
+    Parameters
+    ----------
+    array : array-like or None
+        python object representing an array instance of the return type
+        for converting oneDAL tables. Arrays are queried for conversion
+        namespace when of sycl_usm_array type or array API standard type.
+        When set to None, will return numpy arrays or scipy csr arrays.
+        
+    Returns
+    -------
+    func: callable
+        a function which takes in a single table input and returns an array
+    """
     func = backend.from_table
     if isintance(array, np.ndarray):
         pass
@@ -64,8 +86,8 @@ def return_type_constructor(array):
         # This workaround is necessary for the functional preservation
         # of the compute-follows-data execution.
         device = array.sycl_queue if array.sycl_device.is_cpu else None
-        # Its important to note why the __sycl_usm_array_interface__ is treated
-        # separately.  It provides finer-grained control of SYCL queues and the 
+        # Its important to note why the __sycl_usm_array_interface__ is
+        # prioritized: it provides finer-grained control of SYCL queues and the 
         # related SYCL devices which are generally unavailable via DLPack
         # representations (such as SYCL contexts, SYCL sub-devices, etc.).
         if hasattr(array, "__array_namespace__"):
