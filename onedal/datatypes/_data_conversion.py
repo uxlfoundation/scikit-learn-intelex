@@ -79,7 +79,7 @@ def return_type_constructor(array):
         a function which takes in a single table input and returns an array
     """
     func = backend.from_table
-    if isintance(array, np.ndarray):
+    if isinstance(array, np.ndarray):
         pass
     elif hasattr(array, "__sycl_usm_array_interface__"):
         # oneDAL returns tables without sycl queues for CPU sycl queue inputs.
