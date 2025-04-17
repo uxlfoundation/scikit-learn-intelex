@@ -150,6 +150,10 @@ dal::table convert_to_table(py::object obj) {
 
 // Create a dictionary for `__sycl_usm_array_interface__` protocol from oneDAL table properties.
 py::dict construct_sua_iface(const dal::table& input) {
+    // To enable native extensions to pass the memory allocated by a native SYCL library to SYCL-aware
+    // Python extension without making a copy, the class must provide `__sycl_usm_array_interface__`
+    // attribute representing USM allocations. The `__sycl_usm_array_interface__` attribute is used
+    // for constructing DPCTL usm_ndarray or DPNP ndarray with zero-copy on python level.
     const auto kind = input.get_kind();
     if (kind != dal::homogen_table::kind())
         report_problem_to_sua_iface(": only homogen tables are supported");
@@ -223,16 +227,6 @@ py::dict construct_sua_iface(const dal::table& input) {
     }
 
     return iface;
-}
-
-// Adding `__sycl_usm_array_interface__` attribute to python oneDAL table, that representing
-// USM allocations.
-void define_sycl_usm_array_property(py::class_<dal::table>& table_obj) {
-    // To enable native extensions to pass the memory allocated by a native SYCL library to SYCL-aware
-    // Python extension without making a copy, the class must provide `__sycl_usm_array_interface__`
-    // attribute representing USM allocations. The `__sycl_usm_array_interface__` attribute is used
-    // for constructing DPCTL usm_ndarray or DPNP ndarray with zero-copy on python level.
-    table_obj.def_property_readonly("__sycl_usm_array_interface__", &construct_sua_iface);
 }
 
 } // namespace oneapi::dal::python::sycl_usm
