@@ -182,7 +182,7 @@ def wrap_output_data(func: Callable) -> Callable:
                     result = _convert_to_dpnp(result)
                 return result
 
-            if get_config().get("transform_output") in ["default", None]:
+            if get_config().get("transform_output") in ("default", None):
                 input_array_api = getattr(data[0], "__array_namespace__", lambda: None)()
                 if input_array_api and not _is_numpy_namespace(input_array_api):
                     input_array_api_device = data[0].device
