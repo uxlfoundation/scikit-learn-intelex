@@ -284,8 +284,8 @@ def get_build_options():
         "-DPY_ARRAY_UNIQUE_SYMBOL=daal4py_array_API",
         '-DD4P_VERSION="' + sklearnex_version + '"',
         "-DNPY_ALLOW_THREADS=1",
-    ] + (["-stdlib=libc++"] if using_intel else [])
-    ela = ["-no-intel-lib", "-stdlib=libc++"] if using_intel else []
+    ]
+    ela = ["-no-intel-lib", "-nostdlib"] if using_intel else []
 
     if using_intel and IS_WIN:
         include_dir_plat.append(
