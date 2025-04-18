@@ -283,7 +283,7 @@ def get_build_options():
         '-DD4P_VERSION="' + sklearnex_version + '"',
         "-DNPY_ALLOW_THREADS=1",
     ]
-    ela = ["-no-intel-lib"] if using_intel else []
+    ela = []
 
     if using_intel and IS_WIN:
         include_dir_plat.append(
