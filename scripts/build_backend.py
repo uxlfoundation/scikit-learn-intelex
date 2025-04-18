@@ -69,7 +69,7 @@ def custom_build_cmake_clib(
 
     cxx = os.getenv("CXX")
     if iface in ["dpc", "spmd_dpc"]:
-        default_dpc_compiler = "icx" if IS_WIN else "icpx"
+        default_dpc_compiler = "icx" if IS_WIN else "icpx -static-intel"
         if not cxx:
             cxx = default_dpc_compiler
         elif not (default_dpc_compiler in cxx):
