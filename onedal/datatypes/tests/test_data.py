@@ -81,9 +81,7 @@ class DummyEstimatorWithTableConversions:
         result_responses_table = result.responses
         result_responses_df = from_table(
             result_responses_table,
-            sua_iface=sua_iface,
-            sycl_queue=X.sycl_queue,
-            xp=xp,
+            like=X
         )
         return X_table, result_responses_table, result_responses_df
 
@@ -270,9 +268,7 @@ def test_input_zero_copy_sycl_usm(dataframe, queue, order, dtype):
     X_table = to_table(X_dp)
     _assert_sua_iface_fields(X_dp, X_table)
 
-    X_dp_from_table = from_table(
-        X_table, sycl_queue=queue, sua_iface=sua_iface, xp=X_dp_namespace
-    )
+    X_dp_from_table = from_table(X_table, like=X_dp)
     _assert_sua_iface_fields(X_table, X_dp_from_table)
     _assert_tensor_attr(X_dp, X_dp_from_table, order)
 
