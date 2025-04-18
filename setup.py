@@ -449,10 +449,8 @@ class onedal_build:
         elif n_threads is True:
             n_threads = os.cpu_count() or 1
 
-        cxx = os.getenv("CXX", "cl" if IS_WIN else "g++")
         build_onedal = lambda iface: build_backend.custom_build_cmake_clib(
             iface=iface,
-            cxx=cxx,
             onedal_major_binary_version=ONEDAL_MAJOR_BINARY_VERSION,
             mpi_root=mpi_root,
             no_dist=no_dist,
@@ -500,9 +498,9 @@ class build(onedal_build, orig_build.build):
 
 
 project_urls = {
-    "Bug Tracker": "https://github.com/uxlfoundation/scikit-learn-intelex",
-    "Documentation": "https://intelpython.github.io/daal4py/",
-    "Source Code": "https://github.com/uxlfoundation/scikit-learn-intelex/daal4py",
+    "Bug Tracker": "https://github.com/uxlfoundation/scikit-learn-intelex/issues",
+    "Documentation": "https://uxlfoundation.github.io/scikit-learn-intelex/",
+    "Source Code": "https://github.com/uxlfoundation/scikit-learn-intelex",
 }
 
 with open("README.md", "r", encoding="utf8") as f:

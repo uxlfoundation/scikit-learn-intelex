@@ -16,13 +16,15 @@
 
 import contextlib
 import gc
+import itertools
 import pickle
 import unittest
 import warnings
 from datetime import datetime
 
-import lightgbm as lgbm
+import lightgbm as lgb
 import numpy as np
+import pytest
 import xgboost as xgb
 from scipy.special import softmax
 from sklearn.datasets import (
@@ -46,7 +48,9 @@ except ImportError:
     cb_available = False
 
 try:
-    import shap
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        import shap
 
     shap_available = True
 except ImportError:
@@ -68,7 +72,7 @@ cb_unavailable_str = "CatBoost not available"
 # See https://github.com/catboost/catboost/issues/2556
 # Disable SHAP tests temporarily until it's next major version
 if cb_available:
-    catboost_skip_shap = tuple(map(int, cb.__version__.split("."))) < (1, 3, 0)
+    catboost_skip_shap = tuple(map(int, cb.__version__.split("."))) < (1, 4, 0)
 else:
     catboost_skip_shap = True
 catboost_skip_shap_msg = (
@@ -77,1066 +81,1721 @@ catboost_skip_shap_msg = (
 )
 
 
-class LogRegModelBuilder(unittest.TestCase):
-    def test_iris_with_intercept(self):
-        X, y = load_iris(return_X_y=True)
-        n_classes = 3
-        clf = LogisticRegression(fit_intercept=True, max_iter=1000, random_state=0).fit(
-            X, y
-        )
-        builder = d4p.logistic_regression_model_builder(
-            n_classes=n_classes, n_features=X.shape[1]
-        )
-        builder.set_beta(clf.coef_, clf.intercept_)
-
-        alg_pred = d4p.logistic_regression_prediction(nClasses=n_classes)
-
-        pred_daal = alg_pred.compute(X, builder.model).prediction.flatten()
-        pred_sklearn = clf.predict(X)
-        self.assertTrue(np.allclose(pred_daal, pred_sklearn))
-
-    def test_iris_without_intercept(self):
-        X, y = load_iris(return_X_y=True)
-        n_classes = 3
-        clf = LogisticRegression(fit_intercept=False, max_iter=1000, random_state=0).fit(
-            X, y
-        )
-        builder = d4p.logistic_regression_model_builder(
-            n_classes=n_classes, n_features=X.shape[1]
-        )
-        builder.set_beta(clf.coef_, clf.intercept_)
-
-        alg_pred = d4p.logistic_regression_prediction(nClasses=n_classes)
-
-        pred_daal = alg_pred.compute(X, builder.model).prediction.flatten()
-        pred_sklearn = clf.predict(X)
-        self.assertTrue(np.allclose(pred_daal, pred_sklearn))
-
-    def test_breast_cancer_with_intercept(self):
-        X, y = load_breast_cancer(return_X_y=True)
-        n_classes = 2
-        clf = LogisticRegression(fit_intercept=True, max_iter=10000, random_state=0).fit(
-            X, y
-        )
-        builder = d4p.logistic_regression_model_builder(
-            n_classes=n_classes, n_features=X.shape[1]
-        )
-        builder.set_beta(clf.coef_, clf.intercept_)
-
-        alg_pred = d4p.logistic_regression_prediction(nClasses=n_classes)
-
-        pred_daal = alg_pred.compute(X, builder.model).prediction.flatten()
-        pred_sklearn = clf.predict(X)
-        self.assertTrue(np.allclose(pred_daal, pred_sklearn))
-
-    def test_breast_cancer_without_intercept(self):
-        X, y = load_breast_cancer(return_X_y=True)
-        n_classes = 2
-        clf = LogisticRegression(fit_intercept=False, max_iter=10000, random_state=0).fit(
-            X, y
-        )
-        builder = d4p.logistic_regression_model_builder(
-            n_classes=n_classes, n_features=X.shape[1]
-        )
-        builder.set_beta(clf.coef_, clf.intercept_)
-
-        alg_pred = d4p.logistic_regression_prediction(nClasses=n_classes)
-
-        pred_daal = alg_pred.compute(X, builder.model).prediction.flatten()
-        pred_sklearn = clf.predict(X)
-        self.assertTrue(np.allclose(pred_daal, pred_sklearn))
+# Note: models have an attribute telling whether SHAP calculations
+# are supported for it or not. When that attribute is 'False', attempts
+# to calculate those preditions will throw an exception. This
+# forcefully calculates the predictions anyway with the data that the
+# object might have, in order to ensure that cases that state they
+# do not support SHAP actually do so because the calculations turn
+# to NaN and not due to arbitrary reasons.
+def force_shap_predict(model, X):
+    fptype = "double" if X.dtype == np.float64 else "float"
+    if model._is_regression:
+        return model._predict_regression(X, fptype, True, False)
+    else:
+        return model._predict_classification(X, fptype, "computeClassLabels", True, False)
 
 
-@unittest.skipUnless(shap_supported, reason=shap_not_supported_str)
-class XGBoostRegressionModelBuilder(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls, base_score=0.5):
-        X, y = make_regression(n_samples=2, n_features=10, random_state=42)
-        cls.X_test = X[:2, :]
-        cls.X_nan = np.array([np.nan] * 20, dtype=np.float32).reshape(2, 10)
-        cls.xgb_model = xgb.XGBRegressor(
-            max_depth=5, n_estimators=50, random_state=42, base_score=base_score
-        )
-        cls.xgb_model.fit(X, y)
-
-    def test_model_conversion(self):
-        m = d4p.mb.convert_model(self.xgb_model.get_booster())
-        self.assertEqual(m.model_type, "xgboost")
-        # XGBoost treats regression as 0 classes, LightGBM 1 class
-        # For us, it does not make a difference and both are acceptable
-        self.assertEqual(m.n_classes_, 0)
-        self.assertEqual(m.n_features_in_, 10)
-        self.assertTrue(m._is_regression)
-
-    def test_model_predict(self):
-        m = d4p.mb.convert_model(self.xgb_model.get_booster())
-        d4p_pred = m.predict(self.X_test)
-        xgboost_pred = self.xgb_model.predict(self.X_test)
-        np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=1e-6)
-
-    def test_missing_value_support(self):
-        m = d4p.mb.convert_model(self.xgb_model.get_booster())
-        d4p_pred = m.predict(self.X_nan)
-        xgboost_pred = self.xgb_model.predict(self.X_nan)
-        np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=1e-6)
-
-    def test_model_predict_shap_contribs(self):
-        booster = self.xgb_model.get_booster()
-        m = d4p.mb.convert_model(booster)
-        d4p_pred = m.predict(self.X_test, pred_contribs=True)
-        xgboost_pred = booster.predict(
-            xgb.DMatrix(self.X_test),
-            pred_contribs=True,
-            approx_contribs=False,
-            validate_features=False,
-        )
-        np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=1e-6)
-
-    def test_model_predict_shap_interactions(self):
-        booster = self.xgb_model.get_booster()
-        m = d4p.mb.convert_model(booster)
-        d4p_pred = m.predict(self.X_test, pred_interactions=True)
-        xgboost_pred = booster.predict(
-            xgb.DMatrix(self.X_test),
-            pred_interactions=True,
-            approx_contribs=False,
-            validate_features=False,
-        )
-        np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=1e-6)
-
-    def test_model_predict_shap_contribs_missing_values(self):
-        booster = self.xgb_model.get_booster()
-        m = d4p.mb.convert_model(booster)
-        d4p_pred = m.predict(self.X_nan, pred_contribs=True)
-        xgboost_pred = booster.predict(
-            xgb.DMatrix(self.X_nan),
-            pred_contribs=True,
-            approx_contribs=False,
-            validate_features=False,
-        )
-        np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=5e-6)
-
-
-# duplicate all tests for base_score=0.0
-@unittest.skipUnless(shap_supported, reason=shap_not_supported_str)
-class XGBoostRegressionModelBuilder_base_score0(XGBoostRegressionModelBuilder):
-    @classmethod
-    def setUpClass(cls):
-        XGBoostRegressionModelBuilder.setUpClass(0)
-
-
-# duplicate all tests for base_score=100
-@unittest.skipUnless(shap_supported, reason=shap_not_supported_str)
-class XGBoostRegressionModelBuilder_base_score100(XGBoostRegressionModelBuilder):
-    @classmethod
-    def setUpClass(cls):
-        XGBoostRegressionModelBuilder.setUpClass(100)
-
-
-@unittest.skipUnless(shap_supported, reason=shap_not_supported_str)
-class XGBoostClassificationModelBuilder(unittest.TestCase):
-    def get_conversion_warning_is_expected(self):
-        if (
-            self.xgb_model._estimator_type == "classifier"
-            and self.xgb_model.objective == "binary:logitraw"
-        ):
-            return True
-        else:
-            return False
-
-    @contextlib.contextmanager
-    def conditional_assert_warns(self, warning):
-        if warning is not None:
-            with self.assertWarns(warning) as ctx:
-                try:
-                    yield [ctx]
-                finally:
-                    pass
-        else:
-            with warnings.catch_warnings() as ctx:
-                warnings.simplefilter("error")
-                try:
-                    yield [ctx]
-                finally:
-                    pass
-
-    @classmethod
-    def setUpClass(cls, base_score=0.5, n_classes=2, objective="binary:logistic"):
-        n_features = 15
-        cls.base_score = base_score
-        cls.n_classes = n_classes
+def make_xgb_model(
+    objective: str, base_score: "float | None", sklearn_class: bool, empty_trees: bool
+) -> "xgb.Booster | xgb.XGBRegressor | xgb.XGBClassifier":
+    params_base_score = {"base_score": base_score} if base_score is not None else {}
+    min_split_loss = 1e10 if empty_trees else 0.0
+    if objective.startswith("binary:"):
         X, y = make_classification(
-            n_samples=500,
-            n_classes=n_classes,
-            n_features=n_features,
-            n_informative=(2 * n_features) // 3,
-            random_state=42,
-        )
-        cls.X_test = X[:2, :]
-        cls.X_nan = np.array([np.nan] * 2 * n_features, dtype=np.float32).reshape(
-            2, n_features
-        )
-        cls.xgb_model = xgb.XGBClassifier(
-            max_depth=5,
-            n_estimators=50,
-            random_state=42,
-            base_score=base_score,
-            objective=objective,
-        )
-        cls.xgb_model.fit(X, y)
-
-    def test_model_conversion(self):
-        expected_warning = (
-            UserWarning if self.get_conversion_warning_is_expected() else None
-        )
-        with self.conditional_assert_warns(expected_warning):
-            m = d4p.mb.convert_model(self.xgb_model.get_booster())
-        self.assertEqual(m.model_type, "xgboost")
-        self.assertEqual(m.n_classes_, self.n_classes)
-        self.assertEqual(m.n_features_in_, 15)
-        self.assertFalse(m._is_regression)
-
-    def test_model_predict(self):
-        expected_warning = (
-            UserWarning if self.get_conversion_warning_is_expected() else None
-        )
-        with self.conditional_assert_warns(expected_warning):
-            m = d4p.mb.convert_model(self.xgb_model.get_booster())
-        d4p_pred = m.predict(self.X_test)
-        xgboost_pred = self.xgb_model.predict(self.X_test)
-        np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=1e-7)
-
-    def test_model_predict_proba(self):
-        m = d4p.mb.convert_model(self.xgb_model.get_booster())
-        d4p_pred = m.predict_proba(self.X_test)
-        xgboost_pred = self.xgb_model.predict_proba(self.X_test)
-        # calculating probas involves multiple exp / ln operations, therefore
-        # they're quite susceptible to small numerical changes and we have to
-        # accept an rtol of 1e-5
-        np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=1e-5)
-
-    def test_missing_value_support(self):
-        expected_warning = (
-            UserWarning if self.get_conversion_warning_is_expected() else None
-        )
-        with self.conditional_assert_warns(expected_warning):
-            m = d4p.mb.convert_model(self.xgb_model.get_booster())
-        d4p_pred = m.predict(self.X_nan)
-        xgboost_pred = self.xgb_model.predict(self.X_nan)
-        np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=1e-7)
-
-    def test_model_predict_shap_contribs(self):
-        booster = self.xgb_model.get_booster()
-        m = d4p.mb.convert_model(booster)
-        if not shap_api_changed:
-            with self.assertRaises(NotImplementedError):
-                m.predict(self.X_test, pred_contribs=True)
-        elif self.n_classes > 2:
-            with self.assertRaisesRegex(
-                RuntimeError, "Multiclass classification SHAP values not supported"
-            ):
-                m.predict(self.X_test, pred_contribs=True)
-        else:
-            d4p_pred = m.predict(self.X_test, pred_contribs=True)
-            xgboost_pred = booster.predict(
-                xgb.DMatrix(self.X_test),
-                pred_contribs=True,
-                approx_contribs=False,
-                validate_features=False,
-            )
-            np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=1e-5)
-
-    def test_model_predict_shap_interactions(self):
-        booster = self.xgb_model.get_booster()
-        m = d4p.mb.convert_model(booster)
-        if not shap_api_changed:
-            with self.assertRaises(NotImplementedError):
-                m.predict(self.X_test, pred_contribs=True)
-        elif self.n_classes > 2:
-            with self.assertRaisesRegex(
-                RuntimeError, "Multiclass classification SHAP values not supported"
-            ):
-                m.predict(self.X_test, pred_interactions=True)
-        else:
-            d4p_pred = m.predict(self.X_test, pred_interactions=True)
-            xgboost_pred = booster.predict(
-                xgb.DMatrix(self.X_test),
-                pred_interactions=True,
-                approx_contribs=False,
-                validate_features=False,
-            )
-            # hitting floating precision limits for classification where class probabilities
-            # are between 0 and 1
-            # we need to accept large relative differences, as long as the absolute difference
-            # remains small (<1e-6)
-            np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=5e-2, atol=1e-6)
-
-
-@unittest.skipUnless(shap_supported, reason=shap_not_supported_str)
-class XGBoostGammaModelBuilder(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        X, y = make_regression(n_samples=2, n_features=10, random_state=42)
-        y = np.exp((y - y.mean()) / y.std())
-        cls.X_test = X[:2, :]
-        cls.X_nan = np.array([np.nan] * 20, dtype=np.float32).reshape(2, 10)
-        cls.xgb_model = xgb.XGBRegressor(
-            max_depth=5, n_estimators=50, random_state=42, objective="reg:gamma"
-        )
-        cls.xgb_model.fit(X, y)
-
-    def test_model_conversion(self):
-        m = d4p.mb.convert_model(self.xgb_model.get_booster())
-        self.assertEqual(m.model_type, "xgboost")
-        self.assertEqual(m.n_classes_, 0)
-        self.assertEqual(m.n_features_in_, 10)
-        self.assertTrue(m._is_regression)
-
-    def test_model_predict(self):
-        m = d4p.mb.convert_model(self.xgb_model.get_booster())
-        d4p_pred = m.predict(self.X_test)
-        xgboost_pred = self.xgb_model.predict(self.X_test, output_margin=True)
-        np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=1e-6)
-
-    def test_missing_value_support(self):
-        m = d4p.mb.convert_model(self.xgb_model.get_booster())
-        d4p_pred = m.predict(self.X_nan)
-        xgboost_pred = self.xgb_model.predict(self.X_nan, output_margin=True)
-        np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=1e-6)
-
-    def test_model_predict_shap_contribs(self):
-        booster = self.xgb_model.get_booster()
-        m = d4p.mb.convert_model(booster)
-        d4p_pred = m.predict(self.X_test, pred_contribs=True)
-        xgboost_pred = booster.predict(
-            xgb.DMatrix(self.X_test),
-            pred_contribs=True,
-            approx_contribs=False,
-            validate_features=False,
-        )
-        np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=1e-6)
-
-    def test_model_predict_shap_interactions(self):
-        booster = self.xgb_model.get_booster()
-        m = d4p.mb.convert_model(booster)
-        d4p_pred = m.predict(self.X_test, pred_interactions=True)
-        xgboost_pred = booster.predict(
-            xgb.DMatrix(self.X_test),
-            pred_interactions=True,
-            approx_contribs=False,
-            validate_features=False,
-        )
-        np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=1e-6)
-
-    def test_model_predict_shap_contribs_missing_values(self):
-        booster = self.xgb_model.get_booster()
-        m = d4p.mb.convert_model(booster)
-        d4p_pred = m.predict(self.X_nan, pred_contribs=True)
-        xgboost_pred = booster.predict(
-            xgb.DMatrix(self.X_nan),
-            pred_contribs=True,
-            approx_contribs=False,
-            validate_features=False,
-        )
-        np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=5e-6)
-
-
-# duplicate all tests for base_score=0.3
-@unittest.skipUnless(shap_supported, reason=shap_not_supported_str)
-class XGBoostClassificationModelBuilder_base_score03(XGBoostClassificationModelBuilder):
-    @classmethod
-    def setUpClass(cls):
-        XGBoostClassificationModelBuilder.setUpClass(base_score=0.3)
-
-
-# duplicate all tests for base_score=0.7
-@unittest.skipUnless(shap_supported, reason=shap_not_supported_str)
-class XGBoostClassificationModelBuilder_base_score07(XGBoostClassificationModelBuilder):
-    @classmethod
-    def setUpClass(cls):
-        XGBoostClassificationModelBuilder.setUpClass(base_score=0.7)
-
-
-@unittest.skipUnless(shap_supported, reason=shap_not_supported_str)
-class XGBoostClassificationModelBuilder_n_classes5(XGBoostClassificationModelBuilder):
-    @classmethod
-    def setUpClass(cls):
-        XGBoostClassificationModelBuilder.setUpClass(n_classes=5)
-
-
-@unittest.skipUnless(shap_supported, reason=shap_not_supported_str)
-class XGBoostClassificationModelBuilder_n_classes5_base_score03(
-    XGBoostClassificationModelBuilder
-):
-    @classmethod
-    def setUpClass(cls):
-        XGBoostClassificationModelBuilder.setUpClass(n_classes=5, base_score=0.3)
-
-
-@unittest.skipUnless(shap_supported, reason=shap_not_supported_str)
-class XGBoostClassificationModelBuilder_objective_logitraw(
-    XGBoostClassificationModelBuilder
-):
-    """
-    Caveat: logitraw is not per se supported in daal4py because we always
-
-                 1. normalize to probabilities ("activation") using sigmoid
-                   (exception: SHAP values, the scores defining phi_ij are the raw class scores)
-
-    However, by undoing the activation we can still compare if the original probas and SHAP values are aligned.
-    """
-
-    @classmethod
-    def setUpClass(cls):
-        XGBoostClassificationModelBuilder.setUpClass(
-            n_classes=2, objective="binary:logitraw"
-        )
-
-    def test_model_predict_proba(self):
-        with self.assertWarns(UserWarning):
-            # expect a warning that logitraw behaves differently
-            m = d4p.mb.convert_model(self.xgb_model.get_booster())
-        d4p_pred = m.predict_proba(self.X_test)
-
-        # Note that XGBoost itself here will produce incorrect calculations for 'predict_proba'
-        # due to the intercept being misapplied, but probabilities can correctly be obtained
-        # by getting the raw prediction and transforming it to probabilities.
-        xgboost_pred_raw = self.xgb_model.get_booster().inplace_predict(
-            self.X_test, predict_type="margin"
-        )
-        xgboost_pred = 1 / (1 + np.exp(-xgboost_pred_raw))
-        xgboost_pred = xgboost_pred.reshape((-1, 1))
-        xgboost_pred = np.c_[1 - xgboost_pred, xgboost_pred]
-
-        # calculating probas involves multiple exp / ln operations, therefore
-        # they're quite susceptible to small numerical changes and we have to
-        # accept an rtol of 1e-4
-        np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=1e-4)
-
-    @unittest.skipUnless(shap_api_changed, reason=shap_api_change_str)
-    def test_model_predict_shap_contribs(self):
-        booster = self.xgb_model.get_booster()
-        with self.assertWarns(UserWarning):
-            # expect a warning that logitraw behaves differently and/or
-            # that base_score is ignored / fixed to 0.5
-            m = d4p.mb.convert_model(self.xgb_model.get_booster())
-        d4p_pred = m.predict(self.X_test, pred_contribs=True)
-        xgboost_pred = booster.predict(
-            xgb.DMatrix(self.X_test),
-            pred_contribs=True,
-            approx_contribs=False,
-            validate_features=False,
-        )
-        np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=5e-6)
-
-    @unittest.skipUnless(shap_api_changed, reason=shap_api_change_str)
-    def test_model_predict_shap_interactions(self):
-        booster = self.xgb_model.get_booster()
-        with self.assertWarns(UserWarning):
-            # expect a warning that logitraw behaves differently and/or
-            # that base_score is ignored / fixed to 0.5
-            m = d4p.mb.convert_model(self.xgb_model.get_booster())
-        d4p_pred = m.predict(self.X_test, pred_interactions=True)
-        xgboost_pred = booster.predict(
-            xgb.DMatrix(self.X_test),
-            pred_interactions=True,
-            approx_contribs=False,
-            validate_features=False,
-        )
-        np.testing.assert_allclose(d4p_pred, xgboost_pred, rtol=5e-5)
-
-
-@unittest.skipUnless(shap_supported, reason=shap_not_supported_str)
-class LightGBMRegressionModelBuilder(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        X, y = make_regression(n_samples=100, n_features=10, random_state=42)
-        cls.X_test = X[:2, :]
-        cls.X_nan = np.array([np.nan] * 20, dtype=np.float32).reshape(2, 10)
-        # LightGBM requires a couple of NaN values in the training data to properly set
-        # the missing value type to NaN
-        # https://github.com/microsoft/LightGBM/issues/6139
-        X_train = np.concatenate([cls.X_nan, X])
-        y_train = np.concatenate([[0, 0], y])
-        params = {
-            "task": "train",
-            "boosting": "gbdt",
-            "objective": "regression",
-            "num_leaves": 4,
-            "learning_rage": 0.05,
-            "metric": {"l2", "l1"},
-            "verbose": -1,
-        }
-        cls.lgbm_model = lgbm.train(
-            params,
-            train_set=lgbm.Dataset(X_train, y_train),
-            num_boost_round=1,
-        )
-
-    def test_model_conversion(self):
-        m = d4p.mb.convert_model(self.lgbm_model)
-        self.assertEqual(m.model_type, "lightgbm")
-        self.assertEqual(m.n_classes_, 1)
-        self.assertEqual(m.n_features_in_, 10)
-        self.assertTrue(m._is_regression)
-
-    def test_model_predict(self):
-        m = d4p.mb.convert_model(self.lgbm_model)
-        d4p_pred = m.predict(self.X_test)
-        lgbm_pred = self.lgbm_model.predict(self.X_test)
-        np.testing.assert_allclose(d4p_pred, lgbm_pred, rtol=1e-6)
-
-    def test_missing_value_support(self):
-        m = d4p.mb.convert_model(self.lgbm_model)
-        d4p_pred = m.predict(self.X_nan)
-        lgbm_pred = self.lgbm_model.predict(self.X_nan)
-        np.testing.assert_allclose(d4p_pred, lgbm_pred, rtol=5e-6)
-
-    def test_model_predict_shap_contribs(self):
-        m = d4p.mb.convert_model(self.lgbm_model)
-        d4p_pred = m.predict(self.X_test, pred_contribs=True)
-        lgbm_pred = self.lgbm_model.predict(self.X_test, pred_contrib=True)
-        np.testing.assert_allclose(d4p_pred, lgbm_pred, rtol=1e-6)
-
-    @unittest.skipUnless(shap_available, reason=shap_unavailable_str)
-    def test_model_predict_shap_interactions(self):
-        m = d4p.mb.convert_model(self.lgbm_model)
-        # SHAP Python package drops bias terms from the returned matrix, therefore we drop the final row & column
-        d4p_pred = m.predict(self.X_test, pred_interactions=True)[:, :-1, :-1]
-        explainer = shap.TreeExplainer(self.lgbm_model)
-        shap_pred = explainer.shap_interaction_values(self.X_test)
-        np.testing.assert_allclose(d4p_pred, shap_pred, rtol=1e-6)
-
-    def test_model_predict_shap_contribs_missing_values(self):
-        m = d4p.mb.convert_model(self.lgbm_model)
-        d4p_pred = m.predict(self.X_nan, pred_contribs=True)
-        lgbm_pred = self.lgbm_model.predict(self.X_nan, pred_contrib=True)
-        np.testing.assert_allclose(d4p_pred, lgbm_pred, rtol=1e-6)
-
-
-@unittest.skipUnless(shap_supported, reason=shap_not_supported_str)
-class LightGBMClassificationModelBuilder(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        X, y = make_classification(
-            random_state=3, n_classes=3, n_informative=3, n_features=10
-        )
-        cls.X_test = X[:2, :]
-        cls.X_nan = np.array([np.nan] * 20, dtype=np.float32).reshape(2, 10)
-        X_train = np.concatenate([cls.X_nan, X])
-        y_train = np.concatenate([[0, 0], y])
-        params = {
-            "task": "train",
-            "boosting": "gbdt",
-            "objective": "multiclass",
-            "num_leaves": 4,
-            "num_class": 3,
-            "verbose": -1,
-        }
-        cls.lgbm_model = lgbm.train(
-            params,
-            train_set=lgbm.Dataset(X_train, y_train),
-            num_boost_round=10,
-        )
-
-    def test_model_conversion(self):
-        m = d4p.mb.convert_model(self.lgbm_model)
-        self.assertEqual(m.model_type, "lightgbm")
-        self.assertEqual(m.n_classes_, 3)
-        self.assertEqual(m.n_features_in_, 10)
-        self.assertFalse(m._is_regression)
-
-    def test_model_predict(self):
-        m = d4p.mb.convert_model(self.lgbm_model)
-        d4p_pred = m.predict(self.X_test)
-        lgbm_pred = np.argmax(self.lgbm_model.predict(self.X_test), axis=1)
-        np.testing.assert_allclose(d4p_pred, lgbm_pred, rtol=1e-7)
-
-    def test_model_predict_proba(self):
-        m = d4p.mb.convert_model(self.lgbm_model)
-        d4p_pred = m.predict_proba(self.X_test)
-        lgbm_pred = self.lgbm_model.predict(self.X_test)
-        np.testing.assert_allclose(d4p_pred, lgbm_pred, rtol=1e-7)
-
-    def test_missing_value_support(self):
-        m = d4p.mb.convert_model(self.lgbm_model)
-        d4p_pred = m.predict(self.X_nan)
-        lgbm_pred = np.argmax(self.lgbm_model.predict(self.X_nan), axis=1)
-        np.testing.assert_allclose(d4p_pred, lgbm_pred, rtol=1e-7)
-
-    def test_model_predict_shap_contribs(self):
-        m = d4p.mb.convert_model(self.lgbm_model)
-        with self.assertRaises(NotImplementedError):
-            m.predict(self.X_test, pred_contribs=True)
-
-    def test_model_predict_shap_interactions(self):
-        m = d4p.mb.convert_model(self.lgbm_model)
-        with self.assertRaises(NotImplementedError):
-            m.predict(self.X_test, pred_interactions=True)
-
-    def test_model_predict_shap_contribs_missing_values(self):
-        m = d4p.mb.convert_model(self.lgbm_model)
-        with self.assertRaises(NotImplementedError):
-            m.predict(self.X_nan, pred_contribs=True)
-
-
-@unittest.skipUnless(shap_supported, reason=shap_not_supported_str)
-class LightGBMClassificationModelBuilder_binaryClassification(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        X, y = make_classification(
-            random_state=3, n_classes=2, n_informative=3, n_features=10
-        )
-        cls.X_test = X[:2, :]
-        cls.X_nan = np.array([np.nan] * 20, dtype=np.float32).reshape(2, 10)
-        X_train = np.concatenate([cls.X_nan, X])
-        y_train = np.concatenate([[0, 0], y])
-        params = {
-            "task": "train",
-            "boosting": "gbdt",
-            "objective": "binary",
-            "metric": "binary_logloss",
-            "num_leaves": 4,
-            "verbose": -1,
-        }
-        cls.lgbm_model = lgbm.train(
-            params,
-            train_set=lgbm.Dataset(X_train, y_train),
-            num_boost_round=10,
-        )
-
-    def test_model_conversion(self):
-        m = d4p.mb.convert_model(self.lgbm_model)
-        self.assertEqual(m.model_type, "lightgbm")
-        self.assertEqual(m.n_classes_, 2)
-        self.assertEqual(m.n_features_in_, 10)
-        self.assertFalse(m._is_regression)
-
-    def test_model_predict(self):
-        m = d4p.mb.convert_model(self.lgbm_model)
-        d4p_pred = m.predict(self.X_test)
-        lgbm_pred = np.round(self.lgbm_model.predict(self.X_test)).astype(int)
-        np.testing.assert_allclose(d4p_pred, lgbm_pred, rtol=1e-7)
-
-    def test_model_predict_proba(self):
-        m = d4p.mb.convert_model(self.lgbm_model)
-        # predict proba of being class 1
-        d4p_pred = m.predict_proba(self.X_test)[:, 1]
-        lgbm_pred = self.lgbm_model.predict(self.X_test)
-        np.testing.assert_allclose(d4p_pred, lgbm_pred, rtol=1e-7)
-
-    def test_missing_value_support(self):
-        m = d4p.mb.convert_model(self.lgbm_model)
-        d4p_pred = m.predict(self.X_nan)
-        lgbm_pred = np.round(self.lgbm_model.predict(self.X_nan)).astype(int)
-        np.testing.assert_allclose(d4p_pred, lgbm_pred, rtol=1e-7)
-
-    def test_model_predict_proba_missing_values(self):
-        m = d4p.mb.convert_model(self.lgbm_model)
-        # predict proba of being class 1
-        d4p_pred = m.predict_proba(self.X_nan)[:, 1]
-        lgbm_pred = self.lgbm_model.predict(self.X_nan)
-        np.testing.assert_allclose(d4p_pred, lgbm_pred, rtol=1e-7)
-
-    def test_model_predict_shap_contribs(self):
-        m = d4p.mb.convert_model(self.lgbm_model)
-        with self.assertRaises(NotImplementedError):
-            m.predict(self.X_test, pred_contribs=True)
-
-    def test_model_predict_shap_interactions(self):
-        m = d4p.mb.convert_model(self.lgbm_model)
-        with self.assertRaises(NotImplementedError):
-            m.predict(self.X_test, pred_interactions=True)
-
-    def test_model_predict_shap_contribs_missing_values(self):
-        m = d4p.mb.convert_model(self.lgbm_model)
-        with self.assertRaises(NotImplementedError):
-            m.predict(self.X_nan, pred_contribs=True)
-
-
-@unittest.skipUnless(shap_supported, reason=shap_not_supported_str)
-@unittest.skipUnless(cb_available, reason=cb_unavailable_str)
-class CatBoostRegressionModelBuilder(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        X, y = make_regression(n_samples=100, n_features=10, random_state=42)
-        cls.X_test = X[:2, :]
-        cls.y_test = y[:2]
-        cls.X_nan = np.array([np.nan] * 20, dtype=np.float32).reshape(2, 10)
-        params = {
-            "reg_lambda": 1,
-            "max_depth": 3,
-            "num_leaves": 2**3,
-            "verbose": 0,
-            "objective": "RMSE",
-            "learning_rate": 0.3,
-            "n_estimators": 25,
-        }
-        cls.cb_model = cb.CatBoost(params)
-        cls.cb_model.fit(X, y, verbose=0)
-
-    def test_model_conversion(self):
-        m = d4p.mb.convert_model(self.cb_model)
-        self.assertTrue(hasattr(m, "daal_model_"))
-        self.assertIsInstance(m.daal_model_, d4p._daal4py.gbt_regression_model)
-        self.assertEqual(m.model_type, "catboost")
-        self.assertEqual(m.daal_model_.NumberOfFeatures, 10)
-        self.assertEqual(m.daal_model_.NumberOfTrees, 25)
-        self.assertEqual(m.n_features_in_, 10)
-        self.assertTrue(m._is_regression)
-
-    def test_model_predict(self):
-        m = d4p.mb.convert_model(self.cb_model)
-        d4p_pred = m.predict(self.X_test)
-        cb_pred = self.cb_model.predict(self.X_test)
-        np.testing.assert_allclose(d4p_pred, cb_pred, rtol=1e-7)
-
-    def test_missing_value_support(self):
-        m = d4p.mb.convert_model(self.cb_model)
-        d4p_pred = m.predict(self.X_nan)
-        cb_pred = self.cb_model.predict(self.X_nan)
-        np.testing.assert_allclose(d4p_pred, cb_pred, rtol=1e-7)
-
-    @unittest.skipIf(catboost_skip_shap, reason=catboost_skip_shap_msg)
-    def test_model_predict_shap_contribs(self):
-        m = d4p.mb.convert_model(self.cb_model)
-        d4p_pred = m.predict(self.X_test, pred_contribs=True)
-        lgbm_pred = self.cb_model.get_feature_importance(
-            cb.Pool(self.X_test, self.y_test), type="ShapValues"
-        )
-        np.testing.assert_allclose(d4p_pred, lgbm_pred, rtol=1e-6)
-
-
-@unittest.skipUnless(shap_supported, reason=shap_not_supported_str)
-@unittest.skipUnless(cb_available, reason=cb_unavailable_str)
-class CatBoostClassificationModelBuilder(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        X, y = make_classification(
-            n_classes=3, n_features=10, n_informative=3, random_state=42
-        )
-        cls.X_test = X[:2, :]
-        cls.X_nan = np.array([np.nan] * 20, dtype=np.float32).reshape(2, 10)
-        params = {
-            "reg_lambda": 1,
-            "max_depth": 3,
-            "num_leaves": 2**3,
-            "verbose": 0,
-            "objective": "MultiClass",
-            "learning_rate": 0.3,
-            "n_estimators": 25,
-        }
-        cls.cb_model = cb.CatBoost(params)
-        cls.cb_model.fit(X, y, verbose=0)
-
-    def test_model_conversion(self):
-        m = d4p.mb.convert_model(self.cb_model)
-        self.assertTrue(hasattr(m, "daal_model_"))
-        self.assertIsInstance(m.daal_model_, d4p._daal4py.gbt_classification_model)
-        self.assertEqual(m.model_type, "catboost")
-        self.assertEqual(m.daal_model_.NumberOfFeatures, 10)
-        self.assertEqual(m.daal_model_.NumberOfTrees, 3 * 25)
-        self.assertEqual(m.n_features_in_, 10)
-        self.assertFalse(m._is_regression)
-
-    def test_model_predict(self):
-        m = d4p.mb.convert_model(self.cb_model)
-        d4p_pred = m.predict(self.X_test)
-        cb_pred = self.cb_model.predict(self.X_test, prediction_type="Class").T[0]
-        np.testing.assert_allclose(d4p_pred, cb_pred, rtol=1e-7)
-
-    def test_missing_value_support(self):
-        m = d4p.mb.convert_model(self.cb_model)
-        d4p_pred = m.predict(self.X_nan)
-        cb_pred = self.cb_model.predict(self.X_nan, prediction_type="Class").T[0]
-        np.testing.assert_allclose(d4p_pred, cb_pred, rtol=1e-7)
-
-    def test_model_predict_shap_contribs(self):
-        # SHAP value support from CatBoost models is to be added
-        with self.assertWarnsRegex(
-            Warning,
-            "Converted models of this type do not support SHAP value calculation",
-        ):
-            d4p.mb.convert_model(self.cb_model)
-
-
-@unittest.skipUnless(shap_supported, reason=shap_not_supported_str)
-class XGBoostEarlyStopping(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls) -> None:
-        num_classes = 3
-        X, y = make_classification(
-            n_samples=1500,
-            n_features=10,
+            n_samples=11,
+            n_classes=2,
+            n_features=3,
             n_informative=3,
-            n_classes=num_classes,
-            random_state=42,
+            n_redundant=0,
+            random_state=123,
         )
-        X_train, cls.X_test, y_train, cls.y_test = train_test_split(
-            X, y, test_size=0.5, random_state=42
+        if sklearn_class:
+            return xgb.XGBClassifier(
+                objective=objective,
+                base_score=base_score,
+                n_estimators=5,
+                min_split_loss=min_split_loss,
+                max_depth=3,
+                random_state=123,
+                n_jobs=1,
+            ).fit(X, y)
+        else:
+            return xgb.train(
+                dtrain=xgb.DMatrix(X, y),
+                num_boost_round=5,
+                params={
+                    "objective": objective,
+                    "min_split_loss": min_split_loss,
+                    "max_depth": 3,
+                    "seed": 123,
+                    "nthread": 1,
+                }
+                | params_base_score,
+            )
+    elif objective.startswith("multi:"):
+        X, y = make_classification(
+            n_samples=10,
+            n_classes=3,
+            n_informative=3,
+            n_redundant=0,
+            random_state=123,
+        )
+        if sklearn_class:
+            return xgb.XGBClassifier(
+                objective=objective,
+                base_score=base_score,
+                n_estimators=5,
+                min_split_loss=min_split_loss,
+                max_depth=3,
+                random_state=123,
+                n_jobs=1,
+            ).fit(X, y)
+        else:
+            return xgb.train(
+                dtrain=xgb.DMatrix(X, y),
+                num_boost_round=5,
+                params={
+                    "objective": objective,
+                    "min_split_loss": min_split_loss,
+                    "num_class": 3,
+                    "max_depth": 3,
+                    "seed": 123,
+                    "nthread": 1,
+                }
+                | params_base_score,
+            )
+    else:
+        X, y = make_regression(n_samples=2, n_features=4, random_state=123)
+        if objective == "reg:gamma":
+            y = np.exp((y - y.mean()) / y.std())
+        elif objective == "reg:logistic":
+            y = (y - y.min()) / (y.max() - y.min())
+        if sklearn_class:
+            return xgb.XGBRegressor(
+                objective=objective,
+                base_score=base_score,
+                n_estimators=5,
+                min_split_loss=min_split_loss,
+                max_depth=3,
+                random_state=123,
+                n_jobs=1,
+            ).fit(X, y)
+        else:
+            return xgb.train(
+                dtrain=xgb.DMatrix(X, y),
+                num_boost_round=5,
+                params={
+                    "objective": objective,
+                    "min_split_loss": min_split_loss,
+                    "max_depth": 3,
+                    "seed": 123,
+                    "nthread": 1,
+                }
+                | params_base_score,
+            )
+
+
+@pytest.mark.parametrize("objective", ["reg:squarederror", "reg:gamma", "reg:logistic"])
+@pytest.mark.parametrize("base_score", [None, 0.0, 0.1, 10.0])
+@pytest.mark.parametrize("sklearn_class", [False, True])
+@pytest.mark.parametrize("with_nan", [False, True])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("empty_trees", [False, True])
+def test_xgb_regression(
+    objective, base_score, sklearn_class, with_nan, dtype, empty_trees
+):
+    if (
+        (objective == "reg:logistic")
+        and (base_score is not None)
+        and (base_score > 0.0 or base_score < 1.0)
+    ):
+        pytest.skip("'base_score' not applicable to binary data.")
+    if (objective == "reg:gamma") and (base_score is not None) and (base_score == 0.0):
+        pytest.skip("'base_score' of zero not applicable to objective 'reg:gamma'.")
+
+    xgb_model = make_xgb_model(objective, base_score, sklearn_class, empty_trees)
+    d4p_model = d4p.mb.convert_model(xgb_model)
+
+    if sklearn_class:
+        xgb_model = xgb_model.get_booster()
+
+    assert d4p_model.model_type == "xgboost"
+    assert d4p_model.is_regressor_
+    assert d4p_model.n_classes_ == 0
+    assert d4p_model.n_features_in_ == xgb_model.num_features()
+
+    rng = np.random.default_rng(seed=123)
+    X_test = rng.standard_normal(size=(3, xgb_model.num_features()), dtype=dtype)
+    if with_nan:
+        X_test[:, 2:] = np.nan
+        X_test[-1] = np.nan
+    dm_test = xgb.DMatrix(X_test)
+
+    np.testing.assert_allclose(
+        d4p_model.predict(X_test),
+        xgb_model.predict(dm_test, output_margin=True),
+        atol=1e-5,
+        rtol=1e-5,
+    )
+
+
+@pytest.mark.parametrize("objective", ["reg:squarederror", "reg:gamma", "reg:logistic"])
+@pytest.mark.parametrize("base_score", [None, 0.0, 0.1, 10.0])
+@pytest.mark.parametrize("sklearn_class", [False, True])
+@pytest.mark.parametrize("with_nan", [False, True])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("empty_trees", [False, True])
+def test_xgb_regression_shap(
+    objective, base_score, sklearn_class, with_nan, dtype, empty_trees
+):
+    if (
+        (objective == "reg:logistic")
+        and (base_score is not None)
+        and (base_score > 0.0 or base_score < 1.0)
+    ):
+        pytest.skip("'base_score' not applicable to binary data.")
+    if (objective == "reg:gamma") and (base_score is not None) and (base_score == 0.0):
+        pytest.skip("'base_score' of zero not applicable to objective 'reg:gamma'.")
+
+    xgb_model = make_xgb_model(objective, base_score, sklearn_class, empty_trees)
+    d4p_model = d4p.mb.convert_model(xgb_model)
+
+    if sklearn_class:
+        xgb_model = xgb_model.get_booster()
+
+    assert d4p_model.model_type == "xgboost"
+    assert d4p_model.is_regressor_
+    assert d4p_model.n_classes_ == 0
+    assert d4p_model.n_features_in_ == xgb_model.num_features()
+
+    rng = np.random.default_rng(seed=123)
+    X_test = rng.standard_normal(size=(3, xgb_model.num_features()), dtype=dtype)
+    if with_nan:
+        X_test[:, 2:] = np.nan
+        X_test[-1] = np.nan
+    dm_test = xgb.DMatrix(X_test)
+
+    if shap_supported:
+        np.testing.assert_allclose(
+            d4p_model.predict(X_test, pred_contribs=True),
+            xgb_model.predict(dm_test, pred_contribs=True),
+            atol=1e-5,
+            rtol=1e-5,
+        )
+        np.testing.assert_allclose(
+            d4p_model.predict(X_test, pred_interactions=True),
+            xgb_model.predict(dm_test, pred_interactions=True),
+            atol=1e-5,
+            rtol=1e-5,
         )
 
-        # training parameters setting
-        params = {
-            "n_estimators": 100,
-            "max_bin": 256,
-            "scale_pos_weight": 2,
-            "lambda_l2": 1,
-            "alpha": 0.9,
-            "max_depth": 8,
-            "num_leaves": 2**8,
-            "verbosity": 0,
-            "objective": "multi:softproba",
+    elif not shap_api_changed:
+        with pytest.raises(NotImplementedError):
+            d4p_model.predict(X_test, pred_contribs=True)
+
+
+@pytest.mark.parametrize("objective", ["binary:logistic", "binary:logitraw"])
+@pytest.mark.parametrize("base_score", [None, 0.2, 0.5])
+@pytest.mark.parametrize("sklearn_class", [False, True])
+@pytest.mark.parametrize("with_nan", [False, True])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("empty_trees", [False, True])
+def test_xgb_binary_classification(
+    objective, base_score, sklearn_class, with_nan, dtype, empty_trees
+):
+    xgb_model = make_xgb_model(objective, base_score, sklearn_class, empty_trees)
+    d4p_model = d4p.mb.convert_model(xgb_model)
+
+    if sklearn_class:
+        xgb_model = xgb_model.get_booster()
+
+    assert d4p_model.model_type == "xgboost"
+    assert d4p_model.is_classifier_
+    assert d4p_model.n_classes_ == 2
+    assert d4p_model.n_features_in_ == xgb_model.num_features()
+
+    rng = np.random.default_rng(seed=123)
+    X_test = rng.standard_normal(size=(3, xgb_model.num_features()), dtype=dtype)
+    if with_nan:
+        X_test[:, 2:] = np.nan
+        X_test[-1] = np.nan
+    dm_test = xgb.DMatrix(X_test)
+
+    if objective == "binary:logistic":
+        np.testing.assert_allclose(
+            d4p_model.predict_proba(X_test)[:, 1],
+            xgb_model.predict(dm_test),
+            atol=1e-5,
+            rtol=1e-5,
+        )
+        np.testing.assert_allclose(
+            d4p_model.predict_proba(X_test)[:, 0],
+            1.0 - xgb_model.predict(dm_test),
+            atol=1e-5,
+            rtol=1e-5,
+        )
+    elif objective == "binary:logitraw":
+        xgb_prob = 1 / (1 + np.exp(-xgb_model.predict(dm_test)))
+        np.testing.assert_allclose(
+            d4p_model.predict_proba(X_test)[:, 1],
+            xgb_prob,
+            atol=1e-5,
+            rtol=1e-5,
+        )
+        np.testing.assert_allclose(
+            d4p_model.predict_proba(X_test)[:, 0],
+            1.0 - xgb_prob,
+            atol=1e-5,
+            rtol=1e-5,
+        )
+
+    np.testing.assert_equal(
+        d4p_model.predict(X_test),
+        np.argmax(d4p_model.predict_proba(X_test), axis=1),
+    )
+
+
+@pytest.mark.parametrize("objective", ["binary:logistic", "binary:logitraw"])
+@pytest.mark.parametrize("base_score", [None, 0.2, 0.5])
+@pytest.mark.parametrize("sklearn_class", [False, True])
+@pytest.mark.parametrize("with_nan", [False, True])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("empty_trees", [False, True])
+def test_xgb_binary_classification_shap(
+    objective, base_score, sklearn_class, with_nan, dtype, empty_trees
+):
+    xgb_model = make_xgb_model(objective, base_score, sklearn_class, empty_trees)
+    d4p_model = d4p.mb.convert_model(xgb_model)
+
+    if sklearn_class:
+        xgb_model = xgb_model.get_booster()
+
+    assert d4p_model.model_type == "xgboost"
+    assert d4p_model.is_classifier_
+    assert d4p_model.n_classes_ == 2
+    assert d4p_model.n_features_in_ == xgb_model.num_features()
+
+    rng = np.random.default_rng(seed=123)
+    X_test = rng.standard_normal(size=(3, xgb_model.num_features()), dtype=dtype)
+    if with_nan:
+        X_test[:, 2:] = np.nan
+        X_test[-1] = np.nan
+    dm_test = xgb.DMatrix(X_test)
+
+    if shap_supported:
+        np.testing.assert_allclose(
+            d4p_model.predict(X_test, pred_contribs=True),
+            xgb_model.predict(dm_test, pred_contribs=True),
+            atol=1e-5,
+            rtol=1e-5,
+        )
+        np.testing.assert_allclose(
+            d4p_model.predict(X_test, pred_interactions=True),
+            xgb_model.predict(dm_test, pred_interactions=True),
+            atol=1e-5,
+            rtol=1e-5,
+        )
+
+    elif not shap_api_changed:
+        with pytest.raises(NotImplementedError):
+            d4p_model.predict(X_test, pred_contribs=True)
+
+
+@pytest.mark.parametrize("objective", ["multi:softmax", "multi:softprob"])
+@pytest.mark.parametrize("base_score", [None, 0.2, 0.5])
+@pytest.mark.parametrize("sklearn_class", [False, True])
+@pytest.mark.parametrize("with_nan", [False, True])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("empty_trees", [False, True])
+def test_xgb_multiclass_classification(
+    objective, base_score, sklearn_class, with_nan, dtype, empty_trees
+):
+    xgb_model = make_xgb_model(objective, base_score, sklearn_class, empty_trees)
+    d4p_model = d4p.mb.convert_model(xgb_model)
+
+    if sklearn_class:
+        xgb_model = xgb_model.get_booster()
+
+    assert d4p_model.model_type == "xgboost"
+    assert d4p_model.is_classifier_
+    assert d4p_model.n_classes_ == 3
+    assert d4p_model.n_features_in_ == xgb_model.num_features()
+
+    rng = np.random.default_rng(seed=123)
+    X_test = rng.standard_normal(size=(3, xgb_model.num_features()), dtype=dtype)
+    if with_nan:
+        X_test[:, 2:] = np.nan
+        X_test[-1] = np.nan
+    dm_test = xgb.DMatrix(X_test)
+
+    if objective == "multi:softprob":
+        np.testing.assert_allclose(
+            d4p_model.predict_proba(X_test),
+            xgb_model.predict(dm_test),
+            atol=1e-5,
+            rtol=1e-5,
+        )
+    elif objective == "multi:softmax":
+        np.testing.assert_equal(
+            d4p_model.predict(X_test),
+            xgb_model.predict(dm_test),
+        )
+
+    if shap_supported:
+        with pytest.raises(TypeError):
+            d4p_model.predict(X_test, pred_contribs=True)
+        with pytest.raises(TypeError):
+            d4p_model.predict(X_test, pred_interactions=True)
+    elif not shap_api_changed:
+        with pytest.raises(NotImplementedError):
+            d4p_model.predict(X_test, pred_contribs=True)
+
+
+def test_xgb_early_stop():
+    X, y = make_classification(
+        n_samples=1_500,
+        n_features=10,
+        n_informative=3,
+        n_classes=4,
+        random_state=123,
+    )
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.5, random_state=123
+    )
+    xgb_model = xgb.train(
+        dtrain=xgb.DMatrix(X_train, y_train),
+        evals=[(xgb.DMatrix(X_test, y_test), "test")],
+        verbose_eval=False,
+        num_boost_round=20,
+        early_stopping_rounds=5,
+        params={
+            "objective": "multi:softprob",
             "learning_rate": 0.3,
-            "num_class": num_classes,
-            "early_stopping_rounds": 5,
-            "verbose_eval": False,
-        }
+            "num_class": 4,
+            "seed": 123,
+            "n_jobs": 1,
+        },
+    )
+    assert xgb_model.best_iteration < 19
+    d4p_model = d4p.mb.convert_model(xgb_model)
+    np.testing.assert_allclose(
+        d4p_model.predict_proba(X_test),
+        xgb_model.inplace_predict(
+            X_test,
+            iteration_range=(0, xgb_model.best_iteration + 1),
+        ),
+        atol=1e-5,
+        rtol=1e-5,
+    )
 
-        cls.xgb_clf = xgb.XGBClassifier(**params)
-        cls.xgb_clf.fit(
-            X_train, y_train, eval_set=[(cls.X_test, cls.y_test)], verbose=False
+
+def test_xgb_unsupported():
+    X, y = make_regression(n_samples=10, n_features=4, random_state=123)
+    xgb_model = xgb.train(
+        dtrain=xgb.DMatrix(X, y),
+        num_boost_round=5,
+        params={
+            "objective": "reg:squarederror",
+            "booster": "gblinear",
+            "seed": 123,
+            "nthread": 1,
+        },
+    )
+    with pytest.raises(TypeError):
+        d4p.mb.convert_model(xgb_model)
+
+    xgb_model = xgb.train(
+        dtrain=xgb.DMatrix(X, y),
+        num_boost_round=5,
+        params={
+            "objective": "reg:squarederror",
+            "booster": "dart",
+            "max_depth": 3,
+            "seed": 123,
+            "nthread": 1,
+        },
+    )
+    with pytest.raises(TypeError):
+        d4p.mb.convert_model(xgb_model)
+
+    xgb_model = xgb.train(
+        dtrain=xgb.DMatrix(X, y),
+        num_boost_round=5,
+        params={
+            "objective": "reg:quantileerror",
+            "quantile_alpha": [0.1, 0.9],
+            "max_depth": 3,
+            "seed": 123,
+            "nthread": 1,
+        },
+    )
+    with pytest.raises(TypeError):
+        d4p.mb.convert_model(xgb_model)
+
+    X, y = make_regression(n_samples=10, n_features=2, n_targets=2, random_state=123)
+    xgb_model = xgb.train(
+        dtrain=xgb.DMatrix(X, y),
+        num_boost_round=5,
+        params={
+            "max_depth": 3,
+            "seed": 123,
+            "nthread": 1,
+        },
+    )
+    with pytest.raises(TypeError):
+        d4p.mb.convert_model(xgb_model)
+
+    X = X.astype(int)
+    X -= X.min(axis=0, keepdims=True)
+    xgb_model = xgb.train(
+        dtrain=xgb.DMatrix(X, y[:, 0], feature_types=["c"] * X.shape[1]),
+        num_boost_round=5,
+        params={
+            "max_depth": 3,
+            "seed": 123,
+            "nthread": 1,
+        },
+    )
+    with pytest.raises(TypeError):
+        d4p.mb.convert_model(xgb_model)
+
+
+def make_lgb_model(
+    objective: str,
+    sklearn_class: bool,
+    with_nan: bool,
+    empty_trees: bool,
+    boost_from_average: "None | bool" = None,
+) -> "lgb.Booster | lgb.LGBMRegressor | lgb.LGBMClassifier":
+    min_data_in_leaf = 5_000 if empty_trees else 2
+    params_boost_from_average = (
+        {"boost_from_average": boost_from_average}
+        if boost_from_average is not None
+        else {}
+    )
+    if objective == "binary":
+        X, y = make_classification(
+            n_samples=11,
+            n_classes=2,
+            n_features=3,
+            n_informative=3,
+            n_redundant=0,
+            random_state=123,
         )
-        cls.daal_model = d4p.mb.convert_model(cls.xgb_clf.get_booster())
-
-    def test_early_stopping(self):
-        xgb_prediction = self.xgb_clf.predict(self.X_test)
-        xgb_proba = self.xgb_clf.predict_proba(self.X_test)
-        xgb_errors_count = np.count_nonzero(xgb_prediction - np.ravel(self.y_test))
-
-        daal_prediction = self.daal_model.predict(self.X_test)
-        daal_proba = self.daal_model.predict_proba(self.X_test)
-        daal_errors_count = np.count_nonzero(daal_prediction - np.ravel(self.y_test))
-
-        self.assertTrue(np.absolute(xgb_errors_count - daal_errors_count) == 0)
-
-        np.testing.assert_allclose(xgb_proba, daal_proba, rtol=1e-6)
-
-
-class ModelBuilderTreeView(unittest.TestCase):
-    def test_model_from_booster(self):
-        class MockBooster:
-            def get_dump(self, *_, **kwargs):
-                # raw dump of 2 trees with a max depth of 1
-                return [
-                    '  { "nodeid": 0, "depth": 0, "split": "1", "split_condition": 2, "yes": 1, "no": 2, "missing": 1 , "gain": 3, "cover": 4, "children": [\n    { "nodeid": 1, "leaf": 5 , "cover": 6 }, \n    { "nodeid": 2, "leaf": 7 , "cover":8 }\n  ]}',
-                    '  { "nodeid": 0, "leaf": 0.2 , "cover": 42 }',
-                ]
-
-        mock = MockBooster()
-        result = gbt_convertors.TreeList.from_xgb_booster(
-            mock, max_trees=0, feature_names_to_indices={"1": 1}
+        if with_nan:
+            X[-1, :] = np.nan
+        if sklearn_class:
+            return lgb.LGBMClassifier(
+                objective=objective,
+                n_estimators=5,
+                max_depth=3,
+                num_leaves=6,
+                min_data_in_leaf=min_data_in_leaf,
+                min_data_in_bin=1,
+                min_sum_hessian_in_leaf=1e-10,
+                random_state=123,
+                deterministic=True,
+                verbose=-1,
+                n_jobs=1,
+                **params_boost_from_average,
+            ).fit(X, y)
+        else:
+            return lgb.train(
+                train_set=lgb.Dataset(X, y),
+                num_boost_round=5,
+                params={
+                    "objective": objective,
+                    "max_depth": 3,
+                    "num_leaves": 6,
+                    "min_data_in_leaf": min_data_in_leaf,
+                    "min_data_in_bin": 1,
+                    "min_sum_hessian_in_leaf": 1e-10,
+                    "num_threads": 1,
+                    "verbose": -1,
+                    "seed": 123,
+                    "deterministic": True,
+                }
+                | params_boost_from_average,
+            )
+    elif objective == "multiclass":
+        X, y = make_classification(
+            n_samples=10,
+            n_classes=3,
+            n_informative=3,
+            n_redundant=0,
+            random_state=123,
         )
-        self.assertEqual(len(result), 2)
-
-        tree0 = result[0]
-        self.assertIsInstance(tree0, gbt_convertors.TreeView)
-        self.assertFalse(tree0.is_leaf)
-        with self.assertRaises(ValueError):
-            tree0.cover
-        with self.assertRaises(ValueError):
-            tree0.value
-
-        self.assertIsInstance(tree0.root_node, gbt_convertors.Node)
-
-        self.assertEqual(tree0.root_node.cover, 4)
-        self.assertEqual(tree0.root_node.left_child.cover, 6)
-        self.assertEqual(tree0.root_node.right_child.cover, 8)
-
-        self.assertFalse(tree0.root_node.is_leaf)
-        self.assertTrue(tree0.root_node.left_child.is_leaf)
-        self.assertTrue(tree0.root_node.right_child.is_leaf)
-
-        self.assertTrue(tree0.root_node.default_left)
-        self.assertFalse(tree0.root_node.left_child.default_left)
-        self.assertFalse(tree0.root_node.right_child.default_left)
-
-        self.assertEqual(tree0.root_node.feature, 1)
-        with self.assertRaises(ValueError):
-            tree0.root_node.left_child.feature
-        with self.assertRaises(ValueError):
-            tree0.root_node.right_child.feature
-
-        self.assertEqual(tree0.root_node.value, 2)
-        self.assertEqual(tree0.root_node.left_child.value, 5)
-        self.assertEqual(tree0.root_node.right_child.value, 7)
-
-        self.assertEqual(tree0.root_node.n_children, 2)
-        self.assertEqual(tree0.root_node.left_child.n_children, 0)
-        self.assertEqual(tree0.root_node.right_child.n_children, 0)
-
-        self.assertIsNone(tree0.root_node.left_child.left_child)
-        self.assertIsNone(tree0.root_node.left_child.right_child)
-        self.assertIsNone(tree0.root_node.right_child.left_child)
-        self.assertIsNone(tree0.root_node.right_child.right_child)
-
-        tree1 = result[1]
-        self.assertIsInstance(tree1, gbt_convertors.TreeView)
-        self.assertTrue(tree1.is_leaf)
-        self.assertEqual(tree1.n_nodes, 1)
-        self.assertEqual(tree1.cover, 42)
-        self.assertEqual(tree1.value, 0.2)
-
-
-class TestXGBObjectIsNotCorrupted(unittest.TestCase):
-    def test_xgb_not_corrupted_no_names(self):
-        X, y = make_regression(n_samples=100, n_features=10, random_state=123)
-        X[:, 1] = X[:, 1].astype(int)
-        dm = xgb.DMatrix(X, y, feature_types=["q", "int"] + (["q"] * (X.shape[1] - 2)))
-        xgb_model = xgb.train(
-            params={"objective": "reg:squarederror", "seed": 123},
-            dtrain=dm,
-            num_boost_round=10,
-        )
-        model_bytes_before = xgb_model.save_raw()
-
-        d4p_model = d4p.mb.convert_model(xgb_model)
-
-        model_bytes_after = xgb_model.save_raw()
-        assert model_bytes_before == model_bytes_after
-
-        xgb_pred = xgb_pred = xgb_model.predict(dm)
-        xgb_pred_fresh = xgb.train(
-            params={"objective": "reg:squarederror", "seed": 123},
-            dtrain=xgb.DMatrix(X, y),
-            num_boost_round=10,
-        ).predict(xgb.DMatrix(X))
-        np.testing.assert_almost_equal(xgb_pred, xgb_pred_fresh)
-
-    def test_xgb_not_corrupted_with_names(self):
-        X, y = make_regression(n_samples=100, n_features=10, random_state=123)
-        X[:, 1] = X[:, 1].astype(int)
-        dm = xgb.DMatrix(
-            X,
-            y,
-            feature_types=["q", "int"] + (["q"] * (X.shape[1] - 2)),
-            feature_names=[f"col{i+1}" for i in range(X.shape[1])],
-        )
-        xgb_model = xgb.train(
-            params={"objective": "reg:squarederror", "seed": 123},
-            dtrain=dm,
-            num_boost_round=10,
-        )
-        model_bytes_before = xgb_model.save_raw()
-
-        d4p_model = d4p.mb.convert_model(xgb_model)
-
-        model_bytes_after = xgb_model.save_raw()
-        assert model_bytes_before == model_bytes_after
-
-        xgb_pred = xgb_pred = xgb_model.predict(dm)
-        xgb_pred_fresh = xgb.train(
-            params={"objective": "reg:squarederror", "seed": 123},
-            dtrain=xgb.DMatrix(X, y),
-            num_boost_round=10,
-        ).predict(xgb.DMatrix(X))
-        np.testing.assert_almost_equal(xgb_pred, xgb_pred_fresh)
-
-        np.testing.assert_allclose(d4p_model.predict(X), xgb_pred, rtol=1e-5)
+        if with_nan:
+            X[-1, :] = np.nan
+        if sklearn_class:
+            return lgb.LGBMClassifier(
+                objective=objective,
+                n_estimators=5,
+                max_depth=3,
+                num_leaves=6,
+                min_data_in_leaf=min_data_in_leaf,
+                min_data_in_bin=1,
+                min_sum_hessian_in_leaf=1e-10,
+                random_state=123,
+                deterministic=True,
+                verbose=-1,
+                n_jobs=1,
+                **params_boost_from_average,
+            ).fit(X, y)
+        else:
+            return lgb.train(
+                train_set=lgb.Dataset(X, y),
+                num_boost_round=5,
+                params={
+                    "objective": objective,
+                    "num_class": 3,
+                    "max_depth": 3,
+                    "num_leaves": 6,
+                    "min_data_in_leaf": min_data_in_leaf,
+                    "min_data_in_bin": 1,
+                    "min_sum_hessian_in_leaf": 1e-10,
+                    "num_threads": 1,
+                    "verbose": -1,
+                    "seed": 123,
+                    "deterministic": True,
+                }
+                | params_boost_from_average,
+            )
+    else:
+        X, y = make_regression(n_samples=10, n_features=4, random_state=123)
+        if with_nan:
+            X[-1, :] = np.nan
+        if objective == "gamma":
+            y = np.exp((y - y.mean()) / y.std())
+        if sklearn_class:
+            return lgb.LGBMRegressor(
+                objective=objective,
+                n_estimators=5,
+                max_depth=3,
+                num_leaves=6,
+                min_data_in_leaf=min_data_in_leaf,
+                min_data_in_bin=1,
+                min_sum_hessian_in_leaf=1e-10,
+                random_state=123,
+                deterministic=True,
+                verbose=-1,
+                n_jobs=1,
+                **params_boost_from_average,
+            ).fit(X, y)
+        else:
+            return lgb.train(
+                train_set=lgb.Dataset(X, y),
+                num_boost_round=5,
+                params={
+                    "objective": objective,
+                    "max_depth": 3,
+                    "num_leaves": 6,
+                    "min_data_in_leaf": min_data_in_leaf,
+                    "min_data_in_bin": 1,
+                    "min_sum_hessian_in_leaf": 1e-10,
+                    "num_threads": 1,
+                    "verbose": -1,
+                    "seed": 123,
+                    "deterministic": True,
+                }
+                | params_boost_from_average,
+            )
 
 
-class TestLogRegBuilderClass(unittest.TestCase):
-    def test_logreg_binary(self):
-        if not sklearn_check_version("1.1"):
-            return
-        X, y = make_classification(random_state=123)
-        model_skl = SGDClassifier(
-            loss="log_loss", fit_intercept=False, random_state=123
-        ).fit(X, y)
-        model_d4p = d4p.mb.convert_model(model_skl)
-        np.testing.assert_almost_equal(
-            model_d4p.predict(X[::-1]),
-            model_skl.predict(X[::-1]),
-        )
-        np.testing.assert_almost_equal(
-            model_d4p.predict_proba(X[::-1]),
-            model_skl.predict_proba(X[::-1]),
-        )
-        np.testing.assert_almost_equal(
-            model_d4p.predict_log_proba(X[::-1]),
-            model_skl.predict_log_proba(X[::-1]),
-        )
+@pytest.mark.parametrize("objective", ["regression", "gamma"])
+@pytest.mark.parametrize("sklearn_class", [False, True])
+@pytest.mark.parametrize("with_nan", [False, True])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("empty_trees", [False, True])
+@pytest.mark.parametrize("boost_from_average", [False, True])
+def test_lgb_regression(
+    objective, sklearn_class, with_nan, dtype, empty_trees, boost_from_average
+):
+    lgb_model = make_lgb_model(
+        objective, sklearn_class, with_nan, empty_trees, boost_from_average
+    )
+    d4p_model = d4p.mb.convert_model(lgb_model)
 
-    def test_logreg_multiclass(self):
-        X, y = make_classification(n_classes=3, n_informative=4, random_state=123)
-        model_skl = LogisticRegression().fit(X, y)
-        model_d4p = d4p.mb.convert_model(model_skl)
-        np.testing.assert_almost_equal(
-            model_d4p.predict(X[::-1]),
-            model_skl.predict(X[::-1]),
-        )
-        np.testing.assert_almost_equal(
-            model_d4p.predict_proba(X[::-1]),
-            model_skl.predict_proba(X[::-1]),
-        )
-        np.testing.assert_almost_equal(
-            model_d4p.predict_log_proba(X[::-1]),
-            model_skl.predict_log_proba(X[::-1]),
-        )
+    if sklearn_class:
+        lgb_model = lgb_model.booster_
 
-    def test_error_on_nonlogistic(self):
-        X, y = make_classification(n_classes=3, n_informative=4, random_state=123)
-        model_skl = LogisticRegression(multi_class="ovr").fit(X, y)
-        try:
-            d4p.mb.convert_model(model_skl)
-            assert False
-        except TypeError:
-            assert True
+    assert d4p_model.model_type == "lightgbm"
+    assert d4p_model.is_regressor_
+    assert d4p_model.n_classes_ == 1
+    assert d4p_model.n_features_in_ == lgb_model.num_feature()
 
-    def test_serialization(self):
-        if not sklearn_check_version("1.1"):
-            return
-        X, y = make_classification(random_state=123)
-        model_skl = SGDClassifier(
-            loss="log_loss", fit_intercept=False, random_state=123
-        ).fit(X, y)
-        model_d4p_base = d4p.mb.convert_model(model_skl)
-        model_d4p = pickle.loads(pickle.dumps(model_d4p_base))
-        np.testing.assert_almost_equal(
-            model_d4p_base.predict_proba(X[::-1]),
-            model_d4p.predict_proba(X[::-1]),
-        )
+    rng = np.random.default_rng(seed=123)
+    X_test = rng.standard_normal(size=(3, lgb_model.num_feature()), dtype=dtype)
+    if with_nan:
+        X_test[:, 2:] = np.nan
+        X_test[-1] = np.nan
 
-    def test_fp32(self):
-        X, y = make_classification(random_state=123)
-        model_skl = LogisticRegression().fit(X, y)
-        model_d4p = d4p.mb.LogisticDAALModel(
-            model_skl.coef_, model_skl.intercept_, dtype=np.float32
-        )
-        np.testing.assert_almost_equal(
-            model_d4p.predict(X[::-1]),
-            model_skl.predict(X[::-1]),
-        )
+    np.testing.assert_allclose(
+        d4p_model.predict(X_test),
+        lgb_model.predict(X_test, raw_score=True),
+        atol=1e-5,
+        rtol=1e-5,
+    )
+
+    if shap_supported:
         np.testing.assert_allclose(
-            model_d4p.predict_proba(X[::-1]),
-            model_skl.predict_proba(X[::-1]),
-            atol=1e-6,
+            d4p_model.predict(X_test, pred_contribs=True),
+            lgb_model.predict(X_test, pred_contrib=True),
+            atol=1e-5,
+            rtol=1e-5,
         )
+
+    elif not shap_api_changed:
+        with pytest.raises(NotImplementedError):
+            d4p_model.predict(X_test, pred_contribs=True)
+
+
+@pytest.mark.skipif(not shap_available, reason=shap_unavailable_str)
+@pytest.mark.parametrize("objective", ["regression", "gamma"])
+@pytest.mark.parametrize("sklearn_class", [False, True])
+@pytest.mark.parametrize("with_nan", [False, True])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("empty_trees", [False, True])
+@pytest.mark.parametrize("boost_from_average", [False, True])
+def test_lgb_regression_interactions(
+    objective, sklearn_class, with_nan, dtype, empty_trees, boost_from_average
+):
+    if empty_trees:
+        pytest.skip("Case not supported by library 'shap'.")
+    lgb_model = make_lgb_model(
+        objective, sklearn_class, with_nan, empty_trees, boost_from_average
+    )
+    d4p_model = d4p.mb.convert_model(lgb_model)
+
+    if sklearn_class:
+        lgb_model = lgb_model.booster_
+
+    assert d4p_model.model_type == "lightgbm"
+    assert d4p_model.is_regressor_
+    assert d4p_model.n_classes_ == 1
+    assert d4p_model.n_features_in_ == lgb_model.num_feature()
+
+    rng = np.random.default_rng(seed=123)
+    X_test = rng.standard_normal(size=(3, lgb_model.num_feature()), dtype=dtype)
+    if with_nan:
+        X_test[:, 2:] = np.nan
+        X_test[-1] = np.nan
+
+    if shap_supported:
+        # SHAP Python package drops bias terms from the returned matrix, therefore we drop the final row & column
         np.testing.assert_allclose(
+            d4p_model.predict(X_test, pred_interactions=True)[:, :-1, :-1],
+            shap.TreeExplainer(lgb_model).shap_interaction_values(X_test),
+            atol=1e-5,
+            rtol=1e-5,
+        )
+
+    elif not shap_api_changed:
+        with pytest.raises(NotImplementedError):
+            d4p_model.predict(X_test, pred_contribs=True)
+
+
+@pytest.mark.parametrize("sklearn_class", [False, True])
+@pytest.mark.parametrize("with_nan", [False, True])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("empty_trees", [False, True])
+@pytest.mark.parametrize("boost_from_average", [False, True])
+def test_lgb_binary_classification(
+    sklearn_class, with_nan, dtype, empty_trees, boost_from_average
+):
+    lgb_model = make_lgb_model(
+        "binary", sklearn_class, with_nan, empty_trees, boost_from_average
+    )
+    d4p_model = d4p.mb.convert_model(lgb_model)
+
+    if sklearn_class:
+        lgb_model = lgb_model.booster_
+
+    assert d4p_model.model_type == "lightgbm"
+    assert d4p_model.is_classifier_
+    assert d4p_model.n_classes_ == 2
+    assert d4p_model.n_features_in_ == lgb_model.num_feature()
+
+    rng = np.random.default_rng(seed=123)
+    X_test = rng.standard_normal(size=(3, lgb_model.num_feature()), dtype=dtype)
+    if with_nan:
+        X_test[:, 2:] = np.nan
+        X_test[-1] = np.nan
+
+    np.testing.assert_allclose(
+        d4p_model.predict_proba(X_test)[:, 1],
+        lgb_model.predict(X_test),
+        atol=1e-5,
+        rtol=1e-5,
+    )
+    np.testing.assert_allclose(
+        d4p_model.predict_proba(X_test)[:, 0],
+        1.0 - lgb_model.predict(X_test),
+        atol=1e-5,
+        rtol=1e-5,
+    )
+
+    np.testing.assert_equal(
+        d4p_model.predict(X_test),
+        np.argmax(d4p_model.predict_proba(X_test), axis=1),
+    )
+
+    if shap_supported:
+        np.testing.assert_allclose(
+            d4p_model.predict(X_test, pred_contribs=True),
+            lgb_model.predict(X_test, pred_contrib=True),
+            atol=1e-5,
+            rtol=1e-5,
+        )
+
+    elif not shap_api_changed:
+        with pytest.raises(NotImplementedError):
+            d4p_model.predict(X_test, pred_contribs=True)
+
+
+@pytest.mark.parametrize("sklearn_class", [False, True])
+@pytest.mark.parametrize("with_nan", [False, True])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("empty_trees", [False, True])
+@pytest.mark.parametrize("boost_from_average", [False, True])
+def test_lgb_multiclass_classification(
+    sklearn_class, with_nan, dtype, empty_trees, boost_from_average
+):
+    lgb_model = make_lgb_model(
+        "multiclass", sklearn_class, with_nan, empty_trees, boost_from_average
+    )
+    d4p_model = d4p.mb.convert_model(lgb_model)
+
+    if sklearn_class:
+        lgb_model = lgb_model.booster_
+
+    assert d4p_model.model_type == "lightgbm"
+    assert d4p_model.is_classifier_
+    assert d4p_model.n_classes_ == 3
+    assert d4p_model.n_features_in_ == lgb_model.num_feature()
+
+    rng = np.random.default_rng(seed=123)
+    X_test = rng.standard_normal(size=(3, lgb_model.num_feature()), dtype=dtype)
+    if with_nan:
+        X_test[:, 2:] = np.nan
+        X_test[-1] = np.nan
+
+    np.testing.assert_allclose(
+        d4p_model.predict_proba(X_test),
+        lgb_model.predict(X_test),
+        atol=1e-5,
+        rtol=1e-5,
+    )
+
+    np.testing.assert_equal(
+        d4p_model.predict(X_test),
+        np.argmax(d4p_model.predict_proba(X_test), axis=1),
+    )
+
+
+def test_lgb_early_stop():
+    X, y = make_classification(
+        n_samples=1_500,
+        n_features=10,
+        n_informative=3,
+        n_classes=4,
+        random_state=123,
+    )
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.5, random_state=123
+    )
+    lgb_model = lgb.train(
+        train_set=lgb.Dataset(X_train, y_train),
+        valid_sets=[lgb.Dataset(X_test, y_test)],
+        num_boost_round=25,
+        params={
+            "early_stopping_round": 2,
+            "early_stopping_min_delta": 0.05,
+            "objective": "binary",
+            "max_depth": 3,
+            "num_leaves": 6,
+            "min_data_in_leaf": 2,
+            "min_data_in_bin": 1,
+            "min_sum_hessian_in_leaf": 1e-10,
+            "num_threads": 1,
+            "verbose": -1,
+            "seed": 123,
+            "deterministic": True,
+        },
+    )
+    assert lgb_model.num_trees() < 25
+    assert lgb_model.num_trees() > 1
+    d4p_model = d4p.mb.convert_model(lgb_model)
+    np.testing.assert_almost_equal(
+        d4p_model.predict_proba(X_test)[:, 1],
+        lgb_model.predict(X_test),
+    )
+
+
+def test_lgb_unsupported():
+    X, y = make_regression(n_samples=10, n_features=4, random_state=123)
+    lgb_model = lgb.train(
+        train_set=lgb.Dataset(X, y),
+        num_boost_round=5,
+        params={
+            "linear_tree": True,
+            "max_depth": 3,
+            "num_leaves": 6,
+            "min_data_in_leaf": 2,
+            "min_data_in_bin": 1,
+            "min_sum_hessian_in_leaf": 1e-10,
+            "num_threads": 1,
+            "verbose": -1,
+            "seed": 123,
+            "deterministic": True,
+        },
+    )
+    with pytest.raises(TypeError):
+        d4p.mb.convert_model(lgb_model)
+
+    lgb_model = lgb.train(
+        train_set=lgb.Dataset(X, y),
+        num_boost_round=5,
+        params={
+            "boosting": "dart",
+            "learning_rate": 0.5,
+            "max_depth": 3,
+            "num_leaves": 6,
+            "min_data_in_leaf": 2,
+            "min_data_in_bin": 1,
+            "min_sum_hessian_in_leaf": 1e-10,
+            "num_threads": 1,
+            "verbose": -1,
+            "seed": 123,
+            "deterministic": True,
+        },
+    )
+    with pytest.raises(TypeError):
+        d4p.mb.convert_model(lgb_model)
+
+    lgb_model = lgb.train(
+        train_set=lgb.Dataset(X, y),
+        num_boost_round=5,
+        params={
+            "boosting": "rf",
+            "bagging_fraction": 0.5,
+            "feature_fraction": 0.5,
+            "max_depth": 3,
+            "num_leaves": 6,
+            "min_data_in_leaf": 2,
+            "min_data_in_bin": 1,
+            "min_sum_hessian_in_leaf": 1e-10,
+            "num_threads": 1,
+            "verbose": -1,
+            "seed": 123,
+            "deterministic": True,
+        },
+    )
+    with pytest.raises(TypeError):
+        d4p.mb.convert_model(lgb_model)
+
+    X = X.astype(int)
+    X -= X.min(axis=0, keepdims=True)
+    lgb_model = lgb.train(
+        train_set=lgb.Dataset(X, y, categorical_feature=np.arange(X.shape[1]).tolist()),
+        num_boost_round=5,
+        params={
+            "max_depth": 3,
+            "num_leaves": 6,
+            "min_data_in_leaf": 2,
+            "min_data_in_bin": 1,
+            "min_sum_hessian_in_leaf": 1e-10,
+            "num_threads": 1,
+            "verbose": -1,
+            "seed": 123,
+            "deterministic": True,
+        },
+    )
+
+
+def make_cb_model(
+    objective: str,
+    grow_policy: str,
+    nan_mode: str,
+    sklearn_class: bool,
+    empty_trees: bool = False,
+    boost_from_average: "None | bool" = None,
+) -> "cb.CatBoostRegressor | cb.CatBoostClassifier | cb.CatBoost":
+    with_nan = nan_mode != "Forbidden"
+    depth = 0 if empty_trees else 3
+    params_boost_from_average = (
+        {"boost_from_average": boost_from_average}
+        if boost_from_average is not None
+        else {}
+    )
+    if objective == "Logloss":
+        X, y = make_classification(
+            n_samples=11,
+            n_classes=2,
+            n_features=3,
+            n_informative=3,
+            n_redundant=0,
+            random_state=123,
+        )
+        if with_nan:
+            X[-1, :] = np.nan
+        if sklearn_class:
+            return cb.CatBoostClassifier(
+                objective=objective,
+                grow_policy=grow_policy,
+                nan_mode=nan_mode,
+                boost_from_average=boost_from_average,
+                depth=depth,
+                iterations=2,
+                random_seed=123,
+                thread_count=1,
+                save_snapshot=False,
+                verbose=0,
+                allow_writing_files=False,
+            ).fit(X, y)
+        else:
+            return cb.train(
+                pool=cb.Pool(X, y),
+                params={
+                    "objective": objective,
+                    "grow_policy": grow_policy,
+                    "nan_mode": nan_mode,
+                    "depth": depth,
+                    "random_seed": 123,
+                    "thread_count": 1,
+                    "allow_writing_files": False,
+                }
+                | params_boost_from_average,
+                num_boost_round=2,
+                verbose=0,
+                save_snapshot=False,
+            )
+
+    elif objective == "MultiClass":
+        X, y = make_classification(
+            n_samples=10,
+            n_classes=3,
+            n_informative=3,
+            n_redundant=0,
+            random_state=123,
+        )
+        if with_nan:
+            X[-1, :] = np.nan
+        if sklearn_class:
+            return cb.CatBoostClassifier(
+                objective=objective,
+                grow_policy=grow_policy,
+                nan_mode=nan_mode,
+                boost_from_average=boost_from_average,
+                depth=depth,
+                iterations=2,
+                random_seed=123,
+                thread_count=1,
+                save_snapshot=False,
+                verbose=0,
+                allow_writing_files=False,
+            ).fit(X, y)
+        else:
+            return cb.train(
+                pool=cb.Pool(X, y),
+                params={
+                    "objective": objective,
+                    "grow_policy": grow_policy,
+                    "nan_mode": nan_mode,
+                    "depth": depth,
+                    "random_seed": 123,
+                    "thread_count": 1,
+                    "allow_writing_files": False,
+                }
+                | params_boost_from_average,
+                num_boost_round=2,
+                verbose=0,
+                save_snapshot=False,
+            )
+
+    else:
+        X, y = make_regression(n_samples=25, n_features=4, random_state=123)
+        if "Tweedie" in objective:
+            y = np.exp((y - y.mean()) / y.std())
+        if with_nan:
+            X[-1, :] = np.nan
+        if sklearn_class:
+            return cb.CatBoostRegressor(
+                objective=objective,
+                grow_policy=grow_policy,
+                nan_mode=nan_mode,
+                boost_from_average=boost_from_average,
+                depth=depth,
+                iterations=2,
+                random_seed=123,
+                thread_count=1,
+                save_snapshot=False,
+                verbose=0,
+                allow_writing_files=False,
+            ).fit(X, y)
+        else:
+            return cb.train(
+                pool=cb.Pool(X, y),
+                params={
+                    "objective": objective,
+                    "grow_policy": grow_policy,
+                    "nan_mode": nan_mode,
+                    "depth": depth,
+                    "random_seed": 123,
+                    "thread_count": 1,
+                    "allow_writing_files": False,
+                }
+                | params_boost_from_average,
+                num_boost_round=2,
+                verbose=0,
+                save_snapshot=False,
+            )
+
+
+@pytest.mark.skipif(not cb_available, reason=cb_unavailable_str)
+@pytest.mark.parametrize("objective", ["RMSE", "Tweedie:variance_power=1.99"])
+@pytest.mark.parametrize("boost_from_average", [False, True])
+@pytest.mark.parametrize("grow_policy", ["SymmetricTree", "Lossguide"])
+@pytest.mark.parametrize("nan_mode", ["Forbidden", "Min", "Max"])
+@pytest.mark.parametrize("sklearn_class", [False, True])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("scale", [1.0, 2.5])
+@pytest.mark.parametrize("empty_trees", [False, True])
+def test_catboost_regression(
+    objective,
+    boost_from_average,
+    grow_policy,
+    nan_mode,
+    sklearn_class,
+    dtype,
+    scale,
+    empty_trees,
+):
+    if boost_from_average and objective != "RMSE":
+        pytest.skip("Not implemented in catboost.")
+    cb_model = make_cb_model(
+        objective, grow_policy, nan_mode, sklearn_class, empty_trees, boost_from_average
+    )
+    d4p.mb.convert_model(cb_model)
+    if scale != 1:
+        bias = cb_model.get_scale_and_bias()[1]
+        cb_model.set_scale_and_bias(scale, bias)
+    d4p_model = d4p.mb.convert_model(cb_model)
+
+    assert d4p_model.model_type == "catboost"
+    assert d4p_model.is_regressor_
+    assert d4p_model.n_classes_ == 1
+    assert d4p_model.n_features_in_ == cb_model.n_features_in_
+
+    rng = np.random.default_rng(seed=123)
+    X_test = rng.standard_normal(size=(3, cb_model.n_features_in_), dtype=dtype)
+    if nan_mode != "Forbidden":
+        X_test[:, 2:] = np.nan
+        X_test[-1] = np.nan
+
+    np.testing.assert_allclose(
+        d4p_model.predict(X_test),
+        cb_model.predict(X_test, prediction_type="RawFormulaVal"),
+        atol=1e-5,
+        rtol=1e-5,
+    )
+
+    if shap_supported:
+        shap_pred = force_shap_predict(d4p_model, X_test)
+        if d4p_model.supports_shap_:
+            assert not np.isnan(shap_pred).any()
+        else:
+            assert np.isnan(shap_pred).any()
+
+
+@pytest.mark.skipif(not cb_available, reason=cb_unavailable_str)
+@pytest.mark.skipif(catboost_skip_shap, reason=catboost_skip_shap_msg)
+@pytest.mark.skipif(not shap_supported, reason=shap_not_supported_str)
+@pytest.mark.parametrize("objective", ["RMSE", "Tweedie:variance_power=1.99"])
+@pytest.mark.parametrize("boost_from_average", [False, True])
+@pytest.mark.parametrize("nan_mode", ["Forbidden", "Min", "Max"])
+@pytest.mark.parametrize("sklearn_class", [False, True])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("scale", [1.0, 2.5])
+@pytest.mark.parametrize("empty_trees", [False, True])
+def test_catboost_shap(
+    objective, boost_from_average, nan_mode, sklearn_class, dtype, scale, empty_trees
+):
+    if boost_from_average and objective != "RMSE":
+        pytest.skip("Not implemented in catboost.")
+    cb_model = make_cb_model(
+        objective,
+        "SymmetricTree",
+        nan_mode,
+        sklearn_class,
+        empty_trees,
+        boost_from_average,
+    )
+    if scale != 1:
+        bias = cb_model.get_scale_and_bias()[1]
+        cb_model.set_scale_and_bias(scale, bias)
+    d4p_model = d4p.mb.convert_model(cb_model)
+
+    if not d4p_model.supports_shap_:
+        pytest.skip("Not implemented.")
+
+    assert d4p_model.model_type == "catboost"
+    assert d4p_model.is_regressor_
+    assert d4p_model.n_classes_ == 1
+    assert d4p_model.n_features_in_ == cb_model.n_features_in_
+
+    rng = np.random.default_rng(seed=123)
+    X_test = rng.standard_normal(size=(3, cb_model.n_features_in_), dtype=dtype)
+    if nan_mode != "Forbidden":
+        X_test[:, 2:] = np.nan
+        X_test[-1] = np.nan
+
+    np.testing.assert_allclose(
+        d4p_model.predict(X_test, pred_contribs=True),
+        cb_model.get_feature_importance(cb.Pool(X_test), type="ShapValues"),
+        atol=1e-5,
+        rtol=1e-5,
+    )
+
+
+@pytest.mark.skipif(not cb_available, reason=cb_unavailable_str)
+@pytest.mark.parametrize("grow_policy", ["SymmetricTree", "Lossguide"])
+@pytest.mark.parametrize("nan_mode", ["Forbidden", "Min", "Max"])
+@pytest.mark.parametrize("sklearn_class", [False, True])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("scale", [1.0, 2.5])
+@pytest.mark.parametrize("empty_trees", [False, True])
+def test_catboost_binary_classification(
+    grow_policy, nan_mode, sklearn_class, dtype, scale, empty_trees
+):
+    cb_model = make_cb_model("Logloss", grow_policy, nan_mode, sklearn_class, empty_trees)
+    if scale != 1:
+        bias = cb_model.get_scale_and_bias()[1]
+        cb_model.set_scale_and_bias(scale, bias)
+    d4p_model = d4p.mb.convert_model(cb_model)
+
+    assert d4p_model.model_type == "catboost"
+    assert d4p_model.is_classifier_
+    assert d4p_model.n_classes_ == 2
+    assert d4p_model.n_features_in_ == cb_model.n_features_in_
+
+    rng = np.random.default_rng(seed=123)
+    X_test = rng.standard_normal(size=(3, cb_model.n_features_in_), dtype=dtype)
+    if nan_mode != "Forbidden":
+        X_test[:, 2:] = np.nan
+        X_test[-1] = np.nan
+
+    np.testing.assert_allclose(
+        d4p_model.predict_proba(X_test),
+        cb_model.predict(X_test, prediction_type="Probability"),
+        atol=1e-5,
+        rtol=1e-5,
+    )
+    np.testing.assert_allclose(
+        d4p_model.predict(X_test),
+        cb_model.predict(X_test, prediction_type="Class"),
+        atol=1e-5,
+        rtol=1e-5,
+    )
+
+    if shap_supported:
+        shap_pred = force_shap_predict(d4p_model, X_test)
+        if d4p_model.supports_shap_:
+            assert not np.isnan(shap_pred).any()
+        else:
+            assert np.isnan(shap_pred).any()
+
+
+@pytest.mark.skipif(not cb_available, reason=cb_unavailable_str)
+@pytest.mark.parametrize("grow_policy", ["SymmetricTree", "Lossguide"])
+@pytest.mark.parametrize("nan_mode", ["Forbidden", "Min", "Max"])
+@pytest.mark.parametrize("sklearn_class", [False, True])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("scale", [1.0, 2.5])
+@pytest.mark.parametrize("set_bias", [False, True])
+@pytest.mark.parametrize("empty_trees", [False, True])
+def test_catboost_multiclass_classification(
+    grow_policy, nan_mode, sklearn_class, dtype, scale, set_bias, empty_trees
+):
+    cb_model = make_cb_model(
+        "MultiClass", grow_policy, nan_mode, sklearn_class, empty_trees
+    )
+    if scale != 1:
+        bias = cb_model.get_scale_and_bias()[1]
+        cb_model.set_scale_and_bias(scale, bias)
+    if set_bias:
+        scale = cb_model.get_scale_and_bias()[0]
+        cb_model.set_scale_and_bias(scale, np.arange(3).astype(np.float64).tolist())
+    d4p_model = d4p.mb.convert_model(cb_model)
+
+    assert d4p_model.model_type == "catboost"
+    assert d4p_model.is_classifier_
+    assert d4p_model.n_classes_ == 3
+    assert d4p_model.n_features_in_ == cb_model.n_features_in_
+
+    rng = np.random.default_rng(seed=123)
+    X_test = rng.standard_normal(size=(3, cb_model.n_features_in_), dtype=dtype)
+    if nan_mode != "Forbidden":
+        X_test[:, 2:] = np.nan
+        X_test[-1] = np.nan
+
+    np.testing.assert_allclose(
+        d4p_model.predict_proba(X_test),
+        cb_model.predict(X_test, prediction_type="Probability"),
+        atol=1e-5,
+        rtol=1e-5,
+    )
+    np.testing.assert_allclose(
+        d4p_model.predict(X_test),
+        cb_model.predict(X_test, prediction_type="Class").reshape(-1),
+        atol=1e-5,
+        rtol=1e-5,
+    )
+
+
+@pytest.mark.skipif(not cb_available, reason=cb_unavailable_str)
+def test_catboost_default_objective():
+    X, y = make_regression(n_samples=12, n_features=3, random_state=123)
+    cb_model = cb.train(
+        pool=cb.Pool(X, y),
+        params={
+            "depth": 2,
+            "random_seed": 123,
+            "thread_count": 1,
+            "allow_writing_files": False,
+        },
+        num_boost_round=2,
+        verbose=0,
+        save_snapshot=False,
+    )
+    d4p_model = d4p.mb.convert_model(cb_model)
+    np.testing.assert_allclose(
+        d4p_model.predict(X),
+        cb_model.predict(X, prediction_type="RawFormulaVal"),
+        atol=1e-5,
+        rtol=1e-5,
+    )
+
+
+@pytest.mark.skipif(not cb_available, reason=cb_unavailable_str)
+def test_catboost_unsupported():
+    X, y = make_regression(n_samples=10, n_features=2, n_targets=2, random_state=123)
+    cb_model = cb.CatBoostRegressor(
+        objective="MultiRMSE",
+        depth=3,
+        iterations=2,
+        random_seed=123,
+        thread_count=1,
+        save_snapshot=False,
+        verbose=0,
+        allow_writing_files=False,
+    ).fit(X, y)
+    with pytest.raises(TypeError):
+        d4p.mb.convert_model(cb_model)
+
+    X, y = make_classification(
+        n_samples=10,
+        n_classes=2,
+        n_features=3,
+        n_informative=3,
+        n_redundant=0,
+        random_state=123,
+    )
+    cb_model = cb.CatBoostClassifier(
+        objective="MultiClassOneVsAll",
+        depth=3,
+        iterations=2,
+        random_seed=123,
+        thread_count=1,
+        save_snapshot=False,
+        verbose=0,
+        allow_writing_files=False,
+    ).fit(X, y)
+    with pytest.raises(TypeError):
+        d4p.mb.convert_model(cb_model)
+
+    cb_model = cb.CatBoostClassifier(
+        objective="MultiLogloss",
+        depth=3,
+        iterations=2,
+        random_seed=123,
+        thread_count=1,
+        save_snapshot=False,
+        verbose=0,
+        allow_writing_files=False,
+    ).fit(X, np.c_[y.reshape((-1, 1)), y[::-1].reshape((-1, 1))])
+    with pytest.raises(TypeError):
+        d4p.mb.convert_model(cb_model)
+
+    X = X.astype(int)
+    X -= X.min(axis=0, keepdims=True)
+    cb_model = cb.CatBoostClassifier(
+        objective="MultiClass",
+        cat_features=np.arange(X.shape[1]).tolist(),
+        depth=3,
+        iterations=2,
+        random_seed=123,
+        thread_count=1,
+        save_snapshot=False,
+        verbose=0,
+        allow_writing_files=False,
+    ).fit(X, y)
+    with pytest.raises(Exception):
+        d4p.mb.convert_model(cb_model)
+
+
+def test_model_from_booster():
+    class MockBooster:
+        def get_dump(self, *_, **kwargs):
+            # raw dump of 2 trees with a max depth of 1
+            return [
+                '  { "nodeid": 0, "depth": 0, "split": "1", "split_condition": 2, "yes": 1, "no": 2, "missing": 1 , "gain": 3, "cover": 4, "children": [\n    { "nodeid": 1, "leaf": 5 , "cover": 6 }, \n    { "nodeid": 2, "leaf": 7 , "cover":8 }\n  ]}',
+                '  { "nodeid": 0, "leaf": 0.2 , "cover": 42 }',
+            ]
+
+    mock = MockBooster()
+    result = gbt_convertors.TreeList.from_xgb_booster(
+        mock, max_trees=0, feature_names_to_indices={"1": 1}
+    )
+    assert len(result) == 2
+
+    tree0 = result[0]
+    assert isinstance(tree0, gbt_convertors.TreeView)
+    assert not tree0.is_leaf
+    assert not hasattr(tree0, "cover")
+    assert not hasattr(tree0, "value")
+
+    assert isinstance(tree0.root_node, gbt_convertors.Node)
+
+    assert tree0.root_node.cover == 4
+    assert tree0.root_node.left_child.cover == 6
+    assert tree0.root_node.right_child.cover == 8
+
+    assert not tree0.root_node.is_leaf
+    assert tree0.root_node.left_child.is_leaf
+    assert tree0.root_node.right_child.is_leaf
+
+    assert tree0.root_node.default_left
+    assert not tree0.root_node.left_child.default_left
+    assert not tree0.root_node.right_child.default_left
+
+    assert tree0.root_node.feature == 1
+    assert not hasattr(tree0.root_node.left_child, "feature")
+    assert not hasattr(tree0.root_node.right_child, "feature")
+
+    assert tree0.root_node.value == 2
+    assert tree0.root_node.left_child.value == 5
+    assert tree0.root_node.right_child.value == 7
+
+    assert tree0.root_node.n_children == 2
+    assert tree0.root_node.left_child.n_children == 0
+    assert tree0.root_node.right_child.n_children == 0
+
+    assert tree0.root_node.left_child.left_child is None
+    assert tree0.root_node.left_child.right_child is None
+    assert tree0.root_node.right_child.left_child is None
+    assert tree0.root_node.right_child.right_child is None
+
+    tree1 = result[1]
+    assert isinstance(tree1, gbt_convertors.TreeView)
+    assert tree1.is_leaf
+    assert tree1.n_nodes == 1
+    assert tree1.cover == 42
+    assert tree1.value == 0.2
+
+
+def test_unsupported_multiclass():
+    X, y = make_classification(
+        n_samples=10,
+        n_classes=2,
+        n_features=3,
+        n_informative=3,
+        n_redundant=0,
+        random_state=123,
+    )
+
+    xgb_model = xgb.train(
+        dtrain=xgb.DMatrix(X, y),
+        num_boost_round=3,
+        params={
+            "objective": "multi:softprob",
+            "num_class": 3,
+            "multi_strategy": "multi_output_tree",
+            "max_depth": 3,
+            "seed": 123,
+            "nthread": 1,
+        },
+    )
+    # This currently fails on the XGB side due to being unable
+    # to export to JSON. There's no explicit check for it in
+    # the daal4py side. Once XGB implements the JSON dumping
+    # functionality for multi-output trees, daal4py will need
+    # to be modified to raise an error on such inputs.
+    with pytest.raises(Exception):
+        d4p.mb.convert_model(xgb_model)
+
+    lgb_model = lgb.train(
+        train_set=lgb.Dataset(X, y),
+        num_boost_round=3,
+        params={
+            "objective": "multiclassova",
+            "num_class": 3,
+            "num_leaves": 5,
+            "num_threads": 1,
+            "verbose": -1,
+            "seed": 123,
+            "deterministic": True,
+        },
+    )
+    with pytest.raises(TypeError):
+        d4p.mb.convert_model(lgb_model)
+
+
+@pytest.mark.parametrize("with_names", [False, True])
+@pytest.mark.parametrize("with_types", [False, True])
+def test_xgb_object_is_not_corrupted(with_names, with_types):
+    X, y = make_regression(n_samples=5, n_features=6, random_state=123)
+
+    feature_types = None
+    if with_types:
+        X[:, 1] = X[:, 1].astype(int)
+        feature_types = ["q", "int"] + (["q"] * (X.shape[1] - 2))
+
+    feature_names = None
+    if with_names:
+        feature_names = [f"col{i+1}" for i in range(X.shape[1])]
+
+    dm = xgb.DMatrix(
+        X,
+        y,
+        feature_types=feature_types,
+        feature_names=feature_names,
+    )
+    xgb_model = xgb.train(
+        params={
+            "objective": "reg:squarederror",
+            "max_depth": 3,
+            "seed": 123,
+            "nthread": 1,
+        },
+        dtrain=dm,
+        num_boost_round=3,
+    )
+    model_bytes_before = xgb_model.save_raw()
+
+    d4p_model = d4p.mb.convert_model(xgb_model)
+
+    model_bytes_after = xgb_model.save_raw()
+    assert model_bytes_before == model_bytes_after
+
+    xgb_pred = xgb_pred = xgb_model.predict(dm)
+    xgb_pred_fresh = xgb.train(
+        params={
+            "objective": "reg:squarederror",
+            "max_depth": 3,
+            "seed": 123,
+            "nthread": 1,
+        },
+        dtrain=xgb.DMatrix(X, y),
+        num_boost_round=3,
+    ).predict(xgb.DMatrix(X))
+    np.testing.assert_almost_equal(xgb_pred, xgb_pred_fresh)
+
+    np.testing.assert_allclose(d4p_model.predict(X), xgb_pred, rtol=1e-5)
+
+
+# Note: there isn't any reason why these objects would get corrupted
+# during the conversion, but there's no harm in testing just in case.
+def test_lgb_model_is_not_corrupted():
+    X, y = make_regression(n_samples=5, n_features=6, random_state=123)
+    ds = lgb.Dataset(X, y)
+    lgb_model = lgb.train(
+        train_set=ds,
+        num_boost_round=3,
+        params={
+            "objective": "regression",
+            "num_leaves": 5,
+            "num_threads": 1,
+            "verbose": -1,
+            "seed": 123,
+            "deterministic": True,
+        },
+    )
+    model_json_before = lgb_model.dump_model()
+
+    d4p_model = d4p.mb.convert_model(lgb_model)
+
+    model_json_after = lgb_model.dump_model()
+    assert model_json_before == model_json_after
+
+    lgb_pred = xgb_pred = lgb_model.predict(X)
+    lgb_pred_fresh = lgb.train(
+        train_set=lgb.Dataset(X, y),
+        num_boost_round=3,
+        params={
+            "objective": "regression",
+            "num_leaves": 5,
+            "num_threads": 1,
+            "verbose": -1,
+            "seed": 123,
+            "deterministic": True,
+        },
+    ).predict(X)
+    np.testing.assert_almost_equal(lgb_pred, lgb_pred_fresh)
+
+    np.testing.assert_allclose(d4p_model.predict(X), lgb_pred, rtol=1e-5)
+
+
+def test_gbt_serialization():
+    xgb_model = make_xgb_model("reg:gamma", None, False, False)
+    d4p_model = d4p.mb.convert_model(xgb_model)
+    rng = np.random.default_rng(seed=123)
+    X_test = rng.standard_normal(size=(3, xgb_model.num_features()))
+    pred_before = d4p_model.predict(X_test)
+
+    d4p_bytes = pickle.dumps(d4p_model)
+    del d4p_model, xgb_model
+    gc.collect()
+
+    d4p_new = pickle.loads(d4p_bytes)
+    np.testing.assert_almost_equal(
+        d4p_new.predict(X_test),
+        pred_before,
+    )
+
+
+@pytest.mark.parametrize("fit_intercept", [False, True])
+@pytest.mark.parametrize("stochastic", [False, True])
+@pytest.mark.parametrize("n_classes", [2, 3])
+def test_logreg_builder(fit_intercept, stochastic, n_classes):
+    if stochastic:
+        if not sklearn_check_version("1.1"):
+            pytest.skip("Functionality introduced in a later sklearn version.")
+        if n_classes != 2:
+            pytest.skip("Functionality not yet implemented in sklearn.")
+    if stochastic:
+        model_skl = SGDClassifier(
+            loss="log_loss", fit_intercept=fit_intercept, random_state=123
+        )
+    else:
+        model_skl = LogisticRegression(fit_intercept=fit_intercept)
+
+    X, y = make_classification(n_classes=n_classes, n_informative=4, random_state=123)
+    model_skl.fit(X, y)
+
+    model_d4p = d4p.mb.convert_model(model_skl)
+    np.testing.assert_almost_equal(
+        model_d4p.predict(X[::-1]),
+        model_skl.predict(X[::-1]),
+    )
+    np.testing.assert_almost_equal(
+        model_d4p.predict_proba(X[::-1]),
+        model_skl.predict_proba(X[::-1]),
+    )
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        np.testing.assert_almost_equal(
             model_d4p.predict_log_proba(X[::-1]),
             model_skl.predict_log_proba(X[::-1]),
-            rtol=1e-3,
-            atol=1e-6,
         )
 
-    def test_with_deleted_arrays(self):
-        rng = np.random.default_rng(seed=123)
-        X = rng.standard_normal(size=(5, 10))
-        coefs = rng.standard_normal(size=(3, 10))
-        intercepts = np.zeros(3)
-        ref_pred = X @ coefs.T
-        ref_probs = softmax(ref_pred, axis=1)
-
-        model_d4p = d4p.mb.LogisticDAALModel(coefs, intercepts)
-        coefs[:, :] = 0
-        del coefs, intercepts
-        gc.collect()
-
-        np.testing.assert_almost_equal(
-            model_d4p.predict_proba(X),
-            ref_probs,
-        )
+    np.testing.assert_almost_equal(
+        model_d4p.coef_,
+        model_skl.coef_,
+    )
+    np.testing.assert_almost_equal(
+        model_d4p.intercept_,
+        model_skl.intercept_,
+    )
 
 
-if __name__ == "__main__":
-    unittest.main()
+def test_logreg_builder_fp32():
+    X, y = make_classification(random_state=123)
+    model_skl = LogisticRegression().fit(X, y)
+    model_d4p = d4p.mb.LogisticDAALModel(
+        model_skl.coef_, model_skl.intercept_, dtype=np.float32
+    )
+    np.testing.assert_almost_equal(
+        model_d4p.predict(X[::-1]),
+        model_skl.predict(X[::-1]),
+    )
+    np.testing.assert_allclose(
+        model_d4p.predict_proba(X[::-1]),
+        model_skl.predict_proba(X[::-1]),
+        atol=1e-6,
+    )
+    np.testing.assert_allclose(
+        model_d4p.predict_log_proba(X[::-1]),
+        model_skl.predict_log_proba(X[::-1]),
+        rtol=1e-3,
+        atol=1e-6,
+    )
+
+
+def test_logreg_builder_serialization():
+    X, y = make_classification(random_state=123)
+    model_skl = LogisticRegression().fit(X, y)
+    model_d4p_base = d4p.mb.convert_model(model_skl)
+    model_d4p = pickle.loads(pickle.dumps(model_d4p_base))
+    np.testing.assert_almost_equal(
+        model_d4p_base.predict_proba(X[::-1]),
+        model_d4p.predict_proba(X[::-1]),
+    )
+
+
+def test_logreg_builder_with_deleted_arrays():
+    rng = np.random.default_rng(seed=123)
+    X = rng.standard_normal(size=(5, 10))
+    coefs = rng.standard_normal(size=(3, 10))
+    intercepts = np.zeros(3)
+    ref_pred = X @ coefs.T
+    ref_probs = softmax(ref_pred, axis=1)
+
+    model_d4p = d4p.mb.LogisticDAALModel(coefs, intercepts)
+    coefs[:, :] = 0
+    del coefs, intercepts
+    gc.collect()
+
+    np.testing.assert_almost_equal(
+        model_d4p.predict_proba(X),
+        ref_probs,
+    )
+
+
+# Note: these cases are safe to remove if scikit-learn later
+# on decides to disallow some of these combinations.
+@pytest.mark.parametrize(
+    "estimator_skl,n_classes",
+    [
+        (
+            LogisticRegression(multi_class="ovr"),
+            3,
+        ),
+        (
+            LogisticRegression(multi_class="multinomial"),
+            2,
+        ),
+        # case below might change in the future if sklearn improves their modules
+        pytest.param(
+            SGDClassifier(loss="log_loss"),
+            3,
+            marks=pytest.mark.skipif(
+                not sklearn_check_version("1.1"),
+                reason="Requires higher sklearn version.",
+            ),
+        ),
+        (
+            SGDClassifier(loss="hinge"),
+            2,
+        ),
+    ],
+)
+def test_logreg_builder_error_on_nonlogistic(estimator_skl, n_classes):
+    X, y = make_classification(n_classes=n_classes, n_informative=4, random_state=123)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", FutureWarning)
+        estimator_skl.fit(X, y)
+
+    with pytest.raises(TypeError):
+        d4p.mb.convert_model(estimator_skl)

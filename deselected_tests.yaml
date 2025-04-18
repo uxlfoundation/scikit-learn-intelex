@@ -157,7 +157,7 @@ deselected_tests:
   - svm/tests/test_svm.py::test_custom_kernel_not_array_input[SVR]
 
   # test_non_uniform_strategies fails due to differences in handling of vacuous clusters after update
-  # See https://github.com/IntelPython/daal4py/issues/69
+  # See https://github.com/uxlfoundation/scikit-learn-intelex/issues/69
   - cluster/tests/test_k_means.py::test_kmeans_relocated_clusters >=0.24
 
   # oneAPI Data Analytics Library (oneDAL) does not check convergence for tol == 0.0 for ease of benchmarking

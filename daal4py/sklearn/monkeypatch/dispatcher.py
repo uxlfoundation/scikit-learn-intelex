@@ -188,7 +188,7 @@ def enable(name=None, verbose=True, deprecation=True, get_map=_get_map_of_algori
     if verbose and deprecation and sys.stderr is not None:
         sys.stderr.write(
             "oneAPI Data Analytics Library solvers for sklearn enabled: "
-            "https://intelpython.github.io/daal4py/sklearn.html\n"
+            "https://uxlfoundation.github.io/scikit-learn-intelex/\n"
         )
 
 

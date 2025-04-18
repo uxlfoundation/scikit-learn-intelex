@@ -222,7 +222,7 @@ class BasicStatistics(oneDALEstimator, BaseEstimator):
         self._save_attributes()
         self.n_features_in_ = X.shape[1] if len(X.shape) > 1 else 1
 
-    def fit(self, X, y=None, *, sample_weight=None):
+    def fit(self, X, y=None, sample_weight=None):
         """Calculate statistics of X.
 
         Parameters
