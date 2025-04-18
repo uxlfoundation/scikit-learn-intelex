@@ -392,7 +392,7 @@ class BaseForest(BaseEnsemble, metaclass=ABCMeta):
         else:
             result = self.infer(params, model, X)
 
-        y = from_table(result.responses, sua_iface=sua_iface, sycl_queue=queue, xp=xp)
+        y = from_table(result.responses, like=X)
         return y
 
     def _predict_proba(self, X, hparams=None):
