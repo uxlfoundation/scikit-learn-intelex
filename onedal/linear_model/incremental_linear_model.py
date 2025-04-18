@@ -48,7 +48,6 @@ class IncrementalLinearRegression(BaseLinearRegression):
 
     def __init__(self, fit_intercept=True, copy_X=False, algorithm="norm_eq"):
         super().__init__(fit_intercept=fit_intercept, copy_X=copy_X, algorithm=algorithm)
-        self._queue = None
         self._reset()
 
     @bind_default_backend("linear_model.regression")
@@ -64,6 +63,7 @@ class IncrementalLinearRegression(BaseLinearRegression):
         self._need_to_finalize = False
         # Get the pointer to partial_result from backend
         self._queue = None
+        self._outtype = None            
         self._partial_result = self.partial_train_result()
 
     def __getstate__(self):
@@ -118,7 +118,7 @@ class IncrementalLinearRegression(BaseLinearRegression):
             self._params = self._get_onedal_params(X.dtype)
 
         self._queue = queue
-        if not hasattr(self, "_outtype"):
+        if not self._outtype:
             self._outtype = return_type_constructor(X)
         self.n_features_in_ = _num_features(X, fallback_1d=True)
 
@@ -172,7 +172,7 @@ class IncrementalLinearRegression(BaseLinearRegression):
                 packed_coefficients[:, 1:].squeeze(),
                 packed_coefficients[:, 0].squeeze(),
             )
-            del self._outtype
+            self._outtype = None
             self._need_to_finalize = False
 
         return self
