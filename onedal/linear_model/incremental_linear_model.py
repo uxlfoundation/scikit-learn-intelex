@@ -63,7 +63,7 @@ class IncrementalLinearRegression(BaseLinearRegression):
         self._need_to_finalize = False
         # Get the pointer to partial_result from backend
         self._queue = None
-        self._outtype = None            
+        self._outtype = None
         self._partial_result = self.partial_train_result()
 
     def __getstate__(self):

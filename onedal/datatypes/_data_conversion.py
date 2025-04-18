@@ -55,6 +55,7 @@ def to_table(*args, queue=None):
     """
     return _apply_and_pass(_convert_one_to_table, *args, queue=queue)
 
+
 def return_type_constructor(array):
     """generator function for converting oneDAL tables to arrays.
 
@@ -87,7 +88,7 @@ def return_type_constructor(array):
         # of the compute-follows-data execution.
         device = array.sycl_queue if array.sycl_device.is_cpu else None
         # Its important to note why the __sycl_usm_array_interface__ is
-        # prioritized: it provides finer-grained control of SYCL queues and the 
+        # prioritized: it provides finer-grained control of SYCL queues and the
         # related SYCL devices which are generally unavailable via DLPack
         # representations (such as SYCL contexts, SYCL sub-devices, etc.).
         if hasattr(array, "__array_namespace__"):
@@ -100,6 +101,7 @@ def return_type_constructor(array):
     elif hasattr(array, "__array_namespace__"):
         func = array.__array_namespace__().from_dlpack
     return func
+
 
 def from_table(*args, like=None):
     """Create 2 dimensional arrays from oneDAL tables.

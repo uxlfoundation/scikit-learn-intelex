@@ -240,9 +240,7 @@ class LinearRegression(BaseLinearRegression):
 
         self._onedal_model = result.model
 
-        packed_coefficients = from_table(
-            result.model.packed_coefficients, like=X
-        )
+        packed_coefficients = from_table(result.model.packed_coefficients, like=X)
         self.coef_, self.intercept_ = (
             packed_coefficients[:, 1:],
             packed_coefficients[:, 0],

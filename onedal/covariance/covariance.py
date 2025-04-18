@@ -120,9 +120,7 @@ class EmpiricalCovariance(BaseEmpiricalCovariance):
             self.covariance_ = from_table(result.cov_matrix, like=X)
         else:
             self.covariance_ = (
-                from_table(result.cov_matrix, like=X)
-                * (X.shape[0] - 1)
-                / X.shape[0]
+                from_table(result.cov_matrix, like=X) * (X.shape[0] - 1) / X.shape[0]
             )
 
         self.location_ = from_table(result.means, like=X).ravel()
