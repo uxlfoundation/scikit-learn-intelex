@@ -265,11 +265,6 @@ class GBTDAALBaseModel:
                 # unknown type error
                 raise
 
-        # fallback to calculation without `resultsToCompute`
-        predict_algo = d4p.gbt_regression_prediction(fptype=fptype)
-        predict_result = predict_algo.compute(X, self.daal_model_)
-        return predict_result.prediction.ravel()
-
     def _predict_regression_with_results_to_compute(
         self, X, fptype, pred_contribs=False, pred_interactions=False
     ):
