@@ -27,11 +27,8 @@ from onedal.basic_statistics import (
 
 from .._config import get_config
 from .._device_offload import dispatch
-from .._utils import (
-    ExtensionEstimator,
-    PatchingConditionsChain,
-    _add_inc_serialization_note,
-)
+from .._utils import PatchingConditionsChain, _add_inc_serialization_note
+from ..base import oneDALEstimator
 from ..utils.validation import validate_data
 
 if sklearn_check_version("1.2"):
@@ -42,7 +39,7 @@ import warnings
 
 
 @control_n_jobs(decorated_methods=["partial_fit", "_onedal_finalize_fit"])
-class IncrementalBasicStatistics(ExtensionEstimator, BaseEstimator):
+class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
     """
     Calculates basic statistics on the given data, allows for computation when the data are split into
     batches. The user can use ``partial_fit`` method to provide a single batch of data or use the ``fit`` method to provide

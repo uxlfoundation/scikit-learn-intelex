@@ -24,18 +24,15 @@ from onedal.decomposition import IncrementalPCA as onedal_IncrementalPCA
 
 from ..._config import get_config
 from ..._device_offload import dispatch, wrap_output_data
-from ..._utils import (
-    ExtensionEstimator,
-    PatchingConditionsChain,
-    _add_inc_serialization_note,
-)
+from ..._utils import PatchingConditionsChain, _add_inc_serialization_note
+from ...base import oneDALEstimator
 from ...utils.validation import validate_data
 
 
 @control_n_jobs(
     decorated_methods=["fit", "partial_fit", "transform", "_onedal_finalize_fit"]
 )
-class IncrementalPCA(ExtensionEstimator, _sklearn_IncrementalPCA):
+class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
 
     _need_to_finalize_attrs = {
         "mean_",

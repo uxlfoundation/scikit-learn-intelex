@@ -14,10 +14,14 @@
 # limitations under the License.
 # ==============================================================================
 
+import logging
+
+import pytest
 import sklearn
 
 import onedal
 import sklearnex
+from onedal.tests.utils._device_selection import is_dpctl_device_available
 
 
 def test_get_config_contains_sklearn_params():
@@ -121,3 +125,61 @@ def test_config_context_works():
         "allow_fallback_to_host",
     ]:
         assert onedal_default_config_after_cc[param] == onedal_default_config[param]
+
+
+@pytest.mark.skipif(
+    not is_dpctl_device_available(["gpu"]), reason="Requires a gpu for fallback testing"
+)
+def test_fallback_to_host(caplog):
+    # force a fallback to cpu with direct use of dispatch and PatchingConditionsChain
+    # it should complete with allow_fallback_to_host. The queue should be preserved
+    # and properly used in the second round on gpu
+    from onedal.utils import _sycl_queue_manager as QM
+    from sklearnex._device_offload import dispatch
+    from sklearnex._utils import PatchingConditionsChain
+
+    class _Estimator:
+        def _onedal_gpu_supported(self, method_name, *data):
+            patching_status = PatchingConditionsChain("")
+            patching_status.and_condition(data[0] == "gpu", "")
+            return patching_status
+
+        def _onedal_cpu_supported(self, method_name, *data):
+            patching_status = PatchingConditionsChain("")
+            return patching_status
+
+        def _onedal_test(self, *args, queue=None):
+            if args[0] == "cpu":
+                assert (
+                    queue is None
+                    and QM.__global_queue == QM.__fallback_queue
+                    and QM.get_global_queue() is None
+                )
+            elif args[0] == "gpu":
+                assert queue is not None and QM.get_global_queue() is not None
+
+    start = 0
+    est = _Estimator()
+
+    # set a queue which should persist
+    with (
+        caplog.at_level(logging.DEBUG, logger="sklearnex"),
+        sklearnex.config_context(target_offload="gpu"),
+    ):
+        # True == with cpu (eventually), False == with gpu
+        for fallback in [True, False]:
+            with sklearnex.config_context(allow_fallback_to_host=fallback):
+                dispatch(
+                    est,
+                    "test",
+                    {"onedal": est._onedal_test, "sklearn": None},
+                    "cpu" if fallback else "gpu",
+                )
+
+            # verify that the target_offload has not changed
+            assert sklearnex.get_config()["target_offload"] == "gpu"
+            assert (
+                f": running accelerated version on {'CPU' if fallback else 'GPU'}"
+                in caplog.messages[start:]
+            )
+            start = len(caplog.messages)

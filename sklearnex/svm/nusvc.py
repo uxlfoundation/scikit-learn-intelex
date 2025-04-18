@@ -40,7 +40,7 @@ from ._common import BaseSVC
 @control_n_jobs(
     decorated_methods=["fit", "predict", "_predict_proba", "decision_function", "score"]
 )
-class NuSVC(_sklearn_NuSVC, BaseSVC):
+class NuSVC(BaseSVC, _sklearn_NuSVC):
     __doc__ = _sklearn_NuSVC.__doc__
 
     if sklearn_check_version("1.2"):
