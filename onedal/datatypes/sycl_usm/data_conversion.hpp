@@ -33,8 +33,4 @@ dal::table convert_to_table(py::object obj);
 // Create a dictionary for `__sycl_usm_array_interface__` protocol from oneDAL table properties.
 py::dict construct_sua_iface(const dal::table& input);
 
-// Adding `__sycl_usm_array_interface__` attribute to python oneDAL table, that representing
-// USM allocations.
-void define_sycl_usm_array_property(py::class_<dal::table>& t);
-
 } // namespace oneapi::dal::python::sycl_usm
