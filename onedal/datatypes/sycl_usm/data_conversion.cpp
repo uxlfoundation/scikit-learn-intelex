@@ -159,6 +159,17 @@ py::dict construct_sua_iface(const dal::table& input) {
         report_problem_to_sua_iface(": only homogen tables are supported");
 
     const auto& homogen_input = reinterpret_cast<const dal::homogen_table&>(input);
+    
+    auto bytes_array = dal::detail::get_original_data(homogen_input);
+    auto has_queue = bytes_array.get_queue().has_value();
+    // oneDAL returns tables without sycl context for CPU sycl queue inputs, that
+    // breaks the compute-follows-data execution.
+    // Currently not throwing runtime exception and __sycl_usm_array_interface__["syclobj"] None asigned
+    // if no SYCL queue to allow workaround on python side.
+    if (!has_queue) {
+         throw py::attribute_error("'table' object data is not a SYCL USM allocation");
+    }
+
     const dal::data_type dtype = homogen_input.get_metadata().get_data_type(0);
     const dal::data_layout data_layout = homogen_input.get_data_layout();
 
@@ -178,16 +189,6 @@ py::dict construct_sua_iface(const dal::table& input) {
 
     py::tuple shape = py::make_tuple(row_count, column_count);
     py::list data_entry(2);
-
-    auto bytes_array = dal::detail::get_original_data(homogen_input);
-    auto has_queue = bytes_array.get_queue().has_value();
-    // oneDAL returns tables without sycl context for CPU sycl queue inputs, that
-    // breaks the compute-follows-data execution.
-    // Currently not throwing runtime exception and __sycl_usm_array_interface__["syclobj"] None asigned
-    // if no SYCL queue to allow workaround on python side.
-    // if (!has_queue) {
-    //     report_problem_to_sua_iface(": table has no queue");
-    // }
 
     const bool is_mutable = bytes_array.has_mutable_data();
 
