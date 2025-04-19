@@ -93,11 +93,11 @@ def return_type_constructor(array):
         # representations (such as SYCL contexts, SYCL sub-devices, etc.).
         if hasattr(array, "__array_namespace__"):
             xp = array.__array_namespace__()
-            func = lambda x: xp.asarray(x, device=device)
+            func = lambda x: xp.asarray(x).to_device(device)
         elif hasattr(array, "_create_from_usm_ndarray"):  # signifier of dpnp < 0.19
             xp = array._array_obj.__array_namespace__()
             from_usm = array._create_from_usm_ndarray
-            func = lambda x: from_usm(xp.asarray(x, device=device))
+            func = lambda x: from_usm(xp.asarray(x).to_device(device))
     elif hasattr(array, "__array_namespace__"):
         func = array.__array_namespace__().from_dlpack
     return func
