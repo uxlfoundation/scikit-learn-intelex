@@ -219,7 +219,7 @@ py::dict construct_sua_iface(const dal::table& input) {
 
     // syclobj: Python object from which SYCL context to which represented USM allocation is bound.
     if (!has_queue) {
-        iface["syclobj"] = py::none();
+        iface["syclobj"] = py::str("cpu")
     }
     else {
         iface["syclobj"] =
