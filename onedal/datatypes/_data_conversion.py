@@ -86,18 +86,18 @@ def return_type_constructor(array):
         # oneDAL returns tables without sycl queues for CPU sycl queue inputs.
         # This workaround is necessary for the functional preservation
         # of the compute-follows-data execution.
-        device = array.sycl_queue if array.sycl_device.is_cpu else None
+        device = array.sycl_queue
         # Its important to note why the __sycl_usm_array_interface__ is
         # prioritized: it provides finer-grained control of SYCL queues and the
         # related SYCL devices which are generally unavailable via DLPack
         # representations (such as SYCL contexts, SYCL sub-devices, etc.).
         if hasattr(array, "__array_namespace__"):
             xp = array.__array_namespace__()
-            func = lambda x: xp.asarray(x).to_device(device)
+            func = lambda x: (xp.asarray(x) if hasattr(x, "__sycl_usm_array_interface__") else xp.asarray(func(x), device=device))
         elif hasattr(array, "_create_from_usm_ndarray"):  # signifier of dpnp < 0.19
             xp = array._array_obj.__array_namespace__()
             from_usm = array._create_from_usm_ndarray
-            func = lambda x: from_usm(xp.asarray(x).to_device(device))
+            func = lambda x: from_usm(xp.asarray(x) if hasattr(x, "__sycl_usm_array_interface__") else xp.asarray(func(x), device=device))
     elif hasattr(array, "__array_namespace__"):
         func = array.__array_namespace__().from_dlpack
     return func
