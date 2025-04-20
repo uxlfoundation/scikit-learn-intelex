@@ -164,8 +164,9 @@ py::dict construct_sua_iface(const dal::table& input) {
     auto has_queue = bytes_array.get_queue().has_value();
     // oneDAL returns tables without sycl context for CPU sycl queue inputs, that
     // breaks the compute-follows-data execution.
-    // Currently not throwing runtime exception and __sycl_usm_array_interface__["syclobj"] None asigned
-    // if no SYCL queue to allow workaround on python side.
+    // If a queue is unavailable the data is not a USM allocation. This violates the DPPy-spec
+    // standard for __sycl_usm_array_interface__ and should therefore throw an AttributeError.
+    // This will lead to hasattr calls to show False. 
     if (!has_queue) {
          throw py::attribute_error("'table' object data is not a SYCL USM allocation");
     }
@@ -219,13 +220,7 @@ py::dict construct_sua_iface(const dal::table& input) {
     iface["typestr"] = convert_dal_to_sua_type(dtype);
 
     // syclobj: Python object from which SYCL context to which represented USM allocation is bound.
-    if (!has_queue) {
-        iface["syclobj"] = py::str("cpu");
-    }
-    else {
-        iface["syclobj"] =
-            pack_queue(std::make_shared<sycl::queue>(bytes_array.get_queue().value()));
-    }
+    iface["syclobj"] = pack_queue(std::make_shared<sycl::queue>(bytes_array.get_queue().value()));
 
     return iface;
 }
