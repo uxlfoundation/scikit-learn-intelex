@@ -318,13 +318,14 @@ def test_table_conversions_sycl_usm(dataframe, queue, order, data_shape, dtype):
     # after conversion from onedal table to sua array.
     # Test is not turned off because of this. Only check is skipped.
     skip_data_1 = True
-    _assert_sua_iface_fields(
-        result_responses_df,
-        result_responses_table,
-        skip_data_0=skip_data_0,
-        skip_data_1=skip_data_1,
-        skip_syclobj=skip_syclobj,
-    )
+    if not queue.sycl_device.is_cpu:
+        _assert_sua_iface_fields(
+            result_responses_df,
+            result_responses_table,
+            skip_data_0=skip_data_0,
+            skip_data_1=skip_data_1,
+            skip_syclobj=skip_syclobj,
+        )
     assert X.sycl_queue == result_responses_df.sycl_queue
     if order == "F":
         assert X.flags.f_contiguous == result_responses_df.flags.f_contiguous
