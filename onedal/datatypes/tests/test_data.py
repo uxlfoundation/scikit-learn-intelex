@@ -301,8 +301,10 @@ def test_table_conversions_sycl_usm(dataframe, queue, order, data_shape, dtype):
     alg = DummyEstimatorWithTableConversions()
     X_table, result_responses_table, result_responses_df = alg.fit(X)
 
-    for obj in [X_table, result_responses_table, result_responses_df, X]:
+    for obj in [result_responses_table, result_responses_df, X]:
         assert hasattr(obj, "__sycl_usm_array_interface__"), f"{obj} has no SUA interface"
+
+    assert hasattr(X_table, "__sycl_usm_array_interface__") != queue.sycl_device.is_cpu
     _assert_sua_iface_fields(X, X_table)
 
     # Work around for saving compute-follows-data execution
