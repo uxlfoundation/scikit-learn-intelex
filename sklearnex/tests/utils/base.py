@@ -403,8 +403,8 @@ class DummyEstimator(BaseEstimator):
         # The presence of the fitted attributes (ending with a trailing
         # underscore) is required for the correct check. The cleanup of
         # the memory will occur at the estimator instance deletion.
-        self.x_attr_ = from_table( X_table, like=X)
-        self.y_attr_ = from_table( y_table, like=X if y is None else y)
+        self.x_attr_ = from_table(X_table, like=X)
+        self.y_attr_ = from_table(y_table, like=X if y is None else y)
 
         return self
 

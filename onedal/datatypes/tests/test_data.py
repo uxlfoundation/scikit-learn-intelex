@@ -79,10 +79,7 @@ class DummyEstimatorWithTableConversions:
         # oneDAL backend func is needed to check result table checks.
         result = dbscan.compute(params, X_table, to_table(None))
         result_responses_table = result.responses
-        result_responses_df = from_table(
-            result_responses_table,
-            like=X
-        )
+        result_responses_df = from_table(result_responses_table, like=X)
         return X_table, result_responses_table, result_responses_df
 
 
@@ -304,7 +301,10 @@ def test_table_conversions_sycl_usm(dataframe, queue, order, data_shape, dtype):
     for obj in [X_table, result_responses_df, X]:
         assert hasattr(obj, "__sycl_usm_array_interface__"), f"{obj} has no SUA interface"
 
-    assert hasattr(result_responses_table, "__sycl_usm_array_interface__") != queue.sycl_device.is_cpu
+    assert (
+        hasattr(result_responses_table, "__sycl_usm_array_interface__")
+        != queue.sycl_device.is_cpu
+    )
     _assert_sua_iface_fields(X, X_table)
 
     # Work around for saving compute-follows-data execution
