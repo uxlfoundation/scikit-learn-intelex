@@ -296,7 +296,7 @@ def test_memory_leaks(estimator, dataframe, queue, order, data_shape):
 
 
 @pytest.mark.skipif(
-    os.getenv("ZES_ENABLE_SYSMAN") is None or not is_dpctl_device_available("gpu"),
+    os.getenv("ZES_ENABLE_SYSMAN") is None or not is_dpctl_device_available(["gpu"]),
     reason="SYCL device memory leak check requires the level zero sysman",
 )
 @pytest.mark.parametrize("queue", get_queues("gpu"))
@@ -325,7 +325,8 @@ def test_table_conversions_memory_leaks(dataframe, queue, order, data_shape, dty
         queue
         and queue.sycl_device.is_gpu
         and (
-            os.getenv("ZES_ENABLE_SYSMAN") is None or not is_dpctl_device_available("gpu")
+            os.getenv("ZES_ENABLE_SYSMAN") is None
+            or not is_dpctl_device_available(["gpu"])
         )
     ):
         pytest.skip("SYCL device memory leak check requires the level zero sysman")

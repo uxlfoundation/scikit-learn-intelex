@@ -52,36 +52,96 @@ Optimizations
 Enable CPU Optimizations
 *********************************
 
-::
+.. tabs::
+   .. tab:: By patching
+      .. code-block:: python
 
-   import numpy as np
-   from sklearnex import patch_sklearn
-   patch_sklearn()
+         import numpy as np
+         from sklearnex import patch_sklearn
+         patch_sklearn()
 
-   from sklearn.cluster import DBSCAN
+         from sklearn.cluster import DBSCAN
 
-   X = np.array([[1., 2.], [2., 2.], [2., 3.],
-                 [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
-   clustering = DBSCAN(eps=3, min_samples=2).fit(X)
+         X = np.array([[1., 2.], [2., 2.], [2., 3.],
+                       [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
+         clustering = DBSCAN(eps=3, min_samples=2).fit(X)
+
+   .. tab:: Without patching
+      .. code-block:: python
+
+         import numpy as np
+         from sklearnex.cluster import DBSCAN
+
+         X = np.array([[1., 2.], [2., 2.], [2., 3.],
+                       [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
+         clustering = DBSCAN(eps=3, min_samples=2).fit(X)
+
 
 Enable GPU optimizations
 *********************************
 
 Note: executing on GPU has `additional system software requirements <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`__ - see :doc:`oneapi-gpu`.
 
-::
+.. tabs::
+   .. tab:: By patching
+      .. tabs::
+         .. tab:: By moving data to device
+            .. code-block:: python
 
-   import numpy as np
-   from sklearnex import patch_sklearn, config_context
-   patch_sklearn()
+               import numpy as np
+               from sklearnex import patch_sklearn, config_context
+               patch_sklearn()
 
-   from sklearn.cluster import DBSCAN
+               from sklearn.cluster import DBSCAN
 
-   X = np.array([[1., 2.], [2., 2.], [2., 3.],
-                 [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
-   with config_context(target_offload="gpu:0"):
-       clustering = DBSCAN(eps=3, min_samples=2).fit(X)
+               X = np.array([[1., 2.], [2., 2.], [2., 3.],
+                             [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
+               with config_context(target_offload="gpu:0"):
+                   clustering = DBSCAN(eps=3, min_samples=2).fit(X)
 
+         .. tab:: With GPU arrays
+            .. code-block:: python
+
+               import numpy as np
+               import dpnp
+               from sklearnex import patch_sklearn
+               patch_sklearn()
+
+               from sklearn.cluster import DBSCAN
+
+               X = np.array([[1., 2.], [2., 2.], [2., 3.],
+                             [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
+               X = dpnp.array(X, device="gpu")
+               clustering = DBSCAN(eps=3, min_samples=2).fit(X)
+
+   .. tab:: Without patching
+      .. tabs::
+         .. tab:: By moving data to device
+            .. code-block:: python
+
+               import numpy as np
+               from sklearnex import config_context
+               from sklearnex.cluster import DBSCAN
+
+               X = np.array([[1., 2.], [2., 2.], [2., 3.],
+                             [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
+               with config_context(target_offload="gpu:0"):
+                  clustering = DBSCAN(eps=3, min_samples=2).fit(X)
+
+         .. tab:: With GPU arrays
+            .. code-block:: python
+
+               import numpy as np
+               import dpnp
+               from sklearnex.cluster import DBSCAN
+
+               X = np.array([[1., 2.], [2., 2.], [2., 3.],
+                             [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
+               X = dpnp.array(X, device="gpu")
+               clustering = DBSCAN(eps=3, min_samples=2).fit(X)
+
+
+See :ref:`oneapi_gpu` for other ways of executing on GPU.
 
 
 .. toctree::

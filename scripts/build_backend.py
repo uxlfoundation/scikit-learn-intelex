@@ -107,8 +107,9 @@ def custom_build_cmake_clib(
     # in order to propagate both potential user-passed arguments and flags, such as:
     #     CXX="ccache icpx"
     #     CXX="icpx -O0"
+    env_build = dict(os.environ)
     if cxx:
-        os.environ["CXX"] = cxx
+        env_build["CXX"] = cxx
     cmake_args = [
         "cmake",
         cmake_generator,
@@ -151,6 +152,6 @@ def custom_build_cmake_clib(
         abs_build_temp_path,
     ]
 
-    subprocess.check_call(cmake_args)
-    subprocess.check_call(make_args)
-    subprocess.check_call(make_install_args)
+    subprocess.check_call(cmake_args, env=env_build)
+    subprocess.check_call(make_args, env=env_build)
+    subprocess.check_call(make_install_args, env=env_build)
