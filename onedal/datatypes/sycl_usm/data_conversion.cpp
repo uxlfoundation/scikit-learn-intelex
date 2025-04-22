@@ -159,16 +159,16 @@ py::dict construct_sua_iface(const dal::table& input) {
         report_problem_to_sua_iface(": only homogen tables are supported");
 
     const auto& homogen_input = reinterpret_cast<const dal::homogen_table&>(input);
-    
+
     auto bytes_array = dal::detail::get_original_data(homogen_input);
     auto has_queue = bytes_array.get_queue().has_value();
     // oneDAL returns tables without sycl context for CPU sycl queue inputs, that
     // breaks the compute-follows-data execution.
     // If a queue is unavailable the data is not a USM allocation. This violates the DPPy-spec
     // standard for __sycl_usm_array_interface__ and should therefore throw an AttributeError.
-    // This will lead to hasattr calls to show False. 
+    // This will lead to hasattr calls to show False.
     if (!has_queue) {
-         throw py::attribute_error("'table' object data is not a SYCL USM allocation");
+        throw py::attribute_error("'table' object data is not a SYCL USM allocation");
     }
 
     const dal::data_type dtype = homogen_input.get_metadata().get_data_type(0);
