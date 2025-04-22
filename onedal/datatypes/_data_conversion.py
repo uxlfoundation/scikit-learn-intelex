@@ -76,7 +76,7 @@ def return_type_constructor(array):
 
     Returns
     -------
-    func: callable
+    func : callable
         a function which takes in a single table input and returns an array
     """
     func = backend.from_table
@@ -135,7 +135,7 @@ def from_table(*args, like=None):
 
     Returns
     -------
-    arrays: numpy arrays, sycl_usm_ndarrays, or array API standard arrays
+    arrays : numpy arrays, sycl_usm_ndarrays, or array API standard arrays
     """
     func = like if callable(like) else return_type_constructor(like)
     return _apply_and_pass(func, *args)
