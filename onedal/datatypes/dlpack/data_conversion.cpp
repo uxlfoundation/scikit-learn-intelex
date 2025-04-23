@@ -157,7 +157,6 @@ dal::table convert_to_table(py::object obj, py::object q_obj, bool recursed) {
 DLDevice get_dlpack_device(const dal::array<byte_t>& array) {
     DLDevice device;
 #ifdef ONEDAL_DATA_PARALLEL
-    // std::optional<sycl::queue>
     auto queue = array.get_queue();
     device = queue.has_value()
                  ? DLDevice{ kDLOneAPI, static_cast<std::int32_t>(get_device_id(queue.value())) }
