@@ -211,7 +211,7 @@ DLTensor construct_dlpack_tensor(const dal::array<byte_t>& array,
 static void free_capsule(PyObject* cap) {
     DLManagedTensor* dlm = nullptr;
     if (PyCapsule_IsValid(cap, "dltensor")) {
-        dlm = reinterpret_cast<DLManagedTensor*>(PyCapsule_GetPointer(cap, "dltensor"));
+        dlm = static_cast<DLManagedTensor*>(PyCapsule_GetPointer(cap, "dltensor"));
         if (dlm->deleter) {
             dlm->deleter(dlm);
         }
@@ -249,7 +249,7 @@ py::capsule construct_dlpack(const dal::table& input) {
     };
 
     // create capsule
-    py::capsule capsule(reinterpret_cast<void*>(dlm), "dltensor", free_capsule);
+    py::capsule capsule(static_cast<void*>(dlm), "dltensor", free_capsule);
     return capsule;
 }
 

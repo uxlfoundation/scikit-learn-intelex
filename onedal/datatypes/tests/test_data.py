@@ -14,6 +14,8 @@
 # limitations under the License.
 # ==============================================================================
 
+import gc
+
 import numpy as np
 import pytest
 import scipy.sparse as sp
@@ -610,4 +612,5 @@ def test_table___dlpack__(dataframe, queue, order, data_shape, dtype):
     capsule = X_table.__dlpack__()
     assert_allclose(np.squeeze(from_table(X_table)), np.squeeze(X))
     del capsule
+    gc.collect()
     assert_allclose(np.squeeze(from_table(X_table)), np.squeeze(X))
