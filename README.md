@@ -29,7 +29,7 @@
 [![Join the community on GitHub Discussions](https://badgen.net/badge/join%20the%20discussion/on%20github/black?icon=github)](https://github.com/uxlfoundation/scikit-learn-intelex/discussions)
 [![PyPI Version](https://img.shields.io/pypi/v/scikit-learn-intelex)](https://pypi.org/project/scikit-learn-intelex/)
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/scikit-learn-intelex)](https://anaconda.org/conda-forge/scikit-learn-intelex)
-[![python version](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)
+[![python version](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)
 [![scikit-learn supported versions](https://img.shields.io/badge/sklearn-1.0%20%7C%201.2%20%7C%201.3%20%7C%201.4%20%7C%201.5%20%7C%201.6-blue)](https://img.shields.io/badge/sklearn-1.0%20%7C%201.2%20%7C%201.3%20%7C%201.4%20%7C%201.5%20%7C%201.6-blue)
 
 ---
