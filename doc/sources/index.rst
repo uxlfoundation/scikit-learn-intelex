@@ -169,6 +169,7 @@ See :ref:`oneapi_gpu` for other ways of executing on GPU.
    input-types.rst
    array_api.rst
    verbose.rst
+   parallelism.rst
    preview.rst
    deprecation.rst
 
