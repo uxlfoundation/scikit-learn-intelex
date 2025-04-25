@@ -43,6 +43,12 @@ the following libraries, both in their base booster classes and their scikit-lea
 - `XGBoost <https://xgboost.readthedocs.io>`__
 - `LightGBM <https://lightgbm.readthedocs.io>`__
 - `CatBoost <https://catboost.ai/>`__
+- `TreeLite <https://treelite.readthedocs.io>`__
+
+Models from other libraries are supported indirectly by using TreeLite as an intermediate
+format - for example, objects from |sklearn| such as :obj:`sklearn.ensemble.HistGradientBoostingClassifier`
+can be converted to ``daal4py`` by first converting them to TreeLite and then converting
+the resulting object to ``daal4py``.
 
 Acceleration is achieved by a smart arrangement of tree representations in memory which
 is optimized for the way in which modern CPUs interact with RAM, along with leveraging of
@@ -93,6 +99,28 @@ Example converting an XGBoost model:
         rtol=1e-6,
     )
 
+Example converting a |sklearn| model using TreeLite as intermediate format:
+
+.. code-block:: python
+
+    import numpy as np
+    import treelite
+    import daal4py
+    from sklearn.datasets import make_regression
+    from sklearn.ensemble import HistGradientBoostingRegressor
+
+    X, y = make_regression(n_samples=100, n_features=10, random_state=123)
+    skl_model = HistGradientBoostingRegressor(max_iter=5).fit(X, y)
+    tl_model = treelite.sklearn.import_model(skl_model)
+
+    d4p_model = daal4py.mb.convert_model(tl_model)
+
+    np.testing.assert_allclose(
+        d4p_model.predict(X),
+        treelite.gtil.predict(tl_model, X).reshape(-1),
+        rtol=1e-6,
+    )
+
 
 More examples:
 
@@ -125,6 +153,10 @@ Limitations
 - SHAP values cannot be calculated for multi-class classification models, nor for CatBoost regression models
   from loss functions that involve link functions (e.g. can be calculated for 'RMSE', but not for 'Poisson').
 - Objectives that are not for regression nor classification (e.g. ranking) are not supported.
+- Random forests converted to TreeLite can be supported when they are for regression or binary classification,
+  but not when they are for multi-class classification. In the case of binary classification, random forests
+  are converted as regression models since they do not apply a link function to predictions the same way
+  gradient boosting models do.
 
 Documentation
 -------------
