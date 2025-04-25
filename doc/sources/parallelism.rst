@@ -12,6 +12,7 @@
 .. See the License for the specific language governing permissions and
 .. limitations under the License.
 
+.. include:: substitutions.rst
 .. _parallelism:
 
 #####################
@@ -42,4 +43,4 @@ Environment variables such as `OMP_NUM_THREADS`, `MKL_NUM_THREADS`, `OPENBLAS_NU
 low-level parallelism libraries are recognized by `joblib` and therefore can be used as hints by |sklearnex|.
 
 To track the actual number of threads used by sklearnex's estimators,
-set the `DEBUG` :ref:`verbosity setting <_verbose>`.
+set the `DEBUG` :ref:`verbosity setting <verbose>`.
