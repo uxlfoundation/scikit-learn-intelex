@@ -91,6 +91,7 @@ test:
     # TODO: re-enable shap and catboost when conda-forge packages has a numpy 2.* compatibility
     # - shap
     # - catboost
+    - treelite
     - array-api-compat
     - array-api-strict
   source_files:
