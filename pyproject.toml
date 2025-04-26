@@ -22,3 +22,9 @@ extend-ignore = 'E203'
 [tool.isort]
 profile = "black"
 line_length = 90
+
+[tool.numpydoc_validation]
+checks = [
+    "all",   # report on all checks, except the below
+    "G08",
+]
