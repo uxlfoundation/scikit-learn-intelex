@@ -26,5 +26,5 @@ line_length = 90
 [tool.numpydoc_validation]
 checks = [
     "all",   # report on all checks, except the below
-    "G08",
+    "GL08",
 ]
