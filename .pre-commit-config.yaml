@@ -35,7 +35,9 @@ repos:
       - id: numpydoc-validation
         exclude: |
             (?x)(
-                generator/|
+                .ci/|
                 daal4py/|
+                examples/|
+                generator/|
                 tests/
             )
