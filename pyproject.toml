@@ -26,7 +26,14 @@ line_length = 90
 [tool.numpydoc_validation]
 checks = [
     "all",   # report on all checks, except the below
-    "GL08",
+    "GL08",  # only analyze functions with docstrings
+    "RT02",  # conform with scikit-learn excludes
+    "GL01",
+    "GL02",
+    "PR02",
+    "EX01",
+    "SA01",
+    "ES01"
 ]
 exclude = [  # don't report on objects that match any of these regex
     'generator\..*$',
