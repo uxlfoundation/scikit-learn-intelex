@@ -28,7 +28,7 @@ checks = [
     "all",   # report on all checks, except the below
     "GL08",  # only analyze functions with docstrings
     "RT02",  # conform with scikit-learn excludes
-    "GL01",
+    "GL01",  # see https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/tests/test_docstrings.py
     "GL02",
     "PR02",
     "EX01",
