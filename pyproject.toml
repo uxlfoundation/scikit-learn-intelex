@@ -28,3 +28,7 @@ checks = [
     "all",   # report on all checks, except the below
     "GL08",
 ]
+exclude = [  # don't report on objects that match any of these regex
+    'generator\..*$',
+    'daal4py\..*$',
+]
