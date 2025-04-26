@@ -33,3 +33,9 @@ repos:
     rev: v1.8.0
     hooks:
       - id: numpydoc-validation
+        exclude: |
+            (?x)(
+                generator/|
+                daal4py/|
+                tests/
+            )
