@@ -529,6 +529,16 @@ def sklearn_is_patched(name=None, return_map=False):
 
 
 def is_patched_instance(instance: object) -> bool:
-    """Returns True if the `instance` is patched with scikit-learn-intelex"""
+    """Check if given instance is patched with scikit-learn-intelex.
+
+    Parameters
+    ----------
+    instance: object
+
+    Returns
+    -------
+    check : bool
+        if it is an instance of a daal4py or sklearnex estimator
+    """
     module = getattr(instance, "__module__", "")
     return ("daal4py" in module) or ("sklearnex" in module)
