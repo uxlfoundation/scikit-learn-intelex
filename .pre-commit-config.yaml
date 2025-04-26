@@ -30,6 +30,6 @@ repos:
     hooks:
       - id: clang-format
   - repo: https://github.com/numpy/numpydoc
-    rev: <version>
+    rev: v1.8.0
     hooks:
       - id: numpydoc-validation
