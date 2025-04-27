@@ -36,6 +36,5 @@ checks = [
     "ES01"
 ]
 exclude = [  # don't report on objects that match any of these regex
-    'generator\..*$',
-    'daal4py\..*$',
+    '\._[^\.]*$',
 ]
