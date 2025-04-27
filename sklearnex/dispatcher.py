@@ -533,12 +533,13 @@ def is_patched_instance(instance: object) -> bool:
 
     Parameters
     ----------
-    instance: object
+    instance : object
+        Python object, usually a scikit-learn estimator instance.
 
     Returns
     -------
-    check : bool
-        if it is an instance of a daal4py or sklearnex estimator
+    Check : bool
+        Boolean whether instance is a daal4py or sklearnex estimator.
     """
     module = getattr(instance, "__module__", "")
     return ("daal4py" in module) or ("sklearnex" in module)
