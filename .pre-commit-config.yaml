@@ -39,5 +39,6 @@ repos:
                 daal4py/|
                 examples/|
                 generator/|
+                scripts/|
                 tests/
             )
