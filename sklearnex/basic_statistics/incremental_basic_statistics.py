@@ -97,12 +97,10 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
         n_features_in_ : int
             Number of features seen during ``fit`` or  ``partial_fit``.
 
-    Note
-    ----
+    Notes
+    -----
     Attribute exists only if corresponding result option has been provided.
 
-    Note
-    ----
     Names of attributes without the trailing underscore are
     supported currently but deprecated in 2025.1 and will be removed in 2026.0
 
