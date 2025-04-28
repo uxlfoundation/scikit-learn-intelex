@@ -49,11 +49,11 @@ def set_config(
     use_raw_input=None,
     **sklearn_configs,
 ):
-    """Set global configuration
+    """Set global configuration.
 
     Parameters
     ----------
-    target_offload : string or dpctl.SyclQueue or None, default=None
+    target_offload : str or dpctl.SyclQueue or None, default=None
         The device primarily used to perform computations.
         If string, expected to be "auto" (the execution context
         is deduced from input data location),
@@ -70,11 +70,16 @@ def set_config(
         Global default: True.
 
     use_raw_input : bool or None, default=None
-        .. deprecated:: 2026.0
         If True, uses the raw input data in some SPMD onedal backend computations
         without any checks on data consistency or validity.
         Not recommended for general use.
         Global default: False.
+
+        .. deprecated:: 2026.0
+
+    **sklearn_configs : kwargs
+        Scikit-learn configuration settings dependent on the installed version
+        of scikit-learn.
 
     See Also
     --------
@@ -107,11 +112,11 @@ def set_config(
 
 @contextmanager
 def config_context(**new_config):
-    """Context manager for global scikit-learn configuration
+    """Context manager for global scikit-learn configuration.
 
     Parameters
     ----------
-    target_offload : string or dpctl.SyclQueue or None, default=None
+    target_offload : str or dpctl.SyclQueue or None, default=None
         The device primarily used to perform computations.
         If string, expected to be "auto" (the execution context
         is deduced from input data location),
