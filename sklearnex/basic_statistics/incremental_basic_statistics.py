@@ -47,7 +47,7 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
 
     Parameters
     ----------
-    result_options: str or list, default='all'
+    result_options : str or list, default=str('all')
         List of statistics to compute.
 
     batch_size : int, default=None
