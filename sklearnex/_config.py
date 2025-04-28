@@ -25,7 +25,7 @@ from onedal._config import _get_config as onedal_get_config
 
 
 def get_config():
-    """Retrieve current values for configuration set by :func:`set_config`
+    """Retrieve current values for configuration set by :func:`set_config`.
 
     Returns
     -------
