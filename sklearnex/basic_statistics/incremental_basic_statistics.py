@@ -41,9 +41,12 @@ import warnings
 @control_n_jobs(decorated_methods=["partial_fit", "_onedal_finalize_fit"])
 class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
     """
-    Calculates basic statistics on the given data, allows for computation when the data are split into
-    batches. The user can use ``partial_fit`` method to provide a single batch of data or use the ``fit`` method to provide
-    the entire dataset.
+    Incremental estimator for basic statistics.
+
+    Calculates basic statistics on the given data, allows for computation
+    when the data are split into batches. The user can use ``partial_fit``
+    method to provide a single batch of data or use the ``fit`` method to
+    provide the entire dataset.
 
     Parameters
     ----------
@@ -88,8 +91,9 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
             Second order moment of each feature over all samples.
 
         n_samples_seen_ : int
-            The number of samples processed by the estimator. Will be reset on
-            new calls to ``fit``, but increments across ``partial_fit`` calls.
+            The number of samples processed by the estimator. Will be reset
+            on new calls to ``fit``, but increments across ``partial_fit``
+            calls.
 
         batch_size_ : int
             Inferred batch size from ``batch_size``.
@@ -101,8 +105,8 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
     -----
     Attribute exists only if corresponding result option has been provided.
 
-    Names of attributes without the trailing underscore are
-    supported currently but deprecated in 2025.1 and will be removed in 2026.0
+    Names of attributes without the trailing underscore are supported
+    currently but deprecated in 2025.1 and will be removed in 2026.0
 
     %incremental_serialization_note%
 

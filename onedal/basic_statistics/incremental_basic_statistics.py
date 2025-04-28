@@ -29,14 +29,16 @@ from .basic_statistics import BaseBasicStatistics
 
 class IncrementalBasicStatistics(BaseBasicStatistics):
     """
-    Incremental estimator for basic statistics based on oneDAL implementation.
-    Allows to compute basic statistics if data are splitted into batches.
+    oneDAL low order moments estimator.
+
+    Calculate basic statistics for data split into batches.
+
     Parameters
     ----------
-    result_options: string or list, default='all'
-        List of statistics to compute
+    result_options: str or list, default=str('all')
+        List of statistics to compute.
 
-    Attributes (are existing only if corresponding result option exists)
+    Attributes
     ----------
         min : ndarray of shape (n_features,)
             Minimum of each feature over all samples.
@@ -67,6 +69,10 @@ class IncrementalBasicStatistics(BaseBasicStatistics):
 
         second_order_raw_moment : ndarray of shape (n_features,)
             Second order moment of each feature over all samples.
+
+    Notes
+    -----
+        Attributes are populated only for corresponding result options.
     """
 
     def __init__(self, result_options="all"):
