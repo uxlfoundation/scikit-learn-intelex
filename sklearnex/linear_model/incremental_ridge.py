@@ -253,8 +253,8 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
             `n_targets` is the number of targets.
 
         check_input : bool, default=True
-            Run check_array on X
-    
+            Run validate_data on X and y.
+
         Returns
         -------
         self : IncrementalRidge
@@ -285,7 +285,7 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
             `n_features` is the number of features. It is necessary for
             `n_samples` to be not less than `n_features` if `fit_intercept`
             is False and not less than `n_features` + 1 if `fit_intercept`
-            is True
+            is True.
 
         y : array-like of shape (n_samples,) or (n_samples, n_targets)
             Target values, where `n_samples` is the number of samples and
