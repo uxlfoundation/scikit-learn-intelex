@@ -134,7 +134,7 @@ def config_context(**new_config):
         Not recommended for general use.
         Global default: False.
 
-    Note
+    Notes
     -----
     All settings, not just those presently modified, will be returned to
     their previous values when the context manager is exited.
