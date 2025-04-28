@@ -240,8 +240,7 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
 
     def partial_fit(self, X, y, check_input=True):
         """
-        Incrementally fits the linear model with X and y. All of X and y is
-        processed as a single batch.
+        Incrementally fits with X and y. X and y are processed as a single batch.
 
         Parameters
         ----------
@@ -253,6 +252,9 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
             Target values, where `n_samples` is the number of samples and
             `n_targets` is the number of targets.
 
+        check_input : bool, default=True
+            Run check_array on X
+    
         Returns
         -------
         self : IncrementalRidge
