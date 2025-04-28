@@ -19,7 +19,7 @@ import gc
 import numpy as np
 import pytest
 import scipy.sparse as sp
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_array_equal
 
 from onedal import _default_backend, _dpc_backend
 from onedal._device_offload import supports_queue
@@ -602,7 +602,10 @@ def test_table___dlpack__(dataframe, queue, order, data_shape, dtype):
     if xp := getattr(X_df, "__array_namespace__", lambda: None)():
         X_out = xp.from_dlpack(X_table)
         X_temp = xp.asnumpy(X_out) if hasattr(xp, "asnumpy") else np.asarray(X)
-        assert_allclose(np.squeeze(X_temp), np.squeeze(X))
+        if X_temp.dtype == X.dtype:
+            assert_array_equal(np.squeeze(X_temp), np.squeeze(X))
+        else:
+            assert_allclose(np.squeeze(X_temp), np.squeeze(X))
     else:
         # only some numpy versions support array_api and from_dlpack
         pytest.skip(f"{dataframe} does not have an __array_namespace__ attribute")
