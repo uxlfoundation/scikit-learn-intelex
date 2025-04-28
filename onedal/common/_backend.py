@@ -44,15 +44,15 @@ class BackendManager:
 
         Parameters
         ----------
-            module: str
+            module_name : str
                 The module to get the component from.
 
-            component: str
+            component_name : str
                 The component to get from the module.
 
         Returns
         -------
-            result: method, attribute or module
+            result : method, attribute or module
                 The component of the module.
         """
         submodules = module_name.split(".")
@@ -74,7 +74,7 @@ spmd_manager = BackendManager(_spmd_backend)
 
 
 class BackendFunction:
-    """Wrapper around backend function to allow setting auxiliary information"""
+    """Wrapper around backend function to allow setting auxiliary information."""
 
     def __init__(
         self,
@@ -134,7 +134,7 @@ def __decorator(
     lookup_name: Optional[str],
     no_policy: bool,
 ) -> Callable[..., Any]:
-    """Decorator to bind a method to the specified backend"""
+    """Decorator to bind a method to the specified backend."""
     if lookup_name is None:
         lookup_name = method.__name__
 
