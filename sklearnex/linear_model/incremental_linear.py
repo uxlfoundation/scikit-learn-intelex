@@ -61,7 +61,7 @@ class IncrementalLinearRegression(
 ):
     """
     Incremental Ordinary least squares Linear Regression.
-    
+
     Trains a linear regression model, allows for computation if the data
     are split into batches. The user can use the ``partial_fit`` method
     to provide a single batch of data or use the ``fit`` method to provide
