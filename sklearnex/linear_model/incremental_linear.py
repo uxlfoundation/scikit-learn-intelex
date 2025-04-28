@@ -327,7 +327,7 @@ class IncrementalLinearRegression(
             ``n_targets`` is the number of targets.
 
         check_input : bool, default=True
-            Run check_array on X.
+            Run validate_data on X and y.
 
         Returns
         -------
