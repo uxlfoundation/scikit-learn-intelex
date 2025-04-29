@@ -172,7 +172,7 @@ class LinearRegression(BaseLinearRegression):
     copy_X : bool, default=True
         If True, X will be copied; else, it may be overwritten.
 
-    algorithm : string, default="norm_eq"
+    algorithm : str, default="norm_eq"
         Algorithm used for computation on oneDAL side
     """
 
@@ -270,7 +270,7 @@ class Ridge(BaseLinearRegression):
     copy_X : bool, default=True
         If True, X will be copied; else, it may be overwritten.
 
-    algorithm : string, default="norm_eq"
+    algorithm : str, default="norm_eq"
         Algorithm used for computation on oneDAL side.
     """
 
