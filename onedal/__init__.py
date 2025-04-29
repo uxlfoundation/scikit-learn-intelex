@@ -48,7 +48,7 @@ class Backend:
             self : Backend
                 Encapsulated oneDAL pybind11 module.
         """
-       
+
         self.backend = backend_module
         self.is_dpc = is_dpc
         self.is_spmd = is_spmd
