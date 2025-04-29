@@ -28,7 +28,7 @@ from daal4py.sklearn._utils import _package_check_version
 
 @functools.lru_cache(maxsize=256, typed=False)
 def is_dpctl_available(version=None):
-    """Checks availability of DPCtl package.
+    """Check availability of DPCtl package.
 
     Parameters
     ----------
@@ -55,7 +55,7 @@ def is_dpctl_available(version=None):
 
 @functools.lru_cache(maxsize=256, typed=False)
 def is_dpnp_available(version=None):
-    """Checks availability of DPNP package.
+    """Check availability of DPNP package.
 
     Parameters
     ----------
