@@ -106,7 +106,7 @@ def rbf_kernel(X, Y=None, gamma=None, queue=None):
 
     queue : SyclQueue or None, default=None
         SYCL Queue object for device code execution. Default
-        value None causes computation on host
+        value None causes computation on host.
 
     Returns
     -------
@@ -148,7 +148,7 @@ def poly_kernel(X, Y=None, gamma=1.0, coef0=0.0, degree=3, queue=None):
 
     queue : SyclQueue or None, default=None
         SYCL Queue object for device code execution. Default
-        value None causes computation on host
+        value None causes computation on host.
 
     Returns
     -------
@@ -169,7 +169,7 @@ def poly_kernel(X, Y=None, gamma=1.0, coef0=0.0, degree=3, queue=None):
 def sigmoid_kernel(X, Y=None, gamma=1.0, coef0=0.0, queue=None):
     """Compute the sigmoid kernel between X and Y.
 
-    K(x, y) = tanh(scale*dot(x, y^T) + shift)
+    K(x, y) = tanh(gamma*dot(x, y^T) + coef0)
     for each pair of rows x in X and y in Y.
 
     Parameters
@@ -180,10 +180,10 @@ def sigmoid_kernel(X, Y=None, gamma=1.0, coef0=0.0, queue=None):
     Y : ndarray of shape (n_samples_Y, n_features)
         An optional second feature array. If `None`, uses `Y=X`.
 
-    scale : float, default=1.0
+    gamma : float, default=1.0
         Multiplication value to scale the inner product.
 
-    shift : float, default=0.0
+    coef0 : float, default=0.0
         Constant offset added to scaled inner product.
 
     queue : SyclQueue or None, default=None
