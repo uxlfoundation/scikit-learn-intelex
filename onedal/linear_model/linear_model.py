@@ -173,7 +173,7 @@ class LinearRegression(BaseLinearRegression):
         If True, X will be copied; else, it may be overwritten.
 
     algorithm : str, default="norm_eq"
-        Algorithm used for computation on oneDAL side
+        Algorithm used for oneDAL computation.
     """
 
     def __init__(
@@ -271,7 +271,7 @@ class Ridge(BaseLinearRegression):
         If True, X will be copied; else, it may be overwritten.
 
     algorithm : str, default="norm_eq"
-        Algorithm used for computation on oneDAL side.
+        Algorithm used for oneDAL computation.
     """
 
     def __init__(
