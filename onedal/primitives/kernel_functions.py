@@ -49,9 +49,9 @@ def _compute_kernel(params, submodule, X, Y):
 
 @supports_queue
 def linear_kernel(X, Y=None, scale=1.0, shift=0.0, queue=None):
-    """
-    Compute the linear kernel between X and Y:
-        K(x, y) = scale*dot(x, y^T) + shift
+    """Compute the linear kernel between X and Y.
+    
+    K(x, y) = scale*dot(x, y^T) + shift
     for each pair of rows x in X and y in Y.
 
     Parameters
