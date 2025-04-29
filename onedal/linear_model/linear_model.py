@@ -112,7 +112,7 @@ class BaseLinearRegression(metaclass=ABCMeta):
     @supports_queue
     def predict(self, X, queue=None):
         """Predict using the linear model.
-        
+
         Parameters
         ----------
         X : array-like or sparse matrix, shape (n_samples, n_features)
@@ -188,7 +188,7 @@ class LinearRegression(BaseLinearRegression):
     @supports_queue
     def fit(self, X, y, queue=None):
         """Fit linear model.
-        
+
         Parameters
         ----------
         X : {array-like, sparse matrix} of shape (n_samples, n_features)
