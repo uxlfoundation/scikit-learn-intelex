@@ -126,7 +126,7 @@ def rbf_kernel(X, Y=None, gamma=None, queue=None):
 def poly_kernel(X, Y=None, gamma=1.0, coef0=0.0, degree=3, queue=None):
     """Compute the polynomial kernel between X and Y.
 
-    K(x, y) = (scale*dot(x, y^T) + shift)**degree
+    K(x, y) = (gamma*dot(x, y^T) + coef0)**degree
     for each pair of rows x in X and y in Y.
 
     Parameters
