@@ -26,7 +26,7 @@ class Backend:
         """A unified interface to an available oneDAL pybind11 module.
 
         This class encapsulates a oneDAL pybind11 module allowing for
-        dynamic access of module objects. This sinplifies method and
+        dynamic access of module objects. This simplifies method and
         attribute access in sklearnex without aliasing in sys.modules.
         It contains additional attributes for inspection of the pybind11
         module type (i.e. dpc or spmd) for use in policy creation.
@@ -47,6 +47,7 @@ class Backend:
         -------
             self : Backend
                 Encapsulated oneDAL pybind11 module.
+        """
        
         self.backend = backend_module
         self.is_dpc = is_dpc
