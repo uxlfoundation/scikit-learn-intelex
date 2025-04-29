@@ -79,9 +79,9 @@ class IncrementalLinearRegression(BaseLinearRegression):
     @supports_queue
     def partial_fit(self, X, y, queue=None):
         """Prepare regression from batch data as `_partial_result`.
-        
+
         Computes partial data for linear regression from data batch X.
-        
+
         Parameters
         ----------
         X : array-like of shape (n_samples, n_features)
@@ -93,7 +93,7 @@ class IncrementalLinearRegression(BaseLinearRegression):
 
         queue : SyclQueue or None
             If not None, use this queue for computation.
-    
+
         Returns
         -------
         self : object
@@ -232,7 +232,7 @@ class IncrementalRidge(BaseLinearRegression):
     @supports_queue
     def partial_fit(self, X, y, queue=None):
         """Prepare regression from batch data as `_partial_result`.
-        
+
         Computes partial data for ridge regression from data batch X.
 
         Parameters
@@ -246,6 +246,7 @@ class IncrementalRidge(BaseLinearRegression):
 
         queue : dpctl.SyclQueue
             If not None, use this queue for computations.
+
         Returns
         -------
         self : object
@@ -279,9 +280,7 @@ class IncrementalRidge(BaseLinearRegression):
         return self
 
     def finalize_fit(self, queue=None):
-        """
-        Finalizes ridge regression computation and obtains coefficients
-        from the current `_partial_result`.
+        """Finalize ridge regression from the current `_partial_result`.
 
         Parameters
         ----------
