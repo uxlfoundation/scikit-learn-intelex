@@ -57,13 +57,21 @@ def linear_kernel(X, Y=None, scale=1.0, shift=0.0, queue=None):
     Parameters
     ----------
     X : ndarray of shape (n_samples_X, n_features)
+        A feature array.
+    
     Y : ndarray of shape (n_samples_Y, n_features)
+        An optional second feature array. If `None`, uses `Y=X`.
+    
     scale : float, default=1.0
+        Multiplication value to scale the Gram matrix.
+    
     shift : float, default=0.0
+        Value added to output scaled Gram matrix.
 
     Returns
     -------
     kernel_matrix : ndarray of shape (n_samples_X, n_samples_Y)
+        Scaled and shifted Gram matrix output.
     """
     X, Y = _check_inputs(X, Y)
     return _compute_kernel(
