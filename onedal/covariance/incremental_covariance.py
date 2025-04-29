@@ -29,8 +29,7 @@ from .covariance import BaseEmpiricalCovariance
 
 
 class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
-    """
-    Covariance estimator based on oneDAL implementation.
+    """Covariance estimator based on oneDAL implementation.
 
     Computes sample covariance matrix.
 
@@ -90,8 +89,7 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
 
     @supports_queue
     def partial_fit(self, X, y=None, queue=None):
-        """
-        Generate partial covariance from batch data in `_partial_result`.
+        """Generate partial covariance from batch data in `_partial_result`.
 
         Parameters
         ----------
@@ -131,8 +129,7 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
         self._queue = queue
 
     def finalize_fit(self):
-        """
-        Finalize covariance matrix from the current `_partial_result`.
+        """Finalize covariance matrix from the current `_partial_result`.
 
         Results are stored in `location_` and `covariance_` attributes.
 
