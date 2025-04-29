@@ -40,7 +40,7 @@ logger = logging.getLogger("sklearnex")
 
 def supports_queue(func):
     """Decorator that updates the global queue before function evaluation.
-    
+
     The global queue is updated based on provided queue and global configuration.
     If a `queue` keyword argument is provided in the decorated function, its
     value will be used globally. If no queue is provided, the global queue will
@@ -54,7 +54,7 @@ def supports_queue(func):
 
     Returns
     -------
-        wrapper : callable 
+        wrapper : callable
             Wrapped function.
     """
 
