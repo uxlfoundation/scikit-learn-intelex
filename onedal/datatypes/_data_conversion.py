@@ -37,6 +37,10 @@ def to_table(*args, queue=None):
     ----------
     *args : {scalar, numpy array, sycl_usm_ndarray, csr_matrix, or csr_array}
         Arguments to be individually coverted to oneDAL tables.
+ 
+    queue : SyclQueue or None, default=None
+        SYCL Queue object to be associated with the oneDAL tables. Default
+        value None causes no change in data location or queue.   
 
     Returns
     -------
@@ -48,9 +52,9 @@ def to_table(*args, queue=None):
         Tables will use pointers to the original array data. Scalars
         and non-contiguous arrays will be copies. Arrays may be
         modified in-place by oneDAL during computation. Transformation
-        is possible for data located on CPU and SYCL-enabled Intel GPUs.
-        Each array may only be of a single data type (i.e. each must be
-        homogeneous).
+        is possible only for data located on CPU and SYCL-enabled Intel
+        GPUs. Each array may only be of a single data type (i.e. each
+        must be homogeneous).
     """
     return _apply_and_pass(_convert_one_to_table, *args, queue=queue)
 
