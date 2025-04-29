@@ -92,7 +92,8 @@ class IncrementalLinearRegression(BaseLinearRegression):
             Responses for training data.
 
         queue : SyclQueue or None
-            If not None, use this queue for computation.
+            SYCL Queue object for device code execution. Default
+            value None causes computation on host.
 
         Returns
         -------
@@ -143,7 +144,8 @@ class IncrementalLinearRegression(BaseLinearRegression):
         Parameters
         ----------
         queue : SyclQueue or None
-            If not None, use this queue for computations.
+            SYCL Queue object for device code execution. Default
+            value None causes computation on host.
 
         Returns
         -------
@@ -241,11 +243,12 @@ class IncrementalRidge(BaseLinearRegression):
             Training data batch, where `n_samples` is the number of samples
             in the batch, and `n_features` is the number of features.
 
-        y: array-like of shape (n_samples,) or (n_samples, n_targets)
+        y : array-like of shape (n_samples,) or (n_samples, n_targets)
             Responses for training data.
 
-        queue : dpctl.SyclQueue
-            If not None, use this queue for computations.
+        queue : SyclQueue or None, default=None
+            SYCL Queue object for device code execution. Default
+            value None causes computation on host.
 
         Returns
         -------
@@ -284,8 +287,9 @@ class IncrementalRidge(BaseLinearRegression):
 
         Parameters
         ----------
-        queue : dpctl.SyclQueue
-            If available, uses provided queue for computations.
+        queue : SyclQueue or None, default=None
+            SYCL Queue object for device code execution. Default
+            value None causes computation on host.
 
         Returns
         -------
