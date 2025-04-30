@@ -359,14 +359,14 @@ def __logistic_regression_path(
             y_bin = np.ones(y.shape, dtype=X.dtype)
             # for compute_class_weight
 
-            if solver in ["lbfgs", "newton-cg"]:
+            if solver == "liblinear":
+                mask_classes = np.array([-1, 1])
+                y_bin[~mask] = -1.0
+            else:
                 # HalfBinomialLoss, used for those solvers, represents y in [0, 1] instead
                 # of in [-1, 1].
                 mask_classes = np.array([0, 1])
                 y_bin[~mask] = 0.0
-            else:
-                mask_classes = np.array([-1, 1])
-                y_bin[~mask] = -1.0
         else:
             mask_classes = np.array([-1, 1])
             mask = y == pos_class
@@ -388,7 +388,7 @@ def __logistic_regression_path(
 
     else:
         if sklearn_check_version("1.1"):
-            if solver in ["sag", "saga", "lbfgs", "newton-cg"]:
+            if solver in ["sag", "saga", "lbfgs", "newton-cg", "newton-cholesky"]:
                 # SAG, lbfgs and newton-cg multinomial solvers need LabelEncoder,
                 # not LabelBinarizer, i.e. y as a 1d-array of integers.
                 # LabelEncoder also saves memory compared to LabelBinarizer, especially
@@ -488,7 +488,7 @@ def __logistic_regression_path(
 
     if multi_class == "multinomial":
         # fmin_l_bfgs_b and newton-cg accepts only ravelled parameters.
-        if solver in ["lbfgs", "newton-cg"]:
+        if solver in ["lbfgs", "newton-cg", "newton-cholesky"]:
             if _dal_ready and classes.size == 2:
                 w0 = w0[-1:, :]
             if sklearn_check_version("1.1"):
@@ -753,7 +753,7 @@ def __logistic_regression_path(
             else:
                 n_classes = max(2, classes.size)
                 if sklearn_check_version("1.1"):
-                    if solver in ["lbfgs", "newton-cg"]:
+                    if solver in ["lbfgs", "newton-cg", "newton-cholesky"]:
                         multi_w0 = np.reshape(w0, (n_classes, -1), order="F")
                     else:
                         multi_w0 = w0
