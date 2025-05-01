@@ -74,7 +74,22 @@ spmd_manager = BackendManager(_spmd_backend)
 
 
 class BackendFunction:
-    """Wrapper around backend function to allow setting auxiliary information."""
+    """Wrapper around backend function to allow setting auxiliary information.
+
+    Parameters
+    ----------
+    method : callable
+        Pybind11 backend function.
+
+    backend : Backend
+        Encapsulated oneDAL pybind11 interface.
+
+    name : str
+        Name of function.
+
+    no_policy : bool
+       Flag that a oneDAL policy is not required for function evaluation.
+    """
 
     def __init__(
         self,
