@@ -122,6 +122,27 @@ class BasicStatistics(BaseBasicStatistics):
 
     @supports_queue
     def fit(self, data, sample_weight=None, queue=None):
+        """Generate statistics.
+
+        Parameters
+        ----------
+        data : array-like of shape (n_samples, n_features)
+            Training data batch, where `n_samples` is the number of samples
+            in the batch, and `n_features` is the number of features.
+
+        sample_weight : array-like of shape (n_samples,), default=None
+            Individual weights for each sample.
+
+        queue : SyclQueue or None, default=None
+            SYCL Queue object for device code execution. Default
+            value None causes computation on host.
+
+        Returns
+        -------
+        self : object
+            Returns the instance itself.
+        """
+        
         is_csr = _is_csr(data)
 
         use_raw_input = _get_config().get("use_raw_input", False) is True
