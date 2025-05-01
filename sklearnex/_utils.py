@@ -127,16 +127,21 @@ def register_hyperparameters(hyperparameters_map):
     ----------
     hyperparameters_map : dict
        Dictionary containing the operator-hyperparameter mapping.
+
+    Returns
+    -------
+    decorator : function
+        Function which adds `get_hyperparameters` method to classes 
     """
 
     def decorator(cls):
         """Add `get_hyperparameters()` static method.
-        
+
         Parameters
         ----------
         cls : class
             Class to be modified.
-        
+
         Returns
         -------
         cls : class
