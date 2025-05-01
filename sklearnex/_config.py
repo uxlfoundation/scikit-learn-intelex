@@ -53,7 +53,7 @@ def set_config(
 
     Parameters
     ----------
-    target_offload : str or dpctl.SyclQueue or None, default=None
+    target_offload : str or SyclQueue or None, default=None
         The device primarily used to perform computations.
         If string, expected to be "auto" (the execution context
         is deduced from input data location),
@@ -116,7 +116,7 @@ def config_context(**new_config):  # numpydoc ignore=PR01,PR07
 
     Parameters
     ----------
-    target_offload : str or dpctl.SyclQueue or None, default=None
+    target_offload : str or SyclQueue or None, default=None
         The device primarily used to perform computations.
         If string, expected to be "auto" (the execution context
         is deduced from input data location),
