@@ -112,6 +112,12 @@ def from_data(*data):
     ----------
     *data : arguments
         Data objects which may contain SyclQueues.
+
+    Returns
+    -------
+    queue : SyclQueue or None
+        SYCL Queue object for device code execution. None
+        signifies computation on host.
     """
     for item in data:
         # iterate through all data objects, extract the queue, and verify that all data objects are on the same device
