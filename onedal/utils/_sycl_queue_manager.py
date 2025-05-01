@@ -50,9 +50,9 @@ def __create_sycl_queue(target):
 
 def get_global_queue():
     """Get the global queue.
-    
+
     Retrieve it from the config if not set.
-    
+
     Returns
     -------
     queue: SyclQueue or None
@@ -85,10 +85,10 @@ def remove_global_queue():
 
 def update_global_queue(queue):
     """Update the global queue.
-    
+
     Parameters
     ----------
-    queue: SyclQueue or None
+    queue : SyclQueue or None
         SYCL Queue object for device code execution. None
         signifies computation on host.
     """
