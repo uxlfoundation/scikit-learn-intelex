@@ -188,7 +188,7 @@ jobs:
         run: |
           OTHER_REPO="uxlfoundation/oneDAL"
           WF_NAME="Nightly-build"
-          JQ_QUERY='map(select(.event == "workflow_dispatch" or .event == "schedule")) | .[0].databaseId'
+          JQ_QUERY='map(select(.event == "workflow_dispatch" or .event == "schedule")) | .[1].databaseId'
           RUN_ID=`gh run --repo ${OTHER_REPO} list --workflow "${WF_NAME}" --json databaseId,event --status success --jq "${JQ_QUERY}"`
           echo "Detected latest run id of ${RUN_ID} for workflow ${WF_NAME}"
           echo "run-id=${RUN_ID}" >> "$GITHUB_OUTPUT"
