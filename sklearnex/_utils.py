@@ -131,7 +131,7 @@ def register_hyperparameters(hyperparameters_map):
     Returns
     -------
     decorator : function
-        Function which adds `get_hyperparameters` method to classes 
+        Function which adds `get_hyperparameters` method to classes.
     """
 
     def decorator(cls):
