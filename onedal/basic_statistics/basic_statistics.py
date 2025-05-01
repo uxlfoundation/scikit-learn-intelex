@@ -142,7 +142,7 @@ class BasicStatistics(BaseBasicStatistics):
         self : object
             Returns the instance itself.
         """
-        
+
         is_csr = _is_csr(data)
 
         use_raw_input = _get_config().get("use_raw_input", False) is True
