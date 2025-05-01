@@ -111,7 +111,7 @@ def set_config(
 
 
 @contextmanager
-def config_context(**new_config):
+def config_context(**new_config):  # numpydoc ignore=PR01,PR07
     """Context manager for global scikit-learn configuration.
 
     Parameters
