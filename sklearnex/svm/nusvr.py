@@ -32,7 +32,7 @@ from ._common import BaseSVR
 
 
 @control_n_jobs(decorated_methods=["fit", "predict", "score"])
-class NuSVR(_sklearn_NuSVR, BaseSVR):
+class NuSVR(BaseSVR, _sklearn_NuSVR):
     __doc__ = _sklearn_NuSVR.__doc__
 
     if sklearn_check_version("1.2"):

@@ -14,6 +14,6 @@ xgboost==2.1.4 ; python_version < '3.10'
 xgboost==3.0.0 ; python_version >= '3.10'
 lightgbm==4.6.0
 catboost==1.2.8
-shap==0.47.1 ; python_version < '3.13'
+shap==0.47.2 ; python_version < '3.13'
 array-api-compat==1.11.2
 array-api-strict==2.3.1
