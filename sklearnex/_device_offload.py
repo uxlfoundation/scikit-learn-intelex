@@ -165,9 +165,20 @@ def dispatch(
 
 
 def wrap_output_data(func: Callable) -> Callable:
-    """
+    """ Transform function output to match input format.
+
     Converts and moves the output arrays of the decorated function
     to match the input array type and device.
+
+    Parameters
+    ----------
+    func : callable
+       Function or method which has array data as input.
+
+    Returns
+    -------
+    wrapper : callable
+        Wrapped function or method which will return matching format.
     """
 
     @wraps(func)
