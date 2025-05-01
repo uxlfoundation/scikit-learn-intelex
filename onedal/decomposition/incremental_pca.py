@@ -138,7 +138,7 @@ class IncrementalPCA(BasePCA):
 
         queue : SyclQueue or None, default=None
             SYCL Queue object for device code execution. Default
-            value None causes computation on host
+            value None causes computation on host.
 
         Returns
         -------
@@ -188,7 +188,7 @@ class IncrementalPCA(BasePCA):
         return self
 
     def finalize_fit(self):
-        """Finalize statistics from the current `_partial_result`
+        """Finalize statistics from the current `_partial_result`.
 
         Returns
         -------
