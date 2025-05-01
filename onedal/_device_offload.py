@@ -152,10 +152,21 @@ def _get_host_inputs(*args, **kwargs):
 
 
 def support_input_format(func):
-    """
+    """Transform input and output function arrays to/from host.
+    
     Converts and moves the output arrays of the decorated function
     to match the input array type and device.
     Puts SYCLQueue from data to decorated function arguments.
+
+    Parameters
+    ----------
+    func : callable
+       Function or method which has array data as input.
+
+    Returns
+    -------
+    wrapper_impl : callable
+        Wrapped function or method which will return matching format.
     """
 
     def invoke_func(self_or_None, *args, **kwargs):
