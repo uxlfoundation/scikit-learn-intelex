@@ -105,9 +105,9 @@ def fallback_to_host():
 
 def from_data(*data):
     """Extract the queue from provided data.
-    
+
     This updates the global queue as well.
-    
+
     Parameters
     ----------
     *data : arguments
