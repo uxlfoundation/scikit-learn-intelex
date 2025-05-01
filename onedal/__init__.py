@@ -121,3 +121,5 @@ if _spmd_backend is not None:
         ]
     if daal_check_version((2023, "P", 200)):
         __all__ += ["spmd.cluster"]
+
+__version__ = "2199.9.9"

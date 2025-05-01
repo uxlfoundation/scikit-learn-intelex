@@ -15,6 +15,7 @@
 # ==============================================================================
 
 import inspect
+import logging
 from collections.abc import Iterable
 from functools import wraps
 
@@ -29,6 +30,8 @@ from .utils._dpep_helpers import dpctl_available, dpnp_available
 if dpctl_available:
     from dpctl.memory import MemoryUSMDevice, as_usm_memory
     from dpctl.tensor import usm_ndarray
+
+logger = logging.getLogger("sklearnex")
 
 
 def supports_queue(func):
@@ -154,12 +157,17 @@ def support_input_format(func):
         else:
             self = None
 
-        # Check if the function is KNeighborsClassifier.fit
+        # KNeighbors*.fit can not be used with raw inputs, ignore `use_raw_input=True`
         override_raw_input = (
             self
             and self.__class__.__name__ in ("KNeighborsClassifier", "KNeighborsRegressor")
             and func.__name__ == "fit"
         )
+        if override_raw_input:
+            pretty_name = f"{self.__class__.__name__}.{func.__name__}"
+            logger.warning(
+                f"Using raw inputs is not supported for {pretty_name}. Ignoring `use_raw_input=True` setting."
+            )
         if _get_config()["use_raw_input"] is True and not override_raw_input:
             if "queue" not in kwargs:
                 usm_iface = getattr(args[0], "__sycl_usm_array_interface__", None)
@@ -186,9 +194,9 @@ def support_input_format(func):
                     result = _convert_to_dpnp(result)
                 return result
 
-        if not get_config().get("transform_output"):
+        if get_config().get("transform_output") in ("default", None):
             input_array_api = getattr(data[0], "__array_namespace__", lambda: None)()
-            if input_array_api:
+            if input_array_api and not _is_numpy_namespace(input_array_api):
                 input_array_api_device = data[0].device
                 result = _asarray(result, input_array_api, device=input_array_api_device)
         return result

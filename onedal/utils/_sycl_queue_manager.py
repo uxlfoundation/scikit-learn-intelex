@@ -30,6 +30,11 @@ else:
     # via `__new__`. No SyclDevice is defined.
     SyclQueue = _default_backend.SyclQueue
 
+# This special object signifies that the queue system should be
+# disabled. It will force computation to host. This occurs when the
+# global queue is set to this value (and therefore should not be
+# modified).
+__fallback_queue = object()
 # single instance of global queue
 __global_queue = None
 
@@ -45,8 +50,11 @@ def __create_sycl_queue(target):
 def get_global_queue():
     """Get the global queue. Retrieve it from the config if not set."""
     if (queue := __global_queue) is not None:
-        if SyclQueue and not isinstance(queue, SyclQueue):
-            raise ValueError("Global queue is not a SyclQueue object.")
+        if SyclQueue:
+            if queue is __fallback_queue:
+                return None
+            elif not isinstance(queue, SyclQueue):
+                raise ValueError("Global queue is not a SyclQueue object.")
         return queue
 
     target = _get_config()["target_offload"]
@@ -70,6 +78,12 @@ def update_global_queue(queue):
     global __global_queue
     queue = __create_sycl_queue(queue)
     __global_queue = queue
+
+
+def fallback_to_host():
+    """Enforce a host queue."""
+    global __global_queue
+    __global_queue = __fallback_queue
 
 
 def from_data(*data):

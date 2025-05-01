@@ -64,7 +64,8 @@ from sklearnex._utils import register_hyperparameters
 
 from .._config import get_config
 from .._device_offload import dispatch, wrap_output_data
-from .._utils import PatchableEstimator, PatchingConditionsChain
+from .._utils import PatchingConditionsChain
+from ..base import oneDALEstimator
 from ..utils._array_api import get_namespace
 from ..utils.validation import check_n_features, validate_data
 
@@ -74,7 +75,7 @@ if sklearn_check_version("1.4"):
     from daal4py.sklearn.utils import _assert_all_finite
 
 
-class BaseForest(PatchableEstimator, ABC):
+class BaseForest(oneDALEstimator, ABC):
     _onedal_factory = None
 
     def _onedal_fit(self, X, y, sample_weight=None, queue=None):
@@ -400,7 +401,7 @@ class BaseForest(PatchableEstimator, ABC):
             self.estimator = estimator
 
 
-class ForestClassifier(_sklearn_ForestClassifier, BaseForest):
+class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
     # Surprisingly, even though scikit-learn warns against using
     # their ForestClassifier directly, it actually has a more stable
     # API than the user-facing objects (over time). If they change it
@@ -850,7 +851,7 @@ class ForestClassifier(_sklearn_ForestClassifier, BaseForest):
         )
 
 
-class ForestRegressor(_sklearn_ForestRegressor, BaseForest):
+class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
     _err = "out_of_bag_error_r2|out_of_bag_error_prediction"
     _get_tree_state = staticmethod(get_tree_state_reg)
 
