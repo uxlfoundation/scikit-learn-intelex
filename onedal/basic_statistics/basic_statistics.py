@@ -77,7 +77,7 @@ class BasicStatistics(BaseBasicStatistics):
     result_options : str or list, default=str('all')
         List of statistics to compute.
 
-    algorithm: str or list, default=str('by_default')
+    algorithm : str or list, default=str('by_default')
         Method for statistics computation.
 
     Attributes
