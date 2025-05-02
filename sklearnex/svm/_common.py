@@ -68,6 +68,22 @@ class BaseSVM(oneDALEstimator):
     def intercept_(self):
         del self._icept_
 
+    @property
+    def _intercept_(self):
+        return self.intercept_
+
+    @_intercept_.setter
+    def _intercept_(self, value):
+        self._icept_ = value
+        if hasattr(self, "_onedal_estimator"):
+            self._onedal_estimator.intercept_ = value
+            if hasattr(self._onedal_estimator, "_onedal_model"):
+                del self._onedal_estimator._onedal_model
+
+    @_intercept_.deleter
+    def _intercept_(self):
+        del self._icept_
+
     def _onedal_gpu_supported(self, method_name, *data):
         patching_status = PatchingConditionsChain(f"sklearn.{method_name}")
         patching_status.and_conditions([(False, "GPU offloading is not supported.")])
