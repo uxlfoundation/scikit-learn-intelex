@@ -29,7 +29,7 @@ rsync -a --exclude='daal4py_data_science.ipynb' examples/notebooks/*.ipynb doc/$
 
 # build the documentation
 cd doc
-export SPHINXOPTS="-W -b linkcheck" # used by sphinx-build
+export SPHINXOPTS="-W" # used by sphinx-build
 export O=${SPHINXOPTS} # makefile overrides SPHINXOPTS
 
 # Build comes in two variants:
@@ -53,3 +53,6 @@ if [[ "$*" == *"--gh-pages"* ]]; then
 else
     make html
 fi
+
+#Run the link-checker after build avoid rate limit errors
+sphinx-build -b linkcheck -j auto $SPHINXOPTS sources _build/linkcheck
