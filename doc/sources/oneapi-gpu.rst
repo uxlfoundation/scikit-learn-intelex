@@ -21,16 +21,19 @@ oneAPI and GPU support in |sklearnex|
 
 |sklearnex| can execute computations on different devices (CPUs, GPUs) through the SYCL framework in oneAPI.
 
-The device used for computations can be easily controlled through the target offloading functionality (e.g. through ``sklearnex.config_context(target_offload="gpu")`` - see rest of this page for more details), but for finer-grained controlled (e.g. operating on arrays that are already in a given device's memory), it can also interact with objects from package |dpctl|, which offers a Python interface over SYCL concepts such as devices, queues, and USM (unified shared memory) arrays.
+The device used for computations can be easily controlled through the target offloading functionality (e.g. through ``sklearnex.config_context(target_offload="gpu")``, which moves data to GPU if it's not already there - see rest of this page for more details), but for finer-grained controlled (e.g. operating on arrays that are already in a given device's memory), it can also interact with objects from package |dpctl|, which offers a Python interface over SYCL concepts such as devices, queues, and USM (unified shared memory) arrays.
 
-While not strictly required, package |dpctl| is recommended for a better experience on GPUs.
+While not strictly required, package |dpctl| is recommended for a better experience on GPUs - for example, it can provide GPU-allocated arrays so that ``target_offload`` wouldn't need to move the data from CPU to GPU.
 
-.. important:: Be aware that GPU usage requires non-Python dependencies on your system, such as the `Intel(R) GPGPU Drivers <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`_.
+.. important:: Be aware that GPU usage requires non-Python dependencies on your system, such as the `Intel(R) GPGPU Drivers <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`_ (see below).
 
 Prerequisites
 -------------
 
 For execution on GPUs, DPC++ runtime and GPGPU drivers are required.
+
+DPCP++
+~~~~~~
 
 DPC++ compiler runtime can be installed either from PyPI or Conda:
 
@@ -46,7 +49,22 @@ DPC++ compiler runtime can be installed either from PyPI or Conda:
 
      conda install -c conda-forge dpcpp_cpp_rt
 
-For GPGPU driver installation instructions, see the general `DPC++ system requirements <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`_ sections corresponding to your operating system.
+GPGPU Drivers
+~~~~~~~~~~~~~
+
+On windows, GPGPU drivers are bundled as part of the regular drivers for iGPUs and dGPUs, which can be downloaded from `this link <https://www.intel.com/content/www/us/en/download/785597/intel-arc-iris-xe-graphics-windows.html>`__.
+
+For datacenters, see further instructions `here <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/oneapi-dpcpp/2025.html#inpage-nav-2-1-1>`__.
+
+
+On Linux, some distributions - namely Ubuntu Desktop 25.04 and higher, and Fedora Workstation 42 and higher - come with the GPGPU drivers preinstalled, while others require installing it separately. On Debian systems, it requires installing package ``intel-opencl-icd``: ::
+
+    sudo apt-get install intel-opencl-icd
+
+
+For other distributions such as CentOS, see `instructions here <https://dgpu-docs.intel.com/driver/installation.html>`__.
+
+For more details, see the `DPC++ requirements page <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/oneapi-dpcpp/2025.html>`__.
 
 Device offloading
 -----------------
