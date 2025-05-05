@@ -287,12 +287,6 @@ jobs:
         with:
           name: sklearnex-built
           path: ${{ github.workspace }}\venv\Lib\site-packages\sklearnex\
-      - name: TMP-DEBUG Test import
-        shell: cmd
-        run: |
-          call .\venv\Scripts\activate.bat
-          call .\.github\scripts\activate_components.bat ${{ steps.set-env.outputs.DPCFLAG }}
-          python -m "import daal4py" || echo IMPORT FAILED
 
       - name: Sklearnex testing
         shell: cmd
