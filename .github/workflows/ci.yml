@@ -17,7 +17,7 @@
 name: CI
 on:
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
   push:
     branches:
       - main
@@ -56,7 +56,7 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.PYTHON_VERSION }}  
+          python-version: ${{ matrix.PYTHON_VERSION }}
       - name: Get run ID of "Nightly-build" workflow
         id: get-run-id
         run: |
@@ -251,7 +251,7 @@ jobs:
           pip install cpufeature clang-format pyyaml
           pip install -r dependencies-dev
           for /f "delims=" %%c in ('python -m pip freeze ^| grep numpy') do echo NUMPY_BUILD=%%c>> %GITHUB_ENV%
-      - name: System info 
+      - name: System info
         shell: cmd
         run: |
           call .\venv\Scripts\activate.bat
@@ -276,6 +276,24 @@ jobs:
           pip install %SCIPY_VERSION%
           if "${{ steps.set-env.outputs.DPCFLAG }}"=="" pip install dpctl==${{ env.DPCTL_VERSION }} dpnp==${{ env.DPNP_VERSION }}
           pip list
+
+      - name: Upload built daal4py
+        uses: actions/upload-artifact@v3
+        with:
+          name: daal4py-built
+          path: ${{ github.workspace }}\venv\Lib\site-packages\daal4py\
+      - name: Upload built scikit-learn-intelex
+        uses: actions/upload-artifact@v3
+        with:
+          name: sklearnex-built
+          path: ${{ github.workspace }}\venv\Lib\site-packages\sklearnex\
+      - name: TMP-DEBUG Test import
+        shell: cmd
+        run: |
+          call .\venv\Scripts\activate.bat
+          call .\.github\scripts\activate_components.bat ${{ steps.set-env.outputs.DPCFLAG }}
+          python -m "import daal4py" || echo IMPORT FAILED
+
       - name: Sklearnex testing
         shell: cmd
         run: |
@@ -304,7 +322,7 @@ jobs:
         with:
           name: coverage_win_Py${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}
           path: |
-             *_win${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.info
+            *_win${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.info
       - name: Sklearn testing [preview]
         shell: cmd
         run: |
