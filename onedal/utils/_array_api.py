@@ -40,9 +40,19 @@ if dpnp_available:
         return array
 
 
+def _supports_buffer_protocol(obj):
+    # the array_api standard mandates conversion with the buffer protocol,
+    # which can only be checked via a try-catch in native python
+    try:
+        memoryview(obj)
+    except TypeError:
+        return False
+    return True
+
+
 def _asarray(data, xp, *args, **kwargs):
     """Converted input object to array format of xp namespace provided."""
-    if hasattr(data, "__array_namespace__"):
+    if hasattr(data, "__array_namespace__") or _supports_buffer_protocol(data):
         return xp.asarray(data, *args, **kwargs)
     elif isinstance(data, Iterable):
         if isinstance(data, tuple):

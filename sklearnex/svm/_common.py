@@ -15,7 +15,6 @@
 # ==============================================================================
 
 import warnings
-from abc import ABC
 from numbers import Number, Real
 
 import numpy as np
@@ -30,11 +29,12 @@ from daal4py.sklearn.utils.validation import get_requires_y_tag
 from onedal.utils.validation import _check_array, _check_X_y, _column_or_1d
 
 from .._config import config_context, get_config
-from .._utils import PatchableEstimator, PatchingConditionsChain
+from .._utils import PatchingConditionsChain
+from ..base import oneDALEstimator
 from ..utils.validation import validate_data
 
 
-class BaseSVM(PatchableEstimator, BaseEstimator, ABC):
+class BaseSVM(oneDALEstimator):
 
     @property
     def _dual_coef_(self):

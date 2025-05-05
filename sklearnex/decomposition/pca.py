@@ -18,8 +18,6 @@ import logging
 
 from daal4py.sklearn._utils import daal_check_version
 
-from .._utils import PatchableEstimator
-
 if daal_check_version((2024, "P", 100)):
     import numbers
     from math import sqrt
@@ -34,6 +32,7 @@ if daal_check_version((2024, "P", 100)):
 
     from .._device_offload import dispatch, wrap_output_data
     from .._utils import PatchingConditionsChain
+    from ..base import oneDALEstimator
     from ..utils._array_api import get_namespace
     from ..utils.validation import validate_data
 
@@ -48,7 +47,7 @@ if daal_check_version((2024, "P", 100)):
     from onedal.decomposition import PCA as onedal_PCA
 
     @control_n_jobs(decorated_methods=["fit", "transform", "fit_transform"])
-    class PCA(PatchableEstimator, _sklearn_PCA):
+    class PCA(oneDALEstimator, _sklearn_PCA):
         __doc__ = _sklearn_PCA.__doc__
 
         if sklearn_check_version("1.2"):

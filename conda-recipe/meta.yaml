@@ -88,9 +88,8 @@ test:
     - pandas
     - xgboost
     - lightgbm
-    # TODO: re-enable shap and catboost when conda-forge packages has a numpy 2.* compatibility
-    # - shap
-    # - catboost
+    - shap
+    - catboost
     - array-api-compat
     - array-api-strict
   source_files:

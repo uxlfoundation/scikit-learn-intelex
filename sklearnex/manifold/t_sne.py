@@ -14,12 +14,15 @@
 # limitations under the License.
 # ===============================================================================
 
+from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.manifold import TSNE
 from onedal._device_offload import support_input_format
 
-from .._utils import PatchableEstimator
+from ..base import oneDALEstimator
 
 TSNE.fit = support_input_format(TSNE.fit)
 TSNE.fit_transform = support_input_format(TSNE.fit_transform)
-TSNE._doc_link_module = "daal4py"
-TSNE._doc_link_template = PatchableEstimator._doc_link_template
+
+if sklearn_check_version("1.4"):
+    TSNE._doc_link_module = "daal4py"
+    TSNE._doc_link_url_param_generator = oneDALEstimator._doc_link_url_param_generator

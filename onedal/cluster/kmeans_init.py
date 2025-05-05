@@ -45,7 +45,8 @@ if daal_check_version((2023, "P", 200)):
         function: The wrapped function with the modified configuration if the input data is in CSR format.
         """
         config = get_config()
-        config["target_offload"] = "cpu"
+        # `auto` rather than `cpu` is necessary in order to force host when a SYCL cpu target is unavailable
+        config["target_offload"] = "auto"
 
         def wrapper(self, *args, **kwargs):
             if self.is_csr:

@@ -157,7 +157,7 @@ deselected_tests:
   - svm/tests/test_svm.py::test_custom_kernel_not_array_input[SVR]
 
   # test_non_uniform_strategies fails due to differences in handling of vacuous clusters after update
-  # See https://github.com/IntelPython/daal4py/issues/69
+  # See https://github.com/uxlfoundation/scikit-learn-intelex/issues/69
   - cluster/tests/test_k_means.py::test_kmeans_relocated_clusters >=0.24
 
   # oneAPI Data Analytics Library (oneDAL) does not check convergence for tol == 0.0 for ease of benchmarking
@@ -308,6 +308,14 @@ deselected_tests:
 
   # Failure occurs in python3.9 on windows CPU only - not easy to reproduce
   - ensemble/tests/test_weight_boosting.py::test_estimator >= 1.4 win32
+
+  # array_api dispatching for oneDAL is recognized using the sklearn tag system. This is an expected
+  # break in sklearn conformance as additional non-default tags cause errors in this test. This
+  # non-conformance does not impact the verification system of sklearn. A new system (sklearn >=1.6)
+  # allows for public tag addition. Sklearn also acknowledges the abuse of the old system by others,
+  # meaning its not too impactful to use it so long as the default keys and value types set by sklearn
+  # are respected.
+  - tests/test_common.py::test_valid_tag_types <1.6
 
   # --------------------------------------------------------
   # No need to test daal4py patching

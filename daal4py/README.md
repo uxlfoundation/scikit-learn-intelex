@@ -17,7 +17,7 @@
 # daal4py - A Convenient Python API to the oneAPI Data Analytics Library
 [![Build Status](https://dev.azure.com/daal/daal4py/_apis/build/status/CI?branchName=main)](https://dev.azure.com/daal/daal4py/_build/latest?definitionId=9&branchName=main)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/21716/badge.svg)](https://scan.coverity.com/projects/daal4py)
-[![Join the community on GitHub Discussions](https://badgen.net/badge/join%20the%20discussion/on%20github/black?icon=github)](https://github.com/IntelPython/daal4py/discussions)
+[![Join the community on GitHub Discussions](https://badgen.net/badge/join%20the%20discussion/on%20github/black?icon=github)](https://github.com/uxlfoundation/scikit-learn-intelex/discussions)
 [![PyPI Version](https://img.shields.io/pypi/v/daal4py)](https://pypi.org/project/daal4py/)
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/daal4py)](https://anaconda.org/conda-forge/daal4py)
 
@@ -40,8 +40,7 @@ We publish blogs on Medium, so [follow us](https://medium.com/intel-analytics-so
 - [Accelerate K-Means Clustering](https://medium.com/intel-analytics-software/accelerate-k-means-clustering-6385088788a1)
 
 ## 🔗 Important links
-- [Documentation](https://intelpython.github.io/daal4py/)
-- [scikit-learn API and patching](https://intelpython.github.io/daal4py/sklearn.html#sklearn)
+- [Documentation](https://uxlfoundation.github.io/scikit-learn-intelex/latest/about_daal4py.html)
 - [Building from Sources](https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/daal4py/INSTALL.md)
 - [About oneAPI Data Analytics Library](https://github.com/uxlfoundation/oneDAL)
 
@@ -60,34 +59,6 @@ You may reach out to project maintainers privately at onedal.maintainers@intel.c
 Daal4Py is distributed as part of scikit-learn-intelex, which itself is distributed under different channels.
 
 See the [installation instructions for scikit-learn-intelex](https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/INSTALL.md) for details.
-
-⚠️ Note: *GPU and MPI support are optional dependencies.
-Required dependencies for GPU and MPI support will not be downloaded.
-You need to manually install `dpcpp_cpp_rt` and `dpctl` packages for GPU support, and `mpi4py` with `impi_rt` as backend package for MPI support.*
-
-<details><summary>[Click to expand] ℹ️ How to install dpcpp_cpp_rt and impi_rt packages </summary>
-
-```shell
-# PyPi for dpcpp
-pip install -U dpcpp_cpp_rt dpctl
-```
-
-```shell
-# PyPi for MPI
-pip install -U mpi4py impi_rt
-```
-
-```shell
-# conda for dpcpp
-conda install dpcpp_cpp_rt dpctl -c https://software.repos.intel.com/python/conda/
-```
-
-```shell
-# conda for MPI
-conda install mpi4py impi_rt -c https://software.repos.intel.com/python/conda/
-```
-
-</details>
 
 
 # ⚠️ Scikit-learn patching

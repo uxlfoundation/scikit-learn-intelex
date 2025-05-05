@@ -71,12 +71,6 @@ Case Studies
 
 .. grid:: 3
 
-   .. grid-item-card:: Greener Machine Learning Computing with Intel® AI Acceleration
-      :link: https://www.intel.com/content/www/us/en/developer/articles/case-study/greener-machine-learning-with-intel-ai.html
-      :padding: 1
-
-      Lowering the Environmental Impact of AI Workloads by 7x using Extension for Scikit-learn*.
-
    .. grid-item-card:: Supply Chain Optimization at Enterprise Scale
       :link: https://www.intel.com/content/www/us/en/developer/articles/technical/supply-chain-optimization-at-enterprise-scale.html
       :padding: 1

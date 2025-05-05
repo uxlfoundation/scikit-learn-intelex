@@ -28,7 +28,7 @@ from ._common import BaseSVR
 
 
 @control_n_jobs(decorated_methods=["fit", "predict", "score"])
-class SVR(_sklearn_SVR, BaseSVR):
+class SVR(BaseSVR, _sklearn_SVR):
     __doc__ = _sklearn_SVR.__doc__
 
     if sklearn_check_version("1.2"):

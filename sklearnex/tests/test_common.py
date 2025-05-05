@@ -26,13 +26,16 @@ from contextlib import redirect_stdout
 from multiprocessing import Pipe, Process, get_context
 
 import pytest
+from sklearn.base import BaseEstimator
 from sklearn.utils import all_estimators
 
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal.tests.test_common import _check_primitive_usage_ban
+from sklearnex.base import oneDALEstimator
 from sklearnex.tests.utils import (
     PATCHED_MODELS,
     SPECIAL_INSTANCES,
+    UNPATCHED_MODELS,
     call_method,
     gen_dataset,
     gen_models_info,
@@ -174,6 +177,28 @@ def test_all_estimators_covered(monkeypatch):
     assert (
         uncovered_estimators == []
     ), f"{uncovered_estimators} are currently not included"
+
+
+def test_oneDALEstimator_inheritance(monkeypatch):
+    """All sklearnex estimators should inherit the oneDALEstimator class, sklearnex-only
+    estimators should have it inherit oneDAL estimator one step before BaseEstimator in the
+    mro.  This is only strictly set for non-preview estimators"""
+    monkeypatch.setattr(pkgutil, "walk_packages", _sklearnex_walk(pkgutil.walk_packages))
+    estimators = all_estimators()  # list of tuples
+    for name, obj in estimators:
+        if "preview" not in obj.__module__ and "daal4py" not in obj.__module__:
+            assert issubclass(
+                obj, oneDALEstimator
+            ), f"{name} does not inherit the oneDALEstimator"
+            # oneDAL estimator should be inherited from before BaseEstimator
+            mro = obj.__mro__
+            assert mro.index(oneDALEstimator) < mro.index(
+                BaseEstimator
+            ), f"incorrect mro in {name}"
+            if not any([issubclass(obj, est) for est in UNPATCHED_MODELS.values()]):
+                assert (
+                    mro[mro.index(oneDALEstimator) + 1] is BaseEstimator
+                ), f"oneDALEstimator should be inherited just before BaseEstimator in {name}"
 
 
 def _fullpath(path):

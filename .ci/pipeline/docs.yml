@@ -78,24 +78,11 @@ jobs:
     displayName: 'Build daal4py/sklearnex'
   - script: |
       export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
-      cd doc/daal4py
-      make html 2>&1 | tee build.log
-      cat build.log
-      # check for autodoc warnings
-      if grep -i "autodoc" build.log; then
-        echo "Autodoc Warnings detected, build failed!"
-        exit 1
-      fi
-    displayName: 'Build daal4py documentation'
-  - script: |
-      export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
       cd doc
       ./build-doc.sh
     displayName: 'Build scikit-learn-intelex documentation'
   - script: |
-      mkdir $(Build.ArtifactStagingDirectory)/html/daal4py
       mkdir $(Build.ArtifactStagingDirectory)/html/sklearnex
-      cp -R doc/daal4py/_build $(Build.ArtifactStagingDirectory)/html_daal4py
       cp -R doc/_build $(Build.ArtifactStagingDirectory)/html_sklearnex
     displayName: 'Copy build'
   - task: PublishPipelineArtifact@0
