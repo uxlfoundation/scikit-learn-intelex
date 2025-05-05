@@ -278,12 +278,12 @@ jobs:
           pip list
 
       - name: Upload built daal4py
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: daal4py-built
           path: ${{ github.workspace }}\venv\Lib\site-packages\daal4py\
       - name: Upload built scikit-learn-intelex
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: sklearnex-built
           path: ${{ github.workspace }}\venv\Lib\site-packages\sklearnex\
