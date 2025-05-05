@@ -19,7 +19,7 @@
 oneAPI and GPU support in |sklearnex|
 ##############################################################
 
-|sklearnex| can execute computations on different devices (CPUs, GPUs) through the SYCL framework in oneAPI.
+|sklearnex| can execute computations on different devices (CPUs and GPUs, including integrated GPUs from laptops and desktops) through the SYCL framework in oneAPI.
 
 The device used for computations can be easily controlled through the target offloading functionality (e.g. through ``sklearnex.config_context(target_offload="gpu")``, which moves data to GPU if it's not already there - see rest of this page for more details), but for finer-grained controlled (e.g. operating on arrays that are already in a given device's memory), it can also interact with objects from package |dpctl|, which offers a Python interface over SYCL concepts such as devices, queues, and USM (unified shared memory) arrays.
 
