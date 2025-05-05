@@ -52,7 +52,7 @@ DPC++ compiler runtime can be installed either from PyPI or Conda:
 GPGPU Drivers
 ~~~~~~~~~~~~~
 
-On windows, GPGPU drivers are bundled as part of the regular drivers for iGPUs and dGPUs, which can be downloaded from `this link <https://www.intel.com/content/www/us/en/download/785597/intel-arc-iris-xe-graphics-windows.html>`__.
+On Windows, GPGPU drivers are bundled as part of the regular drivers for iGPUs and dGPUs, which can be downloaded from `this link <https://www.intel.com/content/www/us/en/download/785597/intel-arc-iris-xe-graphics-windows.html>`__.
 
 For datacenters, see further instructions `here <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/oneapi-dpcpp/2025.html#inpage-nav-2-1-1>`__.
 
