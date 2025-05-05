@@ -32,7 +32,7 @@ Prerequisites
 
 For execution on GPUs, DPC++ runtime and GPGPU drivers are required.
 
-DPCP++
+DPC++
 ~~~~~~
 
 DPC++ compiler runtime can be installed either from PyPI or Conda:
