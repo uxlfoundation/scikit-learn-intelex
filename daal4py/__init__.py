@@ -59,7 +59,7 @@ try:
         _get__daal_run_version__,
         _get__version__,
     )
-except ImportError as e:
+except Exception as e:
     import sys
 
     sys.stderr.write("AHUBER HELLO")
