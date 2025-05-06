@@ -287,6 +287,11 @@ jobs:
         with:
           name: sklearnex-built
           path: ${{ github.workspace }}\venv\Lib\site-packages\sklearnex\
+      - name: Import test
+        shell: cmd
+        run: |
+          call .\venv\Scripts\activate.bat
+          python -c "from sklearnex import patch_sklearn;patch_sklearn()"
 
       - name: Sklearnex testing
         shell: cmd
