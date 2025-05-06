@@ -283,7 +283,7 @@ class IncrementalRidge(BaseLinearRegression):
         return self
 
     def finalize_fit(self, queue=None):
-        """Finalize ridge regression from the current `_partial_result`.
+        """Finalize ridge regression from the current ``_partial_result``.
 
         Parameters
         ----------

@@ -169,7 +169,7 @@ def poly_kernel(X, Y=None, gamma=1.0, coef0=0.0, degree=3, queue=None):
 def sigmoid_kernel(X, Y=None, gamma=1.0, coef0=0.0, queue=None):
     """Compute the sigmoid kernel between X and Y.
 
-    K(x, y) = tanh(gamma*dot(x, y^T) + coef0)
+        :math:`K(x, y) = \\text{tanh}(\\gamma \\mathbf{x}^T \\mathbf{y}) + \\text{coef}_0)`
     for each pair of rows x in X and y in Y.
 
     Parameters

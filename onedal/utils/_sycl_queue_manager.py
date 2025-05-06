@@ -183,10 +183,10 @@ def manage_global_queue(queue, *args):
 
     Notes
     -----
-        For most applications, the original queue should be `None`, but
-        if there are nested calls to `manage_global_queue()`, it is
+        For most applications, the original queue should be ``None``, but
+        if there are nested calls to ``manage_global_queue()``, it is
         important to restore the outer queue, rather than setting it to
-        `None`.
+        ``None``.
     """
     original_queue = get_global_queue()
     try:

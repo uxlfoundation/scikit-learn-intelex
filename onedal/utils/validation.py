@@ -136,7 +136,7 @@ def get_finite_keyword():
     Gets the argument name for scikit-learn's validation functions compatible with
     the current version of scikit-learn and using function inspection instead of
     version check due to `onedal` design rule: sklearn versioning should occur
-    in `sklearnex` module.
+    in ``sklearnex`` module.
 
     Returns
     -------

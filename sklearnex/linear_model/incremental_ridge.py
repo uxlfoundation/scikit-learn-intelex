@@ -283,9 +283,9 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
         ----------
         X : array-like of shape (n_samples, n_features)
             Training data, where `n_samples` is the number of samples and
-            `n_features` is the number of features. It is necessary for
-            `n_samples` to be not less than `n_features` if `fit_intercept`
-            is False and not less than `n_features` + 1 if `fit_intercept`
+            ``n_features`` is the number of features. It is necessary for
+            ``n_samples`` to be not less than ``n_features`` if ``fit_intercept``
+            is False and not less than ``n_features`` + 1 if ``fit_intercept``
             is True.
 
         y : array-like of shape (n_samples,) or (n_samples, n_targets)
