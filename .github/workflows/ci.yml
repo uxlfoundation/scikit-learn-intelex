@@ -291,6 +291,7 @@ jobs:
         shell: cmd
         run: |
           call .\venv\Scripts\activate.bat
+          cd ..
           python -c "from sklearnex import patch_sklearn;patch_sklearn()"
 
       - name: Sklearnex testing
