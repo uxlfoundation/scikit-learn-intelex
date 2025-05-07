@@ -267,6 +267,7 @@ linkcheck_ignore = [
     re.compile(r"https://pypi\.org/.+"),
     re.compile(r"https://docs\.readthedocs\.io/.+"),
     re.compile(r"https://www\.kaggle\.com/.+"),
+    re.compile(r"https://.*intel\.com/.+"),
 ]
 
 # Speed up link-check and fail faster
