@@ -57,12 +57,15 @@ On Windows, GPGPU drivers are bundled as part of the regular drivers for iGPUs a
 For datacenters, see further instructions `here <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/oneapi-dpcpp/2025.html#inpage-nav-2-1-1>`__.
 
 
-On Linux, some distributions - namely Ubuntu Desktop 25.04 and higher, and Fedora Workstation 42 and higher - come with the GPGPU drivers preinstalled, while others require installing it separately. On Debian systems, it requires installing package ``intel-opencl-icd``: ::
+On Linux, some distributions - namely Ubuntu Desktop 25.04 and higher, and Fedora Workstation 42 and higher - come with the GPGPU drivers for iGPUs and dGPUs preinstalled, while others require installing them separately.
+
+On Debian systems, it requires installing package ``intel-opencl-icd``, which is available from Debian's ``main`` repository: ::
 
     sudo apt-get install intel-opencl-icd
 
+For Arch Linux, and for other distributions in general, see the `GPGPU article in the Arch wiki <https://wiki.archlinux.org/title/GPGPU>`__.
 
-For other distributions such as CentOS, see `instructions here <https://dgpu-docs.intel.com/driver/installation.html>`__.
+Be aware that datacenter-grade devices, such as 'Flex' and 'Max', require different drivers. For CentOS and for datacenter-grade devices, see `instructions here <https://dgpu-docs.intel.com/driver/installation.html>`__.
 
 For more details, see the `DPC++ requirements page <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/oneapi-dpcpp/2025.html>`__.
 
