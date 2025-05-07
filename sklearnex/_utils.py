@@ -137,7 +137,6 @@ def register_hyperparameters(hyperparameters_map):
     def decorator(cls):
         """Add ``get_hyperparameters()` static method to a class.
 
-
         Parameters
         ----------
         cls : class
