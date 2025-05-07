@@ -129,6 +129,11 @@ rst_prolog = """
 .. |onedal| replace:: oneAPI Data Analytics Library
 """
 
+# Note: sklearn oftentimes uses single backticks to render code.
+# Some docstrings here are inherited from theirs, so this setting
+# is needed to render them the same way they do.
+default_role = "literal"
+
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
