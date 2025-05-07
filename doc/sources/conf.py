@@ -263,8 +263,6 @@ notfound_urls_prefix = "/scikit-learn-intelex/"
 # Any link matching these regexes will be skipped by linkcheck
 linkcheck_ignore = [
     re.compile(r"https://github\.com/.+"),
-    re.compile(r"https://raw\.githubusercontent\.com/.+"),
-    re.compile(r"https://pypi\.org/.+"),
     re.compile(r"https://docs\.readthedocs\.io/.+"),
     re.compile(r"https://www\.kaggle\.com/.+"),
     re.compile(r"https://.*intel\.com/.+"),
