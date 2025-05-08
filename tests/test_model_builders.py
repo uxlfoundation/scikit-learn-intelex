@@ -20,18 +20,28 @@ import itertools
 import pickle
 import unittest
 import warnings
+from collections.abc import Callable
 from datetime import datetime
 
 import lightgbm as lgb
 import numpy as np
 import pytest
+import treelite
 import xgboost as xgb
 from scipy.special import softmax
+from sklearn.base import BaseEstimator
 from sklearn.datasets import (
     load_breast_cancer,
     load_iris,
     make_classification,
     make_regression,
+)
+from sklearn.ensemble import (
+    GradientBoostingClassifier,
+    GradientBoostingRegressor,
+    IsolationForest,
+    RandomForestClassifier,
+    RandomForestRegressor,
 )
 from sklearn.linear_model import LogisticRegression, SGDClassifier
 from sklearn.model_selection import train_test_split
@@ -110,6 +120,8 @@ def make_xgb_model(
             n_redundant=0,
             random_state=123,
         )
+        # Note: this is in order to test '<' vs. '<=' conditions
+        X[:2] = (X[:2] * 10.0).astype(np.int32).astype(np.float64)
         if sklearn_class:
             return xgb.XGBClassifier(
                 objective=objective,
@@ -141,6 +153,7 @@ def make_xgb_model(
             n_redundant=0,
             random_state=123,
         )
+        X[:2] = (X[:2] * 10.0).astype(np.int32).astype(np.float64)
         if sklearn_class:
             return xgb.XGBClassifier(
                 objective=objective,
@@ -167,6 +180,7 @@ def make_xgb_model(
             )
     else:
         X, y = make_regression(n_samples=2, n_features=4, random_state=123)
+        X[:2] = (X[:2] * 10.0).astype(np.int32).astype(np.float64)
         if objective == "reg:gamma":
             y = np.exp((y - y.mean()) / y.std())
         elif objective == "reg:logistic":
@@ -202,8 +216,9 @@ def make_xgb_model(
 @pytest.mark.parametrize("with_nan", [False, True])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("empty_trees", [False, True])
+@pytest.mark.parametrize("from_treelite", [False, True])
 def test_xgb_regression(
-    objective, base_score, sklearn_class, with_nan, dtype, empty_trees
+    objective, base_score, sklearn_class, with_nan, dtype, empty_trees, from_treelite
 ):
     if (
         (objective == "reg:logistic")
@@ -213,31 +228,47 @@ def test_xgb_regression(
         pytest.skip("'base_score' not applicable to binary data.")
     if (objective == "reg:gamma") and (base_score is not None) and (base_score == 0.0):
         pytest.skip("'base_score' of zero not applicable to objective 'reg:gamma'.")
+    if sklearn_class and from_treelite:
+        pytest.skip()
 
     xgb_model = make_xgb_model(objective, base_score, sklearn_class, empty_trees)
+    if from_treelite:
+        xgb_model = treelite.frontend.from_xgboost(xgb_model)
     d4p_model = d4p.mb.convert_model(xgb_model)
 
     if sklearn_class:
         xgb_model = xgb_model.get_booster()
 
-    assert d4p_model.model_type == "xgboost"
+    num_features = (
+        xgb_model.num_features() if not from_treelite else xgb_model.num_feature
+    )
+
+    assert d4p_model.model_type == "xgboost" if not from_treelite else "treelite"
     assert d4p_model.is_regressor_
-    assert d4p_model.n_classes_ == 0
-    assert d4p_model.n_features_in_ == xgb_model.num_features()
+    assert d4p_model.n_classes_ == 1
+    assert d4p_model.n_features_in_ == num_features
 
     rng = np.random.default_rng(seed=123)
-    X_test = rng.standard_normal(size=(3, xgb_model.num_features()), dtype=dtype)
+    X_test = rng.standard_normal(size=(3, num_features), dtype=dtype)
     if with_nan:
         X_test[:, 2:] = np.nan
         X_test[-1] = np.nan
-    dm_test = xgb.DMatrix(X_test)
 
-    np.testing.assert_allclose(
-        d4p_model.predict(X_test),
-        xgb_model.predict(dm_test, output_margin=True),
-        atol=1e-5,
-        rtol=1e-5,
-    )
+    if not from_treelite:
+        dm_test = xgb.DMatrix(X_test)
+        np.testing.assert_allclose(
+            d4p_model.predict(X_test),
+            xgb_model.predict(dm_test, output_margin=True),
+            atol=1e-5,
+            rtol=1e-5,
+        )
+    else:
+        np.testing.assert_allclose(
+            d4p_model.predict(X_test),
+            treelite.gtil.predict(xgb_model, X_test, pred_margin=True).reshape(-1),
+            atol=1e-5,
+            rtol=1e-5,
+        )
 
 
 @pytest.mark.parametrize("objective", ["reg:squarederror", "reg:gamma", "reg:logistic"])
@@ -246,8 +277,9 @@ def test_xgb_regression(
 @pytest.mark.parametrize("with_nan", [False, True])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("empty_trees", [False, True])
+@pytest.mark.parametrize("from_treelite", [False, True])
 def test_xgb_regression_shap(
-    objective, base_score, sklearn_class, with_nan, dtype, empty_trees
+    objective, base_score, sklearn_class, with_nan, dtype, empty_trees, from_treelite
 ):
     if (
         (objective == "reg:logistic")
@@ -257,16 +289,20 @@ def test_xgb_regression_shap(
         pytest.skip("'base_score' not applicable to binary data.")
     if (objective == "reg:gamma") and (base_score is not None) and (base_score == 0.0):
         pytest.skip("'base_score' of zero not applicable to objective 'reg:gamma'.")
+    if sklearn_class and from_treelite:
+        pytest.skip()
 
     xgb_model = make_xgb_model(objective, base_score, sklearn_class, empty_trees)
-    d4p_model = d4p.mb.convert_model(xgb_model)
+    d4p_model = d4p.mb.convert_model(
+        xgb_model if not from_treelite else treelite.frontend.from_xgboost(xgb_model)
+    )
 
     if sklearn_class:
         xgb_model = xgb_model.get_booster()
 
-    assert d4p_model.model_type == "xgboost"
+    assert d4p_model.model_type == "xgboost" if not from_treelite else "treelite"
     assert d4p_model.is_regressor_
-    assert d4p_model.n_classes_ == 0
+    assert d4p_model.n_classes_ == 1
     assert d4p_model.n_features_in_ == xgb_model.num_features()
 
     rng = np.random.default_rng(seed=123)
@@ -301,28 +337,53 @@ def test_xgb_regression_shap(
 @pytest.mark.parametrize("with_nan", [False, True])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("empty_trees", [False, True])
+@pytest.mark.parametrize("from_treelite", [False, True])
 def test_xgb_binary_classification(
-    objective, base_score, sklearn_class, with_nan, dtype, empty_trees
+    objective, base_score, sklearn_class, with_nan, dtype, empty_trees, from_treelite
 ):
+    if sklearn_class and from_treelite:
+        pytest.skip()
     xgb_model = make_xgb_model(objective, base_score, sklearn_class, empty_trees)
+    if from_treelite:
+        xgb_model = treelite.frontend.from_xgboost(xgb_model)
     d4p_model = d4p.mb.convert_model(xgb_model)
 
     if sklearn_class:
         xgb_model = xgb_model.get_booster()
 
-    assert d4p_model.model_type == "xgboost"
+    num_features = (
+        xgb_model.num_features() if not from_treelite else xgb_model.num_feature
+    )
+
+    assert d4p_model.model_type == "xgboost" if not from_treelite else "treelite"
     assert d4p_model.is_classifier_
     assert d4p_model.n_classes_ == 2
-    assert d4p_model.n_features_in_ == xgb_model.num_features()
+    assert d4p_model.n_features_in_ == num_features
 
     rng = np.random.default_rng(seed=123)
-    X_test = rng.standard_normal(size=(3, xgb_model.num_features()), dtype=dtype)
+    X_test = rng.standard_normal(size=(3, num_features), dtype=dtype)
     if with_nan:
         X_test[:, 2:] = np.nan
         X_test[-1] = np.nan
     dm_test = xgb.DMatrix(X_test)
 
-    if objective == "binary:logistic":
+    if from_treelite:
+        tl_pred = treelite.gtil.predict(xgb_model, X_test).reshape(-1)
+        if objective == "binary:logitraw":
+            tl_pred = 1 / (1 + np.exp(-tl_pred))
+        np.testing.assert_allclose(
+            d4p_model.predict_proba(X_test)[:, 1],
+            tl_pred,
+            atol=1e-5,
+            rtol=1e-5,
+        )
+        np.testing.assert_allclose(
+            d4p_model.predict_proba(X_test)[:, 0],
+            1.0 - tl_pred,
+            atol=1e-5,
+            rtol=1e-5,
+        )
+    elif objective == "binary:logistic":
         np.testing.assert_allclose(
             d4p_model.predict_proba(X_test)[:, 1],
             xgb_model.predict(dm_test),
@@ -362,16 +423,21 @@ def test_xgb_binary_classification(
 @pytest.mark.parametrize("with_nan", [False, True])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("empty_trees", [False, True])
+@pytest.mark.parametrize("from_treelite", [False, True])
 def test_xgb_binary_classification_shap(
-    objective, base_score, sklearn_class, with_nan, dtype, empty_trees
+    objective, base_score, sklearn_class, with_nan, dtype, empty_trees, from_treelite
 ):
+    if sklearn_class and from_treelite:
+        pytest.skip()
     xgb_model = make_xgb_model(objective, base_score, sklearn_class, empty_trees)
-    d4p_model = d4p.mb.convert_model(xgb_model)
+    d4p_model = d4p.mb.convert_model(
+        xgb_model if not from_treelite else treelite.frontend.from_xgboost(xgb_model)
+    )
 
     if sklearn_class:
         xgb_model = xgb_model.get_booster()
 
-    assert d4p_model.model_type == "xgboost"
+    assert d4p_model.model_type == "xgboost" if not from_treelite else "treelite"
     assert d4p_model.is_classifier_
     assert d4p_model.n_classes_ == 2
     assert d4p_model.n_features_in_ == xgb_model.num_features()
@@ -408,28 +474,44 @@ def test_xgb_binary_classification_shap(
 @pytest.mark.parametrize("with_nan", [False, True])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("empty_trees", [False, True])
+@pytest.mark.parametrize("from_treelite", [False, True])
 def test_xgb_multiclass_classification(
-    objective, base_score, sklearn_class, with_nan, dtype, empty_trees
+    objective, base_score, sklearn_class, with_nan, dtype, empty_trees, from_treelite
 ):
+    if sklearn_class and from_treelite:
+        pytest.skip()
     xgb_model = make_xgb_model(objective, base_score, sklearn_class, empty_trees)
+    if from_treelite:
+        xgb_model = treelite.frontend.from_xgboost(xgb_model)
     d4p_model = d4p.mb.convert_model(xgb_model)
 
     if sklearn_class:
         xgb_model = xgb_model.get_booster()
 
-    assert d4p_model.model_type == "xgboost"
+    num_features = (
+        xgb_model.num_features() if not from_treelite else xgb_model.num_feature
+    )
+
+    assert d4p_model.model_type == "xgboost" if not from_treelite else "treelite"
     assert d4p_model.is_classifier_
     assert d4p_model.n_classes_ == 3
-    assert d4p_model.n_features_in_ == xgb_model.num_features()
+    assert d4p_model.n_features_in_ == num_features
 
     rng = np.random.default_rng(seed=123)
-    X_test = rng.standard_normal(size=(3, xgb_model.num_features()), dtype=dtype)
+    X_test = rng.standard_normal(size=(3, num_features), dtype=dtype)
     if with_nan:
         X_test[:, 2:] = np.nan
         X_test[-1] = np.nan
     dm_test = xgb.DMatrix(X_test)
 
-    if objective == "multi:softprob":
+    if from_treelite:
+        np.testing.assert_allclose(
+            d4p_model.predict_proba(X_test),
+            treelite.gtil.predict(xgb_model, X_test).squeeze(),
+            atol=1e-5,
+            rtol=1e-5,
+        )
+    elif objective == "multi:softprob":
         np.testing.assert_allclose(
             d4p_model.predict_proba(X_test),
             xgb_model.predict(dm_test),
@@ -490,7 +572,8 @@ def test_xgb_early_stop():
     )
 
 
-def test_xgb_unsupported():
+@pytest.mark.parametrize("from_treelite", [False, True])
+def test_xgb_unsupported(from_treelite):
     X, y = make_regression(n_samples=10, n_features=4, random_state=123)
     xgb_model = xgb.train(
         dtrain=xgb.DMatrix(X, y),
@@ -516,8 +599,20 @@ def test_xgb_unsupported():
             "nthread": 1,
         },
     )
-    with pytest.raises(TypeError):
-        d4p.mb.convert_model(xgb_model)
+    if not from_treelite:
+        with pytest.raises(TypeError):
+            d4p.mb.convert_model(xgb_model)
+    else:
+        # In this case, TreeLite handles the drop logic on their end in a
+        # format that is consumable by daal4py.
+        tl_model = treelite.frontend.from_xgboost(xgb_model)
+        d4p_model = d4p.mb.convert_model(tl_model)
+        np.testing.assert_allclose(
+            d4p_model.predict(X),
+            treelite.gtil.predict(tl_model, X, pred_margin=True).reshape(-1),
+            atol=1e-5,
+            rtol=1e-5,
+        )
 
     xgb_model = xgb.train(
         dtrain=xgb.DMatrix(X, y),
@@ -544,7 +639,9 @@ def test_xgb_unsupported():
         },
     )
     with pytest.raises(TypeError):
-        d4p.mb.convert_model(xgb_model)
+        d4p.mb.convert_model(
+            xgb_model if not from_treelite else treelite.frontend.from_xgboost(xgb_model)
+        )
 
     X = X.astype(int)
     X -= X.min(axis=0, keepdims=True)
@@ -558,7 +655,9 @@ def test_xgb_unsupported():
         },
     )
     with pytest.raises(TypeError):
-        d4p.mb.convert_model(xgb_model)
+        d4p.mb.convert_model(
+            xgb_model if not from_treelite else treelite.frontend.from_xgboost(xgb_model)
+        )
 
 
 def make_lgb_model(
@@ -583,6 +682,7 @@ def make_lgb_model(
             n_redundant=0,
             random_state=123,
         )
+        X[:2] = (X[:2] * 10.0).astype(np.int32).astype(np.float64)
         if with_nan:
             X[-1, :] = np.nan
         if sklearn_class:
@@ -626,6 +726,7 @@ def make_lgb_model(
             n_redundant=0,
             random_state=123,
         )
+        X[:2] = (X[:2] * 10.0).astype(np.int32).astype(np.float64)
         if with_nan:
             X[-1, :] = np.nan
         if sklearn_class:
@@ -664,6 +765,7 @@ def make_lgb_model(
             )
     else:
         X, y = make_regression(n_samples=10, n_features=4, random_state=123)
+        X[:2] = (X[:2] * 10.0).astype(np.int32).astype(np.float64)
         if with_nan:
             X[-1, :] = np.nan
         if objective == "gamma":
@@ -1038,6 +1140,7 @@ def make_cb_model(
             n_redundant=0,
             random_state=123,
         )
+        X[:2] = (X[:2] * 10.0).astype(np.int32).astype(np.float64)
         if with_nan:
             X[-1, :] = np.nan
         if sklearn_class:
@@ -1080,6 +1183,7 @@ def make_cb_model(
             n_redundant=0,
             random_state=123,
         )
+        X[:2] = (X[:2] * 10.0).astype(np.int32).astype(np.float64)
         if with_nan:
             X[-1, :] = np.nan
         if sklearn_class:
@@ -1116,6 +1220,7 @@ def make_cb_model(
 
     else:
         X, y = make_regression(n_samples=25, n_features=4, random_state=123)
+        X[:2] = (X[:2] * 10.0).astype(np.int32).astype(np.float64)
         if "Tweedie" in objective:
             y = np.exp((y - y.mean()) / y.std())
         if with_nan:
@@ -1505,7 +1610,8 @@ def test_model_from_booster():
     assert tree1.value == 0.2
 
 
-def test_unsupported_multiclass():
+@pytest.mark.parametrize("from_treelite", [False, True])
+def test_unsupported_multiclass(from_treelite):
     X, y = make_classification(
         n_samples=10,
         n_classes=2,
@@ -1533,7 +1639,9 @@ def test_unsupported_multiclass():
     # functionality for multi-output trees, daal4py will need
     # to be modified to raise an error on such inputs.
     with pytest.raises(Exception):
-        d4p.mb.convert_model(xgb_model)
+        d4p.mb.convert_model(
+            xgb_model if not from_treelite else treelite.frontend.from_xgboost(xgb_model)
+        )
 
     lgb_model = lgb.train(
         train_set=lgb.Dataset(X, y),
@@ -1549,7 +1657,274 @@ def test_unsupported_multiclass():
         },
     )
     with pytest.raises(TypeError):
-        d4p.mb.convert_model(lgb_model)
+        d4p.mb.convert_model(
+            lgb_model if not from_treelite else treelite.frontend.from_lightgbm(lgb_model)
+        )
+
+
+@pytest.mark.parametrize(
+    "estimator,is_regression,expect_regressor,expect_warning,tl_predict",
+    [
+        (
+            RandomForestRegressor(n_estimators=3),
+            True,
+            True,
+            False,
+            lambda tl_model, X: treelite.gtil.predict(
+                tl_model, X, pred_margin=True
+            ).reshape(-1),
+        ),
+        (
+            GradientBoostingRegressor(n_estimators=3),
+            True,
+            True,
+            False,
+            lambda tl_model, X: treelite.gtil.predict(
+                tl_model, X, pred_margin=True
+            ).reshape(-1),
+        ),
+        (
+            IsolationForest(n_estimators=3),
+            True,
+            True,
+            False,
+            lambda tl_model, X: treelite.gtil.predict(
+                tl_model, X, pred_margin=True
+            ).reshape(-1),
+        ),
+        (
+            RandomForestClassifier(n_estimators=3),
+            False,
+            True,
+            True,
+            lambda tl_model, X: treelite.gtil.predict(tl_model, X, pred_margin=True)[
+                :, 0, 1
+            ],
+        ),
+        (
+            GradientBoostingClassifier(n_estimators=3),
+            False,
+            False,
+            False,
+            lambda tl_model, X: treelite.gtil.predict(tl_model, X).reshape(-1),
+        ),
+    ],
+)
+def test_sklearn_through_treelite(
+    estimator: BaseEstimator,
+    is_regression: bool,
+    expect_regressor: bool,
+    expect_warning: bool,
+    tl_predict: Callable,
+):
+    if is_regression:
+        X, y = make_regression(n_samples=10, n_features=4, random_state=123)
+    else:
+        X, y = make_classification(
+            n_samples=11,
+            n_classes=2,
+            n_features=3,
+            n_informative=3,
+            n_redundant=0,
+            random_state=123,
+        )
+    X[:2] = (X[:2] * 10.0).astype(np.int32).astype(np.float64)
+    tl_model = treelite.sklearn.import_model(estimator.fit(X, y))
+    with pytest.warns() if expect_warning else contextlib.suppress():
+        d4p_model = d4p.mb.convert_model(tl_model)
+
+    if expect_regressor:
+        assert d4p_model.is_regressor_
+    else:
+        assert d4p_model.is_classifier_
+
+    tl_pred = tl_predict(tl_model, X)
+    if d4p_model.is_regressor_:
+        d4p_pred = d4p_model.predict(X)
+    else:
+        d4p_pred = d4p_model.predict_proba(X)[:, 1]
+
+    np.testing.assert_allclose(
+        d4p_pred,
+        tl_pred,
+        atol=1e-5,
+        rtol=1e-5,
+    )
+
+
+def test_treelite_unsupported():
+    if sklearn_check_version("1.4"):
+        X, y = make_classification(
+            n_samples=10,
+            n_classes=3,
+            n_informative=3,
+            n_redundant=0,
+            random_state=123,
+        )
+        tl_model = treelite.sklearn.import_model(
+            RandomForestClassifier(n_estimators=3).fit(X, y)
+        )
+        with pytest.raises(TypeError):
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                d4p_model = d4p.mb.convert_model(tl_model)
+
+        y_multi = np.c_[(y == 0).reshape((-1, 1)), (y == 1)[::-1].reshape((-1, 1))]
+        tl_model = treelite.sklearn.import_model(
+            RandomForestClassifier(n_estimators=3).fit(X, y_multi)
+        )
+        with pytest.raises(TypeError):
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                d4p_model = d4p.mb.convert_model(tl_model)
+
+    X, y = make_regression(n_samples=10, n_features=4, random_state=123, n_targets=2)
+    tl_model = treelite.sklearn.import_model(
+        RandomForestRegressor(n_estimators=3).fit(X, y)
+    )
+    with pytest.raises(TypeError):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            d4p_model = d4p.mb.convert_model(tl_model)
+
+
+# These aren't typically produced by the main libraries targeted by
+# treelite, but can still be specified to be like this when constructing
+# a model through their model builder.
+@pytest.mark.parametrize("opname", [">", ">=", "<", "<="])
+def test_treelite_uncommon(opname):
+    # Taken from their example with a modified op:
+    # https://treelite.readthedocs.io/en/latest/tutorials/builder.html
+    builder = treelite.model_builder.ModelBuilder(
+        threshold_type="float64",
+        leaf_output_type="float64",
+        metadata=treelite.model_builder.Metadata(
+            num_feature=3,
+            task_type="kRegressor",
+            average_tree_output=True,
+            num_target=1,
+            num_class=[1],
+            leaf_vector_shape=(1, 1),
+        ),
+        tree_annotation=treelite.model_builder.TreeAnnotation(
+            num_tree=1, target_id=[0], class_id=[0]
+        ),
+        postprocessor=treelite.model_builder.PostProcessorFunc(name="identity"),
+        base_scores=[0.2],
+    )
+    builder.start_tree()
+    builder.start_node(0)
+    builder.numerical_test(
+        feature_id=0,
+        threshold=5.0,
+        default_left=True,
+        opname=opname,
+        left_child_key=1,
+        right_child_key=2,
+    )
+    builder.end_node()
+    builder.start_node(1)
+    builder.numerical_test(
+        feature_id=2,
+        threshold=-3.0,
+        default_left=False,
+        opname=opname,
+        left_child_key=3,
+        right_child_key=4,
+    )
+    builder.end_node()
+    builder.start_node(2)
+    builder.leaf(0.6)
+    builder.end_node()
+    builder.start_node(3)
+    builder.leaf(-0.4)
+    builder.end_node()
+    builder.start_node(4)
+    builder.leaf(1.2)
+    builder.end_node()
+    builder.end_tree()
+
+    tl_model = builder.commit()
+    d4p_model = d4p.mb.convert_model(tl_model)
+
+    X = np.array(
+        [
+            [0.0, 0.0, -5.0],
+            [0.0, 0.0, -2.0],
+            [0.0, 0.0, 1.0],
+            [0.0, 5.0, -5.0],
+            [0.0, 5.0, -2.0],
+            [0.0, 5.0, 1.0],
+            [10.0, 0.0, -5.0],
+            [10.0, 0.0, -2.0],
+            [10.0, 0.0, 1.0],
+            [10.0, 5.0, -5.0],
+            [10.0, 5.0, -2.0],
+            [10.0, 5.0, 1.0],
+        ]
+    )
+    np.testing.assert_almost_equal(
+        d4p_model.predict(X),
+        treelite.gtil.predict(tl_model, X).reshape(-1),
+    )
+
+
+def test_treelite_uneven_multiclass():
+    # Also based on the same tutorial, with slight modifications:
+    # https://treelite.readthedocs.io/en/latest/tutorials/builder.html
+    builder = treelite.model_builder.ModelBuilder(
+        threshold_type="float64",
+        leaf_output_type="float64",
+        metadata=treelite.model_builder.Metadata(
+            num_feature=1,
+            task_type="kMultiClf",
+            average_tree_output=False,
+            num_target=1,
+            num_class=[3],
+            leaf_vector_shape=(1, 1),
+        ),
+        tree_annotation=treelite.model_builder.TreeAnnotation(
+            num_tree=4,
+            target_id=[0, 0, 0, 0],
+            class_id=[0, 1, 2, 1],
+        ),
+        postprocessor=treelite.model_builder.PostProcessorFunc(name="softmax"),
+        base_scores=[0.2, 0.0, 0.3],
+    )
+    for tree_id in range(4):
+        builder.start_tree()
+        builder.start_node(0)
+        builder.numerical_test(
+            feature_id=0,
+            threshold=0.0,
+            default_left=True,
+            opname="<",
+            left_child_key=1,
+            right_child_key=2,
+        )
+        builder.end_node()
+        builder.start_node(1)
+        builder.leaf(0.5 if tree_id < 2 else 0.0)
+        builder.end_node()
+        builder.start_node(2)
+        builder.leaf(1.0 if tree_id == 2 else 0.0)
+        builder.end_node()
+        builder.end_tree()
+    tl_model = builder.commit()
+    d4p_model = d4p.mb.convert_model(tl_model)
+
+    X = np.array([[-1.0], [0.0], [1.0]])
+    np.testing.assert_almost_equal(
+        d4p_model.predict_proba(X),
+        treelite.gtil.predict(tl_model, X)[:, 0, :],
+    )
+
+
+def test_sklearn_conversion_suggests_treelite():
+    X, y = make_regression(n_samples=10, n_features=4, random_state=123)
+    model = RandomForestRegressor(n_estimators=2).fit(X, y)
+    with pytest.raises(TypeError, match="treelite"):
+        d4p.mb.convert_model(model)
 
 
 @pytest.mark.parametrize("with_names", [False, True])

@@ -15,5 +15,6 @@ xgboost==3.0.0 ; python_version >= '3.10'
 lightgbm==4.6.0
 catboost==1.2.8
 shap==0.47.2 ; python_version < '3.13'
+treelite==4.4.1
 array-api-compat==1.11.2
 array-api-strict==2.3.1
