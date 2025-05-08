@@ -225,9 +225,6 @@ class BaseLogisticRegression(metaclass=ABCMeta):
 
 
 class LogisticRegression(ClassifierMixin, BaseLogisticRegression):
-    """
-    Logistic Regression oneDAL implementation.
-    """
 
     def __init__(
         self,

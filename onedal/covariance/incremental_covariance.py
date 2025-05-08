@@ -29,17 +29,16 @@ from .covariance import BaseEmpiricalCovariance
 
 
 class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
-    """
-    Covariance estimator based on oneDAL implementation.
+    """Covariance estimator based on oneDAL implementation.
 
     Computes sample covariance matrix.
 
     Parameters
     ----------
-    method : string, default="dense"
+    method : str, default="dense"
         Specifies computation method. Available methods: "dense".
 
-    bias: bool, default=False
+    bias : bool, default=False
         If True biased estimation of covariance is computed which equals to
         the unbiased one multiplied by (n_samples - 1) / n_samples.
 
@@ -90,9 +89,7 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
 
     @supports_queue
     def partial_fit(self, X, y=None, queue=None):
-        """
-        Computes partial data for the covariance matrix
-        from data batch X and saves it to `_partial_result`.
+        """Generate partial covariance from batch data in `_partial_result`.
 
         Parameters
         ----------
@@ -103,8 +100,8 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
         y : Ignored
             Not used, present for API consistency by convention.
 
-        queue : dpctl.SyclQueue
-            If not None, use this queue for computations.
+        queue : SyclQueue or None, default=None
+            If not None, use this queue for computation.
 
         Returns
         -------
@@ -132,14 +129,9 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
         self._queue = queue
 
     def finalize_fit(self):
-        """
-        Finalizes covariance matrix and obtains `covariance_` and `location_`
-        attributes from the current `_partial_result`.
+        """Finalize covariance matrix from the current `_partial_result`.
 
-        Parameters
-        ----------
-        queue : dpctl.SyclQueue
-            If not None, use this queue for computations.
+        Results are stored in `location_` and `covariance_` attributes.
 
         Returns
         -------

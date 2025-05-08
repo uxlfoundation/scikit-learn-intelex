@@ -58,10 +58,10 @@ class EmpiricalCovariance(BaseEmpiricalCovariance):
 
     Parameters
     ----------
-    method : string, default="dense"
+    method : str, default="dense"
         Specifies computation method. Available methods: "dense".
 
-    bias: bool, default=False
+    bias : bool, default=False
         If True biased estimation of covariance is computed which equals to
         the unbiased one multiplied by (n_samples - 1) / n_samples.
 

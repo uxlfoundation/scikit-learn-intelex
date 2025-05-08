@@ -39,11 +39,23 @@ logger = logging.getLogger("sklearnex")
 
 
 def supports_queue(func):
-    """
-    Decorator that updates the global queue based on provided queue and global configuration.
-    If a `queue` keyword argument is provided in the decorated function, its value will be used globally.
-    If no queue is provided, the global queue will be updated from the provided data.
-    In either case, all data objects are verified to be on the same device (or on host).
+    """Decorator that updates the global queue before function evaluation.
+
+    The global queue is updated based on provided queue and global configuration.
+    If a ``queue`` keyword argument is provided in the decorated function, its
+    value will be used globally. If no queue is provided, the global queue will
+    be updated from the provided data. In either case, all data objects are
+    verified to be on the same device (or on host).
+
+    Parameters
+    ----------
+        func : callable
+            Function to be wrapped for SYCL queue use in oneDAL.
+
+    Returns
+    -------
+        wrapper : callable
+            Wrapped function.
     """
 
     @wraps(func)
@@ -140,10 +152,21 @@ def _get_host_inputs(*args, **kwargs):
 
 
 def support_input_format(func):
-    """
+    """Transform input and output function arrays to/from host.
+
     Converts and moves the output arrays of the decorated function
     to match the input array type and device.
     Puts SYCLQueue from data to decorated function arguments.
+
+    Parameters
+    ----------
+    func : callable
+       Function or method which has array data as input.
+
+    Returns
+    -------
+    wrapper_impl : callable
+        Wrapped function or method which will return matching format.
     """
 
     def invoke_func(self_or_None, *args, **kwargs):

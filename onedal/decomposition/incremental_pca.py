@@ -28,9 +28,7 @@ from .pca import BasePCA
 
 
 class IncrementalPCA(BasePCA):
-    """
-    Incremental estimator for PCA based on oneDAL implementation.
-    Allows to compute PCA if data are splitted into batches.
+    """Incremental oneDAL PCA estimator.
 
     Parameters
     ----------
@@ -42,8 +40,8 @@ class IncrementalPCA(BasePCA):
         When True the ``components_`` vectors are chosen in deterministic
         way, otherwise some of them can be oppositely directed.
 
-    method : string, default='cov'
-        Method used on oneDAL side to compute result.
+    method : str, default='cov'
+        Method used in oneDAL computation.
 
     whiten : bool, default=False
         When True the ``components_`` vectors are divided
@@ -86,7 +84,6 @@ class IncrementalPCA(BasePCA):
         noise_variance_ : float
             Equal to the average of (min(n_features, n_samples) - n_components)
             smallest eigenvalues of the covariance matrix of X.
-
     """
 
     def __init__(
@@ -131,7 +128,7 @@ class IncrementalPCA(BasePCA):
 
     @supports_queue
     def partial_fit(self, X, queue=None):
-        """Incremental fit with X. All of X is processed as a single batch.
+        """Generate partial PCA from batch data in `_partial_result`.
 
         Parameters
         ----------
@@ -139,8 +136,9 @@ class IncrementalPCA(BasePCA):
             Training data, where `n_samples` is the number of samples and
             `n_features` is the number of features.
 
-        y : Ignored
-            Not used, present for API consistency by convention.
+        queue : SyclQueue or None, default=None
+            SYCL Queue object for device code execution. Default
+            value None causes computation on host.
 
         Returns
         -------
@@ -190,14 +188,7 @@ class IncrementalPCA(BasePCA):
         return self
 
     def finalize_fit(self):
-        """
-        Finalizes principal components computation and obtains resulting
-        attributes from the current `_partial_result`.
-
-        Parameters
-        ----------
-        queue : dpctl.SyclQueue
-            Not used here, added for API conformance
+        """Finalize statistics from the current `_partial_result`.
 
         Returns
         -------

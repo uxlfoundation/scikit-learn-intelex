@@ -30,9 +30,6 @@ from ..utils._array_api import _get_sycl_namespace
 
 
 class BasePCA(metaclass=ABCMeta):
-    """
-    Base class for PCA oneDAL implementation.
-    """
 
     def __init__(
         self,

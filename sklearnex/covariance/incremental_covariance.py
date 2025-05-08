@@ -52,9 +52,12 @@ if sklearn_check_version("1.2"):
 @control_n_jobs(decorated_methods=["partial_fit", "fit", "_onedal_finalize_fit"])
 class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
     """
-    Maximum likelihood covariance estimator that allows for the estimation when the data are split into
-    batches. The user can use the ``partial_fit`` method to provide a single batch of data or use the ``fit`` method to provide
-    the entire dataset.
+    Incremental maximum likelihood covariance estimator.
+
+    Estimator that allows for the estimation when the data are split into
+    batches. The user can use the ``partial_fit`` method to provide a
+    single batch of data or use the ``fit`` method to provide the entire
+    dataset.
 
     Parameters
     ----------
@@ -70,8 +73,8 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
     batch_size : int, default=None
         The number of samples to use for each batch. Only used when calling
         ``fit``. If ``batch_size`` is ``None``, then ``batch_size``
-        is inferred from the data and set to ``5 * n_features``, to provide a
-        balance between approximation accuracy and memory consumption.
+        is inferred from the data and set to ``5 * n_features``, to provide
+        a balance between approximation accuracy and memory consumption.
 
     copy : bool, default=True
         If False, X will be overwritten. ``copy=False`` can be used to
