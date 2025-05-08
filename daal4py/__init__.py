@@ -16,7 +16,6 @@
 # ==============================================================================
 
 import platform
-import traceback
 
 if "Windows" in platform.system():
     import os
@@ -59,12 +58,7 @@ try:
         _get__daal_run_version__,
         _get__version__,
     )
-except Exception as e:
-    import sys
-
-    sys.stderr.write("AHUBER HELLO")
-    traceback.print_exc(file=sys.stderr)
-    sys.stderr.flush()
+except ImportError as e:
     s = str(e)
     if "libfabric" in s:
         raise ImportError(
