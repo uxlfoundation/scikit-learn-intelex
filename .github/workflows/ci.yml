@@ -278,24 +278,6 @@ jobs:
           pip install %SCIPY_VERSION%
           if "${{ steps.set-env.outputs.DPCFLAG }}"=="" pip install dpctl==${{ env.DPCTL_VERSION }} dpnp==${{ env.DPNP_VERSION }}
           pip list
-
-      - name: Upload built daal4py
-        uses: actions/upload-artifact@v4
-        with:
-          name: daal4py-built
-          path: ${{ github.workspace }}\venv\Lib\site-packages\daal4py\
-      - name: Upload built scikit-learn-intelex
-        uses: actions/upload-artifact@v4
-        with:
-          name: sklearnex-built
-          path: ${{ github.workspace }}\venv\Lib\site-packages\sklearnex\
-      - name: Import test
-        shell: cmd
-        run: |
-          call .\venv\Scripts\activate.bat
-          cd ..
-          python -c "from sklearnex import patch_sklearn;patch_sklearn()"
-
       - name: Sklearnex testing
         shell: cmd
         run: |
