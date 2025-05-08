@@ -319,7 +319,7 @@ Software Requirements
    .. tab:: GPU
 
       - A Linux* or Windows* version supported by DPC++ and oneMKL
-      - Intel® GPGPU drivers
+      - Intel® GPGPU drivers (see :ref:`oneapi_gpu`)
       - DPC++ runtime libraries
 
       .. important::
