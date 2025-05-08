@@ -49,7 +49,7 @@ PyYAML==6.0.2
 pyzmq==26.2.1
 requests==2.32.3
 six==1.17.0
-snowballstemmer==2.2.0
+snowballstemmer==3.0.0.1
 soupsieve==2.6
 Sphinx==8.2.3
 sphinx-book-theme==1.1.3
