@@ -267,11 +267,11 @@ jobs:
           set PREFIX=.
           set PYTHON=python
           call .\conda-recipe\bld.bat
-      - name: Upload site-packages
+      - name: Upload venv
         uses: actions/upload-artifact@v4
         with:
-          name: daal4py-built-lkg
-          path: ${{ github.workspace }}\venv\Lib\site-packages-${{ matrix.PYTHON_VERSION }}
+          name: venv-${{ matrix.PYTHON_VERSION }}-${{ matrix.SKLEARN_VERSION }}
+          path: ${{ github.workspace }}\venv
       - name: Install testing requirements
         shell: cmd
         run: |
