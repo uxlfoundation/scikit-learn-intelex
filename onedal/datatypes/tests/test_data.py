@@ -14,10 +14,12 @@
 # limitations under the License.
 # ==============================================================================
 
+import gc
+
 import numpy as np
 import pytest
 import scipy.sparse as sp
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_array_equal
 
 from onedal import _default_backend, _dpc_backend
 from onedal._device_offload import supports_queue
@@ -574,3 +576,44 @@ def test_table_conversions_dlpack(dataframe, queue, order, data_shape, dtype):
     # oneDAL table construction sets 1d arrays to 2d arrays with 1 col
     # this is counter the numpy strategy, and requires numpy's squeeze
     assert_allclose(np.squeeze(X), np.squeeze(X_out))
+
+
+@pytest.mark.parametrize(
+    "dataframe,queue", get_dataframes_and_queues("dpctl,numpy,array_api", "cpu,gpu")
+)
+@pytest.mark.parametrize("order", ["F", "C"])
+@pytest.mark.parametrize("data_shape", data_shapes)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.int32, np.int64])
+def test_table___dlpack__(dataframe, queue, order, data_shape, dtype):
+    """Test if __dlpack__ attribute can be properly consumed by other frameworks
+    This tests kDLOneAPI devices as well as kDLCPU devices.
+    """
+    rng = np.random.RandomState(0)
+    X = np.array(5 * rng.random_sample(data_shape), dtype=dtype)
+
+    X = ORDER_DICT[order](X)
+
+    X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+
+    X_table = to_table(X_df)
+    if hasattr(X_df, "__dlpack_device__"):
+        assert X_df.__dlpack_device__() == X_table.__dlpack_device__()
+
+    if xp := getattr(X_df, "__array_namespace__", lambda: None)():
+        X_out = xp.from_dlpack(X_table)
+        X_temp = xp.asnumpy(X_out) if hasattr(xp, "asnumpy") else np.asarray(X)
+        if X_temp.dtype == X.dtype:
+            assert_array_equal(np.squeeze(X_temp), np.squeeze(X))
+        else:
+            assert_allclose(np.squeeze(X_temp), np.squeeze(X))
+    else:
+        # only some numpy versions support array_api and from_dlpack
+        pytest.skip(f"{dataframe} does not have an __array_namespace__ attribute")
+
+    # test capsule deletion, should have no impact on underlying memory
+    # important for testing ``dlpack::free_capsule``
+    capsule = X_table.__dlpack__()
+    assert_allclose(np.squeeze(from_table(X_table)), np.squeeze(X))
+    del capsule
+    gc.collect()
+    assert_allclose(np.squeeze(from_table(X_table)), np.squeeze(X))
