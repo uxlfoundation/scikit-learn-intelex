@@ -267,16 +267,11 @@ jobs:
           set PREFIX=.
           set PYTHON=python
           call .\conda-recipe\bld.bat
-      - name: Upload built daal4py
+      - name: Upload site-packages
         uses: actions/upload-artifact@v4
         with:
           name: daal4py-built-lkg
-          path: ${{ github.workspace }}\venv\Lib\site-packages\daal4py\
-      - name: Upload built scikit-learn-intelex
-        uses: actions/upload-artifact@v4
-        with:
-          name: sklearnex-built-lkg
-          path: ${{ github.workspace }}\venv\Lib\site-packages\sklearnex\
+          path: ${{ github.workspace }}\venv\Lib\site-packages-${{ matrix.PYTHON_VERSION }}
       - name: Install testing requirements
         shell: cmd
         run: |
