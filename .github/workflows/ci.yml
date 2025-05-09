@@ -17,7 +17,7 @@
 name: CI
 on:
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
   push:
     branches:
       - main
@@ -56,7 +56,7 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.PYTHON_VERSION }}  
+          python-version: ${{ matrix.PYTHON_VERSION }}
       - name: Get run ID of "Nightly-build" workflow
         id: get-run-id
         run: |
@@ -189,7 +189,7 @@ jobs:
           OTHER_REPO="uxlfoundation/oneDAL"
           WF_NAME="Nightly-build"
           JQ_QUERY='map(select(.event == "workflow_dispatch" or .event == "schedule")) | .[0].databaseId'
-          RUN_ID=`gh run --repo ${OTHER_REPO} list --workflow "${WF_NAME}" --json databaseId,event --status success --jq "${JQ_QUERY}"`
+          RUN_ID=$(gh run --repo ${OTHER_REPO} list --workflow "${WF_NAME}" --json databaseId,event --status success --jq "${JQ_QUERY}")
           echo "Detected latest run id of ${RUN_ID} for workflow ${WF_NAME}"
           echo "run-id=${RUN_ID}" >> "$GITHUB_OUTPUT"
         env:
@@ -251,7 +251,7 @@ jobs:
           pip install cpufeature clang-format pyyaml
           pip install -r dependencies-dev
           for /f "delims=" %%c in ('python -m pip freeze ^| grep numpy') do echo NUMPY_BUILD=%%c>> %GITHUB_ENV%
-      - name: System info 
+      - name: System info
         shell: cmd
         run: |
           call .\venv\Scripts\activate.bat
@@ -265,6 +265,11 @@ jobs:
           set PREFIX=.
           set PYTHON=python
           call .\conda-recipe\bld.bat
+      - name: Upload venv
+        uses: actions/upload-artifact@v4
+        with:
+          name: venv-${{ matrix.PYTHON_VERSION }}-${{ matrix.SKLEARN_VERSION }}
+          path: ${{ github.workspace }}\venv
       - name: Install testing requirements
         shell: cmd
         run: |
@@ -304,7 +309,7 @@ jobs:
         with:
           name: coverage_win_Py${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}
           path: |
-             *_win${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.info
+            *_win${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.info
       - name: Sklearn testing [preview]
         shell: cmd
         run: |
