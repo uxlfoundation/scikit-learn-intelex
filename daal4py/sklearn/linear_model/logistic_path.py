@@ -359,7 +359,9 @@ def __logistic_regression_path(
             y_bin = np.ones(y.shape, dtype=X.dtype)
             # for compute_class_weight
 
-            if solver == "liblinear" or (not sklearn_check_version("1.6") and solver not in ["lbfgs", "newton-cg"]):
+            if solver == "liblinear" or (
+                not sklearn_check_version("1.6") and solver not in ["lbfgs", "newton-cg"]
+            ):
                 mask_classes = np.array([-1, 1])
                 y_bin[~mask] = -1.0
             else:
