@@ -325,6 +325,11 @@ deselected_tests:
   - tests/test_common.py::test_estimators[ExtraTreesClassifier(n_estimators=5)-check_sample_weight_equivalence_on_dense_data]
   - tests/test_common.py::test_estimators[ExtraTreesRegressor(n_estimators=5)-check_sample_weight_equivalence_on_dense_data]
   - utils/tests/test_estimator_checks.py::test_xfail_count_with_no_fast_fail
+  # XFail vs XPass differs between scikit-learn and scikit-learn-intelex since 1.6
+  - tests/test_common.py::test_estimators[LinearRegression()-check_sample_weight_equivalence_on_dense_data] <1.7
+  - tests/test_common.py::test_estimators[LogisticRegression(max_iter=5)-check_sample_weight_equivalence_on_dense_data]
+  - tests/test_common.py::test_estimators[LogisticRegression(max_iter=5,solver='newton-cg')-check_sample_weight_equivalence_on_dense_data]
+  - tests/test_common.py::test_estimators[NuSVC()-check_class_weight_classifiers]
 
   # --------------------------------------------------------
   # No need to test daal4py patching
