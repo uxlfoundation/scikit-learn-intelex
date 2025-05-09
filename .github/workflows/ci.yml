@@ -270,12 +270,12 @@ jobs:
       - name: Upload built daal4py
         uses: actions/upload-artifact@v4
         with:
-          name: daal4py-built
+          name: daal4py-built-lkg
           path: ${{ github.workspace }}\venv\Lib\site-packages\daal4py\
       - name: Upload built scikit-learn-intelex
         uses: actions/upload-artifact@v4
         with:
-          name: sklearnex-built
+          name: sklearnex-built-lkg
           path: ${{ github.workspace }}\venv\Lib\site-packages\sklearnex\
       - name: Install testing requirements
         shell: cmd
