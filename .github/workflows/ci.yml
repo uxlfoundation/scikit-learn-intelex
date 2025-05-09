@@ -182,7 +182,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.PYTHON_VERSION }}
-      - name: FIXME Get run ID of "Nightly-build" workflow
+      - name: Get run ID of "Nightly-build" workflow
         id: get-run-id
         shell: bash
         run: |
