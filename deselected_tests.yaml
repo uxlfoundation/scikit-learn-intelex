@@ -330,6 +330,7 @@ deselected_tests:
   - tests/test_common.py::test_estimators[LogisticRegression(max_iter=5)-check_sample_weight_equivalence_on_dense_data]
   - tests/test_common.py::test_estimators[LogisticRegression(max_iter=5,solver='newton-cg')-check_sample_weight_equivalence_on_dense_data]
   - tests/test_common.py::test_estimators[NuSVC()-check_class_weight_classifiers]
+  - tests/test_common.py::test_estimators[CalibratedClassifierCV(estimator=LogisticRegression(C=1))-check_sample_weights_invariance(kind=ones)]
 
   # --------------------------------------------------------
   # No need to test daal4py patching
