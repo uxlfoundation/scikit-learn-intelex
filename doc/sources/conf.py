@@ -160,7 +160,7 @@ html_theme_options = {
 html_context = {
     "current_version": version,
     "project_name": "scikit-learn-intelex",
-    "switcher_url": "/scikit-learn-intelex/doc/versions.json",
+    "switcher_url": "/scikit-learn-intelex/versions.json",
 }
 
 
