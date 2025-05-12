@@ -187,9 +187,11 @@ jobs:
         shell: bash
         run: |
           OTHER_REPO="uxlfoundation/oneDAL"
+          TEST_SHA=20f5343b2448ac53d4a322c9fd73a4f2efee03d3
+          echo "Getting run for hardcoded commit hash ${TEST_SHA}"
           WF_NAME="Nightly-build"
-          JQ_QUERY='map(select(.event == "workflow_dispatch" or .event == "schedule")) | .[0].databaseId'
-          RUN_ID=$(gh run --repo ${OTHER_REPO} list --workflow "${WF_NAME}" --json databaseId,event --status success --jq "${JQ_QUERY}")
+          JQ_QUERY="map(select(.event == \"workflow_dispatch\" or .event == \"schedule\" and .headSha == \"${TEST_SHA}\")) | .[0].databaseId"
+          RUN_ID=$(gh run --repo ${OTHER_REPO} list --workflow "${WF_NAME}" --json databaseId,event,headSha --status success --jq "${JQ_QUERY}")
           echo "Detected latest run id of ${RUN_ID} for workflow ${WF_NAME}"
           echo "run-id=${RUN_ID}" >> "$GITHUB_OUTPUT"
         env:
