@@ -23,7 +23,7 @@ oneAPI and GPU support in |sklearnex|
 
 The device used for computations can be easily controlled through the target offloading functionality (e.g. through ``sklearnex.config_context(target_offload="gpu")``, which moves data to GPU if it's not already there - see rest of this page for more details), but for finer-grained controlled (e.g. operating on arrays that are already in a given device's memory), it can also interact with objects from package |dpctl|, which offers a Python interface over SYCL concepts such as devices, queues, and USM (unified shared memory) arrays.
 
-While not strictly required, package |dpctl| is recommended for a better experience on GPUs - for example, it can provide GPU-allocated arrays so that ``target_offload`` wouldn't need to move the data from CPU to GPU.
+While not strictly required, package |dpctl| is recommended for a better experience on GPUs - for example, it can provide GPU-allocated arrays that enable compute-follows-data execution models (i.e. so that ``target_offload`` wouldn't need to move the data from CPU to GPU).
 
 .. important:: Be aware that GPU usage requires non-Python dependencies on your system, such as the `Intel(R) GPGPU Drivers <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`_ (see below).
 
