@@ -1,8 +1,13 @@
 [
     {
         "name": "latest",
-        "version": "2025.4",
+        "version": "2025.5",
         "url": "/scikit-learn-intelex/latest/"
+    },
+    {
+        "name": "2025.5",
+        "version": "2025.5",
+        "url": "/scikit-learn-intelex/2025.5/"
     },
     {
         "name": "2025.4",
