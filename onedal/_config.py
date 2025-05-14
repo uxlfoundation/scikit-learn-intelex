@@ -64,7 +64,7 @@ def _get_config(copy=True):
     Parameters
     ----------
     copy : bool, default=True
-        If False, a mutable view of the configuration is returned. Each
+        If 'False', a mutable view of the configuration is returned. Each
         thread has a separate copy of the configuration.
 
     Returns

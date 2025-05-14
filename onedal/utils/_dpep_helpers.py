@@ -61,7 +61,7 @@ def is_dpnp_available(version=None):
     ----------
     version : str or None, default=None
         Minimum supported dpnp version if installed.
-        Secondary version check skipped if set to None.
+        Secondary version check skipped if set to 'None'.
 
     Returns
     -------

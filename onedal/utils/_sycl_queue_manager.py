@@ -56,7 +56,7 @@ def get_global_queue():
     Returns
     -------
     queue: SyclQueue or None
-        SYCL Queue object for device code execution. None
+        SYCL Queue object for device code execution. 'None'
         signifies computation on host.
     """
     if (queue := __global_queue) is not None:
@@ -111,7 +111,7 @@ def from_data(*data):
     Parameters
     ----------
     *data : arguments
-        Data objects which may contain SyclQueues.
+        Data objects which may contain :obj:`dpctl.SyclQueue` objects.
 
     Returns
     -------

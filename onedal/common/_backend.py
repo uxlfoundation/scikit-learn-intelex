@@ -193,7 +193,7 @@ def bind_default_backend(
         provided, the name of the decorated method is used.
 
     no_policy : bool, optional
-        If True, the method will be decorated without a policy. Default is
+        If 'True', the method will be decorated without a policy. Default is
         False.
 
     Returns
@@ -240,7 +240,7 @@ def bind_spmd_backend(
         provided, the name of the decorated method is used.
 
     no_policy : bool, optional
-        If True, the method will be decorated without a policy. Default is
+        If 'True', the method will be decorated without a policy. Default is
         False.
 
     Returns

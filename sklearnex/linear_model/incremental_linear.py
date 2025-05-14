@@ -350,7 +350,7 @@ class IncrementalLinearRegression(
 
     def fit(self, X, y):
         """
-        Fit the model with X and y, using minibatches of size batch_size.
+        Fit the model with X and y, using minibatches of size ``batch_size``.
 
         Parameters
         ----------
@@ -359,7 +359,7 @@ class IncrementalLinearRegression(
             ``n_features`` is the number of features. It is necessary for
             ``n_samples`` to be not less than ``n_features`` if ``fit_intercept``
             is False and not less than ``n_features + 1`` if ``fit_intercept``
-            is True.
+            is 'True'.
 
         y : array-like of shape (n_samples,) or (n_samples, n_targets)
             Target values, where ``n_samples`` is the number of samples and
