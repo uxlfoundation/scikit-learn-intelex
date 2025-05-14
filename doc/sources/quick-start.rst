@@ -201,7 +201,7 @@ To install |sklearnex|, run:
    * - Devices
      - CPU, GPU
    * - Modes
-     - Single, SPMD
+     - Single, SPMD (Linux* only)
 
 .. tip:: Running on GPU involves additional dependencies, see :doc:`oneapi-gpu`. SPMD mode has additional requirements on top of GPU ones, see :doc:`distributed-mode` for details.
 
@@ -234,7 +234,7 @@ To prevent version conflicts, we recommend installing `scikit-learn-intelex` int
          * - Devices
            - CPU, GPU
          * - Modes
-           - Single, SPMD
+           - Single, SPMD (Linux* only)
 
 
    .. tab:: Conda-Forge channel
@@ -253,7 +253,7 @@ To prevent version conflicts, we recommend installing `scikit-learn-intelex` int
          * - Devices
            - CPU, GPU
          * - Modes
-           - Single, SPMD
+           - Single, SPMD (Linux* only)
 
 .. tip:: Running on GPU involves additional dependencies, see :doc:`oneapi-gpu`.  SPMD mode has additional requirements on top of GPU ones, see :doc:`distributed-mode` for details.
 
