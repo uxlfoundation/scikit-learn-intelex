@@ -90,6 +90,7 @@ test:
     - lightgbm
     - shap
     - catboost
+    - treelite
     - array-api-compat
     - array-api-strict
   source_files:
