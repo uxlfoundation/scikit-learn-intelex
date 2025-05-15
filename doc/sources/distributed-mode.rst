@@ -39,13 +39,11 @@ ensure that the spmd_backend is built.
 
   It also requires the MPI runtime executable (``mpiexec`` / ``mpirun``) to be from the same library that was used to compile the |sklearnex| - Intel's MPI runtime library is offered as a Python package ``impi_rt`` and will be installed together with the ``mpi4py`` package if executing the command above, but otherwise, it can be installed separately from different distribution channels:
 
-  - Intel's conda channel (recommended)::
-
-      conda install -c https://software.repos.intel.com/python/conda/ -c conda-forge --override-channels impi_rt
-
   - Conda-Forge::
 
-      conda install -c conda-forge --override-channels impi_rt
+      conda install -c conda-forge impi_rt
+
+  .. tip:: ``impi_rt`` is also available from the intel channel: ``https://software.repos.intel.com/python/conda``.
 
   - PyPI (not recommended, might require setting additional environment variables)::
 
