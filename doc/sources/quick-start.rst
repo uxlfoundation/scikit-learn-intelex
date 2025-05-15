@@ -261,11 +261,6 @@ To prevent version conflicts, we recommend installing ``scikit-learn-intelex`` i
 
         conda install -c conda-forge --override-channels scikit-learn-intelex
 
-      .. warning::
-        Packages from ``conda-forge`` might not work together with packages from the ``anaconda`` default
-        channel - see the `conda-forge documentation <https://conda-forge.org/docs/user/tipsandtricks/#using-multiple-channels>`__
-        about it for more details.
-
       .. list-table:: **Supported Configurations**
          :align: left
 
