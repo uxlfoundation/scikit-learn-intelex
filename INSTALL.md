@@ -242,12 +242,11 @@ The compiler and flags to build with both ASAN and debug symbols can be controll
 ```shell
 export CC="icx -fsanitize=address -g"
 export CXX="icpx -fsanitize=address -g"
-export LDFLAGS="-static-libasan"
 ```
 
-The ASAN runtime used by ICX is the same as the one by CLANG. It's possible to preload the ASAN runtime for GNU if that's the system's default through e.g. `LD_PRELOAD=libasan.so` or similar, but to get the same ASAN runtime as for oneDAL, one might need to specifically pass the paths from CLANG:
+The ASAN runtime used by ICX is the same as the one by CLANG. It's possible to preload the ASAN runtime for GNU if that's the system's default through e.g. `LD_PRELOAD=libasan.so` or similar, but to get the same ASAN runtime as for oneDAL, one might need to specifically pass the paths from CLANG if that's not the system's default compiler:
 ```shell
-export LD_PRELOAD=$(clang -print-file-name=libclang_rt.asan-x86_64.so)
+export LD_PRELOAD="$(clang -print-file-name=libclang_rt.asan-x86_64.so)"
 ```
 
 Then, the Python memory allocator can be set to `malloc` like this:
@@ -258,9 +257,9 @@ export PYTHONMALLOC=malloc
 Putting it all together, the earlier examples building the library in-place and executing a python file with it become as follows:
 ```shell
 source <path to ASAN-enabled oneDAL env.sh>
-CC="icx -fsanitize=address -g" CXX="icpx -fsanitize=address -g" LDFLAGS="-static-libasan" python setup.py build_ext --inplace --force --abs-rpath
-CC="icx -fsanitize=address -g" CXX="icpx -fsanitize=address -g" LDFLAGS="-static-libasan" python setup.py build --abs-rpath
-LD_PRELOAD=$(clang -print-file-name=libclang_rt.asan-x86_64.so) PYTHONMALLOC=malloc PYTHONPATH=$(pwd) python <python file.py>
+CC="icx -fsanitize=address -g" CXX="icpx -fsanitize=address -g" python setup.py build_ext --inplace --force --abs-rpath
+CC="icx -fsanitize=address -g" CXX="icpx -fsanitize=address -g" python setup.py build --abs-rpath
+LD_PRELOAD="$(clang -print-file-name=libclang_rt.asan-x86_64.so)" PYTHONMALLOC=malloc PYTHONPATH=$(pwd) python <python file.py>
 ```
 
 _Be aware that ASAN is known to generate many false-positive reports of memory leaks when used with oneDAL, NumPy, and SciPy._
