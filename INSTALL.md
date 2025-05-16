@@ -228,7 +228,7 @@ python setup.py build --abs-rpath
 
 ### Building with ASAN
 
-In order to use the address sanitizer (ASAN) together with `scikit-learn-intelex`, it's necessary to:
+In order to use AddressSanitizer (ASAN) together with `scikit-learn-intelex`, it's necessary to:
 * Build both oneDAL and scikit-learn-intelex with ASAN (otherwise error traces will not be very informative).
 * Preload the ASAN runtime when executing the Python process that imports `scikit-learn-intelex`.
 * Optionally, configure Python to use `malloc` as default allocator to reduce the number of false-positive leak reports.
