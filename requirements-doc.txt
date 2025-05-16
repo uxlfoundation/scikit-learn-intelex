@@ -65,7 +65,7 @@ sphinxcontrib-jsmath==1.0.1
 sphinxcontrib-qthelp==2.0.0
 sphinxcontrib-serializinghtml==2.0.0
 testpath==0.6.0
-tornado==6.4.2
+tornado==6.5
 traitlets==5.14.3
 typing-extensions==4.12.2
 urllib3==2.3.0
