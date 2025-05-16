@@ -21,9 +21,34 @@ from daal4py.sklearn._utils import daal_check_version
 
 
 class Backend:
-    """Encapsulates the oneDAL pybind11 modules and provides a unified interface to it together with additional properties about dpc/spmd policies"""
 
     def __init__(self, backend_module, is_dpc, is_spmd):
+        """A unified interface to an available oneDAL pybind11 module.
+
+        This class encapsulates a oneDAL pybind11 module allowing for
+        dynamic access of module objects. This simplifies method and
+        attribute access in sklearnex without aliasing in sys.modules.
+        It contains additional attributes for inspection of the pybind11
+        module type (i.e. dpc or spmd) for use in policy creation.
+
+        Parameters
+        ----------
+            backend_module : oneDAL pybind11 module
+                Pybind11 module to be encapsulated.
+
+            is_dpc : bool
+                Flag describing if the module is Data Parallel C++-enabled.
+
+            is_spmd : bool
+                Flag describing if the module is single program, multiple
+                data enabled.
+
+        Returns
+        -------
+            self : Backend
+                Encapsulated oneDAL pybind11 module.
+        """
+
         self.backend = backend_module
         self.is_dpc = is_dpc
         self.is_spmd = is_spmd

@@ -29,8 +29,8 @@ def convert_model(model) -> "GBTDAALModel | LogisticDAALModel":
     prediction methods.
 
     It supports gradient-boosted decision tree ensembles (GBT) from the libraries
-    ``xgboost``, ``lightgbm``, and ``catboost``; and logistic regression (binary
-    and multinomial) models from scikit-learn.
+    ``xgboost``, ``lightgbm``, ``catboost``, and ``treelite``; and logistic regression
+    (binary and multinomial) models from scikit-learn.
 
     See the documentation of the classes :obj:`daal4py.mb.GBTDAALModel` and
     :obj:`daal4py.mb.LogisticDAALModel` for more details.
