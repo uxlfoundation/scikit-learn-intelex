@@ -33,17 +33,17 @@ ensure that the spmd_backend is built.
 .. important::
   SMPD mode requires the |mpi4py| package used at runtime to be compiled with the same MPI backend as the |sklearnex|. The PyPI and Conda distributions of |sklearnex| both use Intel's MPI as backend, and hence require an |mpi4py| also built with Intel's MPI - it can be easily installed from Intel's conda channel as follows::
     
-    conda install -c https://software.repos.intel.com/python/conda/ mpi4py
+    conda install -c https://software.repos.intel.com/python/conda/ -c conda-forge --override-channels mpi4py
 
-  It also requires the MPI runtime executable (``mpiexec`` / ``mpirun``) to be from the same library that was used to compile the |sklearnex| - Intel's MPI runtime library is offered as a Python package ``impi_rt`` and will be installed together with the ``mpi4py`` package if executing the command above, but otherwise, it can be installed separately from different distribution channels:
+  .. warning:: Packages from the Intel channel are meant to be compatible with dependencies from ``conda-forge``, and might not work correctly in environments that have packages installed from the ``anaconda`` channel.
 
-  - Intel's conda channel (recommended)::
-
-      conda install -c https://software.repos.intel.com/python/conda/ impi_rt
+  It also requires the MPI runtime executable (``mpiexec`` / ``mpirun``) to be from the same library that was used to compile |sklearnex|. Intel's MPI runtime library is offered as a Python package ``impi_rt`` and will be installed together with the ``mpi4py`` package if executing the command above, but otherwise, it can be installed separately from different distribution channels:
 
   - Conda-Forge::
 
       conda install -c conda-forge impi_rt
+
+  .. tip:: ``impi_rt`` is also available from the Intel channel: ``https://software.repos.intel.com/python/conda``.
 
   - PyPI (not recommended, might require setting additional environment variables)::
 

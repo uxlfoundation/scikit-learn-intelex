@@ -207,12 +207,14 @@ To install |sklearnex|, run:
 
 .. note:: Wheels are only available for x86-64 architecture.
 
-Install from Anaconda* Cloud
-********************************************
+Install through Conda
+*********************
 
-To prevent version conflicts, we recommend installing `scikit-learn-intelex` into a new conda environment.
+To prevent version conflicts, we recommend installing ``scikit-learn-intelex`` into a new conda environment.
 
-*Note: the main Anaconda channel also provides distributions of scikit-learn-intelex, but it does not provide the latest versions, nor does it provide GPU-enabled builds. It is highly recommended to install it from either Intel's channel or conda-forge instead.*
+.. note::
+  The main Anaconda channel also provides distributions of ``scikit-learn-intelex``, but it does not provide the latest versions, nor does
+  it provide GPU-enabled builds. It is highly recommended to install ``scikit-learn-intelex`` from either Intel's channel or from conda-forge instead.
 
 .. tabs::
 
@@ -220,9 +222,20 @@ To prevent version conflicts, we recommend installing `scikit-learn-intelex` int
 
       Recommended for the Intel® Distribution for Python users.
 
-      To install, run::
+      To install in a fresh environment: ::
 
-        conda install -c https://software.repos.intel.com/python/conda/ scikit-learn-intelex
+        conda create -n sklex -c https://software.repos.intel.com/python/conda/ -c conda-forge --override-channels scikit-learn-intelex
+        conda activate sklex
+
+      To install in an existing environment: ::
+
+        conda install -c https://software.repos.intel.com/python/conda/ -c conda-forge --override-channels scikit-learn-intelex
+
+      .. warning::
+        Packages from the Intel channel are meant to be used together with dependencies from the **conda-forge** channel, and might not
+        work correctly when used in an environment where packages from the ``anaconda`` default channel have been installed. It is
+        advisable to use the `miniforge <https://github.com/conda-forge/miniforge>`__ installer for ``conda``/``mamba``, as it comes with
+        ``conda-forge`` as the only default channel.
 
       .. list-table:: **Supported Configurations**
          :align: left
@@ -239,9 +252,14 @@ To prevent version conflicts, we recommend installing `scikit-learn-intelex` int
 
    .. tab:: Conda-Forge channel
 
-      To install, run::
+      To install in a fresh environment: ::
 
-        conda install -c conda-forge scikit-learn-intelex
+        conda create -n sklex -c conda-forge --override-channels scikit-learn-intelex
+        conda activate sklex
+
+      To install in an existing environment: ::
+
+        conda install -c conda-forge --override-channels scikit-learn-intelex
 
       .. list-table:: **Supported Configurations**
          :align: left
