@@ -37,7 +37,7 @@ ensure that the spmd_backend is built.
 
   .. warning:: Packages from the Intel channel are meant to be compatible with dependencies from ``conda-forge``, and might not work correctly in environments that have packages installed from the ``anaconda`` channel.
 
-  It also requires the MPI runtime executable (``mpiexec`` / ``mpirun``) to be from the same library that was used to compile the |sklearnex| - Intel's MPI runtime library is offered as a Python package ``impi_rt`` and will be installed together with the ``mpi4py`` package if executing the command above, but otherwise, it can be installed separately from different distribution channels:
+  It also requires the MPI runtime executable (``mpiexec`` / ``mpirun``) to be from the same library that was used to compile |sklearnex|. Intel's MPI runtime library is offered as a Python package ``impi_rt`` and will be installed together with the ``mpi4py`` package if executing the command above, but otherwise, it can be installed separately from different distribution channels:
 
   - Conda-Forge::
 
