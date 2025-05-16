@@ -112,10 +112,10 @@ We recommend this installation for the users of Intel® Distribution for Python.
   conda install -c https://software.repos.intel.com/python/conda/ -c conda-forge scikit-learn-intelex
   ```
 
-_Note: packages from the Intel channel are meant to be used together with dependencies from the **conda-forge** channel, and might not
+**Note:** packages from the Intel channel are meant to be used together with dependencies from the **conda-forge** channel, and might not
 work correctly when used in an environment where packages from the `anaconda` default channel have been installed. It is
 advisable to use the [miniforge](https://github.com/conda-forge/miniforge) installer for `conda`/`mamba`, as it comes with
-`conda-forge` as the only default channel._
+`conda-forge` as the only default channel.
 
 
 ## Build from Sources
