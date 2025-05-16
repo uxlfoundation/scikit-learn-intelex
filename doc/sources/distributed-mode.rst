@@ -43,7 +43,7 @@ ensure that the spmd_backend is built.
 
       conda install -c conda-forge impi_rt
 
-  .. tip:: ``impi_rt`` is also available from the intel channel: ``https://software.repos.intel.com/python/conda``.
+  .. tip:: ``impi_rt`` is also available from the Intel channel: ``https://software.repos.intel.com/python/conda``.
 
   - PyPI (not recommended, might require setting additional environment variables)::
 
