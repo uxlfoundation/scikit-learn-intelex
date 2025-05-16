@@ -325,6 +325,15 @@ if daal_check_version((2024, "P", 600)):
             self._onedal_estimator.fit(X, y, queue=queue)
             self._save_attributes()
 
+            if sklearn_check_version("1.6"):
+                if y.ndim == 1 or y.shape[1] == 1:
+                    self.coef_ = self.coef_.ravel()
+                    self.intercept_ = self.intercept_[0]
+            else:
+                if self.coef_.shape[0] == 1 and y.ndim == 1:
+                    self.coef_ = self.coef_.ravel()
+                    self.intercept_ = self.intercept_[0]
+
         def _onedal_predict(self, X, queue=None):
             X = validate_data(self, X, accept_sparse=False, reset=False)
 
