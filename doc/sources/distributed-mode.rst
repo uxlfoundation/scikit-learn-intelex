@@ -20,7 +20,7 @@ SPMD (multi-GPU distributed mode)
 =================================
 
 |sklearnex| offers Single Program, Multiple Data (SPMD) supported interfaces for distributed computations on multi-GPU setups
-(see the :ref:`distributed mode on daal4py <distributed_daal4py>` for distributed algorithms on CPU).
+(see the :ref:`distributed mode on daal4py <distributed_daal4py>` for distributed algorithms on CPU) **when Running on Linux***.
 
 Several :doc:`GPU-supported algorithms <oneapi-gpu>`
 also provide distributed, multi-GPU computing capabilities via integration with |mpi4py|. The prerequisites
@@ -53,18 +53,12 @@ ensure that the spmd_backend is built.
 
 Note that |sklearnex| supports GPU offloading to speed up MPI operations. This is supported automatically with
 some MPI backends, but in order to use GPU offloading with Intel MPI, it is required to set the environment variable ``I_MPI_OFFLOAD`` to ``1`` (providing
-data on device without this may lead to a runtime error):
+data on device without this may lead to a runtime error): ::
 
-- On Linux*::
-    
     export I_MPI_OFFLOAD=1
 
-- On Windows*::
-    
-    set I_MPI_OFFLOAD=1
-
 SMPD-aware versions of estimators can be imported from the ``sklearnex.spmd`` module. Data should be distributed across multiple nodes as
-desired, and should be transfered to a |dpctl| or `dpnp <https://github.com/IntelPython/dpnp>`__ array before being passed to the estimator.
+desired, and should be transferred to a |dpctl| or `dpnp <https://github.com/IntelPython/dpnp>`__ array before being passed to the estimator.
 
 Note that SPMD estimators allow an additional argument ``queue`` in their ``.fit`` / ``.predict`` methods, which accept :obj:`dpctl.SyclQueue` objects. For example, while the signature for :obj:`sklearn.linear_model.LinearRegression.predict` would be
 
@@ -82,15 +76,9 @@ Examples of SPMD usage can be found in the GitHub repository for the |sklearnex|
 
 To run on SPMD mode, first create a python file using SPMD estimators from ``sklearnex.spmd``, such as `linear_regression_spmd.py <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/sklearnex/linear_regression_spmd.py>`__.
 
-Then, execute the file through MPI under multiple ranks - for example:
+Then, execute the file through MPI under multiple ranks - for example: ::
 
-- On Linux*::
-    
     mpirun -n 4 python linear_regression_spmd.py
-
-- On Windows*::
-    
-    mpiexec -n 4 python linear_regression_spmd.py
 
 (and remember to set ``I_MPI_OFFLOAD=1`` for Intel's MPI before calling ``mpirun``/``mpiexec``)
 
