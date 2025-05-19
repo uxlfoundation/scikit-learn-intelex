@@ -679,6 +679,12 @@ class RandomForestClassifier(RandomForestClassifier_original, RandomForestBase):
         dfc_predictionResult = dfc_algorithm.compute(X, self.daal_model_)
 
         pred = dfc_predictionResult.probabilities
+        # TODO: fix probabilities out of [0, 1] interval on oneDAL side
+        min_pred, max_pred = pred.min(axis=1, keepdims=True), pred.max(
+            axis=1, keepdims=True
+        )
+        pred = (pred - min_pred) / (max_pred - min_pred)
+        pred /= np.sum(pred, axis=1, keepdims=True)
 
         return pred
 
