@@ -35,7 +35,7 @@ if "Windows" in platform.system():
             dal_root = os.environ["DALROOT"]
             #print(f"DALROOT: {dal_root}")
             dal_root_redist = os.path.join(dal_root, "redist", arch_dir)
-            print(f"Investigating {dal_root_redist}")
+            #print(f"Investigating {dal_root_redist}")
             if os.path.exists(dal_root_redist):
                 print(f"Dir exists, adding to PATH")
                 # List all the files
