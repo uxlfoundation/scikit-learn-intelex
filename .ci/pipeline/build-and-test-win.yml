@@ -20,7 +20,7 @@ steps:
     displayName: 'Create Anaconda environment'
   - script: |
       call activate CB
-      if not defined DALROOT conda install -q -y -c conda-forge dal-devel=2025
+      if not defined DALROOT (conda install -q -y -c conda-forge dal-devel=2025)
       pip install --upgrade setuptools
       pip install cpufeature
       pip install -r dependencies-dev
