@@ -43,8 +43,8 @@ if "Windows" in platform.system():
                 os.listdir(dal_root_redist)
                 os.add_dll_directory(dal_root_redist)
                 os.environ["PATH"] = dal_root_redist + os.pathsep + os.environ["PATH"]
-            else:
-                print(f"Dir does not exist, skipping")
+            #else:
+            #    print(f"Dir does not exist, skipping")
         if "TBBROOT" in os.environ:
             tbb_root = os.environ["TBBROOT"]
             tbb_root_redist = os.path.join(tbb_root, "bin")
