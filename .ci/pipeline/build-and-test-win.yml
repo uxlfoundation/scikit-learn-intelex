@@ -65,15 +65,15 @@ steps:
       if defined COVERAGE_RCFILE set COVERAGE_FILE=%cd%\.coverage.sklearn
       bash .ci/scripts/run_sklearn_tests.sh
     displayName: 'Sklearn testing'
-    env:
-      DALROOT: ${{ variables.DALROOT }
     condition: succeededOrFailed()
     env:
       COVERAGE_RCFILE: ${{ variables.COVERAGE_RCFILE }}
+      DALROOT: ${{ variables.DALROOT }}
   - script: |
       call activate CB
       bash .ci/scripts/run_sklearn_tests.sh
     env:
       SKLEARNEX_PREVIEW: "YES"
+      DALROOT: ${{ variables.DALROOT }}
     displayName: 'Sklearn testing [preview]'
     condition: succeededOrFailed()
