@@ -16,15 +16,18 @@
 steps:
   - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
     displayName: Add conda to PATH
-  - script: conda create -q -y -n CB -c conda-forge python=$(PYTHON_VERSION) dal-devel impi-devel clang-format pyyaml
+  - script: conda create -q -y -n CB -c conda-forge python=$(PYTHON_VERSION) impi-devel clang-format pyyaml
     displayName: 'Create Anaconda environment'
   - script: |
       call activate CB
+      if not defined DALROOT conda install -q -y -c conda-forge dal-devel=2025
       pip install --upgrade setuptools
       pip install cpufeature
       pip install -r dependencies-dev
       pip list
     displayName: 'Install develop requirements'
+    env:
+      DALROOT: ${{ variables.DALROOT }}
   - script: |
       set PATH=C:\msys64\usr\bin;%PATH%
       call activate CB
@@ -48,6 +51,8 @@ steps:
       pip install %SCIPY_VERSION%
       pip list
     displayName: 'Install testing requirements'
+    env:
+      DALROOT: ${{ variables.DALROOT }}
   - script: |
       call activate CB
       if defined COVERAGE_RCFILE set COVERAGE_FILE=%cd%\.coverage.sklearnex
