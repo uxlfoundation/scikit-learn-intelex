@@ -33,7 +33,7 @@ if "Windows" in platform.system():
     if sys.version_info.minor >= 8:
         if "DALROOT" in os.environ:
             dal_root = os.environ["DALROOT"]
-            print(f"DALROOT: {dal_root}")
+            #print(f"DALROOT: {dal_root}")
             dal_root_redist = os.path.join(dal_root, "redist", arch_dir)
             print(f"Investigating {dal_root_redist}")
             if os.path.exists(dal_root_redist):
