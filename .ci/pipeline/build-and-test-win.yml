@@ -51,8 +51,6 @@ steps:
       pip install %SCIPY_VERSION%
       pip list
     displayName: 'Install testing requirements'
-    env:
-      DALROOT: ${{ variables.DALROOT }}
   - script: |
       call activate CB
       if defined COVERAGE_RCFILE set COVERAGE_FILE=%cd%\.coverage.sklearnex
@@ -61,11 +59,14 @@ steps:
     displayName: 'Sklearnex testing'
     env:
       COVERAGE_RCFILE: ${{ variables.COVERAGE_RCFILE }}
+      DALROOT: ${{ variables.DALROOT }}
   - script: |
       call activate CB
       if defined COVERAGE_RCFILE set COVERAGE_FILE=%cd%\.coverage.sklearn
       bash .ci/scripts/run_sklearn_tests.sh
     displayName: 'Sklearn testing'
+    env:
+      DALROOT: ${{ variables.DALROOT }
     condition: succeededOrFailed()
     env:
       COVERAGE_RCFILE: ${{ variables.COVERAGE_RCFILE }}
