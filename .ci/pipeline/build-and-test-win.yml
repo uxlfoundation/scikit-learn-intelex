@@ -53,6 +53,8 @@ steps:
     displayName: 'Install testing requirements'
   - script: |
       call activate CB
+      if defined DALROOT call "%DALROOT%\env\vars.bat"
+      if defined TBBROOT call "%TBBROOT%\env\vars.bat"
       if defined COVERAGE_RCFILE set COVERAGE_FILE=%cd%\.coverage.sklearnex
       cd ..
       call s\conda-recipe\run_test.bat s\ --json-report
@@ -60,8 +62,11 @@ steps:
     env:
       COVERAGE_RCFILE: ${{ variables.COVERAGE_RCFILE }}
       DALROOT: ${{ variables.DALROOT }}
+      TBBROOT: ${{ variables.TBBROOT }}
   - script: |
       call activate CB
+      if defined DALROOT call "%DALROOT%\env\vars.bat"
+      if defined TBBROOT call "%TBBROOT%\env\vars.bat"
       if defined COVERAGE_RCFILE set COVERAGE_FILE=%cd%\.coverage.sklearn
       bash .ci/scripts/run_sklearn_tests.sh
     displayName: 'Sklearn testing'
@@ -69,11 +74,15 @@ steps:
     env:
       COVERAGE_RCFILE: ${{ variables.COVERAGE_RCFILE }}
       DALROOT: ${{ variables.DALROOT }}
+      TBBROOT: ${{ variables.TBBROOT }}
   - script: |
       call activate CB
+      if defined DALROOT call "%DALROOT%\env\vars.bat"
+      if defined TBBROOT call "%TBBROOT%\env\vars.bat"
       bash .ci/scripts/run_sklearn_tests.sh
     env:
       SKLEARNEX_PREVIEW: "YES"
       DALROOT: ${{ variables.DALROOT }}
+      TBBROOT: ${{ variables.TBBROOT }}
     displayName: 'Sklearn testing [preview]'
     condition: succeededOrFailed()
