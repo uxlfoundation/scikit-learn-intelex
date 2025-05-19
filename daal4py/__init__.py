@@ -37,10 +37,10 @@ if "Windows" in platform.system():
             dal_root_redist = os.path.join(dal_root, "redist", arch_dir)
             #print(f"Investigating {dal_root_redist}")
             if os.path.exists(dal_root_redist):
-                print(f"Dir exists, adding to PATH")
+                #print(f"Dir exists, adding to PATH")
                 # List all the files
-                print("Files in dir: ", os.listdir(dal_root_redist))
-                os.listdir(dal_root_redist)
+                #print("Files in dir: ", os.listdir(dal_root_redist))
+                #os.listdir(dal_root_redist)
                 os.add_dll_directory(dal_root_redist)
                 os.environ["PATH"] = dal_root_redist + os.pathsep + os.environ["PATH"]
             #else:
