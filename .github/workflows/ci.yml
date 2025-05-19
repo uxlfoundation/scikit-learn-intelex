@@ -187,7 +187,7 @@ jobs:
         shell: bash
         run: |
           OTHER_REPO="uxlfoundation/oneDAL"
-          TEST_SHA=232ae24df1391f2cf78a5f9b51fbbfea34626e82
+          TEST_SHA=40377a345d2efd9b455411d973589e820f95786d
           echo "Getting run for hardcoded commit hash ${TEST_SHA}"
           WF_NAME="Nightly-build"
           JQ_QUERY="map(select(.event == \"workflow_dispatch\" or .event == \"schedule\" and .headSha == \"${TEST_SHA}\")) | .[0].databaseId"
