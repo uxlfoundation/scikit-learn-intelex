@@ -37,17 +37,33 @@ def get_branch(s):
 
 
 def run_parse(mas, result):
-    name, dtype = mas[0].split()
+    print("\n[run_parse] mas:")
+    for idx, val in enumerate(mas):
+        print(f"  mas[{idx}] = {val!r}")
+
+    try:
+        name, dtype = mas[0].split()
+        print(f"[run_parse] Parsed name = {name}, dtype = {dtype}")
+    except ValueError as e:
+        print(f"[run_parse] ERROR while splitting mas[0]: {mas[0]!r}")
+        print(f"[run_parse] .split() gives: {mas[0].split()}")
+        raise
+
     temp = []
     INFO_POS = 6
     for i in range(1, len(mas)):
-        mas[i] = mas[i][INFO_POS:]  # remove 'INFO: '
+        print(f"[run_parse] Processing mas[{i}]: {mas[i]!r}")
+        mas[i] = mas[i][INFO_POS:]
+        print(f"[run_parse] After trimming INFO: {mas[i]!r}")
         if not mas[i].startswith("sklearn"):
             ind = name + " " + dtype + " " + mas[i]
-            result[ind] = get_branch(temp)
+            branch = get_branch(temp)
+            print(f"[run_parse] Adding result: {ind!r} => {branch}")
+            result[ind] = branch
             temp.clear()
         else:
             temp.append(mas[i])
+            print(f"[run_parse] Appended to temp: {temp!r}")
 
 
 def get_result_log():
@@ -61,13 +77,20 @@ def get_result_log():
             ]
         )
     except subprocess.CalledProcessError as e:
+        print("[get_result_log] Subprocess failed:")
         print(e)
         exit(1)
 
     mas = []
     result = {}
-    for i in process.decode().split("\n"):
+    decoded = process.decode().split("\n")
+    print("[get_result_log] Process output:")
+    for line in decoded:
+        print(f"  {line!r}")
+
+    for i in decoded:
         if not i.startswith("INFO") and len(mas) != 0:
+            print(f"[get_result_log] Switching block at line: {i!r}")
             run_parse(mas, result)
             mas.clear()
             mas.append(i.strip())
