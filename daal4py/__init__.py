@@ -29,22 +29,13 @@ if "Windows" in platform.system():
     current_path = os.path.dirname(__file__)
     path_to_env = site.getsitepackages()[0]
     path_to_libs = os.path.join(path_to_env, "Library", "bin")
-    #print(f"PATH to libs: {path_to_libs}")
     if sys.version_info.minor >= 8:
         if "DALROOT" in os.environ:
             dal_root = os.environ["DALROOT"]
-            #print(f"DALROOT: {dal_root}")
             dal_root_redist = os.path.join(dal_root, "redist", arch_dir)
-            #print(f"Investigating {dal_root_redist}")
             if os.path.exists(dal_root_redist):
-                #print(f"Dir exists, adding to PATH")
-                # List all the files
-                #print("Files in dir: ", os.listdir(dal_root_redist))
-                #os.listdir(dal_root_redist)
                 os.add_dll_directory(dal_root_redist)
                 os.environ["PATH"] = dal_root_redist + os.pathsep + os.environ["PATH"]
-            #else:
-            #    print(f"Dir does not exist, skipping")
         if "TBBROOT" in os.environ:
             tbb_root = os.environ["TBBROOT"]
             tbb_root_redist = os.path.join(tbb_root, "bin")
