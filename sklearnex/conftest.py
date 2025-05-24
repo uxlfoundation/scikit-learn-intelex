@@ -35,6 +35,7 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "mpi: mark test to require MPI for distributed testing"
     )
+    # this assumes onedal.tests.utils._dataframes_support has not been imported yet
     if val := config.getoption("--frameworks"):
         os.environ["ONEDAL_PYTEST_FRAMEWORKS"] = val
 
