@@ -55,6 +55,7 @@ test_frameworks = os.environ.get(
     "ONEDAL_PYTEST_FRAMEWORKS", "numpy,pandas,dpnp,dpctl,array_api"
 )
 
+
 @lru_cache
 def get_dataframes_and_queues(dataframe_filter_=None, device_filter_="cpu,gpu"):
     """Get supported dataframes for testing.
