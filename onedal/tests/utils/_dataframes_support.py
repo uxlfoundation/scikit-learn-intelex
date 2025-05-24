@@ -90,7 +90,7 @@ def get_dataframes_and_queues(dataframe_filter_=None, device_filter_="cpu,gpu"):
     """
     dataframes_and_queues = []
 
-    # filter dataframe_filter based on available test frameworks
+    # filter dataframe_filter_ based on available test frameworks
     if dataframe_filter_:
         dataframe_filter_ = ",".join(
             [i for i in dataframe_filter_.split(",") if i in test_frameworks]
