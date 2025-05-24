@@ -60,8 +60,6 @@ function generate_pytest_args {
     printf -- "${ARGS[*]}"
 }
 
-export ONEDAL_PYTEST_FRAMEWORKS=numpy
-
 ${PYTHON} -c "from sklearnex import patch_sklearn; patch_sklearn()"
 return_code=$(($return_code + $?))
 
