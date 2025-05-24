@@ -69,7 +69,7 @@ return_code=$(($return_code + $?))
 pytest --verbose --pyargs daal4py $@ $(generate_pytest_args daal4py)
 return_code=$(($return_code + $?))
 
-pytest --verbose --pyargs sklearnex $@ $(generate_pytest_args sklearnex)
+pytest --verbose --pyargs sklearnex $@ $(generate_pytest_args sklearnex) --frameworks=numpy
 return_code=$(($return_code + $?))
 
 pytest --verbose --pyargs onedal $@ $(generate_pytest_args onedal)
