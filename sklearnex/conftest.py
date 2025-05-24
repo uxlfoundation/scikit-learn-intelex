@@ -23,6 +23,11 @@ from daal4py.sklearn._utils import sklearn_check_version
 from sklearnex import config_context, patch_sklearn, unpatch_sklearn
 
 
+def pytest_addoption(parser):
+
+    parser.addoption(“--frameworks”, default="numpy,pandas,dpnp,dpctl,array_api")
+    
+
 def pytest_configure(config):
     config.addinivalue_line(
         "markers", "allow_sklearn_fallback: mark test to not check for sklearnex usage"
