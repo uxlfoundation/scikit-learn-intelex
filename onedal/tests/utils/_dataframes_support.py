@@ -14,7 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 import os
-from functools import lru_cache
 
 import pytest
 import scipy.sparse as sp
@@ -56,7 +55,6 @@ test_frameworks = os.environ.get(
 )
 
 
-@lru_cache
 def get_dataframes_and_queues(dataframe_filter_=None, device_filter_="cpu,gpu"):
     """Get supported dataframes for testing.
 
