@@ -60,6 +60,8 @@ function generate_pytest_args {
     printf -- "${ARGS[*]}"
 }
 
+export ONEDAL_PYTEST_FRAMEWORKS=numpy
+
 ${PYTHON} -c "from sklearnex import patch_sklearn; patch_sklearn()"
 return_code=$(($return_code + $?))
 
@@ -69,7 +71,7 @@ return_code=$(($return_code + $?))
 pytest --verbose --pyargs daal4py $@ $(generate_pytest_args daal4py)
 return_code=$(($return_code + $?))
 
-pytest --verbose --pyargs sklearnex $@ $(generate_pytest_args sklearnex) --frameworks=numpy
+pytest --verbose --pyargs sklearnex $@ $(generate_pytest_args sklearnex)
 return_code=$(($return_code + $?))
 
 pytest --verbose --pyargs onedal $@ $(generate_pytest_args onedal)
