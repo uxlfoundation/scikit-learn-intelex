@@ -26,7 +26,7 @@ from sklearnex import config_context, patch_sklearn, unpatch_sklearn
 
 def pytest_addoption(parser):
     parser.addoption("--frameworks", action="store", default="")
-    
+
 
 def pytest_configure(config):
     config.addinivalue_line(
