@@ -16,16 +16,11 @@
 
 import io
 import logging
-import os
 
 import pytest
 
 from daal4py.sklearn._utils import sklearn_check_version
 from sklearnex import config_context, patch_sklearn, unpatch_sklearn
-
-
-def pytest_addoption(parser):
-    parser.addoption("--frameworks", action="store", default="")
 
 
 def pytest_configure(config):
@@ -35,9 +30,6 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "mpi: mark test to require MPI for distributed testing"
     )
-    # this assumes onedal.tests.utils._dataframes_support has not been imported yet
-    if val := config.getoption("--frameworks"):
-        os.environ["ONEDAL_PYTEST_FRAMEWORKS"] = val
 
 
 @pytest.hookimpl(hookwrapper=True)
