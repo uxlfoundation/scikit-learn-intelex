@@ -88,12 +88,12 @@ def get_dataframes_and_queues(dataframe_filter_=None, device_filter_="cpu,gpu"):
     _convert_to_dataframe : Converted input object to certain dataframe format.
     """
     dataframes_and_queues = []
-    if not dataframe_filter_:
-        dataframe_filter_ = test_frameworks
 
     # filter dataframe_filter based on available test frameworks
-    if dataframe_filter_ != test_frameworks:
+    if dataframe_filter_:
         dataframe_filter_ = ",".join([i for i in dataframe_filter_.split(",") if i in test_frameworks])
+    else:
+        dataframe_filter_ = test_frameworks
 
     if "numpy" in dataframe_filter_:
         dataframes_and_queues.append(pytest.param("numpy", None, id="numpy"))
