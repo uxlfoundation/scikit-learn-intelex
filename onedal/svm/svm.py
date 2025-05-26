@@ -334,9 +334,6 @@ class BaseSVM(metaclass=ABCMeta):
 
 
 class SVR(RegressorMixin, BaseSVM):
-    """
-    Epsilon--Support Vector Regression.
-    """
 
     def __init__(
         self,
@@ -395,9 +392,6 @@ class SVR(RegressorMixin, BaseSVM):
 
 
 class SVC(ClassifierMixin, BaseSVM):
-    """
-    C-Support Vector Classification.
-    """
 
     def __init__(
         self,
@@ -470,9 +464,6 @@ class SVC(ClassifierMixin, BaseSVM):
 
 
 class NuSVR(RegressorMixin, BaseSVM):
-    """
-    Nu-Support Vector Regression.
-    """
 
     def __init__(
         self,
@@ -530,9 +521,6 @@ class NuSVR(RegressorMixin, BaseSVM):
 
 
 class NuSVC(ClassifierMixin, BaseSVM):
-    """
-    Nu-Support Vector Classification.
-    """
 
     def __init__(
         self,

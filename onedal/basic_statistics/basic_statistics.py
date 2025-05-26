@@ -68,8 +68,53 @@ class BaseBasicStatistics(metaclass=ABCMeta):
 
 
 class BasicStatistics(BaseBasicStatistics):
-    """
-    Basic Statistics oneDAL implementation.
+    """Low order moments oneDAL estimator.
+
+    Calculate basic statistics for data.
+
+    Parameters
+    ----------
+    result_options : str or list, default=str('all')
+        List of statistics to compute.
+
+    algorithm : str, default=str('by_default')
+        Method for statistics computation.
+
+    Attributes
+    ----------
+        min : ndarray of shape (n_features,)
+            Minimum of each feature over all samples.
+
+        max : ndarray of shape (n_features,)
+            Maximum of each feature over all samples.
+
+        sum : ndarray of shape (n_features,)
+            Sum of each feature over all samples.
+
+        mean : ndarray of shape (n_features,)
+            Mean of each feature over all samples.
+
+        variance : ndarray of shape (n_features,)
+            Variance of each feature over all samples.
+
+        variation : ndarray of shape (n_features,)
+            Variation of each feature over all samples.
+
+        sum_squares : ndarray of shape (n_features,)
+            Sum of squares for each feature over all samples.
+
+        standard_deviation : ndarray of shape (n_features,)
+            Standard deviation of each feature over all samples.
+
+        sum_squares_centered : ndarray of shape (n_features,)
+            Centered sum of squares for each feature over all samples.
+
+        second_order_raw_moment : ndarray of shape (n_features,)
+            Second order moment of each feature over all samples.
+
+    Notes
+    -----
+        Attributes are populated only for corresponding result options.
     """
 
     def __init__(self, result_options="all", algorithm="by_default"):
@@ -77,6 +122,27 @@ class BasicStatistics(BaseBasicStatistics):
 
     @supports_queue
     def fit(self, data, sample_weight=None, queue=None):
+        """Generate statistics.
+
+        Parameters
+        ----------
+        data : array-like of shape (n_samples, n_features)
+            Training data batch, where `n_samples` is the number of samples
+            in the batch, and `n_features` is the number of features.
+
+        sample_weight : array-like of shape (n_samples,), default=None
+            Individual weights for each sample.
+
+        queue : SyclQueue or None, default=None
+            SYCL Queue object for device code execution. Default
+            value None causes computation on host.
+
+        Returns
+        -------
+        self : object
+            Returns the instance itself.
+        """
+
         is_csr = _is_csr(data)
 
         use_raw_input = _get_config().get("use_raw_input", False) is True

@@ -59,13 +59,14 @@ def _get_onedal_threadlocal_config():
 
 
 def _get_config(copy=True):
-    """Retrieve current values for configuration set
-    by :func:`sklearnex.set_config`
+    """Retrieve current configuration set by :func:`sklearnex.set_config`
+
     Parameters
     ----------
     copy : bool, default=True
-        If False, a mutable view of the configuration is returned. Each thread
-        has a separate copy of the configuration.
+        If 'False', a mutable view of the configuration is returned. Each
+        thread has a separate copy of the configuration.
+
     Returns
     -------
     config : dict

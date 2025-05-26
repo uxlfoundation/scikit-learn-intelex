@@ -49,7 +49,16 @@ def __create_sycl_queue(target):
 
 
 def get_global_queue():
-    """Get the global queue. Retrieve it from the config if not set."""
+    """Get the global queue.
+
+    Retrieve it from the config if not set.
+
+    Returns
+    -------
+    queue: SyclQueue or None
+        SYCL Queue object for device code execution. 'None'
+        signifies computation on host.
+    """
     if (queue := __global_queue) is not None:
         if SyclQueue:
             if queue is __fallback_queue:
@@ -75,7 +84,14 @@ def remove_global_queue():
 
 
 def update_global_queue(queue):
-    """Update the global queue."""
+    """Update the global queue.
+
+    Parameters
+    ----------
+    queue : SyclQueue or None
+        SYCL Queue object for device code execution. None
+        signifies computation on host.
+    """
     global __global_queue
     queue = __create_sycl_queue(queue)
     __global_queue = queue
@@ -88,7 +104,21 @@ def fallback_to_host():
 
 
 def from_data(*data):
-    """Extract the queue from provided data. This updates the global queue as well."""
+    """Extract the queue from provided data.
+
+    This updates the global queue as well.
+
+    Parameters
+    ----------
+    *data : arguments
+        Data objects which may contain :obj:`dpctl.SyclQueue` objects.
+
+    Returns
+    -------
+    queue : SyclQueue or None
+        SYCL Queue object for device code execution. None
+        signifies computation on host.
+    """
     for item in data:
         # iterate through all data objects, extract the queue, and verify that all data objects are on the same device
         try:
@@ -131,24 +161,32 @@ def from_data(*data):
 
 @contextmanager
 def manage_global_queue(queue, *args):
-    """
-    Context manager to manage the global SyclQueue.
+    """Context manager to manage the global SyclQueue.
 
     This context manager updates the global queue with the provided queue,
     verifies that all data objects are on the same device, and restores the
     original queue after work is done.
-    Note: For most applications, the original queue should be `None`, but
-            if there are nested calls to `manage_global_queue()`, it is
-            important to restore the outer queue, rather than setting it to
-            `None`.
 
-    Parameters:
-    queue (SyclQueue or None): The queue to set as the global queue. If None,
-                                the global queue will be determined from the provided data.
-    *args: Additional data objects to verify their device placement.
+    Parameters
+    ----------
+    queue : SyclQueue or None
+        The queue to set as the global queue. If None,
+        the global queue will be determined from the provided data.
 
-    Yields:
-    SyclQueue: The global queue after verification.
+    *args : arguments
+        Additional data objects to verify their device placement.
+
+    Yields
+    ------
+    SyclQueue : SyclQueue or None
+        The global queue after verification.
+
+    Notes
+    -----
+        For most applications, the original queue should be ``None``, but
+        if there are nested calls to ``manage_global_queue()``, it is
+        important to restore the outer queue, rather than setting it to
+        ``None``.
     """
     original_queue = get_global_queue()
     try:
