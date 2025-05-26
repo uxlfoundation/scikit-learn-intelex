@@ -315,7 +315,7 @@ jobs:
 
   build_uxl:
     needs: onedal_nightly
-    name: LinuxNightly build Python${{ env.UXL_PYTHONVERSION }}
+    name: LinuxNightly GPU build
     runs-on: uxl-xlarge
     timeout-minutes: 30
 
