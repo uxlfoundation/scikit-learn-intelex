@@ -54,6 +54,8 @@ jobs:
           echo "run-id=${RUN_ID}" >> "$GITHUB_OUTPUT"
         env:
           GH_TOKEN: ${{ github.token }}
+    outputs:
+       run-id: ${{ steps.get-run-id.outputs.run-id }}
 
   sklearn_lnx:
     needs: onedal_nightly
