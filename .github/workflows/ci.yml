@@ -84,7 +84,7 @@ jobs:
           name: __release_lnx
           github-token: ${{ github.token }}
           repository: ${{ env.ONEDAL_REPO }}
-          run-id: ${{ needs.onedal_nightly.get-run-id.outputs.run-id }}
+          run-id: ${{ needs.onedal_nightly.outputs.run-id }}
           path: ./__release_lnx
       - name: Download oneDAL environment artifact
         uses: actions/download-artifact@v4
@@ -92,7 +92,7 @@ jobs:
           name: oneDAL_env
           github-token: ${{ github.token }}
           repository: ${{ env.ONEDAL_REPO }}
-          run-id: ${{ needs.onedal_nightly.get-run-id.outputs.run-id }}
+          run-id: ${{ needs.onedal_nightly.outputs.run-id }}
           path: .ci/env
       - name: Set Environment Variables
         id: set-env
