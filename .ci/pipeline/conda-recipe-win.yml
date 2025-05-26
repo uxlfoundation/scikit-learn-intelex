@@ -19,7 +19,6 @@ steps:
   - script: |
       conda config --add channels conda-forge
       conda config --set channel_priority strict
-      conda update -y -q --all
     displayName: "Conda update"
   - script: |
       conda create -y -q -n build-env conda-build conda-verify libffi=3.4.4
