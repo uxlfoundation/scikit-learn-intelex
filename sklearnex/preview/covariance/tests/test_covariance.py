@@ -27,8 +27,9 @@ from onedal.tests.utils._dataframes_support import (
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 @pytest.mark.parametrize("macro_block", [None, 1024])
+@pytest.mark.parametrize("grain_size", [None, 10])
 @pytest.mark.parametrize("assume_centered", [True, False])
-def test_sklearnex_import_covariance(dataframe, queue, macro_block, assume_centered):
+def test_sklearnex_import_covariance(dataframe, queue, macro_block, grain_size, assume_centered):
     from sklearnex.preview.covariance import EmpiricalCovariance
 
     X = np.array([[0, 1], [0, 1]])
@@ -38,6 +39,9 @@ def test_sklearnex_import_covariance(dataframe, queue, macro_block, assume_cente
     if daal_check_version((2024, "P", 0)) and macro_block is not None:
         hparams = EmpiricalCovariance.get_hyperparameters("fit")
         hparams.cpu_macro_block = macro_block
+        if daal_check_version((2025, "P", 7)) and grain_size is not None:
+            hparams.cpu_grain_size = grain_size
+
     result = empcov.fit(X)
 
     expected_covariance = np.array([[0, 0], [0, 0]])
