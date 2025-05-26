@@ -26,5 +26,6 @@ steps:
     displayName: "Conda create"
   - script: |
       call activate build-env
+      conda install libffi
       conda build . --python $(PYTHON_VERSION) --numpy $(NUMPY_VERSION)
     displayName: "Conda build and test"
