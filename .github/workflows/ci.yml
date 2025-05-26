@@ -84,7 +84,7 @@ jobs:
           name: __release_lnx
           github-token: ${{ github.token }}
           repository: ${{ env.ONEDAL_REPO }}
-          run-id: ${{ needs.get-run-id.outputs.run-id }}
+          run-id: ${{ needs.onedal_nightly.get-run-id.outputs.run-id }}
           path: ./__release_lnx
       - name: Download oneDAL environment artifact
         uses: actions/download-artifact@v4
@@ -92,7 +92,7 @@ jobs:
           name: oneDAL_env
           github-token: ${{ github.token }}
           repository: ${{ env.ONEDAL_REPO }}
-          run-id: ${{ needs.get-run-id.outputs.run-id }}
+          run-id: ${{ needs.onedal_nightly.get-run-id.outputs.run-id }}
           path: .ci/env
       - name: Set Environment Variables
         id: set-env
@@ -199,7 +199,7 @@ jobs:
           name: __release_win
           github-token: ${{ github.token }}
           repository: ${{ env.ONEDAL_REPO }}
-          run-id: ${{ needs.get-run-id.outputs.run-id }}
+          run-id: ${{ needs.onedal_nightly.get-run-id.outputs.run-id }}
           path: ./__release_win
       - name: Download Intel BaseKit artifact
         uses: actions/download-artifact@v4
@@ -207,7 +207,7 @@ jobs:
           name: intel_oneapi_basekit
           github-token: ${{ github.token }}
           repository: ${{ env.ONEDAL_REPO }}
-          run-id: ${{ needs.get-run-id.outputs.run-id }}
+          run-id: ${{ needs.onedal_nightly.get-run-id.outputs.run-id }}
       - name: Decompress Intel BaseKit
         shell: cmd
         run: |
@@ -233,8 +233,8 @@ jobs:
         with:
           name: opencl_rt_installer
           github-token: ${{ github.token }}
-          repository: uxlfoundation/oneDAL
-          run-id: ${{ steps.get-run-id.outputs.run-id }}
+          repository: ${{ env.ONEDAL_REPO }}
+          run-id: ${{ needs.onedal_nightly.get-run-id.outputs.run-id }}
           path: .
       - name: Install Intel OpenCL CPU Runtime
         if: ${{ steps.set-env.outputs.DPCFLAG == '' }}
@@ -314,6 +314,7 @@ jobs:
           bash .ci/scripts/run_sklearn_tests.sh %CPU%
 
   build_uxl:
+    if: github.repository == 'uxlfoundation/scikit-learn-intelex'
     needs: onedal_nightly
     name: LinuxNightly GPU build
     runs-on: uxl-xlarge
@@ -333,16 +334,16 @@ jobs:
         with:
           name: __release_lnx
           github-token: ${{ github.token }}
-          repository: uxlfoundation/oneDAL
-          run-id: ${{ needs.get-run-id.outputs.run-id }}
+          repository: ${{ env.ONEDAL_REPO }}
+          run-id: ${{ needs.onedal_nightly.get-run-id.outputs.run-id }}
           path: ./__release_lnx
       - name: Download oneDAL environment artifact
         uses: actions/download-artifact@v4
         with:
           name: oneDAL_env
           github-token: ${{ github.token }}
-          repository: uxlfoundation/oneDAL
-          run-id: ${{ needs.get-run-id.outputs.run-id }}
+          repository: ${{ env.ONEDAL_REPO }}
+          run-id: ${{ needs.onedal_nightly.get-run-id.outputs.run-id }}
           path: .ci/env
       - name: Set Environment Variables
         id: set-env
