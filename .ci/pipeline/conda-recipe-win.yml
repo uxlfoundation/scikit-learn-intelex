@@ -17,7 +17,7 @@ steps:
   - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
     displayName: Add conda to PATH
   - script: |
-      conda install -y -q anaconda
+      conda list
       conda config --add channels conda-forge
       conda config --set channel_priority strict
     displayName: "Conda update"
