@@ -372,11 +372,11 @@ jobs:
       - name: Build daal4py/sklearnex
         run: |
           source .github/scripts/activate_components.sh ${{ steps.set-env.outputs.DPCFLAG }}
-          python setup.py build --wheel
+          python setup.py bdist_wheel
       - name: Archive sklearnex build
         uses: actions/upload-artifact@v4
         with:
           name: sklearnex_build_${{ env.UXL_PYTHONVERSION }}
           path: |
-             *.whl
+             ./dist/*.whl
       
