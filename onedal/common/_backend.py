@@ -42,12 +42,18 @@ class BackendManager:
     def get_backend_component(self, module_name: str, component_name: str):
         """Get a component of the backend module.
 
-        Args:
-            module(str): The module to get the component from.
-            component: The component to get from the module.
+        Parameters
+        ----------
+            module_name : str
+                The module to get the component from.
 
-        Returns:
-            The component of the module.
+            component_name : str
+                The component to get from the module.
+
+        Returns
+        -------
+            result : method, attribute or module
+                The component of the module.
         """
         submodules = module_name.split(".")
         module = getattr(self.backend, submodules[0])
@@ -68,7 +74,22 @@ spmd_manager = BackendManager(_spmd_backend)
 
 
 class BackendFunction:
-    """Wrapper around backend function to allow setting auxiliary information"""
+    """Wrapper around backend function to allow setting auxiliary information.
+
+    Parameters
+    ----------
+    method : callable
+        Pybind11 backend function.
+
+    backend : Backend
+        Encapsulated oneDAL pybind11 interface.
+
+    name : str
+        Name of function.
+
+    no_policy : bool
+       Flag that a oneDAL policy is not required for function evaluation.
+    """
 
     def __init__(
         self,
@@ -128,7 +149,7 @@ def __decorator(
     lookup_name: Optional[str],
     no_policy: bool,
 ) -> Callable[..., Any]:
-    """Decorator to bind a method to the specified backend"""
+    """Decorator to bind a method to the specified backend."""
     if lookup_name is None:
         lookup_name = method.__name__
 
@@ -157,24 +178,30 @@ def bind_default_backend(
     """
     Decorator to bind a method from the default backend to a class.
 
-    This decorator binds a method implementation from the default backend (host/dpc).
-    If the default backend is unavailable, the method is returned without modification.
+    This decorator binds a method implementation from the default backend
+    (host/dpc). If the default backend is unavailable, the method is
+    returned without modification.
 
-    Parameters:
+    Parameters
     ----------
     module_name : str
-        The name of the module where the target function is located (e.g. `covariance`).
-    lookup_name : Optional[str], optional
-        The name of the method to look up in the backend module. If not provided,
-        the name of the decorated method is used.
-    no_policy : bool, optional
-        If True, the method will be decorated without a policy. Default is False.
+        The name of the module where the target function is located (e.g.
+        `covariance`).
 
-    Returns:
+    lookup_name : Optional[str], optional
+        The name of the method to look up in the backend module. If not
+        provided, the name of the decorated method is used.
+
+    no_policy : bool, optional
+        If 'True', the method will be decorated without a policy. Default is
+        False.
+
+    Returns
     -------
-    Callable[..., Any]
-        The decorated method bound to the implementation in default backend, or the original
-        method if the default backend is unavailable.
+    func : Callable[..., Any]
+        The decorated method bound to the implementation in default
+        backend, or the original method if the default backend is
+        unavailable.
     """
 
     def decorator(method: Callable[..., Any]):
@@ -199,23 +226,28 @@ def bind_spmd_backend(
     Decorator to bind a method from the SPMD backend to a class.
 
     This decorator binds a method implementation from the SPMD backend.
-    If the SPMD backend is unavailable, the method is returned without modification.
+    If the SPMD backend is unavailable, the method is returned without
+    modification.
 
-    Parameters:
+    Parameters
     ----------
     module_name : str
-        The name of the module where the target function is located (e.g. `covariance`).
-    lookup_name : Optional[str], optional
-        The name of the method to look up in the backend module. If not provided,
-        the name of the decorated method is used.
-    no_policy : bool, optional
-        If True, the method will be decorated without a policy. Default is False.
+        The name of the module where the target function is located (e.g.
+        `covariance`).
 
-    Returns:
+    lookup_name : Optional[str], optional
+        The name of the method to look up in the backend module. If not
+        provided, the name of the decorated method is used.
+
+    no_policy : bool, optional
+        If 'True', the method will be decorated without a policy. Default is
+        False.
+
+    Returns
     -------
-    Callable[..., Any]
-        The decorated method bound to the implementation in SPMD backend, or the original
-        method if the SPMD backend is unavailable.
+    func : Callable[..., Any]
+        The decorated method bound to the implementation in SPMD backend,
+        or the original method if the SPMD backend is unavailable.
     """
 
     def decorator(method: Callable[..., Any]):

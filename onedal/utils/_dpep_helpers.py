@@ -15,6 +15,9 @@
 # ==============================================================================
 
 """Utilities for Data Parallel Extensions libs, such as DPNP, DPCtl.
+
+Notes
+-----
 See `Data Parallel Extensions for Python <https://github.com/IntelPython/DPEP>`__
 """
 
@@ -25,7 +28,19 @@ from daal4py.sklearn._utils import _package_check_version
 
 @functools.lru_cache(maxsize=256, typed=False)
 def is_dpctl_available(version=None):
-    """Checks availability of DPCtl package"""
+    """Check availability of DPCtl package.
+
+    Parameters
+    ----------
+    version : str or None, default=None
+        Minimum supported dpctl version if installed.
+        Secondary version check skipped if set to None.
+
+    Returns
+    -------
+    dpctl_available : bool
+        Flag describing import success.
+    """
     try:
         import dpctl
         import dpctl.tensor as dpt
@@ -40,7 +55,19 @@ def is_dpctl_available(version=None):
 
 @functools.lru_cache(maxsize=256, typed=False)
 def is_dpnp_available(version=None):
-    """Checks availability of DPNP package"""
+    """Check availability of DPNP package.
+
+    Parameters
+    ----------
+    version : str or None, default=None
+        Minimum supported dpnp version if installed.
+        Secondary version check skipped if set to 'None'.
+
+    Returns
+    -------
+    dpnp_available : bool
+        Flag describing import success.
+    """
     try:
         import dpnp
 

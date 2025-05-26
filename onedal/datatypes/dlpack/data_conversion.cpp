@@ -154,6 +154,104 @@ dal::table convert_to_table(py::object obj, py::object q_obj, bool recursed) {
     return res;
 }
 
+DLDevice get_dlpack_device(const dal::array<byte_t>& array) {
+    DLDevice device;
+#ifdef ONEDAL_DATA_PARALLEL
+    auto queue = array.get_queue();
+    device = queue.has_value()
+                 ? DLDevice{ kDLOneAPI, static_cast<std::int32_t>(get_device_id(queue.value())) }
+                 : DLDevice{ kDLCPU, std::int32_t(0) };
+#else
+    device = DLDevice{ kDLCPU, std::int32_t(0) };
+#endif //ONEDAL_DATA_PARALLEL
+    return device;
+}
+
+DLDevice get_dlpack_device(const dal::table& input) {
+    if (input.get_kind() == dal::homogen_table::kind()) {
+        auto homogen_input = reinterpret_cast<const dal::homogen_table&>(input);
+        dal::array<byte_t> array = dal::detail::get_original_data(homogen_input);
+        return get_dlpack_device(array);
+    }
+    else {
+        return DLDevice{ kDLCPU, std::int32_t(0) };
+    }
+}
+
+DLTensor construct_dlpack_tensor(const dal::array<byte_t>& array,
+                                 std::int64_t row_count,
+                                 std::int64_t column_count,
+                                 const dal::data_type& dtype,
+                                 const dal::data_layout& layout) {
+    DLTensor tensor;
+
+    // set data
+    tensor.data = const_cast<byte_t*>(array.get_data());
+    tensor.device = get_dlpack_device(array);
+    tensor.ndim = std::int32_t(2);
+    tensor.dtype = convert_dal_to_dlpack_type(dtype);
+
+    // set shape int64_t, which is the output type of a homogen table and for shape and strides
+    if (layout == dal::data_layout::row_major) {
+        tensor.shape =
+            new std::int64_t[4]{ row_count, column_count, column_count, std::int64_t(1) };
+    }
+    else {
+        tensor.shape = new std::int64_t[4]{ row_count, column_count, std::int64_t(1), row_count };
+    }
+
+    // take strategy from dpctl tensors in having a single array allocation by tensor.shape.
+    tensor.strides = &tensor.shape[2];
+    tensor.byte_offset = std::uint64_t(0);
+
+    return tensor;
+}
+
+static void free_capsule(PyObject* cap) {
+    DLManagedTensor* dlm = nullptr;
+    if (PyCapsule_IsValid(cap, "dltensor")) {
+        dlm = static_cast<DLManagedTensor*>(PyCapsule_GetPointer(cap, "dltensor"));
+        if (dlm->deleter) {
+            dlm->deleter(dlm);
+        }
+    }
+}
+
+py::capsule construct_dlpack(const dal::table& input) {
+    // DLManagedTensor is used instead of DLManagedTensorVersioned
+    // due to major frameworks not yet supporting the latter.
+    DLManagedTensor* dlm = new DLManagedTensor;
+
+    // check table type and expose oneDAL array
+    if (input.get_kind() != dal::homogen_table::kind())
+        throw pybind11::type_error("Unsupported table type for dlpack conversion");
+
+    auto homogen_input = reinterpret_cast<const dal::homogen_table&>(input);
+    dal::array<byte_t> array = dal::detail::get_original_data(homogen_input);
+    dlm->manager_ctx = static_cast<void*>(new dal::array<byte_t>(array));
+
+    // set tensor
+    dlm->dl_tensor = construct_dlpack_tensor(array,
+                                             homogen_input.get_row_count(),
+                                             homogen_input.get_column_count(),
+                                             homogen_input.get_metadata().get_data_type(0),
+                                             homogen_input.get_data_layout());
+
+    // generate tensor deleter
+    dlm->deleter = [](struct DLManagedTensor* self) -> void {
+        auto stored_array = static_cast<dal::array<byte_t>*>(self->manager_ctx);
+        if (stored_array) {
+            delete stored_array;
+        }
+        delete[] self->dl_tensor.shape;
+        delete self;
+    };
+
+    // create capsule
+    py::capsule capsule(static_cast<void*>(dlm), "dltensor", free_capsule);
+    return capsule;
+}
+
 py::object dlpack_memory_order(py::object obj) {
     DLManagedTensor* dlm;
     DLManagedTensorVersioned* dlmv;

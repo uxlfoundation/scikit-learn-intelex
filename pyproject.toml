@@ -22,3 +22,19 @@ extend-ignore = 'E203'
 [tool.isort]
 profile = "black"
 line_length = 90
+
+[tool.numpydoc_validation]
+checks = [
+    "all",   # report on all checks, except the below
+    "GL08",  # only analyze functions with docstrings
+    "RT02",  # conform with scikit-learn excludes
+    "GL01",  # see https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/tests/test_docstrings.py
+    "GL02",
+    "PR02",
+    "EX01",
+    "SA01",
+    "ES01"
+]
+exclude = [  # don't report on objects that match any of these regex
+    '\._[^\.]*$',  # disregard private methods and functions
+]

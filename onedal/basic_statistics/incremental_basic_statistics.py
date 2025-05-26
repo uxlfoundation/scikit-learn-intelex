@@ -28,15 +28,16 @@ from .basic_statistics import BaseBasicStatistics
 
 
 class IncrementalBasicStatistics(BaseBasicStatistics):
-    """
-    Incremental estimator for basic statistics based on oneDAL implementation.
-    Allows to compute basic statistics if data are splitted into batches.
+    """Incremental oneDAL low order moments estimator.
+
+    Calculate basic statistics for data split into batches.
+
     Parameters
     ----------
-    result_options: string or list, default='all'
-        List of statistics to compute
+    result_options : str or list, default=str('all')
+        List of statistics to compute.
 
-    Attributes (are existing only if corresponding result option exists)
+    Attributes
     ----------
         min : ndarray of shape (n_features,)
             Minimum of each feature over all samples.
@@ -67,6 +68,10 @@ class IncrementalBasicStatistics(BaseBasicStatistics):
 
         second_order_raw_moment : ndarray of shape (n_features,)
             Second order moment of each feature over all samples.
+
+    Notes
+    -----
+        Attributes are populated only for corresponding result options.
     """
 
     def __init__(self, result_options="all"):
@@ -101,9 +106,7 @@ class IncrementalBasicStatistics(BaseBasicStatistics):
 
     @supports_queue
     def partial_fit(self, X, weights=None, queue=None):
-        """
-        Computes partial data for basic statistics
-        from data batch X and saves it to `_partial_result`.
+        """Generate partial statistics from batch data in `_partial_result`.
 
         Parameters
         ----------
@@ -111,8 +114,12 @@ class IncrementalBasicStatistics(BaseBasicStatistics):
             Training data batch, where `n_samples` is the number of samples
             in the batch, and `n_features` is the number of features.
 
-        queue : dpctl.SyclQueue
-            If not None, use this queue for computations.
+        weights : array-like of shape (n_samples,), default=None
+            Individual weights for each sample.
+
+        queue : SyclQueue or None, default=None
+            SYCL Queue object for device code execution. Default
+            value None causes computation on host.
 
         Returns
         -------
@@ -153,14 +160,7 @@ class IncrementalBasicStatistics(BaseBasicStatistics):
         self._queue = queue
 
     def finalize_fit(self):
-        """
-        Finalizes basic statistics computation and obtains result
-        attributes from the current `_partial_result`.
-
-        Parameters
-        ----------
-        queue : dpctl.SyclQueue
-            If not None, use this queue for computations.
+        """Finalize statistics from the current `_partial_result`.
 
         Returns
         -------

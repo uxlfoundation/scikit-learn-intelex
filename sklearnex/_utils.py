@@ -120,11 +120,33 @@ def get_sklearnex_version(rule):
 
 def register_hyperparameters(hyperparameters_map):
     """Decorator for hyperparameters support in estimator class.
+
     Adds `get_hyperparameters` method to class.
+
+    Parameters
+    ----------
+    hyperparameters_map : dict
+       Dictionary containing the operator-hyperparameter mapping.
+
+    Returns
+    -------
+    decorator : function
+        Function which adds `get_hyperparameters` method to classes.
     """
 
     def decorator(cls):
-        """Add `get_hyperparameters()` static method"""
+        """Add ``get_hyperparameters()` static method to a class.
+
+        Parameters
+        ----------
+        cls : class
+            Class to be modified.
+
+        Returns
+        -------
+        cls : class
+            Class with added `get_hyperparameters` method.
+        """
 
         class StaticHyperparametersAccessor:
             """Like a @staticmethod, but additionally raises a Warning when called on an instance."""

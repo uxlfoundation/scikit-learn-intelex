@@ -53,3 +53,6 @@ if [[ "$*" == *"--gh-pages"* ]]; then
 else
     make html
 fi
+
+#Run the link-checker after build avoid rate limit errors
+sphinx-build -b linkcheck -j auto $SPHINXOPTS sources _build/linkcheck

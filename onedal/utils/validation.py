@@ -93,7 +93,7 @@ def _compute_class_weight(class_weight, classes, y):
 
         le = LabelEncoder()
         y_ind = le.fit_transform(y_)
-        if not all(np.in1d(classes, le.classes_)):
+        if not np.isin(classes, le.classes_).all():
             raise ValueError("classes should have valid labels that are in y")
 
         y_bin = np.bincount(y_ind).astype(np.float64)
@@ -131,10 +131,18 @@ def _validate_targets(y, class_weight, dtype):
 
 
 def get_finite_keyword():
-    """Gets the argument name for scikit-learn's validation functions compatible with
+    """Return scikit-learn-matching finite check enabling keyword.
+
+    Gets the argument name for scikit-learn's validation functions compatible with
     the current version of scikit-learn and using function inspection instead of
     version check due to `onedal` design rule: sklearn versioning should occur
-    in `sklearnex` module."""
+    in ``sklearnex`` module.
+
+    Returns
+    -------
+    finite_keyword : str
+        Keyword string used to enable finiteness checking.
+    """
     if "ensure_all_finite" in inspect.signature(check_array).parameters:
         return "ensure_all_finite"
     return "force_all_finite"

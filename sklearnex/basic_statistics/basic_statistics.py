@@ -40,11 +40,12 @@ if sklearn_check_version("1.2"):
 class BasicStatistics(oneDALEstimator, BaseEstimator):
     """
     Estimator for basic statistics.
-    Allows to compute basic statistics for provided data.
+
+    Compute low order moments and related statistics for given data.
 
     Parameters
     ----------
-    result_options: string or list, default='all'
+    result_options : str or list, default=str('all')
         Used to set statistics to calculate. Possible values are ``'min'``, ``'max'``, ``'sum'``, ``'mean'``, ``'variance'``,
         ``'variation'``, ``sum_squares'``, ``sum_squares_centered'``, ``'standard_deviation'``, ``'second_order_raw_moment'``
         or a list containing any of these values. If set to ``'all'`` then all possible statistics will be
@@ -73,17 +74,13 @@ class BasicStatistics(oneDALEstimator, BaseEstimator):
         second_order_raw_moment_ : ndarray of shape (n_features,)
             Second order moment of each feature over all samples.
 
-    Note
-    ----
+    Notes
+    -----
     Attribute exists only if corresponding result option has been provided.
 
-    Note
-    ----
     Names of attributes without the trailing underscore are
     supported currently but deprecated in 2025.1 and will be removed in 2026.0
 
-    Note
-    ----
     Some results can exhibit small variations due to
     floating point error accumulation and multithreading.
 

@@ -1042,7 +1042,7 @@ Parameters and semantics are described in |onedal-dg-sorting|_.
 .. _onedal-dg-k-means-clustering: https://uxlfoundation.github.io/oneDAL/daal/algorithms/kmeans/k-means-clustering.html
 
 .. |onedal-dg-lbfgs| replace:: |onedal| LBFGS
-.. _onedal-dg-lbfgs: https://uxlfoundation.github.io/oneDAL/daal/algorithms/optimization-solvers/solvers/limited-memory-broyden-fletcher-goldfarb-shanno-algorithm.html
+.. _onedal-dg-lbfgs: https://uxlfoundation.github.io/oneDAL/daal/algorithms/optimization-solvers/solvers/lbfgs.html
 
 .. |onedal-dg-naive-bayes| replace:: |onedal| Naive Bayes
 .. _onedal-dg-naive-bayes: https://uxlfoundation.github.io/oneDAL/daal/algorithms/naive_bayes/naive-bayes-classifier.html

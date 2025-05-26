@@ -60,8 +60,11 @@ class IncrementalLinearRegression(
     MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEstimator
 ):
     """
-    Trains a linear regression model, allows for computation if the data are split into
-    batches. The user can use the ``partial_fit`` method to provide a single batch of data or use the ``fit`` method to provide
+    Incremental Ordinary least squares Linear Regression.
+
+    Trains a linear regression model, allows for computation if the data
+    are split into batches. The user can use the ``partial_fit`` method
+    to provide a single batch of data or use the ``fit`` method to provide
     the entire dataset.
 
     Parameters
@@ -311,8 +314,7 @@ class IncrementalLinearRegression(
 
     def partial_fit(self, X, y, check_input=True):
         """
-        Incremental fit linear model with X and y. All of X and y is
-        processed as a single batch.
+        Incremental fit with X and y. X and y are processed as a single batch.
 
         Parameters
         ----------
@@ -323,6 +325,9 @@ class IncrementalLinearRegression(
         y : array-like of shape (n_samples,) or (n_samples, n_targets)
             Target values, where ``n_samples`` is the number of samples and
             ``n_targets`` is the number of targets.
+
+        check_input : bool, default=True
+            Run validate_data on X and y.
 
         Returns
         -------
@@ -354,7 +359,7 @@ class IncrementalLinearRegression(
             ``n_features`` is the number of features. It is necessary for
             ``n_samples`` to be not less than ``n_features`` if ``fit_intercept``
             is False and not less than ``n_features + 1`` if ``fit_intercept``
-            is True
+            is 'True'.
 
         y : array-like of shape (n_samples,) or (n_samples, n_targets)
             Target values, where ``n_samples`` is the number of samples and

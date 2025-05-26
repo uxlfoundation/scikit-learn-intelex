@@ -37,6 +37,7 @@ from .gbt_convertors import (
     get_catboost_params,
     get_gbt_model_from_catboost,
     get_gbt_model_from_lightgbm,
+    get_gbt_model_from_treelite,
     get_gbt_model_from_xgboost,
     get_lightgbm_params,
     get_xgboost_params,
@@ -63,7 +64,9 @@ def getFPType(X):
 
 class GBTDAALBaseModel:
     def __init__(self):
-        self.model_type: Optional[Literal["xgboost", "catboost", "lightgbm"]] = None
+        self.model_type: Optional[
+            Literal["xgboost", "catboost", "lightgbm", "treelite"]
+        ] = None
 
     @property
     def _is_regression(self):
@@ -86,6 +89,8 @@ class GBTDAALBaseModel:
         if self.n_classes_ <= 2:
             if objective_fun in ["binary:logistic", "binary:logitraw"]:
                 self.n_classes_ = 2
+            elif self.n_classes_ == 0:
+                self.n_classes_ = 1
 
         self.n_features_in_ = int(params["learner"]["learner_model_param"]["num_feature"])
 
@@ -112,6 +117,11 @@ class GBTDAALBaseModel:
         catboost_params = get_catboost_params(booster)
         self.daal_model_, self.supports_shap_ = get_gbt_model_from_catboost(booster)
         self._get_params_from_catboost(catboost_params)
+
+    def _convert_model_from_treelite(self, tl_model):
+        self.daal_model_, self.n_classes_, self.n_features_in_, self.supports_shap_ = (
+            get_gbt_model_from_treelite(tl_model)
+        )
 
     def _convert_model(self, model):
         (submodule_name, class_name) = (
@@ -147,6 +157,14 @@ class GBTDAALBaseModel:
         # Build GBTDAALModel from CatBoost
         elif (submodule_name, class_name) == ("catboost.core", "CatBoost"):
             self._convert_model_from_catboost(model)
+        elif (submodule_name, class_name) == ("treelite.model", "Model"):
+            self._convert_model_from_treelite(model)
+        elif submodule_name.startswith("sklearn.ensemble"):
+            raise TypeError(
+                "Cannot convert scikit-learn models. Try converting to treelite "
+                "with 'treelite.sklearn.import_model' and then converting the "
+                "resulting TreeLite object."
+            )
         else:
             raise TypeError(f"Unknown model format {submodule_name}.{class_name}")
 
@@ -303,14 +321,21 @@ class GBTDAALModel(GBTDAALBaseModel):
 
     Can be created from model objects that meet all of the following criteria:
 
-    - Were produced from one of the following libraries: ``xgboost``, ``lightgbm``, or ``catboost``.
-      It can work with either the base booster classes of those libraries or with their
-      scikit-learn-compatible classes.
+    - Were produced from one of the following libraries: ``xgboost``, ``lightgbm``, ``catboost``,
+      or ``treelite`` (with some limitations). It can work with either the base booster classes
+      of those libraries or with their scikit-learn-compatible classes.
     - Do not use categorical features.
     - Are for regression or classification (e.g. no ranking). In the case of XGBoost objective
       ``binary:logitraw``, it will create a classification model out of it, and in the case of
       objective ``reg:logistic``, will create a regression model.
     - Are not multi-output models. Note that multi-class classification **is** supported.
+    - Are not multi-class random forests (multi-class gradient boosters are supported).
+
+    Note that while models from packages such as scikit-learn are not supported directly,
+    they can still be converted to this class by first converting them to TreeLite and
+    then converting to :obj:`GBTDAALModel` from that TreeLite model. In such case, note that
+    models corresponding to random forest binary classifiers will be treated as regressors
+    that predict probabilities.
 
     Parameters
     ----------
@@ -330,7 +355,7 @@ class GBTDAALModel(GBTDAALBaseModel):
 
     def __init__(self, model):
         self._convert_model(model)
-        for type_str in ("xgboost", "lightgbm", "catboost"):
+        for type_str in ("xgboost", "lightgbm", "catboost", "treelite"):
             if type_str in str(type(model)):
                 self.model_type = type_str
                 break

@@ -77,6 +77,7 @@ def dispatch(
     **kwargs,
 ) -> Any:
     """Dispatch object method call to oneDAL if conditionally possible.
+
     Depending on support conditions, oneDAL will be called, otherwise it will
     fall back to calling scikit-learn.  Dispatching to oneDAL can be influenced
     by the 'use_raw_input' or 'allow_fallback_to_host' config parameters.
@@ -84,25 +85,25 @@ def dispatch(
     Parameters
     ----------
     obj : object
-        sklearnex object which inherits from oneDALEstimator and contains
+        Sklearnex object which inherits from oneDALEstimator and contains
         ``onedal_cpu_supported`` and ``onedal_gpu_supported`` methods which
         evaluate oneDAL support.
 
-    method_name : string
-        name of method to be evaluated for oneDAL support
+    method_name : str
+        Name of method to be evaluated for oneDAL support.
 
     branches : dict
-        dictionary containing functions to be called. Only keys 'sklearn' and
+        Dictionary containing functions to be called. Only keys 'sklearn' and
         'onedal' are used which should contain the relevant scikit-learn and
         onedal object methods respectively. All functions should accept the
         inputs from *args and **kwargs. Additionally, the onedal object method
         must accept a 'queue' keyword.
 
     *args : tuple
-        arguments to be supplied to the dispatched method
+        Arguments to be supplied to the dispatched method.
 
     **kwargs : dict
-        keyword arguments to be supplied to the dispatched method
+        Keyword arguments to be supplied to the dispatched method.
 
     Returns
     -------
@@ -164,9 +165,20 @@ def dispatch(
 
 
 def wrap_output_data(func: Callable) -> Callable:
-    """
+    """Transform function output to match input format.
+
     Converts and moves the output arrays of the decorated function
     to match the input array type and device.
+
+    Parameters
+    ----------
+    func : callable
+       Function or method which has array data as input.
+
+    Returns
+    -------
+    wrapper : callable
+        Wrapped function or method which will return matching format.
     """
 
     @wraps(func)

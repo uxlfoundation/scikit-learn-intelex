@@ -85,19 +85,14 @@ To prevent version conflicts, we recommend to create and activate a new environm
 - Install into a newly created environment (recommended):
 
   ```bash
-  conda config --add channels conda-forge
-  conda config --set channel_priority strict
-  conda create -n env python=3.10 scikit-learn-intelex
+  conda create -n sklex -c conda-forge --override-channels scikit-learn-intelex
+  conda activate sklex
   ```
-
-> **_NOTE:_** If you do not specify the Python version, the latest one is downloaded. 
 
 - Install into your current environment:
 
   ```bash
-  conda config --add channels conda-forge
-  conda config --set channel_priority strict
-  conda install scikit-learn-intelex
+  conda install -c conda-forge scikit-learn-intelex
   ```
 
 ### Install Intel conda Channel
@@ -107,28 +102,21 @@ We recommend this installation for the users of Intel® Distribution for Python.
 - Install into a newly created environment (recommended):
 
   ```bash
-  conda config --add channels https://software.repos.intel.com/python/conda/
-  conda config --set channel_priority strict
-  conda create -n env python=3.10 scikit-learn-intelex
+  conda create -n sklex -c https://software.repos.intel.com/python/conda/ -c conda-forge --override-channels scikit-learn-intelex
+  conda activate sklex
   ```
-
-> **_NOTE:_** If you do not specify the Python version, the latest one is downloaded. 
 
 - Install into your current environment:
 
   ```bash
-  conda config --add channels https://software.repos.intel.com/python/conda/
-  conda config --set channel_priority strict
-  conda install scikit-learn-intelex
+  conda install -c https://software.repos.intel.com/python/conda/ -c conda-forge scikit-learn-intelex
   ```
 
-> **_NOTE:_** If you do not specify the version of Python, the latest one is downloaded. 
+**Note:** packages from the Intel channel are meant to be used together with dependencies from the **conda-forge** channel, and might not
+work correctly when used in an environment where packages from the `anaconda` default channel have been installed. It is
+advisable to use the [miniforge](https://github.com/conda-forge/miniforge) installer for `conda`/`mamba`, as it comes with
+`conda-forge` as the only default channel.
 
-- Install into your current environment:
-
-  ```bash
-  conda install scikit-learn-intelex
-  ```
 
 ## Build from Sources
 Extension for Scikit-learn* is easily built from the sources with the majority of the necessary prerequisites available with conda or pip. 

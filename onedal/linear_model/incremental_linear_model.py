@@ -29,8 +29,7 @@ from .linear_model import BaseLinearRegression
 
 
 class IncrementalLinearRegression(BaseLinearRegression):
-    """
-    Incremental Linear Regression oneDAL implementation.
+    """Incremental Linear Regression oneDAL implementation.
 
     Parameters
     ----------
@@ -42,8 +41,8 @@ class IncrementalLinearRegression(BaseLinearRegression):
     copy_X : bool, default=True
         If True, X will be copied; else, it may be overwritten.
 
-    algorithm : string, default="norm_eq"
-        Algorithm used for computation on oneDAL side
+    algorithm : str, default="norm_eq"
+        Algorithm used for oneDAL computation.
     """
 
     def __init__(self, fit_intercept=True, copy_X=False, algorithm="norm_eq"):
@@ -79,21 +78,23 @@ class IncrementalLinearRegression(BaseLinearRegression):
 
     @supports_queue
     def partial_fit(self, X, y, queue=None):
-        """
-        Computes partial data for linear regression
-        from data batch X and saves it to `_partial_result`.
+        """Prepare regression from batch data as `_partial_result`.
+
+        Computes partial data for linear regression from data batch X.
+
         Parameters
         ----------
         X : array-like of shape (n_samples, n_features)
             Training data batch, where `n_samples` is the number of samples
             in the batch, and `n_features` is the number of features.
 
-        y: array-like of shape (n_samples,) or (n_samples, n_targets) in
-            case of multiple targets
+        y : array-like of shape (n_samples,) or (n_samples, n_targets)
             Responses for training data.
 
-        queue : dpctl.SyclQueue
-            If not None, use this queue for computations.
+        queue : SyclQueue or None
+            SYCL Queue object for device code execution. Default
+            value None causes computation on host.
+
         Returns
         -------
         self : object
@@ -136,14 +137,15 @@ class IncrementalLinearRegression(BaseLinearRegression):
         return self
 
     def finalize_fit(self, queue=None):
-        """
-        Finalizes linear regression computation and obtains coefficients
-        from the current `_partial_result`.
+        """Finalize linear regression from the current `_partial_result`.
+
+        Results are stored as `coef_` and `intercept_`.
 
         Parameters
         ----------
-        queue : dpctl.SyclQueue
-            If not None, use this queue for computations.
+        queue : SyclQueue or None
+            SYCL Queue object for device code execution. Default
+            value None causes computation on host.
 
         Returns
         -------
@@ -176,8 +178,7 @@ class IncrementalLinearRegression(BaseLinearRegression):
 
 
 class IncrementalRidge(BaseLinearRegression):
-    """
-    Incremental Ridge Regression oneDAL implementation.
+    """Incremental Ridge Regression oneDAL implementation.
 
     Parameters
     ----------
@@ -194,8 +195,8 @@ class IncrementalRidge(BaseLinearRegression):
     copy_X : bool, default=True
         If True, X will be copied; else, it may be overwritten.
 
-    algorithm : string, default="norm_eq"
-        Algorithm used for computation on oneDAL side
+    algorithm : str, default="norm_eq"
+        Algorithm used for oneDAL computation.
     """
 
     def __init__(self, alpha=1.0, fit_intercept=True, copy_X=False, algorithm="norm_eq"):
@@ -232,21 +233,23 @@ class IncrementalRidge(BaseLinearRegression):
 
     @supports_queue
     def partial_fit(self, X, y, queue=None):
-        """
-        Computes partial data for ridge regression
-        from data batch X and saves it to `_partial_result`.
+        """Prepare regression from batch data as `_partial_result`.
+
+        Computes partial data for ridge regression from data batch X.
+
         Parameters
         ----------
         X : array-like of shape (n_samples, n_features)
             Training data batch, where `n_samples` is the number of samples
             in the batch, and `n_features` is the number of features.
 
-        y: array-like of shape (n_samples,) or (n_samples, n_targets) in
-            case of multiple targets
+        y : array-like of shape (n_samples,) or (n_samples, n_targets)
             Responses for training data.
 
-        queue : dpctl.SyclQueue
-            If not None, use this queue for computations.
+        queue : SyclQueue or None, default=None
+            SYCL Queue object for device code execution. Default
+            value None causes computation on host.
+
         Returns
         -------
         self : object
@@ -280,14 +283,13 @@ class IncrementalRidge(BaseLinearRegression):
         return self
 
     def finalize_fit(self, queue=None):
-        """
-        Finalizes ridge regression computation and obtains coefficients
-        from the current `_partial_result`.
+        """Finalize ridge regression from the current ``_partial_result``.
 
         Parameters
         ----------
-        queue : dpctl.SyclQueue
-            If available, uses provided queue for computations.
+        queue : SyclQueue or None, default=None
+            SYCL Queue object for device code execution. Default
+            value None causes computation on host.
 
         Returns
         -------

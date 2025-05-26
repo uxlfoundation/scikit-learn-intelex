@@ -30,6 +30,7 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
+import re
 import sys
 
 # sys.path.insert(0, os.path.abspath("../"))
@@ -129,6 +130,11 @@ rst_prolog = """
 .. |onedal| replace:: oneAPI Data Analytics Library
 """
 
+# Note: sklearn oftentimes uses single backticks to render code.
+# Some docstrings here are inherited from theirs, so this setting
+# is needed to render them the same way they do.
+default_role = "literal"
+
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -160,7 +166,7 @@ html_theme_options = {
 html_context = {
     "current_version": version,
     "project_name": "scikit-learn-intelex",
-    "switcher_url": "/scikit-learn-intelex/doc/versions.json",
+    "switcher_url": "/scikit-learn-intelex/versions.json",
 }
 
 
@@ -258,3 +264,13 @@ todo_include_todos = True
 # not found 404 page
 
 notfound_urls_prefix = "/scikit-learn-intelex/"
+
+# Any link matching these regexes will be skipped by linkcheck
+linkcheck_ignore = [
+    re.compile(r"https://github\.com/.+"),  # Avoid rate error
+    re.compile(r"https://.*intel\.com/.+"),  # Avoid permission error
+]
+
+# Speed up link-check and fail faster
+linkcheck_timeout = 10
+linkcheck_workers = 8

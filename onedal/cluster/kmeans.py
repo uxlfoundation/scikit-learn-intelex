@@ -449,6 +449,10 @@ class KMeans(_BaseKMeans):
         X : array-like of shape (n_samples, n_features)
             New data to predict.
 
+        queue : SyclQueue or None, default=None
+            SYCL Queue object for device code execution. Default
+            value None causes computation on host.
+
         Returns
         -------
         labels : ndarray of shape (n_samples,)
@@ -470,6 +474,10 @@ class KMeans(_BaseKMeans):
         y : Ignored
             Not used, present here for API consistency by convention.
 
+        queue : SyclQueue or None, default=None
+            SYCL Queue object for device code execution. Default
+            value None causes computation on host.
+
         Returns
         -------
         labels : ndarray of shape (n_samples,)
@@ -489,6 +497,10 @@ class KMeans(_BaseKMeans):
 
         y : Ignored
             Not used, present here for API consistency by convention.
+
+        queue : SyclQueue or None, default=None
+            SYCL Queue object for device code execution. Default
+            value None causes computation on host.
 
         Returns
         -------
@@ -523,8 +535,12 @@ class KMeans(_BaseKMeans):
 
         Parameters
         ----------
-        X: {array-like, sparse matrix} of shape (n_samples, n_features)
+        X : {array-like, sparse matrix} of shape (n_samples, n_features)
             New data.
+
+        queue : SyclQueue or None, default=None
+            SYCL Queue object for device code execution. Default
+            value None causes computation on host.
 
         Returns
         -------
