@@ -333,7 +333,9 @@ jobs:
         with:
           python-version: ${{ env.UXL_PYTHONVERSION }}
           cache: 'pip'
-          cache-dependency-path: dependencies-dev
+          cache-dependency-path: |
+            **/dependencies-dev
+            **/requirements-test.txt
       - name: Download oneDAL build artifact
         uses: actions/download-artifact@v4
         with:
@@ -396,7 +398,7 @@ jobs:
     needs: [onedal_nightly, build_uxl]
     name: LinuxNightly ${{ matrix.DEVICE }} test Python${{ needs.onedal_nightly.outputs.uxl-python }}_Sklearn${{ needs.onedal_nightly.outputs.uxl-sklearn }}
     runs-on: ${{ matrix.OS }}
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - name: Checkout Scikit-learn-intelex
         uses: actions/checkout@v4
@@ -404,6 +406,9 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.UXL_PYTHONVERSION }}
+          cache-dependency-path: |
+            **/dependencies-dev
+            **/requirements-test.txt
       - name: Download oneDAL build artifact
         uses: actions/download-artifact@v4
         with:
@@ -449,6 +454,9 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: sklearnex_build_${{ env.UXL_PYTHONVERSION }}
+      - name: Install PyTorch
+        if: matrix.DEVICE == 'GPU'
+        run: pip install torch --index-url https://download.pytorch.org/whl/xpu
       - name: Install daal4py/sklearnex
         run: pip install *.whl
       - name: Sklearnex testing
