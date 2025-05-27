@@ -373,8 +373,6 @@ class BaseForest(BaseEnsemble, metaclass=ABCMeta):
         # All data should use the same sycl queue
         if use_raw_input and sua_iface is not None:
             queue = X.sycl_queue
-        else:
-            queue = QM.get_global_queue()
 
         if not use_raw_input:
             X = _check_array(
@@ -386,6 +384,7 @@ class BaseForest(BaseEnsemble, metaclass=ABCMeta):
             _check_n_features(self, X, False)
 
         model = self._onedal_model
+        queue = QM.get_global_queue()
         X = to_table(X, queue=queue)
         params = self._get_onedal_params(X)
         if hparams is not None and not hparams.is_default:
