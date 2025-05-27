@@ -72,7 +72,7 @@ jobs:
             SKLEARN_VERSION: "1.2"
           - PYTHON_VERSION: "3.11"
             SKLEARN_VERSION: "1.3"
-    name: LinuxNightly/pip Python${{ matrix.PYTHON_VERSION }}_Sklearn${{ matrix.SKLEARN_VERSION }}
+    name: LinuxNightly/venv Python${{ matrix.PYTHON_VERSION }}_Sklearn${{ matrix.SKLEARN_VERSION }}
     runs-on: ubuntu-24.04
     timeout-minutes: 120
 
@@ -187,7 +187,7 @@ jobs:
             SKLEARN_VERSION: "1.2"
           - PYTHON_VERSION: "3.11"
             SKLEARN_VERSION: "1.3"
-    name: WindowsNightly/pip Python${{ matrix.PYTHON_VERSION }}_Sklearn${{ matrix.SKLEARN_VERSION }}
+    name: WindowsNightly/venv Python${{ matrix.PYTHON_VERSION }}_Sklearn${{ matrix.SKLEARN_VERSION }}
     runs-on: windows-2025
     timeout-minutes: 120
 
@@ -321,7 +321,7 @@ jobs:
   build_uxl:
     if: github.repository == 'uxlfoundation/scikit-learn-intelex'
     needs: onedal_nightly
-    name: LinuxNightly GPU build
+    name: LinuxNightly build
     runs-on: uxl-xlarge
     timeout-minutes: 30
 
@@ -359,10 +359,6 @@ jobs:
           echo "NO_DIST=1" >> "$GITHUB_ENV"
           # enable coverage report generation
           echo "SKLEARNEX_GCOV=1" >> "$GITHUB_ENV"
-          # reduce GPU driver/runner related memory issues
-          echo "NEOReadDebugKeys=1" >> "$GITHUB_ENV"
-          echo "EnableRecoverablePageFaults=1" >> "$GITHUB_ENV"
-          echo "GpuFaultCheckThreshold=0" >> "$GITHUB_ENV"
       - name: apt-get
         run: sudo apt-get update && sudo apt-get install -y clang-format
       - name: dpcpp installation
@@ -436,6 +432,10 @@ jobs:
           # enable coverage report generation
           echo "COVERAGE_RCFILE=$(readlink -f .coveragerc)" >> "$GITHUB_ENV"
           echo "ONEDAL_PYTEST_FRAMEWORKS=${{ matrix.FRAMEWORKS }}" >> "$GITHUB_ENV"
+          # reduce GPU driver/runner related memory issues
+          echo "NEOReadDebugKeys=1" >> "$GITHUB_ENV"
+          echo "EnableRecoverablePageFaults=1" >> "$GITHUB_ENV"
+          echo "GpuFaultCheckThreshold=0" >> "$GITHUB_ENV"
       - name: apt-get
         run: sudo apt-get update
       - name: dpcpp installation
