@@ -34,6 +34,7 @@ env:
   DPNP_VERSION: 0.16.0
   DPCTL_PY_VERSIONS: '3.9\|3.11'
   UXL_PYTHONVERSION: "3.12"
+  UXL_SKLEARNVERSION: "1.6"
   ONEDAL_REPO: "uxlfoundation/oneDAL"
 
 jobs:
@@ -56,6 +57,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
     outputs:
        run-id: ${{ steps.get-run-id.outputs.run-id }}
+       uxl-python: ${{ env.UXL_PYTHONVERSION }}
+       uxl-sklearn: ${{ env.UXL_SKLEARNVERSION }}
 
   sklearn_lnx:
     needs: onedal_nightly
@@ -380,3 +383,98 @@ jobs:
           path: |
              ./dist/*.whl
       
+  test_uxl:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - OS: uxl-gpu-xlarge
+            FRAMEWORKS: "numpy,pytorch"
+            DEVICE: GPU
+          - OS: uxl-xlarge
+            FRAMEWORKS: "numpy,pandas"
+            DEVICE: CPU
+    needs: build_uxl
+    name: LinuxNightly Python${{ needs.onedal_nightly.outputs.uxl-python }}_Sklearn${{ needs.onedal_nightly.outputs.uxl-sklearn }} test ${{ matrix.FRAMEWORKS }}
+    runs-on: uxl-xlarge
+    timeout-minutes: 30
+    steps:
+      - name: Checkout Scikit-learn-intelex
+        uses: actions/checkout@v4
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.UXL_PYTHONVERSION }}
+      - name: Download oneDAL build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: __release_lnx
+          github-token: ${{ github.token }}
+          repository: ${{ env.ONEDAL_REPO }}
+          run-id: ${{ needs.onedal_nightly.outputs.run-id }}
+          path: ./__release_lnx
+      - name: Download oneDAL environment artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: oneDAL_env
+          github-token: ${{ github.token }}
+          repository: ${{ env.ONEDAL_REPO }}
+          run-id: ${{ needs.onedal_nightly.outputs.run-id }}
+          path: .ci/env
+      - name: Set Environment Variables
+        id: set-env
+        run: |
+          # enable coverage report generation
+          echo "COVERAGE_RCFILE=$(readlink -f .coveragerc)" >> "$GITHUB_ENV"
+          echo "ONEDAL_PYTEST_FRAMEWORKS=${{ matrix.FRAMEWORKS }}" >> "$GITHUB_ENV"
+      - name: apt-get
+        run: sudo apt-get update
+      - name: dpcpp installation
+        run: |
+          # This CI system yields oneAPI dependencies from the oneDAL repository
+          bash .ci/env/apt.sh dpcpp
+      - name: describe system
+        run: |
+          source /opt/intel/oneapi/setvars.sh
+          bash .ci/scripts/describe_system.sh
+      - name: Install requirements
+        run: |
+          pip install -r dependencies-dev
+          pip list
+          echo "NUMPY_BUILD=$(python -m pip freeze | grep numpy)" >> "$GITHUB_ENV"
+          bash .ci/scripts/setup_sklearn.sh ${{ env.UXL_SKLEARNVERSION }}
+          pip install --upgrade -r requirements-test.txt
+          pip install $(python .ci/scripts/get_compatible_scipy_version.py ${{ env.UXL_SKLEARVERSION }}) pyyaml
+      - name: Download sklearnex wheel
+        uses: actions/download-artifact@v4
+        with:
+          name: sklearnex_build_${{ env.UXL_PYTHONVERSION }}
+          path: sklearnex.whl
+      - name: Install daal4py/sklearnex
+        run: pip install sklearnex.whl
+      - name: Sklearnex testing
+        run: |
+          source .github/scripts/activate_components.sh
+          export COVERAGE_FILE=$(pwd)/.coverage.sklearnex
+          cd .ci
+          ../conda-recipe/run_test.sh
+      - name: Sklearn testing
+        run: |
+          source .github/scripts/activate_components.sh
+          export COVERAGE_FILE=$(pwd)/.coverage.sklearn
+          bash .ci/scripts/run_sklearn_tests.sh ${{ matrix.DEVICE }}
+      - name: Create coverage report
+        run: |
+          source .github/scripts/activate_components.sh
+          bash .github/scripts/generate_coverage_reports.sh uxl_lnx_${{ matrix.DEVICE }}
+      - name: Archive coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage_uxl_lnx_${{ matrix.DEVICE }}
+          path: |
+            *uxl_lnx_${{ matrix.DEVICE }}.info
+      - name: Sklearn testing [preview]
+        run: |
+          source .github/scripts/activate_components.sh
+          export SKLEARNEX_PREVIEW='YES'
+          bash .ci/scripts/run_sklearn_tests.sh ${{ matrix.DEVICE }}
