@@ -455,7 +455,7 @@ jobs:
         with:
           name: sklearnex_build_${{ env.UXL_PYTHONVERSION }}
       - name: Install PyTorch
-        if: matrix.DEVICE == 'GPU'
+        if: contains(matrix.FRAMEWORKS, 'pytorch')
         run: pip install torch --index-url https://download.pytorch.org/whl/xpu
       - name: Install daal4py/sklearnex
         run: pip install *.whl
