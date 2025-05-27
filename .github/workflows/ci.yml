@@ -321,7 +321,7 @@ jobs:
   build_uxl:
     if: github.repository == 'uxlfoundation/scikit-learn-intelex'
     needs: onedal_nightly
-    name: LinuxNightly build
+    name: LinuxNightly build Python${{ needs.onedal_nightly.outputs.uxl-python }}
     runs-on: uxl-xlarge
     timeout-minutes: 30
 
