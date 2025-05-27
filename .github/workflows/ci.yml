@@ -356,7 +356,6 @@ jobs:
           # Disable SPMD testing
           echo "NO_DIST=1" >> "$GITHUB_ENV"
           # enable coverage report generation
-          echo "COVERAGE_RCFILE=$(readlink -f .coveragerc)" >> "$GITHUB_ENV"
           echo "SKLEARNEX_GCOV=1" >> "$GITHUB_ENV"
       - name: apt-get
         run: sudo apt-get update && sudo apt-get install -y clang-format
@@ -424,6 +423,7 @@ jobs:
       - name: Set Environment Variables
         id: set-env
         run: |
+          echo "NO_DIST=1" >> "$GITHUB_ENV"
           # enable coverage report generation
           echo "COVERAGE_RCFILE=$(readlink -f .coveragerc)" >> "$GITHUB_ENV"
           echo "ONEDAL_PYTEST_FRAMEWORKS=${{ matrix.FRAMEWORKS }}" >> "$GITHUB_ENV"
@@ -437,14 +437,14 @@ jobs:
         run: |
           source /opt/intel/oneapi/setvars.sh
           bash .ci/scripts/describe_system.sh
-      - name: Install requirements
+      - name: Install test requirements
         run: |
           pip install -r dependencies-dev
-          pip list
           echo "NUMPY_BUILD=$(python -m pip freeze | grep numpy)" >> "$GITHUB_ENV"
           bash .ci/scripts/setup_sklearn.sh ${{ env.UXL_SKLEARNVERSION }}
           pip install --upgrade -r requirements-test.txt
           pip install $(python .ci/scripts/get_compatible_scipy_version.py ${{ env.UXL_SKLEARVERSION }}) pyyaml
+          pip list
       - name: Download sklearnex wheel
         uses: actions/download-artifact@v4
         with:
