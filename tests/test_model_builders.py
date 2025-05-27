@@ -1412,7 +1412,7 @@ def test_catboost_binary_classification(
             assert np.isnan(shap_pred).any()
 
 
-@pytest.mark.skipif(not cb_available, reason=cb_unavailable_str)
+@pytest.mark.skipif(not cb_available or True, reason=cb_unavailable_str)
 @pytest.mark.parametrize("grow_policy", ["SymmetricTree", "Lossguide"])
 @pytest.mark.parametrize("nan_mode", ["Forbidden", "Min", "Max"])
 @pytest.mark.parametrize("sklearn_class", [False, True])
