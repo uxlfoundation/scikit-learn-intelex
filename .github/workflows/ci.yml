@@ -449,9 +449,8 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: sklearnex_build_${{ env.UXL_PYTHONVERSION }}
-          path: sklearnex.whl
       - name: Install daal4py/sklearnex
-        run: pip install sklearnex.whl
+        run: pip install *.whl
       - name: Sklearnex testing
         run: |
           source .github/scripts/activate_components.sh
