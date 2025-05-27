@@ -42,7 +42,7 @@ jobs:
   onedal_nightly:
     runs-on: ubuntu-24.04
     name: Identify oneDAL nightly
-    timeout-minutes: 5
+    timeout-minutes: 2
 
     steps:
       - name: Get run ID of "Nightly-build" workflow
