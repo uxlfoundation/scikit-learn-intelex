@@ -398,7 +398,7 @@ jobs:
     needs: [onedal_nightly, build_uxl]
     name: LinuxNightly ${{ matrix.DEVICE }} test Python${{ needs.onedal_nightly.outputs.uxl-python }}_Sklearn${{ needs.onedal_nightly.outputs.uxl-sklearn }}
     runs-on: ${{ matrix.OS }}
-    timeout-minutes: 60
+    timeout-minutes: 120
     steps:
       - name: Checkout Scikit-learn-intelex
         uses: actions/checkout@v4
