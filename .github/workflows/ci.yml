@@ -391,10 +391,10 @@ jobs:
         include:
           - OS: uxl-gpu-xlarge
             FRAMEWORKS: "numpy,pytorch"
-            DEVICE: GPU
+            DEVICE: gpu
           - OS: uxl-xlarge
             FRAMEWORKS: "numpy,pandas"
-            DEVICE: CPU
+            DEVICE: cpu
     needs: [onedal_nightly, build_uxl]
     name: LinuxNightly ${{ matrix.DEVICE }} test Python${{ needs.onedal_nightly.outputs.uxl-python }}_Sklearn${{ needs.onedal_nightly.outputs.uxl-sklearn }}
     runs-on: ${{ matrix.OS }}
