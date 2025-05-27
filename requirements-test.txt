@@ -11,7 +11,7 @@ scikit-learn==1.6.1 ; python_version >= '3.10'
 pandas==2.1.3 ; python_version < '3.11'
 pandas==2.2.3 ; python_version >= '3.11'
 xgboost==2.1.4 ; python_version < '3.10'
-xgboost==3.0.1 ; python_version >= '3.10'
+xgboost==3.0.2 ; python_version >= '3.10'
 lightgbm==4.6.0
 catboost==1.2.8
 shap==0.47.2 ; python_version < '3.13'
