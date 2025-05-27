@@ -394,9 +394,9 @@ jobs:
           - OS: uxl-xlarge
             FRAMEWORKS: "numpy,pandas"
             DEVICE: CPU
-    needs: build_uxl
-    name: LinuxNightly Python${{ needs.onedal_nightly.outputs.uxl-python }}_Sklearn${{ needs.onedal_nightly.outputs.uxl-sklearn }} test ${{ matrix.FRAMEWORKS }}
-    runs-on: uxl-xlarge
+    needs: [onedal_nightly, build_uxl]
+    name: LinuxNightly ${{ matrix.DEVICE }} test Python${{ needs.onedal_nightly.outputs.uxl-python }}_Sklearn${{ needs.onedal_nightly.outputs.uxl-sklearn }}
+    runs-on: ${{ matrix.OS }}
     timeout-minutes: 30
     steps:
       - name: Checkout Scikit-learn-intelex
