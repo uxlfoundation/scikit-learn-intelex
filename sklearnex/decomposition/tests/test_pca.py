@@ -47,7 +47,7 @@ def test_sklearnex_import(dataframe, queue, macro_block, grain_size):
 
     if daal_check_version((2025, "P", 7)):
         hparams = PCA.get_hyperparameters("fit")
-        if  macro_block is not None:
+        if macro_block is not None:
             hparams.cpu_macro_block = macro_block
         if grain_size is not None:
             hparams.cpu_grain_size = grain_size
