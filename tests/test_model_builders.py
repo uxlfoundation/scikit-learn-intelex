@@ -1755,7 +1755,6 @@ def test_sklearn_through_treelite(
     )
 
 
-@pytest.mark.skipif(not cb_available, reason=cb_unavailable_str)
 def test_treelite_unsupported():
     if sklearn_check_version("1.4"):
         X, y = make_classification(
@@ -1795,7 +1794,6 @@ def test_treelite_unsupported():
 # These aren't typically produced by the main libraries targeted by
 # treelite, but can still be specified to be like this when constructing
 # a model through their model builder.
-@pytest.mark.skipif(not cb_available, reason=cb_unavailable_str)
 @pytest.mark.parametrize("opname", [">", ">=", "<", "<="])
 def test_treelite_uncommon(opname):
     # Taken from their example with a modified op:
