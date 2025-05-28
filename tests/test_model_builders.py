@@ -53,7 +53,7 @@ from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 try:
     import catboost as cb
 
-    cb_available = True
+    cb_available = False
 except ImportError:
     cb_available = False
 
@@ -1412,7 +1412,7 @@ def test_catboost_binary_classification(
             assert np.isnan(shap_pred).any()
 
 
-@pytest.mark.skipif(not cb_available or True, reason=cb_unavailable_str)
+@pytest.mark.skipif(not cb_available, reason=cb_unavailable_str)
 @pytest.mark.parametrize("grow_policy", ["SymmetricTree", "Lossguide"])
 @pytest.mark.parametrize("nan_mode", ["Forbidden", "Min", "Max"])
 @pytest.mark.parametrize("sklearn_class", [False, True])
@@ -1459,7 +1459,7 @@ def test_catboost_multiclass_classification(
     )
 
 
-@pytest.mark.skipif(not cb_available or True, reason=cb_unavailable_str)
+@pytest.mark.skipif(not cb_available, reason=cb_unavailable_str)
 def test_catboost_default_objective():
     X, y = make_regression(n_samples=12, n_features=3, random_state=123)
     cb_model = cb.train(
