@@ -1874,7 +1874,6 @@ def test_treelite_uncommon(opname):
     )
 
 
-@pytest.mark.skipif(not cb_available, reason=cb_unavailable_str)
 def test_treelite_uneven_multiclass():
     # Also based on the same tutorial, with slight modifications:
     # https://treelite.readthedocs.io/en/latest/tutorials/builder.html
@@ -1926,7 +1925,6 @@ def test_treelite_uneven_multiclass():
     )
 
 
-@pytest.mark.skipif(not cb_available, reason=cb_unavailable_str)
 def test_sklearn_conversion_suggests_treelite():
     X, y = make_regression(n_samples=10, n_features=4, random_state=123)
     model = RandomForestRegressor(n_estimators=2).fit(X, y)
