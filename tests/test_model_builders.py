@@ -1550,6 +1550,7 @@ def test_catboost_unsupported():
         d4p.mb.convert_model(cb_model)
 
 
+@pytest.mark.skipif(not cb_available, reason=cb_unavailable_str)
 def test_model_from_booster():
     class MockBooster:
         def get_dump(self, *_, **kwargs):
@@ -1610,6 +1611,7 @@ def test_model_from_booster():
     assert tree1.value == 0.2
 
 
+@pytest.mark.skipif(not cb_available, reason=cb_unavailable_str)
 @pytest.mark.parametrize("from_treelite", [False, True])
 def test_unsupported_multiclass(from_treelite):
     X, y = make_classification(
@@ -1662,6 +1664,7 @@ def test_unsupported_multiclass(from_treelite):
         )
 
 
+@pytest.mark.skipif(not cb_available, reason=cb_unavailable_str)
 @pytest.mark.parametrize(
     "estimator,is_regression,expect_regressor,expect_warning,tl_predict",
     [
@@ -1752,6 +1755,7 @@ def test_sklearn_through_treelite(
     )
 
 
+@pytest.mark.skipif(not cb_available, reason=cb_unavailable_str)
 def test_treelite_unsupported():
     if sklearn_check_version("1.4"):
         X, y = make_classification(
@@ -1791,6 +1795,7 @@ def test_treelite_unsupported():
 # These aren't typically produced by the main libraries targeted by
 # treelite, but can still be specified to be like this when constructing
 # a model through their model builder.
+@pytest.mark.skipif(not cb_available, reason=cb_unavailable_str)
 @pytest.mark.parametrize("opname", [">", ">=", "<", "<="])
 def test_treelite_uncommon(opname):
     # Taken from their example with a modified op:
@@ -1869,6 +1874,7 @@ def test_treelite_uncommon(opname):
     )
 
 
+@pytest.mark.skipif(not cb_available, reason=cb_unavailable_str)
 def test_treelite_uneven_multiclass():
     # Also based on the same tutorial, with slight modifications:
     # https://treelite.readthedocs.io/en/latest/tutorials/builder.html
@@ -1920,6 +1926,7 @@ def test_treelite_uneven_multiclass():
     )
 
 
+@pytest.mark.skipif(not cb_available, reason=cb_unavailable_str)
 def test_sklearn_conversion_suggests_treelite():
     X, y = make_regression(n_samples=10, n_features=4, random_state=123)
     model = RandomForestRegressor(n_estimators=2).fit(X, y)
