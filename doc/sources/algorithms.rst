@@ -222,7 +222,7 @@ Other Tasks
      - Supported data formats:
          - Dense data
          - CSR sparse matrices (oneDAL ≥ 2025.2.0)
-     - Sample weights **not** supported when `X` is CSR sparse
+     - Sample weights **not** supported for CSR data format
    * - `train_test_split`
      - All parameters are supported
      - Only dense data is supported
@@ -421,7 +421,7 @@ Other Tasks
      - Supported data formats:
          - Dense data
          - CSR sparse matrices (oneDAL ≥ 2025.2.0)
-     - Sample weights **not** supported when `X` is CSR sparse
+     - Sample weights **not** supported for CSR data format
 
 .. _spmd-support:
 
@@ -599,7 +599,7 @@ Other Tasks
      - Supported data formats:
          - Dense data
          - CSR sparse matrices (oneDAL ≥ 2025.2.0)
-     - Sample weights **not** supported when `X` is CSR sparse
+     - Sample weights **not** supported for CSR data format
 
 Scikit-learn Tests
 ------------------

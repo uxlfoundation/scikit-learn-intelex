@@ -110,6 +110,18 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
 
     %incremental_serialization_note%
 
+    Parameters
+    ------------
+    All parameters are supported
+
+    Data formats
+    ------------
+    Only dense data are supported
+
+    Sample weights
+    ------------
+    Only dense data is supported
+
     Examples
     --------
     >>> import numpy as np
