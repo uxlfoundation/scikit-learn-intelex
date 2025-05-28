@@ -29,7 +29,9 @@ from onedal.tests.utils._dataframes_support import (
 @pytest.mark.parametrize("macro_block", [None, 1024])
 @pytest.mark.parametrize("grain_size", [None, 10])
 @pytest.mark.parametrize("assume_centered", [True, False])
-def test_sklearnex_import_covariance(dataframe, queue, macro_block, grain_size, assume_centered):
+def test_sklearnex_import_covariance(
+    dataframe, queue, macro_block, grain_size, assume_centered
+):
     from sklearnex.preview.covariance import EmpiricalCovariance
 
     X = np.array([[0, 1], [0, 1]])
