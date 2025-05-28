@@ -219,7 +219,10 @@ Other Tasks
      - Only dense data is supported
    * - `BasicStatistics`
      - All parameters are supported
-     - Only dense data is supported
+     - Supported data formats:
+         - Dense data
+         - CSR sparse matrices (oneDAL ≥ 2025.2.0)
+     - Sample weights **not** supported when `X` is CSR sparse
    * - `train_test_split`
      - All parameters are supported
      - Only dense data is supported
@@ -415,8 +418,10 @@ Other Tasks
      - All parameters are supported
      - Only dense data is supported
    * - `BasicStatistics`
-     - All parameters are supported
-     - Only dense data is supported
+     - Supported data formats:
+         - Dense data
+         - CSR sparse matrices (oneDAL ≥ 2025.2.0)
+     - Sample weights **not** supported when `X` is CSR sparse
 
 .. _spmd-support:
 
@@ -513,7 +518,7 @@ Regression
        - ``normalize`` != `False`
        - ``sample_weight`` != `None`
      - Only dense data is supported.
-     
+
 Clustering
 **********
 
@@ -591,8 +596,10 @@ Other Tasks
      - All parameters are supported
      - Only dense data is supported
    * - `BasicStatistics`
-     - All parameters are supported
-     - Only dense data is supported
+     - Supported data formats:
+         - Dense data
+         - CSR sparse matrices (oneDAL ≥ 2025.2.0)
+     - Sample weights **not** supported when `X` is CSR sparse
 
 Scikit-learn Tests
 ------------------
