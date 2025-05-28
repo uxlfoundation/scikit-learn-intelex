@@ -27,7 +27,9 @@ from onedal.tests.utils._dataframes_support import (
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_sklearnex_import(dataframe, queue):
+@pytest.mark.parametrize("macro_block", [None, 2])
+@pytest.mark.parametrize("grain_size", [None, 2])
+def test_sklearnex_import(dataframe, queue, macro_block, grain_size):
     from sklearnex.decomposition import PCA
 
     X = [[-1, -1], [-2, -1], [-3, -2], [1, 1], [2, 1], [3, 2]]
@@ -42,6 +44,14 @@ def test_sklearnex_import(dataframe, queue):
     ]
 
     pca = PCA(n_components=2, svd_solver="covariance_eigh")
+
+    if daal_check_version((2025, "P", 7)):
+        hparams = PCA.get_hyperparameters("fit")
+        if  macro_block is not None:
+            hparams.cpu_macro_block = macro_block
+        if grain_size is not None:
+            hparams.cpu_grain_size = grain_size
+
     pca.fit(X)
     X_transformed = pca.transform(X)
     X_fit_transformed = PCA(n_components=2, svd_solver="covariance_eigh").fit_transform(X)

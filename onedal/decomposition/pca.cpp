@@ -173,6 +173,19 @@ void init_infer_result(py::module_& m) {
 
 template <typename Policy, typename Task>
 void init_train_ops(py::module& m) {
+#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240000
+    using train_hyperparams_t = dal::pca::detail::train_parameters<Task>;
+    m.def("train",
+          [](const Policy& policy,
+             const py::dict& params,
+             const train_hyperparams_t& hyperparams,
+             const table& data) {
+              using namespace dal::pca;
+              using input_t = train_input<Task>;
+              train_ops_with_hyperparams ops(policy, input_t{ data }, params2desc{}, hyperparams);
+              return fptype2t{ method2t{ Task{}, ops } }(params);
+          });
+#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240000
     m.def("train", [](const Policy& policy, const py::dict& params, const table& data) {
         using namespace dal::pca;
         using input_t = train_input<Task>;
@@ -221,6 +234,28 @@ void init_infer_ops(py::module_& m) {
           });
 }
 
+#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20250700
+
+template <typename Task>
+void init_train_hyperparameters(py::module_& m) {
+    using namespace dal::pca::detail;
+    using train_hyperparams_t = train_parameters<Task>;
+
+    auto cls = py::class_<train_hyperparams_t>(m, "train_hyperparameters")
+                   .def(py::init())
+                   .def("set_cpu_macro_block", &train_hyperparams_t::set_cpu_macro_block)
+                   .def("get_cpu_macro_block",
+                        [](const train_hyperparams_t& self) {
+                            return self.get_cpu_macro_block();
+                        })
+                   .def("set_cpu_grain_size", &train_hyperparams_t::set_cpu_grain_size)
+                   .def("get_cpu_grain_size", [](const train_hyperparams_t& self) {
+                       return self.get_cpu_grain_size();
+                   });
+}
+
+#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20250700
+
 ONEDAL_PY_DECLARE_INSTANTIATOR(init_model);
 ONEDAL_PY_DECLARE_INSTANTIATOR(init_train_result);
 ONEDAL_PY_DECLARE_INSTANTIATOR(init_partial_train_result);
@@ -229,6 +264,9 @@ ONEDAL_PY_DECLARE_INSTANTIATOR(init_train_ops);
 ONEDAL_PY_DECLARE_INSTANTIATOR(init_partial_train_ops);
 ONEDAL_PY_DECLARE_INSTANTIATOR(init_finalize_train_ops);
 ONEDAL_PY_DECLARE_INSTANTIATOR(init_infer_ops);
+#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20250700
+ONEDAL_PY_DECLARE_INSTANTIATOR(init_train_hyperparameters);
+#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20250700
 } // namespace decomposition
 
 ONEDAL_PY_INIT_MODULE(decomposition) {
@@ -250,6 +288,9 @@ ONEDAL_PY_INIT_MODULE(decomposition) {
     ONEDAL_PY_INSTANTIATE(init_infer_result, sub, task_list);
     ONEDAL_PY_INSTANTIATE(init_partial_train_ops, sub, policy_list, task_list);
     ONEDAL_PY_INSTANTIATE(init_finalize_train_ops, sub, policy_list, task_list);
+#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20250700
+    ONEDAL_PY_INSTANTIATE(init_train_hyperparameters, sub, task_list);
+#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20250700
 #endif
 }
 

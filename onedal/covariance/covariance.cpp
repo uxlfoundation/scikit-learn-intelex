@@ -173,8 +173,9 @@ void init_compute_hyperparameters(py::module_& m) {
                         [](compute_hyperparams_t& self, int64_t cpu_macro_block) {
                             self.set_cpu_macro_block(cpu_macro_block);
                         })
-                   .def("get_cpu_macro_block", [](const compute_hyperparams_t& self) {
-                       return self.get_cpu_macro_block();
+                   .def("get_cpu_macro_block",
+                        [](const compute_hyperparams_t& self) {
+                            return self.get_cpu_macro_block();
 #if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20250700
                         })
                    .def("set_cpu_grain_size",
@@ -184,7 +185,7 @@ void init_compute_hyperparameters(py::module_& m) {
                    .def("get_cpu_grain_size", [](const compute_hyperparams_t& self) {
                        return self.get_cpu_grain_size();
 #endif
-                        });
+                   });
 }
 
 #endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240000
