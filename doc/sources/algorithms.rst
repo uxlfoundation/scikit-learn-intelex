@@ -55,6 +55,7 @@ Classification
        - ``ccp_alpha`` != `0`
        - ``criterion`` != `'gini'`
      - Multi-output and sparse data are not supported
+     - Requires oneDAL >= 2023.2
    * - `KNeighborsClassifier`
      -
        - For ``algorithm`` == `'kd_tree'`:
@@ -103,6 +104,7 @@ Regression
        - ``ccp_alpha`` != `0`
        - ``criterion`` != `'mse'`
      - Multi-output and sparse data are not supported
+     - Requires oneDAL >= 2023.2
    * - `KNeighborsRegressor`
      - All parameters are supported except:
 
@@ -113,14 +115,19 @@ Regression
 
        - ``normalize`` != `False`
        - ``sample_weight`` != `None`
+       - ``positive`` = `True`
      - Only dense data is supported.
+     - Multi-output regression is not supported
+     - Number of features + 1 must be < number of samples
    * - `Ridge`
      - All parameters are supported except:
 
        - ``normalize`` != `False`
        - ``solver`` != `'auto'`
        - ``sample_weight`` != `None`
+       - ``positive`` = `True`
      - Only dense data is supported, `#observations` should be >= `#features`.
+     - ``alpha`` must be scalar
    * - `ElasticNet`
      - All parameters are supported except:
 
@@ -146,9 +153,14 @@ Clustering
    * - `KMeans`
      - All parameters are supported except:
 
-       - ``precompute_distances``
-       - ``sample_weight`` != `None`
-     - No limitations
+       - ``algorithm`` != `'lloyd'` ('elkan' falls back to 'lloyd')
+       - ``n_clusters`` = `1`
+       - ``sample_weight`` must be `None` for predict
+       - ``sample_weight`` must be `None` or all ones for fit
+       - ``Init`` = `'k-means++'` fallbacks to CPU
+     - Supported data formats:
+         - Dense data
+         - CSR sparse matrices (oneDAL ≥ 2024.7.0)
    * - `DBSCAN`
      - All parameters are supported except:
 
@@ -170,7 +182,8 @@ Dimensionality Reduction
    * - `PCA`
      - All parameters are supported except:
 
-       - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`]
+       - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`, `'onedal_svd'`]
+       - For sklearnex < 1.5: `'full'` solver is automatically mapped to `'covariance_eigh'`
      - Sparse data is not supported
    * - `TSNE`
      - All parameters are supported except:
@@ -224,8 +237,11 @@ Other Tasks
          - CSR sparse matrices (oneDAL ≥ 2025.2.0)
      - Sample weights **not** supported for CSR data format
    * - `train_test_split`
-     - All parameters are supported
+     - All parameters are supported except:
+         - ``ndim`` not in [`'1'`, `'2'`]
      - Only dense data is supported
+     - Only integer and 32/64-bits floating point types are supported
+     - The input has to be a np.ndarray object
    * - `assert_all_finite`
      - All parameters are supported
      - Only dense data is supported
@@ -234,6 +250,8 @@ Other Tasks
 
        - ``metric`` not in [`'cosine'`, `'correlation'`]
      - Only dense data is supported
+     - ``Y`` must be `None`
+     - Input dtype must be `np.float64`
    * - `roc_auc_score`
      - All parameters are supported except:
 
@@ -283,6 +301,7 @@ Classification
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
      - Multi-output and sparse data are not supported
+     - Requires oneDAL >= 2023.2
    * - `KNeighborsClassifier`
      - All parameters are supported except:
 
@@ -297,7 +316,13 @@ Classification
        - ``class_weight`` != `None`
        - ``sample_weight`` != `None`
        - ``penalty`` != `'l2'`
+       - ``dual`` = `True`
+       - ``intercept_scaling`` != `1`
+       - ``multi_class`` != `'multinomial'`
+       - ``warm_start`` = `True`
+       - ``l1_ratio`` != `None`
      - Only dense data is supported
+     - Only binary classification is supported
 
 Regression
 **********
@@ -328,6 +353,7 @@ Regression
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
      - Multi-output and sparse data are not supported
+     - Requires oneDAL >= 2023.2
    * - `KNeighborsRegressor`
      - All parameters are supported except:
 
@@ -340,7 +366,10 @@ Regression
 
        - ``normalize`` != `False`
        - ``sample_weight`` != `None`
+       - ``positive`` = `True`
      - Only dense data is supported.
+     - Multi-output regression is not supported
+     - Number of features + 1 must be < number of samples
 
 Clustering
 **********
@@ -356,10 +385,14 @@ Clustering
    * - `KMeans`
      - All parameters are supported except:
 
-       - ``precompute_distances``
-       - ``sample_weight`` != `None`
-       - ``Init`` = `'k-means++'` fallbacks to CPU.
-     - Sparse data is not supported
+       - ``algorithm`` != `'lloyd'` ('elkan' falls back to 'lloyd')
+       - ``n_clusters`` = `1`
+       - ``sample_weight`` must be `None` for predict
+       - ``sample_weight`` must be `None` or all ones for fit
+       - ``Init`` = `'k-means++'` fallbacks to CPU
+     - Supported data formats:
+         - Dense data
+         - CSR sparse matrices (oneDAL ≥ 2024.7.0)
    * - `DBSCAN`
      - All parameters are supported except:
 
@@ -381,7 +414,8 @@ Dimensionality Reduction
    * - `PCA`
      - All parameters are supported except:
 
-       - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`]
+       - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`, `'onedal_svd'`]
+       - For sklearnex < 1.5: `'full'` solver is automatically mapped to `'covariance_eigh'`
      - Sparse data is not supported
 
 Nearest Neighbors
@@ -459,6 +493,7 @@ Classification
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
      - Multi-output and sparse data are not supported
+     - Requires oneDAL >= 2023.2
    * - `KNeighborsClassifier`
      - All parameters are supported except:
 
@@ -505,6 +540,7 @@ Regression
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
      - Multi-output and sparse data are not supported
+     - Requires oneDAL >= 2023.2
    * - `KNeighborsRegressor`
      - All parameters are supported except:
 
@@ -517,7 +553,10 @@ Regression
 
        - ``normalize`` != `False`
        - ``sample_weight`` != `None`
+       - ``positive`` = `True`
      - Only dense data is supported.
+     - Multi-output regression is not supported
+     - Number of features + 1 must be < number of samples
 
 Clustering
 **********
@@ -533,10 +572,14 @@ Clustering
    * - `KMeans`
      - All parameters are supported except:
 
-       - ``precompute_distances``
-       - ``sample_weight`` != `None`
-       - ``Init`` = `'k-means++'` fallbacks to CPU.
-     - Sparse data is not supported
+       - ``algorithm`` != `'lloyd'` ('elkan' falls back to 'lloyd')
+       - ``n_clusters`` = `1`
+       - ``sample_weight`` must be `None` for predict
+       - ``sample_weight`` must be `None` or all ones for fit
+       - ``Init`` = `'k-means++'` fallbacks to CPU
+     - Supported data formats:
+         - Dense data
+         - CSR sparse matrices (oneDAL ≥ 2024.7.0)
    * - `DBSCAN`
      - All parameters are supported except:
 
@@ -558,8 +601,8 @@ Dimensionality Reduction
    * - `PCA`
      - All parameters are supported except:
 
-       - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`]
-       - ``fit`` is the only method supported
+       - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`, `'onedal_svd'`]
+       - For sklearnex < 1.5: `'full'` solver is automatically mapped to `'covariance_eigh'`
      - Sparse data is not supported
 
 Nearest Neighbors
