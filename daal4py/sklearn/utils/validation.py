@@ -73,7 +73,7 @@ def _assert_all_finite(
     # Data with small size has too big relative overhead
     # TODO: tune threshold size
     is_df = is_DataFrame(X)
-    if not (is_df or issubclass(np.ndarray)) or X.size < 32768:
+    if not (is_df or issubclass(X, np.ndarray)) or X.size < 32768:
         if sklearn_check_version("1.1"):
             _sklearn_assert_all_finite(
                 X,
