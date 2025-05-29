@@ -14,6 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 
-from ._data_conversion import from_table, to_table
+from ._data_conversion import from_table, kDLCPU, kDLOneAPI, to_table
 
-__all__ = ["from_table", "to_table"]
+__all__ = ["from_table", "kDLCPU", "kDLOneAPI", "to_table"]
