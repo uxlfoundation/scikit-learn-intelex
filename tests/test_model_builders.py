@@ -1611,7 +1611,6 @@ def test_model_from_booster():
     assert tree1.value == 0.2
 
 
-@pytest.mark.skipif(True, reason=cb_unavailable_str)
 @pytest.mark.parametrize("from_treelite", [False, True])
 def test_unsupported_multiclass(from_treelite):
     X, y = make_classification(
