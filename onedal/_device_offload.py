@@ -23,6 +23,7 @@ import numpy as np
 from sklearn import get_config
 
 from ._config import _get_config
+from .datatypes import kDLCPU
 from .utils import _sycl_queue_manager as QM
 from .utils._array_api import _asarray, _is_numpy_namespace
 from .utils._dpep_helpers import dpctl_available, dpnp_available
@@ -36,7 +37,7 @@ else:
     SyclQueue = getattr(_dpc_backend, "SyclQueue", None)
 
 logger = logging.getLogger("sklearnex")
-
+cpu_dlpack_device = (kDLCPU, 0)
 
 def supports_queue(func):
     """Decorator that updates the global queue before function evaluation.
@@ -106,7 +107,7 @@ def _transfer_to_host(*data):
     host_data = []
     for item in data:
         usm_iface = getattr(item, "__sycl_usm_array_interface__", None)
-        array_api = getattr(item, "__array_namespace__", lambda: None)()
+        device = getattr(item, "__dlpack_device__", None)
         if usm_iface is not None:
             if not dpctl_available:
                 raise RuntimeError(
@@ -126,10 +127,26 @@ def _transfer_to_host(*data):
                 order=order,
             )
             has_usm_data = True
-        elif array_api and not _is_numpy_namespace(array_api):
-            # `copy`` param for the `asarray`` is not setted.
-            # The object is copied only if needed.
-            item = np.asarray(item)
+        elif device and not isinstance(item, np.ndarray):
+            # check dlpack data location.
+            if device != cpu_dlpack_device:
+                if hasattr(item, "to_device"):
+                    # not officially part of the array api standard but widely supported
+                    item = item.to_device("cpu")
+                elif hasattr(item, "to"):
+                    # pytorch-specific fix as it is not array api compliant
+                    item = item.to("cpu")
+                else:
+                    raise TypeError(f"cannot move {type(item)} to cpu")
+
+            # convert to numpy
+            if hasattr(item, "__array__"):
+                # `copy`` param for the `asarray`` is not set.
+                # The object is copied only if needed
+                item = np.asarray(item)
+            else:
+                # requires numpy 1.23
+                item = np.from_dlpack(item)
             has_host_data = True
         else:
             has_host_data = True
