@@ -14,6 +14,7 @@
 # limitations under the License.
 # ===============================================================================
 
+import math
 import numbers
 
 import scipy.sparse as sp
@@ -76,13 +77,11 @@ def _sklearnex_assert_all_finite(
     xp, _ = get_namespace(X)
     # this try-catch is a PyTorch-specific fix, as Tensor.size is a function.
     # The try-catch minimizes changes to most common code path (numpy arrays).
-    # xp.size is NOT in the array api standard, but is a fix specifically in
-    # array_api_compat.
     try:
         too_small = X.size < 32768
     except TypeError:
-        too_small = xp.size(X) < 32768
-    
+        too_small = math.prod(X.shape) < 32768
+
     if too_small or not _onedal_supported_format(X, xp):
         if sklearn_check_version("1.1"):
             _sklearn_assert_all_finite(X, allow_nan=allow_nan, input_name=input_name)
