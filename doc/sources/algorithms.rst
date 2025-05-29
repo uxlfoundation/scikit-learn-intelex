@@ -55,7 +55,6 @@ Classification
        - ``ccp_alpha`` != `0`
        - ``criterion`` != `'gini'`
      - Multi-output and sparse data are not supported
-     - Requires oneDAL >= 2023.2
    * - `KNeighborsClassifier`
      -
        - For ``algorithm`` == `'kd_tree'`:
@@ -104,7 +103,6 @@ Regression
        - ``ccp_alpha`` != `0`
        - ``criterion`` != `'mse'`
      - Multi-output and sparse data are not supported
-     - Requires oneDAL >= 2023.2
    * - `KNeighborsRegressor`
      - All parameters are supported except:
 
@@ -113,16 +111,12 @@ Regression
    * - `LinearRegression`
      - All parameters are supported except:
 
-       - ``normalize`` != `False`
        - ``sample_weight`` != `None`
        - ``positive`` = `True`
      - Only dense data is supported.
-     - Multi-output regression is not supported
-     - Number of features + 1 must be < number of samples
    * - `Ridge`
      - All parameters are supported except:
 
-       - ``normalize`` != `False`
        - ``solver`` != `'auto'`
        - ``sample_weight`` != `None`
        - ``positive`` = `True`
@@ -183,7 +177,7 @@ Dimensionality Reduction
      - All parameters are supported except:
 
        - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`, `'onedal_svd'`]
-       - For sklearnex < 1.5: `'full'` solver is automatically mapped to `'covariance_eigh'`
+       - For sklearn < 1.5: `'full'` solver is automatically mapped to `'covariance_eigh'`
      - Sparse data is not supported
    * - `TSNE`
      - All parameters are supported except:
@@ -234,13 +228,13 @@ Other Tasks
      - All parameters are supported
      - Supported data formats:
          - Dense data
-         - CSR sparse matrices (oneDAL ≥ 2025.2.0)
+         - CSR sparse matrices
      - Sample weights **not** supported for CSR data format
    * - `train_test_split`
-     - All parameters are supported except:
-         - ``ndim`` not in [`'1'`, `'2'`]
+     - All parameters are supported
      - Only dense data is supported
      - Only integer and 32/64-bits floating point types are supported
+     - Data with more than 3 dimensions are not supported
      - The input has to be a np.ndarray object
    * - `assert_all_finite`
      - All parameters are supported
@@ -301,7 +295,6 @@ Classification
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
      - Multi-output and sparse data are not supported
-     - Requires oneDAL >= 2023.2
    * - `KNeighborsClassifier`
      - All parameters are supported except:
 
@@ -353,7 +346,6 @@ Regression
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
      - Multi-output and sparse data are not supported
-     - Requires oneDAL >= 2023.2
    * - `KNeighborsRegressor`
      - All parameters are supported except:
 
@@ -364,12 +356,9 @@ Regression
    * - `LinearRegression`
      - All parameters are supported except:
 
-       - ``normalize`` != `False`
        - ``sample_weight`` != `None`
        - ``positive`` = `True`
      - Only dense data is supported.
-     - Multi-output regression is not supported
-     - Number of features + 1 must be < number of samples
 
 Clustering
 **********
@@ -454,7 +443,7 @@ Other Tasks
    * - `BasicStatistics`
      - Supported data formats:
          - Dense data
-         - CSR sparse matrices (oneDAL ≥ 2025.2.0)
+         - CSR sparse matrices
      - Sample weights **not** supported for CSR data format
 
 .. _spmd-support:
@@ -493,7 +482,6 @@ Classification
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
      - Multi-output and sparse data are not supported
-     - Requires oneDAL >= 2023.2
    * - `KNeighborsClassifier`
      - All parameters are supported except:
 
@@ -540,7 +528,6 @@ Regression
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
      - Multi-output and sparse data are not supported
-     - Requires oneDAL >= 2023.2
    * - `KNeighborsRegressor`
      - All parameters are supported except:
 
@@ -551,12 +538,9 @@ Regression
    * - `LinearRegression`
      - All parameters are supported except:
 
-       - ``normalize`` != `False`
        - ``sample_weight`` != `None`
        - ``positive`` = `True`
      - Only dense data is supported.
-     - Multi-output regression is not supported
-     - Number of features + 1 must be < number of samples
 
 Clustering
 **********
@@ -572,8 +556,8 @@ Clustering
    * - `KMeans`
      - All parameters are supported except:
 
-       - ``algorithm`` != `'lloyd'` ('elkan' falls back to 'lloyd')
-       - ``n_clusters`` = `1`
+       - ``algorithm`` != ``'lloyd'`` ('elkan' falls back to 'lloyd')
+       - ``n_clusters`` = ``1``
        - ``sample_weight`` must be `None` for predict
        - ``sample_weight`` must be `None` or all ones for fit
        - ``Init`` = `'k-means++'` fallbacks to CPU
@@ -641,7 +625,7 @@ Other Tasks
    * - `BasicStatistics`
      - Supported data formats:
          - Dense data
-         - CSR sparse matrices (oneDAL ≥ 2025.2.0)
+         - CSR sparse matrices
      - Sample weights **not** supported for CSR data format
 
 Scikit-learn Tests
