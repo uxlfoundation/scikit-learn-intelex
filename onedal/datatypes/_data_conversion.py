@@ -21,6 +21,7 @@ from onedal import _default_backend as backend
 kDLCPU = backend.kDLCPU
 kDLOneAPI = backend.kDLOneAPI
 
+
 def _apply_and_pass(func, *args, **kwargs):
     if len(args) == 1:
         return func(args[0], **kwargs)
