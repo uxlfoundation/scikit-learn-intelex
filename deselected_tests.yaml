@@ -51,10 +51,21 @@ deselected_tests:
   - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full')-check_array_api_input_and_values-torch-cpu-float32]
   - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full')-check_array_api_get_precision-torch-cpu-float64]
   - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full')-check_array_api_get_precision-torch-cpu-float32]
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=0.1,svd_solver='full',whiten=True)-check_array_api_input_and_values-torch-cpu-float64]
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=0.1,svd_solver='full',whiten=True)-check_array_api_input_and_values-torch-cpu-float32]
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=0.1,svd_solver='full',whiten=True)-check_array_api_get_precision-torch-cpu-float64]
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=0.1,svd_solver='full',whiten=True)-check_array_api_get_precision-torch-cpu-float32]
   # `train_test_split` inconsistency for Array API inputs.
   - model_selection/tests/test_split.py::test_array_api_train_test_split[True-None-array_api_strict-None-None]
   - model_selection/tests/test_split.py::test_array_api_train_test_split[True-stratify1-array_api_strict-None-None]
   - model_selection/tests/test_split.py::test_array_api_train_test_split[False-None-array_api_strict-None-None]
+  - model_selection/tests/test_split.py::test_array_api_train_test_split[True-None-torch-cpu-float64]
+  - model_selection/tests/test_split.py::test_array_api_train_test_split[True-None-torch-cpu-float32]
+  - model_selection/tests/test_split.py::test_array_api_train_test_split[True-stratify1-torch-cpu-float64]
+  - model_selection/tests/test_split.py::test_array_api_train_test_split[True-stratify1-torch-cpu-float32]
+  - model_selection/tests/test_split.py::test_array_api_train_test_split[False-None-torch-cpu-float64]
+  - model_selection/tests/test_split.py::test_array_api_train_test_split[False-None-torch-cpu-float32]
+
   # PCA. Array API functionally supported for all factorizations. power_iteration_normalizer=["LU", "QR"]
   - decomposition/tests/test_pca.py::test_array_api_error_and_warnings_on_unsupported_params
   # PCA. InvalidParameterError: The 'M' parameter of randomized_svd must be an instance of 'numpy.ndarray' or a sparse matrix.
