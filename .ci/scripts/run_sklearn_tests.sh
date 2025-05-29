@@ -32,6 +32,7 @@ fi
 if [ "$1" == "gpu" ]; then
     export DESELECT_FLAGS="--gpu ${DESELECT_FLAGS}"
 fi
+
 export DESELECTED_TESTS=$(python ../.circleci/deselect_tests.py ../deselected_tests.yaml ${DESELECT_FLAGS})
 # manual setting of OCL_ICD_FILENAMES is required in
 # specific MSYS environment with conda packages downloaded from intel channel
