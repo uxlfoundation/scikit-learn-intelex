@@ -131,6 +131,7 @@ def _transfer_to_host(*data):
         elif device and not isinstance(item, np.ndarray):
             # check dlpack data location.
             if device != cpu_dlpack_device:
+                raise TypeError(f"{device}, cpu:{cpu_dlpack_device}")
                 if hasattr(item, "to_device"):
                     # use of the "cpu" string as device not officially part of
                     # the array api standard but widely supported
