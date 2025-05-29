@@ -39,6 +39,7 @@ else:
 logger = logging.getLogger("sklearnex")
 cpu_dlpack_device = (kDLCPU, 0)
 
+
 def supports_queue(func):
     """Decorator that updates the global queue before function evaluation.
 
@@ -131,7 +132,8 @@ def _transfer_to_host(*data):
             # check dlpack data location.
             if device != cpu_dlpack_device:
                 if hasattr(item, "to_device"):
-                    # not officially part of the array api standard but widely supported
+                    # use of the "cpu" string as device not officially part of
+                    # the array api standard but widely supported
                     item = item.to_device("cpu")
                 elif hasattr(item, "to"):
                     # pytorch-specific fix as it is not array api compliant
