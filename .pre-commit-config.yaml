@@ -42,7 +42,16 @@ repos:
                 scripts/|
                 tests/
             )
-  - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.401
+  - repo: https://github.com/DetachHead/basedpyright-pre-commit-mirror
+    rev: v1.13.0  # or whatever the latest version is at the time
     hooks:
-    - id: pyright
+      - id: basedpyright
+        exclude: |
+            (?x)(
+                .ci/|
+                daal4py/|
+                examples/|
+                generator/|
+                scripts/|
+                tests/
+            )
