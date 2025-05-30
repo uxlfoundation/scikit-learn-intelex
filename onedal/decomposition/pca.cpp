@@ -173,7 +173,7 @@ void init_infer_result(py::module_& m) {
 
 template <typename Policy, typename Task>
 void init_train_ops(py::module& m) {
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240000
+#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20250700
     using train_hyperparams_t = dal::pca::detail::train_parameters<Task>;
     m.def("train",
           [](const Policy& policy,
@@ -185,7 +185,7 @@ void init_train_ops(py::module& m) {
               train_ops_with_hyperparams ops(policy, input_t{ data }, params2desc{}, hyperparams);
               return fptype2t{ method2t{ Task{}, ops } }(params);
           });
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240000
+#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20250700
     m.def("train", [](const Policy& policy, const py::dict& params, const table& data) {
         using namespace dal::pca;
         using input_t = train_input<Task>;
