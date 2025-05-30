@@ -108,7 +108,7 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
     Names of attributes without the trailing underscore are supported
     currently but deprecated in 2025.1 and will be removed in 2026.0.
 
-    Only dense data are supported. Input dtype must be float32 or float64.
+    Sparse data formats are not supported. Input dtype must be ``float32`` or ``float64``.
 
     %incremental_serialization_note%
 

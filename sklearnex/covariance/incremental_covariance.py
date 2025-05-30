@@ -100,7 +100,7 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
 
     Notes
     -----
-    Only dense data are supported. Input dtype must be float32 or float64.
+    Sparse data formats are not supported. Input dtype must be ``float32`` or ``float64``.
 
     %incremental_serialization_note%
 

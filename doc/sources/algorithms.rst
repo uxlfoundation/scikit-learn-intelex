@@ -177,7 +177,7 @@ Dimensionality Reduction
      - All parameters are supported except:
 
        - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`, `'onedal_svd'`]
-       - For sklearn < 1.5: `'full'` solver is automatically mapped to `'covariance_eigh'`
+       - For |sklearn| < 1.5: `'full'` solver is automatically mapped to `'covariance_eigh'`
      - Sparse data is not supported
    * - `TSNE`
      - All parameters are supported except:
@@ -314,8 +314,8 @@ Classification
        - ``multi_class`` != `'multinomial'`
        - ``warm_start`` = `True`
        - ``l1_ratio`` != `None`
+       - Only binary classification is supported
      - Only dense data is supported
-     - Only binary classification is supported
 
 Regression
 **********
@@ -404,7 +404,7 @@ Dimensionality Reduction
      - All parameters are supported except:
 
        - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`, `'onedal_svd'`]
-       - For sklearn < 1.5: `'full'` solver is automatically mapped to `'covariance_eigh'`
+       - For |sklearn| < 1.5: `'full'` solver is automatically mapped to `'covariance_eigh'`
      - Sparse data is not supported
 
 Nearest Neighbors
@@ -557,10 +557,10 @@ Clustering
      - All parameters are supported except:
 
        - ``algorithm`` != ``'lloyd'`` ('elkan' falls back to 'lloyd')
-       - ``n_clusters`` = ``1``
+       - ``n_clusters`` != ``1``
        - ``sample_weight`` must be `None` for predict
        - ``sample_weight`` must be `None` or all ones for fit
-       - ``Init`` = `'k-means++'` fallbacks to CPU
+       - ``init`` = `'k-means++'` fallbacks to CPU
      - Supported data formats:
          - Dense data
          - CSR sparse matrices
@@ -586,7 +586,7 @@ Dimensionality Reduction
      - All parameters are supported except:
 
        - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`, `'onedal_svd'`]
-       - For sklearn < 1.5: `'full'` solver is automatically mapped to `'covariance_eigh'`
+       - For |sklearn| < 1.5: `'full'` solver is automatically mapped to `'covariance_eigh'`
      - Sparse data is not supported
 
 Nearest Neighbors
