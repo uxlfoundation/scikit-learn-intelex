@@ -14,7 +14,6 @@
 
 .. include:: substitutions.rst
 .. _sklearn_algorithms:
-.. _verbose: https://uxlfoundation.github.io/scikit-learn-intelex/latest/verbose.html
 
 ####################
 Supported Algorithms
@@ -22,7 +21,7 @@ Supported Algorithms
 
 .. note::
    To verify that oneDAL is being used for these algorithms, you can enable verbose mode. 
-   See :ref:`verbose mode documentation <verbose>` for details.
+   See :ref:`verbose` for details.
 
 Applying |sklearnex| impacts the following |sklearn| estimators:
 
