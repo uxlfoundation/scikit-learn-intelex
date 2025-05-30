@@ -96,6 +96,10 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
 
     batch_size_ : int
         Inferred batch size from ``batch_size``.
+    
+    Notes
+    -----
+    Only dense data are supported. Input dtype must be float32 or float64.
 
     %incremental_serialization_note%
     """

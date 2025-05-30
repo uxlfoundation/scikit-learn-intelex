@@ -105,10 +105,10 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
     -----
     Attribute exists only if corresponding result option has been provided.
 
-    Only dense data are supported
-
     Names of attributes without the trailing underscore are supported
-    currently but deprecated in 2025.1 and will be removed in 2026.0
+    currently but deprecated in 2025.1 and will be removed in 2026.0.
+
+    Only dense data are supported. Input dtype must be float32 or float64.
 
     %incremental_serialization_note%
 
