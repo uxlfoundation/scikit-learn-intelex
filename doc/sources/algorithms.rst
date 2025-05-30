@@ -21,7 +21,7 @@ Supported Algorithms
 
 .. note::
    To verify that oneDAL is being used for these algorithms, you can enable verbose mode. 
-   See `verbose mode documentation <https://uxlfoundation.github.io/scikit-learn-intelex/2025.5/verbose.html>`_ for details.
+   See :ref:`verbose mode documentation <verbose>` for details.
 
 Applying |sklearnex| impacts the following |sklearn| estimators:
 
