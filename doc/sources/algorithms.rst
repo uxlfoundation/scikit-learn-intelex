@@ -154,7 +154,7 @@ Clustering
        - ``Init`` = `'k-means++'` fallbacks to CPU
      - Supported data formats:
          - Dense data
-         - CSR sparse matrices (oneDAL ≥ 2024.7.0)
+         - CSR sparse matrices
    * - `DBSCAN`
      - All parameters are supported except:
 
@@ -381,7 +381,7 @@ Clustering
        - ``Init`` = `'k-means++'` fallbacks to CPU
      - Supported data formats:
          - Dense data
-         - CSR sparse matrices (oneDAL ≥ 2024.7.0)
+         - CSR sparse matrices
    * - `DBSCAN`
      - All parameters are supported except:
 
@@ -563,7 +563,7 @@ Clustering
        - ``Init`` = `'k-means++'` fallbacks to CPU
      - Supported data formats:
          - Dense data
-         - CSR sparse matrices (oneDAL ≥ 2024.7.0)
+         - CSR sparse matrices
    * - `DBSCAN`
      - All parameters are supported except:
 
