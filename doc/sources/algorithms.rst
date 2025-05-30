@@ -14,6 +14,7 @@
 
 .. include:: substitutions.rst
 .. _sklearn_algorithms:
+.. _verbose: https://uxlfoundation.github.io/scikit-learn-intelex/latest/verbose.html
 
 ####################
 Supported Algorithms
