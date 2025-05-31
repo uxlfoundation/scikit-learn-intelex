@@ -137,7 +137,7 @@ def test_host_backend_target_offload(target):
 
     err_msg = r"device use via \`target_offload\` is only supported with a DPC\+\+ sklearnex build"
     est = NearestNeighbors()
-    if target != "auto" and not (isinstance(target, str) and target.startswith("cpu")):
+    if target != "auto":
         with pytest.raises(ValueError, match=err_msg):
             with sklearnex.config_context(target_offload=target):
                 est.fit(np.eye(5, 8))
