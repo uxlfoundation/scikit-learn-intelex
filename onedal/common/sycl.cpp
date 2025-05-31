@@ -82,8 +82,8 @@ void instantiate_sycl_interfaces(py::module& m) {
         .def_property_readonly("is_gpu", &sycl::device::is_gpu);
 #else
     namespace sycl {
-        struct queue {};
-    }
+    struct queue {};
+    } // namespace sycl
     py::class_<sycl::queue> syclqueue(m, "SyclQueue");
     // inspired from pybind11 PR#4698 which turns init into a no-op
     syclqueue
