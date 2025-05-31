@@ -25,6 +25,7 @@ from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
 
 from .._config import _get_config
+from ..common.hyperparameters import get_hyperparameters
 from ..datatypes import from_table, to_table
 from ..utils._array_api import _get_sycl_namespace
 
@@ -169,7 +170,11 @@ class PCA(BasePCA):
 
         X = to_table(X, queue=queue)
         params = self._get_onedal_params(X)
-        result = self.train(params, X)
+        hparams = get_hyperparameters("pca", "train")
+        if hparams is not None and not hparams.is_default:
+            result = self.train(params, hparams.backend, X)
+        else:
+            result = self.train(params, X)
 
         self.mean_ = from_table(result.means).ravel()
         self.variances_ = from_table(result.variances)
