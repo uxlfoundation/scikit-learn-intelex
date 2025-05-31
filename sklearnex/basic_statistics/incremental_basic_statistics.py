@@ -109,7 +109,6 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
     currently but deprecated in 2025.1 and will be removed in 2026.0.
 
     Sparse data formats are not supported. Input dtype must be ``float32`` or ``float64``.
-
     %incremental_serialization_note%
 
     Examples

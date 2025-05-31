@@ -151,11 +151,10 @@ Clustering
    * - `KMeans`
      - All parameters are supported except:
 
-       - ``algorithm`` != `'lloyd'` ('elkan' falls back to 'lloyd')
-       - ``n_clusters`` = `1`
-       - ``sample_weight`` must be `None` for predict
-       - ``sample_weight`` must be `None` or all ones for fit
-       - ``Init`` = `'k-means++'` fallbacks to CPU
+       - ``algorithm`` != ``'lloyd'`` ('elkan' falls back to 'lloyd')
+       - ``n_clusters`` = ``1``
+       - ``sample_weight`` must be None, constant, or equal weights
+       - ``init`` = `'k-means++'` fallbacks to CPU
      - Supported data formats:
          - Dense data
          - CSR sparse matrices
@@ -378,11 +377,10 @@ Clustering
    * - `KMeans`
      - All parameters are supported except:
 
-       - ``algorithm`` != `'lloyd'` ('elkan' falls back to 'lloyd')
-       - ``n_clusters`` = `1`
-       - ``sample_weight`` must be `None` for predict
-       - ``sample_weight`` must be `None` or all ones for fit
-       - ``Init`` = `'k-means++'` fallbacks to CPU
+       - ``algorithm`` != ``'lloyd'`` ('elkan' falls back to 'lloyd')
+       - ``n_clusters`` = ``1``
+       - ``sample_weight`` must be None, constant, or equal weights
+       - ``init`` = `'k-means++'` fallbacks to CPU
      - Supported data formats:
          - Dense data
          - CSR sparse matrices
@@ -561,9 +559,8 @@ Clustering
      - All parameters are supported except:
 
        - ``algorithm`` != ``'lloyd'`` ('elkan' falls back to 'lloyd')
-       - ``n_clusters`` != ``1``
-       - ``sample_weight`` must be `None` for predict
-       - ``sample_weight`` must be `None` or all ones for fit
+       - ``n_clusters`` = ``1``
+       - ``sample_weight`` must be None, constant, or equal weights
        - ``init`` = `'k-means++'` fallbacks to CPU
      - Supported data formats:
          - Dense data
