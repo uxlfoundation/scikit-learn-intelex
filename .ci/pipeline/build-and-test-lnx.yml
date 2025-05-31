@@ -28,7 +28,7 @@ steps:
       conda config --add channels conda-forge
       conda config --set channel_priority strict
       conda update -y -q conda
-      conda create -q -y -n CB -c conda-forge python=$(PYTHON_VERSION) mpich pyyaml dpcpp-cpp-rt=2025.0
+      conda create -q -y -n CB -c conda-forge python=$(PYTHON_VERSION) mpich pyyaml
     displayName: "Conda create"
   - script: |
       . /usr/share/miniconda/etc/profile.d/conda.sh

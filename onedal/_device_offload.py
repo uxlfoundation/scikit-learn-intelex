@@ -15,6 +15,7 @@
 # ==============================================================================
 
 import inspect
+import logging
 from collections.abc import Iterable
 from functools import wraps
 
@@ -34,13 +35,27 @@ else:
 
     SyclQueue = getattr(_dpc_backend, "SyclQueue", None)
 
+logger = logging.getLogger("sklearnex")
+
 
 def supports_queue(func):
-    """
-    Decorator that updates the global queue based on provided queue and global configuration.
-    If a `queue` keyword argument is provided in the decorated function, its value will be used globally.
-    If no queue is provided, the global queue will be updated from the provided data.
-    In either case, all data objects are verified to be on the same device (or on host).
+    """Decorator that updates the global queue before function evaluation.
+
+    The global queue is updated based on provided queue and global configuration.
+    If a ``queue`` keyword argument is provided in the decorated function, its
+    value will be used globally. If no queue is provided, the global queue will
+    be updated from the provided data. In either case, all data objects are
+    verified to be on the same device (or on host).
+
+    Parameters
+    ----------
+        func : callable
+            Function to be wrapped for SYCL queue use in oneDAL.
+
+    Returns
+    -------
+        wrapper : callable
+            Wrapped function.
     """
 
     @wraps(func)
@@ -137,10 +152,21 @@ def _get_host_inputs(*args, **kwargs):
 
 
 def support_input_format(func):
-    """
+    """Transform input and output function arrays to/from host.
+
     Converts and moves the output arrays of the decorated function
     to match the input array type and device.
     Puts SYCLQueue from data to decorated function arguments.
+
+    Parameters
+    ----------
+    func : callable
+       Function or method which has array data as input.
+
+    Returns
+    -------
+    wrapper_impl : callable
+        Wrapped function or method which will return matching format.
     """
 
     def invoke_func(self_or_None, *args, **kwargs):
@@ -158,12 +184,17 @@ def support_input_format(func):
         else:
             self = None
 
-        # Check if the function is KNeighborsClassifier.fit
+        # KNeighbors*.fit can not be used with raw inputs, ignore `use_raw_input=True`
         override_raw_input = (
             self
             and self.__class__.__name__ in ("KNeighborsClassifier", "KNeighborsRegressor")
             and func.__name__ == "fit"
         )
+        if override_raw_input:
+            pretty_name = f"{self.__class__.__name__}.{func.__name__}"
+            logger.warning(
+                f"Using raw inputs is not supported for {pretty_name}. Ignoring `use_raw_input=True` setting."
+            )
         if _get_config()["use_raw_input"] is True and not override_raw_input:
             if "queue" not in kwargs:
                 usm_iface = getattr(args[0], "__sycl_usm_array_interface__", None)
@@ -190,9 +221,9 @@ def support_input_format(func):
                     result = _convert_to_dpnp(result)
                 return result
 
-        if not get_config().get("transform_output"):
+        if get_config().get("transform_output") in ("default", None):
             input_array_api = getattr(data[0], "__array_namespace__", lambda: None)()
-            if input_array_api:
+            if input_array_api and not _is_numpy_namespace(input_array_api):
                 input_array_api_device = data[0].device
                 result = _asarray(result, input_array_api, device=input_array_api_device)
         return result

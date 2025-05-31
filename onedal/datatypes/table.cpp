@@ -77,6 +77,11 @@ ONEDAL_PY_INIT_MODULE(table) {
         // returns a numpy dtype, even if source was not from numpy
         return py::dtype(numpy::convert_dal_to_npy_type(t.get_metadata().get_data_type(0)));
     });
+    table_obj.def("__dlpack__", &dlpack::construct_dlpack);
+    table_obj.def("__dlpack_device__", [](const table& t) {
+        auto dlpack_device = dlpack::get_dlpack_device(t);
+        return py::make_tuple(dlpack_device.device_type, dlpack_device.device_id);
+    });
 
 #ifdef ONEDAL_DATA_PARALLEL
     sycl_usm::define_sycl_usm_array_property(table_obj);
@@ -103,6 +108,9 @@ ONEDAL_PY_INIT_MODULE(table) {
         return obj_ptr;
     });
     m.def("dlpack_memory_order", &dlpack::dlpack_memory_order);
+    py::enum_<DLDeviceType>(m, "DLDeviceType")
+        .value("kDLCPU", kDLCPU)
+        .value("kDLOneAPI", kDLOneAPI);
 }
 
 } // namespace oneapi::dal::python
