@@ -100,6 +100,7 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
     Notes
     -----
     Sparse data formats are not supported. Input dtype must be ``float32`` or ``float64``.
+
     %incremental_serialization_note%
     """
 
