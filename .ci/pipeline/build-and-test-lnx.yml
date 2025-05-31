@@ -59,7 +59,7 @@ steps:
       pip install $(python .ci/scripts/get_compatible_scipy_version.py)
       # dpep installation is set to pypi to avoid conflict of numpy versions from pip and conda
       # py312 is disabled due to segfault on exit of program with usage of dpctl
-      if [ $(echo $(PYTHON_VERSION) | grep '3.9\|3.10\|3.11') ] && [ $(SKLEARN_VERSION) != "1.0" ] && [ -z ${NO_DPC} ]; then pip install dpctl==0.18.* dpnp==0.16.*; fi
+      if [ $(echo $(PYTHON_VERSION) | grep '3.9\|3.10\|3.11') ] && [ $(SKLEARN_VERSION) != "1.0" ] && [ -z ${NO_DPC} ]; then pip install dpctl==0.19.* dpnp==0.17.*; fi
       pip list
     env:
       NO_DPC: ${{ variables.NO_DPC }}

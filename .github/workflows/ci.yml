@@ -30,8 +30,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  DPCTL_VERSION: 0.18.1
-  DPNP_VERSION: 0.16.0
+  DPCTL_VERSION: 0.19.0
+  DPNP_VERSION: 0.17.0
   DPCTL_PY_VERSIONS: '3.9\|3.11'
 
 jobs:
@@ -172,7 +172,7 @@ jobs:
           - PYTHON_VERSION: "3.11"
             SKLEARN_VERSION: "1.3"
     name: WindowsNightly/pip Python${{ matrix.PYTHON_VERSION }}_Sklearn${{ matrix.SKLEARN_VERSION }}
-    runs-on: windows-2025
+    runs-on: windows-2022
     timeout-minutes: 120
 
     steps:
@@ -270,12 +270,14 @@ jobs:
         run: |
           call .\venv\Scripts\activate.bat
           call .\.github\scripts\activate_components.bat ${{ steps.set-env.outputs.DPCFLAG }}
+          python -c "import daal4py"
           bash .ci/scripts/setup_sklearn.sh ${{ matrix.SKLEARN_VERSION }}
           pip install --upgrade -r requirements-test.txt
           for /f "delims=" %%c in ('python .ci\scripts\get_compatible_scipy_version.py ${{ matrix.SKLEARN_VERSION }}') do set SCIPY_VERSION=%%c
           pip install %SCIPY_VERSION%
           if "${{ steps.set-env.outputs.DPCFLAG }}"=="" pip install dpctl==${{ env.DPCTL_VERSION }} dpnp==${{ env.DPNP_VERSION }}
           pip list
+          python -c "import daal4py"
       - name: Sklearnex testing
         shell: cmd
         run: |
