@@ -29,8 +29,9 @@ for being enabled by default for all users:
 This type of functionality is available under **preview mode** of |sklearnex| and located in
 the corresponding module (`sklearnex.preview`).
 
-Preview functionality *may* or *may not* participate in patching of Scikit-learn.
-For example, a preview estimator may be a replacement for a stock one or a completely new one.
+Functionalities under preview will be made available after patching when preview mode is enabled,
+although some functionalities might fall under :ref:`extension estimators <extension_estimators>`
+and thus need to be imported directly from the ``sklearnex`` module (see support table for details).
 
 To enable preview functionality, you need to set the `SKLEARNEX_PREVIEW` environment variable
 to non-empty value before patching of Scikit-learn.
