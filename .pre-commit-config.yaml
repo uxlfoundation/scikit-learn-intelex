@@ -29,3 +29,16 @@ repos:
     rev: v14.0.6
     hooks:
       - id: clang-format
+  - repo: https://github.com/numpy/numpydoc
+    rev: v1.8.0
+    hooks:
+      - id: numpydoc-validation
+        exclude: |
+            (?x)(
+                .ci/|
+                daal4py/|
+                examples/|
+                generator/|
+                scripts/|
+                tests/
+            )

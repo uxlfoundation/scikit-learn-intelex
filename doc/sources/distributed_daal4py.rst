@@ -47,7 +47,7 @@ same algorithms to much larger problem sizes.
     PyPI and conda are both compiled with `Intel's MPI <https://www.intel.com/content/www/us/en/developer/tools/oneapi/mpi-library.html>`__
     as MPI backend (offered as Python package ``impi_rt`` in both PyPI and conda): ::
 
-        conda install -c https://software.repos.intel.com/python/conda/ impi_rt
+        conda install -c https://software.repos.intel.com/python/conda/ -c conda-forge --override-channels impi_rt
 
     Using distributed mode with other backends such as OpenMPI requires compiling the
     library from source with that backend.
@@ -61,7 +61,11 @@ same algorithms to much larger problem sizes.
     Intel's MPI backend can be easily installed from Intel's conda channel (see docs for
     :ref:`SPMD mode <distributed>` for more details): ::
 
-        conda install -c https://software.repos.intel.com/python/conda/ mpi4py
+        conda install -c https://software.repos.intel.com/python/conda/ -c conda-forge --override-channels mpi4py
+
+.. warning::
+    Packages from the Intel channel are meant to be compatible with dependencies from ``conda-forge``, and might not work correctly
+    in environments that have packages installed from the ``anaconda`` channel.
 
 Using distributed mode
 ----------------------
