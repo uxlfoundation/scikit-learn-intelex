@@ -233,7 +233,7 @@ class BaseSVC(BaseSVM):
 
         le = LabelEncoder()
         y_ind = le.fit_transform(y_)
-        if not all(np.in1d(classes, le.classes_)):
+        if not np.isin(classes, le.classes_).all():
             raise ValueError("classes should have valid labels that are in y")
 
         recip_freq = len(y_) / (len(le.classes_) * np.bincount(y_ind).astype(np.float64))
