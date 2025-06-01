@@ -60,6 +60,7 @@ steps:
       # dpep installation is set to pypi to avoid conflict of numpy versions from pip and conda
       # py312 is disabled due to segfault on exit of program with usage of dpctl
       if [ $(echo $(PYTHON_VERSION) | grep '3.9\|3.10\|3.11') ] && [ $(SKLEARN_VERSION) != "1.0" ] && [ -z ${NO_DPC} ]; then pip install dpctl==0.18.* dpnp==0.16.*; fi
+      # issues exist with conda-forge dpcpp-cpp-rt=2025.1.1 it is needed to use the dpc build
       if [ -z "${NO_DPC}" ]; then pip install dpcpp-cpp-rt==2025.1.*; fi
       pip list
     env:
@@ -71,9 +72,7 @@ steps:
       if [ -n "${COVERAGE_RCFILE}" ]; then export COVERAGE_FILE=$(pwd)/.coverage.sklearnex; fi
       cd ..
       if [ -n "${TBBROOT}" ] && [ "${TBBROOT}" != "${CONDA_PREFIX}" ]; then source ${TBBROOT}/env/vars.sh; fi
-      python -c "import onedal; print(onedal._default_backend, onedal._dpc_backend)"
-      python -c "import onedal._onedal_py_dpc"
-      # ./s/conda-recipe/run_test.sh --json-report
+      ./s/conda-recipe/run_test.sh --json-report
     env:
       TBBROOT: ${{ variables.TBBROOT }}
       COVERAGE_RCFILE: ${{ variables.COVERAGE_RCFILE }}
@@ -85,9 +84,7 @@ steps:
       if [ -n "${COVERAGE_RCFILE}" ]; then export COVERAGE_FILE=$(pwd)/.coverage.sklearn; fi
       if [ -z "${NO_DPC}" ]; then export CPU="cpu"; fi
       cd ..
-      python -c "import onedal; print(onedal._default_backend, onedal._dpc_backend"
-      python -c "import onedal._onedal_py_dpc"
-      # bash .ci/scripts/run_sklearn_tests.sh $CPU
+      bash .ci/scripts/run_sklearn_tests.sh $CPU
     env:
       TBBROOT: ${{ variables.TBBROOT }}
       COVERAGE_RCFILE: ${{ variables.COVERAGE_RCFILE }}
