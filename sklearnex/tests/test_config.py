@@ -136,7 +136,7 @@ def test_host_backend_target_offload(target):
     from sklearnex.neighbors import NearestNeighbors
 
     err_msg = (
-        r"device use via \`target_offload\` is only supported with the DPC\+\+ interface"
+        r"device use via \`target_offload\` is only supported with the DPC\+\+ backend"
     )
 
     est = NearestNeighbors()
