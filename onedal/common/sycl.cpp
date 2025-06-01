@@ -96,7 +96,7 @@ void instantiate_sycl_interfaces(py::module& m) {
             // isinstance
             if (!py::isinstance<py::str>(obj) || obj.cast<std::string>() != "auto") {
                 throw std::invalid_argument(
-                    "device use via `target_offload` is only supported with a DPC++ sklearnex build");
+                    "device use via `target_offload` is only supported with the DPC++ interface");
             }
             return py::none();
         });
