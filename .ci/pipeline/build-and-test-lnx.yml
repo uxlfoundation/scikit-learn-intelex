@@ -83,7 +83,6 @@ steps:
       if [ -n "${TBBROOT}" ] && [ "${TBBROOT}" != "${CONDA_PREFIX}" ]; then source ${TBBROOT}/env/vars.sh; fi
       if [ -n "${COVERAGE_RCFILE}" ]; then export COVERAGE_FILE=$(pwd)/.coverage.sklearn; fi
       if [ -z "${NO_DPC}" ]; then export CPU="cpu"; fi
-      cd ..
       bash .ci/scripts/run_sklearn_tests.sh $CPU
     env:
       TBBROOT: ${{ variables.TBBROOT }}
