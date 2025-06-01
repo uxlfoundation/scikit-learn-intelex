@@ -122,14 +122,7 @@ class BackendFunction:
             raise RuntimeError("Executing functions from SPMD backend requires a queue")
 
         # craft the correct policy including the device queue
-        if queue is None:
-            policy = self.backend.host_policy()
-        elif self.backend.is_spmd:
-            policy = self.backend.spmd_data_parallel_policy(queue)
-        elif self.backend.is_dpc:
-            policy = self.backend.data_parallel_policy(queue)
-        else:
-            policy = self.backend.host_policy()
+        policy = self.backend.get_policy(queue)
 
         logger.debug(
             f"Dispatching function '{self.name}' with policy {policy} to {self.backend}"

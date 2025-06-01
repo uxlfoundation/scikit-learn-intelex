@@ -17,7 +17,7 @@ steps:
   - script: |
       conda config --add channels conda-forge
       conda config --set channel_priority strict
-      conda update -y -q --all
+      conda update -y -q conda python
     displayName: "Conda update"
   - script: |
       conda create -y -q -n build-env conda-build conda-verify
