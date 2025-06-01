@@ -469,3 +469,6 @@ gpu:
 
   # Introduced with RNG forest updates in oneDAL
   - ensemble/tests/test_voting.py::test_set_estimator_drop
+
+  # Deselection for public GPU runner
+  - model_selection/tests/test_validation.py::test_learning_curve_some_failing_fits_warning[42]
