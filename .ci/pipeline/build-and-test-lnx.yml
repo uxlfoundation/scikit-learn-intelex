@@ -34,10 +34,12 @@ steps:
       . /usr/share/miniconda/etc/profile.d/conda.sh
       conda activate CB
       if [ -z "${DALROOT}" ]; then conda install -q -y -c conda-forge dal-devel=2025; fi
+      if [ -z "${NO_DPC}" ]; then conda install -q -y -c conda-forge dpcpp-cpp-rt=2025.0; fi
       pip install -r dependencies-dev
       pip list
     env:
       DALROOT: ${{ variables.DALROOT }}
+      NO_DPC: ${{ variables.NO_DPC }}
     displayName: "Install develop requirements"
   - script: |
       if [ -z "${DPCPPROOT}" ]; then export DPCPPROOT=/opt/intel/oneapi/compiler/latest; fi
