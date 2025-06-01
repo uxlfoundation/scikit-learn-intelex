@@ -70,7 +70,8 @@ steps:
       if [ -n "${COVERAGE_RCFILE}" ]; then export COVERAGE_FILE=$(pwd)/.coverage.sklearnex; fi
       cd ..
       if [ -n "${TBBROOT}" ] && [ "${TBBROOT}" != "${CONDA_PREFIX}" ]; then source ${TBBROOT}/env/vars.sh; fi
-      ./s/conda-recipe/run_test.sh --json-report
+      python -c "import onedal._onedal_py_dpc"
+      # ./s/conda-recipe/run_test.sh --json-report
     env:
       TBBROOT: ${{ variables.TBBROOT }}
       COVERAGE_RCFILE: ${{ variables.COVERAGE_RCFILE }}
@@ -81,6 +82,7 @@ steps:
       if [ -n "${TBBROOT}" ] && [ "${TBBROOT}" != "${CONDA_PREFIX}" ]; then source ${TBBROOT}/env/vars.sh; fi
       if [ -n "${COVERAGE_RCFILE}" ]; then export COVERAGE_FILE=$(pwd)/.coverage.sklearn; fi
       if [ -z "${NO_DPC}" ]; then export CPU="cpu"; fi
+      python -c "import onedal._onedal_py_dpc"
       bash .ci/scripts/run_sklearn_tests.sh $CPU
     env:
       TBBROOT: ${{ variables.TBBROOT }}
