@@ -70,8 +70,7 @@ steps:
       if [ -n "${COVERAGE_RCFILE}" ]; then export COVERAGE_FILE=$(pwd)/.coverage.sklearnex; fi
       cd ..
       if [ -n "${TBBROOT}" ] && [ "${TBBROOT}" != "${CONDA_PREFIX}" ]; then source ${TBBROOT}/env/vars.sh; fi
-      python -c "import onedal._onedal_py_dpc"
-      # ./s/conda-recipe/run_test.sh --json-report
+      ./s/conda-recipe/run_test.sh --json-report
     env:
       TBBROOT: ${{ variables.TBBROOT }}
       COVERAGE_RCFILE: ${{ variables.COVERAGE_RCFILE }}
