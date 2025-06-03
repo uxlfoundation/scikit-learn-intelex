@@ -317,6 +317,10 @@ deselected_tests:
   # are respected.
   - tests/test_common.py::test_valid_tag_types <1.6
 
+  # Parameter validation test dbscan only in sklearn 1.1, this is temporary deselected before update
+  # to CI parameters, as parameter validation is globally handled in sklearn version 1.2 onward
+  - cluster/tests/test_dbscan.py::test_dbscan_params_validation
+
   # From sklearn 1.6, need to resolve logreg bug from joblib with_parallel_backend.
   # Removal of this deselection will result in test_logistic fails (this one will pass).
   - feature_selection/tests/test_rfe.py::test_rfe_with_joblib_threading_backend

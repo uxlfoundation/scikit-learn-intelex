@@ -33,9 +33,6 @@ from ..utils.validation import _check_array, _check_n_features, _check_X_y, _num
 
 
 class BaseLinearRegression(metaclass=ABCMeta):
-    """
-    Base class for LinearRegression oneDAL implementation.
-    """
 
     @abstractmethod
     def __init__(self, fit_intercept, copy_X, algorithm, alpha=0.0):
@@ -114,19 +111,20 @@ class BaseLinearRegression(metaclass=ABCMeta):
 
     @supports_queue
     def predict(self, X, queue=None):
-        """
-        Predict using the linear model.
+        """Predict using the linear model.
+
         Parameters
         ----------
         X : array-like or sparse matrix, shape (n_samples, n_features)
             Samples.
 
-        queue : dpctl.SyclQueue
-            If not None, uses this queue for computations.
+        queue : SyclQueue or None, default=None
+            SYCL Queue object for device code execution. Default
+            value None causes computation on host.
 
         Returns
         -------
-        C : array, shape (n_samples, n_targets)
+        y : array, shape (n_samples, n_targets)
             Returns predicted values.
         """
 
@@ -162,8 +160,7 @@ class BaseLinearRegression(metaclass=ABCMeta):
 
 
 class LinearRegression(BaseLinearRegression):
-    """
-    Linear Regression oneDAL implementation.
+    """Linear Regression oneDAL implementation.
 
     Parameters
     ----------
@@ -175,8 +172,8 @@ class LinearRegression(BaseLinearRegression):
     copy_X : bool, default=True
         If True, X will be copied; else, it may be overwritten.
 
-    algorithm : string, default="norm_eq"
-        Algorithm used for computation on oneDAL side
+    algorithm : str, default="norm_eq"
+        Algorithm used for oneDAL computation.
     """
 
     def __init__(
@@ -185,14 +182,13 @@ class LinearRegression(BaseLinearRegression):
         copy_X=False,
         *,
         algorithm="norm_eq",
-        **kwargs,
     ):
         super().__init__(fit_intercept=fit_intercept, copy_X=copy_X, algorithm=algorithm)
 
     @supports_queue
     def fit(self, X, y, queue=None):
-        """
-        Fit linear model.
+        """Fit linear model.
+
         Parameters
         ----------
         X : {array-like, sparse matrix} of shape (n_samples, n_features)
@@ -201,8 +197,9 @@ class LinearRegression(BaseLinearRegression):
         y : array-like of shape (n_samples,) or (n_samples, n_targets)
             Target values. Will be cast to X's dtype if necessary.
 
-        queue : dpctl.SyclQueue
-            If not None, use this queue for computations.
+        queue : SyclQueue or None, default=None
+            SYCL Queue object for device code execution. Default
+            value None causes computation on host.
 
         Returns
         -------
@@ -256,8 +253,7 @@ class LinearRegression(BaseLinearRegression):
 
 
 class Ridge(BaseLinearRegression):
-    """
-    Ridge Regression oneDAL implementation.
+    """Ridge Regression oneDAL implementation.
 
     Parameters
     ----------
@@ -274,8 +270,8 @@ class Ridge(BaseLinearRegression):
     copy_X : bool, default=True
         If True, X will be copied; else, it may be overwritten.
 
-    algorithm : string, default="norm_eq"
-        Algorithm used for computation on oneDAL side.
+    algorithm : str, default="norm_eq"
+        Algorithm used for oneDAL computation.
     """
 
     def __init__(
@@ -285,7 +281,6 @@ class Ridge(BaseLinearRegression):
         copy_X=False,
         *,
         algorithm="norm_eq",
-        **kwargs,
     ):
         super().__init__(
             fit_intercept=fit_intercept, alpha=alpha, copy_X=copy_X, algorithm=algorithm
@@ -293,8 +288,8 @@ class Ridge(BaseLinearRegression):
 
     @supports_queue
     def fit(self, X, y, queue=None):
-        """
-        Fit linear model.
+        """Fit Ridge regressor.
+
         Parameters
         ----------
         X : {array-like, sparse matrix} of shape (n_samples, n_features)
@@ -303,8 +298,9 @@ class Ridge(BaseLinearRegression):
         y : array-like of shape (n_samples,) or (n_samples, n_targets)
             Target values. Will be cast to X's dtype if necessary.
 
-        queue : dpctl.SyclQueue
-            If not None, use this queue for computations.
+        queue : SyclQueue or None, default=None
+            SYCL Queue object for device code execution. Default
+            value None causes computation on host.
 
         Returns
         -------
