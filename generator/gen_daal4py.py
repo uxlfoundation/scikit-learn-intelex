@@ -1232,7 +1232,7 @@ def gen_daal4py(dalroot, outdir, version, warn_all=False, no_dist=False, no_stre
                         "-style=file:" + formatfile,
                     ]
                 )
-            except:
+            except TypeError:
                 raise RuntimeError(
                     "clang-format failed for file: "
                     + jp(dirpath, filename)
