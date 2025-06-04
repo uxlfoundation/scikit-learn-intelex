@@ -232,7 +232,7 @@ export CC="icx -fsanitize=address -g"
 export CXX="icpx -fsanitize=address -g"
 ```
 
-The ASAN runtime used by ICX is the same as the one by CLANG. It's possible to preload the ASAN runtime for GNU if that's the system's default through e.g. `LD_PRELOAD=libasan.so` or similar, but to get the same ASAN runtime as for oneDAL, one might need to specifically pass the paths from CLANG if that's not the system's default compiler:
+The ASAN runtime used by ICX is the same as the one by Clang. It's possible to preload the ASAN runtime for GNU if that's the system's default through e.g. `LD_PRELOAD=libasan.so` or similar, but to get the same ASAN runtime as for oneDAL, one might need to specifically pass the paths from Clang if that's not the system's default compiler:
 ```shell
 export LD_PRELOAD="$(clang -print-file-name=libclang_rt.asan-x86_64.so)"
 ```
