@@ -15,6 +15,7 @@
 # ===============================================================================
 
 import json
+import warnings
 from collections import deque
 from copy import deepcopy
 from tempfile import NamedTemporaryFile
@@ -197,6 +198,52 @@ class Node:
             right_child=right_child,
         )
 
+    @staticmethod
+    def from_treelite_dict(dict_all_nodes: list[dict[str, Any]], node_id: int) -> "Node":
+        this_node = dict_all_nodes[node_id]
+        is_leaf = "leaf_value" in this_node
+        default_left = this_node.get("default_left", False)
+
+        n_children = 0
+        if "left_child" in this_node:
+            left_child = Node.from_treelite_dict(dict_all_nodes, this_node["left_child"])
+            n_children += 1 + left_child.n_children
+        else:
+            left_child = None
+        if "right_child" in this_node:
+            right_child = Node.from_treelite_dict(
+                dict_all_nodes, this_node["right_child"]
+            )
+            n_children += 1 + right_child.n_children
+        else:
+            right_child = None
+
+        value = this_node["leaf_value"] if is_leaf else this_node["threshold"]
+        if not is_leaf:
+            comp = this_node["comparison_op"]
+            if comp == "<=":
+                value = float(np.nextafter(value, np.inf))
+            elif comp in [">", ">="]:
+                left_child, right_child = right_child, left_child
+                default_left = not default_left
+                if comp == ">":
+                    value = float(np.nextafter(value, -np.inf))
+            elif comp != "<":
+                raise TypeError(
+                    f"Model to convert contains unsupported split type: {comp}."
+                )
+
+        return Node(
+            cover=this_node.get("sum_hess", 0.0),
+            is_leaf=is_leaf,
+            default_left=default_left,
+            feature=this_node.get("split_feature_id"),
+            value=value,
+            n_children=n_children,
+            left_child=left_child,
+            right_child=right_child,
+        )
+
     def get_value_closest_float_downward(self) -> np.float64:
         """Get the closest exact fp value smaller than self.value"""
         return np.nextafter(np.single(self.value), np.single(-np.inf))
@@ -310,6 +357,14 @@ class TreeList(list):
 
         return tl
 
+    @staticmethod
+    def from_treelite_dict(tl_json: Dict[str, Any]) -> "TreeList":
+        tl = TreeList()
+        for tree_id, tree_dict in enumerate(tl_json["trees"]):
+            root_node = Node.from_treelite_dict(tree_dict["nodes"], 0)
+            tl.append(TreeView(tree_id=tree_id, root_node=root_node))
+        return tl
+
     def __setitem__(self):
         raise NotImplementedError(
             "Use TreeList.from_*() methods to initialize a TreeList"
@@ -421,7 +476,9 @@ def get_gbt_model_from_lightgbm(model: Any, booster=None) -> Any:
     if "is_linear=1" in model_str:
         raise TypeError("Linear trees are not supported.")
     if "[boosting: dart]" in model_str:
-        raise TypeError("'Dart' booster is not supported.")
+        raise TypeError(
+            "'Dart' booster is not supported. Try converting to 'treelite' first."
+        )
     if "[boosting: rf]" in model_str:
         raise TypeError("Random forest boosters are not supported.")
     if ("[objective: lambdarank]" in model_str) or (
@@ -476,7 +533,9 @@ def get_gbt_model_from_xgboost(booster: Any, xgb_config=None) -> Any:
         xgb_config = get_xgboost_params(booster)
 
     if xgb_config["learner"]["learner_train_param"]["booster"] != "gbtree":
-        raise TypeError("Only 'gbtree' booster type is supported.")
+        raise TypeError(
+            "Only 'gbtree' booster type is supported. For DART, try converting to 'treelite' first."
+        )
 
     n_targets = xgb_config["learner"]["learner_model_param"].get("num_target")
     if n_targets is not None and int(n_targets) > 1:
@@ -920,3 +979,200 @@ def get_gbt_model_from_catboost(booster: Any) -> Any:
     if not add_intercept_to_each_node:
         intercept = booster.get_scale_and_bias()[1]
     return mb.model(base_score=intercept), shap_ready
+
+
+def get_gbt_model_from_treelite(
+    tl_model: "treelite.model.Model",
+) -> tuple[Any, int, int, bool]:
+    model_json = json.loads(tl_model.dump_as_json())
+    task_type = model_json["task_type"]
+    if task_type not in ["kBinaryClf", "kRegressor", "kMultiClf", "kIsolationForest"]:
+        raise TypeError(f"Model to convert is of unsupported type: {task_type}")
+    if model_json["num_target"] > 1:
+        raise TypeError("Multi-target models are not supported.")
+    if model_json["postprocessor"] == "multiclass_ova":
+        raise TypeError(
+            "Multi-class classification models that use One-Vs-All are not supported."
+        )
+    for tree in model_json["trees"]:
+        if tree["has_categorical_split"]:
+            raise TypeError("Models with categorical features are not supported.")
+    num_trees = tl_model.num_tree
+    if not num_trees:
+        raise TypeError("Model to convert contains no trees.")
+
+    # Note: the daal4py module always adds up the scores, but some models
+    # might average them instead. In such case, this turns the trees into
+    # additive ones by dividing the predictions by the number of nodes beforehand.
+    if model_json["average_tree_output"]:
+        divide_treelite_leaf_values_by_const(model_json, num_trees)
+
+    base_score = model_json["base_scores"]
+    num_class = model_json["num_class"][0]
+    num_feature = model_json["num_feature"]
+
+    if task_type == "kBinaryClf":
+        num_class = 2
+        if base_score:
+            base_score = list(1 / (1 + np.exp(-np.array(base_score))))
+
+    if num_class > 2:
+        shap_ready = False
+    else:
+        shap_ready = True
+        for tree in model_json["trees"]:
+            if not tree["nodes"][0].get("sum_hess", False):
+                shap_ready = False
+                break
+
+    # In the case of random forests for classification, it might work
+    # by averaging predictions without any link function, whereas
+    # daal4py assumes a logit link. In such case, it's not possible to
+    # convert them to daal4py's logic, but the model can still be used
+    # as a regressor that always outputs something between 0 and 1.
+    is_regression = "Clf" not in task_type
+    if not is_regression and model_json["postprocessor"] == "identity_multiclass":
+        is_regression = True
+        warnings.warn(
+            "Attempting to convert classification model which is not"
+            " based on gradient boosting. Will output a regression"
+            " model instead."
+        )
+
+    looks_like_random_forest = (
+        model_json["postprocessor"] == "identity_multiclass"
+        and len(model_json["base_scores"]) > 1
+        and task_type == "kMultiClf"
+    )
+    if looks_like_random_forest:
+        if num_class > 2 or len(base_score) > 2:
+            raise TypeError("Multi-class random forests are not supported.")
+        if len(model_json["num_class"]) > 1:
+            raise TypeError("Multi-output random forests are not supported.")
+        if len(base_score) == 2 and base_score[0]:
+            raise TypeError("Random forests with base scores are not supported.")
+
+    # In the case of binary random forests, it will always have leaf values
+    # for 2 classes, which is redundant as they sum to 1. daal4py requires
+    # only values for the positive class, so they need to be converted.
+    if looks_like_random_forest:
+        leave_only_last_treelite_leaf_value(model_json)
+        base_score = base_score[-1]
+
+    # In the case of multi-class classification models, if converted
+    # from xgboost, the order of the trees will be the same - i.e.
+    # sequences of one tree of each class, followed by another such
+    # sequence. But treelite could in theory also support building
+    # models where the trees are in a different order, in which case
+    # they will need to be reordered to match xgboost, since that's
+    # how daal4py handles them. And if there is an uneven number of
+    # trees per class, then will need to make up extra trees with
+    # zeros to accommodate it.
+    if task_type == "kMultiClf" and not looks_like_random_forest:
+        num_trees = len(model_json["trees"])
+        if (num_trees % num_class) != 0:
+            shap_ready = False
+            class_ids, num_trees_per_class = np.unique(
+                model_json["class_id"], return_counts=True
+            )
+            max_tree_per_class = num_trees_per_class.max()
+            num_tree_add_per_class = max_tree_per_class - num_trees_per_class
+            for class_ind in range(num_class):
+                for tree in range(num_tree_add_per_class[class_ind]):
+                    add_empty_tree_to_treelite_json(model_json, class_ind)
+
+        tree_class_orders = model_json["class_id"]
+        sequential_ids = np.arange(num_class)
+        num_trees = len(model_json["trees"])
+        assert (num_trees % num_class) == 0
+        if not np.array_equal(
+            tree_class_orders, np.tile(sequential_ids, int(num_trees / num_class))
+        ):
+            argsorted_class_indices = np.argsort(tree_class_orders)
+            per_class_indices = np.split(argsorted_class_indices, num_class)
+            correct_order = np.vstack(per_class_indices).reshape(-1, order="F")
+            model_json["trees"] = [model_json["trees"][ix] for ix in correct_order]
+            model_json["class_id"] = [model_json["class_id"][ix] for ix in correct_order]
+
+    # In the case of multi-class classification with base scores,
+    # since daal4py only supports scalar intercepts, this follows the
+    # same strategy as in catboost of dividing the intercepts equally
+    # among the number of trees
+    if task_type == "kMultiClf" and not looks_like_random_forest:
+        add_intercept_to_treelite_leafs(model_json, base_score)
+        base_score = None
+
+    if isinstance(base_score, list):
+        if len(base_score) == 1:
+            base_score = base_score[0]
+        else:
+            raise TypeError("Model to convert is malformed.")
+
+    tree_list = TreeList.from_treelite_dict(model_json)
+    return (
+        get_gbt_model_from_tree_list(
+            tree_list,
+            n_iterations=num_trees
+            / (
+                num_class
+                if task_type == "kMultiClf" and not looks_like_random_forest
+                else 1
+            ),
+            is_regression=is_regression,
+            n_features=num_feature,
+            n_classes=num_class,
+            base_score=base_score,
+        ),
+        num_class,
+        num_feature,
+        shap_ready,
+    )
+
+
+def divide_treelite_leaf_values_by_const(
+    tl_json: dict[str, Any], divisor: "int | float"
+) -> None:
+    for tree in tl_json["trees"]:
+        for node in tree["nodes"]:
+            if "leaf_value" in node:
+                if isinstance(node["leaf_value"], (list, tuple)):
+                    node["leaf_value"] = list(np.array(node["leaf_value"]) / divisor)
+                else:
+                    node["leaf_value"] /= divisor
+
+
+def leave_only_last_treelite_leaf_value(tl_json: dict[str, Any]) -> None:
+    for tree in tl_json["trees"]:
+        for node in tree["nodes"]:
+            if "leaf_value" in node:
+                assert len(node["leaf_value"]) == 2
+                node["leaf_value"] = node["leaf_value"][-1]
+
+
+def add_intercept_to_treelite_leafs(
+    tl_json: dict[str, Any], base_score: list[float]
+) -> None:
+    num_trees_per_class = len(tl_json["trees"]) / tl_json["num_class"][0]
+    for tree_index, tree in enumerate(tl_json["trees"]):
+        leaf_add = base_score[tl_json["class_id"][tree_index]] / num_trees_per_class
+        for node in tree["nodes"]:
+            if "leaf_value" in node:
+                node["leaf_value"] += leaf_add
+
+
+def add_empty_tree_to_treelite_json(tl_json: dict[str, Any], class_add: int) -> None:
+    tl_json["class_id"].append(class_add)
+    tl_json["trees"].append(
+        {
+            "num_nodes": 1,
+            "has_categorical_split": False,
+            "nodes": [
+                {
+                    "node_id": 0,
+                    "leaf_value": 0.0,
+                    "data_count": 0,
+                    "sum_hess": 0.0,
+                },
+            ],
+        }
+    )

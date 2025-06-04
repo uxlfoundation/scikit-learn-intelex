@@ -26,6 +26,7 @@
 
 [![Build Status](https://dev.azure.com/daal/daal4py/_apis/build/status/CI?branchName=main)](https://dev.azure.com/daal/daal4py/_build/latest?definitionId=9&branchName=main)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/21716/badge.svg)](https://scan.coverity.com/projects/daal4py)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/uxlfoundation/scikit-learn-intelex/badge)](https://securityscorecards.dev/viewer/?uri=github.com/uxlfoundation/scikit-learn-intelex)
 [![Join the community on GitHub Discussions](https://badgen.net/badge/join%20the%20discussion/on%20github/black?icon=github)](https://github.com/uxlfoundation/scikit-learn-intelex/discussions)
 [![PyPI Version](https://img.shields.io/pypi/v/scikit-learn-intelex)](https://pypi.org/project/scikit-learn-intelex/)
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/scikit-learn-intelex)](https://anaconda.org/conda-forge/scikit-learn-intelex)
