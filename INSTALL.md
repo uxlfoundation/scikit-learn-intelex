@@ -250,7 +250,7 @@ CC="icx -fsanitize=address -g" CXX="icpx -fsanitize=address -g" python setup.py 
 LD_PRELOAD="$(clang -print-file-name=libclang_rt.asan-x86_64.so)" PYTHONMALLOC=malloc PYTHONPATH=$(pwd) python <python file.py>
 ```
 
-_Be aware that ASAN is known to generate many false-positive reports of memory leaks when used with oneDAL, NumPy, and SciPy._
+_Be aware that ASan is known to generate many false-positive reports of memory leaks when used with oneDAL, NumPy, and SciPy._
 
 ## Build from Sources with `conda-build`
 
