@@ -244,14 +244,9 @@ void init_train_hyperparameters(py::module_& m) {
     auto cls = py::class_<train_hyperparams_t>(m, "train_hyperparameters")
                    .def(py::init())
                    .def("set_cpu_macro_block", &train_hyperparams_t::set_cpu_macro_block)
-                   .def("get_cpu_macro_block",
-                        [](const train_hyperparams_t& self) {
-                            return self.get_cpu_macro_block();
-                        })
+                   .def("get_cpu_macro_block", &train_hyperparams_t::get_cpu_macro_block)
                    .def("set_cpu_grain_size", &train_hyperparams_t::set_cpu_grain_size)
-                   .def("get_cpu_grain_size", [](const train_hyperparams_t& self) {
-                       return self.get_cpu_grain_size();
-                   });
+                   .def("get_cpu_grain_size", &train_hyperparams_t::get_cpu_grain_size);
 }
 
 #endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20250700

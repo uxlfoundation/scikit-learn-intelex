@@ -169,23 +169,13 @@ void init_compute_hyperparameters(py::module_& m) {
 
     auto cls = py::class_<compute_hyperparams_t>(m, "compute_hyperparameters")
                    .def(py::init())
-                   .def("set_cpu_macro_block",
-                        [](compute_hyperparams_t& self, int64_t cpu_macro_block) {
-                            self.set_cpu_macro_block(cpu_macro_block);
-                        })
-                   .def("get_cpu_macro_block",
-                        [](const compute_hyperparams_t& self) {
-                            return self.get_cpu_macro_block();
+                   .def("set_cpu_macro_block", &compute_hyperparams_t::set_cpu_macro_block)
+                   .def("get_cpu_macro_block", &compute_hyperparams_t::get_cpu_macro_block)
 #if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20250700
-                        })
-                   .def("set_cpu_grain_size",
-                        [](compute_hyperparams_t& self, int64_t cpu_grain_size) {
-                            self.set_cpu_grain_size(cpu_grain_size);
-                        })
-                   .def("get_cpu_grain_size", [](const compute_hyperparams_t& self) {
-                       return self.get_cpu_grain_size();
+                   .def("set_cpu_grain_size", &compute_hyperparams_t::set_cpu_grain_size)
+                   .def("get_cpu_grain_size", &compute_hyperparams_t::get_cpu_grain_size)
 #endif
-                   });
+        ;
 }
 
 #endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240000

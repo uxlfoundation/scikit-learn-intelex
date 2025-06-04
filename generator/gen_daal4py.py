@@ -1223,14 +1223,21 @@ def gen_daal4py(dalroot, outdir, version, warn_all=False, no_dist=False, no_stre
     formatfile = jp("src", ".clang-format")
     for dirpath, dirnames, filenames in os.walk(algo_path):
         for filename in filenames:
-            call(
-                [
-                    shutil.which("clang-format"),
-                    "-i",
-                    jp(dirpath, filename),
-                    "-style=file:" + formatfile,
-                ]
-            )
+            try:
+                call(
+                    [
+                        shutil.which("clang-format"),
+                        "-i",
+                        jp(dirpath, filename),
+                        "-style=file:" + formatfile,
+                    ]
+                )
+            except:
+                raise RuntimeError(
+                    "clang-format failed for file: "
+                    + jp(dirpath, filename)
+                    + ". Please check the clang-format installation."
+                )
     iface = cython_interface(algo_path)
     iface.read()
     print("Generating sources...")
