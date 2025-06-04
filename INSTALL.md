@@ -244,7 +244,7 @@ export PYTHONMALLOC=malloc
 
 Putting it all together, the earlier examples building the library in-place and executing a python file with it become as follows:
 ```shell
-source <path to ASAN-enabled oneDAL env.sh>
+source <path to ASan-enabled oneDAL env.sh>
 CC="icx -fsanitize=address -g" CXX="icpx -fsanitize=address -g" python setup.py build_ext --inplace --force --abs-rpath
 CC="icx -fsanitize=address -g" CXX="icpx -fsanitize=address -g" python setup.py build --abs-rpath
 LD_PRELOAD="$(clang -print-file-name=libclang_rt.asan-x86_64.so)" PYTHONMALLOC=malloc PYTHONPATH=$(pwd) python <python file.py>
