@@ -224,9 +224,9 @@ In order to use AddressSanitizer (ASan) together with `scikit-learn-intelex`, it
 See the instructions on the oneDAL repository for building the library from source with ASAN enabled:
 https://github.com/uxlfoundation/oneDAL/blob/main/INSTALL.md
 
-When building `scikit-learn-intelex`, the system's default compiler is used unless specified otherwise through variables such as `$CXX`. In order to avoid issues with incompatible runtimes of ASAN, one might want to change the compiler to ICX if oneDAL was built with ICX (the default for it).
+When building `scikit-learn-intelex`, the system's default compiler is used unless specified otherwise through variables such as `$CXX`. In order to avoid issues with incompatible runtimes of ASan, one might want to change the compiler to ICX if oneDAL was built with ICX (the default for it).
 
-The compiler and flags to build with both ASAN and debug symbols can be controlled through environment variables - **assuming a Linux system** (ASAN on Windows has not been tested):
+The compiler and flags to build with both ASan and debug symbols can be controlled through environment variables - **assuming a Linux system** (ASan on Windows has not been tested):
 ```shell
 export CC="icx -fsanitize=address -g"
 export CXX="icpx -fsanitize=address -g"
