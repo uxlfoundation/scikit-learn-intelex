@@ -317,6 +317,10 @@ deselected_tests:
   # are respected.
   - tests/test_common.py::test_valid_tag_types <1.6
 
+  # Parameter validation test dbscan only in sklearn 1.1, this is temporary deselected before update
+  # to CI parameters, as parameter validation is globally handled in sklearn version 1.2 onward
+  - cluster/tests/test_dbscan.py::test_dbscan_params_validation
+
   # --------------------------------------------------------
   # No need to test daal4py patching
 reduced_tests:
