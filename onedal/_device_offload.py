@@ -16,25 +16,17 @@
 
 import inspect
 import logging
-from collections.abc import Iterable
 from functools import wraps
 
 import numpy as np
 from sklearn import get_config
 
 from ._config import _get_config
-from .datatypes import kDLCPU
+from .datatypes import copy_to_dpnp, copy_to_usm, kDLCPU
 from .utils import _sycl_queue_manager as QM
 from .utils._array_api import _asarray, _is_numpy_namespace
-from .utils._dpep_helpers import dpctl_available, dpnp_available
+from .utils._third_party import is_dpnp_ndarray
 
-if dpctl_available:
-    from dpctl.memory import MemoryUSMDevice, as_usm_memory
-    from dpctl.tensor import usm_ndarray
-else:
-    from onedal import _dpc_backend
-
-    SyclQueue = getattr(_dpc_backend, "SyclQueue", None)
 
 logger = logging.getLogger("sklearnex")
 cpu_dlpack_device = (kDLCPU, 0)
@@ -69,99 +61,6 @@ def supports_queue(func):
         return result
 
     return wrapper
-
-
-if dpnp_available:
-    import dpnp
-
-    from .utils._array_api import _convert_to_dpnp
-
-
-def _copy_to_usm(queue, array):
-    if not dpctl_available:
-        raise RuntimeError(
-            "dpctl need to be installed to work " "with __sycl_usm_array_interface__"
-        )
-
-    if hasattr(array, "__array__"):
-
-        try:
-            mem = MemoryUSMDevice(array.nbytes, queue=queue)
-            mem.copy_from_host(array.tobytes())
-            return usm_ndarray(array.shape, array.dtype, buffer=mem)
-        except ValueError as e:
-            # ValueError will raise if device does not support the dtype
-            # retry with float32 (needed for fp16 and fp64 support issues)
-            # try again as float32, if it is a float32 just raise the error.
-            if array.dtype == np.float32:
-                raise e
-            return _copy_to_usm(queue, array.astype(np.float32))
-    else:
-        if isinstance(array, Iterable):
-            array = [_copy_to_usm(queue, i) for i in array]
-        return array
-
-
-def _transfer_to_host(*data):
-    has_usm_data, has_host_data = False, False
-
-    host_data = []
-    for item in data:
-        usm_iface = getattr(item, "__sycl_usm_array_interface__", None)
-        if usm_iface is not None:
-            if not dpctl_available:
-                raise RuntimeError(
-                    "dpctl need to be installed to work "
-                    "with __sycl_usm_array_interface__"
-                )
-
-            buffer = as_usm_memory(item).copy_to_host()
-            order = "C"
-            if usm_iface["strides"] is not None and len(usm_iface["strides"]) > 1:
-                if usm_iface["strides"][0] < usm_iface["strides"][1]:
-                    order = "F"
-            item = np.ndarray(
-                shape=usm_iface["shape"],
-                dtype=usm_iface["typestr"],
-                buffer=buffer,
-                order=order,
-            )
-            has_usm_data = True
-        elif not isinstance(item, np.ndarray) and (
-            device := getattr(item, "__dlpack_device__", None)
-        ):
-            # check dlpack data location.
-            if device() != cpu_dlpack_device:
-                if hasattr(item, "to_device"):
-                    # use of the "cpu" string as device not officially part of
-                    # the array api standard but widely supported
-                    item = item.to_device("cpu")
-                elif hasattr(item, "to"):
-                    # pytorch-specific fix as it is not array api compliant
-                    item = item.to("cpu")
-                else:
-                    raise TypeError(f"cannot move {type(item)} to cpu")
-
-            # convert to numpy
-            if hasattr(item, "__array__"):
-                # `copy`` param for the `asarray`` is not set.
-                # The object is copied only if needed
-                item = np.asarray(item)
-            else:
-                # requires numpy 1.23
-                item = np.from_dlpack(item)
-            has_host_data = True
-        else:
-            has_host_data = True
-
-        mismatch_host_item = usm_iface is None and item is not None and has_usm_data
-        mismatch_usm_item = usm_iface is not None and has_host_data
-
-        if mismatch_host_item or mismatch_usm_item:
-            raise RuntimeError("Input data shall be located on single target device")
-
-        host_data.append(item)
-    return has_usm_data, host_data
 
 
 def _get_host_inputs(*args, **kwargs):
@@ -217,9 +116,10 @@ def support_input_format(func):
             )
         if _get_config()["use_raw_input"] is True and not override_raw_input:
             if "queue" not in kwargs:
-                usm_iface = getattr(args[0], "__sycl_usm_array_interface__", None)
-                data_queue = usm_iface["syclobj"] if usm_iface is not None else None
-                kwargs["queue"] = data_queue
+                if usm_iface := getattr(args[0], "__sycl_usm_array_interface__", None):
+                    kwargs["queue"] = usm_iface["syclobj"]
+                else:
+                    kwargs["queue"] = None
             return invoke_func(self, *args, **kwargs)
         elif len(args) == 0 and len(kwargs) == 0:
             # no arguments, there's nothing we can deduce from them -> just call the function
@@ -234,12 +134,8 @@ def support_input_format(func):
                 hostkwargs["queue"] = queue
             result = invoke_func(self, *hostargs, **hostkwargs)
 
-            usm_iface = getattr(data[0], "__sycl_usm_array_interface__", None)
-            if queue is not None and usm_iface is not None:
-                result = _copy_to_usm(queue, result)
-                if dpnp_available and isinstance(data[0], dpnp.ndarray):
-                    result = _convert_to_dpnp(result)
-                return result
+            if queue and hasattr(inp := data[0], "__sycl_usm_array_interface__"):
+                return copy_to_dpnp(result) if is_dpnp_ndarray(inp) else copy_to_usm(result)
 
         if get_config().get("transform_output") in ("default", None):
             input_array_api = getattr(data[0], "__array_namespace__", lambda: None)()

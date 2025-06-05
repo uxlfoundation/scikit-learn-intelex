@@ -15,5 +15,6 @@
 # ==============================================================================
 
 from ._data_conversion import from_table, kDLCPU, kDLOneAPI, to_table
+from ._sycl_usm import copy_to_dpnp, copy_to_usm
 
-__all__ = ["from_table", "kDLCPU", "kDLOneAPI", "to_table"]
+__all__ = ["copy_to_dpnp", "copy_to_usm", "from_table", "kDLCPU", "kDLOneAPI", "to_table"]

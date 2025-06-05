@@ -130,13 +130,13 @@ def _is_subclass_fast(cls: type, modname: str, clsname: str) -> bool:
     return issubclass(cls, parent_cls)
 
 
-def is_dpnp_array(x):
-    """Return True if 'x' is a dpnp array
+def is_dpnp_ndarray(x):
+    """Return True if 'x' is a dpnp ndarray
 
     This function does not import dpnp if it has not already been imported
     and is therefore cheap to use.
     """
-    return _is_subclass_fast(type(x), "dpnp", "array")
+    return _is_subclass_fast(type(x), "dpnp", "ndarray")
 
 
 def is_dpctl_tensor(x):
