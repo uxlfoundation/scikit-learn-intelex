@@ -20,7 +20,7 @@ from collections.abc import Iterable
 
 import numpy as np
 
-from ..utils._third_party import is_dpnp_array
+from ..utils._third_party import is_dpnp_ndarray
 
 
 def _supports_buffer_protocol(obj):
@@ -68,7 +68,7 @@ def _get_sycl_namespace(*arrays):
 
         if hasattr(X, "__array_namespace__"):
             return sua_iface, X.__array_namespace__(), True
-        elif is_dpnp_array(X):
+        elif is_dpnp_ndarray(X):
             return sua_iface, dpnp, False
         else:
             raise ValueError(f"SYCL type not recognized: {sua_iface}")
