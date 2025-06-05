@@ -30,8 +30,7 @@ This type of functionality is available under **preview mode** of |sklearnex| an
 the corresponding module (`sklearnex.preview`).
 
 Functionalities under preview will be made available after patching when preview mode is enabled,
-although some functionalities might fall under :ref:`extension estimators <extension_estimators>`
-and thus need to be imported directly from the ``sklearnex`` module (see support table for details).
+but note that some might be :ref:`extension estimators <extension_estimators>` without analogs in |sklearn|.
 
 To enable preview functionality, you need to set the `SKLEARNEX_PREVIEW` environment variable
 to non-empty value before patching of Scikit-learn.
