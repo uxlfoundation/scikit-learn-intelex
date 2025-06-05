@@ -1,5 +1,5 @@
 # ==============================================================================
-# Copyright 2021 Contributors to the oneDAL Project
+# Copyright Contributors to the oneDAL Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,8 +17,10 @@
 from collections.abc import Iterable
 
 import numpy as np
+
 from ..utils._third_party import lazy_import
-     
+
+
 @lazy_import("dpctl.memory")
 @lazy_import("dpctl.tensor")
 def _array_to_usm(memorymod, tensormod, queue, array):
@@ -34,6 +36,7 @@ def _array_to_usm(memorymod, tensormod, queue, array):
             raise e
         return _array_to_usm(queue, array.astype(np.float32))
 
+
 @lazy_import("dpnp")
 @lazy_import("dpctl.tensor")
 def to_dpnp(dpnpmod, tensormod, array):
@@ -41,7 +44,6 @@ def to_dpnp(dpnpmod, tensormod, array):
         return dpnpmod.array(array, copy=False)
     else:
         return array
-
 
 
 def copy_to_usm(queue, array):
@@ -76,10 +78,6 @@ def _usm_to_array(memorymod, usm_iface, item):
         order=order,
     )
     return item
-
-
-
-
 
 
 def _transfer_to_host(*data):

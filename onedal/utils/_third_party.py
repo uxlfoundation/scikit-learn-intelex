@@ -46,6 +46,7 @@ def is_dpctl_available(version=None):
     """
     try:
         import dpctl
+
         dpctl_available = True
     except ImportError:
         dpctl_available = False
@@ -53,10 +54,11 @@ def is_dpctl_available(version=None):
         dpctl_available = _package_check_version(version, dpctl.__version__)
     return dpctl_available
 
+
 # Note: The dpctl package contains both SYCL infrastructure as well as a
 # data framework (dpctl.tensor). dpctl.tensor is not imported when dpctl is
-# imported. All data frameworks are to be lazy-loaded, but aspects of dpctl 
-# (e.g. SyclQueue) are loaded as normal as it is preferred over included 
+# imported. All data frameworks are to be lazy-loaded, but aspects of dpctl
+# (e.g. SyclQueue) are loaded as normal as it is preferred over included
 # backend replacements in the core onedal python module.
 dpctl_available = is_dpctl_available()
 
@@ -66,6 +68,7 @@ else:
     from onedal import _dpc_backend
 
     SyclQueue = getattr(_dpc_backend, "SyclQueue", None)
+
 
 def lazy_import(module_name: str) -> Callable:
     """Lazy load a python module for use in a function.
@@ -88,8 +91,9 @@ def lazy_import(module_name: str) -> Callable:
     -----
     The wrapped original function should have the module as the first
     argument. This will be hidden to the user. Lazy imports can be stacked
-    for multiple 
+    for multiple
     """
+
     # func should have leading arguments which are following a dependency
     # injection paradigm
     def decorator(func: Callable):
@@ -110,6 +114,7 @@ def lazy_import(module_name: str) -> Callable:
             return real_func(*first_args, **first_kwargs)
 
         return wrapper
+
     return decorator
 
 
