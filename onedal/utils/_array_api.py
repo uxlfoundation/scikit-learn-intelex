@@ -20,24 +20,7 @@ from collections.abc import Iterable
 
 import numpy as np
 
-from ._dpep_helpers import dpctl_available, dpnp_available
-
-if dpctl_available:
-    from dpctl.tensor import usm_ndarray
-
-if dpnp_available:
-    import dpnp
-
-    def _convert_to_dpnp(array):
-        """Converted input object to dpnp.ndarray format."""
-        # Will be removed and `onedal.utils._array_api._asarray` will be
-        # used instead after DPNP Array API enabling.
-        if isinstance(array, usm_ndarray):
-            return dpnp.array(array, copy=False)
-        elif isinstance(array, Iterable):
-            for i in range(len(array)):
-                array[i] = _convert_to_dpnp(array[i])
-        return array
+from ..utils._third_party import is_dpnp_array
 
 
 def _supports_buffer_protocol(obj):
@@ -85,7 +68,7 @@ def _get_sycl_namespace(*arrays):
 
         if hasattr(X, "__array_namespace__"):
             return sua_iface, X.__array_namespace__(), True
-        elif dpnp_available and isinstance(X, dpnp.ndarray):
+        elif is_dpnp_array(X):
             return sua_iface, dpnp, False
         else:
             raise ValueError(f"SYCL type not recognized: {sua_iface}")
