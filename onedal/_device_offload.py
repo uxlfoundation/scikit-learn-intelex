@@ -22,11 +22,10 @@ import numpy as np
 from sklearn import get_config
 
 from ._config import _get_config
-from .datatypes import copy_to_dpnp, copy_to_usm, kDLCPU
+from .datatypes import copy_to_dpnp, copy_to_usm, kDLCPU, usm_to_numpy
 from .utils import _sycl_queue_manager as QM
 from .utils._array_api import _asarray, _is_numpy_namespace
 from .utils._third_party import is_dpnp_ndarray
-
 
 logger = logging.getLogger("sklearnex")
 cpu_dlpack_device = (kDLCPU, 0)
@@ -61,6 +60,51 @@ def supports_queue(func):
         return result
 
     return wrapper
+
+
+def _transfer_to_host(*data):
+    has_usm_data, has_host_data = False, False
+
+    host_data = []
+    for item in data:
+        if usm_iface := getattr(item, "__sycl_usm_array_interface__", None):
+            item = usm_to_numpy(item, usm_iface)
+            has_usm_data = True
+        elif not isinstance(item, np.ndarray) and (
+            device := getattr(item, "__dlpack_device__", None)
+        ):
+            # check dlpack data location.
+            if device() != cpu_dlpack_device:
+                if hasattr(item, "to_device"):
+                    # use of the "cpu" string as device not officially part of
+                    # the array api standard but widely supported
+                    item = item.to_device("cpu")
+                elif hasattr(item, "to"):
+                    # pytorch-specific fix as it is not array api compliant
+                    item = item.to("cpu")
+                else:
+                    raise TypeError(f"cannot move {type(item)} to cpu")
+
+            # convert to numpy
+            if hasattr(item, "__array__"):
+                # `copy`` param for the `asarray`` is not set.
+                # The object is copied only if needed
+                item = np.asarray(item)
+            else:
+                # requires numpy 1.23
+                item = np.from_dlpack(item)
+            has_host_data = True
+        else:
+            has_host_data = True
+
+        mismatch_host_item = usm_iface is None and item is not None and has_usm_data
+        mismatch_usm_item = usm_iface is not None and has_host_data
+
+        if mismatch_host_item or mismatch_usm_item:
+            raise RuntimeError("Input data shall be located on single target device")
+
+        host_data.append(item)
+    return has_usm_data, host_data
 
 
 def _get_host_inputs(*args, **kwargs):
@@ -135,7 +179,9 @@ def support_input_format(func):
             result = invoke_func(self, *hostargs, **hostkwargs)
 
             if queue and hasattr(inp := data[0], "__sycl_usm_array_interface__"):
-                return copy_to_dpnp(result) if is_dpnp_ndarray(inp) else copy_to_usm(result)
+                return (
+                    copy_to_dpnp(result) if is_dpnp_ndarray(inp) else copy_to_usm(result)
+                )
 
         if get_config().get("transform_output") in ("default", None):
             input_array_api = getattr(data[0], "__array_namespace__", lambda: None)()
