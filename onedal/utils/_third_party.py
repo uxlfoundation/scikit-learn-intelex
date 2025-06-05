@@ -146,12 +146,3 @@ def is_dpctl_tensor(x):
     and is therefore cheap to use.
     """
     return _is_subclass_fast(type(x), "dpctl.tensor", "usm_ndarray")
-
-
-def get_unique_values_with_dpep(X):
-    if dpnp_available:
-        return dpnp.unique(X)
-    elif dpctl_available:
-        return dpt.unique_values(X)
-    else:
-        raise RuntimeError("No DPEP package available to provide `unique` function.")
