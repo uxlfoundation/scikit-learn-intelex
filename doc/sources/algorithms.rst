@@ -133,8 +133,8 @@ Regression
        - ``solver`` != `'auto'`
        - ``sample_weight`` != `None`
        - ``positive`` = `True`
+       - ``alpha`` must be scalar
      - Only dense data is supported, `#observations` should be >= `#features`.
-     - ``alpha`` must be scalar
    * - `ElasticNet`
      - All parameters are supported except:
 
