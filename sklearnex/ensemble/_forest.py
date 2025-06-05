@@ -57,7 +57,6 @@ from onedal.ensemble import ExtraTreesRegressor as onedal_ExtraTreesRegressor
 from onedal.ensemble import RandomForestClassifier as onedal_RandomForestClassifier
 from onedal.ensemble import RandomForestRegressor as onedal_RandomForestRegressor
 from onedal.primitives import get_tree_state_cls, get_tree_state_reg
-from onedal.utils._dpep_helpers import get_unique_values_with_dpep
 from onedal.utils.validation import _num_features, _num_samples
 from sklearnex import get_hyperparameters
 from sklearnex._utils import register_hyperparameters
@@ -123,7 +122,10 @@ class BaseForest(oneDALEstimator, ABC):
             if sample_weight is not None:
                 sample_weight = [sample_weight]
         else:
-            self.classes_ = get_unique_values_with_dpep(y)
+            try:
+                self.classes_ = xp.unique(y)
+            except AttributeError:
+                self.classes_ = xp.unique_values(y)
             self.n_classes_ = len(self.classes_)
         self.n_features_in_ = X.shape[1]
 
