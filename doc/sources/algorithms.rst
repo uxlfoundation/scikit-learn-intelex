@@ -71,10 +71,19 @@ Classification
    * - `LogisticRegression`
      - All parameters are supported except:
 
-       - ``solver`` not in [`'lbfgs'`, `'newton-cg'`]
+       - ``solver`` != `'newton-cg'`
        - ``class_weight`` != `None`
        - ``sample_weight`` != `None`
-     - Only dense data is supported
+       - ``penalty`` != `'l2'`
+       - ``dual`` = `True`
+       - ``intercept_scaling`` != `1`
+       - ``multi_class`` != `'multinomial'`
+       - ``warm_start`` = `True`
+       - ``l1_ratio`` != `None`
+       - Only binary classification is supported
+     - Supported data formats:
+         - Dense data
+         - CSR sparse matrices
 
 Regression
 **********
@@ -318,7 +327,9 @@ Classification
        - ``warm_start`` = `True`
        - ``l1_ratio`` != `None`
        - Only binary classification is supported
-     - Only dense data is supported
+     - Supported data formats:
+         - Dense data
+         - CSR sparse matrices
 
 Regression
 **********
@@ -499,7 +510,15 @@ Classification
        - ``class_weight`` != `None`
        - ``sample_weight`` != `None`
        - ``penalty`` != `'l2'`
-     - Only dense data is supported
+       - ``dual`` = `True`
+       - ``intercept_scaling`` != `1`
+       - ``multi_class`` != `'multinomial'`
+       - ``warm_start`` = `True`
+       - ``l1_ratio`` != `None`
+       - Only binary classification is supported
+     - Supported data formats:
+         - Dense data
+         - CSR sparse matrices
 
 Regression
 **********
