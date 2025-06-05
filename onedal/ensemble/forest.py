@@ -515,7 +515,7 @@ class RandomForestClassifier(ClassifierMixin, BaseForest, metaclass=ABCMeta):
 
         try:
             return xp.take(
-                xp.asarray(self.classes_, sycl_queue=pred.sycl_queue),
+                xp.asarray(self.classes_, device=pred.sycl_queue),
                 xp.astype(xp.reshape(pred, (-1,)), xp.int64),
             )
         except AttributeError:
