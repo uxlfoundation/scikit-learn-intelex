@@ -258,9 +258,11 @@ Other Tasks
      - All parameters are supported except:
 
        - ``metric`` not in [`'cosine'`, `'correlation'`]
-     - Only dense data is supported
-     - ``Y`` must be `None`
-     - Input dtype must be `np.float64`
+     - Supported data formats:
+
+       - Only dense data is supported
+       - ``Y`` must be `None`
+       - Input dtype must be `np.float64`
    * - `roc_auc_score`
      - All parameters are supported except:
 
