@@ -241,7 +241,7 @@ Other Tasks
      - Supported data formats:
          - Dense data
          - CSR sparse matrices
-     - Sample weights **not** supported for CSR data format
+         - Sample weights **not** supported for CSR data format
    * - `train_test_split`
      - All parameters are supported
      - Only dense data is supported
@@ -457,7 +457,7 @@ Other Tasks
      - Supported data formats:
          - Dense data
          - CSR sparse matrices
-     - Sample weights **not** supported for CSR data format
+         - Sample weights **not** supported for CSR data format
 
 .. _spmd-support:
 
@@ -646,7 +646,7 @@ Other Tasks
      - Supported data formats:
          - Dense data
          - CSR sparse matrices
-     - Sample weights **not** supported for CSR data format
+         - Sample weights **not** supported for CSR data format
 
 Scikit-learn Tests
 ------------------
