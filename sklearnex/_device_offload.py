@@ -19,13 +19,10 @@ from functools import wraps
 from typing import Any, Union
 
 from onedal._device_offload import _copy_to_usm, _transfer_to_host
+from onedal.datatypes import copy_to_dpnp, copy_to_usm
 from onedal.utils import _sycl_queue_manager as QM
 from onedal.utils._array_api import _asarray, _is_numpy_namespace
-from onedal.utils._dpep_helpers import dpnp_available
-
-if dpnp_available:
-    import dpnp
-    from onedal.utils._array_api import _convert_to_dpnp
+from onedal.utils._third_party import is_dpnp_ndarray
 
 from ._config import config_context, get_config, set_config
 from ._utils import PatchingConditionsChain, get_tags
@@ -187,12 +184,11 @@ def wrap_output_data(func: Callable) -> Callable:
         if not (len(args) == 0 and len(kwargs) == 0):
             data = (*args, *kwargs.values())
 
-            usm_iface = getattr(data[0], "__sycl_usm_array_interface__", None)
-            if usm_iface is not None:
-                result = _copy_to_usm(usm_iface["syclobj"], result)
-                if dpnp_available and isinstance(data[0], dpnp.ndarray):
-                    result = _convert_to_dpnp(result)
-                return result
+            if queue and hasattr(inp := data[0], "__sycl_usm_array_interface__"):
+                return (
+                    copy_to_dpnp(result) if is_dpnp_ndarray(inp) else copy_to_usm(result)
+                )
+
 
             if get_config().get("transform_output") in ("default", None):
                 input_array_api = getattr(data[0], "__array_namespace__", lambda: None)()
