@@ -245,10 +245,12 @@ Other Tasks
        - Sample weights **not** supported for CSR data format
    * - `train_test_split`
      - All parameters are supported
-     - Only dense data is supported
-     - Only integer and 32/64-bits floating point types are supported
-     - Data with more than 3 dimensions is not supported
-     - The input has to be a np.ndarray object
+     - Supported data formats:
+        
+       - Only dense data is supported
+       - Only integer and 32/64-bits floating point types are supported
+       - Data with more than 3 dimensions is not supported
+       - The input has to be a np.ndarray object
    * - `assert_all_finite`
      - All parameters are supported
      - Only dense data is supported
@@ -455,6 +457,7 @@ Other Tasks
      - All parameters are supported
      - Only dense data is supported
    * - `BasicStatistics`
+     - All parameters are supported
      - Supported data formats:
 
        - Dense data
@@ -645,6 +648,7 @@ Other Tasks
      - All parameters are supported
      - Only dense data is supported
    * - `BasicStatistics`
+     - All parameters are supported
      - Supported data formats:
 
        - Dense data
