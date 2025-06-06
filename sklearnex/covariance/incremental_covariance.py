@@ -98,6 +98,10 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
     n_features_in_ : int
         Number of features seen during ``fit`` or ``partial_fit``.
 
+    Notes
+    -----
+    Sparse data formats are not supported. Input dtype must be ``float32`` or ``float64``.
+
     %incremental_serialization_note%
 
     Examples
