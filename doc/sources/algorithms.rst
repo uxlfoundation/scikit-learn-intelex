@@ -81,9 +81,7 @@ Classification
        - ``warm_start`` = `True`
        - ``l1_ratio`` != `None`
        - Only binary classification is supported
-     - Supported data formats:
-         - Dense data
-         - CSR sparse matrices
+     - No limitations
 
 Regression
 **********
@@ -134,7 +132,7 @@ Regression
        - ``sample_weight`` != `None`
        - ``positive`` = `True`
        - ``alpha`` must be scalar
-     - Only dense data is supported, `#observations` should be >= `#features`.
+     - Only dense data is supported.
    * - `ElasticNet`
      - All parameters are supported except:
 
@@ -163,10 +161,8 @@ Clustering
        - ``algorithm`` != ``'lloyd'`` ('elkan' falls back to 'lloyd')
        - ``n_clusters`` = ``1``
        - ``sample_weight`` must be None, constant, or equal weights
-       - ``init`` = `'k-means++'` fallbacks to CPU
-     - Supported data formats:
-         - Dense data
-         - CSR sparse matrices
+       - ``init`` = `'k-means++'` falls back to CPU
+     - No limitations
    * - `DBSCAN`
      - All parameters are supported except:
 
@@ -250,7 +246,7 @@ Other Tasks
        - Only dense data is supported
        - Only integer and 32/64-bits floating point types are supported
        - Data with more than 3 dimensions is not supported
-       - The input has to be a np.ndarray object
+       - Only ``np.ndarray`` inputs are supported.
    * - `assert_all_finite`
      - All parameters are supported
      - Only dense data is supported
@@ -332,9 +328,7 @@ Classification
        - ``warm_start`` = `True`
        - ``l1_ratio`` != `None`
        - Only binary classification is supported
-     - Supported data formats:
-         - Dense data
-         - CSR sparse matrices
+     - No limitations
 
 Regression
 **********
@@ -396,10 +390,8 @@ Clustering
        - ``algorithm`` != ``'lloyd'`` ('elkan' falls back to 'lloyd')
        - ``n_clusters`` = ``1``
        - ``sample_weight`` must be None, constant, or equal weights
-       - ``init`` = `'k-means++'` fallbacks to CPU
-     - Supported data formats:
-         - Dense data
-         - CSR sparse matrices
+       - ``init`` = `'k-means++'` falls back to CPU
+     - No limitations
    * - `DBSCAN`
      - All parameters are supported except:
 
@@ -523,9 +515,7 @@ Classification
        - ``warm_start`` = `True`
        - ``l1_ratio`` != `None`
        - Only binary classification is supported
-     - Supported data formats:
-         - Dense data
-         - CSR sparse matrices
+     - No limitations
 
 Regression
 **********
@@ -587,10 +577,8 @@ Clustering
        - ``algorithm`` != ``'lloyd'`` ('elkan' falls back to 'lloyd')
        - ``n_clusters`` = ``1``
        - ``sample_weight`` must be None, constant, or equal weights
-       - ``init`` = `'k-means++'` fallbacks to CPU
-     - Supported data formats:
-         - Dense data
-         - CSR sparse matrices
+       - ``init`` = `'k-means++'` falls back to CPU
+     - No limitations
    * - `DBSCAN`
      - All parameters are supported except:
 
