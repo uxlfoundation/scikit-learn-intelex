@@ -45,6 +45,7 @@ if daal_check_version((2024, "P", 100)):
     from sklearn.decomposition import PCA as _sklearn_PCA
 
     from onedal.decomposition import PCA as onedal_PCA
+    from onedal.utils._array_api import _is_numpy_namespace
 
     @control_n_jobs(decorated_methods=["fit", "transform", "fit_transform"])
     class PCA(oneDALEstimator, _sklearn_PCA):
@@ -224,7 +225,7 @@ if daal_check_version((2024, "P", 100)):
             else:
                 components = self.components_
 
-            if "numpy" not in xp.__name__:
+            if not _is_numpy_namespace(xp):
                 # DPCtl and dpnp require inputs to be on the same device for
                 # matrix multiplication and division. The type and location
                 # of the components and mean are dependent on the sklearn
