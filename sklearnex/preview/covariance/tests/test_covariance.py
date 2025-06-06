@@ -25,19 +25,72 @@ from onedal.tests.utils._dataframes_support import (
 )
 
 
+# Note: this is arranged as a fixture with a finalizer instead of as a parameter
+# 'True' / 'False' in order to undo the changes later so that it doesn't affect
+# other tests afterwards. It returns a function instead of making the change
+# directly, in order to avoid importing the estimator class before the import test
+# itself, but it still needs to import the class inside the the function that it
+# returns due to serialization logic in pytest causing differences w.r.t. current
+# closure where the function is called.
+@pytest.fixture(params=[False, True])
+def hyperparameters_route(request):
+    def change_parameters(queue, macro_block, grain_size):
+        from sklearnex.preview.covariance import EmpiricalCovariance
+
+        if request.param and daal_check_version((2025, "P", 700)):
+            if queue and queue.sycl_device.is_gpu:
+                pytest.skip("Test for CPU-only functionality")
+
+            hparams = EmpiricalCovariance.get_hyperparameters("fit")
+            if macro_block is not None:
+                hyperparameters_route.curr_cpu_macro_block = hparams.cpu_macro_block
+                hparams.cpu_macro_block = macro_block
+            else:
+                hyperparameters_route.curr_cpu_macro_block = None
+            if grain_size is not None:
+                hyperparameters_route.curr_cpu_grain_size = hparams.cpu_grain_size
+                hparams.cpu_grain_size = grain_size
+            else:
+                hyperparameters_route.curr_cpu_grain_size = None
+        elif request.param and not daal_check_version((2025, "P", 700)):
+            pytest.skip("Functionality introduced in later versions")
+
+    def restore_params():
+        from sklearnex.preview.covariance import EmpiricalCovariance
+
+        if request.param and daal_check_version((2025, "P", 500)):
+            hparams = EmpiricalCovariance.get_hyperparameters("fit")
+            if (
+                hasattr(hyperparameters_route, "curr_cpu_macro_block")
+                and hyperparameters_route.curr_cpu_macro_block is not None
+            ):
+                hparams.cpu_macro_block = hyperparameters_route.curr_cpu_macro_block
+            if (
+                hasattr(hyperparameters_route, "curr_cpu_grain_size")
+                and hyperparameters_route.curr_cpu_grain_size is not None
+            ):
+                hparams.cpu_grain_size = hyperparameters_route.curr_cpu_grain_size
+
+    request.addfinalizer(restore_params)
+    return change_parameters
+
+
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-@pytest.mark.parametrize("macro_block", [None, 1024])
+@pytest.mark.parametrize("macro_block", [None, 2])
+@pytest.mark.parametrize("grain_size", [None, 2])
 @pytest.mark.parametrize("assume_centered", [True, False])
-def test_sklearnex_import_covariance(dataframe, queue, macro_block, assume_centered):
+def test_sklearnex_import_covariance(
+    dataframe, queue, macro_block, grain_size, assume_centered, hyperparameters_route
+):
     from sklearnex.preview.covariance import EmpiricalCovariance
 
-    X = np.array([[0, 1], [0, 1]])
+    X = np.array([[0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1]])
 
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     empcov = EmpiricalCovariance(assume_centered=assume_centered)
-    if daal_check_version((2024, "P", 0)) and macro_block is not None:
-        hparams = EmpiricalCovariance.get_hyperparameters("fit")
-        hparams.cpu_macro_block = macro_block
+
+    hyperparameters_route(queue, macro_block, grain_size)
+
     result = empcov.fit(X)
 
     expected_covariance = np.array([[0, 0], [0, 0]])
