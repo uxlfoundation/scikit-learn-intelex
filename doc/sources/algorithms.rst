@@ -239,6 +239,7 @@ Other Tasks
    * - `BasicStatistics`
      - All parameters are supported
      - Supported data formats:
+
          - Dense data
          - CSR sparse matrices
          - Sample weights **not** supported for CSR data format
@@ -455,6 +456,7 @@ Other Tasks
      - Only dense data is supported
    * - `BasicStatistics`
      - Supported data formats:
+
          - Dense data
          - CSR sparse matrices
          - Sample weights **not** supported for CSR data format
@@ -644,6 +646,7 @@ Other Tasks
      - Only dense data is supported
    * - `BasicStatistics`
      - Supported data formats:
+
          - Dense data
          - CSR sparse matrices
          - Sample weights **not** supported for CSR data format
