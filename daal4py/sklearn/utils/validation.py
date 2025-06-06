@@ -72,21 +72,20 @@ def _assert_all_finite(
 
     # Data with small size has too big relative overhead
     # TODO: tune threshold size
-    if hasattr(X, "size"):
-        if X.size < 32768:
-            if sklearn_check_version("1.1"):
-                _sklearn_assert_all_finite(
-                    X,
-                    allow_nan=allow_nan,
-                    msg_dtype=msg_dtype,
-                    estimator_name=estimator_name,
-                    input_name=input_name,
-                )
-            else:
-                _sklearn_assert_all_finite(X, allow_nan=allow_nan, msg_dtype=msg_dtype)
-            return
-
     is_df = is_DataFrame(X)
+    if not (is_df or isinstance(X, np.ndarray)) or X.size < 32768:
+        if sklearn_check_version("1.1"):
+            _sklearn_assert_all_finite(
+                X,
+                allow_nan=allow_nan,
+                msg_dtype=msg_dtype,
+                estimator_name=estimator_name,
+                input_name=input_name,
+            )
+        else:
+            _sklearn_assert_all_finite(X, allow_nan=allow_nan, msg_dtype=msg_dtype)
+        return
+
     num_of_types = get_number_of_types(X)
 
     # if X is heterogeneous pandas.DataFrame then
