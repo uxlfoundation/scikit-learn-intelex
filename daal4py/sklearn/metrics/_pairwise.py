@@ -17,8 +17,8 @@
 import warnings
 from functools import partial
 
-from joblib import effective_n_jobs
 import numpy as np
+from joblib import effective_n_jobs
 from sklearn.exceptions import DataConversionWarning
 from sklearn.metrics import pairwise_distances as pairwise_distances_original
 from sklearn.metrics.pairwise import (
