@@ -20,12 +20,6 @@ from ...decomposition import IncrementalPCA as base_IncrementalPCA
 
 
 class IncrementalPCA(base_IncrementalPCA):
-    """
-    Distributed incremental estimator for PCA based on oneDAL implementation.
-    Allows for distributed PCA computation if data is split into batches.
-
-    API is the same as for `onedal.decomposition.IncrementalPCA`
-    """
 
     @bind_spmd_backend("decomposition.dim_reduction")
     def finalize_train(self, params, partial_result, queue=None): ...

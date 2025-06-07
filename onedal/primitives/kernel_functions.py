@@ -49,21 +49,33 @@ def _compute_kernel(params, submodule, X, Y):
 
 @supports_queue
 def linear_kernel(X, Y=None, scale=1.0, shift=0.0, queue=None):
-    """
-    Compute the linear kernel between X and Y:
-        K(x, y) = scale*dot(x, y^T) + shift
+    """Compute the linear kernel between X and Y.
+
+    K(x, y) = scale*dot(x, y^T) + shift
     for each pair of rows x in X and y in Y.
 
     Parameters
     ----------
     X : ndarray of shape (n_samples_X, n_features)
+        A feature array.
+
     Y : ndarray of shape (n_samples_Y, n_features)
+        An optional second feature array. If `None`, uses `Y=X`.
+
     scale : float, default=1.0
+        Multiplication value to scale the inner product.
+
     shift : float, default=0.0
+        Constant offset added to scaled inner product.
+
+    queue : SyclQueue or None, default=None
+        SYCL Queue object for device code execution. Default
+        value None causes computation on host.
 
     Returns
     -------
     kernel_matrix : ndarray of shape (n_samples_X, n_samples_Y)
+        Scaled and shifted Gram matrix output.
     """
     X, Y = _check_inputs(X, Y)
     return _compute_kernel(
@@ -76,21 +88,30 @@ def linear_kernel(X, Y=None, scale=1.0, shift=0.0, queue=None):
 
 @supports_queue
 def rbf_kernel(X, Y=None, gamma=None, queue=None):
-    """
-    Compute the rbf (gaussian) kernel between X and Y:
-        K(x, y) = exp(-gamma ||x-y||^2)
+    """Compute the rbf (gaussian) kernel between X and Y.
+
+    K(x, y) = exp(-gamma ||x-y||^2)
     for each pair of rows x in X and y in Y.
 
     Parameters
     ----------
     X : ndarray of shape (n_samples_X, n_features)
+        A feature array.
+
     Y : ndarray of shape (n_samples_Y, n_features)
+        An optional second feature array. If `None`, uses `Y=X`.
+
     gamma : float, default=None
         If None, defaults to 1.0 / n_features.
+
+    queue : SyclQueue or None, default=None
+        SYCL Queue object for device code execution. Default
+        value None causes computation on host.
 
     Returns
     -------
     kernel_matrix : ndarray of shape (n_samples_X, n_samples_Y)
+        The RBF kernel.
     """
 
     X, Y = _check_inputs(X, Y)
@@ -103,22 +124,36 @@ def rbf_kernel(X, Y=None, gamma=None, queue=None):
 
 @supports_queue
 def poly_kernel(X, Y=None, gamma=1.0, coef0=0.0, degree=3, queue=None):
-    """
-    Compute the poly kernel between X and Y:
-        K(x, y) = (scale*dot(x, y^T) + shift)**degree
+    """Compute the polynomial kernel between X and Y.
+
+    K(x, y) = (gamma*dot(x, y^T) + coef0)**degree
     for each pair of rows x in X and y in Y.
 
     Parameters
     ----------
     X : ndarray of shape (n_samples_X, n_features)
+        A feature array.
+
     Y : ndarray of shape (n_samples_Y, n_features)
-    scale : float, default=1.0
-    shift : float, default=0.0
-    degree : float, default=3
+        An optional second feature array. If `None`, uses `Y=X`.
+
+    gamma : float, default=1.0
+        Multiplication value to scale the inner product.
+
+    coef0 : float, default=0.0
+        Constant offset added to scaled inner product.
+
+    degree : int, default=3
+        Kernel degree.
+
+    queue : SyclQueue or None, default=None
+        SYCL Queue object for device code execution. Default
+        value None causes computation on host.
 
     Returns
     -------
     kernel_matrix : ndarray of shape (n_samples_X, n_samples_Y)
+        The polynomial kernel.
     """
 
     X, Y = _check_inputs(X, Y)
@@ -132,21 +167,33 @@ def poly_kernel(X, Y=None, gamma=1.0, coef0=0.0, degree=3, queue=None):
 
 @supports_queue
 def sigmoid_kernel(X, Y=None, gamma=1.0, coef0=0.0, queue=None):
-    """
-    Compute the sigmoid kernel between X and Y:
-        K(x, y) = tanh(scale*dot(x, y^T) + shift)
+    """Compute the sigmoid kernel between X and Y.
+
+        :math:`K(x, y) = \\text{tanh}(\\gamma \\mathbf{x}^T \\mathbf{y}) + \\text{coef}_0)`
     for each pair of rows x in X and y in Y.
 
     Parameters
     ----------
     X : ndarray of shape (n_samples_X, n_features)
+        A feature array.
+
     Y : ndarray of shape (n_samples_Y, n_features)
-    scale : float, default=1.0
-    shift : float, default=0.0
+        An optional second feature array. If `None`, uses `Y=X`.
+
+    gamma : float, default=1.0
+        Multiplication value to scale the inner product.
+
+    coef0 : float, default=0.0
+        Constant offset added to scaled inner product.
+
+    queue : SyclQueue or None, default=None
+        SYCL Queue object for device code execution. Default
+        value None causes computation on host.
 
     Returns
     -------
     kernel_matrix : ndarray of shape (n_samples_X, n_samples_Y)
+        Sigmoid kernel between two arrays.
     """
 
     X, Y = _check_inputs(X, Y)
