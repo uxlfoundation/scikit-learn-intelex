@@ -27,6 +27,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
 
+# CMP0148: Change in python discovery in cmake to 'findpython*'
+# Setting must be turned on for pybind11 to reflect this change.
+if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.27.0")
+    set(PYBIND11_FINDPYTHON ON)
+endif()
+
+
 option(ADD_ONEDAL_RPATH "Adds oneDAL's file paths to the RPATH here" OFF)
 message(STATUS "ADD_ONEDAL_RPATH:" ${ADD_ONEDAL_RPATH})
 
