@@ -70,7 +70,7 @@ else:
     SyclQueue = getattr(_dpc_backend, "SyclQueue", None)
 
 
-def lazy_import(*module_names) -> Callable:
+def lazy_import(*module_names: str) -> Callable:
     """Lazy load python modules for use in a function.
 
     Decorator which uses dependency injection with monkeypatching to import
@@ -79,7 +79,7 @@ def lazy_import(*module_names) -> Callable:
 
     Parameters
     ----------
-    module_names : tuple
+    module_names : tuple of strings
         Arguments are names of modules to be imported via importlib.
 
     Returns
