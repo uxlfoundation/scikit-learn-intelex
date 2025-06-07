@@ -70,17 +70,17 @@ else:
     SyclQueue = getattr(_dpc_backend, "SyclQueue", None)
 
 
-def lazy_import(module_name: str) -> Callable:
-    """Lazy load a python module for use in a function.
+def lazy_import(*module_names) -> Callable:
+    """Lazy load python modules for use in a function.
 
     Decorator which uses dependency injection with monkeypatching to import
-    a python module when called. This is done only once on first usage of
+    python modules when called. This is done only once on first usage of
     the wrapped function to minimize overhead and reduce branching.
 
     Parameters
     ----------
-    module_name : str
-        Name of the module to be imported via importlib.
+    module_names : tuple
+        Arguments are names of modules to be imported via importlib.
 
     Returns
     -------
@@ -89,9 +89,9 @@ def lazy_import(module_name: str) -> Callable:
 
     Notes
     -----
-    The wrapped original function should have the module as the first
-    argument. This will be hidden to the user. Lazy imports can be stacked
-    for multiple
+    The wrapped original function should have the modules as the first
+    arguments. This will be hidden to the user. Lazy imports cannot be
+    stacked, instead pass mulitple arguments to the decorator.
     """
 
     # func should have leading arguments which are following a dependency
@@ -99,21 +99,18 @@ def lazy_import(module_name: str) -> Callable:
     def decorator(func: Callable):
         @functools.wraps(func)
         def wrapper(*first_args, **first_kwargs):
-            mod = importlib.import_module(module_name)
+            modules = tuple(importlib.import_module(i) for i in module_names)
+
+            # hide dependency injection of the original function
+            # onedal/sklearnex will call the underlying function
+            # via ``public_func``
+            def public_func(*args, **kwargs):
+                return func(*modules, *args, **kwargs)
 
             # Monkeypatch the original in a general fashion (cannot use
             # globals())
             modname = func.__module__
             funcname = func.__name__
-            # allow chaining of the decorator by using getattr
-            module_func = getattr(sys.modules[modname], funcname, func)
-            
-            # hide dependency injection of the original function
-            # onedal/sklearnex will call the underlying function
-            # via ``public_func``
-            def public_func(*args, **kwargs):
-                return module_func(mod, *args, **kwargs)
-
             setattr(sys.modules[modname], funcname, public_func)
 
             return public_func(*first_args, **first_kwargs)
