@@ -182,18 +182,17 @@ def wrap_output_data(func: Callable) -> Callable:
     def wrapper(self, *args, **kwargs) -> Any:
         result = func(self, *args, **kwargs)
         if not (len(args) == 0 and len(kwargs) == 0):
-            data = (*args, *kwargs.values())
-
-            if hasattr(inp := data[0], "__sycl_usm_array_interface__"):
+            data = (*args, *kwargs.values())[0]
+    
+            if hasattr(data, "__sycl_usm_array_interface__"):
                 return (
-                    copy_to_dpnp(result) if is_dpnp_ndarray(inp) else copy_to_usm(result)
+                    copy_to_dpnp(result) if is_dpnp_ndarray(data) else copy_to_usm(result)
                 )
 
-
             if get_config().get("transform_output") in ("default", None):
-                input_array_api = getattr(data[0], "__array_namespace__", lambda: None)()
+                input_array_api = getattr(data, "__array_namespace__", lambda: None)()
                 if input_array_api and not _is_numpy_namespace(input_array_api):
-                    input_array_api_device = data[0].device
+                    input_array_api_device = data.device
                     result = _asarray(
                         result, input_array_api, device=input_array_api_device
                     )
