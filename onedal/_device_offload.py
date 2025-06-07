@@ -169,7 +169,7 @@ def support_input_format(func):
             # no arguments, there's nothing we can deduce from them -> just call the function
             return invoke_func(self, *args, **kwargs)
 
-        data = (*args, *kwargs.values())
+        data = (*args, *kwargs.values())[0]
         # get and set the global queue from the kwarg or data
         with QM.manage_global_queue(kwargs.get("queue"), *args) as queue:
             hostargs, hostkwargs = _get_host_inputs(*args, **kwargs)
@@ -178,15 +178,15 @@ def support_input_format(func):
                 hostkwargs["queue"] = queue
             result = invoke_func(self, *hostargs, **hostkwargs)
 
-            if queue and hasattr(inp := data[0], "__sycl_usm_array_interface__"):
+            if queue and hasattr(data, "__sycl_usm_array_interface__"):
                 return (
-                    copy_to_dpnp(result) if is_dpnp_ndarray(inp) else copy_to_usm(result)
+                    copy_to_dpnp(result, queue) if is_dpnp_ndarray(data) else copy_to_usm(result, queue)
                 )
 
         if get_config().get("transform_output") in ("default", None):
-            input_array_api = getattr(data[0], "__array_namespace__", lambda: None)()
+            input_array_api = getattr(data, "__array_namespace__", lambda: None)()
             if input_array_api and not _is_numpy_namespace(input_array_api):
-                input_array_api_device = data[0].device
+                input_array_api_device = data.device
                 result = _asarray(result, input_array_api, device=input_array_api_device)
         return result
 
