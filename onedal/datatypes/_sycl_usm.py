@@ -21,13 +21,12 @@ import numpy as np
 from ..utils._third_party import lazy_import
 
 
-@lazy_import("dpctl.memory")
-@lazy_import("dpctl.tensor")
-def array_to_usm(memorymod, tensormod, queue, array):
+@lazy_import("dpctl.memory", "dpctl.tensor")
+def array_to_usm(memory, tensor, queue, array):
     try:
-        mem = memorymod.MemoryUSMDevice(array.nbytes, queue=queue)
+        mem = memory.MemoryUSMDevice(array.nbytes, queue=queue)
         mem.copy_from_host(array.tobytes())
-        return tensormod.usm_ndarray(array.shape, array.dtype, buffer=mem)
+        return tensor.usm_ndarray(array.shape, array.dtype, buffer=mem)
     except ValueError as e:
         # ValueError will raise if device does not support the dtype
         # retry with float32 (needed for fp16 and fp64 support issues)
@@ -37,11 +36,10 @@ def array_to_usm(memorymod, tensormod, queue, array):
         return _array_to_usm(queue, array.astype(np.float32))
 
 
-@lazy_import("dpnp")
-@lazy_import("dpctl.tensor")
-def to_dpnp(dpnpmod, tensormod, array):
-    if isinstance(array, tensormod.usm_ndarray):
-        return dpnpmod.array(array, copy=False)
+@lazy_import("dpnp", "dpctl.tensor")
+def to_dpnp(dpnp, tensor, array):
+    if isinstance(array, tensor.usm_ndarray):
+        return dpnp.array(array, copy=False)
     else:
         return array
 
