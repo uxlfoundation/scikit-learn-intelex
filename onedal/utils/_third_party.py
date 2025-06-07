@@ -79,7 +79,7 @@ def lazy_import(*module_names: str) -> Callable:
 
     Parameters
     ----------
-    module_names : tuple of strings
+    module_names : strings
         Arguments are names of modules to be imported via importlib.
 
     Returns
