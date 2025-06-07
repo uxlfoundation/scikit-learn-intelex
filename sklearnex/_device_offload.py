@@ -187,7 +187,7 @@ def wrap_output_data(func: Callable) -> Callable:
             if usm_iface := getattr(data, "__sycl_usm_array_interface__", None):
                 queue = usm_iface['syclobj']
                 return (
-                    copy_to_dpnp(result, queue) if is_dpnp_ndarray(data) else copy_to_usm(result, queue)
+                    copy_to_dpnp(queue, result) if is_dpnp_ndarray(data) else copy_to_usm(queue, result)
                 )
 
             if get_config().get("transform_output") in ("default", None):
