@@ -17,10 +17,11 @@
 """Tools to support array_api."""
 
 from collections.abc import Iterable
+from functools import lru_cache
 
 import numpy as np
 
-from ..utils._third_party import is_dpnp_ndarray
+from ..utils._third_party import _is_subclass_fast
 
 
 def _supports_buffer_protocol(obj):
@@ -54,6 +55,19 @@ def _is_numpy_namespace(xp):
     return xp.__name__ in {"numpy", "array_api_compat.numpy", "numpy.array_api"}
 
 
+@lru_cache(100)
+def _cls_to_sycl_namespace(cls):
+    # use caching to minimize imports, derived from array_api_compat
+    if _is_subclass_fast(cls, "dpctl.tensor", "usm_ndarray")
+        import dpctl.tensor as dpt
+        return dpt
+    elif _is_subclass_fast(cls, "dpnp", "ndarray")
+        import dpnp
+        return dpnp
+    else:
+        raise ValueError(f"SYCL type not recognized: {cls}")
+
+
 def _get_sycl_namespace(*arrays):
     """Get namespace of sycl arrays."""
 
@@ -65,12 +79,6 @@ def _get_sycl_namespace(*arrays):
 
     if sua_iface:
         (X,) = sua_iface.values()
-
-        if hasattr(X, "__array_namespace__"):
-            return sua_iface, X.__array_namespace__(), True
-        elif is_dpnp_ndarray(X):
-            return sua_iface, dpnp, False
-        else:
-            raise ValueError(f"SYCL type not recognized: {sua_iface}")
+        return sua_iface, _cls_to_sycl_namespace(type(X)), hasattr(X, "__array_namespace__")
 
     return sua_iface, np, False
