@@ -65,7 +65,7 @@ def copy_to_dpnp(queue, array):
 
 
 @lazy_import("dpctl.memory")
-def usm_to_numpy(memorymod, usm_iface, item):
+def usm_to_numpy(memorymod, item, usm_iface):
     buffer = memorymod.as_usm_memory(item).copy_to_host()
     order = "C"
     if usm_iface["strides"] is not None and len(usm_iface["strides"]) > 1:
