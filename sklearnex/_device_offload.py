@@ -184,7 +184,7 @@ def wrap_output_data(func: Callable) -> Callable:
         if not (len(args) == 0 and len(kwargs) == 0):
             data = (*args, *kwargs.values())
 
-            if queue and hasattr(inp := data[0], "__sycl_usm_array_interface__"):
+            if hasattr(inp := data[0], "__sycl_usm_array_interface__"):
                 return (
                     copy_to_dpnp(result) if is_dpnp_ndarray(inp) else copy_to_usm(result)
                 )
