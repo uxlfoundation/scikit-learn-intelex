@@ -102,16 +102,18 @@ def lazy_import(module_name: str) -> Callable:
             mod = importlib.import_module(module_name)
 
             # hide dependency injection of the original function
-            def real_func(*args, **kwargs):
+            # onedal/sklearnex will call the underlying function
+            # via ``public_func``
+            def public_func(*args, **kwargs):
                 return func(mod, *args, **kwargs)
 
             # Monkeypatch the original in a general fashion (cannot use
             # globals())
             modname = func.__module__
             funcname = func.__name__
-            setattr(sys.modules[modname], funcname, real_func)
+            setattr(sys.modules[modname], funcname, public_func)
 
-            return real_func(*first_args, **first_kwargs)
+            return public_func(*first_args, **first_kwargs)
 
         return wrapper
 
