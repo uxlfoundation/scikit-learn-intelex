@@ -180,7 +180,7 @@ def support_input_format(func):
 
             if queue and hasattr(data, "__sycl_usm_array_interface__"):
                 return (
-                    copy_to_dpnp(result, queue) if is_dpnp_ndarray(data) else copy_to_usm(result, queue)
+                    copy_to_dpnp(queue, result) if is_dpnp_ndarray(data) else copy_to_usm(queue, result)
                 )
 
         if get_config().get("transform_output") in ("default", None):
