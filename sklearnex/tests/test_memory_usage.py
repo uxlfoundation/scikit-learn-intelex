@@ -35,7 +35,6 @@ from onedal.tests.utils._dataframes_support import (
 )
 from onedal.tests.utils._device_selection import get_queues, is_dpctl_device_available
 from onedal.utils._array_api import _get_sycl_namespace
-from onedal.utils._dpep_helpers import dpctl_available, dpnp_available
 from sklearnex import config_context
 from sklearnex.tests.utils import (
     PATCHED_FUNCTIONS,
@@ -43,13 +42,6 @@ from sklearnex.tests.utils import (
     SPECIAL_INSTANCES,
     DummyEstimator,
 )
-
-if dpctl_available:
-    from dpctl.tensor import usm_ndarray
-
-if dpnp_available:
-    import dpnp
-
 
 CPU_SKIP_LIST = (
     "TSNE",  # too slow for using in testing on common data size

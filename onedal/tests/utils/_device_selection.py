@@ -18,7 +18,7 @@ import functools
 
 import pytest
 
-from ...utils._dpep_helpers import dpctl_available
+from ...utils._third_party import dpctl_available
 
 if dpctl_available:
     import dpctl
