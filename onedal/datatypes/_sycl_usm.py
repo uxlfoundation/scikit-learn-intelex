@@ -57,7 +57,7 @@ def copy_to_usm(queue, array):
 
 def copy_to_dpnp(queue, array):
     if hasattr(array, "__array__"):
-        return to_dpnp(array_to_usm(queue, array))
+        return to_dpnp(array_to_usm(queue, i))
     else:
         if isinstance(array, Iterable):
             array = [copy_to_dpnp(queue, i) for i in array]
