@@ -140,7 +140,7 @@ def is_dpnp_ndarray(x: object) -> bool:
 
     Parameters
     ----------
-    x: object
+    x : object
         Any python object.
 
     Returns
@@ -159,7 +159,7 @@ def is_dpctl_tensor(x: object) -> bool:
 
     Parameters
     ----------
-    x: object
+    x : object
         Any python object.
 
     Returns
