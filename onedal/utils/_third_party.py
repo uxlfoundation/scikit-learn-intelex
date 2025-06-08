@@ -79,7 +79,7 @@ def lazy_import(*module_names: str) -> Callable:
 
     Parameters
     ----------
-    module_names : strings
+    *module_names : strings
         Arguments are names of modules to be imported via importlib.
 
     Returns
@@ -132,19 +132,39 @@ def _is_subclass_fast(cls: type, modname: str, clsname: str) -> bool:
     return issubclass(cls, parent_cls)
 
 
-def is_dpnp_ndarray(x):
-    """Return True if 'x' is a dpnp ndarray
+def is_dpnp_ndarray(x: object) -> bool:
+    """Return True if 'x' is a dpnp ndarray.
 
     This function does not import dpnp if it has not already been imported
     and is therefore cheap to use.
+
+    Parameters
+    ----------
+    x: object
+        Any python object.
+
+    Returns
+    -------
+    is_dpnp : bool
+        Flag if subclass of dpnp.ndarray
     """
     return _is_subclass_fast(type(x), "dpnp", "ndarray")
 
 
-def is_dpctl_tensor(x):
-    """Return True if 'x' is a dpnp array
+def is_dpctl_tensor(x: object) -> bool:
+    """Return True if 'x' is a dpctl usm_ndarray.
 
     This function does not import dpnp if it has not already been imported
     and is therefore cheap to use.
+
+    Parameters
+    ----------
+    x: object
+        Any python object.
+
+    Returns
+    -------
+    is_dpctl : bool
+        Flag if subclass of dpctl.tensor.usm_ndarray.
     """
     return _is_subclass_fast(type(x), "dpctl.tensor", "usm_ndarray")
