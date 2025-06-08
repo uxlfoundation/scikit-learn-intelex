@@ -146,7 +146,7 @@ def is_dpnp_ndarray(x: object) -> bool:
     Returns
     -------
     is_dpnp : bool
-        Flag if subclass of dpnp.ndarray
+        Flag if subclass of dpnp.ndarray.
     """
     return _is_subclass_fast(type(x), "dpnp", "ndarray")
 
