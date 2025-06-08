@@ -400,7 +400,7 @@ def gen_pyx(odir):
     gen_daal4py(dal_root, odir, sklearnex_version, no_dist=no_dist, no_stream=no_stream)
 
 
-gen_pyx(os.path.abspath(os.sep.join((".","build"))))
+gen_pyx(os.path.abspath("./build"))
 
 
 def get_onedal_py_libs():
