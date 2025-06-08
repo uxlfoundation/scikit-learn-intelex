@@ -60,9 +60,11 @@ def _cls_to_sycl_namespace(cls):
     # use caching to minimize imports, derived from array_api_compat
     if _is_subclass_fast(cls, "dpctl.tensor", "usm_ndarray"):
         import dpctl.tensor as dpt
+
         return dpt
     elif _is_subclass_fast(cls, "dpnp", "ndarray"):
         import dpnp
+
         return dpnp
     else:
         raise ValueError(f"SYCL type not recognized: {cls}")
@@ -79,6 +81,10 @@ def _get_sycl_namespace(*arrays):
 
     if sua_iface:
         (X,) = sua_iface.values()
-        return sua_iface, _cls_to_sycl_namespace(type(X)), hasattr(X, "__array_namespace__")
+        return (
+            sua_iface,
+            _cls_to_sycl_namespace(type(X)),
+            hasattr(X, "__array_namespace__"),
+        )
 
     return sua_iface, np, False
