@@ -426,12 +426,7 @@ class BaseForest(BaseEnsemble, metaclass=ABCMeta):
 
         # TODO: fix probabilities out of [0, 1] interval on oneDAL side
         pred = from_table(result.probabilities)
-        min_pred, max_pred = xp.min(pred, axis=1, keepdims=True), xp.max(
-            pred, axis=1, keepdims=True
-        )
-        pred = (pred - min_pred) / (max_pred - min_pred)
-        pred /= xp.sum(pred, axis=1, keepdims=True)
-        return pred
+        return pred.clip(0.0, 1.0)
 
 
 class RandomForestClassifier(ClassifierMixin, BaseForest, metaclass=ABCMeta):
