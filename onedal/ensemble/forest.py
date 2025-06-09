@@ -426,7 +426,9 @@ class BaseForest(BaseEnsemble, metaclass=ABCMeta):
         else:
             result = self.infer(params, model, X)
 
-        return from_table(result.probabilities)
+        # TODO: fix probabilities out of [0, 1] interval on oneDAL side
+        pred = from_table(result.probabilities)
+        return pred.clip(0.0, 1.0)
 
 
 class RandomForestClassifier(ClassifierMixin, BaseForest, metaclass=ABCMeta):
