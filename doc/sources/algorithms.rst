@@ -69,18 +69,7 @@ Classification
          all parameters except ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
      - Multi-output and sparse data are not supported
    * - `LogisticRegression`
-     - All parameters are supported except:
-
-       - ``solver`` != `'newton-cg'`
-       - ``class_weight`` != `None`
-       - ``sample_weight`` != `None`
-       - ``penalty`` != `'l2'`
-       - ``dual`` = `True`
-       - ``intercept_scaling`` != `1`
-       - ``multi_class`` != `'multinomial'`
-       - ``warm_start`` = `True`
-       - ``l1_ratio`` != `None`
-       - Only binary classification is supported
+     - All parameters are supported
      - No limitations
 
 Regression
