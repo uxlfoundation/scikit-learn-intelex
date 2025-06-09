@@ -45,14 +45,10 @@ if daal_check_version((2024, "P", 700)):
     from onedal.utils.validation import _assert_all_finite as _onedal_assert_all_finite
 
     def _onedal_supported_format(X, xp):
-        # array_api does not have a `strides` or `flags` attribute for testing memory
-        # order. When dlpack support is brought in for oneDAL, general support for
-        # array_api can be enabled and the hasattr check can be removed.
-        # _onedal_supported_format is therefore conservative in verifying attributes and
-        # does not support array_api. This will block onedal_assert_all_finite from being
-        # used for array_api inputs but will allow dpnp ndarrays and dpctl tensors.
-        # only check contiguous arrays to prevent unnecessary copying of data, even if
-        # non-contiguous arrays can now be converted to oneDAL tables.
+        # data should be checked if contiguous, as oneDAL will only use contiguous
+        # data from sklearnex. Unlike other oneDAL offloading, copying the data is
+        # specifically avoided as it has a non-negligible impact on speed. In that
+        # case use native sklearn ``_assert_all_finite``
         return X.dtype in [xp.float32, xp.float64] and is_contiguous(X)
 
 else:
