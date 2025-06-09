@@ -157,7 +157,7 @@ class BasicStatistics(BaseBasicStatistics):
         data_table, weights_table = to_table(data, sample_weight, queue=queue)
 
         dtype = data_table.dtype
-        raw_result = raw_result = self._compute_raw(
+        raw_result = self._compute_raw(
             data_table, weights_table, dtype, is_csr
         )
         for opt, raw_value in raw_result.items():
