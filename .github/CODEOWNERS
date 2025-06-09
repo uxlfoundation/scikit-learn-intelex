@@ -1,17 +1,17 @@
 # Infra and tools
-.*                            @napetrov @Alexsandruss @homksei @ahuber21 @ethanglaser
-.ci/                          @napetrov @Alexsandruss @homksei @ahuber21 @ethanglaser
-.circleci/                    @napetrov @Alexsandruss @homksei @ahuber21 @ethanglaser
+.*                            @napetrov @Alexsandruss @homksei @ahuber21 @ethanglaser @icfaust @Vika-F @david-cortes-intel @avolkov-intel @syakov-intel @razdoburdin @maria-Petrova @yuejiaointel
+.ci/                          @napetrov @Alexsandruss @homksei @ahuber21 @ethanglaser @icfaust
+.circleci/                    @napetrov @Alexsandruss @homksei @ahuber21 @ethanglaser @icfaust
 .github/                      @napetrov @Alexsandruss @homksei @ahuber21 @ethanglaser @icfaust
 
 # Docs
-*.md                          @maria-Petrova @napetrov @Alexsandruss @icfaust @david-cortes-intel
-doc/                          @maria-Petrova @napetrov @Alexsandruss @icfaust @david-cortes-intel
-requirements-doc.txt          @Alexsandruss @icfaust @david-cortes-intel
+*.md                          @maria-Petrova @napetrov @Alexsandruss @icfaust @david-cortes-intel @Vika-F @syakov-intel @yuejiaao
+doc/                          @maria-Petrova @napetrov @Alexsandruss @icfaust @david-cortes-intel @Vika-F @syakov-intel @yuejiaao
+requirements-doc.txt          @Alexsandruss @icfaust @david-cortes-intel @Vika-F @syakov-intel @yuejiaao
 
 # sklearnex
-onedal/                       @Alexsandruss @icfaust
-sklearnex/                    @Alexsandruss @icfaust
+onedal/                       @Alexsandruss @icfaust @ethanglaser @Vika-F @david-cortes-intel @syakov-intel @rakshithgb-fujitsu @keeranroth
+sklearnex/                    @Alexsandruss @icfaust @ethanglaser @Vika-F @david-cortes-intel @syakov-intel @avolkov-intel @razdoburdin @yuejiaointel
 
 # Examples
 examples/                     @maria-Petrova @Alexsandruss @napetrov
@@ -24,15 +24,17 @@ requirements*                 @napetrov @Alexsandruss @homksei @ahuber21 @ethang
 setup.*                       @napetrov @Alexsandruss @icfaust
 
 # Model builders
-*model_builders*              @razdoburdin @ahuber21 @avolkov-intel
+*model_builders*              @razdoburdin @ahuber21 @avolkov-intel @icfaust @david-cortes-intel
+daal4py/mb/                   @razdoburdin @ahuber21 @avolkov-intel @icfaust @david-cortes-intel
+src/gbt_model_builder*        @razdoburdin @ahuber21 @avolkov-intel @icfaust @david-cortes-intel
 
 # Forests
-*ensemble*                    @ahuber21 @icfaust
+*ensemble*                    @razdoburdin @ahuber21 @avolkov-intel @icfaust @david-cortes-intel
 
 # Testing
-**/test*.py                   @Alexsandruss @icfaust
-deselected_tests.yaml         @Alexsandruss @icfaust
-tests/                        @Alexsandruss @icfaust
+**/test*.py                   @Alexsandruss @icfaust @yuejiaointel @razdoburdin
+deselected_tests.yaml         @Alexsandruss @icfaust @razdoburdin
+tests/                        @Alexsandruss @icfaust @yuejiaointel @razdoburdin
 
 # Distributed
 *spmd*                        @ethanglaser
