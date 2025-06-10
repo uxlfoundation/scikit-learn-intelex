@@ -47,7 +47,7 @@ python-dateutil==2.9.0.post0
 pytz==2025.1
 PyYAML==6.0.2
 pyzmq==26.2.1
-requests==2.32.3
+requests==2.32.4
 six==1.17.0
 snowballstemmer==3.0.0.1
 soupsieve==2.6
