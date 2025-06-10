@@ -33,7 +33,7 @@ steps:
   - script: |
       . /usr/share/miniconda/etc/profile.d/conda.sh
       conda activate CB
-      if [ -z "${DALROOT}" ]; then conda install -q -y -c conda-forge dal-devel=2025; fi
+      if [ -z "${DALROOT}" ]; then conda install -q -y -c conda-forge dal-devel; fi
       pip install -r dependencies-dev
       pip list
     env:
