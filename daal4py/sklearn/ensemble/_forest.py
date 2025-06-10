@@ -679,8 +679,8 @@ class RandomForestClassifier(RandomForestClassifier_original, RandomForestBase):
         dfc_predictionResult = dfc_algorithm.compute(X, self.daal_model_)
 
         pred = dfc_predictionResult.probabilities
-
-        return pred
+        # TODO: fix probabilities out of [0, 1] interval on oneDAL side
+        return pred.clip(0.0, 1.0)
 
     def _daal_fit_classifier(self, X, y, sample_weight=None):
         y = check_array(y, ensure_2d=False, dtype=None)
