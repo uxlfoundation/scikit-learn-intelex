@@ -497,6 +497,18 @@ class build(onedal_build, orig_build.build):
     pass
 
 
+def get_sklearn_ceilings():
+    install_requires_sklearn_ceilings = []
+    with open("requirements-test.txt") as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith("scikit-learn=="):
+                install_requires_sklearn_ceilings.append(
+                    line.replace("scikit-learn==", "scikit-learn<=")
+                )
+    return install_requires_sklearn_ceilings
+
+
 project_urls = {
     "Bug Tracker": "https://github.com/uxlfoundation/scikit-learn-intelex/issues",
     "Documentation": "https://uxlfoundation.github.io/scikit-learn-intelex/",
@@ -618,7 +630,8 @@ setup(
         "numpy>=1.19.5 ; python_version <= '3.9'",
         "numpy>=1.21.6 ; python_version == '3.10'",
         "numpy>=1.23.5 ; python_version >= '3.11'",
-    ],
+    ]
+    + get_sklearn_ceilings(),
     keywords=["machine learning", "scikit-learn", "data science", "data analytics"],
     packages=get_packages_with_tests(packages_with_tests),
     package_data={
