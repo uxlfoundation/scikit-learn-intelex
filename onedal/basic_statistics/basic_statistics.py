@@ -157,9 +157,7 @@ class BasicStatistics(BaseBasicStatistics):
         data_table, weights_table = to_table(data, sample_weight, queue=queue)
 
         dtype = data_table.dtype
-        raw_result = self._compute_raw(
-            data_table, weights_table, dtype, is_csr
-        )
+        raw_result = self._compute_raw(data_table, weights_table, dtype, is_csr)
         for opt, raw_value in raw_result.items():
             value = from_table(raw_value).ravel()
             if is_single_dim:
