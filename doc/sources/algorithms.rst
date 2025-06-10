@@ -492,7 +492,18 @@ Classification
        - ``predict_proba`` method not supported
      - Only dense data is supported
    * - `LogisticRegression`
-     - All parameters are supported
+     - All parameters are supported except:
+
+       - ``solver`` != `'newton-cg'`
+       - ``class_weight`` != `None`
+       - ``sample_weight`` != `None`
+       - ``penalty`` != `'l2'`
+       - ``dual`` = `True`
+       - ``intercept_scaling`` != `1`
+       - ``multi_class`` != `'multinomial'`
+       - ``warm_start`` = `True`
+       - ``l1_ratio`` != `None`
+       - Only binary classification is supported
      - No limitations
 
 Regression
