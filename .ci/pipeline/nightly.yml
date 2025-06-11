@@ -53,8 +53,8 @@ jobs:
       conda activate CB
       pip install -r dependencies-dev
       export DALROOT=$CONDA_PREFIX
-            $(COVERITY_TOOL_HOME)/bin/cov-build --dir cov-int --no-command --fs-capture-search .
-            $(COVERITY_TOOL_HOME)/bin/cov-build --dir cov-int -- python setup.py build_ext --inplace
+      $(COVERITY_TOOL_HOME)/bin/cov-build --dir cov-int --no-command --fs-capture-search .
+      $(COVERITY_TOOL_HOME)/bin/cov-build --dir cov-int -- python setup.py build_ext --inplace
       zip -r daal4py.zip cov-int
     displayName: 'Perform Coverity scan'
   - script: |
