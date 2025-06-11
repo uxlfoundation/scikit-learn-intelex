@@ -22,12 +22,6 @@ schedules:
     - main
   always: true
 
-# temporary (remove before merge)
-pr:
-  branches:
-    include:
-    - main
-
 variables:
   COVERITY_TOOL_HOME: $(Agent.BuildDirectory)/cov-analysis
   DESCRIPTION: Nightly
