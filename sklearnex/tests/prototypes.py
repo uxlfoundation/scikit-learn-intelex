@@ -176,7 +176,7 @@ class PrototypeEstimator(oneDALEstimator, BaseEstimator):
     # Information about the onedal estimators/objects can be found in an
     # equivalent class file in the onedal module.
 
-    def __init__(self):
+    def __init__(self, check=True, only_contiguous=False):
         # Object instantiation is strictly limited by sklearn. It is only
         # allowed to take the keyword arguments and store them as
         # attributes with the same name. When replicating a sklearn
@@ -184,7 +184,14 @@ class PrototypeEstimator(oneDALEstimator, BaseEstimator):
         # ``__init__`` from sklearn. The prototype uses defined parameters
         # to highlight the process in detail when adding new parameters to
         # an estimator.
-        pass
+
+        # This estimator will abstract over the oneDAL finiteness checker
+        # which usually only operates with contiguous data.  These 
+        # parameters will flag whether to actually check for finiteness
+        # and check finiteness only for contiguous data. Therefore, these
+        # two are illustrative.
+        self.check = check
+        self.only_contiguous = only_contiguous
 
     ############################
     # TIER 1 METHOD FLOW NOTES #
@@ -299,7 +306,7 @@ class PrototypeEstimator(oneDALEstimator, BaseEstimator):
 
         # In the ``fit`` method, a python onedal estimator object is
         # generated.
-        self._onedal_estimator = onedal_PrototypeEstimator(operation=True)
+        self._onedal_estimator = onedal_PrototypeEstimator(check=True)
         # queue must be sent back to the onedal python estimator object
         self._onedal_estimator.fit(X, y, queue=queue)
 
@@ -324,12 +331,27 @@ class PrototypeEstimator(oneDALEstimator, BaseEstimator):
         return self._onedal_estimator.predict(X, queue=queue)
 
     def _onedal_cpu_supported(self, method_name, *data):
-        #
+        # All estimators must have the following two functions with exactly
+        # these signatures. method_name is a string which must match one
+        # of the tier 1 methods of the estimator.  The logic located here
+        # will inspect attributes of the data and the estimator to see if
+        # sklearn
+        if method_name == "fit":
+            (X, y) = data
+        elif method_name == "predict":
+            (X,) = data
         pass
 
     def _onedal_gpu_supported(self, method_name, *data):
-        #
+        # This method will only be called if it is expected to try and use
+        # a SYCL-enabled GPU.
+        if method_name == "fit":
+            (X, y) = data
+        elif method_name == "predict":
+            (X,) = data
         pass
 
     def score(self, X, y):
-        pass
+        # This is an example tier 2 method which uses some sklearn
+        # functionality on top of a tier 1 method
+        return 
