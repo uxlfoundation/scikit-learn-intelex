@@ -77,12 +77,12 @@ if sklearn_check_version("1.2"):
 # support (see dpctl tensors and dpnp).
 #
 # 7) ``validate_data`` checks data quality and estimator status before
-# evaluating the function. This replicates a sklearn functionality with a
-# key faster changes implemented in oneDAL, and therefore should only be
+# evaluating the function. This replicates a sklearn functionality with key
+# performance changes implemented in oneDAL and therefore should only be
 # imported from sklearnex and not sklearn.
 #
 # 8) All estimators require validation of the parameters given at
-# initialization.  This aspect was introduced in sklearn 1.2, any additional
+# initialization. This aspect was introduced in sklearn 1.2, any additional
 # parameters must extend the dictionary for checking.
 
 ##########################
@@ -93,7 +93,7 @@ if sklearn_check_version("1.2"):
 #
 # Tier 1: Those methods which offload to oneDAL using ``dispatch``. Typical
 # examples are ``fit`` and ``predict``. They use a direct equivalent oneDAL
-# function for evaluation.  These methods are of highest priority and have
+# function for evaluation. These methods are of highest priority and have
 # performance benchmark requirements.
 #
 # Tier 2: Those methods that use a Tier 1 method with additional Python
@@ -103,7 +103,7 @@ if sklearn_check_version("1.2"):
 #
 # Tier 3: Those methods which directly use sklearn functionality. Typically
 # these can be directly inherited, but can be problematic with respect
-# to other framework support.  These can be wrapped with the sklearnex
+# to other framework support. These can be wrapped with the sklearnex
 # function ``wrap_output_data`` to guarantee array API, dpctl tensor, and
 # dpnp support but should be addressed with care/guidance in a case-by-case
 # basis.
@@ -114,7 +114,7 @@ if sklearn_check_version("1.2"):
 #
 # All tier 1 methods should be in the decorated_methods list for oneDAL
 # parallelism control. In general, changes to oneDAL parallelism should only
-# be done once per public method call.  This may mean some tier 2 methods
+# be done once per public method call.This may mean some tier 2 methods
 # must be added to the list along with some restructuring of the related 
 # tier 1 methods. An illustrative example could be an estimator which
 # implements ``fit_transform`` where combining ``fit`` and ``transform``
@@ -179,7 +179,7 @@ class PrototypeEstimator(oneDALEstimator, BaseEstimator):
 # the general process is as follows:
 #
 # 1) If a method which requires a fitted estimator, the method must call
-#  ``check_is_fitted`` before calling ``dispatch``. This verifies that
+# ``check_is_fitted`` before calling ``dispatch``. This verifies that
 # aspects of the fit are available for analysis (whether oneDAL may be used
 # or not). 
 #
