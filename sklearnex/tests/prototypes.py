@@ -28,6 +28,8 @@ from sklearn.utils.validation import check_is_fitted
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 
+from onedal.tests.prototypes import PrototypeEstimator as onedal_PrototypeEstimator
+
 from .._device_offload import dispatch
 from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
@@ -124,28 +126,39 @@ if sklearn_check_version("1.2"):
 @control_n_jobs(decorated_methods=["fit", "predict"])
 class PrototypeEstimator(oneDALEstimator, BaseEstimator):
     # PrototypeEstimator is a sklearnex-only estimator, shown by the
-    # inheritance of BaseEstimator. oneDALEstimator for these estimators
-    # without a sklearn equivalent must have oneDALEstimator directly
-    # before in the mro.
+    # inheritance of BaseEstimator. Inherited oneDALEstimator for estimators
+    # without a sklearn equivalent must occur directly before BaseEstimator
+    # in the mro.
 
-    ########################
-    # GENERAL DESIGN NOTES #
-    ########################
+    ##################################
+    # GENERAL ESTIMATOR DESIGN NOTES #
+    ##################################
+    #
+    # As a rule conform to sklearn design rules as much as possible.
+    #
+    # All estimators should be defined in a python file located in a folder
+    # limited to the folder names in this directory:
+    # https://github.com/scikit-learn/scikit-learn/tree/main/sklearn
+    # All estimators should be properly added into the patching map located
+    # in sklearnex/dispatcher.py following the convention made there. This
+    # is important for having the estimator properly tested and available
+    # in sklearn.
     #
     # Sklearnex estimators follow a Matryoshka doll pattern with respect to
-    # the underlying oneDAL. The sklearnex estimator is a public-facing API
-    # which mimics sklearn. Sklearnex estimators will use another estimator,
-    # defined in the ``onedal`` module, to create a onedal estimator written in
-    # python. Finally, this python object will use pybind11 to call oneDAL
-    # directly via pybind11-generated objects and functions. These are separate
-    # entities and do not inherit from one another. The clear separation has
-    # utility so long that the following rules are followed:
+    # the underlying oneDAL library. The sklearnex estimator is a
+    # public-facing API which mimics sklearn. Sklearnex estimators will
+    # create another estimator, defined in the ``onedal`` module, for
+    # having a python interface with oneDAL. Finally, this python object
+    # will use pybind11 to call oneDAL directly via pybind11-generated
+    # objects and functions This is known as the ``backend``. These are
+    # separate entities and do not inherit from one another. The clear
+    # separation has utility so long that the following rules are followed:
     #
-    # 1) All conformance to sklearn should happen in sklearnex estimators, with
-    # all variations between the supported sklearn versions handled there. This
-    # includes transforming result data into a format which matches sklearn.
-    # This is done to minimize and focus maintenance with respect to sklearn to
-    # the sklearnex module.
+    # 1) All conformance to sklearn should happen in sklearnex estimators,
+    # with all variations between the supported sklearn versions handled
+    # there. This includes transforming result data into a format which
+    # matches sklearn. This is done to minimize and focus maintenance with
+    # respect to sklearn to the sklearnex module.
     #
     # 2) The onedal estimator handles necessary data conversion and preparation
     # for invoking calls to onedal. These objects should not be influenced by
@@ -157,8 +170,11 @@ class PrototypeEstimator(oneDALEstimator, BaseEstimator):
     # 3) Pybind11 interfaces should be not be made public to the user unless
     # absolutely necessary, as operation there assumes checks in the other
     # objects have been sufficiently carried out. In most circumstances, the
-    # pybind11 interface should be invoked by the python onedal estimator object.
+    # pybind11 interface should be invoked by the python onedal estimator
+    # object.
     #
+    # Information about the onedal estimators/objects can be found in an
+    # equivalent class file in the onedal module.
 
     def __init__(self):
         # Object instantiation is strictly limited by sklearn. It is only
@@ -175,51 +191,144 @@ class PrototypeEstimator(oneDALEstimator, BaseEstimator):
     ############################
     #
     # Some knowledge of the process flow from the sklearnex perspective is
-    # necessary to understand how to implement an estimator. For Tier 1 methods,
-    # the general process is as follows:
+    # necessary to understand how to implement an estimator. For Tier 1
+    # methods, the general process is as follows:
     #
-    # 1) If a method which requires a fitted estimator, the method must call
-    # ``check_is_fitted`` before calling ``dispatch``. This verifies that
-    # aspects of the fit are available for analysis (whether oneDAL may be used
-    # or not).
+    # 1) If a method which requires a fitted estimator, the method must
+    # call ``check_is_fitted`` before calling ``dispatch``. This verifies
+    # that aspects of the fit are available for analysis (whether oneDAL
+    # may be used or not).
     #
-    # 2) ``dispatch`` is called. This takes the estimator object, method name,
-    # and the two possible evaluation branches and proceeds to call
+    # 2) ``dispatch`` is called. This takes the estimator object, method
+    # name, and the two possible evaluation branches and proceeds to call
     # ``_onedal_gpu_supported`` if a SYCL queue is found or set via the
-    # ``target_offload`` config. Otherwise ``_onedal_cpu_supported`` is called.
+    # ``target_offload`` config. Otherwise ``_onedal_cpu_supported`` is
+    # called.
     #
     # 3) ``_onedal_gpu_supported`` or ``_onedal_cpu_supported`` creates a
     # PatchingConditionsChain object, takes the input data and estimator
-    # parameters, and evaluates whether the estimator and data can be run using
-    # oneDAL. This information is logged to the `sklearnex` logger.
+    # parameters, and evaluates whether the estimator and data can be run
+    # using oneDAL. This information is logged to the `sklearnex` logger.
     #
-    # 4) Either sklearn is called, or a object from onedal is created and called
-    # using the input data. This process is handled in a function which has the
-    # prefix "_onedal_" followed by the method name. When fitting data, the
-    # returned onedal estimator object is stored as the ``_onedal_estimator``
-    # attribute.
+    # 4) Either sklearn is called, or a object from onedal is created and
+    # called using the input data. This process is handled in a function
+    # which has the prefix "_onedal_" followed by the method name. When
+    # fitting data, the returned onedal estimator object is stored as the
+    # ``_onedal_estimator`` attribute.
     #
-    # 5) If necessary result data is returned from the estimator. Attributes
+    # 5) Result data is returned from the estimator if necessary. Attributes
     # from the onedal estimator are copied over to the sklearnex estimator.
-    # Result data is returned to user.
 
     def fit(self, X, y):
+        # Parameter validation must be done before calls to dispatch. This
+        # guarantees that the sklearn and onedal use of parameters are
+        # properly typed and valued.
+        if sklearn_check_version("1.2"):
+            self._validate_params()
+
+        # only arguments are passed to _onedal_*_supported, not kwargs.
+        # The choice between sklearn and onedal is based off of the args,
+        # and not the keyword arguments.
+        dispatch(
+            self,
+            "fit",
+            {
+                "onedal": self._onedal_fit,
+                "sklearn": None,  # see note below about this value
+            },
+            X,
+            y,
+        )
+        # For sklearnex-only estimators, _onedal_*_supported should either
+        # pass or throw an exception. This means the sklearn branch is never
+        # used. Therefore the value can be set to None.  For sklearnex
+        # estimators which mimic sklearn, the function should be directly
+        # taken from the sklearn estimator. For example, for sklearnex's
+        # DBSCAN, it will not call ``self.fit``. Instead it will use
+        # ``"sklearn": sklearn_DBSCAN.fit`` directly.  This is even though
+        # the estimator inherits the sklearn estimator, and can be technically
+        # found via ``super``.
+
+        # methods which do not return a result should return self (sklearn
+        # standard)
+        return self
+
+    def predict(self, X):
+        check_is_fitted(self)  # first check if fitting has occured
+        # No need to do another parameter check. While they are modifiable
+        # in sklearn and in sklearnex, the parameters should never be
+        # changed by hand.
+        return dispatch(
+            self,
+            "predict",
+            {
+                "onedal": self._onedal_predict,
+                "sklearn": None,  # see note in ``fit``
+            },
+            X,
+        )
+        # return value will be handled by self._onedal_predict
+
+    def _onedal_fit(self, X, y, queue=None):
+        # The queue attribute must be added as the last kwarg to all
+        # onedal-facing functions.  The SYCL queue is acquired in
+        # ``dispatch`` and is set there before calling ``_onedal_``-prefix
+        # methods.
+
+        # The first step is to always acquire the namespace of input data
+        # This is important for getting the proper data types and possibly
+        # other conversions.
+        xp, _ = get_namespace(X, y)
+
+        # The second step must always be to validate the data.
+        X, y = validate_data(
+            X, y, dtype=[xp.float64, xp.float32], ensure_all_finite=False
+        )
+        # validate_data does several things:
+        # 1) If not in the proper namespace (depending on array_api configs)
+        # convert the data to the proper data format (default: numpy array)
+        # 2) It will check additional aspects for labeled data.
+        # 3) It will convert the arrays to the proper data type, which for
+        # oneDAL is usually float64 or float32, but can also be int32 in
+        # rare circumstances.
+        # kwargs often are used for sklearn's ``check_array``. It is best
+        # to often use the values set for sklearn for the equivalent same
+        # step. This is not guaranteed and requires care by the developer.
+        # For example, ``ensure_all_finite`` is set to false in this case
+        # for the nature of the class, but would otherwise be unset.
+
+        # In the ``fit`` method, a python onedal estimator object is
+        # generated.
+        self._onedal_estimator = onedal_PrototypeEstimator(operation=True)
+        # queue must be sent back to the onedal python estimator object
+        self._onedal_estimator.fit(X, y, queue=queue)
+
+        # set attributes from _onedal_estimator to sklearnex estimator
+        # It is allowed to have a separate private function to do this step
+        # Below is only an example, but should be all the attributes
+        # available from the same sklearn estimator (if not sklearnex-only)
+        # after fitting.
+        self.finite_ = self._onedal_estimator.finite_
+        # See sklearn conventions about trailing underscores for fitted
+        # values.
+
+    def _onedal_predict(self, X, y, queue=None):
+        # The first step is to always acquire the namespace of input data
+        # This is important for getting the proper data types and possibly
+        # other conversions.
+        xp, _ = get_namespace(X, y)
+
+        # The second step must always be to validate the data.
+        X = validate_data(X, dtype=[xp.float64, xp.float32], ensure_all_finite=False)
+        # queue must be sent back to the onedal python estimator object
+        return self._onedal_estimator.predict(X, queue=queue)
+
+    def _onedal_cpu_supported(self, method_name, *data):
         #
         pass
 
-    def predict(self, X):
-        pass
-
-    def _onedal_fit(self, X, y):
-        pass
-
-    def _onedal_predict(self, X, y):
-        pass
-
-    def _onedal_cpu_supported(self, method):
-        pass
-
-    def _onedal_gpu_supported(self, method):
+    def _onedal_gpu_supported(self, method_name, *data):
+        #
         pass
 
     def score(self, X, y):
