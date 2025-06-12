@@ -31,7 +31,7 @@ if daal_check_version((2024, "P", 100)):
     from daal4py.sklearn._utils import sklearn_check_version
 
     from .._device_offload import dispatch, wrap_output_data
-    from .._utils import PatchingConditionsChain
+    from .._utils import PatchingConditionsChain, register_hyperparameters
     from ..base import oneDALEstimator
     from ..utils._array_api import get_namespace
     from ..utils.validation import validate_data
@@ -44,9 +44,11 @@ if daal_check_version((2024, "P", 100)):
 
     from sklearn.decomposition import PCA as _sklearn_PCA
 
+    from onedal.common.hyperparameters import get_hyperparameters
     from onedal.decomposition import PCA as onedal_PCA
     from onedal.utils._array_api import _is_numpy_namespace
 
+    @register_hyperparameters({"fit": get_hyperparameters("pca", "train")})
     @control_n_jobs(decorated_methods=["fit", "transform", "fit_transform"])
     class PCA(oneDALEstimator, _sklearn_PCA):
         __doc__ = _sklearn_PCA.__doc__
