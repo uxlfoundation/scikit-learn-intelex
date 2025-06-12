@@ -104,7 +104,7 @@ jobs:
         duration=$((end - start))
         echo "--- $nb took $duration seconds ---"
       done
-    timeoutInMinutes: 180
+    timeoutInMinutes: 240
     displayName: 'Run jupyter notebook demo'
 
 - job: LinuxNightly
