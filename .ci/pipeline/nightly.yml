@@ -93,7 +93,17 @@ jobs:
       . /usr/share/miniconda/etc/profile.d/conda.sh
       conda activate CB
       cd examples/notebooks
-      jupyter nbconvert --execute --ExecutePreprocessor.timeout=10900 --to notebook $(ls | grep -E '.*\.ipynb' | grep -v "dbscan.*")
+
+      for nb in $(ls *.ipynb | grep -v "dbscan"); do
+        echo "=== Executing $nb ==="
+        start=$(date +%s)
+
+        jupyter nbconvert --execute --ExecutePreprocessor.timeout=10900 --to notebook "$nb"
+
+        end=$(date +%s)
+        duration=$((end - start))
+        echo "--- $nb took $duration seconds ---"
+      done
     timeoutInMinutes: 180
     displayName: 'Run jupyter notebook demo'
 
