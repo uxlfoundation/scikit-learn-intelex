@@ -39,27 +39,27 @@ Classification
    * - Algorithm
      - Parameters
      - Data formats
-   * - `SVC`
+   * - :obj:`sklearn.svm.SVC`
      - All parameters are supported
      - No limitations
-   * - `NuSVC`
+   * - :obj:`sklearn.svm.NuSVC`
      - All parameters are supported
      - No limitations
-   * - `RandomForestClassifier`
+   * - :obj:`sklearn.ensemble.RandomForestClassifier`
      - All parameters are supported except:
 
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
        - ``criterion`` != `'gini'`
      - Multi-output and sparse data are not supported
-   * - `ExtraTreesClassifier`
+   * - :obj:`sklearn.ensemble.ExtraTreesClassifier`
      - All parameters are supported except:
 
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
        - ``criterion`` != `'gini'`
      - Multi-output and sparse data are not supported
-   * - `KNeighborsClassifier`
+   * - :obj:`sklearn.neighbors.KNeighborsClassifier`
      -
        - For ``algorithm`` == `'kd_tree'`:
 
@@ -68,7 +68,7 @@ Classification
 
          all parameters except ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
      - Multi-output and sparse data are not supported
-   * - `LogisticRegression`
+   * - :obj:`sklearn.linear_model.LogisticRegression`
      - All parameters are supported
      - No limitations
 
@@ -83,38 +83,38 @@ Regression
    * - Algorithm
      - Parameters
      - Data formats
-   * - `SVR`
+   * - :obj:`sklearn.svm.SVR`
      - All parameters are supported
      - No limitations
-   * - `NuSVR`
+   * - :obj:`sklearn.svm.NuSVR`
      - All parameters are supported
      - No limitations
-   * - `RandomForestRegressor`
+   * - :obj:`sklearn.ensemble.RandomForestRegressor`
      - All parameters are supported except:
 
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
        - ``criterion`` != `'mse'`
      - Multi-output and sparse data are not supported
-   * - `ExtraTreesRegressor`
+   * - :obj:`sklearn.ensemble.ExtraTreesRegressor`
      - All parameters are supported except:
 
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
        - ``criterion`` != `'mse'`
      - Multi-output and sparse data are not supported
-   * - `KNeighborsRegressor`
+   * - :obj:`sklearn.neighbors.KNeighborsRegressor`
      - All parameters are supported except:
 
        - ``metric`` != `'euclidean'` or `'minkowski'` with ``p`` != `2`
      - Multi-output and sparse data are not supported
-   * - `LinearRegression`
+   * - :obj:`sklearn.linear_model.LinearRegression`
      - All parameters are supported except:
 
        - ``sample_weight`` != `None`
        - ``positive`` = `True`
      - Only dense data is supported.
-   * - `Ridge`
+   * - :obj:`sklearn.linear_model.Ridge`
      - All parameters are supported except:
 
        - ``solver`` != `'auto'`
@@ -122,12 +122,12 @@ Regression
        - ``positive`` = `True`
        - ``alpha`` must be scalar
      - Only dense data is supported.
-   * - `ElasticNet`
+   * - :obj:`sklearn.linear_model.ElasticNet`
      - All parameters are supported except:
 
        - ``sample_weight`` != `None`
      - Multi-output and sparse data are not supported, `#observations` should be >= `#features`.
-   * - `Lasso`
+   * - :obj:`sklearn.linear_model.Lasso`
      - All parameters are supported except:
 
        - ``sample_weight`` != `None`
@@ -144,7 +144,7 @@ Clustering
    * - Algorithm
      - Parameters
      - Data formats
-   * - `KMeans`
+   * - :obj:`sklearn.cluster.KMeans`
      - All parameters are supported except:
 
        - ``algorithm`` != ``'lloyd'`` ('elkan' falls back to 'lloyd')
@@ -152,7 +152,7 @@ Clustering
        - ``sample_weight`` must be None, constant, or equal weights
        - ``init`` = `'k-means++'` falls back to CPU
      - No limitations
-   * - `DBSCAN`
+   * - :obj:`sklearn.cluster.DBSCAN`
      - All parameters are supported except:
 
        - ``metric`` != `'euclidean'` or `'minkowski'` with ``p`` != `2`
@@ -170,13 +170,13 @@ Dimensionality Reduction
    * - Algorithm
      - Parameters
      - Data formats
-   * - `PCA`
+   * - :obj:`sklearn.decomposition.PCA`
      - All parameters are supported except:
 
        - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`, `'onedal_svd'`]
        - For |sklearn| < 1.5: `'full'` solver is automatically mapped to `'covariance_eigh'`
      - Sparse data is not supported
-   * - `TSNE`
+   * - :obj:`sklearn.manifold.TSNE`
      - All parameters are supported except:
 
        - ``metric`` != 'euclidean' or `'minkowski'` with ``p`` != `2`
@@ -197,7 +197,7 @@ Nearest Neighbors
    * - Algorithm
      - Parameters
      - Data formats
-   * - `NearestNeighbors`
+   * - :obj:`sklearn.neighbors.NearestNeighbors`
      -
        - For ``algorithm`` == 'kd_tree':
 
@@ -218,17 +218,17 @@ Other Tasks
    * - Algorithm
      - Parameters
      - Data formats
-   * - `EmpiricalCovariance`
+   * - :obj:`sklearn.covariance.EmpiricalCovariance`
      - All parameters are supported
      - Only dense data is supported
-   * - `BasicStatistics`
+   * - :obj:`sklearnex.basic_statistics.BasicStatistics`
      - All parameters are supported
      - Supported data formats:
 
        - Dense data
        - CSR sparse matrices
        - Sample weights **not** supported for CSR data format
-   * - `train_test_split`
+   * - :obj:`sklearn.model_selection.train_test_split`
      - All parameters are supported
      - Supported data formats:
         
@@ -236,10 +236,10 @@ Other Tasks
        - Only integer and 32/64-bits floating point types are supported
        - Data with more than 3 dimensions is not supported
        - Only ``np.ndarray`` inputs are supported.
-   * - `assert_all_finite`
+   * - :obj:`sklearn.utils.assert_all_finite`
      - All parameters are supported
      - Only dense data is supported
-   * - `pairwise_distance`
+   * - :obj:`sklearn.metrics.pairwise_distance`
      - All parameters are supported except:
 
        - ``metric`` not in [`'cosine'`, `'correlation'`]
@@ -248,7 +248,7 @@ Other Tasks
        - Only dense data is supported
        - ``Y`` must be `None`
        - Input dtype must be `np.float64`
-   * - `roc_auc_score`
+   * - :obj:`sklearn.metrics.roc_auc_score`
      - All parameters are supported except:
 
        - ``average`` != `None`
@@ -273,13 +273,13 @@ Classification
    * - Algorithm
      - Parameters
      - Data formats
-   * - `SVC`
+   * - :obj:`sklearn.svm.SVC`
      - All parameters are supported except:
 
        - ``kernel`` = `'sigmoid_poly'`
        - ``class_weight`` != `None`
      - Only binary dense data is supported
-   * - `RandomForestClassifier`
+   * - :obj:`sklearn.ensemble.RandomForestClassifier`
      - All parameters are supported except:
 
        - ``warm_start`` = `True`
@@ -288,7 +288,7 @@ Classification
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
      - Multi-output and sparse data are not supported
-   * - `ExtraTreesClassifier`
+   * - :obj:`sklearn.ensemble.ExtraTreesClassifier`
      - All parameters are supported except:
 
        - ``warm_start`` = `True`
@@ -297,14 +297,14 @@ Classification
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
      - Multi-output and sparse data are not supported
-   * - `KNeighborsClassifier`
+   * - :obj:`sklearn.neighbors.KNeighborsClassifier`
      - All parameters are supported except:
 
        - ``algorithm`` != `'brute'`
        - ``weights`` = `'callable'`
        - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
      - Only dense data is supported
-   * - `LogisticRegression`
+   * - :obj:`sklearn.linear_model.LogisticRegression`
      - All parameters are supported except:
 
        - ``solver`` != `'newton-cg'`
@@ -330,7 +330,7 @@ Regression
    * - Algorithm
      - Parameters
      - Data formats
-   * - `RandomForestRegressor`
+   * - :obj:`sklearn.ensemble.RandomForestRegressor`
      - All parameters are supported except:
 
        - ``warm_start`` = `True`
@@ -339,7 +339,7 @@ Regression
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
      - Multi-output and sparse data are not supported
-   * - `ExtraTreesRegressor`
+   * - :obj:`sklearn.ensemble.ExtraTreesRegressor`
      - All parameters are supported except:
 
        - ``warm_start`` = `True`
@@ -348,14 +348,14 @@ Regression
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
      - Multi-output and sparse data are not supported
-   * - `KNeighborsRegressor`
+   * - :obj:`sklearn.neighbors.KNeighborsRegressor`
      - All parameters are supported except:
 
        - ``algorithm`` != `'brute'`
        - ``weights`` = `'callable'`
        - ``metric`` != `'euclidean'` or `'minkowski'` with ``p`` != `2`
      - Only dense data is supported
-   * - `LinearRegression`
+   * - :obj:`sklearn.linear_model.LinearRegression`
      - All parameters are supported except:
 
        - ``sample_weight`` != `None`
@@ -373,7 +373,7 @@ Clustering
    * - Algorithm
      - Parameters
      - Data formats
-   * - `KMeans`
+   * - :obj:`sklearn.cluster.KMeans`
      - All parameters are supported except:
 
        - ``algorithm`` != ``'lloyd'`` ('elkan' falls back to 'lloyd')
@@ -381,7 +381,7 @@ Clustering
        - ``sample_weight`` must be None, constant, or equal weights
        - ``init`` = `'k-means++'` falls back to CPU
      - No limitations
-   * - `DBSCAN`
+   * - :obj:`sklearn.cluster.DBSCAN`
      - All parameters are supported except:
 
        - ``metric`` != `'euclidean'`
@@ -399,7 +399,7 @@ Dimensionality Reduction
    * - Algorithm
      - Parameters
      - Data formats
-   * - `PCA`
+   * - :obj:`sklearn.decomposition.PCA`
      - All parameters are supported except:
 
        - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`, `'onedal_svd'`]
@@ -417,7 +417,7 @@ Nearest Neighbors
    * - Algorithm
      - Parameters
      - Data formats
-   * - `NearestNeighbors`
+   * - :obj:`sklearn.neighbors.NearestNeighbors`
      - All parameters are supported except:
 
        - ``algorithm`` != `'brute'`
@@ -436,10 +436,10 @@ Other Tasks
    * - Algorithm
      - Parameters
      - Data formats
-   * - `EmpiricalCovariance`
+   * - :obj:`sklearn.covariance.EmpiricalCovariance`
      - All parameters are supported
      - Only dense data is supported
-   * - `BasicStatistics`
+   * - :obj:`sklearnex.basic_statistics.BasicStatistics`
      - All parameters are supported
      - Supported data formats:
 
@@ -465,7 +465,7 @@ Classification
    * - Algorithm
      - Parameters & Methods
      - Data formats
-   * - `RandomForestClassifier`
+   * - :obj:`sklearn.ensemble.RandomForestClassifier`
      - All parameters are supported except:
 
        - ``warm_start`` = `True`
@@ -474,7 +474,7 @@ Classification
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
      - Multi-output and sparse data are not supported
-   * - `ExtraTreesClassifier`
+   * - :obj:`sklearn.ensemble.ExtraTreesClassifier`
      - All parameters are supported except:
 
        - ``warm_start`` = `True`
@@ -483,7 +483,7 @@ Classification
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
      - Multi-output and sparse data are not supported
-   * - `KNeighborsClassifier`
+   * - :obj:`sklearn.neighbors.KNeighborsClassifier`
      - All parameters are supported except:
 
        - ``algorithm`` != `'brute'`
@@ -491,7 +491,7 @@ Classification
        - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
        - ``predict_proba`` method not supported
      - Only dense data is supported
-   * - `LogisticRegression`
+   * - :obj:`sklearn.linear_model.LogisticRegression`
      - All parameters are supported except:
 
        - ``solver`` != `'newton-cg'`
@@ -517,7 +517,7 @@ Regression
    * - Algorithm
      - Parameters & Methods
      - Data formats
-   * - `RandomForestRegressor`
+   * - :obj:`sklearn.ensemble.RandomForestRegressor`
      - All parameters are supported except:
 
        - ``warm_start`` = `True`
@@ -526,7 +526,7 @@ Regression
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
      - Multi-output and sparse data are not supported
-   * - `ExtraTreesRegressor`
+   * - :obj:`sklearn.ensemble.ExtraTreesRegressor`
      - All parameters are supported except:
 
        - ``warm_start`` = `True`
@@ -535,14 +535,14 @@ Regression
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
      - Multi-output and sparse data are not supported
-   * - `KNeighborsRegressor`
+   * - :obj:`sklearn.neighbors.KNeighborsRegressor`
      - All parameters are supported except:
 
        - ``algorithm`` != `'brute'`
        - ``weights`` = `'callable'`
        - ``metric`` != `'euclidean'` or `'minkowski'` with ``p`` != `2`
      - Only dense data is supported
-   * - `LinearRegression`
+   * - :obj:`sklearn.linear_model.LinearRegression`
      - All parameters are supported except:
 
        - ``sample_weight`` != `None`
@@ -560,7 +560,7 @@ Clustering
    * - Algorithm
      - Parameters & Methods
      - Data formats
-   * - `KMeans`
+   * - :obj:`sklearn.cluster.KMeans`
      - All parameters are supported except:
 
        - ``algorithm`` != ``'lloyd'`` ('elkan' falls back to 'lloyd')
@@ -568,7 +568,7 @@ Clustering
        - ``sample_weight`` must be None, constant, or equal weights
        - ``init`` = `'k-means++'` falls back to CPU
      - No limitations
-   * - `DBSCAN`
+   * - :obj:`sklearn.cluster.DBSCAN`
      - All parameters are supported except:
 
        - ``metric`` != `'euclidean'`
@@ -586,7 +586,7 @@ Dimensionality Reduction
    * - Algorithm
      - Parameters & Methods
      - Data formats
-   * - `PCA`
+   * - :obj:`sklearn.decomposition.PCA`
      - All parameters are supported except:
 
        - ``svd_solver`` not in [`'full'`, `'covariance_eigh'`, `'onedal_svd'`]
@@ -604,7 +604,7 @@ Nearest Neighbors
    * - Algorithm
      - Parameters
      - Data formats
-   * - `NearestNeighbors`
+   * - :obj:`sklearn.neighbors.NearestNeighbors`
      - All parameters are supported except:
 
        - ``algorithm`` != `'brute'`
@@ -623,10 +623,10 @@ Other Tasks
    * - Algorithm
      - Parameters
      - Data formats
-   * - `EmpiricalCovariance`
+   * - :obj:`sklearn.covariance.EmpiricalCovariance`
      - All parameters are supported
      - Only dense data is supported
-   * - `BasicStatistics`
+   * - :obj:`sklearnex.basic_statistics.BasicStatistics`
      - All parameters are supported
      - Supported data formats:
 
