@@ -309,9 +309,13 @@ def get_build_options():
         ela.append("-Wl,-rpath,@loader_path/../../../")
     elif IS_WIN:
         ela.append("-IGNORE:4197")
-    elif IS_LIN and not any(
-        x in os.environ and "-g" in os.environ[x]
-        for x in ["CPPFLAGS", "CFLAGS", "LDFLAGS"]
+    elif (
+        IS_LIN
+        and not any(
+            x in os.environ and "-g" in os.environ[x]
+            for x in ["CPPFLAGS", "CFLAGS", "CXXFLAGS", "CC", "CXX", "LDFLAGS"]
+        )
+        and not USE_ABS_RPATH
     ):
         ela.append("-s")
     if IS_LIN:
