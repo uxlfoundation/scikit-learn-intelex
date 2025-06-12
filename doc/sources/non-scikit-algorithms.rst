@@ -17,7 +17,11 @@
 Non-Scikit-Learn Algorithms
 ===========================
 Algorithms not presented in the original scikit-learn are described here. All algorithms are
-available for both CPU and GPU (including distributed mode)
+available for both CPU and GPU (including distributed mode).
+
+.. Note::
+    If using :ref:`patching <patching>`, these classes can be imported either from module ``sklearn``
+    or from module ``sklearnex``.
 
 .. autoclass:: sklearnex.basic_statistics.BasicStatistics
     :members:
