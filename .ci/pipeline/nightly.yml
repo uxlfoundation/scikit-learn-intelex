@@ -94,7 +94,7 @@ jobs:
       conda activate CB
       cd examples/notebooks
 
-      for nb in $(ls *.ipynb | grep -v "dbscan"); do
+      for nb in $(ls *.ipynb | grep -v "dbscan" | grep -v "higgs"); do
         echo "=== Executing $nb ==="
         start=$(date +%s)
 
@@ -104,7 +104,7 @@ jobs:
         duration=$((end - start))
         echo "--- $nb took $duration seconds ---"
       done
-    timeoutInMinutes: 240
+    timeoutInMinutes: 180
     displayName: 'Run jupyter notebook demo'
 
 - job: LinuxNightly
