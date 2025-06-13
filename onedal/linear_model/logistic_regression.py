@@ -231,19 +231,15 @@ class LogisticRegression(ClassifierMixin, BaseLogisticRegression):
         tol=1e-4,
         C=1.0,
         fit_intercept=True,
-        solver="newton-cg",
         max_iter=100,
-        *,
-        algorithm="dense_batch",
-        **kwargs,
     ):
         super().__init__(
             tol=tol,
             C=C,
             fit_intercept=fit_intercept,
-            solver=solver,
+            solver="newton-cg",
             max_iter=max_iter,
-            algorithm=algorithm,
+            algorithm="dense_batch",
         )
 
     @bind_default_backend("logistic_regression.classification")
