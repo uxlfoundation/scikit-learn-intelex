@@ -14,9 +14,11 @@
 # limitations under the License.
 # ===============================================================================
 
+import math
 import numbers
 
 import scipy.sparse as sp
+from array_api_compat import is_torch_array
 from sklearn.utils.validation import _assert_all_finite as _sklearn_assert_all_finite
 from sklearn.utils.validation import _num_samples, check_array, check_non_negative
 
@@ -70,7 +72,10 @@ def _sklearnex_assert_all_finite(
     # size check is an initial match to daal4py for performance reasons, can be
     # optimized later
     xp, _ = get_namespace(X)
-    if X.size < 32768 or not _onedal_supported_format(X, xp):
+    # this is a PyTorch-specific fix, as Tensor.size is a function.
+    too_small = (math.prod(X.shape) if is_torch_array(X) else X.size) < 32768
+
+    if too_small or not _onedal_supported_format(X, xp):
         if sklearn_check_version("1.1"):
             _sklearn_assert_all_finite(X, allow_nan=allow_nan, input_name=input_name)
         else:

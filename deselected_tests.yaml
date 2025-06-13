@@ -40,22 +40,43 @@ deselected_tests:
   - neighbors/tests/test_neighbors.py::test_neighbor_classifiers_loocv[auto-nn_model0]
 
   # Array API support
-  # sklearnex functional Array API support doesn't guaranty namespace consistency for the estimator's array attributes.
+  # sklearnex functional Array API support doesn't guarantee namespace consistency for the estimator's array attributes.
   - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_input_and_values-array_api_strict-None-None]
   - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_input_and_values-array_api_strict-None-None]
   - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_get_precision-array_api_strict-None-None]
   - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_get_precision-array_api_strict-None-None]
   - linear_model/tests/test_ridge.py::test_ridge_array_api_compliance[Ridge(solver='svd')-check_array_api_attributes-array_api_strict-None-None]
   - linear_model/tests/test_ridge.py::test_ridge_array_api_compliance[Ridge(solver='svd')-check_array_api_input_and_values-array_api_strict-None-None]
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full')-check_array_api_input_and_values-torch-cpu-float64]
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full')-check_array_api_input_and_values-torch-cpu-float32]
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full')-check_array_api_get_precision-torch-cpu-float64]
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full')-check_array_api_get_precision-torch-cpu-float32]
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=0.1,svd_solver='full',whiten=True)-check_array_api_input_and_values-torch-cpu-float64]
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=0.1,svd_solver='full',whiten=True)-check_array_api_input_and_values-torch-cpu-float32]
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=0.1,svd_solver='full',whiten=True)-check_array_api_get_precision-torch-cpu-float64]
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=0.1,svd_solver='full',whiten=True)-check_array_api_get_precision-torch-cpu-float32]
+  - decomposition/tests/test_pca.py::test_pca_mle_array_api_compliance[PCA(n_components='mle',svd_solver='full')-check_array_api_get_precision-torch-cpu-float64]
+  - decomposition/tests/test_pca.py::test_pca_mle_array_api_compliance[PCA(n_components='mle',svd_solver='full')-check_array_api_get_precision-torch-cpu-float32]
   # `train_test_split` inconsistency for Array API inputs.
   - model_selection/tests/test_split.py::test_array_api_train_test_split[True-None-array_api_strict-None-None]
   - model_selection/tests/test_split.py::test_array_api_train_test_split[True-stratify1-array_api_strict-None-None]
   - model_selection/tests/test_split.py::test_array_api_train_test_split[False-None-array_api_strict-None-None]
+  - model_selection/tests/test_split.py::test_array_api_train_test_split[True-None-torch-cpu-float64]
+  - model_selection/tests/test_split.py::test_array_api_train_test_split[True-None-torch-cpu-float32]
+  - model_selection/tests/test_split.py::test_array_api_train_test_split[True-stratify1-torch-cpu-float64]
+  - model_selection/tests/test_split.py::test_array_api_train_test_split[True-stratify1-torch-cpu-float32]
+  - model_selection/tests/test_split.py::test_array_api_train_test_split[False-None-torch-cpu-float64]
+  - model_selection/tests/test_split.py::test_array_api_train_test_split[False-None-torch-cpu-float32]
+
   # PCA. Array API functionally supported for all factorizations. power_iteration_normalizer=["LU", "QR"]
   - decomposition/tests/test_pca.py::test_array_api_error_and_warnings_on_unsupported_params
   # PCA. InvalidParameterError: The 'M' parameter of randomized_svd must be an instance of 'numpy.ndarray' or a sparse matrix.
   - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,power_iteration_normalizer='QR',random_state=0,svd_solver='randomized')-check_array_api_input_and_values-array_api_strict-None-None]
   - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,power_iteration_normalizer='QR',random_state=0,svd_solver='randomized')-check_array_api_get_precision-array_api_strict-None-None]
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,power_iteration_normalizer='QR',random_state=0,svd_solver='randomized')-check_array_api_input_and_values-torch-cpu-float64]
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,power_iteration_normalizer='QR',random_state=0,svd_solver='randomized')-check_array_api_input_and_values-torch-cpu-float32]
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,power_iteration_normalizer='QR',random_state=0,svd_solver='randomized')-check_array_api_get_precision-torch-cpu-float64]
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,power_iteration_normalizer='QR',random_state=0,svd_solver='randomized')-check_array_api_get_precision-torch-cpu-float32]
   # Ridge regression. Array API functionally supported for all solvers. Not raising error for non-svd solvers.
   - linear_model/tests/test_ridge.py::test_array_api_error_and_warnings_for_solver_parameter[array_api_strict]
 
@@ -448,3 +469,6 @@ gpu:
 
   # Introduced with RNG forest updates in oneDAL
   - ensemble/tests/test_voting.py::test_set_estimator_drop
+
+  # Deselection for Scikit-Learn 1.4 GPU conformance
+  - model_selection/tests/test_validation.py::test_learning_curve_some_failing_fits_warning >=1.4
