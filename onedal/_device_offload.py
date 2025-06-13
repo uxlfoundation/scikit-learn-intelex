@@ -20,9 +20,9 @@ from collections.abc import Iterable
 from functools import wraps
 
 import numpy as np
-from onedal import _default_backend as backend
 from sklearn import get_config
 
+from onedal import _default_backend as backend
 
 from ._config import _get_config
 from .utils import _sycl_queue_manager as QM
