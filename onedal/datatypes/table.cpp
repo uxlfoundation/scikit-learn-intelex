@@ -105,7 +105,7 @@ ONEDAL_PY_INIT_MODULE(table) {
 
     m.def("from_table", [](const dal::table& t) -> py::object {
         auto* obj_ptr = numpy::convert_to_pyobject(t);
-        return pybind11::reinterpret_steal<py::object>(obj_ptr);
+        return py::reinterpret_steal<py::object>(obj_ptr);
     });
     m.def("dlpack_memory_order", &dlpack::dlpack_memory_order);
     py::enum_<DLDeviceType>(m, "DLDeviceType")
