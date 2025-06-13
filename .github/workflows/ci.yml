@@ -442,7 +442,7 @@ jobs:
           echo "EnableRecoverablePageFaults=1" >> "$GITHUB_ENV"
           echo "GpuFaultCheckThreshold=0" >> "$GITHUB_ENV"
           # set build numpy version for use in generating code coverage
-          echo "NUMPY_BUILD=${{ needs.build_uxl.outputs.numpy-version }} >> "$GITHUB_ENV"
+          echo "NUMPY_BUILD=${{ needs.build_uxl.outputs.numpy-version }}" >> "$GITHUB_ENV"
       - name: apt-get
         run: sudo apt-get update
       - name: dpcpp installation
