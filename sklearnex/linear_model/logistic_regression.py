@@ -208,12 +208,11 @@ if daal_check_version((2024, "P", 1)):
                     ),
                     (self.class_weight is None, "Class weight is not supported"),
                     (self.solver == "newton-cg", "Only newton-cg solver is supported."),
-                    (
-                        self.multi_class != "multinomial",
-                        "multi_class parameter is not supported.",
-                    ),
                     (self.warm_start == False, "Warm start is not supported."),
-                    (self.l1_ratio is None, "l1 ratio is not supported."),
+                    (
+                        self.l1_ratio is None or self.l1_ratio == 0,
+                        "l1 ratio is not supported.",
+                    ),
                     (sample_weight is None, "Sample weight is not supported."),
                     (
                         target_type == "binary",
