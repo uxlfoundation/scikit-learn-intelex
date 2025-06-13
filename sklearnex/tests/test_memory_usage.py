@@ -122,7 +122,7 @@ GPU_ESTIMATORS = {
 
 data_shapes = [
     pytest.param((1000, 100), id="(1000, 100)"),
-    pytest.param((2000, 50), id="(2000, 50)"),
+    pytest.param((2000, 40), id="(2000, 40)"),
 ]
 
 EXTRA_MEMORY_THRESHOLD = 0.15
