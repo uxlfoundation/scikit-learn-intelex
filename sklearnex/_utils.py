@@ -28,16 +28,19 @@ from daal4py.sklearn._utils import (
 )
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 
-# Note: if inheriting from '_HTMLDocumentationLinkMixin' here, it then doesn't matter
-# the order of inheritance of classes for estimators when this is later subclassed,
-# whereas if inheriting from something else, the subclass that inherits from this needs
-# to be the first inherited class in estimators in order for it to take effect.
-if sklearn_check_version("1.4"):
-    from sklearn.utils._estimator_html_repr import _HTMLDocumentationLinkMixin
+# Not an ideal solution, but this allows for access to the outputs of older
+# sklearnex tag dictionaries in a way similar to the sklearn >=1.6 tag
+# dataclasses via duck-typing. At some point this must be removed for direct
+# use of get_tags in all circumstances, dictated by sklearn support. This is
+# implemented in a way to minimally impact performance.
 
-    BaseForHTMLDocLink = _HTMLDocumentationLinkMixin
+
+if sklearn_check_version("1.6"):
+    from sklearn.utils import get_tags
 else:
-    BaseForHTMLDocLink = ABC
+    from sklearn.base import BaseEstimator
+
+    get_tags = lambda obj: type("Tags", (), BaseEstimator._get_tags(obj))
 
 
 class PatchingConditionsChain(daal4py_PatchingConditionsChain):
@@ -142,20 +145,6 @@ def register_hyperparameters(hyperparameters_map):
     return decorator
 
 
-# This abstract class is meant to generate a clickable doc link for classses
-# in sklearnex that are not part of base scikit-learn.
-class ExtensionEstimator(BaseForHTMLDocLink):
-    @property
-    def _doc_link_module(self) -> str:
-        return "sklearnex"
-
-    @property
-    def _doc_link_template(self) -> str:
-        module_path, _ = self.__class__.__module__.rsplit(".", 1)
-        class_name = self.__class__.__name__
-        return f"https://uxlfoundation.github.io/scikit-learn-intelex/latest/non-scikit-algorithms.html#{module_path}.{class_name}"
-
-
 def _add_inc_serialization_note(class_docstrings: str) -> str:
     """Adds a small note note about serialization for extension estimators that are incremental.
     The class docstrings should leave a placeholder '%incremental_serialization_note%' inside
@@ -179,25 +168,3 @@ the policy is not saved in serialized data."""
     return class_docstrings.replace(
         r"%incremental_serialization_note%", inc_serialization_note
     )
-
-
-# This abstract class is meant to generate a clickable doc link for classses
-# in sklearnex that have counterparts in scikit-learn.
-class PatchableEstimator(BaseForHTMLDocLink):
-    @property
-    def _doc_link_module(self) -> str:
-        return "sklearnex"
-
-    @property
-    def _doc_link_template(self) -> str:
-        if re.search(r"^\d\.\d\.\d$", sklearn.__version__):
-            sklearn_version_parts = sklearn.__version__.split(".")
-            doc_version_url = sklearn_version_parts[0] + "." + sklearn_version_parts[1]
-        else:
-            doc_version_url = "stable"
-        module_path, _ = self.__class__.__module__.rsplit(".", 1)
-        module_path = re.sub("sklearnex", "sklearn", module_path)
-        class_name = self.__class__.__name__
-        # for TSNE, which re-uses daal4py
-        module_path = re.sub(r"daal4py\.", "", module_path)
-        return f"https://scikit-learn.org/{doc_version_url}/modules/generated/{module_path}.{class_name}.html"

@@ -35,15 +35,18 @@ if daal_check_version((2023, "P", 200)):
 
     from daal4py.sklearn._n_jobs_support import control_n_jobs
     from daal4py.sklearn._utils import sklearn_check_version
+    from onedal._device_offload import support_input_format
     from onedal.cluster import KMeans as onedal_KMeans
     from onedal.utils.validation import _is_csr
 
     from .._device_offload import dispatch, wrap_output_data
-    from .._utils import PatchableEstimator, PatchingConditionsChain
+    from .._utils import PatchingConditionsChain
+    from ..base import oneDALEstimator
+    from ..utils._array_api import get_namespace
     from ..utils.validation import validate_data
 
     @control_n_jobs(decorated_methods=["fit", "fit_transform", "predict", "score"])
-    class KMeans(PatchableEstimator, _sklearn_KMeans):
+    class KMeans(oneDALEstimator, _sklearn_KMeans):
         __doc__ = _sklearn_KMeans.__doc__
 
         if sklearn_check_version("1.2"):
@@ -317,16 +320,20 @@ if daal_check_version((2023, "P", 200)):
         _onedal_gpu_supported = _onedal_supported
         _onedal_cpu_supported = _onedal_supported
 
-        @wrap_output_data
-        def fit_transform(self, X, y=None, sample_weight=None):
-            return self.fit(X, sample_weight=sample_weight)._transform(X)
+        def _check_test_data(self, X):
+            xp, _ = get_namespace(X)
+            X = validate_data(
+                self,
+                X,
+                accept_sparse="csr",
+                reset=False,
+                dtype=[xp.float64, xp.float32],
+                order="C",
+                accept_large_sparse=False,
+            )
+            return X
 
-        @wrap_output_data
-        def transform(self, X):
-            check_is_fitted(self)
-
-            X = self._check_test_data(X)
-            return self._transform(X)
+        _transform = support_input_format(_sklearn_KMeans._transform)
 
         @wrap_output_data
         def score(self, X, y=None, sample_weight=None):
@@ -381,8 +388,6 @@ if daal_check_version((2023, "P", 200)):
 
         fit.__doc__ = _sklearn_KMeans.fit.__doc__
         predict.__doc__ = _sklearn_KMeans.predict.__doc__
-        transform.__doc__ = _sklearn_KMeans.transform.__doc__
-        fit_transform.__doc__ = _sklearn_KMeans.fit_transform.__doc__
         score.__doc__ = _sklearn_KMeans.score.__doc__
 
 else:
