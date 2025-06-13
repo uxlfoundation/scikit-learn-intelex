@@ -21,7 +21,7 @@
 
 <h3> Speed up your scikit-learn applications for CPUs and GPUs across single- and multi-node configurations
 
-[Releases](https://github.com/uxlfoundation/scikit-learn-intelex/releases)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Documentation](https://uxlfoundation.github.io/scikit-learn-intelex/)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Examples](https://github.com/uxlfoundation/scikit-learn-intelex/tree/master/examples/notebooks)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Support]()&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;[License](https://github.com/uxlfoundation/scikit-learn-intelex/blob/master/LICENSE)&nbsp;&nbsp;&nbsp;
+[Releases](https://github.com/uxlfoundation/scikit-learn-intelex/releases)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Documentation](https://uxlfoundation.github.io/scikit-learn-intelex/)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Examples](https://github.com/uxlfoundation/scikit-learn-intelex/tree/master/examples/notebooks)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Support](SUPPORT.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;[License](https://github.com/uxlfoundation/scikit-learn-intelex/blob/master/LICENSE)&nbsp;&nbsp;&nbsp;
 
 
 [![Build Status](https://dev.azure.com/daal/daal4py/_apis/build/status/CI?branchName=main)](https://dev.azure.com/daal/daal4py/_build/latest?definitionId=9&branchName=main)

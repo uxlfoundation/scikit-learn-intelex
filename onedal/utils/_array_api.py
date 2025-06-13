@@ -68,7 +68,12 @@ def _asarray(data, xp, *args, **kwargs):
 
 def _is_numpy_namespace(xp):
     """Return True if xp is backed by NumPy."""
-    return xp.__name__ in {"numpy", "array_api_compat.numpy", "numpy.array_api"}
+    return xp.__name__ in {
+        "numpy",
+        "array_api_compat.numpy",
+        "numpy.array_api",
+        "sklearn.externals.array_api_compat.numpy",
+    }
 
 
 def _get_sycl_namespace(*arrays):
