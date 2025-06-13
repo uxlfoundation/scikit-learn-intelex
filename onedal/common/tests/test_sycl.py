@@ -18,7 +18,7 @@ import pytest
 
 from onedal import _default_backend as backend
 from onedal.tests.utils._device_selection import get_queues
-from onedal.utils._dpep_helpers import dpctl_available
+from onedal.utils._third_party import dpctl_available
 
 
 @pytest.mark.skipif(

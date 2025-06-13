@@ -24,7 +24,7 @@ from numpy.testing import assert_allclose, assert_array_equal
 from onedal import _default_backend, _dpc_backend
 from onedal._device_offload import supports_queue
 from onedal.datatypes import from_table, to_table
-from onedal.utils._dpep_helpers import dpctl_available
+from onedal.utils._third_party import dpctl_available
 
 backend = _dpc_backend or _default_backend
 
