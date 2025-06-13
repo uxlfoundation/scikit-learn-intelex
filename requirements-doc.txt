@@ -46,7 +46,7 @@ pyrsistent==0.20.0
 python-dateutil==2.9.0.post0
 pytz==2025.2
 PyYAML==6.0.2
-pyzmq==26.4.0
+pyzmq==27.0.0
 requests==2.32.4
 six==1.17.0
 snowballstemmer==3.0.1
