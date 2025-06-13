@@ -20,10 +20,11 @@ from collections.abc import Iterable
 from functools import wraps
 
 import numpy as np
+from onedal import _default_backend as backend
 from sklearn import get_config
 
+
 from ._config import _get_config
-from .datatypes import kDLCPU
 from .utils import _sycl_queue_manager as QM
 from .utils._array_api import _asarray, _is_numpy_namespace
 from .utils._dpep_helpers import dpctl_available, dpnp_available
@@ -36,8 +37,9 @@ else:
 
     SyclQueue = getattr(_dpc_backend, "SyclQueue", None)
 
+
 logger = logging.getLogger("sklearnex")
-cpu_dlpack_device = (kDLCPU, 0)
+cpu_dlpack_device = (backend.kDLCPU, 0)
 
 
 def supports_queue(func):
