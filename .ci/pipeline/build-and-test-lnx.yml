@@ -14,7 +14,7 @@
 # limitations under the License.
 #===============================================================================
 steps:
-  - script: sudo apt-get update && sudo apt-get install -y clang-format
+  - script: sudo apt-get update
     displayName: "apt-get"
   - script: |
       bash .ci/scripts/install_dpcpp.sh
