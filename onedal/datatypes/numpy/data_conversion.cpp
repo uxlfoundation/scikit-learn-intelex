@@ -269,7 +269,8 @@ dal::table convert_to_table(py::object inp_obj, py::object queue, bool recursed)
     return res;
 }
 
-static void free_capsule(PyObject *cap) {
+template <class T>
+void free_capsule(PyObject *cap) {
     // TODO: check safe cast
     dal::base *stored_array = static_cast<dal::base *>(PyCapsule_GetPointer(cap, NULL));
     if (stored_array) {
@@ -304,7 +305,7 @@ static PyObject *convert_to_numpy_impl(
         throw std::invalid_argument("Conversion to numpy array failed");
 
     void *opaque_value = static_cast<void *>(new dal::array<T>(host_array));
-    PyObject *cap = PyCapsule_New(opaque_value, NULL, free_capsule);
+    PyObject *cap = PyCapsule_New(opaque_value, NULL, free_capsule<T>);
     PyArray_SetBaseObject(reinterpret_cast<PyArrayObject *>(obj), cap);
     return obj;
 }
