@@ -269,9 +269,10 @@ dal::table convert_to_table(py::object inp_obj, py::object queue, bool recursed)
     return res;
 }
 
-static void free_capsule(PyObject *cap) {
+template <class T>
+void free_capsule(PyObject *cap) {
     // TODO: check safe cast
-    dal::base *stored_array = static_cast<dal::base *>(PyCapsule_GetPointer(cap, NULL));
+    dal::array<T> *stored_array = static_cast<dal::array<T> *>(PyCapsule_GetPointer(cap, NULL));
     if (stored_array) {
         delete stored_array;
     }
@@ -304,7 +305,7 @@ static PyObject *convert_to_numpy_impl(
         throw std::invalid_argument("Conversion to numpy array failed");
 
     void *opaque_value = static_cast<void *>(new dal::array<T>(host_array));
-    PyObject *cap = PyCapsule_New(opaque_value, NULL, free_capsule);
+    PyObject *cap = PyCapsule_New(opaque_value, NULL, free_capsule<T>);
     PyArray_SetBaseObject(reinterpret_cast<PyArrayObject *>(obj), cap);
     return obj;
 }
@@ -420,17 +421,21 @@ PyObject *convert_to_pyobject(const dal::table &input) {
         const auto &homogen_input = static_cast<const dal::homogen_table &>(input);
         const dal::data_type dtype = homogen_input.get_metadata().get_data_type(0);
 
-#define MAKE_NYMPY_FROM_HOMOGEN(NpType)                                       \
-    {                                                                         \
-        auto bytes_array = dal::detail::get_original_data(homogen_input);     \
-        res = convert_to_numpy_impl<NpType>(bytes_array,                      \
-                                            homogen_input.get_row_count(),    \
-                                            homogen_input.get_column_count(), \
-                                            homogen_input.get_data_layout()); \
+#define MAKE_NYMPY_FROM_HOMOGEN(NpType, T)                                                         \
+    {                                                                                              \
+        auto bytes_array = dal::detail::get_original_data(homogen_input);                          \
+        T *data_pointer = reinterpret_cast<T *>(bytes_array.get_mutable_data());                   \
+        auto typed_array =                                                                         \
+            dal::array<T>::wrap(data_pointer,                                                      \
+                                homogen_input.get_row_count() * homogen_input.get_column_count()); \
+        res = convert_to_numpy_impl<NpType, T>(typed_array,                                        \
+                                               homogen_input.get_row_count(),                      \
+                                               homogen_input.get_column_count(),                   \
+                                               homogen_input.get_data_layout());                   \
     }
-        SET_CTYPE_NPY_FROM_DAL_TYPE(dtype,
-                                    MAKE_NYMPY_FROM_HOMOGEN,
-                                    throw std::invalid_argument("Unable to convert numpy object"));
+        SET_CTYPES_NPY_FROM_DAL_TYPE(dtype,
+                                     MAKE_NYMPY_FROM_HOMOGEN,
+                                     throw std::invalid_argument("Unable to convert numpy object"));
 #undef MAKE_NYMPY_FROM_HOMOGEN
     }
     else if (input.get_kind() == csr_table_t::kind()) {
