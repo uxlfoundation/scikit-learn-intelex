@@ -815,10 +815,503 @@ class CatBoostClassificationModelBuilder(unittest.TestCase):
         X, y = make_classification(
             n_classes=3, n_features=10, n_informative=3, random_state=42
         )
+<<<<<<< HEAD
         cls.X_test = X[:2, :]
         cls.X_nan = np.array([np.nan] * 20, dtype=np.float32).reshape(2, 10)
         params = {
             "reg_lambda": 1,
+=======
+        X[:2] = (X[:2] * 10.0).astype(np.int32).astype(np.float64)
+        if with_nan:
+            X[-1, :] = np.nan
+        if sklearn_class:
+            return cb.CatBoostClassifier(
+                objective=objective,
+                grow_policy=grow_policy,
+                nan_mode=nan_mode,
+                boost_from_average=boost_from_average,
+                depth=depth,
+                iterations=2,
+                random_seed=123,
+                thread_count=1,
+                save_snapshot=False,
+                verbose=0,
+                allow_writing_files=False,
+            ).fit(X, y)
+        else:
+            return cb.train(
+                pool=cb.Pool(X, y),
+                params={
+                    "objective": objective,
+                    "grow_policy": grow_policy,
+                    "nan_mode": nan_mode,
+                    "depth": depth,
+                    "random_seed": 123,
+                    "thread_count": 1,
+                    "allow_writing_files": False,
+                }
+                | params_boost_from_average,
+                num_boost_round=2,
+                verbose=0,
+                save_snapshot=False,
+            )
+
+    elif objective == "MultiClass":
+        X, y = make_classification(
+            n_samples=10,
+            n_classes=3,
+            n_informative=3,
+            n_redundant=0,
+            random_state=123,
+        )
+        X[:2] = (X[:2] * 10.0).astype(np.int32).astype(np.float64)
+        if with_nan:
+            X[-1, :] = np.nan
+        if sklearn_class:
+            return cb.CatBoostClassifier(
+                objective=objective,
+                grow_policy=grow_policy,
+                nan_mode=nan_mode,
+                boost_from_average=boost_from_average,
+                depth=depth,
+                iterations=2,
+                random_seed=123,
+                thread_count=1,
+                save_snapshot=False,
+                verbose=0,
+                allow_writing_files=False,
+            ).fit(X, y)
+        else:
+            return cb.train(
+                pool=cb.Pool(X, y),
+                params={
+                    "objective": objective,
+                    "grow_policy": grow_policy,
+                    "nan_mode": nan_mode,
+                    "depth": depth,
+                    "random_seed": 123,
+                    "thread_count": 1,
+                    "allow_writing_files": False,
+                }
+                | params_boost_from_average,
+                num_boost_round=2,
+                verbose=0,
+                save_snapshot=False,
+            )
+
+    else:
+        X, y = make_regression(n_samples=25, n_features=4, random_state=123)
+        X[:2] = (X[:2] * 10.0).astype(np.int32).astype(np.float64)
+        if "Tweedie" in objective:
+            y = np.exp((y - y.mean()) / y.std())
+        if with_nan:
+            X[-1, :] = np.nan
+        if sklearn_class:
+            return cb.CatBoostRegressor(
+                objective=objective,
+                grow_policy=grow_policy,
+                nan_mode=nan_mode,
+                boost_from_average=boost_from_average,
+                depth=depth,
+                iterations=2,
+                random_seed=123,
+                thread_count=1,
+                save_snapshot=False,
+                verbose=0,
+                allow_writing_files=False,
+            ).fit(X, y)
+        else:
+            return cb.train(
+                pool=cb.Pool(X, y),
+                params={
+                    "objective": objective,
+                    "grow_policy": grow_policy,
+                    "nan_mode": nan_mode,
+                    "depth": depth,
+                    "random_seed": 123,
+                    "thread_count": 1,
+                    "allow_writing_files": False,
+                }
+                | params_boost_from_average,
+                num_boost_round=2,
+                verbose=0,
+                save_snapshot=False,
+            )
+
+
+@pytest.mark.skipif(not cb_available, reason=cb_unavailable_str)
+@pytest.mark.parametrize("objective", ["RMSE", "Tweedie:variance_power=1.99"])
+@pytest.mark.parametrize("boost_from_average", [False, True])
+@pytest.mark.parametrize("grow_policy", ["SymmetricTree", "Lossguide"])
+@pytest.mark.parametrize("nan_mode", ["Forbidden", "Min", "Max"])
+@pytest.mark.parametrize("sklearn_class", [False, True])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("scale", [1.0, 2.5])
+@pytest.mark.parametrize("empty_trees", [False, True])
+def test_catboost_regression(
+    objective,
+    boost_from_average,
+    grow_policy,
+    nan_mode,
+    sklearn_class,
+    dtype,
+    scale,
+    empty_trees,
+):
+    if boost_from_average and objective != "RMSE":
+        pytest.skip("Not implemented in catboost.")
+    cb_model = make_cb_model(
+        objective, grow_policy, nan_mode, sklearn_class, empty_trees, boost_from_average
+    )
+    d4p.mb.convert_model(cb_model)
+    if scale != 1:
+        bias = cb_model.get_scale_and_bias()[1]
+        cb_model.set_scale_and_bias(scale, bias)
+    d4p_model = d4p.mb.convert_model(cb_model)
+
+    assert d4p_model.model_type == "catboost"
+    assert d4p_model.is_regressor_
+    assert d4p_model.n_classes_ == 1
+    assert d4p_model.n_features_in_ == cb_model.n_features_in_
+
+    rng = np.random.default_rng(seed=123)
+    X_test = rng.standard_normal(size=(3, cb_model.n_features_in_), dtype=dtype)
+    if nan_mode != "Forbidden":
+        X_test[:, 2:] = np.nan
+        X_test[-1] = np.nan
+
+    np.testing.assert_allclose(
+        d4p_model.predict(X_test),
+        cb_model.predict(X_test, prediction_type="RawFormulaVal"),
+        atol=1e-5,
+        rtol=1e-5,
+    )
+
+    if shap_supported:
+        shap_pred = force_shap_predict(d4p_model, X_test)
+        if d4p_model.supports_shap_:
+            assert not np.isnan(shap_pred).any()
+        else:
+            assert np.isnan(shap_pred).any()
+
+
+@pytest.mark.skipif(not cb_available, reason=cb_unavailable_str)
+@pytest.mark.skipif(catboost_skip_shap, reason=catboost_skip_shap_msg)
+@pytest.mark.skipif(not shap_supported, reason=shap_not_supported_str)
+@pytest.mark.parametrize("objective", ["RMSE", "Tweedie:variance_power=1.99"])
+@pytest.mark.parametrize("boost_from_average", [False, True])
+@pytest.mark.parametrize("nan_mode", ["Forbidden", "Min", "Max"])
+@pytest.mark.parametrize("sklearn_class", [False, True])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("scale", [1.0, 2.5])
+@pytest.mark.parametrize("empty_trees", [False, True])
+def test_catboost_shap(
+    objective, boost_from_average, nan_mode, sklearn_class, dtype, scale, empty_trees
+):
+    if boost_from_average and objective != "RMSE":
+        pytest.skip("Not implemented in catboost.")
+    cb_model = make_cb_model(
+        objective,
+        "SymmetricTree",
+        nan_mode,
+        sklearn_class,
+        empty_trees,
+        boost_from_average,
+    )
+    if scale != 1:
+        bias = cb_model.get_scale_and_bias()[1]
+        cb_model.set_scale_and_bias(scale, bias)
+    d4p_model = d4p.mb.convert_model(cb_model)
+
+    if not d4p_model.supports_shap_:
+        pytest.skip("Not implemented.")
+
+    assert d4p_model.model_type == "catboost"
+    assert d4p_model.is_regressor_
+    assert d4p_model.n_classes_ == 1
+    assert d4p_model.n_features_in_ == cb_model.n_features_in_
+
+    rng = np.random.default_rng(seed=123)
+    X_test = rng.standard_normal(size=(3, cb_model.n_features_in_), dtype=dtype)
+    if nan_mode != "Forbidden":
+        X_test[:, 2:] = np.nan
+        X_test[-1] = np.nan
+
+    np.testing.assert_allclose(
+        d4p_model.predict(X_test, pred_contribs=True),
+        cb_model.get_feature_importance(cb.Pool(X_test), type="ShapValues"),
+        atol=1e-5,
+        rtol=1e-5,
+    )
+
+
+@pytest.mark.skipif(not cb_available, reason=cb_unavailable_str)
+@pytest.mark.parametrize("grow_policy", ["SymmetricTree", "Lossguide"])
+@pytest.mark.parametrize("nan_mode", ["Forbidden", "Min", "Max"])
+@pytest.mark.parametrize("sklearn_class", [False, True])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("scale", [1.0, 2.5])
+@pytest.mark.parametrize("empty_trees", [False, True])
+def test_catboost_binary_classification(
+    grow_policy, nan_mode, sklearn_class, dtype, scale, empty_trees
+):
+    cb_model = make_cb_model("Logloss", grow_policy, nan_mode, sklearn_class, empty_trees)
+    if scale != 1:
+        bias = cb_model.get_scale_and_bias()[1]
+        cb_model.set_scale_and_bias(scale, bias)
+    d4p_model = d4p.mb.convert_model(cb_model)
+
+    assert d4p_model.model_type == "catboost"
+    assert d4p_model.is_classifier_
+    assert d4p_model.n_classes_ == 2
+    assert d4p_model.n_features_in_ == cb_model.n_features_in_
+
+    rng = np.random.default_rng(seed=123)
+    X_test = rng.standard_normal(size=(3, cb_model.n_features_in_), dtype=dtype)
+    if nan_mode != "Forbidden":
+        X_test[:, 2:] = np.nan
+        X_test[-1] = np.nan
+
+    np.testing.assert_allclose(
+        d4p_model.predict_proba(X_test),
+        cb_model.predict(X_test, prediction_type="Probability"),
+        atol=1e-5,
+        rtol=1e-5,
+    )
+    np.testing.assert_allclose(
+        d4p_model.predict(X_test),
+        cb_model.predict(X_test, prediction_type="Class"),
+        atol=1e-5,
+        rtol=1e-5,
+    )
+
+    if shap_supported:
+        shap_pred = force_shap_predict(d4p_model, X_test)
+        if d4p_model.supports_shap_:
+            assert not np.isnan(shap_pred).any()
+        else:
+            assert np.isnan(shap_pred).any()
+
+
+@pytest.mark.skipif(not cb_available, reason=cb_unavailable_str)
+@pytest.mark.parametrize("grow_policy", ["SymmetricTree", "Lossguide"])
+@pytest.mark.parametrize("nan_mode", ["Forbidden", "Min", "Max"])
+@pytest.mark.parametrize("sklearn_class", [False, True])
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("scale", [1.0, 2.5])
+@pytest.mark.parametrize("set_bias", [False, True])
+@pytest.mark.parametrize("empty_trees", [False, True])
+def test_catboost_multiclass_classification(
+    grow_policy, nan_mode, sklearn_class, dtype, scale, set_bias, empty_trees
+):
+    cb_model = make_cb_model(
+        "MultiClass", grow_policy, nan_mode, sklearn_class, empty_trees
+    )
+    if scale != 1:
+        bias = cb_model.get_scale_and_bias()[1]
+        cb_model.set_scale_and_bias(scale, bias)
+    if set_bias:
+        scale = cb_model.get_scale_and_bias()[0]
+        cb_model.set_scale_and_bias(scale, np.arange(3).astype(np.float64).tolist())
+    d4p_model = d4p.mb.convert_model(cb_model)
+
+    assert d4p_model.model_type == "catboost"
+    assert d4p_model.is_classifier_
+    assert d4p_model.n_classes_ == 3
+    assert d4p_model.n_features_in_ == cb_model.n_features_in_
+
+    rng = np.random.default_rng(seed=123)
+    X_test = rng.standard_normal(size=(3, cb_model.n_features_in_), dtype=dtype)
+    if nan_mode != "Forbidden":
+        X_test[:, 2:] = np.nan
+        X_test[-1] = np.nan
+
+    np.testing.assert_allclose(
+        d4p_model.predict_proba(X_test),
+        cb_model.predict(X_test, prediction_type="Probability"),
+        atol=1e-5,
+        rtol=1e-5,
+    )
+    np.testing.assert_allclose(
+        d4p_model.predict(X_test),
+        cb_model.predict(X_test, prediction_type="Class").reshape(-1),
+        atol=1e-5,
+        rtol=1e-5,
+    )
+
+
+@pytest.mark.skipif(not cb_available, reason=cb_unavailable_str)
+def test_catboost_default_objective():
+    X, y = make_regression(n_samples=12, n_features=3, random_state=123)
+    cb_model = cb.train(
+        pool=cb.Pool(X, y),
+        params={
+            "depth": 2,
+            "random_seed": 123,
+            "thread_count": 1,
+            "allow_writing_files": False,
+        },
+        num_boost_round=2,
+        verbose=0,
+        save_snapshot=False,
+    )
+    d4p_model = d4p.mb.convert_model(cb_model)
+    np.testing.assert_allclose(
+        d4p_model.predict(X),
+        cb_model.predict(X, prediction_type="RawFormulaVal"),
+        atol=1e-5,
+        rtol=1e-5,
+    )
+
+
+@pytest.mark.skipif(not cb_available, reason=cb_unavailable_str)
+def test_catboost_unsupported():
+    X, y = make_regression(n_samples=10, n_features=2, n_targets=2, random_state=123)
+    cb_model = cb.CatBoostRegressor(
+        objective="MultiRMSE",
+        depth=3,
+        iterations=2,
+        random_seed=123,
+        thread_count=1,
+        save_snapshot=False,
+        verbose=0,
+        allow_writing_files=False,
+    ).fit(X, y)
+    with pytest.raises(TypeError):
+        d4p.mb.convert_model(cb_model)
+
+    X, y = make_classification(
+        n_samples=10,
+        n_classes=2,
+        n_features=3,
+        n_informative=3,
+        n_redundant=0,
+        random_state=123,
+    )
+    cb_model = cb.CatBoostClassifier(
+        objective="MultiClassOneVsAll",
+        depth=3,
+        iterations=2,
+        random_seed=123,
+        thread_count=1,
+        save_snapshot=False,
+        verbose=0,
+        allow_writing_files=False,
+    ).fit(X, y)
+    with pytest.raises(TypeError):
+        d4p.mb.convert_model(cb_model)
+
+    cb_model = cb.CatBoostClassifier(
+        objective="MultiLogloss",
+        depth=3,
+        iterations=2,
+        random_seed=123,
+        thread_count=1,
+        save_snapshot=False,
+        verbose=0,
+        allow_writing_files=False,
+    ).fit(X, np.c_[y.reshape((-1, 1)), y[::-1].reshape((-1, 1))])
+    with pytest.raises(TypeError):
+        d4p.mb.convert_model(cb_model)
+
+    X = X.astype(int)
+    X -= X.min(axis=0, keepdims=True)
+    cb_model = cb.CatBoostClassifier(
+        objective="MultiClass",
+        cat_features=np.arange(X.shape[1]).tolist(),
+        depth=3,
+        iterations=2,
+        random_seed=123,
+        thread_count=1,
+        save_snapshot=False,
+        verbose=0,
+        allow_writing_files=False,
+    ).fit(X, y)
+    with pytest.raises(Exception):
+        d4p.mb.convert_model(cb_model)
+
+
+@pytest.mark.skip(reason="causes timeouts in CI")
+def test_model_from_booster():
+    class MockBooster:
+        def get_dump(self, *_, **kwargs):
+            # raw dump of 2 trees with a max depth of 1
+            return [
+                '  { "nodeid": 0, "depth": 0, "split": "1", "split_condition": 2, "yes": 1, "no": 2, "missing": 1 , "gain": 3, "cover": 4, "children": [\n    { "nodeid": 1, "leaf": 5 , "cover": 6 }, \n    { "nodeid": 2, "leaf": 7 , "cover":8 }\n  ]}',
+                '  { "nodeid": 0, "leaf": 0.2 , "cover": 42 }',
+            ]
+
+    mock = MockBooster()
+    result = gbt_convertors.TreeList.from_xgb_booster(
+        mock, max_trees=0, feature_names_to_indices={"1": 1}
+    )
+    assert len(result) == 2
+
+    tree0 = result[0]
+    assert isinstance(tree0, gbt_convertors.TreeView)
+    assert not tree0.is_leaf
+    assert not hasattr(tree0, "cover")
+    assert not hasattr(tree0, "value")
+
+    assert isinstance(tree0.root_node, gbt_convertors.Node)
+
+    assert tree0.root_node.cover == 4
+    assert tree0.root_node.left_child.cover == 6
+    assert tree0.root_node.right_child.cover == 8
+
+    assert not tree0.root_node.is_leaf
+    assert tree0.root_node.left_child.is_leaf
+    assert tree0.root_node.right_child.is_leaf
+
+    assert tree0.root_node.default_left
+    assert not tree0.root_node.left_child.default_left
+    assert not tree0.root_node.right_child.default_left
+
+    assert tree0.root_node.feature == 1
+    assert not hasattr(tree0.root_node.left_child, "feature")
+    assert not hasattr(tree0.root_node.right_child, "feature")
+
+    assert tree0.root_node.value == 2
+    assert tree0.root_node.left_child.value == 5
+    assert tree0.root_node.right_child.value == 7
+
+    assert tree0.root_node.n_children == 2
+    assert tree0.root_node.left_child.n_children == 0
+    assert tree0.root_node.right_child.n_children == 0
+
+    assert tree0.root_node.left_child.left_child is None
+    assert tree0.root_node.left_child.right_child is None
+    assert tree0.root_node.right_child.left_child is None
+    assert tree0.root_node.right_child.right_child is None
+
+    tree1 = result[1]
+    assert isinstance(tree1, gbt_convertors.TreeView)
+    assert tree1.is_leaf
+    assert tree1.n_nodes == 1
+    assert tree1.cover == 42
+    assert tree1.value == 0.2
+
+
+@pytest.mark.skip(reason="causes timeouts in CI")
+@pytest.mark.parametrize("from_treelite", [False, True])
+def test_unsupported_multiclass(from_treelite):
+    X, y = make_classification(
+        n_samples=10,
+        n_classes=2,
+        n_features=3,
+        n_informative=3,
+        n_redundant=0,
+        random_state=123,
+    )
+
+    xgb_model = xgb.train(
+        dtrain=xgb.DMatrix(X, y),
+        num_boost_round=3,
+        params={
+            "objective": "multi:softprob",
+            "num_class": 3,
+            "multi_strategy": "multi_output_tree",
+>>>>>>> 2494172 ([CI, bugfix] correct stability issues in CondaRecipes (#2493))
             "max_depth": 3,
             "num_leaves": 2**3,
             "verbose": 0,
