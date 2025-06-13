@@ -272,7 +272,7 @@ dal::table convert_to_table(py::object inp_obj, py::object queue, bool recursed)
 template <class T>
 void free_capsule(PyObject *cap) {
     // TODO: check safe cast
-    dal::base *stored_array = static_cast<dal::base *>(PyCapsule_GetPointer(cap, NULL));
+    dal::array<T> *stored_array = static_cast<dal::array<T> *>(PyCapsule_GetPointer(cap, NULL));
     if (stored_array) {
         delete stored_array;
     }
