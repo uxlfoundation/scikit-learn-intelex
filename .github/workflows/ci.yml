@@ -370,8 +370,10 @@ jobs:
           source /opt/intel/oneapi/setvars.sh
           bash .ci/scripts/describe_system.sh
       - name: Install develop requirements
+        id: install-reqs
         run: |
           pip install -r dependencies-dev
+          echo "numpy-version=$(python -m pip freeze | grep numpy)" >> "$GITHUB_OUTPUT"
           pip list
       - name: Build daal4py/sklearnex
         run: |
@@ -383,6 +385,9 @@ jobs:
           name: sklearnex_build_${{ env.UXL_PYTHONVERSION }}
           path: |
              ./dist/*.whl
+    
+    outputs:
+      numpy-version: ${{ steps.install-reqs.outputs.numpy-version }}
       
   test_uxl:
     strategy:
@@ -436,6 +441,8 @@ jobs:
           echo "NEOReadDebugKeys=1" >> "$GITHUB_ENV"
           echo "EnableRecoverablePageFaults=1" >> "$GITHUB_ENV"
           echo "GpuFaultCheckThreshold=0" >> "$GITHUB_ENV"
+          # set build numpy version for use in generating code coverage
+          echo "NUMPY_BUILD=${{ needs.build_uxl.outputs.numpy-version }} >> "$GITHUB_ENV"
       - name: apt-get
         run: sudo apt-get update
       - name: dpcpp installation
@@ -448,8 +455,6 @@ jobs:
           bash .ci/scripts/describe_system.sh
       - name: Install test requirements
         run: |
-          pip install -r dependencies-dev
-          echo "NUMPY_BUILD=$(python -m pip freeze | grep numpy)" >> "$GITHUB_ENV"
           bash .ci/scripts/setup_sklearn.sh ${{ env.UXL_SKLEARNVERSION }}
           pip install --upgrade -r requirements-test.txt
           pip install $(python .ci/scripts/get_compatible_scipy_version.py ${{ env.UXL_SKLEARVERSION }}) pyyaml
