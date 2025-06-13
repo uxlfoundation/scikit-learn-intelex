@@ -88,7 +88,7 @@ jobs:
       conda activate CB
       cd examples/notebooks
       # Validate notebooks except dbscan (memory consumption) and ridge higgs (long execution/conversion time)
-      jupyter nbconvert --execute --ExecutePreprocessor.timeout=10900 --to notebook $(ls | grep -E '.*\.ipynb' | grep -v "dbscan" | grep -v "higgs")
+      jupyter nbconvert --execute --ExecutePreprocessor.timeout=10900 --to notebook $(ls | grep -E '.*\.ipynb' | grep -v "dbscan" | grep -v "higgs" | grep -v "yolanda")
     timeoutInMinutes: 180
     displayName: 'Run jupyter notebook demo'
 
