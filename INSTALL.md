@@ -234,7 +234,7 @@ export CXX="icpx -fsanitize=address -g"
 
 _Hint: the Cython module `daal4py` that gets built through `build_ext` does not do incremental compilation, so one might want to add `ccache` into the compiler call for development purposes - e.g. `CXX="ccache icx  -fsanitize=address -g"`._
 
-The ASan runtime used by ICX is the same as the one by Clang. It's possible to preload the ASan runtime for GNU if that's the system's default through e.g. `LD_PRELOAD=libasan.so` or similar, but to get the same ASan runtime as for oneDAL, one might need to specifically pass the paths from Clang if that's not the system's default compiler:
+The ASan runtime used by ICX is the same as the one by Clang. It's possible to preload the ASan runtime for GNU if that's the system's default through e.g. `LD_PRELOAD=libasan.so` or similar. However, one might need to specifically pass the paths from Clang to get the same ASan runtime as for oneDAL if that is not the system's default compiler:
 ```shell
 export LD_PRELOAD="$(clang -print-file-name=libclang_rt.asan-x86_64.so)"
 ```
