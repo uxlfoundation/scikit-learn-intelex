@@ -421,7 +421,7 @@ PyObject *convert_to_pyobject(const dal::table &input) {
         const auto &homogen_input = static_cast<const dal::homogen_table &>(input);
         const dal::data_type dtype = homogen_input.get_metadata().get_data_type(0);
 
-#define MAKE_NYMPY_FROM_HOMOGEN(NpType, T)                                                         \
+#define MAKE_NUMPY_FROM_HOMOGEN(NpType, T)                                                         \
     {                                                                                              \
         auto bytes_array = dal::detail::get_original_data(homogen_input);                          \
         T *data_pointer = reinterpret_cast<T *>(bytes_array.get_mutable_data());                   \
@@ -434,9 +434,9 @@ PyObject *convert_to_pyobject(const dal::table &input) {
                                                homogen_input.get_data_layout());                   \
     }
         SET_CTYPES_NPY_FROM_DAL_TYPE(dtype,
-                                     MAKE_NYMPY_FROM_HOMOGEN,
+                                     MAKE_NUMPY_FROM_HOMOGEN,
                                      throw std::invalid_argument("Unable to convert numpy object"));
-#undef MAKE_NYMPY_FROM_HOMOGEN
+#undef MAKE_NUMPY_FROM_HOMOGEN
     }
     else if (input.get_kind() == csr_table_t::kind()) {
         const auto &csr_input = static_cast<const csr_table_t &>(input);
