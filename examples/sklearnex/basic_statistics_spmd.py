@@ -48,7 +48,7 @@ size = comm.Get_size()
 
 params_spmd = {"ns": 19, "nf": 31}
 
-data, weights = generate_data(params_spmd, size)
+data, weights = generate_data(params_spmd, size, seed=rank)
 weighted_data = np.diag(weights) @ data
 
 dpt_data = dpt.asarray(data, usm_type="device", sycl_queue=q)
