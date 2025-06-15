@@ -60,7 +60,7 @@ def is_sycl_device_available(targets: Iterable[str]) -> bool:
     """Check if a SYCL device is available.
 
     This is meant to be used for testing purposes only.
-    The check succeeds if any SYCL device in targets are
+    The check succeeds if any SYCL device in targets is
     available.
 
     Parameters
