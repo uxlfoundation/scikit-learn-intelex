@@ -90,6 +90,10 @@ def set_config(
     --------
     Using ``use_raw_input=True`` is not recommended for general use as it
     bypasses data consistency checks, which may lead to unexpected behavior.
+
+    Use of ``target_offload`` requires the DPC++ backend. Setting a
+    non-default value (e.g ``cpu`` or ``gpu``) without this backend active
+    will raise an error.
     """
 
     array_api_dispatch = sklearn_configs.get("array_api_dispatch", False)

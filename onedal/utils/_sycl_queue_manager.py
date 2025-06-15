@@ -22,9 +22,12 @@ from ..utils._dpep_helpers import dpctl_available
 if dpctl_available:
     from dpctl import SyclQueue
 else:
-    from onedal import _dpc_backend
+    from onedal import _default_backend
 
-    SyclQueue = getattr(_dpc_backend, "SyclQueue", None)
+    # Use internally-defined SyclQueue defined in onedal/common/sycl.cpp
+    # the host backend SyclQueue will only accept "auto" and will return
+    # a None, it acts as a function via `__new__`. No SyclDevice is defined.
+    SyclQueue = _default_backend.SyclQueue
 
 # This special object signifies that the queue system should be
 # disabled. It will force computation to host. This occurs when the
@@ -36,12 +39,7 @@ __global_queue = None
 
 
 def __create_sycl_queue(target):
-    if SyclQueue is None:
-        # we don't have SyclQueue support
-        return None
-    if target is None:
-        return None
-    if isinstance(target, SyclQueue):
+    if isinstance(target, SyclQueue) or target is None:
         return target
     if isinstance(target, (str, int)):
         return SyclQueue(target)
