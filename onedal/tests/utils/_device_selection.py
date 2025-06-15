@@ -18,14 +18,11 @@ import functools
 
 import pytest
 
-from ...utils._dpep_helpers import dpctl_available
+from onedal.utils._third_party import dpctl_available, SyclQueue
 
-if dpctl_available:
-    import dpctl
-    from dpctl.memory import MemoryUSMDevice, MemoryUSMShared
-
-
-def get_queues(filter_="cpu,gpu"):
+# lru_cache is used to limit the number of SyclQueues generated
+@functools.lru_cache(maxsize=100)
+def get_queues(filter_="cpu,gpu": str) -> list[SyclQueue]:
     """Get available dpctl.SycQueues for testing.
 
     This is meant to be used for testing purposes only.
@@ -47,19 +44,14 @@ def get_queues(filter_="cpu,gpu"):
     """
     queues = [None] if "cpu" in filter_ else []
 
-    if dpctl_available:
-        if dpctl.has_cpu_devices() and "cpu" in filter_:
-            queues.append(pytest.param(dpctl.SyclQueue("cpu"), id="SyclQueue_CPU"))
-        if dpctl.has_gpu_devices() and "gpu" in filter_:
-            queues.append(pytest.param(dpctl.SyclQueue("gpu"), id="SyclQueue_GPU"))
+    for i in ["cpu", "gpu"]:
+        if i in filter_:
+            try:
+                queues.append(pytest.param(SyclQueue(i), id=f"SyclQueue_{i.upper()}"))
+            except [RuntimeError, ValueError]:
+                pass
 
     return queues
-
-
-def get_memory_usm():
-    if dpctl_available:
-        return [MemoryUSMDevice, MemoryUSMShared]
-    return []
 
 
 def is_dpctl_device_available(targets):
