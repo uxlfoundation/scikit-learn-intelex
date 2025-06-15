@@ -15,10 +15,11 @@
 # ==============================================================================
 
 import functools
+from collections.abc import Iterable
 
 import pytest
 
-from onedal.utils._third_party import dpctl_available, SyclQueue
+from onedal.utils._third_party import SyclQueue
 
 # lru_cache is used to limit the number of SyclQueues generated
 @functools.lru_cache()
@@ -55,16 +56,32 @@ def get_queues(filter_="cpu,gpu": str) -> list[SyclQueue]:
     return queues
 
 
-def is_dpctl_device_available(targets):
-    if not isinstance(targets, (list, tuple)):
-        raise TypeError("`targets` should be a list or tuple of strings.")
-    if dpctl_available:
-        for device in targets:
-            if device == "cpu" and not dpctl.has_cpu_devices():
-                return False
-            if device == "gpu" and not dpctl.has_gpu_devices():
-                return False
-        return True
+def is_sycl_device_available(targets: Iterable[str]) -> bool:
+    """Check if a SYCL device is available.
+
+    This is meant to be used for testing purposes only.
+    The check succeeds if any SYCL device in targets are
+    available.
+
+    Parameters
+    ----------
+    targets : Iterable[str]
+        SYCL filter strings of possible devices.
+
+    Returns
+    -------
+    bool
+        Flag if one of the SYCL targets are available.
+
+    """
+    if not isinstance(targets, Iterable):
+        raise TypeError("`targets` should be an iterable of strings.")
+    for device in targets:
+        try:
+            SyclQueue(device)
+            return True
+        except [RuntimeError, ValueError]:
+            pass
     return False
 
 
