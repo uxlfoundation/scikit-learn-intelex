@@ -61,7 +61,7 @@ def is_sycl_device_available(targets: Iterable[str]) -> bool:
     """Check if a SYCL device is available.
 
     This is meant to be used for testing purposes only.
-    The check succeeds if any SYCL device in targets is
+    The check succeeds if all SYCL device in targets is
     available.
 
     Parameters
@@ -72,7 +72,7 @@ def is_sycl_device_available(targets: Iterable[str]) -> bool:
     Returns
     -------
     bool
-        Flag if one of the SYCL targets are available.
+        Flag if all of the SYCL targets are available.
 
     """
     if not isinstance(targets, Iterable):
@@ -80,10 +80,9 @@ def is_sycl_device_available(targets: Iterable[str]) -> bool:
     for device in targets:
         try:
             SyclQueue(device)
-            return True
         except [RuntimeError, ValueError]:
-            pass
-    return False
+            return False
+    return True
 
 
 def pass_if_not_implemented_for_gpu(reason=""):
