@@ -21,7 +21,7 @@ import pytest
 from onedal.utils._third_party import dpctl_available, SyclQueue
 
 # lru_cache is used to limit the number of SyclQueues generated
-@functools.lru_cache(maxsize=100)
+@functools.lru_cache()
 def get_queues(filter_="cpu,gpu": str) -> list[SyclQueue]:
     """Get available dpctl.SycQueues for testing.
 
