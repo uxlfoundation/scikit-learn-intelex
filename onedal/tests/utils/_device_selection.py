@@ -30,7 +30,9 @@ def get_queues(filter_="cpu,gpu": str) -> list[SyclQueue]:
     Parameters
     ----------
     filter_ : str, default="cpu,gpu"
-        Configure output list with available dpctl.SycQueues for testing.
+        Configure output list with availabe SycQueues for testing.
+        SyclQueues are generated from a comma-separated string following
+        SYCL's ``filter_selector``.
 
     Returns
     -------
@@ -44,12 +46,11 @@ def get_queues(filter_="cpu,gpu": str) -> list[SyclQueue]:
     """
     queues = [None] if "cpu" in filter_ else []
 
-    for i in ["cpu", "gpu"]:
-        if i in filter_:
-            try:
-                queues.append(pytest.param(SyclQueue(i), id=f"SyclQueue_{i.upper()}"))
-            except [RuntimeError, ValueError]:
-                pass
+    for i in filter_.split(","):
+        try:
+            queues.append(pytest.param(SyclQueue(i), id=f"SyclQueue_{i.upper()}"))
+        except [RuntimeError, ValueError]:
+            pass
 
     return queues
 
