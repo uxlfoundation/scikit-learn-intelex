@@ -36,8 +36,8 @@ def get_queues(filter_="cpu,gpu": str) -> list[SyclQueue]:
 
     Returns
     -------
-    list[dpctl.SycQueue]
-        The list of dpctl.SycQueue.
+    list[SyclQueue]
+        The list of SycQueues.
 
     Notes
     -----
