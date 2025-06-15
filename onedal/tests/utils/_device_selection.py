@@ -31,8 +31,8 @@ def get_queues(filter_="cpu,gpu": str) -> list[SyclQueue]:
     ----------
     filter_ : str, default="cpu,gpu"
         Configure output list with availabe SycQueues for testing.
-        SyclQueues are generated from a comma-separated string following
-        SYCL's ``filter_selector``.
+        SyclQueues are generated from a comma-separated string with
+        each element conforming to SYCL's ``filter_selector``.
 
     Returns
     -------
