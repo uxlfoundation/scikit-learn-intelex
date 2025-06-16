@@ -36,9 +36,10 @@ def _daal_dbscan(X, eps=0.5, min_samples=5, sample_weight=None):
     ww = make2d(sample_weight) if sample_weight is not None else None
     XX = make2d(X)
 
+    fpt = getFPType(XX) #  codespell:ignore fpt
     alg = daal4py.dbscan(
         method="defaultDense",
-        fptype=getFPType(XX),
+        fptype=fpt, #  codespell:ignore fpt
         epsilon=float(eps),
         minObservations=int(min_samples),
         memorySavingMode=False,
