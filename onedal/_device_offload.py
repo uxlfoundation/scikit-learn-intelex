@@ -127,7 +127,7 @@ def _transfer_to_host(*data):
             )
             has_usm_data = True
         elif array_api and not _is_numpy_namespace(array_api):
-            # `copy`` param for the `asarray`` is not setted.
+            # `copy`` param for the `asarray`` is not set.
             # The object is copied only if needed.
             item = np.asarray(item)
             has_host_data = True
