@@ -48,7 +48,7 @@
  *   syclobj: dpctl.SyclQueue or dpctl.SyclContext object or `SyclQueueRef` PyCapsule that
  *            represents an opaque value of sycl::queue.
  *
- * For more informations please follow <https://intelpython.github.io/dpctl/latest/
+ * For more information please follow <https://intelpython.github.io/dpctl/latest/
  * api_reference/dpctl/sycl_usm_array_interface.html#sycl-usm-array-interface-attribute>
 */
 

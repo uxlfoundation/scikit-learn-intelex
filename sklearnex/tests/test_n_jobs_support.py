@@ -95,7 +95,7 @@ def test_n_jobs_support(estimator, n_jobs, caplog):
             "NearestNeighbors" in estimator and "radius" in method_name
         ):
             # radius_neighbors and radius_neighbors_graph violate sklearn fallback guard
-            # but use sklearnex interally, additional development must be done to those
+            # but use sklearnex internally, additional development must be done to those
             # functions to bring them to design compliance.
             continue
         try:

@@ -153,7 +153,7 @@ def gen_models_info(algorithms, required_inputs=["X", "y"], fit=False, daal4py=T
     required_inputs : list, tuple of strings or None
         list of required args/kwargs for callable attribute (only non-private,
         non-BaseEstimator attributes).  Only one must be present, None
-        signifies taking all non-private attribues, callable or not.
+        signifies taking all non-private attributes, callable or not.
 
     fit: bool (default False)
         Include "fit" method as an estimator-attribute pair

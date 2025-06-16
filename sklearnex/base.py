@@ -88,7 +88,7 @@ class oneDALEstimator:
             }
 
         def _get_doc_link(self) -> str:
-            # This method is meant to generate a clickable doc link for classses
+            # This method is meant to generate a clickable doc link for classes
             # in sklearnex including those that are not part of base scikit-learn.
             # It should be inherited before inheriting from a scikit-learn estimator.
 
