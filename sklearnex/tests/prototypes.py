@@ -63,27 +63,33 @@ if sklearn_check_version("1.2"):
 # state of oneDAL development and scikit-learn characteristics. This should
 # be used at import time instead of run time whenever possible/ practical.
 #
-# 4) ``dispatch`` is a key central function for evaluating data with either
+# 4) If a sklearn estimator is imported, it must have the ``_sklearn_``
+# prefix added upon import in order to prevent its discovery, highlight
+# its nature as private, and prevent a namespace collision. Any onedal 
+# imported estimator should similarly  have the ``onedal_`` prefix added
+# (as it should have the same name as the sklearnex estimator).
+#
+# 5) ``dispatch`` is a key central function for evaluating data with either
 # oneDAL or sklearn. All oneDAL algorithms which are to be directly used
 # should be accessed via this function.
 #
-# 5) ``PatchingConditionsChain`` is used in conjunction with ``dispatch``
+# 6) ``PatchingConditionsChain`` is used in conjunction with ``dispatch``
 # and methods ``_onedal_cpu_supported`` and ``_onedal_gpu_supported`` to
 # evaluate if the required evaluation on data is possible with oneDAL or
 # sklearn.
 #
-# 6) ``get_namespace`` is key for array_api support, which yields the
+# 7) ``get_namespace`` is key for array_api support, which yields the
 # namespace associated with the given array for use in data conversion
 # necessary for to and from oneDAL. An internal version is preferred due to
 # limitations in sklearn versions and specific IntelPython data framework
 # support (see dpctl tensors and dpnp).
 #
-# 7) ``validate_data`` checks data quality and estimator status before
+# 8) ``validate_data`` checks data quality and estimator status before
 # evaluating the function. This replicates a sklearn functionality with key
 # performance changes implemented in oneDAL and therefore should only be
 # imported from sklearnex and not sklearn.
 #
-# 8) All estimators require validation of the parameters given at
+# 9) All estimators require validation of the parameters given at
 # initialization. This aspect was introduced in sklearn 1.2, any additional
 # parameters must extend the dictionary for checking.
 
@@ -93,21 +99,21 @@ if sklearn_check_version("1.2"):
 #
 # Sklearnex estimator methods can be thought of in 3 major tiers.
 #
-# Tier 1: Those methods which offload to oneDAL using ``dispatch``. Typical
+# Tier 1: Methods which offload to oneDAL using ``dispatch``. Typical
 # examples are ``fit`` and ``predict``. They use a direct equivalent oneDAL
 # function for evaluation. These methods are of highest priority and have
 # performance benchmark requirements.
 #
-# Tier 2: Those methods that use a Tier 1 method with additional Python
+# Tier 2: Methods that use a Tier 1 method with additional Python
 # calculations (usually a sklearn method or applied math function). Examples
 # are ``score`` and ``predict_log_proba``. Oftentimes the additional
 # calculations are trivial, meaning benchmarking is not required.
 #
-# Tier 3: Those methods which directly use sklearn functionality. Typically
-# these can be directly inherited, but can be problematic with respect
-# to other framework support. These can be wrapped with the sklearnex
-# function ``wrap_output_data`` to guarantee array API, dpctl tensor, and
-# dpnp support but should be addressed with care/guidance in a case-by-case
+# Tier 3: Methods which directly use sklearn functionality. Typically these
+# can be directly inherited, but can be problematic with respect to other
+# framework support. These can be wrapped with the sklearnex function 
+# ``wrap_output_data`` to guarantee array API, dpctl tensor, and dpnp
+# support but should be addressed with care/guidance in a case-by-case
 # basis.
 
 ########################
@@ -134,7 +140,10 @@ class PrototypeEstimator(oneDALEstimator, BaseEstimator):
     # GENERAL ESTIMATOR DESIGN NOTES #
     ##################################
     #
-    # As a rule conform to sklearn design rules as much as possible.
+    # As a rule conform to sklearn design rules as much as possible
+    # (https://scikit-learn.org/stable/developers/develop.html)
+    # This includes inheriting the proper sklearn Mixin classes depending 
+    # on the sklearnex estimator functionality.
     #
     # All estimators should be defined in a python file located in a folder
     # limited to the folder names in this directory:
@@ -160,14 +169,14 @@ class PrototypeEstimator(oneDALEstimator, BaseEstimator):
     # matches sklearn. This is done to minimize and focus maintenance with
     # respect to sklearn to the sklearnex module.
     #
-    # 2) The onedal estimator handles necessary data conversion and preparation
-    # for invoking calls to onedal. These objects should not be influenced by
-    # sklearn design or have any sklearn version dependent characteristics.
-    # Users should be able to use these objects directly to fit data without
-    # sklearn, giving the ability to use raw data directly and avoiding
-    # sklearn pre-processing checks as necessary.
+    # 2) The onedal estimator handles necessary data conversion and
+    # preparation for invoking calls to onedal. These objects should not be
+    # influenced by sklearn design or have any sklearn version dependent
+    # characteristics. Users should be able to use these objects directly
+    # to fit data without sklearn, giving the ability to use raw data
+    # directly and avoiding sklearn pre-processing checks as necessary.
     #
-    # 3) Pybind11 interfaces should be not be made public to the user unless
+    # 3) Pybind11 interfaces should not be made public to the user unless
     # absolutely necessary, as operation there assumes checks in the other
     # objects have been sufficiently carried out. In most circumstances, the
     # pybind11 interface should be invoked by the python onedal estimator
@@ -175,6 +184,25 @@ class PrototypeEstimator(oneDALEstimator, BaseEstimator):
     #
     # Information about the onedal estimators/objects can be found in an
     # equivalent class file in the onedal module.
+
+    #######################
+    # DOCUMENTATION NOTES #
+    #######################
+    #
+    # All public methods (i.e. without leading underscores) should have
+    # documentation which conforms to the numpy-doc standard.  Generally
+    # if a defined method replaces an inherited Scikit-Learn estimator 
+    # method, the ``__doc__`` attribute should be re-applied to the new
+    # implementation. Any new additional characteristics compared to the
+    # equivalent sklearn estimator should be appended to the sklearn doc
+    # string.
+    #
+    # When the estimator is added to the patching map in 
+    # sklearnex/dispatcher.py, it must be equivalently added to the support
+    # table located in doc/sources/algorithms.rst if replicating an sklearn
+    # estimator. If it is unique to sklearnex, it must be added to 
+    # docs/sources/non-scikit-algorithms.rst instead.
+
 
     def __init__(self, check=True, only_contiguous=False):
         # Object instantiation is strictly limited by sklearn. It is only
@@ -187,9 +215,9 @@ class PrototypeEstimator(oneDALEstimator, BaseEstimator):
 
         # This estimator will abstract over the oneDAL finiteness checker
         # which usually only operates with contiguous data.  These 
-        # parameters will flag whether to actually check for finiteness
-        # and check finiteness only for contiguous data. Therefore, these
-        # two are illustrative.
+        # parameters will flag whether to actually check for finiteness 
+        # (paramter ``check``) and check finiteness only for contiguous
+        # data (``only_contiguous``). Therefore, these two are illustrative.
         self.check = check
         self.only_contiguous = only_contiguous
 
@@ -215,7 +243,8 @@ class PrototypeEstimator(oneDALEstimator, BaseEstimator):
     # 3) ``_onedal_gpu_supported`` or ``_onedal_cpu_supported`` creates a
     # PatchingConditionsChain object, takes the input data and estimator
     # parameters, and evaluates whether the estimator and data can be run
-    # using oneDAL. This information is logged to the `sklearnex` logger.
+    # using oneDAL. This information is logged to the `sklearnex` logger
+    # via central code (e.g. not by the estimator) in sklearnex.
     #
     # 4) Either sklearn is called, or a object from onedal is created and
     # called using the input data. This process is handled in a function
@@ -253,8 +282,8 @@ class PrototypeEstimator(oneDALEstimator, BaseEstimator):
         # taken from the sklearn estimator. For example, for sklearnex's
         # DBSCAN, it will not call ``self.fit``. Instead it will use
         # ``"sklearn": sklearn_DBSCAN.fit`` directly.  This is even though
-        # the estimator inherits the sklearn estimator, and can be technically
-        # found via ``super``.
+        # the estimator inherits the sklearn estimator, and can be
+        # technically found via ``super``.
 
         # methods which do not return a result should return self (sklearn
         # standard)
@@ -336,15 +365,50 @@ class PrototypeEstimator(oneDALEstimator, BaseEstimator):
         # of the tier 1 methods of the estimator.  The logic located here
         # will inspect attributes of the data and the estimator to see if
         # sklearn
+
+        # Begin by generating the PatchingConditionsChain, which should
+        # require modifying the secondary module to match the folder as in
+        # the example below.
+        patching_status = PatchingConditionsChain(
+            f"sklearnex.test.{self.__class__.__name__}.{method_name}"
+        )
         if method_name == "fit":
             (X, y) = data
+            # the PatchingConditionsChain is validated using 
+            # ``and_conditions`` use of ``or_conditions`` is highly
+            # discouraged.
+            patching_status.and_conditions(
+            [
+                (
+
+                ),
+            ]
+        )
+
+
         elif method_name == "predict":
             (X,) = data
+
+            patching_status.and_conditions(
+            [   # a condition for ``_onedal_estimator`` is normally
+                # required if the method previously calls
+                # ``check_is_fitted``
+                (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained."),
+                (
+                        ,
+                    "Sample weights are not supported for CSR data format",
+                ),
+            ]
+        )
+
         pass
 
     def _onedal_gpu_supported(self, method_name, *data):
         # This method will only be called if it is expected to try and use
         # a SYCL-enabled GPU.
+        patching_status = PatchingConditionsChain(
+            f"sklearnex.test.{self.__class__.__name__}.{method_name}"
+        )
         if method_name == "fit":
             (X, y) = data
         elif method_name == "predict":
