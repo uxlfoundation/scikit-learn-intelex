@@ -972,7 +972,7 @@ class cython_interface(object):
                                 itype,
                                 "const",
                                 dflt,
-                                inpt=True,
+                                inp=True,
                                 algo=func,
                                 doc=doc,
                             ),
