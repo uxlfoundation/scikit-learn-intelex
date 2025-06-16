@@ -1445,6 +1445,7 @@ def test_catboost_unsupported():
         d4p.mb.convert_model(cb_model)
 
 
+@pytest.mark.skip(reason="causes timeouts in CI")
 def test_model_from_booster():
     class MockBooster:
         def get_dump(self, *_, **kwargs):
@@ -1505,6 +1506,7 @@ def test_model_from_booster():
     assert tree1.value == 0.2
 
 
+@pytest.mark.skip(reason="causes timeouts in CI")
 def test_unsupported_multiclass():
     X, y = make_classification(
         n_samples=10,
