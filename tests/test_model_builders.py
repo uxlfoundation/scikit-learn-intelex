@@ -1506,13 +1506,8 @@ def test_model_from_booster():
     assert tree1.value == 0.2
 
 
-<<<<<<< HEAD
-def test_unsupported_multiclass():
-=======
 @pytest.mark.skip(reason="causes timeouts in CI")
-@pytest.mark.parametrize("from_treelite", [False, True])
-def test_unsupported_multiclass(from_treelite):
->>>>>>> 2494172 ([CI, bugfix] correct stability issues in CondaRecipes (#2493))
+def test_unsupported_multiclass():
     X, y = make_classification(
         n_samples=10,
         n_classes=2,
