@@ -47,7 +47,7 @@ def main(readcsv=pd_read_csv, method="hist"):
     dep_data = readcsv(infile, usecols=range(13, 14), dtype=np.float32)
     # Now train/compute, the result provides the model for prediction
     train_result = train_algo.compute(indep_data, dep_data)
-    # Trailing result provides (depending on parameters) model,
+    # Training result provides (depending on parameters) model,
     # outOfBagError, outOfBagErrorPerObservation and/or variableImportance
 
     # Now let's do some prediction
