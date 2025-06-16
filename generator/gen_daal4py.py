@@ -71,7 +71,7 @@ def cleanup_ns(fname, ns):
     # cleanup duplicates
     while len(ns) >= 2 and ns[-1] == ns[len(ns) - 2]:
         del ns[-1]
-    # we should now have our namespace hierachy
+    # we should now have our namespace hierarchy
     if len(ns) == 0 or ns[0] != "daal":
         print(
             fname + ":0: Warning: No namespace (starting with daal) found in"
@@ -82,7 +82,7 @@ def cleanup_ns(fname, ns):
     # namespace 'daal' is special, it's empty
     if len(nsn) == 0:
         nsn = "daal"
-    # Multiple namespaces will leave 'interface' in the hierachy
+    # Multiple namespaces will leave 'interface' in the hierarchy
     # we cannot handle these cases
     if "interface" in nsn:
         print(fname + ":0: Warning: Multiple namespaces found in " + fname + ". Ignored.")
@@ -473,7 +473,7 @@ class cython_interface(object):
     ###############################################################################
     def get_class_for_typedef(self, ns, cls, td):
         """
-        Find the Result type for given algorithm in the C++ class and namespace hierachy.
+        Find the Result type for given algorithm in the C++ class and namespace hierarchy.
         Strips off potential SharedPtr def.
         Note: we assume there are no typedefs *Type outside classes
         """
@@ -507,7 +507,7 @@ class cython_interface(object):
             ret = tmp
         if ret and ret[1] not in self.namespace_dict[ret[0]].classes and "<" in ret[1]:
             # Probably a template, sigh
-            # For now, let's just cut off the template paramters.
+            # For now, let's just cut off the template parameters.
             # Let's hope we don't need anything more sophisticated
             # (like if there are actually specializations...)
             c = ret[1].split("<", 1)[0]
@@ -682,7 +682,7 @@ class cython_interface(object):
     ###############################################################################
     def order_iargs(self, tmp_input_args):
         """
-        We have to put the intput args into the "right" order.
+        We have to put the input args into the "right" order.
         , e.g. start with data then model, then whatever else
         """
         ordered = [
@@ -744,7 +744,7 @@ class cython_interface(object):
 
         We first extract template parameters and setup a generic structure/array.
         The generated array holds the general template spec
-        in entry [0] and specializations in the following entires (if exist).
+        in entry [0] and specializations in the following entries (if exist).
 
         We then extract input arguments.
         The resulting arrays begin with required inputs followed by optional inputs.
@@ -784,7 +784,7 @@ class cython_interface(object):
                 "s2": "step2Master",
             }
             # at this point required parameters need to be
-            # explictly/manually provided in wrappers.required
+            # explicitly/manually provided in wrappers.required
             params_req = (
                 [mk_var(x[0], x[1], algo=func) for x in required[ns]]
                 if ns in required
@@ -833,7 +833,7 @@ class cython_interface(object):
             all_params = OrderedDict()
             opt_params = {}
             for p in param_classes:
-                parms = self.get_all_attrs(p[0], p[1].name, "members", ns)
+                params = self.get_all_attrs(p[0], p[1].name, "members", ns)
                 assert "::" not in p[1].name
                 # hack: we need to use fully qualified enum values,
                 # proper solution would find enum...
@@ -858,11 +858,11 @@ class cython_interface(object):
                             if p[1].template_args
                             else False
                         ),
-                        [splitns(x)[1] for x in parms],
+                        [splitns(x)[1] for x in params],
                     )
-                for a in parms:
+                for a in params:
                     if a not in all_params:
-                        all_params[a] = parms[a]
+                        all_params[a] = params[a]
 
             bcls = "::".join([ns, "Batch"])
             if bcls in no_constructor:
@@ -1030,10 +1030,10 @@ class cython_interface(object):
             retjp["streaming"] = mk_var()
         return {ns + "::" + mode: retjp}
 
-    def prepare_model_hierachy(self, cfg):
+    def prepare_model_hierarchy(self, cfg):
         """
         Create a dict which lists all child classes for each Model.
-        Flatens the full hierachy for each Model.
+        Flatens the full hierarchy for each Model.
         """
         model_hierarchy = defaultdict(lambda: [])
         for ns in cfg:
@@ -1049,7 +1049,7 @@ class cython_interface(object):
                     model_hierarchy[parent].append(c["model_typemap"]["class_type"])
 
         done = 0 if len(model_hierarchy) > 0 else 1
-        # We now have to expand so that each ancestor holds a list of all its decendents
+        # We now have to expand so that each ancestor holds a list of all its descendants
         while done == 0:
             done = 0
             adds = {}
@@ -1115,7 +1115,7 @@ class cython_interface(object):
                     self.prepare_hlwrapper(ns, "Batch", func, no_dist, no_stream)
                 )
 
-        self.prepare_model_hierachy(algoconfig)
+        self.prepare_model_hierarchy(algoconfig)
 
         # and now we can finally generate the code
         wg = wrapper_gen(algoconfig, {cpp2hl(i): ifaces[i] for i in ifaces})

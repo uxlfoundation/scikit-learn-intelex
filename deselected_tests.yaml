@@ -83,7 +83,7 @@ deselected_tests:
 
   # Sklearnex RandomForestClassifier RNG is different from scikit-learn and daal4py
   # resulting in different feature importances for small number of trees (10).
-  # Issue dissappears with bigger number of trees (>=20)
+  # Issue disappears with bigger number of trees (>=20)
   - inspection/tests/test_permutation_importance.py::test_permutation_importance_correlated_feature_regression_pandas[0.5-1]
   - inspection/tests/test_permutation_importance.py::test_permutation_importance_correlated_feature_regression_pandas[0.5-2]
   - inspection/tests/test_permutation_importance.py::test_permutation_importance_correlated_feature_regression_pandas[1.0-1]

@@ -90,7 +90,7 @@ def _assert_all_finite(
     num_of_types = get_number_of_types(X)
 
     # if X is heterogeneous pandas.DataFrame then
-    # covert it to a list of arrays
+    # convert it to a list of arrays
     if is_df and num_of_types > 1:
         lst = []
         for idx in X:
@@ -330,7 +330,7 @@ def _daal_check_array(
     has_pd_integer_array = False
     if hasattr(array, "dtypes") and hasattr(array.dtypes, "__array__"):
         # throw warning if columns are sparse. If all columns are sparse, then
-        # array.sparse exists and sparsity will be perserved (later).
+        # array.sparse exists and sparsity will be preserved (later).
         with suppress(ImportError):
             from pandas import SparseDtype
 

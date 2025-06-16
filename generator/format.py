@@ -21,7 +21,7 @@
 import re
 from collections import defaultdict
 
-# default values of paramters/inputs are set by daal itself.
+# default values of parameters/inputs are set by daal itself.
 # We indicate with these defaults that we want to use daal's defaults
 pydefaults = defaultdict(lambda: "None")
 pydefaults.update(
@@ -49,7 +49,7 @@ cppdefaults.update(
 
 def flat(typ):
     """Flatten C++ name, leaving only what's needed to disambiguate names.
-    E.g. stripping of leading namespaces and replaceing :: with _
+    E.g. stripping of leading namespaces and replacing :: with _
     """
     typ = typ.replace(
         "daal::algorithms::kernel_function::KernelIfacePtr",
