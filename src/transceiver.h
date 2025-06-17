@@ -40,6 +40,7 @@
 #include <memory>
 #include <iostream>
 #include <cassert>
+#include <cstdint>
 #include "daal4py_defines.h"
 
 // Abstract class with minimal functionality needed for communicating between processes.
