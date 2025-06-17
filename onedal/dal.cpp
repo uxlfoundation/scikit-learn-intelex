@@ -23,6 +23,7 @@ namespace oneapi::dal::python {
 
 /* common */
 #ifdef ONEDAL_DATA_PARALLEL_SPMD
+ONEDAL_PY_INIT_MODULE(policy);
 /* algorithms */
 ONEDAL_PY_INIT_MODULE(covariance);
 ONEDAL_PY_INIT_MODULE(dbscan);
@@ -81,6 +82,7 @@ ONEDAL_PY_INIT_MODULE(finiteness_checker);
 
 #ifdef ONEDAL_DATA_PARALLEL_SPMD
 PYBIND11_MODULE(_onedal_py_spmd_dpc, m) {
+    init_policy(m);
     init_covariance(m);
     init_dbscan(m);
     init_decomposition(m);
