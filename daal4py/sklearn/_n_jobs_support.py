@@ -94,16 +94,17 @@ def _run_with_n_jobs(method):
         # get real `n_jobs` number of threads for oneDAL
         # using sklearn rules and `n_threads` from upper parallelism context
 
-        if self.n_jobs is None:
-            n_jobs = cpu_count()
+        if self.n_jobs:
+            n_jobs = (
+                self.n_jobs if self.n_jobs > 0 else max(1, cpu_count() + self.n_jobs + 1)
+            )
         elif self.n_jobs == 0:
             # This is a small variation on joblib's equivalent error
             raise ValueError("n_jobs == 0 has no meaning")
         else:
-            n_jobs = (
-                self.n_jobs if self.n_jobs > 0 else max(1, cpu_count() + self.n_jobs + 1)
-            )
+            return method(self, *args, **kwargs)
 
+        # n_jobs value is attempting to be set
         if (old_n_threads := num_threads()) != n_jobs:
             logger = logging.getLogger("sklearnex")
             cl = self.__class__
