@@ -224,7 +224,7 @@ if daal_check_version((2024, "P", 100)):
                 )
             else:
                 components = self.components_
-
+            print(_is_numpy_namespace(xp), type(X), type(mean), type(components))
             if not _is_numpy_namespace(xp):
                 # DPCtl and dpnp require inputs to be on the same device for
                 # matrix multiplication and division. The type and location
@@ -233,7 +233,7 @@ if daal_check_version((2024, "P", 100)):
                 # same device as the data (compute follows data).
                 components = xp.asarray(components, device=X.device)
                 mean = xp.asarray(mean, device=X.device)
-
+            print(type(mean),type(components))
             return X @ components + mean
 
         def _onedal_supported(self, method_name, X):
