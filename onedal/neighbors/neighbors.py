@@ -730,7 +730,6 @@ class NearestNeighbors(NeighborsBase):
         self,
         n_neighbors=5,
         *,
-        weights="uniform",
         algorithm="auto",
         p=2,
         metric="minkowski",
@@ -745,7 +744,7 @@ class NearestNeighbors(NeighborsBase):
             metric_params=metric_params,
             **kwargs,
         )
-        self.weights = weights
+        self.requires_y = False
 
     @bind_default_backend("neighbors.search")
     def train(self, *args, **kwargs): ...
@@ -792,7 +791,7 @@ class NearestNeighbors(NeighborsBase):
         return self.infer(params, model, X)
 
     @supports_queue
-    def fit(self, X, y, queue=None):
+    def fit(self, X, y=None, queue=None):
         return self._fit(X, y)
 
     @supports_queue
