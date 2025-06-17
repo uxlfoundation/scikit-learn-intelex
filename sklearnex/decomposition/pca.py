@@ -233,7 +233,7 @@ if daal_check_version((2024, "P", 100)):
                 # same device as the data (compute follows data).
                 components = xp.asarray(components, device=X.device)
                 mean = xp.asarray(mean, device=X.device)
-            print(type(mean),type(components))
+            print(type(mean), type(components))
             return X @ components + mean
 
         def _onedal_supported(self, method_name, X):
