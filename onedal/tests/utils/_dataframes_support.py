@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
+import os
 
 import pytest
 import scipy.sparse as sp
@@ -49,18 +50,22 @@ import pandas as pd
 
 from onedal.tests.utils._device_selection import get_queues
 
+test_frameworks = os.environ.get(
+    "ONEDAL_PYTEST_FRAMEWORKS", "numpy,pandas,dpnp,dpctl,array_api"
+)
 
-def get_dataframes_and_queues(
-    dataframe_filter_="numpy,pandas,dpnp,dpctl,array_api", device_filter_="cpu,gpu"
-):
+
+def get_dataframes_and_queues(dataframe_filter_=None, device_filter_="cpu,gpu"):
     """Get supported dataframes for testing.
 
     This is meant to be used for testing purposes only.
+    It is to be used only for pytest test collection.
 
     Parameters
     ----------
-    dataframe_filter_ : str, default="numpy,pandas,dpnp,dpctl"
+    dataframe_filter_ : str, default=None
         Configure output pytest.params for the certain dataframe formats.
+        When it evaluates False, it will default to value of ``test_frameworks``.
     device_filter_ : str, default="cpu,gpu"
         Configure output pytest.params with certain sycl queue for the dataframe,
         where it is applicable.
@@ -82,6 +87,14 @@ def get_dataframes_and_queues(
     _convert_to_dataframe : Converted input object to certain dataframe format.
     """
     dataframes_and_queues = []
+
+    # filter dataframe_filter_ based on available test frameworks
+    if dataframe_filter_:
+        dataframe_filter_ = ",".join(
+            [i for i in dataframe_filter_.split(",") if i in test_frameworks]
+        )
+    else:
+        dataframe_filter_ = test_frameworks
 
     if "numpy" in dataframe_filter_:
         dataframes_and_queues.append(pytest.param("numpy", None, id="numpy"))
