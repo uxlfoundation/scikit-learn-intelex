@@ -30,10 +30,6 @@ from .utils._dpep_helpers import dpctl_available, dpnp_available
 if dpctl_available:
     from dpctl.memory import MemoryUSMDevice, as_usm_memory
     from dpctl.tensor import usm_ndarray
-else:
-    from onedal import _dpc_backend
-
-    SyclQueue = getattr(_dpc_backend, "SyclQueue", None)
 
 logger = logging.getLogger("sklearnex")
 
