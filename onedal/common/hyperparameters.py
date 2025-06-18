@@ -35,6 +35,26 @@ else:
         "to_dict",
     ]
 
+    def get_hyperparameters_backend(algorithm, op):
+        """Get hyperparameters for a specific algorithm and operation."""
+        if algorithm == "linear_regression" and op == "train":
+            hyperparameters_backend = backend.linear_model.regression.train_hyperparameters()
+        elif algorithm == "covariance" and op == "compute":
+            hyperparameters_backend = backend.covariance.compute_hyperparameters()
+        elif daal_check_version((2024, "P", 300)) and algorithm == "decision_forest" and op == "infer":
+            hyperparameters_backend = backend.decision_forest.infer_hyperparameters()
+        else:
+            raise ValueError(
+                f"Hyperparameters for '{algorithm}.{op}' are not defined."
+            )
+        return hyperparameters_backend
+
+    def get_methods_with_prefix(obj, prefix):
+        return {
+            method.replace(prefix, ""): getattr(obj, method)
+            for method in filter(lambda f: f.startswith(prefix), dir(obj))
+        }
+
     class HyperParameters:
         """Class for simplified interaction with oneDAL hyperparameters.
         Overrides `__getattribute__` and `__setattr__` to utilize getters and setters
@@ -88,27 +108,21 @@ else:
         def to_dict(self):
             return {name: getter() for name, getter in self.getters.items()}
 
-    def get_methods_with_prefix(obj, prefix):
-        return {
-            method.replace(prefix, ""): getattr(obj, method)
-            for method in filter(lambda f: f.startswith(prefix), dir(obj))
-        }
-
-    hyperparameters_backend: Dict[Tuple[str, str], Any] = {
-        (
-            "linear_regression",
-            "train",
-        ): backend.linear_model.regression.train_hyperparameters(),
-        ("covariance", "compute"): backend.covariance.compute_hyperparameters(),
-    }
+    hyperparameters_backend_items = [("linear_regression", "train"),
+                                     ("covariance", "compute")]
     if daal_check_version((2024, "P", 300)):
-        df_infer_hp = backend.decision_forest.infer_hyperparameters
-        hyperparameters_backend[("decision_forest", "infer")] = df_infer_hp()
+        hyperparameters_backend_items.append(("decision_forest", "infer"))
+
+    # Create a map of hyperparameters for each algorithm and operation
+    hyperparameters_backend_map: Dict[Tuple[str, str], Any] = {}
+    for algorithm, op in hyperparameters_backend_items:
+        hyperparameters_backend_map[(algorithm, op)] = get_hyperparameters_backend(algorithm, op)
+
     hyperparameters_map = {}
 
-    for (algorithm, op), hyperparameters in hyperparameters_backend.items():
-        setters = get_methods_with_prefix(hyperparameters, "set_")
-        getters = get_methods_with_prefix(hyperparameters, "get_")
+    for (algorithm, op), hyperparameters_backend in hyperparameters_backend_map.items():
+        setters = get_methods_with_prefix(hyperparameters_backend, "set_")
+        getters = get_methods_with_prefix(hyperparameters_backend, "get_")
 
         if set(setters.keys()) != set(getters.keys()):
             raise ValueError(
@@ -117,9 +131,19 @@ else:
             )
 
         hyperparameters_map[(algorithm, op)] = HyperParameters(
-            algorithm, op, setters, getters, hyperparameters
+            algorithm, op, setters, getters, hyperparameters_backend
         )
 
-
 def get_hyperparameters(algorithm, op):
+    print("in get_hyperparameters for", algorithm, op, flush=True)
+    print("hyperparameters_map[({algorithm},{op})]", algorithm, op, hyperparameters_map[(algorithm, op)].backend, flush=True)
     return hyperparameters_map.get((algorithm, op), None)
+
+def reset_hyperparameters(algorithm, op):
+    print("in reset_hyperparameters for", algorithm, op, flush=True)
+    new_hyperparameters_backend = get_hyperparameters_backend(algorithm, op)
+    new_setters = get_methods_with_prefix(new_hyperparameters_backend, "set_")
+    new_getters = get_methods_with_prefix(new_hyperparameters_backend, "get_")
+    hyperparameters_map[(algorithm, op)] = HyperParameters(
+        algorithm, op, new_setters, new_getters, new_hyperparameters_backend
+    )

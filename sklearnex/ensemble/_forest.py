@@ -1206,7 +1206,7 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
     score.__doc__ = _sklearn_ForestRegressor.score.__doc__
 
 
-@register_hyperparameters({"infer": get_hyperparameters("decision_forest", "infer")})
+@register_hyperparameters({"infer": ["decision_forest", "infer"]})
 @control_n_jobs(decorated_methods=["fit", "predict", "predict_proba", "score"])
 class RandomForestClassifier(ForestClassifier):
     __doc__ = _sklearn_RandomForestClassifier.__doc__
