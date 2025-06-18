@@ -21,8 +21,12 @@ import sys
 import warnings
 from abc import ABC
 
-from onedal.common.hyperparameters import get_hyperparameters as onedal_get_hyperparameters
-from onedal.common.hyperparameters import reset_hyperparameters as  onedal_reset_hyperparameters
+from onedal.common.hyperparameters import (
+    get_hyperparameters as onedal_get_hyperparameters,
+)
+from onedal.common.hyperparameters import (
+    reset_hyperparameters as onedal_reset_hyperparameters,
+)
 
 import sklearn
 
@@ -163,7 +167,9 @@ def register_hyperparameters(hyperparameters_map):
                 return self.get_hyperparameters
 
             def get_hyperparameters(self, op):
-                return onedal_get_hyperparameters(hyperparameters_map[op][0], hyperparameters_map[op][1])
+                return onedal_get_hyperparameters(
+                    hyperparameters_map[op][0], hyperparameters_map[op][1]
+                )
 
         class StaticHyperparametersResetter:
             """Like a @staticmethod, but additionally raises a Warning when called on an instance."""
@@ -176,7 +182,9 @@ def register_hyperparameters(hyperparameters_map):
                 return self.reset_hyperparameters
 
             def reset_hyperparameters(self, op):
-                return onedal_reset_hyperparameters(hyperparameters_map[op][0], hyperparameters_map[op][1])
+                return onedal_reset_hyperparameters(
+                    hyperparameters_map[op][0], hyperparameters_map[op][1]
+                )
 
         cls.get_hyperparameters = StaticHyperparametersAccessor()
         cls.reset_hyperparameters = StaticHyperparametersResetter()

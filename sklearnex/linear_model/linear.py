@@ -39,7 +39,8 @@ from sklearn.utils.validation import check_is_fitted, check_X_y
 from onedal.linear_model import LinearRegression as onedal_LinearRegression
 from onedal.utils.validation import _num_features, _num_samples
 
-@register_hyperparameters({"fit" : ("linear_regression",  "train")})
+
+@register_hyperparameters({"fit": ("linear_regression", "train")})
 @control_n_jobs(decorated_methods=["fit", "predict", "score"])
 class LinearRegression(oneDALEstimator, _sklearn_LinearRegression):
     __doc__ = _sklearn_LinearRegression.__doc__

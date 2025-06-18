@@ -38,15 +38,19 @@ else:
     def get_hyperparameters_backend(algorithm, op):
         """Get hyperparameters for a specific algorithm and operation."""
         if algorithm == "linear_regression" and op == "train":
-            hyperparameters_backend = backend.linear_model.regression.train_hyperparameters()
+            hyperparameters_backend = (
+                backend.linear_model.regression.train_hyperparameters()
+            )
         elif algorithm == "covariance" and op == "compute":
             hyperparameters_backend = backend.covariance.compute_hyperparameters()
-        elif daal_check_version((2024, "P", 300)) and algorithm == "decision_forest" and op == "infer":
+        elif (
+            daal_check_version((2024, "P", 300))
+            and algorithm == "decision_forest"
+            and op == "infer"
+        ):
             hyperparameters_backend = backend.decision_forest.infer_hyperparameters()
         else:
-            raise ValueError(
-                f"Hyperparameters for '{algorithm}.{op}' are not defined."
-            )
+            raise ValueError(f"Hyperparameters for '{algorithm}.{op}' are not defined.")
         return hyperparameters_backend
 
     def get_methods_with_prefix(obj, prefix):
@@ -108,15 +112,19 @@ else:
         def to_dict(self):
             return {name: getter() for name, getter in self.getters.items()}
 
-    hyperparameters_backend_items = [("linear_regression", "train"),
-                                     ("covariance", "compute")]
+    hyperparameters_backend_items = [
+        ("linear_regression", "train"),
+        ("covariance", "compute"),
+    ]
     if daal_check_version((2024, "P", 300)):
         hyperparameters_backend_items.append(("decision_forest", "infer"))
 
     # Create a map of hyperparameters for each algorithm and operation
     hyperparameters_backend_map: Dict[Tuple[str, str], Any] = {}
     for algorithm, op in hyperparameters_backend_items:
-        hyperparameters_backend_map[(algorithm, op)] = get_hyperparameters_backend(algorithm, op)
+        hyperparameters_backend_map[(algorithm, op)] = get_hyperparameters_backend(
+            algorithm, op
+        )
 
     hyperparameters_map = {}
 
@@ -134,13 +142,12 @@ else:
             algorithm, op, setters, getters, hyperparameters_backend
         )
 
+
 def get_hyperparameters(algorithm, op):
-    print("in get_hyperparameters for", algorithm, op, flush=True)
-    print("hyperparameters_map[({algorithm},{op})]", algorithm, op, hyperparameters_map[(algorithm, op)].backend, flush=True)
     return hyperparameters_map.get((algorithm, op), None)
 
+
 def reset_hyperparameters(algorithm, op):
-    print("in reset_hyperparameters for", algorithm, op, flush=True)
     new_hyperparameters_backend = get_hyperparameters_backend(algorithm, op)
     new_setters = get_methods_with_prefix(new_hyperparameters_backend, "set_")
     new_getters = get_methods_with_prefix(new_hyperparameters_backend, "get_")
