@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
-from ._data_conversion import from_table, kDLCPU, kDLOneAPI, to_table
+from ._data_conversion import from_table, to_table
 from ._sycl_usm import copy_to_dpnp, copy_to_usm, usm_to_numpy
 
 __all__ = [
