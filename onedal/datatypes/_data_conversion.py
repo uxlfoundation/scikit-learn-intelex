@@ -36,7 +36,7 @@ def to_table(*args, queue=None):
     Parameters
     ----------
     *args : {scalar, numpy array, sycl_usm_ndarray, csr_matrix, or csr_array}
-        Arguments to be individually coverted to oneDAL tables.
+        Arguments to be individually converted to oneDAL tables.
 
     queue : SyclQueue or None, default=None
         SYCL Queue object to be associated with the oneDAL tables. Default

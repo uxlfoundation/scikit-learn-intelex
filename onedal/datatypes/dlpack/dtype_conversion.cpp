@@ -23,13 +23,13 @@ namespace oneapi::dal::python::dlpack {
 
 union type_hash_union {
     std::uint8_t bytes[4];
-    std::uint16_t halfs[2];
+    std::uint16_t halves[2];
     std::uint32_t full = 0u;
 
     constexpr type_hash_union(const DLDataType& t) {
         bytes[0] = t.code;
         bytes[1] = t.bits;
-        halfs[1] = t.lanes;
+        halves[1] = t.lanes;
     }
 };
 

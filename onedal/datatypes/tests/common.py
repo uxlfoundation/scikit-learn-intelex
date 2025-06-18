@@ -99,7 +99,7 @@ if dpctl_available:
         if not skip_data_1:
             assert actual_sua_iface["data"][1] == desired_sua_iface["data"][1]
         # shape: a tuple of integers describing dimensions of an N-dimensional array.
-        # Reformating shapes for check cases (r,) vs (r,1). Contiguous flattened array
+        # Reformatting shapes for check cases (r,) vs (r,1). Contiguous flattened array
         # shape (r,) becoming (r,1) just for the check, since oneDAL supports only (r,1)
         # for 1-D arrays. In code after from_table conversion for 1-D expected outputs
         # xp.ravel or reshape(-1) is used.

@@ -160,7 +160,7 @@ class DecisionTreeClassifier(BaseEstimator, ClassifierMixin):
             ignored if they would result in any single class carrying a
             negative weight in either child node.
 
-        pruning_set: None or a tuple of (X, y) corrsponding to features and
+        pruning_set: None or a tuple of (X, y) corresponding to features and
             associated labels used for tree pruning. See [1] for more details.
 
         Returns
