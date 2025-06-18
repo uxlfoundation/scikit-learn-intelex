@@ -232,10 +232,14 @@ export CC="icx -fsanitize=address -g"
 export CXX="icpx -fsanitize=address -g"
 ```
 
-The ASAN runtime used by ICX is the same as the one by Clang. It's possible to preload the ASan runtime for GNU if that's the system's default through e.g. `LD_PRELOAD=libasan.so` or similar, but to get the same ASan runtime as for oneDAL, one might need to specifically pass the paths from Clang if that's not the system's default compiler:
+_Hint: the Cython module `daal4py` that gets built through `build_ext` does not do incremental compilation, so one might want to add `ccache` into the compiler call for development purposes - e.g. `CXX="ccache icx  -fsanitize=address -g"`._
+
+The ASan runtime used by ICX is the same as the one by Clang. It's possible to preload the ASan runtime for GNU if that's the system's default through e.g. `LD_PRELOAD=libasan.so` or similar. However, one might need to specifically pass the paths from Clang to get the same ASan runtime as for oneDAL if that is not the system's default compiler:
 ```shell
 export LD_PRELOAD="$(clang -print-file-name=libclang_rt.asan-x86_64.so)"
 ```
+
+_Note: this requires both `clang` and its runtime libraries to be installed. If using toolkits from `conda-forge`, then using `libclang_rt` requires installing package `compiler-rt`, in addition to `clang` and `clangxx`._
 
 Then, the Python memory allocator can be set to `malloc` like this:
 ```shell
@@ -245,7 +249,7 @@ export PYTHONMALLOC=malloc
 Putting it all together, the earlier examples building the library in-place and executing a python file with it become as follows:
 ```shell
 source <path to ASan-enabled oneDAL env.sh>
-CC="icx -fsanitize=address -g" CXX="icpx -fsanitize=address -g" python setup.py build_ext --inplace --force --abs-rpath
+CC="ccache icx -fsanitize=address -g" CXX="ccache icpx -fsanitize=address -g" python setup.py build_ext --inplace --force --abs-rpath
 CC="icx -fsanitize=address -g" CXX="icpx -fsanitize=address -g" python setup.py build --abs-rpath
 LD_PRELOAD="$(clang -print-file-name=libclang_rt.asan-x86_64.so)" PYTHONMALLOC=malloc PYTHONPATH=$(pwd) python <python file.py>
 ```

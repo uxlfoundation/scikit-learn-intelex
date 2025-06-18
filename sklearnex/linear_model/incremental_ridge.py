@@ -46,7 +46,7 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
     """
     Incremental estimator for Ridge Regression.
 
-    Allows to train Ridge Regression if data is splitted into batches.
+    Allows to train Ridge Regression if data is split into batches.
 
     Parameters
     ----------

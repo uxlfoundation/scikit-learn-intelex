@@ -54,6 +54,6 @@ if __name__ == "__main__":
     print("\nEigenvalues kv:\n", pca_res.dataForTransform["eigenvalue"])
     print("\nMeans kv:\n", pca_res.dataForTransform["mean"])
     print("\nVariances kv:\n", pca_res.dataForTransform["variance"])
-    # print results of tranform
+    # print results of transform
     print("\nTransformed data:", pcatrans_res.transformedData)
     print("All looks good!")
