@@ -29,12 +29,7 @@ __global_queue = None
 
 
 def __create_sycl_queue(target):
-    if SyclQueue is None:
-        # we don't have SyclQueue support
-        return None
-    if target is None:
-        return None
-    if isinstance(target, SyclQueue):
+    if isinstance(target, SyclQueue) or target is None:
         return target
     if isinstance(target, (str, int)):
         return SyclQueue(target)

@@ -21,6 +21,8 @@ from functools import wraps
 import numpy as np
 from sklearn import get_config
 
+from onedal import _default_backend as backend
+
 from ._config import _get_config
 from .datatypes import copy_to_dpnp, copy_to_usm, kDLCPU, usm_to_numpy
 from .utils import _sycl_queue_manager as QM
@@ -28,7 +30,7 @@ from .utils._array_api import _asarray, _is_numpy_namespace
 from .utils._third_party import is_dpnp_ndarray
 
 logger = logging.getLogger("sklearnex")
-cpu_dlpack_device = (kDLCPU, 0)
+cpu_dlpack_device = (backend.kDLCPU, 0)
 
 
 def supports_queue(func):
