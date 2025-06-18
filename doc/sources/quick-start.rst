@@ -353,6 +353,7 @@ Software Requirements
 * 1.4.X
 * 1.5.X
 * 1.6.X
+* 1.7.X
 
 Memory Requirements
 **********************
