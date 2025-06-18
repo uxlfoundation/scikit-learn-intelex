@@ -34,7 +34,7 @@ from ...base import oneDALEstimator
 from ...utils.validation import validate_data
 
 
-@register_hyperparameters({"fit": get_hyperparameters("covariance", "compute")})
+@register_hyperparameters({"fit": ("covariance", "compute")})
 @control_n_jobs(decorated_methods=["fit", "mahalanobis"])
 class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
     __doc__ = _sklearn_EmpiricalCovariance.__doc__
