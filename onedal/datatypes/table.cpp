@@ -110,7 +110,8 @@ ONEDAL_PY_INIT_MODULE(table) {
     m.def("dlpack_memory_order", &dlpack::dlpack_memory_order);
     py::enum_<DLDeviceType>(m, "DLDeviceType")
         .value("kDLCPU", kDLCPU)
-        .value("kDLOneAPI", kDLOneAPI);
+        .value("kDLOneAPI", kDLOneAPI)
+        .export_values();
 }
 
 } // namespace oneapi::dal::python
