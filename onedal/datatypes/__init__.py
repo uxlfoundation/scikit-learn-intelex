@@ -21,8 +21,6 @@ __all__ = [
     "copy_to_dpnp",
     "copy_to_usm",
     "from_table",
-    "kDLCPU",
-    "kDLOneAPI",
     "to_table",
     "usm_to_numpy",
 ]
