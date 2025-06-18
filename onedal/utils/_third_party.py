@@ -65,9 +65,9 @@ dpctl_available = is_dpctl_available()
 if dpctl_available:
     from dpctl import SyclQueue
 else:
-    from onedal import _dpc_backend
+    from onedal import _default_backend as backend
 
-    SyclQueue = getattr(_dpc_backend, "SyclQueue", None)
+    SyclQueue = backend.SyclQueue
 
 
 def lazy_import(*module_names: str) -> Callable:
