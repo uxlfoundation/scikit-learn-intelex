@@ -88,8 +88,8 @@ cdef class gbt_classification_model_builder:
         :param tree-handle tree_id: tree to which node is added
         :param node-handle parent_id: parent node to which new node is added (use noParent for root node)
         :param size_t position: position in parent (e.g. 0 for left and 1 for right child in a binary tree)
-        :param size_t feature_index: feature index for spliting
-        :param double feature_value: feature value for spliting
+        :param size_t feature_index: feature index for splitting
+        :param double feature_value: feature value for splitting
         :param int default_left: default behaviour in case of missing value
         :param double cover: cover (sum_hess) of the solit node
         :rtype: node identifier
@@ -149,8 +149,8 @@ cdef class gbt_regression_model_builder:
         :param tree-handle tree_id: tree to which node is added
         :param node-handle parent_id: parent node to which new node is added (use noParent for root node)
         :param size_t position: position in parent (e.g. 0 for left and 1 for right child in a binary tree)
-        :param size_t feature_index: feature index for spliting
-        :param double feature_value: feature value for spliting
+        :param size_t feature_index: feature index for splitting
+        :param double feature_value: feature value for splitting
         :param double cover: cover (sum_hess) of the split node
         :param int default_left: default behaviour in case of missing value
         :rtype: node identifier

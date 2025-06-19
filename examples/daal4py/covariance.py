@@ -34,7 +34,7 @@ def main(readcsv=pd_read_csv, method="defaultDense"):
     # let's provide a file directly, not a table/array
     result1 = algo.compute(str(infile))
 
-    # We can also load the data ourselfs and provide the numpy array
+    # We can also load the data ourselves and provide the numpy array
     algo = d4p.covariance(method=method)
     data = readcsv(infile)
     _ = algo.compute(data)

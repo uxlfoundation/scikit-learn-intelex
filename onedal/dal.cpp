@@ -23,6 +23,7 @@ namespace oneapi::dal::python {
 
 /* common */
 #ifdef ONEDAL_DATA_PARALLEL_SPMD
+ONEDAL_PY_INIT_MODULE(policy);
 /* algorithms */
 ONEDAL_PY_INIT_MODULE(covariance);
 ONEDAL_PY_INIT_MODULE(dbscan);
@@ -42,9 +43,7 @@ ONEDAL_PY_INIT_MODULE(neighbors);
 ONEDAL_PY_INIT_MODULE(logistic_regression);
 #endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240001
 #else // ONEDAL_DATA_PARALLEL_SPMD
-#ifdef ONEDAL_DATA_PARALLEL
 ONEDAL_PY_INIT_MODULE(sycl);
-#endif // ONEDAL_DATA_PARALLEL
 
 ONEDAL_PY_INIT_MODULE(policy);
 /* datatypes*/
@@ -83,6 +82,7 @@ ONEDAL_PY_INIT_MODULE(finiteness_checker);
 
 #ifdef ONEDAL_DATA_PARALLEL_SPMD
 PYBIND11_MODULE(_onedal_py_spmd_dpc, m) {
+    init_policy(m);
     init_covariance(m);
     init_dbscan(m);
     init_decomposition(m);
@@ -104,10 +104,10 @@ PYBIND11_MODULE(_onedal_py_spmd_dpc, m) {
 #else
 #ifdef ONEDAL_DATA_PARALLEL
 PYBIND11_MODULE(_onedal_py_dpc, m) {
-    init_sycl(m);
 #else
 PYBIND11_MODULE(_onedal_py_host, m) {
 #endif
+    init_sycl(m);
     init_policy(m);
     init_table(m);
 

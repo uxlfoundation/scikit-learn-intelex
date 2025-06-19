@@ -34,7 +34,7 @@ def main(method="defaultDense"):
     # let's provide a file directly, not a table/array
     result1 = algo.compute(str(infile))
 
-    # We can also load the data ourselfs and provide the numpy array
+    # We can also load the data ourselves and provide the numpy array
     data = pd_read_csv(infile)
     result2 = algo.compute(data)
 

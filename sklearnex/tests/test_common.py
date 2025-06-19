@@ -118,7 +118,7 @@ def test_target_offload_ban():
         allowed_locations=TARGET_OFFLOAD_ALLOWED_LOCATIONS,
     )
     output = "\n".join(output)
-    assert output == "", f"target offloading is occuring in: \n{output}"
+    assert output == "", f"target offloading is occurring in: \n{output}"
 
 
 def _sklearnex_walk(func):
@@ -146,7 +146,7 @@ def test_class_trailing_underscore_ban(monkeypatch):
     estimators = all_estimators()  # list of tuples
     for name, obj in estimators:
         if "preview" not in obj.__module__ and "daal4py" not in obj.__module__:
-            # propeties also occur in sklearn, especially in deprecations and are expected
+            # properties also occur in sklearn, especially in deprecations and are expected
             # to error if queried and the estimator is not fitted
             assert all(
                 [

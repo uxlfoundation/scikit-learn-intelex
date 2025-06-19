@@ -109,7 +109,7 @@ MultiClass Classification
 
        - data preprocessing with Quantile Transformer
        - training and prediction using scikit-learn-intelex
-       - search for optimal paramters using Optuna
+       - search for optimal parameters using Optuna
        - performance comparison to scikit-learn
    * - `Support Vector Classification (SVC) for MultiClass Classification (example 1)
        <https://www.kaggle.com/napetrov/svm-tps-may-2021-with-scikit-learn-intelex>`_
@@ -120,7 +120,7 @@ MultiClass Classification
        - data preprocessing
        - training and prediction using scikit-learn-intelex
 
-   * - `Stacking Classifer with Logistic Regression, kNN, Random Forest, and Quantile Transformer
+   * - `Stacking Classifier with Logistic Regression, kNN, Random Forest, and Quantile Transformer
        <https://www.kaggle.com/owerbat/tps-jun-fast-stacking-with-scikit-learn-intelex>`_
 
        **Data:** [TPS Jun 2021] Synthetic eCommerce data
@@ -215,7 +215,7 @@ Classification Tasks in Natural Language Processing
 
        - data preprocessing
        - TF-IDF calculation
-       - search for optimal paramters using Optuna
+       - search for optimal parameters using Optuna
        - training and prediction using scikit-learn-intelex
        - performance comparison to scikit-learn
    * - `One-vs-Rest Support Vector Machine (SVM) with Text Data for MultiClass Classification
@@ -237,6 +237,6 @@ Classification Tasks in Natural Language Processing
 
        - data preprocessing
        - TF-IDF calculation
-       - search for optimal paramters using Optuna
+       - search for optimal parameters using Optuna
        - training and prediction using scikit-learn-intelex
        - performance comparison to scikit-learn
