@@ -48,7 +48,7 @@ The following Kaggle kernels show how to patch autoML frameworks with |sklearnex
      - Predict the category of an eCommerce product
    * - |automl_with_intelex_titanic|_
 
-       **Data:** Titanic datset
+       **Data:** Titanic dataset
      - Predict whether a passenger survivies
    * - |automl_with_intelex_tps_oct|_
 

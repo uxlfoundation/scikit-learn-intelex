@@ -100,7 +100,7 @@ public:
           step4 is the equivalent of step1, but within the iteration.
           step4/1 are meaningful only on a single rank:
               step1 produces output only on one rank
-              step4 is executed only on one rank, the output of step3 determines wich rank does it
+              step4 is executed only on one rank, the output of step3 determines which rank does it
           step2 processes output of step1/4 on each node, so output of step1/4 need bcasting
           step2 results get gathered on root and processed in step3
           step3 result is sent to one rank for executing step4

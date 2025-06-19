@@ -54,7 +54,7 @@ struct TNVT
     typedef daal::algorithms::tree_utils::regression::SplitNodeDescriptor split_desc_type;
 };
 
-// Decision forest classification uses classification vistors
+// Decision forest classification uses classification visitors
 template <>
 struct TNVT<daal::algorithms::decision_forest::classification::Model>
 {
@@ -63,7 +63,7 @@ struct TNVT<daal::algorithms::decision_forest::classification::Model>
     typedef daal::algorithms::tree_utils::classification::SplitNodeDescriptor split_desc_type;
 };
 
-// Decision tree classification uses classification vistors
+// Decision tree classification uses classification visitors
 template <>
 struct TNVT<daal::algorithms::decision_tree::classification::Model> : public TNVT<daal::algorithms::decision_forest::classification::Model>
 {};
@@ -141,7 +141,7 @@ TreeState _getTreeState(M * model, size_t iTree, size_t n_classes)
     return TreeState(tsv);
 }
 
-// This is the function for getting the tree state frmo a tree which we use in cython
+// This is the function for getting the tree state from a tree which we use in cython
 // we will have different model types, so it's a template
 // Note: the caller will own the memory of the 2 returned arrays!
 template <typename M>

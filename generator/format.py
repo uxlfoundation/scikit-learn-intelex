@@ -21,7 +21,7 @@
 import re
 from collections import defaultdict
 
-# default values of paramters/inputs are set by daal itself.
+# default values of parameters/inputs are set by daal itself.
 # We indicate with these defaults that we want to use daal's defaults
 pydefaults = defaultdict(lambda: "None")
 pydefaults.update(
@@ -49,7 +49,7 @@ cppdefaults.update(
 
 def flat(typ):
     """Flatten C++ name, leaving only what's needed to disambiguate names.
-    E.g. stripping of leading namespaces and replaceing :: with _
+    E.g. stripping of leading namespaces and replacing :: with _
     """
     typ = typ.replace(
         "daal::algorithms::kernel_function::KernelIfacePtr",
@@ -98,16 +98,16 @@ def cy_callext(arg, typ_cy, typ_cyext, s2e=None):
     return arg
 
 
-def mk_var(name="", typ="", const="", dflt=None, inpt=False, algo=None, doc=None):
+def mk_var(name="", typ="", const="", dflt=None, inp=False, algo=None, doc=None):
     """Return an object with preformatted attributes for given argument.
     Analyses, normalizes and formats types, names and members.
-    We can also craete an empty object,
+    We can also create an empty object,
     which can then be used in jinja2 filters without an extra condition.
-    emtpy/optional state is indicated by name==''
+    empty/optional state is indicated by name==''
     """
 
     class fmt_var(object):
-        def __init__(self, name, typ, const, dflt, inpt, algo, doc):
+        def __init__(self, name, typ, const, dflt, inp, algo, doc):
             d4pname = ""
             if name:
                 value = name.strip()
@@ -250,7 +250,7 @@ def mk_var(name="", typ="", const="", dflt=None, inpt=False, algo=None, doc=None
             self.arg_member = "_{}".format(d4pname) if name else ""
             self.init_member = (
                 "_{}({})".format(d4pname, "NULL" if ptr else "")
-                if inpt
+                if inp
                 else "_{0}({0})".format(d4pname) if name else ""
             )
             self.assign_member = "_{0} = {0}".format(d4pname) if name else ""
@@ -284,4 +284,4 @@ def mk_var(name="", typ="", const="", dflt=None, inpt=False, algo=None, doc=None
             a = [getattr(self, x) for x in args]
             return s.format(*a) if self.name else ""
 
-    return fmt_var(name, typ, const, dflt, inpt, algo, doc)
+    return fmt_var(name, typ, const, dflt, inp, algo, doc)

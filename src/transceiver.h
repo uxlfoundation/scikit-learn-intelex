@@ -88,7 +88,7 @@ public:
     // @param[in]  ptr    pointer to data the process contributes to the gather
     // @param[in]  N      number of bytes in ptr
     // @param[in]  root   process id which collects data
-    // @param[in]  sizes  number of bytes constributed by each process, relevant on root only
+    // @param[in]  sizes  number of bytes contributed by each process, relevant on root only
     //                    Can be zero also on root if varying==false
     // @param[in] varying set to false to indicate all members provide same chunksize
     virtual void * gather(const void * ptr, size_t N, size_t root, const size_t * sizes, bool varying = true) = 0;
@@ -146,7 +146,7 @@ public:
 };
 
 // Default implementation for collective operations.
-// tranceiver implementations should derive from here so they can provide
+// transceiver implementations should derive from here so they can provide
 // optimized implementations for only some of the collectives.
 // Also provides members m_me and m_nMembers to avoid frequent function calls.
 class transceiver_impl : public transceiver_iface
