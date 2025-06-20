@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
-"""Utilities for accessing third party pacakges such as DPNP, DPCtl.
+"""Utilities for accessing third party packages such as DPNP, DPCtl.
 
 Notes
 -----
@@ -91,7 +91,7 @@ def lazy_import(*module_names: str) -> Callable:
     -----
     The wrapped original function should have the modules as the first
     arguments. This will be hidden to the user. Lazy imports cannot be
-    stacked, instead pass mulitple arguments to the decorator.
+    stacked, instead pass multiple arguments to the decorator.
     """
 
     # func should have leading arguments which are following a dependency
