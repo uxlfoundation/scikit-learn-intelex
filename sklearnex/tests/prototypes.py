@@ -317,6 +317,18 @@ class PrototypeEstimator(oneDALEstimator, BaseEstimator):
         return self
 
     def predict(self, X):
+        """Predict finiteness for X.
+
+        Parameters
+        ----------
+        X : {array-like, sparse matrix} of shape (n_samples, n_features)
+            The input samples.
+
+        Returns
+        -------
+        y : ndarray of shape (1,)
+            Float representation of finiteness.
+        """
         check_is_fitted(self)  # first check if fitting has occured
         # No need to do another parameter check. While they are modifiable
         # in sklearn and in sklearnex, the parameters should never be
@@ -527,8 +539,8 @@ class PrototypeEstimator(oneDALEstimator, BaseEstimator):
         """
         # This is an example tier 2 method which uses some small additional
         # functionality on top of a tier 1 method
-        # This return value is only an example.
-        return float(self.predict(X)) - float(self.predict(y))
+        # This return value here is a trivial example.
+        return self.predict(X) - self.predict(y)
 
     # These are commented out, as they are generally necessary for copying
     # docstrings from sklearn estimators. _sklearn_Estimator_ should be
