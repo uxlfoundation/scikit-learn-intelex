@@ -112,7 +112,7 @@ jobs:
           echo "COVERAGE_RCFILE=$(readlink -f .coveragerc)" >> "$GITHUB_ENV"
           if [[ -z $DPCFLAG ]]; then echo "SKLEARNEX_GCOV=1" >> "$GITHUB_ENV"; fi
       - name: apt-get
-        run: sudo apt-get update && sudo apt-get install -y clang-format
+        run: sudo apt-get update
       - name: dpcpp installation
         run: |
           # This CI system yields oneAPI dependencies from the oneDAL repository
@@ -252,7 +252,7 @@ jobs:
           python -m venv venv
           call .\venv\Scripts\activate.bat
           pip install --upgrade setuptools
-          pip install cpufeature clang-format pyyaml
+          pip install cpufeature pyyaml
           pip install -r dependencies-dev
           for /f "delims=" %%c in ('python -m pip freeze ^| grep numpy') do echo NUMPY_BUILD=%%c>> %GITHUB_ENV%
       - name: System info 
