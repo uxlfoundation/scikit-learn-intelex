@@ -126,3 +126,5 @@ def enable_array_api(original_class: type[oneDALEstimator]) -> type[oneDALEstima
             return {"onedal_array_api": True}
 
         original_class._more_tags = _more_tags
+
+    return original_class
