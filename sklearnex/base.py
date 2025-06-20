@@ -110,7 +110,21 @@ class oneDALEstimator:
 
 
 def enable_array_api(original_class: type[oneDALEstimator]) -> type[oneDALEstimator]:
-    """This wrapper enables sklearnex to use non-numpy inputs in oneDAL offloading"""
+    """Enables sklearnex to use dpctl, dpnp or array_api inputs in oneDAL offloading.
+
+    This wrapper sets the proper flags/tags for the sklearnex infrastructure
+    to maintain the data framework, as the estimator can use it natively.
+
+    Parameters
+    ----------
+    original_class : oneDALEstimator subclass
+        Class which should enable data zero-copy support in sklearnex
+
+    Returns
+    -------
+    original_class : modified oneDALEstimator subclass
+        Estimator class.
+    """
     if sklearn_check_version("1.6"):
 
         def __sklearn_tags__(self) -> Tags:

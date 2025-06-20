@@ -21,16 +21,11 @@ This can be used as a foundation for developing other estimators. Most
 comments guiding code development should be removed unless pertinent to the
 implementation.  """
 import numpy as np
-
 from sklearn.base import BaseEstimator
 from sklearn.utils.validation import check_is_fitted
 
-# if a sklearn estimator is getting replicated, it should be imported here
-# with the prefix _sklearn_ added to it (using `import as`).
-
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
-
 from onedal.tests.prototypes import PrototypeEstimator as onedal_PrototypeEstimator
 
 from .._device_offload import dispatch
@@ -38,6 +33,10 @@ from .._utils import PatchingConditionsChain
 from ..base import enable_array_api, oneDALEstimator
 from ..utils._array_api import get_namespace
 from ..utils.validation import validate_data
+
+# if a sklearn estimator is getting replicated, it should be imported here
+# with the prefix _sklearn_ added to it (using `import as`).
+
 
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import StrOptions
