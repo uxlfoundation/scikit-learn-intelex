@@ -53,12 +53,12 @@ public:
             ++iter;
             auto s1_result = algo.run_step1Local(input1, centroids);
             // reduce all partial results
-            auto pres = map_reduce_tree::map_reduce_tree<Algo>::reduce(algo, s1_result);
+            auto partialres = map_reduce_tree::map_reduce_tree<Algo>::reduce(algo, s1_result);
             // finalize and check convergence/end of iteration
             if (tcvr->me() == 0)
             {
-                fres = algo.run_step2Master__final(std::vector<daal::algorithms::kmeans::PartialResultPtr>(1, pres));
-                // now check if we convered/reached max_iter
+                fres = algo.run_step2Master__final(std::vector<daal::algorithms::kmeans::PartialResultPtr>(1, partialres));
+                // now check if we converged/reached max_iter
                 if (iter < algo._maxIterations)
                 {
                     double new_goal = fres->get(daal::algorithms::kmeans::objectiveFunction)->daal::data_management::NumericTable::template getValue<double>(0, 0);

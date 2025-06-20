@@ -58,7 +58,7 @@ def wrap_algo(algo, ver):
 
 
 # Listing required parameters for each algorithm.
-# They are used to initialize the algorithm object instead of gettings set explicitly.
+# They are used to initialize the algorithm object instead of being set explicitly.
 # Note: even though listed under 'Batch', they are currently also used for 'Distributed'
 #  unless explicitly provided in a step spec.
 required = {
@@ -293,7 +293,7 @@ ifaces = {
 # By default input arguments have no default value (e.g. they are required).
 # Here you can make input arguments and parameters optional by providing their
 # default value (for each algorithm).
-# Set True value for standart data types and shared pointers.
+# Set True value for standard data types and shared pointers.
 defaults = {
     "algorithms::pca": {"correlation": True},
     "algorithms::multivariate_outlier_detection": {
@@ -388,7 +388,7 @@ SSpec.__new__.__defaults__ = (None,) * (len(SSpec._fields) - 5) + (
 )
 
 # We list all algos with distributed versions here.
-# The indivdual dicts get passed to jinja as global vars (as-is).
+# The individual dicts get passed to jinja as global vars (as-is).
 # Each algorithm provides it distributed pattern and the configuration parameters.
 # The latter are provided per step.
 # Do we want to include the flow-spec in here?

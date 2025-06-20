@@ -190,7 +190,7 @@ def test_tsne_reproducibility(dataframe, queue, dtype):
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     tsne_1 = TSNE(n_components=2, random_state=42).fit_transform(X_df)
     tsne_2 = TSNE(n_components=2, random_state=42).fit_transform(X_df)
-    # in case of dpctl.tensor.usm_ndarray covert to numpy array
+    # in case of dpctl.tensor.usm_ndarray convert to numpy array
     tsne_1 = _as_numpy(tsne_1)
     tsne_2 = _as_numpy(tsne_2)
     assert_allclose(tsne_1, tsne_2, rtol=1e-5)

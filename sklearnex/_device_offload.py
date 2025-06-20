@@ -137,7 +137,7 @@ def dispatch(
                 return branches["sklearn"](obj, *args, **kwargs)
 
         # move data to host because of multiple reasons: array_api fallback to host,
-        # non array_api supporing oneDAL code, issues with usm support in sklearn.
+        # non array_api supporting oneDAL code, issues with usm support in sklearn.
         has_usm_data_for_args, hostargs = _transfer_to_host(*args)
         has_usm_data_for_kwargs, hostvalues = _transfer_to_host(*kwargs.values())
 

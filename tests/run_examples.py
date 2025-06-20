@@ -302,7 +302,7 @@ def run_all(args):
             "{}/{} examples passed/skipped, "
             "{} failed".format(success, num, num - success)
         )
-        print("Error(s) occured. Logs can be found in " + logdir)
+        print("Error(s) occurred. Logs can be found in " + logdir)
         return 4711
     print("{}/{} examples passed/skipped".format(success, num))
     return 0
