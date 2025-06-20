@@ -96,6 +96,9 @@ class BaseLogisticRegression(metaclass=ABCMeta):
             y = y.astype(dtype=np.int32)
         else:
             _, xp, _ = _get_sycl_namespace(X)
+            # try catch needed for raw_inputs + array_api data where unlike
+            # numpy the way to yield unique values is via `unique_values`
+            # This should be removed when refactored for gpu zero-copy
             try:
                 self.classes_ = xp.unique(y)
             except AttributeError:

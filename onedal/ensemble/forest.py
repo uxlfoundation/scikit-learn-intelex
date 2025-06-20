@@ -314,6 +314,9 @@ class BaseForest(BaseEnsemble, metaclass=ABCMeta):
         else:
             if sua_iface is not None:
                 queue = X.sycl_queue
+            # try catch needed for raw_inputs + array_api data where unlike
+            # numpy the way to yield unique values is via `unique_values`
+            # This should be removed when refactored for gpu zero-copy
             try:
                 self.classes_ = xp.unique(y)
             except AttributeError:
