@@ -30,8 +30,8 @@ from onedal.tests.prototypes import PrototypeEstimator as onedal_PrototypeEstima
 
 from .._device_offload import dispatch
 from .._utils import PatchingConditionsChain
-from ..base import enable_array_api, oneDALEstimator
-from ..utils._array_api import get_namespace
+from ..base import oneDALEstimator
+from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.validation import validate_data
 
 # if a sklearn estimator is getting replicated, it should be imported here
