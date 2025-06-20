@@ -117,7 +117,7 @@ def test_n_jobs_affinity(estimator, caplog):
     # get affinity mask of calling process
     mask = os.sched_getaffinity(0)
     # by default, oneDAL should match the number of threads made available to the sklearnex pytest suite
-    # This is currently disabled due to thread setting occuring in test_run_to_run_stability
+    # This is currently disabled due to thread setting occurring in test_run_to_run_stability
     # assert len(mask) == n_t
 
     try:
