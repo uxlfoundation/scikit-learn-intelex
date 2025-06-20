@@ -29,6 +29,7 @@ from .._config import get_config
 from .._device_offload import dispatch
 from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
+from ..utils._array_api import enable_array_api
 from ..utils.validation import validate_data
 
 if sklearn_check_version("1.1") and not sklearn_check_version("1.2"):
@@ -48,6 +49,7 @@ class BaseDBSCAN(oneDALEstimator):
         self.n_features_in_ = self._onedal_estimator.n_features_in_
 
 
+@enable_array_api
 @control_n_jobs(decorated_methods=["fit"])
 class DBSCAN(BaseDBSCAN, _sklearn_DBSCAN):
     __doc__ = _sklearn_DBSCAN.__doc__
