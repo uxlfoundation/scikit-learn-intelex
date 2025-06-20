@@ -107,3 +107,22 @@ class oneDALEstimator:
                 url = f"https://uxlfoundation.github.io/scikit-learn-intelex/latest/non-scikit-algorithms.html#{module_path}.{class_name}"
 
             return url
+
+
+def enable_array_api(original_class: type[oneDALEstimator]) -> type[oneDALEstimator]:
+    """This wrapper enables sklearnex to use non-numpy inputs in oneDAL offloading"""
+    if sklearn_check_version("1.6"):
+
+        def __sklearn_tags__(self) -> Tags:
+            sktags = super(self, original_class).__sklearn_tags__()
+            sktags.onedal_array_api = True
+            return sktags
+
+        original_class.__sklearn_tags__ = __sklearn_tags__
+
+    elif sklearn_check_version("1.3"):
+
+        def _more_tags(self) -> dict[bool]:
+            return {"onedal_array_api": True}
+
+        original_class._more_tags = _more_tags

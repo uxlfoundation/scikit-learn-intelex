@@ -35,7 +35,7 @@ from onedal.tests.prototypes import PrototypeEstimator as onedal_PrototypeEstima
 
 from .._device_offload import dispatch
 from .._utils import PatchingConditionsChain
-from ..base import oneDALEstimator
+from ..base import enable_array_api, oneDALEstimator
 from ..utils._array_api import get_namespace
 from ..utils.validation import validate_data
 
@@ -136,6 +136,10 @@ if sklearn_check_version("1.2"):
 # tier 1 methods may set n_jobs twice.
 
 
+# enable_array_api enables the sklearnex code to work with and directly pass
+# array_api and dpep frameworks data (dpnp, dpctl tensors, and pytorch for
+# example) to the oneDAL backend
+@enable_array_api
 @control_n_jobs(decorated_methods=["fit", "predict"])
 class PrototypeEstimator(oneDALEstimator, BaseEstimator):
     # PrototypeEstimator is a sklearnex-only estimator, shown by the
