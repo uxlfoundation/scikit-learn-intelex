@@ -21,7 +21,10 @@ import numpy as np
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal.utils._array_api import _get_sycl_namespace
 
-from ..base import Tags, oneDALEstimator
+from ..base import oneDALEstimator
+
+if sklearn_check_version("1.6"):
+    from ..base import Tags
 
 if sklearn_check_version("1.2"):
     from sklearn.utils._array_api import get_namespace as sklearn_get_namespace
