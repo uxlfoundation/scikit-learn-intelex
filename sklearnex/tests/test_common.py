@@ -226,6 +226,7 @@ def test_framework_lazy_load(monkeypatch):
     )
     cmd = [sys.executable, "-c", '"' + teststr.format(mod=modules, l=lazy) + '"']
 
+    assert lazy
     if lazy:
         try:
             result = subprocess.run(cmd, check=True, capture_output=True)
