@@ -208,7 +208,9 @@ def test_frameworks_lazy_import(monkeypatch):
     load data frameworks which are not numpy or pandas.
     """
     active = ["numpy", "pandas"]
-    # this doesn't properly handle array_api_strict
+    # handle naming conventions for data frameworks in testing
+    test_frameworks = test_frameworks.replace("dpctl", "dpctl.tensor")
+    test_frameworks = test_frameworks.replace("array_api", "array_api_strict")
     lazy = ",".join([i for i in test_frameworks.split(",") if i not in active])
     if not lazy:
         pytest.skip("No lazily-imported data frameworks available in testing")
