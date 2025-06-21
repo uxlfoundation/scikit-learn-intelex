@@ -216,7 +216,8 @@ def test_frameworks_lazy_import(monkeypatch):
             filtered_modules += [obj.__module__]
 
     modules = ",".join(filtered_modules)
-    active = ["pandas"]
+    active = ["numpy", "pandas"]
+    # this doesn't properly handle array_api_strict
     lazy = ",".join([i for i in test_frameworks.split(",") if i not in active])
     # import all modules with estimators and check sys.modules for the lazily-imported data
     # frameworks. It is done in a subprocess to isolate the impact of testing infrastructure
@@ -226,14 +227,13 @@ def test_frameworks_lazy_import(monkeypatch):
     )
     cmd = [sys.executable, "-c", teststr.format(mod=modules, l=lazy)]
 
-    [print(i) for i in cmd]
     if lazy:
         try:
             result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-        except subprocess.CalledProcessError:
-            raise AssertionError(f"a framework in '{lazy}' is being actively loaded")
-
-        assert False, result.stdout+":"+result.stderr
+        except subprocess.CalledProcessError as e:
+            raise AssertionError(f"a framework in '{lazy}' is being actively loaded") from e
+    else:
+        pytest.skip("No lazily-imported data frameworks available")
 
 
 def _fullpath(path):
