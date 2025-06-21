@@ -34,7 +34,6 @@ from ..common._estimator_checks import _check_is_fitted
 from ..common._mixin import ClassifierMixin, RegressorMixin
 from ..datatypes import from_table, to_table
 from ..utils._array_api import _get_sycl_namespace
-from ..utils._dpep_helpers import get_unique_values_with_dpep
 from ..utils.validation import (
     _check_array,
     _check_n_features,
@@ -315,7 +314,13 @@ class BaseForest(BaseEnsemble, metaclass=ABCMeta):
         else:
             if sua_iface is not None:
                 queue = X.sycl_queue
-            self.classes_ = get_unique_values_with_dpep(y)
+            # try catch needed for raw_inputs + array_api data where unlike
+            # numpy the way to yield unique values is via `unique_values`
+            # This should be removed when refactored for gpu zero-copy
+            try:
+                self.classes_ = xp.unique(y)
+            except AttributeError:
+                self.classes_ = xp.unique_values(y)
 
         self.n_features_in_ = X.shape[1]
 

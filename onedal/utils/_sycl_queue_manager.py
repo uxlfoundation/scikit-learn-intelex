@@ -17,17 +17,7 @@
 from contextlib import contextmanager
 
 from .._config import _get_config
-from ..utils._dpep_helpers import dpctl_available
-
-if dpctl_available:
-    from dpctl import SyclQueue
-else:
-    from onedal import _default_backend
-
-    # Use internally-defined SyclQueue defined in onedal/common/sycl.cpp
-    # the host backend SyclQueue will only accept "auto" and will return
-    # a None, it acts as a function via `__new__`. No SyclDevice is defined.
-    SyclQueue = _default_backend.SyclQueue
+from ._third_party import SyclQueue
 
 # This special object signifies that the queue system should be
 # disabled. It will force computation to host. This occurs when the

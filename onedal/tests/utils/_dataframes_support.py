@@ -20,13 +20,17 @@ import scipy.sparse as sp
 
 from sklearnex import get_config
 
-from ...utils._dpep_helpers import dpctl_available, dpnp_available
+from ...utils._third_party import dpctl_available
 
 if dpctl_available:
     import dpctl.tensor as dpt
 
-if dpnp_available:
+try:
     import dpnp
+
+    dpnp_available = True
+except ImportError:
+    dpnp_available = False
 
 try:
     # This should be lazy imported in the

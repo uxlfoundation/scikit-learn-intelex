@@ -14,10 +14,15 @@
 # limitations under the License.
 # ===============================================================================
 
-from onedal.utils._dpep_helpers import dpctl_available, dpnp_available
+from onedal.utils._third_party import dpctl_available
 
-if dpnp_available:
+try:
     import dpnp
+
+    dpnp_available = True
+except ImportError:
+    dpnp_available = False
+
 
 if dpctl_available:
     import dpctl
