@@ -211,16 +211,16 @@ def test_framework_lazy_load(monkeypatch):
     estimators = all_estimators()  # list of tuples
     filtered_modules = []
     for name, obj in estimators:
-        # do nothing if defined in preview
+        # do not test spmd or preview, as they are exempt
         if "preview" not in obj.__module__ or "spmd" not in obj.__module__:
             filtered_modules += [obj.__module__]
 
     modules = ",".join(filtered_modules)
     active = ["pandas"]
     lazy = ",".join([i for i in test_frameworks.split(",") if i not in active])
-    # import all modules with estimators and check sys.modules for the lazy imported data
+    # import all modules with estimators and check sys.modules for the lazily-imported data
     # frameworks. It is done in a subprocess to isolate the impact of testing infrastructure
-    # on sys.modules, which may have actively loaded those frameworks into python
+    # on sys.modules, which may have actively loaded those frameworks into the test env
     teststr = (
         "import sys,{mod};assert all([i not in sys.modules for i in '{l}'.split(',')])"
     )
