@@ -221,7 +221,7 @@ def test_framework_lazy_load(monkeypatch):
     teststr = "import sys,{mod};[assert i not in sys.modules for i in '{l}'.split(',')]"
     cmd = [sys.executable, "-c", "\"" + teststr.format(mod=modules, l=lazy) + "\""]
     if lazy:
-        result = subprocess.call(cmd, check=True)
+        result = subprocess.run(cmd, check=True)
     
 def _fullpath(path):
     return os.path.realpath(os.path.expanduser(path))
