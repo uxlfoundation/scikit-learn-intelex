@@ -232,7 +232,7 @@ def test_frameworks_lazy_import(monkeypatch):
     cmd = [sys.executable, "-c", teststr.format(mod=modules, l=lazy)]
 
     try:
-        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        subprocess.run(cmd, check=True, capture_output=True, text=True)
     except subprocess.CalledProcessError as e:
         raise AssertionError(f"a framework in '{lazy}' is being actively loaded") from e
 
