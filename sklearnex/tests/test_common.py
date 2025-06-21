@@ -216,7 +216,7 @@ def test_framework_lazy_load(monkeypatch):
             filtered_modules+= [obj.__module__]
 
     modules = ",".join(filtered_modules)
-    active = ["numpy", "pandas"]
+    active = ["pandas"]
     lazy = ",".join([i for i in test_frameworks.split(",") if i not in active])
     teststr = "import sys,{mod};[assert i not in sys.modules for i in '{l}'.split(',')]"
     cmd = [sys.executable, "-c", "\"" + teststr.format(mod=modules, l=lazy) + "\""]
