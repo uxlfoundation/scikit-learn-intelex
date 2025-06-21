@@ -229,7 +229,7 @@ def test_framework_lazy_load(monkeypatch):
     if lazy:
         try:
             result = subprocess.run(cmd, check=True, capture_output=True)
-        except subprocess.CalledProcessError as e:
+        except subprocess.CalledProcessError:
             raise AssertionError(f"a framework in '{lazy}' is being actively loaded")
 
 
