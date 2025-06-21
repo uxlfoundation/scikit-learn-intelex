@@ -20,6 +20,7 @@ import os
 import pathlib
 import pkgutil
 import re
+import subprocess
 import sys
 import trace
 from contextlib import redirect_stdout
@@ -31,6 +32,7 @@ from sklearn.utils import all_estimators
 
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal.tests.test_common import _check_primitive_usage_ban
+from onedal.tests.utils._dataframes_support import test_frameworks
 from sklearnex.base import oneDALEstimator
 from sklearnex.tests.utils import (
     PATCHED_MODELS,
@@ -201,6 +203,26 @@ def test_oneDALEstimator_inheritance(monkeypatch):
                 ), f"oneDALEstimator should be inherited just before BaseEstimator in {name}"
 
 
+def test_framework_lazy_load(monkeypatch):
+    """Check that all estimators defined in sklearnex do not actively
+    load data frameworks which are not numpy or pandas.
+    """
+    monkeypatch.setattr(pkgutil, "walk_packages", _sklearnex_walk(pkgutil.walk_packages))
+    estimators = all_estimators()  # list of tuples
+    filtered_modules = []
+    for name, obj in estimators:
+        # do nothing if defined in preview
+        if "preview" not in obj.__module__ or "spmd" not in obj.__module__:
+            filtered_modules+= [obj.__module__]
+
+    modules = ",".join(filtered_modules)
+    active = ["numpy", "pandas"]
+    lazy = ",".join([i for i in test_frameworks.split(",") if i not in active])
+    teststr = "import sys,{mod};[assert i not in sys.modules for i in '{l}'.split(',')]"
+    cmd = [sys.executable, "-c", "\"" + teststr.format(mod=modules, l=lazy) + "\""]
+    if lazy:
+        result = subprocess.call(cmd, check=True)
+    
 def _fullpath(path):
     return os.path.realpath(os.path.expanduser(path))
 
