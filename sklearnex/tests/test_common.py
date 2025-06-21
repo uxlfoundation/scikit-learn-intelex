@@ -211,7 +211,7 @@ def test_frameworks_lazy_import(monkeypatch):
     # this doesn't properly handle array_api_strict
     lazy = ",".join([i for i in test_frameworks.split(",") if i not in active])
     if not lazy:
-        pytest.skip("No lazily-imported data frameworks available")
+        pytest.skip("No lazily-imported data frameworks available in testing")
 
     monkeypatch.setattr(pkgutil, "walk_packages", _sklearnex_walk(pkgutil.walk_packages))
     estimators = all_estimators()  # list of tuples
