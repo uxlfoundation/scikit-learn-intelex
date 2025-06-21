@@ -222,7 +222,7 @@ def test_framework_lazy_load(monkeypatch):
     # frameworks. It is done in a subprocess to isolate the impact of testing infrastructure
     # on sys.modules, which may have actively loaded those frameworks into the test env
     teststr = (
-        "import sys,{mod};assert all([i not in sys.modules for i in '{l}'.split(',')])"
+        "import sys,{mod};assert all([i not in sys.modules for i in '{l}'.split(',')]);[print(i) for i in sys.modules]"
     )
     cmd = [sys.executable, "-c", '"' + teststr.format(mod=modules, l=lazy) + '"']
 
@@ -231,6 +231,8 @@ def test_framework_lazy_load(monkeypatch):
             result = subprocess.run(cmd, check=True, capture_output=True)
         except subprocess.CalledProcessError:
             raise AssertionError(f"a framework in '{lazy}' is being actively loaded")
+
+        assert False, result.stdout+":"+result.stderr
 
 
 def _fullpath(path):
