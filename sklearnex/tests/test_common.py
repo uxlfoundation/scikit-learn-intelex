@@ -222,7 +222,7 @@ def test_frameworks_lazy_import(monkeypatch):
             filtered_modules += [obj.__module__]
 
     modules = ",".join(filtered_modules)
-    
+
     # import all modules with estimators and check sys.modules for the lazily-imported data
     # frameworks. It is done in a subprocess to isolate the impact of testing infrastructure
     # on sys.modules, which may have actively loaded those frameworks into the test env
