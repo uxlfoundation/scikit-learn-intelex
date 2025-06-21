@@ -222,9 +222,9 @@ def test_frameworks_lazy_import(monkeypatch):
     # frameworks. It is done in a subprocess to isolate the impact of testing infrastructure
     # on sys.modules, which may have actively loaded those frameworks into the test env
     teststr = (
-        "import sys,{mod};assert all([i not in sys.modules for i in '{l}'.split(',')]);[print(i) for i in sys.modules]"
+        "import sys,{mod};assert all([i not in sys.modules for i in '{l}'.split(',')])"
     )
-    cmd = [sys.executable, "-c", '"' + teststr.format(mod=modules, l=lazy) + '"']
+    cmd = [sys.executable, "-c", teststr.format(mod=modules, l=lazy)]
 
     [print(i) for i in cmd]
     if lazy:
