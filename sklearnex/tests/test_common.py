@@ -203,7 +203,7 @@ def test_oneDALEstimator_inheritance(monkeypatch):
                 ), f"oneDALEstimator should be inherited just before BaseEstimator in {name}"
 
 
-def test_framework_lazy_load(monkeypatch):
+def test_frameworks_lazy_import(monkeypatch):
     """Check that all estimators defined in sklearnex do not actively
     load data frameworks which are not numpy or pandas.
     """
@@ -212,7 +212,7 @@ def test_framework_lazy_load(monkeypatch):
     filtered_modules = []
     for name, obj in estimators:
         # do not test spmd or preview, as they are exempt
-        if "preview" not in obj.__module__ or "spmd" not in obj.__module__:
+        if "preview" not in obj.__module__ and "spmd" not in obj.__module__:
             filtered_modules += [obj.__module__]
 
     modules = ",".join(filtered_modules)
