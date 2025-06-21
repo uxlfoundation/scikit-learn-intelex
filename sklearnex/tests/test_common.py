@@ -232,7 +232,7 @@ def test_frameworks_lazy_import(monkeypatch):
         "import sys,{mod};assert all([i not in sys.modules for i in '{l}'.split(',')])"
     )
     cmd = [sys.executable, "-c", teststr.format(mod=modules, l=lazy)]
-
+    subprocess.run([sys.executable, "-c","import sys,dpctl;[print(i) for i in sys.modules]"],check=True, capture_output=True, text=True)
     try:
         subprocess.run(cmd, check=True, capture_output=True, text=True)
     except subprocess.CalledProcessError as e:
