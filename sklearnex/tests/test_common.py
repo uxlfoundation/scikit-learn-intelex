@@ -218,10 +218,16 @@ def test_framework_lazy_load(monkeypatch):
     modules = ",".join(filtered_modules)
     active = ["pandas"]
     lazy = ",".join([i for i in test_frameworks.split(",") if i not in active])
-    teststr = "import sys,{mod};[assert i not in sys.modules for i in '{l}'.split(',')]"
+    # import all modules with estimators and check sys.modules for the lazy imported data
+    # frameworks. It is done in a subprocess to isolate the impact of testing infrastructure
+    # on sys.modules, which may have actively loaded those frameworks into python
+    teststr = "import sys,{mod};assert all([i not in sys.modules for i in '{l}'.split(',')])"
     cmd = [sys.executable, "-c", "\"" + teststr.format(mod=modules, l=lazy) + "\""]
     if lazy:
-        result = subprocess.run(cmd, check=True)
+        try:
+            result = subprocess.run(cmd, check=True, capture_output=True)
+        except subprocess.CalledProcessError as e:
+            raise AssertionError(f"a framework in '{lazy}' is being actively loaded")
     
 def _fullpath(path):
     return os.path.realpath(os.path.expanduser(path))
