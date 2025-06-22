@@ -59,7 +59,7 @@ def to_table(*args, queue=None):
     return _apply_and_pass(_convert_one_to_table, *args, queue=queue)
 
 
-if backend.is_dpc: 
+if backend.is_dpc:
 
     def convert_one_from_table(table, sycl_queue=None, sua_iface=None, xp=None):
         # Currently only `__sycl_usm_array_interface__` protocol used to
