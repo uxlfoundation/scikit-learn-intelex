@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
-from typing import ModuleType
+from types import ModuleType
 
 import numpy as np
 
