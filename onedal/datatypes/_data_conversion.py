@@ -14,6 +14,8 @@
 # limitations under the License.
 # ==============================================================================
 
+from typing import ModuleType
+
 import numpy as np
 
 from onedal import _default_backend as backend
@@ -79,7 +81,14 @@ if backend.is_dpc:
                     backend.from_table(table), usm_type="device", sycl_queue=sycl_queue
                 )
             else:
-                return xp.asarray(table)
+                # By default DPNP ndarray created with a copy.
+                # TODO:
+                # investigate why dpnp.array(table, copy=False) doesn't work.
+                # Work around with using dpctl.tensor.asarray.
+                if isinstance(xp, ModuleType) and xp.__name__ == "dpnp":
+                    return xp.array(xp.dpctl.tensor.asarray(table), copy=False)
+                else:
+                    return xp.asarray(table)
 
         return backend.from_table(table)
 
