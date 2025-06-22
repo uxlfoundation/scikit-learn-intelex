@@ -217,7 +217,7 @@ def test_frameworks_lazy_import(monkeypatch):
 
     monkeypatch.setattr(pkgutil, "walk_packages", _sklearnex_walk(pkgutil.walk_packages))
     estimators = all_estimators()  # list of tuples
-    
+
     filtered_modules = []
     for name, obj in estimators:
         # do not test spmd or preview, as they are exempt
