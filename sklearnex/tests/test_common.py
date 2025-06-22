@@ -218,30 +218,22 @@ def test_frameworks_lazy_import(monkeypatch):
     monkeypatch.setattr(pkgutil, "walk_packages", _sklearnex_walk(pkgutil.walk_packages))
     estimators = all_estimators()  # list of tuples
     
-    teststr = (
-        "import sys,{mod};assert all([i not in sys.modules for i in '{l}'.split(',')])"
-    )
     filtered_modules = []
     for name, obj in estimators:
         # do not test spmd or preview, as they are exempt
         if "preview" not in obj.__module__ and "spmd" not in obj.__module__:
             filtered_modules += [obj.__module__]
 
-            cmd = [sys.executable, "-c", teststr.format(mod=obj.__module__, l=lazy)]
-            subprocess.run(cmd, check=True, capture_output=True, text=True)
     modules = ",".join(filtered_modules)
 
     # import all modules with estimators and check sys.modules for the lazily-imported data
     # frameworks. It is done in a subprocess to isolate the impact of testing infrastructure
     # on sys.modules, which may have actively loaded those frameworks into the test env
-    
+    teststr = (
+        "import sys,{mod};assert all([i not in sys.modules for i in '{l}'.split(',')])"
+    )
     cmd = [sys.executable, "-c", teststr.format(mod=modules, l=lazy)]
-    r=subprocess.run([sys.executable, "-c","import sys,dpctl;[print(i) for i in sys.modules];assert False"],capture_output=True, text=True)
-    print(r.stdout)
-    print(r.stderr)
-    r=subprocess.run([sys.executable, "-c","import sys,dpnp;[print(i) for i in sys.modules];assert False"],capture_output=True, text=True)
-    print(r.stdout)
-    print(r.stderr)
+
     try:
         subprocess.run(cmd, check=True, capture_output=True, text=True)
     except subprocess.CalledProcessError as e:
