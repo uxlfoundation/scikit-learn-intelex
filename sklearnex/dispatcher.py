@@ -119,10 +119,7 @@ def get_patch_map_core(preview=False):
         from ._config import get_config as get_config_sklearnex
         from ._config import set_config as set_config_sklearnex
 
-        if sklearn_check_version("1.2.1"):
-            from .utils.parallel import _FuncWrapper as _FuncWrapper_sklearnex
-        else:
-            from .utils.parallel import _FuncWrapperOld as _FuncWrapper_sklearnex
+        from .utils.parallel import _FuncWrapper as _FuncWrapper_sklearnex
 
         from .cluster import DBSCAN as DBSCAN_sklearnex
         from .cluster import KMeans as KMeans_sklearnex
