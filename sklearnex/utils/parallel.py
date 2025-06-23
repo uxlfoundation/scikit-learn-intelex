@@ -21,7 +21,6 @@ from daal4py.sklearn._utils import sklearn_check_version
 
 from .._config import config_context, get_config
 
-
 if sklearn_check_version("1.7"):
 
     class _FuncWrapper:
