@@ -686,7 +686,7 @@ Parameters and semantics are described in |onedal-dg-stochastic-average-gradient
 
 .. rubric:: Examples:
 
-- `Single Proces saga-logistc_loss <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/saga.py>`__
+- `Single Process saga-logistc_loss <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/saga.py>`__
 
 .. autoclass:: daal4py.optimization_solver_saga
    :members: compute

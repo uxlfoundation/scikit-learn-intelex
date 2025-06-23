@@ -14,6 +14,7 @@
 # limitations under the License.
 # ===============================================================================
 
+import math
 import numbers
 
 import scipy.sparse as sp
@@ -45,14 +46,10 @@ if daal_check_version((2024, "P", 700)):
     from onedal.utils.validation import _assert_all_finite as _onedal_assert_all_finite
 
     def _onedal_supported_format(X, xp):
-        # array_api does not have a `strides` or `flags` attribute for testing memory
-        # order. When dlpack support is brought in for oneDAL, general support for
-        # array_api can be enabled and the hasattr check can be removed.
-        # _onedal_supported_format is therefore conservative in verifying attributes and
-        # does not support array_api. This will block onedal_assert_all_finite from being
-        # used for array_api inputs but will allow dpnp ndarrays and dpctl tensors.
-        # only check contiguous arrays to prevent unnecessary copying of data, even if
-        # non-contiguous arrays can now be converted to oneDAL tables.
+        # data should be checked if contiguous, as oneDAL will only use contiguous
+        # data from sklearnex. Unlike other oneDAL offloading, copying the data is
+        # specifically avoided as it has a non-negligible impact on speed. In that
+        # case use native sklearn ``_assert_all_finite``
         return X.dtype in [xp.float32, xp.float64] and is_contiguous(X)
 
 else:
@@ -74,7 +71,10 @@ def _sklearnex_assert_all_finite(
     # size check is an initial match to daal4py for performance reasons, can be
     # optimized later
     xp, _ = get_namespace(X)
-    if X.size < 32768 or not _onedal_supported_format(X, xp):
+    # this is a PyTorch-specific fix, as Tensor.size is a function. It replicates `.size`
+    too_small = math.prod(X.shape) < 32768
+
+    if too_small or not _onedal_supported_format(X, xp):
         if sklearn_check_version("1.1"):
             _sklearn_assert_all_finite(X, allow_nan=allow_nan, input_name=input_name)
         else:
@@ -106,7 +106,7 @@ def validate_data(
 ):
     # force finite check to not occur in sklearn, default is True
     # `ensure_all_finite` is the most up-to-date keyword name in sklearn
-    # _finite_keyword provides backward compatability for `force_all_finite`
+    # _finite_keyword provides backward compatibility for `force_all_finite`
     ensure_all_finite = kwargs.pop("ensure_all_finite", True)
     kwargs[_finite_keyword] = False
 
