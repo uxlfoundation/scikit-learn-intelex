@@ -142,16 +142,6 @@ public:
     algo_manager__iface__ operator=(const algo_manager__iface__ &) = delete;
 };
 
-#if 0
-static inline NTYPE as_native_shared_ptr(services::SharedPtr< const algo_manager__iface__ > algo)
-{
-    int gc = 0;
-    MK_DAALPTR(ret, new services::SharedPtr< const algo_manager__iface__ >(algo), services::SharedPtr< algo_manager__iface__ >, gc);
-    TMGC(gc);
-    return ret;
-}
-#endif
-
 // Our Batch input/Output manager, abstracts from input/output types
 // also defines how to get results and finalize
 template <typename A, typename O>

@@ -66,7 +66,13 @@ class TSNE(BaseTSNE):
             [n_samples],
             [P.nnz],
             [self.n_iter_without_progress],
-            [self._max_iter if sklearn_check_version("1.5") else self.n_iter],
+            [
+                (
+                    self.max_iter
+                    if sklearn_check_version("1.7")
+                    else (self._max_iter if sklearn_check_version("1.5") else self.n_iter)
+                )
+            ],
         ]
 
         # Pass params to daal4py backend
@@ -130,7 +136,7 @@ class TSNE(BaseTSNE):
 
         if isinstance(self._init, str) and self._init == "pca" and issparse(X):
             raise TypeError(
-                "PCA initialization is currently not suported "
+                "PCA initialization is currently not supported "
                 "with the sparse input matrix. Use "
                 'init="random" instead.'
             )

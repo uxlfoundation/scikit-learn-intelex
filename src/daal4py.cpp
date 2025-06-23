@@ -370,9 +370,9 @@ static daal::data_management::NumericTablePtr _make_npynt(PyObject * nda)
 }
 
 // Try to convert given object to oneDAL Table without copying. Currently supports
-// * numpy contiguous, homogenous -> oneDAL HomogenNumericTable
-// * numpy non-contiguous, homogenous -> NpyNumericTable
-// * numpy structured, heterogenous -> NpyNumericTable
+// * numpy contiguous, homogeneous -> oneDAL HomogenNumericTable
+// * numpy non-contiguous, homogeneous -> NpyNumericTable
+// * numpy structured, heterogeneous -> NpyNumericTable
 // * list of arrays, heterogen -> oneDAL SOANumericTable
 // * scipy csr_matrix -> oneDAL CSRNumericTable
 //   As long as oneDAL CSR is only 0-based we need to copy indices/offsets
