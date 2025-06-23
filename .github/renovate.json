@@ -17,5 +17,8 @@
       "schedule": ["before 2am on the first day of the month"],
       "matchFileNames": ["requirements-doc.txt"]
     }
-  ]
+  ],
+  "pre-commit": {
+    "enabled": true
+  }
 }

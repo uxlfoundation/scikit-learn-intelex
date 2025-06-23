@@ -31,7 +31,7 @@ of the |onedal|, while ``sklearnex`` is a module built atop of the "oneAPI" inte
 DPC-based features such as :ref:`GPU support <oneapi_gpu>`.
 
 There is a large degree of overlap in the functionalities offered between the two modules
-``daal4py`` and ``sklearnex`` - module ``sklearnex`` should be prefered whenever possible,
+``daal4py`` and ``sklearnex`` - module ``sklearnex`` should be preferred whenever possible,
 either by using it directly or through the :ref:`patching mechanism <patching>` - but ``daal4py``
 exposes some additional functionalities from the |onedal| that ``sklearnex`` doesn't:
 
@@ -57,7 +57,7 @@ Using daal4py
 Unlike ``sklearnex``, ``daal4py``, being a lower-level interface, does not follow scikit-learn
 idioms - instead, the process for calling procedures from the ``daal4py`` interface is as follows:
 
-- Instantiate an 'algorithm' class by calling its contructor, without any data - for example:
+- Instantiate an 'algorithm' class by calling its constructor, without any data - for example:
   ``qr_algo = daal4py.qr()``.
 - Call the 'compute' method of that instantiated algorithm in order to obtain a 'result' object,
   passing it the data on which it will operate - for example: ``qr_result = qr_algo.compute(X)``.
