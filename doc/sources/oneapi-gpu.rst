@@ -25,15 +25,15 @@ The device used for computations can be easily controlled through the target off
 
 While not strictly required, package |dpctl| is recommended for a better experience on GPUs - for example, it can provide GPU-allocated arrays that enable compute-follows-data execution models (i.e. so that ``target_offload`` wouldn't need to move the data from CPU to GPU).
 
-.. important:: Be aware that GPU usage requires non-Python dependencies on your system, such as the `Intel(R) GPGPU Drivers <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`_ (see below).
+.. important:: Be aware that GPU usage requires non-Python dependencies on your system, such as the `Intel(R) Compute Runtime <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`_ (see below).
 
 Prerequisites
 -------------
 
-For execution on GPUs, DPC++ runtime and GPGPU drivers are required.
+For execution on GPUs, DPC++ runtime and Intel Compute Runtime (also referred to elsewhere as 'GPGPU drivers') are required.
 
-DPC++
-~~~~~~
+DPC++ Runtime
+~~~~~~~~~~~~~
 
 DPC++ compiler runtime can be installed either from PyPI or Conda:
 
@@ -49,23 +49,25 @@ DPC++ compiler runtime can be installed either from PyPI or Conda:
 
      conda install -c conda-forge dpcpp_cpp_rt
 
-GPGPU Drivers
-~~~~~~~~~~~~~
+Intel Compute Runtime
+~~~~~~~~~~~~~~~~~~~~~
 
-On Windows, GPGPU drivers are bundled as part of the regular drivers for iGPUs and dGPUs, which can be downloaded from `this link <https://www.intel.com/content/www/us/en/download/785597/intel-arc-iris-xe-graphics-windows.html>`__.
+On Windows, GPU drivers for iGPUs and dGPUs include the required Intel Compute Runtime. Drivers for windows can be downloaded from `this link <https://www.intel.com/content/www/us/en/download/785597/intel-arc-iris-xe-graphics-windows.html>`__.
 
 For datacenters, see further instructions `here <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/oneapi-dpcpp/2025.html#inpage-nav-2-1-1>`__.
 
 
-On Linux, some distributions - namely Ubuntu Desktop 25.04 and higher, and Fedora Workstation 42 and higher - come with the GPGPU drivers for iGPUs and dGPUs preinstalled, while others require installing them separately.
+On Linux, some distributions - namely Ubuntu Desktop 25.04 and higher, and Fedora Workstation 42 and higher - come with the compute runtime for iGPUs and dGPUs preinstalled, while others require installing them separately.
 
-On Debian systems, it requires installing package ``intel-opencl-icd``, which is available from Debian's ``main`` repository: ::
+On Debian systems, it requires installing package ``intel-opencl-icd`` (along with its dependencies such as ``intel-compute-runtime`` and ``intel-graphics-compiler``), which is available from Debian's ``main`` repository: ::
 
     sudo apt-get install intel-opencl-icd
 
+.. tip:: For Debian Trixie (13), the Intel Compute Runtime is not available from the Stable repository, but can be installed by enabling the Sid (Unstable) repository.
+
 For Arch Linux, and for other distributions in general, see the `GPGPU article in the Arch wiki <https://wiki.archlinux.org/title/GPGPU>`__.
 
-Be aware that datacenter-grade devices, such as 'Flex' and 'Max', require different drivers. For CentOS and for datacenter-grade devices, see `instructions here <https://dgpu-docs.intel.com/driver/installation.html>`__.
+Be aware that datacenter-grade devices, such as 'Flex' and 'Max', require different drivers and runtimes. For CentOS and for datacenter-grade devices, see `instructions here <https://dgpu-docs.intel.com/driver/installation.html>`__.
 
 For more details, see the `DPC++ requirements page <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/oneapi-dpcpp/2025.html>`__.
 
