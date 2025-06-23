@@ -151,12 +151,13 @@ def from_data(*data):
             continue
 
         # extract the queue
-        global_queue = get_global_queue()
+
         data_queue = usm_iface["syclobj"]
         if not data_queue:
             # no queue, i.e. host data, no more work to do
             continue
 
+        global_queue = get_global_queue()
         # update the global queue if not set
         if global_queue is None:
             update_global_queue(data_queue)
