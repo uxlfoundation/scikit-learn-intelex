@@ -17,8 +17,8 @@
 from contextlib import contextmanager
 
 from .._config import _get_config
-from ..datatypes import get_pytorch_queue
-from ._third_party import is_pytorch_tensor, SyclQueue
+from ..datatypes import get_torch_queue
+from ._third_party import is_torch_tensor, SyclQueue
 
 # This special object signifies that the queue system should be
 # disabled. It will force computation to host. This occurs when the
@@ -100,8 +100,8 @@ def _get_dlpack_queue(obj: object) -> SyclQueue:
     if device_type != kDLOneAPI:
         return None
 
-    if is_pytorch_tensor(obj):
-        return get_pytorch_queue(obj)
+    if is_torch_tensor(obj):
+        return get_torch_queue(obj)
     else:
         # no specialized queue can be extracted,
         # use or generate a generic. Note, this
