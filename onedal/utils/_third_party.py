@@ -154,8 +154,8 @@ def is_dpnp_ndarray(x: object) -> bool:
 def is_dpctl_tensor(x: object) -> bool:
     """Return True if 'x' is a dpctl usm_ndarray.
 
-    This function does not import dpnp if it has not already been imported
-    and is therefore cheap to use.
+    This function does not import dpctl.tensor if it has not already been
+    imported and is therefore cheap to use.
 
     Parameters
     ----------
@@ -168,3 +168,22 @@ def is_dpctl_tensor(x: object) -> bool:
         Flag if subclass of dpctl.tensor.usm_ndarray.
     """
     return _is_subclass_fast(type(x), "dpctl.tensor", "usm_ndarray")
+    
+
+def is_torch_tensor(x: object) -> bool:
+    """Return True if 'x' is a PyTorch Tensor.
+
+    This function does not import PyTorch if it has not already been imported
+    and is therefore cheap to use.
+
+    Parameters
+    ----------
+    x : object
+        Any python object.
+
+    Returns
+    -------
+    is_torch : bool
+        Flag if subclass of dpctl.tensor.usm_ndarray.
+    """
+    return _is_subclass_fast(type(x), "torch", "Tensor")
