@@ -433,6 +433,7 @@ jobs:
       - name: Set Environment Variables
         id: set-env
         run: |
+          python -c "import os; print(len(os.sched_getaffinity(0)))"
           echo "NO_DIST=1" >> "$GITHUB_ENV"
           # enable coverage report generation
           echo "COVERAGE_RCFILE=$(readlink -f .coveragerc)" >> "$GITHUB_ENV"
