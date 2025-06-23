@@ -16,9 +16,13 @@
 
 from contextlib import contextmanager
 
+from onedal import backend
+
 from .._config import _get_config
 from ..datatypes import get_torch_queue
 from ._third_party import is_torch_tensor, SyclQueue
+
+_dlpack_device = backend.kDLOneAPI
 
 # This special object signifies that the queue system should be
 # disabled. It will force computation to host. This occurs when the
@@ -136,24 +140,11 @@ def from_data(*data):
     """
     for item in data:
         # iterate through all data objects, extract the queue, and verify that all data objects are on the same device
-        try:
-            usm_iface = getattr(item, "__sycl_usm_array_interface__", None)
-        except RuntimeError as e:
-            if "SUA interface" in str(e):
-                # ignore SUA interface errors and move on
-                continue
-            else:
-                # unexpected, re-raise
-                raise e
-
-        if usm_iface is None:
-            # no interface found - try next data object
-            continue
-
-        # extract the queue
-
-        data_queue = usm_iface["syclobj"]
-        if not data_queue:
+        if usm_iface = getattr(item, "__sycl_usm_array_interface__", None):
+            data_queue = usm_iface["syclobj"]
+        elif hasattr(item, "__dlpack_device__"):
+            data_queue = _get_dlpack_queue(item)
+        else:
             # no queue, i.e. host data, no more work to do
             continue
 
