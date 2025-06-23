@@ -34,7 +34,7 @@ Patching
 **********************
 
 Once you install the |sklearnex|, you can replace estimator classes (algorithms) that exist in the ``sklearn`` module from |sklearn| with their optimized versions from the extension.
-This action is called `patching` or `monkey patching <https://en.wikipedia.org/wiki/Monkey_patch>`__. This is not a permanent change so you can always undo the patching if necessary.
+This action is called *patching* or `monkey patching <https://en.wikipedia.org/wiki/Monkey_patch>`__. This is not a permanent change so you can always undo the patching if necessary.
 
 To patch |sklearn| with the |sklearnex|, the following methods can be used:
 
@@ -72,7 +72,7 @@ They support different enabling scenarios while producing the same result.
 
 **Example**
 
-This example shows how to patch |sklearn| by modifing your script. To make sure that patching is registered by the scikit-learn estimators, always import module ``sklearn`` after these lines.
+This example shows how to patch |sklearn| by modifying your script. To make sure that patching is registered by the scikit-learn estimators, always import module ``sklearn`` after these lines.
 
 .. code-block:: python
   :caption: Example: Drop-In Patching
@@ -161,7 +161,7 @@ With global patching, you can:
 Unpatching
 **********************
 
-To undo the patch (also called `unpatching`) is to return the ``sklearn`` module to the original implementation and
+To undo the patch (also called *unpatching*) is to return the ``sklearn`` module to the original implementation and
 replace patched estimators with the stock |sklearn| estimators.
 
 To unpatch successfully, you must reimport the ``sklearn`` module(s)::
@@ -353,6 +353,7 @@ Software Requirements
 * 1.4.X
 * 1.5.X
 * 1.6.X
+* 1.7.X
 
 Memory Requirements
 **********************

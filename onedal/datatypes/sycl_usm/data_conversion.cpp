@@ -179,7 +179,7 @@ py::dict construct_sua_iface(const dal::table& input) {
     auto has_queue = bytes_array.get_queue().has_value();
     // oneDAL returns tables without sycl context for CPU sycl queue inputs, that
     // breaks the compute-follows-data execution.
-    // Currently not throwing runtime exception and __sycl_usm_array_interface__["syclobj"] None asigned
+    // Currently not throwing runtime exception and __sycl_usm_array_interface__["syclobj"] None assigned
     // if no SYCL queue to allow workaround on python side.
     // if (!has_queue) {
     //     report_problem_to_sua_iface(": table has no queue");
