@@ -16,9 +16,38 @@
 
 from collections.abc import Iterable
 
+import numpy as np
+
+import onedal.backend
+
 from ..utils._third_party import lazy_import, SyclQueue
 
+cpu_dlpack_device = (backend.kDLCPU, 0)
 
 @lazy_import("torch.xpu")
 def get_torch_queue(torchxpu, array):
-  return SyclQueue(torchxpu.current_stream(array.get_device()).sycl_queue)
+    return SyclQueue(torchxpu.current_stream(array.get_device()).sycl_queue)
+
+
+def dlpack_to_numpy(obj):
+    # check dlpack data location.
+    if obj.__dlpack_device__() != cpu_dlpack_device:
+        if hasattr(item, "to_device"):
+            # use of the "cpu" string as device not officially part of
+            # the array api standard but widely supported
+            item = obj.to_device("cpu")
+        elif hasattr(obj, "to"):
+            # pytorch-specific fix as it is not array api compliant
+            obj = obj.to("cpu")
+        else:
+            raise TypeError(f"cannot move {type(obj)} to cpu")
+
+    # convert to numpy
+    if hasattr(obj, "__array__"):
+        # `copy`` param for the `asarray`` is not set.
+        # The object is copied only if needed
+        obj = np.asarray(obj)
+    else:
+        # requires numpy 1.23
+        obj = np.from_dlpack(obj)
+    return obj
