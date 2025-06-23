@@ -210,7 +210,7 @@ if daal_check_version((2024, "P", 1)):
                     (self.solver == "newton-cg", "Only newton-cg solver is supported."),
                     (self.warm_start == False, "Warm start is not supported."),
                     (
-                        self.l1_ratio is None or self.l1_ratio == 0,
+                        not self.l1_ratio,
                         "l1 ratio is not supported.",
                     ),
                     (sample_weight is None, "Sample weight is not supported."),
