@@ -145,7 +145,10 @@ def from_data(*data):
         elif hasattr(item, "__dlpack_device__"):
             data_queue = _get_dlpack_queue(item)
         else:
-            # no queue, i.e. host data, no more work to do
+            data_queue = None
+
+        # no queue, i.e. host data, no more work to do
+        if data_queue is None:
             continue
 
         global_queue = get_global_queue()
