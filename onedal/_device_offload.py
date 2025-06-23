@@ -24,7 +24,7 @@ from sklearn import get_config
 from onedal import _default_backend as backend
 
 from ._config import _get_config
-from .datatypes import copy_to_dpnp, copy_to_usm, usm_to_numpy
+from .datatypes import copy_to_dpnp, copy_to_usm, dlpack_to_numpy, usm_to_numpy
 from .utils import _sycl_queue_manager as QM
 from .utils._array_api import _asarray, _is_numpy_namespace
 from .utils._third_party import is_dpnp_ndarray
@@ -75,26 +75,7 @@ def _transfer_to_host(*data):
         elif not isinstance(item, np.ndarray) and (
             device := getattr(item, "__dlpack_device__", None)
         ):
-            # check dlpack data location.
-            if device() != cpu_dlpack_device:
-                if hasattr(item, "to_device"):
-                    # use of the "cpu" string as device not officially part of
-                    # the array api standard but widely supported
-                    item = item.to_device("cpu")
-                elif hasattr(item, "to"):
-                    # pytorch-specific fix as it is not array api compliant
-                    item = item.to("cpu")
-                else:
-                    raise TypeError(f"cannot move {type(item)} to cpu")
-
-            # convert to numpy
-            if hasattr(item, "__array__"):
-                # `copy`` param for the `asarray`` is not set.
-                # The object is copied only if needed
-                item = np.asarray(item)
-            else:
-                # requires numpy 1.23
-                item = np.from_dlpack(item)
+            item = dlpack_to_numpy(item, device)
             has_host_data = True
         else:
             has_host_data = True
