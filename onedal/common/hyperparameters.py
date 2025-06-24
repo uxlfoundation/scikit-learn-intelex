@@ -151,11 +151,11 @@ else:
         )
 
 
-def get_hyperparameters(algorithm, op):
+def get_hyperparameters(algorithm: str, op: str) -> HyperParameters:
     return hyperparameters_map.get((algorithm, op), None)
 
 
-def reset_hyperparameters(algorithm, op):
+def reset_hyperparameters(algorithm: str, op: str) -> None:
     new_hyperparameters_backend = get_hyperparameters_backend(algorithm, op)
     new_setters = get_methods_with_prefix(new_hyperparameters_backend, "set_")
     new_getters = get_methods_with_prefix(new_hyperparameters_backend, "get_")

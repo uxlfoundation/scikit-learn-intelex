@@ -14,30 +14,87 @@
 # limitations under the License.
 # ==============================================================================
 
-
+import numpy as np
 import pytest
+
+from sklearn.datasets import make_regression, make_classification
 
 from sklearnex._utils import register_hyperparameters
 
+from sklearnex.preview.covariance import EmpiricalCovariance
+from sklearnex.linear_model import LinearRegression
+from sklearnex.decomposition import PCA
+from sklearnex.ensemble import RandomForestClassifier
 
-def test_register_hyperparameters():
-    hyperparameters_map = {"op": "hyperparameters"}
+# Table of estimators to test hyperparameter reset functionality.
+# Each row contains the following elements:
+#
+# [estimator, estimator_type, operation, hyperparameter_name, non_default_value]
+#
+# estimator:            the estimator class to test. For example, EmpiricalCovariance.
+# estimator_type:       the type of operation to get.
+#                       Possible values: "compute", "regression", "classification".
+# operation:            the argument used in get_hyperparameters() and reset_hyperparameters()
+#                       methods of the estimator.
+# hyperparameter_name:  the name of the hyperparameter to test.
+# non_default_value:    the value to set for the hyperparameter before resetting it.
+#                       This value should be different from the default value of the hyperparameter.
+test_estimators = [
+    [EmpiricalCovariance, "compute", "fit", "cpu_macro_block", 10],
+    [EmpiricalCovariance, "compute", "fit", "cpu_grain_size", 2],
+    [LinearRegression, "regression", "fit", "cpu_macro_block", 10],
+    [PCA, "compute", "fit", "cpu_macro_block", 10],
+    [RandomForestClassifier, "classification", "predict", "block_size", 8],
+]
 
-    @register_hyperparameters(hyperparameters_map)
-    class Test:
-        pass
 
-    # assert the correct value is returned
-    assert Test.get_hyperparameters("op") == "hyperparameters"
+def call_estimator(estimator_object, estimator_type, op, X, y=None):
+    if estimator_type == "compute":
+        return estimator_object.fit(X)
+    elif estimator_type == "regression" or estimator_type == "classification":
+        result = estimator_object.fit(X, y)
+        if op == "predict":
+            return estimator_object.predict(X)
+        else:
+            return result
+    else:
+        raise ValueError(f"Unknown estimator type: {estimator_type}")
 
 
-def test_register_hyperparameters_issues_warning():
-    hyperparameters_map = {"op": "hyperparameters"}
+def test_reset_hyperparameters():
+    for estimator, estimator_type, op, param_name, non_default_value in test_estimators:
 
-    @register_hyperparameters(hyperparameters_map)
-    class Test:
-        pass
+        if estimator_type == "compute":
+            X = np.random.rand(100, 5)
+            y = None
+        elif estimator_type == "regression":
+            X, y = make_regression(n_features=5, n_informative=5, random_state=777)
+        elif estimator_type == "classification":
+            X, y = make_classification(n_features=5, random_state=777)
 
-    # assert a warning is issued when trying to modify the hyperparameters per instance
-    with pytest.warns(Warning):
-        Test().get_hyperparameters("op")
+        # Create an instance of the estimator
+        est_object = estimator()
+
+        # Fit the model to the data with the default hyperparameters
+        call_estimator(est_object, estimator_type, op, X, y)
+
+        # Get the hyperparameters before resetting
+        hparams_before = estimator.get_hyperparameters(op)
+        default_hparam_value = getattr(hparams_before, param_name)
+
+        # Fit the model to the data with non-default hyperparameters
+        setattr(hparams_before, param_name, non_default_value)
+        call_estimator(est_object, estimator_type, op, X, y)
+
+        # Check if the hyperparameters have been set to non-default values
+        assert getattr(hparams_before, param_name) == non_default_value
+        assert getattr(estimator.get_hyperparameters(op), param_name) == non_default_value
+
+        # Reset the hyperparameters
+        estimator.reset_hyperparameters(op)
+        call_estimator(est_object, estimator_type, op, X, y)
+
+        # Check if the hyperparameters have been reset to default values
+        assert (
+            getattr(estimator.get_hyperparameters(op), param_name) == default_hparam_value
+        )

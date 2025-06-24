@@ -120,39 +120,3 @@ def test_sklearnex_import_covariance(
 
     assert_allclose(expected_covariance, result.covariance_)
     assert_allclose(expected_means, result.location_)
-
-
-def test_sklearnex_reset_hyperparameters():
-    from sklearnex.preview.covariance import EmpiricalCovariance
-
-    X = np.random.rand(1000, 5)
-    # Create an instance of EmpiricalCovariance
-    empcov = EmpiricalCovariance()
-
-    # Fit the model to the data with the default hyperparameters
-    result = empcov.fit(X)
-
-    # Get the hyperparameters before resetting
-    hparams_before = EmpiricalCovariance.get_hyperparameters("fit")
-    default_cpu_macro_block = hparams_before.cpu_macro_block
-
-    # Fit the model to the data with non-default hyperparameters
-    non_default_cpu_macro_block = 10
-    hparams_before.cpu_macro_block = non_default_cpu_macro_block
-    result = empcov.fit(X)
-
-    assert hparams_before.cpu_macro_block == non_default_cpu_macro_block
-    assert (
-        EmpiricalCovariance.get_hyperparameters("fit").cpu_macro_block
-        == non_default_cpu_macro_block
-    )
-
-    # Reset the hyperparameters
-    EmpiricalCovariance.reset_hyperparameters("fit")
-    result = empcov.fit(X)
-
-    # Check if the hyperparameters have been reset to default values
-    assert (
-        EmpiricalCovariance.get_hyperparameters("fit").cpu_macro_block
-        == default_cpu_macro_block
-    )
