@@ -56,7 +56,7 @@ class PrototypeEstimator:
     @supports_queue
     def fit(self, X, y, queue=None):
         # convert the data to oneDAL tables in preparation for use by the
-        # oneDAL pybind11
+        # oneDAL pybind11 interfaces/objects.
         X_t, y_t = to_table(X, y)
 
         # Generating the params dict can be centralized into a class method,
