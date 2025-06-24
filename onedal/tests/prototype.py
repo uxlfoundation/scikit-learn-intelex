@@ -96,6 +96,14 @@ class PrototypeEstimator:
         # onedal estimator object.
         self.finite_ = result_X.finite and result_y.finite
 
+        # These attributes are set in order to show the process of setting 
+        # and returning array values and shouldn't normally be done.  In
+        # setting return attributes, post processing of the values to match
+        # needed for sklearn must occur in the sklearnex estimator.
+        self.fit_X_ = from_table(X_t)
+        self.fit_y_ = from_table(y_t)
+
+
     @supports_queue
     def predict(self, X, queue=None):
         X_t = to_table(X)
