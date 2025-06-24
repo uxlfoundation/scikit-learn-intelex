@@ -34,7 +34,9 @@ class PrototypeEstimator:
         # any attributes which aren't related to the operation of oneDAL.
         # This is means that it should not conform to sklearn, only to
         # oneDAL. Don't add unnecessary attributes which only match sklearn,
-        # these should be translated by the sklearnex estimator.
+        # these should be translated by the sklearnex estimator. In this case
+        # the only parameter for the finiteness checker is the 'allow_nan'
+        # param.
         self.allow_nan = allow_nan
 
     # see documentation on bind_default_backend. There exists three possible
