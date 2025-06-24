@@ -49,6 +49,12 @@ else:
             and op == "infer"
         ):
             hyperparameters_backend = backend.decision_forest.infer_hyperparameters()
+        elif (
+            daal_check_version((2025, "P", 700))
+            and algorithm == "pca"
+            and op == "train"
+        ):
+            hyperparameters_backend = backend.decomposition.dim_reduction.train_hyperparameters()
         else:
             raise ValueError(f"Hyperparameters for '{algorithm}.{op}' are not defined.")
         return hyperparameters_backend
@@ -118,6 +124,8 @@ else:
     ]
     if daal_check_version((2024, "P", 300)):
         hyperparameters_backend_items.append(("decision_forest", "infer"))
+    if daal_check_version((2025, "P", 700)):
+        hyperparameters_backend_items.append(("pca", "train"))
 
     # Create a map of hyperparameters for each algorithm and operation
     hyperparameters_backend_map: Dict[Tuple[str, str], Any] = {}

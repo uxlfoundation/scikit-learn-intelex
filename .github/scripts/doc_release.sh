@@ -114,7 +114,7 @@ else
         rsync -av "$version_dir/" $version/
     done
     
-    # Git only add verison folders
+    # Git only add version folders
     git add -- [0-9][0-9][0-9][0-9].[0-9]* 
     git commit -m "Initialize doc archive branch with all versions"
 fi

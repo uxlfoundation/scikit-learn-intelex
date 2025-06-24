@@ -103,14 +103,15 @@ ONEDAL_PY_INIT_MODULE(table) {
         return numpy::convert_to_table(obj, queue);
     });
 
-    m.def("from_table", [](const dal::table& t) -> py::handle {
+    m.def("from_table", [](const dal::table& t) -> py::object {
         auto* obj_ptr = numpy::convert_to_pyobject(t);
-        return obj_ptr;
+        return py::reinterpret_steal<py::object>(obj_ptr);
     });
     m.def("dlpack_memory_order", &dlpack::dlpack_memory_order);
     py::enum_<DLDeviceType>(m, "DLDeviceType")
         .value("kDLCPU", kDLCPU)
-        .value("kDLOneAPI", kDLOneAPI);
+        .value("kDLOneAPI", kDLOneAPI)
+        .export_values();
 }
 
 } // namespace oneapi::dal::python
