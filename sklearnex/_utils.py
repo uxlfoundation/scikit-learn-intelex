@@ -21,19 +21,21 @@ import sys
 import warnings
 from abc import ABC
 
+import sklearn
+
+from daal4py.sklearn._utils import (
+    PatchingConditionsChain as daal4py_PatchingConditionsChain,
+)
+from daal4py.sklearn._utils import (
+    daal_check_version,
+    sklearn_check_version,
+)
 from onedal.common.hyperparameters import (
     get_hyperparameters as onedal_get_hyperparameters,
 )
 from onedal.common.hyperparameters import (
     reset_hyperparameters as onedal_reset_hyperparameters,
 )
-
-import sklearn
-
-from daal4py.sklearn._utils import (
-    PatchingConditionsChain as daal4py_PatchingConditionsChain,
-)
-from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 
 # Not an ideal solution, but this allows for access to the outputs of older
 # sklearnex tag dictionaries in a way similar to the sklearn >=1.6 tag

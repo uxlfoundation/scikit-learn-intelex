@@ -16,15 +16,12 @@
 
 import numpy as np
 import pytest
+from sklearn.datasets import make_classification, make_regression
 
-from sklearn.datasets import make_regression, make_classification
-
-from sklearnex._utils import register_hyperparameters
-
-from sklearnex.preview.covariance import EmpiricalCovariance
-from sklearnex.linear_model import LinearRegression
 from sklearnex.decomposition import PCA
 from sklearnex.ensemble import RandomForestClassifier
+from sklearnex.linear_model import LinearRegression
+from sklearnex.preview.covariance import EmpiricalCovariance
 
 # Table of estimators to test hyperparameter reset functionality.
 # Each row contains the following elements:
