@@ -109,7 +109,7 @@ def test_sklearnex_import_covariance(
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     result = empcov.fit(X)
 
-    # Reset hyperparameters to thre default values
+    # Reset hyperparameters to the default values
     EmpiricalCovariance.reset_hyperparameters("fit")
 
     if assume_centered:

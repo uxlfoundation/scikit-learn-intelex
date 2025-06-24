@@ -50,11 +50,11 @@ else:
         ):
             hyperparameters_backend = backend.decision_forest.infer_hyperparameters()
         elif (
-            daal_check_version((2025, "P", 700))
-            and algorithm == "pca"
-            and op == "train"
+            daal_check_version((2025, "P", 700)) and algorithm == "pca" and op == "train"
         ):
-            hyperparameters_backend = backend.decomposition.dim_reduction.train_hyperparameters()
+            hyperparameters_backend = (
+                backend.decomposition.dim_reduction.train_hyperparameters()
+            )
         else:
             raise ValueError(f"Hyperparameters for '{algorithm}.{op}' are not defined.")
         return hyperparameters_backend
