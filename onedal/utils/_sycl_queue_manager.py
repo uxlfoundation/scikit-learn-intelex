@@ -20,7 +20,7 @@ from onedal import backend
 
 from .._config import _get_config
 from ..datatypes import get_torch_queue
-from ._third_party import is_torch_tensor, SyclQueue
+from ._third_party import SyclQueue, is_torch_tensor
 
 _dlpack_device = backend.kDLOneAPI
 

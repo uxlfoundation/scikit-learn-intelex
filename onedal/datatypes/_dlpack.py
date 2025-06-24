@@ -20,9 +20,10 @@ import numpy as np
 
 import onedal.backend
 
-from ..utils._third_party import lazy_import, SyclQueue
+from ..utils._third_party import SyclQueue, lazy_import
 
 cpu_dlpack_device = (backend.kDLCPU, 0)
+
 
 @lazy_import("torch.xpu")
 def get_torch_queue(torchxpu, array):

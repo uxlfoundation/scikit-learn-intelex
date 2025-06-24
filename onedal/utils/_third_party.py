@@ -168,7 +168,7 @@ def is_dpctl_tensor(x: object) -> bool:
         Flag if subclass of dpctl.tensor.usm_ndarray.
     """
     return _is_subclass_fast(type(x), "dpctl.tensor", "usm_ndarray")
-    
+
 
 def is_torch_tensor(x: object) -> bool:
     """Return True if 'x' is a PyTorch Tensor.
