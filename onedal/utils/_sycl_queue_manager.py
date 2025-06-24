@@ -140,7 +140,7 @@ def from_data(*data):
     """
     for item in data:
         # iterate through all data objects, extract the queue, and verify that all data objects are on the same device
-        if usm_iface = getattr(item, "__sycl_usm_array_interface__", None):
+        if usm_iface := getattr(item, "__sycl_usm_array_interface__", None):
             data_queue = usm_iface["syclobj"]
         elif hasattr(item, "__dlpack_device__"):
             data_queue = _get_dlpack_queue(item)
