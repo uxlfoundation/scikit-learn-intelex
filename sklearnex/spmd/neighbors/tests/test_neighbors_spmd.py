@@ -326,7 +326,7 @@ def test_knnsearch_spmd_gold(dataframe, queue):
     from sklearnex.spmd.neighbors import NearestNeighbors as NearestNeighbors_SPMD
 
     # Create gold data and convert to dataframe
-    X_train = np.array([[-1, -1], [-2, -1], [-3, -2], [1, 1], [2, 1], [3, 2]])
+    X_train = np.array([[-1, -1], [-2, -1], [-3, -2], [1, 1], [2, 1], [3, 2], [10, 10], [9, 9]])
     local_dpt_X_train = _convert_to_dataframe(
         _get_local_tensor(X_train), sycl_queue=queue, target_df=dataframe
     )
