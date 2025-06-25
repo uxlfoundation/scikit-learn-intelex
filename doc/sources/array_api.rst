@@ -103,7 +103,7 @@ then fitted attributes will be on the CPU and `numpy.ndarray` data format.
 DPCTL usm_ndarrays
 ------------------
 Here is an example code to demonstrate how to use `dpctl <https://intelpython.github.io/dpctl/latest/index.html>`__
-arrays to run `RandomForestClassifier` on a GPU witout `config_context(array_api_dispatch=True)`:
+arrays to run `RandomForestClassifier` on a GPU without `config_context(array_api_dispatch=True)`:
 
 .. literalinclude:: ../../examples/sklearnex/random_forest_classifier_dpctl.py
 	   :language: python

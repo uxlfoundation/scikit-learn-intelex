@@ -40,7 +40,7 @@ num_samples, num_features = 3000, 3
 drng = np.random.default_rng(seed)
 X = drng.random(size=(num_samples, num_features))
 
-# Local data are obtained for each GPU and splitted into batches
+# Local data are obtained for each GPU and split into batches
 
 X_local = get_local_data(X, comm)
 X_split = np.array_split(X_local, num_batches)
