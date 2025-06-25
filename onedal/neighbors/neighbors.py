@@ -497,7 +497,6 @@ class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
 
         self._validate_n_classes()
 
-        
         params = self._get_onedal_params(X)
         prediction_result = self._onedal_predict(onedal_model, X, params)
         responses = from_table(prediction_result.responses)
