@@ -120,6 +120,35 @@ def lazy_import(*module_names: str) -> Callable:
     return decorator
 
 
+def convert_sklearnex_queue(func: Callable) -> Callable:
+    """Convert sklearnex pybind11-defined SyclQueue to a dpctl SyclQueue
+
+    There are circumstances where the internal SyclQueue generation is
+    required due to gaps in dpctl SyclQueue construction. This will
+    change the return value of the function to a dpctl SyclQueue if
+    dpctl is available, otherwise it will not wrap the function
+    whatsovever.
+
+    Parameters
+    ----------
+    func : callable
+        Function or method to be wrapped.
+
+    Returns
+    -------
+    wrapped : callable
+        Wrapped or original function depending on ``dpctl_available``.
+
+    """
+    if dpctl_available:
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            return SyclQueue(func(*args, **kwargs)._get_capsule())
+        return wrapper
+    else:
+        return func
+
+
 @functools.lru_cache(100)
 def _is_subclass_fast(cls: type, modname: str, clsname: str) -> bool:
     # Taken directly from array_api_compat.common._helpers to use for
