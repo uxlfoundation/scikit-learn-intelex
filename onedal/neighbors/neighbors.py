@@ -453,33 +453,19 @@ class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
         # global queue is set as per user configuration (`target_offload`) or from data prior to calling this internal function
         queue = QM.get_global_queue()
         gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
-        if self.effective_metric_ == "euclidean" and not gpu_device:
-            params = self._get_daal_params(X)
-            if self._fit_method == "brute":
-                train_alg = bf_knn_classification_training
 
-            else:
-                train_alg = kdtree_knn_classification_training
-
-            return train_alg(**params).compute(X, y).model
-        else:
-            params = self._get_onedal_params(X, y)
-            X_table, y_table = to_table(X, y, queue=queue)
-            return self.train(params, X_table, y_table).model
+        params = self._get_onedal_params(X, y)
+        X_table, y_table = to_table(X, y, queue=queue)
+        return self.train(params, X_table, y_table).model
 
     def _onedal_predict(self, model, X, params):
-        if type(self._onedal_model) is kdtree_knn_classification_model:
-            return kdtree_knn_classification_prediction(**params).compute(X, model)
-        elif type(self._onedal_model) is bf_knn_classification_model:
-            return bf_knn_classification_prediction(**params).compute(X, model)
-        else:
-            X = to_table(X, queue=QM.get_global_queue())
-            if "responses" not in params["result_option"]:
-                params["result_option"] += "|responses"
-            params["fptype"] = X.dtype
-            result = self.infer(params, model, X)
+        X = to_table(X, queue=QM.get_global_queue())
+        if "responses" not in params["result_option"]:
+            params["result_option"] += "|responses"
+        params["fptype"] = X.dtype
+        result = self.infer(params, model, X)
 
-            return result
+        return result
 
     @supports_queue
     def fit(self, X, y, queue=None):
@@ -511,17 +497,10 @@ class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
 
         self._validate_n_classes()
 
-        if (
-            type(onedal_model) is kdtree_knn_classification_model
-            or type(onedal_model) is bf_knn_classification_model
-        ):
-            params = self._get_daal_params(X)
-            prediction_result = self._onedal_predict(onedal_model, X, params)
-            responses = prediction_result.prediction
-        else:
-            params = self._get_onedal_params(X)
-            prediction_result = self._onedal_predict(onedal_model, X, params)
-            responses = from_table(prediction_result.responses)
+        
+        params = self._get_onedal_params(X)
+        prediction_result = self._onedal_predict(onedal_model, X, params)
+        responses = from_table(prediction_result.responses)
 
         result = self.classes_.take(np.asarray(responses.ravel(), dtype=np.intp))
         return result
