@@ -33,7 +33,7 @@ __global_queue = None
 # dictionary of generic SYCL queues with default SYCL contexts for
 # reuse
 __dlpack_queue = {}
-# Special queue for non CPU, non SYCL data associated with dlpack
+# Special queue for non-CPU, non-SYCL data associated with dlpack
 __non_queue = SimpleNamespace(sycl_device=SimpleNamespace(is_cpu=False))
 
 
