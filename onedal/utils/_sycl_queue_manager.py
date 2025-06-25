@@ -163,7 +163,7 @@ def from_data(*data):
         global_dev = global_queue.sycl_device
         if (data_dev and global_dev) is not None and data_dev != global_dev:
             # when all data exists on other devices (e.g. not CPU or SYCL devices)
-            # failure will come in backend selection occuring in
+            # failure will come in backend selection occurring in
             # sklearnex._device_offload._get_backend when using __non_queue
             raise ValueError(
                 "Data objects are located on different target devices or not on selected device."
