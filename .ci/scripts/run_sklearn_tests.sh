@@ -29,8 +29,11 @@ export DESELECT_FLAGS="--public ${DESELECT_FLAGS}"
 if [ -n "${SKLEARNEX_PREVIEW}" ]; then
     export DESELECT_FLAGS="--preview ${DESELECT_FLAGS}"
 fi
-export DESELECTED_TESTS=$(python ../.circleci/deselect_tests.py ../deselected_tests.yaml ${DESELECT_FLAGS})
+if [ "$1" == "gpu" ]; then
+    export DESELECT_FLAGS="--gpu ${DESELECT_FLAGS}"
+fi
 
+export DESELECTED_TESTS=$(python ../.circleci/deselect_tests.py ../deselected_tests.yaml ${DESELECT_FLAGS})
 # manual setting of OCL_ICD_FILENAMES is required in
 # specific MSYS environment with conda packages downloaded from intel channel
 if [[ "$(uname)" =~ "MSYS" ]] && [ -z "${OCL_ICD_FILENAMES}" ] && [ -n "${CONDA_PREFIX}" ]; then

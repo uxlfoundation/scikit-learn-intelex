@@ -46,7 +46,7 @@ Oracle Approximating Shrinkage Estimator (small)
 The output of EmpiricalCovariance is regularized by a shrinkage value impacted by the overall mean of the data.
 The goal would be to implement this estimator with post-processing changes to the fitted empirical covariance.
 This project is very similar to the ShrunkCovariance project and would combine into a medium project.
-When implemented in python re-using our EmpiricalCovariance estimator, this would be an easy project with a 
+When implemented in python reusing our EmpiricalCovariance estimator, this would be an easy project with a 
 small time commitment. Implementing the super-computing distributed version using python would only work for
 distributed-aware frameworks. Extended goals would make this a hard difficulty, medium commitment project. This
 would require implementing the regularization in C++ in oneDAL both for CPU and GPU. Then this must be made 
@@ -62,7 +62,7 @@ ShrunkCovariance Estimator (small)
 The output of EmpiricalCovariance is regularized by a shrinkage value impacted by the overall mean of the data.
 The goal would be to implement this estimator with post-processing changes to the fitted empirical covariance.
 This is very similar to the OAS project and would combine into a medium project.
-When implemented in python re-using our EmpiricalCovariance estimator, this would be an easy project with a 
+When implemented in python reusing our EmpiricalCovariance estimator, this would be an easy project with a 
 small time commitment. Implementing the super-computing distributed version using python would only work for
 distributed-aware frameworks. Extended goals would make this a hard difficulty, medium commitment project. This
 would require implementing the regularization in C++ in oneDAL both for CPU and GPU. Then this must be made 
@@ -78,7 +78,7 @@ Implement the Preprocessing Estimators for Supercomputers
 The Extension for Scikit-learn contains two unique estimators used to get vital metrics from large datasets,
 known as BasicStatistics and IncrementalBasicStatistics. They generate relevant values like 'min', 'max', 'mean' 
 and 'variance' with special focus on multithreaded performance. It is also MPI-enabled working on SBCs to multi-node 
-clusters, and can prove very useful for important big data pre-processing steps which may be otherwise unwieldly. 
+clusters, and can prove very useful for important big data pre-processing steps which may be otherwise unwieldy. 
 Several pre-processsing algorithms in Scikit-learn use these basic metrics where BasicStatistics could be used instead. 
 The overall goal would be to use the online version, IncrementalBasicStatistics, to create advanced pre-processing 
 scikit-learn-intelex estimators which can be used on supercomputing clusters. The difficulty of this project is easy,

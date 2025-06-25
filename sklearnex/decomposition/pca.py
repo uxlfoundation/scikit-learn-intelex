@@ -31,7 +31,7 @@ if daal_check_version((2024, "P", 100)):
     from daal4py.sklearn._utils import sklearn_check_version
 
     from .._device_offload import dispatch, wrap_output_data
-    from .._utils import PatchingConditionsChain
+    from .._utils import PatchingConditionsChain, register_hyperparameters
     from ..base import oneDALEstimator
     from ..utils._array_api import get_namespace
     from ..utils.validation import validate_data
@@ -44,9 +44,11 @@ if daal_check_version((2024, "P", 100)):
 
     from sklearn.decomposition import PCA as _sklearn_PCA
 
+    from onedal.common.hyperparameters import get_hyperparameters
     from onedal.decomposition import PCA as onedal_PCA
     from onedal.utils._array_api import _is_numpy_namespace
 
+    @register_hyperparameters({"fit": get_hyperparameters("pca", "train")})
     @control_n_jobs(decorated_methods=["fit", "transform", "fit_transform"])
     class PCA(oneDALEstimator, _sklearn_PCA):
         __doc__ = _sklearn_PCA.__doc__
@@ -213,9 +215,17 @@ if daal_check_version((2024, "P", 100)):
                 # Scikit-learn PCA["covariance_eigh"] was fit
                 return self._transform(X_fit, xp, x_is_centered=x_is_centered)
 
-        @wrap_output_data
         def inverse_transform(self, X):
-            xp, _ = get_namespace(X)
+            # sklearn does not properly input check inverse_transform using
+            # ``validate_data`` (as of sklearn 1.7). Yielding the namespace
+            # in this way will conform to sklearn and various inputs without
+            # causing issues with dimensionality checks, array api support,
+            # etc. evaluated in ``validate_data``. This is a special solution.
+            xp = (
+                func()
+                if (func := getattr(X, "__array_namespace__", None))
+                else get_namespace(X)[0]
+            )
 
             mean = self.mean_
             if self.whiten:
@@ -226,11 +236,7 @@ if daal_check_version((2024, "P", 100)):
                 components = self.components_
 
             if not _is_numpy_namespace(xp):
-                # DPCtl and dpnp require inputs to be on the same device for
-                # matrix multiplication and division. The type and location
-                # of the components and mean are dependent on the sklearn
-                # version, this makes sure it is of the same type and on the
-                # same device as the data (compute follows data).
+                # Force matching type to input data if possible
                 components = xp.asarray(components, device=X.device)
                 mean = xp.asarray(mean, device=X.device)
 

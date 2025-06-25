@@ -72,7 +72,7 @@ They support different enabling scenarios while producing the same result.
 
 **Example**
 
-This example shows how to patch |sklearn| by modifing your script. To make sure that patching is registered by the scikit-learn estimators, always import module ``sklearn`` after these lines.
+This example shows how to patch |sklearn| by modifying your script. To make sure that patching is registered by the scikit-learn estimators, always import module ``sklearn`` after these lines.
 
 .. code-block:: python
   :caption: Example: Drop-In Patching

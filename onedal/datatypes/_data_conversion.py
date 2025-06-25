@@ -14,6 +14,8 @@
 # limitations under the License.
 # ==============================================================================
 
+from types import ModuleType
+
 import numpy as np
 
 from onedal import _default_backend as backend
@@ -36,7 +38,7 @@ def to_table(*args, queue=None):
     Parameters
     ----------
     *args : {scalar, numpy array, sycl_usm_ndarray, csr_matrix, or csr_array}
-        Arguments to be individually coverted to oneDAL tables.
+        Arguments to be individually converted to oneDAL tables.
 
     queue : SyclQueue or None, default=None
         SYCL Queue object to be associated with the oneDAL tables. Default
@@ -61,29 +63,6 @@ def to_table(*args, queue=None):
 
 if backend.is_dpc:
 
-    try:
-        # try/catch is used here instead of dpep_helpers because
-        # of circular import issues of _data_conversion.py and
-        # utils/validation.py. This is a temporary fix until the
-        # issue with dpnp is addressed, at which point this can
-        # be removed entirely.
-        import dpnp
-
-        def _table_to_array(table, xp=None):
-            # By default DPNP ndarray created with a copy.
-            # TODO:
-            # investigate why dpnp.array(table, copy=False) doesn't work.
-            # Work around with using dpctl.tensor.asarray.
-            if xp == dpnp:
-                return dpnp.array(dpnp.dpctl.tensor.asarray(table), copy=False)
-            else:
-                return xp.asarray(table)
-
-    except ImportError:
-
-        def _table_to_array(table, xp=None):
-            return xp.asarray(table)
-
     def convert_one_from_table(table, sycl_queue=None, sua_iface=None, xp=None):
         # Currently only `__sycl_usm_array_interface__` protocol used to
         # convert into dpnp/dpctl tensors.
@@ -102,7 +81,14 @@ if backend.is_dpc:
                     backend.from_table(table), usm_type="device", sycl_queue=sycl_queue
                 )
             else:
-                return _table_to_array(table, xp=xp)
+                # By default DPNP ndarray created with a copy.
+                # TODO:
+                # investigate why dpnp.array(table, copy=False) doesn't work.
+                # Work around with using dpctl.tensor.asarray.
+                if isinstance(xp, ModuleType) and xp.__name__ == "dpnp":
+                    return xp.array(xp.dpctl.tensor.asarray(table), copy=False)
+                else:
+                    return xp.asarray(table)
 
         return backend.from_table(table)
 

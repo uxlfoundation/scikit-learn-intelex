@@ -16,6 +16,7 @@
 
 import logging
 
+import numpy as np
 import pytest
 import sklearn
 
@@ -128,8 +129,28 @@ def test_config_context_works():
 
 
 @pytest.mark.skipif(
-    not is_sycl_device_available(["gpu"]), reason="Requires a gpu for fallback testing"
+    onedal._default_backend.is_dpc, reason="requires host default backend"
 )
+@pytest.mark.parametrize("target", ["auto", "cpu", "cpu:0", "gpu", 3])
+def test_host_backend_target_offload(target):
+    from sklearnex.neighbors import NearestNeighbors
+
+    err_msg = (
+        r"device use via \`target_offload\` is only supported with the DPC\+\+ backend"
+    )
+
+    est = NearestNeighbors()
+    if target != "auto":
+        with pytest.raises(ValueError, match=err_msg):
+            with sklearnex.config_context(target_offload=target):
+                est.fit(np.eye(5, 8))
+    else:
+        with sklearnex.config_context(target_offload=target):
+            est.fit(np.eye(5, 8))
+
+
+@pytest.mark.skipif(
+    not is_dpctl_device_available(["gpu"]), reason="Requires a gpu for fallback testing"
 def test_fallback_to_host(caplog):
     # force a fallback to cpu with direct use of dispatch and PatchingConditionsChain
     # it should complete with allow_fallback_to_host. The queue should be preserved

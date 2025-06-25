@@ -14,6 +14,7 @@
 # limitations under the License.
 # ===============================================================================
 
+import math
 import numbers
 
 import scipy.sparse as sp
@@ -70,7 +71,10 @@ def _sklearnex_assert_all_finite(
     # size check is an initial match to daal4py for performance reasons, can be
     # optimized later
     xp, _ = get_namespace(X)
-    if X.size < 32768 or not _onedal_supported_format(X, xp):
+    # this is a PyTorch-specific fix, as Tensor.size is a function. It replicates `.size`
+    too_small = math.prod(X.shape) < 32768
+
+    if too_small or not _onedal_supported_format(X, xp):
         if sklearn_check_version("1.1"):
             _sklearn_assert_all_finite(X, allow_nan=allow_nan, input_name=input_name)
         else:
@@ -102,7 +106,7 @@ def validate_data(
 ):
     # force finite check to not occur in sklearn, default is True
     # `ensure_all_finite` is the most up-to-date keyword name in sklearn
-    # _finite_keyword provides backward compatability for `force_all_finite`
+    # _finite_keyword provides backward compatibility for `force_all_finite`
     ensure_all_finite = kwargs.pop("ensure_all_finite", True)
     kwargs[_finite_keyword] = False
 
