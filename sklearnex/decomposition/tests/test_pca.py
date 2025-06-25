@@ -29,9 +29,7 @@ from onedal.tests.utils._dataframes_support import (
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 @pytest.mark.parametrize("macro_block", [None, 2])
 @pytest.mark.parametrize("grain_size", [None, 2])
-def test_sklearnex_import(
-    dataframe, queue, macro_block, grain_size
-):
+def test_sklearnex_import(dataframe, queue, macro_block, grain_size):
     from sklearnex.decomposition import PCA
 
     X = [[-1, -1], [-2, -1], [-3, -2], [1, 1], [2, 1], [3, 2]]
