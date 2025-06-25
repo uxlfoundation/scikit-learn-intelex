@@ -35,12 +35,6 @@ else:
         "to_dict",
     ]
 
-    def get_methods_with_prefix(obj, prefix):
-        return {
-            method.replace(prefix, ""): getattr(obj, method)
-            for method in filter(lambda f: f.startswith(prefix), dir(obj))
-        }
-
     class HyperParameters:
         """Class for simplified interaction with oneDAL hyperparameters.
         Overrides `__getattribute__` and `__setattr__` to utilize getters and setters
@@ -93,6 +87,12 @@ else:
 
         def to_dict(self):
             return {name: getter() for name, getter in self.getters.items()}
+
+    def get_methods_with_prefix(obj, prefix):
+        return {
+            method.replace(prefix, ""): getattr(obj, method)
+            for method in filter(lambda f: f.startswith(prefix), dir(obj))
+        }
 
     hyperparameters_backend_map = {
         (
