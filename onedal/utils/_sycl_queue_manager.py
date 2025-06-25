@@ -17,14 +17,7 @@
 from contextlib import contextmanager
 
 from .._config import _get_config
-from ..utils._dpep_helpers import dpctl_available
-
-if dpctl_available:
-    from dpctl import SyclQueue
-else:
-    from onedal import _dpc_backend
-
-    SyclQueue = getattr(_dpc_backend, "SyclQueue", None)
+from ._third_party import SyclQueue
 
 # This special object signifies that the queue system should be
 # disabled. It will force computation to host. This occurs when the
@@ -36,12 +29,7 @@ __global_queue = None
 
 
 def __create_sycl_queue(target):
-    if SyclQueue is None:
-        # we don't have SyclQueue support
-        return None
-    if target is None:
-        return None
-    if isinstance(target, SyclQueue):
+    if isinstance(target, SyclQueue) or target is None:
         return target
     if isinstance(target, (str, int)):
         return SyclQueue(target)

@@ -18,14 +18,11 @@ from collections.abc import Callable
 from functools import wraps
 from typing import Any, Union
 
-from onedal._device_offload import _copy_to_usm, _transfer_to_host
+from onedal._device_offload import _transfer_to_host
+from onedal.datatypes import copy_to_dpnp, copy_to_usm
 from onedal.utils import _sycl_queue_manager as QM
 from onedal.utils._array_api import _asarray, _is_numpy_namespace
-from onedal.utils._dpep_helpers import dpnp_available
-
-if dpnp_available:
-    import dpnp
-    from onedal.utils._array_api import _convert_to_dpnp
+from onedal.utils._third_party import is_dpnp_ndarray
 
 from ._config import config_context, get_config, set_config
 from ._utils import PatchingConditionsChain, get_tags
@@ -140,7 +137,7 @@ def dispatch(
                 return branches["sklearn"](obj, *args, **kwargs)
 
         # move data to host because of multiple reasons: array_api fallback to host,
-        # non array_api supporing oneDAL code, issues with usm support in sklearn.
+        # non array_api supporting oneDAL code, issues with usm support in sklearn.
         has_usm_data_for_args, hostargs = _transfer_to_host(*args)
         has_usm_data_for_kwargs, hostvalues = _transfer_to_host(*kwargs.values())
 
@@ -185,19 +182,20 @@ def wrap_output_data(func: Callable) -> Callable:
     def wrapper(self, *args, **kwargs) -> Any:
         result = func(self, *args, **kwargs)
         if not (len(args) == 0 and len(kwargs) == 0):
-            data = (*args, *kwargs.values())
+            data = (*args, *kwargs.values())[0]
 
-            usm_iface = getattr(data[0], "__sycl_usm_array_interface__", None)
-            if usm_iface is not None:
-                result = _copy_to_usm(usm_iface["syclobj"], result)
-                if dpnp_available and isinstance(data[0], dpnp.ndarray):
-                    result = _convert_to_dpnp(result)
-                return result
+            if usm_iface := getattr(data, "__sycl_usm_array_interface__", None):
+                queue = usm_iface["syclobj"]
+                return (
+                    copy_to_dpnp(queue, result)
+                    if is_dpnp_ndarray(data)
+                    else copy_to_usm(queue, result)
+                )
 
             if get_config().get("transform_output") in ("default", None):
-                input_array_api = getattr(data[0], "__array_namespace__", lambda: None)()
+                input_array_api = getattr(data, "__array_namespace__", lambda: None)()
                 if input_array_api and not _is_numpy_namespace(input_array_api):
-                    input_array_api_device = data[0].device
+                    input_array_api_device = data.device
                     result = _asarray(
                         result, input_array_api, device=input_array_api_device
                     )
