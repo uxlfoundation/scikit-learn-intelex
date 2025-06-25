@@ -18,9 +18,10 @@ import numpy as np
 import pytest
 from sklearn.datasets import make_classification, make_regression
 
+from daal4py.sklearn._utils import daal_check_version
 from sklearnex.decomposition import PCA
 from sklearnex.ensemble import RandomForestClassifier
-from sklearnex.linear_model import LinearRegression
+from sklearnex.linear_model import IncrementalLinearRegression, LinearRegression
 from sklearnex.preview.covariance import EmpiricalCovariance
 
 # Table of estimators to test hyperparameter reset functionality.
@@ -38,18 +39,31 @@ from sklearnex.preview.covariance import EmpiricalCovariance
 #                       This value should be different from the default value of the hyperparameter.
 test_estimators = [
     [EmpiricalCovariance, "compute", "fit", "cpu_macro_block", 10],
-    [EmpiricalCovariance, "compute", "fit", "cpu_grain_size", 2],
+    [IncrementalLinearRegression, "regression", "fit", "cpu_macro_block", 10],
+    [IncrementalLinearRegression, "regression", "partial_fit", "cpu_macro_block", 10],
     [LinearRegression, "regression", "fit", "cpu_macro_block", 10],
-    [PCA, "compute", "fit", "cpu_macro_block", 10],
-    [RandomForestClassifier, "classification", "predict", "block_size", 8],
 ]
+
+if daal_check_version((2024, "P", 300)):
+    test_estimators.append(
+        [RandomForestClassifier, "classification", "predict", "block_size", 8]
+    )
+
+if daal_check_version((2025, "P", 700)):
+    test_estimators.append([EmpiricalCovariance, "compute", "fit", "cpu_grain_size", 2])
+    test_estimators.append([PCA, "compute", "fit", "cpu_macro_block", 10])
 
 
 def call_estimator(estimator_object, estimator_type, op, X, y=None):
     if estimator_type == "compute":
         return estimator_object.fit(X)
     elif estimator_type == "regression" or estimator_type == "classification":
-        result = estimator_object.fit(X, y)
+        if y is None:
+            raise ValueError("y must be provided for regression or classification tasks")
+        if op == "partial_fit":
+            result = estimator_object.partial_fit(X, y)
+        else:
+            result = estimator_object.fit(X, y)
         if op == "predict":
             return estimator_object.predict(X)
         else:
