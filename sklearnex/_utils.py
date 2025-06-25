@@ -133,7 +133,9 @@ def register_hyperparameters(hyperparameters_map):
     ----------
     hyperparameters_map : Dict[str, Tuple[str, str]]
        Dictionary containing the mapping of the operator name in the sklearnex API
-       to the tuple (algorithm name, operation name) which is a .
+       to the tuple (algorithm name, operation name) that contains the arguments to
+       onedal.common.hyperparameters.get_hyperparameters and
+       onedal.common.hyperparameters.reset_hyperparameters functions.
 
     Returns
     -------
