@@ -103,21 +103,17 @@ def _get_dlpack_queue(obj: object) -> SyclQueue:
     if device_type == backend.kDLCPU:
         return None
     elif device_type != backend.kDLOneAPI:
-        # Data exists on a non-SYCL, non-CPU
-        # device. This will trigger an error
-        # or a fallback if "fallback_to_host" is
-        # set in the config
+        # Data exists on a non-SYCL, non-CPU device. This will trigger an error
+        # or a fallback if "fallback_to_host" is set in the config
         return __non_queue
 
     if is_torch_tensor(obj):
         return get_torch_queue(obj)
     else:
-        # no specialized queue can be extracted,
-        # use or generate a generic. Note, this
-        # will behave in unexpected ways for
-        # non-default SYCL contexts or with SYCL
-        # sub-devices due to limitations in the
-        # dlpack standard (not enough info).
+        # no specialized queue can be extracted use or generate a generic. Note,
+        # this will behave in unexpected ways for non-default SYCL contexts or
+        # with SYCL sub-devices due to limitations in the dlpack standard (not
+        # enough info).
         try:
             queue = __dlpack_queue[device_id]
         except KeyError:
