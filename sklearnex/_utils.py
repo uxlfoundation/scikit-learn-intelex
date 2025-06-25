@@ -26,10 +26,7 @@ import sklearn
 from daal4py.sklearn._utils import (
     PatchingConditionsChain as daal4py_PatchingConditionsChain,
 )
-from daal4py.sklearn._utils import (
-    daal_check_version,
-    sklearn_check_version,
-)
+from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal.common.hyperparameters import (
     get_hyperparameters as onedal_get_hyperparameters,
 )
