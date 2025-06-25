@@ -23,9 +23,9 @@ from onedal.utils._third_party import dpctl_available, SyclQueue
 
 if dpctl_available:
     import dpctl
-    sycl_creation_err = dpctl._sycl_queue.SyclQueueCreationError
+    queue_creation_err = dpctl._sycl_queue.SyclQueueCreationError
 else:
-    sycl_creation_err = (RuntimeError, ValueError)
+    queue_creation_err = (RuntimeError, ValueError)
 
 
 # lru_cache is used to limit the number of SyclQueues generated
@@ -57,7 +57,7 @@ def get_queues(filter_: str = "cpu,gpu") -> list[SyclQueue]:
     for i in filter_.split(","):
         try:
             queues.append(pytest.param(SyclQueue(i), id=f"SyclQueue_{i.upper()}"))
-        except sycl_creation_err:
+        except queue_creation_err:
             pass
 
     return queues
@@ -86,7 +86,7 @@ def is_sycl_device_available(targets: Iterable[str]) -> bool:
     for device in targets:
         try:
             SyclQueue(device)
-        except (RuntimeError, ValueError]:
+        except queue_creation_err:
             return False
     return True
 
