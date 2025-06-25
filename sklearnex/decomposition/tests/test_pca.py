@@ -30,7 +30,7 @@ from onedal.tests.utils._dataframes_support import (
 @pytest.mark.parametrize("macro_block", [None, 2])
 @pytest.mark.parametrize("grain_size", [None, 2])
 def test_sklearnex_import(
-    dataframe, queue, macro_block, grain_size, hyperparameters_route
+    dataframe, queue, macro_block, grain_size
 ):
     from sklearnex.decomposition import PCA
 
@@ -45,7 +45,7 @@ def test_sklearnex_import(
         [3.6053038, 0.04224385],
     ]
 
-    if daal_check_version(2025, "P", 700):
+    if daal_check_version((2025, "P", 700)):
         hparams = PCA.get_hyperparameters("fit")
         if macro_block is not None:
             if queue and queue.sycl_device.is_gpu:
