@@ -20,12 +20,13 @@ import numpy as np
 
 from onedal import _default_backend as backend
 
-from ..utils._third_party import lazy_import
+from ..utils._third_party import convert_sklearnex_queue, lazy_import
 
 cpu_dlpack_device = (backend.kDLCPU, 0)
 
 
 @lazy_import("torch.xpu")
+@convert_sklearnex_queue
 def get_torch_queue(torchxpu, array):
     return backend.SyclQueue(torchxpu.current_stream(array.get_device()).sycl_queue)
 
