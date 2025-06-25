@@ -19,7 +19,7 @@ from collections.abc import Iterable
 
 import pytest
 
-from onedal.utils._third_party import dpctl_available, SyclQueue
+from onedal.utils._third_party import SyclQueue, dpctl_available
 
 if dpctl_available:
     import dpctl
