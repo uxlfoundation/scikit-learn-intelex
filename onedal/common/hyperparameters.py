@@ -35,30 +35,6 @@ else:
         "to_dict",
     ]
 
-    def get_hyperparameters_backend(algorithm, op):
-        """Get hyperparameters for a specific algorithm and operation."""
-        if algorithm == "linear_regression" and op == "train":
-            hyperparameters_backend = (
-                backend.linear_model.regression.train_hyperparameters()
-            )
-        elif algorithm == "covariance" and op == "compute":
-            hyperparameters_backend = backend.covariance.compute_hyperparameters()
-        elif (
-            daal_check_version((2024, "P", 300))
-            and algorithm == "decision_forest"
-            and op == "infer"
-        ):
-            hyperparameters_backend = backend.decision_forest.infer_hyperparameters()
-        elif (
-            daal_check_version((2025, "P", 700)) and algorithm == "pca" and op == "train"
-        ):
-            hyperparameters_backend = (
-                backend.decomposition.dim_reduction.train_hyperparameters()
-            )
-        else:
-            raise ValueError(f"Hyperparameters for '{algorithm}.{op}' are not defined.")
-        return hyperparameters_backend
-
     def get_methods_with_prefix(obj, prefix):
         return {
             method.replace(prefix, ""): getattr(obj, method)
@@ -118,25 +94,26 @@ else:
         def to_dict(self):
             return {name: getter() for name, getter in self.getters.items()}
 
-    hyperparameters_backend_items = [
-        ("linear_regression", "train"),
-        ("covariance", "compute"),
-    ]
+    hyperparameters_backend_map = {
+        (
+            "linear_regression",
+            "train",
+        ): lambda: backend.linear_model.regression.train_hyperparameters(),
+        ("covariance", "compute"): lambda: backend.covariance.compute_hyperparameters(),
+    }
     if daal_check_version((2024, "P", 300)):
-        hyperparameters_backend_items.append(("decision_forest", "infer"))
+        hyperparameters_backend_map[("decision_forest", "infer")] = (
+            lambda: backend.decision_forest.infer_hyperparameters()
+        )
     if daal_check_version((2025, "P", 700)):
-        hyperparameters_backend_items.append(("pca", "train"))
-
-    # Create a map of hyperparameters for each algorithm and operation
-    hyperparameters_backend_map: Dict[Tuple[str, str], Any] = {}
-    for algorithm, op in hyperparameters_backend_items:
-        hyperparameters_backend_map[(algorithm, op)] = get_hyperparameters_backend(
-            algorithm, op
+        hyperparameters_backend_map[("pca", "train")] = (
+            lambda: backend.decomposition.dim_reduction.train_hyperparameters()
         )
 
     hyperparameters_map = {}
 
-    for (algorithm, op), hyperparameters_backend in hyperparameters_backend_map.items():
+    for (algorithm, op), hyperparameters_lambda in hyperparameters_backend_map.items():
+        hyperparameters_backend = hyperparameters_lambda()
         setters = get_methods_with_prefix(hyperparameters_backend, "set_")
         getters = get_methods_with_prefix(hyperparameters_backend, "get_")
 
@@ -149,6 +126,13 @@ else:
         hyperparameters_map[(algorithm, op)] = HyperParameters(
             algorithm, op, setters, getters, hyperparameters_backend
         )
+
+    def get_hyperparameters_backend(algorithm, op):
+        """Get hyperparameters for a specific algorithm and operation."""
+        if (algorithm, op) in hyperparameters_backend_map:
+            return hyperparameters_backend_map[(algorithm, op)]()
+        else:
+            raise ValueError(f"Hyperparameters for '{algorithm}.{op}' are not defined.")
 
 
 def get_hyperparameters(algorithm: str, op: str) -> HyperParameters:
