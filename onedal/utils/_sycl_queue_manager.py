@@ -104,7 +104,7 @@ def _get_dlpack_queue(obj: object) -> SyclQueue:
         return None
     elif device_type != backend.kDLOneAPI:
         # Data exists on a non-SYCL, non-CPU
-        #  device. This will trigger an error
+        # device. This will trigger an error
         # or a fallback if "fallback_to_host" is
         # set in the config
         return __non_queue
