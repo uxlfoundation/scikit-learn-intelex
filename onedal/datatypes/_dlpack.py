@@ -18,7 +18,7 @@ from collections.abc import Iterable
 
 import numpy as np
 
-import onedal.backend
+from onedal import _default_backend as backend
 
 from ..utils._third_party import SyclQueue, lazy_import
 
