@@ -22,8 +22,6 @@ from .._config import _get_config
 from ..datatypes import get_torch_queue
 from ._third_party import SyclQueue, is_torch_tensor
 
-_dlpack_device = backend.kDLOneAPI
-
 # This special object signifies that the queue system should be
 # disabled. It will force computation to host. This occurs when the
 # global queue is set to this value (and therefore should not be
