@@ -17,7 +17,7 @@
 from contextlib import contextmanager
 from types import SimpleNamespace
 
-from onedal import backend
+from onedal import _default_backend as backend
 
 from .._config import _get_config
 from ..datatypes import get_torch_queue

@@ -49,10 +49,7 @@ def _get_backend(
 
     if gpu_device:
         patching_status = obj._onedal_gpu_supported(method_name, *data)
-        if (
-            not patching_status.get_status()
-            and get_config()["allow_fallback_to_host"]
-        ):
+        if not patching_status.get_status() and get_config()["allow_fallback_to_host"]:
             QM.fallback_to_host()
             return None, patching_status
         return patching_status.get_status(), patching_status
