@@ -46,7 +46,7 @@ variables:
 jobs:
 - job: Lint
   pool:
-    vmImage: 'ubuntu-22.04'
+    vmImage: 'ubuntu-24.04'
   steps:
   - template: linting.yml
 - job: LinuxCondaRecipe
@@ -58,7 +58,7 @@ jobs:
         PYTHON_VERSION: '3.12'
         NUMPY_VERSION: '2.1'
   pool:
-    vmImage: 'ubuntu-22.04'
+    vmImage: 'ubuntu-24.04'
   steps:
   - template: conda-recipe-lnx.yml
 - job: WindowsCondaRecipe
@@ -96,7 +96,7 @@ jobs:
         PYTHON_VERSION: '3.13'
         SKLEARN_VERSION: '1.6'
   pool:
-    vmImage: 'ubuntu-22.04'
+    vmImage: 'ubuntu-24.04'
   steps:
   - template: build-and-test-lnx.yml
   - template: codecov-lnx.yml
