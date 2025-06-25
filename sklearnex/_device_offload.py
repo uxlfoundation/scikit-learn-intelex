@@ -51,12 +51,15 @@ def _get_backend(
         patching_status = obj._onedal_gpu_supported(method_name, *data)
         if (
             not patching_status.get_status()
-            and (config := get_config())["allow_fallback_to_host"]
+            and get_config()["allow_fallback_to_host"]
         ):
             QM.fallback_to_host()
             return None, patching_status
         return patching_status.get_status(), patching_status
 
+    if get_config()["allow_fallback_to_host"]:
+        QM.fallback_to_host()
+        return None, None
     raise RuntimeError("Device support is not implemented for the supplied data type.")
 
 
