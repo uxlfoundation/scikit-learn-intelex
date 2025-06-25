@@ -72,4 +72,5 @@ def test_sklearnex_import(dataframe, queue, macro_block, grain_size):
     assert_allclose(X_transformed_expected, _as_numpy(X_fit_transformed), rtol=tol)
 
     # Reset hyperparameters to the default values
-    PCA.reset_hyperparameters("fit")
+    if daal_check_version((2025, "P", 700)):
+        PCA.reset_hyperparameters("fit")
