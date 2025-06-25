@@ -182,7 +182,6 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         self.outputs_2d_ = self._onedal_estimator.outputs_2d_
         self._tree = self._onedal_estimator._tree
 
-
     fit.__doc__ = _sklearn_KNeighborsClassifier.fit.__doc__
     predict.__doc__ = _sklearn_KNeighborsClassifier.predict.__doc__
     predict_proba.__doc__ = _sklearn_KNeighborsClassifier.predict_proba.__doc__
