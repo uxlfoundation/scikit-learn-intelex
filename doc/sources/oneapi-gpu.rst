@@ -16,10 +16,10 @@
 .. _oneapi_gpu:
 
 ##############################################################
-oneAPI and GPU support in |intelex|
+oneAPI and GPU support in |sklearnex|
 ##############################################################
 
-|intelex| can execute computations on different devices (CPUs, GPUs) through the SYCL framework in oneAPI.
+|sklearnex| can execute computations on different devices (CPUs, GPUs) through the SYCL framework in oneAPI.
 
 The device used for computations can be easily controlled through the target offloading functionality (e.g. through ``sklearnex.config_context(target_offload="gpu")`` - see rest of this page for more details), but for finer-grained controlled (e.g. operating on arrays that are already in a given device's memory), it can also interact with objects from package |dpctl|, which offers a Python interface over SYCL concepts such as devices, queues, and USM (unified shared memory) arrays.
 
@@ -51,9 +51,9 @@ For GPGPU driver installation instructions, see the general `DPC++ system requir
 Device offloading
 -----------------
 
-|intelex| offers two options for running an algorithm on a specified device:
+|sklearnex| offers two options for running an algorithm on a specified device:
 
-- Use global configurations of |intelex|\*:
+- Use global configurations of |sklearnex|\*:
 
   1. The :code:`target_offload` argument (in ``config_context`` and in ``set_config`` / ``get_config``)
      can be used to set the device primarily used to perform computations. Accepted data types are
@@ -106,7 +106,7 @@ call :code:`sklearnex.get_config()`.
   .. warning::
     The :code:`usm_ndarray` can only be consumed by the base methods
     like :code:`fit`, :code:`predict`, and :code:`transform`.
-    Note that only the algorithms in |intelex| support
+    Note that only the algorithms in |sklearnex| support
     :code:`usm_ndarray`. The algorithms from the stock version of |sklearn|
     do not support this feature.
 

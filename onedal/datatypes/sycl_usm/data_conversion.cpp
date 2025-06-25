@@ -141,7 +141,7 @@ dal::table convert_to_table(py::object obj) {
 
     SET_CTYPE_FROM_DAL_TYPE(type,
                             MAKE_HOMOGEN_TABLE,
-                            report_problem_for_sua_iface(": unknown data type"));
+                            throw py::type_error("Found unsupported array type"));
 
 #undef MAKE_HOMOGEN_TABLE
 
@@ -179,7 +179,7 @@ py::dict construct_sua_iface(const dal::table& input) {
     auto has_queue = bytes_array.get_queue().has_value();
     // oneDAL returns tables without sycl context for CPU sycl queue inputs, that
     // breaks the compute-follows-data execution.
-    // Currently not throwing runtime exception and __sycl_usm_array_interface__["syclobj"] None asigned
+    // Currently not throwing runtime exception and __sycl_usm_array_interface__["syclobj"] None assigned
     // if no SYCL queue to allow workaround on python side.
     // if (!has_queue) {
     //     report_problem_to_sua_iface(": table has no queue");

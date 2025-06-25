@@ -35,6 +35,7 @@ from sklearn.utils.validation import (
 import daal4py
 
 from .._utils import PatchingConditionsChain, getFPType, make2d
+from ..utils.validation import validate_data
 
 
 def _get_libsvm_impl():
@@ -157,7 +158,7 @@ def _daal4py_kf(kernel, X_fptype, gamma=1.0, is_sparse=False):
         kf = daal4py.kernel_function_linear(fptype=X_fptype, method=method)
     else:
         raise ValueError(
-            "_daal4py_fit received unexpected kernel specifiction {}.".format(kernel)
+            "_daal4py_fit received unexpected kernel specification {}.".format(kernel)
         )
 
     return kf
@@ -421,7 +422,8 @@ def fit(self, X, y, sample_weight=None):
     if callable(self.kernel):
         check_consistent_length(X, y)
     else:
-        X, y = self._validate_data(
+        X, y = validate_data(
+            self,
             X,
             y,
             dtype=np.float64,
@@ -568,7 +570,7 @@ def _daal4py_predict(self, X, is_decision_function=False):
         res = -predictionRes.decisionFunction
 
     if num_classes == 2 and not is_decision_function:
-        # Convert from Intel(R) oneAPI Data Analytics Library format back to
+        # Convert from oneAPI Data Analytics Library format back to
         # original classes
         np.greater(res, 0, out=res)
 

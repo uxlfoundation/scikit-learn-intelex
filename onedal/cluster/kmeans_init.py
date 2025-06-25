@@ -15,18 +15,52 @@
 # ==============================================================================
 
 import numpy as np
-from scipy.sparse import issparse
 from sklearn.utils import check_random_state
 
-from daal4py.sklearn._utils import daal_check_version, get_dtype
+from daal4py.sklearn._utils import daal_check_version
+from onedal._device_offload import supports_queue
+from onedal.common._backend import bind_default_backend
+from onedal.utils import _sycl_queue_manager as QM
+from sklearnex._config import config_context, get_config
 
-from ..common._base import BaseEstimator as onedal_BaseEstimator
 from ..datatypes import from_table, to_table
-from ..utils import _check_array
+from ..utils.validation import _check_array
 
 if daal_check_version((2023, "P", 200)):
 
-    class KMeansInit(onedal_BaseEstimator):
+    def force_host_if_csr(func):
+        """
+        Decorator to force computation on the host if the input data is in CSR format.
+
+        CSR (Compressed Sparse Row) format is not supported on GPU. This decorator ensures that
+        the computation is performed on the host (CPU) when the input data is in CSR format.
+        It is necessary that `self.is_csr` is to the correct value (True or False) before calling.
+        It temporarily modifies the configuration to target the CPU and removes the global SYCL queue
+        to ensure the computation is executed on the host. The original configuration is restored upon exit.
+
+        Parameters:
+        func (function): The function to be decorated.
+
+        Returns:
+        function: The wrapped function with the modified configuration if the input data is in CSR format.
+        """
+        config = get_config()
+        # `auto` rather than `cpu` is necessary in order to force host when a SYCL cpu target is unavailable
+        config["target_offload"] = "auto"
+
+        def wrapper(self, *args, **kwargs):
+            if self.is_csr:
+                with (
+                    config_context(**config),
+                    QM.manage_global_queue(None, None),
+                ):
+                    return func(self, *args, **kwargs)
+            else:
+                return func(self, *args, **kwargs)
+
+        return wrapper
+
+    class KMeansInit:
         """
         KMeansInit oneDAL implementation.
         """
@@ -37,16 +71,21 @@ if daal_check_version((2023, "P", 200)):
             seed=777,
             local_trials_count=None,
             algorithm="plus_plus_dense",
+            is_csr=False,
         ):
             self.cluster_count = cluster_count
             self.seed = seed
             self.local_trials_count = local_trials_count
             self.algorithm = algorithm
+            self.is_csr = is_csr
 
             if local_trials_count is None:
                 self.local_trials_count = 2 + int(np.log(cluster_count))
             else:
                 self.local_trials_count = local_trials_count
+
+        @bind_default_backend("kmeans_init.init", lookup_name="compute")
+        def backend_compute(self, params, X_table): ...
 
         def _get_onedal_params(self, dtype=np.float32):
             return {
@@ -68,31 +107,25 @@ if daal_check_version((2023, "P", 200)):
             params = self._get_onedal_params(X.dtype)
             return (params, X, X.dtype)
 
-        def _compute_raw(self, X_table, module, policy, dtype=np.float32):
+        def _compute_raw(self, X_table, dtype=np.float32):
             params = self._get_onedal_params(dtype)
-
-            result = module.compute(policy, params, X_table)
-
+            result = self.backend_compute(params, X_table)
             return result.centroids
 
-        def _compute(self, X, module, queue):
-            policy = self._get_policy(queue, X)
-            # oneDAL KMeans Init for sparse data does not have GPU support
-            if issparse(X):
-                policy = self._get_policy(None, None)
-            _, X_table, dtype = self._get_params_and_input(X, queue)
-
-            centroids = self._compute_raw(X_table, module, policy, dtype)
-
+        def _compute(self, X):
+            _, X_table, dtype = self._get_params_and_input(X, queue=QM.get_global_queue())
+            centroids = self._compute_raw(X_table, dtype)
             return from_table(centroids)
 
-        def compute_raw(self, X_table, policy, dtype=np.float32):
-            return self._compute_raw(
-                X_table, self._get_backend("kmeans_init", "init", None), policy, dtype
-            )
+        @force_host_if_csr
+        def compute_raw(self, X_table, dtype=np.float32, queue=None):
+            # no @supports_queue decorator here, because we only accept X_table that has no queue information
+            return self._compute_raw(X_table, dtype)
 
+        @force_host_if_csr
+        @supports_queue
         def compute(self, X, queue=None):
-            return self._compute(X, self._get_backend("kmeans_init", "init", None), queue)
+            return self._compute(X)
 
     def kmeans_plusplus(
         X,
@@ -107,6 +140,6 @@ if daal_check_version((2023, "P", 200)):
         return (
             KMeansInit(
                 n_clusters, seed=random_seed, local_trials_count=n_local_trials
-            ).compute(X, queue),
+            ).compute(X, queue=queue),
             np.full(n_clusters, -1),
         )

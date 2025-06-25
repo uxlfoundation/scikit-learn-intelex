@@ -14,9 +14,12 @@
 # limitations under the License.
 # ==============================================================================
 
+from onedal.common._backend import bind_spmd_backend
+
 from ...decomposition import IncrementalPCA as base_IncrementalPCA
-from .._base import BaseEstimatorSPMD
 
 
-class IncrementalPCA(BaseEstimatorSPMD, base_IncrementalPCA):
-    pass
+class IncrementalPCA(base_IncrementalPCA):
+
+    @bind_spmd_backend("decomposition.dim_reduction")
+    def finalize_train(self, params, partial_result, queue=None): ...

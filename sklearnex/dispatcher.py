@@ -454,10 +454,10 @@ def get_patch_names():
 def patch_sklearn(name=None, verbose=True, global_patch=False, preview=False):
     if preview:
         os.environ["SKLEARNEX_PREVIEW"] = "enabled_via_patch_sklearn"
-    if not sklearn_check_version("0.24"):
+    if not sklearn_check_version("1.0"):
         raise NotImplementedError(
-            "Intel(R) Extension for Scikit-learn* patches apply "
-            "for scikit-learn >= 0.24 only ..."
+            "Extension for Scikit-learn* patches apply "
+            "for scikit-learn >= 1.0 only ..."
         )
 
     if global_patch:
@@ -482,7 +482,7 @@ def patch_sklearn(name=None, verbose=True, global_patch=False, preview=False):
 
     if verbose and sys.stderr is not None:
         sys.stderr.write(
-            "Intel(R) Extension for Scikit-learn* enabled "
+            "Extension for Scikit-learn* enabled "
             "(https://github.com/uxlfoundation/scikit-learn-intelex)\n"
         )
 
@@ -529,6 +529,17 @@ def sklearn_is_patched(name=None, return_map=False):
 
 
 def is_patched_instance(instance: object) -> bool:
-    """Returns True if the `instance` is patched with scikit-learn-intelex"""
+    """Check if given instance is patched with scikit-learn-intelex.
+
+    Parameters
+    ----------
+    instance : object
+        Python object, usually a scikit-learn estimator instance.
+
+    Returns
+    -------
+    Check : bool
+        Boolean whether instance is a daal4py or sklearnex estimator.
+    """
     module = getattr(instance, "__module__", "")
     return ("daal4py" in module) or ("sklearnex" in module)

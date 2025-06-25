@@ -18,24 +18,22 @@
   
 # Installation  <!-- omit in toc -->
 
-To install Intel(R) Extension for Scikit-learn*, use one of the following scenarios:
+To install Extension for Scikit-learn*, use one of the following scenarios:
 
 - [Before You Begin](#before-you-begin)
 - [Install via PIP](#install-via-pip)
   - [Install from PyPI Channel (recommended by default)](#install-from-pypi-channel-recommended-by-default)
-- [Install from Anaconda Cloud](#install-from-anaconda-cloud)
-  - [Install via Anaconda Cloud from Conda-Forge Channel](#install-via-anaconda-cloud-from-conda-forge-channel)
-  - [Install via Anaconda Cloud from Intel Channel](#install-via-anaconda-cloud-from-intel-channel)
+- [Install via conda](#install-via-conda)
+  - [Install from Conda-Forge Channel](#install-from-conda-forge-channel)
+  - [Install from Intel conda Channel](#install-from-intel-conda-channel)
 - [Build from Sources](#build-from-sources)
   - [Prerequisites](#prerequisites)
   - [Configure the Build with Environment Variables](#configure-the-build-with-environment-variables)
-  - [Build Intel(R) Extension for Scikit-learn](#build-intelr-extension-for-scikit-learn)
+  - [Build Extension for Scikit-learn](#build-intelr-extension-for-scikit-learn)
 - [Build from Sources with `conda-build`](#build-from-sources-with-conda-build)
   - [Prerequisites for `conda-build`](#prerequisites-for-conda-build)
-  - [Build Intel(R) Extension for Scikit-learn with `conda-build`](#build-intelr-extension-for-scikit-learn-with-conda-build)
+  - [Build Extension for Scikit-learn with `conda-build`](#build-intelr-extension-for-scikit-learn-with-conda-build)
 - [Next Steps](#next-steps)
-
-> **_NOTE:_** Intel(R) Extension for Scikit-learn* is also available as a part of [Intel® AI Tools](https://www.intel.com/content/www/us/en/developer/tools/oneapi/ai-analytics-toolkit.html). If you already have it installed, you do not need to separately install the extension.
 
 
 ## Before You Begin
@@ -49,8 +47,8 @@ Check [System](https://uxlfoundation.github.io/scikit-learn-intelex/latest/syste
 * Devices: CPU, GPU
 * Distribution channels:
   * PyPI
-  * Anaconda Cloud from Conda-Forge Channel
-  * Anaconda Cloud from Intel Channel (https://software.repos.intel.com/python/conda/)
+  * Conda-Forge Channel
+  * Intel conda Channel (https://software.repos.intel.com/python/conda/)
 
 ## Install via PIP
 
@@ -78,62 +76,50 @@ Install `scikit-learn-intelex`:
    pip install scikit-learn-intelex
    ```
 
-## Install from Anaconda Cloud
+## Install via conda
 
 To prevent version conflicts, we recommend to create and activate a new environment. 
 
-### Install via Anaconda Cloud from Conda-Forge Channel
+### Install from Conda-Forge Channel
 
 - Install into a newly created environment (recommended):
 
   ```bash
-  conda config --add channels conda-forge
-  conda config --set channel_priority strict
-  conda create -n env python=3.10 scikit-learn-intelex
+  conda create -n sklex -c conda-forge --override-channels scikit-learn-intelex
+  conda activate sklex
   ```
-
-> **_NOTE:_** If you do not specify the Python version, the latest one is downloaded. 
 
 - Install into your current environment:
 
   ```bash
-  conda config --add channels conda-forge
-  conda config --set channel_priority strict
-  conda install scikit-learn-intelex
+  conda install -c conda-forge scikit-learn-intelex
   ```
 
-### Install via Anaconda Cloud from Intel Channel
+### Install Intel conda Channel
 
 We recommend this installation for the users of Intel® Distribution for Python.
 
 - Install into a newly created environment (recommended):
 
   ```bash
-  conda config --add channels https://software.repos.intel.com/python/conda/
-  conda config --set channel_priority strict
-  conda create -n env python=3.10 scikit-learn-intelex
+  conda create -n sklex -c https://software.repos.intel.com/python/conda/ -c conda-forge --override-channels scikit-learn-intelex
+  conda activate sklex
   ```
-
-> **_NOTE:_** If you do not specify the Python version, the latest one is downloaded. 
 
 - Install into your current environment:
 
   ```bash
-  conda config --add channels https://software.repos.intel.com/python/conda/
-  conda config --set channel_priority strict
-  conda install scikit-learn-intelex
+  conda install -c https://software.repos.intel.com/python/conda/ -c conda-forge scikit-learn-intelex
   ```
 
-> **_NOTE:_** If you do not specify the version of Python, the latest one is downloaded. 
+**Note:** packages from the Intel channel are meant to be used together with dependencies from the **conda-forge** channel, and might not
+work correctly when used in an environment where packages from the `anaconda` default channel have been installed. It is
+advisable to use the [miniforge](https://github.com/conda-forge/miniforge) installer for `conda`/`mamba`, as it comes with
+`conda-forge` as the only default channel.
 
-- Install into your current environment:
-
-  ```bash
-  conda install scikit-learn-intelex
-  ```
 
 ## Build from Sources
-Intel(R) Extension for Scikit-learn* is easily built from the sources with the majority of the necessary prerequisites available with conda or pip. 
+Extension for Scikit-learn* is easily built from the sources with the majority of the necessary prerequisites available with conda or pip. 
 
 The package is available for Windows* OS, Linux* OS, and macOS*.
 
@@ -153,11 +139,12 @@ The build-process (using setup.py) happens in 4 stages:
 * cmake and pybind11
 * A C++ compiler with C++11 support
 * Clang-Format version >=14
-* [Intel® oneAPI Data Analytics Library (oneDAL)](https://github.com/uxlfoundation/oneDAL) version 2021.1 or later, but be mindful that **the oneDAL version must be <= than that of scikit-learn-intelex** (it's backwards compatible but not forwards compatible).
+* [oneAPI Data Analytics Library (oneDAL)](https://github.com/uxlfoundation/oneDAL) version 2021.1 or later, but be mindful that **the oneDAL version must be <= than that of scikit-learn-intelex** (it's backwards compatible but not forwards compatible).
   * You can use the pre-built `dal-devel` conda package from conda-forge channel
 * MPI (optional, needed for distributed mode)
   * You can use the pre-built `impi_rt` and `impi-devel` conda packages from conda-forge channel
 * A DPC++ compiler (optional, needed for DPC++ interfaces)
+  * Note that this also requires a oneDAL build with DPC++ enabled.
 
 ### Configure the Build with Environment Variables
 * ``SKLEARNEX_VERSION``: sets the package version
@@ -173,7 +160,7 @@ The build-process (using setup.py) happens in 4 stages:
 **Note:** The `-j` flag in the ``MAKEFLAGS`` environment variable is superseded in `setup.py` modes which support the ``--parallel`` and `-j` command line flags.
 
 
-### Build Intel(R) Extension for Scikit-learn
+### Build Extension for Scikit-learn
 
 - To install the package:
 
@@ -202,7 +189,7 @@ The build-process (using setup.py) happens in 4 stages:
 
 Where: 
 
-* Keys `--single-version-externally-managed` and `--no-deps` are required to not download daal4py after the installation of Intel(R) Extension for Scikit-learn. 
+* Keys `--single-version-externally-managed` and `--no-deps` are required to not download daal4py after the installation of Extension for Scikit-learn. 
 * The `develop` mode does not install the package but creates a `.egg-link` in the deployment directory
 back to the project source-code directory. That way, you can edit the source code and see the changes
 without reinstalling the package after a small change.
@@ -216,7 +203,9 @@ without reinstalling the package after a small change.
    python setup.py build
    ```
 
-**Note:** the `setup.py` file will accept an optional argument `--abs-rpath` on linux (for all of `build`/`install`/`develop`/etc.) which will make it add the absolute path to oneDAL's shared objects (.so files) to the rpath of the scikit-learn-intelex extension's shared object files in order to load them automatically. This is not necessary when installing from pip or conda, but can be helpful for development purposes when using a from-source build of oneDAL that resides in a custom folder, as it won't assume that oneDAL's files will be found under default system paths. Example:
+**Note1:** the `daal4py` extension module which is built through `build_ext` does not use any kind of build caching for incremental compilation. For development purposes, one might want to use it together with `ccache`, for example by setting `export CXX="ccache icpx"`.
+
+**Note2:** the `setup.py` file will accept an optional argument `--abs-rpath` on linux (for all of `build`/`install`/`develop`/etc.) which will make it add the absolute path to oneDAL's shared objects (.so files) to the rpath of the scikit-learn-intelex extension's shared object files in order to load them automatically. This is not necessary when installing from pip or conda, but can be helpful for development purposes when using a from-source build of oneDAL that resides in a custom folder, as it won't assume that oneDAL's files will be found under default system paths. Example:
 
 ```shell
 python setup.py build_ext --inplace --force --abs-rpath
@@ -225,9 +214,51 @@ python setup.py build --abs-rpath
 
 **Note:** when building `scikit-learn-intelex` from source with this option, it will use the oneDAL library with which it was compiled. oneDAL has dependencies on other libraries such as TBB, which is also distributed as a python package through `pip` and as a `conda` package. By default, a conda environment will first try to load TBB from its own packages if it is installed in the environment, which might cause issues if oneDAL was compiled with a system TBB instead of a conda one. In such cases, it is advised to either uninstall TBB from pip/conda (it will be loaded from the oneDAL library which links to it), or modify the order of search paths in environment variables like `${LD_LIBRARY_PATH}`.
 
+### Building with ASAN
+
+In order to use AddressSanitizer (ASan) together with `scikit-learn-intelex`, it's necessary to:
+* Build both oneDAL and scikit-learn-intelex with ASan (otherwise error traces will not be very informative).
+* Preload the ASan runtime when executing the Python process that imports `scikit-learn-intelex`.
+* Optionally, configure Python to use `malloc` as default allocator to reduce the number of false-positive leak reports.
+
+See the instructions on the oneDAL repository for building the library from source with ASAN enabled:
+https://github.com/uxlfoundation/oneDAL/blob/main/INSTALL.md
+
+When building `scikit-learn-intelex`, the system's default compiler is used unless specified otherwise through variables such as `$CXX`. In order to avoid issues with incompatible runtimes of ASan, one might want to change the compiler to ICX if oneDAL was built with ICX (the default for it).
+
+The compiler and flags to build with both ASan and debug symbols can be controlled through environment variables - **assuming a Linux system** (ASan on Windows has not been tested):
+```shell
+export CC="icx -fsanitize=address -g"
+export CXX="icpx -fsanitize=address -g"
+```
+
+_Hint: the Cython module `daal4py` that gets built through `build_ext` does not do incremental compilation, so one might want to add `ccache` into the compiler call for development purposes - e.g. `CXX="ccache icx  -fsanitize=address -g"`._
+
+The ASan runtime used by ICX is the same as the one by Clang. It's possible to preload the ASan runtime for GNU if that's the system's default through e.g. `LD_PRELOAD=libasan.so` or similar. However, one might need to specifically pass the paths from Clang to get the same ASan runtime as for oneDAL if that is not the system's default compiler:
+```shell
+export LD_PRELOAD="$(clang -print-file-name=libclang_rt.asan-x86_64.so)"
+```
+
+_Note: this requires both `clang` and its runtime libraries to be installed. If using toolkits from `conda-forge`, then using `libclang_rt` requires installing package `compiler-rt`, in addition to `clang` and `clangxx`._
+
+Then, the Python memory allocator can be set to `malloc` like this:
+```shell
+export PYTHONMALLOC=malloc
+```
+
+Putting it all together, the earlier examples building the library in-place and executing a python file with it become as follows:
+```shell
+source <path to ASan-enabled oneDAL env.sh>
+CC="ccache icx -fsanitize=address -g" CXX="ccache icpx -fsanitize=address -g" python setup.py build_ext --inplace --force --abs-rpath
+CC="icx -fsanitize=address -g" CXX="icpx -fsanitize=address -g" python setup.py build --abs-rpath
+LD_PRELOAD="$(clang -print-file-name=libclang_rt.asan-x86_64.so)" PYTHONMALLOC=malloc PYTHONPATH=$(pwd) python <python file.py>
+```
+
+_Be aware that ASan is known to generate many false-positive reports of memory leaks when used with oneDAL, NumPy, and SciPy._
+
 ## Build from Sources with `conda-build`
 
-Intel(R) Extension for Scikit-learn* is easily built from the sources using only one command and `conda-build` utility. 
+Extension for Scikit-learn* is easily built from the sources using only one command and `conda-build` utility. 
 
 ### Prerequisites for `conda-build`
 
@@ -241,7 +272,7 @@ Intel(R) Extension for Scikit-learn* is easily built from the sources using only
 In order to enable DPC++ interfaces support on Windows, you need to set `DPCPPROOT` environment variable pointing to DPC++/C++ Compiler distribution.
 Conda-forge distribution of DPC++ compiler is used by default on Linux, but you still can set your own distribution via `DPCPPROOT` variable.
 
-### Build Intel(R) Extension for Scikit-learn with `conda-build`
+### Build Extension for Scikit-learn with `conda-build`
 
 Create and verify `scikit-learn-intelex` conda package with next command executed from root of sklearnex repo:
 

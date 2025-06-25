@@ -20,13 +20,14 @@ from enum import Enum
 import numpy as np
 from scipy import sparse as sp
 
-from onedal import _backend
+from onedal._device_offload import supports_queue
+from onedal.common._backend import bind_default_backend
+from onedal.utils import _sycl_queue_manager as QM
 
 from ..common._estimator_checks import _check_is_fitted
 from ..common._mixin import ClassifierMixin, RegressorMixin
-from ..common._policy import _get_policy
 from ..datatypes import from_table, to_table
-from ..utils import (
+from ..utils.validation import (
     _check_array,
     _check_n_features,
     _check_X_y,
@@ -84,6 +85,12 @@ class BaseSVM(metaclass=ABCMeta):
         self.algorithm = algorithm
         self.svm_type = svm_type
 
+    @abstractmethod
+    def train(self, *args, **kwargs): ...
+
+    @abstractmethod
+    def infer(self, *args, **kwargs): ...
+
     def _validate_targets(self, y, dtype):
         self.class_weight_ = None
         self.classes_ = None
@@ -114,7 +121,7 @@ class BaseSVM(metaclass=ABCMeta):
             "cache_size": self.cache_size,
         }
 
-    def _fit(self, X, y, sample_weight, module, queue):
+    def _fit(self, X, y, sample_weight):
         if hasattr(self, "decision_function_shape"):
             if self.decision_function_shape not in ("ovr", "ovo", None):
                 raise ValueError(
@@ -166,17 +173,15 @@ class BaseSVM(metaclass=ABCMeta):
                     _gamma = 1.0 / X.shape[1]
                 else:
                     raise ValueError(
-                        "When 'gamma' is a string, it should be either 'scale' or "
-                        "'auto'. Got '{}' instead.".format(self.gamma)
+                        f"When 'gamma' is a string, it should be either 'scale' or 'auto'. Got '{self.gamma}' instead."
                     )
             else:
                 _gamma = self.gamma
             self._scale_, self._sigma_ = _gamma, np.sqrt(0.5 / _gamma)
 
-        policy = _get_policy(queue, *data)
-        data = to_table(*data, queue=queue)
+        data = to_table(*data, queue=QM.get_global_queue())
         params = self._get_onedal_params(data[0])
-        result = module.train(policy, params, *data)
+        result = self.train(params, *data)
 
         if self._sparse:
             self.dual_coef_ = sp.csr_matrix(from_table(result.coeffs).T)
@@ -200,8 +205,8 @@ class BaseSVM(metaclass=ABCMeta):
         self._onedal_model = result.model
         return self
 
-    def _create_model(self, module):
-        m = module.model()
+    def _create_model(self):
+        m = self.model()
 
         m.support_vectors = to_table(self.support_vectors_)
         m.coeffs = to_table(self.dual_coef_.T)
@@ -211,14 +216,14 @@ class BaseSVM(metaclass=ABCMeta):
             m.first_class_response, m.second_class_response = 0, 1
         return m
 
-    def _predict(self, X, module, queue):
+    def _predict(self, X):
         _check_is_fitted(self)
         if self.break_ties and self.decision_function_shape == "ovo":
             raise ValueError(
                 "break_ties must be False when " "decision_function_shape is 'ovo'"
             )
 
-        if module in [_backend.svm.classification, _backend.svm.nu_classification]:
+        if isinstance(self, ClassifierMixin):
             sv = self.support_vectors_
             if not self._sparse and sv.size > 0 and self._n_support.sum() != sv.shape[0]:
                 raise ValueError(
@@ -252,15 +257,14 @@ class BaseSVM(metaclass=ABCMeta):
                     % type(self).__name__
                 )
 
-            policy = _get_policy(queue, X)
-            X = to_table(X, queue=queue)
+            X = to_table(X, queue=QM.get_global_queue())
             params = self._get_onedal_params(X)
 
             if hasattr(self, "_onedal_model"):
                 model = self._onedal_model
             else:
                 model = self._create_model(module)
-            result = module.infer(policy, params, model, X)
+            result = self.infer(params, model, X)
             y = from_table(result.responses)
         return y
 
@@ -283,7 +287,7 @@ class BaseSVM(metaclass=ABCMeta):
         )
         return votes + transformed_confidences
 
-    def _decision_function(self, X, module, queue):
+    def _decision_function(self, X):
         _check_is_fitted(self)
         X = _check_array(
             X, dtype=[np.float64, np.float32], force_all_finite=True, accept_sparse="csr"
@@ -301,7 +305,7 @@ class BaseSVM(metaclass=ABCMeta):
                 % type(self).__name__
             )
 
-        if module in [_backend.svm.classification, _backend.svm.nu_classification]:
+        if isinstance(self, ClassifierMixin):
             sv = self.support_vectors_
             if not self._sparse and sv.size > 0 and self._n_support.sum() != sv.shape[0]:
                 raise ValueError(
@@ -309,15 +313,14 @@ class BaseSVM(metaclass=ABCMeta):
                     f"of {self.__class__.__name__} was altered"
                 )
 
-        policy = _get_policy(queue, X)
-        X = to_table(X, queue=queue)
+        X = to_table(X, queue=QM.get_global_queue())
         params = self._get_onedal_params(X)
 
         if hasattr(self, "_onedal_model"):
             model = self._onedal_model
         else:
             model = self._create_model(module)
-        result = module.infer(policy, params, model, X)
+        result = self.infer(params, model, X)
         decision_function = from_table(result.decision_function)
 
         if len(self.classes_) == 2:
@@ -331,9 +334,6 @@ class BaseSVM(metaclass=ABCMeta):
 
 
 class SVR(RegressorMixin, BaseSVM):
-    """
-    Epsilon--Support Vector Regression.
-    """
 
     def __init__(
         self,
@@ -372,18 +372,26 @@ class SVR(RegressorMixin, BaseSVM):
         )
         self.svm_type = SVMtype.epsilon_svr
 
-    def fit(self, X, y, sample_weight=None, queue=None):
-        return super()._fit(X, y, sample_weight, _backend.svm.regression, queue)
+    @bind_default_backend("svm.regression")
+    def train(self, *args, **kwargs): ...
 
+    @bind_default_backend("svm.regression")
+    def infer(self, *args, **kwargs): ...
+
+    @bind_default_backend("svm.regression")
+    def model(self): ...
+
+    @supports_queue
+    def fit(self, X, y, sample_weight=None, queue=None):
+        return self._fit(X, y, sample_weight)
+
+    @supports_queue
     def predict(self, X, queue=None):
-        y = super()._predict(X, _backend.svm.regression, queue)
+        y = self._predict(X)
         return y.ravel()
 
 
 class SVC(ClassifierMixin, BaseSVM):
-    """
-    C-Support Vector Classification.
-    """
 
     def __init__(
         self,
@@ -424,29 +432,38 @@ class SVC(ClassifierMixin, BaseSVM):
         )
         self.svm_type = SVMtype.c_svc
 
+    @bind_default_backend("svm.classification")
+    def train(self, *args, **kwargs): ...
+
+    @bind_default_backend("svm.classification")
+    def infer(self, *args, **kwargs): ...
+
+    @bind_default_backend("svm.classification")
+    def model(self): ...
+
     def _validate_targets(self, y, dtype):
         y, self.class_weight_, self.classes_ = _validate_targets(
             y, self.class_weight, dtype
         )
         return y
 
+    @supports_queue
     def fit(self, X, y, sample_weight=None, queue=None):
-        return super()._fit(X, y, sample_weight, _backend.svm.classification, queue)
+        return self._fit(X, y, sample_weight)
 
+    @supports_queue
     def predict(self, X, queue=None):
-        y = super()._predict(X, _backend.svm.classification, queue)
+        y = self._predict(X)
         if len(self.classes_) == 2:
             y = y.ravel()
         return self.classes_.take(np.asarray(y, dtype=np.intp)).ravel()
 
+    @supports_queue
     def decision_function(self, X, queue=None):
-        return super()._decision_function(X, _backend.svm.classification, queue)
+        return self._decision_function(X)
 
 
 class NuSVR(RegressorMixin, BaseSVM):
-    """
-    Nu-Support Vector Regression.
-    """
 
     def __init__(
         self,
@@ -485,18 +502,25 @@ class NuSVR(RegressorMixin, BaseSVM):
         )
         self.svm_type = SVMtype.nu_svr
 
-    def fit(self, X, y, sample_weight=None, queue=None):
-        return super()._fit(X, y, sample_weight, _backend.svm.nu_regression, queue)
+    @bind_default_backend("svm.nu_regression")
+    def train(self, *args, **kwargs): ...
 
+    @bind_default_backend("svm.nu_regression")
+    def infer(self, *args, **kwargs): ...
+
+    @bind_default_backend("svm.nu_regression")
+    def model(self): ...
+
+    @supports_queue
+    def fit(self, X, y, sample_weight=None, queue=None):
+        return self._fit(X, y, sample_weight)
+
+    @supports_queue
     def predict(self, X, queue=None):
-        y = super()._predict(X, _backend.svm.nu_regression, queue)
-        return y.ravel()
+        return self._predict(X).ravel()
 
 
 class NuSVC(ClassifierMixin, BaseSVM):
-    """
-    Nu-Support Vector Classification.
-    """
 
     def __init__(
         self,
@@ -537,20 +561,32 @@ class NuSVC(ClassifierMixin, BaseSVM):
         )
         self.svm_type = SVMtype.nu_svc
 
+    @bind_default_backend("svm.nu_classification")
+    def train(self, *args, **kwargs): ...
+
+    @bind_default_backend("svm.nu_classification")
+    def infer(self, *args, **kwargs): ...
+
+    @bind_default_backend("svm.nu_classification")
+    def model(self): ...
+
     def _validate_targets(self, y, dtype):
         y, self.class_weight_, self.classes_ = _validate_targets(
             y, self.class_weight, dtype
         )
         return y
 
+    @supports_queue
     def fit(self, X, y, sample_weight=None, queue=None):
-        return super()._fit(X, y, sample_weight, _backend.svm.nu_classification, queue)
+        return self._fit(X, y, sample_weight)
 
+    @supports_queue
     def predict(self, X, queue=None):
-        y = super()._predict(X, _backend.svm.nu_classification, queue)
+        y = self._predict(X)
         if len(self.classes_) == 2:
             y = y.ravel()
         return self.classes_.take(np.asarray(y, dtype=np.intp)).ravel()
 
+    @supports_queue
     def decision_function(self, X, queue=None):
-        return super()._decision_function(X, _backend.svm.nu_classification, queue)
+        return self._decision_function(X)

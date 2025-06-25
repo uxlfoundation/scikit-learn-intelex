@@ -26,13 +26,16 @@ from contextlib import redirect_stdout
 from multiprocessing import Pipe, Process, get_context
 
 import pytest
+from sklearn.base import BaseEstimator
 from sklearn.utils import all_estimators
 
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal.tests.test_common import _check_primitive_usage_ban
+from sklearnex.base import oneDALEstimator
 from sklearnex.tests.utils import (
     PATCHED_MODELS,
     SPECIAL_INSTANCES,
+    UNPATCHED_MODELS,
     call_method,
     gen_dataset,
     gen_models_info,
@@ -105,7 +108,7 @@ def test_target_offload_ban():
         allowed_locations=TARGET_OFFLOAD_ALLOWED_LOCATIONS,
     )
     output = "\n".join(output)
-    assert output == "", f"target offloading is occuring in: \n{output}"
+    assert output == "", f"target offloading is occurring in: \n{output}"
 
 
 def _sklearnex_walk(func):
@@ -133,7 +136,7 @@ def test_class_trailing_underscore_ban(monkeypatch):
     estimators = all_estimators()  # list of tuples
     for name, obj in estimators:
         if "preview" not in obj.__module__ and "daal4py" not in obj.__module__:
-            # propeties also occur in sklearn, especially in deprecations and are expected
+            # properties also occur in sklearn, especially in deprecations and are expected
             # to error if queried and the estimator is not fitted
             assert all(
                 [
@@ -164,6 +167,28 @@ def test_all_estimators_covered(monkeypatch):
     assert (
         uncovered_estimators == []
     ), f"{uncovered_estimators} are currently not included"
+
+
+def test_oneDALEstimator_inheritance(monkeypatch):
+    """All sklearnex estimators should inherit the oneDALEstimator class, sklearnex-only
+    estimators should have it inherit oneDAL estimator one step before BaseEstimator in the
+    mro.  This is only strictly set for non-preview estimators"""
+    monkeypatch.setattr(pkgutil, "walk_packages", _sklearnex_walk(pkgutil.walk_packages))
+    estimators = all_estimators()  # list of tuples
+    for name, obj in estimators:
+        if "preview" not in obj.__module__ and "daal4py" not in obj.__module__:
+            assert issubclass(
+                obj, oneDALEstimator
+            ), f"{name} does not inherit the oneDALEstimator"
+            # oneDAL estimator should be inherited from before BaseEstimator
+            mro = obj.__mro__
+            assert mro.index(oneDALEstimator) < mro.index(
+                BaseEstimator
+            ), f"incorrect mro in {name}"
+            if not any([issubclass(obj, est) for est in UNPATCHED_MODELS.values()]):
+                assert (
+                    mro[mro.index(oneDALEstimator) + 1] is BaseEstimator
+                ), f"oneDALEstimator should be inherited just before BaseEstimator in {name}"
 
 
 def _fullpath(path):
@@ -396,22 +421,36 @@ def estimator_trace(estimator, method, cache, isolated_trace):
 
 
 def call_validate_data(text, estimator, method):
-    """test that the sklearn function/attribute validate_data is
+    """test that both sklearnex wrapper for validate_data and
+    original sklearn function/method validate_data are
     called once before offloading to oneDAL in sklearnex"""
     try:
         # get last to_table call showing end of oneDAL input portion of code
         idx = len(text["funcs"]) - 1 - text["funcs"][::-1].index("to_table")
-        validfuncs = text["funcs"][:idx]
+        valid_funcs = text["funcs"][:idx]
+        valid_modules = text["modules"][:idx]
     except ValueError:
         pytest.skip("onedal backend not used in this function")
 
-    validate_data = "validate_data" if sklearn_check_version("1.6") else "_validate_data"
+    validate_data_calls = []
+    for func, module in zip(valid_funcs, valid_modules):
+        if func.endswith("validate_data"):
+            validate_data_calls.append({module, func})
 
     assert (
-        validfuncs.count(validate_data) == 1
-    ), f"sklearn's {validate_data} should be called"
+        len(validate_data_calls) == 2
+    ), "validate_data should be called two times: once for sklearn and once for sklearnex"
+    assert validate_data_calls[0] == {
+        "sklearnex.utils.validation",
+        "validate_data",
+    }, "sklearnex's validate_data should be called first"
     assert (
-        validfuncs.count("_check_feature_names") == 1
+        (validate_data_calls[1] == {"sklearn.utils.validation", "validate_data"})
+        if sklearn_check_version("1.6")
+        else (validate_data_calls[1] == {"sklearn.base", "_validate_data"})
+    ), "sklearn's validate_data should be called second"
+    assert (
+        valid_funcs.count("_check_feature_names") == 1
     ), "estimator should check feature names in validate_data"
 
 
@@ -457,11 +496,12 @@ def fit_check_before_support_check(text, estimator, method):
         pytest.skip(f"fitting occurs in {estimator}.{method}")
 
 
-DESIGN_RULES = [n_jobs_check, runtime_property_check, fit_check_before_support_check]
-
-
-if sklearn_check_version("1.0"):
-    DESIGN_RULES += [call_validate_data]
+DESIGN_RULES = [
+    n_jobs_check,
+    runtime_property_check,
+    fit_check_before_support_check,
+    call_validate_data,
+]
 
 
 @pytest.mark.parametrize("design_pattern", DESIGN_RULES)

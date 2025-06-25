@@ -16,6 +16,7 @@
 
 import warnings
 from contextlib import suppress
+from functools import wraps
 
 import numpy as np
 import scipy.sparse as sp
@@ -49,6 +50,19 @@ from .._utils import (
     sklearn_check_version,
 )
 
+if sklearn_check_version("1.6"):
+    from sklearn.utils.validation import (
+        _check_feature_names as _sklearn_check_feature_names,
+    )
+    from sklearn.utils.validation import _check_n_features as _sklearn_check_n_features
+    from sklearn.utils.validation import validate_data as _sklearn_validate_data
+else:
+    from sklearn.base import BaseEstimator
+
+    _sklearn_validate_data = BaseEstimator._validate_data
+    _sklearn_check_feature_names = BaseEstimator._check_feature_names
+    _sklearn_check_n_features = BaseEstimator._check_n_features
+
 
 def _assert_all_finite(
     X, allow_nan=False, msg_dtype=None, estimator_name=None, input_name=""
@@ -58,25 +72,24 @@ def _assert_all_finite(
 
     # Data with small size has too big relative overhead
     # TODO: tune threshold size
-    if hasattr(X, "size"):
-        if X.size < 32768:
-            if sklearn_check_version("1.1"):
-                _sklearn_assert_all_finite(
-                    X,
-                    allow_nan=allow_nan,
-                    msg_dtype=msg_dtype,
-                    estimator_name=estimator_name,
-                    input_name=input_name,
-                )
-            else:
-                _sklearn_assert_all_finite(X, allow_nan=allow_nan, msg_dtype=msg_dtype)
-            return
-
     is_df = is_DataFrame(X)
+    if not (is_df or isinstance(X, np.ndarray)) or X.size < 32768:
+        if sklearn_check_version("1.1"):
+            _sklearn_assert_all_finite(
+                X,
+                allow_nan=allow_nan,
+                msg_dtype=msg_dtype,
+                estimator_name=estimator_name,
+                input_name=input_name,
+            )
+        else:
+            _sklearn_assert_all_finite(X, allow_nan=allow_nan, msg_dtype=msg_dtype)
+        return
+
     num_of_types = get_number_of_types(X)
 
     # if X is heterogeneous pandas.DataFrame then
-    # covert it to a list of arrays
+    # convert it to a list of arrays
     if is_df and num_of_types > 1:
         lst = []
         for idx in X:
@@ -316,7 +329,7 @@ def _daal_check_array(
     has_pd_integer_array = False
     if hasattr(array, "dtypes") and hasattr(array.dtypes, "__array__"):
         # throw warning if columns are sparse. If all columns are sparse, then
-        # array.sparse exists and sparsity will be perserved (later).
+        # array.sparse exists and sparsity will be preserved (later).
         with suppress(ImportError):
             from pandas import SparseDtype
 
@@ -394,13 +407,19 @@ def _daal_check_array(
 
     if sp.issparse(array):
         _ensure_no_complex_data(array)
+        kwargs = {
+            "accept_sparse": accept_sparse,
+            "dtype": dtype,
+            "copy": copy,
+            "accept_large_sparse": accept_large_sparse,
+        }
+        if sklearn_check_version("1.6"):
+            kwargs["ensure_all_finite"] = force_all_finite
+        else:
+            kwargs["force_all_finite"] = force_all_finite
         array = _ensure_sparse_format(
             array,
-            accept_sparse=accept_sparse,
-            dtype=dtype,
-            copy=copy,
-            force_all_finite=force_all_finite,
-            accept_large_sparse=accept_large_sparse,
+            **kwargs,
         )
     else:
         # If np.array(..) gives ComplexWarning, then we convert the warning
@@ -694,3 +713,60 @@ def _daal_num_features(X):
         return len(first_sample)
     except Exception as err:
         raise TypeError(message) from err
+
+
+def get_requires_y_tag(estimator):
+    """Gets the value of the 'requires_y' tag from the estimator
+    using correct code path depending on the scikit-learn version."""
+    if sklearn_check_version("1.6"):
+        requires_y = estimator.__sklearn_tags__().target_tags.required
+    else:
+        try:
+            requires_y = estimator._get_tags()["requires_y"]
+        except KeyError:
+            requires_y = False
+    return requires_y
+
+
+def add_dispatcher_docstring(original_function):
+    """Adds a note about the dispatcher function to the docstring of the original function."""
+
+    def wrapper(dispatcher_function):
+        @wraps(
+            original_function,
+            ["__name__", "__doc__", "__annotations__", "__type_params__"],
+        )
+        def new_function(*args, **kwargs):
+            return dispatcher_function(*args, **kwargs)
+
+        new_function.__doc__ = (
+            f"Sklearnex dispatcher for '{original_function.__qualname__}' "
+            f"from '{original_function.__module__}' module supporting "
+            "it's multiple implementations from different scikit-learn versions.\n\n"
+            + original_function.__doc__
+        )
+
+        return new_function
+
+    return wrapper
+
+
+# simplified copy of similar function from sklearnex.utils.validation,
+# ensures that the correct finiteness check argument is used
+@add_dispatcher_docstring(_sklearn_validate_data)
+def validate_data(*args, **kwargs):
+    if not sklearn_check_version("1.6") and "ensure_all_finite" in kwargs:
+        kwargs["force_all_finite"] = kwargs.pop("ensure_all_finite")
+    return _sklearn_validate_data(*args, **kwargs)
+
+
+# dispatcher functions which use correct `check_feature_names`/`check_n_features` import
+# depending on the scikit-learn version
+@add_dispatcher_docstring(_sklearn_check_feature_names)
+def check_feature_names(*args, **kwargs):
+    _sklearn_check_feature_names(*args, **kwargs)
+
+
+@add_dispatcher_docstring(_sklearn_check_n_features)
+def check_n_features(*args, **kwargs):
+    _sklearn_check_n_features(*args, **kwargs)

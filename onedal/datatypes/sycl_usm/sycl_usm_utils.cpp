@@ -48,7 +48,7 @@
  *   syclobj: dpctl.SyclQueue or dpctl.SyclContext object or `SyclQueueRef` PyCapsule that
  *            represents an opaque value of sycl::queue.
  *
- * For more informations please follow <https://intelpython.github.io/dpctl/latest/
+ * For more information please follow <https://intelpython.github.io/dpctl/latest/
  * api_reference/dpctl/sycl_usm_array_interface.html#sycl-usm-array-interface-attribute>
 */
 
@@ -94,7 +94,7 @@ bool is_sua_readonly(const py::dict& sua) {
 py::tuple get_sua_shape(const py::dict& sua) {
     py::tuple shape = sua["shape"].cast<py::tuple>();
     if (shape.size() == py::ssize_t{ 0ul }) {
-        throw std::runtime_error("Wrong number of dimensions");
+        throw std::length_error("Wrong number of dimensions");
     }
     return shape;
 }
@@ -166,7 +166,7 @@ dal::data_layout get_sua_iface_layout(const py::dict& sua_dict,
         }
     }
     else {
-        throw std::runtime_error("Unsupporterd data shape.`");
+        throw std::runtime_error("Unsupported data shape.`");
     }
 }
 

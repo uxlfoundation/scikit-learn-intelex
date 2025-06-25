@@ -21,7 +21,7 @@ Our documentation is written in restructured text markup and built with [Sphinx]
 
 ## Generate Documentation
 
-To build Intel(R) Extension for Scikit-Learn documentation locally:
+To build Extension for Scikit-Learn documentation locally:
 
 1. Clone the repository:
 
@@ -40,15 +40,3 @@ To build Intel(R) Extension for Scikit-Learn documentation locally:
 5. Run the ``build-doc.sh`` script. 
 
 You will then find documentation under the `_build/html` folder.
-
-Additional documentation for the `daal4py` module can be built with the following steps (after having installed the `scikit-learn-intelex` packages and doc dependencies):
-
-1. Go to the `doc/daal4py` folder:
-
-		cd scikit-learn-intelex/doc/daal4py
-
-2. Run the makefile (assuming linux):
-
-		make html
-
-Documentation will similarly be built under `_build/html`.

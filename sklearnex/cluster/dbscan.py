@@ -27,18 +27,15 @@ from onedal.cluster import DBSCAN as onedal_DBSCAN
 
 from .._config import get_config
 from .._device_offload import dispatch
-from .._utils import PatchableEstimator, PatchingConditionsChain
+from .._utils import PatchingConditionsChain
+from ..base import oneDALEstimator
+from ..utils.validation import validate_data
 
 if sklearn_check_version("1.1") and not sklearn_check_version("1.2"):
     from sklearn.utils import check_scalar
 
-if sklearn_check_version("1.6"):
-    from sklearn.utils.validation import validate_data
-else:
-    validate_data = _sklearn_DBSCAN._validate_data
 
-
-class BaseDBSCAN(ABC):
+class BaseDBSCAN(oneDALEstimator):
     def _onedal_dbscan(self, **onedal_params):
         return onedal_DBSCAN(**onedal_params)
 
@@ -52,7 +49,7 @@ class BaseDBSCAN(ABC):
 
 
 @control_n_jobs(decorated_methods=["fit"])
-class DBSCAN(PatchableEstimator, _sklearn_DBSCAN, BaseDBSCAN):
+class DBSCAN(BaseDBSCAN, _sklearn_DBSCAN):
     __doc__ = _sklearn_DBSCAN.__doc__
 
     if sklearn_check_version("1.2"):
@@ -91,8 +88,7 @@ class DBSCAN(PatchableEstimator, _sklearn_DBSCAN, BaseDBSCAN):
 
     def _onedal_fit(self, X, y, sample_weight=None, queue=None):
         if get_config()["use_raw_input"] is False:
-            if sklearn_check_version("1.0"):
-                X = validate_data(self, X, force_all_finite=False)
+            X = validate_data(self, X, ensure_all_finite=False)
 
         onedal_params = {
             "eps": self.eps,

@@ -48,8 +48,11 @@ if [[ "$*" == *"--gh-pages"* ]]; then
     export BUILDDIR=_build
     export SOURCEDIR=sources
 
-    sphinx-build -b html $SOURCEDIR $BUILDDIR/$SPHINXPROJ/$DOC_VERSION
+    sphinx-build -b html $SPHINXOPTS $SOURCEDIR $BUILDDIR/$SPHINXPROJ/$DOC_VERSION
     echo "<meta http-equiv=\"refresh\" content=\"0; URL='/$SPHINXPROJ/$DOC_VERSION/'\" / >" >> $BUILDDIR/$SPHINXPROJ/index.html
 else
     make html
 fi
+
+#Run the link-checker after build avoid rate limit errors
+sphinx-build -b linkcheck -j auto $SPHINXOPTS sources _build/linkcheck

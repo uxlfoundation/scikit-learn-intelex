@@ -14,11 +14,9 @@
 # limitations under the License.
 # ==============================================================================
 
-import warnings
-
 import numpy as np
 
-from onedal import _backend, _is_dpc_backend
+from onedal import _default_backend as backend
 
 
 def _apply_and_pass(func, *args, **kwargs):
@@ -29,32 +27,39 @@ def _apply_and_pass(func, *args, **kwargs):
 
 def _convert_one_to_table(arg, queue=None):
     # All inputs for table conversion must be array-like or sparse, not scalars
-    return _backend.to_table(np.atleast_2d(arg) if np.isscalar(arg) else arg, queue)
+    return backend.to_table(np.atleast_2d(arg) if np.isscalar(arg) else arg, queue)
 
 
 def to_table(*args, queue=None):
     """Create oneDAL tables from scalars and/or arrays.
 
-    Note: this implementation can be used with scipy.sparse, numpy ndarrays,
-    DPCTL/DPNP usm_ndarrays and scalars. Tables will use pointers to the
-    original array data. Scalars and non-contiguous arrays will be copies.
-    Arrays may be modified in-place by oneDAL during computation. This works
-    for data located on CPU and SYCL-enabled Intel GPUs. Each array may only
-    be of a single datatype (i.e. each must be homogeneous).
-
     Parameters
     ----------
     *args : {scalar, numpy array, sycl_usm_ndarray, csr_matrix, or csr_array}
-        arg1, arg2... The arrays should be given as arguments.
+        Arguments to be individually converted to oneDAL tables.
+
+    queue : SyclQueue or None, default=None
+        SYCL Queue object to be associated with the oneDAL tables. Default
+        value None causes no change in data location or queue.
 
     Returns
     -------
     tables: {oneDAL homogeneous tables}
+        Converted oneDAL tables.
+
+    Notes
+    -----
+        Tables will use pointers to the original array data. Scalars
+        and non-contiguous arrays will be copies. Arrays may be
+        modified in-place by oneDAL during computation. Transformation
+        is possible only for data located on CPU and SYCL-enabled Intel
+        GPUs. Each array may only be of a single data type (i.e. each
+        must be homogeneous).
     """
     return _apply_and_pass(_convert_one_to_table, *args, queue=queue)
 
 
-if _is_dpc_backend:
+if backend.is_dpc:
 
     try:
         # try/catch is used here instead of dpep_helpers because
@@ -79,8 +84,6 @@ if _is_dpc_backend:
         def _table_to_array(table, xp=None):
             return xp.asarray(table)
 
-    from ..common._policy import _HostInteropPolicy
-
     def convert_one_from_table(table, sycl_queue=None, sua_iface=None, xp=None):
         # Currently only `__sycl_usm_array_interface__` protocol used to
         # convert into dpnp/dpctl tensors.
@@ -96,12 +99,12 @@ if _is_dpc_backend:
                 # Host tables first converted into numpy.narrays and then to array from xp
                 # namespace.
                 return xp.asarray(
-                    _backend.from_table(table), usm_type="device", sycl_queue=sycl_queue
+                    backend.from_table(table), usm_type="device", sycl_queue=sycl_queue
                 )
             else:
                 return _table_to_array(table, xp=xp)
 
-        return _backend.from_table(table)
+        return backend.from_table(table)
 
 else:
 
@@ -112,7 +115,7 @@ else:
             raise RuntimeError(
                 "SYCL usm array conversion from table requires the DPC backend"
             )
-        return _backend.from_table(table)
+        return backend.from_table(table)
 
 
 def from_table(*args, sycl_queue=None, sua_iface=None, xp=None):

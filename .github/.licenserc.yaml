@@ -70,7 +70,8 @@ header:
     # Specific files
     - 'setup.cfg'
     - 'LICENSE'
-
+    # External copies of copyrighted work
+    - 'onedal/datatypes/dlpack/dlpack.h'
   comment: never
 
   license-location-threshold: 80 # specifies the index threshold where the license header can be located.

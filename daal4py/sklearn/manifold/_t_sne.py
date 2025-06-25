@@ -37,6 +37,7 @@ from daal4py.sklearn._utils import (
 
 from .._n_jobs_support import control_n_jobs
 from ..neighbors import NearestNeighbors
+from ..utils.validation import validate_data
 
 
 @control_n_jobs(decorated_methods=["fit"])
@@ -65,7 +66,13 @@ class TSNE(BaseTSNE):
             [n_samples],
             [P.nnz],
             [self.n_iter_without_progress],
-            [self._max_iter if sklearn_check_version("1.5") else self.n_iter],
+            [
+                (
+                    self.max_iter
+                    if sklearn_check_version("1.7")
+                    else (self._max_iter if sklearn_check_version("1.5") else self.n_iter)
+                )
+            ],
         ]
 
         # Pass params to daal4py backend
@@ -129,7 +136,7 @@ class TSNE(BaseTSNE):
 
         if isinstance(self._init, str) and self._init == "pca" and issparse(X):
             raise TypeError(
-                "PCA initialization is currently not suported "
+                "PCA initialization is currently not supported "
                 "with the sparse input matrix. Use "
                 'init="random" instead.'
             )
@@ -183,15 +190,19 @@ class TSNE(BaseTSNE):
                     )
 
         if self.method == "barnes_hut":
-            X = self._validate_data(
+            X = validate_data(
+                self,
                 X,
                 accept_sparse=["csr"],
                 ensure_min_samples=2,
                 dtype=[np.float32, np.float64],
             )
         else:
-            X = self._validate_data(
-                X, accept_sparse=["csr", "csc", "coo"], dtype=[np.float32, np.float64]
+            X = validate_data(
+                self,
+                X,
+                accept_sparse=["csr", "csc", "coo"],
+                dtype=[np.float32, np.float64],
             )
 
         if self.metric == "precomputed":

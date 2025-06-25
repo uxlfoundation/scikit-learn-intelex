@@ -18,23 +18,25 @@
 Quick Start
 ####################
 
-Get ready to elevate your |sklearn| code with |intelex| and experience the benefits of accelerated performance in just a few simple steps.
+Get ready to elevate your |sklearn| code with |sklearnex| and experience the benefits of accelerated performance in just a few simple steps.
 
 Compatibility with Scikit-learn*
 ---------------------------------
 
-|intelex| is compatible with the latest stable releases of |sklearn| - see :ref:`software-requirements` for more details.
+|sklearnex| is compatible with the latest stable releases of |sklearn| - see :ref:`software-requirements` for more details.
 
-Integrate |intelex|
---------------------
+Integrate |sklearnex|
+----------------------
+
+.. _patching:
 
 Patching
 **********************
 
-Once you install the |intelex|, you can replace estimator classes (algorithms) that exist in the ``sklearn`` module from |sklearn| with their optimized versions from the extension.
-This action is called `patching`. This is not a permanent change so you can always undo the patching if necessary.
+Once you install the |sklearnex|, you can replace estimator classes (algorithms) that exist in the ``sklearn`` module from |sklearn| with their optimized versions from the extension.
+This action is called *patching* or `monkey patching <https://en.wikipedia.org/wiki/Monkey_patch>`__. This is not a permanent change so you can always undo the patching if necessary.
 
-To patch |sklearn| with the |intelex|, the following methods can be used:
+To patch |sklearn| with the |sklearnex|, the following methods can be used:
 
 .. list-table::
    :header-rows: 1
@@ -70,7 +72,7 @@ They support different enabling scenarios while producing the same result.
 
 **Example**
 
-This example shows how to patch |sklearn| by modifing your script. To make sure that patching is registered by the scikit-learn estimators, always import module ``sklearn`` after these lines.
+This example shows how to patch |sklearn| by modifying your script. To make sure that patching is registered by the scikit-learn estimators, always import module ``sklearn`` after these lines.
 
 .. code-block:: python
   :caption: Example: Drop-In Patching
@@ -159,7 +161,7 @@ With global patching, you can:
 Unpatching
 **********************
 
-To undo the patch (also called `unpatching`) is to return the ``sklearn`` module to the original implementation and
+To undo the patch (also called *unpatching*) is to return the ``sklearn`` module to the original implementation and
 replace patched estimators with the stock |sklearn| estimators.
 
 To unpatch successfully, you must reimport the ``sklearn`` module(s)::
@@ -174,14 +176,14 @@ Installation
 
 .. contents:: :local:
 
-.. tip:: To prevent version conflicts, we recommend creating and activating a new environment for |intelex|.
+.. tip:: To prevent version conflicts, we recommend creating and activating a new environment for |sklearnex|.
 
 Install from PyPI
 **********************
 
 Recommended by default.
 
-To install |intelex|, run:
+To install |sklearnex|, run:
 
 ::
 
@@ -199,18 +201,20 @@ To install |intelex|, run:
    * - Devices
      - CPU, GPU
    * - Modes
-     - Single, SPMD
+     - Single, SPMD (Linux* only)
 
 .. tip:: Running on GPU involves additional dependencies, see :doc:`oneapi-gpu`. SPMD mode has additional requirements on top of GPU ones, see :doc:`distributed-mode` for details.
 
 .. note:: Wheels are only available for x86-64 architecture.
 
-Install from Anaconda* Cloud
-********************************************
+Install through Conda
+*********************
 
-To prevent version conflicts, we recommend installing `scikit-learn-intelex` into a new conda environment.
+To prevent version conflicts, we recommend installing ``scikit-learn-intelex`` into a new conda environment.
 
-*Note: the main Anaconda channel also provides distributions of scikit-learn-intelex, but it does not provide the latest versions, nor does it provide GPU-enabled builds. It is highly recommended to install it from either Intel's channel or conda-forge instead.*
+.. note::
+  The main Anaconda channel also provides distributions of ``scikit-learn-intelex``, but it does not provide the latest versions, nor does
+  it provide GPU-enabled builds. It is highly recommended to install ``scikit-learn-intelex`` from either Intel's channel or from conda-forge instead.
 
 .. tabs::
 
@@ -218,9 +222,20 @@ To prevent version conflicts, we recommend installing `scikit-learn-intelex` int
 
       Recommended for the Intel® Distribution for Python users.
 
-      To install, run::
+      To install in a fresh environment: ::
 
-        conda install -c https://software.repos.intel.com/python/conda/ scikit-learn-intelex
+        conda create -n sklex -c https://software.repos.intel.com/python/conda/ -c conda-forge --override-channels scikit-learn-intelex
+        conda activate sklex
+
+      To install in an existing environment: ::
+
+        conda install -c https://software.repos.intel.com/python/conda/ -c conda-forge --override-channels scikit-learn-intelex
+
+      .. warning::
+        Packages from the Intel channel are meant to be used together with dependencies from the **conda-forge** channel, and might not
+        work correctly when used in an environment where packages from the ``anaconda`` default channel have been installed. It is
+        advisable to use the `miniforge <https://github.com/conda-forge/miniforge>`__ installer for ``conda``/``mamba``, as it comes with
+        ``conda-forge`` as the only default channel.
 
       .. list-table:: **Supported Configurations**
          :align: left
@@ -232,14 +247,19 @@ To prevent version conflicts, we recommend installing `scikit-learn-intelex` int
          * - Devices
            - CPU, GPU
          * - Modes
-           - Single, SPMD
+           - Single, SPMD (Linux* only)
 
 
    .. tab:: Conda-Forge channel
 
-      To install, run::
+      To install in a fresh environment: ::
 
-        conda install -c conda-forge scikit-learn-intelex
+        conda create -n sklex -c conda-forge --override-channels scikit-learn-intelex
+        conda activate sklex
+
+      To install in an existing environment: ::
+
+        conda install -c conda-forge --override-channels scikit-learn-intelex
 
       .. list-table:: **Supported Configurations**
          :align: left
@@ -251,7 +271,7 @@ To prevent version conflicts, we recommend installing `scikit-learn-intelex` int
          * - Devices
            - CPU, GPU
          * - Modes
-           - Single, SPMD
+           - Single, SPMD (Linux* only)
 
 .. tip:: Running on GPU involves additional dependencies, see :doc:`oneapi-gpu`.  SPMD mode has additional requirements on top of GPU ones, see :doc:`distributed-mode` for details.
 
@@ -262,7 +282,7 @@ To prevent version conflicts, we recommend installing `scikit-learn-intelex` int
 Build from Sources
 **********************
 
-See `Installation instructions <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/INSTALL.md#build-from-sources>`_ to build |intelex| from the sources.
+See `Installation instructions <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/INSTALL.md#build-from-sources>`_ to build |sklearnex| from the sources.
 
 Install Intel*(R) AI Tools
 ****************************
@@ -272,7 +292,7 @@ Download the Intel AI Tools `here <https://www.intel.com/content/www/us/en/devel
 Release Notes
 -------------------
 
-See the `Release Notes <https://github.com/uxlfoundation/scikit-learn-intelex/releases>`_ for each version of |intelex|.
+See the `Release Notes <https://github.com/uxlfoundation/scikit-learn-intelex/releases>`_ for each version of |sklearnex|.
 
 System Requirements
 --------------------
@@ -299,7 +319,7 @@ Hardware Requirements
       - Any Intel® GPU supported by both `DPC++ <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`_ and `oneMKL <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/oneapi-math-kernel-library-system-requirements.html>`_
 
 
-.. tip:: Intel(R) processors provide better performance than other CPUs. Read more about hardware comparison in our :ref:`blogs <blogs>`.
+.. tip:: Read more about hardware comparison in our :ref:`blogs <blogs>`.
 
 .. _software-requirements:
 
@@ -324,7 +344,7 @@ Software Requirements
 
          If you use accelerators (e.g. GPUs), refer to `oneAPI DPC++/C++ Compiler System Requirements <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`_.
 
-|intelex| is compatible with the latest stable releases of |sklearn|:
+|sklearnex| is compatible with the latest stable releases of |sklearn|:
 
 * 1.0.X
 * 1.1.X
@@ -333,10 +353,11 @@ Software Requirements
 * 1.4.X
 * 1.5.X
 * 1.6.X
+* 1.7.X
 
 Memory Requirements
 **********************
-By default, algorithms in |intelex| run in the multi-thread mode. This mode uses all available threads.
+By default, algorithms in |sklearnex| run in the multi-thread mode. This mode uses all available threads.
 Optimized scikit-learn estimators can consume more RAM than their corresponding unoptimized versions.
 
 .. list-table::
@@ -347,10 +368,10 @@ Optimized scikit-learn estimators can consume more RAM than their corresponding 
      - Single-thread mode
      - Multi-thread mode
    * - SVM
-     - Both |sklearn| and |intelex| consume approximately the same amount of RAM.
-     - In |intelex|, an algorithm with ``N`` threads consumes ``N`` times more RAM.
+     - Both |sklearn| and |sklearnex| consume approximately the same amount of RAM.
+     - In |sklearnex|, an algorithm with ``N`` threads consumes ``N`` times more RAM.
 
-In all |intelex| algorithms with GPU support, computations run on device memory.
+In all |sklearnex| algorithms with GPU support, computations run on device memory.
 The device memory must be large enough to store a copy of the entire dataset.
 You may also require additional device memory for internal arrays that are used in computation.
 
