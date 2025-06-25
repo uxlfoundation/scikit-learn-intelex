@@ -33,11 +33,11 @@ __global_queue = None
 # dictionary of generic dlpack queues for reuse
 __dlpack_queue = {}
 # Special queue for non CPU, non SYCL data associated with dlpack
-__other_queue = SimpleNamespace(sycl_device=SimpleNamespace(is_cpu=False))
+__non_queue = SimpleNamespace(sycl_device=SimpleNamespace(is_cpu=False))
 
 
 def __create_sycl_queue(target):
-    if isinstance(target, SyclQueue) or target is None or target is __other_queue:
+    if isinstance(target, SyclQueue) or target is None or target is __non_queue:
         return target
     if isinstance(target, (str, int)):
         return SyclQueue(target)
@@ -106,7 +106,7 @@ def _get_dlpack_queue(obj: object) -> SyclQueue:
         #  device. This will trigger an error
         # or a fallback if "fallback_to_host" is
         # set in the config
-        return __other_queue
+        return __non_queue
 
     if is_torch_tensor(obj):
         return get_torch_queue(obj)
@@ -167,7 +167,7 @@ def from_data(*data):
         if (data_dev and global_dev) is not None and data_dev != global_dev:
             # when all data exists on other devices (e.g. not CPU or SYCL devices)
             # failure will come in backend selection occuring in
-            # sklearnex._device_offload._get_backend when using __other_queue
+            # sklearnex._device_offload._get_backend when using __non_queue
             raise ValueError(
                 "Data objects are located on different target devices or not on selected device."
             )
