@@ -23,6 +23,7 @@ from onedal.utils._third_party import SyclQueue, dpctl_available
 
 if dpctl_available:
     import dpctl
+
     queue_creation_err = dpctl._sycl_queue.SyclQueueCreationError
 else:
     queue_creation_err = (RuntimeError, ValueError)
