@@ -30,7 +30,8 @@ from ._third_party import SyclQueue, is_torch_tensor
 __fallback_queue = object()
 # single instance of global queue
 __global_queue = None
-# dictionary of generic dlpack queues for reuse
+# dictionary of generic SYCL queues with default SYCL contexts for
+# reuse
 __dlpack_queue = {}
 # Special queue for non CPU, non SYCL data associated with dlpack
 __non_queue = SimpleNamespace(sycl_device=SimpleNamespace(is_cpu=False))
