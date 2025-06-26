@@ -144,6 +144,7 @@ def convert_sklearnex_queue(func: Callable) -> Callable:
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             return SyclQueue(func(*args, **kwargs)._get_capsule())
+
         return wrapper
 
     else:
@@ -214,6 +215,6 @@ def is_torch_tensor(x: object) -> bool:
     Returns
     -------
     is_torch : bool
-        Flag if subclass of dpctl.tensor.usm_ndarray.
+        Flag if subclass of torch.Tensor.
     """
     return _is_subclass_fast(type(x), "torch", "Tensor")

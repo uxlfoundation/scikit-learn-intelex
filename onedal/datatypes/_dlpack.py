@@ -34,7 +34,7 @@ def get_torch_queue(torchxpu, array):
 def dlpack_to_numpy(obj, device):
     # check dlpack data location.
     if device() != cpu_dlpack_device:
-        if hasattr(item, "to_device"):
+        if hasattr(obj, "to_device"):
             # use of the "cpu" string as device not officially part of
             # the array api standard but widely supported
             item = obj.to_device("cpu")
