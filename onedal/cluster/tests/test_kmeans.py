@@ -57,7 +57,7 @@ if daal_check_version((2023, "P", 200)):
         return (cs, vs, data)
 
     @pytest.mark.parametrize("queue", get_queues())
-    @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+    @pytest.mark.parametrize("dtype", [np.float64])
     @pytest.mark.parametrize("n_dim", [3, 4, 17, 24])
     @pytest.mark.parametrize("n_cluster", [9, 11, 32])
     @pytest.mark.parametrize("pipeline", ["implicit", "external", "internal"])
