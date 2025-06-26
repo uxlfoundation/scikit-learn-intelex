@@ -121,11 +121,11 @@ def lazy_import(*module_names: str) -> Callable:
 
 
 def convert_sklearnex_queue(func: Callable) -> Callable:
-    """Convert sklearnex pybind11-defined SyclQueue to a dpctl SyclQueue
+    """Convert sklearnex pybind11-defined SyclQueue to a dpctl SyclQueue.
 
     There are circumstances where the internal sklearnex pybind-11-defined
     SyclQueue generation is required due to gaps in dpctl.SyclQueue
-    initializer. This will change the return value of the function to a 
+    initializer. This will change the return value of the function to a
     dpctl.SyclQueue if dpctl is available, otherwise it will not wrap the
     function whatsoever.
 
@@ -138,13 +138,14 @@ def convert_sklearnex_queue(func: Callable) -> Callable:
     -------
     wrapped : callable
         Wrapped or original function depending on ``dpctl_available``.
-
     """
     if dpctl_available:
+
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             return SyclQueue(func(*args, **kwargs)._get_capsule())
         return wrapper
+
     else:
         return func
 
