@@ -223,6 +223,8 @@ python setup.py build_ext --inplace --force --abs-rpath --debug
 python setup.py build --abs-rpath --debug
 ```
 
+_**Note:** on Windows, this will only add debugging symbols for the `onedal` extension modules, but not for the `daal4py` extension module._
+
 ### Building with ASAN
 
 In order to use AddressSanitizer (ASan) together with `scikit-learn-intelex`, it's necessary to:
