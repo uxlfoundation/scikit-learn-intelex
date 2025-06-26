@@ -53,7 +53,7 @@ variables:
 jobs:
 - job: Docs
   pool:
-    vmImage: 'ubuntu-22.04'
+    vmImage: 'ubuntu-24.04'
   steps:
   - script: |
       bash .ci/scripts/describe_system.sh
