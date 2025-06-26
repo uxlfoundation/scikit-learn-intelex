@@ -30,7 +30,7 @@ else:
 
 
 # lru_cache is used to limit the number of SyclQueues generated
-@functools.lru_cache()
+# @functools.lru_cache()
 def get_queues(filter_: str = "cpu,gpu") -> list[SyclQueue]:
     """Get available dpctl.SycQueues for testing.
 
