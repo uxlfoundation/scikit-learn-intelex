@@ -208,14 +208,14 @@ class BaseLogisticRegression(metaclass=ABCMeta):
 
     def _predict(self, X):
         result = self._infer(X)
-        sua_iface, xp, _ = _get_sycl_namespace(X)
+        _, xp, _ = _get_sycl_namespace(X)
         y = from_table(result.responses, like=X)
         y = xp.take(xp.asarray(self.classes_), xp.reshape(y, (-1,)), axis=0)
         return y
 
     def _predict_proba(self, X):
         result = result = self._infer(X)
-        sua_iface, xp, _ = _get_sycl_namespace(X)
+        _, xp, _ = _get_sycl_namespace(X)
         y = from_table(result.probabilities, like=X)
         return xp.stack([1 - y, y], axis=1)
 
