@@ -242,9 +242,11 @@ def test_incremental_linear_regression_fit_spmd_random(
     inclin_spmd.fit(local_dpt_X, local_dpt_y)
     inclin.fit(dpt_X, dpt_y)
 
-    assert_allclose(inclin.coef_, inclin_spmd.coef_, atol=tol)
+    assert_allclose(_as_numpy(inclin.coef_), _as_numpy(inclin_spmd.coef_), atol=tol)
     if fit_intercept:
-        assert_allclose(inclin.intercept_, inclin_spmd.intercept_, atol=tol)
+        assert_allclose(
+            _as_numpy(inclin.intercept_), _as_numpy(inclin_spmd.intercept_), atol=tol
+        )
 
     y_pred_spmd = inclin_spmd.predict(dpt_X_test)
     y_pred = inclin.predict(dpt_X_test)
@@ -325,9 +327,11 @@ def test_incremental_linear_regression_partial_fit_spmd_random(
         inclin_spmd.partial_fit(local_dpt_X, local_dpt_y)
         inclin.partial_fit(dpt_X, dpt_y)
 
-    assert_allclose(inclin.coef_, inclin_spmd.coef_, atol=tol)
+    assert_allclose(_as_numpy(inclin.coef_), _as_numpy(inclin_spmd.coef_), atol=tol)
     if fit_intercept:
-        assert_allclose(inclin.intercept_, inclin_spmd.intercept_, atol=tol)
+        assert_allclose(
+            _as_numpy(inclin.intercept_), _as_numpy(inclin_spmd.intercept_), atol=tol
+        )
 
     y_pred_spmd = inclin_spmd.predict(dpt_X_test)
     y_pred = inclin.predict(dpt_X_test)

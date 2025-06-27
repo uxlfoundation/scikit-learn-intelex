@@ -170,10 +170,12 @@ class IncrementalLinearRegression(BaseLinearRegression):
             packed_coefficients = from_table(
                 result.model.packed_coefficients, like=self._outtype
             )
-            self.coef_, self.intercept_ = (
-                packed_coefficients[:, 1:].squeeze(),
-                packed_coefficients[:, 0].squeeze(),
+            self.coef_ = (
+                packed_coefficients[:, 1:]
+                if packed_coefficients.shape[1] > 1
+                else packed_coefficients[:, 1]
             )
+            self.intercept_ = packed_coefficients[:, 0]
             self._outtype = None
             self._need_to_finalize = False
 

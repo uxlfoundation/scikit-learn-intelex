@@ -102,7 +102,7 @@ class EmpiricalCovariance(BaseEmpiricalCovariance):
             Returns the instance itself.
         """
         use_raw_input = _get_config()["use_raw_input"] is True
-        sua_iface, _, _ = _get_sycl_namespace(X)
+        sua_iface, xp, _ = _get_sycl_namespace(X)
         if use_raw_input and sua_iface:
             queue = X.sycl_queue
 
@@ -123,6 +123,6 @@ class EmpiricalCovariance(BaseEmpiricalCovariance):
                 from_table(result.cov_matrix, like=X) * (X.shape[0] - 1) / X.shape[0]
             )
 
-        self.location_ = from_table(result.means, like=X).ravel()
+        self.location_ = xp.squeeze(from_table(result.means, like=X))
 
         return self
