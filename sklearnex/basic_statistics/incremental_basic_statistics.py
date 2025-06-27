@@ -27,11 +27,8 @@ from onedal.basic_statistics import (
 
 from .._config import get_config
 from .._device_offload import dispatch
-from .._utils import (
-    ExtensionEstimator,
-    PatchingConditionsChain,
-    _add_inc_serialization_note,
-)
+from .._utils import PatchingConditionsChain, _add_inc_serialization_note
+from ..base import oneDALEstimator
 from ..utils.validation import validate_data
 
 if sklearn_check_version("1.2"):
@@ -42,16 +39,19 @@ import warnings
 
 
 @control_n_jobs(decorated_methods=["partial_fit", "_onedal_finalize_fit"])
-class IncrementalBasicStatistics(ExtensionEstimator, BaseEstimator):
+class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
     """
-    Calculates basic statistics on the given data, allows for computation when the data are split into
-    batches. The user can use ``partial_fit`` method to provide a single batch of data or use the ``fit`` method to provide
-    the entire dataset.
+    Incremental estimator for basic statistics.
+
+    Calculates basic statistics on the given data, allows for computation
+    when the data are split into batches. The user can use ``partial_fit``
+    method to provide a single batch of data or use the ``fit`` method to
+    provide the entire dataset.
 
     Parameters
     ----------
-    result_options: string or list, default='all'
-        List of statistics to compute
+    result_options : str or list, default=str('all')
+        List of statistics to compute.
 
     batch_size : int, default=None
         The number of samples to use for each batch. Only used when calling
@@ -91,8 +91,9 @@ class IncrementalBasicStatistics(ExtensionEstimator, BaseEstimator):
             Second order moment of each feature over all samples.
 
         n_samples_seen_ : int
-            The number of samples processed by the estimator. Will be reset on
-            new calls to ``fit``, but increments across ``partial_fit`` calls.
+            The number of samples processed by the estimator. Will be reset
+            on new calls to ``fit``, but increments across ``partial_fit``
+            calls.
 
         batch_size_ : int
             Inferred batch size from ``batch_size``.
@@ -100,14 +101,14 @@ class IncrementalBasicStatistics(ExtensionEstimator, BaseEstimator):
         n_features_in_ : int
             Number of features seen during ``fit`` or  ``partial_fit``.
 
-    Note
-    ----
+    Notes
+    -----
     Attribute exists only if corresponding result option has been provided.
 
-    Note
-    ----
-    Names of attributes without the trailing underscore are
-    supported currently but deprecated in 2025.1 and will be removed in 2026.0
+    Names of attributes without the trailing underscore are supported
+    currently but deprecated in 2025.1 and will be removed in 2026.0.
+
+    Sparse data formats are not supported. Input dtype must be ``float32`` or ``float64``.
 
     %incremental_serialization_note%
 

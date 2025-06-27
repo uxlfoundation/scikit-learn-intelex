@@ -45,6 +45,11 @@ ARG_ABS_RPATH = "--abs-rpath"
 if ARG_ABS_RPATH in sys.argv:
     USE_ABS_RPATH = True
     sys.argv = [arg for arg in sys.argv if arg != ARG_ABS_RPATH]
+DEBUG_BUILD = False
+ARG_DEBUG_BUILD = "--debug"
+if ARG_DEBUG_BUILD in sys.argv:
+    DEBUG_BUILD = True
+    sys.argv = [arg for arg in sys.argv if arg != ARG_DEBUG_BUILD]
 
 IS_WIN = False
 IS_MAC = False
@@ -302,6 +307,9 @@ def get_build_options():
     eca += get_sdl_cflags()
     ela += get_sdl_ldflags()
 
+    if DEBUG_BUILD and not IS_WIN:
+        eca += ["-g"]
+
     if IS_MAC:
         eca.append("-stdlib=libc++")
         ela.append("-stdlib=libc++")
@@ -309,16 +317,20 @@ def get_build_options():
         ela.append("-Wl,-rpath,@loader_path/../../../")
     elif IS_WIN:
         ela.append("-IGNORE:4197")
-    elif IS_LIN and not any(
-        x in os.environ and "-g" in os.environ[x]
-        for x in ["CPPFLAGS", "CFLAGS", "LDFLAGS"]
-    ):
-        ela.append("-s")
     if IS_LIN:
         ela.append("-fPIC")
         ela.append(
             f"-Wl,-rpath,{(daal_lib_dir + ':') if USE_ABS_RPATH else ''}$ORIGIN/../../../"
         )
+        if (
+            not any(
+                x in os.environ and "-g" in os.environ[x]
+                for x in ["CPPFLAGS", "CFLAGS", "CXXFLAGS", "CC", "CXX", "LDFLAGS"]
+            )
+            and not USE_ABS_RPATH
+            and not DEBUG_BUILD
+        ):
+            ela.append("-s")
     return eca, ela, include_dir_plat
 
 
@@ -458,6 +470,7 @@ class onedal_build:
             use_abs_rpath=USE_ABS_RPATH,
             use_gcov=use_gcov,
             n_threads=n_threads,
+            debug_build=DEBUG_BUILD,
         )
         if is_onedal_iface:
             build_onedal("host")

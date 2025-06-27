@@ -25,7 +25,7 @@ from onedal._config import _get_config as onedal_get_config
 
 
 def get_config():
-    """Retrieve current values for configuration set by :func:`set_config`
+    """Retrieve current values for configuration set by :func:`set_config`.
 
     Returns
     -------
@@ -49,11 +49,11 @@ def set_config(
     use_raw_input=None,
     **sklearn_configs,
 ):
-    """Set global configuration
+    """Set global configuration.
 
     Parameters
     ----------
-    target_offload : string or dpctl.SyclQueue or None, default=None
+    target_offload : str or SyclQueue or None, default=None
         The device primarily used to perform computations.
         If string, expected to be "auto" (the execution context
         is deduced from input data location),
@@ -70,11 +70,16 @@ def set_config(
         Global default: True.
 
     use_raw_input : bool or None, default=None
-        .. deprecated:: 2026.0
         If True, uses the raw input data in some SPMD onedal backend computations
         without any checks on data consistency or validity.
         Not recommended for general use.
         Global default: False.
+
+        .. deprecated:: 2026.0
+
+    **sklearn_configs : kwargs
+        Scikit-learn configuration settings dependent on the installed version
+        of scikit-learn.
 
     See Also
     --------
@@ -85,6 +90,10 @@ def set_config(
     --------
     Using ``use_raw_input=True`` is not recommended for general use as it
     bypasses data consistency checks, which may lead to unexpected behavior.
+
+    Use of ``target_offload`` requires the DPC++ backend. Setting a
+    non-default value (e.g ``cpu`` or ``gpu``) without this backend active
+    will raise an error.
     """
 
     array_api_dispatch = sklearn_configs.get("array_api_dispatch", False)
@@ -106,12 +115,12 @@ def set_config(
 
 
 @contextmanager
-def config_context(**new_config):
-    """Context manager for global scikit-learn configuration
+def config_context(**new_config):  # numpydoc ignore=PR01,PR07
+    """Context manager for global scikit-learn configuration.
 
     Parameters
     ----------
-    target_offload : string or dpctl.SyclQueue or None, default=None
+    target_offload : str or SyclQueue or None, default=None
         The device primarily used to perform computations.
         If string, expected to be "auto" (the execution context
         is deduced from input data location),
@@ -134,7 +143,7 @@ def config_context(**new_config):
         Not recommended for general use.
         Global default: False.
 
-    Note
+    Notes
     -----
     All settings, not just those presently modified, will be returned to
     their previous values when the context manager is exited.

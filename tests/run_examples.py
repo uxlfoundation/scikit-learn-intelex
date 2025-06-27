@@ -27,7 +27,7 @@ from time import gmtime, strftime
 
 from daal4py import __has_dist__
 from daal4py.sklearn._utils import get_daal_version
-from onedal.utils._dpep_helpers import dpctl_available
+from onedal.utils._third_party import dpctl_available
 
 print("Starting examples validation")
 # First item is major version - 2021,
@@ -302,7 +302,7 @@ def run_all(args):
             "{}/{} examples passed/skipped, "
             "{} failed".format(success, num, num - success)
         )
-        print("Error(s) occured. Logs can be found in " + logdir)
+        print("Error(s) occurred. Logs can be found in " + logdir)
         return 4711
     print("{}/{} examples passed/skipped".format(success, num))
     return 0

@@ -35,22 +35,18 @@ if sklearn_check_version("1.2"):
 from onedal.linear_model import IncrementalRidge as onedal_IncrementalRidge
 
 from .._device_offload import dispatch, wrap_output_data
-from .._utils import (
-    ExtensionEstimator,
-    PatchingConditionsChain,
-    _add_inc_serialization_note,
-)
+from .._utils import PatchingConditionsChain, _add_inc_serialization_note
+from ..base import oneDALEstimator
 
 
 @control_n_jobs(
     decorated_methods=["fit", "partial_fit", "predict", "score", "_onedal_finalize_fit"]
 )
-class IncrementalRidge(
-    ExtensionEstimator, MultiOutputMixin, RegressorMixin, BaseEstimator
-):
+class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEstimator):
     """
     Incremental estimator for Ridge Regression.
-    Allows to train Ridge Regression if data is splitted into batches.
+
+    Allows to train Ridge Regression if data is split into batches.
 
     Parameters
     ----------
@@ -100,6 +96,10 @@ class IncrementalRidge(
 
     batch_size_ : int
         Inferred batch size from ``batch_size``.
+
+    Notes
+    -----
+    Sparse data formats are not supported. Input dtype must be ``float32`` or ``float64``.
 
     %incremental_serialization_note%
     """
@@ -245,8 +245,7 @@ class IncrementalRidge(
 
     def partial_fit(self, X, y, check_input=True):
         """
-        Incrementally fits the linear model with X and y. All of X and y is
-        processed as a single batch.
+        Incrementally fits with X and y. X and y are processed as a single batch.
 
         Parameters
         ----------
@@ -257,6 +256,9 @@ class IncrementalRidge(
         y : array-like of shape (n_samples,) or (n_samples, n_targets)
             Target values, where `n_samples` is the number of samples and
             `n_targets` is the number of targets.
+
+        check_input : bool, default=True
+            Run validate_data on X and y.
 
         Returns
         -------
@@ -285,10 +287,10 @@ class IncrementalRidge(
         ----------
         X : array-like of shape (n_samples, n_features)
             Training data, where `n_samples` is the number of samples and
-            `n_features` is the number of features. It is necessary for
-            `n_samples` to be not less than `n_features` if `fit_intercept`
-            is False and not less than `n_features` + 1 if `fit_intercept`
-            is True
+            ``n_features`` is the number of features. It is necessary for
+            ``n_samples`` to be not less than ``n_features`` if ``fit_intercept``
+            is False and not less than ``n_features`` + 1 if ``fit_intercept``
+            is True.
 
         y : array-like of shape (n_samples,) or (n_samples, n_targets)
             Target values, where `n_samples` is the number of samples and

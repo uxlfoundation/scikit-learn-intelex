@@ -85,19 +85,14 @@ To prevent version conflicts, we recommend to create and activate a new environm
 - Install into a newly created environment (recommended):
 
   ```bash
-  conda config --add channels conda-forge
-  conda config --set channel_priority strict
-  conda create -n env python=3.10 scikit-learn-intelex
+  conda create -n sklex -c conda-forge --override-channels scikit-learn-intelex
+  conda activate sklex
   ```
-
-> **_NOTE:_** If you do not specify the Python version, the latest one is downloaded. 
 
 - Install into your current environment:
 
   ```bash
-  conda config --add channels conda-forge
-  conda config --set channel_priority strict
-  conda install scikit-learn-intelex
+  conda install -c conda-forge scikit-learn-intelex
   ```
 
 ### Install Intel conda Channel
@@ -107,28 +102,21 @@ We recommend this installation for the users of Intel® Distribution for Python.
 - Install into a newly created environment (recommended):
 
   ```bash
-  conda config --add channels https://software.repos.intel.com/python/conda/
-  conda config --set channel_priority strict
-  conda create -n env python=3.10 scikit-learn-intelex
+  conda create -n sklex -c https://software.repos.intel.com/python/conda/ -c conda-forge --override-channels scikit-learn-intelex
+  conda activate sklex
   ```
-
-> **_NOTE:_** If you do not specify the Python version, the latest one is downloaded. 
 
 - Install into your current environment:
 
   ```bash
-  conda config --add channels https://software.repos.intel.com/python/conda/
-  conda config --set channel_priority strict
-  conda install scikit-learn-intelex
+  conda install -c https://software.repos.intel.com/python/conda/ -c conda-forge scikit-learn-intelex
   ```
 
-> **_NOTE:_** If you do not specify the version of Python, the latest one is downloaded. 
+**Note:** packages from the Intel channel are meant to be used together with dependencies from the **conda-forge** channel, and might not
+work correctly when used in an environment where packages from the `anaconda` default channel have been installed. It is
+advisable to use the [miniforge](https://github.com/conda-forge/miniforge) installer for `conda`/`mamba`, as it comes with
+`conda-forge` as the only default channel.
 
-- Install into your current environment:
-
-  ```bash
-  conda install scikit-learn-intelex
-  ```
 
 ## Build from Sources
 Extension for Scikit-learn* is easily built from the sources with the majority of the necessary prerequisites available with conda or pip. 
@@ -225,6 +213,59 @@ python setup.py build --abs-rpath
 ```
 
 **Note:** when building `scikit-learn-intelex` from source with this option, it will use the oneDAL library with which it was compiled. oneDAL has dependencies on other libraries such as TBB, which is also distributed as a python package through `pip` and as a `conda` package. By default, a conda environment will first try to load TBB from its own packages if it is installed in the environment, which might cause issues if oneDAL was compiled with a system TBB instead of a conda one. In such cases, it is advised to either uninstall TBB from pip/conda (it will be loaded from the oneDAL library which links to it), or modify the order of search paths in environment variables like `${LD_LIBRARY_PATH}`.
+
+### Debug Builds
+
+To build modules with debugging symbols and assertions enabled, pass argument `--debug` to the setup command - e.g.:
+
+```shell
+python setup.py build_ext --inplace --force --abs-rpath --debug
+python setup.py build --abs-rpath --debug
+```
+
+_**Note:** on Windows, this will only add debugging symbols for the `onedal` extension modules, but not for the `daal4py` extension module._
+
+### Building with ASAN
+
+In order to use AddressSanitizer (ASan) together with `scikit-learn-intelex`, it's necessary to:
+* Build both oneDAL and scikit-learn-intelex with ASan and with debug symbols (otherwise error traces will not be very informative).
+* Preload the ASan runtime when executing the Python process that imports `scikit-learn-intelex`.
+* Optionally, configure Python to use `malloc` as default allocator to reduce the number of false-positive leak reports.
+
+See the instructions on the oneDAL repository for building the library from source with ASAN enabled:
+https://github.com/uxlfoundation/oneDAL/blob/main/INSTALL.md
+
+When building `scikit-learn-intelex`, the system's default compiler is used unless specified otherwise through variables such as `$CXX`. In order to avoid issues with incompatible runtimes of ASan, one might want to change the compiler to ICX if oneDAL was built with ICX (the default for it).
+
+The compiler and flags to build with both ASan and debug symbols can be controlled through environment variables - **assuming a Linux system** (ASan on Windows has not been tested):
+```shell
+export CC="icx -fsanitize=address -g"
+export CXX="icpx -fsanitize=address -g"
+```
+
+_Hint: the Cython module `daal4py` that gets built through `build_ext` does not do incremental compilation, so one might want to add `ccache` into the compiler call for development purposes - e.g. `CXX="ccache icx  -fsanitize=address -g"`._
+
+The ASan runtime used by ICX is the same as the one by Clang. It's possible to preload the ASan runtime for GNU if that's the system's default through e.g. `LD_PRELOAD=libasan.so` or similar. However, one might need to specifically pass the paths from Clang to get the same ASan runtime as for oneDAL if that is not the system's default compiler:
+```shell
+export LD_PRELOAD="$(clang -print-file-name=libclang_rt.asan-x86_64.so)"
+```
+
+_Note: this requires both `clang` and its runtime libraries to be installed. If using toolkits from `conda-forge`, then using `libclang_rt` requires installing package `compiler-rt`, in addition to `clang` and `clangxx`._
+
+Then, the Python memory allocator can be set to `malloc` like this:
+```shell
+export PYTHONMALLOC=malloc
+```
+
+Putting it all together, the earlier examples building the library in-place and executing a python file with it become as follows:
+```shell
+source <path to ASan-enabled oneDAL env.sh>
+CC="ccache icx -fsanitize=address -g" CXX="ccache icpx -fsanitize=address -g" python setup.py build_ext --inplace --force --abs-rpath
+CC="icx -fsanitize=address -g" CXX="icpx -fsanitize=address -g" python setup.py build --abs-rpath
+LD_PRELOAD="$(clang -print-file-name=libclang_rt.asan-x86_64.so)" PYTHONMALLOC=malloc PYTHONPATH=$(pwd) python <python file.py>
+```
+
+_Be aware that ASan is known to generate many false-positive reports of memory leaks when used with oneDAL, NumPy, and SciPy._
 
 ## Build from Sources with `conda-build`
 

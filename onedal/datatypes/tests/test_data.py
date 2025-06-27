@@ -14,15 +14,17 @@
 # limitations under the License.
 # ==============================================================================
 
+import gc
+
 import numpy as np
 import pytest
 import scipy.sparse as sp
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_array_equal
 
 from onedal import _default_backend, _dpc_backend
 from onedal._device_offload import supports_queue
 from onedal.datatypes import from_table, to_table
-from onedal.utils._dpep_helpers import dpctl_available
+from onedal.utils._third_party import dpctl_available
 
 backend = _dpc_backend or _default_backend
 
@@ -599,7 +601,10 @@ def test_table___dlpack__(dataframe, queue, order, data_shape, dtype):
     if xp := getattr(X_df, "__array_namespace__", lambda: None)():
         X_out = xp.from_dlpack(X_table)
         X_temp = xp.asnumpy(X_out) if hasattr(xp, "asnumpy") else np.asarray(X)
-        assert_allclose(np.squeeze(X_temp), np.squeeze(X))
+        if X_temp.dtype == X.dtype:
+            assert_array_equal(np.squeeze(X_temp), np.squeeze(X))
+        else:
+            assert_allclose(np.squeeze(X_temp), np.squeeze(X))
     else:
         # only some numpy versions support array_api and from_dlpack
         pytest.skip(f"{dataframe} does not have an __array_namespace__ attribute")
@@ -609,4 +614,5 @@ def test_table___dlpack__(dataframe, queue, order, data_shape, dtype):
     capsule = X_table.__dlpack__()
     assert_allclose(np.squeeze(from_table(X_table)), np.squeeze(X))
     del capsule
+    gc.collect()
     assert_allclose(np.squeeze(from_table(X_table)), np.squeeze(X))

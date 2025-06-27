@@ -20,19 +20,24 @@ import os
 import pathlib
 import pkgutil
 import re
+import subprocess
 import sys
 import trace
 from contextlib import redirect_stdout
 from multiprocessing import Pipe, Process, get_context
 
 import pytest
+from sklearn.base import BaseEstimator
 from sklearn.utils import all_estimators
 
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal.tests.test_common import _check_primitive_usage_ban
+from onedal.tests.utils._dataframes_support import test_frameworks
+from sklearnex.base import oneDALEstimator
 from sklearnex.tests.utils import (
     PATCHED_MODELS,
     SPECIAL_INSTANCES,
+    UNPATCHED_MODELS,
     call_method,
     gen_dataset,
     gen_models_info,
@@ -115,7 +120,7 @@ def test_target_offload_ban():
         allowed_locations=TARGET_OFFLOAD_ALLOWED_LOCATIONS,
     )
     output = "\n".join(output)
-    assert output == "", f"target offloading is occuring in: \n{output}"
+    assert output == "", f"target offloading is occurring in: \n{output}"
 
 
 def _sklearnex_walk(func):
@@ -143,7 +148,7 @@ def test_class_trailing_underscore_ban(monkeypatch):
     estimators = all_estimators()  # list of tuples
     for name, obj in estimators:
         if "preview" not in obj.__module__ and "daal4py" not in obj.__module__:
-            # propeties also occur in sklearn, especially in deprecations and are expected
+            # properties also occur in sklearn, especially in deprecations and are expected
             # to error if queried and the estimator is not fitted
             assert all(
                 [
@@ -174,6 +179,65 @@ def test_all_estimators_covered(monkeypatch):
     assert (
         uncovered_estimators == []
     ), f"{uncovered_estimators} are currently not included"
+
+
+def test_oneDALEstimator_inheritance(monkeypatch):
+    """All sklearnex estimators should inherit the oneDALEstimator class, sklearnex-only
+    estimators should have it inherit oneDAL estimator one step before BaseEstimator in the
+    mro.  This is only strictly set for non-preview estimators"""
+    monkeypatch.setattr(pkgutil, "walk_packages", _sklearnex_walk(pkgutil.walk_packages))
+    estimators = all_estimators()  # list of tuples
+    for name, obj in estimators:
+        if "preview" not in obj.__module__ and "daal4py" not in obj.__module__:
+            assert issubclass(
+                obj, oneDALEstimator
+            ), f"{name} does not inherit the oneDALEstimator"
+            # oneDAL estimator should be inherited from before BaseEstimator
+            mro = obj.__mro__
+            assert mro.index(oneDALEstimator) < mro.index(
+                BaseEstimator
+            ), f"incorrect mro in {name}"
+            if not any([issubclass(obj, est) for est in UNPATCHED_MODELS.values()]):
+                assert (
+                    mro[mro.index(oneDALEstimator) + 1] is BaseEstimator
+                ), f"oneDALEstimator should be inherited just before BaseEstimator in {name}"
+
+
+def test_frameworks_lazy_import(monkeypatch):
+    """Check that all estimators defined in sklearnex do not actively
+    load data frameworks which are not numpy or pandas.
+    """
+    active = ["numpy", "pandas", "dpctl.tensor"]
+    # handle naming conventions for data frameworks in testing
+    frameworks = test_frameworks.replace("dpctl", "dpctl.tensor")
+    frameworks = frameworks.replace("array_api", "array_api_strict")
+    lazy = ",".join([i for i in frameworks.split(",") if i not in active])
+    if not lazy:
+        pytest.skip("No lazily-imported data frameworks available in testing")
+
+    monkeypatch.setattr(pkgutil, "walk_packages", _sklearnex_walk(pkgutil.walk_packages))
+    estimators = all_estimators()  # list of tuples
+
+    filtered_modules = []
+    for name, obj in estimators:
+        # do not test spmd or preview, as they are exempt
+        if "preview" not in obj.__module__ and "spmd" not in obj.__module__:
+            filtered_modules += [obj.__module__]
+
+    modules = ",".join(filtered_modules)
+
+    # import all modules with estimators and check sys.modules for the lazily-imported data
+    # frameworks. It is done in a subprocess to isolate the impact of testing infrastructure
+    # on sys.modules, which may have actively loaded those frameworks into the test env
+    teststr = (
+        "import sys,{mod};assert all([i not in sys.modules for i in '{l}'.split(',')])"
+    )
+    cmd = [sys.executable, "-c", teststr.format(mod=modules, l=lazy)]
+
+    try:
+        subprocess.run(cmd, check=True, capture_output=True, text=True)
+    except subprocess.CalledProcessError as e:
+        raise AssertionError(f"a framework in '{lazy}' is being actively loaded") from e
 
 
 def _fullpath(path):

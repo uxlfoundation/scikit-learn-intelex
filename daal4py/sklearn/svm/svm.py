@@ -158,7 +158,7 @@ def _daal4py_kf(kernel, X_fptype, gamma=1.0, is_sparse=False):
         kf = daal4py.kernel_function_linear(fptype=X_fptype, method=method)
     else:
         raise ValueError(
-            "_daal4py_fit received unexpected kernel specifiction {}.".format(kernel)
+            "_daal4py_fit received unexpected kernel specification {}.".format(kernel)
         )
 
     return kf

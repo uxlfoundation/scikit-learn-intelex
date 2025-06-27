@@ -157,7 +157,6 @@ dal::table convert_to_table(py::object obj, py::object q_obj, bool recursed) {
 DLDevice get_dlpack_device(const dal::array<byte_t>& array) {
     DLDevice device;
 #ifdef ONEDAL_DATA_PARALLEL
-    // std::optional<sycl::queue>
     auto queue = array.get_queue();
     device = queue.has_value()
                  ? DLDevice{ kDLOneAPI, static_cast<std::int32_t>(get_device_id(queue.value())) }
@@ -211,7 +210,7 @@ DLTensor construct_dlpack_tensor(const dal::array<byte_t>& array,
 static void free_capsule(PyObject* cap) {
     DLManagedTensor* dlm = nullptr;
     if (PyCapsule_IsValid(cap, "dltensor")) {
-        dlm = reinterpret_cast<DLManagedTensor*>(PyCapsule_GetPointer(cap, "dltensor"));
+        dlm = static_cast<DLManagedTensor*>(PyCapsule_GetPointer(cap, "dltensor"));
         if (dlm->deleter) {
             dlm->deleter(dlm);
         }
@@ -249,7 +248,7 @@ py::capsule construct_dlpack(const dal::table& input) {
     };
 
     // create capsule
-    py::capsule capsule(reinterpret_cast<void*>(dlm), "dltensor", free_capsule);
+    py::capsule capsule(static_cast<void*>(dlm), "dltensor", free_capsule);
     return capsule;
 }
 

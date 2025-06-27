@@ -21,16 +21,17 @@
 
 <h3> Speed up your scikit-learn applications for CPUs and GPUs across single- and multi-node configurations
 
-[Releases](https://github.com/uxlfoundation/scikit-learn-intelex/releases)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Documentation](https://uxlfoundation.github.io/scikit-learn-intelex/)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Examples](https://github.com/uxlfoundation/scikit-learn-intelex/tree/master/examples/notebooks)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Support]()&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;[License](https://github.com/uxlfoundation/scikit-learn-intelex/blob/master/LICENSE)&nbsp;&nbsp;&nbsp;
+[Releases](https://github.com/uxlfoundation/scikit-learn-intelex/releases)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Documentation](https://uxlfoundation.github.io/scikit-learn-intelex/)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Examples](https://github.com/uxlfoundation/scikit-learn-intelex/tree/master/examples/notebooks)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Support](SUPPORT.md)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;[License](https://github.com/uxlfoundation/scikit-learn-intelex/blob/master/LICENSE)&nbsp;&nbsp;&nbsp;
 
 
 [![Build Status](https://dev.azure.com/daal/daal4py/_apis/build/status/CI?branchName=main)](https://dev.azure.com/daal/daal4py/_build/latest?definitionId=9&branchName=main)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/21716/badge.svg)](https://scan.coverity.com/projects/daal4py)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/uxlfoundation/scikit-learn-intelex/badge)](https://securityscorecards.dev/viewer/?uri=github.com/uxlfoundation/scikit-learn-intelex)
 [![Join the community on GitHub Discussions](https://badgen.net/badge/join%20the%20discussion/on%20github/black?icon=github)](https://github.com/uxlfoundation/scikit-learn-intelex/discussions)
 [![PyPI Version](https://img.shields.io/pypi/v/scikit-learn-intelex)](https://pypi.org/project/scikit-learn-intelex/)
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/scikit-learn-intelex)](https://anaconda.org/conda-forge/scikit-learn-intelex)
-[![python version](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)
-[![scikit-learn supported versions](https://img.shields.io/badge/sklearn-1.0%20%7C%201.2%20%7C%201.3%20%7C%201.4%20%7C%201.5%20%7C%201.6-blue)](https://img.shields.io/badge/sklearn-1.0%20%7C%201.2%20%7C%201.3%20%7C%201.4%20%7C%201.5%20%7C%201.6-blue)
+[![python version](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)
+[![scikit-learn supported versions](https://img.shields.io/badge/sklearn-1.0%20%7C%201.2%20%7C%201.3%20%7C%201.4%20%7C%201.5%20%7C%201.6%20%7C%201.7-blue)](https://img.shields.io/badge/sklearn-1.0%20%7C%201.2%20%7C%201.3%20%7C%201.4%20%7C%201.5%20%7C%201.6%20%7C%201.7-blue)
 
 ---
 </h3>
@@ -46,7 +47,7 @@ The software acceleration is achieved with vector instructions, AI hardware-spec
 With Extension for Scikit-learn, you can:
 
 * Speed up training and inference by up to 100x with equivalent mathematical accuracy
-* Benefit from performance improvements across different CPU hardware configurations, including GPUs and multi-GPU configurations
+* Benefit from performance improvements across different hardware configurations, including [GPUs](https://uxlfoundation.github.io/scikit-learn-intelex/latest/oneapi-gpu.html) and [multi-GPU](https://uxlfoundation.github.io/scikit-learn-intelex/latest/distributed-mode.html) configurations
 * Integrate the extension into your existing Scikit-learn applications without code modifications
 * Continue to use the open-source scikit-learn API
 * Enable and disable the extension with a couple of lines of code or at the command line
@@ -59,9 +60,11 @@ With Extension for Scikit-learn, you can:
 
 ## Optimizations
 
+Easiest way to benefit from accelerations from the extension is by patching scikit-learn with it:
+
 - **Enable CPU optimizations**
 
-    ```py
+    ```python
     import numpy as np
     from sklearnex import patch_sklearn
     patch_sklearn()
@@ -77,7 +80,7 @@ With Extension for Scikit-learn, you can:
 
     _Note: executing on GPU has [additional system software requirements](https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html) - see [details](https://uxlfoundation.github.io/scikit-learn-intelex/latest/oneapi-gpu.html)._
 
-    ```py
+    ```python
     import numpy as np
     from sklearnex import patch_sklearn, config_context
     patch_sklearn()
@@ -89,21 +92,50 @@ With Extension for Scikit-learn, you can:
     with config_context(target_offload="gpu:0"):
         clustering = DBSCAN(eps=3, min_samples=2).fit(X)
     ```
+
 :eyes: Check out available [notebooks](https://github.com/uxlfoundation/scikit-learn-intelex/tree/master/examples/notebooks) for more examples.
+
+### Usage without patching
+
+Alternatively, all functionalities are also available under a separate module which can be imported directly, without involving any patching.
+
+* To run on CPU:
+
+  ```python
+  import numpy as np
+  from sklearnex.cluster import DBSCAN
+
+  X = np.array([[1., 2.], [2., 2.], [2., 3.],
+                [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
+  clustering = DBSCAN(eps=3, min_samples=2).fit(X)
+  ```
+
+* To run on GPU:
+
+  ```python
+  import numpy as np
+  from sklearnex import config_context
+  from sklearnex.cluster import DBSCAN
+
+  X = np.array([[1., 2.], [2., 2.], [2., 3.],
+                [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
+  with config_context(target_offload="gpu:0"):
+      clustering = DBSCAN(eps=3, min_samples=2).fit(X)
+  ```
 
 ## Installation
 
 To install Extension for Scikit-learn, run:
 
-```
+```shell
 pip install scikit-learn-intelex
 ```
 
-See all installation instructions in the [Installation Guide](https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/INSTALL.md).
+Package is also offered through other channels such as conda-forge. See all installation instructions in the [Installation Guide](https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/INSTALL.md).
 
 ## Integration
 
-The software acceleration is achieved through patching. It means, replacing the stock scikit-learn algorithms with their optimized versions provided by the extension.
+The easiest way of accelerating scikit-learn workflows with the extension is through through [patching](https://uxlfoundation.github.io/scikit-learn-intelex/latest/quick-start.html#patching), which replaces the stock scikit-learn algorithms with their optimized versions provided by the extension using the same namespaces in the same modules as scikit-learn.
 
 The patching only affects [supported algorithms and their parameters](https://uxlfoundation.github.io/scikit-learn-intelex/latest/algorithms.html).
 You can still use not supported ones in your code, the package simply fallbacks into the stock version of scikit-learn.
@@ -112,16 +144,25 @@ You can still use not supported ones in your code, the package simply fallbacks 
 
 To patch scikit-learn, you can:
 * Use the following command-line flag:
-  ```
+  ```shell
   python -m sklearnex my_application.py
   ```
 * Add the following lines to the script:
-  ```
+  ```python
   from sklearnex import patch_sklearn
   patch_sklearn()
   ```
 
-:eyes: Read about [other ways to patch scikit-learn](https://uxlfoundation.github.io/scikit-learn-intelex/index.html#usage).
+:eyes: Read about [other ways to patch scikit-learn](https://uxlfoundation.github.io/scikit-learn-intelex/latest/quick-start.html#patching).
+
+As an alternative, accelerated classes from the extension can also be imported directly without patching, thereby allowing to keep them separate from stock scikit-learn ones - for example:
+
+```python
+from sklearnex.cluster import DBSCAN as exDBSCAN
+from sklearn.cluster import DBSCAN as stockDBSCAN
+
+# ...
+```
 
 ## Documentation
 

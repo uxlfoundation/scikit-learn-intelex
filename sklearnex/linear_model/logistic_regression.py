@@ -38,19 +38,11 @@ if daal_check_version((2024, "P", 1)):
 
     from .._config import get_config
     from .._device_offload import dispatch, wrap_output_data
-    from .._utils import PatchableEstimator, PatchingConditionsChain, get_patch_message
+    from .._utils import PatchingConditionsChain, get_patch_message
+    from ..base import oneDALEstimator
     from ..utils.validation import validate_data
 
     _sparsity_enabled = daal_check_version((2024, "P", 700))
-
-    class BaseLogisticRegression(ABC):
-        def _onedal_gpu_save_attributes(self):
-            assert hasattr(self, "_onedal_estimator")
-            self.classes_ = self._onedal_estimator.classes_
-            self.coef_ = self._onedal_estimator.coef_
-            self.intercept_ = self._onedal_estimator.intercept_
-            self.n_features_in_ = self._onedal_estimator.n_features_in_
-            self.n_iter_ = self._onedal_estimator.n_iter_
 
     @control_n_jobs(
         decorated_methods=[
@@ -61,9 +53,7 @@ if daal_check_version((2024, "P", 1)):
             "score",
         ]
     )
-    class LogisticRegression(
-        PatchableEstimator, _sklearn_LogisticRegression, BaseLogisticRegression
-    ):
+    class LogisticRegression(oneDALEstimator, _sklearn_LogisticRegression):
         __doc__ = _sklearn_LogisticRegression.__doc__
 
         if sklearn_check_version("1.2"):
@@ -109,6 +99,14 @@ if daal_check_version((2024, "P", 1)):
             )
 
         _onedal_cpu_fit = daal4py_fit
+
+        def _onedal_gpu_save_attributes(self):
+            assert hasattr(self, "_onedal_estimator")
+            self.classes_ = self._onedal_estimator.classes_
+            self.coef_ = self._onedal_estimator.coef_
+            self.intercept_ = self._onedal_estimator.intercept_
+            self.n_features_in_ = self._onedal_estimator.n_features_in_
+            self.n_iter_ = self._onedal_estimator.n_iter_
 
         def fit(self, X, y, sample_weight=None):
             if sklearn_check_version("1.2"):
@@ -210,12 +208,11 @@ if daal_check_version((2024, "P", 1)):
                     ),
                     (self.class_weight is None, "Class weight is not supported"),
                     (self.solver == "newton-cg", "Only newton-cg solver is supported."),
-                    (
-                        self.multi_class != "multinomial",
-                        "multi_class parameter is not supported.",
-                    ),
                     (self.warm_start == False, "Warm start is not supported."),
-                    (self.l1_ratio is None, "l1 ratio is not supported."),
+                    (
+                        not self.l1_ratio,
+                        "l1 ratio is not supported.",
+                    ),
                     (sample_weight is None, "Sample weight is not supported."),
                     (
                         target_type == "binary",

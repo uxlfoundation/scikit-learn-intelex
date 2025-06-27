@@ -18,7 +18,7 @@ import functools
 
 import pytest
 
-from ...utils._dpep_helpers import dpctl_available
+from ...utils._third_party import dpctl_available
 
 if dpctl_available:
     import dpctl
@@ -63,6 +63,8 @@ def get_memory_usm():
 
 
 def is_dpctl_device_available(targets):
+    if not isinstance(targets, (list, tuple)):
+        raise TypeError("`targets` should be a list or tuple of strings.")
     if dpctl_available:
         for device in targets:
             if device == "cpu" and not dpctl.has_cpu_devices():

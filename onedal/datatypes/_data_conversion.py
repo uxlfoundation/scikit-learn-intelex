@@ -14,6 +14,8 @@
 # limitations under the License.
 # ==============================================================================
 
+from types import ModuleType
+
 import numpy as np
 
 from onedal import _default_backend as backend
@@ -33,25 +35,31 @@ def _convert_one_to_table(arg, queue=None):
 def to_table(*args, queue=None):
     """Create oneDAL tables from scalars and/or arrays.
 
-    Note: this implementation can be used with scipy.sparse, numpy ndarrays,
-    dpctl/dpnp usm_ndarrays, array API standard arrays, and scalars. Tables
-    will use pointers to the original array data. Scalars and non-contiguous
-    arrays will be copies. Arrays may be modified in-place by oneDAL during
-    computation. This works for data located on CPU and SYCL-enabled Intel GPUs.
-    Each array may only be of a single datatype (i.e. each must be homogeneous).
-
     Parameters
     ----------
-    *args : scalar, numpy array, sycl_usm_ndarray, array API standard array,
-        csr_matrix, or csr_array
-        arg1, arg2... The arrays should be given as arguments.
+    *args : {scalar, numpy array, sycl_usm_ndarray, csr_matrix, or csr_array}
+        Arguments to be individually converted to oneDAL tables.
+
+    queue : SyclQueue or None, default=None
+        SYCL Queue object to be associated with the oneDAL tables. Default
+        value None causes no change in data location or queue.
 
     queue : SyclQueue or None, default=None
         A dpctl or oneDAL backend python representation of a SYCL Queue or None
 
     Returns
     -------
-    tables: oneDAL homogeneous tables
+    tables: {oneDAL homogeneous tables}
+        Converted oneDAL tables.
+
+    Notes
+    -----
+        Tables will use pointers to the original array data. Scalars
+        and non-contiguous arrays will be copies. Arrays may be
+        modified in-place by oneDAL during computation. Transformation
+        is possible only for data located on CPU and SYCL-enabled Intel
+        GPUs. Each array may only be of a single data type (i.e. each
+        must be homogeneous).
     """
     return _apply_and_pass(_convert_one_to_table, *args, queue=queue)
 
