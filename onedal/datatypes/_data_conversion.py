@@ -110,7 +110,7 @@ def return_type_constructor(array):
             func = lambda x: from_usm(
                 xp.asarray(x)
                 if hasattr(x, "__sycl_usm_array_interface__")
-                else xp.asarray(backend.from_table(x), device=device, copy=False)
+                else xp.asarray(backend.from_table(x), device=device)
             )
     elif hasattr(array, "__array_namespace__"):
         func = array.__array_namespace__().from_dlpack
