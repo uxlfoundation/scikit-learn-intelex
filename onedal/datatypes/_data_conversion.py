@@ -19,7 +19,7 @@ import scipy.sparse as sp
 
 from onedal import _default_backend as backend
 
-from ..utils._third_party import lazy_import
+from ..utils._third_party import is_dpctl_tensor, is_dpnp_ndarray, lazy_import
 
 
 def _apply_and_pass(func, *args, **kwargs):
@@ -97,14 +97,14 @@ def return_type_constructor(array):
         # prioritized: it provides finer-grained control of SYCL queues and the
         # related SYCL devices which are generally unavailable via DLPack
         # representations (such as SYCL contexts, SYCL sub-devices, etc.).
-        if hasattr(array, "__array_namespace__"):
+        if is_dpctl_tensor(array):
             xp = array.__array_namespace__()
             func = lambda x: (
                 xp.asarray(x)
                 if hasattr(x, "__sycl_usm_array_interface__")
                 else xp.asarray(backend.from_table(x), device=device)
             )
-        elif hasattr(array, "_create_from_usm_ndarray"):  # signifier of dpnp < 0.19
+        elif is_dpnp_ndarray(array):
             xp = array._array_obj.__array_namespace__()
             from_usm = array._create_from_usm_ndarray
             func = lambda x: from_usm(
