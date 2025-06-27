@@ -15,6 +15,7 @@
 # ==============================================================================
 
 import numpy as np
+import scipy.sparse as sp
 
 from onedal import _default_backend as backend
 
@@ -85,9 +86,8 @@ def return_type_constructor(array):
     func : callable
         A function which takes in a single table input and returns an array.
     """
-    func = backend.from_table
-    if isinstance(array, np.ndarray) or array is None:
-        pass
+    if isinstance(array, np.ndarray) or array is None or sp.issparse(array):
+        func = backend.from_table
     elif hasattr(array, "__sycl_usm_array_interface__"):
         # oneDAL returns tables without sycl queues for CPU sycl queue inputs.
         # This workaround is necessary for the functional preservation
