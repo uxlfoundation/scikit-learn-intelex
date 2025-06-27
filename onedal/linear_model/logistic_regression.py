@@ -216,7 +216,6 @@ class BaseLogisticRegression(metaclass=ABCMeta):
     def _predict_proba(self, X):
         result = result = self._infer(X)
         sua_iface, xp, _ = _get_sycl_namespace(X)
-        queue = QM.get_global_queue()
         y = from_table(result.probabilities, like=X)
         return xp.stack([1 - y, y], axis=1)
 

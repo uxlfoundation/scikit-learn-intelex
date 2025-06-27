@@ -128,7 +128,7 @@ def from_table(*args, like=None):
     """Create 2 dimensional arrays from oneDAL tables.
 
     oneDAL tables are converted to numpy ndarrays, dpctl tensors, dpnp
-    ndarrays,or array API standard arrays of designated type.
+    ndarrays, or array API standard arrays of designated type.
 
     Parameters
     ----------
