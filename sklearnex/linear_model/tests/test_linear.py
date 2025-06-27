@@ -29,67 +29,10 @@ from onedal.tests.utils._dataframes_support import (
 from sklearnex.tests.utils import _IS_INTEL
 
 
-# Note: this is arranged as a fixture with a finalizer instead of as a parameter
-# 'True' / 'False' in order to undo the changes later so that it doesn't affect
-# other tests afterwards. It returns a function instead of making the change
-# directly, in order to avoid importing the estimator class before the import test
-# itself, but it still needs to import the class inside the the function that it
-# returns due to serialization logic in pytest causing differences w.r.t. current
-# closure where the function is called.
-@pytest.fixture(params=[False, True])
-def non_batched_route(request):
-    def change_parameters(queue, macro_block):
-        from sklearnex.linear_model import LinearRegression
-
-        if request.param and daal_check_version((2025, "P", 500)):
-            if queue and queue.sycl_device.is_gpu:
-                pytest.skip("Test for CPU-only functionality")
-            if macro_block is not None:
-                pytest.skip("Parameter combination with no effect")
-
-            non_batched_route.curr_cpu_max_cols_batched = (
-                LinearRegression.get_hyperparameters("fit").cpu_max_cols_batched
-            )
-            non_batched_route.curr_cpu_small_rows_threshold = (
-                LinearRegression.get_hyperparameters("fit").cpu_small_rows_threshold
-            )
-            non_batched_route.curr_cpu_small_rows_max_cols_batched = (
-                LinearRegression.get_hyperparameters(
-                    "fit"
-                ).cpu_small_rows_max_cols_batched
-            )
-            LinearRegression.get_hyperparameters("fit").cpu_max_cols_batched = 1
-            LinearRegression.get_hyperparameters("fit").cpu_small_rows_threshold = 1
-            LinearRegression.get_hyperparameters(
-                "fit"
-            ).cpu_small_rows_max_cols_batched = 1
-
-        elif request.param and not daal_check_version((2025, "P", 500)):
-            pytest.skip("Functionality introduced in later versions")
-
-    def restore_params():
-        from sklearnex.linear_model import LinearRegression
-
-        if request.param and daal_check_version((2025, "P", 500)):
-            LinearRegression.get_hyperparameters("fit").cpu_max_cols_batched = (
-                non_batched_route.curr_cpu_max_cols_batched
-            )
-            LinearRegression.get_hyperparameters("fit").cpu_small_rows_threshold = (
-                non_batched_route.curr_cpu_small_rows_threshold
-            )
-            LinearRegression.get_hyperparameters(
-                "fit"
-            ).cpu_small_rows_max_cols_batched = (
-                non_batched_route.curr_cpu_small_rows_max_cols_batched
-            )
-
-    request.addfinalizer(restore_params)
-    return change_parameters
-
-
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("macro_block", [None, 1024])
+@pytest.mark.parametrize("non_batched_route", [False, True])
 @pytest.mark.parametrize("overdetermined", [False, True])
 @pytest.mark.parametrize("multi_output", [False, True])
 def test_sklearnex_import_linear(
@@ -123,7 +66,11 @@ def test_sklearnex_import_linear(
         hparams = LinearRegression.get_hyperparameters("fit")
         hparams.cpu_macro_block = macro_block
         hparams.gpu_macro_block = macro_block
-    non_batched_route(queue, macro_block)
+        if daal_check_version((2025, "P", 500)) and non_batched_route:
+            # If the non-batched route is requested, set the parameters to use it
+            hparams.cpu_max_cols_batched = 1
+            hparams.cpu_small_rows_threshold = 1
+            hparams.cpu_small_rows_max_cols_batched = 1
 
     X = X.astype(dtype=dtype)
     y = y.astype(dtype=dtype)
@@ -144,6 +91,9 @@ def test_sklearnex_import_linear(
         linreg_list = LinearRegression().fit(X, y_list)
         assert_allclose(linreg_list.coef_, linreg.coef_)
         assert_allclose(linreg_list.intercept_, linreg.intercept_)
+
+    # Reset hyperparameters to the default values
+    LinearRegression.reset_hyperparameters("fit")
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
