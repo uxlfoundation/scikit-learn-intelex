@@ -14,8 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 
-from types import ModuleType
-
 import numpy as np
 
 from onedal import _default_backend as backend
