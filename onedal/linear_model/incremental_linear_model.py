@@ -172,7 +172,7 @@ class IncrementalLinearRegression(BaseLinearRegression):
             )
             self.coef_ = (
                 packed_coefficients[:, 1:]
-                if packed_coefficients.shape[1] > 1
+                if packed_coefficients.shape[1] > 2
                 else packed_coefficients[:, 1]
             )
             self.intercept_ = packed_coefficients[:, 0]
