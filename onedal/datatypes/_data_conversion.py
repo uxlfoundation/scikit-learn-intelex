@@ -45,7 +45,7 @@ def to_table(*args, queue=None):
         value None causes no change in data location or queue.
 
     queue : SyclQueue or None, default=None
-        A dpctl or oneDAL backend python representation of a SYCL Queue or None
+        A dpctl or oneDAL backend python representation of a SYCL Queue or None.
 
     Returns
     -------
@@ -74,8 +74,8 @@ def return_type_constructor(array):
 
     Parameters
     ----------
-    array : array-like or None
-        python object representing an array instance of the return type
+    Array : array-like or None
+        Python object representing an array instance of the return type
         for converting oneDAL tables. Arrays are queried for conversion
         namespace when of sycl_usm_array type or array API standard type.
         When set to None, will return numpy arrays or scipy csr arrays.
@@ -83,7 +83,7 @@ def return_type_constructor(array):
     Returns
     -------
     func : callable
-        a function which takes in a single table input and returns an array
+        A function which takes in a single table input and returns an array.
     """
     func = backend.from_table
     if isinstance(array, np.ndarray) or array is None:
@@ -133,10 +133,10 @@ def from_table(*args, like=None):
     Parameters
     ----------
     *args : single or multiple python oneDAL tables
-        arg1, arg2... The arrays should be given as arguments.
+        The tables should given as individual arguments.
 
     like : callable, array-like or None, default=None
-        python object representing an array instance of the return type
+        Python object representing an array instance of the return type
         or function capable of converting oneDAL tables into arrays of
         desired type. Arrays are queried for conversion namespace when
         of sycl_usm_array type or array API standard type. When set to
@@ -145,6 +145,7 @@ def from_table(*args, like=None):
     Returns
     -------
     arrays : numpy arrays, sycl_usm_ndarrays, or array API standard arrays
+        Array or tuple of arrays generated from the input oneDAL tables.
 
     Notes
     -----
