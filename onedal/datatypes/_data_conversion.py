@@ -38,7 +38,7 @@ def to_table(*args, queue=None):
 
     Parameters
     ----------
-    *args : {scalar, numpy array, sycl_usm_ndarray, csr_matrix, or csr_array}
+    *args : scalar, numpy array, sycl_usm_ndarray, csr_matrix, or csr_array
         Arguments to be individually converted to oneDAL tables.
 
     queue : SyclQueue or None, default=None
@@ -50,7 +50,7 @@ def to_table(*args, queue=None):
 
     Returns
     -------
-    tables: {oneDAL homogeneous tables}
+    tables: oneDAL homogeneous tables
         Converted oneDAL tables.
 
     Notes
