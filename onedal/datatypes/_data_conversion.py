@@ -20,6 +20,8 @@ import numpy as np
 
 from onedal import _default_backend as backend
 
+from ..utils._third_party import lazy_import
+
 
 def _apply_and_pass(func, *args, **kwargs):
     if len(args) == 1:
@@ -64,15 +66,13 @@ def to_table(*args, queue=None):
     return _apply_and_pass(_convert_one_to_table, *args, queue=queue)
 
 
-def return_type_constructor(array):
-    """generator function for converting oneDAL tables to arrays.
+@lazy_import("array_api_compat")
+def _compat_convert(array_api_compat, array):
+    return array_api_compat.get_namespace(array).from_dlpack
 
-    Note: this implementation will convert any table to numpy ndarrays,
-    scipy csr_arrays, dpctl/dpnp usm_ndarrays, and array API standard
-    arrays of designated type. By default, from_table will return numpy
-    arrays and can only return other types when necessary object
-    attributes exist (i.e. ``__sycl_usm_array_interface__`` or
-    ``__array_namespace__``).
+
+def return_type_constructor(array):
+    """Generate a function for converting oneDAL tables to arrays.
 
     Parameters
     ----------
@@ -116,18 +116,21 @@ def return_type_constructor(array):
             )
     elif hasattr(array, "__array_namespace__"):
         func = array.__array_namespace__().from_dlpack
+    else:
+        try:
+            func = _compat_convert(array)
+        except ImportError:
+            raise TypeError(
+                "array type is unsupported, but may be made compatible by installing `array_api_compat`"
+            )
     return func
 
 
 def from_table(*args, like=None):
     """Create 2 dimensional arrays from oneDAL tables.
 
-    Note: this implementation will convert any table to numpy ndarrays,
-    scipy csr_arrays, dpctl/dpnp usm_ndarrays, and array API standard
-    arrays of designated type. By default, from_table will return numpy
-    arrays and can only return other types when necessary object
-    attributes exist (i.e. ``__sycl_usm_array_interface__`` or
-    ``__array_namespace__``).
+    oneDAL tables are converted to numpy ndarrays, dpctl tensors, dpnp
+    ndarrays,or array API standard arrays of designated type.
 
     Parameters
     ----------
@@ -144,6 +147,12 @@ def from_table(*args, like=None):
     Returns
     -------
     arrays : numpy arrays, sycl_usm_ndarrays, or array API standard arrays
+
+    Notes
+    -----
+    Support for other array types via array_api_compat is possible (e.g.
+    PyTorch), but requires its installation specifically, as it is imported
+    only when necessary.
     """
     func = like if callable(like) else return_type_constructor(like)
     return _apply_and_pass(func, *args)
