@@ -120,7 +120,7 @@ def return_type_constructor(array):
         except ImportError:
             raise TypeError(
                 "array type is unsupported, but may be made compatible by installing `array_api_compat`"
-            )
+            ) from None
     return func
 
 
