@@ -50,7 +50,7 @@ def to_table(*args, queue=None):
 
     Returns
     -------
-    tables: oneDAL homogeneous tables
+    tables : oneDAL homogeneous tables
         Converted oneDAL tables.
 
     Notes
