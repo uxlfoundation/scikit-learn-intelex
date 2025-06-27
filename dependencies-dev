@@ -6,4 +6,4 @@ numpy==2.3.0 ; python_version >= '3.11'
 pybind11==2.13.6
 cmake==4.0.3
 setuptools==79.0.1
-clang-format==14.0.6
+clang-format==20.1.7
