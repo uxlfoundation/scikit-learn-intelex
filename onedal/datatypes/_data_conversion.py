@@ -74,7 +74,7 @@ def return_type_constructor(array):
 
     Parameters
     ----------
-    Array : array-like or None
+    array : array-like or None
         Python object representing an array instance of the return type
         for converting oneDAL tables. Arrays are queried for conversion
         namespace when of sycl_usm_array type or array API standard type.
