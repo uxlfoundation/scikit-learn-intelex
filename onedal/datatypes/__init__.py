@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
-from ._data_conversion import from_table, to_table
+from ._data_conversion import from_table, return_type_constructor, to_table
 from ._sycl_usm import copy_to_dpnp, copy_to_usm, usm_to_numpy
 
 __all__ = [
@@ -22,5 +22,6 @@ __all__ = [
     "copy_to_usm",
     "from_table",
     "to_table",
+    "return_type_constructor",
     "usm_to_numpy",
 ]
