@@ -117,6 +117,8 @@ def test_backend_queue():
     q2 = backend.SyclQueue(q._get_capsule())
     # verify copying via the _get_capsule attribute
     q3 = backend.SyclQueue(q)
+    # create new queue on the same device for device checks
+    q4 = backned.SyclQueue("cpu")
 
     q_array = [q, q2, q3]
 
@@ -125,6 +127,9 @@ def test_backend_queue():
     assert all([queue.sycl_device.is_cpu for queue in q_array])
     assert all([not queue.sycl_device.is_gpu for queue in q_array])
     assert all(["cpu" in queue.sycl_device.filter_string for queue in q_array])
+    assert q.sycl_device == q4.sycl_device  # verify that __eq__ operator works
+    assert not q.sycl_device != q4.sycl_device  # verify that __ne__ operator works
+    assert q != q4  # verify two separate cpu queues created
 
 
 @pytest.mark.skipif(
