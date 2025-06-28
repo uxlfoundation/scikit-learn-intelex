@@ -236,7 +236,7 @@ def test_other_device_fallback(caplog):
                 queue is None
                 and QM.get_global_queue() is None
             )
-            assert isinstance(data[0], np.ndarray)
+            assert isinstance(args[0], np.ndarray)
 
     est = _CPUEstimator()
 
