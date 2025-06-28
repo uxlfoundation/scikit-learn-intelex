@@ -238,7 +238,6 @@ def test_other_device_fallback(caplog):
             )
             assert isinstance(data[0], np.ndarray)
 
-    start = 0
     est = _CPUEstimator()
 
     for fallback in [True, False]:
@@ -247,5 +246,5 @@ def test_other_device_fallback(caplog):
                 est,
                 "test",
                 {"onedal": est._onedal_test, "sklearn": None},
-                np.eye(5, 8),
+                FakeCUDA(np.eye(5, 8)),
             )
