@@ -210,8 +210,8 @@ def test_fallback_to_host(caplog):
 
 def test_other_device_fallback(caplog):
     # force a fallback to cpu with direct use of dispatch and PatchingConditionsChain
-    # it should complete with allow_fallback_to_host. The queue should be preserved
-    # and properly used in the second round on gpu
+    # it should complete with allow_fallback_to_host. The data should be moved to cpu
+    # by calling ``to_device``.
     from onedal.utils import _sycl_queue_manager as QM
     from sklearnex._device_offload import dispatch
     from sklearnex._utils import PatchingConditionsChain
