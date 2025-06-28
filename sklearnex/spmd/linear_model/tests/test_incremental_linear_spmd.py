@@ -99,9 +99,11 @@ def test_incremental_linear_regression_fit_spmd_gold(
     inclin.fit(dpt_X, dpt_y)
 
     rtol = 1e-5 if (dtype == np.float32) else 1e-7
-    assert_allclose(inclin.coef_, inclin_spmd.coef_, rtol=rtol)
+    assert_allclose(_as_numpy(inclin.coef_), _as_numpy(inclin_spmd.coef_), rtol=rtol)
     if fit_intercept:
-        assert_allclose(inclin.intercept_, inclin_spmd.intercept_, rtol=rtol)
+        assert_allclose(
+            _as_numpy(inclin.intercept_), _as_numpy(inclin_spmd.intercept_), rtol=rtol
+        )
 
 
 @pytest.mark.skipif(
@@ -184,9 +186,11 @@ def test_incremental_linear_regression_partial_fit_spmd_gold(
     inclin.fit(dpt_X, dpt_y)
 
     rtol = 1e-5 if (dtype == np.float32) else 1e-7
-    assert_allclose(inclin.coef_, inclin_spmd.coef_, rtol=rtol)
+    assert_allclose(_as_numpy(inclin.coef_), _as_numpy(inclin_spmd.coef_), rtol=rtol)
     if fit_intercept:
-        assert_allclose(inclin.intercept_, inclin_spmd.intercept_, rtol=rtol)
+        assert_allclose(
+            _as_numpy(inclin.intercept_), _as_numpy(inclin_spmd.intercept_), rtol=rtol
+        )
 
 
 @pytest.mark.skipif(

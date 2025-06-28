@@ -339,7 +339,7 @@ class Ridge(BaseLinearRegression):
         )
 
         if self.coef_.shape[0] == 1 and y.ndim == 1:
-            self.coef_ = self.coef_.ravel()
+            self.coef_ = self.coef_[0]  # make coef_ one dimensional
             self.intercept_ = self.intercept_[0]
 
         return self
