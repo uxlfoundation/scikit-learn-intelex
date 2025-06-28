@@ -142,6 +142,7 @@ jobs:
           pip install $(python .ci/scripts/get_compatible_scipy_version.py ${{ matrix.SKLEARN_VERSION }}) pyyaml
           if [ "${{ steps.set-env.outputs.DPCFLAG }}" == "" ]; then pip install dpctl==${{ env.DPCTL_VERSION }} dpnp==${{ env.DPNP_VERSION }}; fi
           pip list
+          python -c "import dpnp"
       - name: Sklearnex testing
         run: |
           source venv/bin/activate
