@@ -118,7 +118,7 @@ def test_backend_queue():
     # verify copying via the _get_capsule attribute
     q3 = backend.SyclQueue(q)
     # create new queue on the same device for device checks
-    q4 = backned.SyclQueue("cpu")
+    q4 = backend.SyclQueue("cpu")
 
     q_array = [q, q2, q3]
 
