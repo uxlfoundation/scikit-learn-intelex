@@ -70,9 +70,9 @@ def _transfer_to_host(*data):
             item = usm_to_numpy(item, usm_iface)
             has_usm_data = True
         elif not isinstance(item, np.ndarray) and (
-            device := getattr(item, "__dlpack_device__", None)
+            hasattr(item, "__dlpack_device__")
         ):
-            item = dlpack_to_numpy(item, device)
+            item = dlpack_to_numpy(item)
             has_host_data = True
         else:
             has_host_data = True
