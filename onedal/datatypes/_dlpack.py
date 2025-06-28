@@ -31,13 +31,13 @@ def get_torch_queue(torchxpu, array):
     return backend.SyclQueue(torchxpu.current_stream(array.get_device()).sycl_queue)
 
 
-def dlpack_to_numpy(obj, device):
+def dlpack_to_numpy(obj):
     # check dlpack data location.
-    if device() != cpu_dlpack_device:
+    if obj.__dlpack_device__() != cpu_dlpack_device:
         if hasattr(obj, "to_device"):
             # use of the "cpu" string as device not officially part of
             # the array api standard but widely supported
-            item = obj.to_device("cpu")
+            obj = obj.to_device("cpu")
         elif hasattr(obj, "to"):
             # pytorch-specific fix as it is not array api compliant
             obj = obj.to("cpu")
