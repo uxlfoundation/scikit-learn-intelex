@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
+import enum
 import logging
 
 import numpy as np
@@ -205,3 +206,46 @@ def test_fallback_to_host(caplog):
                 in caplog.messages[start:]
             )
             start = len(caplog.messages)
+
+
+def test_other_device_fallback(caplog):
+    # force a fallback to cpu with direct use of dispatch and PatchingConditionsChain
+    # it should complete with allow_fallback_to_host. The queue should be preserved
+    # and properly used in the second round on gpu
+    from onedal.utils import _sycl_queue_manager as QM
+    from sklearnex._device_offload import dispatch
+    from sklearnex._utils import PatchingConditionsChain
+
+    class FakeCUDA:
+        def __init__(self, data):
+            self.data = data
+
+        def to_device(self, *args):
+            return self.data
+
+        def __dlpack_device__(self):
+            return (2, 0)
+
+    class _CPUEstimator:
+        def _onedal_cpu_supported(self, method_name, *data):
+            patching_status = PatchingConditionsChain("")
+            return patching_status
+
+        def _onedal_test(self, *args, queue=None):
+            assert (
+                queue is None
+                and QM.get_global_queue() is None
+            )
+            assert isinstance(data[0], np.ndarray)
+
+    start = 0
+    est = _CPUEstimator()
+
+    for fallback in [True, False]:
+        with sklearnex.config_context(allow_fallback_to_host=fallback):
+            dispatch(
+                est,
+                "test",
+                {"onedal": est._onedal_test, "sklearn": None},
+                np.eye(5, 8),
+            )
