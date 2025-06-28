@@ -128,7 +128,7 @@ def test_backend_queue():
     assert all([not queue.sycl_device.is_gpu for queue in q_array])
     assert all(["cpu" in queue.sycl_device.filter_string for queue in q_array])
     assert q.sycl_device == q4.sycl_device  # verify that __eq__ operator works
-    assert not q.sycl_device != q4.sycl_device  # verify that __ne__ operator works
+    assert not (q.sycl_device != q4.sycl_device)  # verify that __ne__ operator works
     assert q != q4  # verify two separate cpu queues created
 
 
