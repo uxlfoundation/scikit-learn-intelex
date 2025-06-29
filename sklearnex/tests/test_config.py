@@ -173,8 +173,6 @@ def test_fallback_to_host(caplog):
 
         def _onedal_test(self, *args, queue=None):
             if args[0] == "cpu":
-                print(args)
-                assert False
                 assert (
                     queue is None
                     and QM.__global_queue == QM.__fallback_queue
