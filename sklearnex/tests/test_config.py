@@ -231,12 +231,12 @@ def test_other_device_fallback(caplog):
             patching_status = PatchingConditionsChain("")
             return patching_status
 
-        def _onedal_test(self, *args, queue=None):
+        def _onedal_test(self, data, queue=None):
             assert (
                 queue is None
                 and QM.get_global_queue() is None
             )
-            assert isinstance(args[0], np.ndarray)
+            assert isinstance(data, np.ndarray)
 
     est = _CPUEstimator()
 
