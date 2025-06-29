@@ -197,7 +197,7 @@ def test_fallback_to_host(caplog):
                 dispatch(
                     est,
                     "test",
-                    {"onedal": est._onedal_test, "sklearn": None},
+                    {"onedal": _Estimator._onedal_test, "sklearn": None},
                     "cpu" if fallback else "gpu",
                 )
 
