@@ -15,6 +15,7 @@
 # ==============================================================================
 
 import logging
+from contextlib import nullcontext
 
 import numpy as np
 import pytest
@@ -194,7 +195,7 @@ def test_fallback_to_host(caplog):
                 dispatch(
                     est,
                     "test",
-                    {"onedal": est._onedal_test, "sklearn": None},
+                    {"onedal": _Estimator._onedal_test, "sklearn": None},
                     "cpu" if fallback else "gpu",
                 )
 
@@ -205,3 +206,44 @@ def test_fallback_to_host(caplog):
                 in caplog.messages[start:]
             )
             start = len(caplog.messages)
+
+
+def test_other_device_fallback():
+    # force a fallback to cpu with direct use of dispatch and PatchingConditionsChain
+    # it should complete with allow_fallback_to_host. The data should be moved to cpu
+    # by calling ``to_device``.
+    from onedal.utils import _sycl_queue_manager as QM
+    from sklearnex._device_offload import dispatch
+    from sklearnex._utils import PatchingConditionsChain
+
+    class FakeCUDA:
+        def __init__(self, data):
+            self.data = data
+
+        def to_device(self, *args):
+            return self.data
+
+        def __dlpack_device__(self):
+            return (2, 0)
+
+    class _CPUEstimator:
+        def _onedal_cpu_supported(self, method_name, *data):
+            patching_status = PatchingConditionsChain("")
+            return patching_status
+
+        def _onedal_test(self, data, queue=None):
+            assert queue is None and QM.get_global_queue() is None
+            assert isinstance(data, np.ndarray)
+
+    est = _CPUEstimator()
+    err_msg = "Device support is not implemented for the supplied data type."
+
+    for fallback in [True, False]:
+        ctx = nullcontext() if fallback else pytest.raises(RuntimeError, match=err_msg)
+        with sklearnex.config_context(allow_fallback_to_host=fallback), ctx:
+            dispatch(
+                est,
+                "test",
+                {"onedal": _CPUEstimator._onedal_test, "sklearn": None},
+                FakeCUDA(np.eye(5, 8)),
+            )
