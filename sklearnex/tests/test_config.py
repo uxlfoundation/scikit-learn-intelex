@@ -14,8 +14,8 @@
 # limitations under the License.
 # ==============================================================================
 
-import enum
 import logging
+from contextlib import nullcontext
 
 import numpy as np
 import pytest
@@ -173,6 +173,8 @@ def test_fallback_to_host(caplog):
 
         def _onedal_test(self, *args, queue=None):
             if args[0] == "cpu":
+                print(args)
+                assert False
                 assert (
                     queue is None
                     and QM.__global_queue == QM.__fallback_queue
@@ -208,7 +210,7 @@ def test_fallback_to_host(caplog):
             start = len(caplog.messages)
 
 
-def test_other_device_fallback(caplog):
+def test_other_device_fallback():
     # force a fallback to cpu with direct use of dispatch and PatchingConditionsChain
     # it should complete with allow_fallback_to_host. The data should be moved to cpu
     # by calling ``to_device``.
@@ -231,20 +233,20 @@ def test_other_device_fallback(caplog):
             patching_status = PatchingConditionsChain("")
             return patching_status
 
-        def _onedal_test(self, data, queue=None):
-            assert (
-                queue is None
-                and QM.get_global_queue() is None
-            )
-            assert isinstance(data, np.ndarray)
+        def _onedal_test(self, *data, queue=None):
+            assert queue is None and QM.get_global_queue() is None
+            assert isinstance(data[0], np.ndarray)
 
     est = _CPUEstimator()
+    err_msg = "Device support is not implemented for the supplied data type."
 
     for fallback in [True, False]:
-        with sklearnex.config_context(allow_fallback_to_host=fallback):
+
+        ctx = nullcontext() if fallback else pytest.raises(RuntimeError, match=err_msg)
+        with sklearnex.config_context(allow_fallback_to_host=fallback), ctx:
             dispatch(
                 est,
                 "test",
-                {"onedal": est._onedal_test, "sklearn": None},
+                {"onedal": _CPUEstimator._onedal_test, "sklearn": None},
                 FakeCUDA(np.eye(5, 8)),
             )

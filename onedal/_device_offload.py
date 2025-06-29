@@ -69,9 +69,7 @@ def _transfer_to_host(*data):
         if usm_iface := getattr(item, "__sycl_usm_array_interface__", None):
             item = usm_to_numpy(item, usm_iface)
             has_usm_data = True
-        elif not isinstance(item, np.ndarray) and (
-            hasattr(item, "__dlpack_device__")
-        ):
+        elif not isinstance(item, np.ndarray) and (hasattr(item, "__dlpack_device__")):
             item = dlpack_to_numpy(item)
             has_host_data = True
         else:
