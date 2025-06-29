@@ -231,15 +231,14 @@ def test_other_device_fallback():
             patching_status = PatchingConditionsChain("")
             return patching_status
 
-        def _onedal_test(self, *data, queue=None):
+        def _onedal_test(self, data, queue=None):
             assert queue is None and QM.get_global_queue() is None
-            assert isinstance(data[0], np.ndarray)
+            assert isinstance(data, np.ndarray)
 
     est = _CPUEstimator()
     err_msg = "Device support is not implemented for the supplied data type."
 
     for fallback in [True, False]:
-
         ctx = nullcontext() if fallback else pytest.raises(RuntimeError, match=err_msg)
         with sklearnex.config_context(allow_fallback_to_host=fallback), ctx:
             dispatch(
