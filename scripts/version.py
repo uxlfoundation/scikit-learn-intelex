@@ -17,7 +17,6 @@
 
 import os
 import re
-import sys
 from ctypes.util import find_library
 from os.path import isfile
 from os.path import join as jp
