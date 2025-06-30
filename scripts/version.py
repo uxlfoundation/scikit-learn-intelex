@@ -79,7 +79,10 @@ def find_library_custom_paths(alias, dal_root):
     path_from_dal_root = (
         jp(dal_root, "Library", "bin") if IS_WIN else jp(dal_root, "lib", "intel64")
     )
-    return alias in os.listdir(path_from_dal_root)
+    if os.path.exists(path_from_dal_root):
+        return alias in os.listdir(path_from_dal_root)
+    else:
+        return False
 
 
 def get_onedal_shared_libs(dal_root):
