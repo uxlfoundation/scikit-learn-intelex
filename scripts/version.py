@@ -72,7 +72,7 @@ def get_onedal_version(dal_root, version_type="release"):
     return version
 
 
-def find_library_custom_paths(alias, dal_root):
+def find_library_custom_paths(alias: str, dal_root: str, is_win: bool) -> bool:
     if find_library(alias):
         return True
     IS_WIN = sys.platform in ["win32", "cygwin"]
@@ -85,7 +85,7 @@ def find_library_custom_paths(alias, dal_root):
         return False
 
 
-def get_onedal_shared_libs(dal_root):
+def get_onedal_shared_libs(dal_root: str, is_win: bool) -> list[str]:
     """Function to find which oneDAL shared libraries are available in the system"""
     lib_names = [
         "onedal",
