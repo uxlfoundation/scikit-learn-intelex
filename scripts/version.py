@@ -15,6 +15,7 @@
 # limitations under the License.
 # ===============================================================================
 
+import os
 import re
 import sys
 from ctypes.util import find_library
