@@ -75,9 +75,8 @@ def get_onedal_version(dal_root, version_type="release"):
 def find_library_custom_paths(alias: str, dal_root: str, is_win: bool) -> bool:
     if find_library(alias):
         return True
-    IS_WIN = sys.platform in ["win32", "cygwin"]
     path_from_dal_root = (
-        jp(dal_root, "Library", "bin") if IS_WIN else jp(dal_root, "lib", "intel64")
+        jp(dal_root, "Library", "bin") if is_win else jp(dal_root, "lib", "intel64")
     )
     if os.path.exists(path_from_dal_root):
         return alias in os.listdir(path_from_dal_root)
@@ -103,6 +102,9 @@ def get_onedal_shared_libs(dal_root: str, is_win: bool) -> list[str]:
             f"lib{lib_name}.{major_bin_version}.dylib",
             f"{lib_name}.{major_bin_version}.dll",
         ]
-        if any(find_library_custom_paths(alias, dal_root) for alias in possible_aliases):
+        if any(
+            find_library_custom_paths(alias, dal_root, is_win)
+            for alias in possible_aliases
+        ):
             found_libraries.append(lib_name)
     return found_libraries
