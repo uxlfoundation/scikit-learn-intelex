@@ -161,6 +161,11 @@ def test_fallback_to_host(caplog):
     from sklearnex._device_offload import dispatch
     from sklearnex._utils import PatchingConditionsChain
 
+    # This is done due to the use of name mangling in _sycl_queue_manager which
+    # doesn't operate in classes directly. This impacts sklearnex's ``dispatch``
+    # routine, which expects class methods rather than instance methods.
+    is_fallback = lambda: QM.__global_queue == QM.__fallback_queue
+
     class _Estimator:
         def _onedal_gpu_supported(self, method_name, *data):
             patching_status = PatchingConditionsChain("")
@@ -175,7 +180,7 @@ def test_fallback_to_host(caplog):
             if args[0] == "cpu":
                 assert (
                     queue is None
-                    and QM.__global_queue == QM.__fallback_queue
+                    and is_fallback()
                     and QM.get_global_queue() is None
                 )
             elif args[0] == "gpu":
