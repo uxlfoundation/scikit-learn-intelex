@@ -16,6 +16,7 @@
 # ===============================================================================
 
 import re
+import sys
 from ctypes.util import find_library
 from os.path import isfile
 from os.path import join as jp
@@ -70,6 +71,16 @@ def get_onedal_version(dal_root, version_type="release"):
     return version
 
 
+def find_library_custom_paths(alias, dal_root):
+    if find_library(alias):
+        return True
+    IS_WIN = sys.platform in ["win32", "cygwin"]
+    path_from_dal_root = (
+        jp(dal_root, "Library", "bin") if IS_WIN else jp(dal_root, "lib", "intel64")
+    )
+    return alias in os.listdir(path_from_dal_root)
+
+
 def get_onedal_shared_libs(dal_root):
     """Function to find which oneDAL shared libraries are available in the system"""
     lib_names = [
@@ -88,6 +99,6 @@ def get_onedal_shared_libs(dal_root):
             f"lib{lib_name}.{major_bin_version}.dylib",
             f"{lib_name}.{major_bin_version}.dll",
         ]
-        if any(find_library(alias) for alias in possible_aliases):
+        if any(find_library_custom_paths(alias, dal_root) for alias in possible_aliases):
             found_libraries.append(lib_name)
     return found_libraries
