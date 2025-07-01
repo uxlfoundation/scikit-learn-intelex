@@ -21,6 +21,8 @@ from daal4py.sklearn._utils import sklearn_check_version
 
 from .._config import config_context, get_config
 
+# Replacement of _FuncWrapper is required to correctly propagate
+# the scikit-learn-intelex configuration functions to the joblib workers.
 if sklearn_check_version("1.7"):
 
     class _FuncWrapper:
