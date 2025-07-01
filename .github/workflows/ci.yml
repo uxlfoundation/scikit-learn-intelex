@@ -281,7 +281,6 @@ jobs:
           call .\.github\scripts\activate_components.bat ${{ steps.set-env.outputs.DPCFLAG }}
           set PYTHON=python
           set COVERAGE_FILE=%cd%\.coverage.sklearnex
-          set SKLEARNEX_PREVIEW=YES
           cd ..
           call scikit-learn-intelex\conda-recipe\run_test.bat scikit-learn-intelex\
       - name: Sklearn testing
@@ -290,6 +289,7 @@ jobs:
           call .\venv\Scripts\activate.bat
           call .\.github\scripts\activate_components.bat ${{ steps.set-env.outputs.DPCFLAG }}
           set COVERAGE_FILE=%cd%\.coverage.sklearn
+          set SKLEARNEX_PREVIEW=YES
           if "${{ steps.set-env.outputs.DPCFLAG }}"=="" set CPU=cpu
           bash .ci/scripts/run_sklearn_tests.sh %CPU%
       - name: Create coverage report
@@ -461,13 +461,13 @@ jobs:
         run: |
           source .github/scripts/activate_components.sh
           export COVERAGE_FILE=$(pwd)/.coverage.sklearnex
-          export SKLEARNEX_PREVIEW='YES'
           cd .ci
           ../conda-recipe/run_test.sh
       - name: Sklearn testing
         run: |
           source .github/scripts/activate_components.sh
           export COVERAGE_FILE=$(pwd)/.coverage.sklearn
+          export SKLEARNEX_PREVIEW='YES'
           bash .ci/scripts/run_sklearn_tests.sh ${{ matrix.DEVICE }}
       - name: Create coverage report
         run: |
