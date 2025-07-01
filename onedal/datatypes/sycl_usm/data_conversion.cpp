@@ -150,11 +150,27 @@ dal::table convert_to_table(py::object obj) {
 
 // Create a dictionary for `__sycl_usm_array_interface__` protocol from oneDAL table properties.
 py::dict construct_sua_iface(const dal::table& input) {
+    // To enable native extensions to pass the memory allocated by a native SYCL library to SYCL-aware
+    // Python extension without making a copy, the class must provide `__sycl_usm_array_interface__`
+    // attribute representing USM allocations. The `__sycl_usm_array_interface__` attribute is used
+    // for constructing DPCTL usm_ndarray or DPNP ndarray with zero-copy on python level.
     const auto kind = input.get_kind();
     if (kind != dal::homogen_table::kind())
         report_problem_to_sua_iface(": only homogen tables are supported");
 
     const auto& homogen_input = reinterpret_cast<const dal::homogen_table&>(input);
+
+    auto bytes_array = dal::detail::get_original_data(homogen_input);
+    auto has_queue = bytes_array.get_queue().has_value();
+    // oneDAL returns tables without sycl context for CPU sycl queue inputs, that
+    // breaks the compute-follows-data execution.
+    // If a queue is unavailable the data is not a USM allocation. This violates the DPPy-spec
+    // standard for __sycl_usm_array_interface__ and should therefore throw an AttributeError.
+    // This will lead to hasattr calls to show False.
+    if (!has_queue) {
+        throw py::attribute_error("'table' object data is not a SYCL USM allocation");
+    }
+
     const dal::data_type dtype = homogen_input.get_metadata().get_data_type(0);
     const dal::data_layout data_layout = homogen_input.get_data_layout();
 
@@ -174,16 +190,6 @@ py::dict construct_sua_iface(const dal::table& input) {
 
     py::tuple shape = py::make_tuple(row_count, column_count);
     py::list data_entry(2);
-
-    auto bytes_array = dal::detail::get_original_data(homogen_input);
-    auto has_queue = bytes_array.get_queue().has_value();
-    // oneDAL returns tables without sycl context for CPU sycl queue inputs, that
-    // breaks the compute-follows-data execution.
-    // Currently not throwing runtime exception and __sycl_usm_array_interface__["syclobj"] None assigned
-    // if no SYCL queue to allow workaround on python side.
-    // if (!has_queue) {
-    //     report_problem_to_sua_iface(": table has no queue");
-    // }
 
     const bool is_mutable = bytes_array.has_mutable_data();
 
@@ -214,25 +220,9 @@ py::dict construct_sua_iface(const dal::table& input) {
     iface["typestr"] = convert_dal_to_sua_type(dtype);
 
     // syclobj: Python object from which SYCL context to which represented USM allocation is bound.
-    if (!has_queue) {
-        iface["syclobj"] = py::none();
-    }
-    else {
-        iface["syclobj"] =
-            pack_queue(std::make_shared<sycl::queue>(bytes_array.get_queue().value()));
-    }
+    iface["syclobj"] = pack_queue(std::make_shared<sycl::queue>(bytes_array.get_queue().value()));
 
     return iface;
-}
-
-// Adding `__sycl_usm_array_interface__` attribute to python oneDAL table, that representing
-// USM allocations.
-void define_sycl_usm_array_property(py::class_<dal::table>& table_obj) {
-    // To enable native extensions to pass the memory allocated by a native SYCL library to SYCL-aware
-    // Python extension without making a copy, the class must provide `__sycl_usm_array_interface__`
-    // attribute representing USM allocations. The `__sycl_usm_array_interface__` attribute is used
-    // for constructing DPCTL usm_ndarray or DPNP ndarray with zero-copy on python level.
-    table_obj.def_property_readonly("__sycl_usm_array_interface__", &construct_sua_iface);
 }
 
 } // namespace oneapi::dal::python::sycl_usm

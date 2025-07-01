@@ -81,12 +81,7 @@ class DummyEstimatorWithTableConversions:
         # oneDAL backend func is needed to check result table checks.
         result = dbscan.compute(params, X_table, to_table(None))
         result_responses_table = result.responses
-        result_responses_df = from_table(
-            result_responses_table,
-            sua_iface=sua_iface,
-            sycl_queue=X.sycl_queue,
-            xp=xp,
-        )
+        result_responses_df = from_table(result_responses_table, like=X)
         return X_table, result_responses_table, result_responses_df
 
 
@@ -272,9 +267,7 @@ def test_input_zero_copy_sycl_usm(dataframe, queue, order, dtype):
     X_table = to_table(X_dp)
     _assert_sua_iface_fields(X_dp, X_table)
 
-    X_dp_from_table = from_table(
-        X_table, sycl_queue=queue, sua_iface=sua_iface, xp=X_dp_namespace
-    )
+    X_dp_from_table = from_table(X_table, like=X_dp)
     _assert_sua_iface_fields(X_table, X_dp_from_table)
     _assert_tensor_attr(X_dp, X_dp_from_table, order)
 
@@ -307,8 +300,13 @@ def test_table_conversions_sycl_usm(dataframe, queue, order, data_shape, dtype):
     alg = DummyEstimatorWithTableConversions()
     X_table, result_responses_table, result_responses_df = alg.fit(X)
 
-    for obj in [X_table, result_responses_table, result_responses_df, X]:
+    for obj in [X_table, result_responses_df, X]:
         assert hasattr(obj, "__sycl_usm_array_interface__"), f"{obj} has no SUA interface"
+
+    assert (
+        hasattr(result_responses_table, "__sycl_usm_array_interface__")
+        != queue.sycl_device.is_cpu
+    )
     _assert_sua_iface_fields(X, X_table)
 
     # Work around for saving compute-follows-data execution
@@ -322,13 +320,14 @@ def test_table_conversions_sycl_usm(dataframe, queue, order, data_shape, dtype):
     # after conversion from onedal table to sua array.
     # Test is not turned off because of this. Only check is skipped.
     skip_data_1 = True
-    _assert_sua_iface_fields(
-        result_responses_df,
-        result_responses_table,
-        skip_data_0=skip_data_0,
-        skip_data_1=skip_data_1,
-        skip_syclobj=skip_syclobj,
-    )
+    if not queue.sycl_device.is_cpu:
+        _assert_sua_iface_fields(
+            result_responses_df,
+            result_responses_table,
+            skip_data_0=skip_data_0,
+            skip_data_1=skip_data_1,
+            skip_syclobj=skip_syclobj,
+        )
     assert X.sycl_queue == result_responses_df.sycl_queue
     if order == "F":
         assert X.flags.f_contiguous == result_responses_df.flags.f_contiguous

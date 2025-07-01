@@ -19,6 +19,7 @@ import pytest
 from numpy.testing import assert_allclose
 
 from onedal.tests.utils._dataframes_support import (
+    _as_numpy,
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
@@ -65,8 +66,10 @@ def test_covariance_spmd_gold(dataframe, queue):
     spmd_result = EmpiricalCovariance_SPMD().fit(local_dpt_data)
     batch_result = EmpiricalCovariance_Batch().fit(data)
 
-    assert_allclose(spmd_result.covariance_, batch_result.covariance_)
-    assert_allclose(spmd_result.location_, batch_result.location_)
+    assert_allclose(
+        _as_numpy(spmd_result.covariance_), _as_numpy(batch_result.covariance_)
+    )
+    assert_allclose(_as_numpy(spmd_result.location_), _as_numpy(batch_result.location_))
 
 
 @pytest.mark.skipif(
@@ -106,5 +109,9 @@ def test_covariance_spmd_synthetic(
     batch_result = EmpiricalCovariance_Batch(assume_centered=assume_centered).fit(data)
 
     atol = 1e-5 if dtype == np.float32 else 1e-7
-    assert_allclose(spmd_result.covariance_, batch_result.covariance_, atol=atol)
-    assert_allclose(spmd_result.location_, batch_result.location_, atol=atol)
+    assert_allclose(
+        _as_numpy(spmd_result.covariance_), _as_numpy(batch_result.covariance_), atol=atol
+    )
+    assert_allclose(
+        _as_numpy(spmd_result.location_), _as_numpy(batch_result.location_), atol=atol
+    )
