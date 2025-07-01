@@ -25,12 +25,25 @@ from onedal.tests.utils._dataframes_support import (
     get_dataframes_and_queues,
 )
 
+from sklearnex.decomposition import PCA
+
+
+@pytest.fixture
+def hyperparameters(request):
+    hparams = PCA.get_hyperparameters("fit")
+
+    def restore_hyperparameters():
+        if daal_check_version((2025, "P", 700)):
+            PCA.reset_hyperparameters("fit")
+
+    request.addfinalizer(restore_hyperparameters)
+    return hparams
+
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 @pytest.mark.parametrize("macro_block", [None, 2])
 @pytest.mark.parametrize("grain_size", [None, 2])
-def test_sklearnex_import(dataframe, queue, macro_block, grain_size):
-    from sklearnex.decomposition import PCA
+def test_sklearnex_import(hyperparameters, dataframe, queue, macro_block, grain_size):
 
     X = [[-1, -1], [-2, -1], [-3, -2], [1, 1], [2, 1], [3, 2]]
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
@@ -44,15 +57,14 @@ def test_sklearnex_import(dataframe, queue, macro_block, grain_size):
     ]
 
     if daal_check_version((2025, "P", 700)):
-        hparams = PCA.get_hyperparameters("fit")
         if macro_block is not None:
             if queue and queue.sycl_device.is_gpu:
                 pytest.skip("Test for CPU-only functionality")
-            hparams.cpu_macro_block = macro_block
+            hyperparameters.cpu_macro_block = macro_block
         if grain_size is not None:
             if queue and queue.sycl_device.is_gpu:
                 pytest.skip("Test for CPU-only functionality")
-            hparams.cpu_grain_size = grain_size
+            hyperparameters.cpu_grain_size = grain_size
 
     pca = PCA(n_components=2, svd_solver="covariance_eigh")
 
@@ -70,7 +82,3 @@ def test_sklearnex_import(dataframe, queue, macro_block, grain_size):
     assert_allclose([6.30061232, 0.54980396], _as_numpy(pca.singular_values_))
     assert_allclose(X_transformed_expected, _as_numpy(X_transformed), rtol=tol)
     assert_allclose(X_transformed_expected, _as_numpy(X_fit_transformed), rtol=tol)
-
-    # Reset hyperparameters to the default values
-    if daal_check_version((2025, "P", 700)):
-        PCA.reset_hyperparameters("fit")

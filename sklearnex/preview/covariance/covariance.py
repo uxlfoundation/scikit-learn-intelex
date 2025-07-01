@@ -90,11 +90,15 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
     _onedal_gpu_supported = _onedal_supported
 
     def fit(self, X, y=None):
+        self._fit(X)
+        return self
+
+    @wrap_output_data
+    def _fit(self, X):
         if sklearn_check_version("1.2"):
             self._validate_params()
-        X = validate_data(self, X, ensure_all_finite=False)
 
-        dispatch(
+        return dispatch(
             self,
             "fit",
             {
@@ -103,8 +107,6 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
             },
             X,
         )
-
-        return self
 
     # expose sklearnex pairwise_distances if mahalanobis distance eventually supported
     @wrap_output_data
