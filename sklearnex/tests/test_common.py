@@ -33,6 +33,7 @@ from sklearn.utils import all_estimators
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal.tests.test_common import _check_primitive_usage_ban
 from onedal.tests.utils._dataframes_support import test_frameworks
+from onedal._utils import get_tags
 from sklearnex.base import oneDALEstimator
 from sklearnex.tests.utils import (
     PATCHED_MODELS,
@@ -532,6 +533,7 @@ def runtime_property_check(text, estimator, method):
 
 
 def fit_check_before_support_check(text, estimator, method):
+    """``check_is_fitted`` should be used early in non-``fit`` estimator methods"""
     if "fit" not in method:
         if "dispatch" not in text["funcs"]:
             pytest.skip(f"onedal dispatching not used in {estimator}.{method}")
@@ -545,11 +547,38 @@ def fit_check_before_support_check(text, estimator, method):
         pytest.skip(f"fitting occurs in {estimator}.{method}")
 
 
+def get_namespace_check(text, estimator, method):
+    """guarantee single array namespace for input data via ``get_namespace``"""
+    # Verify that if the estimator supports array api offloading and that onedal
+    # is called, that ``get_namespace`` is 1) called after validate_data and 2)
+    # all arguments are passed to ``get_namespace`` in order to guarantee single
+    # array typing (i.e. a single namespace)
+    if get_tags(estimator).onedal_array_api:
+        try:
+            # get last to_table call showing end of oneDAL input portion of code
+            table_idx = len(text["funcs"]) - 1 - text["funcs"][::-1].index("to_table")
+        except ValueError:
+            pytest.skip("onedal backend not used in this function")
+        # find index where dispatch is called
+        dispatch_idx = text["funcs"].index("dispatch")
+    
+        # find index where validate_data is called
+        validate_idx = text["funcs"].index("validate_data")
+
+        # in between ``validate_data`` and ``to_table`` should be at least a single
+        # call to ``get_namespace`` that asserts that all elements of the arguments
+        # to dispatch 
+        
+    else:
+        pytest.skip(f"Native oneDAL Array API support not available for {estimator}")        
+
+
 DESIGN_RULES = [
     n_jobs_check,
     runtime_property_check,
     fit_check_before_support_check,
     call_validate_data,
+    get_namespace_check,
 ]
 
 
