@@ -15,6 +15,7 @@
 # ==============================================================================
 
 import importlib.util
+import inspect
 import io
 import os
 import pathlib
@@ -454,18 +455,23 @@ def estimator_trace(estimator, method, cache, isolated_trace):
         )
         regex_mod = r"(?<=--- modulename: )\S*(?=\.py)"  # needed due to differences in module structure
 
-        regex_callingline = r"(?<=\n)\S.*(?=\n --- modulename: )"
+        regex_call = r"(?<={name})\((?s).*(?=\n --- modulename: )"
 
-        cache.set("key", key)
-        cache.set(
-            "text",
-            {
+        output = {
                 "funcs": re.findall(regex_func, text),
                 "trace": text,
                 "modules": [i.replace(os.sep, ".") for i in re.findall(regex_mod, text)],
-                "callingline": [""] + re.findall(regex_callingline, text),
-            },
-        )
+        }
+
+        splittext = text.split(" --- modulename: ")[1:]
+        callingline = [""]
+        for idx in range(len(output["funcs"])):
+            name = output["funcs"][idx]
+            callingline += [re.search(regex_call.format(name=name), splittext[idx])]
+        output["callingline"] = callingline
+               
+        cache.set("key", key)
+        cache.set("text", output)
 
     return cache.get("text", None)
 
@@ -554,14 +560,15 @@ def get_namespace_check(text, estimator, method):
     # all arguments are passed to ``get_namespace`` in order to guarantee single
     # array typing (i.e. a single namespace)
     if get_tags(estimator).onedal_array_api:
-        try:
-            # get last to_table call showing end of oneDAL input portion of code
-            table_idx = len(text["funcs"]) - 1 - text["funcs"][::-1].index("to_table")
-        except ValueError:
+        if "to_table" not in text["funcs"]:
             pytest.skip("onedal backend not used in this function")
         # find index where dispatch is called
-        dispatch_idx = text["funcs"].index("dispatch")
-    
+        onedal_idx = text["funcs"].index("_onedal_"+method)
+        # get the signature, no variable argument lists (e.g. *args) allowed
+        sig = inspect.signature(getattr(estimator, method))
+        # index 0 is the 'self' positional argument
+        params = [str(p) for p in sig.parameters.values()[1:] if p.kind in inspect.Parameter.POSITIONAL_ONLY]
+        
         # find index where validate_data is called
         validate_idx = text["funcs"].index("validate_data")
 
