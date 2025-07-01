@@ -429,7 +429,7 @@ def get_patch_map_core(preview=False):
             [(parallel_module, "get_config", get_config_sklearnex), None]
         ]
         mapping["_funcwrapper"] = [
-            [(parallel_module, "config_contextr", config_context_sklearnex), None]
+            [(parallel_module, "config_context", config_context_sklearnex), None]
         ]
     return mapping
 
