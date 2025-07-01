@@ -88,17 +88,6 @@ steps:
       TBBROOT: ${{ variables.TBBROOT }}
       COVERAGE_RCFILE: ${{ variables.COVERAGE_RCFILE }}
       NO_DPC: ${{ variables.NO_DPC }}
-    displayName: "Sklearn testing"
-    condition: succeededOrFailed()
-  - script: |
-      . /usr/share/miniconda/etc/profile.d/conda.sh
-      conda activate CB
-      if [ -n "${TBBROOT}" ] && [ "${TBBROOT}" != "${CONDA_PREFIX}" ]; then source ${TBBROOT}/env/vars.sh; fi
-      if [ -z "${NO_DPC}" ]; then export CPU="cpu"; fi
-      bash .ci/scripts/run_sklearn_tests.sh $CPU
-    env:
-      TBBROOT: ${{ variables.TBBROOT }}
-      NO_DPC: ${{ variables.NO_DPC }}
       SKLEARNEX_PREVIEW: "YES"
-    displayName: "Sklearn testing [preview]"
+    displayName: "Sklearn testing"
     condition: succeededOrFailed()
