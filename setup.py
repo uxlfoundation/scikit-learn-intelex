@@ -40,16 +40,17 @@ import scripts.build_backend as build_backend
 from scripts.package_helpers import get_packages_with_tests
 from scripts.version import get_onedal_shared_libs, get_onedal_version
 
-USE_ABS_RPATH = False
-ARG_ABS_RPATH = "--abs-rpath"
-if ARG_ABS_RPATH in sys.argv:
-    USE_ABS_RPATH = True
-    sys.argv = [arg for arg in sys.argv if arg != ARG_ABS_RPATH]
-DEBUG_BUILD = False
-ARG_DEBUG_BUILD = "--debug"
-if ARG_DEBUG_BUILD in sys.argv:
-    DEBUG_BUILD = True
-    sys.argv = [arg for arg in sys.argv if arg != ARG_DEBUG_BUILD]
+
+def check_for_build_arg(arg: str) -> bool:
+    if arg in sys.argv:
+        sys.argv = [elt for elt in sys.argv if elt != arg]
+        return True
+    return False
+
+
+USE_ABS_RPATH: bool = check_for_build_arg("--abs-rpath")
+DEBUG_BUILD: bool = check_for_build_arg("--debug")
+USING_LLD: bool = check_for_build_arg("--using-lld")
 
 IS_WIN = False
 IS_MAC = False
@@ -167,10 +168,13 @@ def get_sdl_cflags():
 
 def get_sdl_ldflags():
     if IS_LIN:
-        return [
-            "-Wl,-z,noexecstack,-z,relro,-z,now,-fstack-protector-strong,"
-            "-fno-strict-overflow,-fno-delete-null-pointer-checks,-fwrapv"
-        ]
+        if not USING_LLD:
+            return [
+                "-Wl,-z,noexecstack,-z,relro,-z,now,-fstack-protector-strong"
+                "-fno-strict-overflow,-fno-delete-null-pointer-checks,-fwrapv"
+            ]
+        else:
+            return ["-Wl,-z,noexecstack,-z,relro,-z,now"]
     if IS_MAC:
         return [
             "-fstack-protector-strong",
@@ -470,7 +474,10 @@ class onedal_build:
             use_abs_rpath=USE_ABS_RPATH,
             use_gcov=use_gcov,
             n_threads=n_threads,
+            is_win=IS_WIN,
+            is_lin=IS_LIN,
             debug_build=DEBUG_BUILD,
+            using_lld=USING_LLD,
         )
         if is_onedal_iface:
             build_onedal("host")
