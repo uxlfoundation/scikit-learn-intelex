@@ -123,7 +123,7 @@ def dispatch(
 
     # The _sycl_queue_manager verifies all arguments are on a single SYCL device or
     # cpu and will otherwise throw an error. If located on a non-SYCL, non-CPU
-    # device, a special queue is set which will cause a failure in ``_get_backend`` 
+    # device, a special queue is set which will cause a failure in ``_get_backend``
     with QM.manage_global_queue(None, *args):
         if onedal_array_api:
             backend, patching_status = _get_backend(obj, method_name, *args)
