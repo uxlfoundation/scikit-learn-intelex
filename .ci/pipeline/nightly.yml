@@ -34,7 +34,7 @@ variables:
 jobs:
 - job: Coverity
   pool:
-    vmImage: 'ubuntu-22.04'
+    vmImage: 'ubuntu-24.04'
   steps:
   - script: |
       cd $(Agent.BuildDirectory)
@@ -58,7 +58,7 @@ jobs:
 - job: Jupyter
   timeoutInMinutes: 0
   pool:
-    vmImage: 'ubuntu-22.04'
+    vmImage: 'ubuntu-24.04'
   steps:
   - script: |
       conda config --show channels
@@ -100,7 +100,7 @@ jobs:
         PYTHON_VERSION: '3.11'
         SKLEARN_VERSION: 'main'
   pool:
-    vmImage: 'ubuntu-22.04'
+    vmImage: 'ubuntu-24.04'
   steps:
   - template: build-and-test-lnx.yml
 - job: WindowsNightly

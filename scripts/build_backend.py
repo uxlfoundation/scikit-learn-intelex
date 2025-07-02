@@ -49,6 +49,7 @@ def custom_build_cmake_clib(
     use_abs_rpath=False,
     use_gcov=False,
     n_threads=1,
+    debug_build=False,
 ):
     import pybind11
 
@@ -127,6 +128,9 @@ def custom_build_cmake_clib(
         "-Dpybind11_DIR=" + pybind11.get_cmake_dir(),
         "-DoneDAL_USE_PARAMETERS_LIB=" + use_parameters_arg,
     ]
+
+    if debug_build:
+        cmake_args += ["-DCMAKE_BUILD_TYPE=Debug"]
 
     if build_distribute:
         cmake_args += [
