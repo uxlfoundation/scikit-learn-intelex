@@ -118,7 +118,7 @@ def custom_build_cmake_clib(
         "-DoneDAL_LIBRARY_DIR=" + jp(os.environ["DALROOT"], "lib", arch_dir),
         "-Dpybind11_DIR=" + pybind11.get_cmake_dir(),
         "-DoneDAL_USE_PARAMETERS_LIB=" + use_parameters_arg,
-        f"-DUSING_LLD={'ON' if using_lld else '0FF'}",
+        f"-DUSING_LLD={'ON' if using_lld else 'OFF'}",
     ]
 
     if debug_build:
