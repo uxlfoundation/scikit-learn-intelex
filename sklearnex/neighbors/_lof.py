@@ -29,8 +29,7 @@ from sklearnex.neighbors.common import KNeighborsDispatchingBase
 from sklearnex.neighbors.knn_unsupervised import NearestNeighbors
 
 from ..utils._array_api import get_namespace
-from ..utils.validation import check_feature_names
-
+from ..utils.validation import check_feature_names, validate_data
 
 @control_n_jobs(decorated_methods=["fit", "kneighbors", "_kneighbors"])
 class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor):
@@ -112,6 +111,9 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
         return self
 
     def fit(self, X, y=None):
+        X = validate_data(
+            self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
+        )
         result = dispatch(
             self,
             "fit",
@@ -125,6 +127,9 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
         return result
 
     def _predict(self, X=None):
+        X = validate_data(
+            self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
+        )
         check_is_fitted(self)
 
         if X is not None:
@@ -149,9 +154,10 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
         return self.fit(X)._predict()
 
     def _kneighbors(self, X=None, n_neighbors=None, return_distance=True):
+        X = validate_data(
+            self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
+        )
         check_is_fitted(self)
-        if X is not None:
-            check_feature_names(self, X, reset=False)
         return dispatch(
             self,
             "kneighbors",
@@ -170,6 +176,9 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
     @wraps(_sklearn_LocalOutlierFactor.score_samples, assigned=["__doc__"])
     @wrap_output_data
     def score_samples(self, X):
+        X = validate_data(
+            self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
+        )
         check_is_fitted(self)
 
         distances_X, neighbors_indices_X = self._kneighbors(

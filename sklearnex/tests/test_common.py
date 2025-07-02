@@ -72,9 +72,6 @@ _DESIGN_RULE_VIOLATIONS = {
     "NearestNeighbors-radius_neighbors-n_jobs_check": "uses daal4py for cpu in onedal",
     "NearestNeighbors-kneighbors_graph-n_jobs_check": "uses daal4py for cpu in onedal",
     "NearestNeighbors-radius_neighbors_graph-n_jobs_check": "uses daal4py for cpu in onedal",
-    "LocalOutlierFactor-fit-n_jobs_check": "uses daal4py for cpu in onedal",
-    "LocalOutlierFactor-kneighbors-n_jobs_check": "uses daal4py for cpu in onedal",
-    "LocalOutlierFactor-kneighbors_graph-n_jobs_check": "uses daal4py for cpu in onedal",
     "KNeighborsClassifier(algorithm='brute')-fit-call_validate_data": "validate data called both in sklearnex and onedal",
     "KNeighborsRegressor(algorithm='brute')-kneighbors-n_jobs_check": "uses daal4py for cpu in onedal",
     "KNeighborsRegressor(algorithm='brute')-fit-n_jobs_check": "uses daal4py for cpu in onedal",
@@ -86,9 +83,6 @@ _DESIGN_RULE_VIOLATIONS = {
     "NearestNeighbors(algorithm='brute')-radius_neighbors-n_jobs_check": "uses daal4py for cpu in onedal",
     "NearestNeighbors(algorithm='brute')-kneighbors_graph-n_jobs_check": "uses daal4py for cpu in onedal",
     "NearestNeighbors(algorithm='brute')-radius_neighbors_graph-n_jobs_check": "uses daal4py for cpu in onedal",
-    "LocalOutlierFactor(novelty=True)-fit-n_jobs_check": "uses daal4py for cpu in onedal",
-    "LocalOutlierFactor(novelty=True)-kneighbors-n_jobs_check": "uses daal4py for cpu in onedal",
-    "LocalOutlierFactor(novelty=True)-kneighbors_graph-n_jobs_check": "uses daal4py for cpu in onedal",
     "LogisticRegression(solver='newton-cg')-score-n_jobs_check": "uses daal4py for cpu in sklearnex",
     "LogisticRegression(solver='newton-cg')-fit-n_jobs_check": "uses daal4py for cpu in sklearnex",
     "LogisticRegression(solver='newton-cg')-predict-n_jobs_check": "uses daal4py for cpu in sklearnex",
@@ -488,7 +482,6 @@ def call_validate_data(text, estimator, method):
         if sklearn_check_version("1.6")
         else (validate_data_calls[1] == {"sklearn.base", "_validate_data"})
     ), "sklearn's validate_data should be called second"
-    print(valid_funcs)
     assert (
         valid_funcs.count("_check_feature_names") == 1
     ), "estimator should check feature names in validate_data"

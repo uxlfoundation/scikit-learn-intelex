@@ -19,12 +19,6 @@ from numbers import Integral
 
 import numpy as np
 
-from daal4py import (
-    bf_knn_classification_model,
-    bf_knn_classification_prediction,
-    kdtree_knn_classification_model,
-    kdtree_knn_classification_prediction,
-)
 from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
 from onedal.utils import _sycl_queue_manager as QM
@@ -340,19 +334,10 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
             self._fit_method, self.n_samples_fit_, n_features
         )
 
-        if type(self._onedal_model) in (
-            kdtree_knn_classification_model,
-            bf_knn_classification_model,
-        ):
-            params = super()._get_daal_params(X, n_neighbors=n_neighbors)
-            prediction_results = self._onedal_predict(self._onedal_model, X, params)
-            distances = prediction_results.distances
-            indices = prediction_results.indices
-        else:
-            params = super()._get_onedal_params(X, n_neighbors=n_neighbors)
-            prediction_results = self._onedal_predict(self._onedal_model, X, params)
-            distances = from_table(prediction_results.distances)
-            indices = from_table(prediction_results.indices)
+        params = super()._get_onedal_params(X, n_neighbors=n_neighbors)
+        prediction_results = self._onedal_predict(self._onedal_model, X, params)
+        distances = from_table(prediction_results.distances)
+        indices = from_table(prediction_results.indices)
 
         if method == "kd_tree":
             for i in range(distances.shape[0]):
@@ -723,11 +708,6 @@ class NearestNeighbors(NeighborsBase):
         return self.train(params, X).model
 
     def _onedal_predict(self, model, X, params):
-        if type(self._onedal_model) is kdtree_knn_classification_model:
-            return kdtree_knn_classification_prediction(**params).compute(X, model)
-        elif type(self._onedal_model) is bf_knn_classification_model:
-            return bf_knn_classification_prediction(**params).compute(X, model)
-
         X = to_table(X, queue=QM.get_global_queue())
 
         params["fptype"] = X.dtype
