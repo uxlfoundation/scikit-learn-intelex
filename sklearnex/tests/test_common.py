@@ -488,6 +488,7 @@ def call_validate_data(text, estimator, method):
         if sklearn_check_version("1.6")
         else (validate_data_calls[1] == {"sklearn.base", "_validate_data"})
     ), "sklearn's validate_data should be called second"
+    print(valid_funcs)
     assert (
         valid_funcs.count("_check_feature_names") == 1
     ), "estimator should check feature names in validate_data"

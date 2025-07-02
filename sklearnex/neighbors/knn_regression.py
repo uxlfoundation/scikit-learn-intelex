@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
+import numpy as np
 from sklearn.metrics import r2_score
 from sklearn.neighbors._regression import (
     KNeighborsRegressor as _sklearn_KNeighborsRegressor,
@@ -26,7 +26,7 @@ from daal4py.sklearn.utils.validation import get_requires_y_tag
 from onedal.neighbors import KNeighborsRegressor as onedal_KNeighborsRegressor
 
 from .._device_offload import dispatch, wrap_output_data
-from ..utils.validation import check_feature_names
+from ..utils.validation import check_feature_names, validate_data
 from .common import KNeighborsDispatchingBase
 
 
@@ -62,6 +62,9 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         )
 
     def fit(self, X, y):
+        X, y = validate_data(
+            self, X, y, dtype=[np.float64, np.float32], accept_sparse="csr"
+        )
         dispatch(
             self,
             "fit",
@@ -76,8 +79,10 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
 
     @wrap_output_data
     def predict(self, X):
+        X = validate_data(
+            self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
+        )
         check_is_fitted(self)
-        check_feature_names(self, X, reset=False)
         return dispatch(
             self,
             "predict",
@@ -90,8 +95,10 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
 
     @wrap_output_data
     def score(self, X, y, sample_weight=None):
+        X = validate_data(
+            self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
+        )
         check_is_fitted(self)
-        check_feature_names(self, X, reset=False)
         return dispatch(
             self,
             "score",
@@ -106,9 +113,10 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
 
     @wrap_output_data
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
+        X = validate_data(
+            self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
+        )
         check_is_fitted(self)
-        if X is not None:
-            check_feature_names(self, X, reset=False)
         return dispatch(
             self,
             "kneighbors",

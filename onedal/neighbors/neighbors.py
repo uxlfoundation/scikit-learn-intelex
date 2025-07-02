@@ -232,10 +232,6 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         use_raw_input = _get_config().get("use_raw_input", False) is True
         if y is not None or self.requires_y:
             shape = getattr(y, "shape", None)
-            if not use_raw_input:
-                X, y = super()._validate_data(
-                    X, y, dtype=[np.float64, np.float32], accept_sparse="csr"
-                )
             self._shape = shape if shape is not None else y.shape
 
             if _is_classifier(self):
@@ -452,8 +448,6 @@ class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
     def _onedal_fit(self, X, y):
         # global queue is set as per user configuration (`target_offload`) or from data prior to calling this internal function
         queue = QM.get_global_queue()
-        gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
-
         params = self._get_onedal_params(X, y)
         X_table, y_table = to_table(X, y, queue=queue)
         return self.train(params, X_table, y_table).model
@@ -591,15 +585,6 @@ class KNeighborsRegressor(NeighborsBase, RegressorMixin):
         # global queue is set as per user configuration (`target_offload`) or from data prior to calling this internal function
         queue = QM.get_global_queue()
         gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
-        if self.effective_metric_ == "euclidean" and not gpu_device:
-            params = self._get_daal_params(X)
-            if self._fit_method == "brute":
-                train_alg = bf_knn_classification_training
-            else:
-                train_alg = kdtree_knn_classification_training
-
-            return train_alg(**params).compute(X, y).model
-
         X_table, y_table = to_table(X, y, queue=queue)
         params = self._get_onedal_params(X_table, y)
 
