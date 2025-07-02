@@ -22,10 +22,8 @@ import numpy as np
 from daal4py import (
     bf_knn_classification_model,
     bf_knn_classification_prediction,
-    bf_knn_classification_training,
     kdtree_knn_classification_model,
     kdtree_knn_classification_prediction,
-    kdtree_knn_classification_training,
 )
 from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
@@ -255,8 +253,6 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
                 self._validate_n_classes()
             else:
                 self._y = y
-        elif not use_raw_input:
-            X, _ = super()._validate_data(X, dtype=[np.float64, np.float32])
 
         self.n_samples_fit_ = X.shape[0]
         self.n_features_in_ = X.shape[1]
@@ -596,11 +592,6 @@ class KNeighborsRegressor(NeighborsBase, RegressorMixin):
     def _onedal_predict(self, model, X, params):
         assert self._onedal_model is not None, "Model is not trained"
 
-        if type(model) is kdtree_knn_classification_model:
-            return kdtree_knn_classification_prediction(**params).compute(X, model)
-        elif type(model) is bf_knn_classification_model:
-            return bf_knn_classification_prediction(**params).compute(X, model)
-
         # global queue is set as per user configuration (`target_offload`) or from data prior to calling this internal function
         queue = QM.get_global_queue()
         gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
@@ -727,21 +718,9 @@ class NearestNeighbors(NeighborsBase):
     def _onedal_fit(self, X, y):
         # global queue is set as per user configuration (`target_offload`) or from data prior to calling this internal function
         queue = QM.get_global_queue()
-        gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
-        if self.effective_metric_ == "euclidean" and not gpu_device:
-            params = self._get_daal_params(X)
-            if self._fit_method == "brute":
-                train_alg = bf_knn_classification_training
-
-            else:
-                train_alg = kdtree_knn_classification_training
-
-            return train_alg(**params).compute(X, y).model
-
-        else:
-            params = self._get_onedal_params(X, y)
-            X, y = to_table(X, y, queue=queue)
-            return self.train(params, X).model
+        params = self._get_onedal_params(X, y)
+        X, y = to_table(X, y, queue=queue)
+        return self.train(params, X).model
 
     def _onedal_predict(self, model, X, params):
         if type(self._onedal_model) is kdtree_knn_classification_model:
