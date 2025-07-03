@@ -34,7 +34,7 @@ from sklearn.utils import all_estimators
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal.tests.test_common import _check_primitive_usage_ban
 from onedal.tests.utils._dataframes_support import test_frameworks
-from onedal._utils import get_tags
+from sklearnex._utils import get_tags
 from sklearnex.base import oneDALEstimator
 from sklearnex.tests.utils import (
     PATCHED_MODELS,
@@ -455,23 +455,18 @@ def estimator_trace(estimator, method, cache, isolated_trace):
         )
         regex_mod = r"(?<=--- modulename: )\S*(?=\.py)"  # needed due to differences in module structure
 
-        regex_call = r"(?<={name})\((?s).*(?=\n --- modulename: )"
+        regex_callingline = r"(?<=\n)(\S*\.py\(\d+\)\:)\s*(.*?)\s*(?=\n --- modulename: )"
 
-        output = {
+        cache.set("key", key)
+        cache.set(
+            "text",
+            {
                 "funcs": re.findall(regex_func, text),
                 "trace": text,
                 "modules": [i.replace(os.sep, ".") for i in re.findall(regex_mod, text)],
-        }
-
-        splittext = text.split(" --- modulename: ")[1:]
-        callingline = [""]
-        for idx in range(len(output["funcs"])):
-            name = output["funcs"][idx]
-            callingline += [re.search(regex_call.format(name=name), splittext[idx])]
-        output["callingline"] = callingline
-               
-        cache.set("key", key)
-        cache.set("text", output)
+                "callingline": [""] + [i[1] for i in re.findall(regex_callingline, text)],
+            },
+        )
 
     return cache.get("text", None)
 
@@ -559,16 +554,29 @@ def get_namespace_check(text, estimator, method):
     # is called, that ``get_namespace`` is 1) called after validate_data and 2)
     # all arguments are passed to ``get_namespace`` in order to guarantee single
     # array typing (i.e. a single namespace)
-    if get_tags(estimator).onedal_array_api:
+
+    # get estimator
+    est = (
+        PATCHED_MODELS[estimator]()
+        if estimator in PATCHED_MODELS
+        else SPECIAL_INSTANCES[estimator]
+    )
+
+    if not get_tags(est).onedal_array_api:
         if "to_table" not in text["funcs"]:
             pytest.skip("onedal backend not used in this function")
         # find index where dispatch is called
-        onedal_idx = text["funcs"].index("_onedal_"+method)
+        idx = text["callingline"].index("return branches[\"onedal\"](obj, *hostargs, **hostkwargs, queue=queue)")
+        print(text["funcs"][idx])
+        [print(i) for i in text["callingline"]]
+        assert False
         # get the signature, no variable argument lists (e.g. *args) allowed
-        sig = inspect.signature(getattr(estimator, method))
+        sig = inspect.signature(getattr(est, method))
         # index 0 is the 'self' positional argument
-        params = [str(p) for p in sig.parameters.values()[1:] if p.kind in inspect.Parameter.POSITIONAL_ONLY]
-        
+        argiter = iter(sig.parameters.values())
+        next(argiter) # remove equivalent of `self`
+        params = [str(p) for p in argiter if p.kind in inspect.Parameter.POSITIONAL_ONLY]
+        print(params, onedal_idx, validate_idx)
         # find index where validate_data is called
         validate_idx = text["funcs"].index("validate_data")
 
