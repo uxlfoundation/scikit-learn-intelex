@@ -349,6 +349,21 @@ deselected_tests:
   # to CI parameters, as parameter validation is globally handled in sklearn version 1.2 onward
   - cluster/tests/test_dbscan.py::test_dbscan_params_validation
 
+  # From sklearn 1.6, need to resolve logreg bug from joblib with_parallel_backend.
+  # Removal of this deselection will result in test_logistic fails (this one will pass).
+  - feature_selection/tests/test_rfe.py::test_rfe_with_joblib_threading_backend
+  # Failing tests since sklearn 1.6
+  - tests/test_common.py::test_estimators[CalibratedClassifierCV(cv=3,estimator=LogisticRegression(C=1))-check_sample_weight_equivalence_on_dense_data]
+  - tests/test_common.py::test_estimators[ExtraTreesClassifier(n_estimators=5)-check_sample_weight_equivalence_on_dense_data]
+  - tests/test_common.py::test_estimators[ExtraTreesRegressor(n_estimators=5)-check_sample_weight_equivalence_on_dense_data]
+  - utils/tests/test_estimator_checks.py::test_xfail_count_with_no_fast_fail
+  # XFail vs XPass differs between scikit-learn and scikit-learn-intelex since 1.6
+  - tests/test_common.py::test_estimators[LinearRegression()-check_sample_weight_equivalence_on_dense_data] <1.7
+  - tests/test_common.py::test_estimators[LogisticRegression(max_iter=5)-check_sample_weight_equivalence_on_dense_data]
+  - tests/test_common.py::test_estimators[LogisticRegression(max_iter=5,solver='newton-cg')-check_sample_weight_equivalence_on_dense_data]
+  - tests/test_common.py::test_estimators[NuSVC()-check_class_weight_classifiers]
+  - tests/test_common.py::test_estimators[CalibratedClassifierCV(estimator=LogisticRegression(C=1))-check_sample_weights_invariance(kind=ones)]
+
   # --------------------------------------------------------
   # No need to test daal4py patching
 reduced_tests:
