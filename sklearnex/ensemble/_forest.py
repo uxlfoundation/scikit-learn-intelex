@@ -831,7 +831,8 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         res = self._onedal_estimator.predict(X, queue=queue)
         try:
             return xp.take(
-                xp.asarray(self.classes_), xp.astype(xp.reshape(res, (-1,)), xp.int64)
+                xp.asarray(self.classes_, device=res.sycl_queue),
+                xp.astype(xp.reshape(res, (-1,)), xp.int64),
             )
         except AttributeError:
             return np.take(self.classes_, res.ravel().astype(np.int64, casting="unsafe"))
