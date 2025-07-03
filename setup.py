@@ -170,7 +170,7 @@ def get_sdl_ldflags():
     if IS_LIN:
         if not USING_LLD:
             return [
-                "-Wl,-z,noexecstack,-z,relro,-z,now,-fstack-protector-strong"
+                "-Wl,-z,noexecstack,-z,relro,-z,now,-fstack-protector-strong,"
                 "-fno-strict-overflow,-fno-delete-null-pointer-checks,-fwrapv"
             ]
         else:
