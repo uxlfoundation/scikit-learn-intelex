@@ -322,15 +322,10 @@ deselected_tests:
 
   # Deselections for 2025.0
   - ensemble/tests/test_forest.py::test_importances[ExtraTreesRegressor-squared_error-float64]
-  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[42-1e-100-sparse_array-normal]
-  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[42-0-sparse_array-normal]
-  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[42-0-sparse-normal]
-  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[42-0.01-sparse_array-normal]
-  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[1e-08-sparse-normal]
-  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[42-1e-08-sparse_matrix-normal]
-  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[42-1e-100-sparse-blobs]
-  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[42-1e-100-sparse-normal]
-  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[42-0-sparse_matrix-normal]
+  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[42-0.01-sparse
+  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[42-1e-08-sparse
+  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[42-1e-100-sparse
+  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[42-0-sparse
 
   # Fails in stock scikit-learn: checks that data is modified in-place when not strictly required
   - linear_model/tests/test_base.py::test_inplace_data_preprocessing
