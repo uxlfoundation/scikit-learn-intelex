@@ -21,6 +21,11 @@ import numpy as np
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal.utils._array_api import _get_sycl_namespace
 
+from ..base import oneDALEstimator
+
+if sklearn_check_version("1.6"):
+    from ..base import Tags
+
 if sklearn_check_version("1.2"):
     from sklearn.utils._array_api import get_namespace as sklearn_get_namespace
 
@@ -80,3 +85,38 @@ def get_namespace(*arrays):
         return sklearn_get_namespace(*arrays)
     else:
         return np, False
+
+
+def enable_array_api(original_class: type[oneDALEstimator]) -> type[oneDALEstimator]:
+    """Enable sklearnex to use dpctl, dpnp or array_api inputs in oneDAL offloading.
+
+    This wrapper sets the proper flags/tags for the sklearnex infrastructure
+    to maintain the data framework, as the estimator can use it natively.
+
+    Parameters
+    ----------
+    original_class : oneDALEstimator subclass
+        Class which should enable data zero-copy support in sklearnex.
+
+    Returns
+    -------
+    original_class : modified oneDALEstimator subclass
+        Estimator class.
+    """
+    if sklearn_check_version("1.6"):
+
+        def __sklearn_tags__(self) -> Tags:
+            sktags = super(self, original_class).__sklearn_tags__()
+            sktags.onedal_array_api = True
+            return sktags
+
+        original_class.__sklearn_tags__ = __sklearn_tags__
+
+    elif sklearn_check_version("1.3"):
+
+        def _more_tags(self) -> dict[bool]:
+            return {"onedal_array_api": True}
+
+        original_class._more_tags = _more_tags
+
+    return original_class
