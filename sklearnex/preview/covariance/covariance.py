@@ -116,9 +116,20 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
         precision = self.get_precision()
         with config_context(assume_finite=True):
             # compute mahalanobis distances
-            dist = pairwise_distances(
-                X, self.location_[np.newaxis, :], metric="mahalanobis", VI=precision
-            )
+            try:
+                dist = pairwise_distances(
+                    X, self.location_[np.newaxis, :], metric="mahalanobis", VI=precision
+                )
+
+            except ValueError as e:
+                # Throw the expected sklearn error in an n_feature length violation
+                if "Incompatible dimension for X and Y matrices:" in str(e):
+                    raise ValueError(
+                        f"X has {_num_features(X)} features, but {self.__class__.__name__} "
+                        f"is expecting {self.n_features_in_} features as input."
+                    )
+                else:
+                    raise e
 
         return np.reshape(dist, (len(X),)) ** 2
 
