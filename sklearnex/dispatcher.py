@@ -118,12 +118,6 @@ def get_patch_map_core(preview=False):
         from ._config import config_context as config_context_sklearnex
         from ._config import get_config as get_config_sklearnex
         from ._config import set_config as set_config_sklearnex
-
-        if sklearn_check_version("1.2.1"):
-            from .utils.parallel import _FuncWrapper as _FuncWrapper_sklearnex
-        else:
-            from .utils.parallel import _FuncWrapperOld as _FuncWrapper_sklearnex
-
         from .cluster import DBSCAN as DBSCAN_sklearnex
         from .cluster import KMeans as KMeans_sklearnex
         from .covariance import (
@@ -155,6 +149,7 @@ def get_patch_map_core(preview=False):
         from .svm import SVR as SVR_sklearnex
         from .svm import NuSVC as NuSVC_sklearnex
         from .svm import NuSVR as NuSVR_sklearnex
+        from .utils.parallel import _FuncWrapper as _FuncWrapper_sklearnex
 
         # DBSCAN
         mapping.pop("dbscan")
