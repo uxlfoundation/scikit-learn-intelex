@@ -214,10 +214,21 @@ python setup.py build --abs-rpath
 
 **Note:** when building `scikit-learn-intelex` from source with this option, it will use the oneDAL library with which it was compiled. oneDAL has dependencies on other libraries such as TBB, which is also distributed as a python package through `pip` and as a `conda` package. By default, a conda environment will first try to load TBB from its own packages if it is installed in the environment, which might cause issues if oneDAL was compiled with a system TBB instead of a conda one. In such cases, it is advised to either uninstall TBB from pip/conda (it will be loaded from the oneDAL library which links to it), or modify the order of search paths in environment variables like `${LD_LIBRARY_PATH}`.
 
+### Debug Builds
+
+To build modules with debugging symbols and assertions enabled, pass argument `--debug` to the setup command - e.g.:
+
+```shell
+python setup.py build_ext --inplace --force --abs-rpath --debug
+python setup.py build --abs-rpath --debug
+```
+
+_**Note:** on Windows, this will only add debugging symbols for the `onedal` extension modules, but not for the `daal4py` extension module._
+
 ### Building with ASAN
 
 In order to use AddressSanitizer (ASan) together with `scikit-learn-intelex`, it's necessary to:
-* Build both oneDAL and scikit-learn-intelex with ASan (otherwise error traces will not be very informative).
+* Build both oneDAL and scikit-learn-intelex with ASan and with debug symbols (otherwise error traces will not be very informative).
 * Preload the ASan runtime when executing the Python process that imports `scikit-learn-intelex`.
 * Optionally, configure Python to use `malloc` as default allocator to reduce the number of false-positive leak reports.
 

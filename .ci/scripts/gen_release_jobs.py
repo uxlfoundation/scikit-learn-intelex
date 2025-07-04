@@ -56,7 +56,7 @@ def collect_azp_CI_OS_images(file=f".ci{os.sep}pipeline{os.sep}ci.yml"):
     """Attempt to centralize the supported version from the azp CI pipeline, which
     represents the currently tested versions in Azure Pipelines."""
     regex = r"(?<=vmImage: ').*(?=')"
-    sysdefaults = ["ubuntu-22.04", "windows-2022"]
+    sysdefaults = ["ubuntu-24.04", "windows-2022"]
     if os.path.isfile(file):
         with open(file, "r") as f:
             # find unique values with set
