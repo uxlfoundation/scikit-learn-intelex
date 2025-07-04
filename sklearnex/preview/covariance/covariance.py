@@ -20,6 +20,7 @@ import numpy as np
 from scipy import sparse as sp
 from sklearn.covariance import EmpiricalCovariance as _sklearn_EmpiricalCovariance
 from sklearn.utils import check_array
+from sklearn.utils.validation import _num_features
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
