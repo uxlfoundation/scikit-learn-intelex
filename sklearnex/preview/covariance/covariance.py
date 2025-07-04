@@ -20,6 +20,7 @@ import numpy as np
 from scipy import sparse as sp
 from sklearn.covariance import EmpiricalCovariance as _sklearn_EmpiricalCovariance
 from sklearn.utils import check_array
+from sklearn.utils.validation import _num_features
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
@@ -34,7 +35,7 @@ from ...base import oneDALEstimator
 from ...utils.validation import validate_data
 
 
-@register_hyperparameters({"fit": get_hyperparameters("covariance", "compute")})
+@register_hyperparameters({"fit": ("covariance", "compute")})
 @control_n_jobs(decorated_methods=["fit", "mahalanobis"])
 class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
     __doc__ = _sklearn_EmpiricalCovariance.__doc__
@@ -90,11 +91,15 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
     _onedal_gpu_supported = _onedal_supported
 
     def fit(self, X, y=None):
+        self._fit(X)
+        return self
+
+    @wrap_output_data
+    def _fit(self, X):
         if sklearn_check_version("1.2"):
             self._validate_params()
-        X = validate_data(self, X, ensure_all_finite=False)
 
-        dispatch(
+        return dispatch(
             self,
             "fit",
             {
@@ -104,8 +109,6 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
             X,
         )
 
-        return self
-
     # expose sklearnex pairwise_distances if mahalanobis distance eventually supported
     @wrap_output_data
     def mahalanobis(self, X):
@@ -114,9 +117,20 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
         precision = self.get_precision()
         with config_context(assume_finite=True):
             # compute mahalanobis distances
-            dist = pairwise_distances(
-                X, self.location_[np.newaxis, :], metric="mahalanobis", VI=precision
-            )
+            try:
+                dist = pairwise_distances(
+                    X, self.location_[np.newaxis, :], metric="mahalanobis", VI=precision
+                )
+
+            except ValueError as e:
+                # Throw the expected sklearn error in an n_feature length violation
+                if "Incompatible dimension for X and Y matrices:" in str(e):
+                    raise ValueError(
+                        f"X has {_num_features(X)} features, but {self.__class__.__name__} "
+                        f"is expecting {self.n_features_in_} features as input."
+                    )
+                else:
+                    raise e
 
         return np.reshape(dist, (len(X),)) ** 2
 

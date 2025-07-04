@@ -46,6 +46,7 @@ __all__ = [
     "model_selection",
     "neighbors",
     "patch_sklearn",
+    "reset_hyperparameters",
     "set_config",
     "sklearn_is_patched",
     "svm",
@@ -56,7 +57,7 @@ __version__ = "2199.9.9"
 onedal_iface_flag = os.environ.get("OFF_ONEDAL_IFACE", "0")
 if onedal_iface_flag == "0":
     from onedal import _spmd_backend
-    from onedal.common.hyperparameters import get_hyperparameters
+    from onedal.common.hyperparameters import get_hyperparameters, reset_hyperparameters
 
     if _spmd_backend is not None:
         __all__.append("spmd")

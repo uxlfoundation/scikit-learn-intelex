@@ -48,7 +48,7 @@ if daal_check_version((2024, "P", 100)):
     from onedal.decomposition import PCA as onedal_PCA
     from onedal.utils._array_api import _is_numpy_namespace
 
-    @register_hyperparameters({"fit": get_hyperparameters("pca", "train")})
+    @register_hyperparameters({"fit": ("pca", "train")})
     @control_n_jobs(decorated_methods=["fit", "transform", "fit_transform"])
     class PCA(oneDALEstimator, _sklearn_PCA):
         __doc__ = _sklearn_PCA.__doc__
