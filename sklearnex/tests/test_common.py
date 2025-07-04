@@ -555,6 +555,9 @@ def get_namespace_check(text, estimator, method):
     # all arguments are passed to ``get_namespace`` in order to guarantee single
     # array typing (i.e. a single namespace)
 
+    if "to_table" not in text["funcs"]:
+        pytest.skip("onedal backend not used in this function")
+
     # get estimator
     est = (
         PATCHED_MODELS[estimator]()
@@ -563,29 +566,47 @@ def get_namespace_check(text, estimator, method):
     )
 
     if not get_tags(est).onedal_array_api:
-        if "to_table" not in text["funcs"]:
-            pytest.skip("onedal backend not used in this function")
-        # find index where dispatch is called
-        idx = text["callingline"].index("return branches[\"onedal\"](obj, *hostargs, **hostkwargs, queue=queue)")
-        print(text["funcs"][idx])
-        [print(i) for i in text["callingline"]]
-        assert False
-        # get the signature, no variable argument lists (e.g. *args) allowed
-        sig = inspect.signature(getattr(est, method))
-        # index 0 is the 'self' positional argument
-        argiter = iter(sig.parameters.values())
-        next(argiter) # remove equivalent of `self`
-        params = [str(p) for p in argiter if p.kind in inspect.Parameter.POSITIONAL_ONLY]
-        print(params, onedal_idx, validate_idx)
-        # find index where validate_data is called
-        validate_idx = text["funcs"].index("validate_data")
+        # the nature of this search is a bit more compilicated than the other
+        # rules.  The raw trace string is unfortunately the easiest approach
+        after_offload = text["trace"].split('return branches["onedal"](obj,')[1]
+        reduced_trace, valid_trace, *_ = after_offload.split("= validate_data(")
+
+        def return_call(string):
+            count = 1  # already found first opening
+            for i, c in enumerate(string):
+                if c == "(":
+                    count += 1
+                elif c == ")":
+                    count -= 1
+                if count == 0:
+                    return s[:i]
+            return string
+
+        validate_data_call = return_call(valid_trace)
+
+        # reduced_trace now contains the necessary part of the trace
+        # where get_namespace must be called.  get_namespace must be called
+        # with as many or more arguments as the return values of
+        # ``validate_data``
+
+        # validate_data_call contains the raw validate_data inputs in a
+        # string
+
+        # create a similar representation for the reduced_trace for
+        # get_namespace
+        name_trace = reduced_trace.split("= get_namespace(")[1]
+        get_namespace_call = return_call(name_trace)
+
+        # iterate through both to make sure that get_namespace is taking the
+        # matching inputs to validate_data. This requires that no use of
+        # python unpacking occurs.
 
         # in between ``validate_data`` and ``to_table`` should be at least a single
         # call to ``get_namespace`` that asserts that all elements of the arguments
-        # to dispatch 
-        
+        # to dispatch
+
     else:
-        pytest.skip(f"Native oneDAL Array API support not available for {estimator}")        
+        pytest.skip(f"Native oneDAL Array API support not available for {estimator}")
 
 
 DESIGN_RULES = [
