@@ -279,33 +279,33 @@ public:
 
 /* *********************************************************************** */
 
-// An empty virtual base class (used by TVSP) for shared pointer handling
-// we use this to have a generic type for all shared pointers
-// e.g. used in daalsp_free functions below
-class VSP
+template <class T>
+void delete_daal_shared_ptr(PyObject * cap)
 {
-public:
-    // we need a virtual destructor
-    virtual ~VSP() {};
-};
-// typed virtual shared pointer, for simplicity we make it a oneDAL shared pointer
-template <typename T>
-class TVSP : public VSP, public daal::services::SharedPtr<T>
-{
-public:
-    TVSP(const daal::services::SharedPtr<T> & org) : daal::services::SharedPtr<T>(org) {}
-    virtual ~TVSP() {};
-};
+    daal::services::SharedPtr<T> * shared_ptr = static_cast<daal::services::SharedPtr<T> *>(PyCapsule_GetPointer(cap, NULL));
+    delete shared_ptr;
+}
 
-// define our own free functions for wrapping python objects holding our shared pointers
-extern void daalsp_free_cap(PyObject *);
-extern void rawp_free_cap(PyObject *);
-
-template <typename T>
+template <class T>
 void set_sp_base(PyArrayObject * ary, daal::services::SharedPtr<T> & sp)
 {
-    void * tmp_sp  = static_cast<void *>(new TVSP<T>(sp));
-    PyObject * cap = PyCapsule_New(tmp_sp, NULL, daalsp_free_cap);
+    daal::services::SharedPtr<T> * shared_ptr_for_capsule = new daal::services::SharedPtr<T>();
+    *shared_ptr_for_capsule                               = std::move(sp);
+    PyObject * cap                                        = PyCapsule_New(static_cast<void *>(shared_ptr_for_capsule), NULL, delete_daal_shared_ptr<T>);
+    PyArray_SetBaseObject(ary, cap);
+}
+
+template <class T>
+void rawp_free_cap(PyObject * cap)
+{
+    T * rawp = static_cast<T *>(PyCapsule_GetPointer(cap, NULL));
+    delete[] rawp;
+}
+
+template <class T>
+void set_rawp_base(PyArrayObject * ary, T * ptr)
+{
+    PyObject * cap = PyCapsule_New(static_cast<void *>(ptr), NULL, rawp_free_cap<T>);
     PyArray_SetBaseObject(ary, cap);
 }
 
@@ -313,11 +313,6 @@ template <typename T>
 static T * _daal_clone(const T & o)
 {
     return new T(o);
-}
-
-extern "C"
-{
-    void set_rawp_base(PyArrayObject *, void *);
 }
 
 extern "C"
