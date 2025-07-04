@@ -120,6 +120,37 @@ def lazy_import(*module_names: str) -> Callable:
     return decorator
 
 
+def convert_sklearnex_queue(func: Callable) -> Callable:
+    """Convert sklearnex pybind11-defined SyclQueue to a dpctl SyclQueue.
+
+    There are circumstances where the internal sklearnex pybind-11-defined
+    SyclQueue generation is required due to gaps in ``dpctl.SyclQueue``
+    initializer. This will change the return value of the function to a
+    ``dpctl.SyclQueue`` if dpctl is available, otherwise it will not wrap
+    the function whatsoever (the function will return an internal SyclQueue).
+
+    Parameters
+    ----------
+    func : callable
+        Function or method to be wrapped.
+
+    Returns
+    -------
+    wrapped : callable
+        Wrapped or original function depending on ``dpctl_available``.
+    """
+    if dpctl_available:
+
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            return SyclQueue(func(*args, **kwargs)._get_capsule())
+
+        return wrapper
+
+    else:
+        return func
+
+
 @functools.lru_cache(100)
 def _is_subclass_fast(cls: type, modname: str, clsname: str) -> bool:
     # Taken directly from array_api_compat.common._helpers to use for
@@ -154,8 +185,8 @@ def is_dpnp_ndarray(x: object) -> bool:
 def is_dpctl_tensor(x: object) -> bool:
     """Return True if 'x' is a dpctl usm_ndarray.
 
-    This function does not import dpnp if it has not already been imported
-    and is therefore cheap to use.
+    This function does not import dpctl.tensor if it has not already been
+    imported and is therefore cheap to use.
 
     Parameters
     ----------
@@ -168,3 +199,22 @@ def is_dpctl_tensor(x: object) -> bool:
         Flag if subclass of dpctl.tensor.usm_ndarray.
     """
     return _is_subclass_fast(type(x), "dpctl.tensor", "usm_ndarray")
+
+
+def is_torch_tensor(x: object) -> bool:
+    """Return True if 'x' is a PyTorch Tensor.
+
+    This function does not import PyTorch if it has not already been imported
+    and is therefore cheap to use.
+
+    Parameters
+    ----------
+    x : object
+        Any python object.
+
+    Returns
+    -------
+    is_torch : bool
+        Flag if subclass of torch.Tensor.
+    """
+    return _is_subclass_fast(type(x), "torch", "Tensor")
