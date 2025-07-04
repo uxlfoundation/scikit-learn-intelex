@@ -69,34 +69,6 @@ private:
     PyArrayObject * _ndarray;
 };
 
-// define our own free functions for wrapping python objects holding our shared pointers
-void daalsp_free_cap(PyObject * cap)
-{
-    VSP * sp = static_cast<VSP *>(PyCapsule_GetPointer(cap, NULL));
-    if (sp)
-    {
-        delete sp;
-        sp = NULL;
-    }
-}
-
-// define our own free functions for wrapping python objects holding our raw pointers
-void rawp_free_cap(PyObject * cap)
-{
-    void * rp = PyCapsule_GetPointer(cap, NULL);
-    if (rp)
-    {
-        delete[] rp;
-        rp = NULL;
-    }
-}
-
-void set_rawp_base(PyArrayObject * ary, void * ptr)
-{
-    PyObject * cap = PyCapsule_New(ptr, NULL, rawp_free_cap);
-    PyArray_SetBaseObject(ary, cap);
-}
-
 inline void py_err_check()
 {
     if (PyErr_Occurred())
