@@ -569,7 +569,10 @@ def get_namespace_check(text, estimator, method):
         # the nature of this search is a bit more compilicated than the other
         # rules.  The raw trace string is unfortunately the easiest approach
         after_offload = text["trace"].split('return branches["onedal"](obj,')[1]
-        reduced_trace, valid_trace, *_ = after_offload.split("= validate_data(")
+        try:
+            reduced_trace, valid_trace, *_ = after_offload.split("= validate_data(")
+        except ValueError:
+            raise AssertionError("validate_data is not called") from None
 
         def return_call(string):
             count = 1  # already found first opening
@@ -594,8 +597,34 @@ def get_namespace_check(text, estimator, method):
 
         # create a similar representation for the reduced_trace for
         # get_namespace
-        name_trace = reduced_trace.split("= get_namespace(")[1]
+        try:
+            name_trace = reduced_trace.split("= get_namespace(")[1]
+        except IndexError:
+            raise AssertionError("get_namespaces is not called") from None
+        
         get_namespace_call = return_call(name_trace)
+
+        # extract i
+        get_name_inputs = "".join(get_namespace_call.split()).split(",")
+        get_valid_inputs = "".join(validate_data_call.split()).split(",")
+
+        # check that those inputs in validate_data were previously included
+        # in get_namespace
+        name_iter = iter(get_name_inputs)
+
+        assert "self" == get_valid_inputs[0]
+        for inp in get_valid_inputs[1:]:
+            # this is specifically written for validate_data definition and
+            # how we lint sklearnex. See:
+            # https://scikit-learn.org/stable/modules/generated/sklearn.utils.validation.validate_data.html
+            if "=" not in inp or inp.startswith("X=") or inp.startswith("y="):
+                try:
+                    assert next(name_iter) == inp
+                except StopIteration:
+                    raise AssertionError("get_namespace does not contain all of inputs to validate_data") from None
+
+
+
         assert False, f"namespace:{get_namespace_call} validate_data:{validate_data_call}"
 
 
