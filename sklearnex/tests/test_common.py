@@ -582,8 +582,9 @@ def get_namespace_check(text, estimator, method):
                 elif c == ")":
                     count -= 1
                 if count == 0:
-                    return string[:i]
-            return string
+                    return re.sub("\S*\.py\(\d+\)\:","",string[:i])
+            return re.sub(r"\S*\.py\(\d+\)\:","",string).rsplit("\n", 1)[0]
+
 
         validate_data_call = return_call(valid_trace)
 
@@ -605,7 +606,7 @@ def get_namespace_check(text, estimator, method):
         get_namespace_call = return_call(name_trace)
 
         # remove last parts of trace that may exist
-        re.sub()
+        re.sub(r"", "")
 
     
 
