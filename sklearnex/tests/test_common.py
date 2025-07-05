@@ -565,15 +565,9 @@ def get_namespace_check(text, estimator, method):
         else SPECIAL_INSTANCES[estimator]
     )
 
-    if not get_tags(est).onedal_array_api:
-        # the nature of this search is a bit more compilicated than the other
-        # rules.  The raw trace string is unfortunately the easiest approach
-        after_offload = text["trace"].split('return branches["onedal"](obj,')[1]
-        try:
-            reduced_trace, valid_trace, *_ = after_offload.split("= validate_data(")
-        except ValueError:
-            raise AssertionError("validate_data is not called") from None
-
+    if get_tags(est).onedal_array_api:
+        # the nature of this search is a bit more complicated than the other
+        # rules. The raw trace string is unfortunately the easiest approach
         def return_call(string):
             # this reinterprets a raw trace string into a usable format
             count = 1  # already found first opening
@@ -584,47 +578,54 @@ def get_namespace_check(text, estimator, method):
                     count -= 1
                 if count == 0:
                     # re.sub is used to remove the file and line numbers
-                    return re.sub("\S*\.py\(\d+\)\:","",string[:i])
+                    return re.sub(r"\S*\.py\(\d+\)\:", "", string[:i])
             # split last line because of use of multi-line representation
             # where the last close is not used in python's trace.
-            return re.sub(r"\S*\.py\(\d+\)\:","",string).rsplit("\n", 1)[0]
+            return re.sub(r"\S*\.py\(\d+\)\:", "", string).rsplit("\n", 1)[0]
 
-        # regex the input call to just h
+        # get functionality after a specific call in sklearnex._device_offload
+        # this is where the function starts which does onedal offloading.
+        after_offload = text["trace"].split('return branches["onedal"](obj,')[1]
+        try:
+            reduced_trace, valid_trace, *_ = after_offload.split("= validate_data(")
+        except ValueError:
+            raise AssertionError("validate_data is not called") from None
+
+        # regex the input call to just get the signature in situ
         validate_data_call = return_call(valid_trace)
 
-       # create a similar representation for the reduced_trace for
-        # get_namespace
+        # create a similar representation for ``get_namespace``
         try:
             name_trace = reduced_trace.split("= get_namespace(")[1]
         except IndexError:
             raise AssertionError("get_namespaces is not called") from None
-        
+
         get_namespace_call = return_call(name_trace)
 
+        # remove whitespace and newlines
         get_name_inputs = "".join(get_namespace_call.split()).split(",")
         get_valid_inputs = "".join(validate_data_call.split()).split(",")
 
-        # check that those inputs in validate_data were previously included
-        # in get_namespace
-        name_iter = iter(get_name_inputs)
-
         assert "self" == get_valid_inputs[0]
-        for inp in get_valid_inputs[1:]:
+        for idx, inp in enumerate(get_valid_inputs[1:]):
             # this is specifically written for validate_data definition and
-            # how we lint sklearnex. See:
+            # how we lint sklearnex. Generally X and y should be passed not
+            # as keyword arguments. See:
             # https://scikit-learn.org/stable/modules/generated/sklearn.utils.validation.validate_data.html
-            if "=" not in inp or inp.startswith("X=") or inp.startswith("y="):
+            if ("=" not in inp and idx < 2) or inp.startswith(("X=", "y=")):
                 try:
-                    assert next(name_iter) == inp
+                    assert inp.lstrip("X=").lstrip("y=") in get_name_inputs
                 except StopIteration:
-                    raise AssertionError("get_namespace does not contain all of inputs to validate_data") from None
-            else:
-                break
+                    raise AssertionError(
+                        "get_namespace does not contain all of inputs to validate_data"
+                    ) from None
 
-            # next check if sample_weight is used, if so it needs to be in the
-            # ``get_namespace`` arguments.
-            if "_check_sample_weight" in text["funcs"]:
-                assert next(name_iter, None), "sample_weight array is not included in get_namespace call"
+        # next check if sample_weight is used, if so it needs to be in the
+        # ``get_namespace`` arguments.
+        if "_check_sample_weight" in text["funcs"]:
+            assert (
+                "sample_weight" in get_name_inputs
+            ), "sample_weight array is not included in get_namespace call"
 
     else:
         pytest.skip(f"Native oneDAL Array API support not available for {estimator}")
