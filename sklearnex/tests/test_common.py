@@ -579,7 +579,7 @@ def get_namespace_check(text, estimator, method):
                 elif c == ")":
                     count -= 1
                 if count == 0:
-                    return s[:i]
+                    return string[:i]
             return string
 
         validate_data_call = return_call(valid_trace)
@@ -596,6 +596,8 @@ def get_namespace_check(text, estimator, method):
         # get_namespace
         name_trace = reduced_trace.split("= get_namespace(")[1]
         get_namespace_call = return_call(name_trace)
+        assert False, f"namespace:{get_namespace_call} validate_data:{validate_data_call}"
+
 
         # iterate through both to make sure that get_namespace is taking the
         # matching inputs to validate_data. This requires that no use of
