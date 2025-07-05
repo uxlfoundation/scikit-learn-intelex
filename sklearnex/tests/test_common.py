@@ -575,6 +575,7 @@ def get_namespace_check(text, estimator, method):
             raise AssertionError("validate_data is not called") from None
 
         def return_call(string):
+            # this reinterprets a raw trace string into a usable format
             count = 1  # already found first opening
             for i, c in enumerate(string):
                 if c == "(":
@@ -582,21 +583,16 @@ def get_namespace_check(text, estimator, method):
                 elif c == ")":
                     count -= 1
                 if count == 0:
+                    # re.sub is used to remove the file and line numbers
                     return re.sub("\S*\.py\(\d+\)\:","",string[:i])
+            # split last line because of use of multi-line representation
+            # where the last close is not used in python's trace.
             return re.sub(r"\S*\.py\(\d+\)\:","",string).rsplit("\n", 1)[0]
 
-
+        # regex the input call to just h
         validate_data_call = return_call(valid_trace)
 
-        # reduced_trace now contains the necessary part of the trace
-        # where get_namespace must be called.  get_namespace must be called
-        # with as many or more arguments as the return values of
-        # ``validate_data``
-
-        # validate_data_call contains the raw validate_data inputs in a
-        # string
-
-        # create a similar representation for the reduced_trace for
+       # create a similar representation for the reduced_trace for
         # get_namespace
         try:
             name_trace = reduced_trace.split("= get_namespace(")[1]
@@ -605,12 +601,6 @@ def get_namespace_check(text, estimator, method):
         
         get_namespace_call = return_call(name_trace)
 
-        # remove last parts of trace that may exist
-        re.sub(r"", "")
-
-    
-
-        # extract i
         get_name_inputs = "".join(get_namespace_call.split()).split(",")
         get_valid_inputs = "".join(validate_data_call.split()).split(",")
 
@@ -628,16 +618,13 @@ def get_namespace_check(text, estimator, method):
                     assert next(name_iter) == inp
                 except StopIteration:
                     raise AssertionError("get_namespace does not contain all of inputs to validate_data") from None
+            else:
+                break
 
-
-
-        # iterate through both to make sure that get_namespace is taking the
-        # matching inputs to validate_data. This requires that no use of
-        # python unpacking occurs.
-
-        # in between ``validate_data`` and ``to_table`` should be at least a single
-        # call to ``get_namespace`` that asserts that all elements of the arguments
-        # to dispatch
+            # next check if sample_weight is used, if so it needs to be in the
+            # ``get_namespace`` arguments.
+            if "_check_sample_weight" in text["funcs"]:
+                assert next(name_iter, None), "sample_weight array is not included in get_namespace call"
 
     else:
         pytest.skip(f"Native oneDAL Array API support not available for {estimator}")
