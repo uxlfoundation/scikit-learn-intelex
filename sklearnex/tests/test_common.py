@@ -604,6 +604,11 @@ def get_namespace_check(text, estimator, method):
         
         get_namespace_call = return_call(name_trace)
 
+        # remove last parts of trace that may exist
+        re.sub()
+
+    
+
         # extract i
         get_name_inputs = "".join(get_namespace_call.split()).split(",")
         get_valid_inputs = "".join(validate_data_call.split()).split(",")
@@ -623,9 +628,6 @@ def get_namespace_check(text, estimator, method):
                 except StopIteration:
                     raise AssertionError("get_namespace does not contain all of inputs to validate_data") from None
 
-
-
-        assert False, f"namespace:{get_namespace_call} validate_data:{validate_data_call}"
 
 
         # iterate through both to make sure that get_namespace is taking the
