@@ -588,7 +588,7 @@ def get_namespace_check(text, estimator, method):
         try:
             reduced_trace, valid_trace, *_ = after_offload.split("= validate_data(")
         except ValueError:
-            raise AssertionError("validate_data is not called") from None
+            pytest.fail("validate_data is not called")
 
         # regex the input call to just get the signature in situ
         validate_data_call = return_call(valid_trace)
@@ -597,7 +597,7 @@ def get_namespace_check(text, estimator, method):
         try:
             name_trace = reduced_trace.split("= get_namespace(")[1]
         except IndexError:
-            raise AssertionError("get_namespaces is not called") from None
+            pytest.fail("get_namespaces is not called")
 
         get_namespace_call = return_call(name_trace)
 
