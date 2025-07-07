@@ -551,9 +551,9 @@ def fit_check_before_support_check(text, estimator, method):
 def get_namespace_check(text, estimator, method):
     """guarantee single array namespace for input data via ``get_namespace``"""
     # Verify that if the estimator supports array api offloading and that onedal
-    # is called, that ``get_namespace`` is 1) called after validate_data and 2)
-    # all arguments are passed to ``get_namespace`` in order to guarantee single
-    # array typing (i.e. a single namespace)
+    # is called, that ``get_namespace`` is 1) called before validate_data and
+    # after offloading 2) all arguments are passed to ``get_namespace`` in order
+    # to guarantee single array typing (i.e. a single namespace)
 
     if "to_table" not in text["funcs"]:
         pytest.skip("onedal backend not used in this function")
@@ -613,12 +613,9 @@ def get_namespace_check(text, estimator, method):
             # as keyword arguments. See:
             # https://scikit-learn.org/stable/modules/generated/sklearn.utils.validation.validate_data.html
             if ("=" not in inp and idx < 2) or inp.startswith(("X=", "y=")):
-                try:
-                    assert inp.lstrip("X=").lstrip("y=") in get_name_inputs
-                except StopIteration:
-                    raise AssertionError(
-                        "get_namespace does not contain all of inputs to validate_data"
-                    ) from None
+                assert (
+                    inp.lstrip("X=").lstrip("y=") in get_name_inputs
+                ), "get_namespace does not contain all of inputs to validate_data"
 
         # next check if sample_weight is used, if so it needs to be in the
         # ``get_namespace`` arguments.
