@@ -322,7 +322,7 @@ jobs:
     if: github.repository == 'uxlfoundation/scikit-learn-intelex'
     needs: onedal_nightly
     name: LinuxNightly build Python${{ needs.onedal_nightly.outputs.uxl-python }}
-    runs-on: uxl-xlarge
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
 
     steps:
@@ -394,10 +394,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - OS: uxl-gpu-xlarge
-            FRAMEWORKS: "pytorch,numpy"
-            DEVICE: gpu
-          - OS: uxl-xlarge
+          - OS: ubuntu-24.04
             FRAMEWORKS: "pytorch,numpy"
             DEVICE: cpu
     needs: [onedal_nightly, build_uxl]

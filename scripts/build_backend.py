@@ -20,7 +20,6 @@ import logging
 import os
 import platform as plt
 import subprocess
-import sys
 from os.path import join as jp
 from sysconfig import get_config_var, get_paths
 
@@ -28,28 +27,20 @@ import numpy as np
 
 logger = logging.getLogger("sklearnex")
 
-IS_WIN = False
-IS_MAC = False
-IS_LIN = False
-
-if "linux" in sys.platform:
-    IS_LIN = True
-elif sys.platform == "darwin":
-    IS_MAC = True
-elif sys.platform in ["win32", "cygwin"]:
-    IS_WIN = True
-
 
 def custom_build_cmake_clib(
     iface,
     onedal_major_binary_version=1,
     no_dist=True,
     mpi_root=None,
-    use_parameters_lib=True,
-    use_abs_rpath=False,
-    use_gcov=False,
-    n_threads=1,
-    debug_build=False,
+    use_parameters_lib: bool = True,
+    use_abs_rpath: bool = False,
+    use_gcov: bool = False,
+    n_threads: int = 1,
+    is_win: bool = False,
+    is_lin: bool = False,
+    debug_build: bool = False,
+    using_lld: bool = False,
 ):
     import pybind11
 
@@ -62,15 +53,15 @@ def custom_build_cmake_clib(
     logger.info(f"Builder directory: {builder_directory}")
     logger.info(f"Install directory: {install_directory}")
 
-    cmake_generator = "-GNinja" if IS_WIN else ""
+    cmake_generator = "-GNinja" if is_win else ""
     python_include = get_paths()["include"]
     win_python_path_lib = os.path.abspath(jp(get_config_var("LIBDEST"), "..", "libs"))
-    python_library_dir = win_python_path_lib if IS_WIN else get_config_var("LIBDIR")
+    python_library_dir = win_python_path_lib if is_win else get_config_var("LIBDIR")
     numpy_include = np.get_include()
 
     cxx = os.getenv("CXX")
     if iface in ["dpc", "spmd_dpc"]:
-        default_dpc_compiler = "icx" if IS_WIN else "icpx"
+        default_dpc_compiler = "icx" if is_win else "icpx"
         if not cxx:
             cxx = default_dpc_compiler
         elif not (default_dpc_compiler in cxx):
@@ -79,7 +70,7 @@ def custom_build_cmake_clib(
             )
             cxx = default_dpc_compiler
 
-    build_distribute = iface == "spmd_dpc" and not no_dist and IS_LIN
+    build_distribute = iface == "spmd_dpc" and not no_dist and is_lin
 
     logger.info(f"Build DPCPP SPMD functionality: {str(build_distribute)}")
 
@@ -89,7 +80,7 @@ def custom_build_cmake_clib(
         MPI_LIBNAME = getattr(os.environ, "MPI_LIBNAME", None)
         if MPI_LIBNAME:
             MPI_LIBS = MPI_LIBNAME
-        elif IS_WIN:
+        elif is_win:
             if os.path.isfile(jp(mpi_root, "lib", "mpi.lib")):
                 MPI_LIBS = "mpi"
             if os.path.isfile(jp(mpi_root, "lib", "impi.lib")):
@@ -127,6 +118,7 @@ def custom_build_cmake_clib(
         "-DoneDAL_LIBRARY_DIR=" + jp(os.environ["DALROOT"], "lib", arch_dir),
         "-Dpybind11_DIR=" + pybind11.get_cmake_dir(),
         "-DoneDAL_USE_PARAMETERS_LIB=" + use_parameters_arg,
+        f"-DUSING_LLD={'ON' if using_lld else 'OFF'}",
     ]
 
     if debug_build:
