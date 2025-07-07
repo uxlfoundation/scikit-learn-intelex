@@ -239,16 +239,17 @@ def test_other_device_fallback():
 
     est = _CPUEstimator()
     err_msg = "Device support is not implemented for the supplied data type."
+    data = FakeCUDA(np.eye(5, 8))
 
     for fallback in [True, False]:
         ctx = nullcontext() if fallback else pytest.raises(RuntimeError, match=err_msg)
-        _mock = patch.object(FakeCUDA, "to_device", wraps=est.to_device)
+        _mock = patch.object(FakeCUDA, "to_device", wraps=data.to_device)
         with sklearnex.config_context(allow_fallback_to_host=fallback), ctx, _mock as spy:
             dispatch(
                 est,
                 "test",
                 {"onedal": _CPUEstimator._onedal_test, "sklearn": None},
-                FakeCUDA(np.eye(5, 8)),
+                data,
             )
             if fallback:
                 # verify ``FakeCUDA.to_device`` was used
