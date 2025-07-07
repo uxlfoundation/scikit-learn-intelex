@@ -219,10 +219,10 @@ def test_other_device_fallback():
 
     class FakeCUDA:
         def __init__(self, data):
-            self.data = data
+            self.__data = data
 
         def to_device(self, *args):
-            return self.data
+            return self.__data
 
         def __dlpack_device__(self):
             return (2, 0)
