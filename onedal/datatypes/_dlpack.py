@@ -46,10 +46,13 @@ def dlpack_to_numpy(obj):
 
     # convert to numpy
     if hasattr(obj, "__array__"):
-        # `copy`` param for the `asarray`` is not set.
+        # ``copy`` param for the ``asarray`` is not set.
         # The object is copied only if needed
         obj = np.asarray(obj)
     else:
         # requires numpy 1.23
-        obj = np.from_dlpack(obj)
+        try:
+            obj = np.from_dlpack(obj)
+        except AttributeError:
+            raise NotImplementedError("Upgrade NumPy >= 1.23 for dlpack support") from None 
     return obj

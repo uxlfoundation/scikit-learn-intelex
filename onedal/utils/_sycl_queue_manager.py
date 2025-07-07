@@ -110,7 +110,7 @@ def _get_dlpack_queue(obj: object) -> SyclQueue:
     if is_torch_tensor(obj):
         return get_torch_queue(obj)
     else:
-        # no specialized queue can be extracted use or generate a generic. Note,
+        # no specialized queue can be extracted. Use or generate a generic. Note,
         # this will behave in unexpected ways for non-default SYCL contexts or
         # with SYCL sub-devices due to limitations in the dlpack standard (not
         # enough info).
