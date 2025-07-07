@@ -253,4 +253,4 @@ def test_other_device_fallback():
             )
             if fallback:
                 # verify ``FakeCUDA.to_device`` was used
-                spy.assert_called_once_with()
+                spy.assert_called_once_with("cpu")
