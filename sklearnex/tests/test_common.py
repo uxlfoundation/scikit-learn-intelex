@@ -597,7 +597,7 @@ def get_namespace_check(text, estimator, method):
         try:
             name_trace = reduced_trace.split("= get_namespace(")[1]
         except IndexError:
-            pytest.fail("get_namespaces is not called")
+            pytest.fail("get_namespace is not called")
 
         get_namespace_call = return_call(name_trace)
 
