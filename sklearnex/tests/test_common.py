@@ -15,7 +15,6 @@
 # ==============================================================================
 
 import importlib.util
-import inspect
 import io
 import os
 import pathlib
@@ -455,7 +454,7 @@ def estimator_trace(estimator, method, cache, isolated_trace):
         )
         regex_mod = r"(?<=--- modulename: )\S*(?=\.py)"  # needed due to differences in module structure
 
-        regex_callingline = r"(?<=\n)(\S*\.py\(\d+\)\:)\s*(.*?)\s*(?=\n --- modulename: )"
+        regex_callingline = r"(?<=\n)\S.*(?=\n --- modulename: )"
 
         cache.set("key", key)
         cache.set(
@@ -464,7 +463,7 @@ def estimator_trace(estimator, method, cache, isolated_trace):
                 "funcs": re.findall(regex_func, text),
                 "trace": text,
                 "modules": [i.replace(os.sep, ".") for i in re.findall(regex_mod, text)],
-                "callingline": [""] + [i[1] for i in re.findall(regex_callingline, text)],
+                "callingline": [""] + re.findall(regex_callingline, text),
             },
         )
 
