@@ -114,22 +114,6 @@ class BasePCA(metaclass=ABCMeta):
         else:
             return self.n_components
 
-    def _compute_noise_variance(self, n_components, n_sf_min):
-        if n_components < n_sf_min:
-            if len(self.explained_variance_) == n_sf_min:
-                return self.explained_variance_[n_components:].mean()
-            elif len(self.explained_variance_) < n_sf_min:
-                # TODO Rename variances_ to var_ to align with sklearn/sklearnex IncrementalPCA
-                if hasattr(self, "variances_"):
-                    resid_var = self.variances_.sum()
-                elif hasattr(self, "var_"):
-                    resid_var = self.var_.sum()
-
-                resid_var -= self.explained_variance_.sum()
-                return resid_var / (n_sf_min - n_components)
-        else:
-            return 0.0
-
     def _create_model(self):
         m = self.model()
         m.eigenvectors = to_table(self.components_)
@@ -184,12 +168,12 @@ class PCA(BasePCA):
         self.explained_variance_ratio_ = from_table(
             result.explained_variances_ratio
         ).ravel()
+        self.noise_variance_ = from_table(result.noise_variance_).ravel()
         self.n_samples_ = n_samples
         self.n_features_ = n_features
 
         n_components = self._resolve_n_components_for_result(X.shape)
         self.n_components_ = n_components
-        self.noise_variance_ = self._compute_noise_variance(n_components, n_sf_min)
 
         if n_components < params["n_components"]:
             self.explained_variance_ = self.explained_variance_[:n_components]
