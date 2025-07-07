@@ -16,6 +16,7 @@
 
 import logging
 from contextlib import nullcontext
+from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -241,10 +242,13 @@ def test_other_device_fallback():
 
     for fallback in [True, False]:
         ctx = nullcontext() if fallback else pytest.raises(RuntimeError, match=err_msg)
-        with sklearnex.config_context(allow_fallback_to_host=fallback), ctx:
+        _mock = patch.object(FakeCUDA, "to_device", wraps=est.to_device)
+        with sklearnex.config_context(allow_fallback_to_host=fallback), ctx, _mock as spy:
             dispatch(
                 est,
                 "test",
                 {"onedal": _CPUEstimator._onedal_test, "sklearn": None},
                 FakeCUDA(np.eye(5, 8)),
             )
+            # verify ``FakeCUDA.to_device`` was used
+            spy.assert_called_once_with()
