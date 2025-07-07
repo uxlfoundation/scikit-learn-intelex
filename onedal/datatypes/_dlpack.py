@@ -54,5 +54,8 @@ def dlpack_to_numpy(obj):
         try:
             obj = np.from_dlpack(obj)
         except AttributeError:
-            raise NotImplementedError("Upgrade NumPy >= 1.23 for dlpack support") from None 
+            raise NotImplementedError(
+                "Upgrade NumPy >= 1.23 for dlpack support"
+            ) from None
+
     return obj
