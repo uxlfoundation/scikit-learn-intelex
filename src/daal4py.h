@@ -289,6 +289,8 @@ void delete_daal_shared_ptr(PyObject * cap)
 template <class T>
 void set_sp_base(PyArrayObject * ary, daal::services::SharedPtr<T> & sp)
 {
+    // Note: here we want the capsule to own the pointer, not to increase
+    // its reference count, hence the move operator instead of assignment.
     daal::services::SharedPtr<T> * shared_ptr_for_capsule = new daal::services::SharedPtr<T>();
     *shared_ptr_for_capsule                               = std::move(sp);
     PyObject * cap                                        = PyCapsule_New(static_cast<void *>(shared_ptr_for_capsule), NULL, delete_daal_shared_ptr<T>);
