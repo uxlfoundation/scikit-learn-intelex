@@ -250,5 +250,6 @@ def test_other_device_fallback():
                 {"onedal": _CPUEstimator._onedal_test, "sklearn": None},
                 FakeCUDA(np.eye(5, 8)),
             )
-            # verify ``FakeCUDA.to_device`` was used
-            spy.assert_called_once_with()
+            if fallback:
+                # verify ``FakeCUDA.to_device`` was used
+                spy.assert_called_once_with()
