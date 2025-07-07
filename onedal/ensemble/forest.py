@@ -390,12 +390,12 @@ class BaseForest(BaseEnsemble, metaclass=ABCMeta):
 
         model = self._onedal_model
         queue = QM.get_global_queue()
-        X_t = to_table(X, queue=queue)
-        params = self._get_onedal_params(X_t)
+        X_table = to_table(X, queue=queue)
+        params = self._get_onedal_params(X_table)
         if hparams is not None and not hparams.is_default:
-            result = self.infer(params, hparams.backend, model, X_t)
+            result = self.infer(params, hparams.backend, model, X_table)
         else:
-            result = self.infer(params, model, X_t)
+            result = self.infer(params, model, X_table)
 
         y = from_table(result.responses, like=X)
         return y

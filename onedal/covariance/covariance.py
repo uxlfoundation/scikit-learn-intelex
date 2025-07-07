@@ -108,14 +108,14 @@ class EmpiricalCovariance(BaseEmpiricalCovariance):
 
         if not use_raw_input:
             X = _check_array(X, dtype=[np.float64, np.float32])
-        X_t = to_table(X, queue=queue)
+        X_table = to_table(X, queue=queue)
 
-        params = self._get_onedal_params(X_t.dtype)
+        params = self._get_onedal_params(X_table.dtype)
         hparams = get_hyperparameters("covariance", "compute")
         if hparams is not None and not hparams.is_default:
-            result = self.compute(params, hparams.backend, X_t)
+            result = self.compute(params, hparams.backend, X_table)
         else:
-            result = self.compute(params, X_t)
+            result = self.compute(params, X_table)
         if daal_check_version((2024, "P", 1)) or (not self.bias):
             self.covariance_ = from_table(result.cov_matrix, like=X)
         else:

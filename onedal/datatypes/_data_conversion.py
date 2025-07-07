@@ -45,13 +45,11 @@ def to_table(*args, queue=None):
         SYCL Queue object to be associated with the oneDAL tables. Default
         value None causes no change in data location or queue.
 
-    queue : SyclQueue or None, default=None
-        A dpctl or oneDAL backend python representation of a SYCL Queue or None.
-
     Returns
     -------
     tables : oneDAL homogeneous tables
-        Converted oneDAL tables.
+        Converted oneDAL tables for scalar, numpy array, sycl_usm_ndarray
+        and dlpack inputs; oneDAL csr_table for csr_matrix, csr_array.
 
     Notes
     -----
