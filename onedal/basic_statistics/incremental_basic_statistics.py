@@ -19,9 +19,9 @@ from .basic_statistics import BasicStatistics
 
 
 class IncrementalBasicStatistics(BasicStatistics):
-    """
-    Incremental estimator for basic statistics based on oneDAL implementation.
-    Allows to compute basic statistics if data are splitted into batches.
+    """Incremental oneDAL low order moments estimator.
+
+    Calculate basic statistics for data split into batches.
 
     Parameters
     ----------
