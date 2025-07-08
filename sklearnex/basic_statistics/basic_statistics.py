@@ -31,6 +31,7 @@ from ..base import oneDALEstimator
 from ..utils._array_api import get_namespace
 from ..utils.validation import _check_sample_weight, validate_data
 
+
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import StrOptions
 

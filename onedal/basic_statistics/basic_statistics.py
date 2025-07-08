@@ -20,8 +20,14 @@ from ..common._backend import bind_default_backend
 from ..datatypes import from_table, to_table
 from ..utils.validation import _is_csr
 
+from .._config import _get_config
+from .._device_offload import supports_queue
+from ..common._backend import bind_default_backend
+from ..datatypes import from_table, to_table
+from ..utils.validation import _check_array, _is_csr
 
-class BaseBasicStatistics(metaclass=ABCMeta):
+
+class BasicStatistics(BaseBasicStatistics):
     """Low order moments oneDAL estimator.
 
     Calculate basic statistics for data.
@@ -70,8 +76,8 @@ class BaseBasicStatistics(metaclass=ABCMeta):
     -----
         Attributes are populated only for corresponding result options.
     """
-
-    def __init__(self, result_options="all", algorithm="by_default"):
+    
+    def __init__(self)
         self.options = result_options
         self.algorithm = algorithm
 
@@ -104,6 +110,7 @@ class BaseBasicStatistics(metaclass=ABCMeta):
         # options always to be an iterable
         self._options = opts.split("|") if isinstance(opts, str) else opts
 
+
     def _get_onedal_params(self, is_csr, dtype=None):
         return {
             "fptype": dtype,
@@ -111,6 +118,8 @@ class BaseBasicStatistics(metaclass=ABCMeta):
             "result_option": "|".join(self.options),
         }
 
+
+    @supports_queue
     def fit(self, data, sample_weight=None, queue=None):
         """Generate statistics.
 
@@ -152,4 +161,3 @@ class BaseBasicStatistics(metaclass=ABCMeta):
     def _compute_raw(self, data_table, weights_table, dtype=None, is_csr=False):
         params = self._get_onedal_params(is_csr, dtype)
         return self.compute(params, data_table, weights_table)
- 

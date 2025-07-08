@@ -13,7 +13,9 @@
 # limitations under the License.
 # ==============================================================================
 
-from ..datatypes import _convert_to_supported, from_table, to_table
+from ..datatypes import from_table, to_table
+from .basic_statistics import BasicStatistics
+from ..utils._array_api import _get_sycl_namespace
 from .basic_statistics import BasicStatistics
 
 
@@ -21,6 +23,7 @@ class IncrementalBasicStatistics(BasicStatistics):
     """
     Incremental estimator for basic statistics based on oneDAL implementation.
     Allows to compute basic statistics if data are splitted into batches.
+
     Parameters
     ----------
     result_options : str or list, default=str('all')
@@ -115,6 +118,13 @@ class IncrementalBasicStatistics(BasicStatistics):
         self : object
             Returns the instance itself.
         """
+        use_raw_input = _get_config().get("use_raw_input", False) is True
+        sua_iface, _, _ = _get_sycl_namespace(X)
+
+        # All data should use the same sycl queue
+        if use_raw_input and sua_iface:
+            queue = X.sycl_queue
+
         self._queue = queue
         X_table, sample_weight_table = to_table(X, sample_weight, queue=queue)
 
