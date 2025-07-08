@@ -181,7 +181,6 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
 
         use_raw_input = get_config().get("use_raw_input", False)
         # never check input when using raw input
-        check_input &= use_raw_input is False
         if check_input and not use_raw_input:
             xp, _ = get_namespace(X)
             X = validate_data(
@@ -216,11 +215,8 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
             if sklearn_check_version("1.2"):
                 self._validate_params()
 
-            xp, _ = get_namespace(X)
-            if sklearn_check_version("1.0"):
-                X = validate_data(self, X, dtype=[xp.float64, xp.float32])
-            else:
-                X = check_array(X, dtype=[xp.float64, xp.float32])
+            xp, _ = get_namespace(X, sample_weight)
+            X = validate_data(self, X, dtype=[xp.float64, xp.float32])
 
             if sample_weight is not None:
                 sample_weight = _check_sample_weight(

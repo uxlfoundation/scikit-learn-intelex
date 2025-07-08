@@ -15,13 +15,15 @@
 # ===============================================================================
 
 import math
+import numbers
 
 import scipy.sparse as sp
 from sklearn.utils.validation import _assert_all_finite as _sklearn_assert_all_finite
 from sklearn.utils.validation import _num_samples, check_array, check_non_negative
 
-from daal4py.sklearn._utils import sklearn_check_version
-from onedal.utils.validation import _assert_all_finite as _onedal_assert_all_finite
+from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from daal4py.sklearn.utils.validation import add_dispatcher_docstring
+from onedal.utils.validation import is_contiguous
 
 from ._array_api import get_namespace
 
