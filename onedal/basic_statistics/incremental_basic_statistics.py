@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 
+from .._config import get_config
 from .._device_offload import supports_queue
 from ..common._backend import bind_default_backend
 from ..datatypes import from_table, to_table
