@@ -106,7 +106,7 @@ def enable_array_api(original_class: type[oneDALEstimator]) -> type[oneDALEstima
     if sklearn_check_version("1.6"):
 
         def __sklearn_tags__(self) -> Tags:
-            sktags = super(self, original_class).__sklearn_tags__()
+            sktags = super(original_class, self).__sklearn_tags__()
             sktags.onedal_array_api = True
             return sktags
 
