@@ -223,7 +223,7 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
                     sample_weight, X, dtype=[xp.float64, xp.float32]
                 )
 
-        _ , n_features = X.shape
+        _, n_features = X.shape
         if self.batch_size is None:
             self.batch_size_ = 5 * n_features
         else:

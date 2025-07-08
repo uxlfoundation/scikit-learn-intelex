@@ -14,7 +14,6 @@
 # ==============================================================================
 
 from ..datatypes import from_table, to_table
-from .basic_statistics import BasicStatistics
 from ..utils._array_api import _get_sycl_namespace
 from .basic_statistics import BasicStatistics
 

@@ -14,10 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 
-from ..common._backend import bind_default_backend
-from ..datatypes import from_table, to_table
-from ..utils.validation import _is_csr
-
 from .._config import _get_config
 from .._device_offload import supports_queue
 from ..common._backend import bind_default_backend
@@ -74,7 +70,7 @@ class BasicStatistics:
     -----
         Attributes are populated only for corresponding result options.
     """
-    
+
     def __init__(self, result_options="all", algorithm="by_default"):
         self.options = result_options
         self.algorithm = algorithm
@@ -108,14 +104,12 @@ class BasicStatistics:
         # options always to be an iterable
         self._options = opts.split("|") if isinstance(opts, str) else opts
 
-
     def _get_onedal_params(self, is_csr, dtype=None):
         return {
             "fptype": dtype,
             "method": "sparse" if is_csr else self.algorithm,
             "result_option": "|".join(self.options),
         }
-
 
     @supports_queue
     def fit(self, data, sample_weight=None, queue=None):
@@ -145,7 +139,7 @@ class BasicStatistics:
         is_single_dim = data.ndim == 1
         data_table, sample_weight_table = to_table(data, sample_weight, queue=queue)
 
-        result = self._compute_raw(data_table, sample_weight_table,data.dtype, is_csr)
+        result = self._compute_raw(data_table, sample_weight_table, data.dtype, is_csr)
 
         for opt in self.options:
             value = from_table(getattr(result, opt))[0]  # two-dimensional table [1, n]
