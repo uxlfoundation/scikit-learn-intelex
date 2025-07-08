@@ -14,8 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 
-from abc import ABCMeta
-
 from ..common._backend import bind_default_backend
 from ..datatypes import from_table, to_table
 from ..utils.validation import _is_csr
@@ -27,7 +25,7 @@ from ..datatypes import from_table, to_table
 from ..utils.validation import _check_array, _is_csr
 
 
-class BasicStatistics(BaseBasicStatistics):
+class BasicStatistics:
     """Low order moments oneDAL estimator.
 
     Calculate basic statistics for data.
@@ -77,7 +75,7 @@ class BasicStatistics(BaseBasicStatistics):
         Attributes are populated only for corresponding result options.
     """
     
-    def __init__(self)
+    def __init__(self, result_options="all", algorithm="by_default"):
         self.options = result_options
         self.algorithm = algorithm
 
