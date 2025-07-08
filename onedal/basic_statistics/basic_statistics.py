@@ -14,11 +14,10 @@
 # limitations under the License.
 # ==============================================================================
 
-from .._config import _get_config
 from .._device_offload import supports_queue
 from ..common._backend import bind_default_backend
 from ..datatypes import from_table, to_table
-from ..utils.validation import _check_array, _is_csr
+from ..utils.validation import _is_csr
 
 
 class BasicStatistics:

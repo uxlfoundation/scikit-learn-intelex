@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 
+from ..common._backend import bind_default_backend
 from ..datatypes import from_table, to_table
 from ..utils._array_api import _get_sycl_namespace
 from .basic_statistics import BasicStatistics
@@ -27,6 +28,9 @@ class IncrementalBasicStatistics(BasicStatistics):
     ----------
     result_options : str or list, default=str('all')
         List of statistics to compute.
+
+    algorithm : str, default=str('by_default')
+        Method for statistics computation.
 
     Attributes
     ----------
