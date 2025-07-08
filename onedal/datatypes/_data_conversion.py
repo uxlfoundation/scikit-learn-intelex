@@ -47,7 +47,7 @@ def to_table(*args, queue=None):
 
     Returns
     -------
-    tables : oneDAL homogeneous tables
+    tables : oneDAL homogeneous or csr tables
         Converted oneDAL tables for scalar, numpy array, sycl_usm_ndarray
         and dlpack inputs; oneDAL csr_table for csr_matrix, csr_array.
 
