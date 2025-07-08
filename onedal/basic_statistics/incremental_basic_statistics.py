@@ -17,6 +17,7 @@ from .._config import _get_config
 from .._device_offload import supports_queue
 from ..common._backend import bind_default_backend
 from ..datatypes import from_table, to_table
+from ..utils import _sycl_queue_manager as QM
 from ..utils._array_api import _get_sycl_namespace
 from .basic_statistics import BasicStatistics
 
