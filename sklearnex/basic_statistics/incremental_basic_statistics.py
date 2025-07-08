@@ -27,7 +27,7 @@ from .._config import get_config
 from .._device_offload import dispatch
 from .._utils import PatchingConditionsChain, _add_inc_serialization_note
 from ..base import oneDALEstimator
-from ..utils._array_api import get_namespace
+from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.validation import _check_sample_weight, validate_data
 
 if sklearn_check_version("1.2"):
@@ -37,6 +37,7 @@ import numbers
 import warnings
 
 
+@enable_array_api
 @control_n_jobs(decorated_methods=["partial_fit", "_onedal_finalize_fit"])
 class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
     """
