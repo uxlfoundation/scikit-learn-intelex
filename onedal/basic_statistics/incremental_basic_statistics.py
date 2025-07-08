@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 
+from .._device_offload import supports_queue
 from ..common._backend import bind_default_backend
 from ..datatypes import from_table, to_table
 from ..utils._array_api import _get_sycl_namespace
