@@ -18,14 +18,11 @@ from collections.abc import Callable
 from functools import wraps
 from typing import Any, Union
 
-from onedal._device_offload import _copy_to_usm, _transfer_to_host
+from onedal._device_offload import _transfer_to_host
+from onedal.datatypes import copy_to_dpnp, copy_to_usm
 from onedal.utils import _sycl_queue_manager as QM
 from onedal.utils._array_api import _asarray, _is_numpy_namespace
-from onedal.utils._dpep_helpers import dpnp_available
-
-if dpnp_available:
-    import dpnp
-    from onedal.utils._array_api import _convert_to_dpnp
+from onedal.utils._third_party import is_dpnp_ndarray
 
 from ._config import config_context, get_config, set_config
 from ._utils import PatchingConditionsChain, get_tags
@@ -52,14 +49,16 @@ def _get_backend(
 
     if gpu_device:
         patching_status = obj._onedal_gpu_supported(method_name, *data)
-        if (
-            not patching_status.get_status()
-            and (config := get_config())["allow_fallback_to_host"]
-        ):
+        if not patching_status.get_status() and get_config()["allow_fallback_to_host"]:
             QM.fallback_to_host()
             return None, patching_status
         return patching_status.get_status(), patching_status
 
+    if get_config()["allow_fallback_to_host"]:
+        # This may trigger if the ``onedal.utils._sycl_queue_manager.__non_queue``
+        # object is the queue (e.g. if non-SYCL device data is encountered)
+        QM.fallback_to_host()
+        return None, None
     raise RuntimeError("Device support is not implemented for the supplied data type.")
 
 
@@ -122,12 +121,9 @@ def dispatch(
     # backend can only be a boolean or None, None signifies an unverified backend
     backend: "bool | None" = None
 
-    # config context needs to be saved, as the sycl_queue_manager interacts with
-    # target_offload, which can regenerate a GPU queue later on. Therefore if a
-    # fallback occurs, then the state of target_offload must be set to default
-    # so that later use of get_global_queue only sends to host. We must modify
-    # the target offload settings, but we must also set the original value at the
-    # end, hence the need of a contextmanager.
+    # The _sycl_queue_manager verifies all arguments are on a single SYCL device or
+    # cpu and will otherwise throw an error. If located on a non-SYCL, non-CPU
+    # device, a special queue is set which will cause a failure in ``_get_backend``
     with QM.manage_global_queue(None, *args):
         if onedal_array_api:
             backend, patching_status = _get_backend(obj, method_name, *args)
@@ -185,19 +181,20 @@ def wrap_output_data(func: Callable) -> Callable:
     def wrapper(self, *args, **kwargs) -> Any:
         result = func(self, *args, **kwargs)
         if not (len(args) == 0 and len(kwargs) == 0):
-            data = (*args, *kwargs.values())
+            data = (*args, *kwargs.values())[0]
 
-            usm_iface = getattr(data[0], "__sycl_usm_array_interface__", None)
-            if usm_iface is not None:
-                result = _copy_to_usm(usm_iface["syclobj"], result)
-                if dpnp_available and isinstance(data[0], dpnp.ndarray):
-                    result = _convert_to_dpnp(result)
-                return result
+            if usm_iface := getattr(data, "__sycl_usm_array_interface__", None):
+                queue = usm_iface["syclobj"]
+                return (
+                    copy_to_dpnp(queue, result)
+                    if is_dpnp_ndarray(data)
+                    else copy_to_usm(queue, result)
+                )
 
             if get_config().get("transform_output") in ("default", None):
-                input_array_api = getattr(data[0], "__array_namespace__", lambda: None)()
+                input_array_api = getattr(data, "__array_namespace__", lambda: None)()
                 if input_array_api and not _is_numpy_namespace(input_array_api):
-                    input_array_api_device = data[0].device
+                    input_array_api_device = data.device
                     result = _asarray(
                         result, input_array_api, device=input_array_api_device
                     )
