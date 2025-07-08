@@ -13,12 +13,10 @@
 # limitations under the License.
 # ==============================================================================
 
-from .._config import _get_config
 from .._device_offload import supports_queue
 from ..common._backend import bind_default_backend
-from ..datatypes import from_table, to_table
+from ..datatypes import from_table, return_type_constructor, to_table
 from ..utils import _sycl_queue_manager as QM
-from ..utils._array_api import _get_sycl_namespace
 from .basic_statistics import BasicStatistics
 
 
@@ -88,6 +86,7 @@ class IncrementalBasicStatistics(BasicStatistics):
 
     def _reset(self):
         self._need_to_finalize = False
+        self._outtype = None
         self._queue = None
         # get the _partial_result pointer from backend
         self._partial_result = self.partial_compute_result()
@@ -124,14 +123,11 @@ class IncrementalBasicStatistics(BasicStatistics):
         self : object
             Returns the instance itself.
         """
-        use_raw_input = _get_config().get("use_raw_input", False) is True
-        sua_iface, _, _ = _get_sycl_namespace(X)
-
-        # All data should use the same sycl queue
-        if use_raw_input and sua_iface:
-            queue = X.sycl_queue
 
         self._queue = queue
+        if not self._outtype:
+            self._outtype = return_type_constructor(X)
+
         X_table, sample_weight_table = to_table(X, sample_weight, queue=queue)
 
         if not hasattr(self, "_onedal_params"):
@@ -157,8 +153,11 @@ class IncrementalBasicStatistics(BasicStatistics):
                 result = self.finalize_compute(self._onedal_params, self._partial_result)
 
             for opt in self.options:
-                setattr(self, opt, from_table(getattr(result, opt))[0])
+                setattr(
+                    self, opt, from_table(getattr(result, opt), like=self._outtype)[0]
+                )
 
+            self._outtype = False
             self._need_to_finalize = False
 
         return self

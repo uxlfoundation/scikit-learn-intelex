@@ -111,12 +111,12 @@ class BasicStatistics:
         }
 
     @supports_queue
-    def fit(self, data, sample_weight=None, queue=None):
+    def fit(self, X, sample_weight=None, queue=None):
         """Generate statistics.
 
         Parameters
         ----------
-        data : array-like of shape (n_samples, n_features)
+        X : array-like of shape (n_samples, n_features)
             Training data batch, where `n_samples` is the number of samples
             in the batch, and `n_features` is the number of features.
 
@@ -133,15 +133,15 @@ class BasicStatistics:
             Returns the instance itself.
         """
 
-        is_csr = _is_csr(data)
+        is_csr = _is_csr(X)
 
-        is_single_dim = data.ndim == 1
-        data_table, sample_weight_table = to_table(data, sample_weight, queue=queue)
+        is_single_dim = X.ndim == 1
+        X_table, sample_weight_table = to_table(X, sample_weight, queue=queue)
 
-        result = self._compute_raw(data_table, sample_weight_table, data.dtype, is_csr)
+        result = self._compute_raw(X_table, sample_weight_table, X_table.dtype, is_csr)
 
         for opt in self.options:
-            value = from_table(getattr(result, opt))[0]  # two-dimensional table [1, n]
+            value = from_table(getattr(result, opt), like=X)[0]  # 2D table [1, n]
             if is_single_dim:
                 setattr(self, opt, value[0])
             else:
