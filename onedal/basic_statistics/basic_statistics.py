@@ -14,9 +14,10 @@
 # limitations under the License.
 # ==============================================================================
 
-import warnings
 from abc import ABCMeta, abstractmethod
 
+from .._device_offload import _get_config
+from ..common._backend import bind_default_backend
 from ..common._base import BaseEstimator
 from ..datatypes import _convert_to_supported, from_table, to_table
 from ..utils import _is_csr
@@ -30,6 +31,9 @@ class BasicStatistics(BaseEstimator, metaclass=ABCMeta):
     def __init__(self, result_options="all", algorithm="by_default"):
         self.options = result_options
         self.algorithm = algorithm
+
+    @bind_default_backend("basic_statistics")
+    def compute(self, params, data_table, weights_table): ...
 
     @staticmethod
     def get_all_result_options():
@@ -65,16 +69,33 @@ class BasicStatistics(BaseEstimator, metaclass=ABCMeta):
         }
 
     def fit(self, data, sample_weight=None, queue=None):
-        policy = self._get_policy(queue, data, sample_weight)
+        """Generate statistics.
+
+        Parameters
+        ----------
+        data : array-like of shape (n_samples, n_features)
+            Training data batch, where `n_samples` is the number of samples
+            in the batch, and `n_features` is the number of features.
+
+        sample_weight : array-like of shape (n_samples,), default=None
+            Individual weights for each sample.
+
+        queue : SyclQueue or None, default=None
+            SYCL Queue object for device code execution. Default
+            value None causes computation on host.
+
+        Returns
+        -------
+        self : object
+            Returns the instance itself.
+        """
 
         is_csr = _is_csr(data)
 
         is_single_dim = data.ndim == 1
-        data, sample_weight = to_table(
-            *_convert_to_supported(policy, data, sample_weight)
-        )
+        data_table, sample_weight_table = to_table(data, sample_weight, queue=queue)
 
-        result = self._compute_raw(data, sample_weight, policy, data.dtype, is_csr)
+        result = self._compute_raw(data_table, sample_weight_table,data.dtype, is_csr)
 
         for opt in self.options:
             value = from_table(getattr(result, opt))[0]  # two-dimensional table [1, n]
@@ -85,10 +106,7 @@ class BasicStatistics(BaseEstimator, metaclass=ABCMeta):
 
         return self
 
-    def _compute_raw(self, data_table, weights_table, policy, dtype=None, is_csr=False):
-        # This function is maintained for internal use by KMeans tolerance
-        # calculations, but is otherwise considered legacy code and is not
-        # to be used externally in any circumstance
-        module = self._get_backend("basic_statistics")
+    def _compute_raw(self, data_table, weights_table, dtype=None, is_csr=False):
         params = self._get_onedal_params(is_csr, dtype)
-        return module.compute(policy, params, data_table, weights_table)
+        return self.compute(params, data_table, weights_table)
+ 

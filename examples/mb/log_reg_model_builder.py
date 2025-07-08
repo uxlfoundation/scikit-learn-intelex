@@ -29,61 +29,81 @@ def main():
     # set parameters and train
     clf = LogisticRegression(fit_intercept=True, max_iter=1000, random_state=0).fit(X, y)
 
-    # set parameters and call model builder
-    builder = d4p.logistic_regression_model_builder(
-        n_classes=n_classes, n_features=X.shape[1]
-    )
-    builder.set_beta(clf.coef_, clf.intercept_)
+    # convert model to d4p
+    d4p_model = d4p.mb.convert_model(clf)
 
-    # set parameters and compute predictions
-    predict_alg = d4p.logistic_regression_prediction(
-        nClasses=n_classes, resultsToEvaluate="computeClassLabels"
-    )
-    # set parameters and compute predictions
-    daal4py_prediction = predict_alg.compute(X, builder.model).prediction
+    # compute class predictions
+    predict_result_d4p = d4p_model.predict(X)
     predict_result_sklearn = clf.predict(X)
-    assert np.allclose(daal4py_prediction.flatten(), predict_result_sklearn)
-
-    # set parameters and compute predictions
-    predict_alg = d4p.logistic_regression_prediction(
-        nClasses=n_classes, resultsToEvaluate="computeClassProbabilities"
+    np.testing.assert_equal(
+        predict_result_d4p,
+        predict_result_sklearn,
     )
-    # set parameters and compute predictions
-    daal4py_probabilities = predict_alg.compute(X, builder.model).probabilities
-    predict_result_sklearn = clf.predict_proba(X)
-    assert np.allclose(daal4py_probabilities, predict_result_sklearn)
 
-    # set parameters and compute predictions
-    predict_alg = d4p.logistic_regression_prediction(
-        nClasses=n_classes, resultsToEvaluate="computeClassLogProbabilities"
+    # compute probability predictions
+    predict_proba_result_d4p = d4p_model.predict_proba(X)
+    predict_proba_result_sklearn = clf.predict_proba(X)
+    np.testing.assert_allclose(
+        predict_proba_result_d4p,
+        predict_proba_result_sklearn,
     )
-    # set parameters and compute predictions
-    daal4py_logProbabilities = predict_alg.compute(X, builder.model).logProbabilities
-    predict_result_sklearn = clf.predict_log_proba(X)
-    assert np.allclose(daal4py_logProbabilities, predict_result_sklearn)
 
-    return (builder, daal4py_prediction, daal4py_probabilities, daal4py_logProbabilities)
+    # compute logarithms of probabilities
+    predict_log_proba_result_d4p = d4p_model.predict_log_proba(X)
+    predict_log_proba_result_sklearn = clf.predict_log_proba(X)
+    np.testing.assert_allclose(
+        predict_log_proba_result_d4p,
+        predict_log_proba_result_sklearn,
+    )
+
+    # compute multiple prediction types at once
+    pred_all = d4p_model.predict_multiple(
+        X,
+        classes=True,
+        proba=True,
+        log_proba=True,
+    )
+    np.testing.assert_almost_equal(
+        pred_all.prediction.reshape(-1),
+        predict_result_sklearn,
+    )
+    np.testing.assert_almost_equal(
+        pred_all.probabilities,
+        predict_proba_result_sklearn,
+    )
+    np.testing.assert_almost_equal(
+        pred_all.logProbabilities,
+        predict_log_proba_result_sklearn,
+    )
+
+    return (
+        d4p_model,
+        predict_result_d4p,
+        predict_proba_result_d4p,
+        predict_log_proba_result_d4p,
+    )
 
 
 if __name__ == "__main__":
     if daal_check_version(((2021, "P", 1))):
         (
-            builder,
-            daal4py_prediction,
-            daal4py_probabilities,
-            daal4py_logProbabilities,
+            d4p_model,
+            predict_result_d4p,
+            predict_proba_result_d4p,
+            predict_log_proba_result_d4p,
         ) = main()
-        print("\nLogistic Regression coefficients:\n", builder.model)
+        print("\nLogistic Regression coefficients:\n", d4p_model.coef_)
+        print("\nLogistic Regression intercepts:\n", d4p_model.intercept_)
         print(
             "\nLogistic regression prediction results (first 10 rows):\n",
-            daal4py_prediction[0:10],
+            predict_result_d4p[0:10],
         )
         print(
             "\nLogistic regression prediction probabilities (first 10 rows):\n",
-            daal4py_probabilities[0:10],
+            predict_proba_result_d4p[0:10],
         )
         print(
             "\nLogistic regression prediction log probabilities (first 10 rows):\n",
-            daal4py_logProbabilities[0:10],
+            predict_log_proba_result_d4p[0:10],
         )
         print("All looks good!")

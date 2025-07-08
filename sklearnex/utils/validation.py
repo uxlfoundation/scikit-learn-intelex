@@ -14,7 +14,7 @@
 # limitations under the License.
 # ===============================================================================
 
-import numbers
+import math
 
 import scipy.sparse as sp
 from sklearn.utils.validation import _assert_all_finite as _sklearn_assert_all_finite
@@ -29,7 +29,6 @@ if sklearn_check_version("1.6"):
     from sklearn.utils.validation import validate_data as _sklearn_validate_data
 
     _finite_keyword = "ensure_all_finite"
-
 else:
     from sklearn.base import BaseEstimator
 
@@ -37,13 +36,24 @@ else:
     _finite_keyword = "force_all_finite"
 
 
-def _is_contiguous(X):
-    # array_api does not have a `strides` or `flags` attribute for testing memory
-    # order. When dlpack support is brought in for oneDAL, the dlpack python capsule
-    # can then be inspected for strides and this must be updated. _is_contiguous is
-    # therefore conservative in verifying attributes and does not support array_api.
-    # This will block onedal_assert_all_finite from being used for array_api inputs.
-    return hasattr(X, "flags") and (X.flags["C_CONTIGUOUS"] or X.flags["F_CONTIGUOUS"])
+if daal_check_version((2024, "P", 700)):
+    from onedal.utils.validation import _assert_all_finite as _onedal_assert_all_finite
+
+    def _onedal_supported_format(X, xp):
+        # data should be checked if contiguous, as oneDAL will only use contiguous
+        # data from sklearnex. Unlike other oneDAL offloading, copying the data is
+        # specifically avoided as it has a non-negligible impact on speed. In that
+        # case use native sklearn ``_assert_all_finite``
+        return X.dtype in [xp.float32, xp.float64] and is_contiguous(X)
+
+else:
+    from daal4py.utils.validation import _assert_all_finite as _onedal_assert_all_finite
+    from onedal.utils._array_api import _is_numpy_namespace
+
+    def _onedal_supported_format(X, xp):
+        # daal4py _assert_all_finite only supports numpy namespaces, use internally-
+        # defined check to validate inputs, otherwise offload to sklearn
+        return X.dtype in [xp.float32, xp.float64] and _is_numpy_namespace(xp)
 
 
 def _sklearnex_assert_all_finite(
@@ -55,7 +65,10 @@ def _sklearnex_assert_all_finite(
     # size check is an initial match to daal4py for performance reasons, can be
     # optimized later
     xp, _ = get_namespace(X)
-    if X.size < 32768 or X.dtype not in [xp.float32, xp.float64] or not _is_contiguous(X):
+    # this is a PyTorch-specific fix, as Tensor.size is a function. It replicates `.size`
+    too_small = math.prod(X.shape) < 32768
+
+    if too_small or not _onedal_supported_format(X, xp):
         if sklearn_check_version("1.1"):
             _sklearn_assert_all_finite(X, allow_nan=allow_nan, input_name=input_name)
         else:
@@ -77,6 +90,7 @@ def assert_all_finite(
     )
 
 
+@add_dispatcher_docstring(_sklearn_validate_data)
 def validate_data(
     _estimator,
     /,
@@ -86,7 +100,7 @@ def validate_data(
 ):
     # force finite check to not occur in sklearn, default is True
     # `ensure_all_finite` is the most up-to-date keyword name in sklearn
-    # _finite_keyword provides backward compatability for `force_all_finite`
+    # _finite_keyword provides backward compatibility for `force_all_finite`
     ensure_all_finite = kwargs.pop("ensure_all_finite", True)
     kwargs[_finite_keyword] = False
 
@@ -96,19 +110,30 @@ def validate_data(
         y=y,
         **kwargs,
     )
+
+    check_x = not isinstance(X, str) or X != "no_validation"
+    check_y = not (y is None or isinstance(y, str) and y == "no_validation")
+
     if ensure_all_finite:
         # run local finite check
         allow_nan = ensure_all_finite == "allow-nan"
+        # the return object from validate_data can be a single
+
+        # element (either x or y) or both (as a tuple). An iterator along with
+        # check_x and check_y can go through the output properly without
+        # stacking layers of if statements to make sure the proper input_name
+        # is used
         arg = iter(out if isinstance(out, tuple) else (out,))
-        if not isinstance(X, str) or X != "no_validation":
+        if check_x:
             assert_all_finite(next(arg), allow_nan=allow_nan, input_name="X")
-        if not (y is None or isinstance(y, str) and y == "no_validation"):
+        if check_y:
             assert_all_finite(next(arg), allow_nan=allow_nan, input_name="y")
+
     return out
 
 
 def _check_sample_weight(
-    sample_weight, X, dtype=None, copy=False, only_non_negative=False
+    sample_weight, X, dtype=None, copy=False, ensure_non_negative=False
 ):
 
     n_samples = _num_samples(X)
@@ -118,9 +143,17 @@ def _check_sample_weight(
         dtype = xp.float64
 
     if sample_weight is None:
-        sample_weight = xp.ones(n_samples, dtype=dtype)
+        if hasattr(X, "device"):
+            sample_weight = xp.ones(n_samples, dtype=dtype, device=X.device)
+        else:
+            sample_weight = xp.ones(n_samples, dtype=dtype)
     elif isinstance(sample_weight, numbers.Number):
-        sample_weight = xp.full(n_samples, sample_weight, dtype=dtype)
+        if hasattr(X, "device"):
+            sample_weight = xp.full(
+                n_samples, sample_weight, dtype=dtype, device=X.device
+            )
+        else:
+            sample_weight = xp.full(n_samples, sample_weight, dtype=dtype)
     else:
         if dtype is None:
             dtype = [xp.float64, xp.float32]
@@ -149,7 +182,7 @@ def _check_sample_weight(
                 )
             )
 
-    if only_non_negative:
+    if ensure_non_negative:
         check_non_negative(sample_weight, "`sample_weight`")
 
     return sample_weight

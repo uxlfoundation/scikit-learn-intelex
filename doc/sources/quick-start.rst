@@ -1,45 +1,44 @@
-.. ******************************************************************************
-.. * Copyright 2021 Intel Corporation
-.. *
-.. * Licensed under the Apache License, Version 2.0 (the "License");
-.. * you may not use this file except in compliance with the License.
-.. * You may obtain a copy of the License at
-.. *
-.. *     http://www.apache.org/licenses/LICENSE-2.0
-.. *
-.. * Unless required by applicable law or agreed to in writing, software
-.. * distributed under the License is distributed on an "AS IS" BASIS,
-.. * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-.. * See the License for the specific language governing permissions and
-.. * limitations under the License.
-.. *******************************************************************************/
+.. Copyright 2021 Intel Corporation
+..
+.. Licensed under the Apache License, Version 2.0 (the "License");
+.. you may not use this file except in compliance with the License.
+.. You may obtain a copy of the License at
+..
+..     http://www.apache.org/licenses/LICENSE-2.0
+..
+.. Unless required by applicable law or agreed to in writing, software
+.. distributed under the License is distributed on an "AS IS" BASIS,
+.. WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+.. See the License for the specific language governing permissions and
+.. limitations under the License.
 
-.. |intelex_repo| replace:: |intelex| repository
-.. _intelex_repo: https://github.com/intel/scikit-learn-intelex
+.. include:: substitutions.rst
 
 ####################
 Quick Start
 ####################
 
-Get ready to elevate your scikit-learn code with |intelex| and experience the benefits of accelerated performance in just a few simple steps. 
+Get ready to elevate your |sklearn| code with |sklearnex| and experience the benefits of accelerated performance in just a few simple steps.
 
 Compatibility with Scikit-learn*
 ---------------------------------
 
-Intel(R) Extension for Scikit-learn is compatible with the last four versions of scikit-learn.
+|sklearnex| is compatible with the latest stable releases of |sklearn| - see :ref:`software-requirements` for more details.
 
-Integrate |intelex|
---------------------
+Integrate |sklearnex|
+----------------------
 
-Patching 
+.. _patching:
+
+Patching
 **********************
 
-Once you install Intel*(R) Extension for Scikit-learn*, you replace algorithms that exist in the scikit-learn package with their optimized versions from the extension. 
-This action is called ``patching``. This is not a permanent change so you can always undo the patching if necessary.
+Once you install the |sklearnex|, you can replace estimator classes (algorithms) that exist in the ``sklearn`` module from |sklearn| with their optimized versions from the extension.
+This action is called *patching* or `monkey patching <https://en.wikipedia.org/wiki/Monkey_patch>`__. This is not a permanent change so you can always undo the patching if necessary.
 
-To patch Intel® Extension for Scikit-learn, use one of these methods: 
+To patch |sklearn| with the |sklearnex|, the following methods can be used:
 
-.. list-table:: 
+.. list-table::
    :header-rows: 1
    :align: left
 
@@ -48,16 +47,16 @@ To patch Intel® Extension for Scikit-learn, use one of these methods:
    * - Use a flag in the command line
      - Run this command:
 
-       :: 
-         
+       ::
+
           python -m sklearnex my_application.py
-   * - Modify your script 
+   * - Modify your script
      - Add the following lines:
 
        ::
- 
+
           from sklearnex import patch_sklearn
-          patch_sklearn()   
+          patch_sklearn()
    * - Import an estimator from the ``sklearnex`` module
      - Run this command:
 
@@ -70,24 +69,24 @@ To patch Intel® Extension for Scikit-learn, use one of these methods:
 These patching methods are interchangeable.
 They support different enabling scenarios while producing the same result.
 
-   
+
 **Example**
 
-This example shows how to patch Intel(R) extension for Scikit-Learn by modifing your script. To make sure that patching is registered by the scikit-learn estimators, always import scikit-learn after these lines.
-  
+This example shows how to patch |sklearn| by modifying your script. To make sure that patching is registered by the scikit-learn estimators, always import module ``sklearn`` after these lines.
+
 .. code-block:: python
   :caption: Example: Drop-In Patching
-   
+
     import numpy as np
     from sklearnex import patch_sklearn
     patch_sklearn()
 
     # You need to re-import scikit-learn algorithms after the patch
     from sklearn.cluster import KMeans
-  
+
     # The use of the original Scikit-learn is not changed
     X = np.array([[1,  2], [1,  4], [1,  0],
-                [10, 2], [10, 4], [10, 0]])
+                  [10, 2], [10, 4], [10, 0]])
     kmeans = KMeans(n_clusters=2, random_state=0).fit(X)
     print(f"kmeans.labels_ = {kmeans.labels_}")
 
@@ -95,13 +94,13 @@ This example shows how to patch Intel(R) extension for Scikit-Learn by modifing 
 Global Patching
 **********************
 
-You can also use global patching to patch all your scikit-learn applications without any additional actions.
+You can also use global patching to patch all your |sklearn| applications without any additional actions.
 
-Before you begin, make sure that you have read and write permissions for Scikit-learn files. 
+Before you begin, make sure that you have read and write permissions for Scikit-learn files.
 
 With global patching, you can:
 
-.. list-table:: 
+.. list-table::
    :header-rows: 1
    :align: left
 
@@ -111,19 +110,19 @@ With global patching, you can:
    * - Patch all supported algorithms
      - Run this command:
 
-       :: 
-         
+       ::
+
           python -m sklearnex.glob patch_sklearn
-     
+
      - If you run the global patching command several times with different parameters, then only the last configuration is applied.
    * - Patch selected algorithms
      - Use ``--algorithm`` or ``-a`` keys with a list of algorithms to patch. For example, to patch only ``SVC`` and ``RandomForestClassifier`` estimators, run
 
        ::
- 
+
            python -m sklearnex.glob patch_sklearn -a svc random_forest_classifier
-  
-     -   
+
+     -
    * - Enable global patching via code
      - Use the ``patch_sklearn`` function with the ``global_patch`` argument:
 
@@ -132,7 +131,7 @@ With global patching, you can:
           from sklearnex import patch_sklearn
           patch_sklearn(global_patch=True)
           import sklearn
-      
+
      - After that, Scikit-learn patches is enabled in the current application and in all others that use the same environment.
    * - Disable patching notifications
      - Use ``--no-verbose`` or ``-nv`` keys:
@@ -140,7 +139,7 @@ With global patching, you can:
        ::
 
           python -m sklearnex.glob patch_sklearn -a svc random_forest_classifier -nv
-     -  
+     -
    * - Disable global patching
      - Run this command:
 
@@ -156,35 +155,35 @@ With global patching, you can:
           from sklearnex import unpatch_sklearn
           unpatch_sklearn(global_patch=True)
      -
-    
+
 .. tip:: If you clone an environment with enabled global patching, it will already be applied in the new environment.
 
 Unpatching
 **********************
 
-To undo the patch (also called `unpatching`) is to return scikit-learn to original implementation and
-replace patched algorithms with the stock scikit-learn algorithms.
+To undo the patch (also called *unpatching*) is to return the ``sklearn`` module to the original implementation and
+replace patched estimators with the stock |sklearn| estimators.
 
-To unpatch successfully, you must reimport the scikit-learn package::
+To unpatch successfully, you must reimport the ``sklearn`` module(s)::
 
   sklearnex.unpatch_sklearn()
   # Re-import scikit-learn algorithms after the unpatch
-  from sklearn.cluster import KMeans  
+  from sklearn.cluster import KMeans
 
 
-Installation 
+Installation
 --------------------
 
 .. contents:: :local:
 
-.. tip:: To prevent version conflicts, we recommend creating and activating a new environment for |intelex|. 
+.. tip:: To prevent version conflicts, we recommend creating and activating a new environment for |sklearnex|.
 
-Install from PyPI 
+Install from PyPI
 **********************
 
-Recommended by default. 
+Recommended by default.
 
-To install |intelex|, run:
+To install |sklearnex|, run:
 
 ::
 
@@ -193,125 +192,97 @@ To install |intelex|, run:
 **Supported Configurations**
 
 .. list-table::
-   :header-rows: 1
    :align: left
 
-   * - OS / Python version
-     - Python 3.9
-     - Python 3.10
-     - Python 3.11
-     - Python 3.12
-   * - Linux* OS
-     - [CPU, GPU]
-     - [CPU, GPU]
-     - [CPU, GPU]
-     - [CPU, GPU]
-   * - Windows* OS
-     - [CPU, GPU]
-     - [CPU, GPU]
-     - [CPU, GPU]
-     - [CPU, GPU]
+   * - Operating systems
+     - Windows*, Linux*
+   * - Python versions
+     - 3.9, 3.10, 3.11, 3.12, 3.13
+   * - Devices
+     - CPU, GPU
+   * - Modes
+     - Single, SPMD (Linux* only)
 
+.. tip:: Running on GPU involves additional dependencies, see :doc:`oneapi-gpu`. SPMD mode has additional requirements on top of GPU ones, see :doc:`distributed-mode` for details.
 
+.. note:: Wheels are only available for x86-64 architecture.
 
-Install from Anaconda* Cloud
-********************************************
+Install through Conda
+*********************
 
-To prevent version conflicts, we recommend installing `scikit-learn-intelex` into a new conda environment.
+To prevent version conflicts, we recommend installing ``scikit-learn-intelex`` into a new conda environment.
+
+.. note::
+  The main Anaconda channel also provides distributions of ``scikit-learn-intelex``, but it does not provide the latest versions, nor does
+  it provide GPU-enabled builds. It is highly recommended to install ``scikit-learn-intelex`` from either Intel's channel or from conda-forge instead.
 
 .. tabs::
 
-   .. tab:: Conda-Forge channel
-
-      Recommended by default. 
-      
-      To install, run::
-
-        conda install scikit-learn-intelex -c conda-forge
-      
-      .. list-table:: **Supported Configurations**
-         :header-rows: 1
-         :align: left
-
-         * - OS / Python version
-           - Python 3.9
-           - Python 3.10
-           - Python 3.11
-           - Python 3.12
-         * - Linux* OS
-           - [CPU]
-           - [CPU]
-           - [CPU]
-           - [CPU]
-         * - Windows* OS
-           - [CPU]
-           - [CPU]
-           - [CPU]
-           - [CPU]
-
-
    .. tab:: Intel channel
 
-      Recommended for the Intel® Distribution for Python users. 
+      Recommended for the Intel® Distribution for Python users.
 
-      To install, run::
+      To install in a fresh environment: ::
 
-        conda install scikit-learn-intelex -c https://software.repos.intel.com/python/conda/
-      
+        conda create -n sklex -c https://software.repos.intel.com/python/conda/ -c conda-forge --override-channels scikit-learn-intelex
+        conda activate sklex
+
+      To install in an existing environment: ::
+
+        conda install -c https://software.repos.intel.com/python/conda/ -c conda-forge --override-channels scikit-learn-intelex
+
+      .. warning::
+        Packages from the Intel channel are meant to be used together with dependencies from the **conda-forge** channel, and might not
+        work correctly when used in an environment where packages from the ``anaconda`` default channel have been installed. It is
+        advisable to use the `miniforge <https://github.com/conda-forge/miniforge>`__ installer for ``conda``/``mamba``, as it comes with
+        ``conda-forge`` as the only default channel.
+
       .. list-table:: **Supported Configurations**
-         :header-rows: 1
          :align: left
 
-         * - OS / Python version
-           - Python 3.9
-           - Python 3.10
-           - Python 3.11
-           - Python 3.12
-         * - Linux* OS
-           - [CPU, GPU]
-           - [CPU, GPU]
-           - [CPU, GPU]
-           - [CPU, GPU]
-         * - Windows* OS
-           - [CPU, GPU]
-           - [CPU, GPU]
-           - [CPU, GPU]
-           - [CPU, GPU]
- 
+         * - Operating systems
+           - Windows*, Linux*
+         * - Python versions
+           - 3.9, 3.10, 3.11, 3.12, 3.13
+         * - Devices
+           - CPU, GPU
+         * - Modes
+           - Single, SPMD (Linux* only)
 
 
-   .. tab:: Main channel
+   .. tab:: Conda-Forge channel
 
-      To install, run::
+      To install in a fresh environment: ::
 
-        conda install scikit-learn-intelex
-      
+        conda create -n sklex -c conda-forge --override-channels scikit-learn-intelex
+        conda activate sklex
+
+      To install in an existing environment: ::
+
+        conda install -c conda-forge --override-channels scikit-learn-intelex
+
       .. list-table:: **Supported Configurations**
-         :header-rows: 1
          :align: left
 
-         * - OS / Python version
-           - Python 3.9
-           - Python 3.10
-           - Python 3.11
-           - Python 3.12
-         * - Linux* OS
-           - [CPU]
-           - [CPU]
-           - [CPU]
-           - [CPU]
-         * - Windows* OS
-           - [CPU]
-           - [CPU]
-           - [CPU]
-           - [CPU]
+         * - Operating systems
+           - Windows*, Linux*
+         * - Python versions
+           - 3.9, 3.10, 3.11, 3.12, 3.13
+         * - Devices
+           - CPU, GPU
+         * - Modes
+           - Single, SPMD (Linux* only)
 
+.. tip:: Running on GPU involves additional dependencies, see :doc:`oneapi-gpu`.  SPMD mode has additional requirements on top of GPU ones, see :doc:`distributed-mode` for details.
 
+.. note:: Packages are only available for x86-64 architecture.
+
+.. _build-from-sources:
 
 Build from Sources
 **********************
 
-See `Installation instructions <https://github.com/intel/scikit-learn-intelex/blob/main/INSTALL.md>`_ to build |intelex| from the sources.
+See `Installation instructions <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/INSTALL.md#build-from-sources>`_ to build |sklearnex| from the sources.
 
 Install Intel*(R) AI Tools
 ****************************
@@ -321,9 +292,9 @@ Download the Intel AI Tools `here <https://www.intel.com/content/www/us/en/devel
 Release Notes
 -------------------
 
-See the `Release Notes <https://github.com/intel/scikit-learn-intelex/releases>`_ for each version of Intel® Extension for Scikit-learn*.  
+See the `Release Notes <https://github.com/uxlfoundation/scikit-learn-intelex/releases>`_ for each version of |sklearnex|.
 
-System Requirements 
+System Requirements
 --------------------
 
 Hardware Requirements
@@ -333,23 +304,24 @@ Hardware Requirements
 
    .. tab:: CPU
 
-      All processors with ``x86`` architecture with at least one of the following instruction sets:
+      Any processor with ``x86-64`` architecture with at least one of the following instruction sets:
 
         - SSE2
         - SSE4.2
         - AVX2
         - AVX512
-       
-      .. note:: ARM* architecture is not supported.
+
+      .. note::
+        Note: pre-built packages are not provided for other CPU architectures. See :ref:`build-from-sources` for ARM.
 
    .. tab:: GPU
 
-      - All Intel® integrated and discrete GPUs
-      - Intel® GPU drivers
+      - Any Intel® GPU supported by both `DPC++ <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`_ and `oneMKL <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/oneapi-math-kernel-library-system-requirements.html>`_
 
 
-.. tip:: Intel(R) processors provide better performance than other CPUs. Read more about hardware comparison in our :ref:`blogs <blogs>`.
+.. tip:: Read more about hardware comparison in our :ref:`blogs <blogs>`.
 
+.. _software-requirements:
 
 Software Requirements
 **********************
@@ -364,25 +336,29 @@ Software Requirements
 
    .. tab:: GPU
 
-      - Linux* OS: Ubuntu* 18.04 or newer
-      - Windows* OS 10 or newer
-      - Windows* Server 2019 or newer
-      
-      .. important::
-         
-         If you use accelerators, refer to `oneAPI DPC++/C++ Compiler System Requirements <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`_.
+      - A Linux* or Windows* version supported by DPC++ and oneMKL
+      - Intel® Compute Runtime (see :ref:`oneapi_gpu`)
+      - DPC++ runtime libraries
 
-Intel(R) Extension for Scikit-learn is compatible with the last four versions of scikit-learn:
+      .. important::
+
+         If you use accelerators (e.g. GPUs), refer to `oneAPI DPC++/C++ Compiler System Requirements <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`_.
+
+|sklearnex| is compatible with the latest stable releases of |sklearn|:
 
 * 1.0.X
 * 1.1.X
-* 1.2.X 
+* 1.2.X
 * 1.3.X
+* 1.4.X
+* 1.5.X
+* 1.6.X
+* 1.7.X
 
 Memory Requirements
 **********************
-By default, algorithms in |intelex| run in the multi-thread mode. This mode uses all available threads. 
-Optimized scikit-learn algorithms can consume more RAM than their corresponding unoptimized versions.
+By default, algorithms in |sklearnex| run in the multi-thread mode. This mode uses all available threads.
+Optimized scikit-learn estimators can consume more RAM than their corresponding unoptimized versions.
 
 .. list-table::
    :header-rows: 1
@@ -392,10 +368,10 @@ Optimized scikit-learn algorithms can consume more RAM than their corresponding 
      - Single-thread mode
      - Multi-thread mode
    * - SVM
-     - Both Scikit-learn and |intelex| consume approximately the same amount of RAM.
-     - In |intelex|, an algorithm with ``N`` threads consumes ``N`` times more RAM.
+     - Both |sklearn| and |sklearnex| consume approximately the same amount of RAM.
+     - In |sklearnex|, an algorithm with ``N`` threads consumes ``N`` times more RAM.
 
-In all |intelex| algorithms with GPU support, computations run on device memory. 
+In all |sklearnex| algorithms with GPU support, computations run on device memory.
 The device memory must be large enough to store a copy of the entire dataset.
 You may also require additional device memory for internal arrays that are used in computation.
 

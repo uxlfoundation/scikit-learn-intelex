@@ -1,5 +1,5 @@
 # ==============================================================================
-# Copyright 2024 Intel Corporation
+# Copyright contributors to the oneDAL project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
-import time
 
 import numpy as np
 import numpy.random as rand
@@ -42,9 +40,7 @@ _dataframes_supported = (
     "shape",
     [
         [16, 2048],
-        [
-            2**16 + 3,
-        ],
+        [2**16 + 3],
         [1000, 1000],
     ],
 )
@@ -63,15 +59,13 @@ def test_sum_infinite_actually_finite(dtype, shape, ensure_all_finite):
     "shape",
     [
         [16, 2048],
-        [
-            2**16 + 3,
-        ],
+        [2**16 + 3],
         [1000, 1000],
     ],
 )
 @pytest.mark.parametrize("ensure_all_finite", ["allow-nan", True])
 @pytest.mark.parametrize("check", ["inf", "NaN", None])
-@pytest.mark.parametrize("seed", [0, int(time.time())])
+@pytest.mark.parametrize("seed", [0, 123456])
 @pytest.mark.parametrize(
     "dataframe, queue",
     get_dataframes_and_queues(_dataframes_supported),
@@ -114,7 +108,7 @@ def test_validate_data_random_location(
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("ensure_all_finite", ["allow-nan", True])
 @pytest.mark.parametrize("check", ["inf", "NaN", None])
-@pytest.mark.parametrize("seed", [0, int(time.time())])
+@pytest.mark.parametrize("seed", [0, 123456])
 @pytest.mark.parametrize(
     "dataframe, queue",
     get_dataframes_and_queues(_dataframes_supported),
@@ -155,7 +149,7 @@ def test_validate_data_random_shape_and_location(
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("check", ["inf", "NaN", None])
-@pytest.mark.parametrize("seed", [0, int(time.time())])
+@pytest.mark.parametrize("seed", [0, 123456])
 @pytest.mark.parametrize(
     "dataframe, queue",
     get_dataframes_and_queues(_dataframes_supported),
@@ -229,12 +223,16 @@ def test_validate_data_output(dtype, dataframe, queue):
         # check sklearn validate_data operations work underneath
         X_array = validate_data(est, X, reset=False)
 
-    if dispatch:
-        assert type(X) == type(
-            X_array
-        ), f"validate_data converted {type(X)} to {type(X_array)}"
-        assert type(X) == type(X_out), f"from_array converted {type(X)} to {type(X_out)}"
-    else:
-        # array_api_strict from sklearn < 1.2 and pandas will convert to numpy arrays
-        assert isinstance(X_array, np.ndarray)
-        assert isinstance(X_out, np.ndarray)
+    for orig, first, second in ((X, X_out, X_array), (y, y_out, None)):
+        if dispatch:
+            assert type(orig) == type(
+                first
+            ), f"validate_data converted {type(orig)} to {type(first)}"
+            if second is not None:
+                assert type(orig) == type(
+                    second
+                ), f"from_array converted {type(orig)} to {type(second)}"
+        else:
+            # array_api_strict from sklearn < 1.2 and pandas will convert to numpy arrays
+            assert isinstance(first, np.ndarray)
+            assert second is None or isinstance(second, np.ndarray)

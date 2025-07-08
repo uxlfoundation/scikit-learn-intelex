@@ -14,6 +14,16 @@
 # limitations under the License.
 # ==============================================================================
 
+from . import (
+    basic_statistics,
+    cluster,
+    covariance,
+    decomposition,
+    ensemble,
+    linear_model,
+    neighbors,
+)
+
 __all__ = [
     "basic_statistics",
     "cluster",

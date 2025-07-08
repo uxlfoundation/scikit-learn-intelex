@@ -14,11 +14,15 @@
 # limitations under the License.
 # ==============================================================================
 
-from onedal.basic_statistics import BasicStatistics as BasicStatistics_Batch
-
 from ..._device_offload import support_input_format
-from .._base import BaseEstimatorSPMD
+from ...basic_statistics import BasicStatistics as BasicStatistics_Batch
+from ...common._backend import bind_spmd_backend
 
 
-class BasicStatistics(BaseEstimatorSPMD, BasicStatistics_Batch):
-    pass
+class BasicStatistics(BasicStatistics_Batch):
+    @bind_spmd_backend("basic_statistics")
+    def compute(self, data, weights=None): ...
+
+    @support_input_format
+    def fit(self, data, sample_weight=None, queue=None):
+        return super().fit(data, sample_weight, queue=queue)

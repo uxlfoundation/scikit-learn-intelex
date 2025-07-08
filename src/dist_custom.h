@@ -19,11 +19,12 @@
 
 #include "daal4py_cpp.h"
 
-namespace dist_custom {
+namespace dist_custom
+{
 
-    template<typename Algo>
-    class dist_custom;
+template <typename Algo>
+class dist_custom;
 
-} // namespace dist_custom {
+} // namespace dist_custom
 
 #endif // _DIST_CUSTOM_INCLUDED_

@@ -25,6 +25,10 @@ fi
 
 if [ -z "${DALROOT}" ]; then
     export DALROOT=${PREFIX}
+elif [ "${DALROOT}" != "${CONDA_PREFIX}" ]; then
+    # source oneDAL if DALROOT is set outside of conda-build
+    source ${DALROOT}/env/vars.sh
+    export DALRPATH=--abs-rpath
 fi
 
 if [ -z "${MPIROOT}" ] && [ -z "${NO_DIST}" ]; then
@@ -40,4 +44,4 @@ if [ ! -z "${DPCPPROOT}" ]; then
     source ${DPCPPROOT}/env/vars.sh
 fi
 
-${PYTHON} setup.py install --single-version-externally-managed --record record.txt
+${PYTHON} setup.py install --single-version-externally-managed --record record.txt ${DALRPATH}

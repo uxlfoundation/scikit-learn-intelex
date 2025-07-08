@@ -18,6 +18,7 @@ import warnings
 from functools import partial
 
 import numpy as np
+from joblib import effective_n_jobs
 from sklearn.exceptions import DataConversionWarning
 from sklearn.metrics import pairwise_distances as pairwise_distances_original
 from sklearn.metrics.pairwise import (
@@ -28,7 +29,6 @@ from sklearn.metrics.pairwise import (
     _parallel_pairwise,
     check_pairwise_arrays,
 )
-from sklearn.utils._joblib import effective_n_jobs
 from sklearn.utils.validation import check_non_negative
 
 try:
@@ -48,7 +48,12 @@ from daal4py.sklearn.utils.validation import _daal_check_array
 from .._utils import PatchingConditionsChain, getFPType, sklearn_check_version
 
 if sklearn_check_version("1.3"):
-    from sklearn.utils._param_validation import Integral, StrOptions, validate_params
+    from sklearn.utils._param_validation import (
+        Hidden,
+        Integral,
+        StrOptions,
+        validate_params,
+    )
 
 
 def _daal4py_cosine_distance_dense(X):
@@ -65,7 +70,7 @@ def _daal4py_correlation_distance_dense(X):
     return res.correlationDistance
 
 
-def pairwise_distances(
+def _pairwise_distances(
     X, Y=None, metric="euclidean", *, n_jobs=None, force_all_finite=True, **kwds
 ):
     if metric not in _VALID_METRICS and not callable(metric) and metric != "precomputed":
@@ -102,9 +107,14 @@ def pairwise_distances(
             return _daal4py_correlation_distance_dense(X)
         raise ValueError(f"'{metric}' distance is wrong for daal4py.")
     if metric == "precomputed":
-        X, _ = check_pairwise_arrays(
-            X, Y, precomputed=True, force_all_finite=force_all_finite
-        )
+        if sklearn_check_version("1.6"):
+            X, _ = check_pairwise_arrays(
+                X, Y, precomputed=True, ensure_all_finite=force_all_finite
+            )
+        else:
+            X, _ = check_pairwise_arrays(
+                X, Y, precomputed=True, force_all_finite=force_all_finite
+            )
         whom = (
             "`pairwise_distances`. Precomputed distance "
             " need to have non-negative values."
@@ -114,9 +124,20 @@ def pairwise_distances(
     if metric in PAIRWISE_DISTANCE_FUNCTIONS:
         func = PAIRWISE_DISTANCE_FUNCTIONS[metric]
     elif callable(metric):
-        func = partial(
-            _pairwise_callable, metric=metric, force_all_finite=force_all_finite, **kwds
-        )
+        if sklearn_check_version("1.6"):
+            func = partial(
+                _pairwise_callable,
+                metric=metric,
+                ensure_all_finite=force_all_finite,
+                **kwds,
+            )
+        else:
+            func = partial(
+                _pairwise_callable,
+                metric=metric,
+                force_all_finite=force_all_finite,
+                **kwds,
+            )
     else:
         if issparse(X) or issparse(Y):
             raise TypeError("scipy distance metrics do not" " support sparse matrices.")
@@ -127,7 +148,14 @@ def pairwise_distances(
             msg = "Data was converted to boolean for metric %s" % metric
             warnings.warn(msg, DataConversionWarning)
 
-        X, Y = check_pairwise_arrays(X, Y, dtype=dtype, force_all_finite=force_all_finite)
+        if sklearn_check_version("1.6"):
+            X, Y = check_pairwise_arrays(
+                X, Y, dtype=dtype, ensure_all_finite=force_all_finite
+            )
+        else:
+            X, Y = check_pairwise_arrays(
+                X, Y, dtype=dtype, force_all_finite=force_all_finite
+            )
 
         # precompute data-derived metric params
         params = _precompute_metric_params(X, Y, metric=metric, **kwds)
@@ -140,16 +168,92 @@ def pairwise_distances(
     return _parallel_pairwise(X, Y, func, n_jobs, **kwds)
 
 
+# logic to deprecate `force_all_finite` from sklearn:
+# it was renamed to `ensure_all_finite` since 1.6 and will be removed in 1.8
 if sklearn_check_version("1.3"):
+    pairwise_distances_parameters = {
+        "X": ["array-like", "sparse matrix"],
+        "Y": ["array-like", "sparse matrix", None],
+        "metric": [StrOptions(set(_VALID_METRICS) | {"precomputed"}), callable],
+        "n_jobs": [Integral, None],
+        "force_all_finite": [
+            "boolean",
+            StrOptions({"allow-nan"}),
+            Hidden(StrOptions({"deprecated"})),
+        ],
+        "ensure_all_finite": [
+            "boolean",
+            StrOptions({"allow-nan"}),
+            Hidden(None),
+        ],
+    }
+    if sklearn_check_version("1.6"):
+        if sklearn_check_version("1.8"):
+            del pairwise_distances_parameters["force_all_finite"]
+
+            def pairwise_distances(
+                X,
+                Y=None,
+                metric="euclidean",
+                *,
+                n_jobs=None,
+                ensure_all_finite=None,
+                **kwds,
+            ):
+                return _pairwise_distances(
+                    X,
+                    Y,
+                    metric,
+                    n_jobs=n_jobs,
+                    force_all_finite=ensure_all_finite,
+                    **kwds,
+                )
+
+        else:
+            from sklearn.utils.deprecation import _deprecate_force_all_finite
+
+            def pairwise_distances(
+                X,
+                Y=None,
+                metric="euclidean",
+                *,
+                n_jobs=None,
+                force_all_finite="deprecated",
+                ensure_all_finite=None,
+                **kwds,
+            ):
+                force_all_finite = _deprecate_force_all_finite(
+                    force_all_finite, ensure_all_finite
+                )
+                return _pairwise_distances(
+                    X, Y, metric, n_jobs=n_jobs, force_all_finite=force_all_finite, **kwds
+                )
+
+    else:
+        del pairwise_distances_parameters["ensure_all_finite"]
+
+        def pairwise_distances(
+            X,
+            Y=None,
+            metric="euclidean",
+            *,
+            n_jobs=None,
+            force_all_finite=True,
+            **kwds,
+        ):
+            return _pairwise_distances(
+                X,
+                Y,
+                metric,
+                n_jobs=n_jobs,
+                force_all_finite=force_all_finite,
+                **kwds,
+            )
+
     pairwise_distances = validate_params(
-        {
-            "X": ["array-like", "sparse matrix"],
-            "Y": ["array-like", "sparse matrix", None],
-            "metric": [StrOptions(set(_VALID_METRICS) | {"precomputed"}), callable],
-            "n_jobs": [Integral, None],
-            "force_all_finite": ["boolean", StrOptions({"allow-nan"})],
-        },
+        pairwise_distances_parameters,
         prefer_skip_nested_validation=True,
     )(pairwise_distances)
-
+else:
+    pairwise_distances = _pairwise_distances
 pairwise_distances.__doc__ = pairwise_distances_original.__doc__

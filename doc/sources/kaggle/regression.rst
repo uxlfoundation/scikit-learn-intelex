@@ -1,24 +1,22 @@
-.. ******************************************************************************
-.. * Copyright 2021 Intel Corporation
-.. *
-.. * Licensed under the Apache License, Version 2.0 (the "License");
-.. * you may not use this file except in compliance with the License.
-.. * You may obtain a copy of the License at
-.. *
-.. *     http://www.apache.org/licenses/LICENSE-2.0
-.. *
-.. * Unless required by applicable law or agreed to in writing, software
-.. * distributed under the License is distributed on an "AS IS" BASIS,
-.. * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-.. * See the License for the specific language governing permissions and
-.. * limitations under the License.
-.. *******************************************************************************/
+.. Copyright 2021 Intel Corporation
+..
+.. Licensed under the Apache License, Version 2.0 (the "License");
+.. you may not use this file except in compliance with the License.
+.. You may obtain a copy of the License at
+..
+..     http://www.apache.org/licenses/LICENSE-2.0
+..
+.. Unless required by applicable law or agreed to in writing, software
+.. distributed under the License is distributed on an "AS IS" BASIS,
+.. WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+.. See the License for the specific language governing permissions and
+.. limitations under the License.
 
 Kaggle Kernels for Regression Tasks
 ************************************
 
-The following Kaggle kernels show how to patch scikit-learn with |intelex| for various regression tasks.
-These kernels usually include a performance comparison between stock scikit-learn and scikit-learn patched with |intelex|.
+The following Kaggle kernels show how to patch scikit-learn with |sklearnex| for various regression tasks.
+These kernels usually include a performance comparison between stock scikit-learn and scikit-learn patched with |sklearnex|.
 
 .. include:: /kaggle/note-about-tps.rst
 
@@ -35,17 +33,17 @@ Using a Single Regressor
      - Content
    * - `Baseline Nu Support Vector Regression (nuSVR) with RBF Kernel
        <https://www.kaggle.com/kppetrov/tps-jul-2021-baseline-with-nusvr-model/notebook>`_
-       
+
        **Data:** [TPS Jul 2021] Synthetic pollution data
      - Predict air pollution measurements over time based on weather and input values from multiple sensors
-     - 
+     -
 
        - data preprocessing
-       - search for optimal paramters using Optuna
+       - search for optimal parameters using Optuna
        - training and prediction using scikit-learn-intelex
    * - `Nu Support Vector Regression (nuSVR)
        <https://www.kaggle.com/alexeykolobyanin/tps-aug-nusvr-with-intel-extension-for-sklearn>`__
-     
+
        **Data:** [TPS Aug 2021] Synthetic loan data
      - Calculate loss associated with a loan defaults
      -
@@ -57,7 +55,7 @@ Using a Single Regressor
 
    * - `Nu Support Vector Regression (nuSVR)
        <https://www.kaggle.com/alexeykolobyanin/house-prices-nusvr-sklearn-intelex-4x-speedup>`__
-       
+
        **Data:** House Prices dataset
      - Predict sale prices for a property based on its characteristics
      -
@@ -71,22 +69,22 @@ Using a Single Regressor
        - performance comparison to scikit-learn
    * - `Random Forest Regression
        <https://www.kaggle.com/pahandrovich/tps-jul-2021-fast-randomforest-with-sklearnex>`_
-       
+
        **Data:** [TPS Jul 2021] Synthetic pollution data
      - Predict air pollution measurements over time based on weather and input values from multiple sensors
-     - 
+     -
 
        - checking correlation between features
-       - search for best paramters using GridSearchCV
+       - search for best parameters using GridSearchCV
        - training and prediction using scikit-learn-intelex
        - performance comparison to scikit-learn
 
    * - `Random Forest Regression with Feature Engineering
        <https://www.kaggle.com/alexeykolobyanin/tps-jul-rf-with-intel-extension-for-scikit-learn>`_
-     
+
        **Data:** [TPS Jul 2021] Synthetic pollution data
      - Predict air pollution measurements over time based on weather and input values from multiple sensors
-     - 
+     -
 
        - data preprocessing
        - feature engineering
@@ -106,8 +104,8 @@ Using a Single Regressor
        - performance comparison to scikit-learn
    * - `Ridge Regression
        <https://www.kaggle.com/alexeykolobyanin/tps-sep-ridge-with-sklearn-intelex-2x-speedup>`_
-     
-     
+
+
        **Data:** [TPS Sep 2021] Synthetic insurance data
      - Predict the probability of a customer making a claim upon an insurance policy
      -
@@ -131,10 +129,10 @@ Stacking Regressors
      - Content
    * - `Stacking Regressor with Random Fores, SVR, and LASSO
        <https://www.kaggle.com/alexeykolobyanin/tps-jul-stacking-with-scikit-learn-intelex>`_
-       
+
        **Data:** [TPS Jul 2021] Synthetic pollution data
      - Predict air pollution measurements over time based on weather and input values from multiple sensors
-     - 
+     -
 
        - feature engineering
        - creating a stacking regressor
@@ -144,7 +142,7 @@ Stacking Regressors
 
    * - `Stacking Regressor with ElasticNet, LASSO, and Ridge Regression for Time-series data
        <https://www.kaggle.com/alexeykolobyanin/predict-sales-stacking-with-scikit-learn-intelex>`_
-       
+
        **Data:** Predict Future Sales dataset
      - Predict total sales for every product and store in the next month based on daily sales data
      -

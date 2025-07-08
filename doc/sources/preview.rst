@@ -1,26 +1,25 @@
-.. ******************************************************************************
-.. * Copyright 2024 Intel Corporation
-.. *
-.. * Licensed under the Apache License, Version 2.0 (the "License");
-.. * you may not use this file except in compliance with the License.
-.. * You may obtain a copy of the License at
-.. *
-.. *     http://www.apache.org/licenses/LICENSE-2.0
-.. *
-.. * Unless required by applicable law or agreed to in writing, software
-.. * distributed under the License is distributed on an "AS IS" BASIS,
-.. * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-.. * See the License for the specific language governing permissions and
-.. * limitations under the License.
-.. *******************************************************************************/
+.. Copyright 2024 Intel Corporation
+..
+.. Licensed under the Apache License, Version 2.0 (the "License");
+.. you may not use this file except in compliance with the License.
+.. You may obtain a copy of the License at
+..
+..     http://www.apache.org/licenses/LICENSE-2.0
+..
+.. Unless required by applicable law or agreed to in writing, software
+.. distributed under the License is distributed on an "AS IS" BASIS,
+.. WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+.. See the License for the specific language governing permissions and
+.. limitations under the License.
 
+.. include:: substitutions.rst
 .. _preview:
 
 #####################
 Preview Functionality
 #####################
 
-Some of implemented functionality in |intelex| doesn't meet one or few of next requirements
+Some of implemented functionality in |sklearnex| doesn't meet one or few of next requirements
 for being enabled by default for all users:
 
 * The functionality API is not stable and can be changed in future
@@ -28,11 +27,11 @@ for being enabled by default for all users:
 * The functionality misses performance targets compared to stock Scikit-learn or previously available version of functionality
 * The functionality is not fully tested
 
-This type of functionality is available under **preview mode** of |intelex| and located in
+This type of functionality is available under **preview mode** of |sklearnex| and located in
 the corresponding module (`sklearnex.preview`).
 
-Preview functionality *may* or *may not* participate in patching of Scikit-learn.
-For example, a preview estimator may be a replacement for a stock one or a completely new one.
+Functionalities under preview will be made available after patching when preview mode is enabled,
+but note that some might be :ref:`extension estimators <extension_estimators>` without analogs in |sklearn|.
 
 To enable preview functionality, you need to set the `SKLEARNEX_PREVIEW` environment variable
 to non-empty value before patching of Scikit-learn.

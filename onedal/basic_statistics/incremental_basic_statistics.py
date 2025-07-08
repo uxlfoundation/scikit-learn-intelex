@@ -1,4 +1,3 @@
-# ==============================================================================
 # Copyright 2024 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,10 +23,10 @@ class IncrementalBasicStatistics(BasicStatistics):
     Allows to compute basic statistics if data are splitted into batches.
     Parameters
     ----------
-    result_options: string or list, default='all'
-        List of statistics to compute
+    result_options : str or list, default=str('all')
+        List of statistics to compute.
 
-    Attributes (are existing only if corresponding result option exists)
+    Attributes
     ----------
         min : ndarray of shape (n_features,)
             Minimum of each feature over all samples.
@@ -58,17 +57,31 @@ class IncrementalBasicStatistics(BasicStatistics):
 
         second_order_raw_moment : ndarray of shape (n_features,)
             Second order moment of each feature over all samples.
+
+    Notes
+    -----
+        Attributes are populated only for corresponding result options.
     """
 
     def __init__(self, result_options="all", algorithm="by_default"):
         super().__init__(result_options, algorithm)
         self._reset()
+        self._queue = None
+
+    @bind_default_backend("basic_statistics")
+    def partial_compute_result(self): ...
+
+    @bind_default_backend("basic_statistics")
+    def partial_compute(self, *args, **kwargs): ...
+
+    @bind_default_backend("basic_statistics")
+    def finalize_compute(self, *args, **kwargs): ...
 
     def _reset(self):
         self._need_to_finalize = False
-        self._partial_result = self._get_backend(
-            "basic_statistics", None, "partial_compute_result"
-        )
+        self._queue = None
+        # get the _partial_result pointer from backend
+        self._partial_result = self.partial_compute_result()
 
     def __getstate__(self):
         # Since finalize_fit can't be dispatched without directly provided queue
@@ -80,10 +93,9 @@ class IncrementalBasicStatistics(BasicStatistics):
 
         return data
 
+    @supports_queue
     def partial_fit(self, X, sample_weight=None, queue=None):
-        """
-        Computes partial data for basic statistics
-        from data batch X and saves it to `_partial_result`.
+        """Generate partial statistics from batch data in `_partial_result`.
 
         Parameters
         ----------
@@ -91,8 +103,12 @@ class IncrementalBasicStatistics(BasicStatistics):
             Training data batch, where `n_samples` is the number of samples
             in the batch, and `n_features` is the number of features.
 
-        queue : dpctl.SyclQueue
-            If not None, use this queue for computations.
+        sample_weight : array-like of shape (n_samples,), default=None
+            Individual weights for each sample.
+
+        queue : SyclQueue or None, default=None
+            SYCL Queue object for device code execution. Default
+            value None causes computation on host.
 
         Returns
         -------
@@ -100,35 +116,20 @@ class IncrementalBasicStatistics(BasicStatistics):
             Returns the instance itself.
         """
         self._queue = queue
-        policy = self._get_policy(queue, X)
-        X, sample_weight = to_table(*_convert_to_supported(policy, X, sample_weight))
+        X_table, sample_weight_table = to_table(X, sample_weight, queue=queue)
 
         if not hasattr(self, "_onedal_params"):
             self._onedal_params = self._get_onedal_params(False, dtype=X.dtype)
 
-        self._partial_result = self._get_backend(
-            "basic_statistics",
-            None,
-            "partial_compute",
-            policy,
-            self._onedal_params,
-            self._partial_result,
-            X,
-            sample_weight,
+        self._partial_result = self.partial_compute(
+            self._onedal_params, self._partial_result, X_table, sample_weight_table
         )
 
         self._need_to_finalize = True
-        return self
+        self._queue = queue
 
-    def finalize_fit(self, queue=None):
-        """
-        Finalizes basic statistics computation and obtains result
-        attributes from the current `_partial_result`.
-
-        Parameters
-        ----------
-        queue : dpctl.SyclQueue
-            If not None, use this queue for computations.
+    def finalize_fit(self):
+        """Finalize statistics from the current `_partial_result`.
 
         Returns
         -------
@@ -136,19 +137,9 @@ class IncrementalBasicStatistics(BasicStatistics):
             Returns the instance itself.
         """
         if self._need_to_finalize:
-            if queue is not None:
-                policy = self._get_policy(queue)
-            else:
-                policy = self._get_policy(self._queue)
+            with QM.manage_global_queue(self._queue):
+                result = self.finalize_compute(self._onedal_params, self._partial_result)
 
-            result = self._get_backend(
-                "basic_statistics",
-                None,
-                "finalize_compute",
-                policy,
-                self._onedal_params,
-                self._partial_result,
-            )
             for opt in self.options:
                 setattr(self, opt, from_table(getattr(result, opt))[0])
 
