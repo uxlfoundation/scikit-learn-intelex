@@ -74,11 +74,15 @@ def get_onedal_version(dal_root, version_type="release"):
 def find_library_custom_paths(alias: str, dal_root: str, is_win: bool) -> bool:
     if find_library(alias):
         return True
-    path_from_dal_root = (
-        jp(dal_root, "Library", "bin") if is_win else jp(dal_root, "lib", "intel64")
+    paths_from_dal_root = (
+        [jp(dal_root, "Library", "bin")]
+        if is_win
+        else [jp(dal_root, "lib", "intel64"), jp(dal_root, "lib")]
     )
-    if os.path.exists(path_from_dal_root):
-        return alias in os.listdir(path_from_dal_root)
+    for path in paths_from_dal_root:
+        if os.path.exists(path):
+            if os.path.isfile(jp(path, alias)):
+                return True
     else:
         return False
 
