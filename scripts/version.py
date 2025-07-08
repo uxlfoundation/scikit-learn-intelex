@@ -83,8 +83,7 @@ def find_library_custom_paths(alias: str, dal_root: str, is_win: bool) -> bool:
         if os.path.exists(path):
             if os.path.isfile(jp(path, alias)):
                 return True
-    else:
-        return False
+    return False
 
 
 def get_onedal_shared_libs(dal_root: str, is_win: bool) -> list[str]:
