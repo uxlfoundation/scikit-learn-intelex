@@ -1,30 +1,29 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html5" lang="en">
+<html class="writer-html5" lang="en" data-content_root="./">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Serving GBT models from other libraries &mdash; Extension for Scikit-learn* 2025.5 documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css" />
-      <link rel="stylesheet" type="text/css" href="_static/copybutton.css" />
-      <link rel="stylesheet" type="text/css" href="_static/custom.css" />
-      <link rel="stylesheet" type="text/css" href="_static/tabs.css" />
-      <link rel="stylesheet" type="text/css" href="_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css" />
+  <title>Serving GBT models from other libraries &mdash; Extension for Scikit-learn* 2025.6 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=132153fd" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
 
   
     <link rel="shortcut icon" href="_static/favicon.png"/>
-      <script src="_static/jquery.js"></script>
-      <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-      <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-      <script src="_static/doctools.js"></script>
-      <script src="_static/sphinx_highlight.js"></script>
-      <script src="_static/clipboard.min.js"></script>
-      <script src="_static/copybutton.js"></script>
-      <script src="_static/version_switcher.js"></script>
-      <script src="_static/design-tabs.js"></script>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=61d495fa"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="_static/copybutton.js?v=f281be69"></script>
+      <script src="_static/version_switcher.js?v=1b8cff92"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -72,7 +71,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
 <div class="version-switcher__container dropdown">
     <script>
-      current_version = "2025.5"
+      current_version = "2025.6"
       project_name = "scikit-learn-intelex"
     </script>
     <div id="version-switcher-button"
@@ -425,7 +424,7 @@
 <li class="toctree-l2"><a class="reference internal" href="array_api.html#example-usage">Example usage</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="array_api.html#dpnp-ndarrays">DPNP ndarrays</a></li>
 <li class="toctree-l3"><a class="reference internal" href="array_api.html#dpctl-usm-ndarrays">DPCTL usm_ndarrays</a></li>
-<li class="toctree-l3"><a class="reference internal" href="array_api.html#use-of-array-api-strict">Use of <cite>array-api-strict</cite></a></li>
+<li class="toctree-l3"><a class="reference internal" href="array_api.html#use-of-array-api-strict">Use of <code class="docutils literal notranslate"><span class="pre">array-api-strict</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -467,6 +466,7 @@
 <li class="toctree-l3"><a class="reference internal" href="daal4py.html#daal4py.mb.GBTDAALModel"><code class="docutils literal notranslate"><span class="pre">GBTDAALModel</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="daal4py.html#daal4py.mb.GBTDAALModel.is_classifier_"><code class="docutils literal notranslate"><span class="pre">GBTDAALModel.is_classifier_</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="daal4py.html#daal4py.mb.GBTDAALModel.is_regressor_"><code class="docutils literal notranslate"><span class="pre">GBTDAALModel.is_regressor_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="daal4py.html#daal4py.mb.GBTDAALModel.supports_shap_"><code class="docutils literal notranslate"><span class="pre">GBTDAALModel.supports_shap_</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="daal4py.html#daal4py.mb.GBTDAALModel.predict"><code class="docutils literal notranslate"><span class="pre">GBTDAALModel.predict()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="daal4py.html#daal4py.mb.GBTDAALModel.predict_proba"><code class="docutils literal notranslate"><span class="pre">GBTDAALModel.predict_proba()</span></code></a></li>
 </ul>
@@ -1591,9 +1591,9 @@
            <div itemprop="articleBody">
              
   <section id="serving-gbt-models-from-other-libraries">
-<span id="model-builders"></span><h1>Serving GBT models from other libraries<a class="headerlink" href="#serving-gbt-models-from-other-libraries" title="Permalink to this heading"></a></h1>
+<span id="model-builders"></span><h1>Serving GBT models from other libraries<a class="headerlink" href="#serving-gbt-models-from-other-libraries" title="Link to this heading"></a></h1>
 <section id="introduction">
-<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this heading"></a></h2>
+<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
 <p>The Extension for Scikit-learn* can be used to accelerate computation of predictions (also known as “inference”)
 from GBT (gradient-boosted decision trees) models produced by other libraries such as XGBoost, by
 converting those models to class <a class="reference internal" href="daal4py.html#daal4py.mb.GBTDAALModel" title="daal4py.mb.GBTDAALModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">daal4py.mb.GBTDAALModel</span></code></a> which offers faster methods
@@ -1602,7 +1602,7 @@ converting those models to class <a class="reference internal" href="daal4py.htm
 <img alt="_images/model_builders_speedup.webp" src="_images/model_builders_speedup.webp" />
 <figcaption>
 <p><span class="caption-text">Example speedups in predictions compared to prediction method in XGBoost
-on Intel Xeon Platinum 8275CL (see <a class="reference external" href="https://medium.com/intel-analytics-software/improving-the-performance-of-xgboost-and-lightgbm-inference-3b542c03447e">blog post</a>).</span><a class="headerlink" href="#id1" title="Permalink to this image"></a></p>
+on Intel Xeon Platinum 8275CL (see <a class="reference external" href="https://medium.com/intel-analytics-software/improving-the-performance-of-xgboost-and-lightgbm-inference-3b542c03447e">blog post</a>).</span><a class="headerlink" href="#id1" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>Model objects from other GBT libraries can be converted to this daal4py class through function
@@ -1625,12 +1625,12 @@ the original libraries that produced the models.</p>
 for both feature contributions and feature interactions.</p>
 </section>
 <section id="example">
-<h2>Example<a class="headerlink" href="#example" title="Permalink to this heading"></a></h2>
+<h2>Example<a class="headerlink" href="#example" title="Link to this heading"></a></h2>
 <p>Example converting an XGBoost model:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">xgboost</span> <span class="k">as</span> <span class="nn">xgb</span>
-<span class="kn">import</span> <span class="nn">daal4py</span>
-<span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">make_regression</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">xgboost</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xgb</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">daal4py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_regression</span>
 
 <span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">make_regression</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">n_features</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">123</span><span class="p">)</span>
 <span class="n">dm</span> <span class="o">=</span> <span class="n">xgb</span><span class="o">.</span><span class="n">DMatrix</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
@@ -1675,7 +1675,7 @@ for both feature contributions and feature interactions.</p>
 </ul>
 </section>
 <section id="notes-about-computed-results">
-<h2>Notes about computed results<a class="headerlink" href="#notes-about-computed-results" title="Permalink to this heading"></a></h2>
+<h2>Notes about computed results<a class="headerlink" href="#notes-about-computed-results" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>The shapes of SHAP contributions and interactions are consistent with the XGBoost results.
 In contrast, the <a class="reference external" href="https://shap.readthedocs.io/en/latest/">SHAP Python package</a> drops bias terms, resulting
@@ -1685,16 +1685,19 @@ LightGBM calls “raw”).</p></li>
 </ul>
 </section>
 <section id="limitations">
-<h2>Limitations<a class="headerlink" href="#limitations" title="Permalink to this heading"></a></h2>
+<h2>Limitations<a class="headerlink" href="#limitations" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Models with categorical features are not supported.</p></li>
+<li><p>Multi-class classification is only supported when the logic corresponds to multinomial logistic loss
+instead of one-vs-rest.</p></li>
 <li><p>Multioutput models are not supported.</p></li>
-<li><p>SHAP values can be calculated for regression models only.</p></li>
+<li><p>SHAP values cannot be calculated for multi-class classification models, nor for CatBoost regression models
+from loss functions that involve link functions (e.g. can be calculated for ‘RMSE’, but not for ‘Poisson’).</p></li>
 <li><p>Objectives that are not for regression nor classification (e.g. ranking) are not supported.</p></li>
 </ul>
 </section>
 <section id="documentation">
-<h2>Documentation<a class="headerlink" href="#documentation" title="Permalink to this heading"></a></h2>
+<h2>Documentation<a class="headerlink" href="#documentation" title="Link to this heading"></a></h2>
 <p>See the section about <a class="reference internal" href="daal4py.html#model-builders-docs"><span class="std std-ref">model builders</span></a> in the <code class="docutils literal notranslate"><span class="pre">daal4py</span></code> API reference
 for full documentation.</p>
 </section>
@@ -1711,7 +1714,7 @@ for full documentation.</p>
   <hr/>
 
   <div role="contentinfo">
-<jinja2.runtime.BlockReference object at 0x7faba9209cd0>
+<jinja2.runtime.BlockReference object at 0x7f906f35ea80>
 <a href=
     "https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html" data-cookie-notice="true">
     Cookies
@@ -1738,7 +1741,7 @@ for full documentation.</p>
   </div>
   <div class="version-switcher__container dropdown">
     <script>
-      current_version = "2025.5"
+      current_version = "2025.6"
       project_name = "scikit-learn-intelex"
     </script>
     <div id="version-switcher-button"
