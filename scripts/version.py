@@ -80,9 +80,8 @@ def find_library_custom_paths(alias: str, dal_root: str, is_win: bool) -> bool:
         else [jp(dal_root, "lib", "intel64"), jp(dal_root, "lib")]
     )
     for path in paths_from_dal_root:
-        if os.path.exists(path):
-            if os.path.isfile(jp(path, alias)):
-                return True
+        if os.path.isfile(jp(path, alias)):
+            return True
     return False
 
 
