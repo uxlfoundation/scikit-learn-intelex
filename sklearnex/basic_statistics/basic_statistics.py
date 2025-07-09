@@ -184,7 +184,7 @@ class BasicStatistics(oneDALEstimator, BaseEstimator):
         if sklearn_check_version("1.2"):
             self._validate_params()
 
-        if not get_config().get("use_raw_input"):
+        if not get_config()["use_raw_input"]:
             xp, _ = get_namespace(X, sample_weight)
             X = validate_data(
                 self,
