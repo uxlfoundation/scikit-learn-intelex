@@ -148,6 +148,9 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         )
 
     def _onedal_fit(self, X, y, queue=None):
+        X, y = validate_data(
+            self, X, y, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
+        )
         onedal_params = {
             "n_neighbors": self.n_neighbors,
             "weights": self.weights,

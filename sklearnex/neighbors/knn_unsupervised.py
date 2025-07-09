@@ -76,9 +76,9 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
 
     @wrap_output_data
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
-        X = validate_data(
-            self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
-        )
+        # X = validate_data(
+        #     self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
+        # )
         check_is_fitted(self)
         return dispatch(
             self,

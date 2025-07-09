@@ -70,6 +70,18 @@ _DESIGN_RULE_VIOLATIONS = {
     "LogisticRegression(solver='newton-cg')-predict-n_jobs_check": "uses daal4py for cpu in sklearnex",
     "LogisticRegression(solver='newton-cg')-predict_log_proba-n_jobs_check": "uses daal4py for cpu in sklearnex",
     "LogisticRegression(solver='newton-cg')-predict_proba-n_jobs_check": "uses daal4py for cpu in sklearnex",
+    "KNeighborsClassifier-fit-call_validate_data": "validate_data are called both in onedal and before dispatch",
+    "KNeighborsRegressor-fit-call_validate_data": "validate_data are called both in onedal and before dispatch",
+    "NearestNeighbors-kneighbors-call_validate_data": "validate_data are called both in onedal and before dispatch",
+    "NearestNeighbors-kneighbors_graph-call_validate_data": "validate_data are called both in onedal and before dispatch",
+    "LocalOutlierFactor-kneighbors-call_validate_data": "validate_data are called both in onedal and before dispatch",
+    "LocalOutlierFactor-kneighbors_graph-call_validate_data": "validate_data are called both in onedal and before dispatch",
+    "LocalOutlierFactor(novelty=True)-kneighbors-call_validate_data": "validate_data are called both in onedal and before dispatch",
+    "LocalOutlierFactor(novelty=True)-kneighbors_graph-call_validate_data": "validate_data are called both in onedal and before dispatch",
+    "KNeighborsClassifier(algorithm='brute')-fit-call_validate_data": "validate_data are called both in onedal and before dispatch",
+    "KNeighborsRegressor(algorithm='brute')-fit-call_validate_data": "validate_data are called both in onedal and before dispatch",
+    "NearestNeighbors(algorithm='brute')-kneighbors-call_validate_data": "validate_data are called both in onedal and before dispatch",
+    "NearestNeighbors(algorithm='brute')-kneighbors_graph-call_validate_data": "validate_data are called both in onedal and before dispatch",
 }
 
 
