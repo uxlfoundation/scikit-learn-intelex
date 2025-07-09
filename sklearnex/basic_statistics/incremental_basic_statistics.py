@@ -180,9 +180,8 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
     def _onedal_partial_fit(self, X, sample_weight=None, queue=None, check_input=True):
         first_pass = not hasattr(self, "n_samples_seen_") or self.n_samples_seen_ == 0
 
-        use_raw_input = get_config().get("use_raw_input", False)
         # never check input when using raw input
-        if check_input and not use_raw_input:
+        if check_input and not get_config().get("use_raw_input"):
             xp, _ = get_namespace(X)
             X = validate_data(
                 self,
@@ -211,11 +210,10 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
         self._need_to_finalize = True
 
     def _onedal_fit(self, X, sample_weight=None, queue=None):
-        use_raw_input = get_config().get("use_raw_input", False)
-        if not use_raw_input:
-            if sklearn_check_version("1.2"):
-                self._validate_params()
-
+        if sklearn_check_version("1.2"):
+            self._validate_params()
+        
+        if not get_config().get("use_raw_input"):
             xp, _ = get_namespace(X, sample_weight)
             X = validate_data(self, X, dtype=[xp.float64, xp.float32])
 
