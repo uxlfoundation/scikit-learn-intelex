@@ -16,13 +16,31 @@
 
 import logging
 import os
+import re
+import sys
 import warnings
 from abc import ABC
+
+import sklearn
 
 from daal4py.sklearn._utils import (
     PatchingConditionsChain as daal4py_PatchingConditionsChain,
 )
-from daal4py.sklearn._utils import daal_check_version
+from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+
+# Not an ideal solution, but this allows for access to the outputs of older
+# sklearnex tag dictionaries in a way similar to the sklearn >=1.6 tag
+# dataclasses via duck-typing. At some point this must be removed for direct
+# use of get_tags in all circumstances, dictated by sklearn support. This is
+# implemented in a way to minimally impact performance.
+
+
+if sklearn_check_version("1.6"):
+    from sklearn.utils import get_tags
+else:
+    from sklearn.base import BaseEstimator
+
+    get_tags = lambda obj: type("Tags", (), BaseEstimator._get_tags(obj))
 
 
 class PatchingConditionsChain(daal4py_PatchingConditionsChain):
@@ -37,7 +55,7 @@ class PatchingConditionsChain(daal4py_PatchingConditionsChain):
         else:
             self.logger.debug(
                 f"{self.scope_name}: debugging for the patch is enabled to track"
-                " the usage of Intel® oneAPI Data Analytics Library (oneDAL)"
+                " the usage of oneAPI Data Analytics Library (oneDAL)"
             )
             for message in self.messages:
                 self.logger.debug(
@@ -102,11 +120,33 @@ def get_sklearnex_version(rule):
 
 def register_hyperparameters(hyperparameters_map):
     """Decorator for hyperparameters support in estimator class.
+
     Adds `get_hyperparameters` method to class.
+
+    Parameters
+    ----------
+    hyperparameters_map : dict
+       Dictionary containing the operator-hyperparameter mapping.
+
+    Returns
+    -------
+    decorator : function
+        Function which adds `get_hyperparameters` method to classes.
     """
 
     def decorator(cls):
-        """Add `get_hyperparameters()` static method"""
+        """Add ``get_hyperparameters()` static method to a class.
+
+        Parameters
+        ----------
+        cls : class
+            Class to be modified.
+
+        Returns
+        -------
+        cls : class
+            Class with added `get_hyperparameters` method.
+        """
 
         class StaticHyperparametersAccessor:
             """Like a @staticmethod, but additionally raises a Warning when called on an instance."""
@@ -127,17 +167,26 @@ def register_hyperparameters(hyperparameters_map):
     return decorator
 
 
-# This abstract class is meant to generate a clickable doc link for classses
-# in sklearnex that are not part of base scikit-learn. It should be inherited
-# before inheriting from a scikit-learn estimator, otherwise will get overriden
-# by the estimator's original.
-class IntelEstimator(ABC):
-    @property
-    def _doc_link_module(self) -> str:
-        return "sklearnex"
-
-    @property
-    def _doc_link_template(self) -> str:
-        module_path, _ = self.__class__.__module__.rsplit(".", 1)
-        class_name = self.__class__.__name__
-        return f"https://uxlfoundation.github.io/scikit-learn-intelex/latest/non-scikit-algorithms.html#{module_path}.{class_name}"
+def _add_inc_serialization_note(class_docstrings: str) -> str:
+    """Adds a small note note about serialization for extension estimators that are incremental.
+    The class docstrings should leave a placeholder '%incremental_serialization_note%' inside
+    their docstrings, which will be replaced by this note.
+    """
+    # In python versions >=3.13, leading whitespace in docstrings defined through
+    # static strings (but **not through other ways**) is automatically removed
+    # from the final docstrings, while in earlier versions is kept.
+    inc_serialization_note = """Note
+----
+Serializing instances of this class will trigger a forced finalization of calculations
+when the inputs are in a sycl queue or when using GPUs. Since (internal method)
+finalize_fit can't be dispatched without directly provided queue and the dispatching
+policy can't be serialized, the computation is finalized during serialization call and
+the policy is not saved in serialized data."""
+    if sys.version_info.major == 3 and sys.version_info.minor <= 12:
+        inc_serialization_note = re.sub(
+            r"^", " " * 4, inc_serialization_note, flags=re.MULTILINE
+        )
+        inc_serialization_note = inc_serialization_note.strip()
+    return class_docstrings.replace(
+        r"%incremental_serialization_note%", inc_serialization_note
+    )

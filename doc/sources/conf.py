@@ -30,22 +30,23 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
+import re
 import sys
 
-sys.path.insert(0, os.path.abspath("../"))
+# sys.path.insert(0, os.path.abspath("../"))
 
 
 # -- Project information -----------------------------------------------------
 
-project = "Intel(R) Extension for Scikit-learn*"
-copyright = "Intel"
-author = "Intel"
+project = "Extension for Scikit-learn*"
+copyright = "oneDAL project"
+author = "oneDAL project"
 
 # The short X.Y version
-version = "2025.0.0"
-# The full version, including alpha/beta/rc tags
-release = "2025.0.0"
-
+# Note: it should not have more than  two parts (year.month), otherwise the
+# version switcher will not be able to pick it.
+version = os.environ.get("SHORT_DOC_VERSION", "latest")
+release = version
 
 # -- General configuration ---------------------------------------------------
 
@@ -73,12 +74,15 @@ extensions = [
 
 intersphinx_mapping = {
     "sklearn": ("https://scikit-learn.org/stable/", None),
+    "dpctl": ("https://intelpython.github.io/dpctl/latest", None),
+    "mpi4py": ("https://mpi4py.readthedocs.io/en/stable/", None),
+    "xgboost": ("https://xgboost.readthedocs.io/en/stable/", None),
     # from scikit-learn, in case some object in sklearnex points to them:
     # https://github.com/scikit-learn/scikit-learn/blob/main/doc/conf.py
     "python": ("https://docs.python.org/{.major}".format(sys.version_info), None),
     "numpy": ("https://numpy.org/doc/stable", None),
     "scipy": ("https://docs.scipy.org/doc/scipy/", None),
-    "matplotlib": ("https://matplotlib.org/", None),
+    "matplotlib": ("https://matplotlib.org/stable/", None),
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
     "joblib": ("https://joblib.readthedocs.io/en/latest/", None),
     "seaborn": ("https://seaborn.pydata.org/", None),
@@ -122,19 +126,23 @@ pygments_style = "sphinx"
 # substitutions
 
 rst_prolog = """
-.. |reg| unicode:: U+000AE
-.. |intelex| replace:: Intel\\ |reg|\\  Extension for Scikit-learn*
+.. |sklearnex| replace:: Extension for Scikit-learn*
+.. |onedal| replace:: oneAPI Data Analytics Library
 """
+
+# Note: sklearn oftentimes uses single backticks to render code.
+# Some docstrings here are inherited from theirs, so this setting
+# is needed to render them the same way they do.
+default_role = "literal"
 
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-# html_theme = 'alabaster'
 html_theme = "sphinx_rtd_theme"
-html_logo = ""
-html_favicon = "_static/favicons.png"
+html_logo = "_static/uxl-foundation-logo-horizontal-color.png"
+html_favicon = "_static/favicon.png"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -155,6 +163,13 @@ html_theme_options = {
 }
 
 
+html_context = {
+    "current_version": version,
+    "project_name": "scikit-learn-intelex",
+    "switcher_url": "/scikit-learn-intelex/versions.json",
+}
+
+
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
@@ -163,6 +178,7 @@ html_static_path = ["_static"]
 
 def setup(app):
     app.add_css_file("custom.css")
+    app.add_js_file("version_switcher.js")
 
 
 # -- Options for HTMLHelp output ---------------------------------------------
@@ -196,7 +212,7 @@ latex_documents = [
     (
         master_doc,
         "scikit-learn-intelex.tex",
-        "Intel(R) Extension for Scikit-learn* Documentation",
+        "Extension for Scikit-learn* Documentation",
         "Intel",
         "manual",
     ),
@@ -211,7 +227,7 @@ man_pages = [
     (
         master_doc,
         "scikit-learn-intelex",
-        "Intel(R) Extension for Scikit-learn* Documentation",
+        "Extension for Scikit-learn* Documentation",
         [author],
         1,
     )
@@ -227,10 +243,10 @@ texinfo_documents = [
     (
         master_doc,
         "scikit-learn-intelex",
-        "Intel(R) Extension for Scikit-learn* Documentation",
+        "Extension for Scikit-learn* Documentation",
         author,
         "scikit-learn-intelex",
-        "Intel(R) Extension for Scikit-learn speeds up scikit-learn "
+        "Extension for Scikit-learn speeds up scikit-learn "
         "beyond by providing drop-in patching.",
         "Miscellaneous",
     ),
@@ -248,3 +264,13 @@ todo_include_todos = True
 # not found 404 page
 
 notfound_urls_prefix = "/scikit-learn-intelex/"
+
+# Any link matching these regexes will be skipped by linkcheck
+linkcheck_ignore = [
+    re.compile(r"https://github\.com/.+"),  # Avoid rate error
+    re.compile(r"https://.*intel\.com/.+"),  # Avoid permission error
+]
+
+# Speed up link-check and fail faster
+linkcheck_timeout = 10
+linkcheck_workers = 8

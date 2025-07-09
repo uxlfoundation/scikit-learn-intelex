@@ -45,14 +45,21 @@ header:
     # All .csv and .ipynb files
     - '**/*.csv'
     - '**/*.ipynb'
+   # Auto-generated files
+    - doc/Makefile
+    - doc/make.bat
+    - doc/daal4py/Makefile
+    - doc/daal4py/make.bat
    # Something in doc/
     - 'doc/daal4py/_static/style.css'
     - 'doc/daal4py/_templates/layout.html'
-    - 'doc/sources/_static/style.css'
+    - 'doc/sources/_static/custom.css'
     - 'doc/sources/_templates/footer.html'
     - 'doc/sources/_templates/layout.html'
+    - 'doc/sources/_templates/versions.html'
     - 'doc/daal4py/third-party-programs.txt'
     - 'doc/third-party-programs-sklearnex.txt'
+    - 'doc/versions.json'
     # requirements
     - 'dependencies-dev'
     - 'requirements*.txt'
@@ -63,7 +70,8 @@ header:
     # Specific files
     - 'setup.cfg'
     - 'LICENSE'
-
+    # External copies of copyrighted work
+    - 'onedal/datatypes/dlpack/dlpack.h'
   comment: never
 
   license-location-threshold: 80 # specifies the index threshold where the license header can be located.

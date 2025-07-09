@@ -1,17 +1,25 @@
 {% extends "!layout.html" %}
 {% block extrahead %}
-    <script defer type="text/javascript" src="https://www.intel.com/content/dam/www/global/wap/performance-config.js" ></script>
-    <script type="text/javascript">
-        // Configure TMS settings
-        var wapLocalCode = 'us-en'; // Dynamically set per localized site, see mapping table for values
-        var wapSection = "scikit-learn"; // WAP team will give you a unique section for your site
-        // Load TMS
-        if(document.location.href.includes("uxlfoundation.github.io/scikit-learn-intelex")){
-          (function () {
-            var url = 'https://www.intel.com/content/dam/www/global/wap/tms-loader.js'; // WAP file URL
-            var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true; po.src = url;
-            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
-          })();
-      }
-      </script>
+<script defer type="text/javascript"
+  src="https://www.intel.com/content/dam/www/global/wap/performance-config.js"></script>
+<script type="text/javascript">
+  fetch("{{ switcher_url }}").then(response => response.text()).then(respText => load_versions(respText));
+  // Configure TMS settings
+  var wapLocalCode = 'us-en'; // Dynamically set per localized site, see mapping table for values
+  var wapSection = "scikit-learn"; // WAP team will give you a unique section for your site
+  // Load TMS
+  if (document.location.href.includes("uxlfoundation.github.io/scikit-learn-intelex")) {
+    (function () {
+      var url = 'https://www.intel.com/content/dam/www/global/wap/tms-loader.js'; // WAP file URL
+      var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true; po.src = url;
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+    })();
+  }
+</script>
 {% endblock %}
+
+{% block menu %}
+{% include "versions.html" %}
+{{ super() }}
+{% endblock %}
+

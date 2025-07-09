@@ -19,36 +19,35 @@
 
 #include "transceiver.h"
 
-namespace map_reduce_star {
+namespace map_reduce_star
+{
 
-template<typename Algo>
+template <typename Algo>
 class map_reduce_star
 {
 public:
-    template<typename ... Ts>
-    typename Algo::iomstep2Master_type::result_type
-    static map_reduce(Algo & algo, Ts& ... inputs)
+    template <typename... Ts>
+    typename Algo::iomstep2Master_type::result_type static map_reduce(Algo & algo, Ts &... inputs)
     {
-        auto tcvr = get_transceiver();
+        auto tcvr      = get_transceiver();
         auto s1_result = algo.run_step1Local(inputs...);
         // gather all partial results
         auto p_results = tcvr->gather(s1_result);
         // call reduction on root
         typename Algo::iomstep2Master_type::result_type res;
-        if(tcvr->me() == 0) res = algo.run_step2Master(p_results);
+        if (tcvr->me() == 0) res = algo.run_step2Master(p_results);
         // bcast final result
         tcvr->bcast(res);
         return res;
     }
 
-    template<typename ... Ts>
-    static typename Algo::iomstep2Master_type::result_type
-    compute(Algo & algo, Ts& ... inputs)
+    template <typename... Ts>
+    static typename Algo::iomstep2Master_type::result_type compute(Algo & algo, Ts &... inputs)
     {
         return map_reduce(algo, get_table(inputs)...);
     }
 };
 
-} // namespace map_reduce_star {
+} // namespace map_reduce_star
 
 #endif // _MAP_REDUCE_STAR_INCLUDED_

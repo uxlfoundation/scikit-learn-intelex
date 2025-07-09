@@ -33,7 +33,13 @@ ONEDAL_PY_INIT_MODULE(polynomial_kernel) {
     auto sub = m.def_submodule("polynomial_kernel");
 #ifndef ONEDAL_DATA_PARALLEL_SPMD
     ONEDAL_PY_INSTANTIATE(init_kernel_result, sub, result_t);
-    ONEDAL_PY_INSTANTIATE(init_kernel_compute_ops, sub, policy_list, input_t, result_t, param2desc_t, method::dense);
+    ONEDAL_PY_INSTANTIATE(init_kernel_compute_ops,
+                          sub,
+                          policy_list,
+                          input_t,
+                          result_t,
+                          param2desc_t,
+                          method::dense);
 #endif
 }
 

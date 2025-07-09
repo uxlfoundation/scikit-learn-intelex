@@ -20,12 +20,16 @@ from numbers import Number
 import numpy as np
 
 from daal4py.sklearn._utils import daal_check_version, get_dtype, make2d
+from onedal._device_offload import supports_queue
+from onedal.common._backend import bind_default_backend
+from onedal.utils import _sycl_queue_manager as QM
 
-from ..common._base import BaseEstimator as onedal_BaseEstimator
+from .._config import _get_config
 from ..common._estimator_checks import _check_is_fitted
 from ..common._mixin import ClassifierMixin
 from ..datatypes import from_table, to_table
-from ..utils import (
+from ..utils._array_api import _get_sycl_namespace
+from ..utils.validation import (
     _check_array,
     _check_n_features,
     _check_X_y,
@@ -35,7 +39,7 @@ from ..utils import (
 )
 
 
-class BaseLogisticRegression(onedal_BaseEstimator, metaclass=ABCMeta):
+class BaseLogisticRegression(metaclass=ABCMeta):
     @abstractmethod
     def __init__(self, tol, C, fit_intercept, solver, max_iter, algorithm):
         self.tol = tol
@@ -44,6 +48,16 @@ class BaseLogisticRegression(onedal_BaseEstimator, metaclass=ABCMeta):
         self.solver = solver
         self.max_iter = max_iter
         self.algorithm = algorithm
+
+    @abstractmethod
+    def train(self, params, X, y): ...
+
+    @abstractmethod
+    def infer(self, params, X): ...
+
+    # direct access to the backend model constructor
+    @abstractmethod
+    def model(self): ...
 
     def _get_onedal_params(self, is_csr, dtype=np.float32):
         intercept = "intercept|" if self.fit_intercept else ""
@@ -62,31 +76,44 @@ class BaseLogisticRegression(onedal_BaseEstimator, metaclass=ABCMeta):
             ),
         }
 
-    def _fit(self, X, y, module, queue):
+    def _fit(self, X, y):
+        use_raw_input = _get_config()["use_raw_input"] is True
+
         sparsity_enabled = daal_check_version((2024, "P", 700))
-        X, y = _check_X_y(
-            X,
-            y,
-            accept_sparse=sparsity_enabled,
-            force_all_finite=True,
-            accept_2d_y=False,
-            dtype=[np.float64, np.float32],
-        )
+        if not use_raw_input:
+            X, y = _check_X_y(
+                X,
+                y,
+                accept_sparse=sparsity_enabled,
+                force_all_finite=True,
+                accept_2d_y=False,
+                dtype=[np.float64, np.float32],
+            )
+            if _type_of_target(y) != "binary":
+                raise ValueError("Only binary classification is supported")
+
+            self.classes_, y = np.unique(y, return_inverse=True)
+            y = y.astype(dtype=np.int32)
+        else:
+            _, xp, _ = _get_sycl_namespace(X)
+            # try catch needed for raw_inputs + array_api data where unlike
+            # numpy the way to yield unique values is via `unique_values`
+            # This should be removed when refactored for gpu zero-copy
+            try:
+                self.classes_ = xp.unique(y)
+            except AttributeError:
+                self.classes_ = xp.unique_values(y)
+
+            n_classes = len(self.classes_)
+            if n_classes != 2:
+                raise ValueError("Only binary classification is supported")
         is_csr = _is_csr(X)
 
         self.n_features_in_ = _num_features(X, fallback_1d=True)
-
-        if _type_of_target(y) != "binary":
-            raise ValueError("Only binary classification is supported")
-
-        self.classes_, y = np.unique(y, return_inverse=True)
-        y = y.astype(dtype=np.int32)
-
-        policy = self._get_policy(queue, X, y)
-        X_table, y_table = to_table(X, y, queue=queue)
+        X_table, y_table = to_table(X, y, queue=QM.get_global_queue())
         params = self._get_onedal_params(is_csr, X_table.dtype)
 
-        result = module.train(policy, params, X_table, y_table)
+        result = self.train(params, X_table, y_table)
 
         self._onedal_model = result.model
         self.n_iter_ = np.array([result.iterations_count])
@@ -100,8 +127,8 @@ class BaseLogisticRegression(onedal_BaseEstimator, metaclass=ABCMeta):
 
         return self
 
-    def _create_model(self, module, policy):
-        m = module.model()
+    def _create_model(self):
+        m = self.model()
 
         coefficients = self.coef_
         dtype = get_dtype(coefficients)
@@ -143,65 +170,68 @@ class BaseLogisticRegression(onedal_BaseEstimator, metaclass=ABCMeta):
         if self.fit_intercept:
             packed_coefficients[:, 0][:, np.newaxis] = intercept
 
-        m.packed_coefficients = to_table(
-            packed_coefficients, queue=getattr(policy, "_queue", None)
-        )
+        m.packed_coefficients = to_table(packed_coefficients, queue=QM.get_global_queue())
 
         self._onedal_model = m
 
         return m
 
-    def _infer(self, X, module, queue):
+    def _infer(self, X):
         _check_is_fitted(self)
+
         sparsity_enabled = daal_check_version((2024, "P", 700))
 
-        X = _check_array(
-            X,
-            dtype=[np.float64, np.float32],
-            accept_sparse=sparsity_enabled,
-            force_all_finite=True,
-            ensure_2d=False,
-            accept_large_sparse=sparsity_enabled,
-        )
+        if not _get_config()["use_raw_input"]:
+            X = _check_array(
+                X,
+                dtype=[np.float64, np.float32],
+                accept_sparse=sparsity_enabled,
+                force_all_finite=True,
+                ensure_2d=False,
+                accept_large_sparse=sparsity_enabled,
+            )
         is_csr = _is_csr(X)
         _check_n_features(self, X, False)
 
         X = make2d(X)
-        policy = self._get_policy(queue, X)
 
         if hasattr(self, "_onedal_model"):
             model = self._onedal_model
         else:
-            model = self._create_model(module, policy)
+            model = self._create_model()
 
-        X_table = to_table(X, queue=queue)
+        X_table = to_table(X, queue=QM.get_global_queue())
         params = self._get_onedal_params(is_csr, X.dtype)
 
-        result = module.infer(policy, params, model, X_table)
+        result = self.infer(params, model, X_table)
         return result
 
-    def _predict(self, X, module, queue):
-        result = self._infer(X, module, queue)
-        y = from_table(result.responses)
-        y = np.take(self.classes_, y.ravel(), axis=0)
+    def _predict(self, X):
+        result = self._infer(X)
+        sua_iface, xp, _ = _get_sycl_namespace(X)
+        y = from_table(
+            result.responses,
+            sua_iface=sua_iface,
+            sycl_queue=QM.get_global_queue(),
+            xp=xp,
+        )
+        y = xp.take(xp.asarray(self.classes_), xp.reshape(y, (-1,)), axis=0)
         return y
 
-    def _predict_proba(self, X, module, queue):
-        result = self._infer(X, module, queue)
+    def _predict_proba(self, X):
+        result = result = self._infer(X)
+        sua_iface, xp, _ = _get_sycl_namespace(X)
+        queue = QM.get_global_queue()
+        y = from_table(result.probabilities, sua_iface=sua_iface, sycl_queue=queue, xp=xp)
+        return xp.stack([1 - y, y], axis=1)
 
-        y = from_table(result.probabilities)
-        y = y.reshape(-1, 1)
-        return np.hstack([1 - y, y])
-
-    def _predict_log_proba(self, X, module, queue):
-        y_proba = self._predict_proba(X, module, queue)
-        return np.log(y_proba)
+    def _predict_log_proba(self, X):
+        _, xp, _ = _get_sycl_namespace(X)
+        y_proba = self._predict_proba(X)
+        return xp.log(y_proba)
 
 
 class LogisticRegression(ClassifierMixin, BaseLogisticRegression):
-    """
-    Logistic Regression oneDAL implementation.
-    """
 
     def __init__(
         self,
@@ -223,25 +253,27 @@ class LogisticRegression(ClassifierMixin, BaseLogisticRegression):
             algorithm=algorithm,
         )
 
+    @bind_default_backend("logistic_regression.classification")
+    def train(self, params, X, y, queue=None): ...
+
+    @bind_default_backend("logistic_regression.classification")
+    def infer(self, params, X, model, queue=None): ...
+
+    @bind_default_backend("logistic_regression.classification")
+    def model(self): ...
+
+    @supports_queue
     def fit(self, X, y, queue=None):
-        return super()._fit(
-            X, y, self._get_backend("logistic_regression", "classification", None), queue
-        )
+        return self._fit(X, y)
 
+    @supports_queue
     def predict(self, X, queue=None):
-        y = super()._predict(
-            X, self._get_backend("logistic_regression", "classification", None), queue
-        )
-        return y
+        return self._predict(X)
 
+    @supports_queue
     def predict_proba(self, X, queue=None):
-        y = super()._predict_proba(
-            X, self._get_backend("logistic_regression", "classification", None), queue
-        )
-        return y
+        return self._predict_proba(X)
 
+    @supports_queue
     def predict_log_proba(self, X, queue=None):
-        y = super()._predict_log_proba(
-            X, self._get_backend("logistic_regression", "classification", None), queue
-        )
-        return y
+        return self._predict_log_proba(X)

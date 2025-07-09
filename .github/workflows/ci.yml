@@ -33,20 +33,46 @@ env:
   DPCTL_VERSION: 0.18.1
   DPNP_VERSION: 0.16.0
   DPCTL_PY_VERSIONS: '3.9\|3.11'
+  UXL_PYTHONVERSION: "3.12"
+  UXL_SKLEARNVERSION: "1.4"
+  ONEDAL_REPO: "uxlfoundation/oneDAL"
 
 jobs:
+
+  onedal_nightly:
+    runs-on: ubuntu-24.04
+    name: Identify oneDAL nightly
+    timeout-minutes: 2
+
+    steps:
+      - name: Get run ID of "Nightly-build" workflow
+        id: get-run-id
+        run: |
+          WF_NAME="Nightly-build"
+          JQ_QUERY='map(select(.event == "workflow_dispatch" or .event == "schedule")) | .[0].databaseId'
+          RUN_ID=`gh run --repo ${{ env.ONEDAL_REPO }} list --workflow "${WF_NAME}" --json databaseId,event --status success --jq "${JQ_QUERY}"`
+          echo "Detected latest run id of ${RUN_ID} for workflow ${WF_NAME}"
+          echo "run-id=${RUN_ID}" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
+    outputs:
+       run-id: ${{ steps.get-run-id.outputs.run-id }}
+       uxl-python: ${{ env.UXL_PYTHONVERSION }}
+       uxl-sklearn: ${{ env.UXL_SKLEARNVERSION }}
+
   sklearn_lnx:
+    needs: onedal_nightly
     strategy:
       fail-fast: false
       matrix:
         include:
           - PYTHON_VERSION: "3.9"
-            SKLEARN_VERSION: "1.1"
+            SKLEARN_VERSION: "1.5"
           - PYTHON_VERSION: "3.10"
-            SKLEARN_VERSION: "1.2"
+            SKLEARN_VERSION: "1.0"
           - PYTHON_VERSION: "3.11"
-            SKLEARN_VERSION: "1.3"
-    name: LinuxNightly/pip Python${{ matrix.PYTHON_VERSION }}_Sklearn${{ matrix.SKLEARN_VERSION }}
+            SKLEARN_VERSION: "1.6"
+    name: LinuxNightly/venv Python${{ matrix.PYTHON_VERSION }}_Sklearn${{ matrix.SKLEARN_VERSION }}
     runs-on: ubuntu-24.04
     timeout-minutes: 120
 
@@ -57,32 +83,21 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.PYTHON_VERSION }}  
-      - name: Get run ID of "Nightly-build" workflow
-        id: get-run-id
-        run: |
-          OTHER_REPO="uxlfoundation/oneDAL"
-          WF_NAME="Nightly-build"
-          JQ_QUERY='map(select(.event == "workflow_dispatch" or .event == "schedule")) | .[0].databaseId'
-          RUN_ID=`gh run --repo ${OTHER_REPO} list --workflow "${WF_NAME}" --json databaseId,event --status success --jq "${JQ_QUERY}"`
-          echo "Detected latest run id of ${RUN_ID} for workflow ${WF_NAME}"
-          echo "run-id=${RUN_ID}" >> "$GITHUB_OUTPUT"
-        env:
-          GH_TOKEN: ${{ github.token }}
       - name: Download oneDAL build artifact
         uses: actions/download-artifact@v4
         with:
           name: __release_lnx
           github-token: ${{ github.token }}
-          repository: uxlfoundation/oneDAL
-          run-id: ${{ steps.get-run-id.outputs.run-id }}
+          repository: ${{ env.ONEDAL_REPO }}
+          run-id: ${{ needs.onedal_nightly.outputs.run-id }}
           path: ./__release_lnx
       - name: Download oneDAL environment artifact
         uses: actions/download-artifact@v4
         with:
           name: oneDAL_env
           github-token: ${{ github.token }}
-          repository: uxlfoundation/oneDAL
-          run-id: ${{ steps.get-run-id.outputs.run-id }}
+          repository: ${{ env.ONEDAL_REPO }}
+          run-id: ${{ needs.onedal_nightly.outputs.run-id }}
           path: .ci/env
       - name: Set Environment Variables
         id: set-env
@@ -95,8 +110,9 @@ jobs:
           echo "DPCFLAG=${DPCFLAG}" >> "$GITHUB_OUTPUT"
           # enable coverage report generation
           echo "COVERAGE_RCFILE=$(readlink -f .coveragerc)" >> "$GITHUB_ENV"
+          if [[ -z $DPCFLAG ]]; then echo "SKLEARNEX_GCOV=1" >> "$GITHUB_ENV"; fi
       - name: apt-get
-        run: sudo apt-get update && sudo apt-get install -y clang-format
+        run: sudo apt-get update
       - name: dpcpp installation
         run: |
           # This CI system yields oneAPI dependencies from the oneDAL repository
@@ -111,6 +127,7 @@ jobs:
           source venv/bin/activate
           pip install -r dependencies-dev
           pip list
+          echo "NUMPY_BUILD=$(python -m pip freeze | grep numpy)" >> "$GITHUB_ENV"
       - name: Build daal4py/sklearnex
         run: |
           source venv/bin/activate
@@ -142,13 +159,14 @@ jobs:
       - name: Create coverage report
         run: |
           source venv/bin/activate
-          coverage combine .coverage.sklearnex .coverage.sklearn
-          coverage json -o coverage.lnx${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.json
+          source .github/scripts/activate_components.sh ${{ steps.set-env.outputs.DPCFLAG }}
+          bash .github/scripts/generate_coverage_reports.sh lnx${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }} ${{ steps.set-env.outputs.DPCFLAG }}
       - name: Archive coverage report
         uses: actions/upload-artifact@v4
         with:
           name: coverage_lnx_Py${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}
-          path: coverage.lnx${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.json
+          path: |
+            *_lnx${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.info
       - name: Sklearn testing [preview]
         run: |
           source venv/bin/activate
@@ -158,18 +176,19 @@ jobs:
           bash .ci/scripts/run_sklearn_tests.sh $CPU
 
   sklearn_win:
+    needs: onedal_nightly
     strategy:
       fail-fast: false
       matrix:
         include:
           - PYTHON_VERSION: "3.9"
-            SKLEARN_VERSION: "1.1"
+            SKLEARN_VERSION: "1.5"
           - PYTHON_VERSION: "3.10"
-            SKLEARN_VERSION: "1.2"
+            SKLEARN_VERSION: "1.0"
           - PYTHON_VERSION: "3.11"
-            SKLEARN_VERSION: "1.3"
-    name: WindowsNightly/pip Python${{ matrix.PYTHON_VERSION }}_Sklearn${{ matrix.SKLEARN_VERSION }}
-    runs-on: windows-2022
+            SKLEARN_VERSION: "1.6"
+    name: WindowsNightly/venv Python${{ matrix.PYTHON_VERSION }}_Sklearn${{ matrix.SKLEARN_VERSION }}
+    runs-on: windows-2025
     timeout-minutes: 120
 
     steps:
@@ -179,33 +198,21 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.PYTHON_VERSION }}
-      - name: Get run ID of "Nightly-build" workflow
-        id: get-run-id
-        shell: bash
-        run: |
-          OTHER_REPO="uxlfoundation/oneDAL"
-          WF_NAME="Nightly-build"
-          JQ_QUERY='map(select(.event == "workflow_dispatch" or .event == "schedule")) | .[0].databaseId'
-          RUN_ID=`gh run --repo ${OTHER_REPO} list --workflow "${WF_NAME}" --json databaseId,event --status success --jq "${JQ_QUERY}"`
-          echo "Detected latest run id of ${RUN_ID} for workflow ${WF_NAME}"
-          echo "run-id=${RUN_ID}" >> "$GITHUB_OUTPUT"
-        env:
-          GH_TOKEN: ${{ github.token }}
       - name: Download oneDAL build artifact
         uses: actions/download-artifact@v4
         with:
           name: __release_win
           github-token: ${{ github.token }}
-          repository: uxlfoundation/oneDAL
-          run-id: ${{ steps.get-run-id.outputs.run-id }}
+          repository: ${{ env.ONEDAL_REPO }}
+          run-id: ${{ needs.onedal_nightly.outputs.run-id }}
           path: ./__release_win
       - name: Download Intel BaseKit artifact
         uses: actions/download-artifact@v4
         with:
           name: intel_oneapi_basekit
           github-token: ${{ github.token }}
-          repository: uxlfoundation/oneDAL
-          run-id: ${{ steps.get-run-id.outputs.run-id }}
+          repository: ${{ env.ONEDAL_REPO }}
+          run-id: ${{ needs.onedal_nightly.outputs.run-id }}
       - name: Decompress Intel BaseKit
         shell: cmd
         run: |
@@ -218,7 +225,12 @@ jobs:
           echo C:\msys64\usr\bin;>> %GITHUB_PATH%
           echo NO_DIST=YES>> %GITHUB_ENV%
           set DPCTL_TEMP="${{ env.DPCTL_PY_VERSIONS }}"
-          if not %DPCTL_TEMP:${{ matrix.PYTHON_VERSION }}=%==%DPCTL_TEMP% (echo DPCFLAG=>> %GITHUB_OUTPUT%) else (echo DPCFLAG="0">> %GITHUB_OUTPUT%)
+          if not %DPCTL_TEMP:${{ matrix.PYTHON_VERSION }}=%==%DPCTL_TEMP% (
+            echo DPCFLAG=>> %GITHUB_OUTPUT%
+            echo SKLEARNEX_GCOV=YES>> %GITHUB_ENV%
+          ) else (
+            echo DPCFLAG="0">> %GITHUB_OUTPUT%
+          )
           echo COVERAGE_RCFILE=%cd%\.coveragerc>> %GITHUB_ENV%
       - name: Download Intel OpenCL CPU Runtime artifact
         if: ${{ steps.set-env.outputs.DPCFLAG == '' }}
@@ -226,8 +238,8 @@ jobs:
         with:
           name: opencl_rt_installer
           github-token: ${{ github.token }}
-          repository: uxlfoundation/oneDAL
-          run-id: ${{ steps.get-run-id.outputs.run-id }}
+          repository: ${{ env.ONEDAL_REPO }}
+          run-id: ${{ needs.onedal_nightly.outputs.run-id }}
           path: .
       - name: Install Intel OpenCL CPU Runtime
         if: ${{ steps.set-env.outputs.DPCFLAG == '' }}
@@ -240,8 +252,9 @@ jobs:
           python -m venv venv
           call .\venv\Scripts\activate.bat
           pip install --upgrade setuptools
-          pip install cpufeature clang-format pyyaml
+          pip install cpufeature pyyaml
           pip install -r dependencies-dev
+          for /f "delims=" %%c in ('python -m pip freeze ^| grep numpy') do echo NUMPY_BUILD=%%c>> %GITHUB_ENV%
       - name: System info 
         shell: cmd
         run: |
@@ -288,13 +301,14 @@ jobs:
         shell: cmd
         run: |
           call .\venv\Scripts\activate.bat
-          coverage combine .coverage.sklearnex .coverage.sklearn
-          coverage json -o coverage.win${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.json
+          call .\.github\scripts\activate_components.bat ${{ steps.set-env.outputs.DPCFLAG }}
+          bash .github/scripts/generate_coverage_reports.sh win${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}
       - name: Archive coverage report
         uses: actions/upload-artifact@v4
         with:
           name: coverage_win_Py${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}
-          path: coverage.win${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.json
+          path: |
+             *_win${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.info
       - name: Sklearn testing [preview]
         shell: cmd
         run: |
@@ -303,3 +317,179 @@ jobs:
           if "${{ steps.set-env.outputs.DPCFLAG }}"=="" set CPU=cpu
           set SKLEARNEX_PREVIEW=YES
           bash .ci/scripts/run_sklearn_tests.sh %CPU%
+
+  build_uxl:
+    if: github.repository == 'uxlfoundation/scikit-learn-intelex'
+    needs: onedal_nightly
+    name: LinuxNightly build Python${{ needs.onedal_nightly.outputs.uxl-python }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout Scikit-learn-intelex
+        uses: actions/checkout@v4
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.UXL_PYTHONVERSION }}
+          cache: 'pip'
+          cache-dependency-path: |
+            **/dependencies-dev
+            **/requirements-test.txt
+      - name: Download oneDAL build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: __release_lnx
+          github-token: ${{ github.token }}
+          repository: ${{ env.ONEDAL_REPO }}
+          run-id: ${{ needs.onedal_nightly.outputs.run-id }}
+          path: ./__release_lnx
+      - name: Download oneDAL environment artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: oneDAL_env
+          github-token: ${{ github.token }}
+          repository: ${{ env.ONEDAL_REPO }}
+          run-id: ${{ needs.onedal_nightly.outputs.run-id }}
+          path: .ci/env
+      - name: Set Environment Variables
+        id: set-env
+        run: |
+          # Disable SPMD testing
+          echo "NO_DIST=1" >> "$GITHUB_ENV"
+          # enable coverage report generation
+          echo "SKLEARNEX_GCOV=1" >> "$GITHUB_ENV"
+      - name: apt-get
+        run: sudo apt-get update && sudo apt-get install -y clang-format
+      - name: dpcpp installation
+        run: |
+          # This CI system yields oneAPI dependencies from the oneDAL repository
+          bash .ci/env/apt.sh dpcpp
+      - name: describe system
+        run: |
+          source /opt/intel/oneapi/setvars.sh
+          bash .ci/scripts/describe_system.sh
+      - name: Install develop requirements
+        id: install-reqs
+        run: |
+          pip install -r dependencies-dev
+          echo "numpy-version=$(python -m pip freeze | grep numpy)" >> "$GITHUB_OUTPUT"
+          pip list
+      - name: Build daal4py/sklearnex
+        run: |
+          source .github/scripts/activate_components.sh ${{ steps.set-env.outputs.DPCFLAG }}
+          python setup.py bdist_wheel
+      - name: Archive sklearnex build
+        uses: actions/upload-artifact@v4
+        with:
+          name: sklearnex_build_${{ env.UXL_PYTHONVERSION }}
+          path: |
+             ./dist/*.whl
+    
+    outputs:
+      numpy-version: ${{ steps.install-reqs.outputs.numpy-version }}
+      
+  test_uxl:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - OS: ubuntu-24.04
+            FRAMEWORKS: "pytorch,numpy"
+            DEVICE: cpu
+    needs: [onedal_nightly, build_uxl]
+    name: LinuxNightly [${{ matrix.FRAMEWORKS }}]-${{ matrix.DEVICE }} test Python${{ needs.onedal_nightly.outputs.uxl-python }}_Sklearn${{ needs.onedal_nightly.outputs.uxl-sklearn }}
+    runs-on: ${{ matrix.OS }}
+    timeout-minutes: 120
+    steps:
+      - name: Checkout Scikit-learn-intelex
+        uses: actions/checkout@v4
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.UXL_PYTHONVERSION }}
+          cache-dependency-path: |
+            **/dependencies-dev
+            **/requirements-test.txt
+      - name: Download oneDAL build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: __release_lnx
+          github-token: ${{ github.token }}
+          repository: ${{ env.ONEDAL_REPO }}
+          run-id: ${{ needs.onedal_nightly.outputs.run-id }}
+          path: ./__release_lnx
+      - name: Download oneDAL environment artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: oneDAL_env
+          github-token: ${{ github.token }}
+          repository: ${{ env.ONEDAL_REPO }}
+          run-id: ${{ needs.onedal_nightly.outputs.run-id }}
+          path: .ci/env
+      - name: Set Environment Variables
+        id: set-env
+        run: |
+          echo "NO_DIST=1" >> "$GITHUB_ENV"
+          # enable coverage report generation
+          echo "COVERAGE_RCFILE=$(readlink -f .coveragerc)" >> "$GITHUB_ENV"
+          echo "ONEDAL_PYTEST_FRAMEWORKS=${{ matrix.FRAMEWORKS }}" >> "$GITHUB_ENV"
+          # reduce GPU driver/runner related memory issues
+          echo "NEOReadDebugKeys=1" >> "$GITHUB_ENV"
+          echo "EnableRecoverablePageFaults=1" >> "$GITHUB_ENV"
+          echo "GpuFaultCheckThreshold=0" >> "$GITHUB_ENV"
+          # set build numpy version for use in generating code coverage
+          echo "NUMPY_BUILD=${{ needs.build_uxl.outputs.numpy-version }}" >> "$GITHUB_ENV"
+      - name: apt-get
+        run: sudo apt-get update
+      - name: dpcpp installation
+        run: |
+          # This CI system yields oneAPI dependencies from the oneDAL repository
+          bash .ci/env/apt.sh dpcpp
+      - name: describe system
+        run: |
+          source /opt/intel/oneapi/setvars.sh
+          bash .ci/scripts/describe_system.sh
+      - name: Install test requirements
+        run: |
+          bash .ci/scripts/setup_sklearn.sh ${{ env.UXL_SKLEARNVERSION }}
+          pip install --upgrade -r requirements-test.txt
+          pip install $(python .ci/scripts/get_compatible_scipy_version.py ${{ env.UXL_SKLEARVERSION }}) pyyaml
+          pip list
+      - name: Download sklearnex wheel
+        uses: actions/download-artifact@v4
+        with:
+          name: sklearnex_build_${{ env.UXL_PYTHONVERSION }}
+      - name: Install PyTorch
+        if: contains(matrix.FRAMEWORKS, 'pytorch')
+        run: |
+          pip install torch --index-url https://download.pytorch.org/whl/xpu
+          python -c "import torch; _=[print(torch.xpu.get_device_name(i)) for i in range(torch.xpu.device_count())]" 
+      - name: Install daal4py/sklearnex
+        run: pip install *.whl
+      - name: Sklearnex testing
+        run: |
+          source .github/scripts/activate_components.sh
+          export COVERAGE_FILE=$(pwd)/.coverage.sklearnex
+          cd .ci
+          ../conda-recipe/run_test.sh
+      - name: Sklearn testing
+        run: |
+          source .github/scripts/activate_components.sh
+          export COVERAGE_FILE=$(pwd)/.coverage.sklearn
+          bash .ci/scripts/run_sklearn_tests.sh ${{ matrix.DEVICE }}
+      - name: Create coverage report
+        run: |
+          source .github/scripts/activate_components.sh
+          bash .github/scripts/generate_coverage_reports.sh uxl_lnx_${{ matrix.DEVICE }}
+      - name: Archive coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage_uxl_lnx_${{ matrix.DEVICE }}
+          path: |
+            *uxl_lnx_${{ matrix.DEVICE }}.info
+      - name: Sklearn testing [preview]
+        run: |
+          source .github/scripts/activate_components.sh
+          export SKLEARNEX_PREVIEW='YES'
+          bash .ci/scripts/run_sklearn_tests.sh ${{ matrix.DEVICE }}

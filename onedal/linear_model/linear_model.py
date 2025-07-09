@@ -21,17 +21,18 @@ import numpy as np
 
 from daal4py.sklearn._utils import daal_check_version
 
-from ..common._base import BaseEstimator
+from .._config import _get_config
+from .._device_offload import supports_queue
+from ..common._backend import bind_default_backend
 from ..common._estimator_checks import _check_is_fitted
 from ..common.hyperparameters import get_hyperparameters
 from ..datatypes import from_table, to_table
-from ..utils import _check_n_features, _check_X_y, _num_features
+from ..utils import _sycl_queue_manager as QM
+from ..utils._array_api import _get_sycl_namespace
+from ..utils.validation import _check_array, _check_n_features, _check_X_y, _num_features
 
 
-class BaseLinearRegression(BaseEstimator, metaclass=ABCMeta):
-    """
-    Base class for LinearRegression oneDAL implementation.
-    """
+class BaseLinearRegression(metaclass=ABCMeta):
 
     @abstractmethod
     def __init__(self, fit_intercept, copy_X, algorithm, alpha=0.0):
@@ -39,6 +40,16 @@ class BaseLinearRegression(BaseEstimator, metaclass=ABCMeta):
         self.alpha = alpha
         self.copy_X = copy_X
         self.algorithm = algorithm
+
+    @bind_default_backend("linear_model.regression")
+    def train(self, *args, **kwargs): ...
+
+    @bind_default_backend("linear_model.regression")
+    def infer(self, params, model, X): ...
+
+    # direct access to the backend model class
+    @bind_default_backend("linear_model.regression")
+    def model(self): ...
 
     def _get_onedal_params(self, dtype=np.float32):
         intercept = "intercept|" if self.fit_intercept else ""
@@ -53,9 +64,8 @@ class BaseLinearRegression(BaseEstimator, metaclass=ABCMeta):
 
         return params
 
-    def _create_model(self, policy):
-        module = self._get_backend("linear_model", "regression")
-        model = module.model()
+    def _create_model(self):
+        model = self.model()
 
         # force dtype and shape for all supported estimators to numpy
         if np.isscalar(self.coef_):
@@ -76,16 +86,17 @@ class BaseLinearRegression(BaseEstimator, metaclass=ABCMeta):
         packed_coefficients = np.concatenate((intercept, coef), axis=1)
 
         model.packed_coefficients = to_table(
-            packed_coefficients, queue=getattr(policy, "_queue", None)
+            packed_coefficients, queue=QM.get_global_queue()
         )
 
         self._onedal_model = model
 
         return model
 
+   @supports_queue
     def fit(self, X, y, queue=None):
-        """
-        Fit linear model.
+        """Fit linear model.
+
         Parameters
         ----------
         X : {array-like, sparse matrix} of shape (n_samples, n_features)
@@ -94,32 +105,47 @@ class BaseLinearRegression(BaseEstimator, metaclass=ABCMeta):
         y : array-like of shape (n_samples,) or (n_samples, n_targets)
             Target values. Will be cast to X's dtype if necessary.
 
-        queue : dpctl.SyclQueue
-            If not None, use this queue for computations.
+        queue : SyclQueue or None, default=None
+            SYCL Queue object for device code execution. Default
+            value None causes computation on host.
 
         Returns
         -------
         self : object
             Fitted Estimator.
         """
-        module = self._get_backend("linear_model", "regression")
 
-        policy = self._get_policy(queue, X, y)
+        sua_iface, xp, _ = _get_sycl_namespace(X)
+
+        if not _get_config()["use_raw_input"]:
+            if not isinstance(X, np.ndarray):
+                X = np.asarray(X)
+
+            dtype = get_dtype(X)
+            if dtype not in [np.float32, np.float64]:
+                dtype = np.float64
+                X = X.astype(dtype, copy=self.copy_X)
+
+            y = np.asarray(y).astype(dtype=dtype)
+
+            X, y = _check_X_y(X, y, force_all_finite=False, accept_2d_y=True)
 
         self.n_features_in_ = _num_features(X, fallback_1d=True)
 
-        X_table, y_table = to_table(*_convert_to_supported(policy, X, y))
+        X_table, y_table = to_table(X, y, queue=queue)
         params = self._get_onedal_params(X_table.dtype)
 
         hparams = get_hyperparameters("linear_regression", "train")
         if hparams is not None and not hparams.is_default:
-            result = module.train(policy, params, hparams.backend, X_table, y_table)
+            result = self.train(params, hparams.backend, X_table, y_table)
         else:
-            result = module.train(policy, params, X_table, y_table)
+            result = self.train(params, X_table, y_table)
 
         self._onedal_model = result.model
 
-        packed_coefficients = from_table(result.model.packed_coefficients)
+        packed_coefficients = from_table(
+            result.model.packed_coefficients, sycl_queue=queue
+        )
         self.coef_, self.intercept_ = (
             packed_coefficients[:, 1:],
             packed_coefficients[:, 0],
@@ -131,50 +157,58 @@ class BaseLinearRegression(BaseEstimator, metaclass=ABCMeta):
 
         return self
 
+    @supports_queue
     def predict(self, X, queue=None):
-        """
-        Predict using the linear model.
+        """Predict using the linear model.
+
         Parameters
         ----------
         X : array-like or sparse matrix, shape (n_samples, n_features)
             Samples.
 
-        queue : dpctl.SyclQueue
-            If not None, uses this queue for computations.
+        queue : SyclQueue or None, default=None
+            SYCL Queue object for device code execution. Default
+            value None causes computation on host.
 
         Returns
         -------
-        C : array, shape (n_samples, n_targets)
+        y : array, shape (n_samples, n_targets)
             Returns predicted values.
         """
-        module = self._get_backend("linear_model", "regression")
 
         _check_is_fitted(self)
 
-        policy = self._get_policy(queue, X)
+        sua_iface, xp, _ = _get_sycl_namespace(X)
+        use_raw_input = _get_config().get("use_raw_input", False) is True
+        if use_raw_input and sua_iface is not None:
+            queue = X.sycl_queue
+
+        if not use_raw_input:
+            X = _check_array(
+                X, dtype=[np.float64, np.float32], force_all_finite=False, ensure_2d=False
+            )
+            X = make2d(X)
 
         _check_n_features(self, X, False)
 
         if hasattr(self, "_onedal_model"):
             model = self._onedal_model
         else:
-            model = self._create_model(policy)
+            model = self._create_model()
 
         X_table = to_table(X, queue=queue)
         params = self._get_onedal_params(X_table.dtype)
-
-        result = module.infer(policy, params, model, X_table)
-        y = from_table(result.responses)
+        result = self.infer(params, model, X_table)
+        y = from_table(result.responses, sua_iface=sua_iface, sycl_queue=queue, xp=xp)
 
         if y.shape[1] == 1 and self.coef_.ndim == 1:
-            return y.ravel()
+            return xp.reshape(y, (-1,))
         else:
             return y
 
 
 class LinearRegression(BaseLinearRegression):
-    """
-    Linear Regression oneDAL implementation.
+    """Linear Regression oneDAL implementation.
 
     Parameters
     ----------
@@ -186,8 +220,8 @@ class LinearRegression(BaseLinearRegression):
     copy_X : bool, default=True
         If True, X will be copied; else, it may be overwritten.
 
-    algorithm : string, default="norm_eq"
-        Algorithm used for computation on oneDAL side
+    algorithm : str, default="norm_eq"
+        Algorithm used for oneDAL computation.
     """
 
     def __init__(
@@ -201,8 +235,7 @@ class LinearRegression(BaseLinearRegression):
 
 
 class Ridge(BaseLinearRegression):
-    """
-    Ridge Regression oneDAL implementation.
+    """Ridge Regression oneDAL implementation.
 
     Parameters
     ----------
@@ -219,8 +252,8 @@ class Ridge(BaseLinearRegression):
     copy_X : bool, default=True
         If True, X will be copied; else, it may be overwritten.
 
-    algorithm : string, default="norm_eq"
-        Algorithm used for computation on oneDAL side.
+    algorithm : str, default="norm_eq"
+        Algorithm used for oneDAL computation.
     """
 
     def __init__(

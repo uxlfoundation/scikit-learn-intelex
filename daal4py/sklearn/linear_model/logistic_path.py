@@ -34,6 +34,7 @@ import daal4py as d4p
 
 from .._n_jobs_support import control_n_jobs
 from .._utils import PatchingConditionsChain, getFPType, sklearn_check_version
+from ..utils.validation import check_feature_names
 from .logistic_loss import (
     _daal4py_cross_entropy_loss_extra_args,
     _daal4py_grad_,
@@ -358,14 +359,16 @@ def __logistic_regression_path(
             y_bin = np.ones(y.shape, dtype=X.dtype)
             # for compute_class_weight
 
-            if solver in ["lbfgs", "newton-cg"]:
+            if solver == "liblinear" or (
+                not sklearn_check_version("1.6") and solver not in ["lbfgs", "newton-cg"]
+            ):
+                mask_classes = np.array([-1, 1])
+                y_bin[~mask] = -1.0
+            else:
                 # HalfBinomialLoss, used for those solvers, represents y in [0, 1] instead
                 # of in [-1, 1].
                 mask_classes = np.array([0, 1])
                 y_bin[~mask] = 0.0
-            else:
-                mask_classes = np.array([-1, 1])
-                y_bin[~mask] = -1.0
         else:
             mask_classes = np.array([-1, 1])
             mask = y == pos_class
@@ -387,7 +390,11 @@ def __logistic_regression_path(
 
     else:
         if sklearn_check_version("1.1"):
-            if solver in ["sag", "saga", "lbfgs", "newton-cg"]:
+            if sklearn_check_version("1.6"):
+                solver_list = ["sag", "saga", "lbfgs", "newton-cg", "newton-cholesky"]
+            else:
+                solver_list = ["sag", "saga", "lbfgs", "newton-cg"]
+            if solver in solver_list:
                 # SAG, lbfgs and newton-cg multinomial solvers need LabelEncoder,
                 # not LabelBinarizer, i.e. y as a 1d-array of integers.
                 # LabelEncoder also saves memory compared to LabelBinarizer, especially
@@ -487,7 +494,11 @@ def __logistic_regression_path(
 
     if multi_class == "multinomial":
         # fmin_l_bfgs_b and newton-cg accepts only ravelled parameters.
-        if solver in ["lbfgs", "newton-cg"]:
+        if sklearn_check_version("1.6"):
+            solver_list = ["lbfgs", "newton-cg", "newton-cholesky"]
+        else:
+            solver_list = ["lbfgs", "newton-cg"]
+        if solver in solver_list:
             if _dal_ready and classes.size == 2:
                 w0 = w0[-1:, :]
             if sklearn_check_version("1.1"):
@@ -752,7 +763,11 @@ def __logistic_regression_path(
             else:
                 n_classes = max(2, classes.size)
                 if sklearn_check_version("1.1"):
-                    if solver in ["lbfgs", "newton-cg"]:
+                    if sklearn_check_version("1.6"):
+                        solver_list = ["lbfgs", "newton-cg", "newton-cholesky"]
+                    else:
+                        solver_list = ["lbfgs", "newton-cg"]
+                    if solver in solver_list:
                         multi_w0 = np.reshape(w0, (n_classes, -1), order="F")
                     else:
                         multi_w0 = w0
@@ -793,8 +808,7 @@ def daal4py_fit(self, X, y, sample_weight=None):
 
 def daal4py_predict(self, X, resultsToEvaluate):
     check_is_fitted(self)
-    if sklearn_check_version("1.0"):
-        self._check_feature_names(X, reset=False)
+    check_feature_names(self, X, reset=False)
     X = check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
     try:
         fptype = getFPType(X)
@@ -1005,8 +1019,7 @@ class LogisticRegression(LogisticRegression_original):
         self.l1_ratio = l1_ratio
 
     def fit(self, X, y, sample_weight=None):
-        if sklearn_check_version("1.0"):
-            self._check_feature_names(X, reset=True)
+        check_feature_names(self, X, reset=True)
         if sklearn_check_version("1.2"):
             self._validate_params()
         return daal4py_fit(self, X, y, sample_weight)

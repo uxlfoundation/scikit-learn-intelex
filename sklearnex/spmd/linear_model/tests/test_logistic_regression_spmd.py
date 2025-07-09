@@ -23,6 +23,7 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
+from sklearnex import config_context
 from sklearnex.tests.utils.spmd import (
     _generate_classification_data,
     _get_local_tensor,
@@ -114,8 +115,11 @@ def test_logistic_spmd_gold(dataframe, queue):
     get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("use_raw_input", [True, False])
 @pytest.mark.mpi
-def test_logistic_spmd_synthetic(n_samples, n_features, C, tol, dataframe, queue, dtype):
+def test_logistic_spmd_synthetic(
+    n_samples, n_features, C, tol, dataframe, queue, dtype, use_raw_input
+):
     # TODO: Resolve numerical issues when n_rows_rank < n_cols
     if n_samples <= n_features:
         pytest.skip("Numerical issues when rank rows < columns")
@@ -143,9 +147,10 @@ def test_logistic_spmd_synthetic(n_samples, n_features, C, tol, dataframe, queue
     dpt_X_test = _convert_to_dataframe(X_test, sycl_queue=queue, target_df=dataframe)
 
     # Ensure trained model of batch algo matches spmd
-    spmd_model = LogisticRegression_SPMD(
-        random_state=0, solver="newton-cg", C=C, tol=tol
-    ).fit(local_dpt_X_train, local_dpt_y_train)
+    spmd_model = LogisticRegression_SPMD(random_state=0, solver="newton-cg", C=C, tol=tol)
+    # Configure raw input status for spmd estimator
+    with config_context(use_raw_input=use_raw_input):
+        spmd_model.fit(local_dpt_X_train, local_dpt_y_train)
     batch_model = LogisticRegression_Batch(
         random_state=0, solver="newton-cg", C=C, tol=tol
     ).fit(dpt_X_train, dpt_y_train)
@@ -156,7 +161,9 @@ def test_logistic_spmd_synthetic(n_samples, n_features, C, tol, dataframe, queue
     assert_allclose(spmd_model.intercept_, batch_model.intercept_, rtol=tol, atol=tol)
 
     # Ensure predictions of batch algo match spmd
-    spmd_result = spmd_model.predict(local_dpt_X_test)
+    # Configure raw input status for spmd estimator
+    with config_context(use_raw_input=use_raw_input):
+        spmd_result = spmd_model.predict(local_dpt_X_test)
     batch_result = batch_model.predict(dpt_X_test)
 
     _spmd_assert_allclose(spmd_result, _as_numpy(batch_result))

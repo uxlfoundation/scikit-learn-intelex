@@ -24,17 +24,21 @@
 // Some oneDAL versions seem broken, e.g. '2199' so we need to check that, too
 #if __INTEL_DAAL__ < 2019 || __INTEL_DAAL__ > 2100
 
-namespace daal {
-namespace algorithms {
-namespace optimization_solver {
-namespace iterative_solver {
-    // BatchPtr typedef not existent in older oneDAL versions
-    typedef daal::services::SharedPtr<interface1::Batch> BatchPtr;
+namespace daal
+{
+namespace algorithms
+{
+namespace optimization_solver
+{
+namespace iterative_solver
+{
+// BatchPtr typedef not existent in older oneDAL versions
+typedef daal::services::SharedPtr<interface1::Batch> BatchPtr;
 
-}
-}
-}
-}
+} // namespace iterative_solver
+} // namespace optimization_solver
+} // namespace algorithms
+} // namespace daal
 
 #endif
 

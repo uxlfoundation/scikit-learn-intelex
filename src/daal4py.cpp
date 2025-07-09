@@ -24,7 +24,7 @@
 #include "daal4py_defines.h"
 
 #if NPY_ABI_VERSION < 0x02000000
-  #define PyDataType_NAMES(descr) ((descr)->names)
+    #define PyDataType_NAMES(descr) ((descr)->names)
 #endif
 
 // ************************************************************************************
@@ -35,7 +35,7 @@
 
 #define is_array(a)           ((a) && PyArray_Check(a))
 #define array_type(a)         PyArray_TYPE((PyArrayObject *)a)
-#define array_is_behaved_C(a)   (PyArray_ISCARRAY_RO((PyArrayObject *)a) && array_type(a) < NPY_OBJECT)
+#define array_is_behaved_C(a) (PyArray_ISCARRAY_RO((PyArrayObject *)a) && array_type(a) < NPY_OBJECT)
 #define array_is_behaved_F(a) (PyArray_ISFARRAY_RO((PyArrayObject *)a) && array_type(a) < NPY_OBJECT)
 #define array_is_native(a)    (PyArray_ISNOTSWAPPED((PyArrayObject *)a))
 #define array_numdims(a)      PyArray_NDIM((PyArrayObject *)a)
@@ -98,7 +98,7 @@ void set_rawp_base(PyArrayObject * ary, void * ptr)
 }
 
 inline void py_err_check()
-{        
+{
     if (PyErr_Occurred())
     {
         PyErr_Print();
@@ -229,20 +229,20 @@ PyObject * make_nda(daal::data_management::NumericTablePtr * ptr)
         if ((res = _make_nda_from_csr<float, NPY_FLOAT32>(ptr)) != NULL) return res;
         break;
     case daal::data_management::data_feature_utils::DAAL_INT32_S:
-        if ((res = _make_nda_from_homogen<int32_t, NPY_INT32>(ptr)) != NULL) return res;
-        if ((res = _make_nda_from_csr<int32_t, NPY_INT32>(ptr)) != NULL) return res;
+        if ((res = _make_nda_from_homogen<std::int32_t, NPY_INT32>(ptr)) != NULL) return res;
+        if ((res = _make_nda_from_csr<std::int32_t, NPY_INT32>(ptr)) != NULL) return res;
         break;
     case daal::data_management::data_feature_utils::DAAL_INT32_U:
-        if ((res = _make_nda_from_homogen<uint32_t, NPY_UINT32>(ptr)) != NULL) return res;
-        if ((res = _make_nda_from_csr<uint32_t, NPY_UINT32>(ptr)) != NULL) return res;
+        if ((res = _make_nda_from_homogen<std::uint32_t, NPY_UINT32>(ptr)) != NULL) return res;
+        if ((res = _make_nda_from_csr<std::uint32_t, NPY_UINT32>(ptr)) != NULL) return res;
         break;
     case daal::data_management::data_feature_utils::DAAL_INT64_S:
-        if ((res = _make_nda_from_homogen<int64_t, NPY_INT64>(ptr)) != NULL) return res;
-        if ((res = _make_nda_from_csr<int64_t, NPY_INT64>(ptr)) != NULL) return res;
+        if ((res = _make_nda_from_homogen<std::int64_t, NPY_INT64>(ptr)) != NULL) return res;
+        if ((res = _make_nda_from_csr<std::int64_t, NPY_INT64>(ptr)) != NULL) return res;
         break;
     case daal::data_management::data_feature_utils::DAAL_INT64_U:
-        if ((res = _make_nda_from_homogen<uint64_t, NPY_UINT64>(ptr)) != NULL) return res;
-        if ((res = _make_nda_from_csr<uint64_t, NPY_UINT64>(ptr)) != NULL) return res;
+        if ((res = _make_nda_from_homogen<std::uint64_t, NPY_UINT64>(ptr)) != NULL) return res;
+        if ((res = _make_nda_from_csr<std::uint64_t, NPY_UINT64>(ptr)) != NULL) return res;
         break;
     }
     // Falling back to using block-desriptors and converting to double
@@ -370,9 +370,9 @@ static daal::data_management::NumericTablePtr _make_npynt(PyObject * nda)
 }
 
 // Try to convert given object to oneDAL Table without copying. Currently supports
-// * numpy contiguous, homogenous -> oneDAL HomogenNumericTable
-// * numpy non-contiguous, homogenous -> NpyNumericTable
-// * numpy structured, heterogenous -> NpyNumericTable
+// * numpy contiguous, homogeneous -> oneDAL HomogenNumericTable
+// * numpy non-contiguous, homogeneous -> NpyNumericTable
+// * numpy structured, heterogeneous -> NpyNumericTable
 // * list of arrays, heterogen -> oneDAL SOANumericTable
 // * scipy csr_matrix -> oneDAL CSRNumericTable
 //   As long as oneDAL CSR is only 0-based we need to copy indices/offsets
@@ -444,10 +444,10 @@ daal::data_management::NumericTablePtr make_nt(PyObject * obj)
                         PyArrayObject * slice = reinterpret_cast<PyArrayObject *>(PyArray_SimpleNewFromData(1, &column_len, ary_numtype, static_cast<void *>(PyArray_ITER_DATA(it))));
                         PyArray_SetBaseObject(slice, reinterpret_cast<PyObject *>(ary));
                         Py_INCREF(ary);
-#define SETARRAY_(_T)                                                                                           \
-    {                                                                                                           \
-        daal::services::SharedPtr<_T> _tmp(reinterpret_cast<_T *>(PyArray_DATA(slice)), NumpyDeleter(slice));   \
-        soatbl->setArray(_tmp, i);                                                                              \
+#define SETARRAY_(_T)                                                                                         \
+    {                                                                                                         \
+        daal::services::SharedPtr<_T> _tmp(reinterpret_cast<_T *>(PyArray_DATA(slice)), NumpyDeleter(slice)); \
+        soatbl->setArray(_tmp, i);                                                                            \
     }
                         SET_NPY_FEATURE(PyArray_DESCR(ary)->type, SETARRAY_, throw std::invalid_argument("Found unsupported array type"));
 #undef SETARRAY_
@@ -554,11 +554,11 @@ daal::data_management::NumericTablePtr make_nt(PyObject * obj)
                     size_t c_nr = static_cast<size_t>(PyInt_AsSsize_t(nr));
                     py_err_check();
 #define MKCSR_(_T) ret = daal::data_management::CSRNumericTable::create(daal::services::SharedPtr<_T>(reinterpret_cast<_T *>(array_data(np_vals)), NumpyDeleter(reinterpret_cast<PyArrayObject *>(np_vals))), daal::services::SharedPtr<size_t>(c_indcs_one_based, daal::services::ServiceDeleter()), daal::services::SharedPtr<size_t>(c_roffs_one_based, daal::services::ServiceDeleter()), c_nc, c_nr)
-                    SET_NPY_FEATURE(array_type(np_vals), MKCSR_, throw std::invalid_argument(std::string("Found unsupported data type in ")+Py_TYPE(obj)->tp_name+"\n"));
+                    SET_NPY_FEATURE(array_type(np_vals), MKCSR_, throw std::invalid_argument(std::string("Found unsupported data type in ") + Py_TYPE(obj)->tp_name + "\n"));
 #undef MKCSR_
                 }
                 else
-                    throw std::invalid_argument(std::string("Failed accessing csr data when converting ")+Py_TYPE(obj)->tp_name+"\n");
+                    throw std::invalid_argument(std::string("Failed accessing csr data when converting ") + Py_TYPE(obj)->tp_name + "\n");
                 Py_DECREF(np_indcs);
                 Py_DECREF(np_roffs);
             }
@@ -706,16 +706,16 @@ daal::data_management::DataCollectionPtr make_datacoll(PyObject * input)
     return daal::data_management::DataCollectionPtr();
 }
 
-static int64_t getval_(const std::string & str, const str2i_map_t & strmap)
+static std::int64_t getval_(const std::string & str, const str2i_map_t & strmap)
 {
     auto i = strmap.find(str);
     if (i == strmap.end()) throw std::invalid_argument(std::string("Encountered unexpected string-identifier '") + str + std::string("'"));
     return i->second;
 }
 
-int64_t string2enum(const std::string & str, str2i_map_t & strmap)
+std::int64_t string2enum(const std::string & str, str2i_map_t & strmap)
 {
-    int64_t r = 0;
+    std::int64_t r = 0;
     std::size_t current, previous = 0;
     while ((current = str.find('|', previous)) != std::string::npos)
     {
@@ -743,7 +743,10 @@ extern "C"
 #endif
     }
 
-    size_t c_num_threads() { return daal::services::Environment::getInstance()->getNumberOfThreads(); }
+    size_t c_num_threads()
+    {
+        return daal::services::Environment::getInstance()->getNumberOfThreads();
+    }
 
     size_t c_num_procs()
     {
@@ -809,12 +812,7 @@ double c_roc_auc_score(data_or_file & y_true, data_or_file & y_test)
     auto table_true = get_table(y_true);
     auto table_test = get_table(y_test);
     auto type       = (*table_test->getDictionary())[0].indexType;
-    if (type == daal::data_management::data_feature_utils::DAAL_FLOAT64 ||
-        type == daal::data_management::data_feature_utils::DAAL_INT64_S ||
-        type == daal::data_management::data_feature_utils::DAAL_INT64_U ||
-        type == daal::data_management::data_feature_utils::DAAL_FLOAT32 ||
-        type == daal::data_management::data_feature_utils::DAAL_INT32_S ||
-        type == daal::data_management::data_feature_utils::DAAL_INT32_U)
+    if (type == daal::data_management::data_feature_utils::DAAL_FLOAT64 || type == daal::data_management::data_feature_utils::DAAL_INT64_S || type == daal::data_management::data_feature_utils::DAAL_INT64_U || type == daal::data_management::data_feature_utils::DAAL_FLOAT32 || type == daal::data_management::data_feature_utils::DAAL_INT32_S || type == daal::data_management::data_feature_utils::DAAL_INT32_U)
     {
         return daal::data_management::internal::rocAucScore(table_true, table_test);
     }
@@ -850,12 +848,8 @@ void c_tsne_gradient_descent(data_or_file & init, data_or_file & p, data_or_file
     {
         switch (dtype)
         {
-        case 0:
-            daal::algorithms::internal::tsneGradientDescent<int, double>(initTable, csrTable, sizeIterTable, paramTable, resultTable);
-            break;
-        case 1:
-            daal::algorithms::internal::tsneGradientDescent<int, float>(initTable, csrTable, sizeIterTable, paramTable, resultTable);
-            break;
+        case 0: daal::algorithms::internal::tsneGradientDescent<int, double>(initTable, csrTable, sizeIterTable, paramTable, resultTable); break;
+        case 1: daal::algorithms::internal::tsneGradientDescent<int, float>(initTable, csrTable, sizeIterTable, paramTable, resultTable); break;
         default: throw std::invalid_argument("Invalid data type specified.");
         }
     }
