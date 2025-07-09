@@ -14,9 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 
-import numpy as np
-
-from .._config import _get_config
 from .._device_offload import supports_queue
 from ..common._backend import bind_default_backend
 from ..common.hyperparameters import get_hyperparameters
@@ -78,20 +75,6 @@ class BaseIncrementalLinear(BaseLinearRegression):
         self : object
             Returns the instance itself.
         """
-        use_raw_input = _get_config().get("use_raw_input", False) is True
-        sua_iface, _, _ = _get_sycl_namespace(X)
-
-        if use_raw_input and sua_iface:
-            queue = X.sycl_queue
-        if not use_raw_input:
-            X, y = _check_X_y(
-                X,
-                y,
-                dtype=[np.float64, np.float32],
-                accept_2d_y=True,
-                force_all_finite=False,
-            )
-            y = np.asarray(y, dtype=X.dtype)
 
         if not hasattr(self, "_params"):
             self._params = self._get_onedal_params(X.dtype)

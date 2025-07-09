@@ -139,7 +139,9 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
             self._validate_params()
 
         xp, _ = get_namespace(X)
-        X = validate_data(self, X, accept_sparse=False, dtype=[xp.float64, xp.float32], reset=False)
+        X = validate_data(
+            self, X, accept_sparse=False, dtype=[xp.float64, xp.float32], reset=False
+        )
 
         assert hasattr(self, "_onedal_estimator")
         if self._need_to_finalize:

@@ -15,21 +15,18 @@
 # ==============================================================================
 
 from abc import ABCMeta, abstractmethod
-from numbers import Number
 
 import numpy as np
 
 from daal4py.sklearn._utils import daal_check_version
 
-from .._config import _get_config
 from .._device_offload import supports_queue
 from ..common._backend import bind_default_backend
 from ..common._estimator_checks import _check_is_fitted
 from ..common.hyperparameters import get_hyperparameters
 from ..datatypes import from_table, to_table
 from ..utils import _sycl_queue_manager as QM
-from ..utils._array_api import _get_sycl_namespace
-from ..utils.validation import _check_array, _check_n_features, _check_X_y, _num_features
+from ..utils.validation import _check_n_features, _num_features
 
 
 class BaseLinearRegression(metaclass=ABCMeta):
@@ -51,7 +48,7 @@ class BaseLinearRegression(metaclass=ABCMeta):
     @bind_default_backend("linear_model.regression")
     def model(self): ...
 
-    def _get_onedal_params(self, dtype=np.float32):
+    def _get_onedal_params(self, dtype):
         intercept = "intercept|" if self.fit_intercept else ""
         params = {
             "fptype": dtype,
@@ -68,6 +65,7 @@ class BaseLinearRegression(metaclass=ABCMeta):
         model = self.model()
 
         # force dtype and shape for all supported estimators to numpy
+
         if np.isscalar(self.coef_):
             coef = np.asarray(self.coef_).reshape(1, 1)
         else:
@@ -93,7 +91,7 @@ class BaseLinearRegression(metaclass=ABCMeta):
 
         return model
 
-   @supports_queue
+    @supports_queue
     def fit(self, X, y, queue=None):
         """Fit linear model.
 
@@ -115,21 +113,6 @@ class BaseLinearRegression(metaclass=ABCMeta):
             Fitted Estimator.
         """
 
-        sua_iface, xp, _ = _get_sycl_namespace(X)
-
-        if not _get_config()["use_raw_input"]:
-            if not isinstance(X, np.ndarray):
-                X = np.asarray(X)
-
-            dtype = get_dtype(X)
-            if dtype not in [np.float32, np.float64]:
-                dtype = np.float64
-                X = X.astype(dtype, copy=self.copy_X)
-
-            y = np.asarray(y).astype(dtype=dtype)
-
-            X, y = _check_X_y(X, y, force_all_finite=False, accept_2d_y=True)
-
         self.n_features_in_ = _num_features(X, fallback_1d=True)
 
         X_table, y_table = to_table(X, y, queue=queue)
@@ -143,17 +126,11 @@ class BaseLinearRegression(metaclass=ABCMeta):
 
         self._onedal_model = result.model
 
-        packed_coefficients = from_table(
-            result.model.packed_coefficients, sycl_queue=queue
-        )
+        packed_coefficients = from_table(result.model.packed_coefficients, like=X)
         self.coef_, self.intercept_ = (
             packed_coefficients[:, 1:],
             packed_coefficients[:, 0],
         )
-
-        if self.coef_.shape[0] == 1 and y.ndim == 1:
-            self.coef_ = self.coef_.ravel()
-            self.intercept_ = self.intercept_[0]
 
         return self
 
@@ -178,17 +155,6 @@ class BaseLinearRegression(metaclass=ABCMeta):
 
         _check_is_fitted(self)
 
-        sua_iface, xp, _ = _get_sycl_namespace(X)
-        use_raw_input = _get_config().get("use_raw_input", False) is True
-        if use_raw_input and sua_iface is not None:
-            queue = X.sycl_queue
-
-        if not use_raw_input:
-            X = _check_array(
-                X, dtype=[np.float64, np.float32], force_all_finite=False, ensure_2d=False
-            )
-            X = make2d(X)
-
         _check_n_features(self, X, False)
 
         if hasattr(self, "_onedal_model"):
@@ -199,12 +165,9 @@ class BaseLinearRegression(metaclass=ABCMeta):
         X_table = to_table(X, queue=queue)
         params = self._get_onedal_params(X_table.dtype)
         result = self.infer(params, model, X_table)
-        y = from_table(result.responses, sua_iface=sua_iface, sycl_queue=queue, xp=xp)
+        y = from_table(result.responses, like=X)
 
-        if y.shape[1] == 1 and self.coef_.ndim == 1:
-            return xp.reshape(y, (-1,))
-        else:
-            return y
+        return y
 
 
 class LinearRegression(BaseLinearRegression):

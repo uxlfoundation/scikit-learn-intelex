@@ -244,7 +244,7 @@ class IncrementalLinearRegression(
                 self._validate_params()
 
             xp, _ = get_namespace(X)
-            
+
             X, y = validate_data(
                 self,
                 X,
