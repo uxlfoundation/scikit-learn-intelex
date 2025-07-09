@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
-from ._data_conversion import from_table, to_table
+from ._data_conversion import from_table, return_type_constructor, to_table
 from ._dlpack import dlpack_to_numpy, get_torch_queue
 from ._sycl_usm import copy_to_dpnp, copy_to_usm, usm_to_numpy
 
