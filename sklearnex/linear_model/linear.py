@@ -27,7 +27,7 @@ from .._config import get_config
 from .._device_offload import dispatch, wrap_output_data
 from .._utils import PatchingConditionsChain, get_patch_message, register_hyperparameters
 from ..base import oneDALEstimator
-from ..utils._array_api import get_namespace
+from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.validation import validate_data
 
 if not sklearn_check_version("1.2"):
@@ -41,6 +41,7 @@ from onedal.linear_model import LinearRegression as onedal_LinearRegression
 from onedal.utils.validation import _num_features, _num_samples
 
 
+@enable_array_api
 @register_hyperparameters({"fit": get_hyperparameters("linear_regression", "train")})
 @control_n_jobs(decorated_methods=["fit", "predict", "score"])
 class LinearRegression(oneDALEstimator, _sklearn_LinearRegression):

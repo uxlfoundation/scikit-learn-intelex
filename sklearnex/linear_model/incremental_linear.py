@@ -42,10 +42,11 @@ from .._utils import (
     register_hyperparameters,
 )
 from ..base import oneDALEstimator
-from ..utils._array_api import get_namespace
+from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.validation import validate_data
 
 
+@enable_array_api
 @register_hyperparameters(
     {
         "fit": get_hyperparameters("linear_regression", "train"),
