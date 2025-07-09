@@ -68,7 +68,6 @@ jobs:
       pip install daal-devel impi-devel
       pip install -r dependencies-dev
       pip install -r requirements-doc.txt
-      pip install -r requirements-test.txt
       pip list
     displayName: 'Install requirements'
   - script: |
