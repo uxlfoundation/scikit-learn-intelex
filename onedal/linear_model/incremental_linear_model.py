@@ -17,7 +17,7 @@
 from .._device_offload import supports_queue
 from ..common._backend import bind_default_backend
 from ..common.hyperparameters import get_hyperparameters
-from ..datatypes import from_table, to_table
+from ..datatypes import from_table, return_type_constructor, to_table
 from ..utils import _sycl_queue_manager as QM
 from ..utils.validation import _num_features
 from .linear_model import BaseLinearRegression
