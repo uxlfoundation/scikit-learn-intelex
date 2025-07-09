@@ -53,6 +53,9 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
     _onedal_kneighbors = NearestNeighbors._onedal_kneighbors
 
     def _onedal_fit(self, X, y, queue=None):
+        X = validate_data(
+            self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
+        )
         if sklearn_check_version("1.2"):
             self._validate_params()
 
@@ -112,9 +115,6 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
         return self
 
     def fit(self, X, y=None):
-        X = validate_data(
-            self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
-        )
         result = dispatch(
             self,
             "fit",
@@ -152,6 +152,10 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
         return self.fit(X)._predict()
 
     def _kneighbors(self, X=None, n_neighbors=None, return_distance=True):
+        if X is not None:
+            X = validate_data(
+                self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
+            )
         check_is_fitted(self)
         return dispatch(
             self,

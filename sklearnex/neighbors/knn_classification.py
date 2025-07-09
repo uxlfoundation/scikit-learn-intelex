@@ -64,9 +64,6 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         )
 
     def fit(self, X, y):
-        X = validate_data(
-            self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
-        )
         dispatch(
             self,
             "fit",

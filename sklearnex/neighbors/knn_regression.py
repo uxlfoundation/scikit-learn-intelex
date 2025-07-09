@@ -62,9 +62,6 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         )
 
     def fit(self, X, y):
-        X = validate_data(
-            self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
-        )
         dispatch(
             self,
             "fit",
@@ -113,9 +110,10 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
 
     @wrap_output_data
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
-        X = validate_data(
-            self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
-        )
+        if X is not None:
+            X = validate_data(
+                self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
+            )
         check_is_fitted(self)
         return dispatch(
             self,

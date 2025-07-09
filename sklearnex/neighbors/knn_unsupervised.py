@@ -59,9 +59,6 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         )
 
     def fit(self, X, y=None):
-        X = validate_data(
-            self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
-        )
         dispatch(
             self,
             "fit",
@@ -76,9 +73,10 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
 
     @wrap_output_data
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
-        # X = validate_data(
-        #     self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
-        # )
+        if X is not None:
+            X = validate_data(
+                self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
+            )
         check_is_fitted(self)
         return dispatch(
             self,
@@ -139,6 +137,9 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         )
 
     def _onedal_fit(self, X, y=None, queue=None):
+        X = validate_data(
+            self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
+        )
         onedal_params = {
             "n_neighbors": self.n_neighbors,
             "algorithm": self.algorithm,
