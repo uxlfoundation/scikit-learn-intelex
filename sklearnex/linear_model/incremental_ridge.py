@@ -160,7 +160,7 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
             self._validate_params()
 
         if check_input:
-            xp, _ = get_namespace(X)
+            xp, _ = get_namespace(X, y)
             X, y = validate_data(
                 self,
                 X,
@@ -202,12 +202,12 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
         if sklearn_check_version("1.2"):
             self._validate_params()
 
-        xp, _ = get_namespace(X)
+        xp, _ = get_namespace(X, y)
         X, y = validate_data(
             self,
             X,
             y,
-            dtype=[np.float64, np.float32],
+            dtype=[xp.float64, xp.float32],
             copy=self.copy_X,
             multi_output=True,
             ensure_2d=True,

@@ -193,11 +193,8 @@ class IncrementalLinearRegression(
         if sklearn_check_version("1.2"):
             self._validate_params()
 
-        use_raw_input = get_config().get("use_raw_input", False) is True
-        # never check input when using raw input
-        check_input &= use_raw_input is False
-        if check_input:
-            xp, _ = get_namespace(X)
+        if check_input and not get_config()["use_raw_input"]:
+            xp, _ = get_namespace(X, y)
             X, y = validate_data(
                 self,
                 X,
@@ -243,7 +240,7 @@ class IncrementalLinearRegression(
             if sklearn_check_version("1.2"):
                 self._validate_params()
 
-            xp, _ = get_namespace(X)
+            xp, _ = get_namespace(X, y)
 
             X, y = validate_data(
                 self,

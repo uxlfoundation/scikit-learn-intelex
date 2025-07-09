@@ -152,8 +152,8 @@ class IncrementalLinearRegression(BaseIncrementalLinear):
     copy_X : bool, default=True
         If True, X will be copied; else, it may be overwritten.
 
-    algorithm : string, default="norm_eq"
-        Algorithm used for computation on oneDAL side
+    algorithm : str, default="norm_eq"
+        Algorithm used for computation on oneDAL side.
     """
 
     def __init__(self, fit_intercept=True, copy_X=False, algorithm="norm_eq"):

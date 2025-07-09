@@ -202,11 +202,6 @@ class Ridge(BaseLinearRegression):
 
     Parameters
     ----------
-    alpha : float, default=1.0
-        Regularization strength; must be a positive float. Regularization
-        improves the conditioning of the problem and reduces the variance of
-        the estimates. Larger values specify stronger regularization.
-
     fit_intercept : bool, default=True
         Whether to calculate the intercept for this model. If set
         to False, no intercept will be used in calculations
@@ -217,6 +212,11 @@ class Ridge(BaseLinearRegression):
 
     algorithm : str, default="norm_eq"
         Algorithm used for oneDAL computation.
+
+    alpha : float, default=1.0
+        Regularization strength; must be a positive float. Regularization
+        improves the conditioning of the problem and reduces the variance of
+        the estimates. Larger values specify stronger regularization.
     """
 
     def __init__(
