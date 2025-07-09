@@ -212,7 +212,7 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
     def _onedal_fit(self, X, sample_weight=None, queue=None):
         if sklearn_check_version("1.2"):
             self._validate_params()
-        
+
         if not get_config().get("use_raw_input"):
             xp, _ = get_namespace(X, sample_weight)
             X = validate_data(self, X, dtype=[xp.float64, xp.float32])
