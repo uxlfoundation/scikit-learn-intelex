@@ -83,7 +83,7 @@ jobs:
         git branch
     - name: Install Python Dependencies
       run: |
-        pip install daal-devel impi-devel scikit-learn
+        pip install daal-devel impi-devel
         pip install -r dependencies-dev
         pip install -r requirements-doc.txt
     - name: Build daal4py/sklearnex
