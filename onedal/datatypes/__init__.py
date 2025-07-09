@@ -25,5 +25,6 @@ __all__ = [
     "from_table",
     "get_torch_queue",
     "to_table",
+    "return_type_constructor",
     "usm_to_numpy",
 ]

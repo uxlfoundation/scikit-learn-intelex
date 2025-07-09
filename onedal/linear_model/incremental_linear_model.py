@@ -38,6 +38,7 @@ class BaseIncrementalLinear(BaseLinearRegression):
         self._need_to_finalize = False
         # Get the pointer to partial_result from backend
         self._queue = None
+        self._outtype = None
         self._partial_result = self.partial_train_result()
 
     def __getstate__(self):
@@ -80,6 +81,8 @@ class BaseIncrementalLinear(BaseLinearRegression):
             self._params = self._get_onedal_params(X.dtype)
 
         self._queue = queue
+        if not self._outtype:
+            self._outtype = return_type_constructor(X)
         self.n_features_in_ = _num_features(X, fallback_1d=True)
 
         X_table, y_table = to_table(X, y, queue=queue)
@@ -128,12 +131,21 @@ class BaseIncrementalLinear(BaseLinearRegression):
             self._onedal_model = result.model
 
             packed_coefficients = from_table(
-                result.model.packed_coefficients, sycl_queue=self._queue
+                result.model.packed_coefficients, like=self._outtype
             )
-            self.coef_, self.intercept_ = (
-                packed_coefficients[:, 1:].squeeze(),
-                packed_coefficients[:, 0].squeeze(),
+            self.coef_ = (
+                packed_coefficients[:, 1:]
+                if packed_coefficients.shape[1] > 2
+                else packed_coefficients[:, 1]
             )
+
+            self.intercept_ = packed_coefficients[:, 0]
+
+            if self.coef_.shape[0] == 1:
+                self.coef_ = self.coef_[0]
+                self.intercept_ = self.intercept_[0]
+
+            self._outtype = None
             self._need_to_finalize = False
 
         return self
