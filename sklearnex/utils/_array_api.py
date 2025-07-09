@@ -89,12 +89,15 @@ def get_namespace(*arrays):
 
 def enable_array_api(original_class: type[oneDALEstimator]) -> type[oneDALEstimator]:
     """Enable sklearnex to use dpctl, dpnp or array_api inputs in oneDAL offloading.
+
     This wrapper sets the proper flags/tags for the sklearnex infrastructure
     to maintain the data framework, as the estimator can use it natively.
+
     Parameters
     ----------
     original_class : oneDALEstimator subclass
         Class which should enable data zero-copy support in sklearnex.
+
     Returns
     -------
     original_class : modified oneDALEstimator subclass
