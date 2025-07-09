@@ -204,7 +204,7 @@ class IncrementalLinearRegression(
                 reset=first_pass,
                 copy=self.copy_X,
                 multi_output=True,
-                ensure_all_finite=False,
+                y_numeric=True,
             )
 
         if first_pass:
@@ -250,7 +250,7 @@ class IncrementalLinearRegression(
                 dtype=[xp.float64, xp.float32],
                 copy=self.copy_X,
                 multi_output=True,
-                ensure_2d=True,
+                y_numeric=True,
             )
 
         n_samples, n_features = X.shape
