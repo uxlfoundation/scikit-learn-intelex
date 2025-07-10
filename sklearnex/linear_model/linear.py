@@ -300,9 +300,9 @@ class LinearRegression(oneDALEstimator, _sklearn_LinearRegression):
             self._save_attributes(y)
 
     def _onedal_predict(self, X, queue=None):
+        xp, _ = get_namespace(X)
 
         if not get_config()["use_raw_input"]:
-            xp, _ = get_namespace(X)
             X = validate_data(
                 self, X, accept_sparse=False, dtype=[xp.float64, xp.float32], reset=False
             )
@@ -313,6 +313,9 @@ class LinearRegression(oneDALEstimator, _sklearn_LinearRegression):
             self._onedal_estimator.intercept_ = self.intercept_
 
         res = self._onedal_estimator.predict(X, queue=queue)
+        if res.shape[1] == 1 and self.coef_.ndim == 1:
+            res = xp.reshape(res, (-1,))
+
         return res
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
