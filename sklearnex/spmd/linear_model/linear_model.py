@@ -21,4 +21,4 @@ from ...linear_model import LinearRegression as LinearRegression_Batch
 
 class LinearRegression(LinearRegression_Batch):
     __doc__ = LinearRegression_Batch.__doc__
-    _onedal_LinearRegression = onedal_LinearRegression
+    _onedal_LinearRegression = staticmethod(onedal_LinearRegression)

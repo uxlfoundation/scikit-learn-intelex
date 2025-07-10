@@ -18,7 +18,7 @@ import logging
 
 from sklearn.linear_model import LinearRegression as _sklearn_LinearRegression
 from sklearn.metrics import r2_score
-from sklearn.utils.validation import check_array, check_is_fitted
+from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
@@ -34,7 +34,7 @@ if not sklearn_check_version("1.2"):
     from sklearn.linear_model._base import _deprecate_normalize
 
 from scipy.sparse import issparse
-from sklearn.utils.validation import check_is_fitted, check_X_y
+from sklearn.utils.validation import check_is_fitted
 
 from onedal.common.hyperparameters import get_hyperparameters
 from onedal.linear_model import LinearRegression as onedal_LinearRegression
@@ -280,14 +280,22 @@ class LinearRegression(oneDALEstimator, _sklearn_LinearRegression):
             )
 
         self._initialize_onedal_estimator()
-        # TODO:
-        # impl wrapper/primitive for this case.
-        if get_config()["allow_sklearn_after_onedal"]:
-            try:
-                self._onedal_estimator.fit(X, y, queue=queue)
-                self._save_attributes(y)
 
-            except RuntimeError:
+        try:
+            self._onedal_estimator.fit(X, y, queue=queue)
+
+            self.n_features_in_ = self._onedal_estimator.n_features_in_
+            self._sparse = False
+            self._coef_ = self._onedal_estimator.coef_
+            self._intercept_ = self._onedal_estimator.intercept_
+
+            if self._coef_.shape[0] == 1 and y.ndim == 1:
+                self._coef_ = self._coef_[0]
+                self._intercept_ = self._intercept_[0]
+
+        except RuntimeError as e:
+            if get_config()["allow_sklearn_after_onedal"]:
+
                 logging.getLogger("sklearnex").info(
                     f"{self.__class__.__name__}.fit "
                     + get_patch_message("sklearn_after_onedal")
@@ -295,9 +303,8 @@ class LinearRegression(oneDALEstimator, _sklearn_LinearRegression):
 
                 del self._onedal_estimator
                 super().fit(X, y)
-        else:
-            self._onedal_estimator.fit(X, y, queue=queue)
-            self._save_attributes(y)
+            else:
+                raise e
 
     def _onedal_predict(self, X, queue=None):
         xp, _ = get_namespace(X)
@@ -352,16 +359,6 @@ class LinearRegression(oneDALEstimator, _sklearn_LinearRegression):
     @intercept_.deleter
     def intercept_(self):
         del self._intercept_
-
-    def _save_attributes(self, y):
-        self.n_features_in_ = self._onedal_estimator.n_features_in_
-        self._sparse = False
-        self._coef_ = self._onedal_estimator.coef_
-        self._intercept_ = self._onedal_estimator.intercept_
-
-        if self.coef_.shape[0] == 1 and y.ndim == 1:
-            self.coef_ = self.coef_[0]
-            self.intercept_ = self.intercept_[0]
 
     fit.__doc__ = _sklearn_LinearRegression.fit.__doc__
     predict.__doc__ = _sklearn_LinearRegression.predict.__doc__

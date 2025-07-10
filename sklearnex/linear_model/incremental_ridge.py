@@ -21,10 +21,10 @@ from sklearn.base import BaseEstimator, MultiOutputMixin, RegressorMixin
 from sklearn.linear_model import Ridge as _sklearn_Ridge
 from sklearn.metrics import r2_score
 from sklearn.utils import gen_batches
-from sklearn.utils.validation import check_is_fitted, check_X_y
+from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
-from daal4py.sklearn.utils.validation import sklearn_check_version
+from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import Interval
@@ -113,7 +113,7 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
             "fit_intercept": ["boolean"],
             "alpha": [Interval(numbers.Real, 0, None, closed="left")],
             "copy_X": ["boolean"],
-            "n_jobs": [Interval(numbers.Integral, -1, None, closed="left"), None],
+            "n_jobs": [numbers.Integral, None],
             "batch_size": [Interval(numbers.Integral, 1, None, closed="left"), None],
         }
 
@@ -140,6 +140,7 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
             self._validate_params()
 
         xp, _ = get_namespace(X)
+
         X = validate_data(
             self, X, accept_sparse=False, dtype=[xp.float64, xp.float32], reset=False
         )
@@ -188,15 +189,31 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
         self._onedal_estimator.partial_fit(X, y, queue=queue)
         self._need_to_finalize = True
 
+    if daal_check_version((2025, "P", 200)):
+
+        def _onedal_validate_underdetermined(self, n_samples, n_features):
+            pass
+
+    else:
+
+        def _onedal_validate_underdetermined(self, n_samples, n_features):
+            is_underdetermined = n_samples < n_features + int(self.fit_intercept)
+            if is_underdetermined:
+                raise ValueError("Not enough samples for oneDAL")
+
     def _onedal_finalize_fit(self):
         assert hasattr(self, "_onedal_estimator")
-        is_underdetermined = self.n_samples_seen_ < self.n_features_in_ + int(
-            self.fit_intercept
-        )
-        if is_underdetermined:
-            raise ValueError("Not enough samples to finalize")
+        self._onedal_validate_underdetermined(self.n_samples_seen_, self.n_features_in_)
         self._onedal_estimator.finalize_fit()
-        self._save_attributes()
+
+        self.n_features_in_ = self._onedal_estimator.n_features_in_
+        self._coef_ = self._onedal_estimator.coef_
+        self._intercept_ = self._onedal_estimator.intercept_
+
+        if self._coef_.shape[0] == 1:
+            self._coef_ = self._coef_[0]
+            self._intercept_ = self._intercept_[0]
+
         self._need_to_finalize = False
 
     def _onedal_fit(self, X, y, queue=None):
@@ -204,6 +221,7 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
             self._validate_params()
 
         xp, _ = get_namespace(X, y)
+
         X, y = validate_data(
             self,
             X,
@@ -216,9 +234,7 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
 
         n_samples, n_features = X.shape
 
-        is_underdetermined = n_samples < n_features + int(self.fit_intercept)
-        if is_underdetermined:
-            raise ValueError("Not enough samples to run oneDAL backend")
+        self._onedal_validate_underdetermined(n_samples, n_features)
 
         if self.batch_size is None:
             self.batch_size_ = 5 * n_features
@@ -232,9 +248,6 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
         for batch in gen_batches(n_samples, self.batch_size_):
             X_batch, y_batch = X[batch, ...], y[batch, ...]
             self._onedal_partial_fit(X_batch, y_batch, check_input=False, queue=queue)
-
-        if sklearn_check_version("1.2"):
-            self._validate_params()
 
         # finite check occurs on onedal side
         self.n_features_in_ = n_features
@@ -355,15 +368,12 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
             sample_weight=sample_weight,
         )
 
-    score.__doc__ = _sklearn_Ridge.score.__doc__
-    predict.__doc__ = _sklearn_Ridge.predict.__doc__
-
     @property
     def coef_(self):
         if hasattr(self, "_onedal_estimator") and self._need_to_finalize:
             self._onedal_finalize_fit()
 
-        return self._coef
+        return self._coef_
 
     @coef_.setter
     def coef_(self, value):
@@ -372,14 +382,18 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
             # checking if the model is already fitted and if so, deleting the model
             if hasattr(self._onedal_estimator, "_onedal_model"):
                 del self._onedal_estimator._onedal_model
-        self._coef = value
+        self._coef_ = value
+
+    @coef_.deleter
+    def coef_(self):
+        del self._coef_
 
     @property
     def intercept_(self):
         if hasattr(self, "_onedal_estimator") and self._need_to_finalize:
             self._onedal_finalize_fit()
 
-        return self._intercept
+        return self._intercept_
 
     @intercept_.setter
     def intercept_(self, value):
@@ -388,9 +402,11 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
             # checking if the model is already fitted and if so, deleting the model
             if hasattr(self._onedal_estimator, "_onedal_model"):
                 del self._onedal_estimator._onedal_model
-        self._intercept = value
+        self._intercept_ = value
 
-    def _save_attributes(self):
-        self.n_features_in_ = self._onedal_estimator.n_features_in_
-        self._coef = self._onedal_estimator.coef_
-        self._intercept = self._onedal_estimator.intercept_
+    @intercept_.deleter
+    def intercept_(self):
+        del self._intercept_
+
+    score.__doc__ = _sklearn_Ridge.score.__doc__
+    predict.__doc__ = _sklearn_Ridge.predict.__doc__

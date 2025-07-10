@@ -20,7 +20,7 @@ import warnings
 from sklearn.base import BaseEstimator, MultiOutputMixin, RegressorMixin
 from sklearn.linear_model import LinearRegression as _sklearn_LinearRegression
 from sklearn.metrics import r2_score
-from sklearn.utils import check_array, gen_batches
+from sklearn.utils import gen_batches
 from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
@@ -144,7 +144,7 @@ class IncrementalLinearRegression(
         _parameter_constraints: dict = {
             "fit_intercept": ["boolean"],
             "copy_X": ["boolean"],
-            "n_jobs": [Interval(numbers.Integral, -1, None, closed="left"), None],
+            "n_jobs": [numbers.Integral, None],
             "batch_size": [Interval(numbers.Integral, 1, None, closed="left"), None],
         }
 
@@ -234,6 +234,15 @@ class IncrementalLinearRegression(
         assert hasattr(self, "_onedal_estimator")
         self._onedal_validate_underdetermined(self.n_samples_seen_, self.n_features_in_)
         self._onedal_estimator.finalize_fit()
+
+        self.n_features_in_ = self._onedal_estimator.n_features_in_
+        self._coef_ = self._onedal_estimator.coef_
+        self._intercept_ = self._onedal_estimator.intercept_
+
+        if self._coef_.shape[0] == 1:
+            self._coef_ = self._coef_[0]
+            self._intercept_ = self._intercept_[0]
+
         self._need_to_finalize = False
 
     def _onedal_fit(self, X, y, queue=None):
@@ -280,44 +289,6 @@ class IncrementalLinearRegression(
 
         self._onedal_finalize_fit()
         return self
-
-    @property
-    def intercept_(self):
-        if hasattr(self, "_onedal_estimator"):
-            if self._need_to_finalize:
-                self._onedal_finalize_fit()
-
-            return self._onedal_estimator.intercept_
-        else:
-            raise AttributeError(
-                f"'{self.__class__.__name__}' object has no attribute 'intercept_'"
-            )
-
-    @intercept_.setter
-    def intercept_(self, value):
-        self.__dict__["intercept_"] = value
-        if hasattr(self, "_onedal_estimator"):
-            self._onedal_estimator.intercept_ = value
-            del self._onedal_estimator._onedal_model
-
-    @property
-    def coef_(self):
-        if hasattr(self, "_onedal_estimator"):
-            if self._need_to_finalize:
-                self._onedal_finalize_fit()
-
-            return self._onedal_estimator.coef_
-        else:
-            raise AttributeError(
-                f"'{self.__class__.__name__}' object has no attribute 'coef_'"
-            )
-
-    @coef_.setter
-    def coef_(self, value):
-        self.__dict__["coef_"] = value
-        if hasattr(self, "_onedal_estimator"):
-            self._onedal_estimator.coef_ = value
-            del self._onedal_estimator._onedal_model
 
     def partial_fit(self, X, y, check_input=True):
         """
@@ -417,6 +388,46 @@ class IncrementalLinearRegression(
             y,
             sample_weight=sample_weight,
         )
+
+    @property
+    def coef_(self):
+        if hasattr(self, "_onedal_estimator") and self._need_to_finalize:
+            self._onedal_finalize_fit()
+
+        return self._coef_
+
+    @coef_.setter
+    def coef_(self, value):
+        if hasattr(self, "_onedal_estimator"):
+            self._onedal_estimator.coef_ = value
+            # checking if the model is already fitted and if so, deleting the model
+            if hasattr(self._onedal_estimator, "_onedal_model"):
+                del self._onedal_estimator._onedal_model
+        self._coef_ = value
+
+    @coef_.deleter
+    def coef_(self):
+        del self._coef_
+
+    @property
+    def intercept_(self):
+        if hasattr(self, "_onedal_estimator") and self._need_to_finalize:
+            self._onedal_finalize_fit()
+
+        return self._intercept_
+
+    @intercept_.setter
+    def intercept_(self, value):
+        if hasattr(self, "_onedal_estimator"):
+            self._onedal_estimator.intercept_ = value
+            # checking if the model is already fitted and if so, deleting the model
+            if hasattr(self._onedal_estimator, "_onedal_model"):
+                del self._onedal_estimator._onedal_model
+        self._intercept_ = value
+
+    @intercept_.deleter
+    def intercept_(self):
+        del self._intercept_
 
     score.__doc__ = _sklearn_LinearRegression.score.__doc__
     predict.__doc__ = _sklearn_LinearRegression.predict.__doc__
