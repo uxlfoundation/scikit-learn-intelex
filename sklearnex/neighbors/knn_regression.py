@@ -26,9 +26,9 @@ from daal4py.sklearn.utils.validation import get_requires_y_tag
 from onedal.neighbors import KNeighborsRegressor as onedal_KNeighborsRegressor
 
 from .._device_offload import dispatch, wrap_output_data
+from ..utils._array_api import get_namespace
 from ..utils.validation import validate_data
 from .common import KNeighborsDispatchingBase
-from ..utils._array_api import get_namespace
 
 
 @control_n_jobs(decorated_methods=["fit", "predict", "kneighbors", "score"])
