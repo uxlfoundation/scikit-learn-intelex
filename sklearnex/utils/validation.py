@@ -102,6 +102,7 @@ def validate_data(
     /,
     X="no_validation",
     y="no_validation",
+    require_sparse_with_sorted_indices=True,
     **kwargs,
 ):
     # force finite check to not occur in sklearn, default is True
@@ -134,6 +135,9 @@ def validate_data(
             assert_all_finite(next(arg), allow_nan=allow_nan, input_name="X")
         if check_y:
             assert_all_finite(next(arg), allow_nan=allow_nan, input_name="y")
+
+    if require_sparse_with_sorted_indices and sp.issparse(X) and not X.has_sorted_indices:
+        X.sort_indices()
 
     return out
 
