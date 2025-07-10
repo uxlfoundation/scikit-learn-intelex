@@ -28,7 +28,7 @@ from onedal.neighbors import KNeighborsClassifier as onedal_KNeighborsClassifier
 from .._device_offload import dispatch, wrap_output_data
 from ..utils.validation import validate_data
 from .common import KNeighborsDispatchingBase
-
+from ..utils._array_api import get_namespace
 
 @control_n_jobs(
     decorated_methods=["fit", "predict", "predict_proba", "kneighbors", "score"]
@@ -78,8 +78,9 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
 
     @wrap_output_data
     def predict(self, X):
+        xp, _ = get_namespace(X)
         X = validate_data(
-            self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
+            self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
         )
         check_is_fitted(self)
         return dispatch(
@@ -94,8 +95,9 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
 
     @wrap_output_data
     def predict_proba(self, X):
+        xp, _ = get_namespace(X)
         X = validate_data(
-            self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
+            self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
         )
         check_is_fitted(self)
         return dispatch(
@@ -110,8 +112,9 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
 
     @wrap_output_data
     def score(self, X, y, sample_weight=None):
+        xp, _ = get_namespace(X, y)
         X = validate_data(
-            self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
+            self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
         )
         check_is_fitted(self)
         return dispatch(
@@ -128,9 +131,11 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
 
     @wrap_output_data
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
-        X = validate_data(
-            self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
-        )
+        if X is not None:
+            xp, _ = get_namespace(X)
+            X = validate_data(
+                self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
+            )
         check_is_fitted(self)
         return dispatch(
             self,
@@ -145,8 +150,9 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         )
 
     def _onedal_fit(self, X, y, queue=None):
+        xp, _ = get_namespace(X, y)
         X, y = validate_data(
-            self, X, y, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
+            self, X, y=y, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
         )
         onedal_params = {
             "n_neighbors": self.n_neighbors,

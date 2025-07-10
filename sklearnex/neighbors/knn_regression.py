@@ -28,7 +28,7 @@ from onedal.neighbors import KNeighborsRegressor as onedal_KNeighborsRegressor
 from .._device_offload import dispatch, wrap_output_data
 from ..utils.validation import validate_data
 from .common import KNeighborsDispatchingBase
-
+from ..utils._array_api import get_namespace
 
 @control_n_jobs(decorated_methods=["fit", "predict", "kneighbors", "score"])
 class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegressor):
@@ -76,8 +76,9 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
 
     @wrap_output_data
     def predict(self, X):
+        xp, _ = get_namespace(X)
         X = validate_data(
-            self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
+            self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
         )
         check_is_fitted(self)
         return dispatch(
@@ -92,8 +93,9 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
 
     @wrap_output_data
     def score(self, X, y, sample_weight=None):
+        xp, _ = get_namespace(X, y)
         X = validate_data(
-            self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
+            self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
         )
         check_is_fitted(self)
         return dispatch(
@@ -111,8 +113,9 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
     @wrap_output_data
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
         if X is not None:
+            xp, _ = get_namespace(X)
             X = validate_data(
-                self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
+                self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
             )
         check_is_fitted(self)
         return dispatch(
@@ -128,8 +131,9 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         )
 
     def _onedal_fit(self, X, y, queue=None):
+        xp, _ = get_namespace(X)
         X, y = validate_data(
-            self, X, y, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
+            self, X, y=y, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
         )
         onedal_params = {
             "n_neighbors": self.n_neighbors,

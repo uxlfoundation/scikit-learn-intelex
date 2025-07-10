@@ -25,7 +25,7 @@ from onedal.neighbors import NearestNeighbors as onedal_NearestNeighbors
 from .._device_offload import dispatch, wrap_output_data
 from ..utils.validation import validate_data
 from .common import KNeighborsDispatchingBase
-
+from ..utils._array_api import get_namespace
 
 @control_n_jobs(decorated_methods=["fit", "kneighbors", "radius_neighbors"])
 class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
@@ -74,8 +74,9 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
     @wrap_output_data
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
         if X is not None:
+            xp, _ = get_namespace(X)
             X = validate_data(
-                self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
+                self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
             )
         check_is_fitted(self)
         return dispatch(
@@ -100,8 +101,9 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
             and self._fit_method == "kd_tree"
         ):
             _sklearn_NearestNeighbors.fit(self, self._fit_X, getattr(self, "_y", None))
+        xp, _ = get_namespace(X)
         X = validate_data(
-            self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
+            self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
         )
         check_is_fitted(self)
         return dispatch(
@@ -120,8 +122,9 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
     def radius_neighbors_graph(
         self, X=None, radius=None, mode="connectivity", sort_results=False
     ):
+        xp, _ = get_namespace(X)
         X = validate_data(
-            self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
+            self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
         )
         return dispatch(
             self,
@@ -137,8 +140,9 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         )
 
     def _onedal_fit(self, X, y=None, queue=None):
+        xp, _ = get_namespace(X, y)
         X = validate_data(
-            self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
+            self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
         )
         onedal_params = {
             "n_neighbors": self.n_neighbors,
