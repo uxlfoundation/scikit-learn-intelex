@@ -17,7 +17,11 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
-from scipy.sparse import csr_array
+
+try:
+    from scipy.sparse import csr_array as csr_class
+except ImportError:
+    from scipy.sparse import csr_matrix as csr_class
 
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
@@ -96,7 +100,7 @@ def test_sklearnex_import_nusvr(dataframe, queue):
 
 # https://github.com/uxlfoundation/scikit-learn-intelex/issues/1880
 def test_works_with_unsorted_indices():
-    X = csr_array(
+    X = csr_class(
         (
             np.array(
                 [0.44943642, 0.6316672, 0.6316672, 0.44943642, 0.6316672, 0.6316672]
