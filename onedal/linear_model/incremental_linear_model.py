@@ -141,10 +141,6 @@ class BaseIncrementalLinear(BaseLinearRegression):
 
             self.intercept_ = packed_coefficients[:, 0]
 
-            if self.coef_.shape[0] == 1:
-                self.coef_ = self.coef_[0]
-                self.intercept_ = self.intercept_[0]
-
             self._outtype = None
             self._need_to_finalize = False
 
