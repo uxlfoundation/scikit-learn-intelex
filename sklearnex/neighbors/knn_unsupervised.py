@@ -102,9 +102,10 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         ):
             _sklearn_NearestNeighbors.fit(self, self._fit_X, getattr(self, "_y", None))
         xp, _ = get_namespace(X)
-        X = validate_data(
-            self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
-        )
+        if X is not None:
+            X = validate_data(
+                self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
+            )
         check_is_fitted(self)
         return dispatch(
             self,
@@ -123,9 +124,10 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         self, X=None, radius=None, mode="connectivity", sort_results=False
     ):
         xp, _ = get_namespace(X)
-        X = validate_data(
-            self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
-        )
+        if X is not None:
+            X = validate_data(
+                self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
+            )
         return dispatch(
             self,
             "radius_neighbors_graph",
