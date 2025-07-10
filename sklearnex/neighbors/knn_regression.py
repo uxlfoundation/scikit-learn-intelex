@@ -30,6 +30,7 @@ from ..utils.validation import validate_data
 from .common import KNeighborsDispatchingBase
 from ..utils._array_api import get_namespace
 
+
 @control_n_jobs(decorated_methods=["fit", "predict", "kneighbors", "score"])
 class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegressor):
     __doc__ = _sklearn_KNeighborsRegressor.__doc__
@@ -78,9 +79,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
     def predict(self, X):
         xp, is_array_api = get_namespace(X)
         dtype_spec = None if is_array_api else [np.float64, np.float32]
-        X = validate_data(
-            self, X, dtype=dtype_spec, accept_sparse="csr", reset=False
-        )
+        X = validate_data(self, X, dtype=dtype_spec, accept_sparse="csr", reset=False)
         check_is_fitted(self)
         return dispatch(
             self,

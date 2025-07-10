@@ -30,6 +30,7 @@ from ..utils.validation import validate_data
 from .common import KNeighborsDispatchingBase
 from ..utils._array_api import get_namespace
 
+
 @control_n_jobs(
     decorated_methods=["fit", "predict", "predict_proba", "kneighbors", "score"]
 )
