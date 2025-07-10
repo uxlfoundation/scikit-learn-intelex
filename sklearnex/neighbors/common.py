@@ -31,6 +31,7 @@ from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
 from ..utils._array_api import get_namespace
 
+
 class KNeighborsDispatchingBase(oneDALEstimator):
     def _fit_validation(self, X, y=None):
         if sklearn_check_version("1.2"):
