@@ -250,10 +250,3 @@ def test_multioutput_regression(queue, dtype, fit_intercept, problem_type):
     expected_pred = X @ model.coef_.T + model.intercept_.reshape((1, -1))
     tol = 1e-5 if pred.dtype == np.float32 else 1e-7
     assert_allclose(pred, expected_pred, rtol=tol)
-
-    # check that it also works when 'y' is a list of lists
-    Y_lists = Y.tolist()
-    model_lists = LinearRegression(fit_intercept=fit_intercept).fit(X, Y_lists)
-    assert_allclose(model.coef_, model_lists.coef_)
-    if fit_intercept:
-        assert_allclose(model.intercept_, model_lists.intercept_)

@@ -285,7 +285,7 @@ class LinearRegression(oneDALEstimator, _sklearn_LinearRegression):
         if get_config()["allow_sklearn_after_onedal"]:
             try:
                 self._onedal_estimator.fit(X, y, queue=queue)
-                self._save_attributes()
+                self._save_attributes(y)
 
             except RuntimeError:
                 logging.getLogger("sklearnex").info(
@@ -297,7 +297,7 @@ class LinearRegression(oneDALEstimator, _sklearn_LinearRegression):
                 super().fit(X, y)
         else:
             self._onedal_estimator.fit(X, y, queue=queue)
-            self._save_attributes()
+            self._save_attributes(y)
 
     def _onedal_predict(self, X, queue=None):
 
@@ -350,11 +350,15 @@ class LinearRegression(oneDALEstimator, _sklearn_LinearRegression):
     def intercept_(self):
         del self._intercept_
 
-    def _save_attributes(self):
+    def _save_attributes(self, y):
         self.n_features_in_ = self._onedal_estimator.n_features_in_
         self._sparse = False
         self._coef_ = self._onedal_estimator.coef_
         self._intercept_ = self._onedal_estimator.intercept_
+
+        if self.coef_.shape[0] == 1 and y.ndim == 1:
+            self.coef_ = self.coef_[0]
+            self.intercept_ = self.intercept_[0]
 
     fit.__doc__ = _sklearn_LinearRegression.fit.__doc__
     predict.__doc__ = _sklearn_LinearRegression.predict.__doc__

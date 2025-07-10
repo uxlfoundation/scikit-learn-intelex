@@ -267,7 +267,7 @@ class IncrementalLinearRegression(
             self._onedal_estimator._reset()
 
         for batch in gen_batches(n_samples, self.batch_size_):
-            X_batch, y_batch = X[batch], y[batch]
+            X_batch, y_batch = X[batch, ...], y[batch, ...]
             self._onedal_partial_fit(X_batch, y_batch, check_input=False, queue=queue)
 
         # finite check occurs on onedal side
