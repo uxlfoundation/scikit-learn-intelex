@@ -148,7 +148,11 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
         assert hasattr(self, "_onedal_estimator")
         if self._need_to_finalize:
             self._onedal_finalize_fit()
-        return self._onedal_estimator.predict(X, queue=queue)
+        res = self._onedal_estimator.predict(X, queue=queue)
+
+        if res.shape[1] == 1 and self.coef_.ndim == 1:
+            res = xp.reshape(res, (-1,))
+        return res
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
         return r2_score(
