@@ -471,6 +471,9 @@ public:
   - tests/test_common.py::test_estimators
   # Fails from numpy 2.0 and sklearn 1.4+
   - neighbors/tests/test_neighbors.py::test_KNeighborsClassifier_raise_on_all_zero_weights
+  # floating point error near values == 0 in svm sparse tests using vc oneDAL builds
+  - svm/tests/test_sparse.py::test_unsorted_indices[csr_matrix] <1.7 win32
+  - svm/tests/test_sparse.py::test_unsorted_indices[csr_array] <1.7 win32
 
   # --------------------------------------------------------
   # The following tests currently fail with GPU offloading
