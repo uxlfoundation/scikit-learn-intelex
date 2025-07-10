@@ -1,0 +1,386 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Installation &mdash; Intel(R) Extension for Scikit-learn* 2023.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css" />
+      <link rel="stylesheet" type="text/css" href="_static/tabs.css" />
+
+  
+    <link rel="shortcut icon" href="_static/favicons.png"/>
+      <script src="_static/jquery.js"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+      <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+      <script src="_static/doctools.js"></script>
+      <script src="_static/sphinx_highlight.js"></script>
+      <script src="_static/version_switcher.js"></script>
+      <script src="_static/tabs.js"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Quick Start" href="quick-start.html" />
+    <link rel="prev" title="Memory Requirements" href="memory-requirements.html" />
+    <script defer type="text/javascript" src="https://www.intel.com/content/dam/www/global/wap/performance-config.js" ></script>
+    <script type="text/javascript">
+        fetch("/scikit-learn-intelex/versions.json").then(response => response.text()).then(respText=> load_versions(respText));
+        // Configure TMS settings
+        var wapLocalCode = 'us-en'; // Dynamically set per localized site, see mapping table for values
+        var wapSection = "scikit-learn"; // WAP team will give you a unique section for your site
+        // Load TMS
+        if(document.location.href.includes("intel.github.io/scikit-learn-intelex")){
+          (function () {
+            var url = 'https://www.intel.com/content/dam/www/global/wap/tms-loader.js'; // WAP file URL
+            var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true; po.src = url;
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+          })();
+      }
+      </script>
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Intel(R) Extension for Scikit-learn*
+              <img src="_static/oneAPI-rgb-rev-100.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+  <div class="version-switcher__container dropdown">
+    <script>
+      current_version = "2023.2"
+      project_name = "scikit-learn-intelex"
+    </script>
+    <div id="version-switcher-button"
+      class="version-switcher__button"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="version-switcher-dropdown"
+      aria-label="Version switcher list"
+      style="display:inline-block;padding-left:10px;padding-right:10px;"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </div>
+    <div id="version-switcher-dropdown"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+  
+  
+              <p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="acceleration.html">Acceleration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="what-is-patching.html">Patching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="blogs.html">Medium Blogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="system-requirements.html">System Requirements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="memory-requirements.html">Memory Requirements</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Get Started</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#install-from-distribution-channels">Install from distribution channels</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#install-from-pypi-recommended-by-default">Install from PyPI (recommended by default)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#install-from-anaconda-cloud">Install from Anaconda Cloud</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#build-from-sources">Build from Sources</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#configure-the-build-with-environment-variables">Configure the build with environment variables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#build-intelex">Build Intel® Extension for Scikit-learn*</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#next-steps">Next Steps</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="quick-start.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="samples.html">Samples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kaggle.html">Kaggle Kernels</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="algorithms.html">Supported Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guide/acceleration.html">Acceleration Details</a></li>
+<li class="toctree-l1"><a class="reference internal" href="global-patching.html">Global Patching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="verbose.html">Verbose Mode</a></li>
+<li class="toctree-l1"><a class="reference internal" href="distributed-mode.html">Distributed Mode</a></li>
+<li class="toctree-l1"><a class="reference internal" href="oneapi-gpu.html">oneAPI and GPU support</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Community</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="support.html">Support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contribute.html">How to Contribute</a></li>
+</ul>
+
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Intel(R) Extension for Scikit-learn*</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Installation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/installation.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Permalink to this heading"></a></h1>
+<p>Intel® Extension for Scikit-learn* is available at the <a class="reference external" href="https://pypi.org/project/scikit-learn-intelex/">Python Package Index</a>,
+on Anaconda Cloud in <a class="reference external" href="https://anaconda.org/conda-forge/scikit-learn-intelex">Conda-Forge channel</a> and
+in <a class="reference external" href="https://anaconda.org/intel/scikit-learn-intelex">Intel channel</a>.</p>
+<p>Intel® Extension for Scikit-learn* is also available as a part of <a class="reference external" href="https://www.intel.com/content/www/us/en/developer/tools/oneapi/ai-analytics-toolkit.html">Intel AI Analytics Toolkit</a> (AI Kit).
+If you already have AI Kit installed, you do not need to separately install the extension.</p>
+<p>You can also build the extension from <a class="reference internal" href="#build-from-sources"><span class="std std-ref">sources</span></a>.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>Check out <a class="reference internal" href="system-requirements.html#system-requirements"><span class="std std-ref">System requirements and supported configurations</span></a> before you start the installation process.</p>
+</div>
+<section id="install-from-distribution-channels">
+<h2>Install from distribution channels<a class="headerlink" href="#install-from-distribution-channels" title="Permalink to this heading"></a></h2>
+<nav class="contents local" id="contents">
+<ul class="simple">
+<li><p><a class="reference internal" href="#install-from-pypi-recommended-by-default" id="id2">Install from PyPI (recommended by default)</a></p></li>
+<li><p><a class="reference internal" href="#install-from-anaconda-cloud" id="id3">Install from Anaconda Cloud</a></p></li>
+</ul>
+</nav>
+<section id="install-from-pypi-recommended-by-default">
+<h3><a class="toc-backref" href="#id2" role="doc-backlink">Install from PyPI (recommended by default)</a><a class="headerlink" href="#install-from-pypi-recommended-by-default" title="Permalink to this heading"></a></h3>
+<ol class="arabic">
+<li><p><strong>[Optional step] [Recommended]</strong> To prevent version conflicts, create and activate a new environment:</p>
+<div class="sphinx-tabs docutils container">
+<div aria-label="Tabbed content" class="closeable" role="tablist"><button aria-controls="panel-0-0-0" aria-selected="true" class="sphinx-tabs-tab" id="tab-0-0-0" name="0-0" role="tab" tabindex="0">Linux</button><button aria-controls="panel-0-0-1" aria-selected="false" class="sphinx-tabs-tab" id="tab-0-0-1" name="0-1" role="tab" tabindex="-1">Windows</button></div><div aria-labelledby="tab-0-0-0" class="sphinx-tabs-panel" id="panel-0-0-0" name="0-0" role="tabpanel" tabindex="0"><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">venv</span> <span class="n">env</span>
+<span class="n">source</span> <span class="n">env</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">activate</span>
+</pre></div>
+</div>
+</div><div aria-labelledby="tab-0-0-1" class="sphinx-tabs-panel" hidden="true" id="panel-0-0-1" name="0-1" role="tabpanel" tabindex="0"><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">venv</span> <span class="n">env</span>
+<span class="o">.</span>\<span class="n">env</span>\<span class="n">Scripts</span>\<span class="n">activate</span>
+</pre></div>
+</div>
+</div></div>
+</li>
+<li><p>Install <cite>scikit-learn-intelex</cite>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">scikit</span><span class="o">-</span><span class="n">learn</span><span class="o">-</span><span class="n">intelex</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="install-from-anaconda-cloud">
+<h3><a class="toc-backref" href="#id3" role="doc-backlink">Install from Anaconda Cloud</a><a class="headerlink" href="#install-from-anaconda-cloud" title="Permalink to this heading"></a></h3>
+<p>To prevent version conflicts, we recommend installing <cite>scikit-learn-intelex</cite> into a new conda environment.
+For each distribution channel, there are two installation options: with and without a creation of a new environment.</p>
+<ul>
+<li><p>Install from <strong>Anaconda Cloud: Conda-Forge channel</strong> (recommended by default for conda users):</p>
+<ul>
+<li><p>into a newly created environment (recommended):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">create</span> <span class="o">-</span><span class="n">n</span> <span class="n">env</span> <span class="o">-</span><span class="n">c</span> <span class="n">conda</span><span class="o">-</span><span class="n">forge</span> <span class="n">python</span><span class="o">=</span><span class="mf">3.9</span> <span class="n">scikit</span><span class="o">-</span><span class="n">learn</span><span class="o">-</span><span class="n">intelex</span>
+</pre></div>
+</div>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>If you do not specify the version of Python (<code class="docutils literal notranslate"><span class="pre">python=3.9</span></code> in the example above), then Python 3.10 is downloaded by default,
+which is not supported.</p>
+<p>See <a class="reference internal" href="system-requirements.html#sys-req-conda-forge"><span class="std std-ref">supported configurations for Conda-Forge channel</span></a>.</p>
+</div>
+</li>
+<li><p>into your current environment:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">install</span> <span class="n">scikit</span><span class="o">-</span><span class="n">learn</span><span class="o">-</span><span class="n">intelex</span> <span class="o">-</span><span class="n">c</span> <span class="n">conda</span><span class="o">-</span><span class="n">forge</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</li>
+<li><p>Install from <strong>Anaconda Cloud: Intel channel</strong> (recommended for the users of Intel® Distribution for Python):</p>
+<ul>
+<li><p>into a newly created environment (recommended):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">create</span> <span class="o">-</span><span class="n">n</span> <span class="n">env</span> <span class="o">-</span><span class="n">c</span> <span class="n">intel</span> <span class="n">python</span> <span class="n">scikit</span><span class="o">-</span><span class="n">learn</span><span class="o">-</span><span class="n">intelex</span>
+</pre></div>
+</div>
+<p>Note that you may also specify the version of Python to download
+(see <a class="reference internal" href="system-requirements.html#sys-req-conda-intel"><span class="std std-ref">supported configurations for Anaconda Intel channel</span></a>).
+For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">create</span> <span class="o">-</span><span class="n">n</span> <span class="n">env</span> <span class="o">-</span><span class="n">c</span> <span class="n">intel</span> <span class="n">python</span><span class="o">=</span><span class="mf">3.7</span> <span class="n">scikit</span><span class="o">-</span><span class="n">learn</span><span class="o">-</span><span class="n">intelex</span>
+</pre></div>
+</div>
+</li>
+<li><p>into your current environment:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">install</span> <span class="n">scikit</span><span class="o">-</span><span class="n">learn</span><span class="o">-</span><span class="n">intelex</span> <span class="o">-</span><span class="n">c</span> <span class="n">intel</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</li>
+<li><p>Install from <strong>Anaconda Cloud: Main channel</strong>:</p>
+<ul>
+<li><p>into a newly created environment (recommended):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">create</span> <span class="o">-</span><span class="n">n</span> <span class="n">env</span> <span class="n">python</span><span class="o">=</span><span class="mf">3.9</span> <span class="n">scikit</span><span class="o">-</span><span class="n">learn</span><span class="o">-</span><span class="n">intelex</span>
+</pre></div>
+</div>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>If you do not specify the version of Python (<code class="docutils literal notranslate"><span class="pre">python=3.9</span></code> in the example above), then Python 3.10 is downloaded by default,
+which is not supported.</p>
+<p>See <a class="reference internal" href="system-requirements.html#sys-req-conda-main"><span class="std std-ref">supported configurations for Anaconda main channel</span></a>.</p>
+</div>
+</li>
+<li><p>into your current environment:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">install</span> <span class="n">scikit</span><span class="o">-</span><span class="n">learn</span><span class="o">-</span><span class="n">intelex</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</li>
+</ul>
+</section>
+</section>
+<section id="build-from-sources">
+<span id="id1"></span><h2>Build from Sources<a class="headerlink" href="#build-from-sources" title="Permalink to this heading"></a></h2>
+<p>Sources are available in <a class="reference external" href="https://github.com/intel/scikit-learn-intelex">Intel® Extension for Scikit-learn* repository</a>.</p>
+<p class="rubric">Prerequisites</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Python</span> <span class="n">version</span> <span class="o">&gt;=</span> <span class="mf">3.6</span><span class="p">,</span> <span class="o">&lt;</span> <span class="mf">3.10</span>
+<span class="n">daal4py</span> <span class="o">&gt;=</span> <span class="mf">2021.4</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You can <a class="reference external" href="https://github.com/intel/scikit-learn-intelex/blob/master/daal4py/INSTALL.md">build daal4py from sources</a> or get it from <a class="reference external" href="https://intelpython.github.io/daal4py/#getting-daal4py">distribution channels</a>.</p>
+</div>
+<section id="configure-the-build-with-environment-variables">
+<h3>Configure the build with environment variables<a class="headerlink" href="#configure-the-build-with-environment-variables" title="Permalink to this heading"></a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SKLEARNEX_VERSION</span><span class="p">:</span> <span class="n">sets</span> <span class="n">package</span> <span class="n">version</span>
+</pre></div>
+</div>
+</section>
+<section id="build-intelex">
+<h3>Build Intel® Extension for Scikit-learn*<a class="headerlink" href="#build-intelex" title="Permalink to this heading"></a></h3>
+<p>To install the package:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="o">&lt;</span><span class="n">checkout</span><span class="o">-</span><span class="nb">dir</span><span class="o">&gt;</span>
+<span class="n">python</span> <span class="n">setup_sklearnex</span><span class="o">.</span><span class="n">py</span> <span class="n">install</span>
+</pre></div>
+</div>
+<p>To install the package in the development mode:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="o">&lt;</span><span class="n">checkout</span><span class="o">-</span><span class="nb">dir</span><span class="o">&gt;</span>
+<span class="n">python</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">develop</span>
+</pre></div>
+</div>
+<p>To install scikit-learn-intelex without downloading daal4py:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="o">&lt;</span><span class="n">checkout</span><span class="o">-</span><span class="nb">dir</span><span class="o">&gt;</span>
+<span class="n">python</span> <span class="n">setup_sklearnex</span><span class="o">.</span><span class="n">py</span> <span class="n">install</span> <span class="o">--</span><span class="n">single</span><span class="o">-</span><span class="n">version</span><span class="o">-</span><span class="n">externally</span><span class="o">-</span><span class="n">managed</span> <span class="o">--</span><span class="n">record</span><span class="o">=</span><span class="n">record</span><span class="o">.</span><span class="n">txt</span>
+</pre></div>
+</div>
+<p>To install scikit-learn-intelex without downloading daal4py in the development mode:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="o">&lt;</span><span class="n">checkout</span><span class="o">-</span><span class="nb">dir</span><span class="o">&gt;</span>
+<span class="n">python</span> <span class="n">setup_sklearnex</span><span class="o">.</span><span class="n">py</span> <span class="n">develop</span> <span class="o">--</span><span class="n">no</span><span class="o">-</span><span class="n">deps</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">develop</span></code> mode will not install the package but it will create a <code class="docutils literal notranslate"><span class="pre">.egg-link</span></code> in the deployment directory
+back to the project source code directory. That way you can edit the source code and see the changes
+without having to reinstall the package every time you make a small change.</p>
+</div>
+<p>⚠️ Keys <code class="docutils literal notranslate"><span class="pre">--single-version-externally-managed</span></code> and <code class="docutils literal notranslate"><span class="pre">--no-deps</span></code> are required so that daal4py is not downloaded after installation of Intel® Extension for Scikit-learn*</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="docutils literal notranslate"><span class="pre">--single-version-externally-managed</span></code> is an option used for Python packages instructing the setuptools module
+to create a Python package that can be easily managed by the package manager on the host</p>
+</div>
+</section>
+<section id="next-steps">
+<h3>Next Steps<a class="headerlink" href="#next-steps" title="Permalink to this heading"></a></h3>
+<ul class="simple">
+<li><p><a class="reference internal" href="what-is-patching.html#what-is-patching"><span class="std std-ref">What is patching and how to patch scikit-learn</span></a></p></li>
+<li><p><a class="reference internal" href="quick-start.html#get-started"><span class="std std-ref">How to use scikit-learn-intelex</span></a></p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="memory-requirements.html" class="btn btn-neutral float-left" title="Memory Requirements" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="quick-start.html" class="btn btn-neutral float-right" title="Quick Start" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Intel.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="version-switcher__container dropdown">
+    <script>
+      current_version = "2023.2"
+      project_name = "scikit-learn-intelex"
+    </script>
+    <div id="version-switcher-button"
+      class="version-switcher__button"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="version-switcher-dropdown"
+      aria-label="Version switcher list"
+      style="display:inline-block;padding-left:10px;padding-right:10px;"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </div>
+    <div id="version-switcher-dropdown"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,330 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>oneAPI and GPU support in Intel® Extension for Scikit-learn* &mdash; Intel(R) Extension for Scikit-learn* 2024.3 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css" />
+      <link rel="stylesheet" type="text/css" href="_static/tabs.css" />
+
+  
+    <link rel="shortcut icon" href="_static/favicons.png"/>
+      <script src="_static/jquery.js"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+      <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+      <script src="_static/doctools.js"></script>
+      <script src="_static/sphinx_highlight.js"></script>
+      <script src="_static/version_switcher.js"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Distributed Mode" href="distributed-mode.html" />
+    <link rel="prev" title="Supported Algorithms" href="algorithms.html" />
+    <script defer type="text/javascript" src="https://www.intel.com/content/dam/www/global/wap/performance-config.js" ></script>
+    <script type="text/javascript">
+        fetch("/scikit-learn-intelex/versions.json").then(response => response.text()).then(respText=> load_versions(respText));
+        // Configure TMS settings
+        var wapLocalCode = 'us-en'; // Dynamically set per localized site, see mapping table for values
+        var wapSection = "scikit-learn"; // WAP team will give you a unique section for your site
+        // Load TMS
+        if(document.location.href.includes("intel.github.io/scikit-learn-intelex")){
+          (function () {
+            var url = 'https://www.intel.com/content/dam/www/global/wap/tms-loader.js'; // WAP file URL
+            var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true; po.src = url;
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+          })();
+      }
+      </script>
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Intel(R) Extension for Scikit-learn*
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+  <div class="version-switcher__container dropdown">
+    <script>
+      current_version = "2024.3"
+      project_name = "scikit-learn-intelex"
+    </script>
+    <div id="version-switcher-button"
+      class="version-switcher__button"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="version-switcher-dropdown"
+      aria-label="Version switcher list"
+      style="display:inline-block;padding-left:10px;padding-right:10px;"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </div>
+    <div id="version-switcher-dropdown"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+  
+  
+              <p class="caption" role="heading"><span class="caption-text">Get Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quick-start.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="what-is-patching.html">Patching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="support.html">Support</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="algorithms.html">Supported Algorithms</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">oneAPI and GPU support</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#device-offloading">Device offloading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#example">Example</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="distributed-mode.html">Distributed Mode</a></li>
+<li class="toctree-l1"><a class="reference internal" href="verbose.html">Verbose Mode</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Releases</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="releases.html">Release Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deprecation.html">Deprecation Notice</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Installation Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="system-requirements.html">System Requirements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="memory-requirements.html">Memory Requirements</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="samples.html">Samples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kaggle.html">Kaggle Kernels</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Performance</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="acceleration.html">Acceleration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guide/acceleration.html">Performance Tuning Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Blogs &amp; Publications</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="blogs.html">Medium Blogs</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">How to contribute</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contribute.html">How to Contribute</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Intel(R) Extension for Scikit-learn*</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">oneAPI and GPU support in Intel® Extension for Scikit-learn*</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/oneapi-gpu.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="oneapi-and-gpu-support-in-intelex">
+<span id="oneapi-gpu"></span><h1>oneAPI and GPU support in Intel® Extension for Scikit-learn*<a class="headerlink" href="#oneapi-and-gpu-support-in-intelex" title="Permalink to this heading"></a></h1>
+<p>Intel® Extension for Scikit-learn* supports oneAPI concepts, which
+means that algorithms can be executed on different devices: CPUs and GPUs.
+This is done via integration with
+<a class="reference external" href="https://intelpython.github.io/dpctl/latest/index.html">dpctl</a> package that
+implements core oneAPI concepts like queues and devices.</p>
+<section id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this heading"></a></h2>
+<p>For execution on GPU, DPC++ compiler runtime and driver are required. Refer to <a class="reference external" href="https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html">DPC++ system
+requirements</a> for details.</p>
+<p>DPC++ compiler runtime can be installed either from PyPI or Anaconda:</p>
+<ul>
+<li><p>Install from PyPI:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">dpcpp</span><span class="o">-</span><span class="n">cpp</span><span class="o">-</span><span class="n">rt</span>
+</pre></div>
+</div>
+</li>
+<li><p>Install from Anaconda:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">install</span> <span class="n">dpcpp_cpp_rt</span> <span class="o">-</span><span class="n">c</span> <span class="n">intel</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</section>
+<section id="device-offloading">
+<h2>Device offloading<a class="headerlink" href="#device-offloading" title="Permalink to this heading"></a></h2>
+<p>Intel® Extension for Scikit-learn* offers two options for running an algorithm on a
+specific device with the help of dpctl:</p>
+<ul>
+<li><p>Pass input data as <a class="reference external" href="https://intelpython.github.io/dpctl/latest/docfiles/dpctl/usm_ndarray.html#dpctl.tensor.usm_ndarray">dpctl.tensor.usm_ndarray</a> to the algorithm.</p>
+<p>The computation will run on the device where the input data is
+located, and the result will be returned as <code class="code docutils literal notranslate"><span class="pre">usm_ndarray</span></code> to the same
+device.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>All the input data for an algorithm must reside on the same device.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The <code class="code docutils literal notranslate"><span class="pre">usm_ndarray</span></code> can only be consumed by the base methods
+like <code class="code docutils literal notranslate"><span class="pre">fit</span></code>, <code class="code docutils literal notranslate"><span class="pre">predict</span></code>, and <code class="code docutils literal notranslate"><span class="pre">transform</span></code>.
+Note that only the algorithms in Intel® Extension for Scikit-learn* support
+<code class="code docutils literal notranslate"><span class="pre">usm_ndarray</span></code>. The algorithms from the stock version of scikit-learn
+do not support this feature.</p>
+</div>
+</li>
+<li><p>Use global configurations of Intel® Extension for Scikit-learn**:</p>
+<ol class="arabic simple">
+<li><p>The <code class="code docutils literal notranslate"><span class="pre">target_offload</span></code> option can be used to set the device primarily
+used to perform computations. Accepted data types are <code class="code docutils literal notranslate"><span class="pre">str</span></code> and
+<code class="code docutils literal notranslate"><span class="pre">dpctl.SyclQueue</span></code>. If you pass a string to <code class="code docutils literal notranslate"><span class="pre">target_offload</span></code>,
+it should either be <code class="docutils literal notranslate"><span class="pre">&quot;auto&quot;</span></code>, which means that the execution
+context is deduced from the location of input data, or a string
+with SYCL* filter selector. The default value is <code class="docutils literal notranslate"><span class="pre">&quot;auto&quot;</span></code>.</p></li>
+<li><p>The <code class="code docutils literal notranslate"><span class="pre">allow_fallback_to_host</span></code> option
+is a Boolean flag. If set to <code class="code docutils literal notranslate"><span class="pre">True</span></code>, the computation is allowed
+to fallback to the host device when a particular estimator does not support
+the selected device. The default value is <code class="code docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+</ol>
+</li>
+</ul>
+<p>These options can be set using <code class="code docutils literal notranslate"><span class="pre">sklearnex.set_config()</span></code> function or
+<code class="code docutils literal notranslate"><span class="pre">sklearnex.config_context</span></code>. To obtain the current values of these options,
+call <code class="code docutils literal notranslate"><span class="pre">sklearnex.get_config()</span></code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Functions <code class="code docutils literal notranslate"><span class="pre">set_config</span></code>, <code class="code docutils literal notranslate"><span class="pre">get_config</span></code> and <code class="code docutils literal notranslate"><span class="pre">config_context</span></code>
+are always patched after the <code class="code docutils literal notranslate"><span class="pre">sklearnex.patch_sklearn()</span></code> call.</p>
+</div>
+<p class="rubric">Compatibility considerations</p>
+<p>For compatibility reasons, algorithms in Intel® Extension for Scikit-learn* may be offloaded to the device using
+<code class="code docutils literal notranslate"><span class="pre">daal4py.oneapi.sycl_context</span></code>. However, it is recommended to use one of the options
+described above for device offloading instead of using <code class="code docutils literal notranslate"><span class="pre">sycl_context</span></code>.</p>
+</section>
+<section id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this heading"></a></h2>
+<p>An example on how to patch your code with Intel CPU/GPU optimizations:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sklearnex</span> <span class="kn">import</span> <span class="n">patch_sklearn</span><span class="p">,</span> <span class="n">config_context</span>
+<span class="n">patch_sklearn</span><span class="p">()</span>
+
+<span class="kn">from</span> <span class="nn">sklearn.cluster</span> <span class="kn">import</span> <span class="n">DBSCAN</span>
+
+<span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">2.</span><span class="p">],</span> <span class="p">[</span><span class="mf">2.</span><span class="p">,</span> <span class="mf">2.</span><span class="p">],</span> <span class="p">[</span><span class="mf">2.</span><span class="p">,</span> <span class="mf">3.</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">8.</span><span class="p">,</span> <span class="mf">7.</span><span class="p">],</span> <span class="p">[</span><span class="mf">8.</span><span class="p">,</span> <span class="mf">8.</span><span class="p">],</span> <span class="p">[</span><span class="mf">25.</span><span class="p">,</span> <span class="mf">80.</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+<span class="k">with</span> <span class="n">config_context</span><span class="p">(</span><span class="n">target_offload</span><span class="o">=</span><span class="s2">&quot;gpu:0&quot;</span><span class="p">):</span>
+   <span class="n">clustering</span> <span class="o">=</span> <span class="n">DBSCAN</span><span class="p">(</span><span class="n">eps</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">min_samples</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Current offloading behavior restricts fitting and inference of any models to be
+in the same context or absence of context. For example, a model trained in the GPU context with
+target_offload=”gpu:0” throws an error if the inference is made outside the same GPU context.</p>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="algorithms.html" class="btn btn-neutral float-left" title="Supported Algorithms" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="distributed-mode.html" class="btn btn-neutral float-right" title="Distributed Mode" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+<jinja2.runtime.BlockReference object at 0x7fca671370d0>
+<a href=
+    "https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html" data-cookie-notice="true">
+    Cookies
+</a>
+<a href=
+    "https://www.intel.com/content/www/us/en/privacy/intel-privacy-notice.html">
+    Privacy
+</a>
+<a data-wap_ref="dns" id="wap_dns" href="https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html">
+    Do Not Share My Personal Information
+</a>
+
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="version-switcher__container dropdown">
+    <script>
+      current_version = "2024.3"
+      project_name = "scikit-learn-intelex"
+    </script>
+    <div id="version-switcher-button"
+      class="version-switcher__button"
+      data-bs-toggle="dropdown"
+      aria-haspopup="listbox"
+      aria-controls="version-switcher-dropdown"
+      aria-label="Version switcher list"
+      style="display:inline-block;padding-left:10px;padding-right:10px;"
+    >
+      Choose version  <!-- this text may get changed later by javascript -->
+      <span class="caret"></span>
+    </div>
+    <div id="version-switcher-dropdown"
+      class="version-switcher__menu dropdown-menu list-group-flush py-0"
+      role="listbox" aria-labelledby="">
+      <!-- dropdown will be populated by javascript on page load -->
+    </div>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
