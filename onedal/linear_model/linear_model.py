@@ -80,7 +80,6 @@ class BaseLinearRegression(metaclass=ABCMeta):
             intercept = from_table(to_table(self.intercept_))
 
         # will do automatic dtype promotion based on the two datatypes
-        print(intercept.shape, coef.shape)
         packed_coefficients = np.concatenate((intercept, coef), axis=1)
 
         model.packed_coefficients = to_table(
