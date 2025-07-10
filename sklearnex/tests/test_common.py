@@ -70,12 +70,6 @@ _DESIGN_RULE_VIOLATIONS = {
     "LogisticRegression(solver='newton-cg')-predict-n_jobs_check": "uses daal4py for cpu in sklearnex",
     "LogisticRegression(solver='newton-cg')-predict_log_proba-n_jobs_check": "uses daal4py for cpu in sklearnex",
     "LogisticRegression(solver='newton-cg')-predict_proba-n_jobs_check": "uses daal4py for cpu in sklearnex",
-    "KNeighborsClassifier-fit-call_validate_data": "validate_data are called both in onedal and before dispatch",
-    "KNeighborsRegressor-fit-call_validate_data": "validate_data are called both in onedal and before dispatch",
-    "LocalOutlierFactor-fit-call_validate_data": "validate_data are called both in onedal and before dispatch",
-    "LocalOutlierFactor(novelty=True)-fit-call_validate_data": "validate_data are called both in onedal and before dispatch",
-    "KNeighborsClassifier(algorithm='brute')-fit-call_validate_data": "validate_data are called both in onedal and before dispatch",
-    "KNeighborsRegressor(algorithm='brute')-fit-call_validate_data": "validate_data are called both in onedal and before dispatch",
 }
 
 

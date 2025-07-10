@@ -23,7 +23,7 @@ from daal4py.sklearn.utils.validation import get_requires_y_tag
 from onedal.neighbors import NearestNeighbors as onedal_NearestNeighbors
 
 from .._device_offload import dispatch, wrap_output_data
-from ..utils.validation import check_feature_names, validate_data
+from ..utils.validation import validate_data
 from .common import KNeighborsDispatchingBase
 
 

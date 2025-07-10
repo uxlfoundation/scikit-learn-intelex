@@ -29,7 +29,7 @@ from sklearnex.neighbors.common import KNeighborsDispatchingBase
 from sklearnex.neighbors.knn_unsupervised import NearestNeighbors
 
 from ..utils._array_api import get_namespace
-from ..utils.validation import check_feature_names, validate_data
+from ..utils.validation import validate_data
 
 
 @control_n_jobs(decorated_methods=["fit", "kneighbors", "_kneighbors"])
@@ -53,9 +53,6 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
     _onedal_kneighbors = NearestNeighbors._onedal_kneighbors
 
     def _onedal_fit(self, X, y, queue=None):
-        X = validate_data(
-            self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
-        )
         if sklearn_check_version("1.2"):
             self._validate_params()
 
@@ -175,9 +172,6 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
     @wraps(_sklearn_LocalOutlierFactor.score_samples, assigned=["__doc__"])
     @wrap_output_data
     def score_samples(self, X):
-        X = validate_data(
-            self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
-        )
         check_is_fitted(self)
 
         distances_X, neighbors_indices_X = self._kneighbors(
