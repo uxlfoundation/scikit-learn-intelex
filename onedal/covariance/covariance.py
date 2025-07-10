@@ -102,29 +102,27 @@ class EmpiricalCovariance(BaseEmpiricalCovariance):
             Returns the instance itself.
         """
         use_raw_input = _get_config()["use_raw_input"] is True
-        sua_iface, _, _ = _get_sycl_namespace(X)
+        sua_iface, xp, _ = _get_sycl_namespace(X)
         if use_raw_input and sua_iface:
             queue = X.sycl_queue
 
         if not use_raw_input:
             X = _check_array(X, dtype=[np.float64, np.float32])
-        X = to_table(X, queue=queue)
+        X_table = to_table(X, queue=queue)
 
-        params = self._get_onedal_params(X.dtype)
+        params = self._get_onedal_params(X_table.dtype)
         hparams = get_hyperparameters("covariance", "compute")
         if hparams is not None and not hparams.is_default:
-            result = self.compute(params, hparams.backend, X)
+            result = self.compute(params, hparams.backend, X_table)
         else:
-            result = self.compute(params, X)
+            result = self.compute(params, X_table)
         if daal_check_version((2024, "P", 1)) or (not self.bias):
-            self.covariance_ = from_table(result.cov_matrix, sycl_queue=queue)
+            self.covariance_ = from_table(result.cov_matrix, like=X)
         else:
             self.covariance_ = (
-                from_table(result.cov_matrix, sycl_queue=queue)
-                * (X.shape[0] - 1)
-                / X.shape[0]
+                from_table(result.cov_matrix, like=X) * (X.shape[0] - 1) / X.shape[0]
             )
 
-        self.location_ = from_table(result.means, sycl_queue=queue).ravel()
+        self.location_ = xp.squeeze(from_table(result.means, like=X))
 
         return self
