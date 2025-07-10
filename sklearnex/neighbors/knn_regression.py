@@ -76,9 +76,10 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
 
     @wrap_output_data
     def predict(self, X):
-        xp, _ = get_namespace(X)
+        xp, is_array_api = get_namespace(X)
+        dtype_spec = None if is_array_api else [np.float64, np.float32]
         X = validate_data(
-            self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
+            self, X, dtype=dtype_spec, accept_sparse="csr", reset=False
         )
         check_is_fitted(self)
         return dispatch(
