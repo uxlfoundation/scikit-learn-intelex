@@ -1,30 +1,29 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html5" lang="en">
+<html class="writer-html5" lang="en" data-content_root="./">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>oneAPI and GPU support in Extension for Scikit-learn* &mdash; Extension for Scikit-learn* 2025.5 documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css" />
-      <link rel="stylesheet" type="text/css" href="_static/copybutton.css" />
-      <link rel="stylesheet" type="text/css" href="_static/custom.css" />
-      <link rel="stylesheet" type="text/css" href="_static/tabs.css" />
-      <link rel="stylesheet" type="text/css" href="_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css" />
+  <title>oneAPI and GPU support in Extension for Scikit-learn* &mdash; Extension for Scikit-learn* 2025.6 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=132153fd" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
 
   
     <link rel="shortcut icon" href="_static/favicon.png"/>
-      <script src="_static/jquery.js"></script>
-      <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-      <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-      <script src="_static/doctools.js"></script>
-      <script src="_static/sphinx_highlight.js"></script>
-      <script src="_static/clipboard.min.js"></script>
-      <script src="_static/copybutton.js"></script>
-      <script src="_static/version_switcher.js"></script>
-      <script src="_static/design-tabs.js"></script>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=61d495fa"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="_static/copybutton.js?v=f281be69"></script>
+      <script src="_static/version_switcher.js?v=1b8cff92"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -72,7 +71,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
 <div class="version-switcher__container dropdown">
     <script>
-      current_version = "2025.5"
+      current_version = "2025.6"
       project_name = "scikit-learn-intelex"
     </script>
     <div id="version-switcher-button"
@@ -425,7 +424,7 @@
 <li class="toctree-l2"><a class="reference internal" href="array_api.html#example-usage">Example usage</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="array_api.html#dpnp-ndarrays">DPNP ndarrays</a></li>
 <li class="toctree-l3"><a class="reference internal" href="array_api.html#dpctl-usm-ndarrays">DPCTL usm_ndarrays</a></li>
-<li class="toctree-l3"><a class="reference internal" href="array_api.html#use-of-array-api-strict">Use of <cite>array-api-strict</cite></a></li>
+<li class="toctree-l3"><a class="reference internal" href="array_api.html#use-of-array-api-strict">Use of <code class="docutils literal notranslate"><span class="pre">array-api-strict</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -467,6 +466,7 @@
 <li class="toctree-l3"><a class="reference internal" href="daal4py.html#daal4py.mb.GBTDAALModel"><code class="docutils literal notranslate"><span class="pre">GBTDAALModel</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="daal4py.html#daal4py.mb.GBTDAALModel.is_classifier_"><code class="docutils literal notranslate"><span class="pre">GBTDAALModel.is_classifier_</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="daal4py.html#daal4py.mb.GBTDAALModel.is_regressor_"><code class="docutils literal notranslate"><span class="pre">GBTDAALModel.is_regressor_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="daal4py.html#daal4py.mb.GBTDAALModel.supports_shap_"><code class="docutils literal notranslate"><span class="pre">GBTDAALModel.supports_shap_</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="daal4py.html#daal4py.mb.GBTDAALModel.predict"><code class="docutils literal notranslate"><span class="pre">GBTDAALModel.predict()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="daal4py.html#daal4py.mb.GBTDAALModel.predict_proba"><code class="docutils literal notranslate"><span class="pre">GBTDAALModel.predict_proba()</span></code></a></li>
 </ul>
@@ -1591,16 +1591,16 @@
            <div itemprop="articleBody">
              
   <section id="oneapi-and-gpu-support-in-sklearnex">
-<span id="oneapi-gpu"></span><h1>oneAPI and GPU support in Extension for Scikit-learn*<a class="headerlink" href="#oneapi-and-gpu-support-in-sklearnex" title="Permalink to this heading"></a></h1>
+<span id="oneapi-gpu"></span><h1>oneAPI and GPU support in Extension for Scikit-learn*<a class="headerlink" href="#oneapi-and-gpu-support-in-sklearnex" title="Link to this heading"></a></h1>
 <p>Extension for Scikit-learn* can execute computations on different devices (CPUs, GPUs) through the SYCL framework in oneAPI.</p>
-<p>The device used for computations can be easily controlled through the target offloading functionality (e.g. through <code class="docutils literal notranslate"><span class="pre">sklearnex.config_context(target_offload=&quot;gpu&quot;)</span></code> - see rest of this page for more details), but for finer-grained controlled (e.g. operating on arrays that are already in a given device’s memory), it can also interact with objects from package <a class="reference external" href="https://intelpython.github.io/dpctl/latest/index.html" title="(in Data Parallel Control (dpctl) v0.20.0dev0+189.g3aff6ca341)"><span class="xref std std-doc">dpctl</span></a>, which offers a Python interface over SYCL concepts such as devices, queues, and USM (unified shared memory) arrays.</p>
-<p>While not strictly required, package <a class="reference external" href="https://intelpython.github.io/dpctl/latest/index.html" title="(in Data Parallel Control (dpctl) v0.20.0dev0+189.g3aff6ca341)"><span class="xref std std-doc">dpctl</span></a> is recommended for a better experience on GPUs.</p>
+<p>The device used for computations can be easily controlled through the target offloading functionality (e.g. through <code class="docutils literal notranslate"><span class="pre">sklearnex.config_context(target_offload=&quot;gpu&quot;)</span></code> - see rest of this page for more details), but for finer-grained controlled (e.g. operating on arrays that are already in a given device’s memory), it can also interact with objects from package <a class="reference external" href="https://intelpython.github.io/dpctl/latest/index.html" title="(in Data Parallel Control (dpctl) v0.21.0dev0+51.g6f6fe50f2e)"><span class="xref std std-doc">dpctl</span></a>, which offers a Python interface over SYCL concepts such as devices, queues, and USM (unified shared memory) arrays.</p>
+<p>While not strictly required, package <a class="reference external" href="https://intelpython.github.io/dpctl/latest/index.html" title="(in Data Parallel Control (dpctl) v0.21.0dev0+51.g6f6fe50f2e)"><span class="xref std std-doc">dpctl</span></a> is recommended for a better experience on GPUs.</p>
 <div class="admonition important">
 <p class="admonition-title">Important</p>
 <p>Be aware that GPU usage requires non-Python dependencies on your system, such as the <a class="reference external" href="https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html">Intel(R) GPGPU Drivers</a>.</p>
 </div>
 <section id="prerequisites">
-<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this heading"></a></h2>
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading"></a></h2>
 <p>For execution on GPUs, DPC++ runtime and GPGPU drivers are required.</p>
 <p>DPC++ compiler runtime can be installed either from PyPI or Conda:</p>
 <ul>
@@ -1623,25 +1623,25 @@
 <p>For GPGPU driver installation instructions, see the general <a class="reference external" href="https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html">DPC++ system requirements</a> sections corresponding to your operating system.</p>
 </section>
 <section id="device-offloading">
-<h2>Device offloading<a class="headerlink" href="#device-offloading" title="Permalink to this heading"></a></h2>
+<h2>Device offloading<a class="headerlink" href="#device-offloading" title="Link to this heading"></a></h2>
 <p>Extension for Scikit-learn* offers two options for running an algorithm on a specified device:</p>
 <ul>
 <li><p>Use global configurations of Extension for Scikit-learn**:</p>
 <ol class="arabic">
 <li><p>The <code class="code docutils literal notranslate"><span class="pre">target_offload</span></code> argument (in <code class="docutils literal notranslate"><span class="pre">config_context</span></code> and in <code class="docutils literal notranslate"><span class="pre">set_config</span></code> / <code class="docutils literal notranslate"><span class="pre">get_config</span></code>)
 can be used to set the device primarily used to perform computations. Accepted data types are
-<code class="code docutils literal notranslate"><span class="pre">str</span></code> and <a class="reference external" href="https://intelpython.github.io/dpctl/latest/api_reference/dpctl/generated/dpctl.SyclQueue.html#dpctl.SyclQueue" title="(in Data Parallel Control (dpctl) v0.20.0dev0+189.g3aff6ca341)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dpctl.SyclQueue</span></code></a>. Strings must match to device names recognized by
+<code class="code docutils literal notranslate"><span class="pre">str</span></code> and <a class="reference external" href="https://intelpython.github.io/dpctl/latest/api_reference/dpctl/generated/dpctl.SyclQueue.html#dpctl.SyclQueue" title="(in Data Parallel Control (dpctl) v0.21.0dev0+51.g6f6fe50f2e)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dpctl.SyclQueue</span></code></a>. Strings must match to device names recognized by
 the SYCL* device filter selector - for example, <code class="docutils literal notranslate"><span class="pre">&quot;gpu&quot;</span></code>. If passing <code class="docutils literal notranslate"><span class="pre">&quot;auto&quot;</span></code>,
 the device will be deduced from the location of the input data. Examples:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sklearnex</span> <span class="kn">import</span> <span class="n">config_context</span>
-<span class="kn">from</span> <span class="nn">sklearnex.linear_model</span> <span class="kn">import</span> <span class="n">LinearRegression</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">sklearnex</span><span class="w"> </span><span class="kn">import</span> <span class="n">config_context</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearnex.linear_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">LinearRegression</span>
 
 <span class="k">with</span> <span class="n">config_context</span><span class="p">(</span><span class="n">target_offload</span><span class="o">=</span><span class="s2">&quot;gpu&quot;</span><span class="p">):</span>
     <span class="n">model</span> <span class="o">=</span> <span class="n">LinearRegression</span><span class="p">()</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sklearnex</span> <span class="kn">import</span> <span class="n">set_config</span>
-<span class="kn">from</span> <span class="nn">sklearnex.linear_model</span> <span class="kn">import</span> <span class="n">LinearRegression</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">sklearnex</span><span class="w"> </span><span class="kn">import</span> <span class="n">set_config</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearnex.linear_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">LinearRegression</span>
 
 <span class="n">set_config</span><span class="p">(</span><span class="n">target_offload</span><span class="o">=</span><span class="s2">&quot;gpu&quot;</span><span class="p">)</span>
 <span class="n">model</span> <span class="o">=</span> <span class="n">LinearRegression</span><span class="p">()</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
@@ -1666,7 +1666,7 @@ call <code class="code docutils literal notranslate"><span class="pre">sklearnex
 are always patched after the <code class="code docutils literal notranslate"><span class="pre">sklearnex.patch_sklearn()</span></code> call.</p>
 </div>
 <ul>
-<li><p>Pass input data as <a class="reference external" href="https://intelpython.github.io/dpctl/latest/api_reference/dpctl/generated/dpctl.tensor.usm_ndarray.html#dpctl.tensor.usm_ndarray" title="(in Data Parallel Control (dpctl) v0.20.0dev0+189.g3aff6ca341)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dpctl.tensor.usm_ndarray</span></code></a> to the algorithm.</p>
+<li><p>Pass input data as <a class="reference external" href="https://intelpython.github.io/dpctl/latest/api_reference/dpctl/generated/dpctl.tensor.usm_ndarray.html#dpctl.tensor.usm_ndarray" title="(in Data Parallel Control (dpctl) v0.21.0dev0+51.g6f6fe50f2e)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dpctl.tensor.usm_ndarray</span></code></a> to the algorithm.</p>
 <p>The computation will run on the device where the input data is
 located, and the result will be returned as <code class="code docutils literal notranslate"><span class="pre">usm_ndarray</span></code> to the same
 device.</p>
@@ -1679,19 +1679,19 @@ device.</p>
 <p>The <code class="code docutils literal notranslate"><span class="pre">usm_ndarray</span></code> can only be consumed by the base methods
 like <code class="code docutils literal notranslate"><span class="pre">fit</span></code>, <code class="code docutils literal notranslate"><span class="pre">predict</span></code>, and <code class="code docutils literal notranslate"><span class="pre">transform</span></code>.
 Note that only the algorithms in Extension for Scikit-learn* support
-<code class="code docutils literal notranslate"><span class="pre">usm_ndarray</span></code>. The algorithms from the stock version of <a class="reference external" href="https://scikit-learn.org/stable/index.html" title="(in scikit-learn v1.6)"><span class="xref std std-doc">scikit-learn</span></a>
+<code class="code docutils literal notranslate"><span class="pre">usm_ndarray</span></code>. The algorithms from the stock version of <a class="reference external" href="https://scikit-learn.org/stable/index.html" title="(in scikit-learn v1.7)"><span class="xref std std-doc">scikit-learn</span></a>
 do not support this feature.</p>
 </div>
 </li>
 </ul>
 </section>
 <section id="example">
-<h2>Example<a class="headerlink" href="#example" title="Permalink to this heading"></a></h2>
+<h2>Example<a class="headerlink" href="#example" title="Link to this heading"></a></h2>
 <p>A full example of how to patch your code with Intel CPU/GPU optimizations:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sklearnex</span> <span class="kn">import</span> <span class="n">patch_sklearn</span><span class="p">,</span> <span class="n">config_context</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">sklearnex</span><span class="w"> </span><span class="kn">import</span> <span class="n">patch_sklearn</span><span class="p">,</span> <span class="n">config_context</span>
 <span class="n">patch_sklearn</span><span class="p">()</span>
 
-<span class="kn">from</span> <span class="nn">sklearn.cluster</span> <span class="kn">import</span> <span class="n">DBSCAN</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.cluster</span><span class="w"> </span><span class="kn">import</span> <span class="n">DBSCAN</span>
 
 <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">2.</span><span class="p">],</span> <span class="p">[</span><span class="mf">2.</span><span class="p">,</span> <span class="mf">2.</span><span class="p">],</span> <span class="p">[</span><span class="mf">2.</span><span class="p">,</span> <span class="mf">3.</span><span class="p">],</span>
               <span class="p">[</span><span class="mf">8.</span><span class="p">,</span> <span class="mf">7.</span><span class="p">],</span> <span class="p">[</span><span class="mf">8.</span><span class="p">,</span> <span class="mf">8.</span><span class="p">],</span> <span class="p">[</span><span class="mf">25.</span><span class="p">,</span> <span class="mf">80.</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
@@ -1719,7 +1719,7 @@ in the same context or absence of context. For example, a model whose <code clas
   <hr/>
 
   <div role="contentinfo">
-<jinja2.runtime.BlockReference object at 0x7fab1bdac7d0>
+<jinja2.runtime.BlockReference object at 0x7f908e39de50>
 <a href=
     "https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html" data-cookie-notice="true">
     Cookies
@@ -1746,7 +1746,7 @@ in the same context or absence of context. For example, a model whose <code clas
   </div>
   <div class="version-switcher__container dropdown">
     <script>
-      current_version = "2025.5"
+      current_version = "2025.6"
       project_name = "scikit-learn-intelex"
     </script>
     <div id="version-switcher-button"

@@ -1,30 +1,29 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html5" lang="en">
+<html class="writer-html5" lang="en" data-content_root="./">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Distributed mode (daal4py, CPU) &mdash; Extension for Scikit-learn* 2025.5 documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css" />
-      <link rel="stylesheet" type="text/css" href="_static/copybutton.css" />
-      <link rel="stylesheet" type="text/css" href="_static/custom.css" />
-      <link rel="stylesheet" type="text/css" href="_static/tabs.css" />
-      <link rel="stylesheet" type="text/css" href="_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css" />
+  <title>Distributed mode (daal4py, CPU) &mdash; Extension for Scikit-learn* 2025.6 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=132153fd" />
+      <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
 
   
     <link rel="shortcut icon" href="_static/favicon.png"/>
-      <script src="_static/jquery.js"></script>
-      <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-      <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-      <script src="_static/doctools.js"></script>
-      <script src="_static/sphinx_highlight.js"></script>
-      <script src="_static/clipboard.min.js"></script>
-      <script src="_static/copybutton.js"></script>
-      <script src="_static/version_switcher.js"></script>
-      <script src="_static/design-tabs.js"></script>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=61d495fa"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="_static/copybutton.js?v=f281be69"></script>
+      <script src="_static/version_switcher.js?v=1b8cff92"></script>
+      <script src="_static/design-tabs.js?v=f930bc37"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -72,7 +71,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
 <div class="version-switcher__container dropdown">
     <script>
-      current_version = "2025.5"
+      current_version = "2025.6"
       project_name = "scikit-learn-intelex"
     </script>
     <div id="version-switcher-button"
@@ -425,7 +424,7 @@
 <li class="toctree-l2"><a class="reference internal" href="array_api.html#example-usage">Example usage</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="array_api.html#dpnp-ndarrays">DPNP ndarrays</a></li>
 <li class="toctree-l3"><a class="reference internal" href="array_api.html#dpctl-usm-ndarrays">DPCTL usm_ndarrays</a></li>
-<li class="toctree-l3"><a class="reference internal" href="array_api.html#use-of-array-api-strict">Use of <cite>array-api-strict</cite></a></li>
+<li class="toctree-l3"><a class="reference internal" href="array_api.html#use-of-array-api-strict">Use of <code class="docutils literal notranslate"><span class="pre">array-api-strict</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -467,6 +466,7 @@
 <li class="toctree-l3"><a class="reference internal" href="daal4py.html#daal4py.mb.GBTDAALModel"><code class="docutils literal notranslate"><span class="pre">GBTDAALModel</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="daal4py.html#daal4py.mb.GBTDAALModel.is_classifier_"><code class="docutils literal notranslate"><span class="pre">GBTDAALModel.is_classifier_</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="daal4py.html#daal4py.mb.GBTDAALModel.is_regressor_"><code class="docutils literal notranslate"><span class="pre">GBTDAALModel.is_regressor_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="daal4py.html#daal4py.mb.GBTDAALModel.supports_shap_"><code class="docutils literal notranslate"><span class="pre">GBTDAALModel.supports_shap_</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="daal4py.html#daal4py.mb.GBTDAALModel.predict"><code class="docutils literal notranslate"><span class="pre">GBTDAALModel.predict()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="daal4py.html#daal4py.mb.GBTDAALModel.predict_proba"><code class="docutils literal notranslate"><span class="pre">GBTDAALModel.predict_proba()</span></code></a></li>
 </ul>
@@ -1591,13 +1591,13 @@
            <div itemprop="articleBody">
              
   <section id="distributed-mode-daal4py-cpu">
-<span id="distributed-daal4py"></span><h1>Distributed mode (daal4py, CPU)<a class="headerlink" href="#distributed-mode-daal4py-cpu" title="Permalink to this heading"></a></h1>
+<span id="distributed-daal4py"></span><h1>Distributed mode (daal4py, CPU)<a class="headerlink" href="#distributed-mode-daal4py-cpu" title="Link to this heading"></a></h1>
 <section id="introduction">
-<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this heading"></a></h2>
+<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
 <p>Module <a class="reference internal" href="about_daal4py.html#about-daal4py"><span class="std std-ref">daal4py</span></a> within the Extension for Scikit-learn* offers distributed versions of
 some algorithms that can run on compute clusters managed through the
 <a class="reference external" href="https://en.wikipedia.org/wiki/Message_Passing_Interface">MPI</a> framework, optionally aided
-by <a class="reference external" href="https://mpi4py.readthedocs.io/en/stable/index.html" title="(in MPI for Python v4.0)"><span class="xref std std-doc">mpi4py</span></a>.</p>
+by <a class="reference external" href="https://mpi4py.readthedocs.io/en/stable/index.html" title="(in MPI for Python v4.1)"><span class="xref std std-doc">mpi4py</span></a>.</p>
 <p>Compared to the <a class="reference internal" href="distributed-mode.html#distributed"><span class="std std-ref">SMPD mode</span></a> in the <code class="docutils literal notranslate"><span class="pre">sklearnex</span></code> module which runs on multiple
 GPUs, the distributed mode of algorithms in the <code class="docutils literal notranslate"><span class="pre">daal4py</span></code> module runs on CPU-based nodes - i.e.
 it can be used to execute algorithms on multiple machines that hold different pieces of the data
@@ -1608,7 +1608,7 @@ same algorithms to much larger problem sizes.</p>
 <figcaption>
 <p><span class="caption-text">On a 32-node cluster (1280 cores) daal4py computed K-Means (10
 clusters) of 1.12 TB of data in 107.4 seconds and 35.76 GB of data
-in 4.8 seconds.</span><a class="headerlink" href="#id1" title="Permalink to this image"></a></p>
+in 4.8 seconds.</span><a class="headerlink" href="#id1" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <div class="admonition warning">
@@ -1627,7 +1627,7 @@ library from source with that backend.</p>
 </div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>If using distributed mode with the <a class="reference external" href="https://mpi4py.readthedocs.io/en/stable/index.html" title="(in MPI for Python v4.0)"><span class="xref std std-doc">mpi4py</span></a> library, that library must also be compiled
+<p>If using distributed mode with the <a class="reference external" href="https://mpi4py.readthedocs.io/en/stable/index.html" title="(in MPI for Python v4.1)"><span class="xref std std-doc">mpi4py</span></a> library, that library must also be compiled
 with the same MPI backend as the Extension for Scikit-learn*. A version of <code class="docutils literal notranslate"><span class="pre">mpi4py</span></code> compiled with
 Intel’s MPI backend can be easily installed from Intel’s conda channel (see docs for
 <a class="reference internal" href="distributed-mode.html#distributed"><span class="std std-ref">SPMD mode</span></a> for more details):</p>
@@ -1637,7 +1637,7 @@ Intel’s MPI backend can be easily installed from Intel’s conda channel (see 
 </div>
 </section>
 <section id="using-distributed-mode">
-<h2>Using distributed mode<a class="headerlink" href="#using-distributed-mode" title="Permalink to this heading"></a></h2>
+<h2>Using distributed mode<a class="headerlink" href="#using-distributed-mode" title="Link to this heading"></a></h2>
 <p>In order to use distributed mode, the code to execute must be saved in a Python file,
 and this Python file must be executed through an MPI runner (<code class="docutils literal notranslate"><span class="pre">mpiexec</span></code> / <code class="docutils literal notranslate"><span class="pre">mpirun</span></code>).
 The MPI runner in turn is the software that handles aspects like which nodes to use,
@@ -1650,9 +1650,9 @@ subset of the data for each node, and after the distributed computations are fin
 function <a class="reference internal" href="daal4py.html#daal4py.daalfini" title="daal4py.daalfini"><code class="xref py py-obj docutils literal notranslate"><span class="pre">daal4py.daalfini</span></code></a> must be called before accessing the results object.</p>
 <p>Example:</p>
 <div class="literal-block-wrapper docutils container" id="id2">
-<div class="code-block-caption"><span class="caption-text">File <code class="docutils literal notranslate"><span class="pre">distributed_qr.py</span></code></span><a class="headerlink" href="#id2" title="Permalink to this code"></a></div>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">daal4py</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<div class="code-block-caption"><span class="caption-text">File <code class="docutils literal notranslate"><span class="pre">distributed_qr.py</span></code></span><a class="headerlink" href="#id2" title="Link to this code"></a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">daal4py</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="n">NUM_NODES</span> <span class="o">=</span> <span class="n">daal4py</span><span class="o">.</span><span class="n">num_procs</span><span class="p">()</span> <span class="c1"># this the MPI world size</span>
 <span class="n">THIS_NODE</span> <span class="o">=</span> <span class="n">daal4py</span><span class="o">.</span><span class="n">my_procid</span><span class="p">()</span> <span class="c1"># this is the MPI rank</span>
 
@@ -1711,13 +1711,13 @@ of the process, for example <code class="docutils literal notranslate"><span cla
 <p>Note that the example above used functions from <code class="docutils literal notranslate"><span class="pre">daal4py</span></code> to get the world size
 (<a class="reference internal" href="daal4py.html#daal4py.num_procs" title="daal4py.num_procs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">daal4py.num_procs</span></code></a>) and process rank (<a class="reference internal" href="daal4py.html#daal4py.my_procid" title="daal4py.my_procid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">daal4py.my_procid</span></code></a>) from MPI. Module <code class="docutils literal notranslate"><span class="pre">daal4py</span></code>
 provides simple wrappers over these two MPI functions only, but for further MPI functionalities,
-one can use the package <a class="reference external" href="https://mpi4py.readthedocs.io/en/stable/index.html" title="(in MPI for Python v4.0)"><span class="xref std std-doc">mpi4py</span></a> together with <code class="docutils literal notranslate"><span class="pre">daal4py</span></code>.</p>
+one can use the package <a class="reference external" href="https://mpi4py.readthedocs.io/en/stable/index.html" title="(in MPI for Python v4.1)"><span class="xref std std-doc">mpi4py</span></a> together with <code class="docutils literal notranslate"><span class="pre">daal4py</span></code>.</p>
 <p>Same example calling MPI functionalities from <code class="docutils literal notranslate"><span class="pre">mpi4py</span></code> instead:</p>
 <div class="literal-block-wrapper docutils container" id="id3">
-<div class="code-block-caption"><span class="caption-text">File <code class="docutils literal notranslate"><span class="pre">distributed_qr_mpi4py.py</span></code></span><a class="headerlink" href="#id3" title="Permalink to this code"></a></div>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">daal4py</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">mpi4py</span> <span class="kn">import</span> <span class="n">MPI</span>
+<div class="code-block-caption"><span class="caption-text">File <code class="docutils literal notranslate"><span class="pre">distributed_qr_mpi4py.py</span></code></span><a class="headerlink" href="#id3" title="Link to this code"></a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">daal4py</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mpi4py</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPI</span>
 
 <span class="n">comm</span> <span class="o">=</span> <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span>
 <span class="n">NUM_NODES</span> <span class="o">=</span> <span class="n">comm</span><span class="o">.</span><span class="n">Get_size</span><span class="p">()</span>
@@ -1754,7 +1754,7 @@ one can use the package <a class="reference external" href="https://mpi4py.readt
 </div>
 </section>
 <section id="supported-algorithms">
-<h2>Supported algorithms<a class="headerlink" href="#supported-algorithms" title="Permalink to this heading"></a></h2>
+<h2>Supported algorithms<a class="headerlink" href="#supported-algorithms" title="Link to this heading"></a></h2>
 <p>The following algorithms in <code class="docutils literal notranslate"><span class="pre">daal4py</span></code> have support for distributed mode:</p>
 <ul class="simple">
 <li><p><a class="reference internal" href="daal4py.html#daal4py.pca" title="daal4py.pca"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PCA</span></code></a></p></li>
@@ -1782,7 +1782,7 @@ one can use the package <a class="reference external" href="https://mpi4py.readt
   <hr/>
 
   <div role="contentinfo">
-<jinja2.runtime.BlockReference object at 0x7fab1b275110>
+<jinja2.runtime.BlockReference object at 0x7f908e5e1a60>
 <a href=
     "https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html" data-cookie-notice="true">
     Cookies
@@ -1809,7 +1809,7 @@ one can use the package <a class="reference external" href="https://mpi4py.readt
   </div>
   <div class="version-switcher__container dropdown">
     <script>
-      current_version = "2025.5"
+      current_version = "2025.6"
       project_name = "scikit-learn-intelex"
     </script>
     <div id="version-switcher-button"
