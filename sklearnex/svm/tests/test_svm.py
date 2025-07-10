@@ -100,6 +100,8 @@ def test_sklearnex_import_nusvr(dataframe, queue):
 
 # https://github.com/uxlfoundation/scikit-learn-intelex/issues/1880
 def test_works_with_unsorted_indices():
+    from sklearnex.svm import SVC
+
     X = csr_class(
         (
             np.array(
