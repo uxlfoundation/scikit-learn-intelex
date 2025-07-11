@@ -28,7 +28,7 @@ package:
 
 # Reminder: source should point to path for repo or github archive for feedstock
 # source:
-#   url: https://github.com/intel/scikit-learn-intelex/archive/{{ version }}.tar.gz
+#   url: https://github.com/uxlfoundation/scikit-learn-intelex/archive/{{ version }}.tar.gz
 #   sha256: ...
 source:
   path: ..
@@ -88,9 +88,9 @@ test:
     - pandas
     - xgboost
     - lightgbm
-    # TODO: re-enable shap and catboost when conda-forge packages has a numpy 2.* compatibility
-    # - shap
-    # - catboost
+    - shap
+    - catboost
+    - treelite
     - array-api-compat
     - array-api-strict
   source_files:
@@ -99,12 +99,12 @@ test:
     - tests
 
 about:
-  home: https://intel.github.io/scikit-learn-intelex
+  home: https://uxlfoundation.github.io/scikit-learn-intelex
   license: Apache-2.0
   license_file:
     - LICENSE
     - doc/third-party-programs-sklearnex.txt
-  summary: Intel(R) Extension for Scikit-learn* is a seamless way to speed up your Scikit-learn application.
+  summary: Extension for Scikit-learn* is a seamless way to speed up your Scikit-learn application.
   description: |
     <strong>LEGAL NOTICE: Use of this software package is subject to the
     software license agreement (as set forth above, in the license section of
@@ -114,8 +114,8 @@ about:
     <br/><br/>
     EULA: <a href="https://opensource.org/licenses/Apache-2.0" target="_blank">Apache-2.0</a>
     <br/><br/>
-  dev_url: https://github.com/intel/scikit-learn-intelex
-  doc_url: https://intel.github.io/scikit-learn-intelex
+  dev_url: https://github.com/uxlfoundation/scikit-learn-intelex
+  doc_url: https://uxlfoundation.github.io/scikit-learn-intelex
 
 extra:
   recipe-maintainers:

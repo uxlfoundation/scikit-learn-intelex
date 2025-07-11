@@ -32,22 +32,32 @@ from onedal.covariance import (
 )
 from onedal.utils._array_api import _is_numpy_namespace
 
+from .._config import get_config
 from .._device_offload import dispatch, wrap_output_data
-from .._utils import IntelEstimator, PatchingConditionsChain, register_hyperparameters
+from .._utils import (
+    PatchingConditionsChain,
+    _add_inc_serialization_note,
+    register_hyperparameters,
+)
+from ..base import oneDALEstimator
 from ..metrics import pairwise_distances
 from ..utils._array_api import get_namespace
 from ..utils.validation import validate_data
+
 
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import Interval
 
 
 @control_n_jobs(decorated_methods=["partial_fit", "fit", "_onedal_finalize_fit"])
-class IncrementalEmpiricalCovariance(IntelEstimator, BaseEstimator):
+class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
     """
-    Maximum likelihood covariance estimator that allows for the estimation when the data are split into
-    batches. The user can use the ``partial_fit`` method to provide a single batch of data or use the ``fit`` method to provide
-    the entire dataset.
+    Incremental maximum likelihood covariance estimator.
+
+    Estimator that allows for the estimation when the data are split into
+    batches. The user can use the ``partial_fit`` method to provide a
+    single batch of data or use the ``fit`` method to provide the entire
+    dataset.
 
     Parameters
     ----------
@@ -63,8 +73,8 @@ class IncrementalEmpiricalCovariance(IntelEstimator, BaseEstimator):
     batch_size : int, default=None
         The number of samples to use for each batch. Only used when calling
         ``fit``. If ``batch_size`` is ``None``, then ``batch_size``
-        is inferred from the data and set to ``5 * n_features``, to provide a
-        balance between approximation accuracy and memory consumption.
+        is inferred from the data and set to ``5 * n_features``, to provide
+        a balance between approximation accuracy and memory consumption.
 
     copy : bool, default=True
         If False, X will be overwritten. ``copy=False`` can be used to
@@ -88,12 +98,11 @@ class IncrementalEmpiricalCovariance(IntelEstimator, BaseEstimator):
     n_features_in_ : int
         Number of features seen during ``fit`` or ``partial_fit``.
 
-    Note
-    ----
-    Serializing instances of this class will trigger a forced finalization of calculations.
-    Since finalize_fit can't be dispatched without directly provided queue
-    and the dispatching policy can't be serialized, the computation is finalized
-    during serialization and the policy is not saved in serialized data.
+    Notes
+    -----
+    Sparse data formats are not supported. Input dtype must be ``float32`` or ``float64``.
+
+    %incremental_serialization_note%
 
     Examples
     --------
@@ -113,6 +122,8 @@ class IncrementalEmpiricalCovariance(IntelEstimator, BaseEstimator):
     >>> inccov.location_
     np.array([2., 3.])
     """
+
+    __doc__ = _add_inc_serialization_note(__doc__)
 
     _onedal_incremental_covariance = staticmethod(onedal_IncrementalEmpiricalCovariance)
 
@@ -141,9 +152,9 @@ class IncrementalEmpiricalCovariance(IntelEstimator, BaseEstimator):
         )
         return patching_status
 
-    def _onedal_finalize_fit(self, queue=None):
+    def _onedal_finalize_fit(self):
         assert hasattr(self, "_onedal_estimator")
-        self._onedal_estimator.finalize_fit(queue=queue)
+        self._onedal_estimator.finalize_fit()
         self._need_to_finalize = False
 
         if not daal_check_version((2024, "P", 400)) and self.assume_centered:
@@ -181,28 +192,20 @@ class IncrementalEmpiricalCovariance(IntelEstimator, BaseEstimator):
             )
 
     def _onedal_partial_fit(self, X, queue=None, check_input=True):
-
         first_pass = not hasattr(self, "n_samples_seen_") or self.n_samples_seen_ == 0
 
-        if check_input:
+        if check_input and get_config()["use_raw_input"]:
             xp, _ = get_namespace(X)
             if sklearn_check_version("1.2"):
                 self._validate_params()
-
-            if sklearn_check_version("1.0"):
-                X = validate_data(
-                    self,
-                    X,
-                    dtype=[xp.float64, xp.float32],
-                    reset=first_pass,
-                    copy=self.copy,
-                )
-            else:
-                X = check_array(
-                    X,
-                    dtype=[xp.float64, xp.float32],
-                    copy=self.copy,
-                )
+            X = validate_data(
+                self,
+                X,
+                dtype=[np.float64, np.float32],
+                reset=first_pass,
+                copy=self.copy,
+                ensure_all_finite=False,
+            )
 
         onedal_params = {
             "method": "dense",
@@ -230,18 +233,13 @@ class IncrementalEmpiricalCovariance(IntelEstimator, BaseEstimator):
 
         check_is_fitted(self)
         location = self.location_
-        if sklearn_check_version("1.0"):
-            X = validate_data(
-                self,
-                X_test,
-                dtype=[xp.float64, xp.float32],
-                reset=False,
-            )
-        else:
-            X = check_array(
-                X_test,
-                dtype=[xp.float64, xp.float32],
-            )
+
+        X = validate_data(
+            self,
+            X_test,
+            dtype=[xp.float64, xp.float32],
+            reset=False,
+        )
 
         if not _is_numpy_namespace(xp):
             location = xp.asarray(location, device=X_test.device)
@@ -281,7 +279,7 @@ class IncrementalEmpiricalCovariance(IntelEstimator, BaseEstimator):
 
         Returns
         -------
-        self : object
+        self : IncrementalEmpiricalCovariance
             Returns the instance itself.
         """
         return dispatch(
@@ -297,7 +295,7 @@ class IncrementalEmpiricalCovariance(IntelEstimator, BaseEstimator):
 
     def fit(self, X, y=None):
         """
-        Fit the model with X, using minibatches of size batch_size.
+        Fit the model with X, using minibatches of size ``batch_size``.
 
         Parameters
         ----------
@@ -310,7 +308,7 @@ class IncrementalEmpiricalCovariance(IntelEstimator, BaseEstimator):
 
         Returns
         -------
-        self : object
+        self : IncrementalEmpiricalCovariance
             Returns the instance itself.
         """
 
@@ -329,20 +327,18 @@ class IncrementalEmpiricalCovariance(IntelEstimator, BaseEstimator):
         if hasattr(self, "_onedal_estimator"):
             self._onedal_estimator._reset()
 
-        if sklearn_check_version("1.2"):
-            self._validate_params()
+        if not get_config()["use_raw_input"]:
+            if sklearn_check_version("1.2"):
+                self._validate_params()
 
-        xp, _ = get_namespace(X)
-        if sklearn_check_version("1.0"):
-            X = validate_data(
+
+          xp, _ = get_namespace(X)
+          X = validate_data(
                 self,
                 X,
                 dtype=[xp.float64, xp.float32],
                 copy=self.copy,
             )
-        else:
-            X = check_array(X, dtype=[xp.float64, xp.float32], copy=self.copy)
-            self.n_features_in_ = X.shape[1]
 
         self.batch_size_ = self.batch_size if self.batch_size else 5 * self.n_features_in_
 
@@ -352,17 +348,15 @@ class IncrementalEmpiricalCovariance(IntelEstimator, BaseEstimator):
             )
 
         for batch in gen_batches(X.shape[0], self.batch_size_):
-            X_batch = X[batch]
+            X_batch = X[batch, ...]
             self._onedal_partial_fit(X_batch, queue=queue, check_input=False)
 
-        self._onedal_finalize_fit(queue=queue)
+        self._onedal_finalize_fit()
 
         return self
 
     # expose sklearnex pairwise_distances if mahalanobis distance eventually supported
     def mahalanobis(self, X):
-        if sklearn_check_version("1.0"):
-            self._check_feature_names(X, reset=False)
 
         xp, _ = get_namespace(X)
         precision = self.get_precision()
@@ -371,12 +365,14 @@ class IncrementalEmpiricalCovariance(IntelEstimator, BaseEstimator):
         # self.location_) , and will check for finiteness via check array
         # check_feature_names will match _validate_data functionally
         location = self.location_[None, :]
+
         if not _is_numpy_namespace(xp):
             # Guarantee that inputs to pairwise_distances match in type and location
             location = xp.asarray(location, device=X.device)
 
         try:
             dist = pairwise_distances(X, location, metric="mahalanobis", VI=precision)
+
         except ValueError as e:
             # Throw the expected sklearn error in an n_feature length violation
             if "Incompatible dimension for X and Y matrices: X.shape[1] ==" in str(e):
@@ -386,6 +382,9 @@ class IncrementalEmpiricalCovariance(IntelEstimator, BaseEstimator):
                 )
             else:
                 raise e
+
+        if not _is_numpy_namespace(xp):
+            dist = xp.asarray(dist, device=X.device)
 
         return (xp.reshape(dist, (-1,))) ** 2
 

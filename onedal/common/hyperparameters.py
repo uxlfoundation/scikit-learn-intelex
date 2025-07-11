@@ -19,7 +19,7 @@ from typing import Any, Dict, Tuple
 from warnings import warn
 
 from daal4py.sklearn._utils import daal_check_version
-from onedal import _backend
+from onedal import _default_backend as backend
 
 if not daal_check_version((2024, "P", 0)):
     warn("Hyperparameters are supported in oneDAL starting from 2024.0.0 version.")
@@ -98,12 +98,15 @@ else:
         (
             "linear_regression",
             "train",
-        ): _backend.linear_model.regression.train_hyperparameters(),
-        ("covariance", "compute"): _backend.covariance.compute_hyperparameters(),
+        ): backend.linear_model.regression.train_hyperparameters(),
+        ("covariance", "compute"): backend.covariance.compute_hyperparameters(),
     }
     if daal_check_version((2024, "P", 300)):
-        df_infer_hp = _backend.decision_forest.infer_hyperparameters
+        df_infer_hp = backend.decision_forest.infer_hyperparameters
         hyperparameters_backend[("decision_forest", "infer")] = df_infer_hp()
+    if daal_check_version((2025, "P", 700)):
+        pca_train_hp = backend.decomposition.dim_reduction.train_hyperparameters
+        hyperparameters_backend[("pca", "train")] = pca_train_hp()
     hyperparameters_map = {}
 
     for (algorithm, op), hyperparameters in hyperparameters_backend.items():

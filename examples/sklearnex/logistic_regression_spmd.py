@@ -76,7 +76,7 @@ model_spmd.fit(dpt_X_train, dpt_y_train)
 y_predict = model_spmd.predict(dpt_X_test)
 
 print("Distributed LogisticRegression results:")
-print("Coeficients on rank {}:\n{}:".format(rank, model_spmd.coef_))
+print("Coefficients on rank {}:\n{}:".format(rank, model_spmd.coef_))
 print("Intercept on rank {}:\n{}:".format(rank, model_spmd.intercept_))
 print("Ground truth (first 5 observations on rank {}):\n{}".format(rank, y_test[:5]))
 print(

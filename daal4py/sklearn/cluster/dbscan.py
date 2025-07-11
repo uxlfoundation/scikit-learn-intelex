@@ -26,6 +26,7 @@ import daal4py
 
 from .._n_jobs_support import control_n_jobs
 from .._utils import PatchingConditionsChain, getFPType, make2d, sklearn_check_version
+from ..utils.validation import check_feature_names
 
 if sklearn_check_version("1.1") and not sklearn_check_version("1.2"):
     from sklearn.utils import check_scalar
@@ -35,10 +36,10 @@ def _daal_dbscan(X, eps=0.5, min_samples=5, sample_weight=None):
     ww = make2d(sample_weight) if sample_weight is not None else None
     XX = make2d(X)
 
-    fpt = getFPType(XX)
+    fpt = getFPType(XX)  # codespell:ignore fpt
     alg = daal4py.dbscan(
         method="defaultDense",
-        fptype=fpt,
+        fptype=fpt,  # codespell:ignore fpt
         epsilon=float(eps),
         minObservations=int(min_samples),
         memorySavingMode=False,
@@ -121,8 +122,7 @@ class DBSCAN(DBSCAN_original):
             if self.eps <= 0.0:
                 raise ValueError(f"eps == {self.eps}, must be > 0.0.")
 
-        if sklearn_check_version("1.0"):
-            self._check_feature_names(X, reset=True)
+        check_feature_names(self, X, reset=True)
 
         if sample_weight is not None:
             sample_weight = _check_sample_weight(sample_weight, X)

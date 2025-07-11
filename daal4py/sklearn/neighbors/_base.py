@@ -40,6 +40,7 @@ from .._utils import (
     getFPType,
     sklearn_check_version,
 )
+from ..utils.validation import check_feature_names, check_n_features, get_requires_y_tag
 
 if not sklearn_check_version("1.2"):
     from sklearn.neighbors._base import _check_weights
@@ -239,10 +240,7 @@ def validate_data(
     estimator, X, y=None, reset=True, validate_separately=False, **check_params
 ):
     if y is None:
-        try:
-            requires_y = estimator._get_tags()["requires_y"]
-        except KeyError:
-            requires_y = False
+        requires_y = get_requires_y_tag(estimator)
 
         if requires_y:
             raise ValueError(
@@ -265,7 +263,7 @@ def validate_data(
         out = X, y
 
     if check_params.get("ensure_2d", True):
-        estimator._check_n_features(X, reset=reset)
+        check_n_features(estimator, X, reset=reset)
 
     return out
 
@@ -304,15 +302,10 @@ class NeighborsBase(BaseNeighborsBase):
                     stacklevel=2,
                 )
 
-        if (
-            hasattr(self, "weights")
-            and sklearn_check_version("1.0")
-            and not sklearn_check_version("1.2")
-        ):
+        if hasattr(self, "weights") and not sklearn_check_version("1.2"):
             self.weights = _check_weights(self.weights)
 
-        if sklearn_check_version("1.0"):
-            self._check_feature_names(X, reset=True)
+        check_feature_names(self, X, reset=True)
 
         X_incorrect_type = isinstance(
             X, (KDTree, BallTree, NeighborsBase, BaseNeighborsBase)
@@ -322,10 +315,7 @@ class NeighborsBase(BaseNeighborsBase):
         shape = None
         correct_n_classes = True
 
-        try:
-            requires_y = self._get_tags()["requires_y"]
-        except KeyError:
-            requires_y = False
+        requires_y = get_requires_y_tag(self)
 
         if y is not None or requires_y:
             if not X_incorrect_type or y is None:

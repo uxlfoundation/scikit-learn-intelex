@@ -19,28 +19,32 @@ import warnings
 
 import numpy as np
 from sklearn.base import BaseEstimator, MultiOutputMixin, RegressorMixin
+from sklearn.linear_model import LinearRegression as _sklearn_LinearRegression
 from sklearn.metrics import r2_score
 from sklearn.utils import check_array, gen_batches
 from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
-from daal4py.sklearn._utils import sklearn_check_version
+from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal.linear_model import (
     IncrementalLinearRegression as onedal_IncrementalLinearRegression,
 )
+from sklearnex._config import get_config
+
+from ..utils.validation import validate_data
 
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import Interval
 
-if sklearn_check_version("1.6"):
-    from sklearn.utils.validation import validate_data
-else:
-    validate_data = BaseEstimator._validate_data
-
 from onedal.common.hyperparameters import get_hyperparameters
 
 from .._device_offload import dispatch, wrap_output_data
-from .._utils import IntelEstimator, PatchingConditionsChain, register_hyperparameters
+from .._utils import (
+    PatchingConditionsChain,
+    _add_inc_serialization_note,
+    register_hyperparameters,
+)
+from ..base import oneDALEstimator
 
 
 @register_hyperparameters(
@@ -53,19 +57,22 @@ from .._utils import IntelEstimator, PatchingConditionsChain, register_hyperpara
     decorated_methods=["fit", "partial_fit", "predict", "score", "_onedal_finalize_fit"]
 )
 class IncrementalLinearRegression(
-    IntelEstimator, MultiOutputMixin, RegressorMixin, BaseEstimator
+    MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEstimator
 ):
     """
-    Trains a linear regression model, allows for computation if the data are split into
-    batches. The user can use the ``partial_fit`` method to provide a single batch of data or use the ``fit`` method to provide
+    Incremental Ordinary least squares Linear Regression.
+
+    Trains a linear regression model, allows for computation if the data
+    are split into batches. The user can use the ``partial_fit`` method
+    to provide a single batch of data or use the ``fit`` method to provide
     the entire dataset.
 
     Parameters
     ----------
     fit_intercept : bool, default=True
-    Whether to calculate the intercept for this model. If set
-    to False, no intercept will be used in calculations
-    (i.e. data is expected to be centered).
+        Whether to calculate the intercept for this model. If set
+        to False, no intercept will be used in calculations
+        (i.e. data is expected to be centered).
 
     copy_X : bool, default=True
         If True, X will be copied; else, it may be overwritten.
@@ -103,6 +110,12 @@ class IncrementalLinearRegression(
     n_features_in_ : int
         Number of features seen during ``fit`` or ``partial_fit``.
 
+    Notes
+    -----
+    Sparse data formats are not supported. Input dtype must be ``float32`` or ``float64``.
+
+    %incremental_serialization_note%
+
     Examples
     --------
     >>> import numpy as np
@@ -122,6 +135,8 @@ class IncrementalLinearRegression(
     >>> inclr.intercept_
     np.array(0.)
     """
+
+    __doc__ = _add_inc_serialization_note(__doc__)
 
     _onedal_incremental_linear = staticmethod(onedal_IncrementalLinearRegression)
 
@@ -149,22 +164,16 @@ class IncrementalLinearRegression(
     _onedal_gpu_supported = _onedal_supported
 
     def _onedal_predict(self, X, queue=None):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
+        if get_config()["use_raw_input"] is False:
+            if sklearn_check_version("1.2"):
+                self._validate_params()
 
-        if sklearn_check_version("1.0"):
             X = validate_data(
                 self,
                 X,
                 dtype=[np.float64, np.float32],
                 copy=self.copy_X,
                 reset=False,
-            )
-        else:
-            X = check_array(
-                X,
-                dtype=[np.float64, np.float32],
-                copy=self.copy_X,
             )
 
         assert hasattr(self, "_onedal_estimator")
@@ -183,32 +192,20 @@ class IncrementalLinearRegression(
         if sklearn_check_version("1.2"):
             self._validate_params()
 
+        use_raw_input = get_config().get("use_raw_input", False) is True
+        # never check input when using raw input
+        check_input &= use_raw_input is False
         if check_input:
-            if sklearn_check_version("1.0"):
-                X, y = validate_data(
-                    self,
-                    X,
-                    y,
-                    dtype=[np.float64, np.float32],
-                    reset=first_pass,
-                    copy=self.copy_X,
-                    multi_output=True,
-                    force_all_finite=False,
-                )
-            else:
-                X = check_array(
-                    X,
-                    dtype=[np.float64, np.float32],
-                    copy=self.copy_X,
-                    force_all_finite=False,
-                )
-                y = check_array(
-                    y,
-                    dtype=[np.float64, np.float32],
-                    copy=False,
-                    ensure_2d=False,
-                    force_all_finite=False,
-                )
+            X, y = validate_data(
+                self,
+                X,
+                y,
+                dtype=[np.float64, np.float32],
+                reset=first_pass,
+                copy=self.copy_X,
+                multi_output=True,
+                ensure_all_finite=False,
+            )
 
         if first_pass:
             self.n_samples_seen_ = X.shape[0]
@@ -221,21 +218,28 @@ class IncrementalLinearRegression(
         self._onedal_estimator.partial_fit(X, y, queue=queue)
         self._need_to_finalize = True
 
-    def _onedal_finalize_fit(self, queue=None):
+    if daal_check_version((2025, "P", 200)):
+
+        def _onedal_validate_underdetermined(self, n_samples, n_features):
+            pass
+
+    else:
+
+        def _onedal_validate_underdetermined(self, n_samples, n_features):
+            is_underdetermined = n_samples < n_features + int(self.fit_intercept)
+            if is_underdetermined:
+                raise ValueError("Not enough samples for oneDAL")
+
+    def _onedal_finalize_fit(self):
         assert hasattr(self, "_onedal_estimator")
-        is_underdetermined = self.n_samples_seen_ < self.n_features_in_ + int(
-            self.fit_intercept
-        )
-        if is_underdetermined:
-            raise ValueError("Not enough samples to finalize")
-        self._onedal_estimator.finalize_fit(queue=queue)
+        self._onedal_validate_underdetermined(self.n_samples_seen_, self.n_features_in_)
+        self._onedal_estimator.finalize_fit()
         self._need_to_finalize = False
 
     def _onedal_fit(self, X, y, queue=None):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
-
-        if sklearn_check_version("1.0"):
+        if get_config()["use_raw_input"] is False:
+            if sklearn_check_version("1.2"):
+                self._validate_params()
             X, y = validate_data(
                 self,
                 X,
@@ -245,24 +249,10 @@ class IncrementalLinearRegression(
                 multi_output=True,
                 ensure_2d=True,
             )
-        else:
-            X = check_array(
-                X,
-                dtype=[np.float64, np.float32],
-                copy=self.copy_X,
-            )
-            y = check_array(
-                y,
-                dtype=[np.float64, np.float32],
-                copy=False,
-                ensure_2d=False,
-            )
 
         n_samples, n_features = X.shape
 
-        is_underdetermined = n_samples < n_features + int(self.fit_intercept)
-        if is_underdetermined:
-            raise ValueError("Not enough samples to run oneDAL backend")
+        self._onedal_validate_underdetermined(n_samples, n_features)
 
         if self.batch_size is None:
             self.batch_size_ = 5 * n_features
@@ -277,9 +267,6 @@ class IncrementalLinearRegression(
             X_batch, y_batch = X[batch], y[batch]
             self._onedal_partial_fit(X_batch, y_batch, check_input=False, queue=queue)
 
-        if sklearn_check_version("1.2"):
-            self._validate_params()
-
         # finite check occurs on onedal side
         self.n_features_in_ = n_features
 
@@ -288,7 +275,7 @@ class IncrementalLinearRegression(
                 "Only one sample available. You may want to reshape your data array"
             )
 
-        self._onedal_finalize_fit(queue=queue)
+        self._onedal_finalize_fit()
         return self
 
     @property
@@ -331,8 +318,7 @@ class IncrementalLinearRegression(
 
     def partial_fit(self, X, y, check_input=True):
         """
-        Incremental fit linear model with X and y. All of X and y is
-        processed as a single batch.
+        Incremental fit with X and y. X and y are processed as a single batch.
 
         Parameters
         ----------
@@ -344,9 +330,12 @@ class IncrementalLinearRegression(
             Target values, where ``n_samples`` is the number of samples and
             ``n_targets`` is the number of targets.
 
+        check_input : bool, default=True
+            Run validate_data on X and y.
+
         Returns
         -------
-        self : object
+        self : IncrementalLinearRegression
             Returns the instance itself.
         """
 
@@ -374,7 +363,7 @@ class IncrementalLinearRegression(
             ``n_features`` is the number of features. It is necessary for
             ``n_samples`` to be not less than ``n_features`` if ``fit_intercept``
             is False and not less than ``n_features + 1`` if ``fit_intercept``
-            is True
+            is 'True'.
 
         y : array-like of shape (n_samples,) or (n_samples, n_targets)
             Target values, where ``n_samples`` is the number of samples and
@@ -382,7 +371,7 @@ class IncrementalLinearRegression(
 
         Returns
         -------
-        self : object
+        self : IncrementalLinearRegression
             Returns the instance itself.
         """
 
@@ -400,22 +389,6 @@ class IncrementalLinearRegression(
 
     @wrap_output_data
     def predict(self, X, y=None):
-        """
-        Predict using the linear model.
-
-        Parameters
-        ----------
-        X : array-like or sparse matrix, shape (n_samples, n_features)
-            Samples.
-
-        y : Ignored
-            Not used, present for API consistency by convention.
-
-        Returns
-        -------
-        C : array, shape (n_samples, n_targets)
-            Returns predicted values.
-        """
         check_is_fitted(self)
         return dispatch(
             self,
@@ -429,45 +402,6 @@ class IncrementalLinearRegression(
 
     @wrap_output_data
     def score(self, X, y, sample_weight=None):
-        """Return the coefficient of determination of the prediction.
-
-        The coefficient of determination :math:`R^2` is defined as
-        :math:`(1 - \\frac{u}{v})`, where :math:`u` is the residual
-        sum of squares ``((y_true - y_pred)** 2).sum()`` and :math:`v`
-        is the total sum of squares ``((y_true - y_true.mean()) ** 2).sum()``.
-        The best possible score is 1.0 and it can be negative (because the
-        model can be arbitrarily worse). A constant model that always predicts
-        the expected value of `y`, disregarding the input features, would get
-        a :math:`R^2` score of 0.0.
-
-        Parameters
-        ----------
-        X : array-like of shape (n_samples, n_features)
-            Test samples. For some estimators this may be a precomputed
-            kernel matrix or a list of generic objects instead with shape
-            ``(n_samples, n_samples_fitted)``, where ``n_samples_fitted``
-            is the number of samples used in the fitting for the estimator.
-
-        y : array-like of shape (n_samples,) or (n_samples, n_outputs)
-            True values for `X`.
-
-        sample_weight : array-like of shape (n_samples,), default=None
-            Sample weights.
-
-        Returns
-        -------
-        score : float
-            :math:`R^2` of ``self.predict(X)`` w.r.t. `y`.
-
-        Notes
-        -----
-        The :math:`R^2` score used when calling ``score`` on a regressor uses
-        ``multioutput='uniform_average'`` from version 0.23 to keep consistent
-        with default value of :func:`~sklearn.metrics.r2_score`.
-        This influences the ``score`` method of all the multioutput
-        regressors (except for
-        :class:`~sklearn.multioutput.MultiOutputRegressor`).
-        """
         check_is_fitted(self)
         return dispatch(
             self,
@@ -480,3 +414,6 @@ class IncrementalLinearRegression(
             y,
             sample_weight=sample_weight,
         )
+
+    score.__doc__ = _sklearn_LinearRegression.score.__doc__
+    predict.__doc__ = _sklearn_LinearRegression.predict.__doc__
