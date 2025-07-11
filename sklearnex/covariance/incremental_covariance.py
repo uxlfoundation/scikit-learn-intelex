@@ -193,7 +193,7 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
     def _onedal_partial_fit(self, X, queue=None, check_input=True):
         first_pass = not hasattr(self, "n_samples_seen_") or self.n_samples_seen_ == 0
 
-        if check_input and get_config()["use_raw_input"]:
+        if check_input and not get_config()["use_raw_input"]:
             xp, _ = get_namespace(X)
             if sklearn_check_version("1.2"):
                 self._validate_params()
