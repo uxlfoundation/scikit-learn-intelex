@@ -40,5 +40,42 @@ _**Note:** If building the extension modules in-place [per the instructions here
 Optionally, a JSON report of the results can be produced (requires package `pytest-json-report`) by setting an environment variable `JSON_REPORT_FILE`, indicating the location where to produce a JSON output file - note that the test runner changes the PyTest root directory, so it should be specified as an absolute path, or otherwise will get written into the `site-packages` folder for `sklearn`:
 
 ```shell
-SELECTED_TESTS=all DESELECTED_TESTS="" JSON_REPORT_FILE="$(pwd)/sklearn_test_results.json" python .ci/scripts/run_sklearn_tests.py
+SELECTED_TESTS=all \
+DESELECTED_TESTS="" \
+JSON_REPORT_FILE="$(pwd)/sklearn_test_results.json" \
+    python .ci/scripts/run_sklearn_tests.py
+```
+
+## Comparing test reports
+
+A small utility to compare two JSON test reports is provided under [tests/util_compare_json_reports.py](https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/tests/util_compare_json_reports.py), which can be useful for example when comparing changes before vs. after a given commit.
+
+The file is a python script which produces a new JSON output file highlighting the tests that had different outcomes between two JSON reports. It needs to be executed with the following arguments, prefixed with two dashes and with the value passed after an equal sign (e.g. `--arg1=value`):
+
+* `json1`: path to a first JSON report file from `pytest-json-report`.
+* `json2`: path to a second JSON report file from `pytest-json-report`.
+* `name1`: name that the tests from the first file will use as JSON keys in the generated output file.
+* `name2`: name that the tests from the second file will use as JSON keys in the generated output file.
+* `output`: file name where to save the result JSON file that highlights the differences.
+
+Example:
+```shell
+python tests/util_compare_json_reports.py \
+    --json1=logs_before.json \
+    --json2=logs_after.json \
+    --name1="before" \
+    --name2="after" \
+    --output="diffs_before_after.json"
+```
+
+The result will be a new JSON file which will contain only entries for tests that were present in both files and which had different outcomes, with a structure as follows:
+```
+"test_name": { # taken from 'nodeid' in the pytest json reports
+    <name1>: { # taken from argument 'name1'
+        ...    # json from entry in pytest report under 'tests', minus key 'nodeid'
+    },
+    <name2>: { # taken from argument 'name2'
+        ...    # json from entry in pytest report under 'tests', minus key 'nodeid'
+    }
+}
 ```
