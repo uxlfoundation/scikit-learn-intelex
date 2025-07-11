@@ -36,8 +36,6 @@ from ..utils.validation import validate_data
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import Interval
 
-from onedal.common.hyperparameters import get_hyperparameters
-
 from .._device_offload import dispatch, wrap_output_data
 from .._utils import (
     PatchingConditionsChain,
