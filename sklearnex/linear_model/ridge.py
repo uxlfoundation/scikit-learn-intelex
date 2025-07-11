@@ -332,12 +332,12 @@ if daal_check_version((2024, "P", 600)):
 
             if sklearn_check_version("1.6"):
                 if y.ndim == 1 or y.shape[1] == 1:
-                    self._coef_ = xp.reshape(self._coef_, (-1,))
-                    self._intercept_ = self.intercept_[0, ...]
+                    self._coef_ = self._coef_[0, ...]  # set to 1d
+                    self._intercept_ = self.intercept_[0]  # set 1d to scalar
             else:
                 if self.coef_.shape[0] == 1 and y.ndim == 1:
-                    self._coef_ = xp.reshape(self._coef_, (-1,))
-                    self._intercept_ = self._intercept_[0, ...]
+                    self._coef_ = self._coef_[0, ...]  # set to 1d
+                    self._intercept_ = self.intercept_[0]  # set 1d to scalar
 
         def _onedal_predict(self, X, queue=None):
             xp, _ = get_namespace(X)

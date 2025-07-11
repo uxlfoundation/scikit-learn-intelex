@@ -259,8 +259,9 @@ class LinearRegression(oneDALEstimator, _sklearn_LinearRegression):
     def _onedal_fit(self, X, y, sample_weight, queue=None):
         assert sample_weight is None
 
+        xp, _ = get_namespace(X, y)
+
         if not get_config()["use_raw_input"]:
-            xp, _ = get_namespace(X, y)
             supports_multi_output = daal_check_version((2025, "P", 1))
             X, y = validate_data(
                 self,
@@ -290,8 +291,8 @@ class LinearRegression(oneDALEstimator, _sklearn_LinearRegression):
             self._intercept_ = self._onedal_estimator.intercept_
 
             if self._coef_.shape[0] == 1 and y.ndim == 1:
-                self._coef_ = self._coef_[0, ...]
-                self._intercept_ = self._intercept_[0, ...]
+                self._coef_ = self._coef_[0, ...]  # set to 1d
+                self._intercept_ = self._intercept_[0]  # set 1d to scalar
 
         except RuntimeError as e:
             if get_config()["allow_sklearn_after_onedal"]:
