@@ -37,8 +37,6 @@ if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import Interval
 
 
-
-
 @enable_array_api
 @control_n_jobs(
     decorated_methods=["fit", "partial_fit", "predict", "score", "_onedal_finalize_fit"]
@@ -217,7 +215,7 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
 
         if self._coef_.shape[0] == 1:
             self._coef_ = self._coef_[0, ...]  # set to 1d
-            self._intercept_ = self.intercept_[0]  # set 1d to scalar
+            self._intercept_ = self._intercept_[0]  # set 1d to scalar
 
         self._need_to_finalize = False
 
