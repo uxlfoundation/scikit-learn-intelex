@@ -51,7 +51,7 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
             self._onedal_estimator.covariance_ += lp.dot(location.T, location)
             self._onedal_estimator.location_ = lp.zeros_like(lp.squeeze(location))
         self._set_covariance(self._onedal_estimator.covariance_)
-        self.location_ = self._onedal_estimator.location_
+        self.location_ = lp.squeeze(self._onedal_estimator.location_)
 
     _onedal_covariance = staticmethod(onedal_EmpiricalCovariance)
 
