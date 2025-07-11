@@ -350,7 +350,7 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
     # expose sklearnex pairwise_distances if mahalanobis distance eventually supported
     def mahalanobis(self, X):
 
-        X = validate_data(self, X, reset=False)
+        X = validate_data(self, X, reset=False, dtype=[xp.float64, xp.float32])
         xp, _ = get_namespace(X)
         precision = self.get_precision()
         # compute mahalanobis distances
