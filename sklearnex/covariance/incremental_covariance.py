@@ -44,7 +44,6 @@ from ..metrics import pairwise_distances
 from ..utils._array_api import get_namespace
 from ..utils.validation import validate_data
 
-
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import Interval
 
@@ -201,10 +200,9 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
             X = validate_data(
                 self,
                 X,
-                dtype=[np.float64, np.float32],
+                dtype=[xp.float64, xp.float32],
                 reset=first_pass,
                 copy=self.copy,
-                ensure_all_finite=False,
             )
 
         onedal_params = {
@@ -331,14 +329,8 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
             if sklearn_check_version("1.2"):
                 self._validate_params()
 
-
-          xp, _ = get_namespace(X)
-          X = validate_data(
-                self,
-                X,
-                dtype=[xp.float64, xp.float32],
-                copy=self.copy,
-            )
+            xp, _ = get_namespace(X)
+            X = validate_data(self, X, dtype=[xp.float64, xp.float32], copy=self.copy)
 
         self.batch_size_ = self.batch_size if self.batch_size else 5 * self.n_features_in_
 
@@ -358,6 +350,7 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
     # expose sklearnex pairwise_distances if mahalanobis distance eventually supported
     def mahalanobis(self, X):
 
+        X = validate_data(self, X, reset=False)
         xp, _ = get_namespace(X)
         precision = self.get_precision()
         # compute mahalanobis distances
@@ -370,18 +363,20 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
             # Guarantee that inputs to pairwise_distances match in type and location
             location = xp.asarray(location, device=X.device)
 
-        try:
-            dist = pairwise_distances(X, location, metric="mahalanobis", VI=precision)
+        with config_context(assume_finite=True):
 
-        except ValueError as e:
-            # Throw the expected sklearn error in an n_feature length violation
-            if "Incompatible dimension for X and Y matrices: X.shape[1] ==" in str(e):
-                raise ValueError(
-                    f"X has {_num_features(X)} features, but {self.__class__.__name__} "
-                    f"is expecting {self.n_features_in_} features as input."
-                )
-            else:
-                raise e
+            try:
+                dist = pairwise_distances(X, location, metric="mahalanobis", VI=precision)
+
+            except ValueError as e:
+                # Throw the expected sklearn error in an n_feature length violation
+                if "Incompatible dimension for X and Y matrices: X.shape[1] ==" in str(e):
+                    raise ValueError(
+                        f"X has {_num_features(X)} features, but {self.__class__.__name__} "
+                        f"is expecting {self.n_features_in_} features as input."
+                    )
+                else:
+                    raise e
 
         if not _is_numpy_namespace(xp):
             dist = xp.asarray(dist, device=X.device)

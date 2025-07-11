@@ -16,7 +16,6 @@
 
 
 import math
-
 import numbers
 
 import scipy.sparse as sp

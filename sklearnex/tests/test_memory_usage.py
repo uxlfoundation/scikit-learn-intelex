@@ -43,7 +43,6 @@ from sklearnex.tests.utils import (
     DummyEstimator,
 )
 
-
 CPU_SKIP_LIST = (
     "TSNE",  # too slow for using in testing on common data size
     "config_context",  # does not malloc
