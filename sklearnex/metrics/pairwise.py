@@ -25,9 +25,7 @@ from onedal.primitives import rbf_kernel as _onedal_rbf_kernel
 from .._device_offload import dispatch
 from .._utils import PatchingConditionsChain
 
-pairwise_distances = support_input_format(freefunc=True, queue_param=False)(
-    pairwise_distances
-)
+pairwise_distances = support_input_format(pairwise_distances)
 
 
 if sklearn_check_version("1.6"):
@@ -74,4 +72,3 @@ class RBFKernel:
 
 def rbf_kernel(X, Y=None, gamma=None):
     return RBFKernel().compute(X, Y, gamma)
-
