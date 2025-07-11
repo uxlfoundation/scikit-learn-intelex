@@ -290,8 +290,8 @@ class LinearRegression(oneDALEstimator, _sklearn_LinearRegression):
             self._intercept_ = self._onedal_estimator.intercept_
 
             if self._coef_.shape[0] == 1 and y.ndim == 1:
-                self._coef_ = self._coef_[0]
-                self._intercept_ = self._intercept_[0]
+                self._coef_ = self._coef_[0, ...]
+                self._intercept_ = self._intercept_[0, ...]
 
         except RuntimeError as e:
             if get_config()["allow_sklearn_after_onedal"]:
