@@ -81,8 +81,6 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         X = validate_data(
             self,
             X,
-            self,
-            X,
             dtype=[xp.float64, xp.float32],
             accept_sparse="csr",
             reset=False,
