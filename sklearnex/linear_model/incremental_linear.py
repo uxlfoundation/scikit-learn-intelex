@@ -25,15 +25,11 @@ from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from onedal.common.hyperparameters import get_hyperparameters
 from onedal.linear_model import (
     IncrementalLinearRegression as onedal_IncrementalLinearRegression,
 )
 from sklearnex._config import get_config
-
-if sklearn_check_version("1.2"):
-    from sklearn.utils._param_validation import Interval
-
-from onedal.common.hyperparameters import get_hyperparameters
 
 from .._device_offload import dispatch, wrap_output_data
 from .._utils import (
@@ -44,6 +40,10 @@ from .._utils import (
 from ..base import oneDALEstimator
 from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.validation import validate_data
+
+if sklearn_check_version("1.2"):
+    from sklearn.utils._param_validation import Interval
+
 
 
 @enable_array_api
