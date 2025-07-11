@@ -349,7 +349,10 @@ if daal_check_version((2024, "P", 600)):
                 self._onedal_estimator.intercept_ = self.intercept_
 
             res = self._onedal_estimator.predict(X, queue=queue)
-            return res
+            if res.shape[1] == 1 and self.coef_.ndim == 1:
+                return xp.reshape(res, (-1,))
+            else:
+                return res
 
         def _onedal_score(self, X, y, sample_weight=None, queue=None):
             return r2_score(
