@@ -1,38 +1,40 @@
 # Infra and tools
-.*                            @napetrov @Alexsandruss @homksei @ahuber21 @ethanglaser
-.ci/                          @napetrov @Alexsandruss @homksei @ahuber21 @ethanglaser
-.circleci/                    @napetrov @Alexsandruss @homksei @ahuber21 @ethanglaser
-.github/                      @napetrov @Alexsandruss @homksei @ahuber21 @ethanglaser @icfaust
+.*                            @Alexsandruss @homksei @ahuber21 @ethanglaser @icfaust @david-cortes-intel
+.ci/                          @Alexsandruss @homksei @ahuber21 @ethanglaser @icfaust
+.circleci/                    @Alexsandruss @homksei @ahuber21 @ethanglaser @icfaust
+.github/                      @Alexsandruss @homksei @ahuber21 @ethanglaser @icfaust
 
 # Docs
-*.md                          @maria-Petrova @napetrov @Alexsandruss @icfaust @david-cortes-intel
-doc/                          @maria-Petrova @napetrov @Alexsandruss @icfaust @david-cortes-intel
-requirements-doc.txt          @Alexsandruss @icfaust @david-cortes-intel
+*.md                          @maria-Petrova @napetrov @Alexsandruss @icfaust @david-cortes-intel @Vika-F @syakov-intel @yuejiaointel
+doc/                          @maria-Petrova @Alexsandruss @icfaust @david-cortes-intel @Vika-F @syakov-intel @yuejiaointel
+requirements-doc.txt          @Alexsandruss @icfaust @david-cortes-intel 
 
 # sklearnex
-onedal/                       @Alexsandruss @icfaust
-sklearnex/                    @Alexsandruss @icfaust
+onedal/                       @Alexsandruss @icfaust @ethanglaser @Vika-F @david-cortes-intel
+sklearnex/                    @Alexsandruss @icfaust @ethanglaser @Vika-F @david-cortes-intel
 
 # Examples
-examples/                     @maria-Petrova @Alexsandruss @napetrov
+examples/                     @syakov-intel @Alexsandruss @napetrov @david-cortes-intel
 
 # Dependencies
-conda-recipe/                 @napetrov @Alexsandruss
+conda-recipe/                 @napetrov @Alexsandruss @icfaust @david-cortes-intel
 dependencies-dev              @napetrov @Alexsandruss @homksei @ahuber21 @ethanglaser
 pyproject.toml                @napetrov @Alexsandruss @homksei @ahuber21 @ethanglaser
 requirements*                 @napetrov @Alexsandruss @homksei @ahuber21 @ethanglaser
-setup.*                       @napetrov @Alexsandruss @icfaust
+setup.*                       @napetrov @Alexsandruss @icfaust @david-cortes-intel
 
 # Model builders
-*model_builders*              @razdoburdin @ahuber21 @avolkov-intel
+*model_builders*              @razdoburdin @ahuber21 @avolkov-intel @icfaust @david-cortes-intel
+daal4py/mb/                   @razdoburdin @ahuber21 @avolkov-intel @icfaust @david-cortes-intel
+src/gbt_model_builder*        @razdoburdin @ahuber21 @avolkov-intel @icfaust @david-cortes-intel
 
 # Forests
-*ensemble*                    @ahuber21 @icfaust
+*ensemble*                    @razdoburdin @ahuber21 @avolkov-intel @icfaust @david-cortes-intel
 
 # Testing
-**/test*.py                   @Alexsandruss @icfaust
-deselected_tests.yaml         @Alexsandruss @icfaust
-tests/                        @Alexsandruss @icfaust
+**/test*.py                   @Alexsandruss @icfaust @yuejiaointel @david-cortes-intel @ahuber21 @ethanglaser
+deselected_tests.yaml         @Alexsandruss @icfaust @yuejiaointel @david-cortes-intel @ahuber21 @ethanglaser
+tests/                        @Alexsandruss @icfaust @yuejiaointel @david-cortes-intel @ahuber21 @ethanglaser
 
 # Distributed
 *spmd*                        @ethanglaser

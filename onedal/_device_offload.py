@@ -14,98 +14,63 @@
 # limitations under the License.
 # ==============================================================================
 
+import inspect
 import logging
-from collections.abc import Iterable
 from functools import wraps
 
 import numpy as np
 from sklearn import get_config
 
 from ._config import _get_config
+from .datatypes import copy_to_dpnp, copy_to_usm, dlpack_to_numpy, usm_to_numpy
+from .utils import _sycl_queue_manager as QM
 from .utils._array_api import _asarray, _is_numpy_namespace
-from .utils._dpep_helpers import dpctl_available, dpnp_available
+from .utils._third_party import is_dpnp_ndarray
 
-if dpctl_available:
-    from dpctl import SyclQueue
-    from dpctl.memory import MemoryUSMDevice, as_usm_memory
-    from dpctl.tensor import usm_ndarray
-else:
-    import onedal
-
-    # setting fallback to `object` will make if isinstance call
-    # in _get_global_queue always true for situations without the
-    # dpc backend when `device_offload` is used. Instead, it will
-    # fail at the policy check phase yielding a RuntimeError
-    SyclQueue = getattr(onedal._backend, "SyclQueue", object)
-
-if dpnp_available:
-    import dpnp
-
-    from .utils._array_api import _convert_to_dpnp
+logger = logging.getLogger("sklearnex")
 
 
-def _copy_to_usm(queue, array):
-    if not dpctl_available:
-        raise RuntimeError(
-            "dpctl need to be installed to work " "with __sycl_usm_array_interface__"
-        )
+def supports_queue(func):
+    """Decorator that updates the global queue before function evaluation.
 
-    if hasattr(array, "__array__"):
+    The global queue is updated based on provided queue and global configuration.
+    If a ``queue`` keyword argument is provided in the decorated function, its
+    value will be used globally. If no queue is provided, the global queue will
+    be updated from the provided data. In either case, all data objects are
+    verified to be on the same device (or on host).
 
-        try:
-            mem = MemoryUSMDevice(array.nbytes, queue=queue)
-            mem.copy_from_host(array.tobytes())
-            return usm_ndarray(array.shape, array.dtype, buffer=mem)
-        except ValueError as e:
-            # ValueError will raise if device does not support the dtype
-            # retry with float32 (needed for fp16 and fp64 support issues)
-            # try again as float32, if it is a float32 just raise the error.
-            if array.dtype == np.float32:
-                raise e
-            return _copy_to_usm(queue, array.astype(np.float32))
-    else:
-        if isinstance(array, Iterable):
-            array = [_copy_to_usm(queue, i) for i in array]
-        return array
+    Parameters
+    ----------
+        func : callable
+            Function to be wrapped for SYCL queue use in oneDAL.
+
+    Returns
+    -------
+        wrapper : callable
+            Wrapped function.
+    """
+
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        queue = kwargs.get("queue", None)
+        with QM.manage_global_queue(queue, *args) as queue:
+            kwargs["queue"] = queue
+            result = func(self, *args, **kwargs)
+        return result
+
+    return wrapper
 
 
-def _transfer_to_host(queue, *data):
+def _transfer_to_host(*data):
     has_usm_data, has_host_data = False, False
 
     host_data = []
     for item in data:
-        usm_iface = getattr(item, "__sycl_usm_array_interface__", None)
-        array_api = getattr(item, "__array_namespace__", lambda: None)()
-        if usm_iface is not None:
-            if not dpctl_available:
-                raise RuntimeError(
-                    "dpctl need to be installed to work "
-                    "with __sycl_usm_array_interface__"
-                )
-            if queue is not None:
-                if queue.sycl_device != usm_iface["syclobj"].sycl_device:
-                    raise RuntimeError(
-                        "Input data shall be located " "on single target device"
-                    )
-            else:
-                queue = usm_iface["syclobj"]
-
-            buffer = as_usm_memory(item).copy_to_host()
-            order = "C"
-            if usm_iface["strides"] is not None and len(usm_iface["strides"]) > 1:
-                if usm_iface["strides"][0] < usm_iface["strides"][1]:
-                    order = "F"
-            item = np.ndarray(
-                shape=usm_iface["shape"],
-                dtype=usm_iface["typestr"],
-                buffer=buffer,
-                order=order,
-            )
+        if usm_iface := getattr(item, "__sycl_usm_array_interface__", None):
+            item = usm_to_numpy(item, usm_iface)
             has_usm_data = True
-        elif array_api and not _is_numpy_namespace(array_api):
-            # `copy`` param for the `asarray`` is not setted.
-            # The object is copied only if needed.
-            item = np.asarray(item)
+        elif not isinstance(item, np.ndarray) and (hasattr(item, "__dlpack_device__")):
+            item = dlpack_to_numpy(item)
             has_host_data = True
         else:
             has_host_data = True
@@ -117,103 +82,92 @@ def _transfer_to_host(queue, *data):
             raise RuntimeError("Input data shall be located on single target device")
 
         host_data.append(item)
-    return has_usm_data, queue, host_data
-
-
-def _get_global_queue():
-    target = _get_config()["target_offload"]
-
-    if target != "auto":
-        if isinstance(target, SyclQueue):
-            return target
-        return SyclQueue(target)
-    return None
+    return has_usm_data, host_data
 
 
 def _get_host_inputs(*args, **kwargs):
-    q = _get_global_queue()
-    _, q, hostargs = _transfer_to_host(q, *args)
-    _, q, hostvalues = _transfer_to_host(q, *kwargs.values())
+    _, hostargs = _transfer_to_host(*args)
+    _, hostvalues = _transfer_to_host(*kwargs.values())
     hostkwargs = dict(zip(kwargs.keys(), hostvalues))
-    return q, hostargs, hostkwargs
+    return hostargs, hostkwargs
 
 
-def _run_on_device(func, obj=None, *args, **kwargs):
-    if obj is not None:
-        return func(obj, *args, **kwargs)
-    return func(*args, **kwargs)
+def support_input_format(func):
+    """Transform input and output function arrays to/from host.
 
-
-def support_input_format(freefunc=False, queue_param=True):
-    """
     Converts and moves the output arrays of the decorated function
     to match the input array type and device.
     Puts SYCLQueue from data to decorated function arguments.
 
     Parameters
     ----------
-    freefunc (bool) : Set to True if decorates free function.
-    queue_param (bool) : Set to False if the decorated function has no `queue` parameter
+    func : callable
+       Function or method which has array data as input.
 
-    Notes
-    -----
-    Queue will not be changed if provided explicitly.
+    Returns
+    -------
+    wrapper_impl : callable
+        Wrapped function or method which will return matching format.
     """
 
-    def decorator(func):
-        def wrapper_impl(obj, *args, **kwargs):
-            # Check if the function is KNeighborsClassifier.fit
-            override_raw_input = (
-                obj.__class__.__name__ == "KNeighborsClassifier"
-                or obj.__class__.__name__ == "KNeighborsRegressor"
-            ) and func.__name__ == "fit"
-            if _get_config()["use_raw_input"] is True and not override_raw_input:
-                if "queue" not in kwargs:
-                    usm_iface = getattr(args[0], "__sycl_usm_array_interface__", None)
-                    data_queue = usm_iface["syclobj"] if usm_iface is not None else None
-                    kwargs["queue"] = data_queue
-                return _run_on_device(func, obj, *args, **kwargs)
+    def invoke_func(self_or_None, *args, **kwargs):
+        if self_or_None is None:
+            return func(*args, **kwargs)
+        else:
+            return func(self_or_None, *args, **kwargs)
 
-            elif len(args) == 0 and len(kwargs) == 0:
-                return _run_on_device(func, obj, *args, **kwargs)
+    @wraps(func)
+    def wrapper_impl(*args, **kwargs):
+        # remove self from args if it is a class method
+        if inspect.isfunction(func) and "." in func.__qualname__:
+            self = args[0]
+            args = args[1:]
+        else:
+            self = None
 
-            else:
-                data = (*args, *kwargs.values())
-                data_queue, hostargs, hostkwargs = _get_host_inputs(*args, **kwargs)
-                if queue_param and not (
-                    "queue" in hostkwargs and hostkwargs["queue"] is not None
-                ):
-                    hostkwargs["queue"] = data_queue
-                result = _run_on_device(func, obj, *hostargs, **hostkwargs)
-                usm_iface = getattr(data[0], "__sycl_usm_array_interface__", None)
-                if usm_iface is not None:
-                    result = _copy_to_usm(data_queue, result)
-                    if dpnp_available and isinstance(data[0], dpnp.ndarray):
-                        result = _convert_to_dpnp(result)
-                    return result
-                if not get_config().get("transform_output", False):
-                    input_array_api = getattr(
-                        data[0], "__array_namespace__", lambda: None
-                    )()
-                    if input_array_api:
-                        input_array_api_device = data[0].device
-                        result = _asarray(
-                            result, input_array_api, device=input_array_api_device
-                        )
-                return result
+        # KNeighbors*.fit can not be used with raw inputs, ignore `use_raw_input=True`
+        override_raw_input = (
+            self
+            and self.__class__.__name__ in ("KNeighborsClassifier", "KNeighborsRegressor")
+            and func.__name__ == "fit"
+        )
+        if override_raw_input:
+            pretty_name = f"{self.__class__.__name__}.{func.__name__}"
+            logger.warning(
+                f"Using raw inputs is not supported for {pretty_name}. Ignoring `use_raw_input=True` setting."
+            )
+        if _get_config()["use_raw_input"] is True and not override_raw_input:
+            if "queue" not in kwargs:
+                if usm_iface := getattr(args[0], "__sycl_usm_array_interface__", None):
+                    kwargs["queue"] = usm_iface["syclobj"]
+                else:
+                    kwargs["queue"] = None
+            return invoke_func(self, *args, **kwargs)
+        elif len(args) == 0 and len(kwargs) == 0:
+            # no arguments, there's nothing we can deduce from them -> just call the function
+            return invoke_func(self, *args, **kwargs)
 
-        if freefunc:
+        data = (*args, *kwargs.values())[0]
+        # get and set the global queue from the kwarg or data
+        with QM.manage_global_queue(kwargs.get("queue"), *args) as queue:
+            hostargs, hostkwargs = _get_host_inputs(*args, **kwargs)
+            if "queue" in inspect.signature(func).parameters:
+                # set the queue if it's expected by func
+                hostkwargs["queue"] = queue
+            result = invoke_func(self, *hostargs, **hostkwargs)
 
-            @wraps(func)
-            def wrapper_free(*args, **kwargs):
-                return wrapper_impl(None, *args, **kwargs)
+            if queue and hasattr(data, "__sycl_usm_array_interface__"):
+                return (
+                    copy_to_dpnp(queue, result)
+                    if is_dpnp_ndarray(data)
+                    else copy_to_usm(queue, result)
+                )
 
-            return wrapper_free
+        if get_config().get("transform_output") in ("default", None):
+            input_array_api = getattr(data, "__array_namespace__", lambda: None)()
+            if input_array_api and not _is_numpy_namespace(input_array_api):
+                input_array_api_device = data.device
+                result = _asarray(result, input_array_api, device=input_array_api_device)
+        return result
 
-        @wraps(func)
-        def wrapper_with_self(self, *args, **kwargs):
-            return wrapper_impl(self, *args, **kwargs)
-
-        return wrapper_with_self
-
-    return decorator
+    return wrapper_impl

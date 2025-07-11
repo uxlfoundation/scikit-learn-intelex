@@ -29,11 +29,7 @@ from daal4py.sklearn._utils import sklearn_check_version
 
 from .._n_jobs_support import control_n_jobs
 from .._utils import getFPType
-
-if sklearn_check_version("1.6"):
-    from sklearn.utils.validation import validate_data
-else:
-    validate_data = BaseEstimator._validate_data
+from ..utils.validation import validate_data
 
 
 @control_n_jobs(decorated_methods=["fit", "predict"])
@@ -86,7 +82,7 @@ class AdaBoostClassifier(ClassifierMixin, BaseEstimator):
                 'Parameter "learning_rate" must be ' "non-zero positive value."
             )
         # it is not clear why it is so but we will get error from
-        # Intel(R) oneAPI Data Analytics
+        # oneAPI Data Analytics
         # Library otherwise
         if self.accuracy_threshold < 0 and self.accuracy_threshold >= 1:
             raise ValueError(

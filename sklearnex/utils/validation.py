@@ -14,6 +14,7 @@
 # limitations under the License.
 # ===============================================================================
 
+import math
 import numbers
 
 import scipy.sparse as sp
@@ -21,6 +22,12 @@ from sklearn.utils.validation import _assert_all_finite as _sklearn_assert_all_f
 from sklearn.utils.validation import _num_samples, check_array, check_non_negative
 
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from daal4py.sklearn.utils.validation import (
+    add_dispatcher_docstring,
+    check_feature_names,
+    check_n_features,
+)
+from onedal.utils.validation import is_contiguous
 
 from ._array_api import get_namespace
 
@@ -28,7 +35,6 @@ if sklearn_check_version("1.6"):
     from sklearn.utils.validation import validate_data as _sklearn_validate_data
 
     _finite_keyword = "ensure_all_finite"
-
 else:
     from sklearn.base import BaseEstimator
 
@@ -40,19 +46,11 @@ if daal_check_version((2024, "P", 700)):
     from onedal.utils.validation import _assert_all_finite as _onedal_assert_all_finite
 
     def _onedal_supported_format(X, xp):
-        # array_api does not have a `strides` or `flags` attribute for testing memory
-        # order. When dlpack support is brought in for oneDAL, general support for
-        # array_api can be enabled and the hasattr check can be removed.
-        # _onedal_supported_format is therefore conservative in verifying attributes and
-        # does not support array_api. This will block onedal_assert_all_finite from being
-        # used for array_api inputs but will allow dpnp ndarrays and dpctl tensors.
-        # only check contiguous arrays to prevent unnecessary copying of data, even if
-        # non-contiguous arrays can now be converted to oneDAL tables.
-        return (
-            X.dtype in [xp.float32, xp.float64]
-            and hasattr(X, "flags")
-            and (X.flags["C_CONTIGUOUS"] or X.flags["F_CONTIGUOUS"])
-        )
+        # data should be checked if contiguous, as oneDAL will only use contiguous
+        # data from sklearnex. Unlike other oneDAL offloading, copying the data is
+        # specifically avoided as it has a non-negligible impact on speed. In that
+        # case use native sklearn ``_assert_all_finite``
+        return X.dtype in [xp.float32, xp.float64] and is_contiguous(X)
 
 else:
     from daal4py.utils.validation import _assert_all_finite as _onedal_assert_all_finite
@@ -73,7 +71,10 @@ def _sklearnex_assert_all_finite(
     # size check is an initial match to daal4py for performance reasons, can be
     # optimized later
     xp, _ = get_namespace(X)
-    if X.size < 32768 or not _onedal_supported_format(X, xp):
+    # this is a PyTorch-specific fix, as Tensor.size is a function. It replicates `.size`
+    too_small = math.prod(X.shape) < 32768
+
+    if too_small or not _onedal_supported_format(X, xp):
         if sklearn_check_version("1.1"):
             _sklearn_assert_all_finite(X, allow_nan=allow_nan, input_name=input_name)
         else:
@@ -95,6 +96,7 @@ def assert_all_finite(
     )
 
 
+@add_dispatcher_docstring(_sklearn_validate_data)
 def validate_data(
     _estimator,
     /,
@@ -104,7 +106,7 @@ def validate_data(
 ):
     # force finite check to not occur in sklearn, default is True
     # `ensure_all_finite` is the most up-to-date keyword name in sklearn
-    # _finite_keyword provides backward compatability for `force_all_finite`
+    # _finite_keyword provides backward compatibility for `force_all_finite`
     ensure_all_finite = kwargs.pop("ensure_all_finite", True)
     kwargs[_finite_keyword] = False
 
@@ -132,22 +134,6 @@ def validate_data(
             assert_all_finite(next(arg), allow_nan=allow_nan, input_name="X")
         if check_y:
             assert_all_finite(next(arg), allow_nan=allow_nan, input_name="y")
-
-    if check_y and "dtype" in kwargs:
-        # validate_data does not do full dtype conversions, as it uses check_X_y
-        # oneDAL can make tables from [int32, float32, float64], requiring
-        # a dtype check and conversion. This will query the array_namespace and
-        # convert y as necessary. This is important especially for regressors.
-        dtype = kwargs["dtype"]
-        if not isinstance(dtype, (tuple, list)):
-            dtype = tuple(dtype)
-
-        outx, outy = out if check_x else (None, out)
-        if outy.dtype not in dtype:
-            yp, _ = get_namespace(outy)
-            # use asarray rather than astype because of numpy support
-            outy = yp.asarray(outy, dtype=dtype[0])
-            out = (outx, outy) if check_x else outy
 
     return out
 

@@ -14,13 +14,12 @@
 # limitations under the License.
 # ==============================================================================
 
+from ...common._backend import bind_spmd_backend
 from ...covariance import (
     IncrementalEmpiricalCovariance as base_IncrementalEmpiricalCovariance,
 )
-from .._base import BaseEstimatorSPMD
 
 
-class IncrementalEmpiricalCovariance(
-    BaseEstimatorSPMD, base_IncrementalEmpiricalCovariance
-):
-    pass
+class IncrementalEmpiricalCovariance(base_IncrementalEmpiricalCovariance):
+    @bind_spmd_backend("covariance")
+    def finalize_compute(self, params, partial_result): ...

@@ -25,9 +25,9 @@ def _main():
     parser = argparse.ArgumentParser(
         prog="python -m sklearnex",
         description="""
-            Run your Python script with Intel(R) Extension for
+            Run your Python script with Extension for
             scikit-learn, optimizing solvers of
-            scikit-learn with Intel(R) oneAPI Data Analytics Library.
+            scikit-learn with oneAPI Data Analytics Library.
             """,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )

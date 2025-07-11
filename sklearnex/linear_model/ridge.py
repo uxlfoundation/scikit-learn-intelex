@@ -35,18 +35,15 @@ if daal_check_version((2024, "P", 600)):
         from sklearn.utils import check_scalar
 
     from onedal.linear_model import Ridge as onedal_Ridge
-    from onedal.utils import _num_features, _num_samples
+    from onedal.utils.validation import _num_features, _num_samples
 
     from .._device_offload import dispatch, wrap_output_data
-    from .._utils import PatchableEstimator, PatchingConditionsChain
-
-    if sklearn_check_version("1.6"):
-        from sklearn.utils.validation import validate_data
-    else:
-        validate_data = _sklearn_Ridge._validate_data
+    from .._utils import PatchingConditionsChain
+    from ..base import oneDALEstimator
+    from ..utils.validation import validate_data
 
     @control_n_jobs(decorated_methods=["fit", "predict", "score"])
-    class Ridge(PatchableEstimator, _sklearn_Ridge):
+    class Ridge(oneDALEstimator, _sklearn_Ridge):
         __doc__ = _sklearn_Ridge.__doc__
 
         if sklearn_check_version("1.2"):
@@ -307,15 +304,15 @@ if daal_check_version((2024, "P", 600)):
                         include_boundaries="left",
                     )
 
-            check_params = {
-                "X": X,
-                "y": y,
-                "dtype": [np.float64, np.float32],
-                "accept_sparse": ["csr", "csc", "coo"],
-                "y_numeric": True,
-                "multi_output": True,
-            }
-            X, y = validate_data(self, **check_params)
+            X, y = validate_data(
+                self,
+                X=X,
+                y=y,
+                dtype=[np.float64, np.float32],
+                accept_sparse=["csr", "csc", "coo"],
+                y_numeric=True,
+                multi_output=True,
+            )
 
             if not sklearn_check_version("1.2"):
                 self._normalize = _deprecate_normalize(
@@ -327,6 +324,15 @@ if daal_check_version((2024, "P", 600)):
             self._initialize_onedal_estimator()
             self._onedal_estimator.fit(X, y, queue=queue)
             self._save_attributes()
+
+            if sklearn_check_version("1.6"):
+                if y.ndim == 1 or y.shape[1] == 1:
+                    self.coef_ = self.coef_.ravel()
+                    self.intercept_ = self.intercept_[0]
+            else:
+                if self.coef_.shape[0] == 1 and y.ndim == 1:
+                    self.coef_ = self.coef_.ravel()
+                    self.intercept_ = self.intercept_[0]
 
         def _onedal_predict(self, X, queue=None):
             X = validate_data(self, X, accept_sparse=False, reset=False)
@@ -383,8 +389,8 @@ else:
     from daal4py.sklearn.linear_model import Ridge
     from onedal._device_offload import support_input_format
 
-    Ridge.fit = support_input_format(queue_param=False)(Ridge.fit)
-    Ridge.predict = support_input_format(queue_param=False)(Ridge.predict)
-    Ridge.score = support_input_format(queue_param=False)(Ridge.score)
+    Ridge.fit = support_input_format(Ridge.fit)
+    Ridge.predict = support_input_format(Ridge.predict)
+    Ridge.score = support_input_format(Ridge.score)
 
     logging.warning("Ridge requires oneDAL version >= 2024.6 but it was not found")

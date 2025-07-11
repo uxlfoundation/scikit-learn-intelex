@@ -14,12 +14,16 @@
 # limitations under the License.
 # ==============================================================================
 
+import inspect
 import warnings
 from collections.abc import Sequence
 from numbers import Integral
 
 import numpy as np
 from scipy import sparse as sp
+
+from onedal.common._backend import BackendFunction
+from onedal.utils import _sycl_queue_manager as QM
 
 if np.lib.NumpyVersion(np.__version__) >= np.lib.NumpyVersion("2.0.0a0"):
     # numpy_version >= 2.0
@@ -34,8 +38,7 @@ from sklearn.utils.validation import check_array
 from daal4py.sklearn.utils.validation import (
     _assert_all_finite as _daal4py_assert_all_finite,
 )
-from onedal import _backend
-from onedal.common._policy import _get_policy
+from onedal import _default_backend as backend
 from onedal.datatypes import to_table
 
 
@@ -90,7 +93,7 @@ def _compute_class_weight(class_weight, classes, y):
 
         le = LabelEncoder()
         y_ind = le.fit_transform(y_)
-        if not all(np.in1d(classes, le.classes_)):
+        if not np.isin(classes, le.classes_).all():
             raise ValueError("classes should have valid labels that are in y")
 
         y_bin = np.bincount(y_ind).astype(np.float64)
@@ -127,6 +130,24 @@ def _validate_targets(y, class_weight, dtype):
     return np.asarray(y, dtype=dtype, order="C"), class_weight_res, classes
 
 
+def get_finite_keyword():
+    """Return scikit-learn-matching finite check enabling keyword.
+
+    Gets the argument name for scikit-learn's validation functions compatible with
+    the current version of scikit-learn and using function inspection instead of
+    version check due to `onedal` design rule: sklearn versioning should occur
+    in ``sklearnex`` module.
+
+    Returns
+    -------
+    finite_keyword : str
+        Keyword string used to enable finiteness checking.
+    """
+    if "ensure_all_finite" in inspect.signature(check_array).parameters:
+        return "ensure_all_finite"
+    return "force_all_finite"
+
+
 def _check_array(
     array,
     dtype="numeric",
@@ -136,6 +157,7 @@ def _check_array(
     force_all_finite=True,
     ensure_2d=True,
     accept_large_sparse=True,
+    _finite_keyword=get_finite_keyword(),
 ):
     if force_all_finite:
         if sp.issparse(array):
@@ -145,15 +167,19 @@ def _check_array(
         else:
             _daal4py_assert_all_finite(array)
             force_all_finite = False
+    check_kwargs = {
+        "array": array,
+        "dtype": dtype,
+        "accept_sparse": accept_sparse,
+        "order": order,
+        "copy": copy,
+        "ensure_2d": ensure_2d,
+        "accept_large_sparse": accept_large_sparse,
+    }
+    check_kwargs[_finite_keyword] = force_all_finite
+
     array = check_array(
-        array=array,
-        dtype=dtype,
-        accept_sparse=accept_sparse,
-        order=order,
-        copy=copy,
-        force_all_finite=force_all_finite,
-        ensure_2d=ensure_2d,
-        accept_large_sparse=accept_large_sparse,
+        **check_kwargs,
     )
 
     if sp.issparse(array):
@@ -437,18 +463,22 @@ def _is_csr(x):
 
 
 def _assert_all_finite(X, allow_nan=False, input_name=""):
-    policy = _get_policy(None, X)
+    backend_method = BackendFunction(
+        backend.finiteness_checker.compute.compute, backend, "compute", no_policy=False
+    )
     X_t = to_table(X)
     params = {
         "fptype": X_t.dtype,
         "method": "dense",
         "allow_nan": allow_nan,
     }
-    if not _backend.finiteness_checker.compute.compute(policy, params, X_t).finite:
-        type_err = "infinity" if allow_nan else "NaN, infinity"
-        padded_input_name = input_name + " " if input_name else ""
-        msg_err = f"Input {padded_input_name}contains {type_err}."
-        raise ValueError(msg_err)
+    with QM.manage_global_queue(None, X):
+        # Must use the queue provided by X
+        if not backend_method(params, X_t).finite:
+            type_err = "infinity" if allow_nan else "NaN, infinity"
+            padded_input_name = input_name + " " if input_name else ""
+            msg_err = f"Input {padded_input_name}contains {type_err}."
+            raise ValueError(msg_err)
 
 
 def assert_all_finite(
@@ -462,3 +492,12 @@ def assert_all_finite(
         allow_nan=allow_nan,
         input_name=input_name,
     )
+
+
+def is_contiguous(X):
+    if hasattr(X, "flags"):
+        return X.flags["C_CONTIGUOUS"] or X.flags["F_CONTIGUOUS"]
+    elif hasattr(X, "__dlpack__"):
+        return backend.dlpack_memory_order(X) is not None
+    else:
+        return False

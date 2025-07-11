@@ -18,20 +18,16 @@ from sklearn.metrics import accuracy_score
 from sklearn.neighbors._classification import (
     KNeighborsClassifier as _sklearn_KNeighborsClassifier,
 )
-from sklearn.neighbors._unsupervised import NearestNeighbors as _sklearn_NearestNeighbors
-from sklearn.utils.validation import _deprecate_positional_args, check_is_fitted
+from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
+from daal4py.sklearn.utils.validation import get_requires_y_tag
 from onedal.neighbors import KNeighborsClassifier as onedal_KNeighborsClassifier
 
 from .._device_offload import dispatch, wrap_output_data
+from ..utils.validation import check_feature_names
 from .common import KNeighborsDispatchingBase
-
-if sklearn_check_version("1.6"):
-    from sklearn.utils.validation import validate_data
-else:
-    validate_data = _sklearn_KNeighborsClassifier._validate_data
 
 
 @control_n_jobs(
@@ -44,58 +40,28 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             **_sklearn_KNeighborsClassifier._parameter_constraints
         }
 
-    if sklearn_check_version("1.0"):
-
-        def __init__(
-            self,
-            n_neighbors=5,
-            *,
-            weights="uniform",
-            algorithm="auto",
-            leaf_size=30,
-            p=2,
-            metric="minkowski",
-            metric_params=None,
-            n_jobs=None,
-        ):
-            super().__init__(
-                n_neighbors=n_neighbors,
-                weights=weights,
-                algorithm=algorithm,
-                leaf_size=leaf_size,
-                metric=metric,
-                p=p,
-                metric_params=metric_params,
-                n_jobs=n_jobs,
-            )
-
-    else:
-
-        @_deprecate_positional_args
-        def __init__(
-            self,
-            n_neighbors=5,
-            *,
-            weights="uniform",
-            algorithm="auto",
-            leaf_size=30,
-            p=2,
-            metric="minkowski",
-            metric_params=None,
-            n_jobs=None,
-            **kwargs,
-        ):
-            super().__init__(
-                n_neighbors=n_neighbors,
-                weights=weights,
-                algorithm=algorithm,
-                leaf_size=leaf_size,
-                metric=metric,
-                p=p,
-                metric_params=metric_params,
-                n_jobs=n_jobs,
-                **kwargs,
-            )
+    def __init__(
+        self,
+        n_neighbors=5,
+        *,
+        weights="uniform",
+        algorithm="auto",
+        leaf_size=30,
+        p=2,
+        metric="minkowski",
+        metric_params=None,
+        n_jobs=None,
+    ):
+        super().__init__(
+            n_neighbors=n_neighbors,
+            weights=weights,
+            algorithm=algorithm,
+            leaf_size=leaf_size,
+            metric=metric,
+            p=p,
+            metric_params=metric_params,
+            n_jobs=n_jobs,
+        )
 
     def fit(self, X, y):
         dispatch(
@@ -113,8 +79,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     @wrap_output_data
     def predict(self, X):
         check_is_fitted(self)
-        if sklearn_check_version("1.0"):
-            self._check_feature_names(X, reset=False)
+        check_feature_names(self, X, reset=False)
         return dispatch(
             self,
             "predict",
@@ -128,8 +93,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     @wrap_output_data
     def predict_proba(self, X):
         check_is_fitted(self)
-        if sklearn_check_version("1.0"):
-            self._check_feature_names(X, reset=False)
+        check_feature_names(self, X, reset=False)
         return dispatch(
             self,
             "predict_proba",
@@ -143,8 +107,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     @wrap_output_data
     def score(self, X, y, sample_weight=None):
         check_is_fitted(self)
-        if sklearn_check_version("1.0"):
-            self._check_feature_names(X, reset=False)
+        check_feature_names(self, X, reset=False)
         return dispatch(
             self,
             "score",
@@ -160,8 +123,8 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     @wrap_output_data
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
         check_is_fitted(self)
-        if sklearn_check_version("1.0") and X is not None:
-            self._check_feature_names(X, reset=False)
+        if X is not None:
+            check_feature_names(self, X, reset=False)
         return dispatch(
             self,
             "kneighbors",
@@ -183,13 +146,8 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             "p": self.effective_metric_params_["p"],
         }
 
-        try:
-            requires_y = self._get_tags()["requires_y"]
-        except KeyError:
-            requires_y = False
-
         self._onedal_estimator = onedal_KNeighborsClassifier(**onedal_params)
-        self._onedal_estimator.requires_y = requires_y
+        self._onedal_estimator.requires_y = get_requires_y_tag(self)
         self._onedal_estimator.effective_metric_ = self.effective_metric_
         self._onedal_estimator.effective_metric_params_ = self.effective_metric_params_
         self._onedal_estimator.fit(X, y, queue=queue)

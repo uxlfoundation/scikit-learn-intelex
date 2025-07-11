@@ -19,6 +19,48 @@ import platform
 
 from daal4py.sklearn._utils import daal_check_version
 
+
+class Backend:
+
+    def __init__(self, backend_module, is_dpc, is_spmd):
+        """A unified interface to an available oneDAL pybind11 module.
+
+        This class encapsulates a oneDAL pybind11 module allowing for
+        dynamic access of module objects. This simplifies method and
+        attribute access in sklearnex without aliasing in sys.modules.
+        It contains additional attributes for inspection of the pybind11
+        module type (i.e. dpc or spmd) for use in policy creation.
+
+        Parameters
+        ----------
+            backend_module : oneDAL pybind11 module
+                Pybind11 module to be encapsulated.
+
+            is_dpc : bool
+                Flag describing if the module is Data Parallel C++-enabled.
+
+            is_spmd : bool
+                Flag describing if the module is single program, multiple
+                data enabled.
+
+        Returns
+        -------
+            self : Backend
+                Encapsulated oneDAL pybind11 module.
+        """
+
+        self.backend = backend_module
+        self.is_dpc = is_dpc
+        self.is_spmd = is_spmd
+
+    # accessing the instance will return the backend_module
+    def __getattr__(self, name):
+        return getattr(self.backend, name)
+
+    def __repr__(self) -> str:
+        return f"Backend({self.backend}, is_dpc={self.is_dpc}, is_spmd={self.is_spmd})"
+
+
 if "Windows" in platform.system():
     import os
     import site
@@ -40,44 +82,69 @@ if "Windows" in platform.system():
             pass
     os.environ["PATH"] = path_to_libs + os.pathsep + os.environ["PATH"]
 
+
 try:
-    import onedal._onedal_py_dpc as _backend
+    # use dpc backend if available
+    import onedal._onedal_py_dpc
 
-    _is_dpc_backend = True
+    _dpc_backend = Backend(onedal._onedal_py_dpc, is_dpc=True, is_spmd=False)
+
+    _host_backend = None
 except ImportError:
-    import onedal._onedal_py_host as _backend
+    # fall back to host backend
+    _dpc_backend = None
 
-    _is_dpc_backend = False
+    import onedal._onedal_py_host
 
-_is_spmd_backend = False
+    _host_backend = Backend(onedal._onedal_py_host, is_dpc=False, is_spmd=False)
 
-if _is_dpc_backend:
-    try:
-        import onedal._onedal_py_spmd_dpc as _spmd_backend
+try:
+    # also load spmd backend if available
+    import onedal._onedal_py_spmd_dpc
 
-        _is_spmd_backend = True
-    except ImportError:
-        _is_spmd_backend = False
+    _spmd_backend = Backend(onedal._onedal_py_spmd_dpc, is_dpc=True, is_spmd=True)
+except ImportError:
+    _spmd_backend = None
 
+# if/elif/else layout required for pylint to realize _default_backend cannot be None
+if _dpc_backend is not None:
+    _default_backend = _dpc_backend
+elif _host_backend is not None:
+    _default_backend = _host_backend
+else:
+    raise ImportError("No oneDAL backend available")
 
-__all__ = ["covariance", "decomposition", "ensemble", "neighbors", "primitives", "svm"]
+# Core modules to export
+__all__ = [
+    "_host_backend",
+    "_default_backend",
+    "_dpc_backend",
+    "_spmd_backend",
+    "covariance",
+    "decomposition",
+    "ensemble",
+    "neighbors",
+    "primitives",
+    "svm",
+]
 
-if _is_spmd_backend:
-    __all__.append("spmd")
-
+# Additional features based on version checks
 if daal_check_version((2023, "P", 100)):
     __all__ += ["basic_statistics", "linear_model"]
+if daal_check_version((2023, "P", 200)):
+    __all__ += ["cluster"]
 
-    if _is_spmd_backend:
+# Exports if SPMD backend is available
+if _spmd_backend is not None:
+    __all__ += ["spmd"]
+    if daal_check_version((2023, "P", 100)):
         __all__ += [
             "spmd.basic_statistics",
             "spmd.decomposition",
             "spmd.linear_model",
             "spmd.neighbors",
         ]
-
-if daal_check_version((2023, "P", 200)):
-    __all__ += ["cluster"]
-
-    if _is_spmd_backend:
+    if daal_check_version((2023, "P", 200)):
         __all__ += ["spmd.cluster"]
+
+__version__ = "2199.9.9"

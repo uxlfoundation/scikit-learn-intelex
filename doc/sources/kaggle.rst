@@ -18,20 +18,20 @@
 Kaggle Kernels
 ####################
 
-See Kaggle notebooks created by |intelex| developers.
+See Kaggle notebooks created by |sklearnex| developers.
 
 Acceleration
 ---------------------------------
 
 `Introduction to scikit-learn-intelex <https://www.kaggle.com/code/lordozvlad/introduction-to-scikit-learn-intelex/notebook>`_
-provides a summary of the speedup you can achieve with |intelex|.
+provides a summary of the speedup you can achieve with |sklearnex|.
 
 Machine Learning Workflows
 ---------------------------------
 
 Browse this chapter to find Kaggle kernels that use scikit-learn-intelex for a specific type of a machine learning task.
 
-Kaggle kernels that use scikit-learn and |intelex|:
+Kaggle kernels that use scikit-learn and |sklearnex|:
 ******************************************************************
 
 .. toctree::
@@ -39,7 +39,7 @@ Kaggle kernels that use scikit-learn and |intelex|:
    Classification Tasks <kaggle/classification.rst>
    Regression Tasks <kaggle/regression.rst>
 
-Kaggle kernels that use AutoML with |intelex|:
+Kaggle kernels that use AutoML with |sklearnex|:
 ******************************************************************
 
 .. toctree::

@@ -30,6 +30,7 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
+import re
 import sys
 
 # sys.path.insert(0, os.path.abspath("../"))
@@ -37,9 +38,9 @@ import sys
 
 # -- Project information -----------------------------------------------------
 
-project = "Intel(R) Extension for Scikit-learn*"
-copyright = "Intel"
-author = "Intel"
+project = "Extension for Scikit-learn*"
+copyright = "oneDAL project"
+author = "oneDAL project"
 
 # The short X.Y version
 # Note: it should not have more than  two parts (year.month), otherwise the
@@ -74,12 +75,14 @@ extensions = [
 intersphinx_mapping = {
     "sklearn": ("https://scikit-learn.org/stable/", None),
     "dpctl": ("https://intelpython.github.io/dpctl/latest", None),
+    "mpi4py": ("https://mpi4py.readthedocs.io/en/stable/", None),
+    "xgboost": ("https://xgboost.readthedocs.io/en/stable/", None),
     # from scikit-learn, in case some object in sklearnex points to them:
     # https://github.com/scikit-learn/scikit-learn/blob/main/doc/conf.py
     "python": ("https://docs.python.org/{.major}".format(sys.version_info), None),
     "numpy": ("https://numpy.org/doc/stable", None),
     "scipy": ("https://docs.scipy.org/doc/scipy/", None),
-    "matplotlib": ("https://matplotlib.org/", None),
+    "matplotlib": ("https://matplotlib.org/stable/", None),
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
     "joblib": ("https://joblib.readthedocs.io/en/latest/", None),
     "seaborn": ("https://seaborn.pydata.org/", None),
@@ -123,9 +126,14 @@ pygments_style = "sphinx"
 # substitutions
 
 rst_prolog = """
-.. |reg| unicode:: U+000AE
-.. |intelex| replace:: Intel\\ |reg|\\  Extension for Scikit-learn*
+.. |sklearnex| replace:: Extension for Scikit-learn*
+.. |onedal| replace:: oneAPI Data Analytics Library
 """
+
+# Note: sklearn oftentimes uses single backticks to render code.
+# Some docstrings here are inherited from theirs, so this setting
+# is needed to render them the same way they do.
+default_role = "literal"
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -158,7 +166,7 @@ html_theme_options = {
 html_context = {
     "current_version": version,
     "project_name": "scikit-learn-intelex",
-    "switcher_url": "/scikit-learn-intelex/doc/versions.json",
+    "switcher_url": "/scikit-learn-intelex/versions.json",
 }
 
 
@@ -204,7 +212,7 @@ latex_documents = [
     (
         master_doc,
         "scikit-learn-intelex.tex",
-        "Intel(R) Extension for Scikit-learn* Documentation",
+        "Extension for Scikit-learn* Documentation",
         "Intel",
         "manual",
     ),
@@ -219,7 +227,7 @@ man_pages = [
     (
         master_doc,
         "scikit-learn-intelex",
-        "Intel(R) Extension for Scikit-learn* Documentation",
+        "Extension for Scikit-learn* Documentation",
         [author],
         1,
     )
@@ -235,10 +243,10 @@ texinfo_documents = [
     (
         master_doc,
         "scikit-learn-intelex",
-        "Intel(R) Extension for Scikit-learn* Documentation",
+        "Extension for Scikit-learn* Documentation",
         author,
         "scikit-learn-intelex",
-        "Intel(R) Extension for Scikit-learn speeds up scikit-learn "
+        "Extension for Scikit-learn speeds up scikit-learn "
         "beyond by providing drop-in patching.",
         "Miscellaneous",
     ),
@@ -256,3 +264,13 @@ todo_include_todos = True
 # not found 404 page
 
 notfound_urls_prefix = "/scikit-learn-intelex/"
+
+# Any link matching these regexes will be skipped by linkcheck
+linkcheck_ignore = [
+    re.compile(r"https://github\.com/.+"),  # Avoid rate error
+    re.compile(r"https://.*intel\.com/.+"),  # Avoid permission error
+]
+
+# Speed up link-check and fail faster
+linkcheck_timeout = 10
+linkcheck_workers = 8

@@ -18,9 +18,9 @@
 Samples
 #######
 
-The following samples are also provided as Jupyter notebooks in |intelex| repository.
+The following samples are also provided as Jupyter notebooks in |sklearnex| repository.
 If you want to run them locally, refer to `these instructions
-<https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/notebooks#snake-intelr-extension-for-scikit-learn-notebooks>`_.
+<https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/examples/notebooks/README.md>`_.
 
 .. rubric:: Classification Tasks
 
@@ -30,6 +30,7 @@ If you want to run them locally, refer to `these instructions
    k-Nearest Neighbors (kNN) for MNIST dataset <samples/knn_mnist.ipynb>
    Logistic Regression for Cifar dataset <samples/logistictic_regression_cifar.ipynb>
    Support Vector Classification (SVC) for Adult dataset <samples/svc_adult.ipynb>
+   Random Forest Classification on rain in Australia dataset <samples/random_forest_rain.ipynb>
 
 .. rubric:: Regression Tasks
 
@@ -42,6 +43,9 @@ If you want to run them locally, refer to `these instructions
    Nu-Support Vector Regression (NuSVR) for Medical Charges dataset <samples/nusvr_medical_charges.ipynb>
    Random Forest for Yolanda dataset <samples/random_forest_yolanda.ipynb>
    Rigde Regression for Airlines DepDelay dataset <samples/ridge_regression.ipynb>
+   Ridge Regression on New York City Bike Share dataset <samples/ridge_regression_bike_sharing.ipynb>
+   Ridge Regression on IEEE-CIS Fraud Detection dataset <samples/ridge_regression_fraud_detection.ipynb>
+   Ridge Regression on Higgs dataset <samples/ridge_regression_higgs.ipynb>
 
 .. rubric:: Clustering Tasks
 
@@ -56,18 +60,18 @@ If you want to run them locally, refer to `these instructions
 .. toctree::
    :maxdepth: 1
 
-   Intel® Extension for Scikit-learn TSNE example <samples/tsne.ipynb>
+   Extension for Scikit-learn TSNE example <samples/tsne.ipynb>
 
 .. rubric:: Jupyter Notebook Samples
 
 .. toctree::
    :maxdepth: 1
 
-   Intel® Extension for Scikit-Learn* Getting Started Sample <https://github.com/oneapi-src/oneAPI-samples/tree/master/AI-and-Analytics/Getting-Started-Samples/Intel_Extension_For_SKLearn_GettingStarted>
-   Intel® Extension for Scikit-Learn*: SVC for Adult dataset Performance Sample <https://github.com/oneapi-src/oneAPI-samples/tree/master/AI-and-Analytics/Features-and-Functionality/Intel_Extension_For_SKLearn_Performance_SVC_Adult>
+   Extension for Scikit-Learn* Getting Started Sample <https://github.com/oneapi-src/oneAPI-samples/tree/master/AI-and-Analytics/Getting-Started-Samples/Intel_Extension_For_SKLearn_GettingStarted>
+   Extension for Scikit-Learn*: SVC for Adult dataset Performance Sample <https://github.com/oneapi-src/oneAPI-samples/tree/master/AI-and-Analytics/Features-and-Functionality/Intel_Extension_For_SKLearn_Performance_SVC_Adult>
 
 .. seealso::
 
-   There are also :ref:`Kaggle kernels <kaggle>` that use |intelex| for a variety of machine learning scenarios.
+   There are also :ref:`Kaggle kernels <kaggle>` that use |sklearnex| for a variety of machine learning scenarios.
 
 .. note:: Explore the complete list of oneAPI code samples in the `oneAPI Samples Catalog <https://oneapi-src.github.io/oneAPI-samples/>`_. These samples were designed to help you develop, offload, and optimize multiarchitecture applications targeting CPUs, GPUs, and FPGAs.

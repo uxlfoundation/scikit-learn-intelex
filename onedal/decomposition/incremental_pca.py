@@ -16,17 +16,19 @@
 
 import numpy as np
 
+from onedal._device_offload import supports_queue
+from onedal.common._backend import bind_default_backend
+from onedal.utils import _sycl_queue_manager as QM
+
 from .._config import _get_config
 from ..datatypes import from_table, to_table
-from ..utils import _check_array
 from ..utils._array_api import _get_sycl_namespace
+from ..utils.validation import _check_array
 from .pca import BasePCA
 
 
 class IncrementalPCA(BasePCA):
-    """
-    Incremental estimator for PCA based on oneDAL implementation.
-    Allows to compute PCA if data are splitted into batches.
+    """Incremental oneDAL PCA estimator.
 
     Parameters
     ----------
@@ -38,8 +40,8 @@ class IncrementalPCA(BasePCA):
         When True the ``components_`` vectors are chosen in deterministic
         way, otherwise some of them can be oppositely directed.
 
-    method : string, default='cov'
-        Method used on oneDAL side to compute result.
+    method : str, default='cov'
+        Method used in oneDAL computation.
 
     whiten : bool, default=False
         When True the ``components_`` vectors are divided
@@ -82,7 +84,6 @@ class IncrementalPCA(BasePCA):
         noise_variance_ : float
             Equal to the average of (min(n_features, n_samples) - n_components)
             smallest eigenvalues of the covariance matrix of X.
-
     """
 
     def __init__(
@@ -96,17 +97,24 @@ class IncrementalPCA(BasePCA):
         self.method = method
         self.is_deterministic = is_deterministic
         self.whiten = whiten
+        self._queue = None
         self._reset()
+
+    @bind_default_backend("decomposition.dim_reduction")
+    def finalize_train(self, params, partial_result): ...
+
+    @bind_default_backend("decomposition.dim_reduction")
+    def partial_train(self, params, partial_result, X_table): ...
+
+    @bind_default_backend("decomposition.dim_reduction")
+    def partial_train_result(self): ...
 
     def _reset(self):
         self._need_to_finalize = False
-        # Not supported with spmd policy so IncrementalPCA must be specified
-        module = IncrementalPCA._get_backend(
-            IncrementalPCA, "decomposition", "dim_reduction"
-        )
+        self._queue = None
+        self._partial_result = self.partial_train_result()
         if hasattr(self, "components_"):
             del self.components_
-        self._partial_result = module.partial_train_result()
 
     def __getstate__(self):
         # Since finalize_fit can't be dispatched without directly provided queue
@@ -118,8 +126,9 @@ class IncrementalPCA(BasePCA):
         data.pop("_queue", None)
         return data
 
-    def partial_fit(self, X, queue):
-        """Incremental fit with X. All of X is processed as a single batch.
+    @supports_queue
+    def partial_fit(self, X, queue=None):
+        """Generate partial PCA from batch data in `_partial_result`.
 
         Parameters
         ----------
@@ -127,8 +136,9 @@ class IncrementalPCA(BasePCA):
             Training data, where `n_samples` is the number of samples and
             `n_features` is the number of features.
 
-        y : Ignored
-            Not used, present for API consistency by convention.
+        queue : SyclQueue or None, default=None
+            SYCL Queue object for device code execution. Default
+            value None causes computation on host.
 
         Returns
         -------
@@ -164,37 +174,21 @@ class IncrementalPCA(BasePCA):
 
         self._queue = queue
 
-        # Not supported with spmd policy so IncrementalPCA must be specified
-        policy = IncrementalPCA._get_policy(IncrementalPCA, queue, X)
         X_table = to_table(X, queue=queue)
 
         if not hasattr(self, "_dtype"):
             self._dtype = X_table.dtype
             self._params = self._get_onedal_params(X_table)
 
-        # Not supported with spmd policy so IncrementalPCA must be specified
-        self._partial_result = IncrementalPCA._get_backend(
-            IncrementalPCA,
-            "decomposition",
-            "dim_reduction",
-            "partial_train",
-            policy,
-            self._params,
-            self._partial_result,
-            X_table,
+        self._partial_result = self.partial_train(
+            self._params, self._partial_result, X_table
         )
         self._need_to_finalize = True
+        self._queue = queue
         return self
 
-    def finalize_fit(self, queue=None):
-        """
-        Finalizes principal components computation and obtains resulting
-        attributes from the current `_partial_result`.
-
-        Parameters
-        ----------
-        queue : dpctl.SyclQueue
-            Not used here, added for API conformance
+    def finalize_fit(self):
+        """Finalize statistics from the current `_partial_result`.
 
         Returns
         -------
@@ -202,12 +196,8 @@ class IncrementalPCA(BasePCA):
             Returns the instance itself.
         """
         if self._need_to_finalize:
-            module = self._get_backend("decomposition", "dim_reduction")
-            if queue is not None:
-                policy = self._get_policy(queue)
-            else:
-                policy = self._get_policy(self._queue)
-            result = module.finalize_train(policy, self._params, self._partial_result)
+            with QM.manage_global_queue(self._queue):
+                result = self.finalize_train(self._params, self._partial_result)
             self.mean_ = from_table(result.means).ravel()
             self.var_ = from_table(result.variances).ravel()
             self.components_ = from_table(result.eigenvectors)
@@ -224,4 +214,6 @@ class IncrementalPCA(BasePCA):
                 self.n_components_, min(self.n_samples_seen_, self.n_features_in_)
             )
             self._need_to_finalize = False
+            self._queue = None
+
         return self

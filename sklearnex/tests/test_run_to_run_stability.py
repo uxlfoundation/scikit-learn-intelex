@@ -81,6 +81,13 @@ def eval_method(X, y, est, method):
 
     if not isinstance(res, Iterable):
         results = [_as_numpy(res)] if res is not est else []
+    elif hasattr(res, "dtype") and res.dtype not in [np.object_, np.flexible]:
+        # array_api inputs do not have an __iter__ and this also allows for
+        # multidimensional array-like inputs to be analyzed without slicing.
+        # The check for object and flexible types is because of the
+        # radius_neighbors method in kNeighors algorithms which can return
+        # numpy object arrays of numpy numeric arrays
+        results = [_as_numpy(res).flatten()]
     else:
         results = [_as_numpy(i) for i in res]
 

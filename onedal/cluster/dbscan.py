@@ -17,16 +17,17 @@
 import numpy as np
 
 from daal4py.sklearn._utils import make2d
+from onedal._device_offload import supports_queue
 
 from .._config import _get_config
-from ..common._base import BaseEstimator
+from ..common._backend import bind_default_backend
 from ..common._mixin import ClusterMixin
 from ..datatypes import from_table, to_table
-from ..utils import _check_array
 from ..utils._array_api import _get_sycl_namespace
+from ..utils.validation import _check_array
 
 
-class BaseDBSCAN(BaseEstimator, ClusterMixin):
+class DBSCAN(ClusterMixin):
     def __init__(
         self,
         eps=0.5,
@@ -47,6 +48,9 @@ class BaseDBSCAN(BaseEstimator, ClusterMixin):
         self.leaf_size = leaf_size
         self.p = p
         self.n_jobs = n_jobs
+
+    @bind_default_backend("dbscan.clustering")
+    def compute(self, params, data_table, weights_table): ...
 
     def _get_onedal_params(self, dtype=np.float32):
         return {
@@ -58,7 +62,8 @@ class BaseDBSCAN(BaseEstimator, ClusterMixin):
             "result_options": "core_observation_indices|responses",
         }
 
-    def _fit(self, X, y, sample_weight, module, queue):
+    @supports_queue
+    def fit(self, X, y=None, sample_weight=None, queue=None):
         use_raw_input = _get_config().get("use_raw_input", False) is True
         sua_iface, xp, _ = _get_sycl_namespace(X)
 
@@ -67,22 +72,23 @@ class BaseDBSCAN(BaseEstimator, ClusterMixin):
             X = make2d(X)
         elif sua_iface is not None:
             queue = X.sycl_queue
-        policy = self._get_policy(queue, X)
-        sample_weight = make2d(sample_weight) if sample_weight is not None else None
+
         X_table, sample_weight_table = to_table(X, sample_weight, queue=queue)
 
         params = self._get_onedal_params(X_table.dtype)
-        result = module.compute(policy, params, X_table, sample_weight_table)
+        result = self.compute(params, X_table, sample_weight_table)
 
-        self.labels_ = from_table(result.responses, sycl_queue=queue).ravel()
+        self.labels_ = xp.squeeze(from_table(result.responses, like=X))
         if (
             result.core_observation_indices is not None
             and not result.core_observation_indices.kind == "empty"
         ):
-            self.core_sample_indices_ = from_table(
-                result.core_observation_indices,
-                sycl_queue=queue,
-            ).ravel()
+            self.core_sample_indices_ = xp.squeeze(
+                from_table(
+                    result.core_observation_indices,
+                    like=X,
+                )
+            )
         else:
             # construct keyword arguments for different namespaces (dptcl takes sycl_queue)
             kwargs = {"dtype": xp.int32}  # always the same
@@ -92,31 +98,3 @@ class BaseDBSCAN(BaseEstimator, ClusterMixin):
         self.components_ = xp.take(X, self.core_sample_indices_, axis=0)
         self.n_features_in_ = X.shape[1]
         return self
-
-
-class DBSCAN(BaseDBSCAN):
-    def __init__(
-        self,
-        eps=0.5,
-        *,
-        min_samples=5,
-        metric="euclidean",
-        metric_params=None,
-        algorithm="auto",
-        leaf_size=30,
-        p=None,
-        n_jobs=None,
-    ):
-        self.eps = eps
-        self.min_samples = min_samples
-        self.metric = metric
-        self.metric_params = metric_params
-        self.algorithm = algorithm
-        self.leaf_size = leaf_size
-        self.p = p
-        self.n_jobs = n_jobs
-
-    def fit(self, X, y=None, sample_weight=None, queue=None):
-        return super()._fit(
-            X, y, sample_weight, self._get_backend("dbscan", "clustering", None), queue
-        )

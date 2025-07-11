@@ -30,7 +30,7 @@ from onedal.tests.utils._device_selection import (
 synth_params = {"n_samples": 500, "n_features": 100, "random_state": 42}
 
 
-@pass_if_not_implemented_for_gpu(reason="svr is not implemented")
+@pass_if_not_implemented_for_gpu(reason="Regression SVM is not implemented for GPU")
 @pytest.mark.parametrize("queue", get_queues())
 def test_run_to_run_fit(queue):
     diabetes = datasets.load_diabetes()
@@ -45,7 +45,7 @@ def test_run_to_run_fit(queue):
         assert_allclose(clf_first.dual_coef_, clf.dual_coef_)
 
 
-@pass_if_not_implemented_for_gpu(reason="svr is not implemented")
+@pass_if_not_implemented_for_gpu(reason="Regression SVM is not implemented for GPU")
 @pytest.mark.parametrize("queue", get_queues())
 def test_diabetes_simple(queue):
     diabetes = datasets.load_diabetes()
@@ -54,7 +54,7 @@ def test_diabetes_simple(queue):
     assert clf.score(diabetes.data, diabetes.target, queue=queue) > 0.02
 
 
-@pass_if_not_implemented_for_gpu(reason="svr is not implemented")
+@pass_if_not_implemented_for_gpu(reason="Regression SVM is not implemented for GPU")
 @pytest.mark.parametrize("queue", get_queues())
 def test_input_format_for_diabetes(queue):
     diabetes = datasets.load_diabetes()
@@ -82,7 +82,7 @@ def test_input_format_for_diabetes(queue):
     assert_allclose(res_c_contiguous_numpy, res_f_contiguous_numpy)
 
 
-@pass_if_not_implemented_for_gpu(reason="svr is not implemented")
+@pass_if_not_implemented_for_gpu(reason="Regression SVM is not implemented for GPU")
 @pytest.mark.parametrize("queue", get_queues())
 def test_predict(queue):
     iris = datasets.load_iris()
@@ -120,7 +120,7 @@ def _test_diabetes_compare_with_sklearn(queue, kernel):
     assert_allclose(clf_sklearn.dual_coef_, clf_onedal.dual_coef_, atol=1e-1)
 
 
-@pass_if_not_implemented_for_gpu(reason="svr is not implemented")
+@pass_if_not_implemented_for_gpu(reason="Regression SVM is not implemented for GPU")
 @pytest.mark.parametrize("queue", get_queues())
 @pytest.mark.parametrize("kernel", ["linear", "rbf", "poly", "sigmoid"])
 def test_diabetes_compare_with_sklearn(queue, kernel):
@@ -143,7 +143,7 @@ def _test_synth_rbf_compare_with_sklearn(queue, C, gamma):
     assert result > expected - 1e-5
 
 
-@pass_if_not_implemented_for_gpu(reason="svr is not implemented")
+@pass_if_not_implemented_for_gpu(reason="Regression SVM is not implemented for GPU")
 @pytest.mark.parametrize("queue", get_queues())
 @pytest.mark.parametrize("gamma", ["scale", "auto"])
 @pytest.mark.parametrize("C", [100.0, 1000.0])
@@ -167,7 +167,7 @@ def _test_synth_linear_compare_with_sklearn(queue, C):
     assert result > expected - 1e-3
 
 
-@pass_if_not_implemented_for_gpu(reason="svr is not implemented")
+@pass_if_not_implemented_for_gpu(reason="Regression SVM is not implemented for GPU")
 @pytest.mark.parametrize("queue", get_queues())
 @pytest.mark.parametrize("C", [0.001, 0.1])
 def test_synth_linear_compare_with_sklearn(queue, C):
@@ -188,7 +188,7 @@ def _test_synth_poly_compare_with_sklearn(queue, params):
     assert result > expected - 1e-5
 
 
-@pass_if_not_implemented_for_gpu(reason="svr is not implemented")
+@pass_if_not_implemented_for_gpu(reason="Regression SVM is not implemented for GPU")
 @pytest.mark.parametrize("queue", get_queues())
 @pytest.mark.parametrize(
     "params",
@@ -201,7 +201,7 @@ def test_synth_poly_compare_with_sklearn(queue, params):
     _test_synth_poly_compare_with_sklearn(queue, params)
 
 
-@pass_if_not_implemented_for_gpu(reason="svr is not implemented")
+@pass_if_not_implemented_for_gpu(reason="Regression SVM is not implemented for GPU")
 @pytest.mark.parametrize("queue", get_queues())
 def test_sided_sample_weight(queue):
     clf = SVR(C=1e-2, kernel="linear")
@@ -225,7 +225,7 @@ def test_sided_sample_weight(queue):
     assert y_pred == pytest.approx(1.5)
 
 
-@pass_if_not_implemented_for_gpu(reason="svr is not implemented")
+@pass_if_not_implemented_for_gpu(reason="Regression SVM is not implemented for GPU")
 @pytest.mark.parametrize("queue", get_queues())
 def test_pickle(queue):
     diabetes = datasets.load_diabetes()

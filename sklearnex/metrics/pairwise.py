@@ -74,3 +74,4 @@ class RBFKernel:
 
 def rbf_kernel(X, Y=None, gamma=None):
     return RBFKernel().compute(X, Y, gamma)
+

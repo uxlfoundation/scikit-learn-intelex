@@ -14,6 +14,8 @@
 * limitations under the License.
 *******************************************************************************/
 
+#include <pybind11/operators.h>
+
 #include "onedal/common/sycl_interfaces.hpp"
 #include "onedal/common/pybind11_helpers.hpp"
 
@@ -21,13 +23,12 @@ namespace py = pybind11;
 
 namespace oneapi::dal::python {
 
-#ifdef ONEDAL_DATA_PARALLEL
-
 void instantiate_sycl_interfaces(py::module& m) {
     // These classes mirror a subset of functionality of the dpctl python
     // package's `SyclQueue` and `SyclDevice` objects.  In the case that dpctl
     // is not installed, these classes will enable scikit-learn-intelex to still
     // properly offload to other devices when built with the dpc backend.
+#ifdef ONEDAL_DATA_PARALLEL
     py::class_<sycl::queue> syclqueue(m, "SyclQueue");
     syclqueue.def(py::init<const sycl::device&>())
         .def(py::init([](const std::string& filter) {
@@ -43,7 +44,9 @@ void instantiate_sycl_interfaces(py::module& m) {
              [](const sycl::queue& queue) {
                  return pack_queue(std::make_shared<sycl::queue>(queue));
              })
-        .def_property_readonly("sycl_device", &sycl::queue::get_device);
+        .def_property_readonly("sycl_device", &sycl::queue::get_device)
+        .def(py::self == py::self)
+        .def(py::self != py::self);
 
     // expose limited sycl device features to python for oneDAL analysis
     py::class_<sycl::device> sycldevice(m, "SyclDevice");
@@ -75,19 +78,39 @@ void instantiate_sycl_interfaces(py::module& m) {
                                    }
                                    return py::str(filter + ":") + py::str(py::int_(outidx));
                                })
-        .def_property_readonly("device_id",
-                               [](const sycl::device& device) {
-                                   // assumes we are not working with accelerators
-                                   std::string filter = get_device_name(device);
-                                   return get_device_id(device).value();
-                               })
+        .def("get_device_id",
+             [](const sycl::device& device) {
+                 return get_device_id(device).value();
+             })
         .def_property_readonly("is_cpu", &sycl::device::is_cpu)
-        .def_property_readonly("is_gpu", &sycl::device::is_gpu);
+        .def_property_readonly("is_gpu", &sycl::device::is_gpu)
+        .def(py::self == py::self)
+        .def(py::self != py::self);
+#else
+    struct syclqueue {};
+    py::class_<syclqueue> syclqueue(m, "SyclQueue");
+    // inspired from pybind11 PR#4698 which turns init into a no-op
+    syclqueue
+        .def(py::init([]() {
+            return nullptr;
+        }))
+        .def_static("__new__", [](const py::object& cls, const py::object& obj) {
+            // this object is defined for the host build, where SYCL support is not available.
+            // This class acts as the failure point to target_offload, which will throw an
+            // error in all circumstances if any value but the default value ("auto"), or a string
+            // starting with "cpu". The returned "queue" is a None. Must be a class to work with
+            // isinstance
+            if (!py::isinstance<py::str>(obj) || obj.cast<std::string>() != "auto") {
+                throw std::invalid_argument(
+                    "device use via `target_offload` is only supported with the DPC++ backend");
+            }
+            return py::none();
+        });
+#endif
 }
 
 ONEDAL_PY_INIT_MODULE(sycl) {
     instantiate_sycl_interfaces(m);
 }
-#endif
 
 } // namespace oneapi::dal::python

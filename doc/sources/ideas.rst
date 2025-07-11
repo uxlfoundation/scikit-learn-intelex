@@ -16,7 +16,7 @@
 Ideas
 #####
 
-As an open-source project, we welcome community contributions to Intel(R) Extension for Scikit-learn.
+As an open-source project, we welcome community contributions to Extension for Scikit-learn.
 This document suggests contribution directions which we consider good introductory projects with meaningful
 impact. You can directly contribute to next-generation supercomputing, or just learn in depth about key 
 aspects of performant machine learning code for a range of architectures. This list is expected to evolve 
@@ -32,7 +32,7 @@ extended goal. They are grouped into relative similarity to allow for easy combi
 Implement Covariance Estimators for Supercomputers
 --------------------------------------------------
 
-The Intel(R) Extension for Scikit-learn contains an MPI-enabled covariance algorithm, showing high performance
+The Extension for Scikit-learn contains an MPI-enabled covariance algorithm, showing high performance
 from SBCs to multi-node clusters. It directly matches the capabilities of Scikit-Learn's EmpiricalCovariance
 estimator. There exist a number of closely related algorithms which modify the outputs of EmpiricalCovariance
 which can be created using our implementation. This includes Oracles Approximated Shrinkage (OAS) and Shrunk 
@@ -46,7 +46,7 @@ Oracle Approximating Shrinkage Estimator (small)
 The output of EmpiricalCovariance is regularized by a shrinkage value impacted by the overall mean of the data.
 The goal would be to implement this estimator with post-processing changes to the fitted empirical covariance.
 This project is very similar to the ShrunkCovariance project and would combine into a medium project.
-When implemented in python re-using our EmpiricalCovariance estimator, this would be an easy project with a 
+When implemented in python reusing our EmpiricalCovariance estimator, this would be an easy project with a 
 small time commitment. Implementing the super-computing distributed version using python would only work for
 distributed-aware frameworks. Extended goals would make this a hard difficulty, medium commitment project. This
 would require implementing the regularization in C++ in oneDAL both for CPU and GPU. Then this must be made 
@@ -62,7 +62,7 @@ ShrunkCovariance Estimator (small)
 The output of EmpiricalCovariance is regularized by a shrinkage value impacted by the overall mean of the data.
 The goal would be to implement this estimator with post-processing changes to the fitted empirical covariance.
 This is very similar to the OAS project and would combine into a medium project.
-When implemented in python re-using our EmpiricalCovariance estimator, this would be an easy project with a 
+When implemented in python reusing our EmpiricalCovariance estimator, this would be an easy project with a 
 small time commitment. Implementing the super-computing distributed version using python would only work for
 distributed-aware frameworks. Extended goals would make this a hard difficulty, medium commitment project. This
 would require implementing the regularization in C++ in oneDAL both for CPU and GPU. Then this must be made 
@@ -75,10 +75,10 @@ Questions, status, and additional information can be tracked on `GitHub <https:/
 Implement the Preprocessing Estimators for Supercomputers
 ---------------------------------------------------------
 
-The Intel(R) Extension for Scikit-learn contains two unique estimators used to get vital metrics from large datasets,
+The Extension for Scikit-learn contains two unique estimators used to get vital metrics from large datasets,
 known as BasicStatistics and IncrementalBasicStatistics. They generate relevant values like 'min', 'max', 'mean' 
 and 'variance' with special focus on multithreaded performance. It is also MPI-enabled working on SBCs to multi-node 
-clusters, and can prove very useful for important big data pre-processing steps which may be otherwise unwieldly. 
+clusters, and can prove very useful for important big data pre-processing steps which may be otherwise unwieldy. 
 Several pre-processsing algorithms in Scikit-learn use these basic metrics where BasicStatistics could be used instead. 
 The overall goal would be to use the online version, IncrementalBasicStatistics, to create advanced pre-processing 
 scikit-learn-intelex estimators which can be used on supercomputing clusters. The difficulty of this project is easy,
@@ -138,7 +138,7 @@ Questions, status, and additional information can be tracked on `GitHub <https:/
 Expose Accelerated Kernel Distance Functions
 --------------------------------------------
 
-The Intel(R) Extension for Scikit-learn contains several kernel functions which have not been made available in our public API but
+The Extension for Scikit-learn contains several kernel functions which have not been made available in our public API but
 are available in our onedal package.  Making these available to the users is an easy, python-only project good for learning about 
 Scikit-learn, testing and the underlying math of kernels. The goal would be to make them available in a similar fashion as in Scikit-Learn.
 Their general nature makes them have high utility for both scikit-learn and scikit-learn-intelex as they can be used as plugins for a 

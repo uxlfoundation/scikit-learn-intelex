@@ -75,9 +75,9 @@ public:
     {
         auto s1_result = algo.run_step1Local(inputs...);
         // reduce all partial results
-        auto pres = reduce(algo, s1_result);
+        auto partialres = reduce(algo, s1_result);
         // finalize result
-        auto res = algo.run_step2Master__final(std::vector<typename Algo::iomstep2Master_type::result_type>(1, pres));
+        auto res = algo.run_step2Master__final(std::vector<typename Algo::iomstep2Master_type::result_type>(1, partialres));
         // bcast final result
         get_transceiver()->bcast(res);
         return res;

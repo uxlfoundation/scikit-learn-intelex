@@ -40,11 +40,17 @@ import scripts.build_backend as build_backend
 from scripts.package_helpers import get_packages_with_tests
 from scripts.version import get_onedal_shared_libs, get_onedal_version
 
-USE_ABS_RPATH = False
-ARG_ABS_RPATH = "--abs-rpath"
-if ARG_ABS_RPATH in sys.argv:
-    USE_ABS_RPATH = True
-    sys.argv = [arg for arg in sys.argv if arg != ARG_ABS_RPATH]
+
+def check_for_build_arg(arg: str) -> bool:
+    if arg in sys.argv:
+        sys.argv = [elt for elt in sys.argv if elt != arg]
+        return True
+    return False
+
+
+USE_ABS_RPATH: bool = check_for_build_arg("--abs-rpath")
+DEBUG_BUILD: bool = check_for_build_arg("--debug")
+USING_LLD: bool = check_for_build_arg("--using-lld")
 
 IS_WIN = False
 IS_MAC = False
@@ -99,15 +105,15 @@ if (not no_dist) and (mpi_root is None):
         " Use 'NO_DIST=1' to build without distributed mode."
     )
 dpcpp = (
-    shutil.which("icpx") is not None
-    and "onedal_dpc" in get_onedal_shared_libs(dal_root)
+    shutil.which("icpx" if not IS_WIN else "icx") is not None
+    and "onedal_dpc" in get_onedal_shared_libs(dal_root, IS_WIN)
     and not no_dpc
     and not (IS_WIN and debug_build)
 )
 
 use_parameters_lib = (not IS_WIN) and (ONEDAL_VERSION >= 20240000)
 
-build_distribute = dpcpp and not no_dist and IS_LIN
+build_distributed = dpcpp and not no_dist and IS_LIN
 
 daal_lib_dir = lib_dir if (IS_MAC or os.path.isdir(lib_dir)) else os.path.dirname(lib_dir)
 ONEDAL_LIBDIRS = [daal_lib_dir]
@@ -162,10 +168,13 @@ def get_sdl_cflags():
 
 def get_sdl_ldflags():
     if IS_LIN:
-        return [
-            "-Wl,-z,noexecstack,-z,relro,-z,now,-fstack-protector-strong,"
-            "-fno-strict-overflow,-fno-delete-null-pointer-checks,-fwrapv"
-        ]
+        if not USING_LLD:
+            return [
+                "-Wl,-z,noexecstack,-z,relro,-z,now,-fstack-protector-strong,"
+                "-fno-strict-overflow,-fno-delete-null-pointer-checks,-fwrapv"
+            ]
+        else:
+            return ["-Wl,-z,noexecstack,-z,relro,-z,now"]
     if IS_MAC:
         return [
             "-fstack-protector-strong",
@@ -263,14 +272,21 @@ def get_build_options():
     # FIXME it is a wrong place for this dependency
     if not no_dist:
         include_dir_plat.append(mpi_root + "/include")
-    using_intel = os.environ.get("cc", "") in [
-        "icc",
-        "icpc",
-        "icl",
-        "dpcpp",
-        "icx",
-        "icpx",
-    ]
+
+    using_intel = any(
+        [
+            intel_exec in os.environ.get("CXX", "")
+            for intel_exec in [
+                "icc",
+                "icpc",
+                "icl",
+                "dpcpp",
+                "icx",
+                "icpx",
+            ]
+        ]
+    )
+
     eca = [
         "-DPY_ARRAY_UNIQUE_SYMBOL=daal4py_array_API",
         '-DD4P_VERSION="' + sklearnex_version + '"',
@@ -295,6 +311,9 @@ def get_build_options():
     eca += get_sdl_cflags()
     ela += get_sdl_ldflags()
 
+    if DEBUG_BUILD and not IS_WIN:
+        eca += ["-g"]
+
     if IS_MAC:
         eca.append("-stdlib=libc++")
         ela.append("-stdlib=libc++")
@@ -302,16 +321,20 @@ def get_build_options():
         ela.append("-Wl,-rpath,@loader_path/../../../")
     elif IS_WIN:
         ela.append("-IGNORE:4197")
-    elif IS_LIN and not any(
-        x in os.environ and "-g" in os.environ[x]
-        for x in ["CPPFLAGS", "CFLAGS", "LDFLAGS"]
-    ):
-        ela.append("-s")
     if IS_LIN:
         ela.append("-fPIC")
         ela.append(
             f"-Wl,-rpath,{(daal_lib_dir + ':') if USE_ABS_RPATH else ''}$ORIGIN/../../../"
         )
+        if (
+            not any(
+                x in os.environ and "-g" in os.environ[x]
+                for x in ["CPPFLAGS", "CFLAGS", "CXXFLAGS", "CC", "CXX", "LDFLAGS"]
+            )
+            and not USE_ABS_RPATH
+            and not DEBUG_BUILD
+        ):
+            ela.append("-s")
     return eca, ela, include_dir_plat
 
 
@@ -399,12 +422,12 @@ gen_pyx(os.path.abspath("./build"))
 def get_onedal_py_libs():
     ext_suffix = get_config_vars("EXT_SUFFIX")[0]
     libs = [f"_onedal_py_host{ext_suffix}", f"_onedal_py_dpc{ext_suffix}"]
-    if build_distribute:
+    if build_distributed:
         libs += [f"_onedal_py_spmd_dpc{ext_suffix}"]
     if IS_WIN:
         ext_suffix_lib = ext_suffix.replace(".dll", ".lib")
         libs += [f"_onedal_py_host{ext_suffix_lib}", f"_onedal_py_dpc{ext_suffix_lib}"]
-        if build_distribute:
+        if build_distributed:
             libs += [f"_onedal_py_spmd_dpc{ext_suffix_lib}"]
     return libs
 
@@ -415,6 +438,16 @@ class onedal_build:
         self.onedal_run()
         super(onedal_build, self).run()
         self.onedal_post_build()
+        if hasattr(self, "build_lib"):
+            # swap out __version__ before install
+            for p in ["onedal", "sklearnex"]:
+                loc = os.sep.join((self.build_lib, p, "__init__.py"))
+                if os.path.isfile(loc):
+                    with open(loc, "r+") as f:
+                        data = f.read().replace("2199.9.9", sklearnex_version)
+                        f.seek(0)
+                        f.write(data)
+                        f.truncate()
 
     def onedal_run(self):
         n_threads = self.parallel
@@ -432,22 +465,25 @@ class onedal_build:
         elif n_threads is True:
             n_threads = os.cpu_count() or 1
 
-        cxx = os.getenv("CXX", "cl" if IS_WIN else "g++")
         build_onedal = lambda iface: build_backend.custom_build_cmake_clib(
             iface=iface,
-            cxx=cxx,
             onedal_major_binary_version=ONEDAL_MAJOR_BINARY_VERSION,
+            mpi_root=mpi_root,
             no_dist=no_dist,
             use_parameters_lib=use_parameters_lib,
             use_abs_rpath=USE_ABS_RPATH,
             use_gcov=use_gcov,
             n_threads=n_threads,
+            is_win=IS_WIN,
+            is_lin=IS_LIN,
+            debug_build=DEBUG_BUILD,
+            using_lld=USING_LLD,
         )
         if is_onedal_iface:
             build_onedal("host")
             if dpcpp:
                 build_onedal("dpc")
-                if build_distribute:
+                if build_distributed:
                     build_onedal("spmd_dpc")
 
     def onedal_post_build(self):
@@ -482,9 +518,9 @@ class build(onedal_build, orig_build.build):
 
 
 project_urls = {
-    "Bug Tracker": "https://github.com/uxlfoundation/scikit-learn-intelex",
-    "Documentation": "https://intelpython.github.io/daal4py/",
-    "Source Code": "https://github.com/uxlfoundation/scikit-learn-intelex/daal4py",
+    "Bug Tracker": "https://github.com/uxlfoundation/scikit-learn-intelex/issues",
+    "Documentation": "https://uxlfoundation.github.io/scikit-learn-intelex/",
+    "Source Code": "https://github.com/uxlfoundation/scikit-learn-intelex",
 }
 
 with open("README.md", "r", encoding="utf8") as f:
@@ -540,7 +576,7 @@ if ONEDAL_VERSION >= 20230100:
 if ONEDAL_VERSION >= 20230200:
     packages_with_tests += ["onedal.cluster"]
 
-if build_distribute:
+if build_distributed:
     packages_with_tests += [
         "onedal.spmd",
         "onedal.spmd.covariance",
@@ -565,7 +601,7 @@ if build_distribute:
 
 setup(
     name="scikit-learn-intelex",
-    description="Intel(R) Extension for Scikit-learn is a "
+    description="Extension for Scikit-learn is a "
     "seamless way to speed up your Scikit-learn application.",
     long_description=long_description,
     long_description_content_type="text/markdown",

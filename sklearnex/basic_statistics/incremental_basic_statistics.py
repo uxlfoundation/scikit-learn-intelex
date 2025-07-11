@@ -27,7 +27,9 @@ from onedal.basic_statistics import (
 
 from .._config import get_config
 from .._device_offload import dispatch
-from .._utils import IntelEstimator, PatchingConditionsChain
+from .._utils import PatchingConditionsChain, _add_inc_serialization_note
+from ..base import oneDALEstimator
+from ..utils.validation import validate_data
 
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import Interval, StrOptions
@@ -35,23 +37,21 @@ if sklearn_check_version("1.2"):
 import numbers
 import warnings
 
-if sklearn_check_version("1.6"):
-    from sklearn.utils.validation import validate_data
-else:
-    validate_data = BaseEstimator._validate_data
-
 
 @control_n_jobs(decorated_methods=["partial_fit", "_onedal_finalize_fit"])
-class IncrementalBasicStatistics(IntelEstimator, BaseEstimator):
+class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
     """
-    Calculates basic statistics on the given data, allows for computation when the data are split into
-    batches. The user can use ``partial_fit`` method to provide a single batch of data or use the ``fit`` method to provide
-    the entire dataset.
+    Incremental estimator for basic statistics.
+
+    Calculates basic statistics on the given data, allows for computation
+    when the data are split into batches. The user can use ``partial_fit``
+    method to provide a single batch of data or use the ``fit`` method to
+    provide the entire dataset.
 
     Parameters
     ----------
-    result_options: string or list, default='all'
-        List of statistics to compute
+    result_options : str or list, default=str('all')
+        List of statistics to compute.
 
     batch_size : int, default=None
         The number of samples to use for each batch. Only used when calling
@@ -91,8 +91,9 @@ class IncrementalBasicStatistics(IntelEstimator, BaseEstimator):
             Second order moment of each feature over all samples.
 
         n_samples_seen_ : int
-            The number of samples processed by the estimator. Will be reset on
-            new calls to ``fit``, but increments across ``partial_fit`` calls.
+            The number of samples processed by the estimator. Will be reset
+            on new calls to ``fit``, but increments across ``partial_fit``
+            calls.
 
         batch_size_ : int
             Inferred batch size from ``batch_size``.
@@ -100,21 +101,16 @@ class IncrementalBasicStatistics(IntelEstimator, BaseEstimator):
         n_features_in_ : int
             Number of features seen during ``fit`` or  ``partial_fit``.
 
-    Note
-    ----
+    Notes
+    -----
     Attribute exists only if corresponding result option has been provided.
 
-    Note
-    ----
-    Serializing instances of this class will trigger a forced finalization of calculations.
-    Since finalize_fit can't be dispatched without directly provided queue
-    and the dispatching policy can't be serialized, the computation is finalized
-    during serialization call and the policy is not saved in serialized data.
+    Names of attributes without the trailing underscore are supported
+    currently but deprecated in 2025.1 and will be removed in 2026.0.
 
-    Note
-    ----
-    Names of attributes without the trailing underscore are
-    supported currently but deprecated in 2025.1 and will be removed in 2026.0
+    Sparse data formats are not supported. Input dtype must be ``float32`` or ``float64``.
+
+    %incremental_serialization_note%
 
     Examples
     --------
@@ -134,6 +130,8 @@ class IncrementalBasicStatistics(IntelEstimator, BaseEstimator):
     >>> incbs.max_
     np.array([3., 4.])
     """
+
+    __doc__ = _add_inc_serialization_note(__doc__)
 
     _onedal_incremental_basic_statistics = staticmethod(onedal_IncrementalBasicStatistics)
 
@@ -187,9 +185,9 @@ class IncrementalBasicStatistics(IntelEstimator, BaseEstimator):
         assert isinstance(onedal_options, str)
         return options
 
-    def _onedal_finalize_fit(self, queue=None):
+    def _onedal_finalize_fit(self):
         assert hasattr(self, "_onedal_estimator")
-        self._onedal_estimator.finalize_fit(queue=queue)
+        self._onedal_estimator.finalize_fit()
         self._need_to_finalize = False
 
     def _onedal_partial_fit(self, X, sample_weight=None, queue=None, check_input=True):
@@ -199,18 +197,12 @@ class IncrementalBasicStatistics(IntelEstimator, BaseEstimator):
         # never check input when using raw input
         check_input &= use_raw_input is False
         if check_input:
-            if sklearn_check_version("1.0"):
-                X = validate_data(
-                    self,
-                    X,
-                    dtype=[np.float64, np.float32],
-                    reset=first_pass,
-                )
-            else:
-                X = check_array(
-                    X,
-                    dtype=[np.float64, np.float32],
-                )
+            X = validate_data(
+                self,
+                X,
+                dtype=[np.float64, np.float32],
+                reset=first_pass,
+            )
 
         if not use_raw_input and sample_weight is not None:
             sample_weight = _check_sample_weight(sample_weight, X)
@@ -237,10 +229,7 @@ class IncrementalBasicStatistics(IntelEstimator, BaseEstimator):
             if sklearn_check_version("1.2"):
                 self._validate_params()
 
-            if sklearn_check_version("1.0"):
-                X = validate_data(self, X, dtype=[np.float64, np.float32])
-            else:
-                X = check_array(X, dtype=[np.float64, np.float32])
+            X = validate_data(self, X, dtype=[np.float64, np.float32])
 
             if sample_weight is not None:
                 sample_weight = _check_sample_weight(sample_weight, X)
@@ -264,7 +253,7 @@ class IncrementalBasicStatistics(IntelEstimator, BaseEstimator):
 
         self.n_features_in_ = X.shape[1]
 
-        self._onedal_finalize_fit(queue=queue)
+        self._onedal_finalize_fit()
 
         return self
 
@@ -309,7 +298,7 @@ class IncrementalBasicStatistics(IntelEstimator, BaseEstimator):
 
         Returns
         -------
-        self : object
+        self : IncrementalBasicStatistics
             Returns the instance itself.
         """
         dispatch(
@@ -326,7 +315,7 @@ class IncrementalBasicStatistics(IntelEstimator, BaseEstimator):
         return self
 
     def fit(self, X, y=None, sample_weight=None):
-        """Calculate statistics of X using minibatches of size batch_size.
+        """Calculate statistics of X using minibatches of size ``batch_size``.
 
         Parameters
         ----------
@@ -342,7 +331,7 @@ class IncrementalBasicStatistics(IntelEstimator, BaseEstimator):
 
         Returns
         -------
-        self : object
+        self : IncrementalBasicStatistics
             Returns the instance itself.
         """
         dispatch(

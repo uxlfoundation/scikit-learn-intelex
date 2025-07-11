@@ -38,6 +38,7 @@ using daal::services::LibraryVersionInfo;
 #include <limits>
 #include <string>
 #include <unordered_map>
+#include <cstdint>
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <numpy/arrayobject.h>
 
@@ -72,8 +73,8 @@ extern "C"
 using daal::data_management::NumericTablePtr;
 typedef daal::services::SharedPtr<std::vector<std::vector<daal::byte> > > BytesArray;
 typedef std::string std_string;
-typedef std::unordered_map<std::string, int64_t> str2i_map_t;
-typedef std::unordered_map<int64_t, std::string> i2str_map_t;
+typedef std::unordered_map<std::string, std::int64_t> str2i_map_t;
+typedef std::unordered_map<std::int64_t, std::string> i2str_map_t;
 
 template <typename T>
 bool use_default(const daal::services::SharedPtr<T> * attr)
@@ -141,16 +142,6 @@ public:
     algo_manager__iface__(const algo_manager__iface__ &)           = delete;
     algo_manager__iface__ operator=(const algo_manager__iface__ &) = delete;
 };
-
-#if 0
-static inline NTYPE as_native_shared_ptr(services::SharedPtr< const algo_manager__iface__ > algo)
-{
-    int gc = 0;
-    MK_DAALPTR(ret, new services::SharedPtr< const algo_manager__iface__ >(algo), services::SharedPtr< algo_manager__iface__ >, gc);
-    TMGC(gc);
-    return ret;
-}
-#endif
 
 // Our Batch input/Output manager, abstracts from input/output types
 // also defines how to get results and finalize
@@ -224,7 +215,7 @@ void * get_nt_data_ptr(const daal::data_management::NumericTablePtr * ptr)
     return dptr ? reinterpret_cast<void *>(dptr->getArraySharedPtr().get()) : NULL;
 }
 
-extern int64_t string2enum(const std::string & str, str2i_map_t & strmap);
+extern std::int64_t string2enum(const std::string & str, str2i_map_t & strmap);
 
 static std::string to_std_string(PyObject * o)
 {
