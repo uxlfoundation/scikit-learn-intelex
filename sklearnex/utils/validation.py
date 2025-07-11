@@ -116,7 +116,7 @@ def validate_data(
         y=y,
         **kwargs,
     )
-    
+
     check_x = not isinstance(X, str) or X != "no_validation"
     check_y = not (y is None or isinstance(y, str) and y == "no_validation")
 
