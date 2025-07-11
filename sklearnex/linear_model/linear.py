@@ -16,12 +16,16 @@
 
 import logging
 
+from scipy.sparse import issparse
 from sklearn.linear_model import LinearRegression as _sklearn_LinearRegression
 from sklearn.metrics import r2_score
 from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from onedal.common.hyperparameters import get_hyperparameters
+from onedal.linear_model import LinearRegression as onedal_LinearRegression
+from onedal.utils.validation import _num_features, _num_samples
 
 from .._config import get_config
 from .._device_offload import dispatch, wrap_output_data
@@ -32,14 +36,6 @@ from ..utils.validation import validate_data
 
 if not sklearn_check_version("1.2"):
     from sklearn.linear_model._base import _deprecate_normalize
-
-from scipy.sparse import issparse
-from sklearn.utils.validation import check_is_fitted
-
-from onedal.common.hyperparameters import get_hyperparameters
-from onedal.linear_model import LinearRegression as onedal_LinearRegression
-from onedal.utils.validation import _num_features, _num_samples
-
 
 @enable_array_api
 @register_hyperparameters({"fit": get_hyperparameters("linear_regression", "train")})
