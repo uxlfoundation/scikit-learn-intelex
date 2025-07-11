@@ -45,9 +45,9 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
 
     def _save_attributes(self):
         assert hasattr(self, "_onedal_estimator")
+        lp, _ = get_namespace(self._onedal_estimator.location_)
         if not daal_check_version((2024, "P", 400)) and self.assume_centered:
             location = self._onedal_estimator.location_[None, :]
-            lp, _ = get_namespace(location)
             self._onedal_estimator.covariance_ += lp.dot(location.T, location)
             self._onedal_estimator.location_ = lp.zeros_like(lp.squeeze(location))
         self._set_covariance(self._onedal_estimator.covariance_)
