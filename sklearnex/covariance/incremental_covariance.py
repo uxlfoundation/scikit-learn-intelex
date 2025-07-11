@@ -21,8 +21,9 @@ import numpy as np
 from scipy import linalg
 from sklearn.base import BaseEstimator, clone
 from sklearn.covariance import EmpiricalCovariance as _sklearn_EmpiricalCovariance
-from sklearn.covariance import log_likelihood
+from sklearn.covariance import log_likelihood as _sklearn_log_likelihood
 from sklearn.utils import gen_batches
+from sklearn.utils.extmath import fast_logdet
 from sklearn.utils.validation import _num_features, check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
@@ -34,11 +35,7 @@ from onedal.utils._array_api import _is_numpy_namespace
 
 from .._config import config_context, get_config
 from .._device_offload import dispatch, wrap_output_data
-from .._utils import (
-    PatchingConditionsChain,
-    _add_inc_serialization_note,
-    register_hyperparameters,
-)
+from .._utils import PatchingConditionsChain, _add_inc_serialization_note
 from ..base import oneDALEstimator
 from ..metrics import pairwise_distances
 from ..utils._array_api import get_namespace
@@ -46,6 +43,20 @@ from ..utils.validation import validate_data
 
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import Interval
+
+
+def log_likelihood(emp_cov, precision):
+    # this is to compensate for a lack of array API support in sklearn
+    # even though it exists for ``fast_logdet``
+    xp, _ = get_namespace(emp_cov, precision)
+    p = precision.shape[0]
+    log_likelihood_ = -xp.sum(emp_cov * precision) + fast_logdet(precision)
+    log_likelihood_ -= p * xp.log(2 * np.pi)
+    log_likelihood_ /= 2.0
+    return log_likelihood_
+
+
+log_likelihood.__doc__ = _sklearn_log_likelihood.__doc__
 
 
 @control_n_jobs(decorated_methods=["partial_fit", "fit", "_onedal_finalize_fit"])
@@ -155,15 +166,15 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         assert hasattr(self, "_onedal_estimator")
         self._onedal_estimator.finalize_fit()
         self._need_to_finalize = False
+        lp, _ = get_namespace(self._onedal_estimator.location_)
 
         if not daal_check_version((2024, "P", 400)) and self.assume_centered:
             location = self._onedal_estimator.location_[None, :]
-            lp, _ = get_namespace(location)
             self._onedal_estimator.covariance_ += lp.dot(location.T, location)
             self._onedal_estimator.location_ = lp.zeros_like(lp.squeeze(location))
         if self.store_precision:
-            self.precision_ = linalg.pinvh(
-                self._onedal_estimator.covariance_, check_finite=False
+            self.precision_ = lp.asarray(
+                linalg.pinvh(self._onedal_estimator.covariance_, check_finite=False)
             )
         else:
             self.precision_ = None
@@ -231,6 +242,7 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
 
         check_is_fitted(self)
         location = self.location_
+        precision = self.get_precision()
 
         X = validate_data(
             self,
@@ -241,6 +253,7 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
 
         if not _is_numpy_namespace(xp):
             location = xp.asarray(location, device=X_test.device)
+            precision = xp.asarray(precision, device=X_test.device)
             # depending on the sklearn version, check_array
             # and validate_data will return only numpy arrays
             # which will break dpnp/dpctl support. If the
@@ -255,7 +268,7 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
 
         # test_cov is a numpy array, but calculated on device
         test_cov = est.fit(X - location).covariance_
-        res = log_likelihood(test_cov, self.get_precision())
+        res = log_likelihood(test_cov, precision)
 
         return res
 
@@ -362,6 +375,7 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         if not _is_numpy_namespace(xp):
             # Guarantee that inputs to pairwise_distances match in type and location
             location = xp.asarray(location, device=X.device)
+            precision = xp.asarray(precision, device=X.device)
 
         with config_context(assume_finite=True):
 
