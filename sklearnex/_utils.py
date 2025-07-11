@@ -27,6 +27,12 @@ from daal4py.sklearn._utils import (
     PatchingConditionsChain as daal4py_PatchingConditionsChain,
 )
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from onedal.common.hyperparameters import (
+    get_hyperparameters as onedal_get_hyperparameters,
+)
+from onedal.common.hyperparameters import (
+    reset_hyperparameters as onedal_reset_hyperparameters,
+)
 
 # Not an ideal solution, but this allows for access to the outputs of older
 # sklearnex tag dictionaries in a way similar to the sklearn >=1.6 tag
@@ -121,12 +127,15 @@ def get_sklearnex_version(rule):
 def register_hyperparameters(hyperparameters_map):
     """Decorator for hyperparameters support in estimator class.
 
-    Adds `get_hyperparameters` method to class.
+    Adds `get_hyperparameters` and `reset_hyperparameters` methods to class.
 
     Parameters
     ----------
-    hyperparameters_map : dict
-       Dictionary containing the operator-hyperparameter mapping.
+    hyperparameters_map : Dict[str, Tuple[str, str]]
+       Dictionary containing the mapping of the operator name in the sklearnex API
+       to the tuple (algorithm name, operation name) that contains the arguments to
+       onedal.common.hyperparameters.get_hyperparameters and
+       onedal.common.hyperparameters.reset_hyperparameters functions.
 
     Returns
     -------
@@ -159,9 +168,27 @@ def register_hyperparameters(hyperparameters_map):
                 return self.get_hyperparameters
 
             def get_hyperparameters(self, op):
-                return hyperparameters_map[op]
+                return onedal_get_hyperparameters(
+                    hyperparameters_map[op][0], hyperparameters_map[op][1]
+                )
+
+        class StaticHyperparametersResetter:
+            """Like a @staticmethod, but additionally raises a Warning when called on an instance."""
+
+            def __get__(self, instance, _):
+                if instance is not None:
+                    warnings.warn(
+                        "Hyperparameters are static variables and can not be modified per instance."
+                    )
+                return self.reset_hyperparameters
+
+            def reset_hyperparameters(self, op):
+                return onedal_reset_hyperparameters(
+                    hyperparameters_map[op][0], hyperparameters_map[op][1]
+                )
 
         cls.get_hyperparameters = StaticHyperparametersAccessor()
+        cls.reset_hyperparameters = StaticHyperparametersResetter()
         return cls
 
     return decorator
