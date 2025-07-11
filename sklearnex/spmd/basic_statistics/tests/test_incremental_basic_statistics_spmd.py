@@ -20,6 +20,7 @@ from numpy.testing import assert_allclose
 
 from onedal.basic_statistics.tests.utils import options_and_tests
 from onedal.tests.utils._dataframes_support import (
+    _as_numpy,
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
@@ -303,8 +304,8 @@ def test_incremental_basic_statistics_partial_fit_spmd_synthetic(
 
     for option in options_and_tests:
         assert_allclose(
-            getattr(incbs_spmd, option),
-            getattr(incbs, option),
+            _as_numpy(getattr(incbs_spmd, option)),
+            _as_numpy(getattr(incbs, option)),
             atol=tol,
             err_msg=f"Result for {option} is incorrect",
         )
