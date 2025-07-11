@@ -77,7 +77,6 @@ class BaseIncrementalLinear(BaseLinearRegression):
             Returns the instance itself.
         """
 
-
         self._queue = queue
         if not self._outtype:
             self._outtype = return_type_constructor(X)
@@ -87,7 +86,6 @@ class BaseIncrementalLinear(BaseLinearRegression):
         if not hasattr(self, "_params"):
             self._params = self._get_onedal_params(X_table.dtype)
 
-        
         hparams = get_hyperparameters("linear_regression", "train")
 
         if hparams is not None and not hparams.is_default:
