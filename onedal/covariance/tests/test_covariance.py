@@ -31,7 +31,7 @@ def test_onedal_import_covariance(queue):
     expected_means = np.array([0, 1])
 
     assert_allclose(expected_covariance, result.covariance_)
-    assert_allclose(expected_means, result.location_)
+    assert_allclose(expected_means, result.location_[0])
 
     X = np.array([[1, 2], [3, 6]], dtype=np.float64)
     result = EmpiricalCovariance().fit(X, queue=queue)
@@ -39,7 +39,7 @@ def test_onedal_import_covariance(queue):
     expected_means = np.array([2, 4])
 
     assert_allclose(expected_covariance, result.covariance_)
-    assert_allclose(expected_means, result.location_)
+    assert_allclose(expected_means, result.location_[0])
 
     X = np.array([[1, 2], [3, 6]], dtype=np.float64)
     result = EmpiricalCovariance(bias=True).fit(X, queue=queue)
@@ -47,4 +47,4 @@ def test_onedal_import_covariance(queue):
     expected_means = np.array([2, 4])
 
     assert_allclose(expected_covariance, result.covariance_)
-    assert_allclose(expected_means, result.location_)
+    assert_allclose(expected_means, result.location_[0])
