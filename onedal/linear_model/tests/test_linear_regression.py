@@ -175,7 +175,7 @@ def test_overdetermined_system(queue, dtype, fit_intercept):
         b = Xi.T @ y
         x = np.r_[np.squeeze(model.coef_), model.intercept_]
     residual = A @ x - b
-    assert np.all(np.abs(residual) < 1e-6)
+    assert np.all(np.abs(residual) < (1e-6 if dtype is np.float64 else 1e-5))
 
 
 @pytest.mark.parametrize("queue", get_queues())
@@ -189,9 +189,9 @@ def test_singular_matrix(queue, dtype, fit_intercept):
     if queue and queue.sycl_device.is_gpu and not daal_check_version((2025, "P", 200)):
         pytest.skip("Functionality introduced in later versions")
     gen = np.random.default_rng(seed=123)
-    X = gen.standard_normal(size=(20, 4))
+    X = gen.standard_normal(size=(20, 4)).astype(dtype)
     X[:, 2] = X[:, 3]
-    y = gen.standard_normal(size=X.shape[0])
+    y = gen.standard_normal(size=X.shape[0]).astype(dtype)
 
     model = LinearRegression(fit_intercept=fit_intercept).fit(X, y)
     if not fit_intercept:
