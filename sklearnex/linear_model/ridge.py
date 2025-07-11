@@ -326,16 +326,18 @@ if daal_check_version((2024, "P", 600)):
 
             self._initialize_onedal_estimator()
             self._onedal_estimator.fit(X, y, queue=queue)
-            self._save_attributes()
+            self.n_features_in_ = self._onedal_estimator.n_features_in_
+            self._coef_ = self._onedal_estimator.coef_
+            self._intercept_ = self._onedal_estimator.intercept_
 
             if sklearn_check_version("1.6"):
                 if y.ndim == 1 or y.shape[1] == 1:
-                    self.coef_ = self.coef_.ravel()
-                    self.intercept_ = self.intercept_[0]
+                    self._coef_ = xp.reshape(self._coef_, (-1,))
+                    self._intercept_ = self.intercept_[0, ...]
             else:
                 if self.coef_.shape[0] == 1 and y.ndim == 1:
-                    self.coef_ = self.coef_.ravel()
-                    self.intercept_ = self.intercept_[0]
+                    self._coef_ = xp.reshape(self._coef_, (-1,))
+                    self._intercept_ = self._intercept_[0, ...]
 
         def _onedal_predict(self, X, queue=None):
             xp, _ = get_namespace(X)
@@ -361,7 +363,7 @@ if daal_check_version((2024, "P", 600)):
 
         @property
         def coef_(self):
-            return self._coef
+            return self._coef_
 
         @coef_.setter
         def coef_(self, value):
@@ -370,11 +372,11 @@ if daal_check_version((2024, "P", 600)):
                 # checking if the model is already fitted and if so, deleting the model
                 if hasattr(self._onedal_estimator, "_onedal_model"):
                     del self._onedal_estimator._onedal_model
-            self._coef = value
+            self._coef_ = value
 
         @property
         def intercept_(self):
-            return self._intercept
+            return self._intercept_
 
         @intercept_.setter
         def intercept_(self, value):
@@ -383,12 +385,7 @@ if daal_check_version((2024, "P", 600)):
                 # checking if the model is already fitted and if so, deleting the model
                 if hasattr(self._onedal_estimator, "_onedal_model"):
                     del self._onedal_estimator._onedal_model
-            self._intercept = value
-
-        def _save_attributes(self):
-            self.n_features_in_ = self._onedal_estimator.n_features_in_
-            self._coef = self._onedal_estimator.coef_
-            self._intercept = self._onedal_estimator.intercept_
+            self._intercept_ = value
 
         fit.__doc__ = _sklearn_Ridge.fit.__doc__
         predict.__doc__ = _sklearn_Ridge.predict.__doc__
