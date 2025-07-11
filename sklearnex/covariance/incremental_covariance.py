@@ -32,7 +32,7 @@ from onedal.covariance import (
 )
 from onedal.utils._array_api import _is_numpy_namespace
 
-from .._config import get_config
+from .._config import config_context, get_config
 from .._device_offload import dispatch, wrap_output_data
 from .._utils import (
     PatchingConditionsChain,
