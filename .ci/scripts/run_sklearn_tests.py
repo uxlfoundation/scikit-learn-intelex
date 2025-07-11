@@ -62,6 +62,8 @@ if __name__ == "__main__":
             f"--cov-config={rc}",
             "--cov-report=",
         )
+    if json_file := os.getenv("JSON_REPORT_FILE"):
+        pytest_args += ["--json-report", f"--json-report-file={json_file}"]
 
     while "" in pytest_args:
         pytest_args.remove("")
