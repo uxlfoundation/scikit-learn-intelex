@@ -373,7 +373,7 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         # check_feature_names will match _validate_data functionally
         location = self.location_[None, :]
 
-        if not _is_numpy_namespace(xp):
+        if not _is_numpy_namespace(xp) and not isinstance(X, np.ndarray):
             # Guarantee that inputs to pairwise_distances match in type and location
             location = xp.asarray(location, device=X.device)
             precision = xp.asarray(precision, device=X.device)
@@ -393,7 +393,7 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
                 else:
                     raise e
 
-        if not _is_numpy_namespace(xp):
+        if not _is_numpy_namespace(xp) and not isinstance(X, np.ndarray):
             dist = xp.asarray(dist, device=X.device)
 
         return (xp.reshape(dist, (-1,))) ** 2
