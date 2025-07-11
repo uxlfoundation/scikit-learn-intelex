@@ -18,7 +18,6 @@ import warnings
 
 import scipy.sparse as sp
 from sklearn.covariance import EmpiricalCovariance as _sklearn_EmpiricalCovariance
-from sklearn.utils import check_array
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
@@ -60,10 +59,8 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
         xp, _ = get_namespace(X)
         if sklearn_check_version("1.2"):
             self._validate_params()
-        if sklearn_check_version("1.0"):
-            X = validate_data(self, X, dtype=[xp.float64, xp.float32])
-        else:
-            X = check_array(X)
+
+        X = validate_data(self, X, dtype=[xp.float64, xp.float32])
 
         if X.shape[0] == 1:
             warnings.warn(
