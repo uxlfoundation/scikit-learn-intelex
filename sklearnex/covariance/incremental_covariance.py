@@ -241,8 +241,6 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         xp, _ = get_namespace(X_test)
 
         check_is_fitted(self)
-        location = self.location_
-        precision = self.get_precision()
 
         X = validate_data(
             self,
@@ -251,9 +249,10 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
             reset=False,
         )
 
+        location = self.location_
+        precision = self.get_precision()
+
         if not _is_numpy_namespace(xp):
-            location = xp.asarray(location, device=X_test.device)
-            precision = xp.asarray(precision, device=X_test.device)
             # depending on the sklearn version, check_array
             # and validate_data will return only numpy arrays
             # which will break dpnp/dpctl support. If the
@@ -262,6 +261,8 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
             # the original can be used.
             if isinstance(X, np.ndarray):
                 X = X_test
+            location = xp.asarray(location, device=X.device)
+            precision = xp.asarray(precision, device=X.device)
 
         est = clone(self)
         est.set_params(**{"assume_centered": True})
