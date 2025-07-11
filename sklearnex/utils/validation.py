@@ -14,7 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 
-
 import math
 import numbers
 
@@ -36,7 +35,6 @@ if sklearn_check_version("1.6"):
     from sklearn.utils.validation import validate_data as _sklearn_validate_data
 
     _finite_keyword = "ensure_all_finite"
-
 else:
     from sklearn.base import BaseEstimator
 
@@ -118,6 +116,7 @@ def validate_data(
         y=y,
         **kwargs,
     )
+    
     check_x = not isinstance(X, str) or X != "no_validation"
     check_y = not (y is None or isinstance(y, str) and y == "no_validation")
 
