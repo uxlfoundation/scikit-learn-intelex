@@ -182,6 +182,10 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
             pytest.skip(
                 f"y_numeric option to validate_data does not support array_api inputs for sklearn <1.5"
             )
+        elif estimator == "PCA" and "score" in method:
+            pytest.skip(
+                f"PCA.{method} has sklearn array_api support which breaks with array_api_dispatching"
+            )
         elif (
             not sklearn_check_version("1.3")
             and estimator == "IncrementalEmpiricalCovariance"
