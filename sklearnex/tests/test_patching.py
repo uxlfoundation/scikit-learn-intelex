@@ -176,8 +176,8 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
         # the patching of sklearn should act similarly. Technically this is conformance.
         if (
             not sklearn_check_version("1.5")
-            and "LinearRegression" in Estimator
-            or "Ridge" in Estimator
+            and "LinearRegression" in estimator
+            or "Ridge" in estimator
         ):
             pytest.skip(
                 f"y_numeric option to validate_data does not support array_api inputs for sklearn <1.5"
