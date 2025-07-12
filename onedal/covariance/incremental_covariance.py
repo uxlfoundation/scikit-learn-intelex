@@ -22,7 +22,7 @@ from onedal.common._backend import bind_default_backend
 from onedal.utils import _sycl_queue_manager as QM
 
 from .._config import _get_config
-from ..datatypes import from_table, to_table
+from ..datatypes import from_table, return_type_constructor, to_table
 from ..utils._array_api import _get_sycl_namespace
 from ..utils.validation import _check_array
 from .covariance import BaseEmpiricalCovariance
@@ -74,6 +74,7 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
     def _reset(self):
         self._need_to_finalize = False
         self._queue = None
+        self._outtype = None
         self._partial_result = self.partial_compute_result()
 
     def __getstate__(self):
@@ -110,6 +111,8 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
         """
 
         self._queue = queue
+        if not self._outtype:
+            self._outtype = return_type_constructor(X)
         X_table = to_table(X, queue=queue)
 
         if not hasattr(self, "_dtype"):
@@ -118,8 +121,6 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
         params = self._get_onedal_params(self._dtype)
         self._partial_result = self.partial_compute(params, self._partial_result, X_table)
         self._need_to_finalize = True
-        # store the queue for when we finalize
-        self._queue = queue
 
     def finalize_fit(self):
         """Finalize covariance matrix from the current `_partial_result`.
@@ -136,13 +137,14 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
             with QM.manage_global_queue(self._queue):
                 result = self.finalize_compute(params, self._partial_result)
 
-            if daal_check_version((2024, "P", 1)) or (not self.bias):
-                self.covariance_ = from_table(result.cov_matrix)
-            else:
+            self.covariance_ = from_table(result.cov_matrix, like=self._outtype)
+            
+            if self.bias or not daal_check_version((2024, "P", 1)):
                 n_rows = self._partial_result.partial_n_rows
-                self.covariance_ = from_table(result.cov_matrix) * (n_rows - 1) / n_rows
+                self.covariance_ = self.covariance_ * (n_rows - 1) / n_rows
 
             self.location_ = from_table(result.means).ravel()
+            self._outtype = None
 
             self._need_to_finalize = False
 
