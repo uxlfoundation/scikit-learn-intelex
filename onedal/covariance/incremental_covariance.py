@@ -17,12 +17,12 @@
 import numpy as np
 
 from daal4py.sklearn._utils import daal_check_version
-from onedal._device_offload import supports_queue
-from onedal.common._backend import bind_default_backend
-from onedal.utils import _sycl_queue_manager as QM
 
 from .._config import _get_config
+from .._device_offload import supports_queue
+from ..common._backend import bind_default_backend
 from ..datatypes import from_table, return_type_constructor, to_table
+from ..utils import _sycl_queue_manager as QM
 from ..utils._array_api import _get_sycl_namespace
 from ..utils.validation import _check_array
 from .covariance import BaseEmpiricalCovariance
@@ -143,7 +143,7 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
                 n_rows = self._partial_result.partial_n_rows
                 self.covariance_ = self.covariance_ * (n_rows - 1) / n_rows
 
-            self.location_ = from_table(result.means).ravel()
+            self.location_ = from_table(result.means, like=self._outtype)[0, ...]
             self._outtype = None
 
             self._need_to_finalize = False
