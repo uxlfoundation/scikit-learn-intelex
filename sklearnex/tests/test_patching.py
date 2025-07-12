@@ -176,7 +176,7 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
         # the patching of sklearn should act similarly. Technically this is conformance.
         if (
             not sklearn_check_version("1.5")
-            and "Linear" in Estimator
+            and "LinearRegression" in Estimator
             or "Ridge" in Estimator
         ):
             pytest.skip(
