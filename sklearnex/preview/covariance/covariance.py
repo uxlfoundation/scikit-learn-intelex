@@ -16,21 +16,22 @@
 
 import warnings
 
-import numpy as np
-from scipy import sparse as sp
+import scipy.sparse as sp
 from sklearn.covariance import EmpiricalCovariance as _sklearn_EmpiricalCovariance
-from sklearn.utils import check_array
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from onedal._device_offload import support_input_format
 from onedal.common.hyperparameters import get_hyperparameters
 from onedal.covariance import EmpiricalCovariance as onedal_EmpiricalCovariance
+from onedal.utils._array_api import _is_numpy_namespace
 from sklearnex import config_context
 from sklearnex.metrics import pairwise_distances
 
-from ..._device_offload import dispatch, wrap_output_data
+from ..._device_offload import dispatch
 from ..._utils import PatchingConditionsChain, register_hyperparameters
 from ...base import oneDALEstimator
+from ...utils._array_api import get_namespace
 from ...utils.validation import validate_data
 
 
@@ -46,16 +47,23 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
 
     def _save_attributes(self):
         assert hasattr(self, "_onedal_estimator")
+        lp, _ = get_namespace(self._onedal_estimator.location_)
         if not daal_check_version((2024, "P", 400)) and self.assume_centered:
             location = self._onedal_estimator.location_[None, :]
-            self._onedal_estimator.covariance_ += np.dot(location.T, location)
-            self._onedal_estimator.location_ = np.zeros_like(np.squeeze(location))
+            self._onedal_estimator.covariance_ += lp.dot(location.T, location)
+            self._onedal_estimator.location_ = lp.zeros_like(lp.squeeze(location))
         self._set_covariance(self._onedal_estimator.covariance_)
-        self.location_ = self._onedal_estimator.location_
+        self.location_ = lp.squeeze(self._onedal_estimator.location_)
 
     _onedal_covariance = staticmethod(onedal_EmpiricalCovariance)
 
     def _onedal_fit(self, X, queue=None):
+        xp, _ = get_namespace(X)
+        if sklearn_check_version("1.2"):
+            self._validate_params()
+
+        X = validate_data(self, X, dtype=[xp.float64, xp.float32])
+
         if X.shape[0] == 1:
             warnings.warn(
                 "Only one sample available. You may want to reshape your data array"
@@ -90,10 +98,6 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
     _onedal_gpu_supported = _onedal_supported
 
     def fit(self, X, y=None):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
-        X = validate_data(self, X, ensure_all_finite=False)
-
         dispatch(
             self,
             "fit",
@@ -107,21 +111,44 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
         return self
 
     # expose sklearnex pairwise_distances if mahalanobis distance eventually supported
-    @wrap_output_data
     def mahalanobis(self, X):
-        X = validate_data(self, X, reset=False)
+        xp, _ = get_namespace(X)
+        X = validate_data(self, X, reset=False, dtype=[xp.float64, xp.float32])
 
         precision = self.get_precision()
+        # compute mahalanobis distances
+        # pairwise_distances will check n_features (via n_feature matching with
+        # self.location_) , and will check for finiteness via check array
+        # check_feature_names will match _validate_data functionally
+        location = self.location_[None, :]
+
+        if not _is_numpy_namespace(xp):
+            # Guarantee that inputs to pairwise_distances match in type and location
+            location = xp.asarray(location, device=X.device)
+            precision = xp.asarray(precision, device=X.device)
+
         with config_context(assume_finite=True):
-            # compute mahalanobis distances
-            dist = pairwise_distances(
-                X, self.location_[np.newaxis, :], metric="mahalanobis", VI=precision
-            )
 
-        return np.reshape(dist, (len(X),)) ** 2
+            try:
+                dist = pairwise_distances(X, location, metric="mahalanobis", VI=precision)
 
-    error_norm = wrap_output_data(_sklearn_EmpiricalCovariance.error_norm)
-    score = wrap_output_data(_sklearn_EmpiricalCovariance.score)
+            except ValueError as e:
+                # Throw the expected sklearn error in an n_feature length violation
+                if "Incompatible dimension for X and Y matrices: X.shape[1] ==" in str(e):
+                    raise ValueError(
+                        f"X has {_num_features(X)} features, but {self.__class__.__name__} "
+                        f"is expecting {self.n_features_in_} features as input."
+                    )
+                else:
+                    raise e
+
+        if not _is_numpy_namespace(xp):
+            dist = xp.asarray(dist, device=X.device)
+
+        return (xp.reshape(dist, (-1,))) ** 2
+
+    error_norm = support_input_format(_sklearn_EmpiricalCovariance.error_norm)
+    score = support_input_format(_sklearn_EmpiricalCovariance.score)
 
     fit.__doc__ = _sklearn_EmpiricalCovariance.fit.__doc__
     mahalanobis.__doc__ = _sklearn_EmpiricalCovariance.mahalanobis
