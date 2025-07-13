@@ -136,7 +136,7 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False, check_finite=T
         )
 
     if check_finite:
-        raise NotImplementedError("finite checking does not occur in sklearnex's pinhv")
+        raise NotImplementedError("finite checking does not occur in sklearnex's pinvh")
 
     s, u = xp.linalg.eigh(a)
     maxS = xp.max(xp.abs(s))
