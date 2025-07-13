@@ -38,7 +38,7 @@ from .._device_offload import dispatch, wrap_output_data
 from .._utils import PatchingConditionsChain, _add_inc_serialization_note
 from ..base import oneDALEstimator
 from ..metrics import pairwise_distances
-from ..utils._array_api import get_namespace
+from ..utils._array_api import enable_array_api, get_namespace, pinvh
 from ..utils.validation import validate_data
 
 if sklearn_check_version("1.2"):
@@ -51,7 +51,7 @@ def log_likelihood(emp_cov, precision):
     xp, _ = get_namespace(emp_cov, precision)
     p = precision.shape[0]
     log_likelihood_ = -xp.sum(emp_cov * precision) + fast_logdet(precision)
-    log_likelihood_ -= p * xp.log(2 * np.pi)
+    log_likelihood_ -= p * np.log(2 * np.pi)
     log_likelihood_ /= 2.0
     return log_likelihood_
 
@@ -59,6 +59,7 @@ def log_likelihood(emp_cov, precision):
 log_likelihood.__doc__ = _sklearn_log_likelihood.__doc__
 
 
+@enable_array_api
 @control_n_jobs(decorated_methods=["partial_fit", "fit", "_onedal_finalize_fit"])
 class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
     """
@@ -145,9 +146,6 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
             "copy": ["boolean"],
         }
 
-    get_precision = _sklearn_EmpiricalCovariance.get_precision
-    error_norm = wrap_output_data(_sklearn_EmpiricalCovariance.error_norm)
-
     def __init__(
         self, *, store_precision=False, assume_centered=False, batch_size=None, copy=True
     ):
@@ -173,8 +171,8 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
             self._onedal_estimator.covariance_ += lp.dot(location.T, location)
             self._onedal_estimator.location_ = lp.zeros_like(lp.squeeze(location))
         if self.store_precision:
-            self.precision_ = lp.asarray(
-                linalg.pinvh(self._onedal_estimator.covariance_, check_finite=False)
+            self.precision_ = pinvh(
+                self._onedal_estimator.covariance_, check_finite=False
             )
         else:
             self.precision_ = None
@@ -236,6 +234,13 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
 
         return self
 
+    def get_precision(self):
+        if self.store_precision:
+            precision = self.precision_
+        else:
+            precision = pinvh(self.covariance_, check_finite=False)
+        return precision
+
     @wrap_output_data
     def score(self, X_test, y=None):
         xp, _ = get_namespace(X_test)
@@ -269,10 +274,35 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
 
         # test_cov is a numpy array, but calculated on device
         test_cov = est.fit(X - location).covariance_
-        print(type(X), type(location), type(X_test), type(test_cov), type(precision))
         res = log_likelihood(test_cov, precision)
 
         return res
+
+    def error_norm(self, comp_cov, norm="frobenius", scaling=True, squared=True):
+        # equivalent to the sklearn implementation but written for array API
+        # in the case of numpy, this should be 100% equivalent with an additional
+        # get_namespace call. This can be deprecated if/when sklearn makes the
+        # equivalent array API enabled.
+        xp, _ = get_namespace(comp_cov)
+        # compute the error
+        error = comp_cov - self.covariance_
+        # compute the error norm
+        if norm == "frobenius":
+            squared_norm = xp.sum(error**2)
+        elif norm == "spectral":
+            squared_norm = xp.max(xp.linalg.svdvals(xp.dot(error.T, error)))
+        else:
+            raise NotImplementedError("Only spectral and frobenius norms are implemented")
+        # optionally scale the error norm
+        if scaling:
+            squared_norm = squared_norm / error.shape[0]
+        # finally get either the squared norm or the norm
+        if squared:
+            result = squared_norm
+        else:
+            result = xp.sqrt(squared_norm)
+
+        return result
 
     def partial_fit(self, X, y=None, check_input=True):
         """
@@ -405,3 +435,4 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
     mahalanobis.__doc__ = _sklearn_EmpiricalCovariance.mahalanobis.__doc__
     error_norm.__doc__ = _sklearn_EmpiricalCovariance.error_norm.__doc__
     score.__doc__ = _sklearn_EmpiricalCovariance.score.__doc__
+    get_precision.__doc__ = _sklearn_EmpiricalCovariance.get_precision.__doc__

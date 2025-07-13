@@ -154,3 +154,4 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
     mahalanobis.__doc__ = _sklearn_EmpiricalCovariance.mahalanobis
     error_norm.__doc__ = _sklearn_EmpiricalCovariance.error_norm.__doc__
     score.__doc__ = _sklearn_EmpiricalCovariance.score.__doc__
+    get_precision.__doc__ = _sklearn_EmpiricalCovariance.get_precision.__doc__
