@@ -274,6 +274,8 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
 
         # test_cov is a numpy array, but calculated on device
         test_cov = est.fit(X - location).covariance_
+        if not _is_numpy_namespace(xp):
+            test_cov = xp.asarray(test_cov, device=X.device)
         res = log_likelihood(test_cov, precision)
 
         return res
