@@ -116,8 +116,8 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
 
     @wrap_output_data
     def score(self, X_test, y=None):
+
         check_is_fitted(self)
-        # check with covariance instead for dpnp/dpctl support
         xp, _ = get_namespace(self.covariance_)
 
         X = validate_data(
@@ -127,30 +127,44 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
             reset=False,
         )
 
+        location = self.location_
+        precision = self.get_precision()
+
         est = clone(self)
         est.set_params(**{"assume_centered": True})
 
         # test_cov is a numpy array, but calculated on device
-        test_cov = est.fit(X - location).covariance_
+        test_cov = est.fit(X - self.location_).covariance_
         if not _is_numpy_namespace(xp):
-            test_cov = xp.asarray(test_cov, device=X_test.device)
+            test_cov = xp.asarray(test_cov, device=X.device)
         res = log_likelihood(test_cov, self.get_precision())
 
         return res
 
+    @wrap_output_data
     def error_norm(self, comp_cov, norm="frobenius", scaling=True, squared=True):
-        # simple branched version for array API support
+        # equivalent to the sklearn implementation but written for array API
+        # in the case of numpy-like inputs it will use sklearn's version instead.
+        # This can be deprecated if/when sklearn makes the equivalent array API enabled.
+        # This includes a validate_data call and an unusual call to get_namespace in
+        # order to also support dpnp/dpctl without array_api_dispatch.
         check_is_fitted(self)
-        xp, _ = get_namespace(comp_cov)
+        xp, _ = get_namespace(self.covariance_)
+        c_cov = validate_data(
+            self,
+            comp_cov,
+            dtype=[xp.float64, xp.float32],
+            reset=False,
+        )
+
         if _is_numpy_namespace(xp):
-            return super().error_norm(
-                comp_cov, norm=norm, scaling=scaling, squared=squared
+            # must be done this way is it does not inherit from sklearn
+            return _sklearn_EmpiricalCovariance.error_norm(
+                self, c_cov, norm=norm, scaling=scaling, squared=squared
             )
 
-        # translated copy of sklearn's error_norm.  Can be deprecated when
-        # implemented in sklearn
         # compute the error
-        error = comp_cov - self.covariance_
+        error = c_cov - self.covariance_
         # compute the error norm
         if norm == "frobenius":
             squared_norm = xp.sum(error**2)
@@ -171,25 +185,24 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
 
     # expose sklearnex pairwise_distances if mahalanobis distance eventually supported
     def mahalanobis(self, X):
-        xp, _ = get_namespace(X)
-        X = validate_data(self, X, reset=False, dtype=[xp.float64, xp.float32])
-
+        # This must be done as ```support_input_format``` is insufficient for array API
+        # support when attributes are non-numpy.
+        check_is_fitted(self)
         precision = self.get_precision()
-        # compute mahalanobis distances
-        # pairwise_distances will check n_features (via n_feature matching with
-        # self.location_) , and will check for finiteness via check array
-        # check_feature_names will match _validate_data functionally
-        location = self.location_[None, :]
+        loc = self.location_[None, :]
+        xp, _ = get_namespace(X, precision, loc)
+        # do not check dtype, done in pairwise_distances
+        X_in = validate_data(self, X, reset=False)
 
-        if not _is_numpy_namespace(xp):
-            # Guarantee that inputs to pairwise_distances match in type and location
-            location = xp.asarray(location, device=X.device)
+        if not _is_numpy_namespace(xp) and isinstance(X_in, np.ndarray):
+            # corrects issues with respect to dpnp/dpctl support without array_api_dispatch
+            X_in = X
+            loc = xp.asarray(loc, device=X.device)
             precision = xp.asarray(precision, device=X.device)
 
         with config_context(assume_finite=True):
-
             try:
-                dist = pairwise_distances(X, location, metric="mahalanobis", VI=precision)
+                dist = _mahalanobis(X_in, loc, VI=precision)
 
             except ValueError as e:
                 # Throw the expected sklearn error in an n_feature length violation
@@ -197,7 +210,7 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
                     raise ValueError(
                         f"X has {_num_features(X)} features, but {self.__class__.__name__} "
                         f"is expecting {self.n_features_in_} features as input."
-                    )
+                    ) from None
                 else:
                     raise e
 

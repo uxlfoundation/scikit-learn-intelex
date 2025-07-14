@@ -35,7 +35,7 @@ from onedal.covariance import (
 from onedal.utils._array_api import _is_numpy_namespace
 
 from .._config import config_context, get_config
-from .._device_offload import dispatch
+from .._device_offload import dispatch, wrap_output_data
 from .._utils import PatchingConditionsChain, _add_inc_serialization_note
 from ..base import oneDALEstimator
 from ..utils._array_api import enable_array_api, get_namespace, log_likelihood, pinvh
@@ -346,6 +346,7 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
 
         return res
 
+    @wrap_output_data
     def error_norm(self, comp_cov, norm="frobenius", scaling=True, squared=True):
         # equivalent to the sklearn implementation but written for array API
         # in the case of numpy-like inputs it will use sklearn's version instead.
