@@ -77,14 +77,6 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
 
     @wrap_output_data
     def predict(self, X):
-        xp, _ = get_namespace(X)
-        X = validate_data(
-            self,
-            X,
-            dtype=[xp.float64, xp.float32],
-            accept_sparse="csr",
-            reset=False,
-        )
         check_is_fitted(self)
         return dispatch(
             self,
@@ -100,7 +92,13 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
     def score(self, X, y, sample_weight=None):
         xp, _ = get_namespace(X, y)
         X, y = validate_data(
-            self, X, y, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
+            self,
+            X,
+            y,
+            dtype=[xp.float64, xp.float32],
+            accept_sparse="csr",
+            reset=False,
+            ensure_2d=False,
         )
         check_is_fitted(self)
         return dispatch(
@@ -138,7 +136,13 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
     def _onedal_fit(self, X, y, queue=None):
         xp, _ = get_namespace(X)
         X, y = validate_data(
-            self, X, y=y, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
+            self,
+            X,
+            y=y,
+            dtype=[xp.float64, xp.float32],
+            accept_sparse="csr",
+            reset=False,
+            ensure_2d=False,
         )
         onedal_params = {
             "n_neighbors": self.n_neighbors,
@@ -157,6 +161,14 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         self._save_attributes()
 
     def _onedal_predict(self, X, queue=None):
+        xp, _ = get_namespace(X)
+        X = validate_data(
+            self,
+            X,
+            dtype=[xp.float64, xp.float32],
+            accept_sparse="csr",
+            reset=False,
+        )
         return self._onedal_estimator.predict(X, queue=queue)
 
     def _onedal_kneighbors(
