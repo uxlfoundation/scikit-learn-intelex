@@ -17,6 +17,7 @@
 # https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/scikit-learn-tests.md
 import json
 import sys
+from typing import Any
 
 
 def load_json_from_file(fname: str) -> dict:
@@ -24,11 +25,11 @@ def load_json_from_file(fname: str) -> dict:
         return json.load(f)
 
 
-def dct_wo_key(dct: dict, k_remove: str) -> dict:
+def dct_wo_key(dct: dict[str, Any], k_remove: str) -> dict[str, Any]:
     return {k: v for k, v in dct.items() if k != k_remove}
 
 
-def index_dict_by_key(dct: dict, key: str) -> dict[str, dict]:
+def index_dict_by_key(dct: dict[str, Any], key: str) -> dict[str, dict[str, Any]]:
     return {elt[key]: dct_wo_key(elt, key) for elt in dct}
 
 
