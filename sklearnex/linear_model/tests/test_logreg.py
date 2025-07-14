@@ -19,7 +19,8 @@ import pytest
 from numpy.testing import assert_allclose, assert_array_equal
 from scipy.sparse import csr_matrix
 from sklearn.datasets import load_breast_cancer, load_iris, make_classification
-from sklearn.metrics import accuracy_score
+from sklearn.linear_model import LogisticRegression as origLogisticRegression
+from sklearn.metrics import accuracy_score, log_loss
 from sklearn.model_selection import train_test_split
 
 from daal4py.sklearn._utils import daal_check_version
@@ -132,3 +133,31 @@ if daal_check_version((2024, "P", 700)):
         assert_allclose(prob, prob_sp, rtol=rtol)
         assert_allclose(model.coef_, model_sp.coef_, rtol=rtol)
         assert_allclose(model.intercept_, model_sp.intercept_, rtol=rtol)
+
+
+def test_logistic_regression_is_correct():
+    from sklearnex.linear_model import LogisticRegression
+
+    X = np.array([[-1, 0], [0, 1], [1, 1]])
+    y = np.array([0, 1, 1])
+    C = 3.0
+    model_sklearn = origLogisticRegression(C=C).fit(X, y)
+    model_sklearnex = LogisticRegression(C=C).fit(X, y)
+
+    try:
+        np.testing.assert_allclose(model_sklearnex.coef_, model_sklearn.coef_)
+        np.testing.assert_allclose(model_sklearnex.intercept_, model_sklearn.intercept_)
+    except AssertionError:
+
+        def logistic_model_function(predicted_probabilities, coefs):
+            neg_log_likelihood = X.shape[0] * log_loss(y, predicted_probabilities)
+            sum_squares_coefs = np.dot(coefs.reshape(-1), coefs.reshape(-1))
+            return C * neg_log_likelihood + 0.5 * sum_squares_coefs
+
+        fn_sklearn = logistic_model_function(
+            model_sklearn.predict_proba(X), model_sklearn.coef_
+        )
+        fn_sklearnex = logistic_model_function(
+            model_sklearnex.predict_proba(X), model_sklearnex.coef_
+        )
+        assert fn_sklearnex <= fn_sklearn
