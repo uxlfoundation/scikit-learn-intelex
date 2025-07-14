@@ -408,7 +408,7 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
                     raise ValueError(
                         f"X has {_num_features(X)} features, but {self.__class__.__name__} "
                         f"is expecting {self.n_features_in_} features as input."
-                    )
+                    ) from None
                 else:
                     raise e
 

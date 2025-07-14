@@ -51,7 +51,7 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
         if not daal_check_version((2024, "P", 400)) and self.assume_centered:
             location = self._onedal_estimator.location_[None, :]
             self._onedal_estimator.covariance_ += lp.dot(location.T, location)
-            self._onedal_estimator.location_ = lp.zeros_like(lp.squeeze(location))
+            self._onedal_estimator.location_ = lp.zeros_like(location)
         self._set_covariance(self._onedal_estimator.covariance_)
         self.location_ = lp.squeeze(self._onedal_estimator.location_)
 
@@ -69,13 +69,9 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
                 "Only one sample available. You may want to reshape your data array"
             )
 
-        onedal_params = {
-            "method": "dense",
-            "bias": True,
-            "assume_centered": self.assume_centered,
-        }
-
-        self._onedal_estimator = self._onedal_covariance(**onedal_params)
+        self._onedal_estimator = self._onedal_covariance(
+            method="dense", bias=True, assume_centered=self.assume_centered
+        )
         self._onedal_estimator.fit(X, queue=queue)
         self._save_attributes()
 
@@ -97,7 +93,7 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
     _onedal_cpu_supported = _onedal_supported
     _onedal_gpu_supported = _onedal_supported
 
-    def get_precision():
+    def get_precision(self):
         # use array API-enabled version
         if self.store_precision:
             precision = self.precision_
@@ -118,7 +114,6 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
 
         return self
 
-    @wrap_output_data
     def score(self, X_test, y=None):
         xp, _ = get_namespace(X_test)
 
