@@ -39,10 +39,7 @@ def produce_differences(
     json2 = load_json_from_file(fname2)
     results1 = index_dict_by_key(json1["tests"], "nodeid")
     results2 = index_dict_by_key(json2["tests"], "nodeid")
-    tests_common: set[str] = set.intersection(
-        set(list(results1.keys())),
-        set(list(results2.keys())),
-    )
+    tests_common: set[str] = results1.keys() & results2.keys()
     dct_differences: dict[str, dict] = dict()
     for test_id_key in tests_common:
         test_result1 = results1[test_id_key]
