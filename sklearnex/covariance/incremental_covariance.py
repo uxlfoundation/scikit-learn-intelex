@@ -21,7 +21,6 @@ import numpy as np
 from scipy import linalg
 from sklearn.base import BaseEstimator, clone
 from sklearn.covariance import EmpiricalCovariance as _sklearn_EmpiricalCovariance
-from sklearn.covariance import log_likelihood as _sklearn_log_likelihood
 from sklearn.utils import gen_batches
 from sklearn.utils.extmath import fast_logdet
 from sklearn.utils.validation import _num_features, check_is_fitted
@@ -38,25 +37,11 @@ from .._device_offload import dispatch, wrap_output_data
 from .._utils import PatchingConditionsChain, _add_inc_serialization_note
 from ..base import oneDALEstimator
 from ..metrics import pairwise_distances
-from ..utils._array_api import enable_array_api, get_namespace, pinvh
+from ..utils._array_api import enable_array_api, get_namespace, log_likelihood, pinvh
 from ..utils.validation import validate_data
 
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import Interval
-
-
-def log_likelihood(emp_cov, precision):
-    # this is to compensate for a lack of array API support in sklearn
-    # even though it exists for ``fast_logdet``
-    xp, _ = get_namespace(emp_cov, precision)
-    p = precision.shape[0]
-    log_likelihood_ = -xp.sum(emp_cov * precision) + fast_logdet(precision)
-    log_likelihood_ -= p * np.log(2 * np.pi)
-    log_likelihood_ /= 2.0
-    return log_likelihood_
-
-
-log_likelihood.__doc__ = _sklearn_log_likelihood.__doc__
 
 
 @enable_array_api
@@ -411,8 +396,8 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         X_in = validate_data(self, X, reset=False)
 
         if not _is_numpy_namespace(xp) and isinstance(X_in, np.ndarray):
+            # corrects issues with respect to dpnp/dpctl support
             X_in = X
-            # inputs are to be moved to numpy/cpu
 
         with config_context(assume_finite=True):
             try:

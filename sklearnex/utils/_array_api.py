@@ -18,6 +18,7 @@
 
 import numpy as np
 import scipy.linalg as linalg
+from sklearn.covariance import log_likelihood as _sklearn_log_likelihood
 
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal.utils._array_api import _get_sycl_namespace, _is_numpy_namespace
@@ -90,12 +91,15 @@ def get_namespace(*arrays):
 
 def enable_array_api(original_class: type[oneDALEstimator]) -> type[oneDALEstimator]:
     """Enable sklearnex to use dpctl, dpnp or array_api inputs in oneDAL offloading.
+
     This wrapper sets the proper flags/tags for the sklearnex infrastructure
     to maintain the data framework, as the estimator can use it natively.
+
     Parameters
     ----------
     original_class : oneDALEstimator subclass
         Class which should enable data zero-copy support in sklearnex.
+
     Returns
     -------
     original_class : modified oneDALEstimator subclass
@@ -164,3 +168,17 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False, check_finite=T
 
 
 pinvh.__doc__ = linalg.pinvh.__doc__
+
+
+def log_likelihood(emp_cov, precision):
+    # this is to compensate for a lack of array API support in sklearn
+    # even though it exists for ``fast_logdet``
+    xp, _ = get_namespace(emp_cov, precision)
+    p = precision.shape[0]
+    log_likelihood_ = -xp.sum(emp_cov * precision) + fast_logdet(precision)
+    log_likelihood_ -= p * np.log(2 * np.pi)
+    log_likelihood_ /= 2.0
+    return log_likelihood_
+
+
+log_likelihood.__doc__ = _sklearn_log_likelihood.__doc__
