@@ -42,7 +42,7 @@ The tests can also be made to run on GPU, either by passing argument `gpu` to `r
 ./.ci/scripts/run_sklearn_tests.sh gpu
 ```
 
-Note that functionalities under [preview](https://uxlfoundation.github.io/scikit-learn-intelex/latest/preview.html) are not tested by default - in order to test them, it's necessary to set environment variable `SKLEARNEX_PREVIEW=1` to enable patching of such functionalities before executing either of these scripts (`.sh` / `.py`). The `.sh` script by default will take care of deselecting tests that involve preview functionalities when this environment variable is not set.
+Note that [preview mode](https://uxlfoundation.github.io/scikit-learn-intelex/latest/preview.html) is not tested by default - in order to test it, it's necessary to set environment variable `SKLEARNEX_PREVIEW=1` to enable patching of such functionalities before executing either of these scripts (`.sh` / `.py`). The `.sh` script by default will take care of deselecting tests that require preview mode for patching when this environment variable is not set.
 
 ## Producing a test report
 
