@@ -24,7 +24,7 @@ def dct_wo_key(dct: dict, k_remove: str) -> dict:
     return {k: v for k, v in dct.items() if k != k_remove}
 
 
-def index_dict_by_key(dct: dict, key: str) -> dict:
+def index_dict_by_key(dct: dict, key: str) -> dict[str, dict]:
     return {elt[key]: dct_wo_key(elt, key) for elt in dct}
 
 
