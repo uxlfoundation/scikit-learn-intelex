@@ -32,6 +32,7 @@ namespace py = pybind11;
 PyObject *convert_to_pyobject(const dal::table &input);
 dal::table convert_to_table(py::object inp_obj,
                             py::object queue = py::none(),
-                            bool recursed = false);
+                            bool recursed = false,
+                            bool require_sparse_with_sorted_indices = true);
 
 } // namespace oneapi::dal::python::numpy
