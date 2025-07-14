@@ -29,13 +29,20 @@ Note that some tests are known to produce failures - for example, scikit-learn's
 
 Cases that are known to fail are not executed during these conformance test. The list of deselected tests can be found under [deselected_tests.yaml](https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/deselected_tests.yaml).
 
-Individual tests can be executed through the underlying .py file that the .sh script executes, and other custom selections or deselections can be changed on-the-fly there through usage of environment variables - for example:
+Individual tests can be executed through the underlying `.py` file that the `.sh` script executes, and other custom selections or deselections can be changed on-the-fly there through usage of environment variables - for example:
 
 ```shell
 SELECTED_TESTS=all DESELECTED_TESTS="" python .ci/scripts/run_sklearn_tests.py
 ```
 
 _**Note:** If building the extension modules in-place [per the instructions here](https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/INSTALL.md#build-intelr-extension-for-scikit-learn), it requires also setting `$PYTHONPATH` for this script._
+
+The tests can also be made to run on GPU, either by passing argument `gpu` to `run_sklearn_tests.sh`, or by passing argument `--device <device name>` to  `run_sklearn_tests.py` - example:
+```shell
+./.ci/scripts/run_sklearn_tests.sh gpu
+```
+
+Note that functionalities under [preview](https://uxlfoundation.github.io/scikit-learn-intelex/latest/preview.html) are not tested by default - in order to test them, it's necessary to set environment variable `SKLEARNEX_PREVIEW=1` to enable patching of such functionalities before executing either of these scripts (`.sh` / `.py`). The `.sh` script by default will take care of deselecting tests that involve preview functionalities when this environment variable is not set.
 
 Optionally, a JSON report of the results can be produced (requires package `pytest-json-report`) by setting an environment variable `JSON_REPORT_FILE`, indicating the location where to produce a JSON output file - note that the test runner changes the PyTest root directory, so it should be specified as an absolute path, or otherwise will get written into the `site-packages` folder for `sklearn`:
 
