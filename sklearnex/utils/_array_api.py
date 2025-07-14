@@ -120,4 +120,3 @@ def enable_array_api(original_class: type[oneDALEstimator]) -> type[oneDALEstima
         original_class._more_tags = _more_tags
 
     return original_class
-
