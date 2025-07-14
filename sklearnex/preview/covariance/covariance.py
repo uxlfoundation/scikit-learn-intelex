@@ -32,10 +32,11 @@ from sklearnex.metrics import pairwise_distances
 from ..._device_offload import dispatch, wrap_output_data
 from ..._utils import PatchingConditionsChain, register_hyperparameters
 from ...base import oneDALEstimator
-from ...utils._array_api import get_namespace, pinvh
+from ...utils._array_api import enable_array_api, get_namespace, log_likelihood, pinvh
 from ...utils.validation import validate_data
 
 
+@enable_array_api
 @register_hyperparameters({"fit": get_hyperparameters("covariance", "compute")})
 @control_n_jobs(decorated_methods=["fit", "mahalanobis"])
 class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
