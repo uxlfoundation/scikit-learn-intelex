@@ -32,7 +32,7 @@ to [oneDAL](https://github.com/uxlfoundation/oneDAL) and hence shares the same c
 
 * For Python files:
 ```python
-# =============================================================================
+# ==============================================================================
 # Copyright contributors to the oneDAL project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -46,13 +46,13 @@ to [oneDAL](https://github.com/uxlfoundation/oneDAL) and hence shares the same c
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# =============================================================================
+# ==============================================================================
 ```
 
 * For markdown files:
 ````
 <!--
-******************************************************************************
+********************************************************************************
 * Copyright contributors to the oneDAL project
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
