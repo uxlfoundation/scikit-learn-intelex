@@ -31,8 +31,10 @@ def dct_wo_key(dct: dict[str, Any], k_remove: str) -> dict[str, Any]:
     return {k: v for k, v in dct.items() if k != k_remove}
 
 
-def index_dict_by_key(dct: dict[str, Any], key: str) -> dict[str, dict[str, Any]]:
-    return {elt[key]: dct_wo_key(elt, key) for elt in dct}
+def index_dicts_by_key(
+    lst_of_dicts: list[dict[str, Any]], key: str
+) -> dict[str, dict[str, Any]]:
+    return {elt[key]: dct_wo_key(elt, key) for elt in lst_of_dicts}
 
 
 def produce_differences(
@@ -40,8 +42,8 @@ def produce_differences(
 ) -> dict:
     json1 = load_json_from_file(fname1)
     json2 = load_json_from_file(fname2)
-    results1 = index_dict_by_key(json1["tests"], "nodeid")
-    results2 = index_dict_by_key(json2["tests"], "nodeid")
+    results1 = index_dicts_by_key(json1["tests"], "nodeid")
+    results2 = index_dicts_by_key(json2["tests"], "nodeid")
     tests_common: set[str] = results1.keys() & results2.keys()
     dct_differences: dict[str, dict] = dict()
     for test_id_key in tests_common:
