@@ -16,15 +16,11 @@
 
 import numpy as np
 
-from daal4py.sklearn._utils import make2d
 from onedal._device_offload import supports_queue
 
-from .._config import _get_config
 from ..common._backend import bind_default_backend
 from ..common._mixin import ClusterMixin
 from ..datatypes import from_table, to_table
-from ..utils._array_api import _get_sycl_namespace
-from ..utils.validation import _check_array
 
 
 class DBSCAN(ClusterMixin):
