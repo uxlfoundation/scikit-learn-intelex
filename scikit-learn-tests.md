@@ -55,7 +55,7 @@ JSON_REPORT_FILE="$(pwd)/sklearn_test_results.json" \
 
 ## Comparing test reports
 
-A small utility to compare two JSON test reports is provided under [tests/util_compare_json_reports.py](https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/tests/util_compare_json_reports.py), which can be useful for example when comparing changes before vs. after a given commit.
+A small utility to compare two JSON test reports is provided under [tests/util_compare_json_reports.py](https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/tests/util_compare_json_reports.py), which can be useful for example when comparing changes before and after a given commit.
 
 The file is a python script which produces a new JSON output file highlighting the tests that had different outcomes between two JSON reports. It needs to be executed with the following arguments, prefixed with two dashes and with the value passed after an equal sign (e.g. `--arg1=value`):
 
