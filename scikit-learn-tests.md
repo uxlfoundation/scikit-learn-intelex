@@ -44,6 +44,8 @@ The tests can also be made to run on GPU, either by passing argument `gpu` to `r
 
 Note that functionalities under [preview](https://uxlfoundation.github.io/scikit-learn-intelex/latest/preview.html) are not tested by default - in order to test them, it's necessary to set environment variable `SKLEARNEX_PREVIEW=1` to enable patching of such functionalities before executing either of these scripts (`.sh` / `.py`). The `.sh` script by default will take care of deselecting tests that involve preview functionalities when this environment variable is not set.
 
+## Producing a test report
+
 Optionally, a JSON report of the results can be produced (requires package `pytest-json-report`) by setting an environment variable `JSON_REPORT_FILE`, indicating the location where to produce a JSON output file - note that the test runner changes the PyTest root directory, so it should be specified as an absolute path, or otherwise will get written into the `site-packages` folder for `sklearn`:
 
 ```shell
