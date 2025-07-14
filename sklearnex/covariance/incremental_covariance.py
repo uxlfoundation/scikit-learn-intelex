@@ -32,7 +32,7 @@ from onedal.covariance import (
 from onedal.utils._array_api import _is_numpy_namespace
 
 from .._config import config_context, get_config
-from .._device_offload import dispatch, wrap_output_data
+from .._device_offload import dispatch
 from .._utils import PatchingConditionsChain, _add_inc_serialization_note
 from ..base import oneDALEstimator
 from ..metrics import pairwise_distances
@@ -313,7 +313,6 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
 
         return self
 
-    @wrap_output_data
     def score(self, X_test, y=None):
         xp, _ = get_namespace(X_test)
 
@@ -329,15 +328,14 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         location = self.location_
         precision = self.get_precision()
 
-        if not _is_numpy_namespace(xp):
+        if not _is_numpy_namespace(xp) and isinstance(X, np.ndarray):
             # depending on the sklearn version, check_array
             # and validate_data will return only numpy arrays
             # which will break dpnp/dpctl support. If the
             # array namespace isn't from numpy and the data
             # is now a numpy array, it has been validated and
             # the original can be used.
-            if isinstance(X, np.ndarray):
-                X = X_test
+            X = X_test
             location = xp.asarray(location, device=X.device)
             precision = xp.asarray(precision, device=X.device)
 
@@ -395,8 +393,10 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         X_in = validate_data(self, X, reset=False)
 
         if not _is_numpy_namespace(xp) and isinstance(X_in, np.ndarray):
-            # corrects issues with respect to dpnp/dpctl support
+            # corrects issues with respect to dpnp/dpctl support without array_api_dispatch
             X_in = X
+            loc = xp.asarray(loc, device=X.device)
+            precision = xp.asarray(precision, device=X.device)
 
         with config_context(assume_finite=True):
             try:
