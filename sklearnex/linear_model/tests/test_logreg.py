@@ -135,6 +135,13 @@ if daal_check_version((2024, "P", 700)):
         assert_allclose(model.intercept_, model_sp.intercept_, rtol=rtol)
 
 
+# Note: this is adapted from a test in scikit-learn:
+# https://github.com/scikit-learn/scikit-learn/blob/9b7a86fb6d45905eec7b7afd01d3ae32643c8180/sklearn/linear_model/tests/test_logistic.py#L1494
+# Here we don't always expect them to match exactly due to differences in numerical precision
+# and how each library deals with large/small numbers, but oftentimes the results from oneDAL
+# end up being better in terms of resulting function values (for the objective function being
+# minimized), hence this test will try to look at function values if coefficients aren't
+# sufficiently similar.
 def test_logistic_regression_is_correct():
     from sklearnex.linear_model import LogisticRegression
 
