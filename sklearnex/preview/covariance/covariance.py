@@ -28,7 +28,7 @@ from onedal.utils._array_api import _is_numpy_namespace
 from sklearnex import config_context
 from sklearnex.metrics import pairwise_distances
 
-from ..._device_offload import dispatch
+from ..._device_offload import dispatch, wrap_output_data
 from ..._utils import PatchingConditionsChain, register_hyperparameters
 from ...base import oneDALEstimator
 from ...utils._array_api import get_namespace, pinvh
@@ -114,10 +114,11 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
 
         return self
 
+    @wrap_output_data
     def score(self, X_test, y=None):
-        xp, _ = get_namespace(X_test)
-
         check_is_fitted(self)
+        # check with covariance instead for dpnp/dpctl support
+        xp, _ = get_namespace(self.covariance_)
 
         X = validate_data(
             self,
@@ -126,34 +127,20 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
             reset=False,
         )
 
-        location = self.location_
-        precision = self.get_precision()
-
-        if not _is_numpy_namespace(xp):
-            # depending on the sklearn version, check_array
-            # and validate_data will return only numpy arrays
-            # which will break dpnp/dpctl support. If the
-            # array namespace isn't from numpy and the data
-            # is now a numpy array, it has been validated and
-            # the original can be used.
-            if isinstance(X, np.ndarray):
-                X = X_test
-            location = xp.asarray(location, device=X.device)
-            precision = xp.asarray(precision, device=X.device)
-
         est = clone(self)
         est.set_params(**{"assume_centered": True})
 
         # test_cov is a numpy array, but calculated on device
         test_cov = est.fit(X - location).covariance_
         if not _is_numpy_namespace(xp):
-            test_cov = xp.asarray(test_cov, device=X.device)
-        res = log_likelihood(test_cov, precision)
+            test_cov = xp.asarray(test_cov, device=X_test.device)
+        res = log_likelihood(test_cov, self.get_precision())
 
         return res
 
     def error_norm(self, comp_cov, norm="frobenius", scaling=True, squared=True):
         # simple branched version for array API support
+        check_is_fitted(self)
         xp, _ = get_namespace(comp_cov)
         if _is_numpy_namespace(xp):
             return super().error_norm(

@@ -319,10 +319,11 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
 
         return self
 
+    @wrap_output_data
     def score(self, X_test, y=None):
-        xp, _ = get_namespace(X_test)
 
         check_is_fitted(self)
+        xp, _ = get_namespace(self.covariance_)
 
         X = validate_data(
             self,
@@ -334,25 +335,14 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         location = self.location_
         precision = self.get_precision()
 
-        if not _is_numpy_namespace(xp) and isinstance(X, np.ndarray):
-            # depending on the sklearn version, check_array
-            # and validate_data will return only numpy arrays
-            # which will break dpnp/dpctl support. If the
-            # array namespace isn't from numpy and the data
-            # is now a numpy array, it has been validated and
-            # the original can be used.
-            X = X_test
-            location = xp.asarray(location, device=X.device)
-            precision = xp.asarray(precision, device=X.device)
-
         est = clone(self)
         est.set_params(**{"assume_centered": True})
 
         # test_cov is a numpy array, but calculated on device
-        test_cov = est.fit(X - location).covariance_
+        test_cov = est.fit(X - self.location_).covariance_
         if not _is_numpy_namespace(xp):
             test_cov = xp.asarray(test_cov, device=X.device)
-        res = log_likelihood(test_cov, precision)
+        res = log_likelihood(test_cov, self.get_precision())
 
         return res
 
@@ -360,15 +350,25 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         # equivalent to the sklearn implementation but written for array API
         # in the case of numpy-like inputs it will use sklearn's version instead.
         # This can be deprecated if/when sklearn makes the equivalent array API enabled.
-        xp, _ = get_namespace(comp_cov)
+        # This includes a validate_data call and an unusual call to get_namespace in
+        # order to also support dpnp/dpctl without array_api_dispatch.
+        check_is_fitted(self)
+        xp, _ = get_namespace(self.covariance_)
+        c_cov = validate_data(
+            self,
+            comp_cov,
+            dtype=[xp.float64, xp.float32],
+            reset=False,
+        )
+
         if _is_numpy_namespace(xp):
             # must be done this way is it does not inherit from sklearn
             return _sklearn_EmpiricalCovariance.error_norm(
-                self, comp_cov, norm=norm, scaling=scaling, squared=squared
+                self, c_cov, norm=norm, scaling=scaling, squared=squared
             )
 
         # compute the error
-        error = comp_cov - self.covariance_
+        error = c_cov - self.covariance_
         # compute the error norm
         if norm == "frobenius":
             squared_norm = xp.sum(error**2)
