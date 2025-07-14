@@ -22,7 +22,6 @@ from scipy import linalg
 from sklearn.base import BaseEstimator, clone
 from sklearn.covariance import EmpiricalCovariance as _sklearn_EmpiricalCovariance
 from sklearn.utils import gen_batches
-from sklearn.utils.extmath import fast_logdet
 from sklearn.utils.validation import _num_features, check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs

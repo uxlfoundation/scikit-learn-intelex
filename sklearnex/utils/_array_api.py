@@ -19,6 +19,7 @@
 import numpy as np
 import scipy.linalg as linalg
 from sklearn.covariance import log_likelihood as _sklearn_log_likelihood
+from sklearn.utils.extmath import fast_logdet
 
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal.utils._array_api import _get_sycl_namespace, _is_numpy_namespace
