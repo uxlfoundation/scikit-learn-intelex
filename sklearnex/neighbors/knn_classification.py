@@ -113,10 +113,6 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
 
     @wrap_output_data
     def score(self, X, y, sample_weight=None):
-        xp, _ = get_namespace(X, y)
-        X = validate_data(
-            self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
-        )
         check_is_fitted(self)
         return dispatch(
             self,
@@ -185,6 +181,10 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         )
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
+        xp, _ = get_namespace(X, y)
+        X, y = validate_data(
+            self, X, y, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
+        )
         return accuracy_score(
             y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
         )
