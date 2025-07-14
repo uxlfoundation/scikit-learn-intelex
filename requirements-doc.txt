@@ -49,6 +49,7 @@ PyYAML==6.0.2
 pyzmq==27.0.0
 requests==2.32.4
 six==1.17.0
+scikit-learn
 snowballstemmer==3.0.1
 soupsieve==2.7
 Sphinx==8.2.3
