@@ -31,7 +31,7 @@ from sklearnex.metrics import pairwise_distances
 from ..._device_offload import dispatch
 from ..._utils import PatchingConditionsChain, register_hyperparameters
 from ...base import oneDALEstimator
-from ...utils._array_api import get_namespace
+from ...utils._array_api import get_namespace, pinhv
 from ...utils.validation import validate_data
 
 
@@ -97,6 +97,14 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
     _onedal_cpu_supported = _onedal_supported
     _onedal_gpu_supported = _onedal_supported
 
+    def get_precision():
+        # use array API-enabled version
+        if self.store_precision:
+            precision = self.precision_
+        else:
+            precision = pinvh(self.covariance_, check_finite=False)
+        return precision
+
     def fit(self, X, y=None):
         dispatch(
             self,
@@ -109,6 +117,75 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
         )
 
         return self
+
+    @wrap_output_data
+    def score(self, X_test, y=None):
+        xp, _ = get_namespace(X_test)
+
+        check_is_fitted(self)
+
+        X = validate_data(
+            self,
+            X_test,
+            dtype=[xp.float64, xp.float32],
+            reset=False,
+        )
+
+        location = self.location_
+        precision = self.get_precision()
+
+        if not _is_numpy_namespace(xp):
+            # depending on the sklearn version, check_array
+            # and validate_data will return only numpy arrays
+            # which will break dpnp/dpctl support. If the
+            # array namespace isn't from numpy and the data
+            # is now a numpy array, it has been validated and
+            # the original can be used.
+            if isinstance(X, np.ndarray):
+                X = X_test
+            location = xp.asarray(location, device=X.device)
+            precision = xp.asarray(precision, device=X.device)
+
+        est = clone(self)
+        est.set_params(**{"assume_centered": True})
+
+        # test_cov is a numpy array, but calculated on device
+        test_cov = est.fit(X - location).covariance_
+        if not _is_numpy_namespace(xp):
+            test_cov = xp.asarray(test_cov, device=X.device)
+        res = log_likelihood(test_cov, precision)
+
+        return res
+
+    def error_norm(self, comp_cov, norm="frobenius", scaling=True, squared=True):
+        # simple branched version for array API support
+        xp, _ = get_namespace(comp_cov)
+        if _is_numpy_namespace(xp):
+            return super().error_norm(
+                comp_cov, norm=norm, scaling=scaling, squared=squared
+            )
+
+        # translated copy of sklearn's error_norm.  Can be deprecated when
+        # implemented in sklearn
+        # compute the error
+        error = comp_cov - self.covariance_
+        # compute the error norm
+        if norm == "frobenius":
+            squared_norm = xp.sum(error**2)
+        elif norm == "spectral":
+            squared_norm = xp.max(xp.linalg.svdvals(xp.dot(error.T, error)))
+        else:
+            raise NotImplementedError("Only spectral and frobenius norms are implemented")
+        # optionally scale the error norm
+        if scaling:
+            squared_norm = squared_norm / error.shape[0]
+        # finally get either the squared norm or the norm
+        if squared:
+            result = squared_norm
+        else:
+            result = xp.sqrt(squared_norm)
+
+        return result
 
     # expose sklearnex pairwise_distances if mahalanobis distance eventually supported
     def mahalanobis(self, X):
@@ -147,10 +224,8 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
 
         return (xp.reshape(dist, (-1,))) ** 2
 
-    error_norm = support_input_format(_sklearn_EmpiricalCovariance.error_norm)
-    score = support_input_format(_sklearn_EmpiricalCovariance.score)
-
     fit.__doc__ = _sklearn_EmpiricalCovariance.fit.__doc__
     mahalanobis.__doc__ = _sklearn_EmpiricalCovariance.mahalanobis
     error_norm.__doc__ = _sklearn_EmpiricalCovariance.error_norm.__doc__
     score.__doc__ = _sklearn_EmpiricalCovariance.score.__doc__
+    get_precision.__doc__ = _sklearn_EmpiricalCovariance.get_precision.__doc__

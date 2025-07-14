@@ -241,71 +241,6 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
             precision = pinvh(self.covariance_, check_finite=False)
         return precision
 
-    @wrap_output_data
-    def score(self, X_test, y=None):
-        xp, _ = get_namespace(X_test)
-
-        check_is_fitted(self)
-
-        X = validate_data(
-            self,
-            X_test,
-            dtype=[xp.float64, xp.float32],
-            reset=False,
-        )
-
-        location = self.location_
-        precision = self.get_precision()
-
-        if not _is_numpy_namespace(xp):
-            # depending on the sklearn version, check_array
-            # and validate_data will return only numpy arrays
-            # which will break dpnp/dpctl support. If the
-            # array namespace isn't from numpy and the data
-            # is now a numpy array, it has been validated and
-            # the original can be used.
-            if isinstance(X, np.ndarray):
-                X = X_test
-            location = xp.asarray(location, device=X.device)
-            precision = xp.asarray(precision, device=X.device)
-
-        est = clone(self)
-        est.set_params(**{"assume_centered": True})
-
-        # test_cov is a numpy array, but calculated on device
-        test_cov = est.fit(X - location).covariance_
-        if not _is_numpy_namespace(xp):
-            test_cov = xp.asarray(test_cov, device=X.device)
-        res = log_likelihood(test_cov, precision)
-
-        return res
-
-    def error_norm(self, comp_cov, norm="frobenius", scaling=True, squared=True):
-        # equivalent to the sklearn implementation but written for array API
-        # in the case of numpy, this should be 100% equivalent with an additional
-        # get_namespace call. This can be deprecated if/when sklearn makes the
-        # equivalent array API enabled.
-        xp, _ = get_namespace(comp_cov)
-        # compute the error
-        error = comp_cov - self.covariance_
-        # compute the error norm
-        if norm == "frobenius":
-            squared_norm = xp.sum(error**2)
-        elif norm == "spectral":
-            squared_norm = xp.max(xp.linalg.svdvals(xp.dot(error.T, error)))
-        else:
-            raise NotImplementedError("Only spectral and frobenius norms are implemented")
-        # optionally scale the error norm
-        if scaling:
-            squared_norm = squared_norm / error.shape[0]
-        # finally get either the squared norm or the norm
-        if squared:
-            result = squared_norm
-        else:
-            result = xp.sqrt(squared_norm)
-
-        return result
-
     def partial_fit(self, X, y=None, check_input=True):
         """
         Incremental fit with X. All of X is processed as a single batch.
@@ -393,6 +328,76 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         self._onedal_finalize_fit()
 
         return self
+
+    @wrap_output_data
+    def score(self, X_test, y=None):
+        xp, _ = get_namespace(X_test)
+
+        check_is_fitted(self)
+
+        X = validate_data(
+            self,
+            X_test,
+            dtype=[xp.float64, xp.float32],
+            reset=False,
+        )
+
+        location = self.location_
+        precision = self.get_precision()
+
+        if not _is_numpy_namespace(xp):
+            # depending on the sklearn version, check_array
+            # and validate_data will return only numpy arrays
+            # which will break dpnp/dpctl support. If the
+            # array namespace isn't from numpy and the data
+            # is now a numpy array, it has been validated and
+            # the original can be used.
+            if isinstance(X, np.ndarray):
+                X = X_test
+            location = xp.asarray(location, device=X.device)
+            precision = xp.asarray(precision, device=X.device)
+
+        est = clone(self)
+        est.set_params(**{"assume_centered": True})
+
+        # test_cov is a numpy array, but calculated on device
+        test_cov = est.fit(X - location).covariance_
+        if not _is_numpy_namespace(xp):
+            test_cov = xp.asarray(test_cov, device=X.device)
+        res = log_likelihood(test_cov, precision)
+
+        return res
+
+    def error_norm(self, comp_cov, norm="frobenius", scaling=True, squared=True):
+        # equivalent to the sklearn implementation but written for array API
+        # in the case of numpy-like inputs it will use sklearn's version instead.
+        # This can be deprecated if/when sklearn makes the equivalent array API enabled.
+        xp, _ = get_namespace(comp_cov)
+        if _is_numpy_namespace(xp):
+            # must be done this way is it does not inherit from sklearn
+            return _sklearn_EmpiricalCovariance.error_norm(
+                self, comp_cov, norm=norm, scaling=scaling, squared=squared
+            )
+
+        # compute the error
+        error = comp_cov - self.covariance_
+        # compute the error norm
+        if norm == "frobenius":
+            squared_norm = xp.sum(error**2)
+        elif norm == "spectral":
+            squared_norm = xp.max(xp.linalg.svdvals(xp.dot(error.T, error)))
+        else:
+            raise NotImplementedError("Only spectral and frobenius norms are implemented")
+        # optionally scale the error norm
+        if scaling:
+            squared_norm = squared_norm / error.shape[0]
+        # finally get either the squared norm or the norm
+        if squared:
+            result = squared_norm
+        else:
+            result = xp.sqrt(squared_norm)
+
+        return result
 
     # expose sklearnex pairwise_distances if mahalanobis distance eventually supported
     def mahalanobis(self, X):
