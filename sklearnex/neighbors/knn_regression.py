@@ -90,16 +90,6 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
 
     @wrap_output_data
     def score(self, X, y, sample_weight=None):
-        xp, _ = get_namespace(X, y)
-        X, y = validate_data(
-            self,
-            X,
-            y,
-            dtype=[xp.float64, xp.float32],
-            accept_sparse="csr",
-            reset=False,
-            ensure_2d=False,
-        )
         check_is_fitted(self)
         return dispatch(
             self,
