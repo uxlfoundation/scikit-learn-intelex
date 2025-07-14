@@ -181,6 +181,12 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
         pytest.skip(
             f"array checking in sklearn <1.3 does not fully support array_api inputs, causes sklearnex-only estimator failure"
         )
+    elif (
+        dataframe == "dpctl"
+        and "EmpiricalCovariance" in estimator
+        and method in ["score", "error_norm"]
+    ):
+        pytest.skip("dpctl does not support necessary linear algebra routines")
 
     if dataframe == "array_api":
         # as array_api dispatching is experimental, sklearn support isn't guaranteed.

@@ -16,6 +16,7 @@
 
 import numbers
 import warnings
+from functools import partial
 
 import numpy as np
 from scipy import linalg
@@ -26,6 +27,8 @@ from sklearn.utils.validation import _num_features, check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from daal4py.sklearn.metrics import pairwise_distances
+from onedal._device_offload import support_input_format
 from onedal.covariance import (
     IncrementalEmpiricalCovariance as onedal_IncrementalEmpiricalCovariance,
 )
@@ -35,12 +38,15 @@ from .._config import config_context, get_config
 from .._device_offload import dispatch
 from .._utils import PatchingConditionsChain, _add_inc_serialization_note
 from ..base import oneDALEstimator
-from ..metrics import pairwise_distances
 from ..utils._array_api import enable_array_api, get_namespace, log_likelihood, pinvh
 from ..utils.validation import validate_data
 
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import Interval
+
+# This is a temporary workaround for issues with sklearnex._device_offload._get_host_inputs
+# passing kwargs with sycl queues with other host data will cause failures
+_mahalanobis = support_input_format(partial(pairwise_distances, metric="mahalanobis"))
 
 
 @enable_array_api
@@ -400,7 +406,7 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
 
         with config_context(assume_finite=True):
             try:
-                dist = pairwise_distances(X_in, loc, metric="mahalanobis", VI=precision)
+                dist = _mahalanobis(X_in, loc, VI=precision)
 
             except ValueError as e:
                 # Throw the expected sklearn error in an n_feature length violation

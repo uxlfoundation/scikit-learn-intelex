@@ -19,7 +19,6 @@
 import numpy as np
 import scipy.linalg as linalg
 from sklearn.covariance import log_likelihood as _sklearn_log_likelihood
-from sklearn.utils.extmath import fast_logdet
 
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal.utils._array_api import _get_sycl_namespace, _is_numpy_namespace
@@ -176,7 +175,11 @@ def log_likelihood(emp_cov, precision):
     # even though it exists for ``fast_logdet``
     xp, _ = get_namespace(emp_cov, precision)
     p = precision.shape[0]
-    log_likelihood_ = -xp.sum(emp_cov * precision) + fast_logdet(precision)
+    # extract sklearn.utils.extmath.fast_logdet for dpnp/dpctl support
+    sign, ld = xp.linalg.slogdet(precision)
+    if not sign > 0:
+        ld = -xp.inf
+    log_likelihood_ = -xp.sum(emp_cov * precision) + ld
     log_likelihood_ -= p * np.log(2 * np.pi)
     log_likelihood_ /= 2.0
     return log_likelihood_
