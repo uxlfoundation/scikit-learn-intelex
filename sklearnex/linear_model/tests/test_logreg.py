@@ -19,7 +19,7 @@ import pytest
 from numpy.testing import assert_allclose, assert_array_equal
 from scipy.sparse import csr_matrix
 from sklearn.datasets import load_breast_cancer, load_iris, make_classification
-from sklearn.linear_model import LogisticRegression as origLogisticRegression
+from sklearn.linear_model import LogisticRegression as _sklearn_LogisticRegression
 from sklearn.metrics import accuracy_score, log_loss
 from sklearn.model_selection import train_test_split
 
@@ -141,7 +141,7 @@ def test_logistic_regression_is_correct():
     X = np.array([[-1, 0], [0, 1], [1, 1]])
     y = np.array([0, 1, 1])
     C = 3.0
-    model_sklearn = origLogisticRegression(C=C).fit(X, y)
+    model_sklearn = _sklearn_LogisticRegression(C=C).fit(X, y)
     model_sklearnex = LogisticRegression(C=C).fit(X, y)
 
     try:
