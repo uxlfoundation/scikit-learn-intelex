@@ -401,25 +401,22 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
 
     # expose sklearnex pairwise_distances if mahalanobis distance eventually supported
     def mahalanobis(self, X):
-        xp, _ = get_namespace(X)
-        X = validate_data(self, X, reset=False, dtype=[xp.float64, xp.float32])
-
+        # This must be done as ```support_input_format``` is insufficient for array API
+        # support when attributes are non-numpy.
+        check_is_fitted(self)
         precision = self.get_precision()
-        # compute mahalanobis distances
-        # pairwise_distances will check n_features (via n_feature matching with
-        # self.location_) , and will check for finiteness via check array
-        # check_feature_names will match _validate_data functionally
-        location = self.location_[None, :]
+        loc = self.location_[None, :]
+        xp, _ = get_namespace(X, precision, loc)
+        # do not check dtype, done in pairwise_distances
+        X_in = validate_data(self, X, reset=False)
 
-        if not _is_numpy_namespace(xp) and not isinstance(X, np.ndarray):
-            # Guarantee that inputs to pairwise_distances match in type and location
-            location = xp.asarray(location, device=X.device)
-            precision = xp.asarray(precision, device=X.device)
+        if not _is_numpy_namespace(xp) and isinstance(X_in, np.ndarray):
+            X_in = X
+            # inputs are to be moved to numpy/cpu
 
         with config_context(assume_finite=True):
-
             try:
-                dist = pairwise_distances(X, location, metric="mahalanobis", VI=precision)
+                dist = pairwise_distances(X_in, loc, metric="mahalanobis", VI=precision)
 
             except ValueError as e:
                 # Throw the expected sklearn error in an n_feature length violation
@@ -431,7 +428,7 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
                 else:
                     raise e
 
-        if not _is_numpy_namespace(xp) and not isinstance(X, np.ndarray):
+        if not _is_numpy_namespace(xp):
             dist = xp.asarray(dist, device=X.device)
 
         return (xp.reshape(dist, (-1,))) ** 2

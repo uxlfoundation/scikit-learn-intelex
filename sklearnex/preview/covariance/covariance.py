@@ -31,7 +31,7 @@ from sklearnex.metrics import pairwise_distances
 from ..._device_offload import dispatch
 from ..._utils import PatchingConditionsChain, register_hyperparameters
 from ...base import oneDALEstimator
-from ...utils._array_api import get_namespace, pinhv
+from ...utils._array_api import get_namespace, pinvh
 from ...utils.validation import validate_data
 
 
