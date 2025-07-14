@@ -77,9 +77,7 @@ class DBSCAN(ClusterMixin):
             # 2d table to 1d
             self.core_sample_indices_ = from_table(
                 result.core_observation_indices, like=X
-            )[
-                0
-            ]
+            )[0]
         else:
             self.core_sample_indices_ = None
         return self
