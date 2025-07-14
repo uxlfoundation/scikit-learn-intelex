@@ -11,6 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+# Note: see file 'scikit-learn-tests.md' for instructions about usage
+# of this script:
+# https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/scikit-learn-tests.md
 import json
 import sys
 
