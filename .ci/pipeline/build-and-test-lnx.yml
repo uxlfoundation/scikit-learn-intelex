@@ -25,6 +25,8 @@ steps:
       bash .ci/scripts/describe_system.sh
     displayName: "System info"
   - script: |
+      # set defaults to guarantee use of conda-forge
+      echo -e "default_channels:\n  - https://conda.anaconda.org/conda-forge" >> ~/.condarc
       conda config --add channels conda-forge
       conda config --set channel_priority strict
       conda update -y -q conda
