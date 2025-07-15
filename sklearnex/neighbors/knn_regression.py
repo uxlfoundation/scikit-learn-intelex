@@ -121,7 +121,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
     def _onedal_fit(self, X, y, queue=None):
         xp, _ = get_namespace(X)
         X = validate_data(
-            self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
+            self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=True
         )
         onedal_params = {
             "n_neighbors": self.n_neighbors,
