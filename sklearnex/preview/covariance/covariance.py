@@ -226,7 +226,7 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
         return (xp.reshape(dist, (-1,))) ** 2
 
     fit.__doc__ = _sklearn_EmpiricalCovariance.fit.__doc__
-    mahalanobis.__doc__ = _sklearn_EmpiricalCovariance.mahalanobis
+    mahalanobis.__doc__ = _sklearn_EmpiricalCovariance.mahalanobis.__doc__
     error_norm.__doc__ = _sklearn_EmpiricalCovariance.error_norm.__doc__
     score.__doc__ = _sklearn_EmpiricalCovariance.score.__doc__
     get_precision.__doc__ = _sklearn_EmpiricalCovariance.get_precision.__doc__
