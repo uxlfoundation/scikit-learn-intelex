@@ -26,8 +26,8 @@ steps:
     displayName: "System info"
   - script: |
       # remove defaults to guarantee use of conda-forge
-      echo "default_channels: []" >> ~/.condarc
       conda config --add channels conda-forge
+      conda config --set default_channels []
       conda config --set channel_priority strict
       conda update -y -q conda
       conda create -q -y -n CB -c conda-forge python=$(PYTHON_VERSION) mpich pyyaml
