@@ -60,18 +60,19 @@ function generate_pytest_args {
     printf -- "${ARGS[*]}"
 }
 
+${PYTHON} -c "from daal4py import num_threads;print(f'threads={num_threads()}:0')"
 ${PYTHON} -c "from sklearnex import patch_sklearn; patch_sklearn()"
 return_code=$(($return_code + $?))
-
+${PYTHON} -c "from daal4py import num_threads;print(f'threads={num_threads()}:1')"
 pytest --verbose -s "${sklex_root}/tests" $@ $(generate_pytest_args legacy)
 return_code=$(($return_code + $?))
-
+${PYTHON} -c "from daal4py import num_threads;print(f'threads={num_threads()}:2')"
 pytest --verbose --pyargs daal4py $@ $(generate_pytest_args daal4py)
 return_code=$(($return_code + $?))
-
+${PYTHON} -c "from daal4py import num_threads;print(f'threads={num_threads()}:3')"
 pytest --verbose --pyargs sklearnex $@ $(generate_pytest_args sklearnex)
 return_code=$(($return_code + $?))
-
+${PYTHON} -c "from daal4py import num_threads;print(f'threads={num_threads()}:4')"
 pytest --verbose --pyargs onedal $@ $(generate_pytest_args onedal)
 return_code=$(($return_code + $?))
 
