@@ -256,7 +256,8 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
                 warnings.warn(
                     "Result attributes without a trailing underscore were deprecated in version 2025.1 and will be removed in 2026.0"
                 )
-            return getattr(self._onedal_estimator, sattr)
+                attr += "_"
+            return getattr(self._onedal_estimator, attr)
         if attr in self.__dict__:
             return self.__dict__[attr]
 
