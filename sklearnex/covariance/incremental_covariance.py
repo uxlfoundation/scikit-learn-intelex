@@ -194,8 +194,6 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
 
         if check_input and not get_config()["use_raw_input"]:
             xp, _ = get_namespace(X)
-            if sklearn_check_version("1.2"):
-                self._validate_params()
             X = validate_data(
                 self,
                 X,
@@ -252,6 +250,8 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         self : IncrementalEmpiricalCovariance
             Returns the instance itself.
         """
+        if sklearn_check_version("1.2") and check_input:
+            self._validate_params()
         return dispatch(
             self,
             "partial_fit",
@@ -281,7 +281,8 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         self : IncrementalEmpiricalCovariance
             Returns the instance itself.
         """
-
+        if sklearn_check_version("1.2"):
+            self._validate_params()
         return dispatch(
             self,
             "fit",
@@ -298,9 +299,6 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
             self._onedal_estimator._reset()
 
         if not get_config()["use_raw_input"]:
-            if sklearn_check_version("1.2"):
-                self._validate_params()
-
             xp, _ = get_namespace(X)
             X = validate_data(self, X, dtype=[xp.float64, xp.float32], copy=self.copy)
 

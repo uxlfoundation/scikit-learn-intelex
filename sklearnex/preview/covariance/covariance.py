@@ -66,9 +66,6 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
 
     def _onedal_fit(self, X, queue=None):
         xp, _ = get_namespace(X)
-        if sklearn_check_version("1.2"):
-            self._validate_params()
-
         X = validate_data(self, X, dtype=[xp.float64, xp.float32])
 
         if X.shape[0] == 1:
@@ -109,6 +106,8 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
         return precision
 
     def fit(self, X, y=None):
+        if sklearn_check_version("1.2"):
+            self._validate_params()
         dispatch(
             self,
             "fit",
