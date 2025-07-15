@@ -18,7 +18,6 @@ import warnings
 
 from scipy.sparse import issparse
 from sklearn.base import BaseEstimator
-from sklearn.utils import check_array
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
@@ -181,9 +180,6 @@ class BasicStatistics(oneDALEstimator, BaseEstimator):
         return patching_status
 
     def _onedal_fit(self, X, sample_weight=None, queue=None):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
-
         if not get_config()["use_raw_input"]:
             xp, _ = get_namespace(X, sample_weight)
             X = validate_data(
@@ -229,6 +225,8 @@ class BasicStatistics(oneDALEstimator, BaseEstimator):
         self : object
             Returns the instance itself.
         """
+        if sklearn_check_version("1.2"):
+            self._validate_params()
         dispatch(
             self,
             "fit",

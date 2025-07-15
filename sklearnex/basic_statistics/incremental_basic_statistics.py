@@ -15,7 +15,7 @@
 # ==============================================================================
 
 from sklearn.base import BaseEstimator
-from sklearn.utils import check_array, gen_batches
+from sklearn.utils import gen_batches
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
@@ -210,9 +210,6 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
         self._need_to_finalize = True
 
     def _onedal_fit(self, X, sample_weight=None, queue=None):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
-
         if not get_config()["use_raw_input"]:
             xp, _ = get_namespace(X, sample_weight)
             X = validate_data(self, X, dtype=[xp.float64, xp.float32])
@@ -290,6 +287,8 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
         self : IncrementalBasicStatistics
             Returns the instance itself.
         """
+        if sklearn_check_version("1.2") and check_input:
+            self._validate_params()
         dispatch(
             self,
             "partial_fit",
@@ -323,6 +322,8 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
         self : IncrementalBasicStatistics
             Returns the instance itself.
         """
+        if sklearn_check_version("1.2"):
+            self._validate_params()
         dispatch(
             self,
             "fit",
