@@ -15,7 +15,6 @@
 # ==============================================================================
 
 import warnings
-from abc import ABC
 from numbers import Number, Real
 
 import numpy as np
@@ -30,23 +29,18 @@ from sklearn.svm._base import BaseSVC as _sklearn_BaseSVC
 from sklearn.utils.validation import check_array, check_is_fitted
 
 from daal4py.sklearn._utils import sklearn_check_version
-from onedal.utils import _check_array, _check_X_y, _column_or_1d
+from daal4py.sklearn.utils.validation import get_requires_y_tag
+from onedal.utils.validation import _check_array, _check_X_y, _column_or_1d
 
 from .._config import config_context, get_config
 from .._device_offload import dispatch, wrap_output_data
 from .._utils import PatchingConditionsChain
+from ..base import oneDALEstimator
 from ..utils._array_api import get_namespace
-
-if sklearn_check_version("1.0"):
-    from sklearn.utils.metaestimators import available_if
-
-if sklearn_check_version("1.6"):
-    from sklearn.utils.validation import validate_data
-else:
-    validate_data = BaseEstimator._validate_data
+from ..utils.validation import validate_data
 
 
-class BaseSVM(object):
+class BaseSVM(oneDALEstimator):
 
     _onedal_factory = None
 
@@ -167,30 +161,20 @@ class BaseSVM(object):
                 )
 
         if y is None:
-            if self._get_tags()["requires_y"]:
+            if get_requires_y_tag(self):
                 raise ValueError(
                     f"This {self.__class__.__name__} estimator "
                     f"requires y to be passed, but the target y is None."
                 )
-        # using onedal _check_X_y to insure X and y are contiguous
         # finite check occurs in onedal estimator
-        if sklearn_check_version("1.0"):
-            X, y = validate_data(
-                self,
-                X,
-                y,
-                dtype=[np.float64, np.float32],
-                force_all_finite=False,
-                accept_sparse="csr",
-            )
-        else:
-            X, y = _check_X_y(
-                X,
-                y,
-                dtype=[np.float64, np.float32],
-                force_all_finite=False,
-                accept_sparse="csr",
-            )
+        X, y = validate_data(
+            self,
+            X,
+            y,
+            dtype=[np.float64, np.float32],
+            ensure_all_finite=False,
+            accept_sparse="csr",
+        )
         y = self._validate_targets(y)
         sample_weight = self._get_sample_weight(X, y, sample_weight)
         return X, y, sample_weight
@@ -417,7 +401,7 @@ class BaseSVC(BaseSVM):
 
         le = LabelEncoder()
         y_ind = le.fit_transform(y_)
-        if not all(np.in1d(classes, le.classes_)):
+        if not np.isin(classes, le.classes_).all():
             raise ValueError("classes should have valid labels that are in y")
 
         recip_freq = len(y_) / (len(le.classes_) * np.bincount(y_ind).astype(np.float64))

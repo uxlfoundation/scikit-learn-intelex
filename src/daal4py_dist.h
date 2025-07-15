@@ -18,12 +18,12 @@
 #define _HLAPI_DISTR_H_INCLUDED_
 
 #ifdef _WIN32
-#define NOMINMAX
+    #define NOMINMAX
 #endif
 #include "daal4py.h"
 
 #ifdef _DIST_
-#include <tuple>
+    #include <tuple>
 
 //////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////
@@ -31,71 +31,52 @@
 // Input/Output manager for simple algos with a single fixed result-component
 // abstracts from input/output types
 // also defines how to get results and finalize
-template< typename A, typename O, typename E, int P >
-struct IOManagerSingle : public IOManager< A, O >
+template <typename A, typename O, typename E, int P>
+struct IOManagerSingle : public IOManager<A, O>
 {
-    static O getResult(A & algo)
-    {
-        return algo.getResult()->get(static_cast< E >(P));
-    }
+    static O getResult(A & algo) { return algo.getResult()->get(static_cast<E>(P)); }
 };
-
 
 // Input/Output manager for intermediate steps
 // abstracts from input/output types
 // also defines how to get results and finalize
-template< typename A, typename O >
+template <typename A, typename O>
 struct PartialIOManager
 {
     typedef O result_type;
 
-    static result_type getResult(A & algo)
-    {
-        return daal::services::staticPointerCast<typename result_type::ElementType>(algo.getPartialResult());
-    }
-    static bool needsFini()
-    {
-        return false;
-    }
+    static result_type getResult(A & algo) { return daal::services::staticPointerCast<typename result_type::ElementType>(algo.getPartialResult()); }
+    static bool needsFini() { return false; }
 };
 
 // Input/Output manager for intermediate steps with a single fixed result-component
 // abstracts from input/output types
 // also defines how to get results and finalize
-template< typename A, typename O, typename E, int P >
-struct PartialIOManagerSingle : public PartialIOManager< A, O >
+template <typename A, typename O, typename E, int P>
+struct PartialIOManagerSingle : public PartialIOManager<A, O>
 {
-    static typename PartialIOManager< A, O >::result_type getResult(A & algo)
-    {
-        return algo.getPartialResult()->get(static_cast< E >(P));
-    }
+    static typename PartialIOManager<A, O>::result_type getResult(A & algo) { return algo.getPartialResult()->get(static_cast<E>(P)); }
 };
 
 // Input/Output manager for intermediate steps, output is a tuple of Result and PartialResult of algo step
 // abstracts from input/output types
 // also defines how to get results and finalize
-template< typename A, typename O1, typename O2 >
+template <typename A, typename O1, typename O2>
 struct DoubleIOManager
 {
-    typedef std::tuple< O1, O2 > result_type;
+    typedef std::tuple<O1, O2> result_type;
 
-    static result_type getResult(A & algo)
-    {
-        return std::make_tuple(algo.getResult(), algo.getPartialResult());
-    }
-    static bool needsFini()
-    {
-        return false;
-    }
+    static result_type getResult(A & algo) { return std::make_tuple(algo.getResult(), algo.getPartialResult()); }
+    static bool needsFini() { return false; }
 };
 
-//////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////
 
-#include "map_reduce_star.h"
-#include "map_reduce_star_plus.h"
-#include "map_reduce_tree.h"
-#include "dist_custom.h"
+    #include "map_reduce_star.h"
+    #include "map_reduce_star_plus.h"
+    #include "map_reduce_tree.h"
+    #include "dist_custom.h"
 
 #endif // _DIST_
 #endif // _HLAPI_DISTR_H_INCLUDED_

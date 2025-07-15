@@ -27,12 +27,8 @@ from daal4py.sklearn._utils import sklearn_check_version
 from onedal.svm import NuSVR as onedal_NuSVR
 
 from .._device_offload import dispatch, wrap_output_data
+from ..utils.validation import validate_data
 from ._common import BaseSVR
-
-if sklearn_check_version("1.6"):
-    from sklearn.utils.validation import validate_data
-else:
-    validate_data = _sklearn_NuSVR._validate_data
 
 
 @control_n_jobs(decorated_methods=["fit", "predict", "score"])

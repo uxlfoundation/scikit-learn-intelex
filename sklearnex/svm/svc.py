@@ -14,10 +14,13 @@
 # limitations under the License.
 # ==============================================================================
 
+from functools import wraps
+
 import numpy as np
 from scipy import sparse as sp
 from sklearn.metrics import accuracy_score
 from sklearn.svm import SVC as _sklearn_SVC
+from sklearn.utils.metaestimators import available_if
 from sklearn.utils.validation import (
     _deprecate_positional_args,
     check_array,
@@ -26,21 +29,13 @@ from sklearn.utils.validation import (
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
+from onedal.svm import SVC as onedal_SVC
 
 from .._device_offload import dispatch, wrap_output_data
 from .._utils import PatchingConditionsChain
 from ..utils._array_api import get_namespace
+from ..utils.validation import validate_data
 from ._common import BaseSVC
-
-if sklearn_check_version("1.0"):
-    from sklearn.utils.metaestimators import available_if
-
-from onedal.svm import SVC as onedal_SVC
-
-if sklearn_check_version("1.6"):
-    from sklearn.utils.validation import validate_data
-else:
-    validate_data = _sklearn_SVC._validate_data
 
 
 @control_n_jobs(

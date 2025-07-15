@@ -14,6 +14,14 @@
 # limitations under the License.
 # ==============================================================================
 
+from os import environ
+
+# sklearn requires manual enabling of Scipy array API support
+# if `array-api-compat` package is present in environment
+# TODO: create generic approach to handle this for all tests
+environ["SCIPY_ARRAY_API"] = "1"
+
+
 import numpy as np
 import pytest
 import sklearn.utils.estimator_checks
@@ -59,7 +67,7 @@ def test_libsvm_parameters(queue, array_constr, dtype):
         pytest.param(
             get_queues("gpu"),
             marks=pytest.mark.xfail(
-                reason="class weights are not implemented " "but the error is not raised"
+                reason="class weights are not implemented but the error is not raised"
             ),
         )
     ],
@@ -98,7 +106,7 @@ def test_decision_function(queue):
     assert_array_almost_equal(dec.ravel(), clf.decision_function(X, queue=queue).ravel())
 
 
-@pass_if_not_implemented_for_gpu(reason="multiclass svm is not implemented")
+@pass_if_not_implemented_for_gpu(reason="not implemented")
 @pytest.mark.parametrize("queue", get_queues())
 def test_iris(queue):
     iris = datasets.load_iris()
@@ -107,7 +115,7 @@ def test_iris(queue):
     assert_array_equal(clf.classes_, np.sort(clf.classes_))
 
 
-@pass_if_not_implemented_for_gpu(reason="multiclass svm is not implemented")
+@pass_if_not_implemented_for_gpu(reason="not implemented")
 @pytest.mark.parametrize("queue", get_queues())
 def test_decision_function_shape(queue):
     X, y = make_blobs(n_samples=80, centers=5, random_state=0)
@@ -124,7 +132,7 @@ def test_decision_function_shape(queue):
         SVC(decision_function_shape="bad").fit(X_train, y_train, queue=queue)
 
 
-@pass_if_not_implemented_for_gpu(reason="multiclass svm is not implemented")
+@pass_if_not_implemented_for_gpu(reason="not implemented")
 @pytest.mark.parametrize("queue", get_queues())
 def test_pickle(queue):
     iris = datasets.load_iris()
@@ -141,7 +149,7 @@ def test_pickle(queue):
     assert_array_equal(expected, result)
 
 
-@pass_if_not_implemented_for_gpu(reason="sigmoid kernel is not implemented")
+@pass_if_not_implemented_for_gpu(reason="not implemented")
 @pytest.mark.parametrize(
     "queue",
     get_queues("cpu")

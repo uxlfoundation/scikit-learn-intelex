@@ -1,18 +1,16 @@
-.. ******************************************************************************
-.. * Copyright 2024 Intel Corporation
-.. *
-.. * Licensed under the Apache License, Version 2.0 (the "License");
-.. * you may not use this file except in compliance with the License.
-.. * You may obtain a copy of the License at
-.. *
-.. *     http://www.apache.org/licenses/LICENSE-2.0
-.. *
-.. * Unless required by applicable law or agreed to in writing, software
-.. * distributed under the License is distributed on an "AS IS" BASIS,
-.. * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-.. * See the License for the specific language governing permissions and
-.. * limitations under the License.
-.. *******************************************************************************/
+.. Copyright 2024 Intel Corporation
+..
+.. Licensed under the Apache License, Version 2.0 (the "License");
+.. you may not use this file except in compliance with the License.
+.. You may obtain a copy of the License at
+..
+..     http://www.apache.org/licenses/LICENSE-2.0
+..
+.. Unless required by applicable law or agreed to in writing, software
+.. distributed under the License is distributed on an "AS IS" BASIS,
+.. WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+.. See the License for the specific language governing permissions and
+.. limitations under the License.
 
 .. _array_api:
 
@@ -21,7 +19,7 @@ Array API support
 =================
 The `Array API <https://data-apis.org/array-api/latest/>`_ specification defines
 a standard API for all array manipulation libraries with a NumPy-like API.
-Intel(R) Extension for Scikit-Learn doesn't require
+Extension for Scikit-learn doesn't require
 `array-api-compat <https://github.com/data-apis/array-api-compat>`__ to be installed for
 functional support of the array API standard.
 In the current implementation, the functional support of array api follows the functional
@@ -64,7 +62,7 @@ DPCTL or DPNP inputs are not required to use `config_context(target_offload=devi
 Support for Array API-compatible inputs
 =======================================
 All patched estimators, metrics, tools and non-scikit-learn estimators functionally support Array API standard.
-Intel(R) Extension for scikit-Learn preserves input data format for all outputs. For all array inputs except
+Extension for Scikit-learn preserves input data format for all outputs. For all array inputs except
 SYCL USM arrays `dpnp's <https://github.com/IntelPython/dpnp>`__ ndarray and
 `Data Parallel Control usm_ndarray <https://intelpython.github.io/dpctl/latest/index.html>`__ all computation
 will be only accomplished on CPU unless specified by a `config_context`` with an available GPU device.
@@ -105,7 +103,7 @@ then fitted attributes will be on the CPU and `numpy.ndarray` data format.
 DPCTL usm_ndarrays
 ------------------
 Here is an example code to demonstrate how to use `dpctl <https://intelpython.github.io/dpctl/latest/index.html>`__
-arrays to run `RandomForestClassifier` on a GPU witout `config_context(array_api_dispatch=True)`:
+arrays to run `RandomForestClassifier` on a GPU without `config_context(array_api_dispatch=True)`:
 
 .. literalinclude:: ../../examples/sklearnex/random_forest_classifier_dpctl.py
 	   :language: python

@@ -14,8 +14,11 @@
 # limitations under the License.
 # ==============================================================================
 
+from functools import wraps
+
 import numpy as np
 from sklearn.svm import NuSVC as _sklearn_NuSVC
+from sklearn.utils.metaestimators import available_if
 from sklearn.utils.validation import (
     _deprecate_positional_args,
     check_array,
@@ -27,13 +30,9 @@ from daal4py.sklearn._utils import sklearn_check_version
 from onedal.svm import NuSVC as onedal_NuSVC
 
 from .._device_offload import dispatch, wrap_output_data
+from ..utils._array_api import get_namespace
+from ..utils.validation import validate_data
 from ._common import BaseSVC
-
-if sklearn_check_version("1.6"):
-    from sklearn.utils.validation import validate_data
-else:
-    validate_data = _sklearn_NuSVC._validate_data
-
 
 @control_n_jobs(
     decorated_methods=["fit", "predict", "_predict_proba", "decision_function", "score"]

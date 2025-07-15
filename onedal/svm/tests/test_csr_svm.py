@@ -74,7 +74,7 @@ def _test_simple_dataset(queue, kernel):
     check_svm_model_equal(queue, clf0, clf1, *dataset)
 
 
-@pass_if_not_implemented_for_gpu(reason="csr svm is not implemented")
+@pass_if_not_implemented_for_gpu(reason="not implemented")
 @pytest.mark.parametrize(
     "queue",
     get_queues("cpu")
@@ -82,8 +82,7 @@ def _test_simple_dataset(queue, kernel):
         pytest.param(
             get_queues("gpu"),
             marks=pytest.mark.xfail(
-                reason="raises UnknownError instead of RuntimeError "
-                "with unimplemented message"
+                reason="raises UnknownError instead of RuntimeError with unimplemented message"
             ),
         )
     ],

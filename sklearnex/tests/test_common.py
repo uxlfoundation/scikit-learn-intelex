@@ -15,21 +15,29 @@
 # ==============================================================================
 
 import importlib.util
+import io
 import os
 import pathlib
 import pkgutil
 import re
+import subprocess
 import sys
 import trace
+from contextlib import redirect_stdout
+from multiprocessing import Pipe, Process, get_context
 
 import pytest
+from sklearn.base import BaseEstimator
 from sklearn.utils import all_estimators
 
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal.tests.test_common import _check_primitive_usage_ban
+from onedal.tests.utils._dataframes_support import test_frameworks
+from sklearnex.base import oneDALEstimator
 from sklearnex.tests.utils import (
     PATCHED_MODELS,
     SPECIAL_INSTANCES,
+    UNPATCHED_MODELS,
     call_method,
     gen_dataset,
     gen_models_info,
@@ -112,7 +120,7 @@ def test_target_offload_ban():
         allowed_locations=TARGET_OFFLOAD_ALLOWED_LOCATIONS,
     )
     output = "\n".join(output)
-    assert output == "", f"target offloading is occuring in: \n{output}"
+    assert output == "", f"target offloading is occurring in: \n{output}"
 
 
 def _sklearnex_walk(func):
@@ -140,7 +148,7 @@ def test_class_trailing_underscore_ban(monkeypatch):
     estimators = all_estimators()  # list of tuples
     for name, obj in estimators:
         if "preview" not in obj.__module__ and "daal4py" not in obj.__module__:
-            # propeties also occur in sklearn, especially in deprecations and are expected
+            # properties also occur in sklearn, especially in deprecations and are expected
             # to error if queried and the estimator is not fitted
             assert all(
                 [
@@ -171,6 +179,65 @@ def test_all_estimators_covered(monkeypatch):
     assert (
         uncovered_estimators == []
     ), f"{uncovered_estimators} are currently not included"
+
+
+def test_oneDALEstimator_inheritance(monkeypatch):
+    """All sklearnex estimators should inherit the oneDALEstimator class, sklearnex-only
+    estimators should have it inherit oneDAL estimator one step before BaseEstimator in the
+    mro.  This is only strictly set for non-preview estimators"""
+    monkeypatch.setattr(pkgutil, "walk_packages", _sklearnex_walk(pkgutil.walk_packages))
+    estimators = all_estimators()  # list of tuples
+    for name, obj in estimators:
+        if "preview" not in obj.__module__ and "daal4py" not in obj.__module__:
+            assert issubclass(
+                obj, oneDALEstimator
+            ), f"{name} does not inherit the oneDALEstimator"
+            # oneDAL estimator should be inherited from before BaseEstimator
+            mro = obj.__mro__
+            assert mro.index(oneDALEstimator) < mro.index(
+                BaseEstimator
+            ), f"incorrect mro in {name}"
+            if not any([issubclass(obj, est) for est in UNPATCHED_MODELS.values()]):
+                assert (
+                    mro[mro.index(oneDALEstimator) + 1] is BaseEstimator
+                ), f"oneDALEstimator should be inherited just before BaseEstimator in {name}"
+
+
+def test_frameworks_lazy_import(monkeypatch):
+    """Check that all estimators defined in sklearnex do not actively
+    load data frameworks which are not numpy or pandas.
+    """
+    active = ["numpy", "pandas", "dpctl.tensor"]
+    # handle naming conventions for data frameworks in testing
+    frameworks = test_frameworks.replace("dpctl", "dpctl.tensor")
+    frameworks = frameworks.replace("array_api", "array_api_strict")
+    lazy = ",".join([i for i in frameworks.split(",") if i not in active])
+    if not lazy:
+        pytest.skip("No lazily-imported data frameworks available in testing")
+
+    monkeypatch.setattr(pkgutil, "walk_packages", _sklearnex_walk(pkgutil.walk_packages))
+    estimators = all_estimators()  # list of tuples
+
+    filtered_modules = []
+    for name, obj in estimators:
+        # do not test spmd or preview, as they are exempt
+        if "preview" not in obj.__module__ and "spmd" not in obj.__module__:
+            filtered_modules += [obj.__module__]
+
+    modules = ",".join(filtered_modules)
+
+    # import all modules with estimators and check sys.modules for the lazily-imported data
+    # frameworks. It is done in a subprocess to isolate the impact of testing infrastructure
+    # on sys.modules, which may have actively loaded those frameworks into the test env
+    teststr = (
+        "import sys,{mod};assert all([i not in sys.modules for i in '{l}'.split(',')])"
+    )
+    cmd = [sys.executable, "-c", teststr.format(mod=modules, l=lazy)]
+
+    try:
+        subprocess.run(cmd, check=True, capture_output=True, text=True)
+    except subprocess.CalledProcessError as e:
+        raise AssertionError(f"a framework in '{lazy}' is being actively loaded") from e
 
 
 def _fullpath(path):
@@ -225,23 +292,137 @@ def _whitelist_to_blacklist():
 _TRACE_BLOCK_LIST = _whitelist_to_blacklist()
 
 
+def sklearnex_trace(estimator_name, method_name):
+    """Generate a trace of all function calls in calling estimator.method.
+
+    Parameters
+    ----------
+    estimator_name : str
+        name of estimator which is a key from PATCHED_MODELS or SPECIAL_INSTANCES
+
+    method_name : str
+        name of estimator method which is to be traced and stored
+
+    Returns
+    -------
+    text: str
+        Returns a string output (captured stdout of a python Trace call). It is a
+        modified version to be more informative, completed by a monkeypatching
+        of trace._modname.
+    """
+    # get estimator
+    est = (
+        PATCHED_MODELS[estimator_name]()
+        if estimator_name in PATCHED_MODELS
+        else SPECIAL_INSTANCES[estimator_name]
+    )
+
+    # get dataset
+    X, y = gen_dataset(est)[0]
+    # fit dataset if method does not contain 'fit'
+    if "fit" not in method_name:
+        est.fit(X, y)
+
+    # monkeypatch new modname for clearer info
+    orig_modname = trace._modname
+    try:
+        # initialize tracer to have a more verbose module naming
+        # this impacts ignoremods, but it is not used.
+        trace._modname = _fullpath
+        tracer = trace.Trace(
+            count=0,
+            trace=1,
+            ignoredirs=_TRACE_BLOCK_LIST,
+        )
+        # call trace on method with dataset
+        f = io.StringIO()
+        with redirect_stdout(f):
+            tracer.runfunc(call_method, est, method_name, X, y)
+        return f.getvalue()
+    finally:
+        trace._modname = orig_modname
+
+
+def _trace_daemon(pipe):
+    """function interface for the other process. Information
+    exchanged using a multiprocess.Pipe"""
+    # a sent value with inherent conversion to False will break
+    # the while loop and complete the function
+    while key := pipe.recv():
+        try:
+            text = sklearnex_trace(*key)
+        except:
+            # catch all exceptions and pass back,
+            # this way the process still runs
+            text = ""
+        finally:
+            pipe.send(text)
+
+
+class _FakePipe:
+    """Minimalistic representation of a multiprocessing.Pipe for test development.
+    This allows for running sklearnex_trace in the parent process"""
+
+    _text = ""
+
+    def send(self, key):
+        self._text = sklearnex_trace(*key)
+
+    def recv(self):
+        return self._text
+
+
+@pytest.fixture(scope="module")
+def isolated_trace():
+    """Generates a separate python process for isolated sklearnex traces.
+
+    It is a module scope fixture due to the overhead of importing all the
+    various dependencies and is done once before all the various tests.
+    Each test will first check a cached value, if not existent it will have
+    the waiting child process generate the trace and return the text for
+    caching on its behalf. The isolated process is stopped at test teardown.
+
+    Yields
+    -------
+    pipe_parent: multiprocessing.Connection
+        one end of a duplex pipe to be used by other pytest fixtures for
+        communicating with the special isolated tracing python instance
+        for sklearnex estimators.
+    """
+    # yield _FakePipe()
+    try:
+        # force use of 'spawn' to guarantee a clean python environment
+        # from possible coverage arc tracing
+        ctx = get_context("spawn")
+        pipe_parent, pipe_child = ctx.Pipe()
+        p = ctx.Process(target=_trace_daemon, args=(pipe_child,), daemon=True)
+        p.start()
+        yield pipe_parent
+    finally:
+        # guarantee closing of the process via a try-catch-finally
+        # passing False terminates _trace_daemon's loop
+        pipe_parent.send(False)
+        pipe_parent.close()
+        pipe_child.close()
+        p.join()
+        p.close()
+
+
 @pytest.fixture
-def estimator_trace(estimator, method, cache, capsys, monkeypatch):
-    """Generate a trace of all function calls in calling estimator.method with cache.
+def estimator_trace(estimator, method, cache, isolated_trace):
+    """Create cache of all function calls in calling estimator.method.
 
     Parameters
     ----------
     estimator : str
-        name of estimator which is a key from PATCHED_MODELS or
+        name of estimator which is a key from PATCHED_MODELS or SPECIAL_INSTANCES
 
     method : str
         name of estimator method which is to be traced and stored
 
     cache: pytest.fixture (standard)
 
-    capsys: pytest.fixture (standard)
-
-    monkeypatch: pytest.fixture (standard)
+    isolated_trace: pytest.fixture (test_common.py)
 
     Returns
     -------
@@ -256,31 +437,15 @@ def estimator_trace(estimator, method, cache, capsys, monkeypatch):
     key = "-".join((str(estimator), method))
     flag = cache.get("key", "") != key
     if flag:
-        # get estimator
-        try:
-            est = PATCHED_MODELS[estimator]()
-        except KeyError:
-            est = SPECIAL_INSTANCES[estimator]
 
-        # get dataset
-        X, y = gen_dataset(est)[0]
-        # fit dataset if method does not contain 'fit'
-        if "fit" not in method:
-            est.fit(X, y)
+        isolated_trace.send((estimator, method))
+        text = isolated_trace.recv()
+        # if tracing does not function in isolated_trace, run it in parent process and error
+        if text == "":
+            sklearnex_trace(estimator, method)
+            # guarantee failure if intermittent
+            assert text, f"sklearnex_trace failure for {estimator}.{method}"
 
-        # initialize tracer to have a more verbose module naming
-        # this impacts ignoremods, but it is not used.
-        monkeypatch.setattr(trace, "_modname", _fullpath)
-        tracer = trace.Trace(
-            count=0,
-            trace=1,
-            ignoredirs=_TRACE_BLOCK_LIST,
-        )
-        # call trace on method with dataset
-        tracer.runfunc(call_method, est, method, X, y)
-
-        # collect trace for analysis
-        text = capsys.readouterr().out
         for modulename, file in _TRACE_ALLOW_DICT.items():
             text = text.replace(file, modulename)
         regex_func = (
@@ -305,22 +470,36 @@ def estimator_trace(estimator, method, cache, capsys, monkeypatch):
 
 
 def call_validate_data(text, estimator, method):
-    """test that the sklearn function/attribute validate_data is
+    """test that both sklearnex wrapper for validate_data and
+    original sklearn function/method validate_data are
     called once before offloading to oneDAL in sklearnex"""
     try:
         # get last to_table call showing end of oneDAL input portion of code
         idx = len(text["funcs"]) - 1 - text["funcs"][::-1].index("to_table")
-        validfuncs = text["funcs"][:idx]
+        valid_funcs = text["funcs"][:idx]
+        valid_modules = text["modules"][:idx]
     except ValueError:
         pytest.skip("onedal backend not used in this function")
 
-    validate_data = "validate_data" if sklearn_check_version("1.6") else "_validate_data"
+    validate_data_calls = []
+    for func, module in zip(valid_funcs, valid_modules):
+        if func.endswith("validate_data"):
+            validate_data_calls.append({module, func})
 
     assert (
-        validfuncs.count(validate_data) == 1
-    ), f"sklearn's {validate_data} should be called"
+        len(validate_data_calls) == 2
+    ), "validate_data should be called two times: once for sklearn and once for sklearnex"
+    assert validate_data_calls[0] == {
+        "sklearnex.utils.validation",
+        "validate_data",
+    }, "sklearnex's validate_data should be called first"
     assert (
-        validfuncs.count("_check_feature_names") == 1
+        (validate_data_calls[1] == {"sklearn.utils.validation", "validate_data"})
+        if sklearn_check_version("1.6")
+        else (validate_data_calls[1] == {"sklearn.base", "_validate_data"})
+    ), "sklearn's validate_data should be called second"
+    assert (
+        valid_funcs.count("_check_feature_names") == 1
     ), "estimator should check feature names in validate_data"
 
 
@@ -366,11 +545,12 @@ def fit_check_before_support_check(text, estimator, method):
         pytest.skip(f"fitting occurs in {estimator}.{method}")
 
 
-DESIGN_RULES = [n_jobs_check, runtime_property_check, fit_check_before_support_check]
-
-
-if sklearn_check_version("1.0"):
-    DESIGN_RULES += [call_validate_data]
+DESIGN_RULES = [
+    n_jobs_check,
+    runtime_property_check,
+    fit_check_before_support_check,
+    call_validate_data,
+]
 
 
 @pytest.mark.parametrize("design_pattern", DESIGN_RULES)

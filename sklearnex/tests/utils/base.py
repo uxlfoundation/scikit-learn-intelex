@@ -32,8 +32,11 @@ from sklearn.base import (
 )
 from sklearn.datasets import load_diabetes, load_iris
 from sklearn.neighbors._base import KNeighborsMixin
+from sklearn.utils.validation import check_is_fitted
 
+from onedal.datatypes import from_table, to_table
 from onedal.tests.utils._dataframes_support import _convert_to_dataframe
+from onedal.utils._array_api import _get_sycl_namespace
 from sklearnex import get_patch_map, patch_sklearn, sklearn_is_patched, unpatch_sklearn
 from sklearnex.basic_statistics import BasicStatistics, IncrementalBasicStatistics
 from sklearnex.linear_model import LogisticRegression
@@ -150,7 +153,7 @@ def gen_models_info(algorithms, required_inputs=["X", "y"], fit=False, daal4py=T
     required_inputs : list, tuple of strings or None
         list of required args/kwargs for callable attribute (only non-private,
         non-BaseEstimator attributes).  Only one must be present, None
-        signifies taking all non-private attribues, callable or not.
+        signifies taking all non-private attributes, callable or not.
 
     fit: bool (default False)
         Include "fit" method as an estimator-attribute pair
@@ -336,6 +339,27 @@ def gen_dataset(
     return output
 
 
+def gen_sparse_dataset(row_count, column_count, **kwargs):
+    """Generate sparse dataset for pytest testing.
+
+    Parameters
+    ----------
+    row_count : number of rows in dataset
+
+    column_count: number of columns in dataset
+
+    kwargs: keyword arguments for scipy.sparse.random_array or scipy.sparse.random
+
+    Returns
+    -------
+    scipy.sparse random matrix or array depending on scipy version
+    """
+    if hasattr(sp, "random_array"):
+        return sp.random_array((row_count, column_count), **kwargs)
+    else:
+        return sp.random(row_count, column_count, **kwargs)
+
+
 DTYPES = [
     np.int8,
     np.int16,
@@ -369,3 +393,26 @@ def _get_processor_info():
         )
 
     return proc
+
+
+class DummyEstimator(BaseEstimator):
+
+    def fit(self, X, y=None):
+        X_table = to_table(X)
+        y_table = to_table(y)
+        # The presence of the fitted attributes (ending with a trailing
+        # underscore) is required for the correct check. The cleanup of
+        # the memory will occur at the estimator instance deletion.
+        self.x_attr_ = from_table(X_table, like=X)
+        self.y_attr_ = from_table(y_table, like=X if y is None else y)
+
+        return self
+
+    def predict(self, X):
+        # Checks if the estimator is fitted by verifying the presence of
+        # fitted attributes (ending with a trailing underscore).
+        check_is_fitted(self)
+        X_table = to_table(X)
+        returned_X = from_table(X_table, like=X)
+
+        return returned_X

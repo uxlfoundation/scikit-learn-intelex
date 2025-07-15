@@ -17,21 +17,21 @@
 #ifndef _DAAL4PY_DEFINES_H_
 #define _DAAL4PY_DEFINES_H_
 
-#define DAAL4PY_OVERFLOW_CHECK_BY_MULTIPLICATION(type, op1, op2)                           \
-    {                                                                                      \
-        if (!(0 == (op1)) && !(0 == (op2)))                                                \
-        {                                                                                  \
-            volatile type r = (op1) * (op2);                                               \
-            r /= (op1);                                                                    \
-            if (!(r == (op2))) throw std::runtime_error("Buffer size integer overflow");   \
-        }                                                                                  \
+#define DAAL4PY_OVERFLOW_CHECK_BY_MULTIPLICATION(type, op1, op2)                         \
+    {                                                                                    \
+        if (!(0 == (op1)) && !(0 == (op2)))                                              \
+        {                                                                                \
+            volatile type r = (op1) * (op2);                                             \
+            r /= (op1);                                                                  \
+            if (!(r == (op2))) throw std::runtime_error("Buffer size integer overflow"); \
+        }                                                                                \
     }
 
-#define DAAL4PY_OVERFLOW_CHECK_BY_ADDING(type, op1, op2)                               \
-    {                                                                                  \
-        volatile type r = (op1) + (op2);                                               \
-        r -= (op1);                                                                    \
-        if (!(r == (op2))) throw std::runtime_error("Buffer size integer overflow");   \
+#define DAAL4PY_OVERFLOW_CHECK_BY_ADDING(type, op1, op2)                             \
+    {                                                                                \
+        volatile type r = (op1) + (op2);                                             \
+        r -= (op1);                                                                  \
+        if (!(r == (op2))) throw std::runtime_error("Buffer size integer overflow"); \
     }
 
 #define DAAL4PY_CHECK(cond, error) \

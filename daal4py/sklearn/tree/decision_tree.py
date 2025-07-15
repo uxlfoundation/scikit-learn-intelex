@@ -33,7 +33,7 @@ from .._utils import getFPType, make2d
 
 class DecisionTreeClassifier(BaseEstimator, ClassifierMixin):
     """
-    Decision tree classifier powered by Intel(R) oneAPI Data Analytics Library.
+    Decision tree classifier powered by oneAPI Data Analytics Library.
 
        https://www.intel.com/content/www/us/en/developer/tools/oneapi/
        onedal-documentation.html
@@ -160,7 +160,7 @@ class DecisionTreeClassifier(BaseEstimator, ClassifierMixin):
             ignored if they would result in any single class carrying a
             negative weight in either child node.
 
-        pruning_set: None or a tuple of (X, y) corrsponding to features and
+        pruning_set: None or a tuple of (X, y) corresponding to features and
             associated labels used for tree pruning. See [1] for more details.
 
         Returns

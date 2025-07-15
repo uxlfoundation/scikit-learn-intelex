@@ -24,14 +24,6 @@ from ...covariance import (
 
 
 class IncrementalEmpiricalCovariance(base_IncrementalEmpiricalCovariance):
-    """
-    Incremental distributed estimator for covariance.
-    Allows to distributely compute empirical covariance estimated by maximum
-    likelihood method if data are splitted into batches.
-
-    API is the same as for `sklearnex.covariance.IncrementalEmpiricalCovariance`
-    """
-
     _onedal_incremental_covariance = staticmethod(
         onedalSPMD_IncrementalEmpiricalCovariance
     )

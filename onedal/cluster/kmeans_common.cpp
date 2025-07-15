@@ -23,13 +23,11 @@
 
 #include "onedal/common/pybind11_helpers.hpp"
 
-namespace oneapi::dal::python{
+namespace oneapi::dal::python {
 
 namespace kmeans {
 
-bool is_same_clustering(const dal::table& left,
-                        const dal::table& right,
-                        std::int64_t n_clusters) {
+bool is_same_clustering(const dal::table& left, const dal::table& right, std::int64_t n_clusters) {
     if (!left.has_data() || !right.has_data())
         throw std::invalid_argument("Empty input table");
 
@@ -39,15 +37,16 @@ bool is_same_clustering(const dal::table& left,
     if (left.get_column_count() > 1 || right.get_column_count() > 1)
         throw std::length_error("Too many columns in input table");
 
-    const auto l_arr = l_acc.pull({0, -1});
-    const auto r_arr = r_acc.pull({0, -1});
+    const auto l_arr = l_acc.pull({ 0, -1 });
+    const auto r_arr = r_acc.pull({ 0, -1 });
 
     if (n_clusters < 1)
         throw std::invalid_argument("Invalid number of clusters");
 
     constexpr std::int32_t minus_one = -1;
     auto map = dal::array<std::int32_t>::full( //
-                          n_clusters, minus_one);
+        n_clusters,
+        minus_one);
 
     auto* const m_ptr = map.get_mutable_data();
 
@@ -85,4 +84,4 @@ ONEDAL_PY_INIT_MODULE(kmeans_common) {
     sub.def("_is_same_clustering", &kmeans::is_same_clustering);
 } // ONEDAL_PY_INIT_MODULE(kmeans_common)
 
-} // namespace oneapi::dal::python::kmeans
+} // namespace oneapi::dal::python

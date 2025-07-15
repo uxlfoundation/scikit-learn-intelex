@@ -27,7 +27,7 @@ from time import gmtime, strftime
 
 from daal4py import __has_dist__
 from daal4py.sklearn._utils import get_daal_version
-from onedal.utils._dpep_helpers import dpctl_available
+from onedal.utils._third_party import dpctl_available
 
 print("Starting examples validation")
 # First item is major version - 2021,
@@ -207,8 +207,6 @@ def get_exe_cmd(ex, args):
             return None
         if not check_version(req_version[os.path.basename(ex)], get_daal_version()):
             return None
-        if not check_library(req_library[os.path.basename(ex)]):
-            return None
 
     if os.path.dirname(ex).endswith("sklearnex"):
         if args.nosklearnex:
@@ -269,7 +267,7 @@ def run(exdir, logdir, args):
                                 proc.kill()
                                 out = proc.communicate()[0]
                                 print("Process has timed out: " + str(execute_string))
-                            logfile.write(out.decode("ascii"))
+                            logfile.write(out.decode())
                             if proc.returncode:
                                 print(out)
                                 print(
@@ -304,7 +302,7 @@ def run_all(args):
             "{}/{} examples passed/skipped, "
             "{} failed".format(success, num, num - success)
         )
-        print("Error(s) occured. Logs can be found in " + logdir)
+        print("Error(s) occurred. Logs can be found in " + logdir)
         return 4711
     print("{}/{} examples passed/skipped".format(success, num))
     return 0

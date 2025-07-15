@@ -21,6 +21,12 @@ from numpy.testing import assert_allclose
 from sklearn.datasets import load_diabetes, load_iris, make_classification
 
 from onedal.svm.tests.test_csr_svm import check_svm_model_equal
+
+try:
+    from scipy.sparse import csr_array as csr_class
+except ImportError:
+    from scipy.sparse import csr_matrix as csr_class
+
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
@@ -172,3 +178,29 @@ def test_diabetes(queue, kernel):
         clf0 = SVR(kernel=kernel, C=0.1)
         clf1 = SVR(kernel=kernel, C=0.1)
         check_svm_model_equal(queue, clf0, clf1, *dataset)
+
+
+# https://github.com/uxlfoundation/scikit-learn-intelex/issues/1880
+def test_works_with_unsorted_indices():
+    from sklearnex.svm import SVC
+
+    X = csr_class(
+        (
+            np.array(
+                [0.44943642, 0.6316672, 0.6316672, 0.44943642, 0.6316672, 0.6316672]
+            ),
+            np.array([1, 4, 3, 1, 2, 0], dtype=np.int32),
+            np.array([0, 3, 6], dtype=np.int32),
+        ),
+        shape=(2, 5),
+    )
+    y = np.array([1, 0])
+    X_test_single = np.array([[1, 0, 0, 0, 0]], dtype=np.float64)
+    X_test_multi = np.array([[1, 0, 0, 0, 0], [1, 0, 0, 0, 0]], dtype=np.float64)
+    model = SVC(probability=True).fit(X, y)
+    pred_single = model.predict_proba(X_test_single)
+    pred_multi = model.predict_proba(X_test_multi)[0]
+    np.testing.assert_array_equal(
+        pred_single.reshape(-1),
+        pred_multi.reshape(-1),
+    )
