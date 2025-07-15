@@ -159,7 +159,7 @@ class IncrementalBasicStatistics(BasicStatistics):
                     from_table(getattr(result, opt), like=self._outtype)[0, :],
                 )
 
-            self._outtype = False
+            self._outtype = None
             self._need_to_finalize = False
 
         return self
