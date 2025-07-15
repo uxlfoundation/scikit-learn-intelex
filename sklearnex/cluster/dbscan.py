@@ -110,7 +110,6 @@ class DBSCAN(oneDALEstimator, _sklearn_DBSCAN):
 
         self.components_ = xp.take(X, self.core_sample_indices_, axis=0)
         self.labels_ = self._onedal_estimator.labels_
-        self.core_sample_indices_ = self._onedal_estimator.core_sample_indices_
         self.n_features_in_ = X.shape[1]
 
     def _onedal_supported(self, method_name, *data):
