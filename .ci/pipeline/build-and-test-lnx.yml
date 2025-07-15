@@ -25,10 +25,9 @@ steps:
       bash .ci/scripts/describe_system.sh
     displayName: "System info"
   - script: |
-      conda config --remove channels r
-      conda config --remove channels main
       conda config --add channels conda-forge
       conda config --set channel_priority strict
+      conda config --remove-key default_channels
       conda update -y -q conda
       conda create -q -y -n CB -c conda-forge python=$(PYTHON_VERSION) mpich pyyaml
     displayName: "Conda create"
