@@ -140,10 +140,11 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         self._save_attributes()
 
     def _onedal_predict(self, X, queue=None):
-        xp, _ = get_namespace(X)
-        X = validate_data(
-            self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
-        )
+        if X is not None:
+            xp, _ = get_namespace(X)
+            validate_data(
+                self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
+            )
         return self._onedal_estimator.predict(X, queue=queue)
 
     def _onedal_kneighbors(
