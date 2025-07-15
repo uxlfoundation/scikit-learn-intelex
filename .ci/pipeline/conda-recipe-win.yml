@@ -17,7 +17,7 @@ steps:
   - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
     displayName: Add conda to PATH
   - script: |
-      echo default_channels: [] >> C:\Users\VssAdministrator\.condarc
+      (echo default_channels: & echo   - https://conda.anaconda.org/conda-forge) >> C:\Users\VssAdministrator\.condarc
       conda config --add channels conda-forge
       conda config --set channel_priority strict
       conda update -y -q conda python
