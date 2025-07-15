@@ -77,6 +77,75 @@ class DBSCAN(oneDALEstimator, _sklearn_DBSCAN):
     _onedal_dbscan = staticmethod(onedal_DBSCAN)
 
     def _onedal_fit(self, X, y, sample_weight=None, queue=None):
+        xp, _ = get_namespace(X, y, sample_weight)
+        if not get_config()["use_raw_input"]:
+            X = validate_data(
+                self, X, accept_sparse="csr", dtype=[xp.float64, xp.float32]
+            )
+            if sample_weight is not None:
+                sample_weight = _check_sample_weight(
+                    sample_weight, X, dtype=[xp.float64, xp.float32]
+                )
+
+        onedal_params = {
+            "eps": self.eps,
+            "min_samples": self.min_samples,
+            "metric": self.metric,
+            "metric_params": self.metric_params,
+            "algorithm": self.algorithm,
+            "leaf_size": self.leaf_size,
+            "p": self.p,
+            "n_jobs": self.n_jobs,
+        }
+        self._onedal_estimator = self._onedal_dbscan(**onedal_params)
+
+        self._onedal_estimator.fit(X, y=y, sample_weight=sample_weight, queue=queue)
+        if indices := self._onedal_estimator.core_sample_indices_:
+            self.core_sample_indices_ = indices
+        else:
+            kwargs = {"dtype": xp.int32}  # always the same
+            if not _is_numpy_namespace(xp):
+                kwargs["device"] = X.device
+            self.core_sample_indices_ = xp.empty((0,), **kwargs)
+
+        self.components_ = xp.take(X, self.core_sample_indices_, axis=0)
+        self.labels_ = self._onedal_estimator.labels_
+        self.core_sample_indices_ = self._onedal_estimator.core_sample_indices_
+        self.n_features_in_ = X.shape[1]
+
+    def _onedal_supported(self, method_name, *data):
+        class_name = self.__class__.__name__
+        patching_status = PatchingConditionsChain(
+            f"sklearn.cluster.{class_name}.{method_name}"
+        )
+        if method_name == "fit":
+            X = data[0]
+            patching_status.and_conditions(
+                [
+                    (
+                        self.algorithm in ["auto", "brute"],
+                        f"'{self.algorithm}' algorithm is not supported. "
+                        "Only 'auto' and 'brute' algorithms are supported",
+                    ),
+                    (
+                        self.metric == "euclidean"
+                        or (self.metric == "minkowski" and self.p == 2),
+                        f"'{self.metric}' (p={self.p}) metric is not supported. "
+                        "Only 'euclidean' or 'minkowski' with p=2 metrics are supported.",
+                    ),
+                    (not sp.issparse(X), "X is sparse. Sparse input is not supported."),
+                ]
+            )
+            return patching_status
+        raise RuntimeError(f"Unknown method {method_name} in {self.__class__.__name__}")
+
+    def _onedal_cpu_supported(self, method_name, *data):
+        return self._onedal_supported(method_name, *data)
+
+    def _onedal_gpu_supported(self, method_name, *data):
+        return self._onedal_supported(method_name, *data)
+
+    def fit(self, X, y=None, sample_weight=None):
         if sklearn_check_version("1.2"):
             self._validate_params()
         elif sklearn_check_version("1.1"):
@@ -114,76 +183,6 @@ class DBSCAN(oneDALEstimator, _sklearn_DBSCAN):
         else:
             if self.eps <= 0.0:
                 raise ValueError(f"eps == {self.eps}, must be > 0.0.")
-
-        xp, _ = get_namespace(X, y, sample_weight)
-        if not get_config()["use_raw_input"]:
-            X = validate_data(
-                self, X, accept_sparse="csr", dtype=[xp.float64, xp.float32]
-            )
-            if sample_weight is not None:
-                sample_weight = _check_sample_weight(
-                    sample_weight, X, dtype=[xp.float64, xp.float32]
-                )
-
-        onedal_params = {
-            "eps": self.eps,
-            "min_samples": self.min_samples,
-            "metric": self.metric,
-            "metric_params": self.metric_params,
-            "algorithm": self.algorithm,
-            "leaf_size": self.leaf_size,
-            "p": self.p,
-            "n_jobs": self.n_jobs,
-        }
-        self._onedal_estimator = self._onedal_dbscan(**onedal_params)
-
-        self._onedal_estimator.fit(X, y=y, sample_weight=sample_weight, queue=queue)
-        if indices := self._onedal_estimator.core_sample_indices_:
-            self.core_sample_indices_ = indices
-        else:
-            kwargs = {"dtype": xp.int32}  # always the same
-            if not _is_numpy_namespace(xp):
-                kwargs["device"] = X.device
-            self.core_sample_indices_ = xp.empty((0,), **kwargs)
-
-        self.components_ = xp.take(X, self.core_sample_indices_, axis=0)
-        self.labels_ = xp.squeeze(self._onedal_estimator.labels_)
-        self.core_sample_indices_ = self._onedal_estimator.core_sample_indices_
-        self.n_features_in_ = X.shape[1]
-
-    def _onedal_supported(self, method_name, *data):
-        class_name = self.__class__.__name__
-        patching_status = PatchingConditionsChain(
-            f"sklearn.cluster.{class_name}.{method_name}"
-        )
-        if method_name == "fit":
-            X = data[0]
-            patching_status.and_conditions(
-                [
-                    (
-                        self.algorithm in ["auto", "brute"],
-                        f"'{self.algorithm}' algorithm is not supported. "
-                        "Only 'auto' and 'brute' algorithms are supported",
-                    ),
-                    (
-                        self.metric == "euclidean"
-                        or (self.metric == "minkowski" and self.p == 2),
-                        f"'{self.metric}' (p={self.p}) metric is not supported. "
-                        "Only 'euclidean' or 'minkowski' with p=2 metrics are supported.",
-                    ),
-                    (not sp.issparse(X), "X is sparse. Sparse input is not supported."),
-                ]
-            )
-            return patching_status
-        raise RuntimeError(f"Unknown method {method_name} in {self.__class__.__name__}")
-
-    def _onedal_cpu_supported(self, method_name, *data):
-        return self._onedal_supported(method_name, *data)
-
-    def _onedal_gpu_supported(self, method_name, *data):
-        return self._onedal_supported(method_name, *data)
-
-    def fit(self, X, y=None, sample_weight=None):
         dispatch(
             self,
             "fit",

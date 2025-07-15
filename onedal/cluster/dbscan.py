@@ -65,7 +65,8 @@ class DBSCAN(ClusterMixin):
         params = self._get_onedal_params(X_table.dtype)
         result = self.compute(params, X_table, sample_weight_table)
 
-        self.labels_ = from_table(result.responses, like=X)
+        # 2d table but only 1d of information
+        self.labels_ = from_table(result.responses, like=X)[0]
         if (
             result.core_observation_indices is not None
             and result.core_observation_indices.kind != "empty"
