@@ -284,32 +284,32 @@ struct from_std<bool>
     static const transceiver_iface::type_type typ = transceiver_iface::BOOL;
 };
 template <>
-struct from_std<int8_t>
+struct from_std<std::int8_t>
 {
     static const transceiver_iface::type_type typ = transceiver_iface::INT8;
 };
 template <>
-struct from_std<uint8_t>
+struct from_std<std::uint8_t>
 {
     static const transceiver_iface::type_type typ = transceiver_iface::UINT8;
 };
 template <>
-struct from_std<int32_t>
+struct from_std<std::int32_t>
 {
     static const transceiver_iface::type_type typ = transceiver_iface::INT32;
 };
 template <>
-struct from_std<uint32_t>
+struct from_std<std::uint32_t>
 {
     static const transceiver_iface::type_type typ = transceiver_iface::UINT32;
 };
 template <>
-struct from_std<int64_t>
+struct from_std<std::int64_t>
 {
     static const transceiver_iface::type_type typ = transceiver_iface::INT64;
 };
 template <>
-struct from_std<uint64_t>
+struct from_std<std::uint64_t>
 {
     static const transceiver_iface::type_type typ = transceiver_iface::UINT64;
 };
