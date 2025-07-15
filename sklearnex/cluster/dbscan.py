@@ -100,13 +100,13 @@ class DBSCAN(oneDALEstimator, _sklearn_DBSCAN):
         self._onedal_estimator = self._onedal_dbscan(**onedal_params)
 
         self._onedal_estimator.fit(X, y=y, sample_weight=sample_weight, queue=queue)
-        if indices := self._onedal_estimator.core_sample_indices_:
-            self.core_sample_indices_ = indices
-        else:
+        if self._onedal_estimator.core_sample_indices_ is None:
             kwargs = {"dtype": xp.int32}  # always the same
             if not _is_numpy_namespace(xp):
                 kwargs["device"] = X.device
             self.core_sample_indices_ = xp.empty((0,), **kwargs)
+        else:
+            self.core_sample_indices_ = self._onedal_estimator.core_sample_indices_
 
         self.components_ = xp.take(X, self.core_sample_indices_, axis=0)
         self.labels_ = self._onedal_estimator.labels_
