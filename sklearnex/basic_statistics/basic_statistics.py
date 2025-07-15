@@ -127,7 +127,8 @@ class BasicStatistics(oneDALEstimator, BaseEstimator):
     def _save_attributes(self):
         assert hasattr(self, "_onedal_estimator")
         for option in self._onedal_estimator.options:
-            setattr(self, option + "_", getattr(self._onedal_estimator, option))
+            option += "_"
+            setattr(self, option, getattr(self._onedal_estimator, option))
 
     def __getattr__(self, attr):
         is_deprecated_attr = (

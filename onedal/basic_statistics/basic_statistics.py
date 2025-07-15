@@ -142,7 +142,7 @@ class BasicStatistics:
 
         for opt in self.options:
             value = from_table(getattr(result, opt), like=X)[0]  # 2D table [1, n]
-            setattr(self, opt, value[0] if is_single_dim else value)
+            setattr(self, opt + "_", value[0] if is_single_dim else value)
 
         return self
 
