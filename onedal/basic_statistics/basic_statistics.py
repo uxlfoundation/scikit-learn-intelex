@@ -141,7 +141,7 @@ class BasicStatistics:
         result = self._compute_raw(X_table, sample_weight_table, X_table.dtype, is_csr)
 
         for opt in self.options:
-            value = from_table(getattr(result, opt), like=X)[0]  # 2D table [1, n]
+            value = from_table(getattr(result, opt), like=X)[0, :]  # 2D table [1, n]
             setattr(self, opt + "_", value[0] if is_single_dim else value)
 
         return self

@@ -156,7 +156,7 @@ class IncrementalBasicStatistics(BasicStatistics):
                 setattr(
                     self,
                     opt + "_",
-                    from_table(getattr(result, opt), like=self._outtype)[0],
+                    from_table(getattr(result, opt), like=self._outtype)[0, :],
                 )
 
             self._outtype = False
