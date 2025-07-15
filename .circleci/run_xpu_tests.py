@@ -43,6 +43,12 @@ if __name__ == "__main__":
         action="store_true",
         help="Use Scikit-learn without Intel optimizations",
     )
+    parser.add_argument(
+        "--json-report-file",
+        default=None,
+        action="store_true",
+        help="File path where to output a report of the test outcomes in JSON format",
+    )
     parser.add_argument("--deselected_yml_file", action="append", type=str)
     parser.add_argument("--absolute", action="store_true")
     parser.add_argument("--reduced", action="store_true")
@@ -73,6 +79,9 @@ if __name__ == "__main__":
 
     if not args.quiet:
         pytest_params.append("-q")
+
+    if args.json_report_file is not None:
+        pytest_params += ["--json-report", f"--json-report-file={args.json_report_file}"]
 
     if not args.no_intel_optimized:
         from sklearnex import patch_sklearn
