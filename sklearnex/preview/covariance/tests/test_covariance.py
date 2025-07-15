@@ -49,7 +49,7 @@ def test_sklearnex_import_covariance(
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     empcov = EmpiricalCovariance(assume_centered=assume_centered)
 
-    if daal_check_version((2025, "P", 7)):
+    if daal_check_version((2025, "P", 700)):
         if macro_block is not None:
             if queue and queue.sycl_device.is_gpu:
                 pytest.skip("Test for CPU-only functionality")
