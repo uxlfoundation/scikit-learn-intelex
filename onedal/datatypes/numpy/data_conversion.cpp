@@ -153,7 +153,10 @@ inline csr_table_t convert_to_csr_impl(PyObject *py_data,
     return res_table;
 }
 
-dal::table convert_to_table(py::object inp_obj, py::object queue, bool recursed) {
+dal::table convert_to_table(py::object inp_obj,
+                            py::object queue,
+                            bool recursed,
+                            bool require_sparse_with_sorted_indices) {
     dal::table res;
 
     PyObject *obj = inp_obj.ptr();
@@ -213,6 +216,11 @@ dal::table convert_to_table(py::object inp_obj, py::object queue, bool recursed)
     }
     else if (strcmp(Py_TYPE(obj)->tp_name, "csr_matrix") == 0 ||
              strcmp(Py_TYPE(obj)->tp_name, "csr_array") == 0) {
+        if (require_sparse_with_sorted_indices) {
+            if (!py::getattr(obj, "has_sorted_indices").cast<bool>()) {
+                py::reinterpret_borrow<py::object>(obj).attr("sort_indices")();
+            }
+        }
         PyObject *py_data = PyObject_GetAttrString(obj, "data");
         PyObject *py_column_indices = PyObject_GetAttrString(obj, "indices");
         PyObject *py_row_indices = PyObject_GetAttrString(obj, "indptr");
