@@ -25,6 +25,8 @@ steps:
       bash .ci/scripts/describe_system.sh
     displayName: "System info"
   - script: |
+      conda config --remove channels r
+      conda config --remove channels main
       conda config --add channels conda-forge
       conda config --set channel_priority strict
       conda update -y -q conda
