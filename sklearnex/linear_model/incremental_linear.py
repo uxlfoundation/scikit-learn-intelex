@@ -194,9 +194,6 @@ class IncrementalLinearRegression(
     def _onedal_partial_fit(self, X, y, check_input=True, queue=None):
         first_pass = not hasattr(self, "n_samples_seen_") or self.n_samples_seen_ == 0
 
-        if sklearn_check_version("1.2"):
-            self._validate_params()
-
         if check_input and not get_config()["use_raw_input"]:
             xp, _ = get_namespace(X, y)
             X, y = validate_data(
@@ -250,9 +247,6 @@ class IncrementalLinearRegression(
 
     def _onedal_fit(self, X, y, queue=None):
         if not get_config()["use_raw_input"]:
-            if sklearn_check_version("1.2"):
-                self._validate_params()
-
             xp, _ = get_namespace(X, y)
 
             X, y = validate_data(
@@ -315,6 +309,8 @@ class IncrementalLinearRegression(
         self : IncrementalLinearRegression
             Returns the instance itself.
         """
+        if sklearn_check_version("1.2") and check_input:
+            self._validate_params()
 
         dispatch(
             self,
@@ -351,6 +347,8 @@ class IncrementalLinearRegression(
         self : IncrementalLinearRegression
             Returns the instance itself.
         """
+        if sklearn_check_version("1.2"):
+            self._validate_params()
 
         dispatch(
             self,
