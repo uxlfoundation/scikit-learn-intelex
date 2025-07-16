@@ -174,10 +174,10 @@ class PCA(metaclass=ABCMeta):
             result = self.train(params, X)
 
         (
-            self.mean_,
+            mean_,
             self.var_,
             self.components_,
-            self.singular_values_,
+            sing_vals_,
             eigenvalues_,
             var_ratio,
         ) = from_table(
@@ -190,16 +190,12 @@ class PCA(metaclass=ABCMeta):
             like=X,
         )
 
-        self.mean_ = from_table(result.means).ravel()
+        self.mean_ = mean_[0, ...]
         self.variances_ = from_table(result.variances, like=X)
         self.components_ = from_table(result.eigenvectors, like=X)
-        self.singular_values_ = from_table(result.singular_values).ravel()
-        self.explained_variance_ = np.maximum(from_table(result.eigenvalues).ravel(), 0)
-        self.explained_variance_ratio_ = from_table(
-            result.explained_variances_ratio
-        ).ravel()
-        self.n_samples_ = n_samples
-        self.n_features_ = n_features
+        self.singular_values_ = sing_vals_[0, ...]
+        self.explained_variance_ = eigenvalues_[0, ...]
+        self.explained_variance_ratio_ = var_ratio[0, ...]
 
         n_components = self._resolve_n_components_for_result(X.shape)
         self.n_components_ = n_components

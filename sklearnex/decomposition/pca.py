@@ -289,21 +289,28 @@ if daal_check_version((2024, "P", 100)):
             self._onedal_estimator = self.onedal_PCA(**onedal_params)
             self._onedal_estimator.fit(X, queue=queue)
 
+            if n_components < self.n_components:
+                self.explained_variance_ = self._onedal_estimator.explained_variance_[0, :n_components]
+                self.components_ = self._onedal_estimator.components_[:n_components]
+                self.singular_values_ = self._onedal_estimator.singular_values_[:n_components]
+                self.explained_variance_ratio_ = self._onedal_estimator.explained_variance_ratio_[:n_components]
+
             self.n_samples_ = X.shape[0]
-            if sklearn_check_version("1.2"):
-                self.n_features_in_ = X.shape[1]
-            else:
-                self.n_features_ = X.shape[1]
-                self.n_features_in_ = X.shape[1]
+            self.n_features_in_ = X.shape[1]
             self.n_components_ = self._onedal_estimator.n_components_
-            self.components_ = self._onedal_estimator.components_
             self.mean_ = self._onedal_estimator.mean_
-            self.singular_values_ = self._onedal_estimator.singular_values_
-            self.explained_variance_ = self._onedal_estimator.explained_variance_.ravel()
-            self.explained_variance_ratio_ = (
-                self._onedal_estimator.explained_variance_ratio_
-            )
+
             self.noise_variance_ = self._onedal_estimator.noise_variance_
+
+        if not sklearn_check_version("1.2"):
+
+            @property
+            def n_features_(self):
+                return self.n_features_in_
+
+            @n_features_.setter
+            def n_features(self, val):
+                self.n_features_in_ = val
 
         @wrap_output_data
         def transform(self, X):
