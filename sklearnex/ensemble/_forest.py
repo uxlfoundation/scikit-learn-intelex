@@ -1251,6 +1251,7 @@ class RandomForestClassifier(ForestClassifier):
             monotonic_cst=None,
             max_bins=256,
             min_bin_size=1,
+            local_trees_mode=False,
         ):
             super().__init__(
                 DecisionTreeClassifier(),
@@ -1267,6 +1268,7 @@ class RandomForestClassifier(ForestClassifier):
                     "random_state",
                     "ccp_alpha",
                     "monotonic_cst",
+                    "local_trees_mode",
                 ),
                 bootstrap=bootstrap,
                 oob_score=oob_score,
@@ -1290,6 +1292,7 @@ class RandomForestClassifier(ForestClassifier):
             self.max_bins = max_bins
             self.min_bin_size = min_bin_size
             self.monotonic_cst = monotonic_cst
+            self.local_trees_mode = local_trees_mode
 
     else:
 
@@ -1316,6 +1319,7 @@ class RandomForestClassifier(ForestClassifier):
             max_samples=None,
             max_bins=256,
             min_bin_size=1,
+            local_trees_mode=False,
         ):
             super().__init__(
                 DecisionTreeClassifier(),
@@ -1331,6 +1335,7 @@ class RandomForestClassifier(ForestClassifier):
                     "min_impurity_decrease",
                     "random_state",
                     "ccp_alpha",
+                    "local_trees_mode",
                 ),
                 bootstrap=bootstrap,
                 oob_score=oob_score,
@@ -1353,6 +1358,7 @@ class RandomForestClassifier(ForestClassifier):
             self.ccp_alpha = ccp_alpha
             self.max_bins = max_bins
             self.min_bin_size = min_bin_size
+            self.local_trees_mode = local_trees_mode
 
 
 @control_n_jobs(decorated_methods=["fit", "predict", "score"])
@@ -1392,6 +1398,7 @@ class RandomForestRegressor(ForestRegressor):
             monotonic_cst=None,
             max_bins=256,
             min_bin_size=1,
+            local_trees_mode=False,
         ):
             super().__init__(
                 DecisionTreeRegressor(),
@@ -1408,6 +1415,7 @@ class RandomForestRegressor(ForestRegressor):
                     "random_state",
                     "ccp_alpha",
                     "monotonic_cst",
+                    "local_trees_mode",
                 ),
                 bootstrap=bootstrap,
                 oob_score=oob_score,
@@ -1429,6 +1437,7 @@ class RandomForestRegressor(ForestRegressor):
             self.ccp_alpha = ccp_alpha
             self.max_bins = max_bins
             self.min_bin_size = min_bin_size
+            self.local_trees_mode = local_trees_mode
             self.monotonic_cst = monotonic_cst
 
     else:
@@ -1455,6 +1464,7 @@ class RandomForestRegressor(ForestRegressor):
             max_samples=None,
             max_bins=256,
             min_bin_size=1,
+            local_trees_mode=False,
         ):
             super().__init__(
                 DecisionTreeRegressor(),
@@ -1470,6 +1480,7 @@ class RandomForestRegressor(ForestRegressor):
                     "min_impurity_decrease",
                     "random_state",
                     "ccp_alpha",
+                    "local_trees_mode",
                 ),
                 bootstrap=bootstrap,
                 oob_score=oob_score,
@@ -1491,6 +1502,7 @@ class RandomForestRegressor(ForestRegressor):
             self.ccp_alpha = ccp_alpha
             self.max_bins = max_bins
             self.min_bin_size = min_bin_size
+            self.local_trees_mode = local_trees_mode
 
 
 @control_n_jobs(decorated_methods=["fit", "predict", "predict_proba", "score"])

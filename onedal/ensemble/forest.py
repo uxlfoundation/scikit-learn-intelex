@@ -66,6 +66,7 @@ class BaseForest(BaseEnsemble, metaclass=ABCMeta):
         max_samples,
         max_bins,
         min_bin_size,
+        local_trees_mode,
         infer_mode,
         splitter_mode,
         voting_mode,
@@ -93,6 +94,7 @@ class BaseForest(BaseEnsemble, metaclass=ABCMeta):
         self.ccp_alpha = ccp_alpha
         self.max_bins = max_bins
         self.min_bin_size = min_bin_size
+        self.local_trees_mode = local_trees_mode
         self.infer_mode = infer_mode
         self.splitter_mode = splitter_mode
         self.voting_mode = voting_mode
@@ -186,6 +188,7 @@ class BaseForest(BaseEnsemble, metaclass=ABCMeta):
             "max_leaf_nodes": (0 if self.max_leaf_nodes is None else self.max_leaf_nodes),
             "max_bins": self.max_bins,
             "min_bin_size": self.min_bin_size,
+            "local_trees_mode": self.local_trees_mode,
             "seed": seed,
             "memory_saving_mode": False,
             "bootstrap": bool(self.bootstrap),
@@ -456,6 +459,7 @@ class RandomForestClassifier(ClassifierMixin, BaseForest, metaclass=ABCMeta):
         max_samples=None,
         max_bins=256,
         min_bin_size=1,
+        local_trees_mode=False,
         infer_mode="class_responses",
         splitter_mode="best",
         voting_mode="weighted",
@@ -484,6 +488,7 @@ class RandomForestClassifier(ClassifierMixin, BaseForest, metaclass=ABCMeta):
             max_samples=max_samples,
             max_bins=max_bins,
             min_bin_size=min_bin_size,
+            local_trees_mode=local_trees_mode,
             infer_mode=infer_mode,
             splitter_mode=splitter_mode,
             voting_mode=voting_mode,
@@ -557,6 +562,7 @@ class RandomForestRegressor(RegressorMixin, BaseForest, metaclass=ABCMeta):
         max_samples=None,
         max_bins=256,
         min_bin_size=1,
+        local_trees_mode=False,
         infer_mode="class_responses",
         splitter_mode="best",
         voting_mode="weighted",
@@ -585,6 +591,7 @@ class RandomForestRegressor(RegressorMixin, BaseForest, metaclass=ABCMeta):
             max_samples=max_samples,
             max_bins=max_bins,
             min_bin_size=min_bin_size,
+            local_trees_mode=local_trees_mode,
             infer_mode=infer_mode,
             splitter_mode=splitter_mode,
             voting_mode=voting_mode,
