@@ -17,74 +17,26 @@
 """Tools to support array_api."""
 
 from collections.abc import Iterable
-from functools import wraps
+from functools import lru_cache
 
 import numpy as np
-from sklearn import config_context, get_config
 
-from daal4py.sklearn._utils import get_dtype
-from daal4py.sklearn._utils import make2d as d4p_make2d
-
-try:
-    import dpctl.tensor as dpt
-    from dpctl.tensor import usm_ndarray
-
-    dpctl_available = True
-except ImportError:
-    dpctl_available = False
-
-try:
-    import dpnp
-
-    dpnp_available = True
-except ImportError:
-    dpnp_available = False
+from ..utils._third_party import _is_subclass_fast
 
 
-# TODO:
-# move to Array API module.
-# TODO
-# def make2d(arg, xp=None, is_array_api_compliant=None):
-def make2d(arg, xp=None):
-    if xp and not _is_numpy_namespace(xp) and arg.ndim == 1:
-        return xp.reshape(arg, (arg.size, 1)) if arg.ndim == 1 else arg
-    # TODO:
-    # reimpl via is_array_api_compliant usage.
-    return d4p_make2d(arg)
-
-
-if dpnp_available:
-    import dpnp
-
-    def _convert_to_dpnp(array):
-        """Converted input object to dpnp.ndarray format."""
-        # Will be removed and `onedal.utils._array_api._asarray` will be
-        # used instead after DPNP Array API enabling.
-        if isinstance(array, usm_ndarray):
-            return dpnp.array(array, copy=False)
-        elif isinstance(array, Iterable):
-            for i in range(len(array)):
-                array[i] = _convert_to_dpnp(array[i])
-        return array
-
-
-def _convert_to_numpy(array, xp):
-    """Convert X into a NumPy ndarray on the CPU."""
-    xp_name = xp.__name__
-
-    if dpctl_available and xp_name in {
-        "dpctl.tensor",
-    }:
-        return dpt.to_numpy(array)
-    elif dpnp_available and isinstance(array, dpnp.ndarray):
-        return dpnp.asnumpy(array)
-    else:
-        return _asarray(array, xp)
+def _supports_buffer_protocol(obj):
+    # the array_api standard mandates conversion with the buffer protocol,
+    # which can only be checked via a try-catch in native python
+    try:
+        memoryview(obj)
+    except TypeError:
+        return False
+    return True
 
 
 def _asarray(data, xp, *args, **kwargs):
     """Converted input object to array format of xp namespace provided."""
-    if hasattr(data, "__array_namespace__"):
+    if hasattr(data, "__array_namespace__") or _supports_buffer_protocol(data):
         return xp.asarray(data, *args, **kwargs)
     elif isinstance(data, Iterable):
         if isinstance(data, tuple):
@@ -100,7 +52,27 @@ def _asarray(data, xp, *args, **kwargs):
 
 def _is_numpy_namespace(xp):
     """Return True if xp is backed by NumPy."""
-    return xp.__name__ in {"numpy", "array_api_compat.numpy", "numpy.array_api"}
+    return xp.__name__ in {
+        "numpy",
+        "array_api_compat.numpy",
+        "numpy.array_api",
+        "sklearn.externals.array_api_compat.numpy",
+    }
+
+
+@lru_cache(100)
+def _cls_to_sycl_namespace(cls):
+    # use caching to minimize imports, derived from array_api_compat
+    if _is_subclass_fast(cls, "dpctl.tensor", "usm_ndarray"):
+        import dpctl.tensor as dpt
+
+        return dpt
+    elif _is_subclass_fast(cls, "dpnp", "ndarray"):
+        import dpnp
+
+        return dpnp
+    else:
+        raise ValueError(f"SYCL type not recognized: {cls}")
 
 
 def _get_sycl_namespace(*arrays):
@@ -114,69 +86,10 @@ def _get_sycl_namespace(*arrays):
 
     if sua_iface:
         (X,) = sua_iface.values()
+        return (
+            sua_iface,
+            _cls_to_sycl_namespace(type(X)),
+            hasattr(X, "__array_namespace__"),
+        )
 
-        if hasattr(X, "__array_namespace__"):
-            return sua_iface, X.__array_namespace__(), True
-        elif dpnp_available and isinstance(X, dpnp.ndarray):
-            return sua_iface, dpnp, False
-        else:
-            raise ValueError(f"SYCL type not recognized: {sua_iface}")
-
-    return sua_iface, None, False
-
-
-# TODO:
-#
-sklearn_array_api_version = True
-
-
-def sklearn_array_api_dispatch(freefunc=False):
-    """
-    TBD
-    """
-
-    def decorator(func):
-        def wrapper_impl(obj, *args, **kwargs):
-            # if sklearn_array_api_version and not get_config["array_api_dispatch"]:
-            if sklearn_array_api_version:
-                with config_context(array_api_dispatch=True):
-                    return func(obj, *args, **kwargs)
-            return func(obj, *args, **kwargs)
-
-        if freefunc:
-
-            @wraps(func)
-            def wrapper_free(*args, **kwargs):
-                return wrapper_impl(None, *args, **kwargs)
-
-            return wrapper_free
-
-        @wraps(func)
-        def wrapper_with_self(self, *args, **kwargs):
-            return wrapper_impl(self, *args, **kwargs)
-
-        return wrapper_with_self
-
-    return decorator
-
-
-def get_namespace(*arrays):
-    """Get namespace of arrays.
-    TBD.
-    Parameters
-    ----------
-    *arrays : array objects
-        Array objects.
-    Returns
-    -------
-    namespace : module
-        Namespace shared by array objects.
-    is_array_api : bool
-        True of the arrays are containers that implement the Array API spec.
-    """
-    sycl_type, xp, is_array_api_compliant = _get_sycl_namespace(*arrays)
-
-    if sycl_type:
-        return xp, is_array_api_compliant
-    else:
-        return np, True
+    return sua_iface, np, False

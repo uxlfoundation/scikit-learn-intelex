@@ -52,7 +52,6 @@ def get_patch_map_core(preview=False):
                 EmpiricalCovariance as EmpiricalCovariance_sklearnex,
             )
             from .preview.decomposition import IncrementalPCA as IncrementalPCA_sklearnex
-            from .preview.linear_model import Ridge as Ridge_sklearnex
 
             # Since the state of the lru_cache without preview cannot be
             # guaranteed to not have already enabled sklearnex algorithms
@@ -81,14 +80,6 @@ def get_patch_map_core(preview=False):
                     ),
                     None,
                 ]
-            ]
-
-            # Ridge
-            linear_model_module, _, _ = mapping["ridge"][0][0]
-            sklearn_obj = mapping["ridge"][0][1]
-            mapping.pop("ridge")
-            mapping["ridge"] = [
-                [(linear_model_module, "Ridge", Ridge_sklearnex), sklearn_obj]
             ]
 
         return mapping
@@ -127,15 +118,6 @@ def get_patch_map_core(preview=False):
         from ._config import config_context as config_context_sklearnex
         from ._config import get_config as get_config_sklearnex
         from ._config import set_config as set_config_sklearnex
-
-        if sklearn_check_version("1.4"):
-            import sklearn.utils._array_api as _array_api_module
-
-        if sklearn_check_version("1.2.1"):
-            from .utils.parallel import _FuncWrapper as _FuncWrapper_sklearnex
-        else:
-            from .utils.parallel import _FuncWrapperOld as _FuncWrapper_sklearnex
-
         from .cluster import DBSCAN as DBSCAN_sklearnex
         from .cluster import KMeans as KMeans_sklearnex
         from .covariance import (
@@ -167,10 +149,7 @@ def get_patch_map_core(preview=False):
         from .svm import SVR as SVR_sklearnex
         from .svm import NuSVC as NuSVC_sklearnex
         from .svm import NuSVR as NuSVR_sklearnex
-
-        if sklearn_check_version("1.4"):
-            from .utils._array_api import _convert_to_numpy as _convert_to_numpy_sklearnex
-            from .utils._array_api import get_namespace as get_namespace_sklearnex
+        from .utils.parallel import _FuncWrapper as _FuncWrapper_sklearnex
 
         # DBSCAN
         mapping.pop("dbscan")
@@ -447,24 +426,6 @@ def get_patch_map_core(preview=False):
         mapping["_funcwrapper"] = [
             [(parallel_module, "_FuncWrapper", _FuncWrapper_sklearnex), None]
         ]
-        if sklearn_check_version("1.4"):
-            # Necessary for array_api support
-            mapping["get_namespace"] = [
-                [
-                    (
-                        _array_api_module,
-                        "get_namespace",
-                        get_namespace_sklearnex,
-                    ),
-                    None,
-                ]
-            ]
-            mapping["_convert_to_numpy"] = [
-                [
-                    (_array_api_module, "_convert_to_numpy", _convert_to_numpy_sklearnex),
-                    None,
-                ]
-            ]
     return mapping
 
 
@@ -488,10 +449,10 @@ def get_patch_names():
 def patch_sklearn(name=None, verbose=True, global_patch=False, preview=False):
     if preview:
         os.environ["SKLEARNEX_PREVIEW"] = "enabled_via_patch_sklearn"
-    if not sklearn_check_version("0.24"):
+    if not sklearn_check_version("1.0"):
         raise NotImplementedError(
-            "Intel(R) Extension for Scikit-learn* patches apply "
-            "for scikit-learn >= 0.24 only ..."
+            "Extension for Scikit-learn* patches apply "
+            "for scikit-learn >= 1.0 only ..."
         )
 
     if global_patch:
@@ -516,8 +477,8 @@ def patch_sklearn(name=None, verbose=True, global_patch=False, preview=False):
 
     if verbose and sys.stderr is not None:
         sys.stderr.write(
-            "Intel(R) Extension for Scikit-learn* enabled "
-            "(https://github.com/intel/scikit-learn-intelex)\n"
+            "Extension for Scikit-learn* enabled "
+            "(https://github.com/uxlfoundation/scikit-learn-intelex)\n"
         )
 
 
@@ -563,6 +524,17 @@ def sklearn_is_patched(name=None, return_map=False):
 
 
 def is_patched_instance(instance: object) -> bool:
-    """Returns True if the `instance` is patched with scikit-learn-intelex"""
+    """Check if given instance is patched with scikit-learn-intelex.
+
+    Parameters
+    ----------
+    instance : object
+        Python object, usually a scikit-learn estimator instance.
+
+    Returns
+    -------
+    Check : bool
+        Boolean whether instance is a daal4py or sklearnex estimator.
+    """
     module = getattr(instance, "__module__", "")
     return ("daal4py" in module) or ("sklearnex" in module)
