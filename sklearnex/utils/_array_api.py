@@ -17,9 +17,11 @@
 """Tools to support array_api."""
 
 import numpy as np
+import scipy.linalg as linalg
+from sklearn.covariance import log_likelihood as _sklearn_log_likelihood
 
 from daal4py.sklearn._utils import sklearn_check_version
-from onedal.utils._array_api import _get_sycl_namespace
+from onedal.utils._array_api import _get_sycl_namespace, _is_numpy_namespace
 
 from ..base import oneDALEstimator
 
@@ -120,3 +122,67 @@ def enable_array_api(original_class: type[oneDALEstimator]) -> type[oneDALEstima
         original_class._more_tags = _more_tags
 
     return original_class
+
+
+def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False, check_finite=True):
+    # array API enabled pinvh implementation, via direct translation of scipy.linalg.pinhv
+    # this should be considered a temporary stopgap until implemented in oneDAL
+    xp, _ = get_namespace(a)
+    # fall back to scipy if the namespace is of a numpy origin
+    if _is_numpy_namespace(xp):
+        return linalg.pinvh(
+            a,
+            atol=atol,
+            rtol=rtol,
+            lower=lower,
+            return_rank=return_rank,
+            check_finite=check_finite,
+        )
+
+    if check_finite:
+        raise NotImplementedError("finite checking does not occur in sklearnex's pinvh")
+
+    s, u = xp.linalg.eigh(a)
+    maxS = xp.max(xp.abs(s))
+
+    atol = 0.0 if atol is None else atol
+    rtol = max(a.shape) * xp.finfo(u.dtype).eps if (rtol is None) else rtol
+
+    if (atol < 0.0) or (rtol < 0.0):
+        raise ValueError("atol and rtol values must be positive.")
+
+    val = atol + maxS * rtol
+    above_cutoff = xp.nonzero(abs(s) > val)[0]
+
+    psigma_diag = 1.0 / xp.take(s, above_cutoff)
+    u = xp.take(u, above_cutoff, axis=1)
+
+    uconj = xp.conj(u) if xp.isdtype(u.dtype, kind="complex floating") else u
+
+    B = (u * psigma_diag) @ uconj.T
+
+    if return_rank:
+        return B, len(psigma_diag)
+    else:
+        return B
+
+
+pinvh.__doc__ = linalg.pinvh.__doc__
+
+
+def log_likelihood(emp_cov, precision):
+    # this is to compensate for a lack of array API support in sklearn
+    # even though it exists for ``fast_logdet``
+    xp, _ = get_namespace(emp_cov, precision)
+    p = precision.shape[0]
+    # extract sklearn.utils.extmath.fast_logdet for dpnp/dpctl support
+    sign, ld = xp.linalg.slogdet(precision)
+    if not sign > 0:
+        ld = -xp.inf
+    log_likelihood_ = -xp.sum(emp_cov * precision) + ld
+    log_likelihood_ -= p * np.log(2 * np.pi)
+    log_likelihood_ /= 2.0
+    return log_likelihood_
+
+
+log_likelihood.__doc__ = _sklearn_log_likelihood.__doc__
