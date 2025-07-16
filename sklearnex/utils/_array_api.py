@@ -28,6 +28,11 @@ from ..base import oneDALEstimator
 if sklearn_check_version("1.6"):
     from ..base import Tags
 
+from ..base import oneDALEstimator
+
+if sklearn_check_version("1.6"):
+    from ..base import Tags
+
 if sklearn_check_version("1.2"):
     from sklearn.utils._array_api import get_namespace as sklearn_get_namespace
 
@@ -116,7 +121,7 @@ def enable_array_api(original_class: type[oneDALEstimator]) -> type[oneDALEstima
 
     elif sklearn_check_version("1.3"):
 
-        def _more_tags(self) -> dict[bool]:
+        def _more_tags(self) -> dict[str, bool]:
             return {"onedal_array_api": True}
 
         original_class._more_tags = _more_tags
