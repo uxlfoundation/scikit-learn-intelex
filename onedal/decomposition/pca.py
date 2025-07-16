@@ -30,7 +30,7 @@ from ..datatypes import from_table, to_table
 from ..utils._array_api import _get_sycl_namespace
 
 
-class BasePCA(metaclass=ABCMeta):
+class PCA(metaclass=ABCMeta):
 
     def __init__(
         self,
@@ -149,9 +149,6 @@ class BasePCA(metaclass=ABCMeta):
 
     transform = predict
 
-
-class PCA(BasePCA):
-
     @supports_queue
     def fit(self, X, y=None, queue=None):
         use_raw_input = _get_config().get("use_raw_input", False) is True
@@ -176,9 +173,26 @@ class PCA(BasePCA):
         else:
             result = self.train(params, X)
 
+        (
+            self.mean_,
+            self.var_,
+            self.components_,
+            self.singular_values_,
+            eigenvalues_,
+            var_ratio,
+        ) = from_table(
+            result.means,
+            result.variances,
+            result.eigenvectors,
+            result.singular_values,
+            result.eigenvalues,
+            result.explained_variances_ratio,
+            like=X,
+        )
+
         self.mean_ = from_table(result.means).ravel()
-        self.variances_ = from_table(result.variances)
-        self.components_ = from_table(result.eigenvectors)
+        self.variances_ = from_table(result.variances, like=X)
+        self.components_ = from_table(result.eigenvectors, like=X)
         self.singular_values_ = from_table(result.singular_values).ravel()
         self.explained_variance_ = np.maximum(from_table(result.eigenvalues).ravel(), 0)
         self.explained_variance_ratio_ = from_table(
