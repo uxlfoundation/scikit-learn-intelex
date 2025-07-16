@@ -28,11 +28,6 @@ from ..base import oneDALEstimator
 if sklearn_check_version("1.6"):
     from ..base import Tags
 
-from ..base import oneDALEstimator
-
-if sklearn_check_version("1.6"):
-    from ..base import Tags
-
 if sklearn_check_version("1.2"):
     from sklearn.utils._array_api import get_namespace as sklearn_get_namespace
 
