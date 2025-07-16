@@ -292,7 +292,7 @@ examples = [
     ),
     Config("elastic_net", required_version=((2020, "P", 1), (2021, "B", 105))),
     Config("em_gmm", "em_gmm.csv", lambda r: r.covariances[0]),
-    Config("gradient_boosted_classification", timeout_cpu_seconds=480),
+    Config("gradient_boosted_classification", timeout_cpu_seconds=240),
     Config("implicit_als", "implicit_als.csv", "prediction"),
     Config("kdtree_knn_classification"),
     Config("kmeans", "kmeans.csv", "centroids"),
