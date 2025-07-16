@@ -318,18 +318,6 @@ if daal_check_version((2024, "P", 100)):
                 X,
             )
 
-        @wrap_output_data
-        def fit_transform(self, X):
-            return dispatch(
-                self,
-                "fit_transform",
-                {
-                    "onedal": self.__class__._onedal_fit_transform,
-                    "sklearn": _sklearn_PCA.fit_transform,
-                },
-                X,
-            )
-
         def _onedal_transform(self, X, queue=None):
             X = validate_data(
                 self,
@@ -343,6 +331,18 @@ if daal_check_version((2024, "P", 100)):
         def _onedal_fit_transform(self, X, queue=None):
             self._onedal_fit(X, queue=queue)
             return self._onedal_estimator.predict(X, queue=queue)
+
+        @wrap_output_data
+        def fit_transform(self, X):
+            return dispatch(
+                self,
+                "fit_transform",
+                {
+                    "onedal": self.__class__._onedal_fit_transform,
+                    "sklearn": _sklearn_PCA.fit_transform,
+                },
+                X,
+            )
 
         def inverse_transform(self, X):
             # sklearn does not properly input check inverse_transform using
