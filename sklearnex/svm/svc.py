@@ -18,7 +18,6 @@ from functools import wraps
 
 import numpy as np
 from scipy import sparse as sp
-from sklearn.exceptions import NotFittedError
 from sklearn.metrics import accuracy_score
 from sklearn.svm import SVC as _sklearn_SVC
 from sklearn.utils.metaestimators import available_if
@@ -44,6 +43,7 @@ from ._common import BaseSVC
 )
 class SVC(BaseSVC, _sklearn_SVC):
     __doc__ = _sklearn_SVC.__doc__
+    _onedal_factory = onedal_SVC
 
     if sklearn_check_version("1.2"):
         _parameter_constraints: dict = {**_sklearn_SVC._parameter_constraints}
@@ -114,74 +114,6 @@ class SVC(BaseSVC, _sklearn_SVC):
 
         return self
 
-    @wrap_output_data
-    def predict(self, X):
-        check_is_fitted(self)
-        return dispatch(
-            self,
-            "predict",
-            {
-                "onedal": self.__class__._onedal_predict,
-                "sklearn": _sklearn_SVC.predict,
-            },
-            X,
-        )
-
-    @wrap_output_data
-    def score(self, X, y, sample_weight=None):
-        check_is_fitted(self)
-        return dispatch(
-            self,
-            "score",
-            {
-                "onedal": self.__class__._onedal_score,
-                "sklearn": _sklearn_SVC.score,
-            },
-            X,
-            y,
-            sample_weight=sample_weight,
-        )
-
-    @available_if(_sklearn_SVC._check_proba)
-    @wraps(_sklearn_SVC.predict_proba, assigned=["__doc__"])
-    def predict_proba(self, X):
-        check_is_fitted(self)
-        return self._predict_proba(X)
-
-    @available_if(_sklearn_SVC._check_proba)
-    @wraps(_sklearn_SVC.predict_log_proba, assigned=["__doc__"])
-    def predict_log_proba(self, X):
-        xp, _ = get_namespace(X)
-
-        return xp.log(self.predict_proba(X))
-
-    @wrap_output_data
-    def _predict_proba(self, X):
-        return dispatch(
-            self,
-            "predict_proba",
-            {
-                "onedal": self.__class__._onedal_predict_proba,
-                "sklearn": _sklearn_SVC.predict_proba,
-            },
-            X,
-        )
-
-    @wrap_output_data
-    def decision_function(self, X):
-        check_is_fitted(self)
-        return dispatch(
-            self,
-            "decision_function",
-            {
-                "onedal": self.__class__._onedal_decision_function,
-                "sklearn": _sklearn_SVC.decision_function,
-            },
-            X,
-        )
-
-    decision_function.__doc__ = _sklearn_SVC.decision_function.__doc__
-
     def _onedal_gpu_supported(self, method_name, *data):
         class_name = self.__class__.__name__
         patching_status = PatchingConditionsChain(
@@ -245,7 +177,7 @@ class SVC(BaseSVC, _sklearn_SVC):
             "decision_function_shape": self.decision_function_shape,
         }
 
-        self._onedal_estimator = onedal_SVC(**onedal_params)
+        self._onedal_estimator = self._onedal_factory(**onedal_params)
         self._onedal_estimator.fit(X, y, weights, queue=queue)
 
         if self.probability:
@@ -258,49 +190,4 @@ class SVC(BaseSVC, _sklearn_SVC):
 
         self._save_attributes()
 
-    def _onedal_predict(self, X, queue=None):
-        X = validate_data(
-            self,
-            X,
-            dtype=[np.float64, np.float32],
-            ensure_all_finite=False,
-            ensure_2d=False,
-            accept_sparse="csr",
-            reset=False,
-        )
-        return self._onedal_estimator.predict(X, queue=queue)
-
-    def _onedal_predict_proba(self, X, queue=None):
-        if getattr(self, "clf_prob", None) is None:
-            raise NotFittedError(
-                "predict_proba is not available when fitted with probability=False"
-            )
-        from .._config import config_context, get_config
-
-        # We use stock metaestimators below, so the only way
-        # to pass a queue is using config_context.
-        cfg = get_config()
-        cfg["target_offload"] = queue
-        with config_context(**cfg):
-            return self.clf_prob.predict_proba(X)
-
-    def _onedal_decision_function(self, X, queue=None):
-        X = validate_data(
-            self,
-            X,
-            dtype=[np.float64, np.float32],
-            ensure_all_finite=False,
-            accept_sparse="csr",
-            reset=False,
-        )
-        return self._onedal_estimator.decision_function(X, queue=queue)
-
-    def _onedal_score(self, X, y, sample_weight=None, queue=None):
-        return accuracy_score(
-            y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
-        )
-
     fit.__doc__ = _sklearn_SVC.fit.__doc__
-    predict.__doc__ = _sklearn_SVC.predict.__doc__
-    decision_function.__doc__ = _sklearn_SVC.decision_function.__doc__
-    score.__doc__ = _sklearn_SVC.score.__doc__

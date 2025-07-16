@@ -17,8 +17,6 @@
 from functools import wraps
 
 import numpy as np
-from sklearn.exceptions import NotFittedError
-from sklearn.metrics import accuracy_score
 from sklearn.svm import NuSVC as _sklearn_NuSVC
 from sklearn.utils.metaestimators import available_if
 from sklearn.utils.validation import (
@@ -36,12 +34,12 @@ from ..utils._array_api import get_namespace
 from ..utils.validation import validate_data
 from ._common import BaseSVC
 
-
 @control_n_jobs(
     decorated_methods=["fit", "predict", "_predict_proba", "decision_function", "score"]
 )
 class NuSVC(BaseSVC, _sklearn_NuSVC):
     __doc__ = _sklearn_NuSVC.__doc__
+    _onedal_factory = onedal_NuSVC
 
     if sklearn_check_version("1.2"):
         _parameter_constraints: dict = {**_sklearn_NuSVC._parameter_constraints}
@@ -112,74 +110,6 @@ class NuSVC(BaseSVC, _sklearn_NuSVC):
 
         return self
 
-    @wrap_output_data
-    def predict(self, X):
-        check_is_fitted(self)
-        return dispatch(
-            self,
-            "predict",
-            {
-                "onedal": self.__class__._onedal_predict,
-                "sklearn": _sklearn_NuSVC.predict,
-            },
-            X,
-        )
-
-    @wrap_output_data
-    def score(self, X, y, sample_weight=None):
-        check_is_fitted(self)
-        return dispatch(
-            self,
-            "score",
-            {
-                "onedal": self.__class__._onedal_score,
-                "sklearn": _sklearn_NuSVC.score,
-            },
-            X,
-            y,
-            sample_weight=sample_weight,
-        )
-
-    @available_if(_sklearn_NuSVC._check_proba)
-    @wraps(_sklearn_NuSVC.predict_proba, assigned=["__doc__"])
-    def predict_proba(self, X):
-        check_is_fitted(self)
-        return self._predict_proba(X)
-
-    @available_if(_sklearn_NuSVC._check_proba)
-    @wraps(_sklearn_NuSVC.predict_log_proba, assigned=["__doc__"])
-    def predict_log_proba(self, X):
-        xp, _ = get_namespace(X)
-
-        return xp.log(self.predict_proba(X))
-
-    @wrap_output_data
-    def _predict_proba(self, X):
-        return dispatch(
-            self,
-            "predict_proba",
-            {
-                "onedal": self.__class__._onedal_predict_proba,
-                "sklearn": _sklearn_NuSVC.predict_proba,
-            },
-            X,
-        )
-
-    @wrap_output_data
-    def decision_function(self, X):
-        check_is_fitted(self)
-        return dispatch(
-            self,
-            "decision_function",
-            {
-                "onedal": self.__class__._onedal_decision_function,
-                "sklearn": _sklearn_NuSVC.decision_function,
-            },
-            X,
-        )
-
-    decision_function.__doc__ = _sklearn_NuSVC.decision_function.__doc__
-
     def _get_sample_weight(self, X, y, sample_weight=None):
         sample_weight = super()._get_sample_weight(X, y, sample_weight)
         if sample_weight is None:
@@ -215,7 +145,7 @@ class NuSVC(BaseSVC, _sklearn_NuSVC):
             "decision_function_shape": self.decision_function_shape,
         }
 
-        self._onedal_estimator = onedal_NuSVC(**onedal_params)
+        self._onedal_estimator = self._onedal_factory(**onedal_params)
         self._onedal_estimator.fit(X, y, weights, queue=queue)
 
         if self.probability:
@@ -228,51 +158,4 @@ class NuSVC(BaseSVC, _sklearn_NuSVC):
 
         self._save_attributes()
 
-    def _onedal_predict(self, X, queue=None):
-        validate_data(
-            self,
-            X,
-            dtype=[np.float64, np.float32],
-            ensure_all_finite=False,
-            ensure_2d=False,
-            accept_sparse="csr",
-            reset=False,
-        )
-
-        return self._onedal_estimator.predict(X, queue=queue)
-
-    def _onedal_predict_proba(self, X, queue=None):
-        if getattr(self, "clf_prob", None) is None:
-            raise NotFittedError(
-                "predict_proba is not available when fitted with probability=False"
-            )
-        from .._config import config_context, get_config
-
-        # We use stock metaestimators below, so the only way
-        # to pass a queue is using config_context.
-        cfg = get_config()
-        cfg["target_offload"] = queue
-        with config_context(**cfg):
-            return self.clf_prob.predict_proba(X)
-
-    def _onedal_decision_function(self, X, queue=None):
-        validate_data(
-            self,
-            X,
-            dtype=[np.float64, np.float32],
-            ensure_all_finite=False,
-            accept_sparse="csr",
-            reset=False,
-        )
-
-        return self._onedal_estimator.decision_function(X, queue=queue)
-
-    def _onedal_score(self, X, y, sample_weight=None, queue=None):
-        return accuracy_score(
-            y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
-        )
-
     fit.__doc__ = _sklearn_NuSVC.fit.__doc__
-    predict.__doc__ = _sklearn_NuSVC.predict.__doc__
-    decision_function.__doc__ = _sklearn_NuSVC.decision_function.__doc__
-    score.__doc__ = _sklearn_NuSVC.score.__doc__
