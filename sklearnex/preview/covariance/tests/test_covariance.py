@@ -44,7 +44,7 @@ def hyperparameters(request):
 def test_sklearnex_import_covariance(
     hyperparameters, dataframe, queue, macro_block, grain_size, assume_centered
 ):
-    X = [[0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1]]
+    X = np.array([[0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1]])
 
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     empcov = EmpiricalCovariance(assume_centered=assume_centered)
@@ -72,7 +72,7 @@ def test_sklearnex_import_covariance(
     assert_allclose(expected_covariance, result.covariance_)
     assert_allclose(expected_means, result.location_)
 
-    X = [[1, 2], [3, 6]]
+    X = np.array([[1, 2], [3, 6]])
 
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     result = empcov.fit(X)
