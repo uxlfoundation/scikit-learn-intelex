@@ -113,11 +113,12 @@ if daal_check_version((2024, "P", 100)):
 
         _onedal_PCA = staticmethod(onedal_PCA)
 
-        def _onedal_supported(self, method_name, X):
+        def _onedal_supported(self, method_name, *data):
             class_name = self.__class__.__name__
             patching_status = PatchingConditionsChain(
                 f"sklearn.decomposition.{class_name}.{method_name}"
             )
+            X = data[0]
 
             if method_name in ["fit", "fit_transform"]:
                 # pulling shape of the input is required before offloading
@@ -182,11 +183,8 @@ if daal_check_version((2024, "P", 100)):
                 f"Unknown method {method_name} in {self.__class__.__name__}"
             )
 
-        def _onedal_cpu_supported(self, method_name, *data):
-            return self._onedal_supported(method_name, *data)
-
-        def _onedal_gpu_supported(self, method_name, *data):
-            return self._onedal_supported(method_name, *data)
+        _onedal_cpu_supported = _onedal_supported
+        _onedal_gpu_supported = _onedal_supported
 
         if sklearn_check_version("1.1"):
 
