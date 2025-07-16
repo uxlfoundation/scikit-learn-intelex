@@ -113,7 +113,6 @@ if daal_check_version((2024, "P", 100)):
 
         _onedal_PCA = staticmethod(onedal_PCA)
 
-        @wrap_output_data
         def fit(self, X):
             if sklearn_check_version("1.2"):
                 self._validate_params()
@@ -125,15 +124,16 @@ if daal_check_version((2024, "P", 100)):
                     target_type=numbers.Integral,
                 )
 
-            return dispatch(
+            dispatch(
                 self,
                 "fit",
                 {
                     "onedal": self.__class__._onedal_fit,
-                    "sklearn": _sklearn_PCA._fit,
+                    "sklearn": _sklearn_PCA.fit,
                 },
                 X,
             )
+            return self
 
         def _onedal_fit(self, X, queue=None):
             X = validate_data(
@@ -182,17 +182,6 @@ if daal_check_version((2024, "P", 100)):
             )
             self.noise_variance_ = self._onedal_estimator.noise_variance_
 
-            U = None
-            S = self.singular_values_
-            Vt = self.components_
-
-            if sklearn_check_version("1.5"):
-                xp, _ = get_namespace(X)
-                x_is_centered = not self.copy
-
-                return U, S, Vt, X, x_is_centered, xp
-            else:
-                return U, S, Vt
 
         @wrap_output_data
         def transform(self, X):
