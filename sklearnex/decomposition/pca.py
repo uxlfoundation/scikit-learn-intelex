@@ -111,8 +111,10 @@ if daal_check_version((2024, "P", 100)):
                 self.iterated_power = iterated_power
                 self.random_state = random_state
 
+        _onedal_PCA = staticmethod(onedal_PCA)
+
         @wrap_output_data
-        def _fit(self, X):
+        def fit(self, X):
             if sklearn_check_version("1.2"):
                 self._validate_params()
             elif sklearn_check_version("1.1"):
@@ -161,9 +163,24 @@ if daal_check_version((2024, "P", 100)):
                 "method": "svd" if self._fit_svd_solver == "onedal_svd" else "cov",
                 "whiten": self.whiten,
             }
-            self._onedal_estimator = onedal_PCA(**onedal_params)
+            self._onedal_estimator = self.onedal_PCA(**onedal_params)
             self._onedal_estimator.fit(X, queue=queue)
-            self._save_attributes()
+
+            self.n_samples_ = self._onedal_estimator.n_samples_
+            if sklearn_check_version("1.2"):
+                self.n_features_in_ = self._onedal_estimator.n_features_
+            else:
+                self.n_features_ = self._onedal_estimator.n_features_
+                self.n_features_in_ = self._onedal_estimator.n_features_
+            self.n_components_ = self._onedal_estimator.n_components_
+            self.components_ = self._onedal_estimator.components_
+            self.mean_ = self._onedal_estimator.mean_
+            self.singular_values_ = self._onedal_estimator.singular_values_
+            self.explained_variance_ = self._onedal_estimator.explained_variance_.ravel()
+            self.explained_variance_ratio_ = (
+                self._onedal_estimator.explained_variance_ratio_
+            )
+            self.noise_variance_ = self._onedal_estimator.noise_variance_
 
             U = None
             S = self.singular_values_
@@ -190,6 +207,18 @@ if daal_check_version((2024, "P", 100)):
                 X,
             )
 
+        @wrap_output_data
+        def fit_transform(self, X):
+            return dispatch(
+                self,
+                "fit_transform",
+                {
+                    "onedal": self.__class__._onedal_fit_transform,
+                    "sklearn": _sklearn_PCA.fit_transform,
+                },
+                X,
+            )
+
         def _onedal_transform(self, X, queue=None):
             X = validate_data(
                 self,
@@ -200,30 +229,9 @@ if daal_check_version((2024, "P", 100)):
 
             return self._onedal_estimator.predict(X, queue=queue)
 
-        def fit_transform(self, X, y=None):
-            U, S, Vt, *output = self._fit(X)
-
-            if sklearn_check_version("1.5"):
-                X_fit, x_is_centered, xp = output
-            else:
-                X_fit = X
-
-            if hasattr(self, "_onedal_estimator"):
-                # oneDAL PCA was fit
-                return self.transform(X)
-            elif U is not None:
-                # Scikit-learn PCA was fit
-                U = U[:, : self.n_components_]
-
-                if self.whiten:
-                    U *= sqrt(X_fit.shape[0] - 1)
-                else:
-                    U *= S[: self.n_components_]
-
-                return U
-            else:
-                # Scikit-learn PCA["covariance_eigh"] was fit
-                return self._transform(X_fit, xp, x_is_centered=x_is_centered)
+        def _onedal_fit_transform(self, X, queue=None):
+            self._onedal_fit(X, queue=queue)
+            return self._onedal_estimator.predict(X, queue=queue)
 
         def inverse_transform(self, X):
             # sklearn does not properly input check inverse_transform using
@@ -258,7 +266,7 @@ if daal_check_version((2024, "P", 100)):
                 f"sklearn.decomposition.{class_name}.{method_name}"
             )
 
-            if method_name == "fit":
+            if method_name in ["fit", "fit_transform"]:
                 # pulling shape of the input is required before offloading
                 # due to the nature of sklearn's PCA._fit routine, which is
                 # behind a ``validate_data`` call and cannot be used
@@ -342,7 +350,7 @@ if daal_check_version((2024, "P", 100)):
                 if (
                     sklearn_check_version("1.5")
                     and n_features <= 1_000
-                    and n_shape >= 10 * n_features
+                    and n_samples >= 10 * n_features
                 ):
                     return "covariance_eigh"
                 elif max(n_samples, n_features) <= 500 or n_components == "mle":
@@ -376,23 +384,6 @@ if daal_check_version((2024, "P", 100)):
                         return "randomized"
                     else:
                         return "full"
-
-        def _save_attributes(self):
-            self.n_samples_ = self._onedal_estimator.n_samples_
-            if sklearn_check_version("1.2"):
-                self.n_features_in_ = self._onedal_estimator.n_features_
-            else:
-                self.n_features_ = self._onedal_estimator.n_features_
-                self.n_features_in_ = self._onedal_estimator.n_features_
-            self.n_components_ = self._onedal_estimator.n_components_
-            self.components_ = self._onedal_estimator.components_
-            self.mean_ = self._onedal_estimator.mean_
-            self.singular_values_ = self._onedal_estimator.singular_values_
-            self.explained_variance_ = self._onedal_estimator.explained_variance_.ravel()
-            self.explained_variance_ratio_ = (
-                self._onedal_estimator.explained_variance_ratio_
-            )
-            self.noise_variance_ = self._onedal_estimator.noise_variance_
 
         fit.__doc__ = _sklearn_PCA.fit.__doc__
         transform.__doc__ = _sklearn_PCA.transform.__doc__
