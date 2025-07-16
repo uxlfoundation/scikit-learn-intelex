@@ -114,7 +114,7 @@ def enable_array_api(original_class: type[oneDALEstimator]) -> type[oneDALEstima
 
     elif sklearn_check_version("1.3"):
 
-        def _more_tags(self) -> dict[bool]:
+        def _more_tags(self) -> dict[str, bool]:
             return {"onedal_array_api": True}
 
         original_class._more_tags = _more_tags
