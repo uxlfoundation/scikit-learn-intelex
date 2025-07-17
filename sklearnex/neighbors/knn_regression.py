@@ -127,8 +127,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
             dtype=[xp.float64, xp.float32],
             accept_sparse="csr",
             reset=True,
-            multi_output=True,
-            ensure_all_finite=ensure_finite,
+            multi_output=True
         )
         onedal_params = {
             "n_neighbors": self.n_neighbors,
