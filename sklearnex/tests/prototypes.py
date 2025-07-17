@@ -201,7 +201,9 @@ class PrototypeEstimator(oneDALEstimator, BaseEstimator):
     # following the tier system described below. If it is sklearnex only,
     # then it should try to follow sklearn conventions of sklearn estimators
     # which are most closely related (e.g. IncrementalPCA for incremental
-    # estimators).
+    # estimators). NOTE: as per the sklearn design rules, all estimator 
+    # attributes with trailing underscores are return values and are of
+    # some type of data (and therefore not themselves oneDAL-accelerated).
     #
     # Information about the onedal estimators/objects can be found in an
     # equivalent class file in the onedal module.
@@ -308,7 +310,7 @@ class PrototypeEstimator(oneDALEstimator, BaseEstimator):
             self,
             "fit",
             {
-                "onedal": self._onedal_fit,
+                "onedal": self.__class__._onedal_fit,
                 "sklearn": None,  # see note below about this value
             },
             X,
@@ -349,7 +351,7 @@ class PrototypeEstimator(oneDALEstimator, BaseEstimator):
             self,
             "predict",
             {
-                "onedal": self._onedal_predict,
+                "onedal": self.__class__.onedal_predict,
                 "sklearn": None,  # see note in ``fit``
             },
             X,
