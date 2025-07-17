@@ -71,6 +71,50 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
     @bind_default_backend("kmeans.clustering")
     def infer(self, params, model, centroids_table): ...
 
+
+    def _resolve_init_strategy(self, init, X, dtype, default_n_init=10):
+        """Validates and normalizes init strategy and sets _n_init accordingly."""
+        init_is_array = _is_arraylike_not_scalar(init)
+
+        # Validate array shape if applicable
+        if init_is_array:
+            init = _check_array(init, dtype=dtype, accept_sparse="csr", copy=True, order="C")
+            self._validate_center_shape(X, init)
+
+        # Set n_init depending on type of init
+        if self.n_init == "auto":
+            if isinstance(init, str):
+                if init == "k-means++":
+                    self._n_init = 1
+                elif init == "random":
+                    self._n_init = default_n_init
+            elif callable(init):
+                self._n_init = default_n_init
+            elif init_is_array:
+                self._n_init = 1
+        elif isinstance(self.n_init, int):
+            self._n_init = self.n_init
+        else:
+            raise ValueError(f"Invalid value for `n_init`: {self.n_init}")
+
+        if init_is_array and self._n_init != 1:
+            warnings.warn(
+            (
+                "Explicit initial center position passed: performing only"
+                f" one init in {self.__class__.__name__} instead of "
+                f"n_init={self._n_init}."
+            ),
+            RuntimeWarning,
+            stacklevel=2,
+        )
+        self._n_init = 1
+
+        return init
+
+
+
+
+
     def _validate_center_shape(self, X, centers):
         """Check if centers is compatible with X and n_clusters."""
         if centers.shape[0] != self.n_clusters:
@@ -112,50 +156,13 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
     def _check_params_vs_input(
         self, X_table, is_csr, default_n_init=10, dtype=np.float32
     ):
-        # n_clusters
+    
         if X_table.shape[0] < self.n_clusters:
             raise ValueError(
                 f"n_samples={X_table.shape[0]} should be >= n_clusters={self.n_clusters}."
             )
 
-        # tol
         self._tol = self._tolerance(X_table, self.tol, is_csr, dtype)
-
-        # n-init
-        # TODO(1.4): Remove
-        self._n_init = self.n_init
-        if self._n_init == "warn":
-            warnings.warn(
-                (
-                    "The default value of `n_init` will change from "
-                    f"{default_n_init} to 'auto' in 1.4. Set the value of `n_init`"
-                    " explicitly to suppress the warning"
-                ),
-                FutureWarning,
-                stacklevel=2,
-            )
-            self._n_init = default_n_init
-        if self._n_init == "auto":
-            if isinstance(self.init, str) and self.init == "k-means++":
-                self._n_init = 1
-            elif isinstance(self.init, str) and self.init == "random":
-                self._n_init = default_n_init
-            elif callable(self.init):
-                self._n_init = default_n_init
-            else:  # array-like
-                self._n_init = 1
-
-        if _is_arraylike_not_scalar(self.init) and self._n_init != 1:
-            warnings.warn(
-                (
-                    "Explicit initial center position passed: performing only"
-                    f" one init in {self.__class__.__name__} instead of "
-                    f"n_init={self._n_init}."
-                ),
-                RuntimeWarning,
-                stacklevel=2,
-            )
-            self._n_init = 1
         assert self.algorithm == "lloyd"
 
     def _get_onedal_params(self, is_csr=False, dtype=np.float32, result_options=None):
@@ -170,6 +177,18 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
             "result_options": "" if result_options is None else result_options,
         }
 
+
+    def _compute_centroids_with_onedal_init(self, X_table, n_clusters, random_seed, algorithm, is_csr, dtype):
+        alg = self._get_kmeans_init(
+        cluster_count=n_clusters,
+        seed=random_seed,
+        algorithm=algorithm,
+        is_csr=is_csr,
+        )
+        queue = QM.get_global_queue()
+        return alg.compute_raw(X_table, dtype, queue=queue)
+
+
     def _init_centroids_onedal(
         self,
         X_table,
@@ -183,26 +202,10 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
 
         if isinstance(init, str) and init == "k-means++":
             algorithm = "plus_plus_dense" if not is_csr else "plus_plus_csr"
-            alg = self._get_kmeans_init(
-                cluster_count=n_clusters,
-                seed=random_seed,
-                algorithm=algorithm,
-                is_csr=is_csr,
-            )
-            # We pass down the queue that was set through the KMeans.fit()
-            queue = QM.get_global_queue()
-            centers_table = alg.compute_raw(X_table, dtype, queue=queue)
+            centers_table = self._compute_centroids_with_onedal_init( X_table, n_clusters, random_seed, algorithm, is_csr, dtype)
         elif isinstance(init, str) and init == "random":
             algorithm = "random_dense" if not is_csr else "random_csr"
-            alg = self._get_kmeans_init(
-                cluster_count=n_clusters,
-                seed=random_seed,
-                algorithm=algorithm,
-                is_csr=is_csr,
-            )
-            # We pass down the queue that was set through the KMeans.fit()
-            queue = QM.get_global_queue()
-            centers_table = alg.compute_raw(X_table, dtype, queue=queue)
+            centers_table = self._compute_centroids_with_onedal_init(X_table, n_clusters, random_seed, algorithm, is_csr, dtype)
         elif _is_arraylike_not_scalar(init):
             if _is_csr(init):
                 # oneDAL KMeans only supports Dense Centroids
@@ -264,92 +267,37 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         )
 
     def _fit(self, X):
-        is_csr = _is_csr(X)
-
-        if _get_config()["use_raw_input"] is False:
-            X = _check_array(
-                X,
-                dtype=[np.float64, np.float32],
-                accept_sparse="csr",
-                force_all_finite=False,
-            )
-        X_table = to_table(X, queue=QM.get_global_queue())
-        dtype = X_table.dtype
+        X, X_table, is_csr, dtype = self._prepare_input(X)
 
         self._check_params_vs_input(X_table, is_csr, dtype=dtype)
-
         self.n_features_in_ = X_table.column_count
 
         best_model, best_n_iter = None, None
         best_inertia, best_labels = None, None
-
-        def is_better_iteration(inertia, labels):
-            if best_inertia is None:
-                return True
-            else:
-                better_inertia = inertia < best_inertia
-                return better_inertia and not self._is_same_clustering(
-                    labels, best_labels, self.n_clusters
-                )
-
         random_state = check_random_state(self.random_state)
 
-        init = self.init
-        init_is_array_like = _is_arraylike_not_scalar(init)
-        if init_is_array_like:
-            init = _check_array(
-                init, dtype=dtype, accept_sparse="csr", copy=True, order="C"
-            )
-            self._validate_center_shape(X, init)
-
-        use_onedal_init = daal_check_version((2023, "P", 200)) and not callable(self.init)
+        init = self._resolve_init_strategy(self.init, X, dtype)
 
         for _ in range(self._n_init):
-            if use_onedal_init:
-                random_seed = random_state.randint(np.iinfo("i").max)
-                centroids_table = self._init_centroids_onedal(
-                    X_table, init, random_seed, is_csr, dtype=dtype
-                )
-            else:
-                centroids_table = self._init_centroids_sklearn(
-                    X, init, random_state, dtype=dtype
-                )
+            centroids_table = self._get_initial_centroids(X, X_table, init, random_state, is_csr, dtype)
 
             if self.verbose:
-                print("Initialization complete")
+                logging.info("Initialization complete")
 
-            labels, inertia, model, n_iter = self._fit_backend(
-                X_table, centroids_table, dtype, is_csr
-            )
+            labels, inertia, model, n_iter = self._fit_backend(X_table, centroids_table, dtype, is_csr)
 
             if self.verbose:
-                print("Iteration {}, inertia {}.".format(n_iter, inertia))
+                logging.info(f"Iteration {n_iter}, inertia {inertia}.")
 
-            if is_better_iteration(inertia, labels):
-                best_model, best_n_iter = model, n_iter
-                best_inertia, best_labels = inertia, labels
+            if self._is_better_iteration(inertia, labels, best_inertia, best_labels):
+                best_model, best_n_iter, best_inertia, best_labels = (
+                    model, n_iter, inertia, labels
+                )
 
-        # Types without conversion
-        self.model_ = best_model
-
-        # Simple types
-        self.n_iter_ = best_n_iter
-        self.inertia_ = best_inertia
-
-        # Complex type conversion
-        self.labels_ = from_table(best_labels).ravel()
-
-        distinct_clusters = len(np.unique(self.labels_))
-        if distinct_clusters < self.n_clusters:
-            warnings.warn(
-                "Number of distinct clusters ({}) found smaller than "
-                "n_clusters ({}). Possibly due to duplicate points "
-                "in X.".format(distinct_clusters, self.n_clusters),
-                ConvergenceWarning,
-                stacklevel=2,
-            )
+        self._finalize_best_model(best_model, best_n_iter, best_inertia, best_labels)
 
         return self
+
 
     @property
     def cluster_centers_(self):
