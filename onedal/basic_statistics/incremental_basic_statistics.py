@@ -13,21 +13,14 @@
 # limitations under the License.
 # ==============================================================================
 
-import numpy as np
-
-from daal4py.sklearn._utils import get_dtype
-from onedal._device_offload import supports_queue
-from onedal.common._backend import bind_default_backend
-from onedal.utils import _sycl_queue_manager as QM
-
-from .._config import _get_config
-from ..datatypes import from_table, to_table
-from ..utils._array_api import _get_sycl_namespace
-from ..utils.validation import _check_array
-from .basic_statistics import BaseBasicStatistics
+from .._device_offload import supports_queue
+from ..common._backend import bind_default_backend
+from ..datatypes import from_table, return_type_constructor, to_table
+from ..utils import _sycl_queue_manager as QM
+from .basic_statistics import BasicStatistics
 
 
-class IncrementalBasicStatistics(BaseBasicStatistics):
+class IncrementalBasicStatistics(BasicStatistics):
     """Incremental oneDAL low order moments estimator.
 
     Calculate basic statistics for data split into batches.
@@ -36,6 +29,9 @@ class IncrementalBasicStatistics(BaseBasicStatistics):
     ----------
     result_options : str or list, default=str('all')
         List of statistics to compute.
+
+    algorithm : str, default=str('by_default')
+        Method for statistics computation.
 
     Attributes
     ----------
@@ -74,8 +70,8 @@ class IncrementalBasicStatistics(BaseBasicStatistics):
         Attributes are populated only for corresponding result options.
     """
 
-    def __init__(self, result_options="all"):
-        super().__init__(result_options, algorithm="by_default")
+    def __init__(self, result_options="all", algorithm="by_default"):
+        super().__init__(result_options, algorithm)
         self._reset()
         self._queue = None
 
@@ -90,6 +86,7 @@ class IncrementalBasicStatistics(BaseBasicStatistics):
 
     def _reset(self):
         self._need_to_finalize = False
+        self._outtype = None
         self._queue = None
         # get the _partial_result pointer from backend
         self._partial_result = self.partial_compute_result()
@@ -105,7 +102,7 @@ class IncrementalBasicStatistics(BaseBasicStatistics):
         return data
 
     @supports_queue
-    def partial_fit(self, X, weights=None, queue=None):
+    def partial_fit(self, X, sample_weight=None, queue=None):
         """Generate partial statistics from batch data in `_partial_result`.
 
         Parameters
@@ -114,7 +111,7 @@ class IncrementalBasicStatistics(BaseBasicStatistics):
             Training data batch, where `n_samples` is the number of samples
             in the batch, and `n_features` is the number of features.
 
-        weights : array-like of shape (n_samples,), default=None
+        sample_weight : array-like of shape (n_samples,), default=None
             Individual weights for each sample.
 
         queue : SyclQueue or None, default=None
@@ -126,34 +123,18 @@ class IncrementalBasicStatistics(BaseBasicStatistics):
         self : object
             Returns the instance itself.
         """
-        use_raw_input = _get_config().get("use_raw_input", False) is True
-        sua_iface, _, _ = _get_sycl_namespace(X)
-
-        # All data should use the same sycl queue
-        if use_raw_input and sua_iface:
-            queue = X.sycl_queue
 
         self._queue = queue
+        if not self._outtype:
+            self._outtype = return_type_constructor(X)
 
-        if not use_raw_input:
-            X = _check_array(
-                X, dtype=[np.float64, np.float32], ensure_2d=False, force_all_finite=False
-            )
-            if weights is not None:
-                weights = _check_array(
-                    weights,
-                    dtype=[np.float64, np.float32],
-                    ensure_2d=False,
-                    force_all_finite=False,
-                )
+        X_table, sample_weight_table = to_table(X, sample_weight, queue=queue)
 
         if not hasattr(self, "_onedal_params"):
-            dtype = get_dtype(X)
-            self._onedal_params = self._get_onedal_params(False, dtype=dtype)
+            self._onedal_params = self._get_onedal_params(False, dtype=X.dtype)
 
-        X_table, weights_table = to_table(X, weights, queue=queue)
         self._partial_result = self.partial_compute(
-            self._onedal_params, self._partial_result, X_table, weights_table
+            self._onedal_params, self._partial_result, X_table, sample_weight_table
         )
 
         self._need_to_finalize = True
@@ -171,10 +152,14 @@ class IncrementalBasicStatistics(BaseBasicStatistics):
             with QM.manage_global_queue(self._queue):
                 result = self.finalize_compute(self._onedal_params, self._partial_result)
 
-            options = self._get_result_options(self.options).split("|")
-            for opt in options:
-                setattr(self, opt, from_table(getattr(result, opt)).ravel())
+            for opt in self.options:
+                setattr(
+                    self,
+                    opt + "_",
+                    from_table(getattr(result, opt), like=self._outtype)[0, :],
+                )
 
+            self._outtype = None
             self._need_to_finalize = False
 
         return self

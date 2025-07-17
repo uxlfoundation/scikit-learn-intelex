@@ -30,9 +30,9 @@ result = incbs.partial_fit(X_2)
 X_3 = np.array([[1, 1], [1, 2], [2, 3]])
 result = incbs.partial_fit(X_3)
 
-print(f"Mean:\n{result.mean}")
-print(f"Max:\n{result.max}")
-print(f"Sum:\n{result.sum}")
+print(f"Mean:\n{result.mean_}")
+print(f"Max:\n{result.max_}")
+print(f"Sum:\n{result.sum_}")
 
 # We put the whole data to fit method, it is split automatically and then
 # partial_fit is called for each batch.
@@ -40,6 +40,6 @@ incbs = IncrementalBasicStatistics(result_options=["mean", "max", "sum"], batch_
 X = np.array([[0, 1], [0, 1], [1, 2], [1, 1], [1, 2], [2, 3]])
 result = incbs.fit(X)
 
-print(f"Mean:\n{result.mean}")
-print(f"Max:\n{result.max}")
-print(f"Sum:\n{result.sum}")
+print(f"Mean:\n{result.mean_}")
+print(f"Max:\n{result.max_}")
+print(f"Sum:\n{result.sum_}")
