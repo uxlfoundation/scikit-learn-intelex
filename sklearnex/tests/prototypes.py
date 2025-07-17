@@ -73,7 +73,8 @@ if sklearn_check_version("1.2"):
 #
 # 6) ``dispatch`` is a key central function for evaluating data with either
 # oneDAL or sklearn. All oneDAL algorithms which are to be directly used
-# should be accessed via this function.
+# should be accessed via this function. It should not be used unless a
+# call to a onedal estimator occurs.
 #
 # 7) ``PatchingConditionsChain`` is used in conjunction with ``dispatch``
 # and methods ``_onedal_cpu_supported`` and ``_onedal_gpu_supported`` to
@@ -94,6 +95,7 @@ if sklearn_check_version("1.2"):
 # 10) All estimators require validation of the parameters given at
 # initialization. This aspect was introduced in sklearn 1.2, any additional
 # parameters must extend the dictionary for checking.
+#
 
 ##########################
 # METHOD HEIRARCHY NOTES #
@@ -191,6 +193,12 @@ class PrototypeEstimator(oneDALEstimator, BaseEstimator):
     # objects have been sufficiently carried out. In most circumstances, the
     # pybind11 interface should be invoked by the Python onedal estimator
     # object.
+    #
+    # 4) If the estimator replicates/inherits from a sklearn estimator, 
+    # then only public methods should be those with the same signature as
+    # the sklearn estimator. If it is sklearnex only, then it should try to
+    # follow sklearn conventions of sklearn estimators which are most closely
+    # related (e.g. IncrementalPCA for incremental estimators).
     #
     # Information about the onedal estimators/objects can be found in an
     # equivalent class file in the onedal module.
@@ -413,6 +421,16 @@ class PrototypeEstimator(oneDALEstimator, BaseEstimator):
         patching_status = PatchingConditionsChain(
             f"sklearnex.test.{self.__class__.__name__}.{method_name}"
         )
+        # The conditions are specifically tailored to compares aspects
+        # of the oneDAL implementation to the aspects of the sklearn
+        # estimator.  For example, oneDAL may not support sparse inputs
+        # where sklearn might, that would need to be checked with
+        # scipy.sparse.issparse(X). In general the conditions will
+        # correspond to information in the metadata and/or the estimator
+        # parameters.
+        #
+        # In no circumstance should ``validate_data`` be called here or
+        # in _onedal_gpu_supoorted to get the data into the proper form.
         if method_name == "fit":
             (X, y) = data
             xp = get_namespace(X, y)
