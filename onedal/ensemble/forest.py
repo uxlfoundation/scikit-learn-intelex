@@ -66,7 +66,6 @@ class BaseForest(BaseEnsemble, metaclass=ABCMeta):
         max_samples,
         max_bins,
         min_bin_size,
-        local_trees_mode,
         infer_mode,
         splitter_mode,
         voting_mode,
@@ -94,7 +93,6 @@ class BaseForest(BaseEnsemble, metaclass=ABCMeta):
         self.ccp_alpha = ccp_alpha
         self.max_bins = max_bins
         self.min_bin_size = min_bin_size
-        self.local_trees_mode = local_trees_mode
         self.infer_mode = infer_mode
         self.splitter_mode = splitter_mode
         self.voting_mode = voting_mode
@@ -188,7 +186,6 @@ class BaseForest(BaseEnsemble, metaclass=ABCMeta):
             "max_leaf_nodes": (0 if self.max_leaf_nodes is None else self.max_leaf_nodes),
             "max_bins": self.max_bins,
             "min_bin_size": self.min_bin_size,
-            "local_trees_mode": self.local_trees_mode,
             "seed": seed,
             "memory_saving_mode": False,
             "bootstrap": bool(self.bootstrap),
@@ -488,7 +485,6 @@ class RandomForestClassifier(ClassifierMixin, BaseForest, metaclass=ABCMeta):
             max_samples=max_samples,
             max_bins=max_bins,
             min_bin_size=min_bin_size,
-            local_trees_mode=local_trees_mode,
             infer_mode=infer_mode,
             splitter_mode=splitter_mode,
             voting_mode=voting_mode,
@@ -496,12 +492,18 @@ class RandomForestClassifier(ClassifierMixin, BaseForest, metaclass=ABCMeta):
             variable_importance_mode=variable_importance_mode,
             algorithm=algorithm,
         )
+        self.local_trees_mode = local_trees_mode
 
     @bind_default_backend("decision_forest.classification")
     def train(self, *args, **kwargs): ...
 
     @bind_default_backend("decision_forest.classification")
     def infer(self, *args, **kwargs): ...
+
+    def _get_onedal_params(self, data):
+        onedal_params = super()._get_onedal_params(data)
+        onedal_params["local_trees_mode"] = self.local_trees_mode
+        return onedal_params
 
     def _validate_targets(self, y, dtype):
         y, self.class_weight_, self.classes_ = _validate_targets(
@@ -591,7 +593,6 @@ class RandomForestRegressor(RegressorMixin, BaseForest, metaclass=ABCMeta):
             max_samples=max_samples,
             max_bins=max_bins,
             min_bin_size=min_bin_size,
-            local_trees_mode=local_trees_mode,
             infer_mode=infer_mode,
             splitter_mode=splitter_mode,
             voting_mode=voting_mode,
@@ -599,12 +600,18 @@ class RandomForestRegressor(RegressorMixin, BaseForest, metaclass=ABCMeta):
             variable_importance_mode=variable_importance_mode,
             algorithm=algorithm,
         )
+        self.local_trees_mode = local_trees_mode
 
     @bind_default_backend("decision_forest.regression")
     def train(self, *args, **kwargs): ...
 
     @bind_default_backend("decision_forest.regression")
     def infer(self, *args, **kwargs): ...
+
+    def _get_onedal_params(self, data):
+        onedal_params = super()._get_onedal_params(data)
+        onedal_params["local_trees_mode"] = self.local_trees_mode
+        return onedal_params
 
     @supports_queue
     def fit(self, X, y, sample_weight=None, queue=None):
@@ -642,7 +649,6 @@ class ExtraTreesClassifier(ClassifierMixin, BaseForest, metaclass=ABCMeta):
         max_samples=None,
         max_bins=256,
         min_bin_size=1,
-        local_trees_mode=False,
         infer_mode="class_responses",
         splitter_mode="random",
         voting_mode="weighted",
@@ -671,7 +677,6 @@ class ExtraTreesClassifier(ClassifierMixin, BaseForest, metaclass=ABCMeta):
             max_samples=max_samples,
             max_bins=max_bins,
             min_bin_size=min_bin_size,
-            local_trees_mode=local_trees_mode,
             infer_mode=infer_mode,
             splitter_mode=splitter_mode,
             voting_mode=voting_mode,
@@ -735,7 +740,6 @@ class ExtraTreesRegressor(RegressorMixin, BaseForest, metaclass=ABCMeta):
         max_samples=None,
         max_bins=256,
         min_bin_size=1,
-        local_trees_mode=False,
         infer_mode="class_responses",
         splitter_mode="random",
         voting_mode="weighted",
@@ -764,7 +768,6 @@ class ExtraTreesRegressor(RegressorMixin, BaseForest, metaclass=ABCMeta):
             max_samples=max_samples,
             max_bins=max_bins,
             min_bin_size=min_bin_size,
-            local_trees_mode=local_trees_mode,
             infer_mode=infer_mode,
             splitter_mode=splitter_mode,
             voting_mode=voting_mode,

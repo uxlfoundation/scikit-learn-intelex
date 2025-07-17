@@ -21,6 +21,9 @@ from ...common._backend import bind_spmd_backend
 
 
 class RandomForestClassifier(RandomForestClassifier_Batch):
+    def __init__(self, *args, local_trees_mode=None, **kwargs):
+        super().__init__(*args, local_trees_mode=local_trees_mode, **kwargs)
+
     @bind_spmd_backend("decision_forest.classification")
     def train(self, *args, **kwargs): ...
 
@@ -29,6 +32,9 @@ class RandomForestClassifier(RandomForestClassifier_Batch):
 
 
 class RandomForestRegressor(RandomForestRegressor_Batch):
+    def __init__(self, *args, local_trees_mode=None, **kwargs):
+        super().__init__(*args, local_trees_mode=local_trees_mode, **kwargs)
+
     @bind_spmd_backend("decision_forest.regression")
     def train(self, *args, **kwargs): ...
 

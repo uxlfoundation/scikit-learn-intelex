@@ -1251,7 +1251,6 @@ class RandomForestClassifier(ForestClassifier):
             monotonic_cst=None,
             max_bins=256,
             min_bin_size=1,
-            local_trees_mode=False,
         ):
             super().__init__(
                 DecisionTreeClassifier(),
@@ -1291,7 +1290,6 @@ class RandomForestClassifier(ForestClassifier):
             self.max_bins = max_bins
             self.min_bin_size = min_bin_size
             self.monotonic_cst = monotonic_cst
-            self.local_trees_mode = local_trees_mode
 
     else:
 
@@ -1318,7 +1316,6 @@ class RandomForestClassifier(ForestClassifier):
             max_samples=None,
             max_bins=256,
             min_bin_size=1,
-            local_trees_mode=False,
         ):
             super().__init__(
                 DecisionTreeClassifier(),
@@ -1356,7 +1353,6 @@ class RandomForestClassifier(ForestClassifier):
             self.ccp_alpha = ccp_alpha
             self.max_bins = max_bins
             self.min_bin_size = min_bin_size
-            self.local_trees_mode = local_trees_mode
 
 
 @control_n_jobs(decorated_methods=["fit", "predict", "score"])
@@ -1396,7 +1392,6 @@ class RandomForestRegressor(ForestRegressor):
             monotonic_cst=None,
             max_bins=256,
             min_bin_size=1,
-            local_trees_mode=False,
         ):
             super().__init__(
                 DecisionTreeRegressor(),
@@ -1434,7 +1429,6 @@ class RandomForestRegressor(ForestRegressor):
             self.ccp_alpha = ccp_alpha
             self.max_bins = max_bins
             self.min_bin_size = min_bin_size
-            self.local_trees_mode = local_trees_mode
             self.monotonic_cst = monotonic_cst
 
     else:
@@ -1461,7 +1455,6 @@ class RandomForestRegressor(ForestRegressor):
             max_samples=None,
             max_bins=256,
             min_bin_size=1,
-            local_trees_mode=False,
         ):
             super().__init__(
                 DecisionTreeRegressor(),
@@ -1498,7 +1491,6 @@ class RandomForestRegressor(ForestRegressor):
             self.ccp_alpha = ccp_alpha
             self.max_bins = max_bins
             self.min_bin_size = min_bin_size
-            self.local_trees_mode = local_trees_mode
 
 
 @control_n_jobs(decorated_methods=["fit", "predict", "predict_proba", "score"])
@@ -1539,7 +1531,6 @@ class ExtraTreesClassifier(ForestClassifier):
             monotonic_cst=None,
             max_bins=256,
             min_bin_size=1,
-            local_trees_mode=False,
         ):
             super().__init__(
                 ExtraTreeClassifier(),
@@ -1578,7 +1569,6 @@ class ExtraTreesClassifier(ForestClassifier):
             self.ccp_alpha = ccp_alpha
             self.max_bins = max_bins
             self.min_bin_size = min_bin_size
-            self.local_trees_mode = local_trees_mode
             self.monotonic_cst = monotonic_cst
 
     else:
@@ -1606,7 +1596,6 @@ class ExtraTreesClassifier(ForestClassifier):
             max_samples=None,
             max_bins=256,
             min_bin_size=1,
-            local_trees_mode=False,
         ):
             super().__init__(
                 ExtraTreeClassifier(),
@@ -1644,7 +1633,6 @@ class ExtraTreesClassifier(ForestClassifier):
             self.ccp_alpha = ccp_alpha
             self.max_bins = max_bins
             self.min_bin_size = min_bin_size
-            self.local_trees_mode = local_trees_mode
 
 
 @control_n_jobs(decorated_methods=["fit", "predict", "score"])
@@ -1684,7 +1672,6 @@ class ExtraTreesRegressor(ForestRegressor):
             monotonic_cst=None,
             max_bins=256,
             min_bin_size=1,
-            local_trees_mode=False,
         ):
             super().__init__(
                 ExtraTreeRegressor(),
@@ -1723,7 +1710,6 @@ class ExtraTreesRegressor(ForestRegressor):
             self.max_bins = max_bins
             self.min_bin_size = min_bin_size
             self.monotonic_cst = monotonic_cst
-            self.local_trees_mode = local_trees_mode
 
     else:
 
@@ -1749,7 +1735,6 @@ class ExtraTreesRegressor(ForestRegressor):
             max_samples=None,
             max_bins=256,
             min_bin_size=1,
-            local_trees_mode=False,
         ):
             super().__init__(
                 ExtraTreeRegressor(),
@@ -1786,7 +1771,6 @@ class ExtraTreesRegressor(ForestRegressor):
             self.ccp_alpha = ccp_alpha
             self.max_bins = max_bins
             self.min_bin_size = min_bin_size
-            self.local_trees_mode = local_trees_mode
 
 
 # Allow for isinstance calls without inheritance changes using ABCMeta
