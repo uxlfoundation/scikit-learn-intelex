@@ -328,7 +328,7 @@ def test_patch_map_match():
 
     module_map = {i: i for i in sklearnex__all__.intersection(sklearn__all__)}
 
-    # _assert_all_finite, patches an internal sklearn function which isn't
+    # _assert_all_finite patches an internal sklearn function which isn't
     # exposed via __all__ in sklearn. It is a special case where this rule
     # is not applied (e.g. it is grandfathered in).
     del patched["_assert_all_finite"]
