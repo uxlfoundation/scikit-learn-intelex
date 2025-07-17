@@ -83,23 +83,12 @@ def test_sklearnex_import(hyperparameters, dataframe, queue, macro_block, grain_
     assert_allclose(X_transformed_expected, _as_numpy(X_fit_transformed), rtol=tol)
 
 
-@pytest.fixture
-def batch_params(request):
-    hparams = PCA.get_hyperparameters("fit")
-
-    def restore_params():
-        hparams.is_default = True
-
-    request.addfinalizer(restore_params)
-    return hparams
-
-
 @pytest.mark.skipif(
     not daal_check_version((2025, "P", 700)),
     reason="Functionality introduced in a later version",
 )
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_non_batched_covariance(batch_params, dataframe):
+def test_non_batched_covariance(hyperparameters, dataframe, queue):
     if queue and queue.sycl_device.is_gpu:
         pytest.skip("Test for CPU-only functionality")
 
@@ -112,10 +101,10 @@ def test_non_batched_covariance(batch_params, dataframe):
     mu = rng.standard_normal(size=5)
     X = rng.multivariate_normal(mu, S, size=20)
 
-    batch_params.cpu_max_cols_batched = np.iinfo(np.int32).max
+    hyperparameters.cpu_max_cols_batched = np.iinfo(np.int32).max
     res_batched = PCA().fit(X).components_
 
-    batch_params.cpu_max_cols_batched = 1
+    hyperparameters.cpu_max_cols_batched = 1
     res_non_batched = PCA().fit(X).components_
 
     np.testing.assert_allclose(res_non_batched, res_batched)
