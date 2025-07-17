@@ -19,8 +19,8 @@ import logging
 from daal4py.sklearn._utils import daal_check_version
 
 if daal_check_version((2024, "P", 100)):
-    from numbers import Integral
     from math import sqrt
+    from numbers import Integral
     from warnings import warn
 
     import numpy as np
@@ -189,7 +189,6 @@ if daal_check_version((2024, "P", 100)):
         _onedal_cpu_supported = _onedal_supported
         _onedal_gpu_supported = _onedal_supported
 
-
         def _validate_n_components(self, n_components, n_samples, n_features):
             # This reproduces the initial n_components validation in PCA._fit_full
             # Also a maintenance burden, but is isolated for compartmentalization
@@ -216,20 +215,25 @@ if daal_check_version((2024, "P", 100)):
             # this method extracts aspects of post-processing located in
             # PCA._fit_full which cannot be re-used.  It is isolated for
             if self.n_components == "mle":
-                return _infer_dimension(self._onedal_estimator.explained_variance_, self.n_samples_)
+                return _infer_dimension(
+                    self._onedal_estimator.explained_variance_, self.n_samples_
+                )
             else:
-                ratio_cumsum = stable_cumsum(self._onedal_estimator.explained_variance_ratio_)
+                ratio_cumsum = stable_cumsum(
+                    self._onedal_estimator.explained_variance_ratio_
+                )
                 return np.searchsorted(ratio_cumsum, self.n_components, side="right") + 1
 
-
         def _compute_noise_variance(self, n_sf_min, xp=np):
-            # This varies from sklearn, but not sure why (and is undocumented from the 
+            # This varies from sklearn, but not sure why (and is undocumented from the
             # original implementation in sklearnex)
             if self.n_components_ < n_sf_min:
                 if len(self.explained_variance_) == n_sf_min:
                     return xp.mean(self.explained_variance_)
                 elif len(self.explained_variance_) < n_sf_min:
-                    resid_var = xp.sum(self._onedal_estimator.var_) - xp.sum(self.explained_variance_)
+                    resid_var = xp.sum(self._onedal_estimator.var_) - xp.sum(
+                        self.explained_variance_
+                    )
                     return resid_var / (n_sf_min - n_components)
             else:
                 return 0.0
@@ -331,9 +335,13 @@ if daal_check_version((2024, "P", 100)):
             # unless the components are explicitly given as an integer, post-processing
             # will set the components having first trained using the minimum size of the
             # input dimensions. This is done in sklearnex and not in the onedal estimator
-            n_components = self.n_components if isinstance(self.n_components, Integral) else min(X.shape)
+            n_components = (
+                self.n_components
+                if isinstance(self.n_components, Integral)
+                else min(X.shape)
+            )
             onedal_params = {
-                "n_components": n_components
+                "n_components": n_components,
                 "is_deterministic": True,
                 "method": "svd" if self._fit_svd_solver == "onedal_svd" else "cov",
                 "whiten": self.whiten,
@@ -345,24 +353,34 @@ if daal_check_version((2024, "P", 100)):
             self.n_features_in_ = X.shape[1]
 
             # post-process the number of components
-            if self.n_components is not None and not isinstance(self.n_components, Integral):
+            if self.n_components is not None and not isinstance(
+                self.n_components, Integral
+            ):
                 n_components = self._postprocess_n_components()
 
             # set attributes necessary for calls to transform, will modify
             # self._onedal_estimator, and clear any previous fit models
             self.n_components_ = n_components
-            self.components_ = self._onedal_estimator.components_[:n_components, ...] 
-            self.explained_variance_ = self._onedal_estimator.explained_variance_[:n_components]
+            self.components_ = self._onedal_estimator.components_[:n_components, ...]
+            self.explained_variance_ = self._onedal_estimator.explained_variance_[
+                :n_components
+            ]
 
             # set private mean, as it doesn't need to feed back on the onedal_estimator
             self._mean_ = self._onedal_estimator.mean_
 
-            # set other fit attributes, first by modifying the onedal_estimator 
-            self._onedal_estimator.singular_values_=self._onedal_estimator.singular_values_[:n_components]
-            self._onedal_esitmator.explained_variance_ratio_ = self._onedal_estimator.explained_variance_ratio_[:n_components]
+            # set other fit attributes, first by modifying the onedal_estimator
+            self._onedal_estimator.singular_values_ = (
+                self._onedal_estimator.singular_values_[:n_components]
+            )
+            self._onedal_esitmator.explained_variance_ratio_ = (
+                self._onedal_estimator.explained_variance_ratio_[:n_components]
+            )
 
             self.singular_values_ = self._onedal_estimator.singular_values_
-            self.explained_variance_ratio_ = self._onedal_estimator.explained_variance_ratio_
+            self.explained_variance_ratio_ = (
+                self._onedal_estimator.explained_variance_ratio_
+            )
 
             # calculate the noise variance
             self.noise_variance_ = self._compute_noise_variance(X.shape, xp=xp)
@@ -449,7 +467,7 @@ if daal_check_version((2024, "P", 100)):
 
         # set properties for deleting the onedal_estimator model if:
         # n_components_, components_, means_ or explained_variance_ are
-        # changed. This assists in speeding up multiple uses of onedal 
+        # changed. This assists in speeding up multiple uses of onedal
         # transform as a model must now only be generated once.
 
         @property
@@ -499,7 +517,6 @@ if daal_check_version((2024, "P", 100)):
                 if hasattr(self._onedal_estimator, "_onedal_model"):
                     del self._onedal_estimator._onedal_model
             self._explained_variance_ = value
-
 
         fit.__doc__ = _sklearn_PCA.fit.__doc__
         transform.__doc__ = _sklearn_PCA.transform.__doc__

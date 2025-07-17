@@ -56,7 +56,7 @@ class PCA(metaclass=ABCMeta):
         return {
             "fptype": data.dtype,
             "method": self.method,
-            "n_components": self.n_components_
+            "n_components": self.n_components_,
             "is_deterministic": self.is_deterministic,
             "whiten": self.whiten,
         }
