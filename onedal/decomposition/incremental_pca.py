@@ -27,6 +27,8 @@ from ..utils.validation import _check_array
 from .pca import BasePCA
 
 
+# TODO:
+# update for BasePCA.
 class IncrementalPCA(BasePCA):
     """Incremental oneDAL PCA estimator.
 
