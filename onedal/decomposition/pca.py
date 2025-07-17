@@ -52,21 +52,21 @@ class PCA(metaclass=ABCMeta):
     @bind_default_backend("decomposition.dim_reduction")
     def infer(self, params, X, model): ...
 
-    def _get_onedal_params(self, data, n_components = None):
+    def _get_onedal_params(self, data):
         return {
             "fptype": data.dtype,
             "method": self.method,
-            "n_components": n_components if n_components else self.n_components
+            "n_components": self.n_components
             "is_deterministic": self.is_deterministic,
             "whiten": self.whiten,
         }
 
-    def _create_model(self, n_components=None, queue=None):
+    def _create_model(self, queue=None):
         m = self.model()
-        m.eigenvectors = to_table(self.components_[:n_components], queue=queue)
+        m.eigenvectors = to_table(self.components_, queue=queue)
         m.means = to_table(self.mean_, queue=queue)
         if self.whiten:
-            m.eigenvalues = to_table(self.explained_variance_[:n_components], queue=queue)
+            m.eigenvalues = to_table(self.explained_variance_, queue=queue)
         self._onedal_model = m
 
     @supports_queue

@@ -372,8 +372,8 @@ if daal_check_version((2024, "P", 100)):
                 return self.n_features_in_
 
             @n_features_.setter
-            def n_features(self, val):
-                self.n_features_in_ = val
+            def n_features(self, value):
+                self.n_features_in_ = value
 
         @wrap_output_data
         def transform(self, X):
@@ -443,9 +443,57 @@ if daal_check_version((2024, "P", 100)):
             return X @ components + mean
 
         # set properties for deleting the onedal_estimator model if:
-        # components_, n_components_, means_ or explained_variance_ are
+        # n_components_, components_, means_ or explained_variance_ are
         # changed. This assists in speeding up multiple uses of onedal 
         # transform as a model must now only be generated once.
+        # Also include setters for post-processed values
+
+        @property
+        def n_components_(self):
+            return self._n_components_
+
+        @n_components.setter
+        def n_components_(self, value):
+            if hasattr(self, "_onedal_estimator") and hasattr(self._onedal_estimator, "_onedal_model"):
+                del self._onedal_estimator._onedal_model
+            self._n_components_ = value
+
+        @property
+        def components_(self):
+            return self.components_
+
+        @components_.setter
+        def components_(self, val):
+            if hasattr(self, "_onedal_estimator"):
+                self._onedal_estimator.components_ = value
+                if hasattr(self._onedal_estimator, "_onedal_model"):
+                    del self._onedal_estimator._onedal_model
+            self._n_components_ = val
+
+        @property
+        def means_(self):
+            return self.means_
+
+        @means_.setter
+        def means_(self, val):
+            if hasattr(self, "_onedal_estimator"):
+                self._onedal_estimator.means_ = value
+                if hasattr(self._onedal_estimator, "_onedal_model"):
+                    del self._onedal_estimator._onedal_model
+            self._means_ = val
+
+        @property
+        def explained_variance_(self):
+            return self.explained_variance_
+
+        @explained_variance_.setter
+        def explained_variance_(self, val):
+            if hasattr(self, "_onedal_estimator"):
+                self._onedal_estimator.explained_variance_ = value
+                if hasattr(self._onedal_estimator, "_onedal_model"):
+                    del self._onedal_estimator._onedal_model
+            self._explained_variance_ = val
+
 
         fit.__doc__ = _sklearn_PCA.fit.__doc__
         transform.__doc__ = _sklearn_PCA.transform.__doc__
