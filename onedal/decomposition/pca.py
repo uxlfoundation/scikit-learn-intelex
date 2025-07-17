@@ -56,7 +56,7 @@ class PCA(metaclass=ABCMeta):
         return {
             "fptype": data.dtype,
             "method": self.method,
-            "n_components": self.n_components
+            "n_components": self.n_components_
             "is_deterministic": self.is_deterministic,
             "whiten": self.whiten,
         }
@@ -82,6 +82,10 @@ class PCA(metaclass=ABCMeta):
     def fit(self, X, y=None, queue=None):
 
         X = to_table(X, queue=queue)
+        # define n_components_ to allow for external modification of
+        # transforms
+        self.n_components_ = self.n_components
+
         params = self._get_onedal_params(X)
         hparams = get_hyperparameters("pca", "train")
         if hparams is not None and not hparams.is_default:
