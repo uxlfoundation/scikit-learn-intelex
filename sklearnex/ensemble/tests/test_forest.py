@@ -35,9 +35,24 @@ hparam_values = [
 ]
 
 
+@pytest.fixture
+def hyperparameters(request):
+    from sklearnex.ensemble import RandomForestClassifier
+
+    hparams = RandomForestClassifier.get_hyperparameters("predict")
+
+    def restore_hyperparameters():
+        RandomForestClassifier.reset_hyperparameters("predict")
+
+    request.addfinalizer(restore_hyperparameters)
+    return hparams
+
+
 @pytest.mark.parametrize("dataframe, queue", get_dataframes_and_queues())
 @pytest.mark.parametrize("block, trees, rows, scale", hparam_values)
-def test_sklearnex_import_rf_classifier(dataframe, queue, block, trees, rows, scale):
+def test_sklearnex_import_rf_classifier(
+    hyperparameters, dataframe, queue, block, trees, rows, scale
+):
     from sklearnex.ensemble import RandomForestClassifier
 
     X, y = make_classification(
@@ -51,12 +66,12 @@ def test_sklearnex_import_rf_classifier(dataframe, queue, block, trees, rows, sc
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     y = _convert_to_dataframe(y, sycl_queue=queue, target_df=dataframe)
     rf = RandomForestClassifier(max_depth=2, random_state=0).fit(X, y)
-    hparams = RandomForestClassifier.get_hyperparameters("infer")
-    if hparams and block is not None:
-        hparams.block_size = block
-        hparams.min_trees_for_threading = trees
-        hparams.min_number_of_rows_for_vect_seq_compute = rows
-        hparams.scale_factor_for_vect_parallel_compute = scale
+
+    if hyperparameters and block is not None:
+        hyperparameters.block_size = block
+        hyperparameters.min_trees_for_threading = trees
+        hyperparameters.min_number_of_rows_for_vect_seq_compute = rows
+        hyperparameters.scale_factor_for_vect_parallel_compute = scale
     assert "sklearnex" in rf.__module__
     assert_allclose([1], _as_numpy(rf.predict([[0, 0, 0, 0]])))
 
