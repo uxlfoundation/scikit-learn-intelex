@@ -267,6 +267,49 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
             result.iteration_count,
         )
 
+    def _prepare_input(self, X):
+        is_csr = _is_csr(X)
+        if _get_config()["use_raw_input"] is False:
+            X = _check_array(
+                X,
+                dtype=[np.float64, np.float32],
+                accept_sparse="csr",
+                force_all_finite=False,
+            )
+        X_table = to_table(X, queue=QM.get_global_queue())
+        dtype = X_table.dtype
+        return X, X_table, is_csr, dtype
+
+    def _get_initial_centroids(self, X, X_table, init, random_state, is_csr, dtype):
+        use_onedal_init = daal_check_version((2023, "P", 200)) and not callable(init)
+        if use_onedal_init:
+            random_seed = random_state.randint(np.iinfo("i").max)
+            return self._init_centroids_onedal(X_table, init, random_seed, is_csr, dtype)
+        else:
+            return self._init_centroids_sklearn(X, init, random_state, dtype)
+
+    def _is_better_iteration(self, inertia, labels, best_inertia, best_labels):
+        if best_inertia is None:
+            return True
+        return inertia < best_inertia and not self._is_same_clustering(
+            labels, best_labels, self.n_clusters
+        )
+
+    def _finalize_best_model(self, model, n_iter, inertia, labels):
+        self.model_ = model
+        self.n_iter_ = n_iter
+        self.inertia_ = inertia
+        self.labels_ = from_table(labels).ravel()
+
+        distinct_clusters = len(np.unique(self.labels_))
+        if distinct_clusters < self.n_clusters:
+            warnings.warn(
+                f"Number of distinct clusters ({distinct_clusters}) found smaller than "
+                f"n_clusters ({self.n_clusters}). Possibly due to duplicate points in X.",
+                ConvergenceWarning,
+                stacklevel=2,
+            )
+
     def _fit(self, X):
         X, X_table, is_csr, dtype = self._prepare_input(X)
 
