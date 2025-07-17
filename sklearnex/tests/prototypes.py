@@ -195,10 +195,13 @@ class PrototypeEstimator(oneDALEstimator, BaseEstimator):
     # object.
     #
     # 4) If the estimator replicates/inherits from a sklearn estimator, 
-    # then only public methods should be those with the same signature as
-    # the sklearn estimator. If it is sklearnex only, then it should try to
-    # follow sklearn conventions of sklearn estimators which are most closely
-    # related (e.g. IncrementalPCA for incremental estimators).
+    # then only implemented public methods should be those which override
+    # those from the sklearn estimator. The sklearn method should only be
+    # overridden if an equivalent oneDAL-accelerated capability exists
+    # following the tier system described below. If it is sklearnex only,
+    # then it should try to follow sklearn conventions of sklearn estimators
+    # which are most closely related (e.g. IncrementalPCA for incremental
+    # estimators).
     #
     # Information about the onedal estimators/objects can be found in an
     # equivalent class file in the onedal module.
