@@ -19,13 +19,15 @@ import logging
 from daal4py.sklearn._utils import daal_check_version
 
 if daal_check_version((2024, "P", 100)):
-    import numbers
+    from numbers import Integral
     from math import sqrt
     from warnings import warn
 
     import numpy as np
     from scipy.sparse import issparse
-    from sklearn.utils.validation import check_array, check_is_fitted
+    from sklearn.decomposition._pca import _infer_dimension
+    from sklearn.utils.extmath import stable_cumsum
+    from sklearn.utils.validation import check_is_fitted
 
     from daal4py.sklearn._n_jobs_support import control_n_jobs
     from daal4py.sklearn._utils import sklearn_check_version
@@ -47,6 +49,7 @@ if daal_check_version((2024, "P", 100)):
     from onedal.common.hyperparameters import get_hyperparameters
     from onedal.decomposition import PCA as onedal_PCA
     from onedal.utils._array_api import _is_numpy_namespace
+    from onedal.utils.validation import _num_features, _num_samples
 
     @register_hyperparameters({"fit": get_hyperparameters("pca", "train")})
     @control_n_jobs(decorated_methods=["fit", "transform", "fit_transform"])
@@ -133,12 +136,12 @@ if daal_check_version((2024, "P", 100)):
                 # must be done in this case due to the sklearn estimator
                 # design.
                 self._fit_svd_solver = (
-                    self._find_fit_svd_solver(n_samples, n_features)
+                    self._select_svd_solver(n_samples, n_features)
                     if self.svd_solver == "auto"
                     else self.svd_solver
                 )
                 # Use oneDAL in the following cases:
-                # 1. oneDAL SVD solver is explicitly set
+                # 1. "onedal_svd" solver is explicitly set
                 # 2. solver is set to "covariance_eigh"
                 # 3. solver is set to "full" and sklearn version < 1.5
                 # 4. solver is set to "auto" and dispatched to "full"
@@ -186,9 +189,52 @@ if daal_check_version((2024, "P", 100)):
         _onedal_cpu_supported = _onedal_supported
         _onedal_gpu_supported = _onedal_supported
 
+
+        def _validate_n_components(self, n_components, n_samples, n_features):
+            # This reproduces the initial n_components validation in PCA._fit_full
+            # Also a maintenance burden, but is isolated for compartmentalization
+            if n_components == "mle":
+                if n_samples < n_features:
+                    raise ValueError(
+                        "n_components='mle' is only supported if n_samples >= n_features"
+                    )
+            elif not 0 <= n_components <= min(n_samples, n_features):
+                raise ValueError(
+                    "n_components=%r must be between 0 and "
+                    "min(n_samples, n_features)=%r with "
+                    "svd_solver='full'" % (n_components, min(n_samples, n_features))
+                )
+            elif not sklearn_check_version("1.2") and n_components >= 1:
+                if not isinstance(n_components, Integral):
+                    raise ValueError(
+                        "n_components=%r must be of type int "
+                        "when greater than or equal to 1, "
+                        "was of type=%r" % (n_components, type(n_components))
+                    )
+
+        def _postprocess_n_components(self):
+            # this method extracts aspects of post-processing located in
+            # PCA._fit_full which cannot be re-used.  It is isolated for
+            if self.n_components == "mle":
+                return _infer_dimension(self.explained_variance_, self.n_samples_)
+            else:
+                ratio_cumsum = stable_cumsum(self.explained_variance_ratio_)
+                return np.searchsorted(ratio_cumsum, self.n_components, side="right") + 1
+
+
+        def _compute_noise_variance(self, n_components, n_sf_min, xp=np):
+            if n_components < n_sf_min:
+                if len(self.explained_variance_) == n_sf_min:
+                    return xp.mean(self.explained_variance_[n_components:])
+                elif len(self.explained_variance_) < n_sf_min:
+                    resid_var = xp.sum(self._onedal_estimator.var_) - xp.sum(self.explained_variance_)
+                    return resid_var / (n_sf_min - n_components)
+            else:
+                return 0.0
+
         if sklearn_check_version("1.1"):
 
-            def _find_fit_svd_solver(self, n_samples, n_features):
+            def _select_svd_solver(self, n_samples, n_features):
                 n_sf_min = min(n_samples, n_features)
                 n_components = (
                     n_sf_min if self.n_components is None else self.n_components
@@ -213,7 +259,7 @@ if daal_check_version((2024, "P", 100)):
 
         else:
 
-            def _find_fit_svd_solver(self, n_samples, n_features):
+            def _select_svd_solver(self, n_samples, n_features):
                 n_sf_min = min(n_samples, n_features)
                 n_components = (
                     n_sf_min if self.n_components is None else self.n_components
@@ -244,7 +290,7 @@ if daal_check_version((2024, "P", 100)):
                     self.n_oversamples,
                     "n_oversamples",
                     min_val=1,
-                    target_type=numbers.Integral,
+                    target_type=Integral,
                 )
 
             dispatch(
@@ -280,8 +326,12 @@ if daal_check_version((2024, "P", 100)):
                     "for performance purposes."
                 )
 
+            # unless the components are explicitly given as an integer, post-processing
+            # will set the components having first trained using the minimum size of the
+            # input dimensions. This is done in sklearnex and not in the onedal estimator
+            n_components = self.n_components if self.n_components and isinstance(self.n_components, Integral) else min(X.shape)
             onedal_params = {
-                "n_components": self.n_components,
+                "n_components": n_components
                 "is_deterministic": True,
                 "method": "svd" if self._fit_svd_solver == "onedal_svd" else "cov",
                 "whiten": self.whiten,
@@ -289,18 +339,27 @@ if daal_check_version((2024, "P", 100)):
             self._onedal_estimator = self.onedal_PCA(**onedal_params)
             self._onedal_estimator.fit(X, queue=queue)
 
+            self.n_samples_ = X.shape[0]
+            self.n_features_in_ = X.shape[1]
+            
+            # post-process the number of components
+            if self.n_components is not None and not isinstance(self.n_components, Integral):
+                n_components = self._postprocess_n_components(X.shape)
+
             if n_components < self.n_components:
                 self.explained_variance_ = self._onedal_estimator.explained_variance_[0, :n_components]
                 self.components_ = self._onedal_estimator.components_[:n_components]
                 self.singular_values_ = self._onedal_estimator.singular_values_[:n_components]
                 self.explained_variance_ratio_ = self._onedal_estimator.explained_variance_ratio_[:n_components]
 
-            self.n_samples_ = X.shape[0]
-            self.n_features_in_ = X.shape[1]
-            self.n_components_ = self._onedal_estimator.n_components_
+
+
             self.mean_ = self._onedal_estimator.mean_
 
             self.noise_variance_ = self._onedal_estimator.noise_variance_
+
+            # return X for use in fit_transform, as it is validated and ready
+            return X
 
         if not sklearn_check_version("1.2"):
 
@@ -334,11 +393,11 @@ if daal_check_version((2024, "P", 100)):
                 reset=False,
             )
 
-            return self._onedal_estimator.predict(X, queue=queue)
+            return self._onedal_estimator.predict(X, n_components=self.n_components_, queue=queue)
 
         def _onedal_fit_transform(self, X, queue=None):
-            self._onedal_fit(X, queue=queue)
-            return self._onedal_estimator.predict(X, queue=queue)
+            X = self._onedal_fit(X, queue=queue)
+            return self._onedal_estimator.predict(X, n_components=self.n_components_, queue=queue)
 
         @wrap_output_data
         def fit_transform(self, X):
