@@ -61,21 +61,21 @@ class PCA(metaclass=ABCMeta):
             "whiten": self.whiten,
         }
 
-    def _create_model(self):
+    def _create_model(self, n_components=None, queue=None):
         m = self.model()
-        m.eigenvectors = to_table(self.components_)
-        m.means = to_table(self.mean_)
+        m.eigenvectors = to_table(self.components_[:n_components], queue=queue)
+        m.means = to_table(self.mean_, queue=queue)
         if self.whiten:
-            m.eigenvalues = to_table(self.explained_variance_)
+            m.eigenvalues = to_table(self.explained_variance_[:n_components], queue=queue)
         self._onedal_model = m
-        return m
 
     @supports_queue
     def predict(self, X, n_components=None, queue=None):
-        model = self._create_model()
         X_table = to_table(X, queue=queue)
         params = self._get_onedal_params(X_table, n_components)
-        result = self.infer(params, model, X_table)
+        if not hasattr(self, "_onedal_model"):
+            self._create_model(n_components, queue)
+        result = self.infer(params, self._onedal_model, X_table)
         return from_table(result.transformed_data, like=X)
 
     @supports_queue

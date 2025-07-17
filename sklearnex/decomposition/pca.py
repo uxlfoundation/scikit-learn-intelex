@@ -341,22 +341,26 @@ if daal_check_version((2024, "P", 100)):
 
             self.n_samples_ = X.shape[0]
             self.n_features_in_ = X.shape[1]
+
+            self.mean_ = self._onedal_estimator.mean_
+                            self.explained_variance_ = self._onedal_estimator.explained_variance_[0, :n_components]
+                self.components_ = self._onedal_estimator.components_[:n_components]
+                self.singular_values_ = self._onedal_estimator.singular_values_[:n_components]
+                self.explained_variance_ratio_ = self._onedal_estimator.explained_variance_ratio_[:n_components]
+            self.noise_variance_ = self._onedal_estimator.noise_variance_
             
             # post-process the number of components
             if self.n_components is not None and not isinstance(self.n_components, Integral):
                 n_components = self._postprocess_n_components(X.shape)
 
-            if n_components < self.n_components:
-                self.explained_variance_ = self._onedal_estimator.explained_variance_[0, :n_components]
-                self.components_ = self._onedal_estimator.components_[:n_components]
-                self.singular_values_ = self._onedal_estimator.singular_values_[:n_components]
-                self.explained_variance_ratio_ = self._onedal_estimator.explained_variance_ratio_[:n_components]
+                self.explained_variance_ = self.explained_variance_[0, :n_components]
+                self.components_ = self.components_[:n_components]
+                self.singular_values_ = self.singular_values_[:n_components]
+                self.explained_variance_ratio_ = self.explained_variance_ratio_[:n_components]
 
 
 
-            self.mean_ = self._onedal_estimator.mean_
 
-            self.noise_variance_ = self._onedal_estimator.noise_variance_
 
             # return X for use in fit_transform, as it is validated and ready
             return X
@@ -437,6 +441,11 @@ if daal_check_version((2024, "P", 100)):
                 mean = xp.asarray(mean, device=X.device)
 
             return X @ components + mean
+
+        # set properties for deleting the onedal_estimator model if:
+        # components_, n_components_, means_ or explained_variance_ are
+        # changed. This assists in speeding up multiple uses of onedal 
+        # transform as a model must now only be generated once.
 
         fit.__doc__ = _sklearn_PCA.fit.__doc__
         transform.__doc__ = _sklearn_PCA.transform.__doc__
