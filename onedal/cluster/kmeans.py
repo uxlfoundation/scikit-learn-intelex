@@ -73,23 +73,26 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
 
     def _resolve_init_strategy(self, init, X, dtype, default_n_init=10):
         """Validates and normalizes init strategy and sets _n_init accordingly."""
+
+        # Determine type up front
+        init_is_str = isinstance(init, str)
+        init_is_callable = callable(init)
         init_is_array = _is_arraylike_not_scalar(init)
 
-        # Validate array shape if applicable
+        # Validate array shape if needed
         if init_is_array:
             init = _check_array(
                 init, dtype=dtype, accept_sparse="csr", copy=True, order="C"
             )
             self._validate_center_shape(X, init)
 
-        # Set n_init depending on type of init
+        # Resolve n_init
         if self.n_init == "auto":
-            if isinstance(init, str):
-                if init == "k-means++":
-                    self._n_init = 1
-                elif init == "random":
-                    self._n_init = default_n_init
-            elif callable(init):
+            if init_is_str and init == "k-means++":
+                self._n_init = 1
+            elif init_is_str and init == "random":
+                self._n_init = default_n_init
+            elif init_is_callable:
                 self._n_init = default_n_init
             elif init_is_array:
                 self._n_init = 1
@@ -98,6 +101,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         else:
             raise ValueError(f"Invalid value for `n_init`: {self.n_init}")
 
+        # Force override for array-like init
         if init_is_array and self._n_init != 1:
             warnings.warn(
                 (
@@ -108,7 +112,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
                 RuntimeWarning,
                 stacklevel=2,
             )
-        self._n_init = 1
+            self._n_init = 1
 
         return init
 
