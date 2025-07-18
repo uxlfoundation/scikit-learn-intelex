@@ -167,13 +167,24 @@ void init_compute_hyperparameters(py::module_& m) {
     using namespace dal::covariance::detail;
     using compute_hyperparams_t = compute_parameters<Task>;
 
-    auto cls = py::class_<compute_hyperparams_t>(m, "compute_hyperparameters")
-                   .def(py::init())
-                   .def("set_cpu_macro_block", &compute_hyperparams_t::set_cpu_macro_block)
-                   .def("get_cpu_macro_block", &compute_hyperparams_t::get_cpu_macro_block)
+    auto cls =
+        py::class_<compute_hyperparams_t>(m, "compute_hyperparameters")
+            .def(py::init())
+            .def("set_cpu_macro_block", &compute_hyperparams_t::set_cpu_macro_block)
+            .def("get_cpu_macro_block", &compute_hyperparams_t::get_cpu_macro_block)
 #if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20250700
-                   .def("set_cpu_grain_size", &compute_hyperparams_t::set_cpu_grain_size)
-                   .def("get_cpu_grain_size", &compute_hyperparams_t::get_cpu_grain_size)
+            .def("set_cpu_grain_size", &compute_hyperparams_t::set_cpu_grain_size)
+            .def("get_cpu_grain_size", &compute_hyperparams_t::get_cpu_grain_size)
+            .def("set_cpu_max_cols_batched", &compute_hyperparams_t::set_cpu_max_cols_batched)
+            .def("get_cpu_max_cols_batched", &compute_hyperparams_t::get_cpu_max_cols_batched)
+            .def("set_cpu_small_rows_threshold",
+                 &compute_hyperparams_t::set_cpu_small_rows_threshold)
+            .def("get_cpu_small_rows_threshold",
+                 &compute_hyperparams_t::get_cpu_small_rows_threshold)
+            .def("set_cpu_small_rows_max_cols_batched",
+                 &compute_hyperparams_t::set_cpu_small_rows_max_cols_batched)
+            .def("get_cpu_small_rows_max_cols_batched",
+                 &compute_hyperparams_t::get_cpu_small_rows_max_cols_batched)
 #endif
         ;
 }

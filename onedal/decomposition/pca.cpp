@@ -241,12 +241,21 @@ void init_train_hyperparameters(py::module_& m) {
     using namespace dal::pca::detail;
     using train_hyperparams_t = train_parameters<Task>;
 
-    auto cls = py::class_<train_hyperparams_t>(m, "train_hyperparameters")
-                   .def(py::init())
-                   .def("set_cpu_macro_block", &train_hyperparams_t::set_cpu_macro_block)
-                   .def("get_cpu_macro_block", &train_hyperparams_t::get_cpu_macro_block)
-                   .def("set_cpu_grain_size", &train_hyperparams_t::set_cpu_grain_size)
-                   .def("get_cpu_grain_size", &train_hyperparams_t::get_cpu_grain_size);
+    auto cls =
+        py::class_<train_hyperparams_t>(m, "train_hyperparameters")
+            .def(py::init())
+            .def("set_cpu_macro_block", &train_hyperparams_t::set_cpu_macro_block)
+            .def("get_cpu_macro_block", &train_hyperparams_t::get_cpu_macro_block)
+            .def("set_cpu_grain_size", &train_hyperparams_t::set_cpu_grain_size)
+            .def("get_cpu_grain_size", &train_hyperparams_t::get_cpu_grain_size)
+            .def("set_cpu_max_cols_batched", &train_hyperparams_t::set_cpu_max_cols_batched)
+            .def("get_cpu_max_cols_batched", &train_hyperparams_t::get_cpu_max_cols_batched)
+            .def("set_cpu_small_rows_threshold", &train_hyperparams_t::set_cpu_small_rows_threshold)
+            .def("get_cpu_small_rows_threshold", &train_hyperparams_t::get_cpu_small_rows_threshold)
+            .def("set_cpu_small_rows_max_cols_batched",
+                 &train_hyperparams_t::set_cpu_small_rows_max_cols_batched)
+            .def("get_cpu_small_rows_max_cols_batched",
+                 &train_hyperparams_t::get_cpu_small_rows_max_cols_batched);
 }
 
 #endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20250700
