@@ -27,7 +27,12 @@ class RandomForestClassifier(RandomForestClassifier_Batch):
 
     def __init__(self, *args, local_trees_mode=False, **kwargs):
         self.local_trees_mode = local_trees_mode
-        super().__init__(*args, local_trees_mode=local_trees_mode, **kwargs)
+        super().__init__(*args, **kwargs)
+
+    def _create_onedal_estimator(self, onedal_params):
+        onedal_params = dict(onedal_params)  # copy to avoid mutating input
+        onedal_params["local_trees_mode"] = self.local_trees_mode
+        return self._onedal_factory(**onedal_params)
 
     def _onedal_cpu_supported(self, method_name, *data):
         # TODO:
@@ -56,7 +61,12 @@ class RandomForestRegressor(RandomForestRegressor_Batch):
 
     def __init__(self, *args, local_trees_mode=False, **kwargs):
         self.local_trees_mode = local_trees_mode
-        super().__init__(*args, local_trees_mode=local_trees_mode, **kwargs)
+        super().__init__(*args, **kwargs)
+
+    def _create_onedal_estimator(self, onedal_params):
+        onedal_params = dict(onedal_params)  # copy to avoid mutating input
+        onedal_params["local_trees_mode"] = self.local_trees_mode
+        return self._onedal_factory(**onedal_params)
 
     def _onedal_cpu_supported(self, method_name, *data):
         # TODO:
