@@ -456,7 +456,6 @@ class RandomForestClassifier(ClassifierMixin, BaseForest, metaclass=ABCMeta):
         max_samples=None,
         max_bins=256,
         min_bin_size=1,
-        local_trees_mode=False,
         infer_mode="class_responses",
         splitter_mode="best",
         voting_mode="weighted",
@@ -492,18 +491,12 @@ class RandomForestClassifier(ClassifierMixin, BaseForest, metaclass=ABCMeta):
             variable_importance_mode=variable_importance_mode,
             algorithm=algorithm,
         )
-        self.local_trees_mode = local_trees_mode
 
     @bind_default_backend("decision_forest.classification")
     def train(self, *args, **kwargs): ...
 
     @bind_default_backend("decision_forest.classification")
     def infer(self, *args, **kwargs): ...
-
-    def _get_onedal_params(self, data):
-        onedal_params = super()._get_onedal_params(data)
-        onedal_params["local_trees_mode"] = self.local_trees_mode
-        return onedal_params
 
     def _validate_targets(self, y, dtype):
         y, self.class_weight_, self.classes_ = _validate_targets(
@@ -564,7 +557,6 @@ class RandomForestRegressor(RegressorMixin, BaseForest, metaclass=ABCMeta):
         max_samples=None,
         max_bins=256,
         min_bin_size=1,
-        local_trees_mode=False,
         infer_mode="class_responses",
         splitter_mode="best",
         voting_mode="weighted",
@@ -600,18 +592,12 @@ class RandomForestRegressor(RegressorMixin, BaseForest, metaclass=ABCMeta):
             variable_importance_mode=variable_importance_mode,
             algorithm=algorithm,
         )
-        self.local_trees_mode = local_trees_mode
 
     @bind_default_backend("decision_forest.regression")
     def train(self, *args, **kwargs): ...
 
     @bind_default_backend("decision_forest.regression")
     def infer(self, *args, **kwargs): ...
-
-    def _get_onedal_params(self, data):
-        onedal_params = super()._get_onedal_params(data)
-        onedal_params["local_trees_mode"] = self.local_trees_mode
-        return onedal_params
 
     @supports_queue
     def fit(self, X, y, sample_weight=None, queue=None):

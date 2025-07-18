@@ -21,22 +21,34 @@ from ...common._backend import bind_spmd_backend
 
 
 class RandomForestClassifier(RandomForestClassifier_Batch):
-    def __init__(self, *args, local_trees_mode=None, **kwargs):
-        super().__init__(*args, local_trees_mode=local_trees_mode, **kwargs)
+    def __init__(self, *args, local_trees_mode=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.local_trees_mode = local_trees_mode
 
     @bind_spmd_backend("decision_forest.classification")
     def train(self, *args, **kwargs): ...
 
     @bind_spmd_backend("decision_forest.classification")
     def infer(self, *args, **kwargs): ...
+
+    def _get_onedal_params(self, data):
+        onedal_params = super()._get_onedal_params(data)
+        onedal_params["local_trees_mode"] = self.local_trees_mode
+        return onedal_params
 
 
 class RandomForestRegressor(RandomForestRegressor_Batch):
-    def __init__(self, *args, local_trees_mode=None, **kwargs):
-        super().__init__(*args, local_trees_mode=local_trees_mode, **kwargs)
+    def __init__(self, *args, local_trees_mode=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.local_trees_mode = local_trees_mode
 
     @bind_spmd_backend("decision_forest.regression")
     def train(self, *args, **kwargs): ...
 
     @bind_spmd_backend("decision_forest.regression")
     def infer(self, *args, **kwargs): ...
+
+    def _get_onedal_params(self, data):
+        onedal_params = super()._get_onedal_params(data)
+        onedal_params["local_trees_mode"] = self.local_trees_mode
+        return onedal_params
