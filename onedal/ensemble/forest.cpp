@@ -188,9 +188,6 @@ struct params2desc {
 #if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230101
                         .set_splitter_mode(get_splitter_mode(params))
 #endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230101
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20250700 && defined(ONEDAL_DATA_PARALLEL_SPMD)
-                        .set_local_trees_mode(params["local_trees_mode"].cast<bool>())
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20250700 && defined(ONEDAL_DATA_PARALLEL_SPMD)
                         .set_error_metric_mode(get_error_metric_mode(params))
                         .set_variable_importance_mode(get_variable_importance_mode(params));
 
@@ -203,6 +200,12 @@ struct params2desc {
 #if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240000
         desc.set_seed(params["seed"].cast<std::int64_t>());
 #endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240000
+
+#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20250700
+        if (params.contains("local_trees_mode")) {
+            desc.set_local_trees_mode(params["local_trees_mode"].cast<bool>())
+        }
+#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20250700
 
         return desc;
     }
