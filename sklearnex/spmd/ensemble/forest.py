@@ -25,6 +25,15 @@ class RandomForestClassifier(RandomForestClassifier_Batch):
     __doc__ = RandomForestClassifier_Batch.__doc__
     _onedal_factory = onedal_RandomForestClassifier
 
+    def __init__(self, *args, local_trees_mode=False, **kwargs):
+        self.local_trees_mode = local_trees_mode
+        super().__init__(*args, **kwargs)
+
+    def _create_onedal_estimator(self, onedal_params):
+        onedal_params = dict(onedal_params)  # copy to avoid mutating input
+        onedal_params["local_trees_mode"] = self.local_trees_mode
+        return self._onedal_factory(**onedal_params)
+
     def _onedal_cpu_supported(self, method_name, *data):
         # TODO:
         # check which methods supported SPMD interface on CPU.
@@ -49,6 +58,15 @@ class RandomForestClassifier(RandomForestClassifier_Batch):
 class RandomForestRegressor(RandomForestRegressor_Batch):
     __doc__ = RandomForestRegressor_Batch.__doc__
     _onedal_factory = onedal_RandomForestRegressor
+
+    def __init__(self, *args, local_trees_mode=False, **kwargs):
+        self.local_trees_mode = local_trees_mode
+        super().__init__(*args, **kwargs)
+
+    def _create_onedal_estimator(self, onedal_params):
+        onedal_params = dict(onedal_params)  # copy to avoid mutating input
+        onedal_params["local_trees_mode"] = self.local_trees_mode
+        return self._onedal_factory(**onedal_params)
 
     def _onedal_cpu_supported(self, method_name, *data):
         # TODO:
