@@ -147,9 +147,6 @@ class IncrementalPCA(BasePCA):
             Returns the instance itself.
         """
 
-        use_raw_input = _get_config().get("use_raw_input", False) is True
-        sua_iface, _, _ = _get_sycl_namespace(X)
-
         n_samples, n_features = X.shape
         first_pass = not hasattr(self, "components_")
         if first_pass:
@@ -194,21 +191,29 @@ class IncrementalPCA(BasePCA):
         if self._need_to_finalize:
             with QM.manage_global_queue(self._queue):
                 result = self.finalize_train(self._params, self._partial_result)
-            self.mean_ = from_table(result.means).ravel()
-            self.var_ = from_table(result.variances).ravel()
-            self.components_ = from_table(result.eigenvectors)
-            self.singular_values_ = np.nan_to_num(
-                from_table(result.singular_values).ravel()
+
+            (
+                mean_,
+                self.var_,
+                self.components_,
+                sing_vals_,
+                eigenvalues_,
+                var_ratio,
+            ) = from_table(
+                result.means,
+                result.variances,
+                result.eigenvectors,
+                result.singular_values,
+                result.eigenvalues,
+                result.explained_variances_ratio,
+                like=X,
             )
-            self.explained_variance_ = np.maximum(
-                from_table(result.eigenvalues).ravel(), 0
-            )
-            self.explained_variance_ratio_ = from_table(
-                result.explained_variances_ratio
-            ).ravel()
-            self.noise_variance_ = self._compute_noise_variance(
-                self.n_components_, min(self.n_samples_seen_, self.n_features_in_)
-            )
+
+            # tables are 2d, but outputs are inherently 1d, reduce dimensions
+            self.mean_ = mean_[0, ...]
+            self.singular_values_ = sing_vals_[0, ...]
+            self.explained_variance_ = eigenvalues_[0, ...]
+            self.explained_variance_ratio_ = var_ratio[0, ...]
             self._need_to_finalize = False
             self._outtype = None
             self._queue = None
