@@ -110,6 +110,7 @@ class PCA(metaclass=ABCMeta):
             like=X,
         )
 
+        # tables are 2d, but outputs are inherently 1d, reduce dimensions
         self.mean_ = mean_[0, ...]
         self.singular_values_ = sing_vals_[0, ...]
         self.explained_variance_ = eigenvalues_[0, ...]
