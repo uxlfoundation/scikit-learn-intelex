@@ -373,7 +373,7 @@ if daal_check_version((2024, "P", 100)):
             self._onedal_estimator.singular_values_ = (
                 self._onedal_estimator.singular_values_[:n_components]
             )
-            self._onedal_esitmator.explained_variance_ratio_ = (
+            self._onedal_estimator.explained_variance_ratio_ = (
                 self._onedal_estimator.explained_variance_ratio_[:n_components]
             )
 
