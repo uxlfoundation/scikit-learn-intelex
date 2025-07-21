@@ -79,7 +79,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         return self._onedal_estimator.predict(X, queue=queue)
 
     def _onedal_partial_fit(self, X, check_input=True, queue=None):
-        first_pass = not hasattr(self, "_onedal_estimator")
+        first_pass = not hasattr(self, "n_samples_seen_") or self.n_samples_seen_ == 0
         if first_pass:
             self.components_ = None
 
