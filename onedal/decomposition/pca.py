@@ -81,17 +81,17 @@ class PCA(metaclass=ABCMeta):
     @supports_queue
     def fit(self, X, y=None, queue=None):
 
-        X = to_table(X, queue=queue)
+        X_table = to_table(X, queue=queue)
         # define n_components_ to allow for external modification of
         # transforms
         self.n_components_ = self.n_components
 
-        params = self._get_onedal_params(X)
+        params = self._get_onedal_params(X_table)
         hparams = get_hyperparameters("pca", "train")
         if hparams is not None and not hparams.is_default:
-            result = self.train(params, hparams.backend, X)
+            result = self.train(params, hparams.backend, X_table)
         else:
-            result = self.train(params, X)
+            result = self.train(params, X_table)
 
         (
             mean_,
