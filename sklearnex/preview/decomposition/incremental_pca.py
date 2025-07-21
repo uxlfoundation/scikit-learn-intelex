@@ -18,7 +18,6 @@ import numpy as np
 import scipy.sparse as sp
 from sklearn.decomposition import IncrementalPCA as _sklearn_IncrementalPCA
 from sklearn.utils import check_array, gen_batches
-from sklearn.utils._param_validation import StrOptions
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
@@ -31,6 +30,8 @@ from ...base import oneDALEstimator
 from ...utils._array_api import get_namespace
 from ...utils.validation import validate_data
 
+if sklearn_check_version("1.2"):
+    from sklearn.utils._param_validation import StrOptions
 
 @control_n_jobs(
     decorated_methods=["fit", "partial_fit", "transform", "_onedal_finalize_fit"]
