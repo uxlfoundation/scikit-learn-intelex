@@ -61,8 +61,8 @@ def _daal4py_logistic_loss_extra_args(
         fptype=getFPType(X),
         method="defaultDense",
         interceptFlag=fit_intercept,
-        penaltyL1=l1,
-        penaltyL2=l2,
+        penaltyL1=l1 / n,
+        penaltyL2=l2 / n,
         resultsToCompute=results_to_compute,
     )
     objective_function_algorithm_instance.setup(X, y, beta)
@@ -99,8 +99,8 @@ def _daal4py_cross_entropy_loss_extra_args(
             fptype=getFPType(X),
             method="defaultDense",
             interceptFlag=fit_intercept,
-            penaltyL1=l1,
-            penaltyL2=l2,
+            penaltyL1=l1 / n,
+            penaltyL2=l2 / n,
             resultsToCompute=results_to_compute,
         )
     )
