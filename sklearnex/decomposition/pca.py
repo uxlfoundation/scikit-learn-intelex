@@ -128,8 +128,8 @@ if daal_check_version((2024, "P", 100)):
                 # due to the nature of sklearn's PCA._fit routine, which is
                 # behind a ``validate_data`` call and cannot be used
                 # without a performance impact
-                n_samples = num_samples(X)
-                n_features = num_features(X)
+                n_samples = _num_samples(X)
+                n_features = _num_features(X)
                 # in the case that the code falls back to sklearn
                 # self._fit_svd_solver will be clobbered in ``PCA._fit``
                 # setting values in dispatching is generally forbidden, but
