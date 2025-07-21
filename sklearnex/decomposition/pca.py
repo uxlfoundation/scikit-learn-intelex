@@ -346,7 +346,7 @@ if daal_check_version((2024, "P", 100)):
                 "method": "svd" if self._fit_svd_solver == "onedal_svd" else "cov",
                 "whiten": self.whiten,
             }
-            self._onedal_estimator = self.onedal_PCA(**onedal_params)
+            self._onedal_estimator = self._onedal_PCA(**onedal_params)
             self._onedal_estimator.fit(X, queue=queue)
 
             self.n_samples_ = X.shape[0]
