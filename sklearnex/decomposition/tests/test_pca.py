@@ -81,3 +81,30 @@ def test_sklearnex_import(hyperparameters, dataframe, queue, macro_block, grain_
     assert_allclose([6.30061232, 0.54980396], _as_numpy(pca.singular_values_))
     assert_allclose(X_transformed_expected, _as_numpy(X_transformed), rtol=tol)
     assert_allclose(X_transformed_expected, _as_numpy(X_fit_transformed), rtol=tol)
+
+
+@pytest.mark.skipif(
+    not daal_check_version((2025, "P", 700)),
+    reason="Functionality introduced in a later version",
+)
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+def test_non_batched_covariance(hyperparameters, dataframe, queue):
+    if queue and queue.sycl_device.is_gpu:
+        pytest.skip("Test for CPU-only functionality")
+
+    from sklearnex.decomposition import PCA
+
+    # This generates a random matrix with non-independent columns
+    rng = np.random.default_rng(seed=123)
+    S = rng.standard_normal(size=(6, 5))
+    S = S.T @ S
+    mu = rng.standard_normal(size=5)
+    X = rng.multivariate_normal(mu, S, size=20)
+
+    hyperparameters.cpu_max_cols_batched = np.iinfo(np.int32).max
+    res_batched = PCA().fit(X).components_
+
+    hyperparameters.cpu_max_cols_batched = 1
+    res_non_batched = PCA().fit(X).components_
+
+    np.testing.assert_allclose(res_non_batched, res_batched)
