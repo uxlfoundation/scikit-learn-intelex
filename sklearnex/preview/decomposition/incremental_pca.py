@@ -58,7 +58,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         )
         self.svd_solver = svd_solver
         self._need_to_finalize = False
-        # Note: use of the svd solver will cause partial result to grow proportionally
+        # Note: use of the onedal_svd solver will cause partial result to grow proportionally
         # to the input data and for that reason is not the default, which is contrary
         # to the scikit-learn implementation.
 
@@ -176,7 +176,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         )
         if "fit" in method:
             patching_status.and_conditions(
-                [(not sp.issparse(X), "Sparse input is not supprted")]
+                [(not sp.issparse(X), "Sparse input is not supported")]
             )
         else:
             patching_status.and_conditions(
@@ -194,7 +194,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         if "fit" in method:
             patching_status.and_conditions(
                 [
-                    (not sp.issparse(X), "Sparse input is not supprted"),
+                    (not sp.issparse(X), "Sparse input is not supported"),
                     (self.svd_solver != "onedal_svd", "onedal_svd not supported on GPU"),
                 ]
             )
