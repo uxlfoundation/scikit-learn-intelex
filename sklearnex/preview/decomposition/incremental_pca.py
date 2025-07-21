@@ -174,9 +174,14 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         patching_status = PatchingConditionsChain(
             f"sklearn.decomposition.{self.__class__.__name__}.{method_name}"
         )
-        patching_status.and_conditions(
-            [(not sp.issparse(X), "Sparse input is not supprted")]
-        )
+        if "fit" in method:
+            patching_status.and_conditions(
+                [(not sp.issparse(X), "Sparse input is not supprted")]
+            )
+        else:
+            patching_status.and_conditions(
+                [(hasattr(self, "_onedal_estimator"), "oneDAL model was not trained")]
+            )
         return patching_status
 
     _onedal_cpu_supported = _onedal_supported
@@ -186,12 +191,17 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
             f"sklearn.decomposition.{self.__class__.__name__}.{method_name}"
         )
         # onedal_svd doesn't exist for GPU
-        patching_status.and_conditions(
-            [
-                (not sp.issparse(X), "Sparse input is not supprted"),
-                (self.svd_solver != "onedal_svd", "onedal_svd not supported on GPU"),
-            ]
-        )
+        if "fit" in method:
+            patching_status.and_conditions(
+                [
+                    (not sp.issparse(X), "Sparse input is not supprted"),
+                    (self.svd_solver != "onedal_svd", "onedal_svd not supported on GPU"),
+                ]
+            )
+        else:
+            patching_status.and_conditions(
+                [(hasattr(self, "_onedal_estimator"), "oneDAL model was not trained")]
+            )
         return patching_status
 
     def partial_fit(self, X, y=None, check_input=True):
