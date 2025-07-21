@@ -205,8 +205,6 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
             )
         return patching_status
 
-    _onedal_cpu_supported = _onedal_supported
-
     def _onedal_gpu_supported(self, method_name, *data):
         patching_status = PatchingConditionsChain(
             f"sklearn.decomposition.{self.__class__.__name__}.{method_name}"
