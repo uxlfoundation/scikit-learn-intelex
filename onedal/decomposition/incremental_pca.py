@@ -214,6 +214,8 @@ class IncrementalPCA(BasePCA):
             self.singular_values_ = sing_vals_[0, ...]
             self.explained_variance_ = eigenvalues_[0, ...]
             self.explained_variance_ratio_ = var_ratio[0, ...]
+
+            # set partial result attributes to defaults
             self._need_to_finalize = False
             self._outtype = None
             self._queue = None
