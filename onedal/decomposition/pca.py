@@ -70,11 +70,11 @@ class PCA(metaclass=ABCMeta):
         self._onedal_model = m
 
     @supports_queue
-    def predict(self, X, n_components=None, queue=None):
+    def predict(self, X, queue=None):
         X_table = to_table(X, queue=queue)
-        params = self._get_onedal_params(X_table, n_components)
+        params = self._get_onedal_params(X_table)
         if not hasattr(self, "_onedal_model"):
-            self._create_model(n_components, queue)
+            self._create_model(queue)
         result = self.infer(params, self._onedal_model, X_table)
         return from_table(result.transformed_data, like=X)
 
