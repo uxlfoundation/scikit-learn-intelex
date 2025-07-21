@@ -195,7 +195,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         patching_status = PatchingConditionsChain(
             f"sklearn.decomposition.{self.__class__.__name__}.{method_name}"
         )
-        if "fit" in method:
+        if "fit" in method_name:
             patching_status.and_conditions(
                 [(not sp.issparse(X), "Sparse input is not supported")]
             )
@@ -210,7 +210,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
             f"sklearn.decomposition.{self.__class__.__name__}.{method_name}"
         )
         # onedal_svd doesn't exist for GPU
-        if "fit" in method:
+        if "fit" in method_name:
             patching_status.and_conditions(
                 [
                     (not sp.issparse(X), "Sparse input is not supported"),
