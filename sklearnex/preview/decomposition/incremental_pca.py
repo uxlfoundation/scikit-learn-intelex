@@ -17,6 +17,7 @@
 import numpy as np
 from sklearn.decomposition import IncrementalPCA as _sklearn_IncrementalPCA
 from sklearn.utils import check_array, gen_batches
+from sklearn.utils._param_validation import StrOptions
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
@@ -44,12 +45,23 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         "singular_values_",
         "var_",
     }
+    __doc__ = _sklearn_IncrementalPCA.__doc__
 
-    def __init__(self, n_components=None, *, whiten=False, copy=True, batch_size=None):
+    if sklearn_check_version("1.2"):
+        _parameter_constraints: dict = {**_sklearn_IncrementalPCA._parameter_constraints, 
+        "svd_solver": [
+            StrOptions({"auto", "covariance_eigh", "onedal_svd"})
+        ],}
+
+
+    def __init__(self, n_components=None, *, svd_solver="auto", whiten=False, copy=True, batch_size=None):
         super().__init__(
             n_components=n_components, whiten=whiten, copy=copy, batch_size=batch_size
         )
+        self.svd_solver = svd_solver
         self._need_to_finalize = False
+
+                
 
     _onedal_incremental_pca = staticmethod(onedal_IncrementalPCA)
 

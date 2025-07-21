@@ -22,12 +22,10 @@ from onedal.utils import _sycl_queue_manager as QM
 
 from .._config import _get_config
 from ..datatypes import from_table, return_type_constructor, to_table
-from .pca import BasePCA
+from .pca import PCA
 
 
-# TODO:
-# update for BasePCA.
-class IncrementalPCA(BasePCA):
+class IncrementalPCA(PCA):
     """Incremental oneDAL PCA estimator.
 
     Parameters
