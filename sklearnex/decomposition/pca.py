@@ -493,7 +493,7 @@ if daal_check_version((2024, "P", 100)):
                 self._onedal_estimator.components_ = value
                 if hasattr(self._onedal_estimator, "_onedal_model"):
                     del self._onedal_estimator._onedal_model
-            self._n_components_ = value
+            self._components_ = value
 
         @property
         def means_(self):
