@@ -15,6 +15,7 @@
 # ===============================================================================
 
 import numpy as np
+import scipy.sparse as sp
 from sklearn.decomposition import IncrementalPCA as _sklearn_IncrementalPCA
 from sklearn.utils import check_array, gen_batches
 from sklearn.utils._param_validation import StrOptions
@@ -27,6 +28,7 @@ from ..._config import get_config
 from ..._device_offload import dispatch, wrap_output_data
 from ..._utils import PatchingConditionsChain, _add_inc_serialization_note
 from ...base import oneDALEstimator
+from ...utils._array_api import get_namespace
 from ...utils.validation import validate_data
 
 
@@ -34,87 +36,103 @@ from ...utils.validation import validate_data
     decorated_methods=["fit", "partial_fit", "transform", "_onedal_finalize_fit"]
 )
 class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
-
-    _need_to_finalize_attrs = {
-        "mean_",
-        "explained_variance_",
-        "explained_variance_ratio_",
-        "n_components_",
-        "components_",
-        "noise_variance_",
-        "singular_values_",
-        "var_",
-    }
     __doc__ = _sklearn_IncrementalPCA.__doc__
 
     if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {**_sklearn_IncrementalPCA._parameter_constraints, 
-        "svd_solver": [
-            StrOptions({"auto", "covariance_eigh", "onedal_svd"})
-        ],}
+        _parameter_constraints: dict = {
+            **_sklearn_IncrementalPCA._parameter_constraints,
+            "svd_solver": [StrOptions({"auto", "covariance_eigh", "onedal_svd"})],
+        }
 
-
-    def __init__(self, n_components=None, *, svd_solver="auto", whiten=False, copy=True, batch_size=None):
+    def __init__(
+        self,
+        n_components=None,
+        *,
+        svd_solver="auto",
+        whiten=False,
+        copy=True,
+        batch_size=None,
+    ):
         super().__init__(
             n_components=n_components, whiten=whiten, copy=copy, batch_size=batch_size
         )
         self.svd_solver = svd_solver
         self._need_to_finalize = False
-
-                
+        # Note: use of the svd solver will cause partial result to grow proportionally
+        # to the input data and for that reason is not the default, which is contrary
+        # to the scikit-learn implementation.
 
     _onedal_incremental_pca = staticmethod(onedal_IncrementalPCA)
 
     def _onedal_transform(self, X, queue=None):
-        assert hasattr(self, "_onedal_estimator")
         if self._need_to_finalize:
             self._onedal_finalize_fit()
-        use_raw_input = get_config().get("use_raw_input", False) is True
-        if not use_raw_input:
-            X = check_array(X, dtype=[np.float64, np.float32])
+        if not get_config()["use_raw_input"]:
+            xp, _ = get_namespace(X)
+            X = validate_data(self, X, dtype=[xp.float64, xp.float32], reset=False)
         return self._onedal_estimator.predict(X, queue=queue)
 
     def _onedal_fit_transform(self, X, queue=None):
-        self._onedal_fit(X, queue)
-        return self._onedal_transform(X, queue)
+        self._onedal_fit(X, queue=queue)
+        return self._onedal_estimator.predict(X, queue=queue)
 
     def _onedal_partial_fit(self, X, check_input=True, queue=None):
         first_pass = not hasattr(self, "_onedal_estimator")
 
-        use_raw_input = get_config().get("use_raw_input", False) is True
-        # never check input when using raw input
-        check_input &= use_raw_input is False
-        if check_input:
-            X = validate_data(self, X, dtype=[np.float64, np.float32], reset=first_pass)
+        if check_input and not get_config()["use_raw_input"]:
+            xp, _ = get_namespace(X)
+            X = validate_data(self, X, dtype=[xp.float64, xp.float32], reset=first_pass)
 
         n_samples, n_features = X.shape
 
+        # extracted directly from sklearn's IncrementalPCA
         if self.n_components is None:
-            if not hasattr(self, "_components_shape"):
+            if self.components_ is None:
                 self.n_components_ = min(n_samples, n_features)
-                self._components_shape = self.n_components_
-
+            else:
+                self.n_components_ = self.components_.shape[0]
         elif not self.n_components <= n_features:
             raise ValueError(
                 "n_components=%r invalid for n_features=%d, need "
                 "more rows than columns for IncrementalPCA "
                 "processing" % (self.n_components, n_features)
             )
-        elif not self.n_components <= n_samples:
+        elif self.n_components > n_samples and (
+            not sklearn_check_version("1.6") or first_pass
+        ):
             raise ValueError(
                 "n_components=%r must be less or equal to "
                 "the batch number of samples "
                 "%d." % (self.n_components, n_samples)
+                + (
+                    "for the first partial_fit call."
+                    if sklearn_check_version("1.6")
+                    else ""
+                )
             )
         else:
             self.n_components_ = self.n_components
+
+        if (self.components_ is not None) and (
+            self.components_.shape[0] != self.n_components_
+        ):
+            raise ValueError(
+                "Number of input features has changed from %i "
+                "to %i between calls to partial_fit! Try "
+                "setting n_components to a fixed value."
+                % (self.components_.shape[0], self.n_components_)
+            )
 
         if not hasattr(self, "n_samples_seen_"):
             self.n_samples_seen_ = n_samples
         else:
             self.n_samples_seen_ += n_samples
 
-        onedal_params = {"n_components": self.n_components_, "whiten": self.whiten}
+        onedal_params = {
+            "n_components": self.n_components_,
+            "whiten": self.whiten,
+            "method": "svd" if self.svd_solver == "onedal_svd" else "cov",
+        }
 
         if not hasattr(self, "_onedal_estimator"):
             self._onedal_estimator = self._onedal_incremental_pca(**onedal_params)
@@ -127,12 +145,11 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         self._need_to_finalize = False
 
     def _onedal_fit(self, X, queue=None):
-        use_raw_input = get_config().get("use_raw_input", False) is True
-        if not use_raw_input:
+        if not get_config()["use_raw_input"]:
             if sklearn_check_version("1.2"):
                 self._validate_params()
-
-            X = validate_data(self, X, dtype=[np.float64, np.float32], copy=self.copy)
+            xp, _ = get_namespace(X)
+            X = validate_data(self, X, dtype=[xp.float64, xp.float32], copy=self.copy)
 
         n_samples, n_features = X.shape
 
@@ -146,40 +163,36 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
             self._onedal_estimator._reset()
 
         for batch in gen_batches(n_samples, self.batch_size_):
-            X_batch = X[batch]
+            X_batch = X[batch, ...]
             self._onedal_partial_fit(X_batch, queue=queue)
 
         self._onedal_finalize_fit()
 
         return self
 
-    def _onedal_supported(self, method_name, *data):
+    def _onedal_cpu_supported(self, method_name, *data):
         patching_status = PatchingConditionsChain(
             f"sklearn.decomposition.{self.__class__.__name__}.{method_name}"
+        )
+        patching_status.and_conditions(
+            [(not sp.issparse(X), "Sparse input is not supprted")]
         )
         return patching_status
 
     _onedal_cpu_supported = _onedal_supported
-    _onedal_gpu_supported = _onedal_supported
 
-    def __getattr__(self, attr):
-        # finalize the fit if requested attribute requires it
-        if attr in IncrementalPCA._need_to_finalize_attrs:
-            if "_onedal_estimator" not in self.__dict__:
-                # _onedal_estimator required to finalize the fit
-                raise AttributeError(
-                    f"Requested postfit attribute '{attr}' before fitting the model."
-                )
-            if self.__dict__["_need_to_finalize"]:
-                self._onedal_finalize_fit()
-        # join attributes of the class and the onedal_estimator to provide common interface
-        joined = self.__dict__ | self.__dict__.get("_onedal_estimator", {}).__dict__
-        if attr in joined:
-            return joined[attr]
-        # raise AttributeError if attribute is neither in this class nor in _onedal_estimator
-        raise AttributeError(
-            f"'{self.__class__.__name__}' object has no attribute '{attr}'"
+    def _onedal_gpu_supported(self, method_name, *data):
+        patching_status = PatchingConditionsChain(
+            f"sklearn.decomposition.{self.__class__.__name__}.{method_name}"
         )
+        # onedal_svd doesn't exist for GPU
+        patching_status.and_conditions(
+            [
+                (not sp.issparse(X), "Sparse input is not supprted"),
+                (self.svd_solver != "onedal_svd", "onedal_svd not supported on GPU"),
+            ]
+        )
+        return patching_status
 
     def partial_fit(self, X, y=None, check_input=True):
         dispatch(
@@ -208,6 +221,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
 
     @wrap_output_data
     def transform(self, X):
+        check_is_fitted(self)
         return dispatch(
             self,
             "transform",
