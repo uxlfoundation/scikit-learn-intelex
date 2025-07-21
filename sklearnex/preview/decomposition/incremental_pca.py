@@ -64,21 +64,8 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
 
     _onedal_incremental_pca = staticmethod(onedal_IncrementalPCA)
 
-    def _compute_noise_variance(self, n_sf_min, xp=np):
-        # This varies from sklearn, but not sure why (and is undocumented from the
-        # original implementation in sklearnex)
-        if self.n_components_ < n_sf_min:
-            if len(self.explained_variance_) == n_sf_min:
-                return xp.mean(self.explained_variance_)
-            elif len(self.explained_variance_) < n_sf_min:
-                resid_var = xp.sum(self._onedal_estimator.var_) - xp.sum(
-                    self.explained_variance_
-                )
-                return resid_var / (n_sf_min - n_components)
-        else:
-            return 0.0
-
     def _onedal_transform(self, X, queue=None):
+        # does not batch out data like sklearn's ``IncrementalPCA.transform``
         if self._need_to_finalize:
             self._onedal_finalize_fit()
         if not get_config()["use_raw_input"]:
@@ -99,7 +86,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
 
         n_samples, n_features = X.shape
 
-        # extracted directly from sklearn's IncrementalPCA
+        # extracted from sklearn's ``IncrementalPCA.partial_fit``
         if self.n_components is None:
             if self.components_ is None:
                 self.n_components_ = min(n_samples, n_features)
@@ -162,18 +149,14 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         self._components_ = self._onedal_estimator.components_
         self._explained_variance_ = self._onedal_estimator.explained_variance_
 
-        # set other fit attributes, first by modifying the onedal_estimator
-        self._onedal_estimator.singular_values_ = self._onedal_estimator.singular_values_
-        self._onedal_esitmator.explained_variance_ratio_ = (
-            self._onedal_estimator.explained_variance_ratio_
-        )
-
+        # set other attributes
         self.singular_values_ = self._onedal_estimator.singular_values_
         self.explained_variance_ratio_ = self._onedal_estimator.explained_variance_ratio_
         self.var_ = self._onedal_estimator.var_
 
         # calculate the noise variance
-        self.noise_variance_ = self._compute_noise_variance(X.shape, xp=xp)
+        xp, _ = get_namespace(self.explained_variance_)
+        self.noise_variance_ = xp.mean(self.explained_variance_)
         self._need_to_finalize = False
 
     def _onedal_fit(self, X, queue=None):
@@ -291,58 +274,58 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
             X,
         )
 
-        # set properties for deleting the onedal_estimator model if:
-        # n_components_, components_, means_ or explained_variance_ are
-        # changed. This assists in speeding up multiple uses of onedal
-        # transform as a model must now only be generated once.
+    # set properties for deleting the onedal_estimator model if:
+    # n_components_, components_, means_ or explained_variance_ are
+    # changed. This assists in speeding up multiple uses of onedal
+    # transform as a model must now only be generated once.
 
-        @property
-        def n_components_(self):
-            return self._n_components_
+    @property
+    def n_components_(self):
+        return self._n_components_
 
-        @n_components.setter
-        def n_components_(self, value):
-            if hasattr(self, "_onedal_estimator"):
-                self._onedal_estimator.n_components_ = value
-                if hasattr(self._onedal_estimator, "_onedal_model"):
-                    del self._onedal_estimator._onedal_model
-            self._n_components_ = value
+    @n_components.setter
+    def n_components_(self, value):
+        if hasattr(self, "_onedal_estimator"):
+            self._onedal_estimator.n_components_ = value
+            if hasattr(self._onedal_estimator, "_onedal_model"):
+                del self._onedal_estimator._onedal_model
+        self._n_components_ = value
 
-        @property
-        def components_(self):
-            return self._components_
+    @property
+    def components_(self):
+        return self._components_
 
-        @components_.setter
-        def components_(self, value):
-            if hasattr(self, "_onedal_estimator"):
-                self._onedal_estimator.components_ = value
-                if hasattr(self._onedal_estimator, "_onedal_model"):
-                    del self._onedal_estimator._onedal_model
-            self._n_components_ = value
+    @components_.setter
+    def components_(self, value):
+        if hasattr(self, "_onedal_estimator"):
+            self._onedal_estimator.components_ = value
+            if hasattr(self._onedal_estimator, "_onedal_model"):
+                del self._onedal_estimator._onedal_model
+        self._n_components_ = value
 
-        @property
-        def means_(self):
-            return self._means_
+    @property
+    def means_(self):
+        return self._means_
 
-        @means_.setter
-        def means_(self, value):
-            if hasattr(self, "_onedal_estimator"):
-                self._onedal_estimator.means_ = value
-                if hasattr(self._onedal_estimator, "_onedal_model"):
-                    del self._onedal_estimator._onedal_model
-            self._means_ = value
+    @means_.setter
+    def means_(self, value):
+        if hasattr(self, "_onedal_estimator"):
+            self._onedal_estimator.means_ = value
+            if hasattr(self._onedal_estimator, "_onedal_model"):
+                del self._onedal_estimator._onedal_model
+        self._means_ = value
 
-        @property
-        def explained_variance_(self):
-            return self._explained_variance_
+    @property
+    def explained_variance_(self):
+        return self._explained_variance_
 
-        @explained_variance_.setter
-        def explained_variance_(self, value):
-            if hasattr(self, "_onedal_estimator"):
-                self._onedal_estimator.explained_variance_ = value
-                if hasattr(self._onedal_estimator, "_onedal_model"):
-                    del self._onedal_estimator._onedal_model
-            self._explained_variance_ = value
+    @explained_variance_.setter
+    def explained_variance_(self, value):
+        if hasattr(self, "_onedal_estimator"):
+            self._onedal_estimator.explained_variance_ = value
+            if hasattr(self._onedal_estimator, "_onedal_model"):
+                del self._onedal_estimator._onedal_model
+        self._explained_variance_ = value
 
     __doc__ = _add_inc_serialization_note(
         _sklearn_IncrementalPCA.__doc__ + "\n" + r"%incremental_serialization_note%"
