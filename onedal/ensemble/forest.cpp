@@ -203,7 +203,7 @@ struct params2desc {
 
 #if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20250700
         if (params.contains("local_trees_mode")) {
-            desc.set_local_trees_mode(params["local_trees_mode"].cast<bool>())
+            desc.set_local_trees_mode(params["local_trees_mode"].cast<bool>());
         }
         else {
             desc.set_local_trees_mode(false);
