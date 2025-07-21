@@ -81,9 +81,11 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
     def _onedal_partial_fit(self, X, check_input=True, queue=None):
         first_pass = not hasattr(self, "_onedal_estimator")
 
-        if check_input and not get_config()["use_raw_input"]:
-            xp, _ = get_namespace(X)
-            X = validate_data(self, X, dtype=[xp.float64, xp.float32], reset=first_pass)
+        if check_input:
+            self.components_ = None
+            if not get_config()["use_raw_input"]:
+                xp, _ = get_namespace(X)
+                X = validate_data(self, X, dtype=[xp.float64, xp.float32], reset=first_pass)
 
         n_samples, n_features = X.shape
 
