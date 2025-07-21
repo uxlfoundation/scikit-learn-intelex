@@ -199,7 +199,7 @@ class IncrementalPCA(PCA):
                 result.singular_values,
                 result.eigenvalues,
                 result.explained_variances_ratio,
-                like=X,
+                like=self._outtype,
             )
 
             # tables are 2d, but outputs are inherently 1d, reduce dimensions
