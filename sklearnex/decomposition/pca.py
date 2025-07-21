@@ -474,7 +474,7 @@ if daal_check_version((2024, "P", 100)):
         def n_components_(self):
             return self._n_components_
 
-        @n_components.setter
+        @n_components_.setter
         def n_components_(self, value):
             if hasattr(self, "_onedal_estimator"):
                 self._onedal_estimator.n_components_ = value
