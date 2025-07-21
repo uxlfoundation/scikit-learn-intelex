@@ -288,7 +288,7 @@ if daal_check_version((2024, "P", 100)):
                     else:
                         return "full"
 
-        def fit(self, X):
+        def fit(self, X, y=None):
             if sklearn_check_version("1.2"):
                 self._validate_params()
             elif sklearn_check_version("1.1"):
