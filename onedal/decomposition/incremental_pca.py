@@ -187,7 +187,7 @@ class IncrementalPCA(PCA):
 
             (
                 mean_,
-                self.var_,
+                var_,
                 self.components_,
                 sing_vals_,
                 eigenvalues_,
@@ -204,6 +204,7 @@ class IncrementalPCA(PCA):
 
             # tables are 2d, but outputs are inherently 1d, reduce dimensions
             self.mean_ = mean_[0, ...]
+            self.var_ = var_[0, ...]
             self.singular_values_ = sing_vals_[0, ...]
             self.explained_variance_ = eigenvalues_[0, ...]
             self.explained_variance_ratio_ = var_ratio[0, ...]
