@@ -224,9 +224,10 @@ if daal_check_version((2024, "P", 100)):
                 )
                 return np.searchsorted(ratio_cumsum, self.n_components, side="right") + 1
 
-        def _compute_noise_variance(self, n_sf_min, xp=np):
+        def _compute_noise_variance(self, X, xp=np):
             # This varies from sklearn, but not sure why (and is undocumented from the
             # original implementation in sklearnex)
+            n_sf_min = min(X.shape)
             if self.n_components_ < n_sf_min:
                 if len(self.explained_variance_) == n_sf_min:
                     return xp.mean(self.explained_variance_)
