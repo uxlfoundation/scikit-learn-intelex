@@ -34,11 +34,13 @@ from sklearn.exceptions import ConvergenceWarning
 from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.utils import check_random_state
 
+from sklearnex.utils._array_api import get_namespace
+
 from .._config import _get_config
 from ..common._mixin import ClusterMixin, TransformerMixin
 from ..datatypes import from_table, to_table
 from ..utils.validation import _check_array, _is_arraylike_not_scalar, _is_csr
-from sklearnex.utils._array_api import get_namespace
+
 
 class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
     def __init__(
@@ -179,8 +181,9 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         dtype=None,
         n_centroids=None,
     ):
+
         xp = X_table.__array_namespace__()
-        
+
         if dtype is None:
             dtype = xp.float32
 
@@ -229,7 +232,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         # using the scikit-learn implementation
         logging.getLogger("sklearnex").info("Computing KMeansInit with Stock sklearn")
         xp, _ = get_namespace(X)
-        
+
         if dtype is None:
             dtype = xp.float32
 
@@ -260,8 +263,8 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         return to_table(centers, queue=getattr(QM.get_global_queue(), "_queue", None))
 
     def _fit_backend(self, X_table, centroids_table, dtype=None, is_csr=False):
-        
-        xp = X_table.__array_namespace__()        
+
+        xp = X_table.__array_namespace__()
 
         if dtype is None:
             dtype = xp.float32
