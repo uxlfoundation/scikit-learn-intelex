@@ -429,7 +429,7 @@ if daal_check_version((2024, "P", 100)):
             return self._onedal_estimator.predict(X, queue=queue)
 
         @wrap_output_data
-        def fit_transform(self, X):
+        def fit_transform(self, X, y=None):
             return dispatch(
                 self,
                 "fit_transform",
