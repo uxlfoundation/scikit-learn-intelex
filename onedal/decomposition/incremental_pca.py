@@ -151,7 +151,7 @@ class IncrementalPCA(PCA):
             self.components_ = None
             self.n_samples_seen_ = n_samples
             self.n_features_in_ = n_features
-            self.n_components_ = self.n_components
+            self.n_components_ = self.n_components if self.n_components else min(X.shape)
         else:
             self.n_samples_seen_ += n_samples
 
