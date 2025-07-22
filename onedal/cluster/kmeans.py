@@ -179,7 +179,6 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         dtype=None,
         n_centroids=None,
     ):
-        
         xp = X_table.__array_namespace__()
         
         if dtype is None:
