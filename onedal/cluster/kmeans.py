@@ -38,7 +38,7 @@ from .._config import _get_config
 from ..common._mixin import ClusterMixin, TransformerMixin
 from ..datatypes import from_table, to_table
 from ..utils.validation import _check_array, _is_arraylike_not_scalar, _is_csr
-from ..utils._array_api import get_namespace
+from sklearnex.utils._array_api import get_namespace
 
 class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
     def __init__(
