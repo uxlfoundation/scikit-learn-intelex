@@ -159,8 +159,8 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         self.var_ = self._onedal_estimator.var_
 
         # calculate the noise variance
-        xp, _ = get_namespace(self.explained_variance_)
-        self.noise_variance_ = xp.mean(self.explained_variance_)
+        xp, _ = get_namespace(self._onedal_estimator.explained_variance_)
+        self.noise_variance_ = xp.mean(self._onedal_estimator.explained_variance_)
         self._need_to_finalize = False
 
     def _onedal_fit(self, X, queue=None):
