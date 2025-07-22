@@ -533,7 +533,7 @@ if daal_check_version((2024, "P", 100)):
             self._explained_variance_ = value
 
         @explained_variance_.deleter
-        def explained_variance_(self)
+        def explained_variance_(self):
             del self._explained_variance_
 
         fit.__doc__ = _sklearn_PCA.fit.__doc__
