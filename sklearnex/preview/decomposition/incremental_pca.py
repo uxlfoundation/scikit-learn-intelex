@@ -66,6 +66,46 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
 
     _onedal_incremental_pca = staticmethod(onedal_IncrementalPCA)
 
+    def _validate_n_components(self, n_components, n_samples, n_features):
+        # extracted from sklearn's ``IncrementalPCA.partial_fit``. This is a
+        # maintenance burden that cannot be easily separated from sklearn.
+        if n_components is None:
+            if self._components_ is None:
+                self._n_components_ = min(n_samples, n_features)
+            else:
+                self._n_components_ = self.components_.shape[0]
+        elif not n_components <= n_features:
+            raise ValueError(
+                "n_components=%r invalid for n_features=%d, need "
+                "more rows than columns for IncrementalPCA "
+                "processing" % (self.n_components, n_features)
+            )
+        elif n_components > n_samples and (
+            not sklearn_check_version("1.6") or first_pass
+        ):
+            raise ValueError(
+                "n_components=%r must be less or equal to "
+                "the batch number of samples "
+                "%d." % (self.n_components, n_samples)
+                + (
+                    "for the first partial_fit call."
+                    if sklearn_check_version("1.6")
+                    else ""
+                )
+            )
+        else:
+            self._n_components_ = n_components
+
+        if (self._components_ is not None) and (
+            self._components_.shape[0] != self._n_components_
+        ):
+            raise ValueError(
+                "Number of input features has changed from %i "
+                "to %i between calls to partial_fit! Try "
+                "setting n_components to a fixed value."
+                % (self.components_.shape[0], self.n_components_)
+            )
+    
     def _onedal_transform(self, X, queue=None):
         # does not batch out data like sklearn's ``IncrementalPCA.transform``
         if self._need_to_finalize:
@@ -89,44 +129,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
                 X = validate_data(self, X, dtype=[xp.float64, xp.float32], reset=first_pass)
 
         n_samples, n_features = X.shape
-
-        # extracted from sklearn's ``IncrementalPCA.partial_fit``
-        if self.n_components is None:
-            if self._components_ is None:
-                self._n_components_ = min(n_samples, n_features)
-            else:
-                self._n_components_ = self.components_.shape[0]
-        elif not self.n_components <= n_features:
-            raise ValueError(
-                "n_components=%r invalid for n_features=%d, need "
-                "more rows than columns for IncrementalPCA "
-                "processing" % (self.n_components, n_features)
-            )
-        elif self.n_components > n_samples and (
-            not sklearn_check_version("1.6") or first_pass
-        ):
-            raise ValueError(
-                "n_components=%r must be less or equal to "
-                "the batch number of samples "
-                "%d." % (self.n_components, n_samples)
-                + (
-                    "for the first partial_fit call."
-                    if sklearn_check_version("1.6")
-                    else ""
-                )
-            )
-        else:
-            self._n_components_ = self.n_components
-
-        if (self._components_ is not None) and (
-            self._components_.shape[0] != self._n_components_
-        ):
-            raise ValueError(
-                "Number of input features has changed from %i "
-                "to %i between calls to partial_fit! Try "
-                "setting n_components to a fixed value."
-                % (self.components_.shape[0], self.n_components_)
-            )
+        self._validate_n_components(self.n_components, n_samples, n_features)
 
         if not hasattr(self, "n_samples_seen_"):
             self.n_samples_seen_ = n_samples
@@ -159,7 +162,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         self.var_ = self._onedal_estimator.var_
 
         # calculate the noise variance
-        if self._n_components_ < len(self.onedal_estimator.explained_variance_):
+        if self._n_components_ < len(self._onedal_estimator.explained_variance_):
             xp, _ = get_namespace(self._onedal_estimator.explained_variance_)
             self.noise_variance_ = xp.mean(self._onedal_estimator.explained_variance_[self._n_components_:])
         else:
