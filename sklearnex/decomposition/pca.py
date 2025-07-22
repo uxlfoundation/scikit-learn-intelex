@@ -468,7 +468,7 @@ if daal_check_version((2024, "P", 100)):
             return X @ components + mean
 
         # set properties for deleting the onedal_estimator model if:
-        # n_components_, components_, means_ or explained_variance_ are
+        # n_components_, components_, mean_ or explained_variance_ are
         # changed. This assists in speeding up multiple uses of onedal
         # transform as a model must now only be generated once.
 
