@@ -385,7 +385,7 @@ if daal_check_version((2024, "P", 100)):
             )
 
             # calculate the noise variance
-            self.noise_variance_ = self._compute_noise_variance(X.shape, xp=xp)
+            self.noise_variance_ = self._compute_noise_variance(X, xp=xp)
 
             # return X for use in fit_transform, as it is validated and ready
             return X
