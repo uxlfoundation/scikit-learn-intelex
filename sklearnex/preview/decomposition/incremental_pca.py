@@ -34,6 +34,7 @@ from ...utils.validation import validate_data
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import StrOptions
 
+
 @control_n_jobs(
     decorated_methods=["fit", "partial_fit", "transform", "_onedal_finalize_fit"]
 )
@@ -105,7 +106,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
                 "setting n_components to a fixed value."
                 % (self.components_.shape[0], self.n_components_)
             )
-    
+
     def _onedal_transform(self, X, queue=None):
         # does not batch out data like sklearn's ``IncrementalPCA.transform``
         if self._need_to_finalize:
@@ -125,8 +126,8 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
             self._components_ = None
 
         if check_input and not get_config()["use_raw_input"]:
-                xp, _ = get_namespace(X)
-                X = validate_data(self, X, dtype=[xp.float64, xp.float32], reset=first_pass)
+            xp, _ = get_namespace(X)
+            X = validate_data(self, X, dtype=[xp.float64, xp.float32], reset=first_pass)
 
         n_samples, n_features = X.shape
         self._validate_n_components(self.n_components, n_samples, n_features)
@@ -164,9 +165,11 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         # calculate the noise variance
         if self._n_components_ < len(self._onedal_estimator.explained_variance_):
             xp, _ = get_namespace(self._onedal_estimator.explained_variance_)
-            self.noise_variance_ = xp.mean(self._onedal_estimator.explained_variance_[self._n_components_:])
+            self.noise_variance_ = xp.mean(
+                self._onedal_estimator.explained_variance_[self._n_components_ :]
+            )
         else:
-            self.noise_variance_ = 0.0                                   
+            self.noise_variance_ = 0.0
         self._need_to_finalize = False
 
     def _onedal_fit(self, X, queue=None):
@@ -360,7 +363,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
     @explained_variance_.deleter
     def explained_variance_(self):
         del self._explained_variance_
-    
+
     __doc__ = _add_inc_serialization_note(
         _sklearn_IncrementalPCA.__doc__ + "\n" + r"%incremental_serialization_note%"
     )
