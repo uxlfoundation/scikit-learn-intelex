@@ -176,9 +176,15 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         init,
         random_seed,
         is_csr,
-        dtype=np.float32,
+        dtype=None,
         n_centroids=None,
     ):
+        
+        xp = X_table.__array_namespace__()
+        
+        if dtype is None:
+            dtype = xp.float32
+
         n_clusters = self.n_clusters if n_centroids is None else n_centroids
 
         if isinstance(init, str) and init == "k-means++":
@@ -219,10 +225,15 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
 
         return centers_table
 
-    def _init_centroids_sklearn(self, X, init, random_state, dtype=np.float32):
+    def _init_centroids_sklearn(self, X, init, random_state, dtype=None):
         # For oneDAL versions < 2023.2 or callable init,
         # using the scikit-learn implementation
         logging.getLogger("sklearnex").info("Computing KMeansInit with Stock sklearn")
+        xp, _ = get_namespace(X)
+        
+        if dtype is None:
+            dtype = xp.float32
+
         n_samples = X.shape[0]
 
         if isinstance(init, str) and init == "k-means++":
@@ -249,7 +260,13 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
 
         return to_table(centers, queue=getattr(QM.get_global_queue(), "_queue", None))
 
-    def _fit_backend(self, X_table, centroids_table, dtype=np.float32, is_csr=False):
+    def _fit_backend(self, X_table, centroids_table, dtype=None, is_csr=False):
+        
+        xp = X_table.__array_namespace__()        
+
+        if dtype is None:
+            dtype = xp.float32
+
         params = self._get_onedal_params(is_csr, dtype)
 
         assert X_table.dtype == dtype
