@@ -279,7 +279,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         )
 
     # set properties for deleting the onedal_estimator model if:
-    # n_components_, components_, means_ or explained_variance_ are
+    # n_components_, components_, mean_ or explained_variance_ are
     # changed. This assists in speeding up multiple uses of onedal
     # transform as a model must now only be generated once.
 
@@ -320,22 +320,22 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         del self._components_
 
     @property
-    def means_(self):
+    def mean_(self):
         if hasattr(self, "_onedal_estimator") and self._need_to_finalize:
             self._onedal_finalize_fit()
-        return self._means_
+        return self._mean_
 
-    @means_.setter
+    @mean_.setter
     def means_(self, value):
         if hasattr(self, "_onedal_estimator"):
-            self._onedal_estimator.means_ = value
+            self._onedal_estimator.mean_ = value
             if hasattr(self._onedal_estimator, "_onedal_model"):
                 del self._onedal_estimator._onedal_model
-        self._means_ = value
+        self._mean_ = value
 
-    @means_.deleter
-    def means_(self):
-        del self._means_
+    @mean_.deleter
+    def mean_(self):
+        del self._mean_
 
     @property
     def explained_variance_(self):
