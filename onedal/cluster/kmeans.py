@@ -38,7 +38,7 @@ from .._config import _get_config
 from ..common._mixin import ClusterMixin, TransformerMixin
 from ..datatypes import from_table, to_table
 from ..utils.validation import _check_array, _is_arraylike_not_scalar, _is_csr
-
+from ..utils._array_api import get_namespace
 
 class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
     def __init__(
@@ -363,14 +363,15 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
 
     @cluster_centers_.setter
     def cluster_centers_(self, cluster_centers):
-        self._cluster_centers_ = np.asarray(cluster_centers)
+        xp, _ = get_namespace(cluster_centers)
+        self._cluster_centers_ = xp.asarray(cluster_centers)
 
         self.n_iter_ = 0
         self.inertia_ = 0
 
         self.model_.centroids = to_table(self._cluster_centers_)
         self.n_features_in_ = self.model_.centroids.column_count
-        self.labels_ = np.arange(self.model_.centroids.row_count)
+        self.labels_ = xp.arange(self.model_.centroids.row_count)
 
         return self
 
@@ -401,6 +402,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         )
 
     def _transform(self, X):
+        xp, _ = get_namespace(X)
         return euclidean_distances(X, self.cluster_centers_)
 
 

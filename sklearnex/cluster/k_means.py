@@ -155,11 +155,12 @@ if daal_check_version((2023, "P", 200)):
             return self
 
         def _onedal_fit(self, X, _, sample_weight, queue=None):
+            xp, _ = get_namespace(X)
             X = validate_data(
                 self,
                 X,
                 accept_sparse="csr",
-                dtype=[np.float64, np.float32],
+                dtype=[xp.float64, xp.float32],
                 order="C",
                 copy=self.copy_x,
                 accept_large_sparse=False,
@@ -294,12 +295,13 @@ if daal_check_version((2023, "P", 200)):
                 )
 
         def _onedal_predict(self, X, sample_weight=None, queue=None):
+            xp, _ = get_namespace(X)
             X = validate_data(
                 self,
                 X,
                 accept_sparse="csr",
                 reset=False,
-                dtype=[np.float64, np.float32],
+                dtype=[xp.float64, xp.float32],
             )
 
             if not hasattr(self, "_onedal_estimator"):
@@ -351,12 +353,13 @@ if daal_check_version((2023, "P", 200)):
             )
 
         def _onedal_score(self, X, y=None, sample_weight=None, queue=None):
+            xp, _ = get_namespace(X)
             X = validate_data(
                 self,
                 X,
                 accept_sparse="csr",
                 reset=False,
-                dtype=[np.float64, np.float32],
+                dtype=[xp.float64, xp.float32],
             )
 
             if not sklearn_check_version("1.5") and sklearn_check_version("1.3"):
