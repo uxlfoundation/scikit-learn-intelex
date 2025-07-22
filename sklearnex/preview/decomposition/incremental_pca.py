@@ -160,7 +160,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
 
         # calculate the noise variance
         if self._n_components_ < len(self.onedal_estimator.explained_variance_):
-            xp, _ = get_namespace(self._onedal_estimator.explained_variance_):
+            xp, _ = get_namespace(self._onedal_estimator.explained_variance_)
             self.noise_variance_ = xp.mean(self._onedal_estimator.explained_variance_[self._n_components_:])
         else:
             self.noise_variance_ = 0.0                                   
