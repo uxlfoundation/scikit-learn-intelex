@@ -285,6 +285,8 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
 
     @property
     def n_components_(self):
+        if hasattr(self, "_onedal_estimator") and self._need_to_finalize:
+            self._onedal_finalize_fit()
         return self._n_components_
 
     @n_components_.setter
@@ -295,8 +297,14 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
                 del self._onedal_estimator._onedal_model
         self._n_components_ = value
 
+    @n_components_.deleter
+    def n_components_(self):
+        del self._n_components_
+
     @property
     def components_(self):
+        if hasattr(self, "_onedal_estimator") and self._need_to_finalize:
+            self._onedal_finalize_fit()
         return self._components_
 
     @components_.setter
@@ -307,8 +315,14 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
                 del self._onedal_estimator._onedal_model
         self._components_ = value
 
+    @components_.deleter
+    def components_(self):
+        del self._components_
+
     @property
     def means_(self):
+        if hasattr(self, "_onedal_estimator") and self._need_to_finalize:
+            self._onedal_finalize_fit()
         return self._means_
 
     @means_.setter
@@ -319,8 +333,14 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
                 del self._onedal_estimator._onedal_model
         self._means_ = value
 
+    @means_.deleter
+    def means_(self):
+        del self._means_
+
     @property
     def explained_variance_(self):
+        if hasattr(self, "_onedal_estimator") and self._need_to_finalize:
+            self._onedal_finalize_fit()
         return self._explained_variance_
 
     @explained_variance_.setter
@@ -331,6 +351,10 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
                 del self._onedal_estimator._onedal_model
         self._explained_variance_ = value
 
+    @explained_variance_.deleter
+    def explained_variance_(self):
+        del self._explained_variance_
+    
     __doc__ = _add_inc_serialization_note(
         _sklearn_IncrementalPCA.__doc__ + "\n" + r"%incremental_serialization_note%"
     )
