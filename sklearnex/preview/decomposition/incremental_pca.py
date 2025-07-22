@@ -185,7 +185,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
             self._onedal_estimator._reset()
 
         for batch in gen_batches(
-            n_samples, self.batch_size_, min_bin_size=self.n_components or 0
+            n_samples, self.batch_size_, min_batch_size=self.n_components or 0
         ):
             X_batch = X[batch, ...]
             self._onedal_partial_fit(X_batch, queue=queue)
