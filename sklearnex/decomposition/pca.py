@@ -485,6 +485,7 @@ if daal_check_version((2024, "P", 100)):
             self._n_components_ = value
 
         @n_components_.deleter
+        def n_components_(self):
             del self._n_components_
 
         @property
