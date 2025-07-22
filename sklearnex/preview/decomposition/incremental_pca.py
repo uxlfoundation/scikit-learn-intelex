@@ -97,6 +97,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         else:
             self._n_components_ = n_components
 
+        # the private variables are used to not trigger _onedal_finalize_fit
         if (self._components_ is not None) and (
             self._components_.shape[0] != self._n_components_
         ):
@@ -151,6 +152,10 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
     def _onedal_finalize_fit(self):
         assert hasattr(self, "_onedal_estimator")
         self._onedal_estimator.finalize_fit()
+        xp, _ = get_namespace(
+            self._onedal_estimator.explained_variance_,
+            self._onedal_estimator.singular_values_,
+        )
 
         # set attributes needed for transform
         self._mean_ = self._onedal_estimator.mean_
@@ -159,12 +164,16 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
 
         # set other attributes
         self.singular_values_ = self._onedal_estimator.singular_values_
+        # NOTE: This covers up a numerical accuracy issue in oneDAL online PCA which
+        # can yield NaN values for singular values. Replace in place using array API
+        self.singular_values_[...] = xp.where(
+            xp.isnan(self.singular_values_), 0, self.singular_values_
+        )
         self.explained_variance_ratio_ = self._onedal_estimator.explained_variance_ratio_
         self.var_ = self._onedal_estimator.var_
 
         # calculate the noise variance
         if self._n_components_ < len(self._onedal_estimator.explained_variance_):
-            xp, _ = get_namespace(self._onedal_estimator.explained_variance_)
             self.noise_variance_ = xp.mean(
                 self._onedal_estimator.explained_variance_[self._n_components_ :]
             )

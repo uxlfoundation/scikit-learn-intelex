@@ -344,6 +344,14 @@ if daal_check_version((2024, "P", 100)):
             ):
                 n_components = self._postprocess_n_components()
 
+            # calculate the noise variance, see sklearn's PCA._fit_full
+            if n_components < min(X.shape):
+                self.noise_variance_ = xp.mean(
+                    self._onedal_estimator.explained_variance_[n_components:]
+                )
+            else:
+                self.noise_variance_ = 0.0
+
             # set attributes necessary for calls to transform, will modify
             # self._onedal_estimator, and clear any previous fit models
             self.n_components_ = n_components
@@ -367,12 +375,6 @@ if daal_check_version((2024, "P", 100)):
             self.explained_variance_ratio_ = (
                 self._onedal_estimator.explained_variance_ratio_
             )
-
-            # calculate the noise variance, see sklearn's PCA._fit_full
-            if n_components < min(X.shape):
-                self.noise_variance_ = xp.mean(self.explained_variance_[n_components:])
-            else:
-                self.noise_variance_ = 0.0
 
             # return X for use in fit_transform, as it is validated and ready
             return X
