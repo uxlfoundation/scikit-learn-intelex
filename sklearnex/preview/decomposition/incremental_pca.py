@@ -76,7 +76,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         return self._onedal_estimator.predict(X, queue=queue)
 
     def _onedal_fit_transform(self, X, queue=None):
-        self._onedal_fit(X, queue=queue)
+        X = self._onedal_fit(X, queue=queue)
         return self._onedal_estimator.predict(X, queue=queue)
 
     def _onedal_partial_fit(self, X, check_input=True, queue=None):
@@ -195,7 +195,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
 
         self._onedal_finalize_fit()
 
-        return self
+        return X
 
     def _onedal_cpu_supported(self, method_name, *data):
         patching_status = PatchingConditionsChain(
