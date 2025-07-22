@@ -224,21 +224,6 @@ if daal_check_version((2024, "P", 100)):
                 )
                 return np.searchsorted(ratio_cumsum, self.n_components, side="right") + 1
 
-        def _compute_noise_variance(self, X, xp=np):
-            # This varies from sklearn, but not sure why (and is undocumented from the
-            # original implementation in sklearnex)
-            n_sf_min = min(X.shape)
-            if self.n_components_ < n_sf_min:
-                if len(self.explained_variance_) == n_sf_min:
-                    return xp.mean(self.explained_variance_)
-                elif len(self.explained_variance_) < n_sf_min:
-                    resid_var = xp.sum(self._onedal_estimator.var_) - xp.sum(
-                        self.explained_variance_
-                    )
-                    return resid_var / (n_sf_min - n_components)
-            else:
-                return 0.0
-
         if sklearn_check_version("1.1"):
 
             def _select_svd_solver(self, n_samples, n_features):
@@ -384,8 +369,11 @@ if daal_check_version((2024, "P", 100)):
                 self._onedal_estimator.explained_variance_ratio_
             )
 
-            # calculate the noise variance
-            self.noise_variance_ = self._compute_noise_variance(X, xp=xp)
+            # calculate the noise variance, see sklearn's PCA._fit_full
+            if n_components < min(X.shape):
+                self.noise_variance_ = xp.mean(self.explained_variance_[n_components:])
+            else:
+                self.noise_variance_ = 0.0
 
             # return X for use in fit_transform, as it is validated and ready
             return X
