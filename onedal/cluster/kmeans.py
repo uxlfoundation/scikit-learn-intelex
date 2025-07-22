@@ -264,7 +264,8 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
 
     def _fit_backend(self, X_table, centroids_table, dtype=None, is_csr=False):
 
-        xp = X_table.__array_namespace__()
+        xp, _ = get_namespace(X_table)
+        xp = X_table
 
         if dtype is None:
             dtype = xp.float32
@@ -421,7 +422,6 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         )
 
     def _transform(self, X):
-        xp, _ = get_namespace(X)
         return euclidean_distances(X, self.cluster_centers_)
 
 
