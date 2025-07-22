@@ -82,7 +82,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
     def _onedal_partial_fit(self, X, check_input=True, queue=None):
         first_pass = not hasattr(self, "components_")
         if first_pass:
-            self.components_ = None
+            self._components_ = None
 
         if check_input and not get_config()["use_raw_input"]:
                 xp, _ = get_namespace(X)
@@ -92,10 +92,10 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
 
         # extracted from sklearn's ``IncrementalPCA.partial_fit``
         if self.n_components is None:
-            if self.components_ is None:
-                self.n_components_ = min(n_samples, n_features)
+            if self._components_ is None:
+                self._n_components_ = min(n_samples, n_features)
             else:
-                self.n_components_ = self.components_.shape[0]
+                self._n_components_ = self.components_.shape[0]
         elif not self.n_components <= n_features:
             raise ValueError(
                 "n_components=%r invalid for n_features=%d, need "
@@ -116,10 +116,10 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
                 )
             )
         else:
-            self.n_components_ = self.n_components
+            self._n_components_ = self.n_components
 
-        if (self.components_ is not None) and (
-            self.components_.shape[0] != self.n_components_
+        if (self._components_ is not None) and (
+            self._components_.shape[0] != self._n_components_
         ):
             raise ValueError(
                 "Number of input features has changed from %i "
@@ -134,7 +134,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
             self.n_samples_seen_ += n_samples
 
         onedal_params = {
-            "n_components": self.n_components_,
+            "n_components": self._n_components_,
             "whiten": self.whiten,
             "method": "svd" if self.svd_solver == "onedal_svd" else "cov",
         }
@@ -159,8 +159,11 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         self.var_ = self._onedal_estimator.var_
 
         # calculate the noise variance
-        xp, _ = get_namespace(self._onedal_estimator.explained_variance_)
-        self.noise_variance_ = xp.mean(self._onedal_estimator.explained_variance_)
+        if self._n_components_ < len(self.onedal_estimator.explained_variance_):
+            xp, _ = get_namespace(self._onedal_estimator.explained_variance_):
+            self.noise_variance_ = xp.mean(self._onedal_estimator.explained_variance_[self._n_components_:])
+        else:
+            self.noise_variance_ = 0.0                                   
         self._need_to_finalize = False
 
     def _onedal_fit(self, X, queue=None):
