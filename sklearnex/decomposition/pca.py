@@ -484,6 +484,9 @@ if daal_check_version((2024, "P", 100)):
                     del self._onedal_estimator._onedal_model
             self._n_components_ = value
 
+        @n_components_.deleter
+            del self._n_components_
+
         @property
         def components_(self):
             return self._components_
@@ -496,17 +499,25 @@ if daal_check_version((2024, "P", 100)):
                     del self._onedal_estimator._onedal_model
             self._components_ = value
 
-        @property
-        def means_(self):
-            return self._means_
+        @components_.deleter
+        def components_(self):
+            del self._components_
 
-        @means_.setter
-        def means_(self, value):
+        @property
+        def mean_(self):
+            return self._mean_
+
+        @mean_.setter
+        def mean_(self, value):
             if hasattr(self, "_onedal_estimator"):
-                self._onedal_estimator.means_ = value
+                self._onedal_estimator.mean_ = value
                 if hasattr(self._onedal_estimator, "_onedal_model"):
                     del self._onedal_estimator._onedal_model
-            self._means_ = value
+            self._mean_ = value
+
+        @mean_.deleter
+        def mean_(self):
+            del self._mean_
 
         @property
         def explained_variance_(self):
@@ -519,6 +530,10 @@ if daal_check_version((2024, "P", 100)):
                 if hasattr(self._onedal_estimator, "_onedal_model"):
                     del self._onedal_estimator._onedal_model
             self._explained_variance_ = value
+
+        @explained_variance_.deleter
+        def explained_variance_(self)
+            del self._explained_variance_
 
         fit.__doc__ = _sklearn_PCA.fit.__doc__
         transform.__doc__ = _sklearn_PCA.transform.__doc__
