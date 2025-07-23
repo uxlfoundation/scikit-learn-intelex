@@ -28,13 +28,14 @@ from ..._config import get_config
 from ..._device_offload import dispatch, wrap_output_data
 from ..._utils import PatchingConditionsChain, _add_inc_serialization_note
 from ...base import oneDALEstimator
-from ...utils._array_api import get_namespace
+from ...utils._array_api import enable_array_api, get_namespace
 from ...utils.validation import validate_data
 
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import StrOptions
 
 
+@enable_array_api
 @control_n_jobs(
     decorated_methods=["fit", "partial_fit", "transform", "_onedal_finalize_fit"]
 )
