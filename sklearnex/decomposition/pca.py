@@ -212,7 +212,7 @@ if daal_check_version((2024, "P", 100)):
 
         def _postprocess_n_components(self):
             # this method extracts aspects of post-processing located in
-            # PCA._fit_full which cannot be re-used.  It is isolated for
+            # PCA._fit_full which cannot be reused.  It is isolated for
             if self.n_components == "mle":
                 return _infer_dimension(
                     self._onedal_estimator.explained_variance_, self.n_samples_
