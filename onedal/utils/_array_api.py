@@ -24,11 +24,6 @@ import scipy.sparse as sp
 
 from ..utils._third_party import _is_subclass_fast
 
-try:
-    from dpctl.tensor import usm_ndarray
-except ImportError:
-    usm_ndarray = ()  # fallback if not available
-
 
 def _supports_buffer_protocol(obj):
     # the array_api standard mandates conversion with the buffer protocol,
