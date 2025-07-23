@@ -111,7 +111,7 @@ def _enable_array_api(original_class: type[oneDALEstimator]) -> type[oneDALEstim
 
 
 def enable_array_api(
-    class_or_str: Union[type[oneDALEstimator], str]
+    class_or_str: Union[type[oneDALEstimator], str],
 ) -> Union[type[oneDALEstimator], Callable]:
     """Enable sklearnex to use dpctl, dpnp or array API inputs in oneDAL offloading.
 
@@ -120,7 +120,7 @@ def enable_array_api(
 
     Parameters
     ----------
-    class_or_str : oneDALEstimator subclass or string
+    class_or_str : oneDALEstimator subclass or str
         Class which should enable data zero-copy support in sklearnex. By
         default it will enable for sklearn versions >1.3. If the wrapper is
         decorated with an argument, it must be a string defining the oldest
