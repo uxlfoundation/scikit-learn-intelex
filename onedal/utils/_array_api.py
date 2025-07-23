@@ -81,11 +81,32 @@ def _cls_to_sycl_namespace(cls):
         raise ValueError(f"SYCL type not recognized: {cls}")
 
 
-def _get_sycl_namespace(*arrays):
-    """Get namespace of sycl arrays."""
-    # Accept only known dense SYCL-compatible arrays
+def _get_allowed_sycl_types():
+    """Return a tuple of known SYCL-compatible dense array types."""
+    allowed = []
 
-    sua_iface = {type(x): x for x in arrays if isinstance(x, usm_ndarray)}
+    try:
+        from dpctl.tensor import usm_ndarray
+
+        allowed.append(usm_ndarray)
+    except ImportError:
+        pass
+
+    try:
+        from dpnp import ndarray as dpnp_ndarray
+
+        allowed.append(dpnp_ndarray)
+    except ImportError:
+        pass
+
+    return tuple(allowed)
+
+
+def _get_sycl_namespace(*arrays):
+    """Get namespace of SYCL-compatible arrays (excluding sparse or unsupported types)."""
+    allowed_sycl_types = _get_allowed_sycl_types()
+
+    sua_iface = {type(x): x for x in arrays if isinstance(x, allowed_sycl_types)}
 
     if len(sua_iface) > 1:
         raise ValueError(f"Multiple SYCL types for array inputs: {sua_iface}")
