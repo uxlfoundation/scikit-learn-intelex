@@ -40,9 +40,10 @@ if daal_check_version((2024, "P", 600)):
     from .._device_offload import dispatch, wrap_output_data
     from .._utils import PatchingConditionsChain
     from ..base import oneDALEstimator
-    from ..utils._array_api import get_namespace
+    from ..utils._array_api import enable_array_api, get_namespace
     from ..utils.validation import validate_data
 
+    @enable_array_api
     @control_n_jobs(decorated_methods=["fit", "predict", "score"])
     class Ridge(oneDALEstimator, _sklearn_Ridge):
         __doc__ = _sklearn_Ridge.__doc__
