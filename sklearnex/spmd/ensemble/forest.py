@@ -25,7 +25,6 @@ class RandomForestClassifier(RandomForestClassifier_Batch):
     __doc__ = RandomForestClassifier_Batch.__doc__
     _onedal_factory = onedal_RandomForestClassifier
 
-    #def __init__(self, *args, local_trees_mode=False, **kwargs):
     # TODO init based on sklearn version
     def __init__(
         self,
@@ -107,8 +106,6 @@ class RandomForestClassifier(RandomForestClassifier_Batch):
 class RandomForestRegressor(RandomForestRegressor_Batch):
     __doc__ = RandomForestRegressor_Batch.__doc__
     _onedal_factory = onedal_RandomForestRegressor
-
-    # def __init__(self, *args, local_trees_mode=False, **kwargs):
 
     def __init__(
         self,
