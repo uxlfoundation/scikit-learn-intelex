@@ -39,7 +39,7 @@ if not sklearn_check_version("1.2"):
 
 
 @enable_array_api
-@register_hyperparameters({"fit": get_hyperparameters("linear_regression", "train")})
+@register_hyperparameters({"fit": ("linear_regression", "train")})
 @control_n_jobs(decorated_methods=["fit", "predict", "score"])
 class LinearRegression(oneDALEstimator, _sklearn_LinearRegression):
     __doc__ = _sklearn_LinearRegression.__doc__

@@ -48,8 +48,8 @@ if sklearn_check_version("1.2"):
 @enable_array_api
 @register_hyperparameters(
     {
-        "fit": get_hyperparameters("linear_regression", "train"),
-        "partial_fit": get_hyperparameters("linear_regression", "train"),
+        "fit": ("linear_regression", "train"),
+        "partial_fit": ("linear_regression", "train"),
     }
 )
 @control_n_jobs(
