@@ -393,16 +393,13 @@ class IncrementalLinearRegression(
     def coef_(self):
         if hasattr(self, "_onedal_estimator") and self._need_to_finalize:
             self._onedal_finalize_fit()
-
         return self._coef_
 
     @coef_.setter
     def coef_(self, value):
         if hasattr(self, "_onedal_estimator"):
             self._onedal_estimator.coef_ = value
-            # checking if the model is already fitted and if so, deleting the model
-            if hasattr(self._onedal_estimator, "_onedal_model"):
-                del self._onedal_estimator._onedal_model
+            self._onedal_estimator._onedal_model = None
         self._coef_ = value
 
     @coef_.deleter
@@ -413,16 +410,13 @@ class IncrementalLinearRegression(
     def intercept_(self):
         if hasattr(self, "_onedal_estimator") and self._need_to_finalize:
             self._onedal_finalize_fit()
-
         return self._intercept_
 
     @intercept_.setter
     def intercept_(self, value):
         if hasattr(self, "_onedal_estimator"):
             self._onedal_estimator.intercept_ = value
-            # checking if the model is already fitted and if so, deleting the model
-            if hasattr(self._onedal_estimator, "_onedal_model"):
-                del self._onedal_estimator._onedal_model
+            self._onedal_estimator._onedal_model = None
         self._intercept_ = value
 
     @intercept_.deleter

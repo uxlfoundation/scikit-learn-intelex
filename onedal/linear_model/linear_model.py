@@ -37,6 +37,7 @@ class BaseLinearRegression(metaclass=ABCMeta):
         self.alpha = alpha
         self.copy_X = copy_X
         self.algorithm = algorithm
+        self._onedal_model = None
 
     @bind_default_backend("linear_model.regression")
     def train(self, *args, **kwargs): ...
@@ -156,14 +157,12 @@ class BaseLinearRegression(metaclass=ABCMeta):
 
         _check_n_features(self, X, False)
 
-        if hasattr(self, "_onedal_model"):
-            model = self._onedal_model
-        else:
-            model = self._create_model()
+        if self._onedal_model is None:
+            self._create_model()
 
         X_table = to_table(X, queue=queue)
         params = self._get_onedal_params(X_table.dtype)
-        result = self.infer(params, model, X_table)
+        result = self.infer(params, self._onedal_model, X_table)
         y = from_table(result.responses, like=X)
 
         return y

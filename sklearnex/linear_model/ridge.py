@@ -370,10 +370,12 @@ if daal_check_version((2024, "P", 600)):
         def coef_(self, value):
             if hasattr(self, "_onedal_estimator"):
                 self._onedal_estimator.coef_ = value
-                # checking if the model is already fitted and if so, deleting the model
-                if hasattr(self._onedal_estimator, "_onedal_model"):
-                    del self._onedal_estimator._onedal_model
+                self._onedal_estimator._onedal_model = None
             self._coef_ = value
+
+        @coef_.deleter
+        def coef_(self):
+            del self._coef_
 
         @property
         def intercept_(self):
@@ -383,10 +385,12 @@ if daal_check_version((2024, "P", 600)):
         def intercept_(self, value):
             if hasattr(self, "_onedal_estimator"):
                 self._onedal_estimator.intercept_ = value
-                # checking if the model is already fitted and if so, deleting the model
-                if hasattr(self._onedal_estimator, "_onedal_model"):
-                    del self._onedal_estimator._onedal_model
+                self._onedal_estimator._onedal_model = None
             self._intercept_ = value
+
+        @intercept_.deleter
+        def intercept_(self):
+            del self._intercept_
 
         fit.__doc__ = _sklearn_Ridge.fit.__doc__
         predict.__doc__ = _sklearn_Ridge.predict.__doc__

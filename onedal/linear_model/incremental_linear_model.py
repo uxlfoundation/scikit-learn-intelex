@@ -97,6 +97,10 @@ class BaseIncrementalLinear(BaseLinearRegression):
                 self._params, self._partial_result, X_table, y_table
             )
 
+        # If a secondary fit occurs in any form, set model to None.
+        if self._onedal_model is not None:
+            self._onedal_model = None
+
         self._need_to_finalize = True
         return self
 
@@ -165,7 +169,6 @@ class IncrementalLinearRegression(BaseIncrementalLinear):
 
     def __init__(self, fit_intercept=True, copy_X=False, algorithm="norm_eq"):
         super().__init__(fit_intercept=fit_intercept, copy_X=copy_X, algorithm=algorithm)
-        self._queue = None
         self._reset()
 
 
@@ -195,5 +198,4 @@ class IncrementalRidge(BaseIncrementalLinear):
         super().__init__(
             fit_intercept=fit_intercept, alpha=alpha, copy_X=copy_X, algorithm=algorithm
         )
-        self._queue = None
         self._reset()

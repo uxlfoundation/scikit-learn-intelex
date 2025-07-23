@@ -337,7 +337,7 @@ class LinearRegression(oneDALEstimator, _sklearn_LinearRegression):
         self._coef_ = value
         if hasattr(self, "_onedal_estimator"):
             self._onedal_estimator.coef_ = value
-            del self._onedal_estimator._onedal_model
+            self._onedal_estimator._onedal_model = None
 
     @coef_.deleter
     def coef_(self):
@@ -352,7 +352,7 @@ class LinearRegression(oneDALEstimator, _sklearn_LinearRegression):
         self._intercept_ = value
         if hasattr(self, "_onedal_estimator"):
             self._onedal_estimator.intercept_ = value
-            del self._onedal_estimator._onedal_model
+            self._onedal_estimator._onedal_model = None
 
     @intercept_.deleter
     def intercept_(self):
