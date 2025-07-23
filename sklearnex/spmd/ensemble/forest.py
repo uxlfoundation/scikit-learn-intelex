@@ -14,9 +14,9 @@
 # limitations under the License.
 # ==============================================================================
 
+from daal4py.sklearn._utils import sklearn_check_version
 from onedal.spmd.ensemble import RandomForestClassifier as onedal_RandomForestClassifier
 from onedal.spmd.ensemble import RandomForestRegressor as onedal_RandomForestRegressor
-from daal4py.sklearn._utils import sklearn_check_version
 
 from ...ensemble import RandomForestClassifier as RandomForestClassifier_Batch
 from ...ensemble import RandomForestRegressor as RandomForestRegressor_Batch
@@ -27,6 +27,7 @@ class RandomForestClassifier(RandomForestClassifier_Batch):
     _onedal_factory = onedal_RandomForestClassifier
 
     if sklearn_check_version("1.4"):
+
         def __init__(
             self,
             n_estimators=100,
@@ -77,7 +78,9 @@ class RandomForestClassifier(RandomForestClassifier_Batch):
                 max_bins=max_bins,
                 min_bin_size=min_bin_size,
             )
+
     else:
+
         def __init__(
             self,
             n_estimators=100,
@@ -127,7 +130,6 @@ class RandomForestClassifier(RandomForestClassifier_Batch):
                 min_bin_size=min_bin_size,
             )
 
-
     def _create_onedal_estimator(self, onedal_params):
         onedal_params = dict(onedal_params)  # copy to avoid mutating input
         onedal_params["local_trees_mode"] = self.local_trees_mode
@@ -159,6 +161,7 @@ class RandomForestRegressor(RandomForestRegressor_Batch):
     _onedal_factory = onedal_RandomForestRegressor
 
     if sklearn_check_version("1.4"):
+
         def __init__(
             self,
             n_estimators=100,
@@ -207,7 +210,9 @@ class RandomForestRegressor(RandomForestRegressor_Batch):
                 max_bins=max_bins,
                 min_bin_size=min_bin_size,
             )
+
     else:
+
         def __init__(
             self,
             n_estimators=100,
