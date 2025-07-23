@@ -23,7 +23,6 @@ from sklearn.utils import check_array
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
-from onedal.common.hyperparameters import get_hyperparameters
 from onedal.covariance import EmpiricalCovariance as onedal_EmpiricalCovariance
 from sklearnex import config_context
 from sklearnex.metrics import pairwise_distances
@@ -34,7 +33,7 @@ from ...base import oneDALEstimator
 from ...utils.validation import validate_data
 
 
-@register_hyperparameters({"fit": get_hyperparameters("covariance", "compute")})
+@register_hyperparameters({"fit": ("covariance", "compute")})
 @control_n_jobs(decorated_methods=["fit", "mahalanobis"])
 class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
     __doc__ = _sklearn_EmpiricalCovariance.__doc__

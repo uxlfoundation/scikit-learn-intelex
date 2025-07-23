@@ -36,8 +36,6 @@ from ..utils.validation import validate_data
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import Interval
 
-from onedal.common.hyperparameters import get_hyperparameters
-
 from .._device_offload import dispatch, wrap_output_data
 from .._utils import (
     PatchingConditionsChain,
@@ -49,8 +47,8 @@ from ..base import oneDALEstimator
 
 @register_hyperparameters(
     {
-        "fit": get_hyperparameters("linear_regression", "train"),
-        "partial_fit": get_hyperparameters("linear_regression", "train"),
+        "fit": ("linear_regression", "train"),
+        "partial_fit": ("linear_regression", "train"),
     }
 )
 @control_n_jobs(

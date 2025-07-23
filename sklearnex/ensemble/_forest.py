@@ -58,7 +58,6 @@ from onedal.ensemble import RandomForestClassifier as onedal_RandomForestClassif
 from onedal.ensemble import RandomForestRegressor as onedal_RandomForestRegressor
 from onedal.primitives import get_tree_state_cls, get_tree_state_reg
 from onedal.utils.validation import _num_features, _num_samples
-from sklearnex import get_hyperparameters
 from sklearnex._utils import register_hyperparameters
 
 from .._config import get_config
@@ -1215,7 +1214,7 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
     score.__doc__ = _sklearn_ForestRegressor.score.__doc__
 
 
-@register_hyperparameters({"infer": get_hyperparameters("decision_forest", "infer")})
+@register_hyperparameters({"predict": ("decision_forest", "infer")})
 @control_n_jobs(decorated_methods=["fit", "predict", "predict_proba", "score"])
 class RandomForestClassifier(ForestClassifier):
     __doc__ = _sklearn_RandomForestClassifier.__doc__
