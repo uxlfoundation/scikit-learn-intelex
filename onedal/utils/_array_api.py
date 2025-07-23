@@ -22,7 +22,7 @@ from functools import lru_cache
 import numpy as np
 import scipy.sparse as sp
 
-from ..utils._third_party import _is_subclass_fast
+from ..utils._third_party import _is_subclass_fast, is_dpctl_tensor, is_dpnp_ndarray
 
 
 def _supports_buffer_protocol(obj):
@@ -76,32 +76,20 @@ def _cls_to_sycl_namespace(cls):
         raise ValueError(f"SYCL type not recognized: {cls}")
 
 
-def _get_allowed_sycl_types():
-    """Return a tuple of known SYCL-compatible dense array types."""
-    allowed = []
-
-    try:
-        from dpctl.tensor import usm_ndarray
-
-        allowed.append(usm_ndarray)
-    except ImportError:
-        pass
-
-    try:
-        from dpnp import ndarray as dpnp_ndarray
-
-        allowed.append(dpnp_ndarray)
-    except ImportError:
-        pass
-
-    return tuple(allowed)
-
-
 def _get_sycl_namespace(*arrays):
-    """Get namespace of SYCL-compatible arrays (excluding sparse or unsupported types)."""
-    allowed_sycl_types = _get_allowed_sycl_types()
+    sua_iface = {}
+    for x in arrays:
+        try:
+            has_sycl = getattr(x, "__sycl_usm_array_interface__", None) is not None
+        except RuntimeError:
+            has_sycl = False
 
-    sua_iface = {type(x): x for x in arrays if isinstance(x, allowed_sycl_types)}
+        if (
+            has_sycl
+            and not isinstance(x, sp.spmatrix)
+            and (is_dpctl_tensor(x) or is_dpnp_ndarray(x))
+        ):
+            sua_iface[type(x)] = x
 
     if len(sua_iface) > 1:
         raise ValueError(f"Multiple SYCL types for array inputs: {sua_iface}")
