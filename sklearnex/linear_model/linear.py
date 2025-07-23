@@ -38,7 +38,7 @@ if not sklearn_check_version("1.2"):
     from sklearn.linear_model._base import _deprecate_normalize
 
 
-@enable_array_api("1.5")
+@enable_array_api("1.5")  # validate_data y_numeric requires sklearn >=1.5
 @register_hyperparameters({"fit": ("linear_regression", "train")})
 @control_n_jobs(decorated_methods=["fit", "predict", "score"])
 class LinearRegression(oneDALEstimator, _sklearn_LinearRegression):

@@ -158,7 +158,7 @@ class BaseLinearRegression(metaclass=ABCMeta):
         _check_n_features(self, X, False)
 
         if self._onedal_model is None:
-            self._create_model()
+            self._onedal_model = self._create_model()
 
         X_table = to_table(X, queue=queue)
         params = self._get_onedal_params(X_table.dtype)
