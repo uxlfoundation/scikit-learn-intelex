@@ -20,9 +20,14 @@ from collections.abc import Iterable
 from functools import lru_cache
 
 import numpy as np
+import scipy.sparse as sp
 
 from ..utils._third_party import _is_subclass_fast
 
+try:
+    from dpctl.tensor import usm_ndarray
+except ImportError:
+    usm_ndarray = ()  # fallback if not available
 
 def _supports_buffer_protocol(obj):
     # the array_api standard mandates conversion with the buffer protocol,
@@ -74,12 +79,14 @@ def _cls_to_sycl_namespace(cls):
     else:
         raise ValueError(f"SYCL type not recognized: {cls}")
 
-
 def _get_sycl_namespace(*arrays):
     """Get namespace of sycl arrays."""
-
-    # sycl support designed to work regardless of array_api_dispatch sklearn global value
-    sua_iface = {type(x): x for x in arrays if hasattr(x, "__sycl_usm_array_interface__")}
+    # Accept only known dense SYCL-compatible arrays
+    sua_iface = {
+        type(x): x
+        for x in arrays
+        if isinstance(x, usm_ndarray)
+    }
 
     if len(sua_iface) > 1:
         raise ValueError(f"Multiple SYCL types for array inputs: {sua_iface}")
