@@ -29,6 +29,7 @@ try:
 except ImportError:
     usm_ndarray = ()  # fallback if not available
 
+
 def _supports_buffer_protocol(obj):
     # the array_api standard mandates conversion with the buffer protocol,
     # which can only be checked via a try-catch in native python
@@ -79,14 +80,12 @@ def _cls_to_sycl_namespace(cls):
     else:
         raise ValueError(f"SYCL type not recognized: {cls}")
 
+
 def _get_sycl_namespace(*arrays):
     """Get namespace of sycl arrays."""
     # Accept only known dense SYCL-compatible arrays
-    sua_iface = {
-        type(x): x
-        for x in arrays
-        if isinstance(x, usm_ndarray)
-    }
+
+    sua_iface = {type(x): x for x in arrays if isinstance(x, usm_ndarray)}
 
     if len(sua_iface) > 1:
         raise ValueError(f"Multiple SYCL types for array inputs: {sua_iface}")
