@@ -355,21 +355,24 @@ if daal_check_version((2024, "P", 100)):
 
             # set attributes necessary for calls to transform, will modify
             # self._onedal_estimator, and clear any previous fit models
+            # Follow guidance from sklearn PCA._fit_full and copy the data
             self.n_components_ = n_components
-            self.components_ = self._onedal_estimator.components_[:n_components, ...]
-            self.explained_variance_ = self._onedal_estimator.explained_variance_[
-                :n_components
-            ]
+            self.components_ = xp.asarray(
+                self._onedal_estimator.components_[:n_components, ...], copy=True
+            )
+            self.explained_variance_ = xp.asarray(
+                self._onedal_estimator.explained_variance_[:n_components], copy=True
+            )
 
             # set private mean, as it doesn't need to feed back on the onedal_estimator
             self._mean_ = self._onedal_estimator.mean_
 
             # set other fit attributes, first by modifying the onedal_estimator
-            self._onedal_estimator.singular_values_ = (
-                self._onedal_estimator.singular_values_[:n_components]
+            self._onedal_estimator.singular_values_ = xp.asarray(
+                self._onedal_estimator.singular_values_[:n_components], copy=True
             )
-            self._onedal_estimator.explained_variance_ratio_ = (
-                self._onedal_estimator.explained_variance_ratio_[:n_components]
+            self._onedal_estimator.explained_variance_ratio_ = xp.asarray(
+                self._onedal_estimator.explained_variance_ratio_[:n_components], copy=True
             )
 
             self.singular_values_ = self._onedal_estimator.singular_values_
