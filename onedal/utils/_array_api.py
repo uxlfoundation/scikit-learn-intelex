@@ -77,19 +77,17 @@ def _cls_to_sycl_namespace(cls):
 
 
 def _get_sycl_namespace(*arrays):
+    """Get namespace of sycl arrays."""
+
+    # sycl support designed to work regardless of array_api_dispatch sklearn global value
     sua_iface = {}
     for x in arrays:
         try:
-            has_sycl = getattr(x, "__sycl_usm_array_interface__", None) is not None
+            if getattr(x, "__sycl_usm_array_interface__", None) is not None:
+                sua_iface[type(x)] = x
         except RuntimeError:
-            has_sycl = False
-
-        if (
-            has_sycl
-            and not isinstance(x, sp.spmatrix)
-            and (is_dpctl_tensor(x) or is_dpnp_ndarray(x))
-        ):
-            sua_iface[type(x)] = x
+            # Skip objects that raise errors when accessing the attribute
+            continue
 
     if len(sua_iface) > 1:
         raise ValueError(f"Multiple SYCL types for array inputs: {sua_iface}")
