@@ -380,16 +380,6 @@ if daal_check_version((2024, "P", 100)):
             # return X for use in fit_transform, as it is validated and ready
             return X
 
-        if not sklearn_check_version("1.2"):
-
-            @property
-            def n_features_(self):
-                return self.n_features_in_
-
-            @n_features_.setter
-            def n_features(self, value):
-                self.n_features_in_ = value
-
         @wrap_output_data
         def transform(self, X):
             check_is_fitted(self)
@@ -525,6 +515,20 @@ if daal_check_version((2024, "P", 100)):
         @explained_variance_.deleter
         def explained_variance_(self):
             del self._explained_variance_
+
+        if not sklearn_check_version("1.2"):
+
+            @property
+            def n_features_(self):
+                return self.n_features_in_
+
+            @n_features_.setter
+            def n_features_(self, value):
+                self.n_features_in_ = value
+
+            @n_features_.deleter
+            def n_features_(self):
+                del self.n_features_in_
 
         fit.__doc__ = _sklearn_PCA.fit.__doc__
         transform.__doc__ = _sklearn_PCA.transform.__doc__
