@@ -202,8 +202,8 @@ def _add_inc_serialization_note(class_docstrings: str) -> str:
     # In python versions >=3.13, leading whitespace in docstrings defined through
     # static strings (but **not through other ways**) is automatically removed
     # from the final docstrings, while in earlier versions is kept.
-    inc_serialization_note = """Note
-----
+    inc_serialization_note = """Notes
+-----
 Serializing instances of this class will trigger a forced finalization of calculations
 when the inputs are in a sycl queue or when using GPUs. Since (internal method)
 finalize_fit can't be dispatched without directly provided queue and the dispatching

@@ -53,26 +53,26 @@ class BasicStatistics(oneDALEstimator, BaseEstimator):
 
     Attributes
     ----------
-        min_ : ndarray of shape (n_features,)
-            Minimum of each feature over all samples.
-        max_ : ndarray of shape (n_features,)
-            Maximum of each feature over all samples.
-        sum_ : ndarray of shape (n_features,)
-            Sum of each feature over all samples.
-        mean_ : ndarray of shape (n_features,)
-            Mean of each feature over all samples.
-        variance_ : ndarray of shape (n_features,)
-            Variance of each feature over all samples. Bessel's correction is used.
-        variation_ : ndarray of shape (n_features,)
-            Variation of each feature over all samples. Bessel's correction is used.
-        sum_squares_ : ndarray of shape (n_features,)
-            Sum of squares for each feature over all samples.
-        standard_deviation_ : ndarray of shape (n_features,)
-            Unbiased standard deviation of each feature over all samples. Bessel's correction is used.
-        sum_squares_centered_ : ndarray of shape (n_features,)
-            Centered sum of squares for each feature over all samples.
-        second_order_raw_moment_ : ndarray of shape (n_features,)
-            Second order moment of each feature over all samples.
+    min_ : ndarray of shape (n_features,)
+        Minimum of each feature over all samples.
+    max_ : ndarray of shape (n_features,)
+        Maximum of each feature over all samples.
+    sum_ : ndarray of shape (n_features,)
+        Sum of each feature over all samples.
+    mean_ : ndarray of shape (n_features,)
+        Mean of each feature over all samples.
+    variance_ : ndarray of shape (n_features,)
+        Variance of each feature over all samples. Bessel's correction is used.
+    variation_ : ndarray of shape (n_features,)
+        Variation of each feature over all samples. Bessel's correction is used.
+    sum_squares_ : ndarray of shape (n_features,)
+        Sum of squares for each feature over all samples.
+    standard_deviation_ : ndarray of shape (n_features,)
+        Unbiased standard deviation of each feature over all samples. Bessel's correction is used.
+    sum_squares_centered_ : ndarray of shape (n_features,)
+        Centered sum of squares for each feature over all samples.
+    second_order_raw_moment_ : ndarray of shape (n_features,)
+        Second order moment of each feature over all samples.
 
     Notes
     -----
