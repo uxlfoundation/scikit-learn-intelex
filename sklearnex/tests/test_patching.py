@@ -174,13 +174,7 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
         # the infrastructure from sklearn that sklearnex depends on is also susceptible
         # to failure. In this case compare to sklearn for the same failure. By design
         # the patching of sklearn should act similarly. Technically this is conformance.
-        if not sklearn_check_version("1.5") and (
-            "LinearRegression" in estimator or "Ridge" in estimator
-        ):
-            pytest.skip(
-                f"y_numeric option to validate_data does not support array_api inputs for sklearn <1.5"
-            )
-        elif estimator == "PCA" and "score" in method:
+        if estimator == "PCA" and "score" in method:
             pytest.skip(
                 f"PCA.{method} has sklearn array_api support which breaks with array_api_dispatching"
             )

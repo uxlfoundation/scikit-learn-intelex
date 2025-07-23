@@ -44,7 +44,7 @@ if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import Interval
 
 
-@enable_array_api
+@enable_array_api("1.5")
 @register_hyperparameters(
     {
         "fit": ("linear_regression", "train"),
