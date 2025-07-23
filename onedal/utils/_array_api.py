@@ -20,9 +20,8 @@ from collections.abc import Iterable
 from functools import lru_cache
 
 import numpy as np
-import scipy.sparse as sp
 
-from ..utils._third_party import _is_subclass_fast, is_dpctl_tensor, is_dpnp_ndarray
+from ..utils._third_party import _is_subclass_fast
 
 
 def _supports_buffer_protocol(obj):
