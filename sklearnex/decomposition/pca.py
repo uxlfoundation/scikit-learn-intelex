@@ -370,12 +370,12 @@ if daal_check_version((2024, "P", 100)):
 
             self.components_ = xp.reshape(
                 self._onedal_estimator.components_[:n_components, ...],
-                shape=(n_components, -1),
+                (n_components, -1),
                 copy=True,
             )
             self.explained_variance_ = xp.reshape(
                 self._onedal_estimator.explained_variance_[:n_components],
-                shape=(-1,),
+                (-1,),
                 copy=True,
             )
             self.mean_ = xp.reshape(self._onedal_estimator.mean_, shape=(-1,), copy=True)
@@ -383,12 +383,12 @@ if daal_check_version((2024, "P", 100)):
             # set other fit attributes, first by modifying the onedal_estimator
             self._onedal_estimator.singular_values_ = xp.reshape(
                 self._onedal_estimator.singular_values_[:n_components],
-                shape=(-1,),
+                (-1,),
                 copy=True,
             )
             self._onedal_estimator.explained_variance_ratio_ = xp.reshape(
                 self._onedal_estimator.explained_variance_ratio_[:n_components],
-                shape=(-1,),
+                (-1,),
                 copy=True,
             )
 
