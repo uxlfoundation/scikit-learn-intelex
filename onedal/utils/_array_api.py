@@ -20,8 +20,14 @@ from collections.abc import Iterable
 from functools import lru_cache
 
 import numpy as np
+import scipy.sparse as sp
 
 from ..utils._third_party import _is_subclass_fast
+
+try:
+    from onedal._onedal_py_dpc import table as onedal_table_type
+except ImportError:
+    onedal_table_type = type(None)
 
 
 def _supports_buffer_protocol(obj):
@@ -75,18 +81,21 @@ def _cls_to_sycl_namespace(cls):
         raise ValueError(f"SYCL type not recognized: {cls}")
 
 
-def _get_sycl_namespace(*arrays):
-    """Get namespace of sycl arrays."""
+def _is_valid_sycl_array(x):
+    try:
+        if getattr(x, "__sycl_usm_array_interface__", None) is None:
+            return False
+    except RuntimeError:
+        return False
 
-    # sycl support designed to work regardless of array_api_dispatch sklearn global value
-    sua_iface = {}
-    for x in arrays:
-        try:
-            if getattr(x, "__sycl_usm_array_interface__", None) is not None:
-                sua_iface[type(x)] = x
-        except RuntimeError:
-            # Skip objects that raise errors when accessing the attribute
-            continue
+    if isinstance(x, (sp.spmatrix, onedal_table_type)):
+        return False
+
+    return True
+
+
+def _get_sycl_namespace(*arrays):
+    sua_iface = {type(x): x for x in arrays if _is_valid_sycl_array(x)}
 
     if len(sua_iface) > 1:
         raise ValueError(f"Multiple SYCL types for array inputs: {sua_iface}")

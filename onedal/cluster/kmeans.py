@@ -216,7 +216,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
                 # oneDAL KMeans only supports Dense Centroids
                 centers = init.toarray()
             else:
-                centers = np.asarray(init)
+                centers = xp.asarray(init)
             assert centers.shape[0] == n_clusters
             assert centers.shape[1] == X_table.column_count
             # KMeans is implemented on both CPU and GPU for Dense and CSR data
