@@ -228,9 +228,9 @@ if daal_check_version((2024, "P", 100)):
             # generally replicates capability seen in sklearn.PCA._fit_full
             explained_variance = self._onedal_estimator.explained_variance_
             if self._n_components_ < n_sf_min:
-                if len(explained_variance) == n_sf_min:
+                if explained_variance.shape[0] == n_sf_min:
                     return xp.mean(explained_variance[self._n_components_ :])
-                elif len(explained_variance) < n_sf_min:
+                elif explained_variance.shape[0] < n_sf_min:
                     # replicates capability seen in sklearn.PCA._fit_truncated
                     # this is necessary as oneDAL will fit only to self.n_components
                     # which leads to self.explained_variance_ not containing the
@@ -367,23 +367,40 @@ if daal_check_version((2024, "P", 100)):
             # set attributes necessary for calls to transform, will modify
             # self._onedal_estimator, and clear any previous fit models
             # Follow guidance from sklearn PCA._fit_full and copy the data
+            # however, due to limitations in the array API standard and
+            # the implementation of numpy, must use ``astype`` to expose a
+            # common way to force a copy (also limited by sklearn 1.0)
             self.n_components_ = n_components
             self.noise_variance_ = self._compute_noise_variance(
                 min(self.n_samples_, self.n_features_in_), xp
             )
 
-            self.components_ = self._onedal_estimator.components_[:n_components, ...]
-            self.explained_variance_ = self._onedal_estimator.explained_variance_[
-                :n_components
-            ]
-            self.mean_ = self._onedal_estimator.mean_
+            self.components_ = xp.astype(
+                self._onedal_estimator.components_[:n_components, ...],
+                self._onedal_estimator.components_.dtype,
+                copy=True,
+            )
+            self.explained_variance_ = xp.astype(
+                self._onedal_estimator.explained_variance_[:n_components],
+                self._onedal_estimator.explained_variance_.dtype,
+                copy=True,
+            )
+            self.mean_ = xp.astype(
+                self._onedal_estimator.mean_,
+                self._onedal_estimator.mean_.dtype,
+                copy=True,
+            )
 
             # set other fit attributes, first by modifying the onedal_estimator
-            self._onedal_estimator.singular_values_ = (
-                self._onedal_estimator.singular_values_[:n_components]
+            self._onedal_estimator.singular_values_ = xp.astype(
+                self._onedal_estimator.singular_values_[:n_components],
+                self._onedal_estimator.singular_values_.dtype,
+                copy=True,
             )
-            self._onedal_estimator.explained_variance_ratio_ = (
-                self._onedal_estimator.explained_variance_ratio_[:n_components]
+            self._onedal_estimator.explained_variance_ratio_ = xp.astype(
+                self._onedal_estimator.explained_variance_ratio_[:n_components],
+                self._onedal_estimator.explained_variance_ratio_.dtype,
+                copy=True,
             )
 
             self.singular_values_ = self._onedal_estimator.singular_values_

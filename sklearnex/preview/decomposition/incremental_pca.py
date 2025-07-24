@@ -113,9 +113,9 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         # generally replicates capability seen in sklearn.PCA._fit_full
         explained_variance = self._onedal_estimator.explained_variance_
         if self._n_components_ < n_sf_min:
-            if len(explained_variance) == n_sf_min:
+            if explained_variance.shape[0] == n_sf_min:
                 return xp.mean(explained_variance[self._n_components_ :])
-            elif len(explained_variance) < n_sf_min:
+            elif explained_variance.shape[0] < n_sf_min:
                 # replicates capability seen in sklearn.PCA._fit_truncated
                 # this is necessary as oneDAL will fit only to self.n_components
                 # which leads to self.explained_variance_ not containing the

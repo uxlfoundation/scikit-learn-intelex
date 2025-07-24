@@ -65,7 +65,9 @@ def to_table(*args, queue=None):
 
 @lazy_import("array_api_compat")
 def _compat_convert(array_api_compat, array):
-    return array_api_compat.get_namespace(array).from_dlpack
+    xp = array_api_compat.get_namespace(array)
+    device = array.device
+    return lambda x: xp.from_dlpack(x, device=device)
 
 
 def return_type_constructor(array):
@@ -111,7 +113,9 @@ def return_type_constructor(array):
                 else xp.asarray(backend.from_table(x), device=device)
             )
     elif hasattr(array, "__array_namespace__"):
-        func = array.__array_namespace__().from_dlpack
+        xp = array.__array_namespace__()
+        device = array.device
+        func = lambda x: xp.from_dlpack(x, device=device)
     else:
         try:
             func = _compat_convert(array)
