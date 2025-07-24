@@ -224,19 +224,21 @@ if daal_check_version((2024, "P", 100)):
                 )
                 return np.searchsorted(ratio_cumsum, self.n_components, side="right") + 1
 
-        def _compute_noise_variance(self, xp):
+        def _compute_noise_variance(self, n_sf_min, xp):
             # generally replicates capability seen in sklearn.PCA._fit_full
-            n_sf_min = min(self.n_samples_, self.n_features_in_)
+            explained_variance = self._onedal_estimator.explained_variance_
             if self._n_components_ < n_sf_min:
-                if len(self._explained_variance_) == n_sf_min:
-                    return xp.mean(self._explained_variance_[self._n_components_ :])
-                elif len(self._explained_variance_) < n_sf_min:
+                if len(explained_variance) == n_sf_min:
+                    return xp.mean(explained_variance[self._n_components_ :])
+                elif len(explained_variance) < n_sf_min:
                     # replicates capability seen in sklearn.PCA._fit_truncated
                     # this is necessary as oneDAL will fit only to self.n_components
                     # which leads to self.explained_variance_ not containing the
                     # full information (and therefore can't replicate
                     # sklearn.PCA._fit_full)
-                    resid_var = xp.sum(self.var_) - xp.sum(self._explained_variance_)
+                    resid_var = xp.sum(self._onedal_estimator.var_) - xp.sum(
+                        explained_variance
+                    )
                     return resid_var / (n_sf_min - self._n_components_)
             else:
                 return 0.0
@@ -366,7 +368,9 @@ if daal_check_version((2024, "P", 100)):
             # self._onedal_estimator, and clear any previous fit models
             # Follow guidance from sklearn PCA._fit_full and copy the data
             self.n_components_ = n_components
-            self.noise_variance_ = self._compute_noise_variance(xp)
+            self.noise_variance_ = self._compute_noise_variance(
+                min(self.n_samples_, self.n_features_in_), xp
+            )
 
             self.components_ = self._onedal_estimator.components_[:n_components, ...]
             self.explained_variance_ = self._onedal_estimator.explained_variance_[
