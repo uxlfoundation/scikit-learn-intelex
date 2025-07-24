@@ -68,7 +68,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
 
     _onedal_incremental_pca = staticmethod(onedal_IncrementalPCA)
 
-    def _validate_n_components(self, n_components, n_samples, n_features):
+    def _set_n_components(self, n_components, n_samples, n_features):
         # extracted from sklearn's ``IncrementalPCA.partial_fit``. This is a
         # maintenance burden that cannot be easily separated from sklearn.
         if n_components is None:
@@ -109,6 +109,23 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
                 % (self.components_.shape[0], self.n_components_)
             )
 
+    def _compute_noise_variance(self, xp):
+        # generally replicates capability seen in sklearn.PCA._fit_full
+        n_sf_min = min(self.n_samples_seen_, self.n_features_in_)
+        if self._n_components_ < n_sf_min:
+            if len(self._explained_variance_) == n_sf_min:
+                return xp.mean(self._explained_variance_[self._n_components_ :])
+            elif len(self._explained_variance_) < n_sf_min:
+                # replicates capability seen in sklearn.PCA._fit_truncated
+                # this is necessary as oneDAL will fit only to self.n_components
+                # which leads to self.explained_variance_ not containing the
+                # full information (and therefore can't replicate
+                # sklearn.PCA._fit_full)
+                resid_var = xp.sum(self.var_) - xp.sum(self._explained_variance_)
+                return resid_var / (n_sf_min - self._n_components_)
+        else:
+            return 0.0
+
     def _onedal_transform(self, X, queue=None):
         # does not batch out data like sklearn's ``IncrementalPCA.transform``
         if self._need_to_finalize:
@@ -132,7 +149,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
             X = validate_data(self, X, dtype=[xp.float64, xp.float32], reset=first_pass)
 
         n_samples, n_features = X.shape
-        self._validate_n_components(self.n_components, n_samples, n_features)
+        self._set_n_components(self.n_components, n_samples, n_features)
 
         if not hasattr(self, "n_samples_seen_"):
             self.n_samples_seen_ = n_samples
@@ -174,12 +191,8 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         self.var_ = self._onedal_estimator.var_
 
         # calculate the noise variance
-        if self._n_components_ < len(self._onedal_estimator.explained_variance_):
-            self.noise_variance_ = xp.mean(
-                self._onedal_estimator.explained_variance_[self._n_components_ :]
-            )
-        else:
-            self.noise_variance_ = 0.0
+        self.noise_variance_ = self._compute_noise_variance(xp)
+
         self._need_to_finalize = False
 
     def _onedal_fit(self, X, queue=None):

@@ -224,6 +224,23 @@ if daal_check_version((2024, "P", 100)):
                 )
                 return np.searchsorted(ratio_cumsum, self.n_components, side="right") + 1
 
+        def _compute_noise_variance(self, xp):
+            # generally replicates capability seen in sklearn.PCA._fit_full
+            n_sf_min = min(self.n_samples_, self.n_features_in_)
+            if self._n_components_ < n_sf_min:
+                if len(self._explained_variance_) == n_sf_min:
+                    return xp.mean(self._explained_variance_[self._n_components_ :])
+                elif len(self._explained_variance_) < n_sf_min:
+                    # replicates capability seen in sklearn.PCA._fit_truncated
+                    # this is necessary as oneDAL will fit only to self.n_components
+                    # which leads to self.explained_variance_ not containing the
+                    # full information (and therefore can't replicate
+                    # sklearn.PCA._fit_full)
+                    resid_var = xp.sum(self.var_) - xp.sum(self._explained_variance_)
+                    return resid_var / (n_sf_min - self._n_components_)
+            else:
+                return 0.0
+
         if sklearn_check_version("1.1"):
 
             def _select_svd_solver(self, n_samples, n_features):
@@ -345,18 +362,12 @@ if daal_check_version((2024, "P", 100)):
             ):
                 n_components = self._postprocess_n_components()
 
-            # calculate the noise variance, see sklearn's PCA._fit_full
-            if n_components < min(X.shape):
-                self.noise_variance_ = xp.mean(
-                    self._onedal_estimator.explained_variance_[n_components:]
-                )
-            else:
-                self.noise_variance_ = 0.0
-
             # set attributes necessary for calls to transform, will modify
             # self._onedal_estimator, and clear any previous fit models
             # Follow guidance from sklearn PCA._fit_full and copy the data
             self.n_components_ = n_components
+            self.noise_variance_ = self._compute_noise_variance(xp)
+
             self.components_ = xp.reshape(
                 self._onedal_estimator.components_[:n_components, ...],
                 shape=(n_components, -1),
