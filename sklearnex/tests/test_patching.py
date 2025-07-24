@@ -168,10 +168,6 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
         )
     elif method and not hasattr(est, method):
         pytest.skip(f"sklearn available_if prevents testing {estimator}.{method}")
-    elif dataframe == "array_api" and estimator == "PCA" and "score" in method:
-        pytest.skip(
-            f"PCA.{method} has sklearn array_api support which breaks with array_api_dispatching"
-        )
     elif (
         dataframe == "array_api"
         and not sklearn_check_version("1.3")

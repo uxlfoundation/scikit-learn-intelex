@@ -357,22 +357,26 @@ if daal_check_version((2024, "P", 100)):
             # self._onedal_estimator, and clear any previous fit models
             # Follow guidance from sklearn PCA._fit_full and copy the data
             self.n_components_ = n_components
-            self.components_ = xp.asarray(
-                self._onedal_estimator.components_[:n_components, ...], copy=True
+            self.components_ = xp.reshape(
+                self._onedal_estimator.components_[:n_components, ...],
+                shape=(n_components, -1),
+                copy=True,
             )
-            self.explained_variance_ = xp.asarray(
-                self._onedal_estimator.explained_variance_[:n_components], copy=True
+            self.explained_variance_ = xp.reshape(
+                self._onedal_estimator.explained_variance_[:n_components],
+                shape=(-1,),
+                copy=True,
             )
 
             # set private mean, as it doesn't need to feed back on the onedal_estimator
-            self._mean_ = self._onedal_estimator.mean_
+            self._mean_ = xp.reshape(self._onedal_estimator.mean_, shape=(-1,), copy=True)
 
             # set other fit attributes, first by modifying the onedal_estimator
-            self._onedal_estimator.singular_values_ = xp.asarray(
-                self._onedal_estimator.singular_values_[:n_components], copy=True
+            self._onedal_estimator.singular_values_ = (
+                self._onedal_estimator.singular_values_[:n_components]
             )
-            self._onedal_estimator.explained_variance_ratio_ = xp.asarray(
-                self._onedal_estimator.explained_variance_ratio_[:n_components], copy=True
+            self._onedal_estimator.explained_variance_ratio_ = (
+                self._onedal_estimator.explained_variance_ratio_[:n_components]
             )
 
             self.singular_values_ = self._onedal_estimator.singular_values_
@@ -382,6 +386,16 @@ if daal_check_version((2024, "P", 100)):
 
             # return X for use in fit_transform, as it is validated and ready
             return X
+
+        if not sklearn_check_version("1.2"):
+
+            @property
+            def n_features_(self):
+                return self.n_features_in_
+
+            @n_features_.setter
+            def n_features(self, value):
+                self.n_features_in_ = value
 
         @wrap_output_data
         def transform(self, X):
@@ -463,8 +477,7 @@ if daal_check_version((2024, "P", 100)):
         def n_components_(self, value):
             if hasattr(self, "_onedal_estimator"):
                 self._onedal_estimator.n_components_ = value
-                if hasattr(self._onedal_estimator, "_onedal_model"):
-                    del self._onedal_estimator._onedal_model
+                self._onedal_estimator._onedal_model = None
             self._n_components_ = value
 
         @n_components_.deleter
@@ -479,8 +492,7 @@ if daal_check_version((2024, "P", 100)):
         def components_(self, value):
             if hasattr(self, "_onedal_estimator"):
                 self._onedal_estimator.components_ = value
-                if hasattr(self._onedal_estimator, "_onedal_model"):
-                    del self._onedal_estimator._onedal_model
+                self._onedal_estimator._onedal_model = None
             self._components_ = value
 
         @components_.deleter
@@ -495,8 +507,7 @@ if daal_check_version((2024, "P", 100)):
         def mean_(self, value):
             if hasattr(self, "_onedal_estimator"):
                 self._onedal_estimator.mean_ = value
-                if hasattr(self._onedal_estimator, "_onedal_model"):
-                    del self._onedal_estimator._onedal_model
+                self._onedal_estimator._onedal_model = None
             self._mean_ = value
 
         @mean_.deleter
@@ -511,27 +522,12 @@ if daal_check_version((2024, "P", 100)):
         def explained_variance_(self, value):
             if hasattr(self, "_onedal_estimator"):
                 self._onedal_estimator.explained_variance_ = value
-                if hasattr(self._onedal_estimator, "_onedal_model"):
-                    del self._onedal_estimator._onedal_model
+                self._onedal_estimator._onedal_model = None
             self._explained_variance_ = value
 
         @explained_variance_.deleter
         def explained_variance_(self):
             del self._explained_variance_
-
-        if not sklearn_check_version("1.2"):
-
-            @property
-            def n_features_(self):
-                return self.n_features_in_
-
-            @n_features_.setter
-            def n_features_(self, value):
-                self.n_features_in_ = value
-
-            @n_features_.deleter
-            def n_features_(self):
-                del self.n_features_in_
 
         fit.__doc__ = _sklearn_PCA.fit.__doc__
         transform.__doc__ = _sklearn_PCA.transform.__doc__

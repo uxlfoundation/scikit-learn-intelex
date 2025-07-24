@@ -312,8 +312,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
     def n_components_(self, value):
         if hasattr(self, "_onedal_estimator"):
             self._onedal_estimator.n_components_ = value
-            if hasattr(self._onedal_estimator, "_onedal_model"):
-                del self._onedal_estimator._onedal_model
+            self._onedal_estimator._onedal_model = None
         self._n_components_ = value
 
     @n_components_.deleter
@@ -330,8 +329,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
     def components_(self, value):
         if hasattr(self, "_onedal_estimator"):
             self._onedal_estimator.components_ = value
-            if hasattr(self._onedal_estimator, "_onedal_model"):
-                del self._onedal_estimator._onedal_model
+            self._onedal_estimator._onedal_model = None
         self._components_ = value
 
     @components_.deleter
@@ -348,8 +346,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
     def means_(self, value):
         if hasattr(self, "_onedal_estimator"):
             self._onedal_estimator.mean_ = value
-            if hasattr(self._onedal_estimator, "_onedal_model"):
-                del self._onedal_estimator._onedal_model
+            self._onedal_estimator._onedal_model = None
         self._mean_ = value
 
     @mean_.deleter
@@ -366,8 +363,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
     def explained_variance_(self, value):
         if hasattr(self, "_onedal_estimator"):
             self._onedal_estimator.explained_variance_ = value
-            if hasattr(self._onedal_estimator, "_onedal_model"):
-                del self._onedal_estimator._onedal_model
+            self._onedal_estimator._onedal_model = None
         self._explained_variance_ = value
 
     @explained_variance_.deleter

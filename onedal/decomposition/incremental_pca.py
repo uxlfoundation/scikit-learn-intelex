@@ -108,6 +108,7 @@ class IncrementalPCA(PCA):
     def partial_train_result(self): ...
 
     def _reset(self):
+        self._onedal_model = None
         self._need_to_finalize = False
         self._queue = None
         self._outtype = None
@@ -170,6 +171,8 @@ class IncrementalPCA(PCA):
         self._partial_result = self.partial_train(
             self._params, self._partial_result, X_table
         )
+        if self._onedal_model is not None:
+            self._onedal_model = None
         self._need_to_finalize = True
         return self
 

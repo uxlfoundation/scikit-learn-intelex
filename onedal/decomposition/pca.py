@@ -41,6 +41,7 @@ class PCA(metaclass=ABCMeta):
         self.method = method
         self.is_deterministic = is_deterministic
         self.whiten = whiten
+        self._onedal_model = None
 
     # provides direct access to the backend model constructor
     @bind_default_backend("decomposition.dim_reduction")
@@ -67,14 +68,14 @@ class PCA(metaclass=ABCMeta):
         m.means = to_table(self.mean_, queue=queue)
         if self.whiten:
             m.eigenvalues = to_table(self.explained_variance_, queue=queue)
-        self._onedal_model = m
+        return m
 
     @supports_queue
     def predict(self, X, queue=None):
         X_table = to_table(X, queue=queue)
         params = self._get_onedal_params(X_table)
-        if not hasattr(self, "_onedal_model"):
-            self._create_model(queue)
+        if self._onedal_model is None:
+            self._onedal_model = self._create_model(queue)
         result = self.infer(params, self._onedal_model, X_table)
         return from_table(result.transformed_data, like=X)
 
@@ -116,5 +117,8 @@ class PCA(metaclass=ABCMeta):
         self.singular_values_ = sing_vals_[0, ...]
         self.explained_variance_ = eigenvalues_[0, ...]
         self.explained_variance_ratio_ = var_ratio[0, ...]
+
+        if self._onedal_model is not None:
+            self._onedal_model = None
 
         return self
