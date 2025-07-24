@@ -144,9 +144,7 @@ def validate_data(
         yp, _ = get_namespace(outy)
 
         # avoid using ``kwargs.get("dtype")`` as it will always set up the default
-        dtype = (
-            kwargs["dtype"] if "dtype" in kwargs else (yp.float64, yp.float32, yp.int32)
-        )
+        dtype = kwargs.get("dtype", (yp.float64, yp.float32, yp.int32))
         if not isinstance(dtype, Sequence):
             dtype = tuple(dtype)
 
