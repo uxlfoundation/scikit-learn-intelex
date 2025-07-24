@@ -367,22 +367,20 @@ if daal_check_version((2024, "P", 100)):
                 shape=(-1,),
                 copy=True,
             )
-
-            # set private mean, as it doesn't need to feed back on the onedal_estimator
-            self._mean_ = xp.reshape(self._onedal_estimator.mean_, shape=(-1,), copy=True)
+            self.mean_ = xp.reshape(self._onedal_estimator.mean_, shape=(-1,), copy=True)
 
             # set other fit attributes, first by modifying the onedal_estimator
-            self._onedal_estimator.singular_values_ = (
+            self._onedal_estimator.singular_values_ = xp.reshape(
                 self._onedal_estimator.singular_values_[:n_components]
-            )
-            self._onedal_estimator.explained_variance_ratio_ = (
+            , shape=(-1,), copy=True)
+            self._onedal_estimator.explained_variance_ratio_ = xp.reshape(
                 self._onedal_estimator.explained_variance_ratio_[:n_components]
-            )
+            , shape=(-1,), copy=True)
 
             self.singular_values_ = self._onedal_estimator.singular_values_
-            self.explained_variance_ratio_ = (
+            self.explained_variance_ratio_ = xp.reshape(
                 self._onedal_estimator.explained_variance_ratio_
-            )
+            , shape=(-1,), copy=True)
 
             # return X for use in fit_transform, as it is validated and ready
             return X
