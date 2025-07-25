@@ -26,7 +26,7 @@ steps:
       pip install cpufeature
       pip install -r dependencies-dev
       pip list
-      if not defined DALROOT conda install -q -y -c conda-forge dal-devel
+      if not defined DALROOT conda install -q -y -c conda-forge "dal-devel>=2025.6.1"
     displayName: 'Install develop requirements'
     env:
       DALROOT: ${{ variables.DALROOT }}
