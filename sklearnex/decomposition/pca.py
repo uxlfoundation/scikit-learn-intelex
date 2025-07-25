@@ -367,41 +367,31 @@ if daal_check_version((2024, "P", 100)):
             # set attributes necessary for calls to transform, will modify
             # self._onedal_estimator, and clear any previous fit models
             # Follow guidance from sklearn PCA._fit_full and copy the data
-            # however, due to limitations in the array API standard and
-            # the implementation of numpy, must use ``astype`` to expose a
-            # common way to force a copy (also limited by sklearn 1.0)
             self.n_components_ = n_components
             self.noise_variance_ = self._compute_noise_variance(
                 min(self.n_samples_, self.n_features_in_), xp
             )
 
-            self.components_ = xp.astype(
-                self._onedal_estimator.components_[:n_components, ...],
-                self._onedal_estimator.components_.dtype,
-                copy=True,
-            )
-            self.explained_variance_ = xp.astype(
-                self._onedal_estimator.explained_variance_[:n_components],
-                self._onedal_estimator.explained_variance_.dtype,
-                copy=True,
-            )
-            self.mean_ = xp.astype(
-                self._onedal_estimator.mean_,
-                self._onedal_estimator.mean_.dtype,
-                copy=True,
-            )
+            # This is necessary as get_namespace may return a bare numpy,
+            # which ``asarray`` may not contain the copy keyword argument.
+            if xp is np:
+                copy = np.copy
+            else:
+                copy = lambda x: xp.asarray(x, copy=True)
+
+
+            self.components_ = copy(self._onedal_estimator.components_[:n_components, ...])
+
+            self.explained_variance_ = xp.maximum(
+                self._onedal_estimator.explained_variance_[:n_components], 0)
+            self.mean_ = copy(
+                self._onedal_estimator.mean_)
 
             # set other fit attributes, first by modifying the onedal_estimator
-            self._onedal_estimator.singular_values_ = xp.astype(
-                self._onedal_estimator.singular_values_[:n_components],
-                self._onedal_estimator.singular_values_.dtype,
-                copy=True,
-            )
-            self._onedal_estimator.explained_variance_ratio_ = xp.astype(
-                self._onedal_estimator.explained_variance_ratio_[:n_components],
-                self._onedal_estimator.explained_variance_ratio_.dtype,
-                copy=True,
-            )
+            self._onedal_estimator.singular_values_ = copy(
+                self._onedal_estimator.singular_values_[:n_components])
+            self._onedal_estimator.explained_variance_ratio_ = copy(
+                self._onedal_estimator.explained_variance_ratio_[:n_components])
 
             self.singular_values_ = self._onedal_estimator.singular_values_
             self.explained_variance_ratio_ = (
