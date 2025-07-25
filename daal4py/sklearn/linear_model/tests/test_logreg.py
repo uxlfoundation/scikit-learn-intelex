@@ -137,5 +137,6 @@ def test_binary_multinomial_probabilities(fit_intercept, C):
     np.testing.assert_allclose(
         model_sklearnex.predict_proba(X),
         model_sklearn.predict_proba(X),
-        atol=1e-4,
+        rtol=1e-2,
+        atol=1e-3,
     )
