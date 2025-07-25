@@ -416,8 +416,10 @@ if daal_check_version((2024, "P", 100)):
                 return self.n_features_in_
 
             @n_features_.setter
-            def n_features(self, value):
+            def n_features_(self, value):
                 self.n_features_in_ = value
+
+            # no deleter defined as n_features_in_ will control it.
 
         @wrap_output_data
         def transform(self, X):
