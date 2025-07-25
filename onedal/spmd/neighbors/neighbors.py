@@ -18,6 +18,7 @@ from ..._device_offload import support_input_format, supports_queue
 from ...common._backend import bind_spmd_backend
 from ...neighbors import KNeighborsClassifier as KNeighborsClassifier_Batch
 from ...neighbors import KNeighborsRegressor as KNeighborsRegressor_Batch
+from ...neighbors import NearestNeighbors as NearestNeighbors_Batch
 
 
 class KNeighborsClassifier(KNeighborsClassifier_Batch):
@@ -84,3 +85,20 @@ class KNeighborsRegressor(KNeighborsRegressor_Batch):
         if "responses" not in params["result_option"]:
             params["result_option"] += "|responses"
         return params
+
+
+class NearestNeighbors(NearestNeighbors_Batch):
+
+    @bind_spmd_backend("neighbors.search")
+    def train(self, *args, **kwargs): ...
+
+    @bind_spmd_backend("neighbors.search")
+    def infer(self, *args, **kwargs): ...
+
+    @support_input_format
+    def fit(self, X, y=None, queue=None):
+        return super().fit(X, y, queue=queue)
+
+    @support_input_format
+    def kneighbors(self, X=None, n_neighbors=None, return_distance=True, queue=None):
+        return super().kneighbors(X, n_neighbors, return_distance, queue=queue)
