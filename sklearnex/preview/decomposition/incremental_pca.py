@@ -245,7 +245,10 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
             )
         else:
             patching_status.and_conditions(
-                [(hasattr(self, "_onedal_estimator"), "oneDAL model was not trained")]
+                [
+                    (not sp.issparse(X), "Sparse input is not supported"),
+                    (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained"),
+                ]
             )
         return patching_status
 
@@ -264,7 +267,10 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
             )
         else:
             patching_status.and_conditions(
-                [(hasattr(self, "_onedal_estimator"), "oneDAL model was not trained")]
+                [
+                    (not sp.issparse(X), "Sparse input is not supported"),
+                    (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained"),
+                ]
             )
         return patching_status
 

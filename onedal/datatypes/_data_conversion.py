@@ -111,7 +111,9 @@ def return_type_constructor(array):
                 else xp.asarray(backend.from_table(x), device=device)
             )
     elif hasattr(array, "__array_namespace__"):
-        func = array.__array_namespace__().from_dlpack
+        xp = array.__array_namespace__()
+        device = array.device
+        func = lambda inp: xp.from_dlpack(inp, device=device)
     else:
         try:
             func = _compat_convert(array)
