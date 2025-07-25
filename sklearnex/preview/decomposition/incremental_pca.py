@@ -364,7 +364,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         return self._mean_
 
     @mean_.setter
-    def means_(self, value):
+    def mean_(self, value):
         if hasattr(self, "_onedal_estimator"):
             self._onedal_estimator.mean_ = value
             self._onedal_estimator._onedal_model = None
