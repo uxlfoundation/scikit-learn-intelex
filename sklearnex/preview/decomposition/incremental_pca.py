@@ -321,7 +321,8 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
 
     @wrap_output_data
     def fit_transform(self, X, y=None, **fit_params):
-        
+        if sklearn_check_version("1.2"):
+            self._validate_params()
         return dispatch(
             self,
             "fit_transform",
