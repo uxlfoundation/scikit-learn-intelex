@@ -389,7 +389,7 @@ if daal_check_version((2024, "P", 100)):
             # oneDAL PCA eigenvalues are not guaranteed to be >=0 and must be clipped.
             # This is likely due to accumulated numerical error in the oneDAL calculation.
             self.explained_variance_ = xp.clip(
-                self._onedal_estimator.explained_variance_[:n_components], 0.0
+                self._onedal_estimator.explained_variance_[:n_components], 0.0, None
             )
             self.mean_ = copy(self._onedal_estimator.mean_)
 

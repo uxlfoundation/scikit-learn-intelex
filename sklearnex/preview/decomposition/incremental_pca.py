@@ -183,7 +183,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         # oneDAL PCA eigenvalues are not guaranteed to be >=0 and must be clipped.
         # This is likely due to accumulated numerical error in the oneDAL calculation.
         self._explained_variance_ = xp.clip(
-            self._onedal_estimator.explained_variance_, 0.0
+            self._onedal_estimator.explained_variance_, 0.0, None
         )
 
         # set other attributes
