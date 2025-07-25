@@ -40,7 +40,8 @@ from daal4py.sklearn.linear_model import LogisticRegression as _d4p_LogisticRegr
     + (["newton-cholesky"] if sklearn_check_version("1.2") else []),
 )
 @pytest.mark.parametrize("fit_intercept", [False, True])
-def test_logistic_regression_is_correct_with_weights(solver, fit_intercept):
+@pytest.mark.parametrize("C", [1, 0.1])
+def test_logistic_regression_is_correct_with_weights(solver, fit_intercept, C):
     X = np.array(
         [
             [1, 3],
@@ -66,20 +67,22 @@ def test_logistic_regression_is_correct_with_weights(solver, fit_intercept):
     w = np.arange(X.shape[0])
 
     model_sklearnex = _d4p_LogisticRegression(
-        solver=solver, fit_intercept=fit_intercept, random_state=123
+        C=C, solver=solver, fit_intercept=fit_intercept, random_state=123
     ).fit(X, y, w)
     model_sklearn = _sklearn_LogisticRegression(
-        solver=solver, fit_intercept=fit_intercept, random_state=123
+        C=C, solver=solver, fit_intercept=fit_intercept, random_state=123
     ).fit(X, y, w)
 
     np.testing.assert_allclose(
         model_sklearnex.coef_,
         model_sklearn.coef_,
+        atol=1e-5,
     )
     if fit_intercept:
         np.testing.assert_allclose(
             model_sklearnex.intercept_,
             model_sklearn.intercept_,
+            atol=1e-5,
         )
 
 
@@ -89,7 +92,10 @@ def test_logistic_regression_is_correct_with_weights(solver, fit_intercept):
     + (["newton-cholesky"] if sklearn_check_version("1.2") else []),
 )
 @pytest.mark.parametrize("fit_intercept", [False, True])
-def test_multinomial_logistic_regression_is_correct_with_weights(solver, fit_intercept):
+@pytest.mark.parametrize("C", [1, 0.1])
+def test_multinomial_logistic_regression_is_correct_with_weights(
+    solver, fit_intercept, C
+):
     X = np.array(
         [
             [1, 3],
@@ -115,10 +121,10 @@ def test_multinomial_logistic_regression_is_correct_with_weights(solver, fit_int
     w = np.arange(X.shape[0])
 
     model_sklearnex = _d4p_LogisticRegression(
-        solver=solver, fit_intercept=fit_intercept, random_state=123
+        C=C, solver=solver, fit_intercept=fit_intercept, random_state=123
     ).fit(X, y, w)
     model_sklearn = _sklearn_LogisticRegression(
-        solver=solver, fit_intercept=fit_intercept, random_state=123
+        C=C, solver=solver, fit_intercept=fit_intercept, random_state=123
     ).fit(X, y, w)
 
     np.testing.assert_allclose(

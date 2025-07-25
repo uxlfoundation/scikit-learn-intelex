@@ -617,7 +617,7 @@ def __logistic_regression_path(
                     extra_args = (X, target, sample_weight, l2_reg_strength, n_threads)
                 else:
                     if not _dal_ready:
-                        extra_args = (X, target, C, sample_weight)
+                        extra_args = (X, target, 1.0 / C, sample_weight)
                     else:
                         extra_args = (X, target, 1.0 / (C * sw_sum), sample_weight)
 
@@ -688,7 +688,7 @@ def __logistic_regression_path(
                     args = (X, target, sample_weight, l2_reg_strength, n_threads)
                 else:
                     if not _dal_ready:
-                        args = (X, target, C, sample_weight)
+                        args = (X, target, 1.0 / C, sample_weight)
                     else:
                         args = (X, target, 1.0 / (C * sw_sum), sample_weight)
 
