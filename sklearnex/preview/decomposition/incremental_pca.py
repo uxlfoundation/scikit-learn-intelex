@@ -76,7 +76,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
                 self._n_components_ = min(n_samples, n_features)
             else:
                 self._n_components_ = self.components_.shape[0]
-        elif not n_components <= n_features:
+        elif not 1 <= n_components <= n_features:
             raise ValueError(
                 "n_components=%r invalid for n_features=%d, need "
                 "more rows than columns for IncrementalPCA "
@@ -245,10 +245,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
             )
         else:
             patching_status.and_conditions(
-                [
-                    (not sp.issparse(X), "Sparse input is not supported"),
-                    (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained"),
-                ]
+                [(hasattr(self, "_onedal_estimator"), "oneDAL model was not trained")]
             )
         return patching_status
 
@@ -267,10 +264,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
             )
         else:
             patching_status.and_conditions(
-                [
-                    (not sp.issparse(X), "Sparse input is not supported"),
-                    (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained"),
-                ]
+                [(hasattr(self, "_onedal_estimator"), "oneDAL model was not trained")]
             )
         return patching_status
 
