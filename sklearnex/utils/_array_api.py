@@ -20,6 +20,7 @@ from collections.abc import Callable
 from typing import Union
 
 import numpy as np
+from scipy import sparse as sp
 
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal.utils._array_api import _get_sycl_namespace
@@ -31,6 +32,11 @@ if sklearn_check_version("1.6"):
 
 if sklearn_check_version("1.2"):
     from sklearn.utils._array_api import get_namespace as sklearn_get_namespace
+
+try:
+    from onedal._onedal_py_dpc import table as onedal_table_type
+except ImportError:
+    onedal_table_type = type(None)
 
 
 def get_namespace(*arrays):
@@ -84,7 +90,12 @@ def get_namespace(*arrays):
 
     if sycl_type:
         return xp, is_array_api_compliant
-    elif sklearn_check_version("1.2"):
+
+    for x in arrays:
+        if isinstance(x, (onedal_table_type, sp.spmatrix)):
+            return np, False
+
+    if sklearn_check_version("1.2"):
         return sklearn_get_namespace(*arrays)
     else:
         return np, False

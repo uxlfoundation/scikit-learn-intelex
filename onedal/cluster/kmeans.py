@@ -34,6 +34,8 @@ from sklearn.exceptions import ConvergenceWarning
 from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.utils import check_random_state
 
+from sklearnex.utils._array_api import get_namespace
+
 from .._config import _get_config
 from ..common._mixin import ClusterMixin, TransformerMixin
 from ..datatypes import from_table, to_table
@@ -176,9 +178,15 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         init,
         random_seed,
         is_csr,
-        dtype=np.float32,
+        dtype=None,
         n_centroids=None,
     ):
+
+        xp, _ = get_namespace(X_table)
+
+        if dtype is None:
+            dtype = xp.float32
+
         n_clusters = self.n_clusters if n_centroids is None else n_centroids
 
         if isinstance(init, str) and init == "k-means++":
@@ -208,7 +216,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
                 # oneDAL KMeans only supports Dense Centroids
                 centers = init.toarray()
             else:
-                centers = np.asarray(init)
+                centers = xp.asarray(init)
             assert centers.shape[0] == n_clusters
             assert centers.shape[1] == X_table.column_count
             # KMeans is implemented on both CPU and GPU for Dense and CSR data
@@ -219,10 +227,15 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
 
         return centers_table
 
-    def _init_centroids_sklearn(self, X, init, random_state, dtype=np.float32):
+    def _init_centroids_sklearn(self, X, init, random_state, dtype=None):
         # For oneDAL versions < 2023.2 or callable init,
         # using the scikit-learn implementation
         logging.getLogger("sklearnex").info("Computing KMeansInit with Stock sklearn")
+        xp, _ = get_namespace(X)
+
+        if dtype is None:
+            dtype = xp.float32
+
         n_samples = X.shape[0]
 
         if isinstance(init, str) and init == "k-means++":
@@ -249,7 +262,14 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
 
         return to_table(centers, queue=getattr(QM.get_global_queue(), "_queue", None))
 
-    def _fit_backend(self, X_table, centroids_table, dtype=np.float32, is_csr=False):
+    def _fit_backend(self, X_table, centroids_table, dtype=None, is_csr=False):
+
+        xp, _ = get_namespace(X_table)
+        xp = X_table
+
+        if dtype is None:
+            dtype = xp.float32
+
         params = self._get_onedal_params(is_csr, dtype)
 
         assert X_table.dtype == dtype
@@ -363,14 +383,15 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
 
     @cluster_centers_.setter
     def cluster_centers_(self, cluster_centers):
-        self._cluster_centers_ = np.asarray(cluster_centers)
+        xp, _ = get_namespace(cluster_centers)
+        self._cluster_centers_ = xp.asarray(cluster_centers)
 
         self.n_iter_ = 0
         self.inertia_ = 0
 
         self.model_.centroids = to_table(self._cluster_centers_)
         self.n_features_in_ = self.model_.centroids.column_count
-        self.labels_ = np.arange(self.model_.centroids.row_count)
+        self.labels_ = xp.arange(self.model_.centroids.row_count)
 
         return self
 
