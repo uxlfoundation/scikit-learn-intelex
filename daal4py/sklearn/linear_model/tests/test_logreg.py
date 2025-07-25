@@ -23,7 +23,8 @@ from daal4py.sklearn.linear_model import LogisticRegression as _d4p_LogisticRegr
     ["lbfgs", "newton-cg", "sag", "liblinear"]
     + (["newton-cholesky"] if sklearn_check_version("1.2") else []),
 )
-def test_logistic_regression_is_correct_with_weights(solver):
+@pytest.mark.parametrize("fit_intercept", [False, True])
+def test_logistic_regression_is_correct_with_weights(solver, fit_intercept):
     X = np.array(
         [
             [1, 3],
@@ -48,14 +49,70 @@ def test_logistic_regression_is_correct_with_weights(solver):
     y = np.array([1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2], dtype=int)
     w = np.arange(X.shape[0])
 
-    model_sklearnex = _d4p_LogisticRegression(solver=solver, random_state=123).fit(
-        X, y, w
-    )
-    model_sklearn = _sklearn_LogisticRegression(solver=solver, random_state=123).fit(
-        X, y, w
-    )
+    model_sklearnex = _d4p_LogisticRegression(
+        solver=solver, fit_intercept=fit_intercept, random_state=123
+    ).fit(X, y, w)
+    model_sklearn = _sklearn_LogisticRegression(
+        solver=solver, fit_intercept=fit_intercept, random_state=123
+    ).fit(X, y, w)
 
     np.testing.assert_allclose(
         model_sklearnex.coef_,
         model_sklearn.coef_,
     )
+    if fit_intercept:
+        np.testing.assert_allclose(
+            model_sklearnex.intercept_,
+            model_sklearn.intercept_,
+        )
+
+
+@pytest.mark.parametrize(
+    "solver",
+    ["lbfgs", "newton-cg", "sag", "liblinear"]
+    + (["newton-cholesky"] if sklearn_check_version("1.2") else []),
+)
+@pytest.mark.parametrize("fit_intercept", [False, True])
+def test_multinomial_logistic_regression_is_correct_with_weights(solver, fit_intercept):
+    X = np.array(
+        [
+            [1, 3],
+            [1, 3],
+            [1, 3],
+            [1, 3],
+            [2, 1],
+            [2, 1],
+            [2, 1],
+            [2, 1],
+            [3, 3],
+            [3, 3],
+            [3, 3],
+            [3, 3],
+            [4, 1],
+            [4, 1],
+            [4, 1],
+            [4, 1],
+        ],
+        dtype=np.float64,
+    )
+    y = np.array([1, 1, 1, 1, 2, 2, 2, 2, 1, 3, 3, 1, 2, 2, 2, 2], dtype=int)
+    w = np.arange(X.shape[0])
+
+    model_sklearnex = _d4p_LogisticRegression(
+        solver=solver, fit_intercept=fit_intercept, random_state=123
+    ).fit(X, y, w)
+    model_sklearn = _sklearn_LogisticRegression(
+        solver=solver, fit_intercept=fit_intercept, random_state=123
+    ).fit(X, y, w)
+
+    np.testing.assert_allclose(
+        model_sklearnex.coef_,
+        model_sklearn.coef_,
+        atol=1e-4,
+    )
+    if fit_intercept:
+        np.testing.assert_allclose(
+            model_sklearnex.intercept_,
+            model_sklearn.intercept_,
+            atol=1e-3,
+        )
