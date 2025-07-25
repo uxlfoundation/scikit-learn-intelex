@@ -455,6 +455,8 @@ if daal_check_version((2024, "P", 100)):
 
         @wrap_output_data
         def fit_transform(self, X, y=None):
+            if sklearn_check_version("1.2"):
+                self._validate_params()
             return dispatch(
                 self,
                 "fit_transform",
