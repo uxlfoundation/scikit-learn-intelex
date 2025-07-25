@@ -40,11 +40,6 @@ deselected_tests:
   - neighbors/tests/test_neighbors.py::test_neighbor_classifiers_loocv[auto-nn_model0]
 
   # Array API support
-  # sklearnex functional Array API support doesn't guarantee namespace consistency for the estimator's array attributes.
-  - linear_model/tests/test_ridge.py::test_ridge_array_api_compliance[Ridge(solver='svd')-check_array_api_attributes-array_api_strict-None-None]
-  - linear_model/tests/test_ridge.py::test_ridge_array_api_compliance[Ridge(solver='svd')-check_array_api_input_and_values-array_api_strict-None-None]
-  - linear_model/tests/test_ridge.py::test_ridge_array_api_compliance[Ridge(solver='svd')-check_array_api_input_and_values-array_api_strict-device1-float32]
-  - linear_model/tests/test_ridge.py::test_ridge_array_api_compliance[Ridge(solver='svd')-check_array_api_attributes-array_api_strict-device1-float32]
   # `train_test_split` inconsistency for Array API inputs.
   - model_selection/tests/test_split.py::test_array_api_train_test_split[True-None-array_api_strict-None-None]
   - model_selection/tests/test_split.py::test_array_api_train_test_split[True-stratify1-array_api_strict-None-None]
@@ -252,6 +247,10 @@ deselected_tests:
   # for absolute error in this test) because of different implementations of PCA.
   # The results are also not stable.
   - decomposition/tests/test_incremental_pca.py::test_whitening
+  
+  # The test fails because of changing of 'auto' strategy in PCA to improve performance.
+  # 'randomized' PCA expected, but 'full' is given.
+  - decomposition/tests/test_pca.py::test_pca_svd_solver_auto[data3-10-randomized]
 
   # Scikit-learn logistic regression predict depends from decision_function while d4p is not.
   # Assertion error in check_estimator (PoorScoreLogisticRegression())
@@ -263,7 +262,6 @@ deselected_tests:
   # This test fails because with patch config_context with new options, but the
   # test checks only the exact number of options that are used
   - tests/test_config.py::test_config_context
-
 
   # Accuracy of scikit-learn-intelex and scikit-learn may differ due to different approaches
   - manifold/tests/test_t_sne.py::test_bh_match_exact
