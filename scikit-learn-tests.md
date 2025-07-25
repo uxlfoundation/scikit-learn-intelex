@@ -37,6 +37,11 @@ SELECTED_TESTS=all DESELECTED_TESTS="" python .ci/scripts/run_sklearn_tests.py
 
 _**Note:** If building the extension modules in-place [per the instructions here](https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/INSTALL.md#build-intelr-extension-for-scikit-learn), it requires also setting `$PYTHONPATH` for this script._
 
+Further arguments to pytest can be supplied by passing them as arguments to the `.py` runner - for example
+```shell
+SELECTED_TESTS=all DESELECTED_TESTS="" python .ci/scripts/run_sklearn_tests.py -x
+```
+
 The tests can also be made to run on GPU, either by passing argument `gpu` to `run_sklearn_tests.sh`, or by passing argument `--device <device name>` to  `run_sklearn_tests.py` - example:
 ```shell
 ./.ci/scripts/run_sklearn_tests.sh gpu

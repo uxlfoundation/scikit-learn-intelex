@@ -16,6 +16,7 @@
 
 import math
 import numbers
+from collections.abc import Sequence
 
 import scipy.sparse as sp
 from sklearn.utils.validation import _assert_all_finite as _sklearn_assert_all_finite
@@ -124,7 +125,6 @@ def validate_data(
         # run local finite check
         allow_nan = ensure_all_finite == "allow-nan"
         # the return object from validate_data can be a single
-
         # element (either x or y) or both (as a tuple). An iterator along with
         # check_x and check_y can go through the output properly without
         # stacking layers of if statements to make sure the proper input_name
@@ -134,6 +134,24 @@ def validate_data(
             assert_all_finite(next(arg), allow_nan=allow_nan, input_name="X")
         if check_y:
             assert_all_finite(next(arg), allow_nan=allow_nan, input_name="y")
+
+    if check_y and kwargs.get("y_numeric", False):
+        # validate_data does not do full dtype conversions, as it uses check_X_y
+        # oneDAL can make tables from [int32, float32, float64], requiring
+        # a dtype check and conversion. This will query the array_namespace and
+        # convert y as necessary. This is important especially for regressors.
+        outx, outy = out if check_x else (None, out)
+        yp, _ = get_namespace(outy)
+
+        # avoid using ``kwargs.get("dtype")`` as it will always set up the default
+        dtype = kwargs.get("dtype", (yp.float64, yp.float32, yp.int32))
+        if not isinstance(dtype, Sequence):
+            dtype = tuple(dtype)
+
+        if outy.dtype not in dtype:
+            # use asarray rather than astype because of numpy support
+            outy = yp.asarray(outy, dtype=dtype[0])
+            out = (outx, outy) if check_x else outy
 
     return out
 
