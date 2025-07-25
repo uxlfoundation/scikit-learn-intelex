@@ -276,6 +276,9 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         return patching_status
 
     def partial_fit(self, X, y=None, check_input=True):
+        if sklearn_check_version("1.2") and check_input:
+            self._validate_params()
+
         dispatch(
             self,
             "partial_fit",
@@ -289,6 +292,9 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         return self
 
     def fit(self, X, y=None):
+        if sklearn_check_version("1.2")
+            self._validate_params()
+
         dispatch(
             self,
             "fit",
@@ -315,6 +321,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
 
     @wrap_output_data
     def fit_transform(self, X, y=None, **fit_params):
+        
         return dispatch(
             self,
             "fit_transform",
