@@ -313,6 +313,7 @@ Classification
        - ``penalty`` != `'l2'`
        - ``dual`` = `True`
        - ``intercept_scaling`` != `1`
+       - ``multi_class`` = `'multinomial'`
        - ``warm_start`` = `True`
        - ``l1_ratio`` != 0 and ``l1_ratio`` != ``None``
        - Only binary classification is supported
