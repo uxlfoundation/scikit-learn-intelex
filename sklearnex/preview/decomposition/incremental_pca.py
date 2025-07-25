@@ -292,7 +292,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         return self
 
     def fit(self, X, y=None):
-        if sklearn_check_version("1.2")
+        if sklearn_check_version("1.2"):
             self._validate_params()
 
         dispatch(
