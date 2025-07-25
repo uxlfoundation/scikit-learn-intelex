@@ -204,7 +204,7 @@ if daal_check_version((2024, "P", 100)):
                     "min(n_samples, n_features)=%r with "
                     "svd_solver='full'" % (self.n_components, min(n_samples, n_features))
                 )
-            elif not sklearn_check_version("1.2") and n_components >= 1:
+            elif not sklearn_check_version("1.2") and self.n_components >= 1:
                 if not isinstance(self.n_components, Integral):
                     raise ValueError(
                         "n_components=%r must be of type int "
