@@ -88,9 +88,9 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
             raise ValueError(
                 "n_components=%r must be less or equal to "
                 "the batch number of samples "
-                "%d." % (self.n_components, n_samples)
+                "%d" % (self.n_components, n_samples)
                 + (
-                    "for the first partial_fit call."
+                    " for the first partial_fit call."
                     if sklearn_check_version("1.6")
                     else ""
                 )
