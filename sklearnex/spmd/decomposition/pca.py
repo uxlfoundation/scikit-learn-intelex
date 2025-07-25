@@ -20,4 +20,4 @@ from ..decomposition import PCA as base_PCA
 
 
 class PCA(base_PCA):
-    _onedal_pca = staticmethod(onedal_PCA)
+    _onedal_PCA = staticmethod(onedal_PCA)
