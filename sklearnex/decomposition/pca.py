@@ -46,6 +46,7 @@ if daal_check_version((2024, "P", 100)):
 
     from sklearn.decomposition import PCA as _sklearn_PCA
 
+    from onedal._device_offload import _transfer_to_host
     from onedal.decomposition import PCA as onedal_PCA
     from onedal.utils._array_api import _is_numpy_namespace
     from onedal.utils.validation import _num_features, _num_samples
@@ -220,9 +221,12 @@ if daal_check_version((2024, "P", 100)):
                     self._onedal_estimator.explained_variance_, self.n_samples_
                 )
             else:
-                ratio_cumsum = stable_cumsum(
-                    self._onedal_estimator.explained_variance_ratio_
-                )
+                ratio = self._onedal_estimator.explained_variance_ratio_
+                if not isinstance(ratio, np.ndarray):
+                    # this is suboptimal, but the implementation in sklearn is not much
+                    # better/ does the same thing.
+                    _, (ratio,) = _transfer_to_host(ratio)
+                ratio_cumsum = stable_cumsum(ratio)
                 return np.searchsorted(ratio_cumsum, self.n_components, side="right") + 1
 
         def _compute_noise_variance(self, n_sf_min, xp):

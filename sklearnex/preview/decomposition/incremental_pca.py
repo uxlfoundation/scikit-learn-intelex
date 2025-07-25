@@ -68,7 +68,7 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
 
     _onedal_incremental_pca = staticmethod(onedal_IncrementalPCA)
 
-    def _set_n_components(self, n_components, n_samples, n_features):
+    def _set_n_components(self, n_components, n_samples, n_features, first_pass):
         # extracted from sklearn's ``IncrementalPCA.partial_fit``. This is a
         # maintenance burden that cannot be easily separated from sklearn.
         if n_components is None:
@@ -151,7 +151,8 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
             X = validate_data(self, X, dtype=[xp.float64, xp.float32], reset=first_pass)
 
         n_samples, n_features = X.shape
-        self._set_n_components(self.n_components, n_samples, n_features)
+
+        self._set_n_components(self.n_components, n_samples, n_features, first_pass)
 
         if not hasattr(self, "n_samples_seen_"):
             self.n_samples_seen_ = n_samples
