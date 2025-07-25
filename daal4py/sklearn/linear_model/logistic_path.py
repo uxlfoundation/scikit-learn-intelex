@@ -616,7 +616,10 @@ def __logistic_regression_path(
                     l2_reg_strength = 1.0 / (C * sw_sum)
                     extra_args = (X, target, sample_weight, l2_reg_strength, n_threads)
                 else:
-                    extra_args = (X, target, 1.0 / (C * sw_sum), sample_weight)
+                    if not _dal_ready:
+                        extra_args = (X, target, 1.0 / C, sample_weight)
+                    else:
+                        extra_args = (X, target, 1.0 / (C * sw_sum), sample_weight)
 
             iprint = [-1, 50, 1, 100, 101][
                 np.searchsorted(np.array([0, 1, 2, 3]), verbose)
@@ -684,7 +687,10 @@ def __logistic_regression_path(
                     l2_reg_strength = 1.0 / (C * sw_sum)
                     args = (X, target, sample_weight, l2_reg_strength, n_threads)
                 else:
-                    args = (X, target, 1.0 / (C * sw_sum), sample_weight)
+                    if not _dal_ready:
+                        args = (X, target, 1.0 / C, sample_weight)
+                    else:
+                        args = (X, target, 1.0 / (C * sw_sum), sample_weight)
 
                 w0, n_iter_i = _newton_cg(
                     hess, func, grad, w0, args=args, maxiter=max_iter, tol=tol
@@ -842,6 +848,10 @@ def daal4py_predict(self, X, resultsToEvaluate):
                     )
                     != "ovr",
                     f"selected multiclass option is not supported for n_classes > 2.",
+                ),
+                (
+                    not (self.classes_.size == 2 and self.multi_class == "multinomial"),
+                    "multi_class='multinomial' not supported with binary data",
                 ),
             ],
         )
