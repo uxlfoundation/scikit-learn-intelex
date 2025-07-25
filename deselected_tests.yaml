@@ -247,7 +247,7 @@ deselected_tests:
   # for absolute error in this test) because of different implementations of PCA.
   # The results are also not stable.
   - decomposition/tests/test_incremental_pca.py::test_whitening
-  
+
   # The test fails because of changing of 'auto' strategy in PCA to improve performance.
   # 'randomized' PCA expected, but 'full' is given.
   - decomposition/tests/test_pca.py::test_pca_svd_solver_auto[data3-10-randomized]
