@@ -189,26 +189,27 @@ if daal_check_version((2024, "P", 100)):
         _onedal_cpu_supported = _onedal_supported
         _onedal_gpu_supported = _onedal_supported
 
-        def _validate_n_components(self, n_components, n_samples, n_features):
+        def _validate_n_components(self, X):
             # This reproduces the initial n_components validation in PCA._fit_full
             # Also a maintenance burden, but is isolated for compartmentalization
-            if n_components == "mle":
+            n_samples, n_features = X.shape
+            if self.n_components == "mle":
                 if n_samples < n_features:
                     raise ValueError(
                         "n_components='mle' is only supported if n_samples >= n_features"
                     )
-            elif not 0 <= n_components <= min(n_samples, n_features):
+            elif not 0 <= self.n_components <= min(n_samples, n_features):
                 raise ValueError(
                     "n_components=%r must be between 0 and "
                     "min(n_samples, n_features)=%r with "
                     "svd_solver='full'" % (n_components, min(n_samples, n_features))
                 )
             elif not sklearn_check_version("1.2") and n_components >= 1:
-                if not isinstance(n_components, Integral):
+                if not isinstance(self.n_components, Integral):
                     raise ValueError(
                         "n_components=%r must be of type int "
                         "when greater than or equal to 1, "
-                        "was of type=%r" % (n_components, type(n_components))
+                        "was of type=%r" % (self.n_components, type(self.n_components))
                     )
 
         def _postprocess_n_components(self):
@@ -325,6 +326,9 @@ if daal_check_version((2024, "P", 100)):
                 copy=self.copy,
             )
 
+            if self.n_components is not None:
+                self._validate_n_components(X)
+
             if (
                 sklearn_check_version("1.5")
                 and self._fit_svd_solver == "full"
@@ -379,20 +383,23 @@ if daal_check_version((2024, "P", 100)):
             else:
                 copy = lambda x: xp.asarray(x, copy=True)
 
-
-            self.components_ = copy(self._onedal_estimator.components_[:n_components, ...])
+            self.components_ = copy(
+                self._onedal_estimator.components_[:n_components, ...]
+            )
             # oneDAL PCA eigenvalues are not guaranteed to be >=0 and must be clipped.
             # This is likely due to accumulated numerical error in the oneDAL calculation.
             self.explained_variance_ = xp.maximum(
-                self._onedal_estimator.explained_variance_[:n_components], 0)
-            self.mean_ = copy(
-                self._onedal_estimator.mean_)
+                self._onedal_estimator.explained_variance_[:n_components], 0
+            )
+            self.mean_ = copy(self._onedal_estimator.mean_)
 
             # set other fit attributes, first by modifying the onedal_estimator
             self._onedal_estimator.singular_values_ = copy(
-                self._onedal_estimator.singular_values_[:n_components])
+                self._onedal_estimator.singular_values_[:n_components]
+            )
             self._onedal_estimator.explained_variance_ratio_ = copy(
-                self._onedal_estimator.explained_variance_ratio_[:n_components])
+                self._onedal_estimator.explained_variance_ratio_[:n_components]
+            )
 
             self.singular_values_ = self._onedal_estimator.singular_values_
             self.explained_variance_ratio_ = (
