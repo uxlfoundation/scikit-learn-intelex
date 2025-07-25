@@ -180,7 +180,11 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         # set attributes needed for transform
         self._mean_ = self._onedal_estimator.mean_
         self._components_ = self._onedal_estimator.components_
-        self._explained_variance_ = self._onedal_estimator.explained_variance_
+        # oneDAL PCA eigenvalues are not guaranteed to be >=0 and must be clipped.
+        # This is likely due to accumulated numerical error in the oneDAL calculation.
+        self._explained_variance_ = xp.maximum(
+            self._onedal_estimator.explained_variance_, 0
+        )
 
         # set other attributes
         self.singular_values_ = self._onedal_estimator.singular_values_
