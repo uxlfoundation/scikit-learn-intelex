@@ -16,7 +16,7 @@
 
 from onedal.spmd.decomposition import PCA as onedal_PCA
 
-from ..decomposition import PCA as base_PCA
+from ...decomposition import PCA as base_PCA
 
 
 class PCA(base_PCA):
