@@ -849,6 +849,10 @@ def daal4py_predict(self, X, resultsToEvaluate):
                     != "ovr",
                     f"selected multiclass option is not supported for n_classes > 2.",
                 ),
+                (
+                    not (self.classes_.size == 2 and self.multi_class == "multinomial"),
+                    "multi_class='multinomial' not supported with binary data",
+                ),
             ],
         )
 
