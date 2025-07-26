@@ -169,7 +169,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
                 dtype=[xp.float64, xp.float32],
                 accept_sparse="csr",
                 reset=False,
-                ensure_all_finite=(self.metric != "nan_euclidean"),
+                ensure_all_finite=False,
             )
             return self._onedal_estimator.predict(X, queue=queue)
         return _sklearn_KNeighborsClassifier.predict(self, X)
