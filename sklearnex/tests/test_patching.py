@@ -174,11 +174,7 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
         # the infrastructure from sklearn that sklearnex depends on is also susceptible
         # to failure. In this case compare to sklearn for the same failure. By design
         # the patching of sklearn should act similarly. Technically this is conformance.
-        if estimator == "PCA" and "score" in method:
-            pytest.skip(
-                f"PCA.{method} has sklearn array_api support which breaks with array_api_dispatching"
-            )
-        elif (
+        if (
             not sklearn_check_version("1.3")
             and estimator == "IncrementalEmpiricalCovariance"
             and method == "score"

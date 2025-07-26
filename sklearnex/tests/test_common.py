@@ -52,7 +52,6 @@ TARGET_OFFLOAD_ALLOWED_LOCATIONS = [
 ]
 
 _DESIGN_RULE_VIOLATIONS = {
-    "PCA-fit_transform-call_validate_data": "calls both 'fit' and 'transform'",
     "IncrementalEmpiricalCovariance-score-call_validate_data": "must call clone of itself",
     "SVC(probability=True)-fit-call_validate_data": "SVC fit can use sklearn estimator",
     "NuSVC(probability=True)-fit-call_validate_data": "NuSVC fit can use sklearn estimator",
