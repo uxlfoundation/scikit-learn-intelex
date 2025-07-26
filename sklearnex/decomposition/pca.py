@@ -335,11 +335,11 @@ if daal_check_version((2024, "P", 100)):
 
             if (
                 sklearn_check_version("1.5")
-                and not get_config()["use_raw_input"]
+                and hasattr(self, "_fit_svd_solver")
                 and self._fit_svd_solver == "full"
                 and self.svd_solver == "auto"
             ):
-                # disabled for `use_raw_input`
+                # disabled for `use_raw_input` by hasattr check
                 self._fit_svd_solver = "covariance_eigh"
                 # warning should only be emitted if to be offloaded to oneDAL
                 warn(
