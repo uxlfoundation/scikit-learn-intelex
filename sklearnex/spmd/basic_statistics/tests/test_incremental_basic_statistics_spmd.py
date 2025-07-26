@@ -90,9 +90,10 @@ def test_incremental_basic_statistics_fit_spmd_gold(dataframe, queue, weighted, 
     )
 
     for option in options_and_tests:
+        attr = option + "_"
         assert_allclose(
-            getattr(incbs_spmd, option),
-            getattr(incbs, option),
+            getattr(incbs_spmd, attr),
+            getattr(incbs, attr),
             err_msg=f"Result for {option} is incorrect",
         )
 
@@ -163,9 +164,10 @@ def test_incremental_basic_statistics_partial_fit_spmd_gold(
     incbs.fit(dpt_data, sample_weight=dpt_weights if weighted else None)
 
     for option in options_and_tests:
+        attr = option + "_"
         assert_allclose(
-            getattr(incbs_spmd, option),
-            getattr(incbs, option),
+            getattr(incbs_spmd, attr),
+            getattr(incbs, attr),
             err_msg=f"Result for {option} is incorrect",
         )
 
@@ -235,8 +237,8 @@ def test_incremental_basic_statistics_single_option_partial_fit_spmd_gold(
         )
 
     incbs.fit(dpt_data, sample_weight=dpt_weights if weighted else None)
-
-    assert_allclose(getattr(incbs_spmd, option), getattr(incbs, option))
+    attr = option + "_"
+    assert_allclose(getattr(incbs_spmd, attr), getattr(incbs, attr))
 
 
 @pytest.mark.skipif(
@@ -303,9 +305,10 @@ def test_incremental_basic_statistics_partial_fit_spmd_synthetic(
         incbs.partial_fit(dpt_data, sample_weight=dpt_weights if weighted else None)
 
     for option in options_and_tests:
+        attr = option + "_"
         assert_allclose(
-            _as_numpy(getattr(incbs_spmd, option)),
-            _as_numpy(getattr(incbs, option)),
+            _as_numpy(getattr(incbs_spmd, attr)),
+            _as_numpy(getattr(incbs, attr)),
             atol=tol,
             err_msg=f"Result for {option} is incorrect",
         )
