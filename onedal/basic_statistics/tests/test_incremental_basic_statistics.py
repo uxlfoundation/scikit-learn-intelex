@@ -49,16 +49,16 @@ def test_multiple_options_on_gold_data(queue, weighted, dtype):
         expected_weighted_mean = np.array([0.25, 0.25])
         expected_weighted_min = np.array([0, 0])
         expected_weighted_max = np.array([0.5, 0.5])
-        assert_allclose(expected_weighted_mean, result.mean)
-        assert_allclose(expected_weighted_max, result.max)
-        assert_allclose(expected_weighted_min, result.min)
+        assert_allclose(expected_weighted_mean, result.mean_)
+        assert_allclose(expected_weighted_max, result.max_)
+        assert_allclose(expected_weighted_min, result.min_)
     else:
         expected_mean = np.array([0.5, 0.5])
         expected_min = np.array([0, 0])
         expected_max = np.array([1, 1])
-        assert_allclose(expected_mean, result.mean)
-        assert_allclose(expected_max, result.max)
-        assert_allclose(expected_min, result.min)
+        assert_allclose(expected_mean, result.mean_)
+        assert_allclose(expected_max, result.max_)
+        assert_allclose(expected_min, result.min_)
 
 
 @pytest.mark.parametrize("queue", get_queues())
@@ -91,7 +91,7 @@ def test_single_option_on_random_data(
             incbs.partial_fit(data_split[i], queue=queue)
     result = incbs.finalize_fit()
 
-    res = getattr(result, result_option)
+    res = getattr(result, result_option + "_")
     if weighted:
         weighted_data = np.diag(weights) @ data
         gtr = function(weighted_data)
@@ -129,7 +129,7 @@ def test_multiple_options_on_random_data(
             incbs.partial_fit(data_split[i], queue=queue)
     result = incbs.finalize_fit()
 
-    res_mean, res_max, res_sum = result.mean, result.max, result.sum
+    res_mean, res_max, res_sum = result.mean_, result.max_, result.sum_
     if weighted:
         weighted_data = np.diag(weights) @ data
         gtr_mean, gtr_max, gtr_sum = (
@@ -183,7 +183,7 @@ def test_all_option_on_random_data(
     for result_option in options_and_tests:
         function, tols = options_and_tests[result_option]
         fp32tol, fp64tol = tols
-        res = getattr(result, result_option)
+        res = getattr(result, result_option + "_")
         if weighted:
             gtr = function(weighted_data)
         else:
@@ -273,7 +273,7 @@ def test_incremental_estimator_pickle(queue, dtype):
     for result_option in options_and_tests:
         _, tols = options_and_tests[result_option]
         fp32tol, fp64tol = tols
-        res = getattr(incbs, result_option)
-        res_loaded = getattr(incbs_loaded, result_option)
+        res = getattr(incbs, result_option + "_")
+        res_loaded = getattr(incbs_loaded, result_option + "_")
         tol = fp32tol if res.dtype == np.float32 else fp64tol
         assert_allclose(res, res_loaded, atol=tol)

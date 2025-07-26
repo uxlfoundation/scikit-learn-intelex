@@ -19,7 +19,6 @@ import pytest
 from numpy.testing import assert_allclose
 from scipy import sparse as sp
 
-from daal4py.sklearn._utils import daal_check_version
 from onedal.basic_statistics import BasicStatistics
 from onedal.basic_statistics.tests.utils import options_and_tests
 from onedal.tests.utils._device_selection import get_queues
@@ -57,7 +56,7 @@ def test_single_option_on_random_data(
 
     result = basicstat.fit(data, sample_weight=weights, queue=queue)
 
-    res = getattr(result, result_option)
+    res = getattr(result, result_option + "_")
     if weighted:
         weighted_data = np.diag(weights) @ data
         gtr = function(weighted_data)
@@ -89,7 +88,7 @@ def test_multiple_options_on_random_data(queue, row_count, column_count, weighte
 
     result = basicstat.fit(data, sample_weight=weights, queue=queue)
 
-    res_mean, res_max, res_sum = result.mean, result.max, result.sum
+    res_mean, res_max, res_sum = result.mean_, result.max_, result.sum_
     if weighted:
         weighted_data = np.diag(weights) @ data
         gtr_mean, gtr_max, gtr_sum = (
@@ -136,7 +135,7 @@ def test_all_option_on_random_data(queue, row_count, column_count, weighted, dty
     for result_option in options_and_tests:
         function, tols = options_and_tests[result_option]
         fp32tol, fp64tol = tols
-        res = getattr(result, result_option)
+        res = getattr(result, result_option + "_")
         if weighted:
             gtr = function(weighted_data)
         else:
@@ -168,7 +167,7 @@ def test_1d_input_on_random_data(queue, result_option, data_size, weighted, dtyp
 
     result = basicstat.fit(data, sample_weight=weights, queue=queue)
 
-    res = getattr(result, result_option)
+    res = getattr(result, result_option + "_")
     if weighted:
         weighted_data = weights * data
         gtr = function(weighted_data)
@@ -199,7 +198,7 @@ def test_basic_csr(queue, dtype):
     basicstat = BasicStatistics(result_options="mean")
     result = basicstat.fit(data, queue=queue)
 
-    res_mean = result.mean
+    res_mean = result.mean_
     gtr_mean = data.mean(axis=0)
     tol = 5e-6 if res_mean.dtype == np.float32 else 1e-9
     assert_allclose(gtr_mean, res_mean, rtol=tol)
@@ -232,7 +231,7 @@ def test_options_csr(queue, option, dtype):
     basicstat = BasicStatistics(result_options=result_option)
     result = basicstat.fit(data, queue=queue)
 
-    res = getattr(result, result_option)
+    res = getattr(result, result_option + "_")
     func = getattr(data, function)
     gtr = func(axis=0)
     if type(gtr).__name__ != "ndarray":
