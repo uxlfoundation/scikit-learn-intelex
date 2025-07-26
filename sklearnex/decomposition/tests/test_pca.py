@@ -24,65 +24,25 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
+from sklearnex.decomposition import PCA
 
 
-# Note: this is arranged as a fixture with a finalizer instead of as a parameter
-# 'True' / 'False' in order to undo the changes later so that it doesn't affect
-# other tests afterwards. It returns a function instead of making the change
-# directly, in order to avoid importing the estimator class before the import test
-# itself, but it still needs to import the class inside the the function that it
-# returns due to serialization logic in pytest causing differences w.r.t. current
-# closure where the function is called.
-@pytest.fixture(params=[False, True])
-def hyperparameters_route(request):
-    def change_parameters(queue, macro_block, grain_size):
-        from sklearnex.decomposition import PCA
+@pytest.fixture
+def hyperparameters(request):
+    hparams = PCA.get_hyperparameters("fit")
 
-        if request.param and daal_check_version((2025, "P", 700)):
-            if queue and queue.sycl_device.is_gpu:
-                pytest.skip("Test for CPU-only functionality")
+    def restore_hyperparameters():
+        if daal_check_version((2025, "P", 700)):
+            PCA.reset_hyperparameters("fit")
 
-            hparams = PCA.get_hyperparameters("fit")
-            if macro_block is not None:
-                hyperparameters_route.curr_cpu_macro_block = hparams.cpu_macro_block
-                hparams.cpu_macro_block = macro_block
-            else:
-                hyperparameters_route.curr_cpu_macro_block = None
-            if grain_size is not None:
-                hyperparameters_route.curr_cpu_grain_size = hparams.cpu_grain_size
-                hparams.cpu_grain_size = grain_size
-            else:
-                hyperparameters_route.curr_cpu_grain_size = None
-        elif request.param and not daal_check_version((2025, "P", 700)):
-            pytest.skip("Functionality introduced in later versions")
-
-    def restore_params():
-        from sklearnex.decomposition import PCA
-
-        if request.param and daal_check_version((2025, "P", 500)):
-            hparams = PCA.get_hyperparameters("fit")
-            if (
-                hasattr(hyperparameters_route, "curr_cpu_macro_block")
-                and hyperparameters_route.curr_cpu_macro_block is not None
-            ):
-                hparams.cpu_macro_block = hyperparameters_route.curr_cpu_macro_block
-            if (
-                hasattr(hyperparameters_route, "curr_cpu_grain_size")
-                and hyperparameters_route.curr_cpu_grain_size is not None
-            ):
-                hparams.cpu_grain_size = hyperparameters_route.curr_cpu_grain_size
-
-    request.addfinalizer(restore_params)
-    return change_parameters
+    request.addfinalizer(restore_hyperparameters)
+    return hparams
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 @pytest.mark.parametrize("macro_block", [None, 2])
 @pytest.mark.parametrize("grain_size", [None, 2])
-def test_sklearnex_import(
-    dataframe, queue, macro_block, grain_size, hyperparameters_route
-):
-    from sklearnex.decomposition import PCA
+def test_sklearnex_import(hyperparameters, dataframe, queue, macro_block, grain_size):
 
     X = [[-1, -1], [-2, -1], [-3, -2], [1, 1], [2, 1], [3, 2]]
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
@@ -95,9 +55,17 @@ def test_sklearnex_import(
         [3.6053038, 0.04224385],
     ]
 
-    pca = PCA(n_components=2, svd_solver="covariance_eigh")
+    if daal_check_version((2025, "P", 700)):
+        if macro_block is not None:
+            if queue and queue.sycl_device.is_gpu:
+                pytest.skip("Test for CPU-only functionality")
+            hyperparameters.cpu_macro_block = macro_block
+        if grain_size is not None:
+            if queue and queue.sycl_device.is_gpu:
+                pytest.skip("Test for CPU-only functionality")
+            hyperparameters.cpu_grain_size = grain_size
 
-    hyperparameters_route(queue, macro_block, grain_size)
+    pca = PCA(n_components=2, svd_solver="covariance_eigh")
 
     pca.fit(X)
     X_transformed = pca.transform(X)
@@ -113,3 +81,30 @@ def test_sklearnex_import(
     assert_allclose([6.30061232, 0.54980396], _as_numpy(pca.singular_values_))
     assert_allclose(X_transformed_expected, _as_numpy(X_transformed), rtol=tol)
     assert_allclose(X_transformed_expected, _as_numpy(X_fit_transformed), rtol=tol)
+
+
+@pytest.mark.skipif(
+    not daal_check_version((2025, "P", 700)),
+    reason="Functionality introduced in a later version",
+)
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+def test_non_batched_covariance(hyperparameters, dataframe, queue):
+    if queue and queue.sycl_device.is_gpu:
+        pytest.skip("Test for CPU-only functionality")
+
+    from sklearnex.decomposition import PCA
+
+    # This generates a random matrix with non-independent columns
+    rng = np.random.default_rng(seed=123)
+    S = rng.standard_normal(size=(6, 5))
+    S = S.T @ S
+    mu = rng.standard_normal(size=5)
+    X = rng.multivariate_normal(mu, S, size=20)
+
+    hyperparameters.cpu_max_cols_batched = np.iinfo(np.int32).max
+    res_batched = PCA().fit(X).components_
+
+    hyperparameters.cpu_max_cols_batched = 1
+    res_non_batched = PCA().fit(X).components_
+
+    np.testing.assert_allclose(res_non_batched, res_batched)

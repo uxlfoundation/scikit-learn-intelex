@@ -14,42 +14,30 @@
 # limitations under the License.
 # ===============================================================================
 
-import numbers
-from abc import ABC
-
 from scipy import sparse as sp
 from sklearn.cluster import DBSCAN as _sklearn_DBSCAN
-from sklearn.utils.validation import _check_sample_weight
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal.cluster import DBSCAN as onedal_DBSCAN
+from onedal.utils._array_api import _is_numpy_namespace
 
 from .._config import get_config
 from .._device_offload import dispatch
 from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
-from ..utils.validation import validate_data
+from ..utils._array_api import enable_array_api, get_namespace
+from ..utils.validation import _check_sample_weight, validate_data
 
 if sklearn_check_version("1.1") and not sklearn_check_version("1.2"):
+    import numbers
+
     from sklearn.utils import check_scalar
 
 
-class BaseDBSCAN(oneDALEstimator):
-    def _onedal_dbscan(self, **onedal_params):
-        return onedal_DBSCAN(**onedal_params)
-
-    def _save_attributes(self):
-        assert hasattr(self, "_onedal_estimator")
-
-        self.labels_ = self._onedal_estimator.labels_
-        self.core_sample_indices_ = self._onedal_estimator.core_sample_indices_
-        self.components_ = self._onedal_estimator.components_
-        self.n_features_in_ = self._onedal_estimator.n_features_in_
-
-
+@enable_array_api
 @control_n_jobs(decorated_methods=["fit"])
-class DBSCAN(BaseDBSCAN, _sklearn_DBSCAN):
+class DBSCAN(oneDALEstimator, _sklearn_DBSCAN):
     __doc__ = _sklearn_DBSCAN.__doc__
 
     if sklearn_check_version("1.2"):
@@ -86,9 +74,18 @@ class DBSCAN(BaseDBSCAN, _sklearn_DBSCAN):
         self.p = p
         self.n_jobs = n_jobs
 
+    _onedal_dbscan = staticmethod(onedal_DBSCAN)
+
     def _onedal_fit(self, X, y, sample_weight=None, queue=None):
-        if get_config()["use_raw_input"] is False:
-            X = validate_data(self, X, ensure_all_finite=False)
+        xp, _ = get_namespace(X, y, sample_weight)
+        if not get_config()["use_raw_input"]:
+            X = validate_data(
+                self, X, accept_sparse="csr", dtype=[xp.float64, xp.float32]
+            )
+            if sample_weight is not None:
+                sample_weight = _check_sample_weight(
+                    sample_weight, X, dtype=[xp.float64, xp.float32]
+                )
 
         onedal_params = {
             "eps": self.eps,
@@ -103,7 +100,17 @@ class DBSCAN(BaseDBSCAN, _sklearn_DBSCAN):
         self._onedal_estimator = self._onedal_dbscan(**onedal_params)
 
         self._onedal_estimator.fit(X, y=y, sample_weight=sample_weight, queue=queue)
-        self._save_attributes()
+        if self._onedal_estimator.core_sample_indices_ is None:
+            kwargs = {"dtype": xp.int32}  # always the same
+            if not _is_numpy_namespace(xp):
+                kwargs["device"] = X.device
+            self.core_sample_indices_ = xp.empty((0,), **kwargs)
+        else:
+            self.core_sample_indices_ = self._onedal_estimator.core_sample_indices_
+
+        self.components_ = xp.take(X, self.core_sample_indices_, axis=0)
+        self.labels_ = self._onedal_estimator.labels_
+        self.n_features_in_ = X.shape[1]
 
     def _onedal_supported(self, method_name, *data):
         class_name = self.__class__.__name__
@@ -111,7 +118,7 @@ class DBSCAN(BaseDBSCAN, _sklearn_DBSCAN):
             f"sklearn.cluster.{class_name}.{method_name}"
         )
         if method_name == "fit":
-            X, y, sample_weight = data
+            X = data[0]
             patching_status.and_conditions(
                 [
                     (
@@ -175,10 +182,6 @@ class DBSCAN(BaseDBSCAN, _sklearn_DBSCAN):
         else:
             if self.eps <= 0.0:
                 raise ValueError(f"eps == {self.eps}, must be > 0.0.")
-
-        use_raw_input = get_config().get("use_raw_input", False) is True
-        if not use_raw_input and sample_weight is not None:
-            sample_weight = _check_sample_weight(sample_weight, X)
         dispatch(
             self,
             "fit",
