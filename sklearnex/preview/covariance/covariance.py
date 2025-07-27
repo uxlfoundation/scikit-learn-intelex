@@ -25,8 +25,7 @@ from sklearn.utils.validation import check_is_fitted
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from daal4py.sklearn.metrics import pairwise_distances
-from onedal._device_offload import support_input_format
-from onedal.common.hyperparameters import get_hyperparameters
+
 from onedal.covariance import EmpiricalCovariance as onedal_EmpiricalCovariance
 from onedal.utils._array_api import _is_numpy_namespace
 from sklearnex import config_context
@@ -43,7 +42,7 @@ _mahalanobis = support_input_format(partial(pairwise_distances, metric="mahalano
 
 
 @enable_array_api
-@register_hyperparameters({"fit": get_hyperparameters("covariance", "compute")})
+@register_hyperparameters({"fit": ("covariance", "compute")})
 @control_n_jobs(decorated_methods=["fit", "mahalanobis"])
 class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
     __doc__ = _sklearn_EmpiricalCovariance.__doc__
