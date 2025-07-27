@@ -32,6 +32,7 @@ if daal_check_version((2024, "P", 100)):
     from daal4py.sklearn._n_jobs_support import control_n_jobs
     from daal4py.sklearn._utils import sklearn_check_version
 
+    from .._config import get_config
     from .._device_offload import dispatch, wrap_output_data
     from .._utils import PatchingConditionsChain, register_hyperparameters
     from ..base import oneDALEstimator
@@ -322,18 +323,15 @@ if daal_check_version((2024, "P", 100)):
 
         def _onedal_fit(self, X, queue=None):
             xp, _ = get_namespace(X)
-            X = validate_data(
-                self,
-                X,
-                dtype=[xp.float64, xp.float32],
-                ensure_2d=True,
-                copy=self.copy,
-            )
+            if not get_config("use_raw_input"):
+                X = validate_data(
+                    self,
+                    X,
+                    dtype=[xp.float64, xp.float32],
+                    ensure_2d=True,
+                    copy=self.copy,
+                )
 
-            if self.n_components is not None:
-                self._validate_n_components(X)
-
-            if hasattr(self, "_fit_svd_solver"):
                 # `use_raw_input` disabled by hasattr check
                 if (
                     sklearn_check_version("1.5")
@@ -349,6 +347,9 @@ if daal_check_version((2024, "P", 100)):
                     )
             else:
                 self._fit_svd_solver = "covariance_eigh"
+
+            if self.n_components is not None:
+                self._validate_n_components(X)
 
             # unless the components are explicitly given as an integer, post-processing
             # will set the components having first trained using the minimum size of the
@@ -443,13 +444,14 @@ if daal_check_version((2024, "P", 100)):
             )
 
         def _onedal_transform(self, X, queue=None):
-            xp, _ = get_namespace(X)
-            X = validate_data(
-                self,
-                X,
-                dtype=[xp.float64, xp.float32],
-                reset=False,
-            )
+            if not get_config("use_raw_input"):
+                xp, _ = get_namespace(X)
+                X = validate_data(
+                    self,
+                    X,
+                    dtype=[xp.float64, xp.float32],
+                    reset=False,
+                )
 
             return self._onedal_estimator.predict(X, queue=queue)
 
