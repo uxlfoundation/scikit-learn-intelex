@@ -323,7 +323,7 @@ if daal_check_version((2024, "P", 100)):
 
         def _onedal_fit(self, X, queue=None):
             xp, _ = get_namespace(X)
-            if not get_config("use_raw_input"):
+            if not get_config()["use_raw_input]:
                 X = validate_data(
                     self,
                     X,
@@ -444,7 +444,7 @@ if daal_check_version((2024, "P", 100)):
             )
 
         def _onedal_transform(self, X, queue=None):
-            if not get_config("use_raw_input"):
+            if not get_config()["use_raw_input"]:
                 xp, _ = get_namespace(X)
                 X = validate_data(
                     self,
