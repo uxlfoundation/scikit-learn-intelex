@@ -333,20 +333,22 @@ if daal_check_version((2024, "P", 100)):
             if self.n_components is not None:
                 self._validate_n_components(X)
 
-            if (
-                sklearn_check_version("1.5")
-                and hasattr(self, "_fit_svd_solver")
-                and self._fit_svd_solver == "full"
-                and self.svd_solver == "auto"
-            ):
-                # disabled for `use_raw_input` by hasattr check
+            if hasattr(self, "_fit_svd_solver"):
+                # `use_raw_input` disabled by hasattr check
+                if (
+                    sklearn_check_version("1.5")
+                    and self._fit_svd_solver == "full"
+                    and self.svd_solver == "auto"
+                ):
+                    self._fit_svd_solver = "covariance_eigh"
+                    # warning should only be emitted if to be offloaded to oneDAL
+                    warn(
+                        "Sklearnex always uses `covariance_eigh` solver instead of `full` "
+                        "when `svd_solver` parameter is set to `auto` "
+                        "for performance purposes."
+                    )
+            else:
                 self._fit_svd_solver = "covariance_eigh"
-                # warning should only be emitted if to be offloaded to oneDAL
-                warn(
-                    "Sklearnex always uses `covariance_eigh` solver instead of `full` "
-                    "when `svd_solver` parameter is set to `auto` "
-                    "for performance purposes."
-                )
 
             # unless the components are explicitly given as an integer, post-processing
             # will set the components having first trained using the minimum size of the
