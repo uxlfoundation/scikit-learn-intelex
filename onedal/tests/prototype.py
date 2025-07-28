@@ -85,7 +85,7 @@ class DummyEstimator:
         # This is the call to the oneDAL pybind11 backend, which was
         # previously bound using ``bind_default_backend``. It returns a
         # pybind11 Python interface to the oneDAL C++ result object.
-        result = self.train(params, X_t, constant)
+        self._onedal_model = self.train(params, X_t, constant)
         # In general the naming conventions of ``fit`` match to ``train``,
         # and ``predict`` match oneDAL's ``infer``. Please refer to the oneDAL
         # design documentation to determine the best translation. Generally the
@@ -101,15 +101,12 @@ class DummyEstimator:
         # onedal estimator object.
 
         self.constant_, self.fit_X_, self.fit_y_ = from_table(
-            result.constant, X_t, y_t, like=X
+            self._onedal_model.constant, X_t, y_t, like=X
         )
         # These attributes are set in order to show the process of setting
         # and returning array values (and is just an example).  In setting
         # return attributes, post processing of the values beyond conversion
         # needed for sklearn must occur in the sklearnex estimator.
-
-        # set the onedal model to None since a new fit has been completed
-        self._onedal_model = None
 
     def _create_model(self):
         # While doing something rather trivial, this is closer to what may
