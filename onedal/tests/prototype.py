@@ -61,7 +61,7 @@ class DummyEstimator:
     def infer(self, params, model, data_table): ...
 
     @bind_default_backend("dummy.model")
-    def model(self):
+    def model(self): ...
 
     @supports_queue
     def fit(self, X, y, queue=None):
@@ -80,7 +80,6 @@ class DummyEstimator:
         params = {
             "fptype": X_t.dtype,
             "method": "dense",
-            "constant": self.constant,
         }
 
         # This is the call to the oneDAL pybind11 backend, which was
@@ -101,8 +100,10 @@ class DummyEstimator:
         # Attributes of the result object are copied to attributes of the
         # onedal estimator object.
 
-        self.constant_, self.fit_X_, self.fit_y_ = from_table(result.constant, X_t, y_t, like=X)
-        # These attributes are set in order to show the process of setting 
+        self.constant_, self.fit_X_, self.fit_y_ = from_table(
+            result.constant, X_t, y_t, like=X
+        )
+        # These attributes are set in order to show the process of setting
         # and returning array values (and is just an example).  In setting
         # return attributes, post processing of the values beyond conversion
         # needed for sklearn must occur in the sklearnex estimator.
