@@ -19,6 +19,7 @@ import pytest
 from numpy.testing import assert_allclose
 
 from onedal.tests.utils._dataframes_support import (
+    _as_numpy,
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
@@ -122,12 +123,12 @@ def test_pca_spmd_synthetic(
     batch_result = PCA_Batch(n_components=n_components, whiten=whiten).fit(data)
 
     tol = 1e-3 if dtype == np.float32 else 1e-7
-    assert_allclose(spmd_result.mean_, batch_result.mean_, atol=tol)
-    assert_allclose(spmd_result.components_, batch_result.components_, atol=tol, rtol=tol)
-    assert_allclose(spmd_result.singular_values_, batch_result.singular_values_, atol=tol)
-    assert_allclose(spmd_result.noise_variance_, batch_result.noise_variance_, atol=tol)
+    assert_allclose(_as_numpy(spmd_result.mean_), _as_numpy(batch_result.mean_), atol=tol)
+    assert_allclose(_as_numpy(spmd_result.components_), _as_numpy(batch_result.components_), atol=tol, rtol=tol)
+    assert_allclose(_as_numpy(spmd_result.singular_values_), _as_numpy(batch_result.singular_values_), atol=tol)
+    assert_allclose(_as_numpy(spmd_result.noise_variance_), _as_numpy(batch_result.noise_variance_), atol=tol)
     assert_allclose(
-        spmd_result.explained_variance_ratio_,
-        batch_result.explained_variance_ratio_,
+        _as_numpy(spmd_result.explained_variance_ratio_),
+        _as_numpy(batch_result.explained_variance_ratio_),
         atol=tol,
     )
