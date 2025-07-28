@@ -127,5 +127,5 @@ class DummyEstimator:
             "fptype": X_t.dtype,
             "method": "dense",
         }
-        res = self.compute(params, self._onedal_model, X_t)
+        res = self.infer(params, self._onedal_model, X_t)
         return from_table(res.output, like=X)
