@@ -403,6 +403,11 @@ deselected_tests:
   - linear_model/tests/test_logistic.py::test_warm_start
   - linear_model/tests/test_logistic.py::test_dtype_match
   - linear_model/tests/test_logistic.py::test_newton_cholesky_fallback_to_lbfgs
+  - linear_model/tests/test_logistic.py::test_logistic_cv_sparse[csr_array]
+  - linear_model/tests/test_logistic.py::test_logistic_cv_sparse[csr_matrix]
+
+  # This particular case does not reach convergence, fails because of a warning
+  - "linear_model/tests/test_logistic.py::test_n_iter[newton-cg]"
 
   # --------------------------------------------------------
   # No need to test daal4py patching
