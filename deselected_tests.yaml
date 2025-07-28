@@ -406,8 +406,13 @@ deselected_tests:
   - linear_model/tests/test_logistic.py::test_logistic_cv_sparse[csr_array]
   - linear_model/tests/test_logistic.py::test_logistic_cv_sparse[csr_matrix]
 
+  # Scikit-learn does not constraint multinomial logistic intercepts to sum to zero.
+  # Softmax function is invariant to additions by a constant, so even though the numbers
+  # might look very off here, the predictions they generate are identical.
+  - linear_model/tests/test_logistic.py::test_logistic_regression_multinomial
+
   # This particular case does not reach convergence, fails because of a warning
-  - "linear_model/tests/test_logistic.py::test_n_iter[newton-cg]"
+  - linear_model/tests/test_logistic.py::test_n_iter[newton-cg]
 
   # --------------------------------------------------------
   # No need to test daal4py patching
