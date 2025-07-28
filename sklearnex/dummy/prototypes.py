@@ -28,7 +28,7 @@ from sklearn.utils.validation import check_is_fitted
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal._device_offload import support_input_format
-from onedal.dummy import DummyEstimator as onedal_DummyEstimator
+from onedal.tests.prototype import DummyEstimator as onedal_DummyEstimator
 
 from .._device_offload import dispatch
 from .._utils import PatchingConditionsChain
@@ -539,9 +539,11 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
 
     # onedal estimators with onedal models which can be modified must have
     # the necessary attributes linked. This way the state of the two
-    # estimators do not diverge, as modifications could impact the model
-    # used in the inference. This not always necessary, as some estimators
-    # generate a model for predict during fit which cannot be modified.
+    # estimators do not diverge as modifications could impact the inference
+    # results. This not always necessary, as some estimators generate a
+    # model for predict during fit which cannot be modified. The easiest
+    # way to check for this is if the oneDAL estimator contains a "model"
+    # method.
 
     @property
     def constant_(self):
