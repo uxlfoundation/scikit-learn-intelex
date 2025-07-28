@@ -18,8 +18,9 @@ from daal4py.sklearn._utils import daal_check_version
 
 from .dbscan import DBSCAN
 from .kmeans import KMeans, k_means
+from .louvain import Louvain
 
-__all__ = ["DBSCAN", "KMeans", "k_means"]
+__all__ = ["DBSCAN", "KMeans", "k_means", "Louvain"]
 
 if daal_check_version((2023, "P", 200)):
     from .kmeans_init import KMeansInit, kmeans_plusplus
