@@ -123,10 +123,22 @@ def test_pca_spmd_synthetic(
     batch_result = PCA_Batch(n_components=n_components, whiten=whiten).fit(data)
 
     tol = 1e-3 if dtype == np.float32 else 1e-7
-    assert_allclose(_as_numpy(spmd_result.mean_), _as_numpy(batch_result.mean_), atol=tol)
-    assert_allclose(_as_numpy(spmd_result.components_), _as_numpy(batch_result.components_), atol=tol, rtol=tol)
-    assert_allclose(_as_numpy(spmd_result.singular_values_), _as_numpy(batch_result.singular_values_), atol=tol)
-    assert_allclose(_as_numpy(spmd_result.noise_variance_), _as_numpy(batch_result.noise_variance_), atol=tol)
+    assert_allclose(
+        _as_numpy(spmd_result.components_),
+        _as_numpy(batch_result.components_),
+        atol=tol,
+        rtol=tol,
+    )
+    assert_allclose(
+        _as_numpy(spmd_result.singular_values_),
+        _as_numpy(batch_result.singular_values_),
+        atol=tol,
+    )
+    assert_allclose(
+        _as_numpy(spmd_result.noise_variance_),
+        _as_numpy(batch_result.noise_variance_),
+        atol=tol,
+    )
     assert_allclose(
         _as_numpy(spmd_result.explained_variance_ratio_),
         _as_numpy(batch_result.explained_variance_ratio_),
