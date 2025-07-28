@@ -46,7 +46,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--json-report-file",
         default=None,
-        action="store_true",
+        type=str,
         help="File path where to output a report of the test outcomes in JSON format",
     )
     parser.add_argument("--deselected_yml_file", action="append", type=str)
