@@ -537,11 +537,11 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
         # the patching_status object should be returned
         return patching_status
 
-    # attributes which are used by the onedal estimator in generating
-    # predictions must be linked. This way the state of the two estimators
-    # do not diverge, as modifications  could impact the model used in the
-    # inference. This not always necessary, as some estimators generate a
-    # model for predict during fit which cannot be modified.
+    # estimators which have onedal models which can be modified must have
+    # the necessary attributes linked. This way the state of the two
+    # estimators do not diverge, as modifications could impact the model
+    # used in the inference. This not always necessary, as some estimators
+    # generate a model for predict during fit which cannot be modified.
 
     @property
     def constant_(self):
