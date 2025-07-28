@@ -67,7 +67,7 @@ class DummyEstimator:
     def fit(self, X, y, queue=None):
         # convert the data to oneDAL tables in preparation for use by the
         # oneDAL pybind11 interfaces/objects.
-        X_t, y_t = to_table(X, y)
+        X_t, y_t, constant = to_table(X, y, self.constant)
 
         # Generating the params dict can be centralized into a class method,
         # but it must be named ``_get_onedal_params``. Parameter 'fptype' is
@@ -85,7 +85,7 @@ class DummyEstimator:
         # This is the call to the oneDAL pybind11 backend, which was
         # previously bound using ``bind_default_backend``. It returns a
         # pybind11 Python interface to the oneDAL C++ result object.
-        result = self.train(params, X_t)
+        result = self.train(params, X_t, constant)
         # In general the naming conventions of ``fit`` match to ``train``,
         # and ``predict`` match oneDAL's ``infer``. Please refer to the oneDAL
         # design documentation to determine the best translation. Generally the
