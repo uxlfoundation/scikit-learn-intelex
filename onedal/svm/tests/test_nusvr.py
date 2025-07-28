@@ -196,7 +196,7 @@ def test_synth_poly_compare_with_sklearn(queue, params):
 def test_pickle(queue):
     diabetes = datasets.load_diabetes()
 
-    clf = NuSVR(kernel="rbf", C=10.0)
+    clf = NuSVR(kernel="linear", C=10.0)
     clf.fit(diabetes.data, diabetes.target, queue=queue)
     expected = clf.predict(diabetes.data, queue=queue)
 

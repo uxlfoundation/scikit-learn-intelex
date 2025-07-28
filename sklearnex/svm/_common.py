@@ -19,22 +19,30 @@ from numbers import Number, Real
 
 import numpy as np
 from scipy import sparse as sp
-from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.base import BaseEstimator, ClassifierMixin, RegressorMixin
 from sklearn.calibration import CalibratedClassifierCV
-from sklearn.metrics import r2_score
+from sklearn.exceptions import NotFittedError
+from sklearn.metrics import accuracy_score, r2_score
 from sklearn.preprocessing import LabelEncoder
+from sklearn.svm._base import BaseLibSVM as _sklearn_BaseLibSVM
+from sklearn.svm._base import BaseSVC as _sklearn_BaseSVC
+from sklearn.utils.validation import check_array, check_is_fitted
 
 from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.utils.validation import get_requires_y_tag
 from onedal.utils.validation import _check_array, _check_X_y, _column_or_1d
 
 from .._config import config_context, get_config
+from .._device_offload import dispatch, wrap_output_data
 from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
+from ..utils._array_api import get_namespace
 from ..utils.validation import validate_data
 
 
 class BaseSVM(oneDALEstimator):
+
+    _onedal_factory = None
 
     @property
     def _dual_coef_(self):
@@ -91,7 +99,7 @@ class BaseSVM(oneDALEstimator):
             return patching_status
         inference_methods = (
             ["predict", "score"]
-            if class_name.endswith("R")
+            if isinstance(self, RegressorMixin)
             else ["predict", "predict_proba", "decision_function", "score"]
         )
         if method_name in inference_methods:
@@ -225,8 +233,168 @@ class BaseSVM(oneDALEstimator):
 
         return sample_weight
 
+    def _onedal_predict(self, X, queue=None, xp=None):
+        if xp is None:
+            xp, _ = get_namespace(X)
+
+        if sklearn_check_version("1.0"):
+            X = validate_data(
+                self,
+                X,
+                dtype=[xp.float64, xp.float32],
+                accept_sparse="csr",
+                reset=False,
+            )
+        else:
+            X = check_array(
+                X,
+                dtype=[xp.float64, xp.float32],
+                accept_sparse="csr",
+            )
+
+        return self._onedal_estimator.predict(X, queue=queue)
+
 
 class BaseSVC(BaseSVM):
+
+    @wrap_output_data
+    def predict(self, X):
+        check_is_fitted(self)
+        return dispatch(
+            self,
+            "predict",
+            {
+                "onedal": self.__class__._onedal_predict,
+                "sklearn": _sklearn_BaseSVC.predict,
+            },
+            X,
+        )
+
+    @wrap_output_data
+    def score(self, X, y, sample_weight=None):
+        check_is_fitted(self)
+        return dispatch(
+            self,
+            "score",
+            {
+                "onedal": self.__class__._onedal_score,
+                "sklearn": _sklearn_BaseSVC.score,
+            },
+            X,
+            y,
+            sample_weight=sample_weight,
+        )
+
+    @wrap_output_data
+    def decision_function(self, X):
+        check_is_fitted(self)
+        return dispatch(
+            self,
+            "decision_function",
+            {
+                "onedal": self.__class__._onedal_decision_function,
+                "sklearn": _sklearn_BaseSVC.decision_function,
+            },
+            X,
+        )
+
+    if sklearn_check_version("1.0"):
+
+        @available_if(_sklearn_BaseSVC._check_proba)
+        def predict_proba(self, X):
+            """
+            Compute probabilities of possible outcomes for samples in X.
+
+            The model need to have probability information computed at training
+            time: fit with attribute `probability` set to True.
+
+            Parameters
+            ----------
+            X : array-like of shape (n_samples, n_features)
+                For kernel="precomputed", the expected shape of X is
+                (n_samples_test, n_samples_train).
+
+            Returns
+            -------
+            T : ndarray of shape (n_samples, n_classes)
+                Returns the probability of the sample for each class in
+                the model. The columns correspond to the classes in sorted
+                order, as they appear in the attribute :term:`classes_`.
+
+            Notes
+            -----
+            The probability model is created using cross validation, so
+            the results can be slightly different than those obtained by
+            predict. Also, it will produce meaningless results on very small
+            datasets.
+            """
+            check_is_fitted(self)
+            return self._predict_proba(X)
+
+        @available_if(_sklearn_BaseSVC._check_proba)
+        def predict_log_proba(self, X):
+            """Compute log probabilities of possible outcomes for samples in X.
+
+            The model need to have probability information computed at training
+            time: fit with attribute `probability` set to True.
+
+            Parameters
+            ----------
+            X : array-like of shape (n_samples, n_features) or \
+                    (n_samples_test, n_samples_train)
+                For kernel="precomputed", the expected shape of X is
+                (n_samples_test, n_samples_train).
+
+            Returns
+            -------
+            T : ndarray of shape (n_samples, n_classes)
+                Returns the log-probabilities of the sample for each class in
+                the model. The columns correspond to the classes in sorted
+                order, as they appear in the attribute :term:`classes_`.
+
+            Notes
+            -----
+            The probability model is created using cross validation, so
+            the results can be slightly different than those obtained by
+            predict. Also, it will produce meaningless results on very small
+            datasets.
+            """
+            xp, _ = get_namespace(X)
+
+            return xp.log(self.predict_proba(X))
+
+    else:
+
+        @property
+        def predict_proba(self):
+            self._check_proba()
+            check_is_fitted(self)
+            return self._predict_proba
+
+        def _predict_log_proba(self, X):
+            xp, _ = get_namespace(X)
+            return xp.log(self.predict_proba(X))
+
+        predict_proba.__doc__ = _sklearn_BaseSVC.predict_proba.__doc__
+
+    @wrap_output_data
+    def _predict_proba(self, X):
+        sklearn_pred_proba = (
+            _sklearn_BaseSVC.predict_proba
+            if sklearn_check_version("1.0")
+            else _sklearn_BaseSVC._predict_proba
+        )
+
+        return dispatch(
+            self,
+            "predict_proba",
+            {
+                "onedal": self.__class__._onedal_predict_proba,
+                "sklearn": sklearn_pred_proba,
+            },
+            X,
+        )
+
     def _compute_balanced_class_weight(self, y):
         y_ = _column_or_1d(y)
         classes, _ = np.unique(y_, return_inverse=True)
@@ -276,7 +444,7 @@ class BaseSVC(BaseSVM):
         self.dual_coef_ = self._onedal_estimator.dual_coef_
         self.shape_fit_ = self._onedal_estimator.class_weight_
         self.classes_ = self._onedal_estimator.classes_
-        if isinstance(self, ClassifierMixin) or not sklearn_check_version("1.2"):
+        if not sklearn_check_version("1.2"):
             self.class_weight_ = self._onedal_estimator.class_weight_
         self.support_ = self._onedal_estimator.support_
 
@@ -298,8 +466,145 @@ class BaseSVC(BaseSVM):
             length = int(len(self.classes_) * (len(self.classes_) - 1) / 2)
             self.n_iter_ = np.full((length,), self._onedal_estimator.n_iter_)
 
+    def _onedal_predict(self, X, queue=None):
+        sv = self.support_vectors_
+        if not self._sparse and sv.size > 0 and self._n_support.sum() != sv.shape[0]:
+            raise ValueError(
+                "The internal representation " f"of {self.__class__.__name__} was altered"
+            )
+
+        xp, _ = get_namespace(X)
+
+        if self.break_ties and self.decision_function_shape == "ovo":
+            raise ValueError(
+                "break_ties must be False when " "decision_function_shape is 'ovo'"
+            )
+
+        if (
+            self.break_ties
+            and self.decision_function_shape == "ovr"
+            and len(self.classes_) > 2
+        ):
+            res = xp.argmax(self._onedal_decision_function(X, queue=queue), axis=1)
+        else:
+            res = super()._onedal_predict(X, queue=queue, xp=xp)
+
+        # the extensive reshaping here comes from the previous implementation, and
+        # should be sorted out, as this is inefficient and likely can be reduced
+        res = xp.asarray(res, dtype=xp.int32)
+        if len(self.classes_) == 2:
+            res = xp.reshape(res, (-1,))
+
+        return xp.reshape(xp.take(xp.asarray(self.classes_), res), (-1,))
+
+    def _onedal_ovr_decision_function(self, predictions, confidences, n_classes):
+        # This function is legacy from the original implementation and needs
+        # to be refactored.
+        xp, _ = get_namespace(predictions)
+        n_samples = predictions.shape[0]
+        votes = xp.zeros((n_samples, n_classes))
+        sum_of_confidences = xp.zeros((n_samples, n_classes))
+
+        k = 0
+        for i in range(n_classes):
+            for j in range(i + 1, n_classes):
+                sum_of_confidences[:, i] -= confidences[:, k]
+                sum_of_confidences[:, j] += confidences[:, k]
+                votes[predictions[:, k] == 0, i] += 1
+                votes[predictions[:, k] == 1, j] += 1
+                k += 1
+
+        transformed_confidences = sum_of_confidences / (
+            3 * (xp.abs(sum_of_confidences) + 1)
+        )
+        return votes + transformed_confidences
+
+    def _onedal_decision_function(self, X, queue=None):
+        sv = self.support_vectors_
+        if not self._sparse and sv.size > 0 and self._n_support.sum() != sv.shape[0]:
+            raise ValueError(
+                "The internal representation " f"of {self.__class__.__name__} was altered"
+            )
+        xp, _ = get_namespace(X)
+        if sklearn_check_version("1.0"):
+            X = validate_data(
+                self,
+                X,
+                dtype=[xp.float64, xp.float32],
+                accept_sparse="csr",
+                reset=False,
+            )
+        else:
+            X = check_array(
+                X,
+                dtype=[xp.float64, xp.float32],
+                accept_sparse="csr",
+            )
+
+        decision_function = self._onedal_estimator.decision_function(X, queue=queue)
+
+        if len(self.classes_) == 2:
+            decision_function = decision_function.ravel()
+        elif len(self.classes_) > 2 and self.decision_function_shape == "ovr":
+            decision_function = self._onedal_ovr_decision_function(
+                decision_function < 0, -decision_function, len(self.classes_)
+            )
+
+        return xp.asarray(decision_function)
+
+    def _onedal_predict_proba(self, X, queue=None):
+        if getattr(self, "clf_prob", None) is None:
+            raise NotFittedError(
+                "predict_proba is not available when fitted with probability=False"
+            )
+        from .._config import config_context, get_config
+
+        # We use stock metaestimators below, so the only way
+        # to pass a queue is using config_context.
+        cfg = get_config()
+        cfg["target_offload"] = queue
+        with config_context(**cfg):
+            return self.clf_prob.predict_proba(X)
+
+    def _onedal_score(self, X, y, sample_weight=None, queue=None):
+        return accuracy_score(
+            y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
+        )
+
+    predict.__doc__ = _sklearn_BaseSVC.predict.__doc__
+    decision_function.__doc__ = _sklearn_BaseSVC.decision_function.__doc__
+    score.__doc__ = _sklearn_BaseSVC.score.__doc__
+
 
 class BaseSVR(BaseSVM):
+    @wrap_output_data
+    def predict(self, X):
+        check_is_fitted(self)
+        return dispatch(
+            self,
+            "predict",
+            {
+                "onedal": self.__class__._onedal_predict,
+                "sklearn": _sklearn_BaseLibSVM.predict,
+            },
+            X,
+        )
+
+    @wrap_output_data
+    def score(self, X, y, sample_weight=None):
+        check_is_fitted(self)
+        return dispatch(
+            self,
+            "score",
+            {
+                "onedal": self.__class__._onedal_score,
+                "sklearn": RegressorMixin.score,
+            },
+            X,
+            y,
+            sample_weight=sample_weight,
+        )
+
     def _save_attributes(self):
         self.support_vectors_ = self._onedal_estimator.support_vectors_
         self.n_features_in_ = self._onedal_estimator.n_features_in_
@@ -320,7 +625,15 @@ class BaseSVR(BaseSVM):
 
         self._dualcoef_ = self.dual_coef_
 
+    def _onedal_predict(self, X, queue=None):
+        xp, _ = get_namespace(X)
+        res = super()._onedal_predict(X, queue)
+        return xp.reshape(res, (-1,))
+
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
         return r2_score(
             y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
         )
+
+    predict.__doc__ = _sklearn_BaseLibSVM.predict.__doc__
+    score.__doc__ = RegressorMixin.score.__doc__

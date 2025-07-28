@@ -206,22 +206,24 @@ def test_synth_poly_compare_with_sklearn(queue, params):
 def test_sided_sample_weight(queue):
     clf = SVR(C=1e-2, kernel="linear")
 
-    X = [[-2, 0], [-1, -1], [0, -2], [0, 2], [1, 1], [2, 0]]
-    Y = [1, 1, 1, 2, 2, 2]
+    X = np.array([[-2, 0], [-1, -1], [0, -2], [0, 2], [1, 1], [2, 0]], dtype=np.float64)
+    Y = np.array([1, 1, 1, 2, 2, 2], dtype=np.float64)
 
-    sample_weight = [10.0, 0.1, 0.1, 0.1, 0.1, 10]
+    X_pred = np.array([[-1.0, 1.0]], dtype=np.float64)
+
+    sample_weight = np.array([10.0, 0.1, 0.1, 0.1, 0.1, 10], dtype=np.float64)
     clf.fit(X, Y, sample_weight=sample_weight, queue=queue)
-    y_pred = clf.predict([[-1.0, 1.0]], queue=queue)
+    y_pred = clf.predict(X_pred, queue=queue)
     assert y_pred < 1.5
 
-    sample_weight = [1.0, 0.1, 10.0, 10.0, 0.1, 0.1]
+    sample_weight = np.array([1.0, 0.1, 10.0, 10.0, 0.1, 0.1], dtype=np.float64)
     clf.fit(X, Y, sample_weight=sample_weight, queue=queue)
-    y_pred = clf.predict([[-1.0, 1.0]], queue=queue)
+    y_pred = clf.predict(X_pred, queue=queue)
     assert y_pred > 1.5
 
-    sample_weight = [1] * 6
+    sample_weight = np.array([1] * 6, dtype=np.float64)
     clf.fit(X, Y, sample_weight=sample_weight, queue=queue)
-    y_pred = clf.predict([[-1.0, 1.0]], queue=queue)
+    y_pred = clf.predict(X_pred, queue=queue)
     assert y_pred == pytest.approx(1.5)
 
 
@@ -229,7 +231,7 @@ def test_sided_sample_weight(queue):
 @pytest.mark.parametrize("queue", get_queues())
 def test_pickle(queue):
     diabetes = datasets.load_diabetes()
-    clf = SVR(kernel="rbf", C=10.0)
+    clf = SVR(kernel="linear", C=10.0)
     clf.fit(diabetes.data, diabetes.target, queue=queue)
     expected = clf.predict(diabetes.data, queue=queue)
 
