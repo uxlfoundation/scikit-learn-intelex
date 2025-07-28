@@ -37,7 +37,7 @@ if __name__ == "__main__":
         help="device name",
         choices=["none", "cpu", "gpu"],
     )
-    args = parser.parse_args()
+    args, extra_args = parser.parse_known_args()
 
     sklearn_file_dir = os.path.dirname(sklearn.__file__)
     os.chdir(sklearn_file_dir)
@@ -67,6 +67,9 @@ if __name__ == "__main__":
 
     while "" in pytest_args:
         pytest_args.remove("")
+
+    if extra_args:
+        pytest_args += extra_args
 
     if args.device != "none":
         with sklearn.config_context(target_offload=args.device):
