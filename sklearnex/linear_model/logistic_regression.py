@@ -210,6 +210,10 @@ if daal_check_version((2024, "P", 1)):
                     (self.solver == "newton-cg", "Only newton-cg solver is supported."),
                     (self.warm_start == False, "Warm start is not supported."),
                     (
+                        not (self.multi_class == "multinomial"),
+                        "multi_class='multinomial is not supported.",
+                    ),
+                    (
                         not self.l1_ratio,
                         "l1 ratio is not supported.",
                     ),
