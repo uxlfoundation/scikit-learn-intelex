@@ -21,12 +21,14 @@ This can be used as a foundation for developing other estimators. Most
 comments guiding code development should be removed unless pertinent to the
 implementation.  """
 import numpy as np
-from sklearn.base import BaseEstimator
+import scipy.sparse as sp
+from sklearn.dummy import _sklearn_DummyRegressor
 from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
-from onedal.tests.prototypes import PrototypeEstimator as onedal_PrototypeEstimator
+from onedal._device_offload import support_input_format
+from onedal.dummy import DummyEstimator as onedal_DummyEstimator
 
 from .._device_offload import dispatch
 from .._utils import PatchingConditionsChain
@@ -142,9 +144,10 @@ if sklearn_check_version("1.2"):
 # example) to the oneDAL backend
 @enable_array_api
 @control_n_jobs(decorated_methods=["fit", "predict"])
-class PrototypeEstimator(oneDALEstimator, BaseEstimator):
-    # PrototypeEstimator is a sklearnex-only estimator, shown by the
-    # inheritance of BaseEstimator. Inherited oneDALEstimator for estimators
+class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
+    # All sklearnex estimators must inherit a sklearn estimator, sklearnex-
+    # only estimators are shown by the inheritance of sklearn's
+    # BaseEstimator. Additionaly, inherited oneDALEstimator for estimators
     # without a sklearn equivalent must occur directly before BaseEstimator
     # in the mro.
 
@@ -194,14 +197,14 @@ class PrototypeEstimator(oneDALEstimator, BaseEstimator):
     # pybind11 interface should be invoked by the Python onedal estimator
     # object.
     #
-    # 4) If the estimator replicates/inherits from a sklearn estimator, 
+    # 4) If the estimator replicates/inherits from a sklearn estimator,
     # then only implemented public methods should be those which override
     # those from the sklearn estimator. The sklearn method should only be
     # overridden if an equivalent oneDAL-accelerated capability exists
     # following the tier system described below. If it is sklearnex only,
     # then it should try to follow sklearn conventions of sklearn estimators
     # which are most closely related (e.g. IncrementalPCA for incremental
-    # estimators). NOTE: as per the sklearn design rules, all estimator 
+    # estimators). NOTE: as per the sklearn design rules, all estimator
     # attributes with trailing underscores are return values and are of
     # some type of data (and therefore not themselves oneDAL-accelerated).
     #
@@ -226,23 +229,30 @@ class PrototypeEstimator(oneDALEstimator, BaseEstimator):
     # estimator. If it is unique to sklearnex, it must be added to
     # docs/sources/non-scikit-algorithms.rst instead.
 
-    def __init__(self, check=True, only_float64=False):
+    # This is required as part of sklearn conformance, which does checking
+    # of parameters set in __init__ when calling self.validate_params (should
+    # only be in a fit or fit-derived call)
+    if sklearn_check_version("1.2"):
+        _parameter_constraints: dict = {**_sklearn_DummyRegressor._parameter_constraints}
+
+    def __init__(self, *, strategy="mean", constant=None, quantile=None):
         # Object instantiation is strictly limited by sklearn. It is only
         # allowed to take the keyword arguments and store them as
         # attributes with the same name. When replicating a sklearn
         # estimator, it may be possible to use the inherited version of
         # ``__init__`` from sklearn. The prototype uses defined parameters
-        # to highlight the process in detail when adding new parameters to
-        # an estimator.
+        # to highlight the way parameters are set.  Controlled by sklearn
+        # test_common.py testing.
+        #
+        # The signature of the __init__ must match the sklearn estimator
+        # that it replicates (and is verified in test_patching.py)
+        self.strategy = strategy
+        self.constant = constant
+        self.quantile = quantile
 
-        # This estimator will abstract over the oneDAL finiteness checker
-        # which usually only operates with contiguous data.  These
-        # parameters will flag whether to actually check for finiteness
-        # using onedal via the paramter ``check`` and check finiteness only
-        # for float64 data (``only_float64``). Therefore, these two are
-        # illustrative.
-        self.check = check
-        self.only_float64 = only_float64
+    # To generalize for spmd and other use cases, the constructor of the
+    # onedal estimator should be set as an attribute of the class
+    _onedal_DummyEstimator = staticmethod(onedal_DummyEstimator)
 
     ############################
     # TIER 1 METHOD FLOW NOTES #
@@ -279,24 +289,7 @@ class PrototypeEstimator(oneDALEstimator, BaseEstimator):
     # 5) Result data is returned from the estimator if necessary. Attributes
     # from the onedal estimator are copied over to the sklearnex estimator.
 
-    def fit(self, X, y):
-        """
-        Check (X, y) data for finiteness.
-
-        Parameters
-        ----------
-        X : {array-like, sparse matrix} of shape (n_samples, n_features)
-            The training input samples.
-
-        y : array-like of shape (n_samples,) or (n_samples, n_outputs)
-            The target values.
-
-        Returns
-        -------
-        self : object
-            Fitted estimator.
-        """
-
+    def fit(self, X, y, sample_weight=None):
         # Parameter validation must be done before calls to dispatch. This
         # guarantees that the sklearn and onedal use of parameters are
         # properly typed and valued.
@@ -311,38 +304,27 @@ class PrototypeEstimator(oneDALEstimator, BaseEstimator):
             "fit",
             {
                 "onedal": self.__class__._onedal_fit,
-                "sklearn": None,  # see note below about this value
+                "sklearn": _sklearn_DummyRegressor.fit,
             },
             X,
             y,
+            sample_weight,
         )
         # For sklearnex-only estimators, _onedal_*_supported should either
         # pass or throw an exception. This means the sklearn branch is never
-        # used. Therefore the value can be set to None.  For sklearnex
-        # estimators which mimic sklearn, the function should be directly
-        # taken from the sklearn estimator. For example, for sklearnex's
-        # DBSCAN, it will not call ``self.fit``. Instead it will use
-        # ``"sklearn": sklearn_DBSCAN.fit`` directly.  This is even though
-        # the estimator inherits the sklearn estimator, and can be
-        # technically found via ``super``.
+        # used. In general, the two branches must be the class methods. THe
+        # parameters which are passed as arguments are given to
+        # _onedal_*_supported. In this example, the ``sample_weight`` kwarg
+        # is set as an arg for checking.
 
         # methods which do not return a result should return self (sklearn
         # standard)
         return self
 
-    def predict(self, X):
-        """Predict finiteness for X.
+    def predict(self, X, return_std=False):
+        # note return_std is a special aspect of the sklearn version of this
+        # estimator, normally the signatures is just predict(self, X)
 
-        Parameters
-        ----------
-        X : {array-like, sparse matrix} of shape (n_samples, n_features)
-            The input samples.
-
-        Returns
-        -------
-        y : ndarray of shape (1,)
-            Float representation of finiteness.
-        """
         check_is_fitted(self)  # first check if fitting has occured
         # No need to do another parameter check. While they are modifiable
         # in sklearn and in sklearnex, the parameters should never be
@@ -351,10 +333,11 @@ class PrototypeEstimator(oneDALEstimator, BaseEstimator):
             self,
             "predict",
             {
-                "onedal": self.__class__.onedal_predict,
-                "sklearn": None,  # see note in ``fit``
+                "onedal": self.__class__._onedal_predict,
+                "sklearn": _sklearn_DummyRegressor.predict,
             },
             X,
+            return_std=return_std,  # not important for patching, set as kwarg
         )
         # return value will be handled by self._onedal_predict
 
@@ -370,9 +353,7 @@ class PrototypeEstimator(oneDALEstimator, BaseEstimator):
         xp, _ = get_namespace(X, y)
 
         # The second step must always be to validate the data.
-        X, y = validate_data(
-            X, y, dtype=[xp.float64, xp.float32], ensure_all_finite=False
-        )
+        X, y = validate_data(X, y, dtype=[xp.float64, xp.float32, xp.int32])
         # validate_data does several things:
         # 1) If not in the proper namespace (depending on array_api configs)
         # convert the data to the proper data format (default: numpy array)
@@ -386,9 +367,12 @@ class PrototypeEstimator(oneDALEstimator, BaseEstimator):
         # For example, ``ensure_all_finite`` is set to false in this case
         # for the nature of the class, but would otherwise be unset.
 
+        # Conformance to sklearn's DummyRegressor
+        self.n_outputs_ = y.shape[1]
+
         # In the ``fit`` method, a Python onedal estimator object is
         # generated.
-        self._onedal_estimator = onedal_PrototypeEstimator(check=True)
+        self._onedal_estimator = self._onedal_DummyEstimator(constant=self.constant)
         # queue must be passed to the onedal Python estimator object
         # though this may change in the future as a requirement.
         self._onedal_estimator.fit(X, y, queue=queue)
@@ -398,20 +382,33 @@ class PrototypeEstimator(oneDALEstimator, BaseEstimator):
         # Below is only an example, but should be all the attributes
         # available from the same sklearn estimator (if not sklearnex-only)
         # after fitting.
-        self.finite_ = self._onedal_estimator.finite_
+        self.constant_ = self._onedal_estimator.constant_
         # See sklearn conventions about trailing underscores for fitted
         # values.
 
-    def _onedal_predict(self, X, y, queue=None):
+        # sklearn conformance
+        if self.n_outputs_ != 1 and self.constant_.shape[0] != y.shape[1]:
+            raise ValueError(
+                "Constant target value should have shape (%d, 1)." % y.shape[1]
+            )
+
+    def _onedal_predict(self, X, return_std=None, queue=None):
         # The first step is to always acquire the namespace of input data
         # This is important for getting the proper data types and possibly
         # other conversions.
-        xp, _ = get_namespace(X, y)
+        xp, _ = get_namespace(X)
 
         # The second step must always be to validate the data.
         X = validate_data(X, dtype=[xp.float64, xp.float32], ensure_all_finite=False)
         # queue must be sent back to the onedal Python estimator object
-        return self._onedal_estimator.predict(X, queue=queue)
+        y = self._onedal_estimator.predict(X, queue=queue)
+
+        if self.n_outputs_ == 1:
+            y = xp.reshape(y, (-1,))
+
+        y_std = xp.zeros_like(y)
+
+        return (y, y_std) if return_std else y
 
     def _onedal_cpu_supported(self, method_name, *data):
         # All estimators must have the following two functions with exactly
@@ -437,7 +434,7 @@ class PrototypeEstimator(oneDALEstimator, BaseEstimator):
         # In no circumstance should ``validate_data`` be called here or
         # in _onedal_gpu_supoorted to get the data into the proper form.
         if method_name == "fit":
-            (X, y) = data
+            (X, y, sample_weight) = data
             xp = get_namespace(X, y)
 
             # the PatchingConditionsChain is validated using
@@ -446,37 +443,37 @@ class PrototypeEstimator(oneDALEstimator, BaseEstimator):
             # and must be tailored to the specific estimator implementation.
             patching_status.and_conditions(
                 [
-                    (self.check, "estimator set not to check input data with oneDAL"),
                     (
-                        not self.only_float64
-                        or hasattr(X, "dtype")
-                        and X.dtype == xp.float64,
-                        "X data is not float64 for float64-only finiteness checking",
+                        not sp.issparse(X),
+                        "estimator set not to check input data with oneDAL",
                     ),
                     (
-                        not self.only_float64
-                        or hasattr(y, "dtype")
-                        and y.dtype == xp.float64,
-                        "y data is not float64 for float64-only finiteness checking",
+                        self.strategy == "constant",
+                        "only the constant strategy is supported",
                     ),
+                    (
+                        hasattr(X, "dtype")
+                        and X.dtype in (xp.int32, xp.float64, xp.float32),
+                        "oneDAL only supports int32, float64 and float32 inputs",
+                    ),
+                    (
+                        isinstance(self.constant, (int, float)),
+                        "only basic python types are supported",
+                    ),
+                    (sample_weight is None, "sample_weight is not supported"),
                 ]
             )
 
         elif method_name == "predict":
             (X,) = data
-            xp = get_namespace(X, y)
+            xp = get_namespace(X)
 
             patching_status.and_conditions(
-                [  # a condition for ``_onedal_estimator`` is normally
-                    # required if the method previously calls
-                    # ``check_is_fitted``
+                [
                     (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained."),
-                    (self.check, "estimator set not to check input data with oneDAL"),
                     (
-                        not self.only_float64
-                        or hasattr(X, "dtype")
-                        and X.dtype == xp.float64,
-                        "X data is not float64 for float64-only finiteness checking",
+                        not sp.issparse(X),
+                        "estimator set not to check input data with oneDAL",
                     ),
                 ]
             )
@@ -493,7 +490,7 @@ class PrototypeEstimator(oneDALEstimator, BaseEstimator):
             f"sklearnex.test.{self.__class__.__name__}.{method_name}"
         )
         if method_name == "fit":
-            (X, y) = data
+            (X, y, sample_weight) = data
             xp = get_namespace(X, y)
 
             # the PatchingConditionsChain is validated using
@@ -502,37 +499,37 @@ class PrototypeEstimator(oneDALEstimator, BaseEstimator):
             # and must be tailored to the specific estimator implementation.
             patching_status.and_conditions(
                 [
-                    (self.check, "estimator set not to check input data with oneDAL"),
                     (
-                        not self.only_float64
-                        or hasattr(X, "dtype")
-                        and X.dtype == xp.float64,
-                        "X data is not float64 for float64-only finiteness checking",
+                        not sp.issparse(X),
+                        "estimator set not to check input data with oneDAL",
                     ),
                     (
-                        not self.only_float64
-                        or hasattr(y, "dtype")
-                        and y.dtype == xp.float64,
-                        "y data is not float64 for float64-only finiteness checking",
+                        self.strategy == "constant",
+                        "only the constant strategy is supported",
                     ),
+                    (
+                        hasattr(X, "dtype")
+                        and X.dtype in (xp.int32, xp.float64, xp.float32),
+                        "oneDAL only supports int32, float64 and float32 inputs",
+                    ),
+                    (
+                        isinstance(self.constant, (int, float)),
+                        "only basic python types are supported",
+                    ),
+                    (sample_weight is None, "sample_weight is not supported"),
                 ]
             )
 
         elif method_name == "predict":
             (X,) = data
-            xp = get_namespace(X, y)
+            xp = get_namespace(X)
 
             patching_status.and_conditions(
-                [  # a condition for ``_onedal_estimator`` is normally
-                    # required if the method previously calls
-                    # ``check_is_fitted``
+                [
                     (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained."),
-                    (self.check, "estimator set not to check input data with oneDAL"),
                     (
-                        not self.only_float64
-                        or hasattr(X, "dtype")
-                        and X.dtype == xp.float64,
-                        "X data is not float64 for float64-only finiteness checking",
+                        not sp.issparse(X),
+                        "estimator set not to check input data with oneDAL",
                     ),
                 ]
             )
@@ -540,37 +537,34 @@ class PrototypeEstimator(oneDALEstimator, BaseEstimator):
         # the patching_status object should be returned
         return patching_status
 
-    def score(self, X, y):
-        """
-        Return float value difference in finiteness.
+    # attributes which are used by the onedal estimator in generating
+    # predictions must be linked. This way the state of the two estimators
+    # do not diverge, as modifications  could impact the model used in the
+    # inference. This not always necessary, as some estimators generate a
+    # model for predict during fit which cannot be modified.
 
-        This is a simple mathematical representation that should never be
-        used and is simply an example.  When implementing score for any other
-        estimator, it should use a score method matching the inherited mixins
-        (like r2_score, accuracy_score, etc.).
+    @property
+    def constant_(self):
+        return self._constant_
 
-        Parameters
-        ----------
-        X : array-like of shape (n_samples, n_features)
-            Test samples 'X'.
+    @constant_.setter
+    def constant(self, value):
+        self._constant_ = value
+        if hasattr(self, "_onedal_estimator"):
+            self._onedal_estimator._onedal_model = None
+            self._onedal_estimator.constant_ = value
 
-        y : array-like of shape (n_samples,) or (n_samples, n_outputs)
-            Values 'y'.
+    @constant_.deleter
+    def constant_(self):
+        del self._constant_
 
-        Returns
-        -------
-        score : float
-            difference in finiteness as a float
-        """
-        # This is an example tier 2 method which uses some small additional
-        # functionality on top of a tier 1 method
-        # This return value here is a trivial example.
-        return self.predict(X) - self.predict(y)
+    # score is a tier 3 method in this case. Wrap with ``support_input_format`` for array
+    # api support.
+    score = support_input_format(_sklearn_DummyRegressor.score)
 
-    # These are commented out, as they are generally necessary for copying
-    # docstrings from sklearn estimators. _sklearn_Estimator_ should be
-    # re-named. For example, for PCA, the inherited sklearn estimator should
-    # be _sklearn_PCA.
-    # fit.__doc__ = _sklearn_Estimator.__doc__
-    # predict.__doc__ = _sklearn_Estimator.__doc__
-    # score.__doc__ = _sklearn_Estimator.__doc__
+    # Docstrings should be inherited from the sklearn estimator if possible
+    # In sklearnex-only estimators, they should be written from scratch
+    # using the numpy-doc standard.
+    fit.__doc__ = _sklearn_DummyRegressor.fit.__doc__
+    predict.__doc__ = _sklearn_DummyRegressor.predict.__doc__
+    score.__doc__ = _sklearn_DummyRegressor.score.__doc__
