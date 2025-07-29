@@ -359,14 +359,16 @@ def __logistic_regression_path(
             y_bin = np.ones(y.shape, dtype=X.dtype)
             # for compute_class_weight
 
-            if solver in ["lbfgs", "newton-cg"]:
+            if solver == "liblinear" or (
+                not sklearn_check_version("1.6") and solver not in ["lbfgs", "newton-cg"]
+            ):
+                mask_classes = np.array([-1, 1])
+                y_bin[~mask] = -1.0
+            else:
                 # HalfBinomialLoss, used for those solvers, represents y in [0, 1] instead
                 # of in [-1, 1].
                 mask_classes = np.array([0, 1])
                 y_bin[~mask] = 0.0
-            else:
-                mask_classes = np.array([-1, 1])
-                y_bin[~mask] = -1.0
         else:
             mask_classes = np.array([-1, 1])
             mask = y == pos_class
@@ -388,7 +390,11 @@ def __logistic_regression_path(
 
     else:
         if sklearn_check_version("1.1"):
-            if solver in ["sag", "saga", "lbfgs", "newton-cg"]:
+            if sklearn_check_version("1.6"):
+                solver_list = ["sag", "saga", "lbfgs", "newton-cg", "newton-cholesky"]
+            else:
+                solver_list = ["sag", "saga", "lbfgs", "newton-cg"]
+            if solver in solver_list:
                 # SAG, lbfgs and newton-cg multinomial solvers need LabelEncoder,
                 # not LabelBinarizer, i.e. y as a 1d-array of integers.
                 # LabelEncoder also saves memory compared to LabelBinarizer, especially
@@ -488,7 +494,11 @@ def __logistic_regression_path(
 
     if multi_class == "multinomial":
         # fmin_l_bfgs_b and newton-cg accepts only ravelled parameters.
-        if solver in ["lbfgs", "newton-cg"]:
+        if sklearn_check_version("1.6"):
+            solver_list = ["lbfgs", "newton-cg", "newton-cholesky"]
+        else:
+            solver_list = ["lbfgs", "newton-cg"]
+        if solver in solver_list:
             if _dal_ready and classes.size == 2:
                 w0 = w0[-1:, :]
             if sklearn_check_version("1.1"):
@@ -606,7 +616,10 @@ def __logistic_regression_path(
                     l2_reg_strength = 1.0 / (C * sw_sum)
                     extra_args = (X, target, sample_weight, l2_reg_strength, n_threads)
                 else:
-                    extra_args = (X, target, 1.0 / (C * sw_sum), sample_weight)
+                    if not _dal_ready:
+                        extra_args = (X, target, 1.0 / C, sample_weight)
+                    else:
+                        extra_args = (X, target, 1.0 / (C * sw_sum), sample_weight)
 
             iprint = [-1, 50, 1, 100, 101][
                 np.searchsorted(np.array([0, 1, 2, 3]), verbose)
@@ -674,7 +687,10 @@ def __logistic_regression_path(
                     l2_reg_strength = 1.0 / (C * sw_sum)
                     args = (X, target, sample_weight, l2_reg_strength, n_threads)
                 else:
-                    args = (X, target, 1.0 / (C * sw_sum), sample_weight)
+                    if not _dal_ready:
+                        args = (X, target, 1.0 / C, sample_weight)
+                    else:
+                        args = (X, target, 1.0 / (C * sw_sum), sample_weight)
 
                 w0, n_iter_i = _newton_cg(
                     hess, func, grad, w0, args=args, maxiter=max_iter, tol=tol
@@ -753,7 +769,11 @@ def __logistic_regression_path(
             else:
                 n_classes = max(2, classes.size)
                 if sklearn_check_version("1.1"):
-                    if solver in ["lbfgs", "newton-cg"]:
+                    if sklearn_check_version("1.6"):
+                        solver_list = ["lbfgs", "newton-cg", "newton-cholesky"]
+                    else:
+                        solver_list = ["lbfgs", "newton-cg"]
+                    if solver in solver_list:
                         multi_w0 = np.reshape(w0, (n_classes, -1), order="F")
                     else:
                         multi_w0 = w0
@@ -828,6 +848,10 @@ def daal4py_predict(self, X, resultsToEvaluate):
                     )
                     != "ovr",
                     f"selected multiclass option is not supported for n_classes > 2.",
+                ),
+                (
+                    not (self.classes_.size == 2 and self.multi_class == "multinomial"),
+                    "multi_class='multinomial' not supported with binary data",
                 ),
             ],
         )

@@ -15,19 +15,13 @@
 # ==============================================================================
 
 from contextlib import contextmanager
+from types import SimpleNamespace
+
+from onedal import _default_backend as backend
 
 from .._config import _get_config
-from ..utils._dpep_helpers import dpctl_available
-
-if dpctl_available:
-    from dpctl import SyclQueue
-else:
-    from onedal import _default_backend
-
-    # Use internally-defined SyclQueue defined in onedal/common/sycl.cpp
-    # the host backend SyclQueue will only accept "auto" and will return
-    # a None, it acts as a function via `__new__`. No SyclDevice is defined.
-    SyclQueue = _default_backend.SyclQueue
+from ..datatypes import get_torch_queue
+from ._third_party import SyclQueue, is_torch_tensor
 
 # This special object signifies that the queue system should be
 # disabled. It will force computation to host. This occurs when the
@@ -36,10 +30,15 @@ else:
 __fallback_queue = object()
 # single instance of global queue
 __global_queue = None
+# dictionary of generic SYCL queues with default SYCL contexts for
+# reuse
+__dlpack_queue = {}
+# Special queue for non-CPU, non-SYCL data associated with dlpack
+__non_queue = SimpleNamespace(sycl_device=SimpleNamespace(is_cpu=False))
 
 
 def __create_sycl_queue(target):
-    if isinstance(target, SyclQueue) or target is None:
+    if isinstance(target, SyclQueue) or target is None or target is __non_queue:
         return target
     if isinstance(target, (str, int)):
         return SyclQueue(target)
@@ -58,11 +57,8 @@ def get_global_queue():
         signifies computation on host.
     """
     if (queue := __global_queue) is not None:
-        if SyclQueue:
-            if queue is __fallback_queue:
-                return None
-            elif not isinstance(queue, SyclQueue):
-                raise ValueError("Global queue is not a SyclQueue object.")
+        if queue is __fallback_queue:
+            return None
         return queue
 
     target = _get_config()["target_offload"]
@@ -101,6 +97,32 @@ def fallback_to_host():
     __global_queue = __fallback_queue
 
 
+def _get_dlpack_queue(obj: object) -> SyclQueue:
+    # users should not require direct use of this
+    device_type, device_id = obj.__dlpack_device__()
+    if device_type == backend.kDLCPU:
+        return None
+    elif device_type != backend.kDLOneAPI:
+        # Data exists on a non-SYCL, non-CPU device. This will trigger an error
+        # or a fallback if "fallback_to_host" is set in the config
+        return __non_queue
+
+    if is_torch_tensor(obj):
+        return get_torch_queue(obj)
+    else:
+        # no specialized queue can be extracted. Use or generate a generic. Note,
+        # this will behave in unexpected ways for non-default SYCL contexts or
+        # with SYCL sub-devices due to limitations in the dlpack standard (not
+        # enough info).
+        try:
+            queue = __dlpack_queue[device_id]
+        except KeyError:
+            # use filter string capability to yield a queue
+            queue = SyclQueue(str(device_id))
+            __dlpack_queue[device_id] = queue
+        return queue
+
+
 def from_data(*data):
     """Extract the queue from provided data.
 
@@ -119,27 +141,18 @@ def from_data(*data):
     """
     for item in data:
         # iterate through all data objects, extract the queue, and verify that all data objects are on the same device
-        try:
-            usm_iface = getattr(item, "__sycl_usm_array_interface__", None)
-        except RuntimeError as e:
-            if "SUA interface" in str(e):
-                # ignore SUA interface errors and move on
-                continue
-            else:
-                # unexpected, re-raise
-                raise e
+        if usm_iface := getattr(item, "__sycl_usm_array_interface__", None):
+            data_queue = usm_iface["syclobj"]
+        elif hasattr(item, "__dlpack_device__"):
+            data_queue = _get_dlpack_queue(item)
+        else:
+            data_queue = None
 
-        if usm_iface is None:
-            # no interface found - try next data object
+        # no queue, i.e. host data, no more work to do
+        if data_queue is None:
             continue
 
-        # extract the queue
         global_queue = get_global_queue()
-        data_queue = usm_iface["syclobj"]
-        if not data_queue:
-            # no queue, i.e. host data, no more work to do
-            continue
-
         # update the global queue if not set
         if global_queue is None:
             update_global_queue(data_queue)
@@ -149,6 +162,9 @@ def from_data(*data):
         data_dev = data_queue.sycl_device
         global_dev = global_queue.sycl_device
         if (data_dev and global_dev) is not None and data_dev != global_dev:
+            # when all data exists on other devices (e.g. not CPU or SYCL devices)
+            # failure will come in backend selection occurring in
+            # sklearnex._device_offload._get_backend when using __non_queue
             raise ValueError(
                 "Data objects are located on different target devices or not on selected device."
             )

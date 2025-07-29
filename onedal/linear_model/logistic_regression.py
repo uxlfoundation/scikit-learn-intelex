@@ -29,7 +29,6 @@ from ..common._estimator_checks import _check_is_fitted
 from ..common._mixin import ClassifierMixin
 from ..datatypes import from_table, to_table
 from ..utils._array_api import _get_sycl_namespace
-from ..utils._dpep_helpers import get_unique_values_with_dpep
 from ..utils.validation import (
     _check_array,
     _check_n_features,
@@ -96,7 +95,15 @@ class BaseLogisticRegression(metaclass=ABCMeta):
             self.classes_, y = np.unique(y, return_inverse=True)
             y = y.astype(dtype=np.int32)
         else:
-            self.classes_ = get_unique_values_with_dpep(y)
+            _, xp, _ = _get_sycl_namespace(X)
+            # try catch needed for raw_inputs + array_api data where unlike
+            # numpy the way to yield unique values is via `unique_values`
+            # This should be removed when refactored for gpu zero-copy
+            try:
+                self.classes_ = xp.unique(y)
+            except AttributeError:
+                self.classes_ = xp.unique_values(y)
+
             n_classes = len(self.classes_)
             if n_classes != 2:
                 raise ValueError("Only binary classification is supported")
@@ -201,21 +208,15 @@ class BaseLogisticRegression(metaclass=ABCMeta):
 
     def _predict(self, X):
         result = self._infer(X)
-        sua_iface, xp, _ = _get_sycl_namespace(X)
-        y = from_table(
-            result.responses,
-            sua_iface=sua_iface,
-            sycl_queue=QM.get_global_queue(),
-            xp=xp,
-        )
+        _, xp, _ = _get_sycl_namespace(X)
+        y = from_table(result.responses, like=X)
         y = xp.take(xp.asarray(self.classes_), xp.reshape(y, (-1,)), axis=0)
         return y
 
     def _predict_proba(self, X):
         result = result = self._infer(X)
-        sua_iface, xp, _ = _get_sycl_namespace(X)
-        queue = QM.get_global_queue()
-        y = from_table(result.probabilities, sua_iface=sua_iface, sycl_queue=queue, xp=xp)
+        _, xp, _ = _get_sycl_namespace(X)
+        y = from_table(result.probabilities, like=X)
         return xp.stack([1 - y, y], axis=1)
 
     def _predict_log_proba(self, X):

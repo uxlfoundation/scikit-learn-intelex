@@ -313,9 +313,9 @@ Classification
        - ``penalty`` != `'l2'`
        - ``dual`` = `True`
        - ``intercept_scaling`` != `1`
-       - ``multi_class`` != `'multinomial'`
+       - ``multi_class`` = `'multinomial'`
        - ``warm_start`` = `True`
-       - ``l1_ratio`` != `None`
+       - ``l1_ratio`` != 0 and ``l1_ratio`` != ``None``
        - Only binary classification is supported
      - No limitations
 
@@ -640,3 +640,6 @@ Scikit-learn Tests
 Monkey-patched scikit-learn classes and functions passes scikit-learn's own test
 suite, with few exceptions, specified in `deselected_tests.yaml
 <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/deselected_tests.yaml>`__.
+
+See the file `scikit-learn-tests.md <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/scikit-learn-tests.md>`__
+for instructions about how to execute the scikit-learn test suite under patching.
