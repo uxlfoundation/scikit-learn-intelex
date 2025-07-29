@@ -22,10 +22,25 @@ from ...ensemble import RandomForestClassifier as RandomForestClassifier_Batch
 from ...ensemble import RandomForestRegressor as RandomForestRegressor_Batch
 
 
+def local_trees_wrapper(func):
+    def new_factory(self, **params):
+        params["local_trees_mode"] = self.local_trees_mode
+        return func(self, **params)
+
+    return new_factory
+
+
 class RandomForestClassifier(RandomForestClassifier_Batch):
     __doc__ = RandomForestClassifier_Batch.__doc__
     _onedal_factory = onedal_RandomForestClassifier
 
+    # Wrap _onedal_factory to suport local_trees_mode parameter
+    @property
+    def _onedal_factory(self):
+        return local_trees_wrapper(type(self)._onedal_factory)
+
+    # Init constructor with local_trees_mode parameter but pass to parent 
+    # class without (to maintain scikit-learn estimator compatibility)
     if sklearn_check_version("1.4"):
 
         def __init__(
@@ -130,10 +145,6 @@ class RandomForestClassifier(RandomForestClassifier_Batch):
                 min_bin_size=min_bin_size,
             )
 
-    def _create_onedal_estimator(self, onedal_params):
-        onedal_params["local_trees_mode"] = self.local_trees_mode
-        return self._onedal_factory(**onedal_params)
-
     def _onedal_cpu_supported(self, method_name, *data):
         # TODO:
         # check which methods supported SPMD interface on CPU.
@@ -159,6 +170,13 @@ class RandomForestRegressor(RandomForestRegressor_Batch):
     __doc__ = RandomForestRegressor_Batch.__doc__
     _onedal_factory = onedal_RandomForestRegressor
 
+    # Wrap _onedal_factory to suport local_trees_mode parameter
+    @property
+    def _onedal_factory(self):
+        return local_trees_wrapper(type(self)._onedal_factory)
+
+    # Init constructor with local_trees_mode parameter but pass to parent 
+    # class without (to maintain scikit-learn estimator compatibility)
     if sklearn_check_version("1.4"):
 
         def __init__(
@@ -258,10 +276,6 @@ class RandomForestRegressor(RandomForestRegressor_Batch):
                 max_bins=max_bins,
                 min_bin_size=min_bin_size,
             )
-
-    def _create_onedal_estimator(self, onedal_params):
-        onedal_params["local_trees_mode"] = self.local_trees_mode
-        return self._onedal_factory(**onedal_params)
 
     def _onedal_cpu_supported(self, method_name, *data):
         # TODO:
