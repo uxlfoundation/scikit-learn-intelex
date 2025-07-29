@@ -131,7 +131,6 @@ class RandomForestClassifier(RandomForestClassifier_Batch):
             )
 
     def _create_onedal_estimator(self, onedal_params):
-        onedal_params = dict(onedal_params)  # copy to avoid mutating input
         onedal_params["local_trees_mode"] = self.local_trees_mode
         return self._onedal_factory(**onedal_params)
 
