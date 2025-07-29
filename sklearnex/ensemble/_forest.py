@@ -163,7 +163,7 @@ class BaseForest(oneDALEstimator, ABC):
         self._cached_estimators_ = None
 
         # Compute
-        self._onedal_estimator = self._onedal_factory(onedal_params)
+        self._onedal_estimator = self._onedal_factory(**onedal_params)
         self._onedal_estimator.fit(X, xp.reshape(y, (-1,)), sample_weight, queue=queue)
 
         self._save_attributes()
