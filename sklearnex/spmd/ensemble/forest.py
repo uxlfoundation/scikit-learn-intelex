@@ -34,7 +34,7 @@ class RandomForestClassifier(RandomForestClassifier_Batch):
     __doc__ = RandomForestClassifier_Batch.__doc__
     _onedal_factory = onedal_RandomForestClassifier
 
-    # Wrap _onedal_factory to suport local_trees_mode parameter
+    # Wrap _onedal_factory to support local_trees_mode parameter
     @property
     def _onedal_factory(self):
         return local_trees_wrapper(type(self)._onedal_factory)
@@ -170,7 +170,7 @@ class RandomForestRegressor(RandomForestRegressor_Batch):
     __doc__ = RandomForestRegressor_Batch.__doc__
     _onedal_factory = onedal_RandomForestRegressor
 
-    # Wrap _onedal_factory to suport local_trees_mode parameter
+    # Wrap _onedal_factory to support local_trees_mode parameter
     @property
     def _onedal_factory(self):
         return local_trees_wrapper(type(self)._onedal_factory)
