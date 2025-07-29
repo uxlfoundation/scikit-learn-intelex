@@ -24,7 +24,24 @@ namespace py = pybind11;
 
 namespace oneapi::dal::python {
 
-namespace linear_model {
+namespace dummy {
+
+///////////////////////////// Fake oneDAL Algorithm ///////////////////////
+// These aspects fake the necessary characteristics of a oneDAL algorithm
+
+// These aspects are created in the algorithm's common.hpp
+namespace task {
+    struct compute {};
+    using by_default = compute;
+}
+
+namespace method {
+    struct dense {};
+    using by_default = dense;
+}
+
+///////////////////////////// Fake oneDAL Algorithm ///////////////////////
+
 
 template <typename Task, typename Ops>
 struct method2t {
@@ -32,7 +49,6 @@ struct method2t {
 
     template <typename Float>
     auto operator()(const py::dict& params) {
-        using namespace dal::linear_regression;
 
         const auto method = params["method"].cast<std::string>();
         ONEDAL_PARAM_DISPATCH_VALUE(method, "norm_eq", ops, Float, method::norm_eq);
@@ -139,7 +155,7 @@ ONEDAL_PY_DECLARE_INSTANTIATOR(init_infer_result);
 ONEDAL_PY_DECLARE_INSTANTIATOR(init_train_ops);
 ONEDAL_PY_DECLARE_INSTANTIATOR(init_infer_ops);
 
-} // namespace linear_model
+} // namespace dummy
 
 ONEDAL_PY_INIT_MODULE(dummy) {
     using namespace dal::detail;
