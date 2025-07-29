@@ -39,7 +39,7 @@ class RandomForestClassifier(RandomForestClassifier_Batch):
     def _onedal_factory(self):
         return local_trees_wrapper(type(self)._onedal_factory)
 
-    # Init constructor with local_trees_mode parameter but pass to parent 
+    # Init constructor with local_trees_mode parameter but pass to parent
     # class without (to maintain scikit-learn estimator compatibility)
     if sklearn_check_version("1.4"):
 
@@ -175,7 +175,7 @@ class RandomForestRegressor(RandomForestRegressor_Batch):
     def _onedal_factory(self):
         return local_trees_wrapper(type(self)._onedal_factory)
 
-    # Init constructor with local_trees_mode parameter but pass to parent 
+    # Init constructor with local_trees_mode parameter but pass to parent
     # class without (to maintain scikit-learn estimator compatibility)
     if sklearn_check_version("1.4"):
 
