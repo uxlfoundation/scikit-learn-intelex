@@ -154,10 +154,6 @@ if daal_check_version((2024, "P", 100)):
                 patching_status.and_conditions(
                     [
                         (
-                            n_features < 2 * n_samples,
-                            "Data shape is not compatible.",
-                        ),
-                        (
                             force_solver
                             or self._fit_svd_solver in ["covariance_eigh", "onedal_svd"],
                             (
@@ -387,10 +383,7 @@ if daal_check_version((2024, "P", 100)):
 
             # This is necessary as get_namespace may return a bare numpy,
             # which ``asarray`` may not contain the copy keyword argument.
-            if xp is np:
-                copy = np.copy
-            else:
-                copy = lambda x: xp.asarray(x, copy=True)
+            copy = np.copy if xp is np else lambda x: xp.asarray(x, copy=True)
 
             self.components_ = copy(
                 self._onedal_estimator.components_[:n_components, ...]
