@@ -27,6 +27,7 @@ def local_trees_wrapper(factor_cls):
         def __init__(self, *args, **params):
             params["local_trees_mode"] = getattr(self, "local_trees_mode", False)
             super().__init__(*args, **params)
+
     return WrappedFactory
 
 
