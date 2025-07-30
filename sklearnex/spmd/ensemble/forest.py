@@ -22,12 +22,12 @@ from ...ensemble import RandomForestClassifier as RandomForestClassifier_Batch
 from ...ensemble import RandomForestRegressor as RandomForestRegressor_Batch
 
 
-def local_trees_wrapper(func):
-    def new_factory(self, **params):
-        params["local_trees_mode"] = self.local_trees_mode
-        return func(self, **params)
-
-    return new_factory
+def local_trees_wrapper(factor_cls):
+    class WrappedFactory(factor_cls):
+        def __init__(self, *args, **params):
+            params["local_trees_mode"] = getattr(self, "local_trees_mode", False)
+            super().__init__(*args, **params)
+    return WrappedFactory
 
 
 class RandomForestClassifier(RandomForestClassifier_Batch):
@@ -37,7 +37,7 @@ class RandomForestClassifier(RandomForestClassifier_Batch):
     # Wrap _onedal_factory to support local_trees_mode parameter
     @property
     def _onedal_factory(self):
-        return local_trees_wrapper(type(self)._onedal_factory_cls)
+        return local_trees_wrapper(self._onedal_factory_cls)
 
     # Init constructor with local_trees_mode parameter but pass to parent
     # class without (to maintain scikit-learn estimator compatibility)
@@ -173,7 +173,7 @@ class RandomForestRegressor(RandomForestRegressor_Batch):
     # Wrap _onedal_factory to support local_trees_mode parameter
     @property
     def _onedal_factory(self):
-        return local_trees_wrapper(type(self)._onedal_factory_cls)
+        return local_trees_wrapper(self._onedal_factory_cls)
 
     # Init constructor with local_trees_mode parameter but pass to parent
     # class without (to maintain scikit-learn estimator compatibility)
