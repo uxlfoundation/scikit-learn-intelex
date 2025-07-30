@@ -40,6 +40,15 @@ deselected_tests:
   - neighbors/tests/test_neighbors.py::test_neighbor_classifiers_loocv[auto-nn_model0]
 
   # Array API support
+  # limitations in various frameworks leads to __dlpack__ inconsistency between array_api_strict and pytorch
+  # temporarily chose pytorch and deselect array_api_strict
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_input_and_values-array_api_strict-None-None]
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_input_and_values-array_api_strict-None-None]
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_input_and_values-array_api_strict-CPU_DEVICE-float64]
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_input_and_values-array_api_strict-device1-float32]
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_input_and_values-array_api_strict-CPU_DEVICE-float64]
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_input_and_values-array_api_strict-device1-float32]
+  
   # numpy.array_api was experimental and its use in sklearn was not official
   - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full')-check_array_api_input_and_values-numpy.array_api-None-None] <1.5
   - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full')-check_array_api_get_precision-numpy.array_api-None-None] <1.5
@@ -76,7 +85,7 @@ deselected_tests:
   # resulting in solver assignment check failure for sklearn version >= 1.5
   - decomposition/tests/test_pca.py::test_pca_svd_solver_auto[1000-500-400-full] >=1.5
   - decomposition/tests/test_pca.py::test_pca_svd_solver_auto[1000-500-0.5-full] >=1.5
-  - decomposition/tests/test_pca.py::test_pca_svd_solver_auto[10-50-5-full] >= 1.5
+  - decomposition/tests/test_pca.py::test_pca_svd_solver_auto[10-50-5-full] >=1.5
 
   # Non-critical, but there are significant differences due to different implementations
   - linear_model/tests/test_common.py::test_balance_property[42-True-LinearRegression]
