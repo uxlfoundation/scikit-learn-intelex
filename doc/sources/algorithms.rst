@@ -532,7 +532,7 @@ Regression
 
        **Additional parameters:**
 
-       - ``local_trees_mode`` (bool, default=False): Enables local trees mode for distributed training. `n_estimators` is per rank, with isolated learning occurring on each processor before merging into a single model. This mode is experimental but scales better than default. This parameter is specific to the SPMD implementation and is not present in the standard scikit-learn API.
+       - ``local_trees_mode`` (bool, default=False): Enables local trees mode for distributed training. ``n_estimators`` is per rank, with isolated learning occurring on each processor before merging into a single model. This mode is experimental but scales better than default. This parameter is specific to the SPMD implementation and is not present in the standard scikit-learn API.
      - Multi-output and sparse data are not supported
    * - :obj:`sklearn.ensemble.ExtraTreesRegressor`
      - All parameters are supported except:
