@@ -36,7 +36,7 @@ namespace py = pybind11;
 dal::table convert_to_table(py::object obj, py::object q_obj = py::none(), bool recursed = false);
 
 DLDevice get_dlpack_device(const dal::table& input);
-py::capsule construct_dlpack(const dal::table& input);
+py::capsule construct_dlpack(const dal::table& input, py::object max_version = py::none(), py::object dl_device = py::none(), bool copy = true);
 
 py::object dlpack_memory_order(py::object obj);
 } // namespace oneapi::dal::python::dlpack

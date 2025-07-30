@@ -217,40 +217,72 @@ static void free_capsule(PyObject* cap) {
     }
 }
 
-py::capsule construct_dlpack(const dal::table& input) {
-    // DLManagedTensor is used instead of DLManagedTensorVersioned
-    // due to major frameworks not yet supporting the latter.
-    DLManagedTensor* dlm = new DLManagedTensor;
-
+py::capsule construct_dlpack(const dal::table& input, py::object max_version, py::object dl_device, bool copy) {
     // check table type and expose oneDAL array
     if (input.get_kind() != dal::homogen_table::kind())
         throw pybind11::type_error("Unsupported table type for dlpack conversion");
+    
+    dal::array<byte_t> array, host_array;
+    DLTensor tensor;
+    py::capsule capsule;
 
     auto homogen_input = reinterpret_cast<const dal::homogen_table&>(input);
-    dal::array<byte_t> array = dal::detail::get_original_data(homogen_input);
-    dlm->manager_ctx = static_cast<void*>(new dal::array<byte_t>(array));
+    array = dal::detail::get_original_data(homogen_input);
+
+    // check dl_device if kDLCPU and then transfer to host
+    if (!dl_device.is_none() && kdlcpu && copy)
+        host_array = transfer_to_host(array);
+    host_array.need_mutable_data();
 
     // set tensor
-    dlm->dl_tensor = construct_dlpack_tensor(array,
-                                             homogen_input.get_row_count(),
-                                             homogen_input.get_column_count(),
-                                             homogen_input.get_metadata().get_data_type(0),
-                                             homogen_input.get_data_layout());
+    tensor = construct_dlpack_tensor(host_array,
+                                     homogen_input.get_row_count(),
+                                     homogen_input.get_column_count(),
+                                     homogen_input.get_metadata().get_data_type(0),
+                                     homogen_input.get_data_layout());
 
-    // generate tensor deleter
-    dlm->deleter = [](struct DLManagedTensor* self) -> void {
-        auto stored_array = static_cast<dal::array<byte_t>*>(self->manager_ctx);
-        if (stored_array) {
-            delete stored_array;
-        }
-        delete[] self->dl_tensor.shape;
-        delete self;
-    };
+    if max_version.is_none()){
+        //not a versioned tensor
+        DLManagedTensor* dlm = new DLManagedTensor;
+        dlm->manager_ctx = static_cast<void*>(new dal::array<byte_t>(array));
+
+        // generate tensor deleter
+        dlm->deleter = [](struct DLManagedTensor* self) -> void {
+            auto stored_array = static_cast<dal::array<byte_t>*>(self->manager_ctx);
+            if (stored_array) {
+                delete stored_array;
+            }
+            delete[] self->dl_tensor.shape;
+            delete self;
+        };
+
+        // create capsule
+        capsule = py::capsule(static_cast<void*>(dlm), "dltensor", free_capsule);
+    } else
+    {
+        if // max version check
+
+        DLManagedTensorVersioned* dlmv = new DLManagedTensorVersioned;
+        dlmv->manager_ctx = static_cast<void*>(new dal::array<byte_t>(array));
+
+        // generate tensor deleter
+        dlmv->deleter = [](struct DLManagedTensorVersioned* self) -> void {
+            auto stored_array = static_cast<dal::array<byte_t>*>(self->manager_ctx);
+            if (stored_array) {
+                delete stored_array;
+            }
+            delete[] self->dl_tensor.shape;
+            delete self;
+        };
+
+        capsule = py::capsule(static_cast<void*>(dlmv), "dltensorversioned", free_capsule);
+    }
 
     // create capsule
-    py::capsule capsule(static_cast<void*>(dlm), "dltensor", free_capsule);
+    
     return capsule;
 }
+
 
 py::object dlpack_memory_order(py::object obj) {
     DLManagedTensor* dlm;
