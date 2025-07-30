@@ -17,6 +17,7 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
+from sklearn.datasets import load_iris
 
 from daal4py.sklearn._utils import daal_check_version
 from onedal.tests.utils._dataframes_support import (
