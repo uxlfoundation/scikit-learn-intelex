@@ -15,8 +15,8 @@
 # ===============================================================================
 
 import numpy as np
-import scipy.sparse as sp
 import pytest
+import scipy.sparse as sp
 from numpy.testing import assert_allclose
 from sklearn.base import clone
 from sklearn.datasets import load_iris
