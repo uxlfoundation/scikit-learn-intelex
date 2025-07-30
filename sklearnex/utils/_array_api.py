@@ -16,6 +16,7 @@
 
 """Tools to support array_api."""
 
+import math
 from collections.abc import Callable
 from typing import Union
 
@@ -211,7 +212,7 @@ def log_likelihood(emp_cov, precision):
     if not sign > 0:
         ld = -xp.inf
     log_likelihood_ = -xp.sum(emp_cov * precision) + ld
-    log_likelihood_ -= p * np.log(2 * np.pi)
+    log_likelihood_ -= p * xp.log(2 * math.pi)
     log_likelihood_ /= 2.0
     return log_likelihood_
 
