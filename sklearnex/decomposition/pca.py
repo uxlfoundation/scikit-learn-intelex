@@ -381,25 +381,19 @@ if daal_check_version((2024, "P", 100)):
                 min(self.n_samples_, self.n_features_in_), xp
             )
 
-            # This is necessary as get_namespace may return a bare numpy,
-            # which ``asarray`` may not contain the copy keyword argument.
-            copy = np.copy if xp is np else lambda x: xp.asarray(x, copy=True)
-
-            self.components_ = copy(
-                self._onedal_estimator.components_[:n_components, ...]
-            )
+            self.components_ = self._onedal_estimator.components_[:n_components, ...]
             # oneDAL PCA eigenvalues are not guaranteed to be >=0 and must be clipped.
             # This is likely due to accumulated numerical error in the oneDAL calculation.
             self.explained_variance_ = xp.clip(
                 self._onedal_estimator.explained_variance_[:n_components], 0.0, None
             )
-            self.mean_ = copy(self._onedal_estimator.mean_)
+            self.mean_ = self._onedal_estimator.mean_
 
             # set other fit attributes, first by modifying the onedal_estimator
-            self._onedal_estimator.singular_values_ = copy(
+            self._onedal_estimator.singular_values_ = (
                 self._onedal_estimator.singular_values_[:n_components]
             )
-            self._onedal_estimator.explained_variance_ratio_ = copy(
+            self._onedal_estimator.explained_variance_ratio_ = (
                 self._onedal_estimator.explained_variance_ratio_[:n_components]
             )
 
@@ -509,10 +503,6 @@ if daal_check_version((2024, "P", 100)):
                 self._onedal_estimator._onedal_model = None
             self._n_components_ = value
 
-        @n_components_.deleter
-        def n_components_(self):
-            del self._n_components_
-
         @property
         def components_(self):
             return self._components_
@@ -523,10 +513,6 @@ if daal_check_version((2024, "P", 100)):
                 self._onedal_estimator.components_ = value
                 self._onedal_estimator._onedal_model = None
             self._components_ = value
-
-        @components_.deleter
-        def components_(self):
-            del self._components_
 
         @property
         def mean_(self):
@@ -539,10 +525,6 @@ if daal_check_version((2024, "P", 100)):
                 self._onedal_estimator._onedal_model = None
             self._mean_ = value
 
-        @mean_.deleter
-        def mean_(self):
-            del self._mean_
-
         @property
         def explained_variance_(self):
             return self._explained_variance_
@@ -553,10 +535,6 @@ if daal_check_version((2024, "P", 100)):
                 self._onedal_estimator.explained_variance_ = value
                 self._onedal_estimator._onedal_model = None
             self._explained_variance_ = value
-
-        @explained_variance_.deleter
-        def explained_variance_(self):
-            del self._explained_variance_
 
         fit.__doc__ = _sklearn_PCA.fit.__doc__
         transform.__doc__ = _sklearn_PCA.transform.__doc__

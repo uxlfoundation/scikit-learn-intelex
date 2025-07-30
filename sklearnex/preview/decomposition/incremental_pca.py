@@ -358,10 +358,6 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
             self._onedal_estimator._onedal_model = None
         self._n_components_ = value
 
-    @n_components_.deleter
-    def n_components_(self):
-        del self._n_components_
-
     @property
     def components_(self):
         if hasattr(self, "_onedal_estimator") and self._need_to_finalize:
@@ -374,10 +370,6 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
             self._onedal_estimator.components_ = value
             self._onedal_estimator._onedal_model = None
         self._components_ = value
-
-    @components_.deleter
-    def components_(self):
-        del self._components_
 
     @property
     def mean_(self):
@@ -392,10 +384,6 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
             self._onedal_estimator._onedal_model = None
         self._mean_ = value
 
-    @mean_.deleter
-    def mean_(self):
-        del self._mean_
-
     @property
     def explained_variance_(self):
         if hasattr(self, "_onedal_estimator") and self._need_to_finalize:
@@ -408,10 +396,6 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
             self._onedal_estimator.explained_variance_ = value
             self._onedal_estimator._onedal_model = None
         self._explained_variance_ = value
-
-    @explained_variance_.deleter
-    def explained_variance_(self):
-        del self._explained_variance_
 
     __doc__ = _add_inc_serialization_note(
         _sklearn_IncrementalPCA.__doc__ + "\n" + r"%incremental_serialization_note%"

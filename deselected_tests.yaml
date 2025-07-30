@@ -76,6 +76,7 @@ deselected_tests:
   # resulting in solver assignment check failure for sklearn version >= 1.5
   - decomposition/tests/test_pca.py::test_pca_svd_solver_auto[1000-500-400-full] >=1.5
   - decomposition/tests/test_pca.py::test_pca_svd_solver_auto[1000-500-0.5-full] >=1.5
+  - decomposition/tests/test_pca.py::test_pca_svd_solver_auto[10-50-5-full] >= 1.5
 
   # Non-critical, but there are significant differences due to different implementations
   - linear_model/tests/test_common.py::test_balance_property[42-True-LinearRegression]
