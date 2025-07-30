@@ -363,6 +363,10 @@ def test_changed_estimated_attributes(with_array_api, dataframe, queue):
     assert np.array_equal(_as_numpy(est.transform(X)), _as_numpy(est0.transform(X)))
 
 
+@pytest.skipif(
+    not sklearn_check_version("1.5"),
+    reason='svd_solver="auto" does not support sparse inputs',
+)
 @pytest.mark.allow_sklearn_fallback
 def test_create_model_behavior():
     # verify that fit fallbacks does not break ``transform`` as the oneDAL
