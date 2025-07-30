@@ -118,7 +118,7 @@ def test_changed_estimated_attributes(with_array_api, dataframe, queue):
     if dataframe == "pandas":
         pytest.skip("pandas data not supported with array_api_dispatch")
     # check that attributes necessary for the PCA onedal estimator match
-    # changes occuring in the sklearnex estimator
+    # changes occurring in the sklearnex estimator
     X, y = load_iris(return_X_y=True)
 
     X_0 = _convert_to_dataframe(X[y == 0], sycl_queue=queue, target_df=dataframe)
@@ -134,7 +134,7 @@ def test_changed_estimated_attributes(with_array_api, dataframe, queue):
     est.mean_ = est0.mean_
     est.components_ = est0.components_
     est.explained_variance_ = est0.explained_variance_
-    est.n_components_ = est0.n_components_  # is trivial but excercises the logic
+    est.n_components_ = est0.n_components_  # is trivial but exercises the logic
 
     assert np.array_equal(_as_numpy(est.transform(X)), _as_numpy(est0.transform(X)))
 
