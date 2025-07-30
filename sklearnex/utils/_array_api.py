@@ -20,7 +20,6 @@ import math
 from collections.abc import Callable
 from typing import Union
 
-import numpy as np
 import scipy.linalg as linalg
 from sklearn.covariance import log_likelihood as _sklearn_log_likelihood
 
