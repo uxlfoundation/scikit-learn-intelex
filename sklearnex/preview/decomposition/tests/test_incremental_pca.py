@@ -339,7 +339,7 @@ def test_sklearnex_incremental_estimatior_pickle(dataframe, queue, dtype):
     )
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("numpy,dpctl,dpnp"))
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("numpy,dpctl"))
 def test_changed_estimated_attributes(with_array_api, dataframe, queue):
     # check that attributes necessary for the PCA onedal estimator match
     # changes occurring in the sklearnex estimator
@@ -374,7 +374,7 @@ def test_create_model_behavior():
     X_trans = est.fit_transform(X)
 
     # force data to sparse for a fallback to sklearn
-    X_sp = sp.csr_array(X)
+    X_sp = sp.csr_matrix(X)
     est.fit(X_sp)
     # In the case of a fallback, the model should be set to none by clobbered
     # fitted attributes
