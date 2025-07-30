@@ -240,7 +240,8 @@ py::capsule construct_dlpack(const dal::table& input, py::object max_version, py
     array = dal::detail::get_original_data(homogen_input);
 
     // check dl_device if kDLCPU and then transfer to host
-    if (!dl_device.is_none() && kdlcpu && copy)
+    if (!dl_device.is_none())
+        if (dl_device[0].cast == kDLCPU && copy)
         host_array = transfer_to_host(array);
     host_array.need_mutable_data();
 
