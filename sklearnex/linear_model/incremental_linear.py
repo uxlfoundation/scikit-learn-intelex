@@ -17,11 +17,10 @@
 import numbers
 import warnings
 
-import numpy as np
 from sklearn.base import BaseEstimator, MultiOutputMixin, RegressorMixin
 from sklearn.linear_model import LinearRegression as _sklearn_LinearRegression
 from sklearn.metrics import r2_score
-from sklearn.utils import check_array, gen_batches
+from sklearn.utils import gen_batches
 from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
@@ -31,11 +30,6 @@ from onedal.linear_model import (
 )
 from sklearnex._config import get_config
 
-from ..utils.validation import validate_data
-
-if sklearn_check_version("1.2"):
-    from sklearn.utils._param_validation import Interval
-
 from .._device_offload import dispatch, wrap_output_data
 from .._utils import (
     PatchingConditionsChain,
@@ -43,8 +37,14 @@ from .._utils import (
     register_hyperparameters,
 )
 from ..base import oneDALEstimator
+from ..utils._array_api import enable_array_api, get_namespace
+from ..utils.validation import validate_data
+
+if sklearn_check_version("1.2"):
+    from sklearn.utils._param_validation import Interval
 
 
+@enable_array_api("1.5")  # validate_data y_numeric requires sklearn >=1.5
 @register_hyperparameters(
     {
         "fit": ("linear_regression", "train"),
@@ -142,7 +142,7 @@ class IncrementalLinearRegression(
         _parameter_constraints: dict = {
             "fit_intercept": ["boolean"],
             "copy_X": ["boolean"],
-            "n_jobs": [Interval(numbers.Integral, -1, None, closed="left"), None],
+            "n_jobs": [numbers.Integral, None],
             "batch_size": [Interval(numbers.Integral, 1, None, closed="left"), None],
         }
 
@@ -162,14 +162,16 @@ class IncrementalLinearRegression(
     _onedal_gpu_supported = _onedal_supported
 
     def _onedal_predict(self, X, queue=None):
-        if get_config()["use_raw_input"] is False:
+        if not get_config()["use_raw_input"]:
             if sklearn_check_version("1.2"):
                 self._validate_params()
+
+            xp, _ = get_namespace(X)
 
             X = validate_data(
                 self,
                 X,
-                dtype=[np.float64, np.float32],
+                dtype=[xp.float64, xp.float32],
                 copy=self.copy_X,
                 reset=False,
             )
@@ -177,7 +179,11 @@ class IncrementalLinearRegression(
         assert hasattr(self, "_onedal_estimator")
         if self._need_to_finalize:
             self._onedal_finalize_fit()
-        return self._onedal_estimator.predict(X, queue=queue)
+        res = self._onedal_estimator.predict(X, queue=queue)
+
+        if res.shape[1] == 1 and self.coef_.ndim == 1:
+            res = xp.reshape(res, (-1,))
+        return res
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
         return r2_score(
@@ -187,22 +193,17 @@ class IncrementalLinearRegression(
     def _onedal_partial_fit(self, X, y, check_input=True, queue=None):
         first_pass = not hasattr(self, "n_samples_seen_") or self.n_samples_seen_ == 0
 
-        if sklearn_check_version("1.2"):
-            self._validate_params()
-
-        use_raw_input = get_config().get("use_raw_input", False) is True
-        # never check input when using raw input
-        check_input &= use_raw_input is False
-        if check_input:
+        if check_input and not get_config()["use_raw_input"]:
+            xp, _ = get_namespace(X, y)
             X, y = validate_data(
                 self,
                 X,
                 y,
-                dtype=[np.float64, np.float32],
+                dtype=[xp.float64, xp.float32],
                 reset=first_pass,
                 copy=self.copy_X,
                 multi_output=True,
-                ensure_all_finite=False,
+                y_numeric=True,
             )
 
         if first_pass:
@@ -232,20 +233,29 @@ class IncrementalLinearRegression(
         assert hasattr(self, "_onedal_estimator")
         self._onedal_validate_underdetermined(self.n_samples_seen_, self.n_features_in_)
         self._onedal_estimator.finalize_fit()
+
+        self.n_features_in_ = self._onedal_estimator.n_features_in_
+        self._coef_ = self._onedal_estimator.coef_
+        self._intercept_ = self._onedal_estimator.intercept_
+
+        if self._coef_.shape[0] == 1:
+            self._coef_ = self._coef_[0, ...]  # set to 1d
+            self._intercept_ = self._intercept_[0]  # set 1d to scalar
+
         self._need_to_finalize = False
 
     def _onedal_fit(self, X, y, queue=None):
-        if get_config()["use_raw_input"] is False:
-            if sklearn_check_version("1.2"):
-                self._validate_params()
+        if not get_config()["use_raw_input"]:
+            xp, _ = get_namespace(X, y)
+
             X, y = validate_data(
                 self,
                 X,
                 y,
-                dtype=[np.float64, np.float32],
+                dtype=[xp.float64, xp.float32],
                 copy=self.copy_X,
                 multi_output=True,
-                ensure_2d=True,
+                y_numeric=True,
             )
 
         n_samples, n_features = X.shape
@@ -262,7 +272,7 @@ class IncrementalLinearRegression(
             self._onedal_estimator._reset()
 
         for batch in gen_batches(n_samples, self.batch_size_):
-            X_batch, y_batch = X[batch], y[batch]
+            X_batch, y_batch = X[batch, ...], y[batch, ...]
             self._onedal_partial_fit(X_batch, y_batch, check_input=False, queue=queue)
 
         # finite check occurs on onedal side
@@ -275,44 +285,6 @@ class IncrementalLinearRegression(
 
         self._onedal_finalize_fit()
         return self
-
-    @property
-    def intercept_(self):
-        if hasattr(self, "_onedal_estimator"):
-            if self._need_to_finalize:
-                self._onedal_finalize_fit()
-
-            return self._onedal_estimator.intercept_
-        else:
-            raise AttributeError(
-                f"'{self.__class__.__name__}' object has no attribute 'intercept_'"
-            )
-
-    @intercept_.setter
-    def intercept_(self, value):
-        self.__dict__["intercept_"] = value
-        if hasattr(self, "_onedal_estimator"):
-            self._onedal_estimator.intercept_ = value
-            del self._onedal_estimator._onedal_model
-
-    @property
-    def coef_(self):
-        if hasattr(self, "_onedal_estimator"):
-            if self._need_to_finalize:
-                self._onedal_finalize_fit()
-
-            return self._onedal_estimator.coef_
-        else:
-            raise AttributeError(
-                f"'{self.__class__.__name__}' object has no attribute 'coef_'"
-            )
-
-    @coef_.setter
-    def coef_(self, value):
-        self.__dict__["coef_"] = value
-        if hasattr(self, "_onedal_estimator"):
-            self._onedal_estimator.coef_ = value
-            del self._onedal_estimator._onedal_model
 
     def partial_fit(self, X, y, check_input=True):
         """
@@ -336,6 +308,8 @@ class IncrementalLinearRegression(
         self : IncrementalLinearRegression
             Returns the instance itself.
         """
+        if sklearn_check_version("1.2") and check_input:
+            self._validate_params()
 
         dispatch(
             self,
@@ -372,6 +346,8 @@ class IncrementalLinearRegression(
         self : IncrementalLinearRegression
             Returns the instance itself.
         """
+        if sklearn_check_version("1.2"):
+            self._validate_params()
 
         dispatch(
             self,
@@ -412,6 +388,40 @@ class IncrementalLinearRegression(
             y,
             sample_weight=sample_weight,
         )
+
+    @property
+    def coef_(self):
+        if hasattr(self, "_onedal_estimator") and self._need_to_finalize:
+            self._onedal_finalize_fit()
+        return self._coef_
+
+    @coef_.setter
+    def coef_(self, value):
+        if hasattr(self, "_onedal_estimator"):
+            self._onedal_estimator.coef_ = value
+            self._onedal_estimator._onedal_model = None
+        self._coef_ = value
+
+    @coef_.deleter
+    def coef_(self):
+        del self._coef_
+
+    @property
+    def intercept_(self):
+        if hasattr(self, "_onedal_estimator") and self._need_to_finalize:
+            self._onedal_finalize_fit()
+        return self._intercept_
+
+    @intercept_.setter
+    def intercept_(self, value):
+        if hasattr(self, "_onedal_estimator"):
+            self._onedal_estimator.intercept_ = value
+            self._onedal_estimator._onedal_model = None
+        self._intercept_ = value
+
+    @intercept_.deleter
+    def intercept_(self):
+        del self._intercept_
 
     score.__doc__ = _sklearn_LinearRegression.score.__doc__
     predict.__doc__ = _sklearn_LinearRegression.predict.__doc__
