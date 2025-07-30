@@ -71,7 +71,7 @@ inline dal::homogen_table convert_to_homogen_impl(managed_t* dlm_tensor, py::obj
         // in oneDAL when sycl default contexts and parent devices are used. It is assumed that the
         // external queue  is a more specific which properly handles these cases (allowing for oneDAL).
         sycl::queue queue;
-        queue = !q_obj.is(py::none()) ? get_queue_from_python(q_obj)
+        queue = !q_obj.is_none()) ? get_queue_from_python(q_obj)
                                       : get_queue_by_device_id(tensor.device.device_id);
 
         res = dal::homogen_table(queue,
@@ -111,7 +111,7 @@ dal::table convert_to_table(py::object obj, py::object q_obj, bool recursed) {
 
     // if there is a queue, check that the data matches the necessary precision.
 #ifdef ONEDAL_DATA_PARALLEL
-    if (!q_obj.is(py::none()) && !q_obj.attr("sycl_device").attr("has_aspect_fp64").cast<bool>() &&
+    if (!q_obj.is_none()) && !q_obj.attr("sycl_device").attr("has_aspect_fp64").cast<bool>() &&
         dtype == dal::data_type::float64) {
         // If the queue exists, doesn't have the fp64 aspect, and the data is float64
         // then cast it to float32 (using reduce_precision), error raised in reduce_precision
@@ -217,6 +217,16 @@ static void free_capsule(PyObject* cap) {
     }
 }
 
+static void free_capsule_versioned(PyObject* cap) {
+    DLManagedTensor* dlm = nullptr;
+    if (PyCapsule_IsValid(cap, "dltensor_versioned")) {
+        dlm = static_cast<DLManagedTensor*>(PyCapsule_GetPointer(cap, "dltensor_versioned"));
+        if (dlm->deleter) {
+            dlm->deleter(dlm);
+        }
+    }
+}
+
 py::capsule construct_dlpack(const dal::table& input, py::object max_version, py::object dl_device, bool copy) {
     // check table type and expose oneDAL array
     if (input.get_kind() != dal::homogen_table::kind())
@@ -241,7 +251,7 @@ py::capsule construct_dlpack(const dal::table& input, py::object max_version, py
                                      homogen_input.get_metadata().get_data_type(0),
                                      homogen_input.get_data_layout());
 
-    if max_version.is_none()){
+    if(max_version.is_none() || max_version[0].cast<int>() < DLPACK_MAJOR_VERSION){
         //not a versioned tensor
         DLManagedTensor* dlm = new DLManagedTensor;
         dlm->manager_ctx = static_cast<void*>(new dal::array<byte_t>(array));
@@ -260,8 +270,6 @@ py::capsule construct_dlpack(const dal::table& input, py::object max_version, py
         capsule = py::capsule(static_cast<void*>(dlm), "dltensor", free_capsule);
     } else
     {
-        if // max version check
-
         DLManagedTensorVersioned* dlmv = new DLManagedTensorVersioned;
         dlmv->manager_ctx = static_cast<void*>(new dal::array<byte_t>(array));
 
@@ -274,11 +282,17 @@ py::capsule construct_dlpack(const dal::table& input, py::object max_version, py
             delete[] self->dl_tensor.shape;
             delete self;
         };
+        dlmv->version.major = DLPACK_MAJOR_VERSION;
+        dlmv->version.minor = DLPACK_MINOR_VERSION;
 
-        capsule = py::capsule(static_cast<void*>(dlmv), "dltensorversioned", free_capsule);
+        dlmv->flags = 0;
+        if (copy) {
+            dmlv->flags |= DLPACK_FLAG_BITMASK_IS_COPIED;
+        } else {
+            dmlv->flags |= DLPACK_FLAG_BITMASK_READ_ONLY;
+        }
+        capsule = py::capsule(static_cast<void*>(dlmv), "dltensor_versioned", free_capsule_versioned);
     }
-
-    // create capsule
     
     return capsule;
 }
