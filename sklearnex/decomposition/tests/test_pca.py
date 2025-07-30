@@ -17,7 +17,7 @@
 import numpy as np
 import pytest
 import scipy.sparse as sp
-from numpy.testing import array_equal, assert_allclose
+from numpy.testing import assert_allclose
 from sklearn.base import clone
 from sklearn.datasets import load_iris
 
@@ -128,7 +128,7 @@ def test_changed_estimated_attributes(with_array_api, dataframe, queue):
     est = clone(est0)
     assert not hasattr(est, "_onedal_estimator")
     est.fit(X)
-    assert not array_equal(_as_numpy(est.transform(X)), _as_numpy(est0.transform(X)))
+    assert not np.array_equal(_as_numpy(est.transform(X)), _as_numpy(est0.transform(X)))
 
     # copy over parameters necessary for transform
     est.mean_ = est0.mean_
@@ -136,7 +136,7 @@ def test_changed_estimated_attributes(with_array_api, dataframe, queue):
     est.explained_variance_ = est0.explained_variance_
     est.n_components_ = est0.n_components_  # is trivial but excercises the logic
 
-    assert array_equal(_as_numpy(est.transform(X)), _as_numpy(est0.transform(X)))
+    assert np.array_equal(_as_numpy(est.transform(X)), _as_numpy(est0.transform(X)))
 
 
 @pytest.mark.allow_sklearn_fallback

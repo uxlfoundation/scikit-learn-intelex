@@ -334,3 +334,52 @@ def test_sklearnex_incremental_estimatior_pickle(dataframe, queue, dtype):
         incpca_loaded.explained_variance_ratio_,
         atol=1e-6,
     )
+
+
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+def test_changed_estimated_attributes(with_array_api, dataframe, queue):
+    if dataframe == "pandas":
+        pytest.skip("pandas data not supported with array_api_dispatch")
+    # check that attributes necessary for the PCA onedal estimator match
+    # changes occuring in the sklearnex estimator
+    X, y = load_iris(return_X_y=True)
+
+    X_0 = _convert_to_dataframe(X[y == 0], sycl_queue=queue, target_df=dataframe)
+    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+
+    est0 = IncrementalPCA(n_components=4).fit(X_0)
+    est = clone(est0)
+    assert not hasattr(est, "_onedal_estimator")
+    est.fit(X)
+    assert not np.array_equal(_as_numpy(est.transform(X)), _as_numpy(est0.transform(X)))
+
+    # copy over parameters necessary for transform
+    est.mean_ = est0.mean_
+    est.components_ = est0.components_
+    est.explained_variance_ = est0.explained_variance_
+    est.n_components_ = est0.n_components_  # is trivial but excercises the logic
+
+    assert np.array_equal(_as_numpy(est.transform(X)), _as_numpy(est0.transform(X)))
+
+
+@pytest.mark.allow_sklearn_fallback
+def test_create_model_behavior():
+    # verify that fit fallbacks does not break ``transform`` as the oneDAL
+    # model is generated JIT
+
+    X, _ = load_iris(return_X_y=True)
+    # generate a onedal estimator
+    est = IncrementalPCA()
+    X_trans = est.fit_transform(X)
+
+    # force data to sparse for a fallback to sklearn
+    X_sp = sp.csr_array(X)
+    est.fit(X_sp)
+    # In the case of a fallback, the model should be set to none by clobbered
+    # fitted attributes
+    assert est._onedal_estimator._onedal_model is None
+
+    X_trans_sparse = est.transform(X)
+    # use allclose as data was fit with sklearn and onedal on the same data
+    # but using different backends
+    assert_allclose(X_trans, X_trans_sparse)
