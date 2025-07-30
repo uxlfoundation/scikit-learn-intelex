@@ -15,8 +15,8 @@
 # ===============================================================================
 
 import numpy as np
-import pytest
 import scipy.sparse as sp
+import pytest
 from numpy.testing import assert_allclose
 from sklearn.base import clone
 from sklearn.datasets import load_iris
@@ -339,10 +339,8 @@ def test_sklearnex_incremental_estimatior_pickle(dataframe, queue, dtype):
     )
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("numpy,dpctl,dpnp"))
 def test_changed_estimated_attributes(with_array_api, dataframe, queue):
-    if dataframe == "pandas":
-        pytest.skip("pandas data not supported with array_api_dispatch")
     # check that attributes necessary for the PCA onedal estimator match
     # changes occurring in the sklearnex estimator
     X, y = load_iris(return_X_y=True)
@@ -372,7 +370,7 @@ def test_create_model_behavior():
 
     X, _ = load_iris(return_X_y=True)
     # generate a onedal estimator
-    est = IncrementalPCA()
+    est = IncrementalPCA(n_components=3)
     X_trans = est.fit_transform(X)
 
     # force data to sparse for a fallback to sklearn
