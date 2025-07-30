@@ -113,10 +113,8 @@ def test_non_batched_covariance(hyperparameters, dataframe, queue):
     assert_allclose(res_non_batched, res_batched)
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("numpy,dpctl,dpnp"))
 def test_changed_estimated_attributes(with_array_api, dataframe, queue):
-    if dataframe == "pandas":
-        pytest.skip("pandas data not supported with array_api_dispatch")
     # check that attributes necessary for the PCA onedal estimator match
     # changes occurring in the sklearnex estimator
     X, y = load_iris(return_X_y=True)
@@ -146,7 +144,7 @@ def test_create_model_behavior():
 
     X, _ = load_iris(return_X_y=True)
     # generate a onedal estimator
-    est = PCA()
+    est = PCA(n_components=3)
     X_trans = est.fit_transform(X)
 
     # force data to sparse for a fallback to sklearn

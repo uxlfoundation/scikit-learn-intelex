@@ -16,7 +16,9 @@
 
 import numpy as np
 import pytest
+import scipy.sparse as sp
 from numpy.testing import assert_allclose
+from sklearn.base import clone
 from sklearn.datasets import load_iris
 
 from daal4py.sklearn._utils import daal_check_version
