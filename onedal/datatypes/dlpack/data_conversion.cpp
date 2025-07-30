@@ -182,11 +182,12 @@ DLTensor construct_dlpack_tensor(const dal::array<byte_t>& array,
                                  std::int64_t row_count,
                                  std::int64_t column_count,
                                  const dal::data_type& dtype,
-                                 const dal::data_layout& layout) {
+                                 const dal::data_layout& layout,
+                                 bool modifiable) {
     DLTensor tensor;
 
     // set data
-    tensor.data = const_cast<byte_t*>(array.get_data());
+    tensor.data = modifiable ? array.get_mutable_data() : const_cast<byte_t*>(array.get_data());
     tensor.device = get_dlpack_device(array);
     tensor.ndim = std::int32_t(2);
     tensor.dtype = convert_dal_to_dlpack_type(dtype);
@@ -232,25 +233,46 @@ py::capsule construct_dlpack(const dal::table& input, py::object max_version, py
     if (input.get_kind() != dal::homogen_table::kind())
         throw pybind11::type_error("Unsupported table type for dlpack conversion");
     
-    dal::array<byte_t> array, host_array;
     DLTensor tensor;
     py::capsule capsule;
 
     auto homogen_input = reinterpret_cast<const dal::homogen_table&>(input);
-    array = dal::detail::get_original_data(homogen_input);
+    dal::array<byte_t> array = dal::detail::get_original_data(homogen_input);
 
-    // check dl_device if kDLCPU and then transfer to host
-    if (!dl_device.is_none())
-        if (dl_device[0].cast == kDLCPU && copy)
-        host_array = transfer_to_host(array);
-    host_array.need_mutable_data();
+    // verify requested device
+    if (!dl_device.is_none()){
+        DLDevice requested{dl_device[0].cast<DLDeviceType>(), dl_device[1].cast<int32_t>};
+        DLDevice current = get_dlpack_device(array);
+        // only allow transfers to host, dlpack implementation does not provide sufficient fine-grained control
+        if ( requested.device_type != current.device_type || requested.device_id != current.device_id ){
+            if ( requested.device_type == kDLCPU && copy){
+                array = transfer_to_host(array);
+            } else {
+                throw py::buffer_error("Cannot create dlpack for requested device")
+                    }
+        }
+    } 
+// oneDAL tables are by definition immutable, and must be made mutable via a copy.
+    if (copy) {
+#ifdef ONEDAL_DATA_PARALLEL
+        auto queue = array.get_queue();
+        if (queue.has_value()){
+            array.need_mutable_data(queue);
+        } else {
+#else
+            {
+#endif // ONEDAL_DATA_PARALLEL
+            array.need_mutable_data();
+        }
+    }
 
     // set tensor
-    tensor = construct_dlpack_tensor(host_array,
+    tensor = construct_dlpack_tensor(array,
                                      homogen_input.get_row_count(),
                                      homogen_input.get_column_count(),
                                      homogen_input.get_metadata().get_data_type(0),
-                                     homogen_input.get_data_layout());
+                                     homogen_input.get_data_layout(),
+                                     copy);
 
     if(max_version.is_none() || max_version[0].cast<int>() < DLPACK_MAJOR_VERSION){
         //not a versioned tensor
@@ -286,11 +308,11 @@ py::capsule construct_dlpack(const dal::table& input, py::object max_version, py
         dlmv->version.major = DLPACK_MAJOR_VERSION;
         dlmv->version.minor = DLPACK_MINOR_VERSION;
 
-        dlmv->flags = 0;
+        // by definition for oneDAL tables, unless a copy of the array is made, it is readonly.
         if (copy) {
-            dmlv->flags |= DLPACK_FLAG_BITMASK_IS_COPIED;
+            dmlv->flags = DLPACK_FLAG_BITMASK_IS_COPIED;
         } else {
-            dmlv->flags |= DLPACK_FLAG_BITMASK_READ_ONLY;
+            dmlv->flags = DLPACK_FLAG_BITMASK_READ_ONLY;
         }
         capsule = py::capsule(static_cast<void*>(dlmv), "dltensor_versioned", free_capsule_versioned);
     }
