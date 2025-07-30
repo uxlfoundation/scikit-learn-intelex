@@ -212,7 +212,7 @@ def log_likelihood(emp_cov, precision):
     if not sign > 0:
         ld = -xp.inf
     log_likelihood_ = -xp.sum(emp_cov * precision) + ld
-    log_likelihood_ -= p * xp.log(2 * math.pi)
+    log_likelihood_ -= p * math.log(2 * math.pi)
     log_likelihood_ /= 2.0
     return log_likelihood_
 
