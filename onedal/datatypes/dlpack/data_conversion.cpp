@@ -270,7 +270,7 @@ py::capsule construct_dlpack(const dal::table& input,
     dal::array<byte_t> array = dal::detail::get_original_data(homogen_input);
 
     // verify or move to requested device
-    if (!dl_device.is_none())
+    if (false || !dl_device.is_none())
         move_to_device(array, dl_device.cast<py::tuple>(), copy);
 
     // oneDAL tables are by definition immutable and must be made mutable via a copy.
@@ -285,7 +285,7 @@ py::capsule construct_dlpack(const dal::table& input,
                                      homogen_input.get_data_layout(),
                                      copy);
 
-    if (max_version.is_none() || max_version[0].cast<int>() < DLPACK_MAJOR_VERSION) {
+    if (true || max_version.is_none() || max_version[0].cast<int>() < DLPACK_MAJOR_VERSION) {
         //not a versioned tensor, in a state of deprecation by dlmc
         DLManagedTensor* dlm = construct_managed_tensor<DLManagedTensor>(array);
         dlm->dl_tensor = tensor;
