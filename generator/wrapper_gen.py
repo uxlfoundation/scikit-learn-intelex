@@ -18,7 +18,7 @@
 # The code generator.
 # We define jinja2 templates to generate code for all the oneDAL algorithms and their
 # Result and Model objects. Most macros work on one namespace and expect expect
-# values/variables in their env. If not specificied otherwise, we assume we can
+# values/variables in their env. If not specified otherwise, we assume we can
 # use the following
 #          {{ns}}:            current C++ namespace
 #          {{algo}}:          algo name (as seen in API)
@@ -1364,7 +1364,7 @@ cpp_footer_template = """
 ##################################################################################
 def flat(t, cpp=True):
     """Flatten C++ name, leaving only what's needed to disambiguate names.
-    E.g. stripping of leading namespaces and replaceing :: with _
+    E.g. stripping of leading namespaces and replacing :: with _
     """
 
     def _flat(ty):

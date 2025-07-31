@@ -72,7 +72,7 @@ They support different enabling scenarios while producing the same result.
 
 **Example**
 
-This example shows how to patch |sklearn| by modifing your script. To make sure that patching is registered by the scikit-learn estimators, always import module ``sklearn`` after these lines.
+This example shows how to patch |sklearn| by modifying your script. To make sure that patching is registered by the scikit-learn estimators, always import module ``sklearn`` after these lines.
 
 .. code-block:: python
   :caption: Example: Drop-In Patching
@@ -188,6 +188,8 @@ To install |sklearnex|, run:
 ::
 
   pip install scikit-learn-intelex
+
+.. tip:: Wheels are also available through Intel's index: ``https://software.repos.intel.com/python/pypi``
 
 **Supported Configurations**
 
@@ -337,7 +339,7 @@ Software Requirements
    .. tab:: GPU
 
       - A Linux* or Windows* version supported by DPC++ and oneMKL
-      - Intel® GPGPU drivers
+      - Intel® Compute Runtime (see :ref:`oneapi_gpu`)
       - DPC++ runtime libraries
 
       .. important::
@@ -353,6 +355,7 @@ Software Requirements
 * 1.4.X
 * 1.5.X
 * 1.6.X
+* 1.7.X
 
 Memory Requirements
 **********************

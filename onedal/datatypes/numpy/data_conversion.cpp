@@ -153,7 +153,10 @@ inline csr_table_t convert_to_csr_impl(PyObject *py_data,
     return res_table;
 }
 
-dal::table convert_to_table(py::object inp_obj, py::object queue, bool recursed) {
+dal::table convert_to_table(py::object inp_obj,
+                            py::object queue,
+                            bool recursed,
+                            bool require_sparse_with_sorted_indices) {
     dal::table res;
 
     PyObject *obj = inp_obj.ptr();
@@ -213,6 +216,11 @@ dal::table convert_to_table(py::object inp_obj, py::object queue, bool recursed)
     }
     else if (strcmp(Py_TYPE(obj)->tp_name, "csr_matrix") == 0 ||
              strcmp(Py_TYPE(obj)->tp_name, "csr_array") == 0) {
+        if (require_sparse_with_sorted_indices) {
+            if (!py::getattr(obj, "has_sorted_indices").cast<bool>()) {
+                py::reinterpret_borrow<py::object>(obj).attr("sort_indices")();
+            }
+        }
         PyObject *py_data = PyObject_GetAttrString(obj, "data");
         PyObject *py_column_indices = PyObject_GetAttrString(obj, "indices");
         PyObject *py_row_indices = PyObject_GetAttrString(obj, "indptr");
@@ -269,9 +277,10 @@ dal::table convert_to_table(py::object inp_obj, py::object queue, bool recursed)
     return res;
 }
 
-static void free_capsule(PyObject *cap) {
+template <class T>
+void free_capsule(PyObject *cap) {
     // TODO: check safe cast
-    dal::base *stored_array = static_cast<dal::base *>(PyCapsule_GetPointer(cap, NULL));
+    dal::array<T> *stored_array = static_cast<dal::array<T> *>(PyCapsule_GetPointer(cap, NULL));
     if (stored_array) {
         delete stored_array;
     }
@@ -304,7 +313,7 @@ static PyObject *convert_to_numpy_impl(
         throw std::invalid_argument("Conversion to numpy array failed");
 
     void *opaque_value = static_cast<void *>(new dal::array<T>(host_array));
-    PyObject *cap = PyCapsule_New(opaque_value, NULL, free_capsule);
+    PyObject *cap = PyCapsule_New(opaque_value, NULL, free_capsule<T>);
     PyArray_SetBaseObject(reinterpret_cast<PyArrayObject *>(obj), cap);
     return obj;
 }

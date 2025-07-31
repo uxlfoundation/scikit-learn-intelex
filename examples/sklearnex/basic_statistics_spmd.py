@@ -48,7 +48,7 @@ size = comm.Get_size()
 
 params_spmd = {"ns": 19, "nf": 31}
 
-data, weights = generate_data(params_spmd, size)
+data, weights = generate_data(params_spmd, size, seed=rank)
 weighted_data = np.diag(weights) @ data
 
 dpt_data = dpt.asarray(data, usm_type="device", sycl_queue=q)
@@ -60,5 +60,5 @@ gtr_std = np.std(weighted_data, axis=0)
 bss = BasicStatisticsSpmd(["mean", "standard_deviation"])
 bss.fit(dpt_data, dpt_weights)
 
-print(f"Computed mean on rank {rank}:\n", bss.mean)
-print(f"Computed std on rank {rank}:\n", bss.standard_deviation)
+print(f"Computed mean on rank {rank}:\n", bss.mean_)
+print(f"Computed std on rank {rank}:\n", bss.standard_deviation_)

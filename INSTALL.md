@@ -214,10 +214,32 @@ python setup.py build --abs-rpath
 
 **Note:** when building `scikit-learn-intelex` from source with this option, it will use the oneDAL library with which it was compiled. oneDAL has dependencies on other libraries such as TBB, which is also distributed as a python package through `pip` and as a `conda` package. By default, a conda environment will first try to load TBB from its own packages if it is installed in the environment, which might cause issues if oneDAL was compiled with a system TBB instead of a conda one. In such cases, it is advised to either uninstall TBB from pip/conda (it will be loaded from the oneDAL library which links to it), or modify the order of search paths in environment variables like `${LD_LIBRARY_PATH}`.
 
+### Using LLD as linker
+
+By default, the setup script adds additional linkage arguments on Linux, such as strong stack protection. These are not supported by all linkers - in particular, they are not supported by LLVM's LLD linker. If using LLD as linker (for example, by setting environment variable `LDFLAGS="-fuse-ld=lld"`), then one must additionally pass argument `--using-lld` to the setup command. Example:
+
+```shell
+CC=clang CXX=clang++ LDFLAGS="-fuse-ld=lld" python setup.py build_ext --inplace --force --abs-rpath --using-lld
+CC=clang CXX=clang++ LDFLAGS="-fuse-ld=lld" python setup.py build --abs-rpath --using-lld
+```
+
+Note that passing argument `--using-lld` does not make the script use LLD as linker, only makes it avoid adding options that are not supported by it.
+
+### Debug Builds
+
+To build modules with debugging symbols and assertions enabled, pass argument `--debug` to the setup command - e.g.:
+
+```shell
+python setup.py build_ext --inplace --force --abs-rpath --debug
+python setup.py build --abs-rpath --debug
+```
+
+_**Note:** on Windows, this will only add debugging symbols for the `onedal` extension modules, but not for the `daal4py` extension module._
+
 ### Building with ASAN
 
 In order to use AddressSanitizer (ASan) together with `scikit-learn-intelex`, it's necessary to:
-* Build both oneDAL and scikit-learn-intelex with ASan (otherwise error traces will not be very informative).
+* Build both oneDAL and scikit-learn-intelex with ASan and with debug symbols (otherwise error traces will not be very informative).
 * Preload the ASan runtime when executing the Python process that imports `scikit-learn-intelex`.
 * Optionally, configure Python to use `malloc` as default allocator to reduce the number of false-positive leak reports.
 
@@ -232,10 +254,14 @@ export CC="icx -fsanitize=address -g"
 export CXX="icpx -fsanitize=address -g"
 ```
 
-The ASAN runtime used by ICX is the same as the one by Clang. It's possible to preload the ASan runtime for GNU if that's the system's default through e.g. `LD_PRELOAD=libasan.so` or similar, but to get the same ASan runtime as for oneDAL, one might need to specifically pass the paths from Clang if that's not the system's default compiler:
+_Hint: the Cython module `daal4py` that gets built through `build_ext` does not do incremental compilation, so one might want to add `ccache` into the compiler call for development purposes - e.g. `CXX="ccache icx  -fsanitize=address -g"`._
+
+The ASan runtime used by ICX is the same as the one by Clang. It's possible to preload the ASan runtime for GNU if that's the system's default through e.g. `LD_PRELOAD=libasan.so` or similar. However, one might need to specifically pass the paths from Clang to get the same ASan runtime as for oneDAL if that is not the system's default compiler:
 ```shell
 export LD_PRELOAD="$(clang -print-file-name=libclang_rt.asan-x86_64.so)"
 ```
+
+_Note: this requires both `clang` and its runtime libraries to be installed. If using toolkits from `conda-forge`, then using `libclang_rt` requires installing package `compiler-rt`, in addition to `clang` and `clangxx`._
 
 Then, the Python memory allocator can be set to `malloc` like this:
 ```shell
@@ -245,12 +271,18 @@ export PYTHONMALLOC=malloc
 Putting it all together, the earlier examples building the library in-place and executing a python file with it become as follows:
 ```shell
 source <path to ASan-enabled oneDAL env.sh>
-CC="icx -fsanitize=address -g" CXX="icpx -fsanitize=address -g" python setup.py build_ext --inplace --force --abs-rpath
+CC="ccache icx -fsanitize=address -g" CXX="ccache icpx -fsanitize=address -g" python setup.py build_ext --inplace --force --abs-rpath
 CC="icx -fsanitize=address -g" CXX="icpx -fsanitize=address -g" python setup.py build --abs-rpath
 LD_PRELOAD="$(clang -print-file-name=libclang_rt.asan-x86_64.so)" PYTHONMALLOC=malloc PYTHONPATH=$(pwd) python <python file.py>
 ```
 
 _Be aware that ASan is known to generate many false-positive reports of memory leaks when used with oneDAL, NumPy, and SciPy._
+
+### Building with other sanitizers
+
+UBSan can be used in a similar way as ASan in scikit-learn-intelex when oneDAL is built with this sanitizer, by using `-fsanitize=undefined` instead, but getting Python to load the required runtime might require using LLD as linker when compiling scikit-learn (see argument `--using-lld` for more details), and might require loading a different compiler runtime, such as `libclang_rt.ubsan_standalone-x86_64.so`.
+
+Other sanitizers such as MSan which provide only static-link files with no runtimes are not possible to use with scikit-learn-intelex, unless Python itself is also compiled with them.
 
 ## Build from Sources with `conda-build`
 

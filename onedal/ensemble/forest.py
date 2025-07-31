@@ -34,7 +34,6 @@ from ..common._estimator_checks import _check_is_fitted
 from ..common._mixin import ClassifierMixin, RegressorMixin
 from ..datatypes import from_table, to_table
 from ..utils._array_api import _get_sycl_namespace
-from ..utils._dpep_helpers import get_unique_values_with_dpep
 from ..utils.validation import (
     _check_array,
     _check_n_features,
@@ -315,7 +314,13 @@ class BaseForest(BaseEnsemble, metaclass=ABCMeta):
         else:
             if sua_iface is not None:
                 queue = X.sycl_queue
-            self.classes_ = get_unique_values_with_dpep(y)
+            # try catch needed for raw_inputs + array_api data where unlike
+            # numpy the way to yield unique values is via `unique_values`
+            # This should be removed when refactored for gpu zero-copy
+            try:
+                self.classes_ = xp.unique(y)
+            except AttributeError:
+                self.classes_ = xp.unique_values(y)
 
         self.n_features_in_ = X.shape[1]
 
@@ -361,7 +366,7 @@ class BaseForest(BaseEnsemble, metaclass=ABCMeta):
 
     def _create_model(self, module):
         # TODO:
-        # upate error msg.
+        # update error msg.
         raise NotImplementedError("Creating model is not supported.")
 
     def _predict(self, X, hparams=None):
@@ -385,14 +390,14 @@ class BaseForest(BaseEnsemble, metaclass=ABCMeta):
 
         model = self._onedal_model
         queue = QM.get_global_queue()
-        X = to_table(X, queue=queue)
-        params = self._get_onedal_params(X)
+        X_table = to_table(X, queue=queue)
+        params = self._get_onedal_params(X_table)
         if hparams is not None and not hparams.is_default:
-            result = self.infer(params, hparams.backend, model, X)
+            result = self.infer(params, hparams.backend, model, X_table)
         else:
-            result = self.infer(params, model, X)
+            result = self.infer(params, model, X_table)
 
-        y = from_table(result.responses, sua_iface=sua_iface, sycl_queue=queue, xp=xp)
+        y = from_table(result.responses, like=X)
         return y
 
     def _predict_proba(self, X, hparams=None):
@@ -517,7 +522,8 @@ class RandomForestClassifier(ClassifierMixin, BaseForest, metaclass=ABCMeta):
 
         try:
             return xp.take(
-                xp.asarray(self.classes_), xp.astype(xp.reshape(pred, (-1,)), xp.int64)
+                xp.asarray(self.classes_, device=pred.sycl_queue),
+                xp.astype(xp.reshape(pred, (-1,)), xp.int64),
             )
         except AttributeError:
             return np.take(self.classes_, pred.ravel().astype(np.int64, casting="unsafe"))
