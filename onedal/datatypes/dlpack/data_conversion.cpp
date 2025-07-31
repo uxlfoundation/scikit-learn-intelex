@@ -229,6 +229,23 @@ static void free_capsule_versioned(PyObject* cap) {
     }
 }
 
+template <typename dlmanaged>
+dlmanaged* construct_managed_tensor(const dal::array<byte_t>& array) {
+    dlmanaged* dlm = new dlmanaged;
+    dlm->manager_ctx = static_cast<void*>(new dal::array<byte_t>(array));
+
+    // generate tensor deleter
+    dlm->deleter = [](struct dlmanaged* self) -> void {
+        auto stored_array = static_cast<dal::array<byte_t>*>(self->manager_ctx);
+        if (stored_array) {
+            delete stored_array;
+        }
+        delete[] self->dl_tensor.shape;
+        delete self;
+    };
+    return dlm
+}
+
 py::capsule construct_dlpack(const dal::table& input,
                              py::object max_version,
                              py::object dl_device,
@@ -247,7 +264,8 @@ py::capsule construct_dlpack(const dal::table& input,
     if (!dl_device.is_none()) {
         DLDevice requested{ dl_device[0].cast<DLDeviceType>(), dl_device[1].cast<int32_t> };
         DLDevice current = get_dlpack_device(array);
-        // only allow transfers to host, dlpack implementation does not provide sufficient fine-grained control
+        // only allow transfers to host, dlpack implementation does not provide sufficient
+        // fine-grained control for SYCL devices.
         if (requested.device_type != current.device_type ||
             requested.device_id != current.device_id) {
             if (requested.device_type == kDLCPU && copy) {
@@ -258,7 +276,7 @@ py::capsule construct_dlpack(const dal::table& input,
             }
         }
     }
-    // oneDAL tables are by definition immutable, and must be made mutable via a copy.
+    // oneDAL tables are by definition immutable and must be made mutable via a copy.
     if (copy) {
 #ifdef ONEDAL_DATA_PARALLEL
         auto queue = array.get_queue();
@@ -282,36 +300,15 @@ py::capsule construct_dlpack(const dal::table& input,
                                      copy);
 
     if (max_version.is_none() || max_version[0].cast<int>() < DLPACK_MAJOR_VERSION) {
-        //not a versioned tensor
-        DLManagedTensor* dlm = new DLManagedTensor;
-        dlm->manager_ctx = static_cast<void*>(new dal::array<byte_t>(array));
-
-        // generate tensor deleter
-        dlm->deleter = [](struct DLManagedTensor* self) -> void {
-            auto stored_array = static_cast<dal::array<byte_t>*>(self->manager_ctx);
-            if (stored_array) {
-                delete stored_array;
-            }
-            delete[] self->dl_tensor.shape;
-            delete self;
-        };
+        //not a versioned tensor, in a state of deprecation by dlmc
+        DLManagedTensor* dlm = construct_managed_tensor<DLManagedTensor>(array);
 
         // create capsule
         capsule = py::capsule(static_cast<void*>(dlm), "dltensor", free_capsule);
     }
     else {
-        DLManagedTensorVersioned* dlmv = new DLManagedTensorVersioned;
-        dlmv->manager_ctx = static_cast<void*>(new dal::array<byte_t>(array));
+        DLManagedTensorVersioned* dlmv = construct_managed_tensor<DLManagedTensorVersioned>(array);
 
-        // generate tensor deleter
-        dlmv->deleter = [](struct DLManagedTensorVersioned* self) -> void {
-            auto stored_array = static_cast<dal::array<byte_t>*>(self->manager_ctx);
-            if (stored_array) {
-                delete stored_array;
-            }
-            delete[] self->dl_tensor.shape;
-            delete self;
-        };
         dlmv->version.major = DLPACK_MAJOR_VERSION;
         dlmv->version.minor = DLPACK_MINOR_VERSION;
 
