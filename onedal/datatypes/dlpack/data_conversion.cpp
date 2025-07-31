@@ -113,17 +113,18 @@ dal::table convert_to_table(py::object obj, py::object q_obj, bool recursed) {
 #ifdef ONEDAL_DATA_PARALLEL
     if (!q_obj.is_none()) && !q_obj.attr("sycl_device").attr("has_aspect_fp64").cast<bool>() &&
         dtype == dal::data_type::float64) {
-        // If the queue exists, doesn't have the fp64 aspect, and the data is float64
-        // then cast it to float32 (using reduce_precision), error raised in reduce_precision
-        if (!recursed) {
-            py::object copy = reduce_precision(obj);
-            res = convert_to_table(copy, q_obj, true);
+            // If the queue exists, doesn't have the fp64 aspect, and the data is float64
+            // then cast it to float32 (using reduce_precision), error raised in reduce_precision
+            if (!recursed) {
+                py::object copy = reduce_precision(obj);
+                res = convert_to_table(copy, q_obj, true);
+            }
+            else {
+                throw std::invalid_argument(
+                    "dlpack input could not be converted into onedal table.");
+            }
+            return res;
         }
-        else {
-            throw std::invalid_argument("dlpack input could not be converted into onedal table.");
-        }
-        return res;
-    }
 #endif // ONEDAL_DATA_PARALLEL
 
     // unusual data format found, try to make contiguous, otherwise throw error
@@ -228,11 +229,14 @@ static void free_capsule_versioned(PyObject* cap) {
     }
 }
 
-py::capsule construct_dlpack(const dal::table& input, py::object max_version, py::object dl_device, bool copy) {
+py::capsule construct_dlpack(const dal::table& input,
+                             py::object max_version,
+                             py::object dl_device,
+                             bool copy) {
     // check table type and expose oneDAL array
     if (input.get_kind() != dal::homogen_table::kind())
         throw pybind11::type_error("Unsupported table type for dlpack conversion");
-    
+
     DLTensor tensor;
     py::capsule capsule;
 
@@ -240,27 +244,30 @@ py::capsule construct_dlpack(const dal::table& input, py::object max_version, py
     dal::array<byte_t> array = dal::detail::get_original_data(homogen_input);
 
     // verify requested device
-    if (!dl_device.is_none()){
-        DLDevice requested{dl_device[0].cast<DLDeviceType>(), dl_device[1].cast<int32_t>};
+    if (!dl_device.is_none()) {
+        DLDevice requested{ dl_device[0].cast<DLDeviceType>(), dl_device[1].cast<int32_t> };
         DLDevice current = get_dlpack_device(array);
         // only allow transfers to host, dlpack implementation does not provide sufficient fine-grained control
-        if ( requested.device_type != current.device_type || requested.device_id != current.device_id ){
-            if ( requested.device_type == kDLCPU && copy){
+        if (requested.device_type != current.device_type ||
+            requested.device_id != current.device_id) {
+            if (requested.device_type == kDLCPU && copy) {
                 array = transfer_to_host(array);
-            } else {
-                throw py::buffer_error("Cannot create dlpack for requested device")
-                    }
+            }
+            else {
+                throw py::buffer_error("Cannot create dlpack for requested device");
+            }
         }
-    } 
-// oneDAL tables are by definition immutable, and must be made mutable via a copy.
+    }
+    // oneDAL tables are by definition immutable, and must be made mutable via a copy.
     if (copy) {
 #ifdef ONEDAL_DATA_PARALLEL
         auto queue = array.get_queue();
-        if (queue.has_value()){
+        if (queue.has_value()) {
             array.need_mutable_data(queue);
-        } else {
+        }
+        else {
 #else
-            {
+        {
 #endif // ONEDAL_DATA_PARALLEL
             array.need_mutable_data();
         }
@@ -274,7 +281,7 @@ py::capsule construct_dlpack(const dal::table& input, py::object max_version, py
                                      homogen_input.get_data_layout(),
                                      copy);
 
-    if(max_version.is_none() || max_version[0].cast<int>() < DLPACK_MAJOR_VERSION){
+    if (max_version.is_none() || max_version[0].cast<int>() < DLPACK_MAJOR_VERSION) {
         //not a versioned tensor
         DLManagedTensor* dlm = new DLManagedTensor;
         dlm->manager_ctx = static_cast<void*>(new dal::array<byte_t>(array));
@@ -291,8 +298,8 @@ py::capsule construct_dlpack(const dal::table& input, py::object max_version, py
 
         // create capsule
         capsule = py::capsule(static_cast<void*>(dlm), "dltensor", free_capsule);
-    } else
-    {
+    }
+    else {
         DLManagedTensorVersioned* dlmv = new DLManagedTensorVersioned;
         dlmv->manager_ctx = static_cast<void*>(new dal::array<byte_t>(array));
 
@@ -311,15 +318,16 @@ py::capsule construct_dlpack(const dal::table& input, py::object max_version, py
         // by definition for oneDAL tables, unless a copy of the array is made, it is readonly.
         if (copy) {
             dmlv->flags = DLPACK_FLAG_BITMASK_IS_COPIED;
-        } else {
+        }
+        else {
             dmlv->flags = DLPACK_FLAG_BITMASK_READ_ONLY;
         }
-        capsule = py::capsule(static_cast<void*>(dlmv), "dltensor_versioned", free_capsule_versioned);
+        capsule =
+            py::capsule(static_cast<void*>(dlmv), "dltensor_versioned", free_capsule_versioned);
     }
-    
+
     return capsule;
 }
-
 
 py::object dlpack_memory_order(py::object obj) {
     DLManagedTensor* dlm;

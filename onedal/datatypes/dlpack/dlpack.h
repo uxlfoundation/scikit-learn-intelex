@@ -59,10 +59,10 @@ extern "C" {
  * updates indicate the addition of enumeration values.
  */
 typedef struct {
-  /*! \brief DLPack major version. */
-  uint32_t major;
-  /*! \brief DLPack minor version. */
-  uint32_t minor;
+    /*! \brief DLPack major version. */
+    uint32_t major;
+    /*! \brief DLPack minor version. */
+    uint32_t minor;
 } DLPackVersion;
 
 /*!
@@ -73,112 +73,112 @@ typedef enum : int32_t {
 #else
 typedef enum {
 #endif
-  /*! \brief CPU device */
-  kDLCPU = 1,
-  /*! \brief CUDA GPU device */
-  kDLCUDA = 2,
-  /*!
+    /*! \brief CPU device */
+    kDLCPU = 1,
+    /*! \brief CUDA GPU device */
+    kDLCUDA = 2,
+    /*!
    * \brief Pinned CUDA CPU memory by cudaMallocHost
    */
-  kDLCUDAHost = 3,
-  /*! \brief OpenCL devices. */
-  kDLOpenCL = 4,
-  /*! \brief Vulkan buffer for next generation graphics. */
-  kDLVulkan = 7,
-  /*! \brief Metal for Apple GPU. */
-  kDLMetal = 8,
-  /*! \brief Verilog simulator buffer */
-  kDLVPI = 9,
-  /*! \brief ROCm GPUs for AMD GPUs */
-  kDLROCM = 10,
-  /*!
+    kDLCUDAHost = 3,
+    /*! \brief OpenCL devices. */
+    kDLOpenCL = 4,
+    /*! \brief Vulkan buffer for next generation graphics. */
+    kDLVulkan = 7,
+    /*! \brief Metal for Apple GPU. */
+    kDLMetal = 8,
+    /*! \brief Verilog simulator buffer */
+    kDLVPI = 9,
+    /*! \brief ROCm GPUs for AMD GPUs */
+    kDLROCM = 10,
+    /*!
    * \brief Pinned ROCm CPU memory allocated by hipMallocHost
    */
-  kDLROCMHost = 11,
-  /*!
+    kDLROCMHost = 11,
+    /*!
    * \brief Reserved extension device type,
    * used for quickly test extension device
    * The semantics can differ depending on the implementation.
    */
-  kDLExtDev = 12,
-  /*!
+    kDLExtDev = 12,
+    /*!
    * \brief CUDA managed/unified memory allocated by cudaMallocManaged
    */
-  kDLCUDAManaged = 13,
-  /*!
+    kDLCUDAManaged = 13,
+    /*!
    * \brief Unified shared memory allocated on a oneAPI non-partititioned
    * device. Call to oneAPI runtime is required to determine the device
    * type, the USM allocation type and the sycl context it is bound to.
    *
    */
-  kDLOneAPI = 14,
-  /*! \brief GPU support for next generation WebGPU standard. */
-  kDLWebGPU = 15,
-  /*! \brief Qualcomm Hexagon DSP */
-  kDLHexagon = 16,
-  /*! \brief Microsoft MAIA devices */
-  kDLMAIA = 17,
-  /*! \brief AWS Trainium */
-  kDLTrn = 18,
+    kDLOneAPI = 14,
+    /*! \brief GPU support for next generation WebGPU standard. */
+    kDLWebGPU = 15,
+    /*! \brief Qualcomm Hexagon DSP */
+    kDLHexagon = 16,
+    /*! \brief Microsoft MAIA devices */
+    kDLMAIA = 17,
+    /*! \brief AWS Trainium */
+    kDLTrn = 18,
 } DLDeviceType;
 
 /*!
  * \brief A Device for Tensor and operator.
  */
 typedef struct {
-  /*! \brief The device type used in the device. */
-  DLDeviceType device_type;
-  /*!
+    /*! \brief The device type used in the device. */
+    DLDeviceType device_type;
+    /*!
    * \brief The device index.
    * For vanilla CPU memory, pinned memory, or managed memory, this is set to 0.
    */
-  int32_t device_id;
+    int32_t device_id;
 } DLDevice;
 
 /*!
  * \brief The type code options DLDataType.
  */
 typedef enum {
-  /*! \brief signed integer */
-  kDLInt = 0U,
-  /*! \brief unsigned integer */
-  kDLUInt = 1U,
-  /*! \brief IEEE floating point */
-  kDLFloat = 2U,
-  /*!
+    /*! \brief signed integer */
+    kDLInt = 0U,
+    /*! \brief unsigned integer */
+    kDLUInt = 1U,
+    /*! \brief IEEE floating point */
+    kDLFloat = 2U,
+    /*!
    * \brief Opaque handle type, reserved for testing purposes.
    * Frameworks need to agree on the handle data type for the exchange to be well-defined.
    */
-  kDLOpaqueHandle = 3U,
-  /*! \brief bfloat16 */
-  kDLBfloat = 4U,
-  /*!
+    kDLOpaqueHandle = 3U,
+    /*! \brief bfloat16 */
+    kDLBfloat = 4U,
+    /*!
    * \brief complex number
    * (C/C++/Python layout: compact struct per complex number)
    */
-  kDLComplex = 5U,
-  /*! \brief boolean */
-  kDLBool = 6U,
-  /*! \brief FP8 data types */
-  kDLFloat8_e3m4 = 7U,
-  kDLFloat8_e4m3 = 8U,
-  kDLFloat8_e4m3b11fnuz = 9U,
-  kDLFloat8_e4m3fn = 10U,
-  kDLFloat8_e4m3fnuz = 11U,
-  kDLFloat8_e5m2 = 12U,
-  kDLFloat8_e5m2fnuz = 13U,
-  kDLFloat8_e8m0fnu = 14U,
-  /*! \brief FP6 data types
+    kDLComplex = 5U,
+    /*! \brief boolean */
+    kDLBool = 6U,
+    /*! \brief FP8 data types */
+    kDLFloat8_e3m4 = 7U,
+    kDLFloat8_e4m3 = 8U,
+    kDLFloat8_e4m3b11fnuz = 9U,
+    kDLFloat8_e4m3fn = 10U,
+    kDLFloat8_e4m3fnuz = 11U,
+    kDLFloat8_e5m2 = 12U,
+    kDLFloat8_e5m2fnuz = 13U,
+    kDLFloat8_e8m0fnu = 14U,
+    /*! \brief FP6 data types
    * Setting bits != 6 is currently unspecified, and the producer must ensure it is set
    * while the consumer must stop importing if the value is unexpected.
    */
-  kDLFloat6_e2m3fn = 15U,
-  kDLFloat6_e3m2fn = 16U,
-  /*! \brief FP4 data types
+    kDLFloat6_e2m3fn = 15U,
+    kDLFloat6_e3m2fn = 16U,
+    /*! \brief FP4 data types
    * Setting bits != 4 is currently unspecified, and the producer must ensure it is set
    * while the consumer must stop importing if the value is unexpected.
    */
-  kDLFloat4_e2m1fn = 17U,
+    kDLFloat4_e2m1fn = 17U,
 } DLDataTypeCode;
 
 /*!
@@ -200,25 +200,25 @@ typedef enum {
  *  for a packed data set D ((D >> (i * bits)) && bit_mask) stores the i-th element.
  */
 typedef struct {
-  /*!
+    /*!
    * \brief Type code of base types.
    * We keep it uint8_t instead of DLDataTypeCode for minimal memory
    * footprint, but the value should be one of DLDataTypeCode enum values.
    * */
-  uint8_t code;
-  /*!
+    uint8_t code;
+    /*!
    * \brief Number of bits, common choices are 8, 16, 32.
    */
-  uint8_t bits;
-  /*! \brief Number of lanes in the type, used for vector types. */
-  uint16_t lanes;
+    uint8_t bits;
+    /*! \brief Number of lanes in the type, used for vector types. */
+    uint16_t lanes;
 } DLDataType;
 
 /*!
  * \brief Plain C Tensor object, does not manage memory.
  */
 typedef struct {
-  /*!
+    /*!
    * \brief The data pointer points to the allocated data. This will be CUDA
    * device pointer or cl_mem handle in OpenCL. It may be opaque on some device
    * types. This pointer is always aligned to 256 bytes as in CUDA. The
@@ -247,22 +247,22 @@ typedef struct {
    * Note that if the tensor is of size zero, then the data pointer should be
    * set to `NULL`.
    */
-  void* data;
-  /*! \brief The device of the tensor */
-  DLDevice device;
-  /*! \brief Number of dimensions */
-  int32_t ndim;
-  /*! \brief The data type of the pointer*/
-  DLDataType dtype;
-  /*! \brief The shape of the tensor */
-  int64_t* shape;
-  /*!
+    void* data;
+    /*! \brief The device of the tensor */
+    DLDevice device;
+    /*! \brief Number of dimensions */
+    int32_t ndim;
+    /*! \brief The data type of the pointer*/
+    DLDataType dtype;
+    /*! \brief The shape of the tensor */
+    int64_t* shape;
+    /*!
    * \brief strides of the tensor (in number of elements, not bytes)
    *  can be NULL, indicating tensor is compact and row-majored.
    */
-  int64_t* strides;
-  /*! \brief The offset in bytes to the beginning pointer to data */
-  uint64_t byte_offset;
+    int64_t* strides;
+    /*! \brief The offset in bytes to the beginning pointer to data */
+    uint64_t byte_offset;
 } DLTensor;
 
 /*!
@@ -280,19 +280,19 @@ typedef struct {
  * \sa DLManagedTensorVersioned
  */
 typedef struct DLManagedTensor {
-  /*! \brief DLTensor which is being memory managed */
-  DLTensor dl_tensor;
-  /*! \brief the context of the original host framework of DLManagedTensor in
+    /*! \brief DLTensor which is being memory managed */
+    DLTensor dl_tensor;
+    /*! \brief the context of the original host framework of DLManagedTensor in
    *   which DLManagedTensor is used in the framework. It can also be NULL.
    */
-  void * manager_ctx;
-  /*!
+    void* manager_ctx;
+    /*!
    * \brief Destructor - this should be called
    * to destruct the manager_ctx  which backs the DLManagedTensor. It can be
    * NULL if there is no way for the caller to provide a reasonable destructor.
    * The destructor deletes the argument self as well.
    */
-  void (*deleter)(struct DLManagedTensor * self);
+    void (*deleter)(struct DLManagedTensor* self);
 } DLManagedTensor;
 
 // bit masks used in the DLManagedTensorVersioned
@@ -327,26 +327,26 @@ typedef struct DLManagedTensor {
  * \note This is the current standard DLPack exchange data structure.
  */
 struct DLManagedTensorVersioned {
-  /*!
+    /*!
    * \brief The API and ABI version of the current managed Tensor
    */
-  DLPackVersion version;
-  /*!
+    DLPackVersion version;
+    /*!
    * \brief the context of the original host framework.
    *
    * Stores DLManagedTensorVersioned is used in the
    * framework. It can also be NULL.
    */
-  void *manager_ctx;
-  /*!
+    void* manager_ctx;
+    /*!
    * \brief Destructor.
    *
    * This should be called to destruct manager_ctx which holds the DLManagedTensorVersioned.
    * It can be NULL if there is no way for the caller to provide a reasonable
    * destructor. The destructor deletes the argument self as well.
    */
-  void (*deleter)(struct DLManagedTensorVersioned *self);
-  /*!
+    void (*deleter)(struct DLManagedTensorVersioned* self);
+    /*!
    * \brief Additional bitmask flags information about the tensor.
    *
    * By default the flags should be set to 0.
@@ -357,12 +357,12 @@ struct DLManagedTensorVersioned {
    * \sa DLPACK_FLAG_BITMASK_READ_ONLY
    * \sa DLPACK_FLAG_BITMASK_IS_COPIED
    */
-  uint64_t flags;
-  /*! \brief DLTensor which is being memory managed */
-  DLTensor dl_tensor;
+    uint64_t flags;
+    /*! \brief DLTensor which is being memory managed */
+    DLTensor dl_tensor;
 };
 
 #ifdef __cplusplus
-}  // DLPACK_EXTERN_C
+} // DLPACK_EXTERN_C
 #endif
-#endif  // DLPACK_DLPACK_H_
+#endif // DLPACK_DLPACK_H_
