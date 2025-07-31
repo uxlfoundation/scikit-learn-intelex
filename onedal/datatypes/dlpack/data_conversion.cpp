@@ -112,20 +112,19 @@ dal::table convert_to_table(py::object obj, py::object q_obj, bool recursed) {
 
     // if there is a queue, check that the data matches the necessary precision.
 #ifdef ONEDAL_DATA_PARALLEL
-    if (!q_obj.is_none()) && !q_obj.attr("sycl_device").attr("has_aspect_fp64").cast<bool>() &&
+    if (!q_obj.is_none() && !q_obj.attr("sycl_device").attr("has_aspect_fp64").cast<bool>() &&
         dtype == dal::data_type::float64) {
-            // If the queue exists, doesn't have the fp64 aspect, and the data is float64
-            // then cast it to float32 (using reduce_precision), error raised in reduce_precision
-            if (!recursed) {
-                py::object copy = reduce_precision(obj);
-                res = convert_to_table(copy, q_obj, true);
-            }
-            else {
-                throw std::invalid_argument(
-                    "dlpack input could not be converted into onedal table.");
-            }
-            return res;
+        // If the queue exists, doesn't have the fp64 aspect, and the data is float64
+        // then cast it to float32 (using reduce_precision), error raised in reduce_precision
+        if (!recursed) {
+            py::object copy = reduce_precision(obj);
+            res = convert_to_table(copy, q_obj, true);
         }
+        else {
+            throw std::invalid_argument("dlpack input could not be converted into onedal table.");
+        }
+        return res;
+    }
 #endif // ONEDAL_DATA_PARALLEL
 
     // unusual data format found, try to make contiguous, otherwise throw error
@@ -278,7 +277,7 @@ py::capsule construct_dlpack(const dal::table& input,
 #ifdef ONEDAL_DATA_PARALLEL
         auto queue = array.get_queue();
         if (queue.has_value()) {
-            array.need_mutable_data(queue);
+            array.need_mutable_data(queue.value());
         }
         else {
 #else
