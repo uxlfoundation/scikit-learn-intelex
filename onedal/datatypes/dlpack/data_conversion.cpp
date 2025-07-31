@@ -72,8 +72,8 @@ inline dal::homogen_table convert_to_homogen_impl(managed_t* dlm_tensor, py::obj
         // in oneDAL when sycl default contexts and parent devices are used. It is assumed that the
         // external queue  is a more specific which properly handles these cases (allowing for oneDAL).
         sycl::queue queue;
-        queue = !q_obj.is_none()) ? get_queue_from_python(q_obj)
-                                      : get_queue_by_device_id(tensor.device.device_id);
+        queue = !q_obj.is_none() ? get_queue_from_python(q_obj)
+                                 : get_queue_by_device_id(tensor.device.device_id);
 
         res = dal::homogen_table(queue,
                                  ptr,

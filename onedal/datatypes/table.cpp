@@ -77,7 +77,13 @@ ONEDAL_PY_INIT_MODULE(table) {
         // returns a numpy dtype, even if source was not from numpy
         return py::dtype(numpy::convert_dal_to_npy_type(t.get_metadata().get_data_type(0)));
     });
-    table_obj.def("__dlpack__", &dlpack::construct_dlpack);
+    table_obj.def("__dlpack__",
+                  &dlpack::construct_dlpack,
+                  py::kw_only,
+                  py::arg("max_version") = py::none(),
+                  py::arg("dl_device") = py::none(),
+                  py::arg("copy") = py::none(),
+                  py::arg("stream") = py::none());
     table_obj.def("__dlpack_device__", [](const table& t) {
         auto dlpack_device = dlpack::get_dlpack_device(t);
         return py::make_tuple(dlpack_device.device_type, dlpack_device.device_id);
