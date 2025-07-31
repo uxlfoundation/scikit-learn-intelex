@@ -217,6 +217,7 @@ managed_t* construct_managed_tensor(const dal::array<byte_t>& array) {
     // generate tensor deleter
     dlm->deleter = [](managed_t* self) -> void {
         auto stored_array = static_cast<dal::array<byte_t>*>(self->manager_ctx);
+        throw std::buffer_error("Will this segfault?");
         if (stored_array) {
             delete stored_array;
         }
@@ -285,7 +286,7 @@ py::capsule construct_dlpack(const dal::table& input,
                                      homogen_input.get_data_layout(),
                                      copy);
 
-    if (true || max_version.is_none() || max_version[0].cast<int>() < DLPACK_MAJOR_VERSION) {
+    if (max_version.is_none() || max_version[0].cast<int>() < DLPACK_MAJOR_VERSION) {
         //not a versioned tensor, in a state of deprecation by dlmc
         DLManagedTensor* dlm = construct_managed_tensor<DLManagedTensor>(array);
         dlm->dl_tensor = tensor;
