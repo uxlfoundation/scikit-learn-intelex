@@ -236,7 +236,7 @@ dlmanaged* construct_managed_tensor(const dal::array<byte_t>& array) {
     dlm->manager_ctx = static_cast<void*>(new dal::array<byte_t>(array));
 
     // generate tensor deleter
-    dlm->deleter = [](struct dlmanaged* self) -> void {
+    dlm->deleter = [](dlmanaged* self) -> void {
         auto stored_array = static_cast<dal::array<byte_t>*>(self->manager_ctx);
         if (stored_array) {
             delete stored_array;
@@ -244,7 +244,7 @@ dlmanaged* construct_managed_tensor(const dal::array<byte_t>& array) {
         delete[] self->dl_tensor.shape;
         delete self;
     };
-    return dlm
+    return dlm;
 }
 
 py::capsule construct_dlpack(const dal::table& input,
@@ -271,7 +271,7 @@ py::capsule construct_dlpack(const dal::table& input,
 
     // verify requested device
     if (!dl_device.is_none()) {
-        DLDevice requested{ dl_device[0].cast<DLDeviceType>(), dl_device[1].cast<int32_t> };
+        DLDevice requested{ dl_device[0].cast<DLDeviceType>(), dl_device[1].cast<int32_t>() };
         DLDevice current = get_dlpack_device(array);
         // only allow transfers to host, dlpack implementation does not provide sufficient
         // fine-grained control for SYCL devices.
@@ -323,10 +323,10 @@ py::capsule construct_dlpack(const dal::table& input,
 
         // by definition for oneDAL tables, unless a copy of the array is made, it is readonly.
         if (copy) {
-            dmlv->flags = DLPACK_FLAG_BITMASK_IS_COPIED;
+            dlmv->flags = DLPACK_FLAG_BITMASK_IS_COPIED;
         }
         else {
-            dmlv->flags = DLPACK_FLAG_BITMASK_READ_ONLY;
+            dlmv->flags = DLPACK_FLAG_BITMASK_READ_ONLY;
         }
         capsule =
             py::capsule(static_cast<void*>(dlmv), "dltensor_versioned", free_capsule_versioned);
