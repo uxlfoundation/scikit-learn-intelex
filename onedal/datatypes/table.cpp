@@ -79,6 +79,7 @@ ONEDAL_PY_INIT_MODULE(table) {
     });
     table_obj.def("__dlpack__",
                   &dlpack::construct_dlpack,
+                  py::arg("self"),
                   py::kw_only(),
                   py::arg("max_version") = py::none(),
                   py::arg("dl_device") = py::none(),
