@@ -299,12 +299,14 @@ py::capsule construct_dlpack(const dal::table& input,
     if (max_version.is_none() || max_version[0].cast<int>() < DLPACK_MAJOR_VERSION) {
         //not a versioned tensor, in a state of deprecation by dlmc
         DLManagedTensor* dlm = construct_managed_tensor<DLManagedTensor>(array);
+        dlm->tensor = tensor;
 
         // create capsule
         capsule = py::capsule(static_cast<void*>(dlm), "dltensor", free_capsule);
     }
     else {
         DLManagedTensorVersioned* dlmv = construct_managed_tensor<DLManagedTensorVersioned>(array);
+        dlmv->tensor = tensor;
 
         dlmv->version.major = DLPACK_MAJOR_VERSION;
         dlmv->version.minor = DLPACK_MINOR_VERSION;
