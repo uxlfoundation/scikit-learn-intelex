@@ -209,13 +209,13 @@ DLTensor construct_dlpack_tensor(const dal::array<byte_t>& array,
     return tensor;
 }
 
-template <typename dlmanaged>
-dlmanaged* construct_managed_tensor(const dal::array<byte_t>& array) {
-    dlmanaged* dlm = new dlmanaged;
+template <typename managed_t>
+managed_t* construct_managed_tensor(const dal::array<byte_t>& array) {
+    managed_t* dlm = new managed_t;
     dlm->manager_ctx = static_cast<void*>(new dal::array<byte_t>(array));
 
     // generate tensor deleter
-    dlm->deleter = [](dlmanaged* self) -> void {
+    dlm->deleter = [](managed_t* self) -> void {
         auto stored_array = static_cast<dal::array<byte_t>*>(self->manager_ctx);
         if (stored_array) {
             delete stored_array;
