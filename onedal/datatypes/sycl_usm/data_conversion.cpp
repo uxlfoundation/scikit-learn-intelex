@@ -156,7 +156,8 @@ py::dict construct_sua_iface(const dal::table& input) {
     // for constructing DPCTL usm_ndarray or DPNP ndarray with zero-copy on python level.
     const auto kind = input.get_kind();
     if (kind != dal::homogen_table::kind())
-        throw py::attribute_error("__sycl_usm_array_interface__ not available: only homogen tables are supported");
+        throw py::attribute_error(
+            "__sycl_usm_array_interface__ not available: only homogen tables are supported");
 
     const auto& homogen_input = reinterpret_cast<const dal::homogen_table&>(input);
 
