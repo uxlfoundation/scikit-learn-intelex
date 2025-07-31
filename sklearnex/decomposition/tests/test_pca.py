@@ -21,7 +21,7 @@ from numpy.testing import assert_allclose
 from sklearn.base import clone
 from sklearn.datasets import load_iris
 
-from daal4py.sklearn._utils import daal_check_version
+from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
