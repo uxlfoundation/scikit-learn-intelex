@@ -261,7 +261,7 @@ py::capsule construct_dlpack(const dal::table& input,
 
     // default behavior for tables is to copy due to readonly oneDAL rules
     // default copy is true in order to support pytorch
-    bool copy = !copyobj.is(py::bool_(false));
+    bool copy = false //!copyobj.is(py::bool_(false));
 
     DLTensor tensor;
     py::capsule capsule;
