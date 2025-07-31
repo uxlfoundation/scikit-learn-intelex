@@ -229,6 +229,7 @@ dlmanaged* construct_managed_tensor(const dal::array<byte_t>& array) {
 
 static inline void move_to_device(dal::array<byte_t>& array, py::tuple dl_device, bool copy) {
     DLDevice requested{ dl_device[0].cast<DLDeviceType>(), dl_device[1].cast<std::int32_t>() };
+#ifdef ONEDAL_DATA_PARALLEL
     DLDevice current = get_dlpack_device(array);
     // only allow transfers to host, dlpack implementation does not provide sufficient
     // fine-grained control for SYCL devices.
@@ -237,6 +238,10 @@ static inline void move_to_device(dal::array<byte_t>& array, py::tuple dl_device
             array = transfer_to_host(array);
         }
         else {
+#else
+    if (requested.device_type != kDLCPU) {
+        {
+#endif // ONEDAL_DATA_PARALLEL
             throw py::buffer_error("Cannot create dlpack for requested device");
         }
     }
