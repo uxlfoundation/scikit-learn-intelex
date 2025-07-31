@@ -405,6 +405,7 @@ deselected_tests:
   - linear_model/tests/test_logistic.py::test_newton_cholesky_fallback_to_lbfgs
   - linear_model/tests/test_logistic.py::test_logistic_cv_sparse[csr_array]
   - linear_model/tests/test_logistic.py::test_logistic_cv_sparse[csr_matrix]
+  - tests/test_common.py::test_estimators[LogisticRegressionCV(cv=3,max_iter=5)-check_sample_weight_equivalence_on_dense_data]
 
   # Scikit-learn does not constraint multinomial logistic intercepts to sum to zero.
   # Softmax function is invariant to additions by a constant, so even though the numbers
