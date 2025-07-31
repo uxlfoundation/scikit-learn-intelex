@@ -210,26 +210,6 @@ DLTensor construct_dlpack_tensor(const dal::array<byte_t>& array,
     return tensor;
 }
 
-static void free_capsule(PyObject* cap) {
-    DLManagedTensor* dlm = nullptr;
-    if (PyCapsule_IsValid(cap, "dltensor")) {
-        dlm = static_cast<DLManagedTensor*>(PyCapsule_GetPointer(cap, "dltensor"));
-        if (dlm->deleter) {
-            dlm->deleter(dlm);
-        }
-    }
-}
-
-static void free_capsule_versioned(PyObject* cap) {
-    DLManagedTensorVersioned* dlmv = nullptr;
-    if (PyCapsule_IsValid(cap, "dltensor_versioned")) {
-        dlmv = static_cast<DLManagedTensorVersioned*>(PyCapsule_GetPointer(cap, "dltensor_versioned"));
-        if (dlmv->deleter) {
-            dlmv->deleter(dlmv);
-        }
-    }
-}
-
 template <typename dlmanaged>
 dlmanaged* construct_managed_tensor(const dal::array<byte_t>& array) {
     dlmanaged* dlm = new dlmanaged;
@@ -245,6 +225,21 @@ dlmanaged* construct_managed_tensor(const dal::array<byte_t>& array) {
         delete self;
     };
     return dlm;
+}
+
+static inline void move_to_device(dal::array<byte_t>& array, py::tuple dl_device, bool copy) {
+    DLDevice requested{ dl_device[0].cast<DLDeviceType>(), dl_device[1].cast<std::int32_t>() };
+    DLDevice current = get_dlpack_device(array);
+    // only allow transfers to host, dlpack implementation does not provide sufficient
+    // fine-grained control for SYCL devices.
+    if (requested.device_type != current.device_type || requested.device_id != current.device_id) {
+        if (requested.device_type == kDLCPU && copy) {
+            array = transfer_to_host(array);
+        }
+        else {
+            throw py::buffer_error("Cannot create dlpack for requested device");
+        }
+    }
 }
 
 py::capsule construct_dlpack(const dal::table& input,
@@ -269,22 +264,10 @@ py::capsule construct_dlpack(const dal::table& input,
     auto homogen_input = reinterpret_cast<const dal::homogen_table&>(input);
     dal::array<byte_t> array = dal::detail::get_original_data(homogen_input);
 
-    // verify requested device
-    if (!dl_device.is_none()) {
-        DLDevice requested{ dl_device[0].cast<DLDeviceType>(), dl_device[1].cast<int32_t>() };
-        DLDevice current = get_dlpack_device(array);
-        // only allow transfers to host, dlpack implementation does not provide sufficient
-        // fine-grained control for SYCL devices.
-        if (requested.device_type != current.device_type ||
-            requested.device_id != current.device_id) {
-            if (requested.device_type == kDLCPU && copy) {
-                array = transfer_to_host(array);
-            }
-            else {
-                throw py::buffer_error("Cannot create dlpack for requested device");
-            }
-        }
-    }
+    // verify or move to requested device
+    if (!dl_device.is_none())
+        move_to_device(array, dl_device.cast<py::tuple>(), copy);
+
     // oneDAL tables are by definition immutable and must be made mutable via a copy.
     if (copy) {
 #ifdef ONEDAL_DATA_PARALLEL

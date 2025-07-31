@@ -17,7 +17,7 @@
 #include "oneapi/dal/array.hpp"
 
 template <typename T>
-static dal::array<T> transfer_to_host(const dal::array<T> &array) {
+dal::array<T> transfer_to_host(const dal::array<T> &array) {
 #ifdef ONEDAL_DATA_PARALLEL
     auto opt_queue = array.get_queue();
     if (opt_queue.has_value()) {
