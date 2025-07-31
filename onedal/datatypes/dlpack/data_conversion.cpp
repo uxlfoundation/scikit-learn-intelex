@@ -261,7 +261,7 @@ py::capsule construct_dlpack(const dal::table& input,
         throw py::buffer_error("dlpack stream is unsupported");
 
     // default behavior for tables is to copy due to readonly oneDAL rules
-    bool copy = !copyobj.is(py::bool_(false));
+    bool copy = copyobj.is(py::bool_(true));
 
     DLTensor tensor;
     py::capsule capsule;
