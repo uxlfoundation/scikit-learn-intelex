@@ -263,17 +263,20 @@ def test_warm_start_binary(fit_intercept, multi_class, solver, weighted):
     # first checks that it would work correctly in scikit-learn.
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        model1_skl = _sklearn_LogisticRegression(
-            random_state=123,
-            solver=solver,
-            fit_intercept=fit_intercept,
-            multi_class=multi_class,
-            max_iter=2,
-        ).fit(
-            X,
-            y,
-            np.ones(X.shape[0]) if weighted else None,
-        )
+        try:
+            model1_skl = _sklearn_LogisticRegression(
+                random_state=123,
+                solver=solver,
+                fit_intercept=fit_intercept,
+                multi_class=multi_class,
+                max_iter=2,
+            ).fit(
+                X,
+                y,
+                np.ones(X.shape[0]) if weighted else None,
+            )
+        except ValueError:
+            pytest.skip("Functionality introduced in a later scikit-learn version.")
         model2_skl = (
             _sklearn_LogisticRegression(
                 random_state=123,
@@ -367,17 +370,20 @@ def test_warm_start_multinomial(fit_intercept, multi_class, solver, weighted):
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        model1_skl = _sklearn_LogisticRegression(
-            random_state=123,
-            solver=solver,
-            fit_intercept=fit_intercept,
-            multi_class=multi_class,
-            max_iter=2,
-        ).fit(
-            X,
-            y,
-            np.ones(X.shape[0]) if weighted else None,
-        )
+        try:
+            model1_skl = _sklearn_LogisticRegression(
+                random_state=123,
+                solver=solver,
+                fit_intercept=fit_intercept,
+                multi_class=multi_class,
+                max_iter=2,
+            ).fit(
+                X,
+                y,
+                np.ones(X.shape[0]) if weighted else None,
+            )
+        except ValueError:
+            pytest.skip("Functionality introduced in a later scikit-learn version.")
         model2_skl = (
             _sklearn_LogisticRegression(
                 random_state=123,
