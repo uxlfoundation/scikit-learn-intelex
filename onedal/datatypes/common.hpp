@@ -16,6 +16,8 @@
 
 #include "oneapi/dal/array.hpp"
 
+namespace oneapi::dal::python {
+
 template <typename T>
 dal::array<T> transfer_to_host(const dal::array<T> &array) {
 #ifdef ONEDAL_DATA_PARALLEL
@@ -41,3 +43,5 @@ dal::array<T> transfer_to_host(const dal::array<T> &array) {
 
     return array;
 }
+
+} // namespace oneapi::dal::python
