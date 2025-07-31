@@ -65,9 +65,7 @@ def to_table(*args, queue=None):
 
 @lazy_import("array_api_compat")
 def _compat_convert(array_api_compat, array):
-    from_dlpack = array_api_compat.get_namespace(array).from_dlpack
-    # guarantee return from_table via dlpack is a copy of the data
-    return lambda inp: from_dlpack(inp, copy=True)
+    return array_api_compat.get_namespace(array).from_dlpack
 
 
 def return_type_constructor(array):
