@@ -18,6 +18,7 @@
 #include "oneapi/dal/table/detail/homogen_utils.hpp"
 
 #include "onedal/datatypes/dlpack/data_conversion.hpp"
+#include "onedal/datatypes/common.hpp"
 
 #ifdef ONEDAL_DATA_PARALLEL
 #include "onedal/common/sycl_interfaces.hpp"
@@ -220,11 +221,11 @@ static void free_capsule(PyObject* cap) {
 }
 
 static void free_capsule_versioned(PyObject* cap) {
-    DLManagedTensor* dlm = nullptr;
+    DLManagedTensorVersioned* dlmv = nullptr;
     if (PyCapsule_IsValid(cap, "dltensor_versioned")) {
-        dlm = static_cast<DLManagedTensor*>(PyCapsule_GetPointer(cap, "dltensor_versioned"));
-        if (dlm->deleter) {
-            dlm->deleter(dlm);
+        dlmv = static_cast<DLManagedTensorVersioned*>(PyCapsule_GetPointer(cap, "dltensor_versioned"));
+        if (dlmv->deleter) {
+            dlmv->deleter(dlmv);
         }
     }
 }
@@ -249,10 +250,18 @@ dlmanaged* construct_managed_tensor(const dal::array<byte_t>& array) {
 py::capsule construct_dlpack(const dal::table& input,
                              py::object max_version,
                              py::object dl_device,
-                             bool copy) {
+                             py::object copyobj,
+                             py::object stream) {
     // check table type and expose oneDAL array
     if (input.get_kind() != dal::homogen_table::kind())
         throw pybind11::type_error("Unsupported table type for dlpack conversion");
+
+    if (!stream.is_none())
+        // necessary for array API conformance
+        throw py::buffer_error("dlpack stream is unsupported");
+
+    // default behavior for tables is to copy due to readonly oneDAL rules
+    bool copy = !copyobj.is(py::bool_(false));
 
     DLTensor tensor;
     py::capsule capsule;
