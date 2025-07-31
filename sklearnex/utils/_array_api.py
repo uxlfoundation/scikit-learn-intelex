@@ -16,8 +16,10 @@
 
 """Tools to support array_api."""
 
+from collections.abc import Callable
+from typing import Union
+
 import numpy as np
-from scipy import sparse as sp
 
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal.utils._array_api import _get_sycl_namespace
@@ -29,11 +31,6 @@ if sklearn_check_version("1.6"):
 
 if sklearn_check_version("1.2"):
     from sklearn.utils._array_api import get_namespace as sklearn_get_namespace
-
-try:
-    from onedal._onedal_py_dpc import table as onedal_table_type
-except ImportError:
-    onedal_table_type = type(None)
 
 
 def get_namespace(*arrays):
@@ -87,33 +84,13 @@ def get_namespace(*arrays):
 
     if sycl_type:
         return xp, is_array_api_compliant
-
-    for x in arrays:
-        if isinstance(x, (onedal_table_type, sp.spmatrix)):
-            return np, False
-
-    if sklearn_check_version("1.2"):
+    elif sklearn_check_version("1.2"):
         return sklearn_get_namespace(*arrays)
     else:
         return np, False
 
 
-def enable_array_api(original_class: type[oneDALEstimator]) -> type[oneDALEstimator]:
-    """Enable sklearnex to use dpctl, dpnp or array_api inputs in oneDAL offloading.
-
-    This wrapper sets the proper flags/tags for the sklearnex infrastructure
-    to maintain the data framework, as the estimator can use it natively.
-
-    Parameters
-    ----------
-    original_class : oneDALEstimator subclass
-        Class which should enable data zero-copy support in sklearnex.
-
-    Returns
-    -------
-    original_class : modified oneDALEstimator subclass
-        Estimator class.
-    """
+def _enable_array_api(original_class: type[oneDALEstimator]) -> type[oneDALEstimator]:
     if sklearn_check_version("1.6"):
 
         def __sklearn_tags__(self) -> Tags:
@@ -131,3 +108,46 @@ def enable_array_api(original_class: type[oneDALEstimator]) -> type[oneDALEstima
         original_class._more_tags = _more_tags
 
     return original_class
+
+
+def enable_array_api(
+    class_or_str: Union[type[oneDALEstimator], str],
+) -> Union[type[oneDALEstimator], Callable]:
+    """Enable sklearnex to use dpctl, dpnp or array API inputs in oneDAL offloading.
+
+    This wrapper sets the proper flags/tags for the sklearnex infrastructure
+    to maintain the data framework, as the estimator can use it natively.
+
+    Parameters
+    ----------
+    class_or_str : oneDALEstimator subclass or str
+        Class which should enable data zero-copy support in sklearnex. By
+        default it will enable for sklearn versions >1.3. If the wrapper is
+        decorated with an argument, it must be a string defining the oldest
+        sklearn version where array API support begins.
+
+    Returns
+    -------
+    cls or wrapper : modified oneDALEstimator subclass or wrapper
+        Estimator class or wrapper.
+
+    Examples
+    --------
+    @enable_array_api  # default array API support
+    class PCA():
+        ...
+
+    @enable_array_api("1.5")  # array API support for sklearn > 1.5
+    class Ridge():
+        ...
+    """
+    if isinstance(class_or_str, str):
+        # enable array_api for the estimator for a given sklearn version str
+        if sklearn_check_version(class_or_str):
+            return _enable_array_api
+        else:
+            # do not apply the wrapper as it is not supported
+            return lambda x: x
+    else:
+        # default setting (apply array_api enablement for sklearn >=1.3)
+        return _enable_array_api(class_or_str)
