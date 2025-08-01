@@ -34,7 +34,6 @@ from sklearn.exceptions import ConvergenceWarning
 from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.utils import check_random_state
 
-from onedal._onedal_py_dpc import table
 from sklearnex.utils._array_api import get_namespace
 
 from .._config import _get_config
@@ -96,10 +95,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         )
 
     def _infer_namespace(self, X_table):
-        if isinstance(X_table, table):
-            xp = np
-        else:
-            xp, _ = get_namespace(X_table)
+        xp, _ = get_namespace(X_table)
         return xp
 
     def _infer_dtype(self, X_table, dtype=None):
