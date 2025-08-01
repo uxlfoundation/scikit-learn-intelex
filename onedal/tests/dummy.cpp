@@ -31,7 +31,9 @@ namespace dummy {
 template <typename Task, typename Ops>
 struct method2t {
     method2t(const Task& task, const Ops& ops) : ops(ops) {}
-
+    // this functor converts the method param into a valid oneDAL task.
+    // Tasks are specific to each algorithm, therefore method2t is often
+    // defined for each algo.
     template <typename Float>
     auto operator()(const py::dict& params) {
 
@@ -45,6 +47,7 @@ struct method2t {
 };
 
 struct params2desc {
+    // This functor converts the params dictionary into a oneDAL descriptor
     template <typename Float, typename Method, typename Task>
     auto operator()(const py::dict& params) {
         using namespace dal::dummy;
@@ -60,6 +63,11 @@ struct params2desc {
     }
 };
 
+// the following functions define the python interface methods for the 
+// oneDAL algorithms. They are templated for the policy (which may be host,
+// dpc, or spmd), and task, which is defined per algorithm.  They are all
+// defined using lambda functions (a common occurrence for pybind11), but
+// that is not a requirement.
 template <typename Policy, typename Task>
 void init_train_ops(py::module& m) {
     m.def("train",
@@ -87,6 +95,9 @@ void init_infer_ops(py::module_& m) {
               return fptype2t{ method2t{ Task{}, ops } }(params);
           });
 }
+
+// This defines the result C++ objects for use in python via pybind11.
+// Return types should be pybind11 native types or oneDAL tables.
 
 template <typename Task>
 void init_train_result(py::module_& m) {
@@ -122,6 +133,8 @@ ONEDAL_PY_INIT_MODULE(dummy) {
     using task_list = types<task::generate>;
     auto sub = m.def_submodule("dummy");
 
+    // explicitly define the templates based off of the policy and task
+    // lists.
     ONEDAL_PY_INSTANTIATE(init_train_ops, sub, policy_list, task_list);
     ONEDAL_PY_INSTANTIATE(init_infer_ops, sub, policy_list, task_list);
     ONEDAL_PY_INSTANTIATE(init_train_result, sub, task_list);
