@@ -49,7 +49,7 @@ PyYAML==6.0.2
 pyzmq==27.0.0
 requests==2.32.4
 six==1.17.0
-scikit-learn==1.7.1 # version needed due to issue with 1.7.1, remove when sklearn 1.8 drops
+scikit-learn==1.7.0 # version needed due to issue with 1.7.1, remove when sklearn 1.8 drops
 snowballstemmer==3.0.1
 soupsieve==2.7
 Sphinx==8.2.3
