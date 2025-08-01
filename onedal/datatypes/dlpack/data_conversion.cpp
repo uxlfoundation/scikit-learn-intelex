@@ -302,12 +302,12 @@ py::capsule construct_dlpack(const dal::table& input,
         dlmv->version.minor = DLPACK_MINOR_VERSION;
 
         // by definition for oneDAL tables, unless a copy of the array is made, it is readonly.
-        if (copy) {
-            dlmv->flags = DLPACK_FLAG_BITMASK_IS_COPIED;
-        }
-        else {
+        //if (copy) {
+        //    dlmv->flags = DLPACK_FLAG_BITMASK_IS_COPIED;
+        //}
+        //else {
             dlmv->flags = DLPACK_FLAG_BITMASK_READ_ONLY;
-        }
+        //}
         capsule =
             py::capsule(static_cast<void*>(dlmv), "dltensor_versioned", free_capsule_versioned);
     }
