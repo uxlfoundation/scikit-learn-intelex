@@ -61,11 +61,10 @@ void init_train_ops(py::module& m) {
     m.def("train",
           [](const Policy& policy,
              const py::dict& params,
-             const table& data,
-             const table& responses) {
+             const table& data) {
               using namespace dal::dummy;
               using input_t = train_input<Task>;
-              train_ops ops(policy, input_t{ data, responses }, params2desc{});
+              train_ops ops(policy, input_t{ data }, params2desc{});
               return fptype2t{ method2t{ Task{}, ops } }(params);
           });
 };
@@ -114,7 +113,6 @@ ONEDAL_PY_DECLARE_INSTANTIATOR(init_infer_ops);
 
 ONEDAL_PY_INIT_MODULE(dummy) {
     using namespace dal::detail;
-    using namespace linear_model;
     using namespace dal::dummy;
 
     using task_list = types<task::generate>;
@@ -126,6 +124,6 @@ ONEDAL_PY_INIT_MODULE(dummy) {
     ONEDAL_PY_INSTANTIATE(init_infer_result, sub, task_list);
 }
 
-ONEDAL_PY_TYPE2STR(dal::linear_regression::task::regression, "regression");
+ONEDAL_PY_TYPE2STR(dal::dummy::task::generate, "generate");
 
 } // namespace oneapi::dal::python
