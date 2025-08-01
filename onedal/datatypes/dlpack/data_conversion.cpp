@@ -310,6 +310,7 @@ py::capsule construct_dlpack(const dal::table& input,
         //}
         capsule =
             py::capsule(static_cast<void*>(dlmv), "dltensor_versioned", free_capsule_versioned);
+        throw py::buffer_error("makes it here");
     }
 
     return capsule;
