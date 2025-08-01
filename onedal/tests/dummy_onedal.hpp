@@ -55,20 +55,20 @@ public:
 
     descriptor() = default;
 
+    double get_constant() const {
+        return this->constant;
+    }
+
+    auto& set_constant(double value) {
+        this->constant = value;
+        return *this;
+    }
+
+    double constant
+
 }
 
 // These aspects are created in the algorithm's train_types.hpp
-
-template <typename Task = task::by_default>
-class train_input : public base {
-
-public:
-    using task_t = Task
-
-    train_input(const table& data)
-
-}
-
 template <typename Task = task::by_default>
 class train_result {
 
@@ -78,6 +78,16 @@ public:
     train_result();
 
     const &
+
+}
+
+template <typename Task = task::by_default>
+class train_input : public base {
+
+public:
+    using task_t = Task
+
+    train_input(const table& data)
 
 }
 
@@ -97,20 +107,6 @@ struct train_ops {
 }
 // These aspect are create in the algorithm's infer_types.hpp
 template <typename Task = task::by_default>
-class infer_input : public base {
-
-public:
-    using task_t = Task;
-
-    infer_input(const table& data, const table& constant): data(data), constant(constant) {}
-    // setters and getters for ``data`` and ``model`` removed for brevity
-    
-    // attributes usually hidden in an infer_input_impl class
-    table data;
-    table constant;
-}
-
-template <typename Task = task::by_default>
 class infer_result {
 
 public:
@@ -123,6 +119,20 @@ public:
     // attribute usually hidden in an infer_result_impl class
     table data;
 
+}
+
+template <typename Task = task::by_default>
+class infer_input : public base {
+
+public:
+    using task_t = Task;
+
+    infer_input(const table& data, const table& constant): data(data), constant(constant) {}
+    // setters and getters for ``data`` and ``model`` removed for brevity
+    
+    // attributes usually hidden in an infer_input_impl class
+    table data;
+    table constant;
 }
 
 // These aspects are created in the algorithm's detail/infer_ops.hpp

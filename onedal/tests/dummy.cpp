@@ -52,7 +52,9 @@ struct params2desc {
         // conversion of the params dict to oneDAL params occurs here except
         // for the ``method`` and ``fptype`` parameters.  They are assigned
         // to the descriptor individually here before returning.
-        return dummy::descriptor<Float, Method, Task>()
+        const auto constant = params["constant"].cast<double>();
+
+        return dummy::descriptor<Float, Method, Task>(constant)
     }
 };
 
