@@ -23,6 +23,11 @@ import numpy as np
 
 from ..utils._third_party import _is_subclass_fast
 
+try:
+    from onedal._onedal_py_dpc import table as onedal_table_type
+except ImportError:
+    onedal_table_type = type(None)
+
 
 def _supports_buffer_protocol(obj):
     # the array_api standard mandates conversion with the buffer protocol,
@@ -91,5 +96,7 @@ def _get_sycl_namespace(*arrays):
             _cls_to_sycl_namespace(type(X)),
             hasattr(X, "__array_namespace__"),
         )
+    elif any(isinstance(x, onedal_table_type) for x in arrays):
+        return True, np, False
 
     return sua_iface, np, False
