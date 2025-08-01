@@ -17,7 +17,7 @@
 
 #include "onedal/common.hpp"
 #include "onedal/version.hpp"
-#include "oendal/tests/fake_onedal.hpp"
+#include "oendal/tests/dummy_onedal.hpp"
 #include "oneapi/dal/table/common.hpp"
 #include "oneapi/dal/table/homogen.hpp"
 
@@ -76,6 +76,9 @@ void init_train_ops(py::module& m) {
              const table& data) {
               using namespace dal::dummy;
               using input_t = train_input<Task>;
+              // while there is a train_ops defined for each oneDAL algorithm
+              // which supports ``train``, this is the train_ops defined in
+              // onedal/common/dispatch_utils.hpp
               train_ops ops(policy, input_t{ data }, params2desc{});
               // fptype2t is defined in common/dispatch_utils.hpp
               // which operates in a similar manner to the method2t functor
@@ -95,6 +98,11 @@ void init_infer_ops(py::module_& m) {
               using input_t = infer_input<Task>;
 
               infer_ops ops(policy, input_t{ data, constant }, params2desc{});
+              // with the use of functors the order of operations is as
+              // follows: Task is generated, the ops is already created above,
+              // method2t is constructed, and then fptype2t is constructed.
+              // It is then evaluated in opposite order sequentially on the
+              // params dict.
               return fptype2t{ method2t{ Task{}, ops } }(params);
           });
 }
