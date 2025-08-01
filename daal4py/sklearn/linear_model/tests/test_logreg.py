@@ -21,7 +21,7 @@ import pytest
 from sklearn.datasets import make_classification
 from sklearn.linear_model import LogisticRegression as _sklearn_LogisticRegression
 
-from daal4py.sklearn._utils import sklearn_check_version
+from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from daal4py.sklearn.linear_model import LogisticRegression as _d4p_LogisticRegression
 
 X = np.array(
@@ -249,6 +249,24 @@ def test_warm_start_stateful(fit_intercept, solver, n_classes, multi_class, weig
 )
 @pytest.mark.parametrize("weighted", [False, True])
 def test_warm_start_binary(fit_intercept, multi_class, solver, weighted):
+    if (
+        solver == "newton-cholesky"
+        and multi_class == "multinomial"
+        and not sklearn_check_version("1.6")
+    ):
+        pytest.skip("Functionality introduced in a later scikit-learn version.")
+
+    # Note: scikit-learn itself has bugs that would make it fail this test
+    # under some versions (starting with 1.6) but not others.
+    # TODO: Revisit whether this gets fixed in scikit-learn==1.9 once it gets
+    # released, and update the version number if it hasn't been fixed by then.
+    if (
+        solver == "newton-cholesky"
+        and multi_class == "multinomial"
+        and not sklearn_check_version("1.8")
+    ):
+        pytest.skip("Bug in scikit-learn in the functionality being tested")
+
     X, y = make_classification(
         random_state=123,
         n_classes=2,
@@ -257,60 +275,6 @@ def test_warm_start_binary(fit_intercept, multi_class, solver, weighted):
         n_redundant=0,
         class_sep=0.5,
     )
-
-    # Note: scikit-learn itself has bugs that would make it fail this test
-    # under some versions but not others. Hence, before doing the test, this
-    # first checks that it would work correctly in scikit-learn.
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        try:
-            model1_skl = _sklearn_LogisticRegression(
-                random_state=123,
-                solver=solver,
-                fit_intercept=fit_intercept,
-                multi_class=multi_class,
-                max_iter=2,
-            ).fit(
-                X,
-                y,
-                np.ones(X.shape[0]) if weighted else None,
-            )
-        except ValueError:
-            pytest.skip("Functionality introduced in a later scikit-learn version.")
-        model2_skl = (
-            _sklearn_LogisticRegression(
-                random_state=123,
-                solver=solver,
-                fit_intercept=fit_intercept,
-                multi_class=multi_class,
-                max_iter=1,
-                warm_start=True,
-            )
-            .fit(
-                X,
-                y,
-                np.ones(X.shape[0]) if weighted else None,
-            )
-            .fit(
-                X,
-                y,
-                np.ones(X.shape[0]) if weighted else None,
-            )
-        )
-
-    skl_works = True
-    try:
-        np.testing.assert_allclose(model1_skl.coef_, model2_skl.coef_)
-    except AssertionError:
-        skl_works = False
-    if skl_works and fit_intercept:
-        try:
-            np.testing.assert_allclose(model1_skl.intercept_, model2_skl.intercept_)
-        except AssertionError:
-            skl_works = False
-
-    if not skl_works:
-        pytest.skip("Bug in scikit-learn in the functionality being tested")
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
@@ -359,6 +323,20 @@ def test_warm_start_binary(fit_intercept, multi_class, solver, weighted):
 )
 @pytest.mark.parametrize("weighted", [False, True])
 def test_warm_start_multinomial(fit_intercept, multi_class, solver, weighted):
+    if (
+        solver == "newton-cholesky"
+        and multi_class == "multinomial"
+        and not sklearn_check_version("1.6")
+    ):
+        pytest.skip("Functionality introduced in a later scikit-learn version.")
+
+    if (
+        solver == "newton-cholesky"
+        and multi_class == "multinomial"
+        and not sklearn_check_version("1.8")
+    ):
+        pytest.skip("Bug in scikit-learn in the functionality being tested")
+
     X, y = make_classification(
         random_state=123,
         n_classes=3,
@@ -367,56 +345,6 @@ def test_warm_start_multinomial(fit_intercept, multi_class, solver, weighted):
         n_redundant=0,
         class_sep=0.5,
     )
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        try:
-            model1_skl = _sklearn_LogisticRegression(
-                random_state=123,
-                solver=solver,
-                fit_intercept=fit_intercept,
-                multi_class=multi_class,
-                max_iter=2,
-            ).fit(
-                X,
-                y,
-                np.ones(X.shape[0]) if weighted else None,
-            )
-        except ValueError:
-            pytest.skip("Functionality introduced in a later scikit-learn version.")
-        model2_skl = (
-            _sklearn_LogisticRegression(
-                random_state=123,
-                solver=solver,
-                fit_intercept=fit_intercept,
-                multi_class=multi_class,
-                max_iter=1,
-                warm_start=True,
-            )
-            .fit(
-                X,
-                y,
-                np.ones(X.shape[0]) if weighted else None,
-            )
-            .fit(
-                X,
-                y,
-                np.ones(X.shape[0]) if weighted else None,
-            )
-        )
-    skl_works = True
-    try:
-        np.testing.assert_allclose(model1_skl.coef_, model2_skl.coef_)
-    except AssertionError:
-        skl_works = False
-    if skl_works and fit_intercept:
-        try:
-            np.testing.assert_allclose(model1_skl.intercept_, model2_skl.intercept_)
-        except AssertionError:
-            skl_works = False
-
-    if not skl_works:
-        pytest.skip("Bug in scikit-learn in the functionality being tested")
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
@@ -464,6 +392,9 @@ def test_warm_start_multinomial(fit_intercept, multi_class, solver, weighted):
 # is processing the regularization correctly under all circumstances, and
 # that it is not multiplying or dividing the coefficients by two when it
 # shouldn't do it.
+@pytest.mark.skipif(
+    not daal_check_version((2025, "P", 800)), reason="Bugs fixed in later oneDAL releases"
+)
 @pytest.mark.parametrize("multi_class", ["auto", "multinomial"])
 @pytest.mark.parametrize("C", [1, 0.2, 20.0])
 @pytest.mark.parametrize("solver", ["lbfgs", "newton-cg"])
