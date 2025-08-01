@@ -36,8 +36,8 @@ struct method2t {
     auto operator()(const py::dict& params) {
 
         const auto method = params["method"].cast<std::string>();
-        ONEDAL_PARAM_DISPATCH_VALUE(method, "norm_eq", ops, Float, method::norm_eq);
-        ONEDAL_PARAM_DISPATCH_VALUE(method, "by_default", ops, Float, method::norm_eq);
+        ONEDAL_PARAM_DISPATCH_VALUE(method, "generate", ops, Float, method::generate);
+        ONEDAL_PARAM_DISPATCH_VALUE(method, "by_default", ops, Float, method::by_default);
         ONEDAL_PARAM_DISPATCH_THROW_INVALID_VALUE(method);
     }
 
@@ -47,20 +47,12 @@ struct method2t {
 struct params2desc {
     template <typename Float, typename Method, typename Task>
     auto operator()(const py::dict& params) {
-        using namespace dal::linear_regression;
+        using namespace dal::dummy;
 
-        const auto intercept = params["intercept"].cast<bool>();
-
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240600
-        const auto alpha = params["alpha"].cast<double>();
-        auto desc = linear_regression::descriptor<Float, Method, Task>(intercept, alpha)
-                        .set_result_options(get_onedal_result_options(params));
-#else
-        auto desc =
-            linear_regression::descriptor<Float, Method, Task>(intercept).set_result_options(
-                get_onedal_result_options(params));
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240600
-        return desc;
+        // conversion of the params dict to oneDAL params occurs here except
+        // for the ``method`` and ``fptype`` parameters.  They are assigned
+        // to the descriptor individually here before returning.
+        return dummy::descriptor<Float, Method, Task>()
     }
 };
 
@@ -71,7 +63,7 @@ void init_train_ops(py::module& m) {
              const py::dict& params,
              const table& data,
              const table& responses) {
-              using namespace dal::linear_regression;
+              using namespace dal::dummy;
               using input_t = train_input<Task>;
               train_ops ops(policy, input_t{ data, responses }, params2desc{});
               return fptype2t{ method2t{ Task{}, ops } }(params);
@@ -83,58 +75,36 @@ void init_infer_ops(py::module_& m) {
     m.def("infer",
           [](const Policy& policy,
              const py::dict& params,
-             const dal::linear_regression::model<Task>& model,
+             const table& constant,
              const table& data) {
-              using namespace dal::linear_regression;
+              using namespace dal::dummy;
               using input_t = infer_input<Task>;
 
-              infer_ops ops(policy, input_t{ data, model }, params2desc{});
+              infer_ops ops(policy, input_t{ data, constant }, params2desc{});
               return fptype2t{ method2t{ Task{}, ops } }(params);
           });
 }
 
 template <typename Task>
-void init_model(py::module_& m) {
-    using namespace dal::linear_regression;
-    using model_t = model<Task>;
-
-    auto cls = py::class_<model_t>(m, "model")
-                   .def(py::init())
-                   .def(py::pickle(
-                       [](const model_t& m) {
-                           return serialize(m);
-                       },
-                       [](const py::bytes& bytes) {
-                           return deserialize<model_t>(bytes);
-                       }))
-                   .DEF_ONEDAL_PY_PROPERTY(packed_coefficients, model_t);
-}
-
-template <typename Task>
 void init_train_result(py::module_& m) {
-    using namespace dal::linear_regression;
+    using namespace dal::dummy;
     using result_t = train_result<Task>;
 
     py::class_<result_t>(m, "train_result")
         .def(py::init())
-        .DEF_ONEDAL_PY_PROPERTY(model, result_t)
-        .DEF_ONEDAL_PY_PROPERTY(intercept, result_t)
-        .DEF_ONEDAL_PY_PROPERTY(coefficients, result_t)
-        .DEF_ONEDAL_PY_PROPERTY(packed_coefficients, result_t)
-        .DEF_ONEDAL_PY_PROPERTY(result_options, result_t);
+        .DEF_ONEDAL_PY_PROPERTY(constant, result_t)
 }
 
 template <typename Task>
 void init_infer_result(py::module_& m) {
-    using namespace dal::linear_regression;
+    using namespace dal::dummy;
     using result_t = infer_result<Task>;
 
     auto cls = py::class_<result_t>(m, "infer_result")
                    .def(py::init())
-                   .DEF_ONEDAL_PY_PROPERTY(responses, result_t);
+                   .DEF_ONEDAL_PY_PROPERTY(data, result_t);
 }
 
-ONEDAL_PY_DECLARE_INSTANTIATOR(init_model);
 ONEDAL_PY_DECLARE_INSTANTIATOR(init_train_result);
 ONEDAL_PY_DECLARE_INSTANTIATOR(init_infer_result);
 ONEDAL_PY_DECLARE_INSTANTIATOR(init_train_ops);
@@ -145,18 +115,14 @@ ONEDAL_PY_DECLARE_INSTANTIATOR(init_infer_ops);
 ONEDAL_PY_INIT_MODULE(dummy) {
     using namespace dal::detail;
     using namespace linear_model;
-    using namespace dal::linear_regression;
+    using namespace dal::dummy;
 
-    using task_list = types<task::regression>;
+    using task_list = types<task::generate>;
     auto sub = m.def_submodule("dummy");
 
     ONEDAL_PY_INSTANTIATE(init_train_ops, sub, policy_list, task_list);
     ONEDAL_PY_INSTANTIATE(init_infer_ops, sub, policy_list, task_list);
-    ONEDAL_PY_INSTANTIATE(init_partial_train_ops, sub, policy_list, task_list);
-    ONEDAL_PY_INSTANTIATE(init_finalize_train_ops, sub, policy_list, task_list);
-    ONEDAL_PY_INSTANTIATE(init_model, sub, task_list);
     ONEDAL_PY_INSTANTIATE(init_train_result, sub, task_list);
-    ONEDAL_PY_INSTANTIATE(init_partial_train_result, sub, task_list);
     ONEDAL_PY_INSTANTIATE(init_infer_result, sub, task_list);
 }
 

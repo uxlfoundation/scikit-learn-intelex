@@ -22,7 +22,7 @@
 
 namespace py = pybind11;
 
-namespace oneapi::dal::python {
+namespace oneapi::dal {
 
 namespace dummy {
 
@@ -54,8 +54,6 @@ public:
     using task_t = Task;
 
     descriptor() = default;
-
-    double get_constant const { return constant}
 
 }
 
@@ -141,3 +139,5 @@ template <typename Context>
     }
 }
 ///////////////////////////// Fake oneDAL Algorithm ///////////////////////
+
+}

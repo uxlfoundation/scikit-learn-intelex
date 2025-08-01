@@ -132,5 +132,5 @@ class DummyEstimator:
             "method": "dense",
             "constant": self.constant
         }
-        result = self.infer(params, X_t, self._onedal_model)
+        result = self.infer(params, self._onedal_model, X_t)
         return from_table(result.data, like=X)
