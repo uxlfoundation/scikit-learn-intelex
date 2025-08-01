@@ -217,7 +217,7 @@ managed_t* construct_managed_tensor(const dal::array<byte_t>& array) {
     // generate tensor deleter
     dlm->deleter = [](managed_t* self) -> void {
         auto stored_array = static_cast<dal::array<byte_t>*>(self->manager_ctx);
-        throw std::buffer_error("Will this segfault?");
+        throw py::buffer_error("Will this segfault?");
         if (stored_array) {
             delete stored_array;
         }
