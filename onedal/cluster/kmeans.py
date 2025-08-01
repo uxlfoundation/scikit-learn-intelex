@@ -95,15 +95,20 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
             is_csr=is_csr,
         )
 
-    def _infer_dtype(self, X_table, dtype=None):
-        if dtype is not None:
-            return dtype
-
+    def _infer_namespace(self, X_table):
         if isinstance(X_table, table):
-            return np.float32
+            xp = np
+        else:
+            xp, _ = get_namespace(X_table)
+        return xp
 
-        xp, _ = get_namespace(X_table)
-        return xp.float32
+    def _infer_dtype(self, X_table, dtype=None):
+        xp = self._infer_namespace(X_table)
+
+        if dtype is not None:
+            return xp, dtype
+
+        return xp, xp.float32
 
     # Get appropriate backend (required for SPMD)
     def _get_basic_statistics_backend(self, result_options):
@@ -193,7 +198,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         n_centroids=None,
     ):
 
-        dtype = self._infer_dtype(X_table, dtype)
+        xp, dtype = self._infer_dtype(X_table, dtype)
 
         n_clusters = self.n_clusters if n_centroids is None else n_centroids
 
@@ -272,7 +277,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
 
     def _fit_backend(self, X_table, centroids_table, dtype=None, is_csr=False):
 
-        dtype = self._infer_dtype(X_table, dtype)
+        xp, dtype = self._infer_dtype(X_table, dtype)
 
         params = self._get_onedal_params(is_csr, dtype)
 
