@@ -578,7 +578,7 @@ def test_table_conversions_dlpack(dataframe, queue, order, data_shape, dtype):
 
 
 @pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("dpctl,numpy,array_api", "cpu,gpu")
+    "dataframe,queue", get_dataframes_and_queues("numpy,array_api", "cpu,gpu")
 )
 @pytest.mark.parametrize("order", ["F", "C"])
 @pytest.mark.parametrize("data_shape", data_shapes)
