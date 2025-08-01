@@ -274,11 +274,10 @@ py::capsule construct_dlpack(const dal::table& input,
         move_to_device(array, dl_device.cast<py::tuple>(), copy);
     throw py::buffer_error("makes it here");
     // oneDAL tables are by definition immutable and must be made mutable via a copy.
-    if (copy)
+    if (false && copy)
         array.need_mutable_data();
 
     // set tensor
-    throw py::buffer_error("makes it here");
     tensor = construct_dlpack_tensor(array,
                                      homogen_input.get_row_count(),
                                      homogen_input.get_column_count(),
