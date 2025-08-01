@@ -578,7 +578,7 @@ def test_table_conversions_dlpack(dataframe, queue, order, data_shape, dtype):
 
 
 @pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("numpy,array_api", "cpu,gpu")
+    "dataframe,queue", get_dataframes_and_queues("dpctl", "cpu,gpu")
 )
 @pytest.mark.parametrize("order", ["F", "C"])
 @pytest.mark.parametrize("data_shape", data_shapes)
@@ -600,7 +600,6 @@ def test_table___dlpack__(dataframe, queue, order, data_shape, dtype):
 
     if xp := getattr(X_df, "__array_namespace__", lambda: None)():
         X_out = xp.from_dlpack(X_table)
-        assert False
         X_temp = xp.asnumpy(X_out) if hasattr(xp, "asnumpy") else np.asarray(X)
         if X_temp.dtype == X.dtype:
             assert_array_equal(np.squeeze(X_temp), np.squeeze(X))
