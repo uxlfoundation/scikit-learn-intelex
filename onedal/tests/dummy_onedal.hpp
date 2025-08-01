@@ -190,21 +190,27 @@ struct train_ops {
     using input_t = train_input<task_t>;
     using result_t = train_result<task_t>;
 
-    template <typename Context>
-    auto operator()(const Context& ctx, const Descriptor& desc, const input_t& input) const {
-    // Usually a train_ops_dispatcher is contained in oneDAL train_ops.cpp.
+    auto operator()(const host_policy& ctx, const Descriptor& desc, const input_t& input) const {
+    // Usually a infer_ops_dispatcher is contained in oneDAL infer_ops.cpp.
     // Due to the simplicity of this algorithm, implement it here.
-#ifdef ONEDAL_DATA_PARALLEL
-    // turn value specified as constant into a single-element dal table
-    // with characteristics of the data table.
-#else
-    {
-#endif //ONEDAL_DATA_PARALLEL
-        dal::array<float_t> array = dal::array::full( 1, reinterpret_cast<float_t>(input.constant));
+        dal::array<float_t> array = dal::array::full( 1, desc.get_constant());
+        result_t result();
+        result.data = dal::homogen_table::wrap(array, 1, 1);
+        return result;
     }
 
-        return dal::homogen_table::wrap(array, 1, 1);
+#ifdef ONEDAL_DATA_PARALLEL
+    auto operator()(const data_parallel_policy& ctx, const Descriptor& desc, const input_t& input) const {
+    // Usually a infer_ops_dispatcher is contained in oneDAL infer_ops.cpp.
+    // Due to the simplicity of this algorithm, implement it here.
+    auto queue = ctx.get_queue()
+    dal::array<float_t> array = dal::array::full( queue, 1, desc.get_constant());
+    result_t result();
+    result.data = dal::homogen_table::wrap(array, 1, 1);
+    return result;
     }
+#endif //ONEDAL_DATA_PARALLEL
+
 }
 }
 }
@@ -245,24 +251,27 @@ struct infer_ops {
     auto operator()(const host_policy& ctx, const Descriptor& desc, const input_t& input) const {
     // Usually a infer_ops_dispatcher is contained in oneDAL infer_ops.cpp.
     // Due to the simplicity of this algorithm, implement it here.
-        auto row_c = data.get_row_count();
-        auto col_c = data.get_column_count();
-        bytes_t* ptr = dal::detail::get_original_data(constant).get_data();
-
-        dal::array<float_t> array = dal::array::full( row_c*col_c, *reinterpret_cast<float_t*>(bytes));
-        return dal::homogen_table::wrap(array, row_c, col_c);
+        auto row_c = input.data.get_row_count();
+        auto col_c = input.data.get_column_count();
+        bytes_t* ptr = dal::detail::get_original_data(input.constant).get_data();
+        dal::array<float_t> array = dal::array::full( row_c*col_c, *reinterpret_cast<float_t*>(ptr));
+        result_t result();
+        result.data = dal::homogen_table::wrap(array, row_c, col_c);
+        return result;
     }
 
 #ifdef ONEDAL_DATA_PARALLEL
     auto operator()(const data_parallel_policy& ctx, const Descriptor& desc, const input_t& input) const {
     // Usually a infer_ops_dispatcher is contained in oneDAL infer_ops.cpp.
     // Due to the simplicity of this algorithm, implement it here.
-    auto row_c = data.get_row_count();
-    auto col_c = data.get_column_count();
-    bytes_t* ptr = dal::detail::get_original_data(data).get_data();
-    auto queue = ctx.get_queue()
+    auto row_c = input.data.get_row_count();
+    auto col_c = input.data.get_column_count();
+    bytes_t* ptr = dal::detail::get_original_data(input.constant).get_data();
+    auto queue = ctx.get_queue();
     dal::array<float_t> array = dal::array::full( queue, row_c*col_c, *reinterpret_cast<float_t*>(ptr));
-        return dal::homogen_table::wrap(queue, array, row_c, col_c);
+    result_t result();
+    result.data = dal::homogen_table::wrap(queue, array, row_c, col_c);
+    return result;
     }
 #endif //ONEDAL_DATA_PARALLEL
 
