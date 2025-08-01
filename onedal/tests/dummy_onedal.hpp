@@ -200,8 +200,7 @@ struct train_ops {
         // Usually a infer_ops_dispatcher is contained in oneDAL infer_ops.cpp.
         // Due to the simplicity of this algorithm, implement it here.
         auto queue = ctx.get_queue();
-         dal::array<float_t> array =
-            dal::array::full(queue, 1, desc.get_constant());
+        dal::array<float_t> array = dal::array::full(queue, 1, desc.get_constant());
         result_t result();
         result.data = dal::homogen_table::wrap(array, 1, 1);
         return result;
