@@ -53,7 +53,7 @@ scikit-learn==1.7.0 # version needed due to issue with 1.7.1, remove when sklear
 snowballstemmer==3.0.1
 soupsieve==2.7
 Sphinx==8.2.3
-sphinx-book-theme==1.1.4
+sphinx-book-theme==1.1.3
 sphinx-design==0.6.1
 sphinx_copybutton==0.5.2
 sphinx-notfound-page==1.1.0
