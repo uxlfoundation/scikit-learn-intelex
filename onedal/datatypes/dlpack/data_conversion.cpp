@@ -189,7 +189,7 @@ DLTensor construct_dlpack_tensor(const dal::array<byte_t>& array,
 
     // set data
     tensor.data = modifiable ? array.get_mutable_data() : const_cast<byte_t*>(array.get_data());
-    throw py::buffer_error("makes it here");
+    // made it here
     tensor.device = get_dlpack_device(array);
     tensor.ndim = std::int32_t(2);
     tensor.dtype = convert_dal_to_dlpack_type(dtype);
@@ -202,10 +202,11 @@ DLTensor construct_dlpack_tensor(const dal::array<byte_t>& array,
     else {
         tensor.shape = new std::int64_t[4]{ row_count, column_count, std::int64_t(1), row_count };
     }
-
+    
     // take strategy from dpctl tensors in having a single array allocation by tensor.shape.
     tensor.strides = &tensor.shape[2];
     tensor.byte_offset = std::uint64_t(0);
+    throw py::buffer_error("makes it here");
 
     return tensor;
 }
