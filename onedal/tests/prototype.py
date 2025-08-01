@@ -14,12 +14,12 @@
 # limitations under the License.
 # ==============================================================================
 
-""" This file describes necessary characteristics and design patterns of
+"""This file describes necessary characteristics and design patterns of
 onedal estimators.
 
 This can be used as a foundation for developing other estimators. Most
 comments guiding code development should be removed unless pertinent to the
-implementation.  """
+implementation."""
 
 from .._device_offload import supports_queue
 from ..common._backend import bind_default_backend
@@ -80,7 +80,7 @@ class DummyEstimator:
         params = {
             "fptype": y_t.dtype,  # normally X_t.dtype is used
             "method": "dense",
-            "constant": self.constant
+            "constant": self.constant,
         }
 
         # This is the call to the oneDAL pybind11 backend, which was
@@ -127,10 +127,6 @@ class DummyEstimator:
         if self._onedal_model is None:
             self._onedal_model = self._create_model()
 
-        params = {
-            "fptype": X_t.dtype,
-            "method": "dense",
-            "constant": self.constant
-        }
+        params = {"fptype": X_t.dtype, "method": "dense", "constant": self.constant}
         result = self.infer(params, self._onedal_model, X_t)
         return from_table(result.data, like=X)

@@ -14,13 +14,11 @@
 * limitations under the License.
 *******************************************************************************/
 
-
 #include "onedal/common.hpp"
 #include "onedal/version.hpp"
 #include "oendal/tests/dummy_onedal.hpp"
 #include "oneapi/dal/table/common.hpp"
 #include "oneapi/dal/table/homogen.hpp"
-
 
 namespace py = pybind11;
 
@@ -53,58 +51,53 @@ struct params2desc {
         using namespace dal::dummy;
         auto desc = dummy::descriptor<Float, Method, Task>()
 
-        // conversion of the params dict to oneDAL params occurs here except
-        // for the ``method`` and ``fptype`` parameters.  They are assigned
-        // to the descriptor individually here before returning.
-        const auto constant = params["constant"].cast<double>();
+            // conversion of the params dict to oneDAL params occurs here except
+            // for the ``method`` and ``fptype`` parameters.  They are assigned
+            // to the descriptor individually here before returning.
+            const auto constant = params["constant"].cast<double>();
         desc.set_constant(constant);
 
         return desc;
     }
 };
 
-// the following functions define the python interface methods for the 
+// the following functions define the python interface methods for the
 // oneDAL algorithms. They are templated for the policy (which may be host,
 // dpc, or spmd), and task, which is defined per algorithm.  They are all
 // defined using lambda functions (a common occurrence for pybind11), but
 // that is not a requirement.
 template <typename Policy, typename Task>
 void init_train_ops(py::module& m) {
-    m.def("train",
-          [](const Policy& policy,
-             const py::dict& params,
-             const table& data) {
-              using namespace dal::dummy;
-              using input_t = train_input<Task>;
-              // while there is a train_ops defined for each oneDAL algorithm
-              // which supports ``train``, this is the train_ops defined in
-              // onedal/common/dispatch_utils.hpp
-              train_ops ops(policy, input_t{ data }, params2desc{});
-              // fptype2t is defined in common/dispatch_utils.hpp
-              // which operates in a similar manner to the method2t functor
-              // it selects the floating point datatype for the calculation
-              return fptype2t{ method2t{ Task{}, ops } }(params);
-          });
+    m.def("train", [](const Policy& policy, const py::dict& params, const table& data) {
+        using namespace dal::dummy;
+        using input_t = train_input<Task>;
+        // while there is a train_ops defined for each oneDAL algorithm
+        // which supports ``train``, this is the train_ops defined in
+        // onedal/common/dispatch_utils.hpp
+        train_ops ops(policy, input_t{ data }, params2desc{});
+        // fptype2t is defined in common/dispatch_utils.hpp
+        // which operates in a similar manner to the method2t functor
+        // it selects the floating point datatype for the calculation
+        return fptype2t{ method2t{ Task{}, ops } }(params);
+    });
 };
 
 template <typename Policy, typename Task>
 void init_infer_ops(py::module_& m) {
-    m.def("infer",
-          [](const Policy& policy,
-             const py::dict& params,
-             const table& constant,
-             const table& data) {
-              using namespace dal::dummy;
-              using input_t = infer_input<Task>;
+    m.def(
+        "infer",
+        [](const Policy& policy, const py::dict& params, const table& constant, const table& data) {
+            using namespace dal::dummy;
+            using input_t = infer_input<Task>;
 
-              infer_ops ops(policy, input_t{ data, constant }, params2desc{});
-              // with the use of functors the order of operations is as
-              // follows: Task is generated, the ops is already created above,
-              // method2t is constructed, and then fptype2t is constructed.
-              // It is then evaluated in opposite order sequentially on the
-              // params dict.
-              return fptype2t{ method2t{ Task{}, ops } }(params);
-          });
+            infer_ops ops(policy, input_t{ data, constant }, params2desc{});
+            // with the use of functors the order of operations is as
+            // follows: Task is generated, the ops is already created above,
+            // method2t is constructed, and then fptype2t is constructed.
+            // It is then evaluated in opposite order sequentially on the
+            // params dict.
+            return fptype2t{ method2t{ Task{}, ops } }(params);
+        });
 }
 
 // This defines the result C++ objects for use in python via pybind11.
@@ -129,8 +122,6 @@ void init_infer_result(py::module_& m) {
                    .def(py::init())
                    .DEF_ONEDAL_PY_PROPERTY(data, result_t);
 }
-
-
 
 ONEDAL_PY_DECLARE_INSTANTIATOR(init_train_result);
 ONEDAL_PY_DECLARE_INSTANTIATOR(init_infer_result);
@@ -173,7 +164,7 @@ ONEDAL_PY_INIT_MODULE(dummy) {
     // versus optimized away. The namings in dispatch_utils.hpp are also
     // unfortunate and confusing.
 
-//
+    //
     ONEDAL_PY_INSTANTIATE(init_train_ops, sub, policy_list, task_list);
     ONEDAL_PY_INSTANTIATE(init_infer_ops, sub, policy_list, task_list);
     ONEDAL_PY_INSTANTIATE(init_train_result, sub, task_list);

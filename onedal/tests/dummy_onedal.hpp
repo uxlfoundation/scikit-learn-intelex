@@ -24,17 +24,15 @@
 #include "oneapi/dal/infer.hpp"
 #include "oneapi/dal/detail/policy.hpp"
 
-
-
 namespace py = pybind11;
 
 namespace oneapi::dal {
 
 ////////////////////////// Dummy oneDAL Algorithm /////////////////////////
-// These aspects fake the necessary API characteristics of a oneDAL 
-// algorithm. This example foregoes the indirections used with impl_ 
+// These aspects fake the necessary API characteristics of a oneDAL
+// algorithm. This example foregoes the indirections used with impl_
 // attributes characteristic of the oneDAL codebase and only show the
-// necessary APIs. It is also as minimal as possible, dropping some 
+// necessary APIs. It is also as minimal as possible, dropping some
 // required setters/getters for brevity. It also violates some rules with
 // respect to protected/private, attributes, and compile time type checking.
 //
@@ -59,16 +57,16 @@ namespace oneapi::dal {
 namespace dummy {
 
 namespace task {
-    // tasks can be arbitrarily named, ``by_default`` must be defined.
-    struct generate {};
-    using by_default = generate;
+// tasks can be arbitrarily named, ``by_default`` must be defined.
+struct generate {};
+using by_default = generate;
 }
 
 namespace method {
-    // methods can be arbirarily named, though this will be used in the
-    // python onedal estimator as a parameter
-    struct dense {};
-    using by_default = dense;
+// methods can be arbirarily named, though this will be used in the
+// python onedal estimator as a parameter
+struct dense {};
+using by_default = dense;
 }
 
 namespace detail {
@@ -82,14 +80,13 @@ template <typename Float = float,
           typename Method = method::by_default,
           typename Task = task::by_default>
 class descriptor : public base {
-
 public:
     using tag_t = descriptor_tag;
     using float_t = Float;
     using method_t = Method;
     using task_t = Task;
 
-    descriptor(): constant(0.0) {}
+    descriptor() : constant(0.0) {}
 
     double get_constant() const {
         return this->constant;
@@ -102,11 +99,9 @@ public:
 
     // normally this attribute is hidden in another struct
     double constant
-
 }
 }
 /////////////////////////////// common.hpp ////////////////////////////////
-
 
 ///////////////////////////// train_types.hpp /////////////////////////////
 
@@ -114,13 +109,14 @@ namespace dummy {
 
 template <typename Task = task::by_default>
 class train_result {
-
 public:
     using task_t = Task;
-        
-    train_result(){}
 
-    const table& get_data(){return this->data;}
+    train_result() {}
+
+    const table& get_data() {
+        return this->data;
+    }
 
     // attribute usually hidden in an infer_result_impl class
     table data;
@@ -129,11 +125,11 @@ public:
 
 template <typename Task = task::by_default>
 class train_input : public base {
-
 public:
     using task_t = Task
 
-    train_input(const table& data) : data(data){}
+    train_input(const table& data)
+            : data(data) {}
 
     table data;
 }
@@ -141,18 +137,18 @@ public:
 
 ///////////////////////////// train_types.hpp /////////////////////////////
 
-
 ///////////////////////////// infer_types.hpp /////////////////////////////
 namespace dummy {
 template <typename Task = task::by_default>
 class infer_result {
-
 public:
     using task_t = Task;
 
-    infer_result(){}
+    infer_result() {}
 
-    const table& get_data(){return this->data;}
+    const table& get_data() {
+        return this->data;
+    }
 
     // attribute usually hidden in an infer_result_impl class
     table data;
@@ -161,20 +157,18 @@ public:
 
 template <typename Task = task::by_default>
 class infer_input : public base {
-
 public:
     using task_t = Task;
 
-    infer_input(const table& data, const table& constant): data(data), constant(constant) {}
+    infer_input(const table& data, const table& constant) : data(data), constant(constant) {}
     // setters and getters for ``data`` and ``model`` removed for brevity
-    
+
     // attributes usually hidden in an infer_input_impl class
     table data;
     table constant;
 }
 }
 ///////////////////////////// infer_types.hpp /////////////////////////////
-
 
 /////// THESE ARE PRIVATE STEPS REQUIRED FOR IT TO WORK WITH ONEDAL ///////
 
@@ -191,31 +185,31 @@ struct train_ops {
     using result_t = train_result<task_t>;
 
     auto operator()(const host_policy& ctx, const Descriptor& desc, const input_t& input) const {
-    // Usually a infer_ops_dispatcher is contained in oneDAL infer_ops.cpp.
-    // Due to the simplicity of this algorithm, implement it here.
-        dal::array<float_t> array = dal::array::full( 1, desc.get_constant());
+        // Usually a infer_ops_dispatcher is contained in oneDAL infer_ops.cpp.
+        // Due to the simplicity of this algorithm, implement it here.
+        dal::array<float_t> array = dal::array::full(1, desc.get_constant());
         result_t result();
         result.data = dal::homogen_table::wrap(array, 1, 1);
         return result;
     }
 
 #ifdef ONEDAL_DATA_PARALLEL
-    auto operator()(const data_parallel_policy& ctx, const Descriptor& desc, const input_t& input) const {
-    // Usually a infer_ops_dispatcher is contained in oneDAL infer_ops.cpp.
-    // Due to the simplicity of this algorithm, implement it here.
-    auto queue = ctx.get_queue()
-    dal::array<float_t> array = dal::array::full( queue, 1, desc.get_constant());
-    result_t result();
-    result.data = dal::homogen_table::wrap(array, 1, 1);
-    return result;
+    auto operator()(const data_parallel_policy& ctx,
+                    const Descriptor& desc,
+                    const input_t& input) const {
+        // Usually a infer_ops_dispatcher is contained in oneDAL infer_ops.cpp.
+        // Due to the simplicity of this algorithm, implement it here.
+        auto queue = ctx.get_queue() dal::array<float_t> array =
+            dal::array::full(queue, 1, desc.get_constant());
+        result_t result();
+        result.data = dal::homogen_table::wrap(array, 1, 1);
+        return result;
     }
 #endif //ONEDAL_DATA_PARALLEL
-
 }
 }
 }
 ////////////////////////////// train_ops.hpp //////////////////////////////
-
 
 //////////////////////////////// train.hpp ////////////////////////////////
 
@@ -229,7 +223,6 @@ struct train_ops<Descriptor, dal::dummy::detail::descriptor_tag>
 }
 
 //////////////////////////////// train.hpp ////////////////////////////////
-
 
 ////////////////////////////// infer_ops.hpp //////////////////////////////
 namespace dummy {
@@ -249,37 +242,39 @@ struct infer_ops {
     using result_t = infer_result<task_t>;
 
     auto operator()(const host_policy& ctx, const Descriptor& desc, const input_t& input) const {
-    // Usually a infer_ops_dispatcher is contained in oneDAL infer_ops.cpp.
-    // Due to the simplicity of this algorithm, implement it here.
+        // Usually a infer_ops_dispatcher is contained in oneDAL infer_ops.cpp.
+        // Due to the simplicity of this algorithm, implement it here.
         auto row_c = input.data.get_row_count();
         auto col_c = input.data.get_column_count();
         bytes_t* ptr = dal::detail::get_original_data(input.constant).get_data();
-        dal::array<float_t> array = dal::array::full( row_c*col_c, *reinterpret_cast<float_t*>(ptr));
+        dal::array<float_t> array =
+            dal::array::full(row_c * col_c, *reinterpret_cast<float_t*>(ptr));
         result_t result();
         result.data = dal::homogen_table::wrap(array, row_c, col_c);
         return result;
     }
 
 #ifdef ONEDAL_DATA_PARALLEL
-    auto operator()(const data_parallel_policy& ctx, const Descriptor& desc, const input_t& input) const {
-    // Usually a infer_ops_dispatcher is contained in oneDAL infer_ops.cpp.
-    // Due to the simplicity of this algorithm, implement it here.
-    auto row_c = input.data.get_row_count();
-    auto col_c = input.data.get_column_count();
-    bytes_t* ptr = dal::detail::get_original_data(input.constant).get_data();
-    auto queue = ctx.get_queue();
-    dal::array<float_t> array = dal::array::full( queue, row_c*col_c, *reinterpret_cast<float_t*>(ptr));
-    result_t result();
-    result.data = dal::homogen_table::wrap(queue, array, row_c, col_c);
-    return result;
+    auto operator()(const data_parallel_policy& ctx,
+                    const Descriptor& desc,
+                    const input_t& input) const {
+        // Usually a infer_ops_dispatcher is contained in oneDAL infer_ops.cpp.
+        // Due to the simplicity of this algorithm, implement it here.
+        auto row_c = input.data.get_row_count();
+        auto col_c = input.data.get_column_count();
+        bytes_t* ptr = dal::detail::get_original_data(input.constant).get_data();
+        auto queue = ctx.get_queue();
+        dal::array<float_t> array =
+            dal::array::full(queue, row_c * col_c, *reinterpret_cast<float_t*>(ptr));
+        result_t result();
+        result.data = dal::homogen_table::wrap(queue, array, row_c, col_c);
+        return result;
     }
 #endif //ONEDAL_DATA_PARALLEL
-
 }
 }
 }
 ////////////////////////////// infer_ops.hpp //////////////////////////////
-
 
 //////////////////////////////// infer.hpp ////////////////////////////////
 

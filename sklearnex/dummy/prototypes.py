@@ -14,12 +14,12 @@
 # limitations under the License.
 # ==============================================================================
 
-""" This file describes necessary characteristics and design patterns of
+"""This file describes necessary characteristics and design patterns of
 sklearnex estimators.
 
 This can be used as a foundation for developing other estimators. Most
 comments guiding code development should be removed unless pertinent to the
-implementation.  """
+implementation."""
 import numpy as np
 import scipy.sparse as sp
 from sklearn.dummy import _sklearn_DummyRegressor
