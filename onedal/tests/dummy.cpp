@@ -130,6 +130,8 @@ void init_infer_result(py::module_& m) {
                    .DEF_ONEDAL_PY_PROPERTY(data, result_t);
 }
 
+
+
 ONEDAL_PY_DECLARE_INSTANTIATOR(init_train_result);
 ONEDAL_PY_DECLARE_INSTANTIATOR(init_infer_result);
 ONEDAL_PY_DECLARE_INSTANTIATOR(init_train_ops);
@@ -145,7 +147,33 @@ ONEDAL_PY_INIT_MODULE(dummy) {
     auto sub = m.def_submodule("dummy");
 
     // explicitly define the templates based off of the policy and task
-    // lists.
+    // lists. These instantiations lead to a cascade of fully-resolved
+    // templates from oneDAL.  It begins by fully resolving functors defined
+    // here and the oneDAL descriptor. It then fully specifies functors in
+    // common/dispatch_utils.hpp, which starts resolving oneDAL objects
+    // for the algorithm like the train_ops/infer_ops functors defined there.
+    // This leads to a fair number of compile time work with oneDAL headers.
+    // For example take init_train_ops in approximate reverse order
+    // (to show how it goes from here to oneDAL):
+    //
+    // 0. Creates pybind11 interface
+    // 1. Specifies lambda defined in init_train_ops
+    // 2. Specifies fptype2t
+    // 3. Specifies method2t
+    // 4. Specifies train_ops defined in common/dispatch_utils.hpp
+    // 5. Specifies train defined in oneapi/dal/train.hpp
+    // 6. Specifies train_dispatch in oneapi/dal/detail/train_ops.hpp
+    // 7. Specifies several functors in oneapi/dal/detail/ops_dispatcher.hpp
+    // 8. Specifies train_ops defined in algorithm's train_ops.hpp
+    // 9. Specifies oneDAL train_input, train_result and descriptor structs
+    /**** finally hits objects compiled in oneDAL for the computation ****/
+    // (train_ops_dispatcher for example)
+    //
+    // Its not clear how many layers of these indirections are compiled
+    // versus optimized away. The namings in dispatch_utils.hpp are also
+    // unfortunate and confusing.
+
+//
     ONEDAL_PY_INSTANTIATE(init_train_ops, sub, policy_list, task_list);
     ONEDAL_PY_INSTANTIATE(init_infer_ops, sub, policy_list, task_list);
     ONEDAL_PY_INSTANTIATE(init_train_result, sub, task_list);
