@@ -189,6 +189,7 @@ DLTensor construct_dlpack_tensor(const dal::array<byte_t>& array,
 
     // set data
     tensor.data = modifiable ? array.get_mutable_data() : const_cast<byte_t*>(array.get_data());
+    throw py::buffer_error("makes it here");
     tensor.device = get_dlpack_device(array);
     tensor.ndim = std::int32_t(2);
     tensor.dtype = convert_dal_to_dlpack_type(dtype);
@@ -276,8 +277,8 @@ py::capsule construct_dlpack(const dal::table& input,
     // oneDAL tables are by definition immutable and must be made mutable via a copy.
     if (copy)
         array.need_mutable_data();
-     throw py::buffer_error("makes it here");
     // set tensor
+    //makes it here
     tensor = construct_dlpack_tensor(array,
                                      homogen_input.get_row_count(),
                                      homogen_input.get_column_count(),
