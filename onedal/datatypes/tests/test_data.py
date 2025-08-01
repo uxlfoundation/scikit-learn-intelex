@@ -600,6 +600,7 @@ def test_table___dlpack__(dataframe, queue, order, data_shape, dtype):
 
     if xp := getattr(X_df, "__array_namespace__", lambda: None)():
         X_out = xp.from_dlpack(X_table)
+        assert False
         X_temp = xp.asnumpy(X_out) if hasattr(xp, "asnumpy") else np.asarray(X)
         if X_temp.dtype == X.dtype:
             assert_array_equal(np.squeeze(X_temp), np.squeeze(X))
