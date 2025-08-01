@@ -33,6 +33,7 @@ from sklearn.utils import all_estimators
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal.tests.test_common import _check_primitive_usage_ban
 from onedal.tests.utils._dataframes_support import test_frameworks
+from sklearnex._utils import get_tags
 from sklearnex.base import oneDALEstimator
 from sklearnex.tests.utils import (
     PATCHED_MODELS,
@@ -532,6 +533,7 @@ def runtime_property_check(text, estimator, method):
 
 
 def fit_check_before_support_check(text, estimator, method):
+    """``check_is_fitted`` should be used early in non-``fit`` estimator methods"""
     if "fit" not in method:
         if "dispatch" not in text["funcs"]:
             pytest.skip(f"onedal dispatching not used in {estimator}.{method}")
@@ -545,11 +547,92 @@ def fit_check_before_support_check(text, estimator, method):
         pytest.skip(f"fitting occurs in {estimator}.{method}")
 
 
+def get_namespace_check(text, estimator, method):
+    """guarantee single array namespace for input data via ``get_namespace``"""
+    # Verify that if the estimator supports array api offloading and that onedal
+    # is called, that ``get_namespace`` is 1) called before validate_data and
+    # after offloading 2) all arguments are passed to ``get_namespace`` in order
+    # to guarantee single array typing (i.e. a single namespace)
+
+    if "to_table" not in text["funcs"]:
+        pytest.skip("onedal backend not used in this function")
+
+    # get estimator
+    est = (
+        PATCHED_MODELS[estimator]()
+        if estimator in PATCHED_MODELS
+        else SPECIAL_INSTANCES[estimator]
+    )
+
+    if get_tags(est).onedal_array_api:
+        # the nature of this search is a bit more complicated than the other
+        # rules. The raw trace string is unfortunately the easiest approach
+        def return_call(string):
+            # this reinterprets a raw trace string into a usable format
+            count = 1  # already found first opening
+            for i, c in enumerate(string):
+                if c == "(":
+                    count += 1
+                elif c == ")":
+                    count -= 1
+                if count == 0:
+                    # re.sub is used to remove the file and line numbers
+                    return re.sub(r"\S*\.py\(\d+\)\:", "", string[:i])
+            # split last line because of use of multi-line representation
+            # where the last close is not used in python's trace.
+            return re.sub(r"\S*\.py\(\d+\)\:", "", string).rsplit("\n", 1)[0]
+
+        # get functionality after a specific call in sklearnex._device_offload
+        # this is where the function starts which does onedal offloading.
+        after_offload = text["trace"].split('return branches["onedal"](obj,')[1]
+        try:
+            reduced_trace, valid_trace, *_ = after_offload.split("= validate_data(")
+        except ValueError:
+            pytest.fail("validate_data is not called")
+
+        # regex the input call to just get the signature in situ
+        validate_data_call = return_call(valid_trace)
+
+        # create a similar representation for ``get_namespace``
+        try:
+            name_trace = reduced_trace.split("= get_namespace(")[1]
+        except IndexError:
+            pytest.fail("get_namespace is not called")
+
+        get_namespace_call = return_call(name_trace)
+
+        # remove whitespace and newlines
+        get_name_inputs = "".join(get_namespace_call.split()).split(",")
+        get_valid_inputs = "".join(validate_data_call.split()).split(",")
+
+        assert "self" == get_valid_inputs[0]
+        for idx, inp in enumerate(get_valid_inputs[1:]):
+            # this is specifically written for validate_data definition and
+            # how we lint sklearnex. Generally X and y should be passed not
+            # as keyword arguments. See:
+            # https://scikit-learn.org/stable/modules/generated/sklearn.utils.validation.validate_data.html
+            if ("=" not in inp and idx < 2) or inp.startswith(("X=", "y=")):
+                assert (
+                    inp.lstrip("X=").lstrip("y=") in get_name_inputs
+                ), "get_namespace does not contain all of inputs to validate_data"
+
+        # next check if sample_weight is used, if so it needs to be in the
+        # ``get_namespace`` arguments.
+        if "_check_sample_weight" in text["funcs"]:
+            assert (
+                "sample_weight" in get_name_inputs
+            ), "sample_weight array is not included in get_namespace call"
+
+    else:
+        pytest.skip(f"Native oneDAL Array API support not available for {estimator}")
+
+
 DESIGN_RULES = [
     n_jobs_check,
     runtime_property_check,
     fit_check_before_support_check,
     call_validate_data,
+    get_namespace_check,
 ]
 
 
