@@ -196,3 +196,26 @@ def test_multinomial_logistic_regression_is_correct():
             model_sklearnex.predict_proba(X), model_sklearnex.coef_
         )
         assert fn_sklearnex <= fn_sklearn
+
+
+@pytest.mark.parametrize(
+    "dataframe,queue", get_dataframes_and_queues(device_filter_="gpu")
+)
+def test_gpu_logreg_prediction_shapes(dataframe, queue):
+    from sklearnex.linear_model import LogisticRegression
+
+    X, y = make_classification(random_state=123)
+    X = X.astype(np.float32)
+    y = y.astype(np.float32)
+    X_train, X_test, y_train, _ = prepare_input(X, y, dataframe, queue=queue)
+
+    model = LogisticRegression(solver="newton-cg")
+    with config_context(target_offload="gpu:0"):
+        model.fit(X_train, y_train)
+        pred = model.predict(X_test)
+        pred_proba = model.predict_proba(X_test)
+        pred_log_proba = model.predict_log_proba(X_test)
+
+    np.testing.assert_array_equal(pred.shape, (X_test.shape[0],))
+    np.testing.assert_array_equal(pred_proba.shape, (X_test.shape[0], 2))
+    np.testing.assert_array_equal(pred_log_proba.shape, (X_test.shape[0], 2))
