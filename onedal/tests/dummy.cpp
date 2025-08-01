@@ -77,6 +77,9 @@ void init_train_ops(py::module& m) {
               using namespace dal::dummy;
               using input_t = train_input<Task>;
               train_ops ops(policy, input_t{ data }, params2desc{});
+              // fptype2t is defined in common/dispatch_utils.hpp
+              // which operates in a similar manner to the method2t functor
+              // it selects the floating point datatype for the calculation
               return fptype2t{ method2t{ Task{}, ops } }(params);
           });
 };
