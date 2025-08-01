@@ -502,7 +502,10 @@ def __logistic_regression_path(
             if _dal_ready and classes.size == 2:
                 w0 = w0[-1:, :]
             if sklearn_check_version("1.1"):
-                w0 = w0.ravel(order="F")
+                if _dal_ready and coef is not None:
+                    w0 = w0.ravel(order="C")
+                else:
+                    w0 = w0.ravel(order="F")
             else:
                 w0 = w0.ravel()
         target = Y_multi
@@ -682,6 +685,8 @@ def __logistic_regression_path(
                     maxiter=max_iter,
                     tol=tol,
                 )
+                if _dal_ready and C_daal_multiplier == 2:
+                    w0 /= 2
             else:
                 if sklearn_check_version("1.1"):
                     l2_reg_strength = 1.0 / (C * sw_sum)
