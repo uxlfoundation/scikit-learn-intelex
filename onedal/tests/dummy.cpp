@@ -36,8 +36,8 @@ struct method2t {
     // defined for each algo.
     template <typename Float>
     auto operator()(const py::dict& params) {
-
         const auto method = params["method"].cast<std::string>();
+
         ONEDAL_PARAM_DISPATCH_VALUE(method, "generate", ops, Float, method::generate);
         ONEDAL_PARAM_DISPATCH_VALUE(method, "by_default", ops, Float, method::by_default);
         ONEDAL_PARAM_DISPATCH_THROW_INVALID_VALUE(method);
