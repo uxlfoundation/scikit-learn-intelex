@@ -61,8 +61,8 @@ if sklearn_check_version("1.2"):
 # create parallelization control for the oneDAL library via the ``n_jobs``
 # parameter. This parameter is added to ``__init__`` automatically.
 #
-# 4) For compatability reasons, ``daal_check_version`` and
-# ``sklearn_check_version`` add or remove capabilites based on the installed
+# 4) For compatibility reasons, ``daal_check_version`` and
+# ``sklearn_check_version`` add or remove capabilities based on the installed
 # oneDAL library and scikit-learn package. This is often necessary for the
 # state of oneDAL development and scikit-learn characteristics. This should
 # be used at import time instead of run time whenever possible/ practical.
@@ -100,7 +100,7 @@ if sklearn_check_version("1.2"):
 #
 
 ##########################
-# METHOD HEIRARCHY NOTES #
+# METHOD HIERARCHY NOTES #
 ##########################
 #
 # Sklearnex estimator methods can be thought of in 3 major tiers.
@@ -147,7 +147,7 @@ if sklearn_check_version("1.2"):
 class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
     # All sklearnex estimators must inherit a sklearn estimator, sklearnex-
     # only estimators are shown by the inheritance of sklearn's
-    # BaseEstimator. Additionaly, inherited oneDALEstimator for estimators
+    # BaseEstimator. Additionally, inherited oneDALEstimator for estimators
     # without a sklearn equivalent must occur directly before BaseEstimator
     # in the mro.
 
@@ -325,7 +325,7 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
         # note return_std is a special aspect of the sklearn version of this
         # estimator, normally the signatures is just predict(self, X)
 
-        check_is_fitted(self)  # first check if fitting has occured
+        check_is_fitted(self)  # first check if fitting has occurred
         # No need to do another parameter check. While they are modifiable
         # in sklearn and in sklearnex, the parameters should never be
         # changed by hand.
@@ -484,7 +484,7 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
     def _onedal_gpu_supported(self, method_name, *data):
         # This method will only be called if it is expected to try and use
         # a SYCL-enabled GPU. See _onedal_cpu_supported for initial
-        # implemenatation notes.  This should follow the same proceedures
+        # implementation notes.  This should follow the same procedures
         # dicatated by the characteristics of GPU oneDAL algorithm
         patching_status = PatchingConditionsChain(
             f"sklearnex.test.{self.__class__.__name__}.{method_name}"

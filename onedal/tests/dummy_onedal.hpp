@@ -63,7 +63,7 @@ using by_default = generate;
 }
 
 namespace method {
-// methods can be arbirarily named, though this will be used in the
+// methods can be arbitrarily named, though this will be used in the
 // python onedal estimator as a parameter
 struct dense {};
 using by_default = dense;
