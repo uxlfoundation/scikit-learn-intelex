@@ -34,6 +34,7 @@ from sklearn.exceptions import ConvergenceWarning
 from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.utils import check_random_state
 
+from onedal._onedal_py_dpc import table
 from sklearnex.utils._array_api import get_namespace
 
 from .._config import _get_config
@@ -182,10 +183,12 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         n_centroids=None,
     ):
 
-        xp, _ = get_namespace(X_table)
-
         if dtype is None:
-            dtype = xp.float32
+            if isinstance(X_table, table):
+                dtype = np.float32
+            else:
+                xp, _ = get_namespace(X_table)
+                dtype = xp.float32
 
         n_clusters = self.n_clusters if n_centroids is None else n_centroids
 
@@ -264,11 +267,12 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
 
     def _fit_backend(self, X_table, centroids_table, dtype=None, is_csr=False):
 
-        xp, _ = get_namespace(X_table)
-        xp = X_table
-
         if dtype is None:
-            dtype = xp.float32
+            if isinstance(X_table, table):
+                dtype = np.float32
+            else:
+                xp, _ = get_namespace(X_table)
+                dtype = xp.float32
 
         params = self._get_onedal_params(is_csr, dtype)
 
