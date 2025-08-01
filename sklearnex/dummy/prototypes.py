@@ -17,7 +17,7 @@
 """Sklearnex module estimator design guide and example.
 
 This can be used as a foundation for developing other estimators. Most
-comments guiding code development should be removed if re-used unless
+comments guiding code development should be removed if reused unless
 pertinent to the derivative implementation."""
 import numpy as np
 import scipy.sparse as sp
@@ -34,13 +34,6 @@ from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
 from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.validation import validate_data
-
-# if a sklearn estimator is getting replicated, it should be imported here
-# with the prefix _sklearn_ added to it (using `import as`).
-
-
-if sklearn_check_version("1.2"):
-    from sklearn.utils._param_validation import StrOptions
 
 
 ################
