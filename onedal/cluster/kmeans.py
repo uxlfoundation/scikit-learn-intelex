@@ -130,6 +130,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
     def _check_params_vs_input(
         self, X_table, is_csr, default_n_init=10, dtype=np.float32
     ):
+
         # n_clusters
         if X_table.shape[0] < self.n_clusters:
             raise ValueError(
@@ -194,11 +195,9 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         init,
         random_seed,
         is_csr,
-        dtype=None,
+        dtype=np.float32,
         n_centroids=None,
     ):
-
-        xp, dtype = self._infer_dtype(X_table, dtype)
 
         n_clusters = self.n_clusters if n_centroids is None else n_centroids
 
@@ -229,7 +228,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
                 # oneDAL KMeans only supports Dense Centroids
                 centers = init.toarray()
             else:
-                centers = xp.asarray(init)
+                centers = np.asarray(init)
             assert centers.shape[0] == n_clusters
             assert centers.shape[1] == X_table.column_count
             # KMeans is implemented on both CPU and GPU for Dense and CSR data
@@ -244,10 +243,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         # For oneDAL versions < 2023.2 or callable init,
         # using the scikit-learn implementation
         logging.getLogger("sklearnex").info("Computing KMeansInit with Stock sklearn")
-        xp, _ = get_namespace(X)
-
-        if dtype is None:
-            dtype = xp.float32
+        xp, dbtype = self._infer_dtype(X, dtype)
 
         n_samples = X.shape[0]
 
@@ -275,9 +271,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
 
         return to_table(centers, queue=getattr(QM.get_global_queue(), "_queue", None))
 
-    def _fit_backend(self, X_table, centroids_table, dtype=None, is_csr=False):
-
-        xp, dtype = self._infer_dtype(X_table, dtype)
+    def _fit_backend(self, X_table, centroids_table, dtype=np.float32, is_csr=False):
 
         params = self._get_onedal_params(is_csr, dtype)
 
@@ -295,13 +289,16 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
     def _fit(self, X):
         is_csr = _is_csr(X)
 
+        xp = self._infer_namespace(X)
+
         if _get_config()["use_raw_input"] is False:
             X = _check_array(
                 X,
-                dtype=[np.float64, np.float32],
+                dtype=[xp.float64, xp.float32],
                 accept_sparse="csr",
                 force_all_finite=False,
             )
+
         X_table = to_table(X, queue=QM.get_global_queue())
         dtype = X_table.dtype
 
