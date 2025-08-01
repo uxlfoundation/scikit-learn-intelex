@@ -278,6 +278,7 @@ py::capsule construct_dlpack(const dal::table& input,
         array.need_mutable_data();
 
     // set tensor
+    throw py::buffer_error("makes it here");
     tensor = construct_dlpack_tensor(array,
                                      homogen_input.get_row_count(),
                                      homogen_input.get_column_count(),
