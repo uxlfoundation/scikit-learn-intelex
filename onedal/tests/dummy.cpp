@@ -17,31 +17,16 @@
 
 #include "onedal/common.hpp"
 #include "onedal/version.hpp"
+#include "oendal/tests/fake_onedal.hpp"
 #include "oneapi/dal/table/common.hpp"
 #include "oneapi/dal/table/homogen.hpp"
+
 
 namespace py = pybind11;
 
 namespace oneapi::dal::python {
 
 namespace dummy {
-
-///////////////////////////// Fake oneDAL Algorithm ///////////////////////
-// These aspects fake the necessary characteristics of a oneDAL algorithm
-
-// These aspects are created in the algorithm's common.hpp
-namespace task {
-    struct compute {};
-    using by_default = compute;
-}
-
-namespace method {
-    struct dense {};
-    using by_default = dense;
-}
-
-///////////////////////////// Fake oneDAL Algorithm ///////////////////////
-
 
 template <typename Task, typename Ops>
 struct method2t {

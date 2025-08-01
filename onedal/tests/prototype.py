@@ -67,7 +67,7 @@ class DummyEstimator:
     def fit(self, X, y, queue=None):
         # convert the data to oneDAL tables in preparation for use by the
         # oneDAL pybind11 interfaces/objects.
-        X_t, y_t, constant = to_table(X, y, self.constant)
+        X_t, y_t = to_table(X, y)
 
         # Generating the params dict can be centralized into a class method,
         # but it must be named ``_get_onedal_params``. Parameter 'fptype' is
@@ -78,14 +78,15 @@ class DummyEstimator:
         # is standardized (taken care of by ``to_table``).  This dtype is a
         # ``numpy`` dtype due to its ubiquity and native support in pybind11.
         params = {
-            "fptype": X_t.dtype,
+            "fptype": y_t.dtype,  # normally X_t.dtype is used
             "method": "dense",
+            "constant": self.constant
         }
 
         # This is the call to the oneDAL pybind11 backend, which was
         # previously bound using ``bind_default_backend``. It returns a
         # pybind11 Python interface to the oneDAL C++ result object.
-        self._onedal_model = self.train(params, X_t, constant)
+        result = self.train(params, y_t)
         # In general the naming conventions of ``fit`` match to ``train``,
         # and ``predict`` match oneDAL's ``infer``. Please refer to the oneDAL
         # design documentation to determine the best translation. Generally the
@@ -101,9 +102,10 @@ class DummyEstimator:
         # onedal estimator object.
 
         self.constant_, self.fit_X_, self.fit_y_ = from_table(
-            self._onedal_model.constant, X_t, y_t, like=X
+            result.constant, X_t, y_t, like=X
         )
-        # These attributes are set in order to show the process of setting
+        # The fit_X_ and fit_y_ attributes are not required and are generally
+        # discouraged. They set in order to show the process of setting
         # and returning array values (and is just an example).  In setting
         # return attributes, post processing of the values beyond conversion
         # needed for sklearn must occur in the sklearnex estimator.
@@ -111,11 +113,13 @@ class DummyEstimator:
     def _create_model(self):
         # While doing something rather trivial, this is closer to what may
         # occur in other estimators which can generate models just in time.
-        # necessary attributes are collected, converted to oneDAL tables
-        # and set to the oneDAL object.
-        m = self.model()
-        m.constant = to_table(self.constant_)
-        return m
+        # Necessary attributes are collected, converted to oneDAL tables
+        # and set to the oneDAL object. In general there should be a oneDAL
+        # model class defined with serialization and deserialization with a
+        # pybind11 interface.
+
+        # This example just treats a oneDAL table as the model.
+        return to_table(self.constant_)
 
     @supports_queue
     def predict(self, X, queue=None):
@@ -126,6 +130,7 @@ class DummyEstimator:
         params = {
             "fptype": X_t.dtype,
             "method": "dense",
+            "constant": self.constant
         }
-        res = self.infer(params, self._onedal_model, X_t)
-        return from_table(res.output, like=X)
+        result = self.infer(params, X_t, self._onedal_model)
+        return from_table(result.data, like=X)
