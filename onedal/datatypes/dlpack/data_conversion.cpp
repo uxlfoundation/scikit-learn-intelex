@@ -217,7 +217,6 @@ managed_t* construct_managed_tensor(const dal::array<byte_t>& array) {
     // generate tensor deleter
     dlm->deleter = [](managed_t* self) -> void {
         auto stored_array = static_cast<dal::array<byte_t>*>(self->manager_ctx);
-        throw py::buffer_error("Will this segfault?");
         if (stored_array) {
             delete stored_array;
         }
@@ -295,6 +294,8 @@ py::capsule construct_dlpack(const dal::table& input,
         capsule = py::capsule(static_cast<void*>(dlm), "dltensor", free_capsule);
     }
     else {
+        throw py::buffer_error("Will this segfault?");
+
         DLManagedTensorVersioned* dlmv = construct_managed_tensor<DLManagedTensorVersioned>(array);
         dlmv->dl_tensor = tensor;
 
