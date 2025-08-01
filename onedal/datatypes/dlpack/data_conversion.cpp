@@ -272,7 +272,7 @@ py::capsule construct_dlpack(const dal::table& input,
     // verify or move to requested device
     if (!dl_device.is_none())
         move_to_device(array, dl_device.cast<py::tuple>(), copy);
-
+    throw py::buffer_error("makes it here");
     // oneDAL tables are by definition immutable and must be made mutable via a copy.
     if (copy)
         array.need_mutable_data();
