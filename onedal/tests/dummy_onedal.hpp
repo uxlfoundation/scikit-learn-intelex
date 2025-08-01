@@ -27,9 +27,9 @@ namespace oneapi::dal {
 namespace dummy {
 
 ///////////////////////////// Fake oneDAL Algorithm ///////////////////////
-// These aspects fake the necessary characteristics of a oneDAL algorithm
+// These aspects fake the necessary characteristics of a oneDAL algorithm.
 // They forego the indirections used with impl_ attributes characteristic
-// of the oneDAL codebase, and only show the necessary APIs. It is also as
+// of the oneDAL codebase and only show the necessary APIs. It is also as
 // minimal as possible, dropping some required setters/getters for brevity.
 
 // These aspects are created in the algorithm's common.hpp
