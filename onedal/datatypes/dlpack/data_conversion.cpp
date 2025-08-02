@@ -195,7 +195,7 @@ managed_t* construct_dlpack_tensor(const dal::array<byte_t>& array,
     dlm->dl_tensor.device = get_dlpack_device(array);
     dlm->dl_tensor.ndim = std::int32_t(2);
     dlm->dl_tensor.dtype = convert_dal_to_dlpack_type(dtype);
-
+    throw py::buffer_error("makes it here");
     // set shape int64_t, which is the output type of a homogen table and for shape and strides
     if (layout == dal::data_layout::row_major) {
         dlm->dl_tensor.shape =
