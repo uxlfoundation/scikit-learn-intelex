@@ -616,3 +616,35 @@ def test_table___dlpack__(dataframe, queue, order, data_shape, dtype):
     del capsule
     gc.collect()
     assert_allclose(np.squeeze(from_table(X_table)), np.squeeze(X))
+
+@pytest.mark.skip(not hasattr(np, "from_dlpack"), reason="no dlpack support in installed numpy")
+@pytest.mark.parametrize(
+    "dataframe,queue", get_dataframes_and_queues("dpctl", "cpu,gpu")
+)
+@pytest.mark.parametrize("order", ["F", "C"])
+@pytest.mark.parametrize("data_shape", data_shapes)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.int32, np.int64])
+def test_table_cvt_to_host_dlpack(dataframe, queue, order, data_shape, dtype):
+    """Test if __dlpack__ attribute can be properly consumed by other frameworks
+    This tests kDLOneAPI devices as well as kDLCPU devices.
+    """
+    rng = np.random.RandomState(0)
+    X = np.array(5 * rng.random_sample(data_shape), dtype=dtype)
+
+    X = ORDER_DICT[order](X)
+
+    X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+
+    X_table = to_table(X_df)
+    # verify that it is on a kDLOneAPI device
+    assert X_df.__dlpack_device__() == X_table.__dlpack_device__()
+
+    # extract to numpy (which should move to host)
+    X_out = np.from_dlpack(X_table)
+    if X_out.dtype == X.dtype:
+        assert_array_equal(np.squeeze(X_out), np.squeeze(X))
+    else:
+        assert_allclose(np.squeeze(X_out), np.squeeze(X))
+
+    # verify that table immutability and copy behavior has been followed
+    assert X_out.flags.writeable
