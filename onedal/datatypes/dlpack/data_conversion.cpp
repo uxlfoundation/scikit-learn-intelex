@@ -190,6 +190,7 @@ managed_t* construct_dlpack_tensor(const dal::array<byte_t>& array,
     dlm->manager_ctx = static_cast<void*>(new dal::array<byte_t>(array));
 
     // set data
+    throw py::buffer_error("makes it here3");
     dlm->dl_tensor.data =
         modifiable ? array.get_mutable_data() : const_cast<byte_t*>(array.get_data());
     throw py::buffer_error("makes it here2");
