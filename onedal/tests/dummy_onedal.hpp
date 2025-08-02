@@ -81,7 +81,7 @@ template <typename Float = float,
           typename Task = task::by_default>
 class descriptor : public base {
 public:
-    using tag_t = descriptor_tag;
+    using tag_t = detail::descriptor_tag;
     using float_t = Float;
     using method_t = Method;
     using task_t = Task;
