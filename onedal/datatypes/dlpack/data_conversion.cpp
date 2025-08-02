@@ -295,7 +295,7 @@ py::capsule construct_dlpack(const dal::table& input,
             homogen_input.get_column_count(),
             homogen_input.get_metadata().get_data_type(0),
             homogen_input.get_data_layout(),
-            copy);
+            false);
         throw py::buffer_error("makes it here versioned");
         dlmv->version.major = DLPACK_MAJOR_VERSION;
         dlmv->version.minor = DLPACK_MINOR_VERSION;
