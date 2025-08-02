@@ -207,7 +207,7 @@ managed_t* construct_dlpack_tensor(const dal::array<byte_t>& array,
     }
 
     // take strategy from dpctl tensors in having a single array allocation by tensor.shape.
-    dlm->dl_tensor.strides = &tensor.shape[2];
+    dlm->dl_tensor.strides = &dlm->dl_tensor.shape[2];
     dlm->dl_tensor.byte_offset = std::uint64_t(0);
 
     // generate tensor deleter
