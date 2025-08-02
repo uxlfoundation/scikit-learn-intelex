@@ -276,25 +276,25 @@ py::capsule construct_dlpack(const dal::table& input,
     if (max_version.is_none() || max_version[0].cast<int>() < DLPACK_MAJOR_VERSION) {
         //not a versioned tensor, in a state of deprecation by dlmc
         DLManagedTensor* dlm =
-            construct_dlpack_tensor(array,
-                                    homogen_input.get_row_count(),
-                                    homogen_input.get_column_count(),
-                                    homogen_input.get_metadata().get_data_type(0),
-                                    homogen_input.get_data_layout(),
-                                    copy);
+            construct_dlpack_tensor<DLManagedTensor>(array,
+                                                     homogen_input.get_row_count(),
+                                                     homogen_input.get_column_count(),
+                                                     homogen_input.get_metadata().get_data_type(0),
+                                                     homogen_input.get_data_layout(),
+                                                     copy);
 
         // create capsule
         capsule = py::capsule(static_cast<void*>(dlm), "dltensor", free_capsule);
     }
     else {
         // assume RVO
-        DLManagedTensorVersioned* dlmv =
-            construct_dlpack_tensor(array,
-                                    homogen_input.get_row_count(),
-                                    homogen_input.get_column_count(),
-                                    homogen_input.get_metadata().get_data_type(0),
-                                    homogen_input.get_data_layout(),
-                                    copy);
+        DLManagedTensorVersioned* dlmv = construct_dlpack_tensor<DLManagedTensorVersioned>(
+            array,
+            homogen_input.get_row_count(),
+            homogen_input.get_column_count(),
+            homogen_input.get_metadata().get_data_type(0),
+            homogen_input.get_data_layout(),
+            copy);
 
         dlmv->version.major = DLPACK_MAJOR_VERSION;
         dlmv->version.minor = DLPACK_MINOR_VERSION;
