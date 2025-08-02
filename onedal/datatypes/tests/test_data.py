@@ -617,10 +617,11 @@ def test_table___dlpack__(dataframe, queue, order, data_shape, dtype):
     gc.collect()
     assert_allclose(np.squeeze(from_table(X_table)), np.squeeze(X))
 
-@pytest.mark.skip(not hasattr(np, "from_dlpack"), reason="no dlpack support in installed numpy")
-@pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("dpctl", "cpu,gpu")
-)
+
+@pytest.mark.skip(
+    not hasattr(np, "from_dlpack"), reason="no dlpack support in installed numpy"
+ )
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("dpctl", "cpu,gpu"))
 @pytest.mark.parametrize("order", ["F", "C"])
 @pytest.mark.parametrize("data_shape", data_shapes)
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.int32, np.int64])
