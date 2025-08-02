@@ -272,7 +272,8 @@ py::capsule construct_dlpack(const dal::table& input,
     if (copy)
         array.need_mutable_data();
 
-    if (max_version.is_none() || max_version.cast<py::tuple>()[0].cast<int>() < DLPACK_MAJOR_VERSION) {
+    if (max_version.is_none() ||
+        max_version.cast<py::tuple>()[0].cast<int>() < DLPACK_MAJOR_VERSION) {
         //not a versioned tensor, in a state of deprecation by dlmc
         DLManagedTensor* dlm =
             construct_dlpack_tensor<DLManagedTensor>(array,
