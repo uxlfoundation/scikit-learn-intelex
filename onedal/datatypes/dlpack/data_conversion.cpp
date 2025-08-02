@@ -186,20 +186,15 @@ managed_t* construct_dlpack_tensor(const dal::array<byte_t>& array,
                                    const dal::data_type& dtype,
                                    const dal::data_layout& layout,
                                    bool modifiable) {
-    throw py::buffer_error("makes it here4");
     managed_t* dlm = new managed_t;
     dlm->manager_ctx = static_cast<void*>(new dal::array<byte_t>(array));
 
     // set data
-    throw py::buffer_error("makes it here3");
     dlm->dl_tensor.data =
         modifiable ? array.get_mutable_data() : const_cast<byte_t*>(array.get_data());
-    throw py::buffer_error("makes it here2");
     dlm->dl_tensor.device = get_dlpack_device(array);
-    throw py::buffer_error("makes it here0");
     dlm->dl_tensor.ndim = std::int32_t(2);
     dlm->dl_tensor.dtype = convert_dal_to_dlpack_type(dtype);
-    throw py::buffer_error("makes it here");
     // set shape int64_t, which is the output type of a homogen table and for shape and strides
     if (layout == dal::data_layout::row_major) {
         dlm->dl_tensor.shape =
@@ -286,7 +281,7 @@ py::capsule construct_dlpack(const dal::table& input,
                                                      homogen_input.get_metadata().get_data_type(0),
                                                      homogen_input.get_data_layout(),
                                                      copy);
-        throw py::buffer_error("makes it here managed");
+
         // create capsule
         capsule = py::capsule(static_cast<void*>(dlm), "dltensor", free_capsule);
     }
@@ -299,7 +294,7 @@ py::capsule construct_dlpack(const dal::table& input,
             homogen_input.get_metadata().get_data_type(0),
             homogen_input.get_data_layout(),
             copy);
-        throw py::buffer_error("makes it here versioned");
+
         dlmv->version.major = DLPACK_MAJOR_VERSION;
         dlmv->version.minor = DLPACK_MINOR_VERSION;
 
