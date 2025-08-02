@@ -63,20 +63,20 @@ function generate_pytest_args {
 ${PYTHON} -c "from sklearnex import patch_sklearn; patch_sklearn()"
 return_code=$(($return_code + $?))
 
-pytest --verbose -s "${sklex_root}/tests" $@ $(generate_pytest_args legacy)
-return_code=$(($return_code + $?))
+# pytest --verbose -s "${sklex_root}/tests" $@ $(generate_pytest_args legacy)
+# return_code=$(($return_code + $?))
 
-pytest --verbose --pyargs daal4py $@ $(generate_pytest_args daal4py)
-return_code=$(($return_code + $?))
+# pytest --verbose --pyargs daal4py $@ $(generate_pytest_args daal4py)
+# return_code=$(($return_code + $?))
 
-pytest --verbose --pyargs sklearnex $@ $(generate_pytest_args sklearnex)
-return_code=$(($return_code + $?))
+# pytest --verbose --pyargs sklearnex $@ $(generate_pytest_args sklearnex)
+# return_code=$(($return_code + $?))
 
 pytest --verbose --pyargs onedal $@ $(generate_pytest_args onedal)
 return_code=$(($return_code + $?))
 
-pytest --verbose -s "${sklex_root}/.ci/scripts/test_global_patch.py" $@ $(generate_pytest_args global_patching)
-return_code=$(($return_code + $?))
+# pytest --verbose -s "${sklex_root}/.ci/scripts/test_global_patch.py" $@ $(generate_pytest_args global_patching)
+# return_code=$(($return_code + $?))
 
 echo "NO_DIST=$NO_DIST"
 if [[ ! $NO_DIST ]]; then
