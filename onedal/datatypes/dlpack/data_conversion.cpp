@@ -186,6 +186,7 @@ managed_t* construct_dlpack_tensor(const dal::array<byte_t>& array,
                                    const dal::data_type& dtype,
                                    const dal::data_layout& layout,
                                    bool modifiable) {
+    throw py::buffer_error("makes it here4");
     managed_t* dlm = new managed_t;
     dlm->manager_ctx = static_cast<void*>(new dal::array<byte_t>(array));
 
