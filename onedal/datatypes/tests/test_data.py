@@ -641,7 +641,14 @@ def test_table_cvt_to_host_dlpack(dataframe, queue, order, data_shape, dtype):
     assert X_df.__dlpack_device__() == X_table.__dlpack_device__()
 
     # extract to numpy (which should move to host)
-    X_out = np.from_dlpack(X_table)
+    try:
+        X_out = np.from_dlpack(X_table)
+    except RuntimeError as e:
+        if "Unsupported device in DLTensor." in str(e):
+            pytest.skip("Numpy version cannot handle device selection")
+        else:
+            raise e
+
     if X_out.dtype == X.dtype:
         assert_array_equal(np.squeeze(X_out), np.squeeze(X))
     else:
