@@ -35,5 +35,7 @@ DLTensor get_dlpack_tensor(const py::capsule& caps,
 bool check_dlpack_oneAPI_device(const DLDeviceType& device);
 py::object regenerate_layout(const py::object& obj);
 py::object reduce_precision(const py::object& obj);
+void free_capsule(PyObject* cap);
+void free_capsule_versioned(PyObject* cap);
 
 } // namespace oneapi::dal::python::dlpack
