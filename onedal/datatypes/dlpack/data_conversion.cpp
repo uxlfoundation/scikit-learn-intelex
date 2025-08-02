@@ -179,42 +179,36 @@ DLDevice get_dlpack_device(const dal::table& input) {
     }
 }
 
-DLTensor construct_dlpack_tensor(const dal::array<byte_t>& array,
-                                 std::int64_t row_count,
-                                 std::int64_t column_count,
-                                 const dal::data_type& dtype,
-                                 const dal::data_layout& layout,
-                                 bool modifiable) {
-    DLTensor tensor;
+template <typename managed_t>
+managed_t* construct_dlpack_tensor(const dal::array<byte_t>& array,
+                                   std::int64_t row_count,
+                                   std::int64_t column_count,
+                                   const dal::data_type& dtype,
+                                   const dal::data_layout& layout,
+                                   bool modifiable) {
+    managed_t* dlm = new managed_t;
+    dlm->manager_ctx = static_cast<void*>(new dal::array<byte_t>(array));
 
     // set data
-    tensor.data = modifiable ? array.get_mutable_data() : const_cast<byte_t*>(array.get_data());
-    // made it here
-    tensor.device = get_dlpack_device(array);
-    tensor.ndim = std::int32_t(2);
-    tensor.dtype = convert_dal_to_dlpack_type(dtype);
+    dlm->dl_tensor.data =
+        modifiable ? array.get_mutable_data() : const_cast<byte_t*>(array.get_data());
+    dlm->dl_tensor.device = get_dlpack_device(array);
+    dlm->dl_tensor.ndim = std::int32_t(2);
+    dlm->dl_tensor.dtype = convert_dal_to_dlpack_type(dtype);
 
     // set shape int64_t, which is the output type of a homogen table and for shape and strides
     if (layout == dal::data_layout::row_major) {
-        tensor.shape =
+        dlm->dl_tensor.shape =
             new std::int64_t[4]{ row_count, column_count, column_count, std::int64_t(1) };
     }
     else {
-        tensor.shape = new std::int64_t[4]{ row_count, column_count, std::int64_t(1), row_count };
+        dlm->dl_tensor.shape =
+            new std::int64_t[4]{ row_count, column_count, std::int64_t(1), row_count };
     }
-    
+
     // take strategy from dpctl tensors in having a single array allocation by tensor.shape.
-    tensor.strides = &tensor.shape[2];
-    tensor.byte_offset = std::uint64_t(0);
-    throw py::buffer_error("makes it here");
-
-    return tensor;
-}
-
-template <typename managed_t>
-managed_t* construct_managed_tensor(const dal::array<byte_t>& array) {
-    managed_t* dlm = new managed_t;
-    dlm->manager_ctx = static_cast<void*>(new dal::array<byte_t>(array));
+    dlm->dl_tensor.strides = &tensor.shape[2];
+    dlm->dl_tensor.byte_offset = std::uint64_t(0);
 
     // generate tensor deleter
     dlm->deleter = [](managed_t* self) -> void {
@@ -225,6 +219,7 @@ managed_t* construct_managed_tensor(const dal::array<byte_t>& array) {
         delete[] self->dl_tensor.shape;
         delete self;
     };
+
     return dlm;
 }
 
@@ -265,7 +260,6 @@ py::capsule construct_dlpack(const dal::table& input,
     // default copy is true in order to support pytorch
     bool copy = !copyobj.is(py::bool_(false));
 
-    DLTensor tensor;
     py::capsule capsule;
 
     auto homogen_input = reinterpret_cast<const dal::homogen_table&>(input);
@@ -274,46 +268,46 @@ py::capsule construct_dlpack(const dal::table& input,
     // verify or move to requested device
     if (!dl_device.is_none())
         move_to_device(array, dl_device.cast<py::tuple>(), copy);
-    // makes it here no problem
+
     // oneDAL tables are by definition immutable and must be made mutable via a copy.
     if (copy)
         array.need_mutable_data();
-    // set tensor
-    //makes it here
-    tensor = construct_dlpack_tensor(array,
-                                     homogen_input.get_row_count(),
-                                     homogen_input.get_column_count(),
-                                     homogen_input.get_metadata().get_data_type(0),
-                                     homogen_input.get_data_layout(),
-                                     copy);
 
     if (max_version.is_none() || max_version[0].cast<int>() < DLPACK_MAJOR_VERSION) {
         //not a versioned tensor, in a state of deprecation by dlmc
-        DLManagedTensor* dlm = construct_managed_tensor<DLManagedTensor>(array);
-        dlm->dl_tensor = tensor;
+        DLManagedTensor* dlm =
+            construct_dlpack_tensor(array,
+                                    homogen_input.get_row_count(),
+                                    homogen_input.get_column_count(),
+                                    homogen_input.get_metadata().get_data_type(0),
+                                    homogen_input.get_data_layout(),
+                                    copy);
 
         // create capsule
         capsule = py::capsule(static_cast<void*>(dlm), "dltensor", free_capsule);
     }
     else {
-        throw py::buffer_error("Will this segfault?");
-
-        DLManagedTensorVersioned* dlmv = construct_managed_tensor<DLManagedTensorVersioned>(array);
-        dlmv->dl_tensor = tensor;
+        // assume RVO
+        DLManagedTensorVersioned* dlmv =
+            construct_dlpack_tensor(array,
+                                    homogen_input.get_row_count(),
+                                    homogen_input.get_column_count(),
+                                    homogen_input.get_metadata().get_data_type(0),
+                                    homogen_input.get_data_layout(),
+                                    copy);
 
         dlmv->version.major = DLPACK_MAJOR_VERSION;
         dlmv->version.minor = DLPACK_MINOR_VERSION;
 
         // by definition for oneDAL tables, unless a copy of the array is made, it is readonly.
-        //if (copy) {
-        //    dlmv->flags = DLPACK_FLAG_BITMASK_IS_COPIED;
-        //}
-        //else {
+        if (copy) {
+            dlmv->flags = DLPACK_FLAG_BITMASK_IS_COPIED;
+        }
+        else {
             dlmv->flags = DLPACK_FLAG_BITMASK_READ_ONLY;
-        //}
+        }
         capsule =
             py::capsule(static_cast<void*>(dlmv), "dltensor_versioned", free_capsule_versioned);
-        throw py::buffer_error("makes it here");
     }
 
     return capsule;
