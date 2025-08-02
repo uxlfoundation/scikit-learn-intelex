@@ -193,6 +193,7 @@ managed_t* construct_dlpack_tensor(const dal::array<byte_t>& array,
     dlm->dl_tensor.data =
         modifiable ? array.get_mutable_data() : const_cast<byte_t*>(array.get_data());
     dlm->dl_tensor.device = get_dlpack_device(array);
+    throw py::buffer_error("makes it here0");
     dlm->dl_tensor.ndim = std::int32_t(2);
     dlm->dl_tensor.dtype = convert_dal_to_dlpack_type(dtype);
     throw py::buffer_error("makes it here");
