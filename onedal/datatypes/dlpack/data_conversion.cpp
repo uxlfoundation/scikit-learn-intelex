@@ -192,6 +192,7 @@ managed_t* construct_dlpack_tensor(const dal::array<byte_t>& array,
     // set data
     dlm->dl_tensor.data =
         modifiable ? array.get_mutable_data() : const_cast<byte_t*>(array.get_data());
+    throw py::buffer_error("makes it here2");
     dlm->dl_tensor.device = get_dlpack_device(array);
     throw py::buffer_error("makes it here0");
     dlm->dl_tensor.ndim = std::int32_t(2);
@@ -295,7 +296,7 @@ py::capsule construct_dlpack(const dal::table& input,
             homogen_input.get_column_count(),
             homogen_input.get_metadata().get_data_type(0),
             homogen_input.get_data_layout(),
-            false);
+            copy);
         throw py::buffer_error("makes it here versioned");
         dlmv->version.major = DLPACK_MAJOR_VERSION;
         dlmv->version.minor = DLPACK_MINOR_VERSION;
