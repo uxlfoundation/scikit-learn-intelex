@@ -237,7 +237,7 @@ static inline void move_dlpack_data(dal::array<byte_t>& array, py::tuple dl_devi
     if (requested.device_type != kDLCPU) {
         {
 #endif // ONEDAL_DATA_PARALLEL
-            throw py::buffer_error("Cannot create dlpack for requested device");
+            throw py::buffer_error("Cannot transfer data to requested device");
         }
     }
 }
