@@ -89,13 +89,13 @@ ONEDAL_PY_INIT_MODULE(table) {
                 // necessary for array API conformance
                 throw py::buffer_error("dlpack stream is unsupported");
 
-            if ((!max_version.is_none() && !py::isinstance<py::tuple>(max_version)) ||
-                py::len(max_version) != 2)
+            if (!max_version.is_none() &&
+                (!py::isinstance<py::tuple>(max_version) || py::len(max_version) != 2))
                 throw py::type_error("max_version must be a tuple (major, minor)");
 
             // verify or move to requested device
-            if ((!dl_device.is_none() && !py::isinstance<py::tuple>(dl_device)) ||
-                py::len(dl_device) != 2)
+            if (!dl_device.is_none() &&
+                (!py::isinstance<py::tuple>(dl_device) || py::len(dl_device) != 2))
                 throw py::type_error("dl_device must be a tuple (device_type, device_id)");
 
             // default behavior for tables is to copy due to readonly oneDAL rules
