@@ -91,17 +91,17 @@ ONEDAL_PY_INIT_MODULE(table) {
 
             if (!max_version.is_none() && !py::isinstance<py::tuple>(max_version) ||
                 py::len(max_version) != 2)
-                throw pybind11::type_error("max_version must be a tuple (major, minor)");
+                throw py::type_error("max_version must be a tuple (major, minor)");
 
             // verify or move to requested device
             if (!dl_device.is_none() && !py::isinstance<py::tuple>(dl_device) ||
                 py::len(dl_device) != 2)
-                throw pybind11::type_error("dl_device must be a tuple (device_type, device_id)");
+                throw py::type_error("dl_device must be a tuple (device_type, device_id)");
 
             // default behavior for tables is to copy due to readonly oneDAL rules
             // default copy is true in vorder to support pytorch
             if (!copyobj.is_none() && !py::isinstance<py::bool_>(copyobj))
-                throw pybind11::type_error("copy must be a boolean or None");
+                throw py::type_error("copy must be a boolean or None");
 
             return dlpack::construct_dlpack(t, max_version, dl_device, copyobj);
         },
