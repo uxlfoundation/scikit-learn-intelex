@@ -649,7 +649,7 @@ def test_table_cvt_to_host_dlpack(dataframe, queue, order, data_shape, dtype):
         else:
             raise e
     assert X_out.__dlpack_device__() != X_table.__dlpack_device__()
-    
+
     if X_out.dtype == X.dtype:
         assert_array_equal(np.squeeze(X_out), np.squeeze(X))
     else:
