@@ -248,7 +248,7 @@ py::capsule construct_dlpack(const dal::table& input,
                              py::object copyobj) {
     // check table type and expose oneDAL array
     if (input.get_kind() != dal::homogen_table::kind())
-        throw pybind11::type_error("Unsupported table type for dlpack conversion");
+        throw py::type_error("Unsupported table type for dlpack conversion");
 
     bool copy = !copyobj.is(py::bool_(false));
 
