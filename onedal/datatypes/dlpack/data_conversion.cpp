@@ -270,7 +270,7 @@ py::capsule construct_dlpack(const dal::table& input,
     // verify or move to requested device
     if (!dl_device.is_none()){
         if (!py::isinstance<py::tuple>(dl_device) || py::len(dl_device) != 2)
- 	    throw pybind11::type_error("dl_device must be a tuple (device_type, device_id)");
+ 	     throw pybind11::type_error("dl_device must be a tuple (device_type, device_id)");
 
         move_to_device(array, dl_device.cast<py::tuple>(), copy);
     }
