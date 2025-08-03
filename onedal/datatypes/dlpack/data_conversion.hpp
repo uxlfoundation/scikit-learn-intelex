@@ -39,8 +39,7 @@ DLDevice get_dlpack_device(const dal::table& input);
 py::capsule construct_dlpack(const dal::table& input,
                              py::object max_version = py::none(),
                              py::object dl_device = py::none(),
-                             py::object copyobj = py::none(),
-                             py::object stream = py::none());
+                             py::object copyobj = py::none());
 
 py::object dlpack_memory_order(py::object obj);
 } // namespace oneapi::dal::python::dlpack
