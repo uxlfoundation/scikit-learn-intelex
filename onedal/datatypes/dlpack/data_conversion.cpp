@@ -257,9 +257,9 @@ py::capsule construct_dlpack(const dal::table& input,
 
     // default behavior for tables is to copy due to readonly oneDAL rules
     // default copy is true in vorder to support pytorch
-    if (!copyobj.is_none() || !py::isinstance<py::bool_>(copyobj)) {
-	    throw pybind11::type_error("copy must be a boolean or None");
-	}
+    if (!copyobj.is_none() && !py::isinstance<py::bool_>(copyobj)) {
+        throw pybind11::type_error("copy must be a boolean or None");
+    }
     bool copy = !copyobj.is(py::bool_(false));
 
     py::capsule capsule;
@@ -270,7 +270,7 @@ py::capsule construct_dlpack(const dal::table& input,
     // verify or move to requested device
     if (!dl_device.is_none()) {
         if (!py::isinstance<py::tuple>(dl_device) || py::len(dl_device) != 2)
-		throw pybind11::type_error("dl_device must be a tuple (device_type, device_id)");
+            throw pybind11::type_error("dl_device must be a tuple (device_type, device_id)");
 
         move_to_device(array, dl_device.cast<py::tuple>(), copy);
     }
@@ -280,7 +280,7 @@ py::capsule construct_dlpack(const dal::table& input,
         array.need_mutable_data();
 
     if (!py::isinstance<py::tuple>(max_version) || py::len(max_version) != 2)
-	    throw pybind11::type_error("max_version must be a tuple (major, minor)");
+        throw pybind11::type_error("max_version must be a tuple (major, minor)");
 
     if (max_version.is_none() ||
         max_version.cast<py::tuple>()[0].cast<int>() < DLPACK_MAJOR_VERSION) {
