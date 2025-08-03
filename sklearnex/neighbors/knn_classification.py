@@ -171,8 +171,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
                 reset=False,
                 ensure_all_finite=False,
             )
-            return self._onedal_estimator.predict(X, queue=queue)
-        return _sklearn_KNeighborsClassifier.predict(self, X)
+        return self._onedal_estimator.predict(X, queue=queue)
 
     def _onedal_predict_proba(self, X, queue=None):
         if X is not None:
