@@ -222,7 +222,7 @@ managed_t* construct_dlpack_tensor(const dal::array<byte_t>& array,
     return dlm;
 }
 
-static inline void move_to_device(dal::array<byte_t>& array, py::tuple dl_device, bool copy) {
+static inline void move_dlpack_data(dal::array<byte_t>& array, py::tuple dl_device, bool copy) {
     DLDevice requested{ dl_device[0].cast<DLDeviceType>(), dl_device[1].cast<std::int32_t>() };
 #ifdef ONEDAL_DATA_PARALLEL
     DLDevice current = get_dlpack_device(array);
@@ -259,7 +259,7 @@ py::capsule construct_dlpack(const dal::table& input,
 
     // verify or move to requested device
     if (!dl_device.is_none()) {
-        move_to_device(array, dl_device.cast<py::tuple>(), copy);
+        move_dlpack_data(array, dl_device.cast<py::tuple>(), copy);
     }
 
     // oneDAL tables are by definition immutable and must be made mutable via a copy.
