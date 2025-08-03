@@ -100,16 +100,16 @@ ONEDAL_PY_INIT_MODULE(table) {
 
             // default behavior for tables is to copy due to readonly oneDAL rules
             // default copy is true in vorder to support pytorch
-            if (!copyobj.is_none() && !py::isinstance<py::bool_>(copyobj)) {
+            if (!copyobj.is_none() && !py::isinstance<py::bool_>(copyobj))
                 throw pybind11::type_error("copy must be a boolean or None");
-            }
+
             return dlpack::construct_dlpack(t, max_version, dl_device, copyobj);
         },
         py::kw_only(),
         py::arg("stream") = py::none(),
         py::arg("max_version") = py::none(),
         py::arg("dl_device") = py::none(),
-        py::arg("copy") = py::none(), );
+        py::arg("copy") = py::none());
     table_obj.def("__dlpack_device__", [](const table& t) {
         auto dlpack_device = dlpack::get_dlpack_device(t);
         return py::make_tuple(dlpack_device.device_type, dlpack_device.device_id);
