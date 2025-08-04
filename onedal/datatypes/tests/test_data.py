@@ -670,7 +670,14 @@ def test_table_writable_dlpack(queue):
     X_table = to_table(X)
     # verify that it is on a kDLOneAPI device
     assert X.__dlpack_device__() == X_table.__dlpack_device__()
+    # verify move to host
+    X_table.__dlpack__(dl_device=(1,0))
+    # verify error is raised when copy=False
+    with pytest.raises(BufferError, match="Cannot transfer data to requested device"):
+        X_table.__dlpack__(dl_device=(1,0), copy=False)
+    
     for copy_bool in [True, False]:
         X_out = xp.from_dlpack(X_table, copy=copy_bool)
         # verify that table immutability is gone and copy behavior has been followed
         assert X_out.flags["W"] is copy_bool
+    
