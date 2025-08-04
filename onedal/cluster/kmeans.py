@@ -227,7 +227,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         # For oneDAL versions < 2023.2 or callable init,
         # using the scikit-learn implementation
         logging.getLogger("sklearnex").info("Computing KMeansInit with Stock sklearn")
-        xp, _ = get_namespace(X_table)
+        xp, _ = get_namespace(X)
 
         if dtype is None:
             dtype = xp.float32
