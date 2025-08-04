@@ -552,3 +552,25 @@ def test_custom_solvers_are_correct(multi_class, C, solver, n_classes):
         rtol=1e-3,
         atol=1e-3,
     )
+
+
+@pytest.mark.parametrize(
+    "dataframe,queue", get_dataframes_and_queues(device_filter_="gpu")
+)
+def test_gpu_logreg_prediction_shapes(dataframe, queue):
+    if not queue or not queue.sycl_device.is_gpu:
+        pytest.skip("Test for GPU-only code branch")
+    from sklearnex.linear_model import LogisticRegression
+
+    X, y = make_classification(random_state=123)
+    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+    y = _convert_to_dataframe(y, sycl_queue=queue, target_df=dataframe)
+
+    model = LogisticRegression(solver="newton-cg").fit(X, y)
+    pred = model.predict(X)
+    pred_proba = model.predict_proba(X)
+    pred_log_proba = model.predict_log_proba(X)
+
+    np.testing.assert_array_equal(pred.shape, (X.shape[0],))
+    np.testing.assert_array_equal(pred_proba.shape, (X.shape[0], 2))
+    np.testing.assert_array_equal(pred_log_proba.shape, (X.shape[0], 2))

@@ -102,7 +102,7 @@ def __logistic_regression_path(
     dual=False,
     penalty="l2",
     intercept_scaling=1.0,
-    multi_class="warn",
+    multi_class="auto",
     random_state=None,
     check_input=True,
     max_squared_sum=None,
