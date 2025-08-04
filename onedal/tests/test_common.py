@@ -66,6 +66,6 @@ def test_frameworks_intentionality():
         try:
             _ = importlib.import_module(module)
         # If a module isn't installed, working as intended.
-        # If an importerror occurs, then something is wrong.
+        # If an ImportError occurs, then something is wrong.
         except ModuleNotFoundError:
             pass
