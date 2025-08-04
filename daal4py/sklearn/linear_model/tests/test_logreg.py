@@ -263,7 +263,7 @@ def test_warm_start_binary(fit_intercept, multi_class, solver, weighted):
     if (
         solver == "newton-cholesky"
         and multi_class == "multinomial"
-        and not sklearn_check_version("1.8")
+        and not sklearn_check_version("1.9")
     ):
         pytest.skip("Bug in scikit-learn in the functionality being tested")
 
