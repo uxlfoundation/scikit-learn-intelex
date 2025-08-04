@@ -226,7 +226,13 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
     def _init_centroids_sklearn(self, X, init, random_state, dtype=None):
         # For oneDAL versions < 2023.2 or callable init,
         # using the scikit-learn implementation
+        import logging
+
+        from sklearn.utils._array_api import get_namespace
+
         logging.getLogger("sklearnex").info("Computing KMeansInit with Stock sklearn")
+
+        # Get the Array API namespace (xp) and original type info (_)
         xp, _ = get_namespace(X)
 
         if dtype is None:
@@ -245,7 +251,8 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
             centers = X[seeds]
         elif callable(init):
             cc_arr = init(X, self.n_clusters, random_state)
-            cc_arr = np.ascontiguousarray(cc_arr, dtype=dtype)
+            if cc_arr.dtype != dtype:
+                cc_arr = xp.astype(cc_arr, dtype)
             self._validate_center_shape(X, cc_arr)
             centers = cc_arr
         elif _is_arraylike_not_scalar(init):
@@ -253,7 +260,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         else:
             raise ValueError(
                 f"init should be either 'k-means++', 'random', a ndarray or a "
-                f"callable, got '{ init }' instead."
+                f"callable, got '{init}' instead."
             )
 
         return to_table(centers, queue=getattr(QM.get_global_queue(), "_queue", None))
