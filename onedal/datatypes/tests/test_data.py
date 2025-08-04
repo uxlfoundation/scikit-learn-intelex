@@ -625,7 +625,7 @@ def test_table___dlpack__(dataframe, queue, order, data_shape, dtype):
 @pytest.mark.parametrize("order", ["F", "C"])
 @pytest.mark.parametrize("data_shape", data_shapes)
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.int32, np.int64])
-def test_table_cvt_to_host_dlpack(dataframe, queue, order, data_shape, dtype):
+def test_table_convert_to_host_dlpack(dataframe, queue, order, data_shape, dtype):
     """Test if __dlpack__ attribute can be properly consumed by moving data
     to host from a SYCL device.
     """
@@ -657,3 +657,21 @@ def test_table_cvt_to_host_dlpack(dataframe, queue, order, data_shape, dtype):
 
     # verify that table immutability is gone and copy behavior has been followed
     assert X_out.flags.writeable
+
+
+@pytest.mark.parametrize("queue", get_queues())
+def test_table_writable_dlpack(queue):
+    """Test if __dlpack__ attribute can be properly consumed by moving data
+    to host from a SYCL device.
+    """
+    xp = pytest.importorskip("dpctl.tensor")
+    X = xp.eye(5, 8, dtype=xp.float32, device=queue)
+    X.flags["W"] = False
+    X_table = to_table(X)
+    # verify that it is on a kDLOneAPI device
+    assert X.__dlpack_device__() == X_table.__dlpack_device__()
+    for copy_bool in [True, False]:
+        X_out = xp.from_dlpack(X_table, copy=copy_bool)
+        # verify that table immutability is gone and copy behavior has been followed
+        assert X_out.flags["W"] is copy_bool
+    
