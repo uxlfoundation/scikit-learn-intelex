@@ -19,7 +19,6 @@ import warnings
 import numpy as np
 import pytest
 from sklearn.datasets import make_classification
-from sklearn.exceptions import ConvergenceWarning
 from sklearn.linear_model import LogisticRegression as _sklearn_LogisticRegression
 
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
@@ -61,7 +60,7 @@ y_multiclass = np.array([1, 1, 1, 1, 2, 2, 2, 2, 1, 3, 3, 1, 2, 2, 2, 2], dtype=
 @pytest.mark.parametrize("C", [1, 0.1])
 def test_binary_multinomial_probabilities(fit_intercept, C):
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=ConvergenceWarning)
+        warnings.simplefilter("ignore")
         model_sklearnex = _d4p_LogisticRegression(
             C=C, fit_intercept=fit_intercept, multi_class="multinomial"
         ).fit(X, y_binary)
@@ -108,7 +107,7 @@ def test_warm_start_stateful(fit_intercept, n_classes, multi_class, weighted):
     # if those already differ too much (which can be the case given numerical
     # differences), will then skip the rest of test that checks the warm starts.
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=ConvergenceWarning)
+        warnings.simplefilter("ignore")
         model1 = _sklearn_LogisticRegression(
             solver="lbfgs",
             fit_intercept=fit_intercept,
@@ -138,7 +137,7 @@ def test_warm_start_stateful(fit_intercept, n_classes, multi_class, weighted):
         pytest.skip("Too large numerical differences for further comparisons")
 
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=ConvergenceWarning)
+        warnings.simplefilter("ignore")
         model1.fit(
             X,
             y,
@@ -177,7 +176,7 @@ def test_warm_start_binary(fit_intercept, multi_class, weighted):
     )
 
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=ConvergenceWarning)
+        warnings.simplefilter("ignore")
         model1 = _d4p_LogisticRegression(
             random_state=123,
             solver="newton-cg",
@@ -229,7 +228,7 @@ def test_warm_start_multinomial(fit_intercept, multi_class, weighted):
     )
 
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=ConvergenceWarning)
+        warnings.simplefilter("ignore")
         model1 = _d4p_LogisticRegression(
             random_state=123,
             solver="newton-cg",
@@ -292,7 +291,7 @@ def test_custom_solvers_are_correct(multi_class, C, solver, n_classes):
     )
 
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=ConvergenceWarning)
+        warnings.simplefilter("ignore")
         model_sklearn = _sklearn_LogisticRegression(
             C=C,
             multi_class=multi_class,
@@ -324,7 +323,7 @@ def test_custom_solvers_are_correct(multi_class, C, solver, n_classes):
         np.testing.assert_allclose(
             model_sklearnex.intercept_ - model_sklearnex.intercept_.mean(),
             model_sklearn.intercept_ - model_sklearn.intercept_.mean(),
-            atol=1e-2,
+            atol=1e-3,
         )
     np.testing.assert_allclose(
         model_sklearnex_refitted.coef_, model_sklearn.coef_, rtol=1e-3, atol=5e-3
@@ -338,7 +337,7 @@ def test_custom_solvers_are_correct(multi_class, C, solver, n_classes):
             model_sklearnex_refitted.intercept_
             - model_sklearnex_refitted.intercept_.mean(),
             model_sklearn.intercept_ - model_sklearn.intercept_.mean(),
-            atol=1e-2,
+            atol=1e-3,
         )
 
     np.testing.assert_allclose(
