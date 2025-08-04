@@ -259,7 +259,8 @@ def test_warm_start_binary(fit_intercept, multi_class, solver, weighted):
     # Note: scikit-learn itself has bugs that would make it fail this test
     # under some versions (starting with 1.6) but not others.
     # TODO: Revisit whether this gets fixed in scikit-learn==1.9 once it gets
-    # released, and update the version number if it hasn't been fixed by then.
+    # released, and update the version number if it hasn't been fixed by then:
+    # https://github.com/scikit-learn/scikit-learn/issues/31859
     if (
         solver == "newton-cholesky"
         and multi_class == "multinomial"
