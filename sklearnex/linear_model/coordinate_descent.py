@@ -24,6 +24,7 @@ from ..base import oneDALEstimator
 # sycl GPU support. No GPU device will be offloaded.
 ElasticNet.fit = support_input_format(ElasticNet.fit)
 ElasticNet.predict = support_input_format(ElasticNet.predict)
+ElasticNet.path = support_input_format(ElasticNet.path)
 ElasticNet.score = support_input_format(ElasticNet.score)
 if sklearn_check_version("1.4"):
     ElasticNet._doc_link_module = "daal4py"
@@ -36,7 +37,9 @@ if sklearn_check_version("1.4"):
 # sycl GPU support. No GPU device will be offloaded.
 Lasso.fit = support_input_format(Lasso.fit)
 Lasso.predict = support_input_format(Lasso.predict)
+Lasso.path = support_input_format(Lasso.path)
 Lasso.score = support_input_format(Lasso.score)
 if sklearn_check_version("1.4"):
     Lasso._doc_link_module = "daal4py"
     Lasso._doc_link_url_param_generator = oneDALEstimator._doc_link_url_param_generator
+
