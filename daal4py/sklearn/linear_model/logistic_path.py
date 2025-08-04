@@ -148,7 +148,7 @@ def __logistic_regression_path(
             max_squared_sum=max_squared_sum,
             sample_weight=sample_weight,
             l1_ratio=l1_ratio,
-            n_threads=n_threads,
+            **({"n_threads": n_threads} if sklearn_check_version("1.1") else {}),
         )
 
     # Comment 2025-08-04: this file might have dead code paths from unsupported solvers.
