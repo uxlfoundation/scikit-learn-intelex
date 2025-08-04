@@ -27,7 +27,6 @@ from sklearn.utils import (
     check_random_state,
     compute_class_weight,
 )
-from sklearn.utils.fixes import _get_additional_lbfgs_options_dict
 from sklearn.utils.optimize import _check_optimize_result, _newton_cg
 from sklearn.utils.validation import _check_sample_weight, check_is_fitted
 
@@ -58,19 +57,30 @@ if sklearn_check_version("1.1"):
         _fit_liblinear,
     )
 else:
+    from sklearn.linear_model._logistic import _LOGISTIC_SOLVER_CONVERGENCE_MSG
     from sklearn.linear_model._logistic import (
-        _check_solver,
-        _check_multi_class,
-        _fit_liblinear,
-        _logistic_loss_and_grad,
-        _logistic_loss,
-        _logistic_grad_hess,
-        _multinomial_loss,
-        _multinomial_loss_grad,
-        _multinomial_grad_hess,
-        _LOGISTIC_SOLVER_CONVERGENCE_MSG,
         LogisticRegression as LogisticRegression_original,
     )
+    from sklearn.linear_model._logistic import (
+        _check_multi_class,
+        _check_solver,
+        _fit_liblinear,
+        _logistic_grad_hess,
+        _logistic_loss,
+        _logistic_loss_and_grad,
+        _multinomial_grad_hess,
+        _multinomial_loss,
+        _multinomial_loss_grad,
+    )
+
+if sklearn_check_version("1.7.1"):
+    from sklearn.utils.fixes import _get_additional_lbfgs_options_dict
+else:
+    # From https://github.com/scikit-learn/scikit-learn/blob/760edca5fb5cc3538b98ebc55171806e2a6e3e84/sklearn/utils/fixes.py#L408
+    # This should be removed if SciPy>=1.15 becomes the minimum required at some point
+    def _get_additional_lbfgs_options_dict(k, v):
+        return {k: v}
+
 
 from sklearn.linear_model._logistic import _logistic_regression_path as lr_path_original
 from sklearn.preprocessing import LabelBinarizer, LabelEncoder
