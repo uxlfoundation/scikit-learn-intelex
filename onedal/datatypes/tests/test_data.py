@@ -673,7 +673,7 @@ def test_table_writable_dlpack(queue):
     # verify that it is on a kDLOneAPI device
     assert X.__dlpack_device__() == X_table.__dlpack_device__()
     assert X_table.__dlpack_device__() != cpu_device
-    
+
     # verify move to host
     X_table.__dlpack__(dl_device=cpu_device)
     # verify error is raised when copy=False
