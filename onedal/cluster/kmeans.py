@@ -228,8 +228,6 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         # using the scikit-learn implementation
         import logging
 
-        from sklearn.utils._array_api import get_namespace
-
         logging.getLogger("sklearnex").info("Computing KMeansInit with Stock sklearn")
 
         # Get the Array API namespace (xp) and original type info (_)
@@ -251,9 +249,15 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
             centers = X[seeds]
         elif callable(init):
             cc_arr = init(X, self.n_clusters, random_state)
-            xp_cc_arr, _ = get_namespace(cc_arr)
-            if xp_cc_arr.dtype != dtype:
-                cc_arr = xp_cc_arr.astype(cc_arr, dtype)
+
+            # Try Array API path
+            if hasattr(cc_arr, "__array_namespace__"):
+                xp, _ = get_namespace(cc_arr)
+            if cc_arr.dtype != dtype:
+                cc_arr = xp.astype(cc_arr, dtype)
+            else:
+                cc_arr = np.ascontiguousarray(cc_arr, dtype=dtype)
+
             self._validate_center_shape(X, cc_arr)
             centers = cc_arr
         elif _is_arraylike_not_scalar(init):
