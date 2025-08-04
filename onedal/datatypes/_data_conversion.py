@@ -95,21 +95,12 @@ def return_type_constructor(array):
         # prioritized: it provides finer-grained control of SYCL queues and the
         # related SYCL devices which are generally unavailable via DLPack
         # representations (such as SYCL contexts, SYCL sub-devices, etc.).
-        if is_dpctl_tensor(array):
-            xp = array.__array_namespace__()
-            func = lambda x: (
-                xp.asarray(x)
-                if hasattr(x, "__sycl_usm_array_interface__")
-                else xp.asarray(backend.from_table(x), device=device)
-            )
-        elif is_dpnp_ndarray(array):
-            xp = array._array_obj.__array_namespace__()
-            from_usm = array._create_from_usm_ndarray
-            func = lambda x: from_usm(
-                xp.asarray(x)
-                if hasattr(x, "__sycl_usm_array_interface__")
-                else xp.asarray(backend.from_table(x), device=device)
-            )
+        xp = array.__array_namespace__()
+        func = lambda x: (
+            xp.asarray(x)
+            if hasattr(x, "__sycl_usm_array_interface__")
+            else xp.asarray(backend.from_table(x), device=device)
+        )
     elif hasattr(array, "__array_namespace__"):
         func = array.__array_namespace__().from_dlpack
     else:
