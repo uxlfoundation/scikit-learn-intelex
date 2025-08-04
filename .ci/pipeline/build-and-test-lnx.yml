@@ -103,7 +103,3 @@ steps:
       SKLEARNEX_PREVIEW: "YES"
     displayName: "Sklearn testing [preview]"
     condition: succeededOrFailed()
-
-
-
-
