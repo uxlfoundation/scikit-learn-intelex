@@ -674,4 +674,3 @@ def test_table_writable_dlpack(queue):
         X_out = xp.from_dlpack(X_table, copy=copy_bool)
         # verify that table immutability is gone and copy behavior has been followed
         assert X_out.flags["W"] is copy_bool
-    
