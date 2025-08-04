@@ -207,7 +207,7 @@ def __logistic_regression_path(
         y_bin[~mask] = 0.0
 
     else:
-        _multi = le.fit_transform(y).astype(X.dtype, copy=False)
+        Y_multi = le.fit_transform(y).astype(X.dtype, copy=False)
 
         w0 = np.zeros((classes.size, n_features + 1), order="C", dtype=X.dtype)
 
