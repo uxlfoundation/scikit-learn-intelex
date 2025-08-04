@@ -202,20 +202,19 @@ def test_multinomial_logistic_regression_is_correct():
     "dataframe,queue", get_dataframes_and_queues(device_filter_="gpu")
 )
 def test_gpu_logreg_prediction_shapes(dataframe, queue):
+    if not queue or not queue.sycl_device.is_gpu:
+        pytest.skip("Test for GPU-only code branch")
     from sklearnex.linear_model import LogisticRegression
 
     X, y = make_classification(random_state=123)
-    X = X.astype(np.float32)
-    y = y.astype(np.float32)
-    X_train, X_test, y_train, _ = prepare_input(X, y, dataframe, queue=queue)
+    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+    y = _convert_to_dataframe(y, sycl_queue=queue, target_df=dataframe)
 
-    model = LogisticRegression(solver="newton-cg")
-    with config_context(target_offload="gpu:0"):
-        model.fit(X_train, y_train)
-        pred = model.predict(X_test)
-        pred_proba = model.predict_proba(X_test)
-        pred_log_proba = model.predict_log_proba(X_test)
+    model = LogisticRegression(solver="newton-cg").fit(X, y)
+    pred = model.predict(X)
+    pred_proba = model.predict_proba(X)
+    pred_log_proba = model.predict_log_proba(X)
 
-    np.testing.assert_array_equal(pred.shape, (X_test.shape[0],))
-    np.testing.assert_array_equal(pred_proba.shape, (X_test.shape[0], 2))
-    np.testing.assert_array_equal(pred_log_proba.shape, (X_test.shape[0], 2))
+    np.testing.assert_array_equal(pred.shape, (X.shape[0],))
+    np.testing.assert_array_equal(pred_proba.shape, (X.shape[0], 2))
+    np.testing.assert_array_equal(pred_log_proba.shape, (X.shape[0], 2))
