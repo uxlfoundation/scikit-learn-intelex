@@ -35,6 +35,6 @@
       "matchStrings": ["DPNP_VERSION: (?<currentValue>\\d+\\.\\d+\\.\\d+)"],
       "depNameTemplate": "IntelPython/dpnp",
       "datasourceTemplate": "github-releases"
-    },
+    }
   ]
 }
