@@ -251,8 +251,9 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
             centers = X[seeds]
         elif callable(init):
             cc_arr = init(X, self.n_clusters, random_state)
-            if cc_arr.dtype != dtype:
-                cc_arr = xp.astype(cc_arr, dtype)
+            xp_cc_arr, _ = get_namespace(cc_arr)
+            if xp_cc_arr.dtype != dtype:
+                cc_arr = xp_cc_arr.astype(cc_arr, dtype)
             self._validate_center_shape(X, cc_arr)
             centers = cc_arr
         elif _is_arraylike_not_scalar(init):
