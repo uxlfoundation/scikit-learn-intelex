@@ -94,18 +94,6 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
             is_csr=is_csr,
         )
 
-    def _infer_namespace(self, X_table):
-        xp, _ = get_namespace(X_table)
-        return xp
-
-    def _infer_dtype(self, X_table, dtype=None):
-        xp = self._infer_namespace(X_table)
-
-        if dtype is not None:
-            return xp, dtype
-
-        return xp, xp.float32
-
     # Get appropriate backend (required for SPMD)
     def _get_basic_statistics_backend(self, result_options):
         return BasicStatistics(result_options)
@@ -239,7 +227,10 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         # For oneDAL versions < 2023.2 or callable init,
         # using the scikit-learn implementation
         logging.getLogger("sklearnex").info("Computing KMeansInit with Stock sklearn")
-        xp, dbtype = self._infer_dtype(X, dtype)
+        xp, _ = get_namespace(X_table)
+
+        if dtype is None:
+            dtype = xp.float32
 
         n_samples = X.shape[0]
 
@@ -285,7 +276,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
     def _fit(self, X):
         is_csr = _is_csr(X)
 
-        xp = self._infer_namespace(X)
+        xp, _ = get_namespace(X)
 
         if _get_config()["use_raw_input"] is False:
             X = _check_array(
