@@ -253,8 +253,8 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
             # Try Array API path
             if hasattr(cc_arr, "__array_namespace__"):
                 xp, _ = get_namespace(cc_arr)
-            if cc_arr.dtype != dtype:
-                cc_arr = xp.astype(cc_arr, dtype)
+                if cc_arr.dtype != dtype:
+                    cc_arr = xp.astype(cc_arr, dtype)
             else:
                 cc_arr = np.ascontiguousarray(cc_arr, dtype=dtype)
 
