@@ -668,13 +668,17 @@ def test_table_writable_dlpack(queue):
     X = xp.eye(5, 8, dtype=xp.float32, device=queue)
     X.flags["W"] = False
     X_table = to_table(X)
+
+    cpu_device = (_default_backend.kDLCPU, 0)
     # verify that it is on a kDLOneAPI device
     assert X.__dlpack_device__() == X_table.__dlpack_device__()
+    assert X_table.__dlpack_device__() != cpu_device
+    
     # verify move to host
-    X_table.__dlpack__(dl_device=(1, 0))
+    X_table.__dlpack__(dl_device=cpu_device)
     # verify error is raised when copy=False
     with pytest.raises(BufferError, match="Cannot transfer data to requested device"):
-        X_table.__dlpack__(dl_device=(1, 0), copy=False)
+        X_table.__dlpack__(dl_device=cpu_device, copy=False)
 
     for copy_bool in [True, False]:
         X_out = xp.from_dlpack(X_table, copy=copy_bool)
