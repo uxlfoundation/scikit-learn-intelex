@@ -669,7 +669,7 @@ def test_table_writable_dlpack(queue):
     X.flags["W"] = False
     X_table = to_table(X)
 
-    cpu_device = (_default_backend.kDLCPU, 0)
+    cpu_device = (backend.kDLCPU, 0)
     # verify that it is on a kDLOneAPI device
     assert X.__dlpack_device__() == X_table.__dlpack_device__()
     assert X_table.__dlpack_device__() != cpu_device
