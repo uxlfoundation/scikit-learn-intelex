@@ -18,7 +18,7 @@ import importlib
 import os
 from glob import glob
 
-from .utils._dataframes_support import data_frameworks
+from onedal.tests.utils._dataframes_support import data_frameworks
 
 
 def _check_primitive_usage_ban(primitive_name, package, allowed_locations=None):
