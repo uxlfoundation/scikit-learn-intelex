@@ -52,6 +52,7 @@ from daal4py.sklearn._utils import (
     daal_check_version,
     sklearn_check_version,
 )
+from onedal._device_offload import support_input_format
 from onedal.ensemble import ExtraTreesClassifier as onedal_ExtraTreesClassifier
 from onedal.ensemble import ExtraTreesRegressor as onedal_ExtraTreesRegressor
 from onedal.ensemble import RandomForestClassifier as onedal_RandomForestClassifier
