@@ -42,7 +42,7 @@ variables:
   PYTHON: 'python'
   ARGS: '1'
   SHELLOPTS: 'errexit:pipefail'
-  DPCTL_VERSION: 0.20.2
+  DPCTL_VERSION: 0.20.1
   DPNP_VERSION: 0.18.1
 
 jobs:
