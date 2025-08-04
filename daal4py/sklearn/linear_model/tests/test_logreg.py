@@ -234,8 +234,8 @@ def test_warm_start_stateful(fit_intercept, solver, n_classes, multi_class, weig
             np.testing.assert_allclose(model1.intercept_, model2.intercept_)
         else:
             # Note: softmax function is invariable to shifting by a constant
-            intercepts1 = model1.intercept_ - model1.intercept_.sum()
-            intercepts2 = model2.intercept_ - model2.intercept_.sum()
+            intercepts1 = model1.intercept_ - model1.intercept_.mean()
+            intercepts2 = model2.intercept_ - model2.intercept_.mean()
             np.testing.assert_allclose(intercepts1, intercepts2)
 
 
@@ -383,8 +383,8 @@ def test_warm_start_multinomial(fit_intercept, multi_class, solver, weighted):
     np.testing.assert_allclose(model1.coef_, model2.coef_)
     if fit_intercept:
         # Note: softmax function is invariable to shifting by a constant
-        intercepts1 = model1.intercept_ - model1.intercept_.sum()
-        intercepts2 = model2.intercept_ - model2.intercept_.sum()
+        intercepts1 = model1.intercept_ - model1.intercept_.mean()
+        intercepts2 = model2.intercept_ - model2.intercept_.mean()
         np.testing.assert_allclose(intercepts1, intercepts2)
 
 
@@ -440,8 +440,8 @@ def test_custom_solvers_are_correct(multi_class, C, solver, n_classes):
         )
     else:
         np.testing.assert_allclose(
-            model_sklearnex.intercept_ - model_sklearnex.intercept_.sum(),
-            model_sklearn.intercept_ - model_sklearn.intercept_.sum(),
+            model_sklearnex.intercept_ - model_sklearnex.intercept_.mean(),
+            model_sklearn.intercept_ - model_sklearn.intercept_.mean(),
             atol=1e-2,
         )
     np.testing.assert_allclose(
@@ -454,8 +454,8 @@ def test_custom_solvers_are_correct(multi_class, C, solver, n_classes):
     else:
         np.testing.assert_allclose(
             model_sklearnex_refitted.intercept_
-            - model_sklearnex_refitted.intercept_.sum(),
-            model_sklearn.intercept_ - model_sklearn.intercept_.sum(),
+            - model_sklearnex_refitted.intercept_.mean(),
+            model_sklearn.intercept_ - model_sklearn.intercept_.mean(),
             atol=1e-2,
         )
 
