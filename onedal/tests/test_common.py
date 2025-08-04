@@ -64,7 +64,7 @@ def test_frameworks_intentionality():
     fmwks = data_frameworks.replace("array_api","array_api_strict").split(",")
     for module in fmwks:
         try:
-            _ = importlib.import(module)
+            _ = importlib.import_module(module)
         # If a module isn't installed, working as intended.
         # If an importerror occurs, then something is wrong.
         except ModuleNotFoundError:
