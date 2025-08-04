@@ -19,7 +19,7 @@ import scipy.sparse as sp
 
 from onedal import _default_backend as backend
 
-from ..utils._third_party import is_dpctl_tensor, is_dpnp_ndarray, lazy_import
+from ..utils._third_party import lazy_import
 
 
 def _apply_and_pass(func, *args, **kwargs):
