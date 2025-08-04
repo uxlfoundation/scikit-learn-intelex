@@ -18,7 +18,7 @@ import importlib
 import os
 from glob import glob
 
-from onedal.tests.utils._dataframes_support import data_frameworks
+from onedal.tests.utils._dataframes_support import test_frameworks
 
 
 def _check_primitive_usage_ban(primitive_name, package, allowed_locations=None):
@@ -61,7 +61,7 @@ def test_sklearn_check_version_ban():
 
 def test_frameworks_intentionality():
     """Only silent skip frameworks which are not installed"""
-    fmwks = data_frameworks.replace("array_api","array_api_strict").split(",")
+    fmwks = test_frameworks.replace("array_api","array_api_strict").split(",")
     for module in fmwks:
         try:
             _ = importlib.import_module(module)
