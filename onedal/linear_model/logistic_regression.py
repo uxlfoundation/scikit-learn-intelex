@@ -225,6 +225,13 @@ class BaseLogisticRegression(metaclass=ABCMeta):
         y_proba = self._predict_proba(X)
         return xp.log(y_proba)
 
+    def _decision_function(self, X):
+        _, xp, _ = _get_sycl_namespace(X)
+        raw = xp.matmul(X, xp.reshape(self.coef_, -1))
+        if self.fit_intercept:
+            raw += self.intercept_
+        return raw
+
 
 class LogisticRegression(ClassifierMixin, BaseLogisticRegression):
 
@@ -272,3 +279,7 @@ class LogisticRegression(ClassifierMixin, BaseLogisticRegression):
     @supports_queue
     def predict_log_proba(self, X, queue=None):
         return self._predict_log_proba(X)
+
+    @supports_queue
+    def decision_function(self, X, queue=None):
+        return self._decision_function(X)
