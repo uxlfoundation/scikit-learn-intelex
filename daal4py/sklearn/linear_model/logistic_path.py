@@ -192,11 +192,8 @@ def __logistic_regression_path(
     # For doing a ovr, we need to mask the labels first. for the
     # multinomial case this is not necessary.
     if multi_class == "ovr":
-        y_bin = np.ones(y.shape, dtype=X.dtype)
-        mask = y == pos_class
-        y_bin[~mask] = 0.0
+        y_bin = (y == pos_class).astype(X.dtype)
         w0 = np.zeros(n_features + 1, dtype=X.dtype)
-
     else:
         Y_multi = le.fit_transform(y).astype(X.dtype, copy=False)
         w0 = np.zeros((classes.size, n_features + 1), order="C", dtype=X.dtype)
@@ -247,13 +244,14 @@ def __logistic_regression_path(
         # fmin_l_bfgs_b and newton-cg accepts only ravelled parameters.
         if classes.size == 2:
             w0 = w0[-1:, :]
-        if sklearn_check_version("1.1"):
-            if _dal_ready and coef is not None:
-                w0 = w0.ravel(order="C")
-            else:
-                w0 = w0.ravel(order="F")
-        else:
-            w0 = w0.ravel()
+        w0 = w0.ravel(order="C")
+        # if sklearn_check_version("1.1"):
+        #     if _dal_ready and coef is not None:
+        #         w0 = w0.ravel(order="C")
+        #     else:
+        #         w0 = w0.ravel(order="F")
+        # else:
+        #     w0 = w0.ravel()
         target = Y_multi
 
         # Note: scikit-learn does a theoretically incorrect procedure when using
