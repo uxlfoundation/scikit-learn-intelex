@@ -245,13 +245,6 @@ def __logistic_regression_path(
         if classes.size == 2:
             w0 = w0[-1:, :]
         w0 = w0.ravel(order="C")
-        # if sklearn_check_version("1.1"):
-        #     if _dal_ready and coef is not None:
-        #         w0 = w0.ravel(order="C")
-        #     else:
-        #         w0 = w0.ravel(order="F")
-        # else:
-        #     w0 = w0.ravel()
         target = Y_multi
 
         # Note: scikit-learn does a theoretically incorrect procedure when using
