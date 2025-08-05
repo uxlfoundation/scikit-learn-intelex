@@ -124,7 +124,7 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
     def score(self, X_test, y=None):
 
         check_is_fitted(self)
-        xp, _ = get_namespace(self.covariance_)
+        xp, _ = get_namespace(X_test, self.covariance_)
 
         X = validate_data(
             self,
@@ -137,7 +137,7 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
         precision = self.get_precision()
 
         est = clone(self)
-        est.set_params(**{"assume_centered": True})
+        est.set_params(assume_centered=True)
 
         # test_cov is a numpy array, but calculated on device
         test_cov = est.fit(X - self.location_).covariance_
@@ -155,7 +155,7 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
         # This includes a validate_data call and an unusual call to get_namespace in
         # order to also support dpnp/dpctl without array_api_dispatch.
         check_is_fitted(self)
-        xp, _ = get_namespace(self.covariance_)
+        xp, _ = get_namespace(comp_cov, self.covariance_)
         c_cov = validate_data(
             self,
             comp_cov,
