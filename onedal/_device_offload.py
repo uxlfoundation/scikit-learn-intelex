@@ -188,4 +188,5 @@ def support_sycl_format(func):
         ):
             args, kwargs = _get_host_inputs(*args, **kwargs)
         return func(*args, **kwargs)
+
     return wrapper

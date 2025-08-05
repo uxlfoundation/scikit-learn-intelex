@@ -44,7 +44,7 @@ if daal_check_version((2024, "P", 100)):
 
     from sklearn.decomposition import PCA as _sklearn_PCA
 
-    from onedal._utils import support_sycl_format
+    from onedal._device_offload import support_sycl_format
     from onedal.decomposition import PCA as onedal_PCA
     from onedal.utils._array_api import _is_numpy_namespace
 
