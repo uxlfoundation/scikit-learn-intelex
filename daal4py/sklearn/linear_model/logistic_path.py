@@ -154,8 +154,8 @@ def __logistic_regression_path(
     # Comment 2025-08-04: this file might have dead code paths from unsupported solvers.
     # It appears to have initially been a copy-paste of scikit-learn with a few additions
     # for varying levels of offloading to oneDAL, but later on the check above was added that
-    # calls 'lr_path_original' early on when it won't end up doing offloading anything to
-    # oneDAL. Some parts of the file have been selectively updated since the initial copy-paste
+    # calls 'lr_path_original' early on when it won't end up offloading anything to oneDAL.
+    # Some parts of the file have been selectively updated since the initial copy-paste
     # to reflect newer additions to sklearn, but they are not synch. The rest of the file
     # remains as it was before the early offload conditions, so some sections might have
     # become unreachable.
