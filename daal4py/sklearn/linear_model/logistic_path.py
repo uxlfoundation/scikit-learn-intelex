@@ -193,22 +193,12 @@ def __logistic_regression_path(
     # multinomial case this is not necessary.
     if multi_class == "ovr":
         y_bin = np.ones(y.shape, dtype=X.dtype)
-
-        if sklearn_check_version("1.1"):
-            mask = y == pos_class
-            y_bin = np.ones(y.shape, dtype=X.dtype)
-
-            y_bin[~mask] = 0.0
-        else:
-            mask = y == pos_class
-            y_bin[~mask] = -1.0
-
-        w0 = np.zeros(n_features + 1, dtype=X.dtype)
+        mask = y == pos_class
         y_bin[~mask] = 0.0
+        w0 = np.zeros(n_features + 1, dtype=X.dtype)
 
     else:
         Y_multi = le.fit_transform(y).astype(X.dtype, copy=False)
-
         w0 = np.zeros((classes.size, n_features + 1), order="C", dtype=X.dtype)
 
     # Adoption of https://github.com/scikit-learn/scikit-learn/pull/26721
@@ -544,30 +534,6 @@ def logistic_regression_path(
     l1_ratio=None,
     n_threads=1,
 ):
-    if sklearn_check_version("1.1"):
-        return __logistic_regression_path(
-            X,
-            y,
-            pos_class=pos_class,
-            Cs=Cs,
-            fit_intercept=fit_intercept,
-            max_iter=max_iter,
-            tol=tol,
-            verbose=verbose,
-            solver=solver,
-            coef=coef,
-            class_weight=class_weight,
-            dual=dual,
-            penalty=penalty,
-            intercept_scaling=intercept_scaling,
-            multi_class=multi_class,
-            random_state=random_state,
-            check_input=check_input,
-            max_squared_sum=max_squared_sum,
-            sample_weight=sample_weight,
-            l1_ratio=l1_ratio,
-            n_threads=n_threads,
-        )
     return __logistic_regression_path(
         X,
         y,
@@ -589,6 +555,7 @@ def logistic_regression_path(
         max_squared_sum=max_squared_sum,
         sample_weight=sample_weight,
         l1_ratio=l1_ratio,
+        n_threads=n_threads,
     )
 
 
