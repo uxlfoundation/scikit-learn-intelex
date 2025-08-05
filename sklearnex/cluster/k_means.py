@@ -337,7 +337,6 @@ if daal_check_version((2023, "P", 200)):
         # Remove when dpctl/dpnp support implicit NumPy array conversions
         _check_test_data = support_sycl_format(_sklearn_KMenans._check_test_data)
 
-
         @wrap_output_data
         def score(self, X, y=None, sample_weight=None):
             check_is_fitted(self)
