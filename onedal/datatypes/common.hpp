@@ -39,7 +39,7 @@ dal::array<T> transfer_to_host(const dal::array<T> &array) {
             }
             if (memory_kind == sycl::usm::alloc::shared) {
                 // if a shared allocation no movement is necessary but sync the data.
-                opt_queue.wait();
+                opt_queue.value().wait();
                 return array;
             }
         }
