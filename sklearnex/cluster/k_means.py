@@ -35,7 +35,7 @@ if daal_check_version((2023, "P", 200)):
 
     from daal4py.sklearn._n_jobs_support import control_n_jobs
     from daal4py.sklearn._utils import sklearn_check_version
-    from onedal._device_offload import support_input_format
+    from onedal._device_offload import support_input_format, support_sycl_format
     from onedal.cluster import KMeans as onedal_KMeans
     from onedal.utils.validation import _is_csr
 
@@ -334,6 +334,9 @@ if daal_check_version((2023, "P", 200)):
             return X
 
         _transform = support_input_format(_sklearn_KMeans._transform)
+        # Remove when dpctl/dpnp support implicit NumPy array conversions
+        _check_test_data = support_sycl_format(_sklearn_KMenans._check_test_data)
+
 
         @wrap_output_data
         def score(self, X, y=None, sample_weight=None):
