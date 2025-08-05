@@ -60,24 +60,24 @@ function generate_pytest_args {
     printf -- "${ARGS[*]}"
 }
 
-COMMON_PYTEST_ARGS="--verbose --durations=100 --durations-min=0.01"
+PYTEST_VERBOSITY_ARGS=$(cat "${sklex_root}/.pytest-verbosity-args")
 
 ${PYTHON} -c "from sklearnex import patch_sklearn; patch_sklearn()"
 return_code=$(($return_code + $?))
 
-pytest ${COMMON_PYTEST_ARGS} -s "${sklex_root}/tests" $@ $(generate_pytest_args legacy)
+pytest ${PYTEST_VERBOSITY_ARGS} -s "${sklex_root}/tests" $@ $(generate_pytest_args legacy)
 return_code=$(($return_code + $?))
 
-pytest ${COMMON_PYTEST_ARGS} --pyargs daal4py $@ $(generate_pytest_args daal4py)
+pytest ${PYTEST_VERBOSITY_ARGS} --pyargs daal4py $@ $(generate_pytest_args daal4py)
 return_code=$(($return_code + $?))
 
-pytest ${COMMON_PYTEST_ARGS} --pyargs sklearnex $@ $(generate_pytest_args sklearnex)
+pytest ${PYTEST_VERBOSITY_ARGS} --pyargs sklearnex $@ $(generate_pytest_args sklearnex)
 return_code=$(($return_code + $?))
 
-pytest ${COMMON_PYTEST_ARGS} --pyargs onedal $@ $(generate_pytest_args onedal)
+pytest ${PYTEST_VERBOSITY_ARGS} --pyargs onedal $@ $(generate_pytest_args onedal)
 return_code=$(($return_code + $?))
 
-pytest ${COMMON_PYTEST_ARGS} -s "${sklex_root}/.ci/scripts/test_global_patch.py" $@ $(generate_pytest_args global_patching)
+pytest ${PYTEST_VERBOSITY_ARGS} -s "${sklex_root}/.ci/scripts/test_global_patch.py" $@ $(generate_pytest_args global_patching)
 return_code=$(($return_code + $?))
 
 echo "NO_DIST=$NO_DIST"
