@@ -269,6 +269,7 @@ py::capsule construct_dlpack(const dal::table& input,
     if (max_version.is_none() ||
         max_version.cast<py::tuple>()[0].cast<int>() < DLPACK_MAJOR_VERSION) {
         //not a versioned tensor, in a state of deprecation by dlmc
+        // assume return value optimization (RVO) rather than passing by reference.
         DLManagedTensor* dlm =
             construct_dlpack_tensor<DLManagedTensor>(array,
                                                      homogen_input.get_row_count(),
@@ -281,7 +282,7 @@ py::capsule construct_dlpack(const dal::table& input,
         capsule = py::capsule(static_cast<void*>(dlm), "dltensor", free_capsule);
     }
     else {
-        // assume RVO
+        // assume return value optimization (RVO) rather than passing by reference.
         DLManagedTensorVersioned* dlmv = construct_dlpack_tensor<DLManagedTensorVersioned>(
             array,
             homogen_input.get_row_count(),
