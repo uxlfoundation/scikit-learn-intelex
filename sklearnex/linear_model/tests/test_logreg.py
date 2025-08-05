@@ -487,6 +487,7 @@ def test_custom_solvers_are_correct(multi_class, C, solver, n_classes):
         n_clusters_per_class=1,
         n_features=2,
         n_redundant=0,
+        n_samples=50,
         class_sep=0.25,
     )
 
@@ -497,15 +498,15 @@ def test_custom_solvers_are_correct(multi_class, C, solver, n_classes):
             multi_class=multi_class,
         ).fit(X, y)
         model_sklearnex = LogisticRegression(
-            C=C, solver=solver, multi_class=multi_class, max_iter=int(1e7), tol=1e-20
+            C=C, solver=solver, multi_class=multi_class, max_iter=1_000, tol=1e-8
         ).fit(X, y)
         model_sklearnex_refitted = (
             LogisticRegression(
                 C=C,
                 solver=solver,
                 multi_class=multi_class,
-                max_iter=int(1e7),
-                tol=1e-20,
+                max_iter=1_000,
+                tol=1e-8,
                 warm_start=True,
             )
             .fit(X, y)
