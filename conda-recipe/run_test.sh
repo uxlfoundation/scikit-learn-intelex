@@ -92,10 +92,10 @@ if [[ ! $NO_DIST ]]; then
         export EXTRA_MPI_ARGS="-n 4"
     fi
     mpirun ${EXTRA_MPI_ARGS} python "${sklex_root}/tests/helper_mpi_tests.py" \
-        pytest -k spmd --with-mpi ${COMMON_PYTEST_ARGS} --pyargs sklearnex $@ $(generate_pytest_args sklearnex_spmd)
+        pytest -k spmd --with-mpi ${PYTEST_VERBOSITY_ARGS} --pyargs sklearnex $@ $(generate_pytest_args sklearnex_spmd)
     return_code=$(($return_code + $?))
     mpirun ${EXTRA_MPI_ARGS} python "${sklex_root}/tests/helper_mpi_tests.py" \
-        pytest ${COMMON_PYTEST_ARGS} -s "${sklex_root}/tests/test_daal4py_spmd_examples.py" $@ $(generate_pytest_args mpi_legacy)
+        pytest ${PYTEST_VERBOSITY_ARGS} -s "${sklex_root}/tests/test_daal4py_spmd_examples.py" $@ $(generate_pytest_args mpi_legacy)
     return_code=$(($return_code + $?))
 fi
 
