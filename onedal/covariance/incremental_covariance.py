@@ -141,7 +141,7 @@ class IncrementalEmpiricalCovariance(BaseEmpiricalCovariance):
 
             if self.bias and not daal_check_version((2024, "P", 1)):
                 n_rows = self._partial_result.partial_n_rows
-                self.covariance_ = self.covariance_ * (n_rows - 1) / n_rows
+                self.covariance_ *= (n_rows - 1) / n_rows
 
             self.location_ = from_table(result.means, like=self._outtype)[0, ...]
             self._outtype = None
