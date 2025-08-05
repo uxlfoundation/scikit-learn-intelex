@@ -61,7 +61,7 @@ def test_sklearn_check_version_ban():
 
 def test_frameworks_intentionality():
     """Only silent skip frameworks which are not installed"""
-    fmwks = test_frameworks.replace("array_api","array_api_strict").split(",")
+    fmwks = test_frameworks.replace("array_api", "array_api_strict").split(",")
     for module in fmwks:
         try:
             _ = importlib.import_module(module)

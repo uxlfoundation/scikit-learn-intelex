@@ -284,13 +284,13 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         # requires moving data to host to construct the csr_matrix
         if mode == "connectivity":
             A_ind = self.kneighbors(X, n_neighbors, return_distance=False)
-            _, (A_ind, ) = _transfer_to_host(A_ind)
+            _, (A_ind,) = _transfer_to_host(A_ind)
             n_queries = A_ind.shape[0]
             A_data = np.ones(n_queries * n_neighbors)
 
         elif mode == "distance":
             A_data, A_ind = self.kneighbors(X, n_neighbors, return_distance=True)
-            _, (A_data, A_ind) = _transfer_to_host(A_data, A_ind) 
+            _, (A_data, A_ind) = _transfer_to_host(A_data, A_ind)
             A_data = np.reshape(A_data, (-1,))
 
         else:

@@ -44,6 +44,7 @@ if daal_check_version((2024, "P", 100)):
 
     from sklearn.decomposition import PCA as _sklearn_PCA
 
+    from onedal._utils import support_sycl_format
     from onedal.decomposition import PCA as onedal_PCA
     from onedal.utils._array_api import _is_numpy_namespace
 
@@ -109,6 +110,14 @@ if daal_check_version((2024, "P", 100)):
                 self.tol = tol
                 self.iterated_power = iterated_power
                 self.random_state = random_state
+
+        score_samples = support_sycl_format(_sklearn_PCA.score_samples)
+
+        def score(self, X, y=None):
+            # needs to be implemented for dpctl/dpnp support without
+            # array_api_dispatch.
+            xp, _ = get_namespace(X)
+            return float(xp.mean(self.score_samples(X)))
 
         def fit(self, X, y=None):
             self._fit(X)
@@ -413,6 +422,7 @@ if daal_check_version((2024, "P", 100)):
         transform.__doc__ = _sklearn_PCA.transform.__doc__
         fit_transform.__doc__ = _sklearn_PCA.fit_transform.__doc__
         inverse_transform.__doc__ = _sklearn_PCA.inverse_transform.__doc__
+        score.__doc__ = _sklearn_PCA.score.__doc__
 
 else:
     from daal4py.sklearn.decomposition import PCA

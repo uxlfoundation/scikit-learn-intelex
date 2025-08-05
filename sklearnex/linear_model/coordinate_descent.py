@@ -25,6 +25,8 @@ from ..base import oneDALEstimator
 ElasticNet.fit = support_input_format(ElasticNet.fit)
 ElasticNet.predict = support_input_format(ElasticNet.predict)
 ElasticNet.path = support_input_format(ElasticNet.path)
+# WARNING: This is necessary for the aliasing of sklearn and support_input_format
+ElasticNet.path.__qualname__ = ".".join(("ElasticNet", ElasticNet.path.__qualname__))
 ElasticNet.score = support_input_format(ElasticNet.score)
 if sklearn_check_version("1.4"):
     ElasticNet._doc_link_module = "daal4py"
@@ -38,8 +40,9 @@ if sklearn_check_version("1.4"):
 Lasso.fit = support_input_format(Lasso.fit)
 Lasso.predict = support_input_format(Lasso.predict)
 Lasso.path = support_input_format(Lasso.path)
+# WARNING: This is necessary for the aliasing of sklearn and support_input_format
+Lasso.path.__qualname__ = ".".join(("Lasso", Lasso.path.__qualname__))
 Lasso.score = support_input_format(Lasso.score)
 if sklearn_check_version("1.4"):
     Lasso._doc_link_module = "daal4py"
     Lasso._doc_link_url_param_generator = oneDALEstimator._doc_link_url_param_generator
-

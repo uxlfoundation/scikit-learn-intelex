@@ -460,7 +460,7 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
 
     decision_path = support_input_format(_sklearn_ForestClassifier.decision_path)
     apply = support_input_format(_sklearn_ForestClassifier.apply)
-    
+
     def _estimators_(self):
         super()._estimators_()
         for est in self._cached_estimators_:
@@ -907,7 +907,7 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
 
     decision_path = support_input_format(_sklearn_ForestRegressor.decision_path)
     apply = support_input_format(_sklearn_ForestRegressor.apply)
-    
+
     def _onedal_fit_ready(self, patching_status, X, y, sample_weight):
         if sp.issparse(y):
             raise ValueError("sparse multilabel-indicator for y is not supported.")

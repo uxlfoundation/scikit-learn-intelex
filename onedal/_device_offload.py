@@ -24,7 +24,7 @@ from sklearn import get_config
 from ._config import _get_config
 from .datatypes import copy_to_dpnp, copy_to_usm, dlpack_to_numpy, usm_to_numpy
 from .utils import _sycl_queue_manager as QM
-from .utils._array_api import _asarray, _is_numpy_namespace, _get_sycl_namespace
+from .utils._array_api import _asarray, _get_sycl_namespace, _is_numpy_namespace
 from .utils._third_party import is_dpnp_ndarray
 
 logger = logging.getLogger("sklearnex")
@@ -179,10 +179,13 @@ def support_sycl_format(func):
     # array_api_inputs, specifically move sycl data to host
     # when array_api_dispatch is not set.
     # This can be deprecated when dpctl/dpnp support the
-    # __array__ numpy implicit coversion attribute
+    # __array__ numpy implicit conversion attribute
     @wraps(func)
     def wrapper(*args, **kwargs):
-        if not get_config().get("array_api_dispatch", False) and _get_sycl_namespace(*args)[2]:
+        if (
+            not get_config().get("array_api_dispatch", False)
+            and _get_sycl_namespace(*args)[2]
+        ):
             args, kwargs = _get_host_inputs(*args, **kwargs)
         return func(*args, **kwargs)
-        
+    return wrapper

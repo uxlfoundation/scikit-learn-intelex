@@ -100,7 +100,9 @@ if daal_check_version((2024, "P", 1)):
             )
 
         _onedal_cpu_fit = daal4py_fit
-        decision_function = support_input_format(_sklearn_LogisticRegression.decision_function)
+        decision_function = support_input_format(
+            _sklearn_LogisticRegression.decision_function
+        )
 
         def _onedal_gpu_save_attributes(self):
             assert hasattr(self, "_onedal_estimator")
