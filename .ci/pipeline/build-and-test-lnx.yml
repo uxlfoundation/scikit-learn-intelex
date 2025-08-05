@@ -60,7 +60,7 @@ steps:
       pip install --upgrade -r requirements-test.txt
       pip install $(python .ci/scripts/get_compatible_scipy_version.py)
       # dpep installation is set to pypi to avoid conflict of numpy versions from pip and conda
-      if [ [ $(SKLEARN_VERSION) != "1.0" ] && [ -z ${NO_DPC} ]; then pip install dpctl==0.20.* dpnp==0.18.*; fi
+      if [ $(SKLEARN_VERSION) != "1.0" ] && [ -z ${NO_DPC} ]; then pip install dpctl==0.20.* dpnp==0.18.*; fi
       if [ -z "${NO_DPC}" ]; then pip install dpcpp-cpp-rt==2025.2.*; fi
       pip list
     env:
