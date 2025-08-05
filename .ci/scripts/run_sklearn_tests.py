@@ -50,7 +50,7 @@ if __name__ == "__main__":
 
     pytest_verbosity_file = os.path.join(
         os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-        ".pytest-verbosity-args"
+        ".pytest-verbosity-args",
     )
     with open(pytest_verbosity_file, "r") as f:
         verbosity_args = f.read().strip()
