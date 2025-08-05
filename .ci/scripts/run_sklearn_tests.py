@@ -48,15 +48,7 @@ if __name__ == "__main__":
     if sklearn_check_version("1.6"):
         os.environ["SCIPY_ARRAY_API"] = "1"
 
-    pytest_verbosity_file = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-        ".pytest-verbosity-args",
-    )
-    with open(pytest_verbosity_file, "r") as f:
-        verbosity_args = f.read().strip()
-
     pytest_args = (
-        f"{verbosity_args} "
         f"--rootdir={sklearn_file_dir} "
         f'{os.environ["DESELECTED_TESTS"]} {os.environ["SELECTED_TESTS"]}'.split(" ")
     )
