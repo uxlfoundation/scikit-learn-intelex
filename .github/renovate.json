@@ -30,8 +30,8 @@
       "matchStrings": [
         "\\s*DPCTL_VERSION: (?<currentValue>\\d+\\.\\d+\\.\\d+)"
       ],
-      "depNameTemplate": "IntelPython/dpctl",
-      "datasourceTemplate": "github-releases"
+      "depNameTemplate": "dpctl",
+      "datasourceTemplate": "pypi"
     },
     {
       "fileMatch": [
@@ -41,8 +41,8 @@
       "matchStrings": [
         "\\s*DPNP_VERSION: (?<currentValue>\\d+\\.\\d+\\.\\d+)"
       ],
-      "depNameTemplate": "IntelPython/dpnp",
-      "datasourceTemplate": "github-releases"
+      "depNameTemplate": "dpnp",
+      "datasourceTemplate": "pypi"
     },
     {
       "fileMatch": ["^\\.ci/pipeline/ci\\.yml$"],
