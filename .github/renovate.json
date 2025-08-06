@@ -24,7 +24,7 @@
 "regexManagers": [
     {
       "fileMatch": [
-        "^\\.ci/pipeline/ci\\.yml$",
+        "^\\.ci/pipeline/build-and-test-lnx\\.yml$",
         "^\\.github/workflows/ci\\.yml$"
       ],
       "matchStrings": [
@@ -35,7 +35,7 @@
     },
     {
       "fileMatch": [
-        "^\\.ci/pipeline/ci\\.yml$",
+        "^\\.ci/pipeline/build-and-test-lnx\\.yml$",
         "^\\.github/workflows/ci\\.yml$"
       ],
       "matchStrings": [
@@ -45,7 +45,7 @@
       "datasourceTemplate": "pypi"
     },
     {
-      "fileMatch": ["^\\.ci/pipeline/ci\\.yml$"],
+      "fileMatch": ["^\\.ci/pipeline/build-and-test-lnx\\.yml$"],
       "matchStrings": [
         "\\s*DPCPP_RT_VERSION = (?<currentValue>\\d+\\.\\d+\\.\\d+)"
       ],
