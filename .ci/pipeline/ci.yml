@@ -42,9 +42,6 @@ variables:
   PYTHON: 'python'
   ARGS: '1'
   SHELLOPTS: 'errexit:pipefail'
-  DPCTL_VERSION: 0.20.1
-  DPNP_VERSION: 0.18.1
-  DPCPP_RT_VERSION: 2025.2.0
 
 jobs:
 - job: Lint
