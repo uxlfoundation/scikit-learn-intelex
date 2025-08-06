@@ -321,7 +321,9 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
     def score(self, X_test, y=None):
 
         check_is_fitted(self)
-        xp, _ = get_namespace(X_test, self.covariance_)
+        # Only covariance evaluated for get_namespace due to dpnp/dpctl
+        # support without array_api_dispatch
+        xp, _ = get_namespace(self.covariance_)
 
         X = validate_data(
             self,
@@ -352,7 +354,9 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         # This includes a validate_data call and an unusual call to get_namespace in
         # order to also support dpnp/dpctl without array_api_dispatch.
         check_is_fitted(self)
-        xp, _ = get_namespace(comp_cov, self.covariance_)
+        # Only covariance evaluated for get_namespace due to dpnp/dpctl
+        # support without array_api_dispatch
+        xp, _ = get_namespace(self.covariance_)
         c_cov = validate_data(
             self,
             comp_cov,
