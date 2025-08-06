@@ -268,7 +268,9 @@ def test_input_zero_copy_sycl_usm(dataframe, queue, order, dtype):
     _assert_sua_iface_fields(X_dp, X_table)
 
     X_dp_from_table = from_table(X_table, like=X_dp)
-    _assert_sua_iface_fields(X_table, X_dp_from_table)
+    # Skip dpnp as direct consumption of the __sycl_usm_array_interface__ is not yet
+    # possible.
+    _assert_sua_iface_fields(X_table, X_dp_from_table, skip_data_0 = dataframe == "dpnp")
     _assert_tensor_attr(X_dp, X_dp_from_table, order)
 
 
