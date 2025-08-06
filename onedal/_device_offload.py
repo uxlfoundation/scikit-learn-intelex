@@ -174,12 +174,11 @@ def support_input_format(func):
 
 
 def support_sycl_format(func):
-    # For methods whose output do not match the input types,
-    # there is no oneDAL equivalent, and does not support
-    # array_api_inputs, specifically move sycl data to host
-    # when array_api_dispatch is not set.
-    # This can be deprecated when dpctl/dpnp support the
-    # __array__ numpy implicit conversion attribute
+    # For methods whose output do not match the input types, with no oneDAL
+    # equivalent, and without array API support, specifically move SYCL
+    # data to host when array_api_dispatch is not set. This is necessary as
+    # all sycl data frameworks no longer support numpy implicit conversion
+    # and must be manually converted.
     @wraps(func)
     def wrapper(*args, **kwargs):
         if (

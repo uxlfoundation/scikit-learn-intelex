@@ -111,13 +111,9 @@ if daal_check_version((2024, "P", 100)):
                 self.iterated_power = iterated_power
                 self.random_state = random_state
 
+        # guarantee operability with dpnp/dpctl, runs on CPU unless
+        # array_api_dispatch is enabled.
         score_samples = support_sycl_format(_sklearn_PCA.score_samples)
-
-        def score(self, X, y=None):
-            # needs to be implemented for dpctl/dpnp support without
-            # array_api_dispatch.
-            xp, _ = get_namespace(X)
-            return float(xp.mean(self.score_samples(X)))
 
         def fit(self, X, y=None):
             self._fit(X)
