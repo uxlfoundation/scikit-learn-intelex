@@ -42,4 +42,3 @@ Lasso.score = support_input_format(Lasso.score)
 if sklearn_check_version("1.4"):
     Lasso._doc_link_module = "daal4py"
     Lasso._doc_link_url_param_generator = oneDALEstimator._doc_link_url_param_generator
-
