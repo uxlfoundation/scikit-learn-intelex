@@ -187,6 +187,7 @@ def support_sycl_format(func):
             and _get_sycl_namespace(*args)[2]
         ):
             return _get_host_inputs(*args, **kwargs)
+        return args, kwargs
 
     if inspect.isfunction(func) and "." in func.__qualname__:
 
