@@ -20,7 +20,7 @@ import scipy.sparse as sp
 from onedal import _default_backend as backend
 
 from ..utils._third_party import is_dpctl_tensor, is_dpnp_ndarray, lazy_import
-from ._sycl_usm import to_dpnp
+import _sycl_usm
 
 
 def _apply_and_pass(func, *args, **kwargs):
@@ -105,7 +105,7 @@ def return_type_constructor(array):
             )
         elif is_dpnp_ndarray(array):
             func = lambda x: (
-                to_dpnp(x)
+                _sycl_usm.to_dpnp(x)
                 if hasattr(x, "__sycl_usm_array_interface__")
                 else xp.asarray(backend.from_table(x), device=device)
             )
