@@ -418,7 +418,7 @@ if daal_check_version((2024, "P", 100)):
         transform.__doc__ = _sklearn_PCA.transform.__doc__
         fit_transform.__doc__ = _sklearn_PCA.fit_transform.__doc__
         inverse_transform.__doc__ = _sklearn_PCA.inverse_transform.__doc__
-        score.__doc__ = _sklearn_PCA.score.__doc__
+        score_samples.__doc__ = _sklearn_PCA.score_samples.__doc__
 
 else:
     from daal4py.sklearn.decomposition import PCA

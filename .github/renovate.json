@@ -21,20 +21,36 @@
   "pre-commit": {
     "enabled": true
   },
-  "customManagers": [
+"regexManagers": [
     {
-      "customType": "regex",
-      "fileMatch": ["^\\.ci\\/pipeline\\/ci\\.yml$","^\\.github\\/workflows\\/ci\\.yml$"],
-      "matchStrings": ["DPCTL_VERSION: (?<currentValue>\\d+\\.\\d+\\.\\d+)"],
+      "fileMatch": [
+        "^\\.ci/pipeline/ci\\.yml$",
+        "^\\.github/workflows/ci\\.yml$"
+      ],
+      "matchStrings": [
+        "\\s*DPCTL_VERSION: (?<currentValue>\\d+\\.\\d+\\.\\d+)"
+      ],
       "depNameTemplate": "IntelPython/dpctl",
       "datasourceTemplate": "github-releases"
     },
     {
-      "customType": "regex",
-      "fileMatch": ["^\\.ci\\/pipeline\\/ci\\.yml$","^\\.github\\/workflows\\/ci\\.yml$"],
-      "matchStrings": ["DPNP_VERSION: (?<currentValue>\\d+\\.\\d+\\.\\d+)"],
+      "fileMatch": [
+        "^\\.ci/pipeline/ci\\.yml$",
+        "^\\.github/workflows/ci\\.yml$"
+      ],
+      "matchStrings": [
+        "\\s*DPNP_VERSION: (?<currentValue>\\d+\\.\\d+\\.\\d+)"
+      ],
       "depNameTemplate": "IntelPython/dpnp",
       "datasourceTemplate": "github-releases"
+    },
+    {
+      "fileMatch": ["^\\.ci/pipeline/ci\\.yml$"],
+      "matchStrings": [
+        "\\s*DPCPP_RT_VERSION = (?<currentValue>\\d+\\.\\d+\\.\\d+)"
+      ],
+      "depNameTemplate": "dpcpp-cpp-rt",
+      "datasourceTemplate": "pypi"
     }
   ]
 }
