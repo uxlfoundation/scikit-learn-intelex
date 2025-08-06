@@ -29,31 +29,6 @@ from onedal.utils import _sycl_queue_manager as QM
 if daal_check_version((2023, "P", 200)):
     from .kmeans_init import KMeansInit
 
-import logging
-import warnings
-from abc import ABC
-
-import numpy as np
-from sklearn.cluster._kmeans import _kmeans_plusplus
-from sklearn.exceptions import ConvergenceWarning
-from sklearn.metrics.pairwise import euclidean_distances
-from sklearn.utils import check_random_state
-
-from daal4py.sklearn._utils import daal_check_version
-from onedal._device_offload import supports_queue
-from onedal.basic_statistics import BasicStatistics
-from onedal.common._backend import bind_default_backend
-from onedal.utils import _sycl_queue_manager as QM
-from sklearnex.utils._array_api import get_namespace
-
-from .._config import _get_config
-from ..common._mixin import ClusterMixin, TransformerMixin
-from ..datatypes import from_table, to_table
-from ..utils.validation import _check_array, _is_arraylike_not_scalar, _is_csr
-
-if daal_check_version((2023, "P", 200)):
-    from .kmeans_init import KMeansInit
-
 from sklearn.cluster._kmeans import _kmeans_plusplus
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.metrics.pairwise import euclidean_distances
