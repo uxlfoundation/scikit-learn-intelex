@@ -39,7 +39,7 @@ def array_to_usm(memory, tensor, queue, array):
 
 @lazy_import("dpnp", "dpctl.tensor")
 def to_dpnp(dpnp, tensor, array, device=None):
-    return dpnp.array._create_from_usm_ndarray(tensor.asarray(array, device=device))
+    return dpnp.ndarray._create_from_usm_ndarray(tensor.asarray(array, device=device))
 
 
 def copy_to_usm(queue, array):
