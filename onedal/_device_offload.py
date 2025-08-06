@@ -181,13 +181,25 @@ def support_sycl_format(func):
     # and support_input_format, return values are matching sklearn (sparse
     # arrays or numpy inputs)
 
-    @wraps(func)
-    def wrapper(*args, **kwargs):
+    def move_sycl_data(*args, **kwargs):
         if (
             not get_config().get("array_api_dispatch", False)
             and _get_sycl_namespace(*args)[2]
         ):
-            args, kwargs = _get_host_inputs(*args, **kwargs)
-        return func(*args, **kwargs)
+            return _get_host_inputs(*args, **kwargs)
+
+    if inspect.ismethod(func):
+
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            self, (args, kwargs) = args[0], move_sycl_data(*args[1:], **kwargs)
+            return func(self, *args, **kwargs)
+
+    else:
+
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            args, kwargs = move_sycl_data(*args, **kwargs)
+            return func(*args, **kwargs)
 
     return wrapper
