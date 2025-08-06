@@ -226,7 +226,6 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
     def _init_centroids_sklearn(self, X, init, random_state, dtype=None):
         # For oneDAL versions < 2023.2 or callable init,
         # using the scikit-learn implementation
-        import logging
 
         logging.getLogger("sklearnex").info("Computing KMeansInit with Stock sklearn")
 
