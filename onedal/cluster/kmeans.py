@@ -258,7 +258,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
 
     def _predict_backend(self, X_table, result_options=None):
         params = self._get_onedal_params(
-            _is_csr=False, dtype=X_table.dtype, result_options=result_options
+            is_csr=False, dtype=X_table.dtype, result_options=result_options
         )
         return self.infer(params, self.model_, X_table)
 
