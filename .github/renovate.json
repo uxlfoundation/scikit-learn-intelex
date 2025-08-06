@@ -21,8 +21,9 @@
   "pre-commit": {
     "enabled": true
   },
-"regexManagers": [
+"customManagers": [
     {
+      "customType": "regex",
       "fileMatch": [
         "^\\.ci/pipeline/build-and-test-lnx\\.yml$",
         "^\\.github/workflows/ci\\.yml$"
@@ -34,6 +35,7 @@
       "datasourceTemplate": "pypi"
     },
     {
+      "customType": "regex",
       "fileMatch": [
         "^\\.ci/pipeline/build-and-test-lnx\\.yml$",
         "^\\.github/workflows/ci\\.yml$"
@@ -45,6 +47,7 @@
       "datasourceTemplate": "pypi"
     },
     {
+      "customType": "regex",
       "fileMatch": ["^\\.ci/pipeline/build-and-test-lnx\\.yml$"],
       "matchStrings": [
         "\\s*DPCPP_RT_VERSION: (?<currentValue>\\d+\\.\\d+\\.\\d+)"
