@@ -174,11 +174,13 @@ def support_input_format(func):
 
 
 def support_sycl_format(func):
-    # For methods whose output do not match the input types, with no oneDAL
-    # equivalent, and without array API support, specifically move SYCL
-    # data to host when array_api_dispatch is not set. This is necessary as
-    # all sycl data frameworks no longer support numpy implicit conversion
-    # and must be manually converted.
+    # This wrapper enables scikit-learn functions and methods to work with
+    # all sycl data frameworks as they no longer support numpy implicit
+    # conversion and must be manually converted. This is only necessary
+    # when array API support is not active, meaning unlike wrap_output_data
+    # and support_input_format, return values are matching sklearn (sparse
+    # arrays or numpy inputs)
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         if (
