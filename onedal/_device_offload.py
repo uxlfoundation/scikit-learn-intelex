@@ -189,14 +189,16 @@ def support_sycl_format(func):
 
         @wraps(func)
         def wrapper(*args, **kwargs):
-            self, (args, kwargs) = args[0], move_sycl_data(*args[1:], **kwargs)
-            return func(self, *args, **kwargs)
+            with QM.manage_global_queue(kwargs.get("queue"), *args):
+                self, (args, kwargs) = args[0], move_sycl_data(*args[1:], **kwargs)
+                return func(self, *args, **kwargs)
 
     else:
 
         @wraps(func)
         def wrapper(*args, **kwargs):
-            args, kwargs = move_sycl_data(*args, **kwargs)
-            return func(*args, **kwargs)
+            with QM.manage_global_queue(kwargs.get("queue"), *args):
+                args, kwargs = move_sycl_data(*args, **kwargs)
+                return func(*args, **kwargs)
 
     return wrapper
