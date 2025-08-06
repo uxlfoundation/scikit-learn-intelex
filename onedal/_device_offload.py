@@ -188,7 +188,7 @@ def support_sycl_format(func):
         ):
             return _get_host_inputs(*args, **kwargs)
 
-    if inspect.ismethod(func):
+    if inspect.isfunction(func) and "." in func.__qualname__:
 
         @wraps(func)
         def wrapper(*args, **kwargs):
