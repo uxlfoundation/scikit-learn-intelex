@@ -463,7 +463,7 @@ jobs:
       - name: Install PyTorch
         if: contains(matrix.FRAMEWORKS, 'pytorch')
         run: |
-          pip install torch-cpu
+          pip install torch index-url https://download.pytorch.org/whl/cpu
           python -c "import torch; _=[print(torch.xpu.get_device_name(i)) for i in range(torch.xpu.device_count())]" 
       - name: Install daal4py/sklearnex
         run: pip install *.whl
