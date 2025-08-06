@@ -17,6 +17,7 @@
 from collections.abc import Iterable
 
 import numpy as np
+import scipy.sparse as sp
 
 from ..utils._third_party import lazy_import
 
@@ -33,7 +34,7 @@ def array_to_usm(memory, tensor, queue, array):
         # try again as float32, if it is a float32 just raise the error.
         if array.dtype == np.float32:
             raise e
-        return _array_to_usm(queue, array.astype(np.float32))
+        return array_to_usm(queue, array.astype(np.float32))
 
 
 @lazy_import("dpnp", "dpctl.tensor")
@@ -48,7 +49,7 @@ def copy_to_usm(queue, array):
     if hasattr(array, "__array__"):
         return array_to_usm(queue, array)
     else:
-        if isinstance(array, Iterable):
+        if isinstance(array, Iterable) and not sp.issparse(array):
             array = [copy_to_usm(queue, i) for i in array]
         return array
 
@@ -57,7 +58,7 @@ def copy_to_dpnp(queue, array):
     if hasattr(array, "__array__"):
         return to_dpnp(array_to_usm(queue, array))
     else:
-        if isinstance(array, Iterable):
+        if isinstance(array, Iterable) and not sp.issparse(array):
             array = [copy_to_dpnp(queue, i) for i in array]
         return array
 
