@@ -14,13 +14,13 @@
 # limitations under the License.
 # ==============================================================================
 
+import _sycl_usm
 import numpy as np
 import scipy.sparse as sp
 
 from onedal import _default_backend as backend
 
 from ..utils._third_party import is_dpctl_tensor, is_dpnp_ndarray, lazy_import
-import _sycl_usm
 
 
 def _apply_and_pass(func, *args, **kwargs):
