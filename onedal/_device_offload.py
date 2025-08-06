@@ -22,7 +22,7 @@ import numpy as np
 from sklearn import get_config
 
 from ._config import _get_config
-from .datatypes import copy_to_dpnp, copy_to_usm, dlpack_to_numpy, usm_to_numpy
+from .datatypes import copy_to_dpnp, copy_to_usm, dlpack_to_numpy
 from .utils import _sycl_queue_manager as QM
 from .utils._array_api import _asarray, _get_sycl_namespace, _is_numpy_namespace
 from .utils._third_party import is_dpnp_ndarray
@@ -62,23 +62,19 @@ def supports_queue(func):
 
 
 def _transfer_to_host(*data):
-    has_usm_data, has_host_data = False, False
+    has_usm_data = None
 
     host_data = []
     for item in data:
-        if usm_iface := getattr(item, "__sycl_usm_array_interface__", None):
-            item = usm_to_numpy(item, usm_iface)
-            has_usm_data = True
+        if usm_iface := hasattr(item, "__sycl_usm_array_interface__"):
+            xp = item.__array_namespace__()
+            item = xp.asnumpy(item)
+            has_usm_data = has_usm_data or has_usm_data is None
         elif not isinstance(item, np.ndarray) and (hasattr(item, "__dlpack_device__")):
             item = dlpack_to_numpy(item)
-            has_host_data = True
-        else:
-            has_host_data = True
 
-        mismatch_host_item = usm_iface is None and item is not None and has_usm_data
-        mismatch_usm_item = usm_iface is not None and has_host_data
-
-        if mismatch_host_item or mismatch_usm_item:
+        # set has_usm_data to boolean and use xor to see if they don't match
+        if (has_usm_data := bool(has_usm_data)) ^ usm_iface:
             raise RuntimeError("Input data shall be located on single target device")
 
         host_data.append(item)
