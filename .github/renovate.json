@@ -47,7 +47,7 @@
     {
       "fileMatch": ["^\\.ci/pipeline/build-and-test-lnx\\.yml$"],
       "matchStrings": [
-        "\\s*DPCPP_RT_VERSION = (?<currentValue>\\d+\\.\\d+\\.\\d+)"
+        "\\s*DPCPP_RT_VERSION: (?<currentValue>\\d+\\.\\d+\\.\\d+)"
       ],
       "depNameTemplate": "dpcpp-cpp-rt",
       "datasourceTemplate": "pypi"
