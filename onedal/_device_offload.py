@@ -173,32 +173,21 @@ def support_sycl_format(func):
     # This wrapper enables scikit-learn functions and methods to work with
     # all sycl data frameworks as they no longer support numpy implicit
     # conversion and must be manually converted. This is only necessary
-    # when array API support is not active, meaning unlike wrap_output_data
-    # and support_input_format, return values are matching sklearn (sparse
-    # arrays or numpy inputs)
+    # when array API is supported but not active.
 
-    def move_sycl_data(*args, **kwargs):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
         if (
             not get_config().get("array_api_dispatch", False)
             and _get_sycl_namespace(*args)[2]
         ):
-            return _get_host_inputs(*args, **kwargs)
-        return args, kwargs
-
-    if inspect.isfunction(func) and "." in func.__qualname__:
-
-        @wraps(func)
-        def wrapper(*args, **kwargs):
             with QM.manage_global_queue(kwargs.get("queue"), *args):
-                self, (args, kwargs) = args[0], move_sycl_data(*args[1:], **kwargs)
-                return func(self, *args, **kwargs)
-
-    else:
-
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            with QM.manage_global_queue(kwargs.get("queue"), *args):
-                args, kwargs = move_sycl_data(*args, **kwargs)
-                return func(*args, **kwargs)
+                if inspect.isfunction(func) and "." in func.__qualname__:
+                    self, (args, kwargs) = args[0], _get_host_inputs(*args[1:], **kwargs)
+                    return func(self, *args, **kwargs)
+                else:
+                    args, kwargs = _get_host_inputs(*args, **kwargs)
+                    return func(*args, **kwargs)
+        return func(*args, **kwargs)
 
     return wrapper
