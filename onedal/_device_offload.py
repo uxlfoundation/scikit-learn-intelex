@@ -67,6 +67,10 @@ def _transfer_to_host(*data):
 
     host_data = []
     for item in data:
+        if item is None:
+            host_data.append(item)
+            continue
+
         if usm_iface := hasattr(item, "__sycl_usm_array_interface__"):
             xp = item.__array_namespace__()
             item = xp.asnumpy(item)
