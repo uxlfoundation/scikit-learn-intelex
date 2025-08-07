@@ -20,5 +20,40 @@
   ],
   "pre-commit": {
     "enabled": true
-  }
+  },
+"customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": [
+        "^\\.ci/pipeline/build-and-test-lnx\\.yml$",
+        "^\\.github/workflows/ci\\.yml$"
+      ],
+      "matchStrings": [
+        "\\s*DPCTL_VERSION: (?<currentValue>\\d+\\.\\d+\\.\\d+)"
+      ],
+      "depNameTemplate": "dpctl",
+      "datasourceTemplate": "pypi"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": [
+        "^\\.ci/pipeline/build-and-test-lnx\\.yml$",
+        "^\\.github/workflows/ci\\.yml$"
+      ],
+      "matchStrings": [
+        "\\s*DPNP_VERSION: (?<currentValue>\\d+\\.\\d+\\.\\d+)"
+      ],
+      "depNameTemplate": "dpnp",
+      "datasourceTemplate": "pypi"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^\\.ci/pipeline/build-and-test-lnx\\.yml$"],
+      "matchStrings": [
+        "\\s*DPCPP_RT_VERSION: (?<currentValue>\\d+\\.\\d+\\.\\d+)"
+      ],
+      "depNameTemplate": "dpcpp-cpp-rt",
+      "datasourceTemplate": "pypi"
+    }
+  ]
 }
