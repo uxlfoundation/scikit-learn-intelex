@@ -27,6 +27,7 @@ from sklearn.utils.validation import _num_features, check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from onedal._device_offload import support_sycl_format
 from onedal.covariance import (
     IncrementalEmpiricalCovariance as onedal_IncrementalEmpiricalCovariance,
 )
@@ -231,6 +232,7 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         return self
 
     @wrap_output_data
+    @support_sycl_format
     def score(self, X_test, y=None):
         xp, _ = get_namespace(X_test)
 

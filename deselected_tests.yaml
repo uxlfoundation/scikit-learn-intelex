@@ -383,9 +383,6 @@ deselected_tests:
   # to CI parameters, as parameter validation is globally handled in sklearn version 1.2 onward
   - cluster/tests/test_dbscan.py::test_dbscan_params_validation
 
-  # From sklearn 1.6, need to resolve logreg bug from joblib with_parallel_backend.
-  # Removal of this deselection will result in test_logistic fails (this one will pass).
-  - feature_selection/tests/test_rfe.py::test_rfe_with_joblib_threading_backend
   # Failing tests since sklearn 1.6
   - tests/test_common.py::test_estimators[CalibratedClassifierCV(cv=3,estimator=LogisticRegression(C=1))-check_sample_weight_equivalence_on_dense_data]
   - tests/test_common.py::test_estimators[ExtraTreesClassifier(n_estimators=5)-check_sample_weight_equivalence_on_dense_data]
@@ -397,6 +394,28 @@ deselected_tests:
   - tests/test_common.py::test_estimators[LogisticRegression(max_iter=5,solver='newton-cg')-check_sample_weight_equivalence_on_dense_data]
   - tests/test_common.py::test_estimators[NuSVC()-check_class_weight_classifiers]
   - tests/test_common.py::test_estimators[CalibratedClassifierCV(estimator=LogisticRegression(C=1))-check_sample_weights_invariance(kind=ones)]
+
+  # Logistic regression is not expected to give exact matches due to small differences in numerical tolerances
+  - linear_model/tests/test_logistic.py::test_multinomial_binary_probabilities
+  - linear_model/tests/test_logistic.py::test_logistic_cv_multinomial_score[neg_log_loss-multiclass_agg_list3]
+  - linear_model/tests/test_logistic.py::test_logistic_regression_class_weights
+  - linear_model/tests/test_logistic.py::test_liblinear_decision_function_zero
+  - linear_model/tests/test_logistic.py::test_warm_start
+  - linear_model/tests/test_logistic.py::test_dtype_match
+  - linear_model/tests/test_logistic.py::test_newton_cholesky_fallback_to_lbfgs
+  - linear_model/tests/test_logistic.py::test_logistic_cv_sparse[csr_array]
+  - linear_model/tests/test_logistic.py::test_logistic_cv_sparse[csr_matrix]
+  - tests/test_common.py::test_estimators[LogisticRegressionCV(cv=3,max_iter=5)-check_sample_weight_equivalence_on_dense_data]
+  - ensemble/tests/test_bagging.py::test_estimators_samples >=1.0,<1.1
+  - ensemble/tests/test_voting.py::test_sample_weight >=1.0,<1.1
+
+  # Scikit-learn does not constraint multinomial logistic intercepts to sum to zero.
+  # Softmax function is invariant to additions by a constant, so even though the numbers
+  # might look very off here, the predictions they generate are identical.
+  - linear_model/tests/test_logistic.py::test_logistic_regression_multinomial
+
+  # This particular case does not reach convergence, fails because of a warning
+  - linear_model/tests/test_logistic.py::test_n_iter[newton-cg]
 
   # --------------------------------------------------------
   # No need to test daal4py patching

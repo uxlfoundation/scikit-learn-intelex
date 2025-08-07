@@ -17,14 +17,15 @@
 import inspect
 import logging
 from functools import wraps
+from operator import xor
 
 import numpy as np
 from sklearn import get_config
 
 from ._config import _get_config
-from .datatypes import copy_to_dpnp, copy_to_usm, dlpack_to_numpy, usm_to_numpy
+from .datatypes import copy_to_dpnp, copy_to_usm, dlpack_to_numpy
 from .utils import _sycl_queue_manager as QM
-from .utils._array_api import _asarray, _is_numpy_namespace
+from .utils._array_api import _asarray, _get_sycl_namespace, _is_numpy_namespace
 from .utils._third_party import is_dpnp_ndarray
 
 logger = logging.getLogger("sklearnex")
@@ -62,23 +63,23 @@ def supports_queue(func):
 
 
 def _transfer_to_host(*data):
-    has_usm_data, has_host_data = False, False
+    has_usm_data = None
 
     host_data = []
     for item in data:
-        if usm_iface := getattr(item, "__sycl_usm_array_interface__", None):
-            item = usm_to_numpy(item, usm_iface)
-            has_usm_data = True
+        if item is None:
+            host_data.append(item)
+            continue
+
+        if usm_iface := hasattr(item, "__sycl_usm_array_interface__"):
+            xp = item.__array_namespace__()
+            item = xp.asnumpy(item)
+            has_usm_data = has_usm_data or has_usm_data is None
         elif not isinstance(item, np.ndarray) and (hasattr(item, "__dlpack_device__")):
             item = dlpack_to_numpy(item)
-            has_host_data = True
-        else:
-            has_host_data = True
 
-        mismatch_host_item = usm_iface is None and item is not None and has_usm_data
-        mismatch_usm_item = usm_iface is not None and has_host_data
-
-        if mismatch_host_item or mismatch_usm_item:
+        # set has_usm_data to boolean and use xor to see if they don't match
+        if xor((has_usm_data := bool(has_usm_data)), usm_iface):
             raise RuntimeError("Input data shall be located on single target device")
 
         host_data.append(item)
@@ -171,3 +172,27 @@ def support_input_format(func):
         return result
 
     return wrapper_impl
+
+
+def support_sycl_format(func):
+    # This wrapper enables scikit-learn functions and methods to work with
+    # all sycl data frameworks as they no longer support numpy implicit
+    # conversion and must be manually converted. This is only necessary
+    # when array API is supported but not active.
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if (
+            not get_config().get("array_api_dispatch", False)
+            and _get_sycl_namespace(*args)[2]
+        ):
+            with QM.manage_global_queue(kwargs.get("queue"), *args):
+                if inspect.isfunction(func) and "." in func.__qualname__:
+                    self, (args, kwargs) = args[0], _get_host_inputs(*args[1:], **kwargs)
+                    return func(self, *args, **kwargs)
+                else:
+                    args, kwargs = _get_host_inputs(*args, **kwargs)
+                    return func(*args, **kwargs)
+        return func(*args, **kwargs)
+
+    return wrapper
