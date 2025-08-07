@@ -96,6 +96,8 @@ def return_type_constructor(array):
         # related SYCL devices which are generally unavailable via DLPack
         # representations (such as SYCL contexts, SYCL sub-devices, etc.).
         xp = array.__array_namespace__()
+        # array api support added in dpnp starting in 0.19, will fail for
+        # older versions
         if is_dpctl_tensor(array):
             func = lambda x: (
                 xp.asarray(x)

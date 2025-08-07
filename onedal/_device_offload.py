@@ -17,6 +17,7 @@
 import inspect
 import logging
 from functools import wraps
+from operator import xor
 
 import numpy as np
 from sklearn import get_config
@@ -74,7 +75,7 @@ def _transfer_to_host(*data):
             item = dlpack_to_numpy(item)
 
         # set has_usm_data to boolean and use xor to see if they don't match
-        if (has_usm_data := bool(has_usm_data)) ^ usm_iface:
+        if xor((has_usm_data := bool(has_usm_data)), usm_iface):
             raise RuntimeError("Input data shall be located on single target device")
 
         host_data.append(item)

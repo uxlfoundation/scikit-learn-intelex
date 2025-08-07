@@ -46,7 +46,7 @@ def _to_dpnp(dpnp, tensor, array):
 
 
 def copy_to_usm(queue, array):
-    if hasattr(array, "__array__"):
+    if hasattr(array, "tobytes"):
         return _array_to_usm(queue, array)
     else:
         if isinstance(array, Iterable) and not sp.issparse(array):
@@ -55,7 +55,7 @@ def copy_to_usm(queue, array):
 
 
 def copy_to_dpnp(queue, array):
-    if hasattr(array, "__array__"):
+    if hasattr(array, "tobytes"):
         return _to_dpnp(_array_to_usm(queue, array))
     else:
         if isinstance(array, Iterable) and not sp.issparse(array):
