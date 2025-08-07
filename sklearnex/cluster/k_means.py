@@ -334,7 +334,6 @@ if daal_check_version((2023, "P", 200)):
             return X
 
         _transform = support_input_format(_sklearn_KMeans._transform)
-        # Remove when dpctl/dpnp support implicit NumPy array conversions
         transform = support_input_format(_sklearn_KMeans.transform)
 
         @wrap_output_data
