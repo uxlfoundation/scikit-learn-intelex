@@ -49,7 +49,6 @@ if __name__ == "__main__":
         os.environ["SCIPY_ARRAY_API"] = "1"
 
     pytest_args = (
-        "--verbose --durations=100 --durations-min=0.01 "
         f"--rootdir={sklearn_file_dir} "
         f'{os.environ["DESELECTED_TESTS"]} {os.environ["SELECTED_TESTS"]}'.split(" ")
     )
