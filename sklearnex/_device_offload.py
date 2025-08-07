@@ -183,8 +183,8 @@ def wrap_output_data(func: Callable) -> Callable:
         if not (len(args) == 0 and len(kwargs) == 0):
             data = (*args, *kwargs.values())[0]
             # Remove check for result __sycl_usm_array_interface__ on deprecation of use_raw_inputs
-            if usm_iface := getattr(
-                data, "__sycl_usm_array_interface__", None
+            if (
+                usm_iface := getattr(data, "__sycl_usm_array_interface__", None)
             ) and not hasattr(result, "__sycl_usm_array_interface__"):
                 queue = usm_iface["syclobj"]
                 return (
