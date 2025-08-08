@@ -38,7 +38,7 @@ from .._config import config_context, get_config
 from .._device_offload import dispatch, wrap_output_data
 from .._utils import PatchingConditionsChain, _add_inc_serialization_note
 from ..base import oneDALEstimator
-from ..utils._array_api import enable_array_api, get_namespace, log_likelihood, pinvh
+from ..utils._array_api import _pinvh, enable_array_api, get_namespace, log_likelihood
 from ..utils.validation import validate_data
 
 if sklearn_check_version("1.2"):
@@ -226,7 +226,7 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         if self.store_precision:
             precision = self.precision_
         else:
-            precision = pinvh(self.covariance_, check_finite=False)
+            precision = _pinvh(self.covariance_, check_finite=False)
         return precision
 
     def partial_fit(self, X, y=None, check_input=True):
