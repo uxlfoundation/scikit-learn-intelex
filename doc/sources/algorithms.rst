@@ -66,7 +66,7 @@ Classification
          all parameters except ``metric`` != `'euclidean'` or `'minkowski'` with ``p`` != `2`
        - For ``algorithm`` == `'brute'`:
 
-         all parameters except ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
+         all parameters except ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`, `'correlation'`]
      - Multi-output and sparse data are not supported
    * - :obj:`sklearn.linear_model.LogisticRegression`
      - All parameters are supported
@@ -204,7 +204,7 @@ Nearest Neighbors
          all parameters except ``metric`` != `'euclidean'` or `'minkowski'` with ``p`` != `2`
        - For ``algorithm`` == 'brute':
 
-         all parameters except ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
+         all parameters except ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`, `'correlation'`]
      - Sparse data is not supported
 
 Other Tasks
@@ -302,7 +302,7 @@ Classification
 
        - ``algorithm`` != `'brute'`
        - ``weights`` = `'callable'`
-       - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
+       - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`, `'correlation'`]
      - Only dense data is supported
    * - :obj:`sklearn.linear_model.LogisticRegression`
      - All parameters are supported except:
@@ -421,7 +421,7 @@ Nearest Neighbors
 
        - ``algorithm`` != `'brute'`
        - ``weights`` = `'callable'`
-       - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
+       - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`, `'correlation'`]
      - Only dense data is supported
 
 Other Tasks
@@ -487,7 +487,7 @@ Classification
 
        - ``algorithm`` != `'brute'`
        - ``weights`` = `'callable'`
-       - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
+       - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`, `'correlation'`]
        - ``predict_proba`` method not supported
      - Only dense data is supported
    * - :obj:`sklearn.linear_model.LogisticRegression`
@@ -608,7 +608,7 @@ Nearest Neighbors
 
        - ``algorithm`` != `'brute'`
        - ``weights`` = `'callable'`
-       - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
+       - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`, `'correlation'`]
      - Only dense data is supported
 
 Other Tasks

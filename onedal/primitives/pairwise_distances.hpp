@@ -66,4 +66,24 @@ struct distance_params2desc {
     }
 };
 
+template <typename Policy,
+          typename Input,
+          typename Result,
+          typename Param2Desc,
+          typename DenseMethod>
+inline void init_distance_compute_ops(pybind11::module_& m) {
+    m.def("compute",
+          [](const Policy& policy, const pybind11::dict& params, const table& x, const table& y) {
+              compute_ops ops(policy, Input{ x, y }, Param2Desc{});
+              return fptype2t{ distance_method2t{ DenseMethod{}, ops } }(params);
+          });
+}
+
+template <typename Result>
+inline void init_distance_result(pybind11::module_& m) {
+    pybind11::class_<Result>(m, "result")
+        .def(pybind11::init())
+        .def_property("values", &Result::get_values, &Result::set_values);
+}
+
 } // namespace oneapi::dal::python
