@@ -30,7 +30,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  DPCTL_VERSION: 0.20.1
+  DPCTL_VERSION: 0.20.2
   DPNP_VERSION: 0.18.1
   DPCTL_PY_VERSIONS: '3.9\|3.11'
   UXL_PYTHONVERSION: "3.12"
