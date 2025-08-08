@@ -34,7 +34,7 @@ jobs:
       - name: Checkout Scikit-learn-intelex
         uses: actions/checkout@v4
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           path: coverage
           github-token: ${{ github.token }}
