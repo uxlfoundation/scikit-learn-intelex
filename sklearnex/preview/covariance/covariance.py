@@ -55,6 +55,8 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
     _onedal_covariance = staticmethod(onedal_EmpiricalCovariance)
 
     def _onedal_fit(self, X, queue=None):
+        X = validate_data(self, X, ensure_all_finite=False)
+
         if X.shape[0] == 1:
             warnings.warn(
                 "Only one sample available. You may want to reshape your data array"
@@ -91,8 +93,6 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
     def fit(self, X, y=None):
         if sklearn_check_version("1.2"):
             self._validate_params()
-        X = validate_data(self, X, ensure_all_finite=False)
-
         dispatch(
             self,
             "fit",
