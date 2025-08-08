@@ -32,6 +32,7 @@ from onedal._device_offload import support_sycl_format
 from onedal.covariance import (
     IncrementalEmpiricalCovariance as onedal_IncrementalEmpiricalCovariance,
 )
+from onedal._device_offload import support_input_format
 from onedal.utils._array_api import _is_numpy_namespace
 
 from .._config import config_context, get_config
