@@ -60,23 +60,24 @@ function generate_pytest_args {
     printf -- "${ARGS[*]}"
 }
 
-${PYTHON} -c "from daal4py import num_threads;print(f'threads={num_threads()}:0')"
+PYTEST_VERBOSITY_ARGS=$(cat "${sklex_root}/.pytest-verbosity-args")
+
 ${PYTHON} -c "from sklearnex import patch_sklearn; patch_sklearn()"
 return_code=$(($return_code + $?))
-${PYTHON} -c "from daal4py import num_threads;print(f'threads={num_threads()}:1')"
-pytest --verbose -s "${sklex_root}/tests" $@ $(generate_pytest_args legacy)
-return_code=$(($return_code + $?))
-${PYTHON} -c "from daal4py import num_threads;print(f'threads={num_threads()}:2')"
-pytest --verbose --pyargs daal4py $@ $(generate_pytest_args daal4py)
-return_code=$(($return_code + $?))
-${PYTHON} -c "from daal4py import num_threads;print(f'threads={num_threads()}:3')"
-pytest --verbose --pyargs sklearnex $@ $(generate_pytest_args sklearnex)
-return_code=$(($return_code + $?))
-${PYTHON} -c "from daal4py import num_threads;print(f'threads={num_threads()}:4')"
-pytest --verbose --pyargs onedal $@ $(generate_pytest_args onedal)
+
+pytest ${PYTEST_VERBOSITY_ARGS} -s "${sklex_root}/tests" $@ $(generate_pytest_args legacy)
 return_code=$(($return_code + $?))
 
-pytest --verbose -s "${sklex_root}/.ci/scripts/test_global_patch.py" $@ $(generate_pytest_args global_patching)
+pytest ${PYTEST_VERBOSITY_ARGS} --pyargs daal4py $@ $(generate_pytest_args daal4py)
+return_code=$(($return_code + $?))
+
+pytest ${PYTEST_VERBOSITY_ARGS} --pyargs sklearnex $@ $(generate_pytest_args sklearnex)
+return_code=$(($return_code + $?))
+
+pytest ${PYTEST_VERBOSITY_ARGS} --pyargs onedal $@ $(generate_pytest_args onedal)
+return_code=$(($return_code + $?))
+
+pytest ${PYTEST_VERBOSITY_ARGS} -s "${sklex_root}/.ci/scripts/test_global_patch.py" $@ $(generate_pytest_args global_patching)
 return_code=$(($return_code + $?))
 
 echo "NO_DIST=$NO_DIST"
@@ -91,10 +92,10 @@ if [[ ! $NO_DIST ]]; then
         export EXTRA_MPI_ARGS="-n 4"
     fi
     mpirun ${EXTRA_MPI_ARGS} python "${sklex_root}/tests/helper_mpi_tests.py" \
-        pytest -k spmd --with-mpi --verbose --pyargs sklearnex $@ $(generate_pytest_args sklearnex_spmd)
+        pytest -k spmd --with-mpi ${PYTEST_VERBOSITY_ARGS} --pyargs sklearnex $@ $(generate_pytest_args sklearnex_spmd)
     return_code=$(($return_code + $?))
     mpirun ${EXTRA_MPI_ARGS} python "${sklex_root}/tests/helper_mpi_tests.py" \
-        pytest --verbose -s "${sklex_root}/tests/test_daal4py_spmd_examples.py" $@ $(generate_pytest_args mpi_legacy)
+        pytest ${PYTEST_VERBOSITY_ARGS} -s "${sklex_root}/tests/test_daal4py_spmd_examples.py" $@ $(generate_pytest_args mpi_legacy)
     return_code=$(($return_code + $?))
 fi
 

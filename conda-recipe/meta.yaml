@@ -95,6 +95,7 @@ test:
     - array-api-strict
   source_files:
     - .ci
+    - .pytest-verbosity-args
     - examples
     - tests
 
