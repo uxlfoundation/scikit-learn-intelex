@@ -25,7 +25,7 @@ from sklearn.utils.validation import check_is_fitted
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from daal4py.sklearn.metrics import pairwise_distances
-from onedal._device_offload import support_input_format
+from onedal._device_offload import support_input_format, support_sycl_format
 from onedal.covariance import EmpiricalCovariance as onedal_EmpiricalCovariance
 from onedal.utils._array_api import _is_numpy_namespace
 from sklearnex import config_context
@@ -33,7 +33,7 @@ from sklearnex import config_context
 from ..._device_offload import dispatch, wrap_output_data
 from ..._utils import PatchingConditionsChain, register_hyperparameters
 from ...base import oneDALEstimator
-from ...utils._array_api import enable_array_api, get_namespace, log_likelihood, pinvh
+from ...utils._array_api import _log_likelihood, _pinvh, enable_array_api, get_namespace
 from ...utils.validation import validate_data
 
 # This is a temporary workaround for issues with sklearnex._device_offload._get_host_inputs
@@ -102,7 +102,7 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
         if self.store_precision:
             precision = self.precision_
         else:
-            precision = pinvh(self.covariance_, check_finite=False)
+            precision = _pinvh(self.covariance_, check_finite=False)
         return precision
 
     def fit(self, X, y=None):
@@ -121,6 +121,7 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
         return self
 
     @wrap_output_data
+    @support_sycl_format
     def score(self, X_test, y=None):
 
         check_is_fitted(self)
@@ -145,11 +146,12 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
         test_cov = est.fit(X - self.location_).covariance_
         if not _is_numpy_namespace(xp):
             test_cov = xp.asarray(test_cov, device=X.device)
-        res = log_likelihood(test_cov, self.get_precision())
+        res = _log_likelihood(test_cov, self.get_precision())
 
         return res
 
     @wrap_output_data
+    @support_sycl_format
     def error_norm(self, comp_cov, norm="frobenius", scaling=True, squared=True):
         # equivalent to the sklearn implementation but written for array API
         # in the case of numpy-like inputs it will use sklearn's version instead.
@@ -194,6 +196,7 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
         return result
 
     # expose sklearnex pairwise_distances if mahalanobis distance eventually supported
+    @support_sycl_format
     def mahalanobis(self, X):
         # This must be done as ```support_input_format``` is insufficient for array API
         # support when attributes are non-numpy.
