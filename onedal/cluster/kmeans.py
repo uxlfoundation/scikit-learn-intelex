@@ -34,6 +34,8 @@ from sklearn.exceptions import ConvergenceWarning
 from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.utils import check_random_state
 
+from sklearnex.utils._array_api import get_namespace
+
 from .._config import _get_config
 from ..common._mixin import ClusterMixin, TransformerMixin
 from ..datatypes import from_table, to_table
@@ -112,6 +114,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
     def _check_params_vs_input(
         self, X_table, is_csr, default_n_init=10, dtype=np.float32
     ):
+
         # n_clusters
         if X_table.shape[0] < self.n_clusters:
             raise ValueError(
@@ -179,6 +182,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         dtype=np.float32,
         n_centroids=None,
     ):
+
         n_clusters = self.n_clusters if n_centroids is None else n_centroids
 
         if isinstance(init, str) and init == "k-means++":
@@ -219,10 +223,18 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
 
         return centers_table
 
-    def _init_centroids_sklearn(self, X, init, random_state, dtype=np.float32):
+    def _init_centroids_sklearn(self, X, init, random_state, dtype=None):
         # For oneDAL versions < 2023.2 or callable init,
         # using the scikit-learn implementation
+
         logging.getLogger("sklearnex").info("Computing KMeansInit with Stock sklearn")
+
+        # Get the Array API namespace (xp) and original type info (_)
+        xp, _ = get_namespace(X)
+
+        if dtype is None:
+            dtype = xp.float32
+
         n_samples = X.shape[0]
 
         if isinstance(init, str) and init == "k-means++":
@@ -236,7 +248,15 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
             centers = X[seeds]
         elif callable(init):
             cc_arr = init(X, self.n_clusters, random_state)
-            cc_arr = np.ascontiguousarray(cc_arr, dtype=dtype)
+
+            # Try Array API path
+            if hasattr(cc_arr, "__array_namespace__"):
+                xp_cc_arr, _ = get_namespace(cc_arr)
+                if cc_arr.dtype != dtype:
+                    cc_arr = xp_cc_arr.astype(cc_arr, dtype)
+            else:
+                cc_arr = np.ascontiguousarray(cc_arr, dtype=dtype)
+
             self._validate_center_shape(X, cc_arr)
             centers = cc_arr
         elif _is_arraylike_not_scalar(init):
@@ -244,12 +264,13 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         else:
             raise ValueError(
                 f"init should be either 'k-means++', 'random', a ndarray or a "
-                f"callable, got '{ init }' instead."
+                f"callable, got '{init}' instead."
             )
 
         return to_table(centers, queue=getattr(QM.get_global_queue(), "_queue", None))
 
     def _fit_backend(self, X_table, centroids_table, dtype=np.float32, is_csr=False):
+
         params = self._get_onedal_params(is_csr, dtype)
 
         assert X_table.dtype == dtype
@@ -266,13 +287,16 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
     def _fit(self, X):
         is_csr = _is_csr(X)
 
+        xp, _ = get_namespace(X)
+
         if _get_config()["use_raw_input"] is False:
             X = _check_array(
                 X,
-                dtype=[np.float64, np.float32],
+                dtype=[xp.float64, xp.float32],
                 accept_sparse="csr",
                 force_all_finite=False,
             )
+
         X_table = to_table(X, queue=QM.get_global_queue())
         dtype = X_table.dtype
 
@@ -363,14 +387,15 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
 
     @cluster_centers_.setter
     def cluster_centers_(self, cluster_centers):
-        self._cluster_centers_ = np.asarray(cluster_centers)
+        xp, _ = get_namespace(cluster_centers)
+        self._cluster_centers_ = xp.asarray(cluster_centers)
 
         self.n_iter_ = 0
         self.inertia_ = 0
 
         self.model_.centroids = to_table(self._cluster_centers_)
         self.n_features_in_ = self.model_.centroids.column_count
-        self.labels_ = np.arange(self.model_.centroids.row_count)
+        self.labels_ = xp.arange(self.model_.centroids.row_count)
 
         return self
 
