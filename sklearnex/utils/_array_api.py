@@ -156,7 +156,7 @@ def enable_array_api(
         return _enable_array_api(class_or_str)
 
 
-def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False, check_finite=True):
+def _pinvh(a, atol=None, rtol=None, lower=True, return_rank=False, check_finite=True):
     # array API enabled pinvh implementation, via direct translation of scipy.linalg.pinhv
     # this should be considered a temporary stopgap until implemented in oneDAL
     xp, _ = get_namespace(a)
@@ -197,9 +197,6 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False, check_finite=T
         return B, len(psigma_diag)
     else:
         return B
-
-
-pinvh.__doc__ = linalg.pinvh.__doc__
 
 
 def log_likelihood(emp_cov, precision):
