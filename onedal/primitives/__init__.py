@@ -16,6 +16,7 @@
 
 from .get_tree import get_tree_state_cls, get_tree_state_reg
 from .kernel_functions import linear_kernel, poly_kernel, rbf_kernel, sigmoid_kernel
+from .pairwise_distances import correlation_distance, cosine_distance
 
 __all__ = [
     "get_tree_state_cls",
@@ -24,4 +25,6 @@ __all__ = [
     "rbf_kernel",
     "poly_kernel",
     "sigmoid_kernel",
+    "correlation_distance",
+    "cosine_distance",
 ]

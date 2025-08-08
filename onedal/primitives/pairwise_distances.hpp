@@ -19,6 +19,7 @@
 #include <pybind11/pybind11.h>
 
 #include "oneapi/dal/algo/chebyshev_distance/common.hpp"
+#include "oneapi/dal/algo/correlation_distance/common.hpp"
 #include "oneapi/dal/algo/cosine_distance/common.hpp"
 #include "oneapi/dal/algo/minkowski_distance/common.hpp"
 
@@ -32,6 +33,8 @@ auto get_distance_descriptor(const pybind11::dict& params) {
     using method_t = typename Distance::method_t;
     using task_t = typename Distance::task_t;
     using minkowski_desc_t = minkowski_distance::descriptor<float_t, method_t, task_t>;
+    using correlation_distance_desc_t = correlation_distance::descriptor<float_t, method_t, task_t>;
+    using cosine_distance_desc_t = cosine_distance::descriptor<float_t, method_t, task_t>;
 
     auto distance = Distance{};
     if constexpr (std::is_same_v<Distance, minkowski_desc_t>) {
