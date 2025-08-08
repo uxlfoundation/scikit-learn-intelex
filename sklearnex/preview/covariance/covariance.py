@@ -33,7 +33,7 @@ from sklearnex import config_context
 from ..._device_offload import dispatch, wrap_output_data
 from ..._utils import PatchingConditionsChain, register_hyperparameters
 from ...base import oneDALEstimator
-from ...utils._array_api import _log_likelihood, _pinvh, enable_array_api, get_namespace
+from ...utils._array_api import _pinvh, enable_array_api, get_namespace, log_likelihood
 from ...utils.validation import validate_data
 
 # This is a temporary workaround for issues with sklearnex._device_offload._get_host_inputs
@@ -146,7 +146,7 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
         test_cov = est.fit(X - self.location_).covariance_
         if not _is_numpy_namespace(xp):
             test_cov = xp.asarray(test_cov, device=X.device)
-        res = _log_likelihood(test_cov, self.get_precision())
+        res = log_likelihood(test_cov, self.get_precision())
 
         return res
 
