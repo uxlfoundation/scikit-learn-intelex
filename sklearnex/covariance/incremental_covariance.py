@@ -32,7 +32,7 @@ from onedal._device_offload import support_sycl_format
 from onedal.covariance import (
     IncrementalEmpiricalCovariance as onedal_IncrementalEmpiricalCovariance,
 )
-from onedal._device_offload import support_input_format
+from onedal._device_offload import support_input_format, support_sycl_format
 from onedal.utils._array_api import _is_numpy_namespace
 
 from .._config import config_context, get_config
@@ -349,6 +349,7 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         return res
 
     @wrap_output_data
+    @support_sycl_format
     def error_norm(self, comp_cov, norm="frobenius", scaling=True, squared=True):
         # equivalent to the sklearn implementation but written for array API
         # in the case of numpy-like inputs it will use sklearn's version instead.
@@ -393,6 +394,7 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         return result
 
     # expose sklearnex pairwise_distances if mahalanobis distance eventually supported
+    @support_sycl_format
     def mahalanobis(self, X):
         # This must be done as ```support_input_format``` is insufficient for array API
         # support when attributes are non-numpy.
