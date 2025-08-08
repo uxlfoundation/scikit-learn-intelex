@@ -43,13 +43,13 @@ same algorithms to much larger problem sizes.
 
     Just like SPMD mode in ``sklearnex``, using distributed mode in ``daal4py`` requires
     the MPI runtime library managing the computations to be the same MPI backend library
-    with which the |sklearnex| library was compiled. Distributions of the |sklearnex| in
-    PyPI and conda are both compiled with `Intel's MPI <https://www.intel.com/content/www/us/en/developer/tools/oneapi/mpi-library.html>`__
+    with which the |sklearnex| library was compiled, or to be ABI compatible with it.
+    Distributions of the |sklearnex| in PyPI and conda-forge are both compiled with `Intel's MPI <https://www.intel.com/content/www/us/en/developer/tools/oneapi/mpi-library.html>`__
     as MPI backend (offered as Python package ``impi_rt`` in both PyPI and conda): ::
 
-        conda install -c https://software.repos.intel.com/python/conda/ -c conda-forge --override-channels impi_rt
+        conda install -c conda-forge impi_rt mpi=*=impi
 
-    Using distributed mode with other backends such as OpenMPI requires compiling the
+    Using distributed mode with non-MPICH-compatible backends such as OpenMPI requires compiling the
     library from source with that backend.
 
     See the docs for :ref:`SPMD mode <distributed>` for more details.
@@ -57,15 +57,28 @@ same algorithms to much larger problem sizes.
 .. warning::
 
     If using distributed mode with the |mpi4py| library, that library must also be compiled
-    with the same MPI backend as the |sklearnex|. A version of ``mpi4py`` compiled with
-    Intel's MPI backend can be easily installed from Intel's conda channel (see docs for
-    :ref:`SPMD mode <distributed>` for more details): ::
+    with the same MPI backend as the |sklearnex|, or with a compatible MPI backend. A version
+    of ``mpi4py`` compiled with Intel's MPI backend can be easily installed as follows (see docs
+    for :ref:`SPMD mode <distributed>` for more details):
 
-        conda install -c https://software.repos.intel.com/python/conda/ -c conda-forge --override-channels mpi4py
+    .. tabs::
+        .. tab:: From conda-forge
+            ::
 
-.. warning::
-    Packages from the Intel channel are meant to be compatible with dependencies from ``conda-forge``, and might not work correctly
-    in environments that have packages installed from the ``anaconda`` channel.
+                conda install -c conda-forge mpi4py mpi=*=impi
+
+        .. tab:: From Intel's conda channel
+            ::
+
+                conda install -c https://software.repos.intel.com/python/conda/ -c conda-forge --override-channels mpi4py mpi=*=impi
+
+            .. warning:: Packages from the Intel channel are meant to be compatible with dependencies from ``conda-forge``, and might not work correctly in environments that have packages installed from the ``anaconda`` channel.
+
+        .. tab:: From Intel's pip Index
+            ::
+
+                pip install --index-url https://software.repos.intel.com/python/pypi mpi4py impi_rt
+
 
 Using distributed mode
 ----------------------

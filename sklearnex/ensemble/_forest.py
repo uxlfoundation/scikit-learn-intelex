@@ -52,6 +52,7 @@ from daal4py.sklearn._utils import (
     daal_check_version,
     sklearn_check_version,
 )
+from onedal._device_offload import support_input_format
 from onedal.ensemble import ExtraTreesClassifier as onedal_ExtraTreesClassifier
 from onedal.ensemble import ExtraTreesRegressor as onedal_ExtraTreesRegressor
 from onedal.ensemble import RandomForestClassifier as onedal_RandomForestClassifier
@@ -456,6 +457,9 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
 
         if self._onedal_factory is None:
             raise TypeError(f" oneDAL estimator has not been set.")
+
+    decision_path = support_input_format(_sklearn_ForestClassifier.decision_path)
+    apply = support_input_format(_sklearn_ForestClassifier.apply)
 
     def _estimators_(self):
         super()._estimators_()
@@ -900,6 +904,9 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
 
         if self._onedal_factory is None:
             raise TypeError(f" oneDAL estimator has not been set.")
+
+    decision_path = support_input_format(_sklearn_ForestRegressor.decision_path)
+    apply = support_input_format(_sklearn_ForestRegressor.apply)
 
     def _onedal_fit_ready(self, patching_status, X, y, sample_weight):
         if sp.issparse(y):

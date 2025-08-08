@@ -47,7 +47,7 @@ if daal_check_version((2024, "P", 100)):
 
     from sklearn.decomposition import PCA as _sklearn_PCA
 
-    from onedal._device_offload import _transfer_to_host
+    from onedal._device_offload import support_sycl_format
     from onedal.decomposition import PCA as onedal_PCA
     from onedal.utils._array_api import _is_numpy_namespace
     from onedal.utils.validation import _num_features, _num_samples
@@ -117,6 +117,9 @@ if daal_check_version((2024, "P", 100)):
                 self.random_state = random_state
 
         _onedal_PCA = staticmethod(onedal_PCA)
+        # guarantee operability with dpnp/dpctl, runs on CPU unless
+        # array_api_dispatch is enabled.
+        score_samples = support_sycl_format(_sklearn_PCA.score_samples)
 
         def _onedal_supported(self, method_name, *data):
             class_name = self.__class__.__name__
@@ -540,6 +543,7 @@ if daal_check_version((2024, "P", 100)):
         transform.__doc__ = _sklearn_PCA.transform.__doc__
         fit_transform.__doc__ = _sklearn_PCA.fit_transform.__doc__
         inverse_transform.__doc__ = _sklearn_PCA.inverse_transform.__doc__
+        score_samples.__doc__ = _sklearn_PCA.score_samples.__doc__
 
 else:
     from daal4py.sklearn.decomposition import PCA

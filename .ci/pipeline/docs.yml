@@ -65,6 +65,7 @@ jobs:
   - script: sudo apt-get update && sudo apt-get install -y clang-format pandoc 
     displayName: 'apt-get'
   - script: |
+      set -e
       pip install daal-devel impi-devel
       pip install -r dependencies-dev
       pip install -r requirements-doc.txt
