@@ -30,6 +30,7 @@ from onedal.covariance import EmpiricalCovariance as onedal_EmpiricalCovariance
 from onedal.utils._array_api import _is_numpy_namespace
 from sklearnex import config_context
 
+from ..._config import get_config
 from ..._device_offload import dispatch, wrap_output_data
 from ..._utils import PatchingConditionsChain, register_hyperparameters
 from ...base import oneDALEstimator
@@ -65,8 +66,9 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
     _onedal_covariance = staticmethod(onedal_EmpiricalCovariance)
 
     def _onedal_fit(self, X, queue=None):
-        xp, _ = get_namespace(X)
-        X = validate_data(self, X, dtype=[xp.float64, xp.float32])
+        if not get_config()["use_raw_input"]:
+            xp, _ = get_namespace(X)
+            X = validate_data(self, X, dtype=[xp.float64, xp.float32])
 
         if X.shape[0] == 1:
             warnings.warn(
