@@ -45,7 +45,6 @@ def test_covariance_spmd_gold(dataframe, queue):
     from sklearnex.preview.covariance import (
         EmpiricalCovariance as EmpiricalCovariance_Batch,
     )
-
     from sklearnex.spmd.covariance import EmpiricalCovariance as EmpiricalCovariance_SPMD
 
     # Create gold data and convert to dataframe
@@ -96,7 +95,6 @@ def test_covariance_spmd_synthetic(
     from sklearnex.preview.covariance import (
         EmpiricalCovariance as EmpiricalCovariance_Batch,
     )
-
     from sklearnex.spmd.covariance import EmpiricalCovariance as EmpiricalCovariance_SPMD
 
     # Generate data and convert to dataframe
