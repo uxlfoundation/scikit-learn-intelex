@@ -254,4 +254,4 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
     error_norm.__doc__ = _sklearn_EmpiricalCovariance.error_norm.__doc__
     score.__doc__ = _sklearn_EmpiricalCovariance.score.__doc__
     get_precision.__doc__ = _sklearn_EmpiricalCovariance.get_precision.__doc__
-    _set_precision.__doc__ = _sklearn_EmpiricalCovariance._set_precision.__doc__
+    _set_covariance.__doc__ = _sklearn_EmpiricalCovariance._set_covariance.__doc__
