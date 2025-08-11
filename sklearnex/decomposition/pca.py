@@ -31,6 +31,7 @@ if daal_check_version((2024, "P", 100)):
 
     from daal4py.sklearn._n_jobs_support import control_n_jobs
     from daal4py.sklearn._utils import sklearn_check_version
+    from onedal._device_offload import _transfer_to_host
 
     from .._config import get_config
     from .._device_offload import dispatch, wrap_output_data
@@ -551,3 +552,4 @@ else:
     logging.warning(
         "Sklearnex PCA requires oneDAL version >= 2024.1.0 but it was not found"
     )
+
