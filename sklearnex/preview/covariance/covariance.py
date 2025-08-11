@@ -20,7 +20,7 @@ from functools import partial
 import scipy.sparse as sp
 from sklearn.base import clone
 from sklearn.covariance import EmpiricalCovariance as _sklearn_EmpiricalCovariance
-from sklearn.utils.validation import check_is_fitted
+from sklearn.utils.validation import check_array, check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
@@ -35,7 +35,7 @@ from ..._device_offload import dispatch, wrap_output_data
 from ..._utils import PatchingConditionsChain, register_hyperparameters
 from ...base import oneDALEstimator
 from ...utils._array_api import _pinvh, enable_array_api, get_namespace, log_likelihood
-from ...utils.validation import validate_data
+from ...utils.validation import assert_all_finite, validate_data
 
 # This is a temporary workaround for issues with sklearnex._device_offload._get_host_inputs
 # passing kwargs with sycl queues with other host data will cause failures
@@ -52,6 +52,21 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
         _parameter_constraints: dict = {
             **_sklearn_EmpiricalCovariance._parameter_constraints,
         }
+
+    def _set_covariance(self, covariance):
+        if not get_config()["use_raw_input"]:
+            if sklearn_check_version("1.6"):
+                covariance = check_array(covariance, ensure_all_finite=False)
+            else:
+                covariance = check_array(covariance, force_all_finite=False)
+            assert_all_finite(covariance)
+        # set covariance
+        self.covariance_ = covariance
+        # set precision
+        if self.store_precision:
+            self.precision_ = _pinvh(covariance, check_finite=False)
+        else:
+            self.precision_ = None
 
     def _save_attributes(self):
         assert hasattr(self, "_onedal_estimator")
@@ -239,3 +254,4 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
     error_norm.__doc__ = _sklearn_EmpiricalCovariance.error_norm.__doc__
     score.__doc__ = _sklearn_EmpiricalCovariance.score.__doc__
     get_precision.__doc__ = _sklearn_EmpiricalCovariance.get_precision.__doc__
+    _set_precision.__doc__ = _sklearn_EmpiricalCovariance._set_precision.__doc__
