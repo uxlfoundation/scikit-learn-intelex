@@ -30,6 +30,7 @@ from ._common import BaseSVR
 @control_n_jobs(decorated_methods=["fit", "predict", "score"])
 class SVR(BaseSVR, _sklearn_SVR):
     __doc__ = _sklearn_SVR.__doc__
+    _onedal_factory = onedal_SVR
 
     if sklearn_check_version("1.2"):
         _parameter_constraints: dict = {**_sklearn_SVR._parameter_constraints}
@@ -92,34 +93,6 @@ class SVR(BaseSVR, _sklearn_SVR):
 
         return self
 
-    @wrap_output_data
-    def predict(self, X):
-        check_is_fitted(self)
-        return dispatch(
-            self,
-            "predict",
-            {
-                "onedal": self.__class__._onedal_predict,
-                "sklearn": _sklearn_SVR.predict,
-            },
-            X,
-        )
-
-    @wrap_output_data
-    def score(self, X, y, sample_weight=None):
-        check_is_fitted(self)
-        return dispatch(
-            self,
-            "score",
-            {
-                "onedal": self.__class__._onedal_score,
-                "sklearn": _sklearn_SVR.score,
-            },
-            X,
-            y,
-            sample_weight=sample_weight,
-        )
-
     def _onedal_fit(self, X, y, sample_weight=None, queue=None):
         X, _, sample_weight = self._onedal_fit_checks(X, y, sample_weight)
         onedal_params = {
@@ -135,21 +108,8 @@ class SVR(BaseSVR, _sklearn_SVR):
             "max_iter": self.max_iter,
         }
 
-        self._onedal_estimator = onedal_SVR(**onedal_params)
+        self._onedal_estimator = self._onedal_factory(**onedal_params)
         self._onedal_estimator.fit(X, y, sample_weight, queue=queue)
         self._save_attributes()
 
-    def _onedal_predict(self, X, queue=None):
-        X = validate_data(
-            self,
-            X,
-            dtype=[np.float64, np.float32],
-            ensure_all_finite=False,
-            accept_sparse="csr",
-            reset=False,
-        )
-        return self._onedal_estimator.predict(X, queue=queue)
-
     fit.__doc__ = _sklearn_SVR.fit.__doc__
-    predict.__doc__ = _sklearn_SVR.predict.__doc__
-    score.__doc__ = _sklearn_SVR.score.__doc__

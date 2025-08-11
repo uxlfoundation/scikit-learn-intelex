@@ -15,7 +15,6 @@
 # ==============================================================================
 
 from abc import ABCMeta, abstractmethod
-from enum import Enum
 
 import numpy as np
 from scipy import sparse as sp
@@ -24,6 +23,7 @@ from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
 from onedal.utils import _sycl_queue_manager as QM
 
+from ..common._base import BaseEstimator
 from ..common._estimator_checks import _check_is_fitted
 from ..common._mixin import ClassifierMixin, RegressorMixin
 from ..datatypes import from_table, to_table
@@ -36,14 +36,7 @@ from ..utils.validation import (
 )
 
 
-class SVMtype(Enum):
-    c_svc = 0
-    epsilon_svr = 1
-    nu_svc = 2
-    nu_svr = 3
-
-
-class BaseSVM(metaclass=ABCMeta):
+class BaseSVM(BaseEstimator, metaclass=ABCMeta):
     @abstractmethod
     def __init__(
         self,
@@ -64,8 +57,6 @@ class BaseSVM(metaclass=ABCMeta):
         decision_function_shape,
         break_ties,
         algorithm,
-        svm_type=None,
-        **kwargs,
     ):
         self.C = C
         self.nu = nu
@@ -83,7 +74,6 @@ class BaseSVM(metaclass=ABCMeta):
         self.decision_function_shape = decision_function_shape
         self.break_ties = break_ties
         self.algorithm = algorithm
-        self.svm_type = svm_type
 
     @abstractmethod
     def train(self, *args, **kwargs): ...
@@ -96,14 +86,14 @@ class BaseSVM(metaclass=ABCMeta):
         self.classes_ = None
         return _column_or_1d(y, warn=True).astype(dtype, copy=False)
 
-    def _get_onedal_params(self, data):
+    def _get_onedal_params(self, dtype):
         max_iter = 10000 if self.max_iter == -1 else self.max_iter
         # TODO: remove this workaround
         # when oneDAL SVM starts support of 'n_iterations' result
         self.n_iter_ = 1 if max_iter < 1 else max_iter
         class_count = 0 if self.classes_ is None else len(self.classes_)
         return {
-            "fptype": data.dtype,
+            "fptype": dtype,
             "method": self.algorithm,
             "kernel": self.kernel,
             "c": self.C,
@@ -136,6 +126,7 @@ class BaseSVM(metaclass=ABCMeta):
             force_all_finite=True,
             accept_sparse="csr",
         )
+        # hard work remains on moving validate targets away from onedal
         y = self._validate_targets(y, X.dtype)
         if sample_weight is not None and len(sample_weight) > 0:
             sample_weight = _check_array(
@@ -161,27 +152,11 @@ class BaseSVM(metaclass=ABCMeta):
             self._scale_, self._sigma_ = 1.0, 1.0
             self.coef0 = 0.0
         else:
-            if isinstance(self.gamma, str):
-                if self.gamma == "scale":
-                    if sp.issparse(X):
-                        # var = E[X^2] - E[X]^2
-                        X_sc = (X.multiply(X)).mean() - (X.mean()) ** 2
-                    else:
-                        X_sc = X.var()
-                    _gamma = 1.0 / (X.shape[1] * X_sc) if X_sc != 0 else 1.0
-                elif self.gamma == "auto":
-                    _gamma = 1.0 / X.shape[1]
-                else:
-                    raise ValueError(
-                        f"When 'gamma' is a string, it should be either 'scale' or 'auto'. Got '{self.gamma}' instead."
-                    )
-            else:
-                _gamma = self.gamma
-            self._scale_, self._sigma_ = _gamma, np.sqrt(0.5 / _gamma)
+            self._scale_, self._sigma_ = self.gamma, np.sqrt(0.5 / self.gamma)
 
-        data = to_table(*data, queue=QM.get_global_queue())
-        params = self._get_onedal_params(data[0])
-        result = self.train(params, *data)
+        data_t = to_table(*data, queue=QM.get_global_queue())
+        params = self._get_onedal_params(data_t[0].dtype)
+        result = self.train(params, *data_t)
 
         if self._sparse:
             self.dual_coef_ = sp.csr_matrix(from_table(result.coeffs).T)
@@ -195,6 +170,7 @@ class BaseSVM(metaclass=ABCMeta):
         self.n_features_in_ = X.shape[1]
         self.shape_fit_ = X.shape
 
+        # _n_support not used in this object, will be moved to sklearnex
         if getattr(self, "classes_", None) is not None:
             indices = y.take(self.support_, axis=0)
             self._n_support = np.array(
@@ -211,107 +187,21 @@ class BaseSVM(metaclass=ABCMeta):
         m.support_vectors = to_table(self.support_vectors_)
         m.coeffs = to_table(self.dual_coef_.T)
         m.biases = to_table(self.intercept_)
-
-        if self.svm_type is SVMtype.c_svc or self.svm_type is SVMtype.nu_svc:
-            m.first_class_response, m.second_class_response = 0, 1
         return m
 
-    def _predict(self, X):
+    def _infer(self, X, module, queue):
         _check_is_fitted(self)
-        if self.break_ties and self.decision_function_shape == "ovo":
-            raise ValueError(
-                "break_ties must be False when " "decision_function_shape is 'ovo'"
-            )
 
-        if isinstance(self, ClassifierMixin):
-            sv = self.support_vectors_
-            if not self._sparse and sv.size > 0 and self._n_support.sum() != sv.shape[0]:
-                raise ValueError(
-                    "The internal representation "
-                    f"of {self.__class__.__name__} was altered"
-                )
-
-        if (
-            self.break_ties
-            and self.decision_function_shape == "ovr"
-            and len(self.classes_) > 2
-        ):
-            y = np.argmax(self.decision_function(X), axis=1)
-        else:
-            X = _check_array(
-                X,
-                dtype=[np.float64, np.float32],
-                force_all_finite=True,
-                accept_sparse="csr",
-            )
-            _check_n_features(self, X, False)
-
-            if self._sparse and not sp.isspmatrix(X):
-                X = sp.csr_matrix(X)
-            if self._sparse:
-                X.sort_indices()
-
-            if sp.issparse(X) and not self._sparse and not callable(self.kernel):
-                raise ValueError(
-                    "cannot use sparse input in %r trained on dense data"
-                    % type(self).__name__
-                )
-
-            X = to_table(X, queue=QM.get_global_queue())
-            params = self._get_onedal_params(X)
-
-            if hasattr(self, "_onedal_model"):
-                model = self._onedal_model
-            else:
-                model = self._create_model(module)
-            result = self.infer(params, model, X)
-            y = from_table(result.responses)
-        return y
-
-    def _ovr_decision_function(self, predictions, confidences, n_classes):
-        n_samples = predictions.shape[0]
-        votes = np.zeros((n_samples, n_classes))
-        sum_of_confidences = np.zeros((n_samples, n_classes))
-
-        k = 0
-        for i in range(n_classes):
-            for j in range(i + 1, n_classes):
-                sum_of_confidences[:, i] -= confidences[:, k]
-                sum_of_confidences[:, j] += confidences[:, k]
-                votes[predictions[:, k] == 0, i] += 1
-                votes[predictions[:, k] == 1, j] += 1
-                k += 1
-
-        transformed_confidences = sum_of_confidences / (
-            3 * (np.abs(sum_of_confidences) + 1)
-        )
-        return votes + transformed_confidences
-
-    def _decision_function(self, X):
-        _check_is_fitted(self)
-        X = _check_array(
-            X, dtype=[np.float64, np.float32], force_all_finite=True, accept_sparse="csr"
-        )
-        _check_n_features(self, X, False)
-
-        if self._sparse and not sp.isspmatrix(X):
-            X = sp.csr_matrix(X)
         if self._sparse:
-            X.sort_indices()
-
-        if sp.issparse(X) and not self._sparse and not callable(self.kernel):
+            if not sp.isspmatrix(X):
+                X = sp.csr_matrix(X)
+            else:
+                X.sort_indices()
+        elif sp.issparse(X) and not callable(self.kernel):
             raise ValueError(
                 "cannot use sparse input in %r trained on dense data"
                 % type(self).__name__
             )
-
-        if isinstance(self, ClassifierMixin):
-            sv = self.support_vectors_
-            if not self._sparse and sv.size > 0 and self._n_support.sum() != sv.shape[0]:
-                raise ValueError(
-                    "The internal representation "
-                    f"of {self.__class__.__name__} was altered"
-                )
 
         X = to_table(X, queue=QM.get_global_queue())
         params = self._get_onedal_params(X)
@@ -320,17 +210,15 @@ class BaseSVM(metaclass=ABCMeta):
             model = self._onedal_model
         else:
             model = self._create_model(module)
+
         result = self.infer(params, model, X)
         decision_function = from_table(result.decision_function)
 
-        if len(self.classes_) == 2:
-            decision_function = decision_function.ravel()
+    def _predict(self, X, module, queue):
+        return from_table(self._infer(X, module, queue).responses)
 
-        if self.decision_function_shape == "ovr" and len(self.classes_) > 2:
-            decision_function = self._ovr_decision_function(
-                decision_function < 0, -decision_function, len(self.classes_)
-            )
-        return decision_function
+    def _decision_function(self, X, module, queue):
+        return from_table(self._infer(X, module, queue).decision_function)
 
 
 class SVR(RegressorMixin, BaseSVM):
@@ -350,7 +238,6 @@ class SVR(RegressorMixin, BaseSVM):
         max_iter=-1,
         tau=1e-12,
         algorithm="thunder",
-        **kwargs,
     ):
         super().__init__(
             C=C,
@@ -370,7 +257,6 @@ class SVR(RegressorMixin, BaseSVM):
             break_ties=False,
             algorithm=algorithm,
         )
-        self.svm_type = SVMtype.epsilon_svr
 
     @bind_default_backend("svm.regression")
     def train(self, *args, **kwargs): ...
@@ -387,8 +273,7 @@ class SVR(RegressorMixin, BaseSVM):
 
     @supports_queue
     def predict(self, X, queue=None):
-        y = self._predict(X)
-        return y.ravel()
+        return self._predict(X)
 
 
 class SVC(ClassifierMixin, BaseSVM):
@@ -410,7 +295,6 @@ class SVC(ClassifierMixin, BaseSVM):
         decision_function_shape="ovr",
         break_ties=False,
         algorithm="thunder",
-        **kwargs,
     ):
         super().__init__(
             C=C,
@@ -430,7 +314,11 @@ class SVC(ClassifierMixin, BaseSVM):
             break_ties=break_ties,
             algorithm=algorithm,
         )
-        self.svm_type = SVMtype.c_svc
+
+    def _create_model(self, module):
+        m = super()._create_model(module)
+        m.first_class_response, m.second_class_response = 0, 1
+        return m
 
     @bind_default_backend("svm.classification")
     def train(self, *args, **kwargs): ...
@@ -453,10 +341,7 @@ class SVC(ClassifierMixin, BaseSVM):
 
     @supports_queue
     def predict(self, X, queue=None):
-        y = self._predict(X)
-        if len(self.classes_) == 2:
-            y = y.ravel()
-        return self.classes_.take(np.asarray(y, dtype=np.intp)).ravel()
+        return self._predict(X)
 
     @supports_queue
     def decision_function(self, X, queue=None):
@@ -480,7 +365,6 @@ class NuSVR(RegressorMixin, BaseSVM):
         max_iter=-1,
         tau=1e-12,
         algorithm="thunder",
-        **kwargs,
     ):
         super().__init__(
             C=C,
@@ -500,7 +384,6 @@ class NuSVR(RegressorMixin, BaseSVM):
             break_ties=False,
             algorithm=algorithm,
         )
-        self.svm_type = SVMtype.nu_svr
 
     @bind_default_backend("svm.nu_regression")
     def train(self, *args, **kwargs): ...
@@ -517,7 +400,7 @@ class NuSVR(RegressorMixin, BaseSVM):
 
     @supports_queue
     def predict(self, X, queue=None):
-        return self._predict(X).ravel()
+        return self._predict(X)[0]
 
 
 class NuSVC(ClassifierMixin, BaseSVM):
@@ -539,7 +422,6 @@ class NuSVC(ClassifierMixin, BaseSVM):
         decision_function_shape="ovr",
         break_ties=False,
         algorithm="thunder",
-        **kwargs,
     ):
         super().__init__(
             C=1.0,
@@ -559,7 +441,11 @@ class NuSVC(ClassifierMixin, BaseSVM):
             break_ties=break_ties,
             algorithm=algorithm,
         )
-        self.svm_type = SVMtype.nu_svc
+
+    def _create_model(self, module):
+        m = super()._create_model(module)
+        m.first_class_response, m.second_class_response = 0, 1
+        return m
 
     @bind_default_backend("svm.nu_classification")
     def train(self, *args, **kwargs): ...
@@ -582,10 +468,7 @@ class NuSVC(ClassifierMixin, BaseSVM):
 
     @supports_queue
     def predict(self, X, queue=None):
-        y = self._predict(X)
-        if len(self.classes_) == 2:
-            y = y.ravel()
-        return self.classes_.take(np.asarray(y, dtype=np.intp)).ravel()
+        return self._predict(X)
 
     @supports_queue
     def decision_function(self, X, queue=None):

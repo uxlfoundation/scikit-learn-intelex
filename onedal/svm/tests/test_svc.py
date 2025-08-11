@@ -40,14 +40,14 @@ from onedal.tests.utils._device_selection import (
 
 def _test_libsvm_parameters(queue, array_constr, dtype):
     X = array_constr([[-2, -1], [-1, -1], [-1, -2], [1, 1], [1, 2], [2, 1]], dtype=dtype)
-    y = array_constr([1, 1, 1, 2, 2, 2], dtype=dtype)
+    y = array_constr([0, 0, 0, 1, 1, 1], dtype=dtype)
 
     clf = SVC(kernel="linear").fit(X, y, queue=queue)
     assert_array_equal(clf.dual_coef_, [[-0.25, 0.25]])
     assert_array_equal(clf.support_, [1, 3])
     assert_array_equal(clf.support_vectors_, (X[1], X[3]))
     assert_array_equal(clf.intercept_, [0.0])
-    assert_array_equal(clf.predict(X), y)
+    assert_array_equal(clf.predict(X).ravel(), y)
 
 
 @pytest.mark.parametrize("queue", get_queues())
@@ -73,12 +73,12 @@ def test_libsvm_parameters(queue, array_constr, dtype):
     ],
 )
 def test_class_weight(queue):
-    X = np.array([[-2, -1], [-1, -1], [-1, -2], [1, 1], [1, 2], [2, 1]])
-    y = np.array([1, 1, 1, 2, 2, 2])
+    X = np.array([[-2, -1], [-1, -1], [-1, -2], [1, 1], [1, 2], [2, 1]], dtype=np.float64)
+    y = np.array([0, 0, 0, 1, 1, 1], dtype=np.float64)
 
-    clf = SVC(class_weight={1: 0.1})
+    clf = SVC(class_weight={0: 0.1})
     clf.fit(X, y, queue=queue)
-    assert_array_almost_equal(clf.predict(X, queue=queue), [2] * 6)
+    assert_array_almost_equal(clf.predict(X, queue=queue).ravel(), [1] * 6)
 
 
 @pytest.mark.parametrize("queue", get_queues())
@@ -103,7 +103,7 @@ def test_decision_function(queue):
 
     rbfs = rbf_kernel(X, clf.support_vectors_, gamma=clf.gamma)
     dec = np.dot(rbfs, clf.dual_coef_.T) + clf.intercept_
-    assert_array_almost_equal(dec.ravel(), clf.decision_function(X, queue=queue))
+    assert_array_almost_equal(dec.ravel(), clf.decision_function(X, queue=queue).ravel())
 
 
 @pass_if_not_implemented_for_gpu(reason="not implemented")
@@ -168,9 +168,9 @@ def test_svc_sigmoid(queue, dtype):
         [[-1, 2], [0, 0], [2, -1], [+1, +1], [+1, +2], [+2, +1]], dtype=dtype
     )
     X_test = np.array([[0, 2], [0.5, 0.5], [0.3, 0.1], [2, 0], [-1, -1]], dtype=dtype)
-    y_train = np.array([1, 1, 1, 2, 2, 2], dtype=dtype)
+    y_train = np.array([0, 0, 0, 1, 1, 1], dtype=dtype)
     svc = SVC(kernel="sigmoid").fit(X_train, y_train, queue=queue)
 
     assert_array_equal(svc.dual_coef_, [[-1, -1, -1, 1, 1, 1]])
     assert_array_equal(svc.support_, [0, 1, 2, 3, 4, 5])
-    assert_array_equal(svc.predict(X_test, queue=queue), [2, 2, 1, 2, 1])
+    assert_array_equal(svc.predict(X_test, queue=queue).ravel(), [1, 1, 0, 1, 0])
