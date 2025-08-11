@@ -42,7 +42,9 @@ from sklearnex.tests.utils.spmd import (
 @pytest.mark.mpi
 def test_covariance_spmd_gold(dataframe, queue):
     # Import spmd and batch algo
-    from skelarnex.preview.covariance import EmpiricalCovariance as EmpiricalCovariance_Batch
+    from sklearnex.preview.covariance import (
+        EmpiricalCovariance as EmpiricalCovariance_Batch,
+    )
 
     from sklearnex.spmd.covariance import EmpiricalCovariance as EmpiricalCovariance_SPMD
 
@@ -91,7 +93,9 @@ def test_covariance_spmd_synthetic(
     n_samples, n_features, assume_centered, dataframe, queue, dtype, use_raw_input
 ):
     # Import spmd and batch algo
-    from sklearnex.preview.covariance import EmpiricalCovariance as EmpiricalCovariance_Batch
+    from sklearnex.preview.covariance import (
+        EmpiricalCovariance as EmpiricalCovariance_Batch,
+    )
 
     from sklearnex.spmd.covariance import EmpiricalCovariance as EmpiricalCovariance_SPMD
 
