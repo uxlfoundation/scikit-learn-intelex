@@ -552,4 +552,3 @@ else:
     logging.warning(
         "Sklearnex PCA requires oneDAL version >= 2024.1.0 but it was not found"
     )
-
