@@ -158,6 +158,10 @@ if daal_check_version((2024, "P", 100)):
                 patching_status.and_conditions(
                     [
                         (
+                            n_samples > 1,
+                            "oneDAL requires more than a single sample",
+                        ),
+                        (
                             force_solver
                             or self._fit_svd_solver in ["covariance_eigh", "onedal_svd"],
                             (
@@ -552,3 +556,4 @@ else:
     logging.warning(
         "Sklearnex PCA requires oneDAL version >= 2024.1.0 but it was not found"
     )
+
