@@ -161,7 +161,7 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
             self._onedal_estimator.covariance_ += lp.dot(location.T, location)
             self._onedal_estimator.location_ = lp.zeros_like(lp.squeeze(location))
         if self.store_precision:
-            self.precision_ = pinvh(
+            self.precision_ = _pinvh(
                 self._onedal_estimator.covariance_, check_finite=False
             )
         else:
