@@ -17,6 +17,7 @@
 import warnings
 from functools import partial
 
+import numpy as np
 import scipy.sparse as sp
 from sklearn.base import clone
 from sklearn.covariance import EmpiricalCovariance as _sklearn_EmpiricalCovariance

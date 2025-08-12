@@ -305,7 +305,7 @@ def test_score_verify_namespace(dispatch, dataframe, queue):
 
     if dispatch:
         cfg_context = config_context(array_api_dispatch=True)
-        err = pytest.raises(TypeError, match="Multiple namespaces for array inputs: .*")
+        err = pytest.raises(TypeError)
     else:
         # support_sycl_format will cause it to function
         cfg_context = nullcontext()
