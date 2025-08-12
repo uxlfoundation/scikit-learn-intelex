@@ -198,9 +198,7 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
         error = c_cov - self.covariance_
         # compute the error norm
         if norm == "frobenius":
-            squared_norm = xp.matmul(
-                xp.reshape(error, (1, -1)), xp.reshape(error, (-1, 1))
-            )
+            squared_norm = xp.matmul(xp.reshape(error, (-1)), xp.reshape(error, (-1)))
         elif norm == "spectral":
             squared_norm = xp.max(xp.linalg.svdvals(xp.matmul(error.T, error)))
         else:

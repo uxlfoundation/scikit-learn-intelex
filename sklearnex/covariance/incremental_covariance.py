@@ -378,9 +378,7 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         if norm == "frobenius":
             # variance from sklearn version to leverage BLAS GEMM
             # squared_norm = xp.sum(error**2)
-            squared_norm = xp.matmul(
-                xp.reshape(error, (1, -1)), xp.reshape(error, (-1, 1))
-            )
+            squared_norm = xp.matmul(xp.reshape(error, (-1)), xp.reshape(error, (-1)))
         elif norm == "spectral":
             squared_norm = xp.max(xp.linalg.svdvals(xp.matmul(error.T, error)))
         else:
