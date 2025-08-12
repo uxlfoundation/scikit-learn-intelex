@@ -116,6 +116,6 @@ class EmpiricalCovariance(BaseEmpiricalCovariance):
                 from_table(result.cov_matrix, like=X) * (X.shape[0] - 1) / X.shape[0]
             )
 
-        self.location_ = from_table(result.means, like=X)
+        self.location_ = from_table(result.means, like=X)[0, ...]
 
         return self

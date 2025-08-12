@@ -154,12 +154,12 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         assert hasattr(self, "_onedal_estimator")
         self._onedal_estimator.finalize_fit()
         self._need_to_finalize = False
-        lp, _ = get_namespace(self._onedal_estimator.location_)
 
         if not daal_check_version((2024, "P", 400)) and self.assume_centered:
+            xp, _ = get_namespace(self._onedal_estimator.location_)
             location = self._onedal_estimator.location_[None, :]
-            self._onedal_estimator.covariance_ += lp.dot(location.T, location)
-            self._onedal_estimator.location_ = lp.zeros_like(lp.squeeze(location))
+            self._onedal_estimator.covariance_ += xp.dot(location.T, location)
+            self._onedal_estimator.location_ = xp.zeros_like(xp.squeeze(location))
         if self.store_precision:
             self.precision_ = _pinvh(
                 self._onedal_estimator.covariance_, check_finite=False
@@ -324,7 +324,7 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         check_is_fitted(self)
         # Only covariance evaluated for get_namespace due to dpnp/dpctl
         # support without array_api_dispatch
-        xp, _ = get_namespace(self.covariance_)
+        xp, _ = get_namespace(X_test, self.covariance_)
 
         X = validate_data(
             self,
@@ -376,9 +376,13 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         error = c_cov - self.covariance_
         # compute the error norm
         if norm == "frobenius":
-            squared_norm = xp.sum(error**2)
+            # variance from sklearn version to leverage BLAS GEMM
+            # squared_norm = xp.sum(error**2)
+            squared_norm = xp.matmul(
+                xp.reshape(error, (1, -1)), xp.reshape(error, (-1, 1))
+            )
         elif norm == "spectral":
-            squared_norm = xp.max(xp.linalg.svdvals(xp.dot(error.T, error)))
+            squared_norm = xp.max(xp.linalg.svdvals(xp.matmul(error.T, error)))
         else:
             raise NotImplementedError("Only spectral and frobenius norms are implemented")
         # optionally scale the error norm

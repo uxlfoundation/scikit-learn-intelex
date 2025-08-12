@@ -70,13 +70,15 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
 
     def _save_attributes(self):
         assert hasattr(self, "_onedal_estimator")
-        lp, _ = get_namespace(self._onedal_estimator.location_)
         if not daal_check_version((2024, "P", 400)) and self.assume_centered:
+            xp, _ = get_namespace(self._onedal_estimator.location_)
             location = self._onedal_estimator.location_[None, :]
-            self._onedal_estimator.covariance_ += lp.dot(location.T, location)
-            self._onedal_estimator.location_ = lp.zeros_like(location)
+            self._onedal_estimator.covariance_ += xp.dot(location.T, location)
+            self._onedal_estimator.location_ = xp.zeros_like(
+                self._onedal_estimator.location_
+            )
         self._set_covariance(self._onedal_estimator.covariance_)
-        self.location_ = lp.squeeze(self._onedal_estimator.location_)
+        self.location_ = self._onedal_estimator.location_
 
     _onedal_covariance = staticmethod(onedal_EmpiricalCovariance)
 
@@ -144,7 +146,7 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
         check_is_fitted(self)
         # Only covariance evaluated for get_namespace due to dpnp/dpctl
         # support without array_api_dispatch
-        xp, _ = get_namespace(self.covariance_)
+        xp, _ = get_namespace(X_test, self.covariance_)
 
         X = validate_data(
             self,
@@ -178,7 +180,7 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
         check_is_fitted(self)
         # Only covariance evaluated for get_namespace due to dpnp/dpctl
         # support without array_api_dispatch
-        xp, _ = get_namespace(self.covariance_)
+        xp, _ = get_namespace(comp_cov, self.covariance_)
         c_cov = validate_data(
             self,
             comp_cov,
@@ -196,9 +198,11 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
         error = c_cov - self.covariance_
         # compute the error norm
         if norm == "frobenius":
-            squared_norm = xp.sum(error**2)
+            squared_norm = xp.matmul(
+                xp.reshape(error, (1, -1)), xp.reshape(error, (-1, 1))
+            )
         elif norm == "spectral":
-            squared_norm = xp.max(xp.linalg.svdvals(xp.dot(error.T, error)))
+            squared_norm = xp.max(xp.linalg.svdvals(xp.matmul(error.T, error)))
         else:
             raise NotImplementedError("Only spectral and frobenius norms are implemented")
         # optionally scale the error norm
