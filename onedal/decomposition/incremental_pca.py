@@ -152,7 +152,7 @@ class IncrementalPCA(PCA):
             self.components_ = None
             self.n_samples_seen_ = n_samples
             self.n_features_in_ = n_features
-            self.n_components_ = self.n_components if self.n_components else min(X.shape)
+            self.n_components_ = self.n_components if self.n_components else X.shape[0]
         else:
             self.n_samples_seen_ += n_samples
 
@@ -165,8 +165,6 @@ class IncrementalPCA(PCA):
         if not hasattr(self, "_dtype"):
             self._dtype = X_table.dtype
             self._params = self._get_onedal_params(X_table)
-        else:
-            assert X.dtype == self._dtype, f"data of different datatype given"
 
         self._partial_result = self.partial_train(
             self._params, self._partial_result, X_table
