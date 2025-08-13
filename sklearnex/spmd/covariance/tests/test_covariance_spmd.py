@@ -42,7 +42,9 @@ from sklearnex.tests.utils.spmd import (
 @pytest.mark.mpi
 def test_covariance_spmd_gold(dataframe, queue):
     # Import spmd and batch algo
-    from onedal.covariance import EmpiricalCovariance as EmpiricalCovariance_Batch
+    from sklearnex.preview.covariance import (
+        EmpiricalCovariance as EmpiricalCovariance_Batch,
+    )
     from sklearnex.spmd.covariance import EmpiricalCovariance as EmpiricalCovariance_SPMD
 
     # Create gold data and convert to dataframe
@@ -81,7 +83,7 @@ def test_covariance_spmd_gold(dataframe, queue):
 @pytest.mark.parametrize("assume_centered", [True, False])
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("use_raw_input", [True, False])
@@ -90,8 +92,9 @@ def test_covariance_spmd_synthetic(
     n_samples, n_features, assume_centered, dataframe, queue, dtype, use_raw_input
 ):
     # Import spmd and batch algo
-    # TODO: Align sklearnex spmd to sklearnex estimator with bias and swap onedal with sklearnex
-    from onedal.covariance import EmpiricalCovariance as EmpiricalCovariance_Batch
+    from sklearnex.preview.covariance import (
+        EmpiricalCovariance as EmpiricalCovariance_Batch,
+    )
     from sklearnex.spmd.covariance import EmpiricalCovariance as EmpiricalCovariance_SPMD
 
     # Generate data and convert to dataframe

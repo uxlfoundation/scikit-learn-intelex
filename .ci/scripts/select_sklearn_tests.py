@@ -35,6 +35,7 @@ def parse_tests_tree(entry, prefix=""):
         raise ValueError(f"Unknown type {type(entry)} in tests map")
 
 
+# Reduced sklearn tests suite covering all patched functions in the shortest running time
 tests_map = {
     "cluster/tests": ["test_dbscan.py", "test_k_means.py"],
     "covariance/tests": "test_covariance.py",
@@ -42,6 +43,7 @@ tests_map = {
     "ensemble/tests": "test_forest.py",
     "linear_model/tests": ["test_base.py", "test_coordinate_descent.py", "test_ridge.py"],
     "manifold/tests": "test_t_sne.py",
+    "metrics/tests": ["test_pairwise.py", "test_ranking.py"],
     "model_selection/tests": ["test_split.py", "test_validation.py"],
     "neighbors/tests": ["test_lof.py", "test_neighbors.py", "test_neighbors_pipeline.py"],
     "svm/tests": ["test_sparse.py", "test_svm.py"],
