@@ -147,7 +147,7 @@ class IncrementalPCA(PCA):
         """
 
         n_samples, n_features = X.shape
-        first_pass = not hasattr(self, "components_")
+        first_pass = not self._need_to_finalize
         if first_pass:
             self.components_ = None
             self.n_samples_seen_ = n_samples
