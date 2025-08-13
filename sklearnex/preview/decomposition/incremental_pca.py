@@ -52,10 +52,10 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         self,
         n_components=None,
         *,
-        svd_solver="auto",
         whiten=False,
         copy=True,
         batch_size=None,
+        svd_solver="auto",
     ):
         super().__init__(
             n_components=n_components, whiten=whiten, copy=copy, batch_size=batch_size
