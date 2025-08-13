@@ -78,7 +78,7 @@ jobs:
 
     steps:
       - name: Checkout Scikit-learn-intelex
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Install Python
         uses: actions/setup-python@v5
         with:
@@ -193,7 +193,7 @@ jobs:
 
     steps:
       - name: Checkout Scikit-learn-intelex
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Install Python
         uses: actions/setup-python@v5
         with:
@@ -327,7 +327,7 @@ jobs:
 
     steps:
       - name: Checkout Scikit-learn-intelex
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Install Python
         uses: actions/setup-python@v5
         with:
@@ -403,7 +403,7 @@ jobs:
     timeout-minutes: 120
     steps:
       - name: Checkout Scikit-learn-intelex
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Install Python
         uses: actions/setup-python@v5
         with:
