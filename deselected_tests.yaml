@@ -443,6 +443,9 @@ public:
   # floating point error near values == 0 in svm sparse tests using vc oneDAL builds
   - svm/tests/test_sparse.py::test_unsorted_indices[csr_matrix] <1.7 win32
   - svm/tests/test_sparse.py::test_unsorted_indices[csr_array] <1.7 win32
+  # numpy <2 with array_api_strict leads to dlpack copy issues with DLManagedTensor
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_input_and_values-array_api_strict-None-None] >=1.5,<1.6
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_input_and_values-array_api_strict-None-None] >=1.5,<1.6
 
   # --------------------------------------------------------
   # The following tests currently fail with GPU offloading

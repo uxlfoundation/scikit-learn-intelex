@@ -174,12 +174,7 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
         # the infrastructure from sklearn that sklearnex depends on is also susceptible
         # to failure. In this case compare to sklearn for the same failure. By design
         # the patching of sklearn should act similarly. Technically this is conformance.
-        if estimator == "PCA" and "transform" in method:
-            # issue not to be observed with normal numpy usage
-            pytest.skip(
-                f"numpy backend __dlpack__ does not but should export readonly arrays."
-            )
-        elif (
+        if (
             not sklearn_check_version("1.3")
             and estimator == "IncrementalEmpiricalCovariance"
             and method == "score"
