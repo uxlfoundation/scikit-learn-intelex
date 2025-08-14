@@ -97,21 +97,6 @@ class LogisticDAALModel:
         )
         builder.set_beta(coefs, intercepts)
         self._model = builder.model
-        self._alg_pred_class = logistic_regression_prediction(
-            nClasses=self.n_classes_,
-            fptype=self._fptype,
-            resultsToEvaluate="computeClassLabels",
-        )
-        self._alg_pred_prob = logistic_regression_prediction(
-            nClasses=self.n_classes_,
-            fptype=self._fptype,
-            resultsToEvaluate="computeClassProbabilities",
-        )
-        self._alg_pred_logprob = logistic_regression_prediction(
-            nClasses=self.n_classes_,
-            fptype=self._fptype,
-            resultsToEvaluate="computeClassLogProbabilities",
-        )
 
     @property
     def coef_(self):
@@ -133,7 +118,12 @@ class LogisticDAALModel:
             The most probable class, as integer indexes
         """
         return (
-            self._alg_pred_class.compute(X, self._model)
+            logistic_regression_prediction(
+                nClasses=self.n_classes_,
+                fptype=self._fptype,
+                resultsToEvaluate="computeClassLabels",
+            )
+            .compute(X, self._model)
             .prediction.reshape(-1)
             .astype(int)
         )
@@ -151,7 +141,15 @@ class LogisticDAALModel:
         proba : array(n_samples, n_classes)
             The predicted probabilities for each class.
         """
-        return self._alg_pred_prob.compute(X, self._model).probabilities
+        return (
+            logistic_regression_prediction(
+                nClasses=self.n_classes_,
+                fptype=self._fptype,
+                resultsToEvaluate="computeClassProbabilities",
+            )
+            .compute(X, self._model)
+            .probabilities
+        )
 
     predict_proba.__doc__ = predict_proba.__doc__.replace(r"%docstring_X%", _docstring_X)
 
@@ -166,7 +164,15 @@ class LogisticDAALModel:
         log_proba : array(n_samples, n_classes)
             The logarithms of the predicted probabilities for each class.
         """
-        return self._alg_pred_logprob.compute(X, self._model).logProbabilities
+        return (
+            logistic_regression_prediction(
+                nClasses=self.n_classes_,
+                fptype=self._fptype,
+                resultsToEvaluate="computeClassLogProbabilities",
+            )
+            .compute(X, self._model)
+            .logProbabilities
+        )
 
     predict_log_proba.__doc__ = predict_log_proba.__doc__.replace(
         r"%docstring_X%", _docstring_X

@@ -2146,6 +2146,24 @@ def test_logreg_builder_with_deleted_arrays():
     )
 
 
+# This just checks that it doesn't segfault
+def test_logreg_builder_sequential_calls():
+    rng = np.random.default_rng(seed=123)
+    X = rng.standard_normal(size=(5, 10))
+    coefs = rng.standard_normal(size=(3, 10))
+    intercepts = np.zeros(3)
+    ref_pred = X @ coefs.T
+    ref_probs = softmax(ref_pred, axis=1)
+
+    model_d4p = d4p.mb.LogisticDAALModel(coefs, intercepts)
+    pred = model_d4p.predict_log_proba(X)
+    del pred
+    gc.collect()
+    pred = model_d4p.predict_log_proba(X)
+    del pred
+    gc.collect()
+
+
 # Note: these cases are safe to remove if scikit-learn later
 # on decides to disallow some of these combinations.
 @pytest.mark.parametrize(
