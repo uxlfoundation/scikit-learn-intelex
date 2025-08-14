@@ -126,7 +126,7 @@ deselected_tests:
   # sklearn 1.4 has different absolute and relative tolerances for this test,
   # set of available solvers and corresponding sklearnex rules to choose one
   # than newer versions resulting in test failure on specific systems
-  - decomposition/tests/test_pca.py::test_pca_dtype_preservation[full] ==1.4
+  - decomposition/tests/test_pca.py::test_pca_dtype_preservation[full] <1.5
 
   # Non-critical, but there are significant differences due to different implementations
   - linear_model/tests/test_common.py::test_balance_property[42-True-LinearRegression]
