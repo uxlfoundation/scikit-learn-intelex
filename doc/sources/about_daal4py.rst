@@ -61,6 +61,7 @@ idioms - instead, the process for calling procedures from the ``daal4py`` interf
   ``qr_algo = daal4py.qr()``.
 - Call the 'compute' method of that instantiated algorithm in order to obtain a 'result' object,
   passing it the data on which it will operate - for example: ``qr_result = qr_algo.compute(X)``.
+
     .. warning::
 
         Methods such as ``compute`` should only be called **once** on a daal4py object, unless the
