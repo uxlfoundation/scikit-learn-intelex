@@ -27,7 +27,7 @@ import numpy.random as nprnd
 import pytest
 from sklearn.base import BaseEstimator
 
-from daal4py.sklearn._utils import sklearn_check_version
+from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
@@ -174,9 +174,14 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
         # the infrastructure from sklearn that sklearnex depends on is also susceptible
         # to failure. In this case compare to sklearn for the same failure. By design
         # the patching of sklearn should act similarly. Technically this is conformance.
-        if estimator == "PCA" and "score" in method:
+        if (
+            estimator == "PCA"
+            and "transform" in method
+            and not _package_check_version("2.0", np.__version__)
+        ):
+            # issue not to be observed with normal numpy usage
             pytest.skip(
-                f"PCA.{method} has sklearn array_api support which breaks with array_api_dispatching"
+                f"numpy backend does not properly handle the __dlpack__ attribute."
             )
         elif (
             not sklearn_check_version("1.3")
