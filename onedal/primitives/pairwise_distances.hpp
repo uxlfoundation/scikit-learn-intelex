@@ -19,6 +19,7 @@
 #include <pybind11/pybind11.h>
 
 #include "oneapi/dal/algo/chebyshev_distance/common.hpp"
+#include "oneapi/dal/algo/correlation_distance/common.hpp"
 #include "oneapi/dal/algo/cosine_distance/common.hpp"
 #include "oneapi/dal/algo/minkowski_distance/common.hpp"
 
@@ -32,6 +33,8 @@ auto get_distance_descriptor(const pybind11::dict& params) {
     using method_t = typename Distance::method_t;
     using task_t = typename Distance::task_t;
     using minkowski_desc_t = minkowski_distance::descriptor<float_t, method_t, task_t>;
+    using correlation_distance_desc_t = correlation_distance::descriptor<float_t, method_t, task_t>;
+    using cosine_distance_desc_t = cosine_distance::descriptor<float_t, method_t, task_t>;
 
     auto distance = Distance{};
     if constexpr (std::is_same_v<Distance, minkowski_desc_t>) {
@@ -62,5 +65,25 @@ struct distance_params2desc {
         return get_distance_descriptor<Desc<Float, Method, Task>>(params);
     }
 };
+
+template <typename Policy,
+          typename Input,
+          typename Result,
+          typename Param2Desc,
+          typename DenseMethod>
+inline void init_distance_compute_ops(pybind11::module_& m) {
+    m.def("compute",
+          [](const Policy& policy, const pybind11::dict& params, const table& x, const table& y) {
+              compute_ops ops(policy, Input{ x, y }, Param2Desc{});
+              return fptype2t{ distance_method2t{ DenseMethod{}, ops } }(params);
+          });
+}
+
+template <typename Result>
+inline void init_distance_result(pybind11::module_& m) {
+    pybind11::class_<Result>(m, "result")
+        .def(pybind11::init())
+        .def_property("values", &Result::get_values, &Result::set_values);
+}
 
 } // namespace oneapi::dal::python
