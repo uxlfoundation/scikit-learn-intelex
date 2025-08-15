@@ -42,6 +42,7 @@ variables:
   PYTHON: 'python'
   ARGS: '1'
   SHELLOPTS: 'errexit:pipefail'
+  SKLEARNEX_VERBOSE: 'DEBUG'
 
 jobs:
 - job: Lint
