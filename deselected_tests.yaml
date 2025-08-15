@@ -123,11 +123,6 @@ deselected_tests:
   - decomposition/tests/test_pca.py::test_pca_svd_solver_auto[1000-500-400-full] >=1.5
   - decomposition/tests/test_pca.py::test_pca_svd_solver_auto[1000-500-0.5-full] >=1.5
 
-  # sklearn 1.4 has different absolute and relative tolerances for this test,
-  # set of available solvers and corresponding sklearnex rules to choose one
-  # than newer versions resulting in test failure on specific systems
-  - decomposition/tests/test_pca.py::test_pca_dtype_preservation[full] <1.5
-
   # Non-critical, but there are significant differences due to different implementations
   - linear_model/tests/test_common.py::test_balance_property[42-True-LinearRegression]
   - neighbors/tests/test_lof.py::test_lof_dtype_equivalence[0.5-True-brute]
@@ -494,6 +489,11 @@ public:
   # floating point error near values == 0 in svm sparse tests using vc oneDAL builds
   - svm/tests/test_sparse.py::test_unsorted_indices[csr_matrix] <1.7 win32
   - svm/tests/test_sparse.py::test_unsorted_indices[csr_array] <1.7 win32
+
+  # sklearn 1.4 has different absolute and relative tolerances for this test,
+  # set of available solvers and corresponding sklearnex rules to choose one
+  # than newer versions resulting in test failure on specific systems
+  - decomposition/tests/test_pca.py::test_pca_dtype_preservation[full] <1.5
 
   # --------------------------------------------------------
   # The following tests currently fail with GPU offloading
