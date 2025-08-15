@@ -492,7 +492,8 @@ public:
 
   # sklearn 1.4 has different absolute and relative tolerances for this test,
   # set of available solvers and corresponding sklearnex rules to choose one
-  # than newer versions resulting in test failure on specific systems
+  # than newer versions resulting in test failure on some systems when
+  # single-threaded computation is used which is a frequent case for CI
   - decomposition/tests/test_pca.py::test_pca_dtype_preservation[full] <1.5
 
   # --------------------------------------------------------
