@@ -61,6 +61,14 @@ idioms - instead, the process for calling procedures from the ``daal4py`` interf
   ``qr_algo = daal4py.qr()``.
 - Call the 'compute' method of that instantiated algorithm in order to obtain a 'result' object,
   passing it the data on which it will operate - for example: ``qr_result = qr_algo.compute(X)``.
+
+    .. warning::
+
+        Methods such as ``compute`` should only be called **once** on a daal4py object, unless the
+        object is created in streaming mode (see rest of this doc page for more details). If subsequent
+        calls to the same method are needed (e.g. if one wishes to re-fit the model on new data), the
+        object providing this method should be re-created again - otherwise, crashes and spurious
+        errors might happen.
 - Access the relevant results in the 'result' object - for example: ``R = qr_result.matrixR``.
 
 
@@ -111,8 +119,10 @@ can still be loaded in smaller chunks, or for machine learning models that are c
 updated as new data is collected, for example.
 
 In order to use streaming mode, the algorithm constructor needs to be passed argument ``streaming=True``,
-method ``.compute()`` needs to be called multiple times with different data, and the 'result'
-object should be obtained by calling method ``.finalize()`` after all the data has been passed.
+method ``.compute()`` needs to be called multiple times with different data (but note again: methods
+such as ``compute()`` should **not** be called more than once when the algorithm is not in streaming
+mode), and the 'result' object should be obtained by calling method ``.finalize()`` after all the data
+has been passed.
 
 Example: ::
 
