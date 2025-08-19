@@ -447,6 +447,12 @@ public:
   - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_input_and_values-array_api_strict-None-None] >=1.5,<1.6
   - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_input_and_values-array_api_strict-None-None] >=1.5,<1.6
 
+  # sklearn 1.4 has different absolute and relative tolerances for this test,
+  # set of available solvers and corresponding sklearnex rules to choose one
+  # than newer versions resulting in test failure on some systems when
+  # single-threaded computation is used which is a frequent case for CI
+  - decomposition/tests/test_pca.py::test_pca_dtype_preservation[full] <1.5
+
   # --------------------------------------------------------
   # The following tests currently fail with GPU offloading
 gpu:
