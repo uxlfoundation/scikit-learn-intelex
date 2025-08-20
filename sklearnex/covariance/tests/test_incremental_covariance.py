@@ -14,6 +14,7 @@
 # limitations under the License.
 # ===============================================================================
 
+from contextlib import nullcontext
 from os import environ
 
 from daal4py.sklearn._utils import sklearn_check_version
@@ -285,3 +286,32 @@ def test_IncrementalEmpiricalCovariance_against_sklearn(monkeypatch, sklearn_tes
     class_name = ".".join([sklearn_test.__module__, "EmpiricalCovariance"])
     monkeypatch.setattr(class_name, IncrementalEmpiricalCovariance)
     sklearn_test()
+
+
+@pytest.mark.skipif(
+    not sklearn_check_version("1.4"), reason="requires array_api_support sklearn config"
+)
+@pytest.mark.parametrize("dispatch", [True, False])
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("dpnp"))
+def test_score_verify_namespace(dispatch, dataframe, queue):
+    from sklearnex import config_context
+    from sklearnex.covariance import IncrementalEmpiricalCovariance
+
+    est = IncrementalEmpiricalCovariance()
+
+    rng = np.random.seed(42)
+    X = np.random.rand(5, 10)
+    X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+
+    if dispatch:
+        cfg_context = config_context(array_api_dispatch=True)
+        err = pytest.raises(TypeError)
+    else:
+        # support_sycl_format will cause it to function
+        cfg_context = nullcontext()
+        err = nullcontext()
+
+    # calculate and store data on SYCL device (CPU or GPU)
+    with cfg_context, err:
+        est.fit(X_df)
+        est.score(X + 3)

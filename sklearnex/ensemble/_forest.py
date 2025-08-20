@@ -52,13 +52,13 @@ from daal4py.sklearn._utils import (
     daal_check_version,
     sklearn_check_version,
 )
+from onedal._device_offload import support_input_format
 from onedal.ensemble import ExtraTreesClassifier as onedal_ExtraTreesClassifier
 from onedal.ensemble import ExtraTreesRegressor as onedal_ExtraTreesRegressor
 from onedal.ensemble import RandomForestClassifier as onedal_RandomForestClassifier
 from onedal.ensemble import RandomForestRegressor as onedal_RandomForestRegressor
 from onedal.primitives import get_tree_state_cls, get_tree_state_reg
 from onedal.utils.validation import _num_features, _num_samples
-from sklearnex import get_hyperparameters
 from sklearnex._utils import register_hyperparameters
 
 from .._config import get_config
@@ -457,6 +457,9 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
 
         if self._onedal_factory is None:
             raise TypeError(f" oneDAL estimator has not been set.")
+
+    decision_path = support_input_format(_sklearn_ForestClassifier.decision_path)
+    apply = support_input_format(_sklearn_ForestClassifier.apply)
 
     def _estimators_(self):
         super()._estimators_()
@@ -902,6 +905,9 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
         if self._onedal_factory is None:
             raise TypeError(f" oneDAL estimator has not been set.")
 
+    decision_path = support_input_format(_sklearn_ForestRegressor.decision_path)
+    apply = support_input_format(_sklearn_ForestRegressor.apply)
+
     def _onedal_fit_ready(self, patching_status, X, y, sample_weight):
         if sp.issparse(y):
             raise ValueError("sparse multilabel-indicator for y is not supported.")
@@ -1212,7 +1218,7 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
     score.__doc__ = _sklearn_ForestRegressor.score.__doc__
 
 
-@register_hyperparameters({"infer": get_hyperparameters("decision_forest", "infer")})
+@register_hyperparameters({"predict": ("decision_forest", "infer")})
 @control_n_jobs(decorated_methods=["fit", "predict", "predict_proba", "score"])
 class RandomForestClassifier(ForestClassifier):
     __doc__ = _sklearn_RandomForestClassifier.__doc__

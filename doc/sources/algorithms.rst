@@ -69,8 +69,13 @@ Classification
          all parameters except ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
      - Multi-output and sparse data are not supported
    * - :obj:`sklearn.linear_model.LogisticRegression`
-     - All parameters are supported
-     - No limitations
+     - All parameters are supported except:
+
+       - ``solver`` not in [``'lbfgs'``, ``'newton-cg'``]
+       - ``penalty`` in [``'l1'``, ``'elasticnet'``]
+       - ``sample_weight`` != ``None``
+       - ``class_weight`` != ``None``
+     - Sparse data is not supported.
 
 Regression
 **********
@@ -313,6 +318,7 @@ Classification
        - ``penalty`` != `'l2'`
        - ``dual`` = `True`
        - ``intercept_scaling`` != `1`
+       - ``multi_class`` = `'multinomial'`
        - ``warm_start`` = `True`
        - ``l1_ratio`` != 0 and ``l1_ratio`` != ``None``
        - Only binary classification is supported
