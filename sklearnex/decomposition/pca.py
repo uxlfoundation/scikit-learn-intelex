@@ -19,21 +19,25 @@ import logging
 from daal4py.sklearn._utils import daal_check_version
 
 if daal_check_version((2024, "P", 100)):
-    import numbers
     from math import sqrt
+    from numbers import Integral
     from warnings import warn
 
     import numpy as np
     from scipy.sparse import issparse
-    from sklearn.utils.validation import check_array, check_is_fitted
+    from sklearn.decomposition._pca import _infer_dimension
+    from sklearn.utils.extmath import stable_cumsum
+    from sklearn.utils.validation import check_is_fitted
 
     from daal4py.sklearn._n_jobs_support import control_n_jobs
     from daal4py.sklearn._utils import sklearn_check_version
+    from onedal._device_offload import _transfer_to_host
 
+    from .._config import get_config
     from .._device_offload import dispatch, wrap_output_data
     from .._utils import PatchingConditionsChain, register_hyperparameters
     from ..base import oneDALEstimator
-    from ..utils._array_api import get_namespace
+    from ..utils._array_api import enable_array_api, get_namespace
     from ..utils.validation import validate_data
 
     if sklearn_check_version("1.1") and not sklearn_check_version("1.2"):
@@ -44,9 +48,12 @@ if daal_check_version((2024, "P", 100)):
 
     from sklearn.decomposition import PCA as _sklearn_PCA
 
+    from onedal._device_offload import support_sycl_format
     from onedal.decomposition import PCA as onedal_PCA
     from onedal.utils._array_api import _is_numpy_namespace
+    from onedal.utils.validation import _num_features, _num_samples
 
+    @enable_array_api
     @register_hyperparameters({"fit": ("pca", "train")})
     @control_n_jobs(decorated_methods=["fit", "transform", "fit_transform"])
     class PCA(oneDALEstimator, _sklearn_PCA):
@@ -110,153 +117,53 @@ if daal_check_version((2024, "P", 100)):
                 self.iterated_power = iterated_power
                 self.random_state = random_state
 
-        def fit(self, X, y=None):
-            self._fit(X)
-            return self
+        _onedal_PCA = staticmethod(onedal_PCA)
+        # guarantee operability with dpnp/dpctl, runs on CPU unless
+        # array_api_dispatch is enabled.
+        score_samples = support_sycl_format(_sklearn_PCA.score_samples)
 
-        @wrap_output_data
-        def _fit(self, X):
-            if sklearn_check_version("1.2"):
-                self._validate_params()
-            elif sklearn_check_version("1.1"):
-                check_scalar(
-                    self.n_oversamples,
-                    "n_oversamples",
-                    min_val=1,
-                    target_type=numbers.Integral,
-                )
-
-            return dispatch(
-                self,
-                "fit",
-                {
-                    "onedal": self.__class__._onedal_fit,
-                    "sklearn": _sklearn_PCA._fit,
-                },
-                X,
-            )
-
-        def _onedal_fit(self, X, queue=None):
-            X = validate_data(
-                self,
-                X,
-                dtype=[np.float64, np.float32],
-                ensure_2d=True,
-                copy=self.copy,
-            )
-
-            onedal_params = {
-                "n_components": self.n_components,
-                "is_deterministic": True,
-                "method": "svd" if self._fit_svd_solver == "onedal_svd" else "cov",
-                "whiten": self.whiten,
-            }
-            self._onedal_estimator = onedal_PCA(**onedal_params)
-            self._onedal_estimator.fit(X, queue=queue)
-            self._save_attributes()
-
-            U = None
-            S = self.singular_values_
-            Vt = self.components_
-
-            if sklearn_check_version("1.5"):
-                xp, _ = get_namespace(X)
-                x_is_centered = not self.copy
-
-                return U, S, Vt, X, x_is_centered, xp
-            else:
-                return U, S, Vt
-
-        @wrap_output_data
-        def transform(self, X):
-            check_is_fitted(self)
-            return dispatch(
-                self,
-                "transform",
-                {
-                    "onedal": self.__class__._onedal_transform,
-                    "sklearn": _sklearn_PCA.transform,
-                },
-                X,
-            )
-
-        def _onedal_transform(self, X, queue=None):
-            X = validate_data(
-                self,
-                X,
-                dtype=[np.float64, np.float32],
-                reset=False,
-            )
-            self._validate_n_features_in_after_fitting(X)
-
-            return self._onedal_estimator.predict(X, queue=queue)
-
-        def fit_transform(self, X, y=None):
-            if sklearn_check_version("1.5"):
-                U, S, Vt, X_fit, x_is_centered, xp = self._fit(X)
-            else:
-                U, S, Vt = self._fit(X)
-                X_fit = X
-            if hasattr(self, "_onedal_estimator"):
-                # oneDAL PCA was fit
-                return self.transform(X)
-            elif U is not None:
-                # Scikit-learn PCA was fit
-                U = U[:, : self.n_components_]
-
-                if self.whiten:
-                    U *= sqrt(X_fit.shape[0] - 1)
-                else:
-                    U *= S[: self.n_components_]
-
-                return U
-            else:
-                # Scikit-learn PCA["covariance_eigh"] was fit
-                return self._transform(X_fit, xp, x_is_centered=x_is_centered)
-
-        def inverse_transform(self, X):
-            # sklearn does not properly input check inverse_transform using
-            # ``validate_data`` (as of sklearn 1.7). Yielding the namespace
-            # in this way will conform to sklearn and various inputs without
-            # causing issues with dimensionality checks, array api support,
-            # etc. evaluated in ``validate_data``. This is a special solution.
-            xp = (
-                func()
-                if (func := getattr(X, "__array_namespace__", None))
-                else get_namespace(X)[0]
-            )
-
-            mean = self.mean_
-            if self.whiten:
-                components = (
-                    xp.sqrt(self.explained_variance_[:, np.newaxis]) * self.components_
-                )
-            else:
-                components = self.components_
-
-            if not _is_numpy_namespace(xp):
-                # Force matching type to input data if possible
-                components = xp.asarray(components, device=X.device)
-                mean = xp.asarray(mean, device=X.device)
-
-            return X @ components + mean
-
-        def _onedal_supported(self, method_name, X):
+        def _onedal_supported(self, method_name, *data):
             class_name = self.__class__.__name__
             patching_status = PatchingConditionsChain(
                 f"sklearn.decomposition.{class_name}.{method_name}"
             )
+            X = data[0]
 
-            if method_name == "fit":
-                shape_tuple, _is_shape_compatible = self._get_shape_compatibility(X)
+            if method_name in ["fit", "fit_transform"]:
+                # pulling shape of the input is required before offloading
+                # due to the nature of sklearn's PCA._fit routine, which is
+                # behind a ``validate_data`` call and cannot be used
+                # without a performance impact
+                n_samples = _num_samples(X)
+                n_features = _num_features(X)
+                # in the case that the code falls back to sklearn
+                # self._fit_svd_solver will be clobbered in ``PCA._fit``
+                # setting values in dispatching is generally forbidden, but
+                # must be done in this case due to the sklearn estimator
+                # design.
+                self._fit_svd_solver = (
+                    self._select_svd_solver(n_samples, n_features)
+                    if self.svd_solver == "auto"
+                    else self.svd_solver
+                )
+                # Use oneDAL in the following cases:
+                # 1. "onedal_svd" solver is explicitly set
+                # 2. solver is set to "covariance_eigh"
+                # 3. solver is set to "full" and sklearn version < 1.5
+                # 4. solver is set to "auto" and dispatched to "full"
+                force_solver = self._fit_svd_solver == "full" and (
+                    not sklearn_check_version("1.5") or self.svd_solver == "auto"
+                )
+
                 patching_status.and_conditions(
                     [
                         (
-                            _is_shape_compatible,
-                            "Data shape is not compatible.",
+                            n_samples > 1,
+                            "oneDAL requires more than a single sample",
                         ),
                         (
-                            self._is_solver_compatible_with_onedal(shape_tuple),
+                            force_solver
+                            or self._fit_svd_solver in ["covariance_eigh", "onedal_svd"],
                             (
                                 "Only 'covariance_eigh' and 'onedal_svd' "
                                 "solvers are supported."
@@ -285,134 +192,363 @@ if daal_check_version((2024, "P", 100)):
                 f"Unknown method {method_name} in {self.__class__.__name__}"
             )
 
-        def _onedal_cpu_supported(self, method_name, *data):
-            return self._onedal_supported(method_name, *data)
+        _onedal_cpu_supported = _onedal_supported
+        _onedal_gpu_supported = _onedal_supported
 
-        def _onedal_gpu_supported(self, method_name, *data):
-            return self._onedal_supported(method_name, *data)
-
-        def _get_shape_compatibility(self, X):
-            _is_shape_compatible = False
-            _empty_shape = (0, 0)
-            if hasattr(X, "shape"):
-                shape_tuple = X.shape
-                if len(shape_tuple) == 1:
-                    shape_tuple = (1, shape_tuple[0])
-            elif isinstance(X, list):
-                if np.ndim(X) == 1:
-                    shape_tuple = (1, len(X))
-                elif np.ndim(X) == 2:
-                    shape_tuple = (len(X), len(X[0]))
-            else:
-                return _empty_shape, _is_shape_compatible
-
-            if shape_tuple[0] > 0 and shape_tuple[1] > 0 and len(shape_tuple) == 2:
-                _is_shape_compatible = shape_tuple[1] / shape_tuple[0] < 2
-
-            return shape_tuple, _is_shape_compatible
-
-        def _is_solver_compatible_with_onedal(self, shape_tuple):
-            self._fit_svd_solver = self.svd_solver
-            n_sf_min = min(shape_tuple)
-            n_components = n_sf_min if self.n_components is None else self.n_components
-
-            if self._fit_svd_solver == "auto":
-                if sklearn_check_version("1.1"):
-                    if (
-                        sklearn_check_version("1.5")
-                        and shape_tuple[1] <= 1_000
-                        and shape_tuple[0] >= 10 * shape_tuple[1]
-                    ):
-                        self._fit_svd_solver = "covariance_eigh"
-                    elif max(shape_tuple) <= 500 or n_components == "mle":
-                        self._fit_svd_solver = "full"
-                    elif 1 <= n_components < 0.8 * n_sf_min:
-                        self._fit_svd_solver = "randomized"
-                    else:
-                        self._fit_svd_solver = "full"
-                else:
-                    if n_components == "mle":
-                        self._fit_svd_solver = "full"
-                    else:
-                        # check if sklearnex is faster than randomized sklearn
-                        # Refer to daal4py
-                        regression_coefs = np.array(
-                            [
-                                [
-                                    9.779873e-11,
-                                    shape_tuple[0] * shape_tuple[1] * n_components,
-                                ],
-                                [
-                                    -1.122062e-11,
-                                    shape_tuple[0] * shape_tuple[1] * shape_tuple[1],
-                                ],
-                                [1.127905e-09, shape_tuple[0] ** 2],
-                            ]
-                        )
-                        if (
-                            n_components >= 1
-                            and np.dot(regression_coefs[:, 0], regression_coefs[:, 1])
-                            <= 0
-                        ):
-                            self._fit_svd_solver = "randomized"
-                        else:
-                            self._fit_svd_solver = "full"
-
-            # Use oneDAL in next cases:
-            # 1. oneDAL SVD solver is explicitly set
-            # 2. solver is set or dispatched to "covariance_eigh"
-            # 3. solver is set or dispatched to "full" and sklearn version < 1.5
-            # 4. solver is set to "auto" and dispatched to "full"
-            if self._fit_svd_solver in ["onedal_svd", "covariance_eigh"]:
-                return True
-            elif not sklearn_check_version("1.5") and self._fit_svd_solver == "full":
-                self._fit_svd_solver = "covariance_eigh"
-                return True
-            elif self.svd_solver == "auto" and self._fit_svd_solver == "full":
-                warn(
-                    "Sklearnex always uses `covariance_eigh` solver instead of `full` "
-                    "when `svd_solver` parameter is set to `auto` "
-                    "for performance purposes."
+        def _validate_n_components(self, X):
+            # This reproduces the initial n_components validation in PCA._fit_full
+            # Also a maintenance burden, but is isolated for compartmentalization
+            n_samples, n_features = X.shape
+            if self.n_components == "mle":
+                if n_samples < n_features:
+                    raise ValueError(
+                        "n_components='mle' is only supported if n_samples >= n_features"
+                    )
+            elif not 0 <= self.n_components <= min(n_samples, n_features):
+                raise ValueError(
+                    "n_components=%r must be between 0 and "
+                    "min(n_samples, n_features)=%r with "
+                    "svd_solver='full'" % (self.n_components, min(n_samples, n_features))
                 )
-                self._fit_svd_solver = "covariance_eigh"
-                return True
-            else:
-                return False
+            elif not sklearn_check_version("1.2") and self.n_components >= 1:
+                if not isinstance(self.n_components, Integral):
+                    raise ValueError(
+                        "n_components=%r must be of type int "
+                        "when greater than or equal to 1, "
+                        "was of type=%r" % (self.n_components, type(self.n_components))
+                    )
 
-        def _save_attributes(self):
-            self.n_samples_ = self._onedal_estimator.n_samples_
-            if sklearn_check_version("1.2"):
-                self.n_features_in_ = self._onedal_estimator.n_features_
+        def _postprocess_n_components(self):
+            # this method extracts aspects of post-processing located in
+            # PCA._fit_full which cannot be reused.
+            if self.n_components == "mle":
+                return _infer_dimension(
+                    self._onedal_estimator.explained_variance_, self.n_samples_
+                )
             else:
-                self.n_features_ = self._onedal_estimator.n_features_
-                self.n_features_in_ = self._onedal_estimator.n_features_
-            self.n_components_ = self._onedal_estimator.n_components_
-            self.components_ = self._onedal_estimator.components_
+                ratio = self._onedal_estimator.explained_variance_ratio_
+                if not isinstance(ratio, np.ndarray):
+                    # this is suboptimal, but the implementation in sklearn is not much
+                    # better/ does the same thing.
+                    _, (ratio,) = _transfer_to_host(ratio)
+                ratio_cumsum = stable_cumsum(ratio)
+                return np.searchsorted(ratio_cumsum, self.n_components, side="right") + 1
+
+        def _compute_noise_variance(self, n_sf_min, xp):
+            # generally replicates capability seen in sklearn.PCA._fit_full
+            explained_variance = self._onedal_estimator.explained_variance_
+            if self._n_components_ < n_sf_min:
+                if explained_variance.shape[0] == n_sf_min:
+                    return xp.mean(explained_variance[self._n_components_ :])
+                elif explained_variance.shape[0] < n_sf_min:
+                    # replicates capability seen in sklearn.PCA._fit_truncated
+                    # this is necessary as oneDAL will fit only to self.n_components
+                    # which leads to self.explained_variance_ not containing the
+                    # full information (and therefore can't replicate
+                    # sklearn.PCA._fit_full)
+                    resid_var = xp.sum(self._onedal_estimator.var_) - xp.sum(
+                        explained_variance
+                    )
+                    return resid_var / (n_sf_min - self._n_components_)
+            else:
+                return 0.0
+
+        if sklearn_check_version("1.1"):
+
+            def _select_svd_solver(self, n_samples, n_features):
+                n_sf_min = min(n_samples, n_features)
+                n_components = (
+                    n_sf_min if self.n_components is None else self.n_components
+                )
+                # This is matching aspects of sklearn.decomposition.PCA's ``_fit`` method
+                # Must be done this way as the logic hidden behind a ``validate_data`` call
+                # in sklearn cannot be reused without performance loss. This is likely to be
+                # high maintenance, but is written to be as simple and straightforward as
+                # possible.
+                if (
+                    sklearn_check_version("1.5")
+                    and n_features <= 1_000
+                    and n_samples >= 10 * n_features
+                ):
+                    return "covariance_eigh"
+                elif max(n_samples, n_features) <= 500 or n_components == "mle":
+                    return "full"
+                elif 1 <= n_components < 0.8 * n_sf_min:
+                    return "randomized"
+                else:
+                    return "full"
+
+        else:
+
+            def _select_svd_solver(self, n_samples, n_features):
+                n_sf_min = min(n_samples, n_features)
+                n_components = (
+                    n_sf_min if self.n_components is None else self.n_components
+                )
+
+                if n_components == "mle":
+                    return "full"
+                else:
+                    # check if sklearnex is faster than randomized sklearn
+                    # Refer to daal4py, this is legacy and should be either
+                    # regenerated or removed. Refactored from daal4py to
+                    # remove unnecessary math.
+                    d4p_analysis = (
+                        n_features
+                        * (9.779873e-11 * n_components - 1.122062e-11 * n_features)
+                        + 1.127905e-09 * n_samples
+                    )
+                    if n_components >= 1 and d4p_analysis <= 0:
+                        return "randomized"
+                    else:
+                        return "full"
+
+        def fit(self, X, y=None):
+            if sklearn_check_version("1.2"):
+                self._validate_params()
+            elif sklearn_check_version("1.1"):
+                check_scalar(
+                    self.n_oversamples,
+                    "n_oversamples",
+                    min_val=1,
+                    target_type=Integral,
+                )
+
+            dispatch(
+                self,
+                "fit",
+                {
+                    "onedal": self.__class__._onedal_fit,
+                    "sklearn": _sklearn_PCA.fit,
+                },
+                X,
+            )
+            return self
+
+        def _onedal_fit(self, X, queue=None):
+            xp, _ = get_namespace(X)
+            if not get_config()["use_raw_input"]:
+                X = validate_data(
+                    self,
+                    X,
+                    dtype=[xp.float64, xp.float32],
+                    ensure_2d=True,
+                    copy=self.copy,
+                )
+
+                # `use_raw_input` disabled by hasattr check
+                if (
+                    sklearn_check_version("1.5")
+                    and self._fit_svd_solver == "full"
+                    and self.svd_solver == "auto"
+                ):
+                    self._fit_svd_solver = "covariance_eigh"
+                    # warning should only be emitted if to be offloaded to oneDAL
+                    warn(
+                        "Sklearnex always uses `covariance_eigh` solver instead of `full` "
+                        "when `svd_solver` parameter is set to `auto` "
+                        "for performance purposes."
+                    )
+            else:
+                self._fit_svd_solver = "covariance_eigh"
+
+            if self.n_components is not None:
+                self._validate_n_components(X)
+
+            # unless the components are explicitly given as an integer, post-processing
+            # will set the components having first trained using the minimum size of the
+            # input dimensions. This is done in sklearnex and not in the onedal estimator
+            n_components = (
+                self.n_components
+                if isinstance(self.n_components, Integral)
+                else min(X.shape)
+            )
+            onedal_params = {
+                "n_components": n_components,
+                "is_deterministic": True,
+                "method": "svd" if self._fit_svd_solver == "onedal_svd" else "cov",
+                "whiten": self.whiten,
+            }
+            self._onedal_estimator = self._onedal_PCA(**onedal_params)
+            self._onedal_estimator.fit(X, queue=queue)
+
+            self.n_samples_ = X.shape[0]
+            self.n_features_in_ = X.shape[1]
+
+            # post-process the number of components
+            if self.n_components is not None and not isinstance(
+                self.n_components, Integral
+            ):
+                n_components = self._postprocess_n_components()
+
+            # set attributes necessary for calls to transform, will modify
+            # self._onedal_estimator, and clear any previous fit models
+            # Follow guidance from sklearn PCA._fit_full and copy the data
+            self.n_components_ = n_components
+            self.noise_variance_ = self._compute_noise_variance(
+                min(self.n_samples_, self.n_features_in_), xp
+            )
+
+            self.components_ = self._onedal_estimator.components_[:n_components, ...]
+            # oneDAL PCA eigenvalues are not guaranteed to be >=0 and must be clipped.
+            # This is likely due to accumulated numerical error in the oneDAL calculation.
+            self.explained_variance_ = xp.clip(
+                self._onedal_estimator.explained_variance_[:n_components], 0.0, None
+            )
             self.mean_ = self._onedal_estimator.mean_
+
+            # set other fit attributes, first by modifying the onedal_estimator
+            self._onedal_estimator.singular_values_ = (
+                self._onedal_estimator.singular_values_[:n_components]
+            )
+            self._onedal_estimator.explained_variance_ratio_ = (
+                self._onedal_estimator.explained_variance_ratio_[:n_components]
+            )
+
             self.singular_values_ = self._onedal_estimator.singular_values_
-            self.explained_variance_ = self._onedal_estimator.explained_variance_.ravel()
             self.explained_variance_ratio_ = (
                 self._onedal_estimator.explained_variance_ratio_
             )
-            self.noise_variance_ = self._onedal_estimator.noise_variance_
 
-        def _validate_n_features_in_after_fitting(self, X):
-            if sklearn_check_version("1.2"):
-                expected_n_features = self.n_features_in_
-            else:
-                expected_n_features = self.n_features_
-            if X.shape[1] != expected_n_features:
-                raise ValueError(
-                    (
-                        f"X has {X.shape[1]} features, "
-                        f"but PCA is expecting {expected_n_features} features as input"
-                    )
+            # return X for use in fit_transform, as it is validated and ready
+            return X
+
+        if not sklearn_check_version("1.2"):
+
+            @property
+            def n_features_(self):
+                return self.n_features_in_
+
+            @n_features_.setter
+            def n_features_(self, value):
+                self.n_features_in_ = value
+
+            # no deleter defined as n_features_in_ will control it.
+
+        @wrap_output_data
+        def transform(self, X):
+            check_is_fitted(self)
+            return dispatch(
+                self,
+                "transform",
+                {
+                    "onedal": self.__class__._onedal_transform,
+                    "sklearn": _sklearn_PCA.transform,
+                },
+                X,
+            )
+
+        def _onedal_transform(self, X, queue=None):
+            if not get_config()["use_raw_input"]:
+                xp, _ = get_namespace(X)
+                X = validate_data(
+                    self,
+                    X,
+                    dtype=[xp.float64, xp.float32],
+                    reset=False,
                 )
+
+            return self._onedal_estimator.predict(X, queue=queue)
+
+        def _onedal_fit_transform(self, X, queue=None):
+            X = self._onedal_fit(X, queue=queue)
+            return self._onedal_estimator.predict(X, queue=queue)
+
+        @wrap_output_data
+        def fit_transform(self, X, y=None):
+            if sklearn_check_version("1.2"):
+                self._validate_params()
+            return dispatch(
+                self,
+                "fit_transform",
+                {
+                    "onedal": self.__class__._onedal_fit_transform,
+                    "sklearn": _sklearn_PCA.fit_transform,
+                },
+                X,
+            )
+
+        def inverse_transform(self, X):
+            # sklearn does not properly input check inverse_transform using
+            # ``validate_data`` (as of sklearn 1.7). Yielding the namespace
+            # in this way will conform to sklearn and various inputs without
+            # causing issues with dimensionality checks, array api support,
+            # etc. evaluated in ``validate_data``. This is a special solution.
+            xp = (
+                func()
+                if (func := getattr(X, "__array_namespace__", None))
+                else get_namespace(X)[0]
+            )
+
+            mean = self.mean_
+            if self.whiten:
+                components = (
+                    xp.sqrt(self.explained_variance_[:, np.newaxis]) * self.components_
+                )
+            else:
+                components = self.components_
+
+            if not _is_numpy_namespace(xp):
+                # Force matching type to input data if possible
+                components = xp.asarray(components, device=X.device)
+                mean = xp.asarray(mean, device=X.device)
+
+            return X @ components + mean
+
+        # set properties for deleting the onedal_estimator model if:
+        # n_components_, components_, mean_ or explained_variance_ are
+        # changed. This assists in speeding up multiple uses of onedal
+        # transform as a model must now only be generated once.
+
+        @property
+        def n_components_(self):
+            return self._n_components_
+
+        @n_components_.setter
+        def n_components_(self, value):
+            if hasattr(self, "_onedal_estimator"):
+                self._onedal_estimator.n_components_ = value
+                self._onedal_estimator._onedal_model = None
+            self._n_components_ = value
+
+        @property
+        def components_(self):
+            return self._components_
+
+        @components_.setter
+        def components_(self, value):
+            if hasattr(self, "_onedal_estimator"):
+                self._onedal_estimator.components_ = value
+                self._onedal_estimator._onedal_model = None
+            self._components_ = value
+
+        @property
+        def mean_(self):
+            return self._mean_
+
+        @mean_.setter
+        def mean_(self, value):
+            if hasattr(self, "_onedal_estimator"):
+                self._onedal_estimator.mean_ = value
+                self._onedal_estimator._onedal_model = None
+            self._mean_ = value
+
+        @property
+        def explained_variance_(self):
+            return self._explained_variance_
+
+        @explained_variance_.setter
+        def explained_variance_(self, value):
+            if hasattr(self, "_onedal_estimator"):
+                self._onedal_estimator.explained_variance_ = value
+                self._onedal_estimator._onedal_model = None
+            self._explained_variance_ = value
 
         fit.__doc__ = _sklearn_PCA.fit.__doc__
         transform.__doc__ = _sklearn_PCA.transform.__doc__
         fit_transform.__doc__ = _sklearn_PCA.fit_transform.__doc__
         inverse_transform.__doc__ = _sklearn_PCA.inverse_transform.__doc__
+        score_samples.__doc__ = _sklearn_PCA.score_samples.__doc__
 
 else:
     from daal4py.sklearn.decomposition import PCA

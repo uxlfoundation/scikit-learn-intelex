@@ -578,7 +578,7 @@ def test_table_conversions_dlpack(dataframe, queue, order, data_shape, dtype):
 
 
 @pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("dpctl,numpy,array_api", "cpu,gpu")
+    "dataframe,queue", get_dataframes_and_queues("numpy,dpctl,array_api", "cpu,gpu")
 )
 @pytest.mark.parametrize("order", ["F", "C"])
 @pytest.mark.parametrize("data_shape", data_shapes)
@@ -616,3 +616,71 @@ def test_table___dlpack__(dataframe, queue, order, data_shape, dtype):
     del capsule
     gc.collect()
     assert_allclose(np.squeeze(from_table(X_table)), np.squeeze(X))
+
+
+@pytest.mark.skipif(
+    not hasattr(np, "from_dlpack"), reason="no dlpack support in installed numpy"
+)
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("dpctl", "cpu,gpu"))
+@pytest.mark.parametrize("order", ["F", "C"])
+@pytest.mark.parametrize("data_shape", data_shapes)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.int32, np.int64])
+def test_table_convert_to_host_dlpack(dataframe, queue, order, data_shape, dtype):
+    """Test if __dlpack__ attribute can be properly consumed by moving data
+    to host from a SYCL device.
+    """
+    rng = np.random.RandomState(0)
+    X = np.array(5 * rng.random_sample(data_shape), dtype=dtype)
+
+    X = ORDER_DICT[order](X)
+
+    X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+
+    X_table = to_table(X_df)
+    # verify that it is on a kDLOneAPI device
+    assert X_df.__dlpack_device__() == X_table.__dlpack_device__()
+
+    # extract to numpy (which should move to host)
+    try:
+        X_out = np.from_dlpack(X_table)
+    except RuntimeError as e:
+        if "Unsupported device in DLTensor." in str(e):
+            pytest.skip("Numpy version cannot request device conversion")
+        else:
+            raise e
+    assert X_out.__dlpack_device__() != X_table.__dlpack_device__()
+
+    if X_out.dtype == X.dtype:
+        assert_array_equal(np.squeeze(X_out), np.squeeze(X))
+    else:
+        assert_allclose(np.squeeze(X_out), np.squeeze(X))
+
+    # verify that table immutability is gone and copy behavior has been followed
+    assert X_out.flags.writeable
+
+
+@pytest.mark.parametrize("queue", get_queues())
+def test_table_writable_dlpack(queue):
+    """Test if __dlpack__ attribute can be properly consumed by moving data
+    to host from a SYCL device.
+    """
+    xp = pytest.importorskip("dpctl.tensor")
+    X = xp.eye(5, 8, dtype=xp.float32, device=queue)
+    X.flags["W"] = False
+    X_table = to_table(X)
+
+    cpu_device = (backend.kDLCPU, 0)
+    # verify that it is on a kDLOneAPI device
+    assert X.__dlpack_device__() == X_table.__dlpack_device__()
+    assert X_table.__dlpack_device__() != cpu_device
+
+    # verify move to host
+    X_table.__dlpack__(dl_device=cpu_device)
+    # verify error is raised when copy=False
+    with pytest.raises(BufferError, match="Cannot transfer data to requested device"):
+        X_table.__dlpack__(dl_device=cpu_device, copy=False)
+
+    for copy_bool in [True, False]:
+        X_out = xp.from_dlpack(X_table, copy=copy_bool)
+        # verify that table immutability is gone and copy behavior has been followed
+        assert X_out.flags["W"] is copy_bool

@@ -153,4 +153,26 @@ DLTensor get_dlpack_tensor(const py::capsule& caps,
     }
     return tensor;
 }
+
+void free_capsule(PyObject* cap) {
+    DLManagedTensor* dlm = nullptr;
+    if (PyCapsule_IsValid(cap, "dltensor")) {
+        dlm = static_cast<DLManagedTensor*>(PyCapsule_GetPointer(cap, "dltensor"));
+        if (dlm->deleter) {
+            dlm->deleter(dlm);
+        }
+    }
+}
+
+void free_capsule_versioned(PyObject* cap) {
+    DLManagedTensorVersioned* dlmv = nullptr;
+    if (PyCapsule_IsValid(cap, "dltensor_versioned")) {
+        dlmv =
+            static_cast<DLManagedTensorVersioned*>(PyCapsule_GetPointer(cap, "dltensor_versioned"));
+        if (dlmv->deleter) {
+            dlmv->deleter(dlmv);
+        }
+    }
+}
+
 } // namespace oneapi::dal::python::dlpack
