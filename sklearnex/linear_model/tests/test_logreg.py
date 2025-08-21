@@ -575,3 +575,24 @@ def test_gpu_logreg_prediction_shapes(dataframe, queue):
     np.testing.assert_array_equal(pred.shape, (X.shape[0],))
     np.testing.assert_array_equal(pred_proba.shape, (X.shape[0], 2))
     np.testing.assert_array_equal(pred_log_proba.shape, (X.shape[0], 2))
+
+
+@pytest.mark.skipif(
+    not daal_check_version((2025, "P", 800)), reason="Bugs fixed in later oneDAL releases"
+)
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+def test_log_proba_doesnt_return_inf(dataframe, queue):
+    from sklearnex.linear_model import LogisticRegression
+
+    X, y = make_classification(random_state=123)
+    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+    y = _convert_to_dataframe(y, sycl_queue=queue, target_df=dataframe)
+
+    model = LogisticRegression(solver="newton-cg").fit(X, y)
+    X_problem = 1e10 * _as_numpy(model.coef_).reshape((1, -1))
+    X_problem = np.vstack([X_problem, -X_problem])
+
+    pred_log_proba = model.predict_log_proba(X_problem)
+    pred_log_proba = _as_numpy(pred_log_proba)
+
+    assert not np.any(np.isinf(pred_log_proba))
