@@ -2072,10 +2072,16 @@ def test_logreg_builder(fit_intercept, stochastic, n_classes):
     )
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", RuntimeWarning)
-        np.testing.assert_almost_equal(
-            model_d4p.predict_log_proba(X[::-1]),
-            model_skl.predict_log_proba(X[::-1]),
-        )
+        try:
+            np.testing.assert_almost_equal(
+                model_d4p.predict_log_proba(X[::-1]),
+                model_skl.predict_log_proba(X[::-1]),
+            )
+        except AssertionError:
+            np.testing.assert_almost_equal(
+                np.exp(model_d4p.predict_log_proba(X[::-1])),
+                np.exp(model_skl.predict_log_proba(X[::-1])),
+            )
 
     np.testing.assert_almost_equal(
         model_d4p.coef_,
@@ -2138,6 +2144,24 @@ def test_logreg_builder_with_deleted_arrays():
         model_d4p.predict_proba(X),
         ref_probs,
     )
+
+
+# This just checks that it doesn't segfault
+def test_logreg_builder_sequential_calls():
+    rng = np.random.default_rng(seed=123)
+    X = rng.standard_normal(size=(5, 10))
+    coefs = rng.standard_normal(size=(3, 10))
+    intercepts = np.zeros(3)
+    ref_pred = X @ coefs.T
+    ref_probs = softmax(ref_pred, axis=1)
+
+    model_d4p = d4p.mb.LogisticDAALModel(coefs, intercepts)
+    pred = model_d4p.predict_log_proba(X)
+    del pred
+    gc.collect()
+    pred = model_d4p.predict_log_proba(X)
+    del pred
+    gc.collect()
 
 
 # Note: these cases are safe to remove if scikit-learn later

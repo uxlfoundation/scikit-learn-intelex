@@ -223,6 +223,14 @@ class BaseLogisticRegression(metaclass=ABCMeta):
     def _predict_log_proba(self, X):
         _, xp, _ = _get_sycl_namespace(X)
         y_proba = self._predict_proba(X)
+        # These are the same thresholds used by oneDAL during the model fitting procedure
+        if y_proba.dtype == np.float32:
+            min_prob = 1e-7
+            max_prob = 1.0 - 1e-7
+        else:
+            min_prob = 1e-15
+            max_prob = 1.0 - 1e-15
+        y_proba = xp.clip(y_proba, min_prob, max_prob)
         return xp.log(y_proba)
 
     def _decision_function(self, X):

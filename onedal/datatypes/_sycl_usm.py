@@ -17,12 +17,13 @@
 from collections.abc import Iterable
 
 import numpy as np
+import scipy.sparse as sp
 
 from ..utils._third_party import lazy_import
 
 
 @lazy_import("dpctl.memory", "dpctl.tensor")
-def array_to_usm(memory, tensor, queue, array):
+def _array_to_usm(memory, tensor, queue, array):
     try:
         mem = memory.MemoryUSMDevice(array.nbytes, queue=queue)
         mem.copy_from_host(array.tobytes())
@@ -37,7 +38,7 @@ def array_to_usm(memory, tensor, queue, array):
 
 
 @lazy_import("dpnp", "dpctl.tensor")
-def to_dpnp(dpnp, tensor, array):
+def _to_dpnp(dpnp, tensor, array):
     if isinstance(array, tensor.usm_ndarray):
         return dpnp.array(array, copy=False)
     else:
@@ -45,34 +46,18 @@ def to_dpnp(dpnp, tensor, array):
 
 
 def copy_to_usm(queue, array):
-    if hasattr(array, "__array__"):
-        return array_to_usm(queue, array)
+    if hasattr(array, "tobytes"):
+        return _array_to_usm(queue, array)
     else:
-        if isinstance(array, Iterable):
+        if isinstance(array, Iterable) and not sp.issparse(array):
             array = [copy_to_usm(queue, i) for i in array]
         return array
 
 
 def copy_to_dpnp(queue, array):
-    if hasattr(array, "__array__"):
-        return to_dpnp(array_to_usm(queue, array))
+    if hasattr(array, "tobytes"):
+        return _to_dpnp(_array_to_usm(queue, array))
     else:
-        if isinstance(array, Iterable):
+        if isinstance(array, Iterable) and not sp.issparse(array):
             array = [copy_to_dpnp(queue, i) for i in array]
         return array
-
-
-@lazy_import("dpctl.memory")
-def usm_to_numpy(memorymod, item, usm_iface):
-    buffer = memorymod.as_usm_memory(item).copy_to_host()
-    order = "C"
-    if usm_iface["strides"] is not None and len(usm_iface["strides"]) > 1:
-        if usm_iface["strides"][0] < usm_iface["strides"][1]:
-            order = "F"
-    item = np.ndarray(
-        shape=usm_iface["shape"],
-        dtype=usm_iface["typestr"],
-        buffer=buffer,
-        order=order,
-    )
-    return item

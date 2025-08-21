@@ -262,8 +262,8 @@ def test_incremental_pca_partial_fit_spmd_random(
 
     for attribute in attributes_to_compare:
         assert_allclose(
-            getattr(incpca, attribute),
-            getattr(incpca_spmd, attribute),
+            _as_numpy(getattr(incpca, attribute)),
+            _as_numpy(getattr(incpca_spmd, attribute)),
             atol=tol,
             err_msg=f"{attribute} is incorrect",
         )

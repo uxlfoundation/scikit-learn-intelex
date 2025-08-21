@@ -33,6 +33,7 @@ if daal_check_version((2024, "P", 1)):
     from daal4py.sklearn._n_jobs_support import control_n_jobs
     from daal4py.sklearn._utils import sklearn_check_version
     from daal4py.sklearn.linear_model.logistic_path import daal4py_fit, daal4py_predict
+    from onedal._device_offload import support_input_format
     from onedal.linear_model import LogisticRegression as onedal_LogisticRegression
     from onedal.utils.validation import _num_samples
 
@@ -99,6 +100,9 @@ if daal_check_version((2024, "P", 1)):
             )
 
         _onedal_cpu_fit = daal4py_fit
+        decision_function = support_input_format(
+            _sklearn_LogisticRegression.decision_function
+        )
 
         def _onedal_gpu_save_attributes(self):
             assert hasattr(self, "_onedal_estimator")
