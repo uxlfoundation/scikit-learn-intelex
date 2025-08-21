@@ -584,7 +584,7 @@ def test_gpu_logreg_prediction_shapes(dataframe, queue):
 
 
 @pytest.mark.skipif(
-    not daal_check_version((2025, "P", 800)), reason="Bugs fixed in later oneDAL releases"
+    not daal_check_version((2025, "P", 900)), reason="Bugs fixed in later oneDAL releases"
 )
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 def test_log_proba_doesnt_return_inf(dataframe, queue):
