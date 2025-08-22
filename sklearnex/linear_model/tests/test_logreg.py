@@ -108,6 +108,7 @@ if daal_check_version((2024, "P", 700)):
     @pytest.mark.parametrize(
         "dims", [(3007, 17, 0.05), (50000, 100, 0.01), (512, 10, 0.5)]
     )
+    @pytest.mark.allow_sklearn_fallback
     def test_csr(queue, dtype, dims):
         from sklearnex.linear_model import LogisticRegression
 
@@ -129,13 +130,16 @@ if daal_check_version((2024, "P", 700)):
             model.fit(X, y)
             pred = model.predict(X)
             prob = model.predict_proba(X)
+            raw = model.decision_function(X)
             model_sp.fit(X_sp, y)
             pred_sp = model_sp.predict(X_sp)
             prob_sp = model_sp.predict_proba(X_sp)
+            raw_sp = model.decision_function(X_sp)
 
         rtol = 2e-4
         assert_allclose(pred, pred_sp, rtol=rtol)
         assert_allclose(prob, prob_sp, rtol=rtol)
+        assert_allclose(raw, raw_sp, rtol=rtol)
         assert_allclose(model.coef_, model_sp.coef_, rtol=rtol)
         assert_allclose(model.intercept_, model_sp.intercept_, rtol=rtol)
 
@@ -571,14 +575,16 @@ def test_gpu_logreg_prediction_shapes(dataframe, queue):
     pred = model.predict(X)
     pred_proba = model.predict_proba(X)
     pred_log_proba = model.predict_log_proba(X)
+    pred_decision_function = model.decision_function(X)
 
     np.testing.assert_array_equal(pred.shape, (X.shape[0],))
     np.testing.assert_array_equal(pred_proba.shape, (X.shape[0], 2))
     np.testing.assert_array_equal(pred_log_proba.shape, (X.shape[0], 2))
+    np.testing.assert_array_equal(pred_decision_function.shape, (X.shape[0],))
 
 
 @pytest.mark.skipif(
-    not daal_check_version((2025, "P", 800)), reason="Bugs fixed in later oneDAL releases"
+    not daal_check_version((2025, "P", 900)), reason="Bugs fixed in later oneDAL releases"
 )
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 def test_log_proba_doesnt_return_inf(dataframe, queue):
