@@ -29,7 +29,7 @@ from sklearnex.neighbors.common import KNeighborsDispatchingBase
 from sklearnex.neighbors.knn_unsupervised import NearestNeighbors
 
 from ..utils._array_api import get_namespace
-from ..utils.validation import check_feature_names
+from ..utils.validation import validate_data
 
 
 @control_n_jobs(decorated_methods=["fit", "kneighbors", "_kneighbors"])
@@ -149,9 +149,12 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
         return self.fit(X)._predict()
 
     def _kneighbors(self, X=None, n_neighbors=None, return_distance=True):
-        check_is_fitted(self)
         if X is not None:
-            check_feature_names(self, X, reset=False)
+            xp, _ = get_namespace(X)
+            X = validate_data(
+                self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
+            )
+        check_is_fitted(self)
         return dispatch(
             self,
             "kneighbors",
