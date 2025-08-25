@@ -224,6 +224,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             "euclidean",
             "chebyshev",
             "cosine",
+            "correlation",
         ]
         onedal_kdtree_metrics = ["euclidean"]
         is_valid_for_brute = (
