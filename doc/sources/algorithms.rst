@@ -125,7 +125,7 @@ Regression
        - ``solver`` != `'auto'`
        - ``sample_weight`` != `None`
        - ``positive`` = `True`
-       - ``alpha`` must be scalar
+       - ``alpha`` must be a scalar
      - Only dense data is supported.
    * - :obj:`sklearn.linear_model.ElasticNet`
      - All parameters are supported except:
@@ -360,6 +360,15 @@ Regression
        - ``weights`` = `'callable'`
        - ``metric`` != `'euclidean'` or `'minkowski'` with ``p`` != `2`
      - Only dense data is supported
+   * - :obj:`sklearn.linear_model.Ridge`
+     - All parameters are supported except:
+
+       - ``solver`` != `'auto'`
+       - ``sample_weight`` != `None`
+       - ``positive`` = `True`
+       - ``alpha`` must be a scalar
+     - Only dense data is supported.
+
    * - :obj:`sklearn.linear_model.LinearRegression`
      - All parameters are supported except:
 
