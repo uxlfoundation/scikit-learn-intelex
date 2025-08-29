@@ -156,6 +156,13 @@ def dispatch(
                 patching_status.write_log(transferred_to_host=False)
                 return branches["sklearn"](obj, *args, **kwargs)
             else:
+                # Will first attempt a fallback to CPU on oneDAL before falling back
+                # to stock scikit-learn.
+                with QM.force_host():
+                    backend, patching_status = _get_backend(obj, method_name, *hostargs)
+                    if backend:
+                        patching_status.write_log()
+                        return branches["onedal"](obj, *hostargs, **hostkwargs)
                 patching_status.write_log()
                 return branches["sklearn"](obj, *hostargs, **hostkwargs)
 

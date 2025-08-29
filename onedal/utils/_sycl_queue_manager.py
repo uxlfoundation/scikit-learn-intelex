@@ -211,3 +211,25 @@ def manage_global_queue(queue, *args):
     finally:
         # restore the original queue
         update_global_queue(original_queue)
+
+
+@contextmanager
+def force_host():
+    """
+    Context manager that temporarily enforces a fall back to host.
+
+    Temporarily sets the global queue to the default host fallback and then
+    restores it. Intended to be used as a workaround to check if an operation
+    is supported by oneDAL on CPU even if the data is on GPU.
+
+    Yields
+    ------
+    None : None
+        ``None``, signaling that there's no queue.
+    """
+    original_queue = get_global_queue()
+    try:
+        fallback_to_host()
+        yield get_global_queue()
+    finally:
+        update_global_queue(original_queue)

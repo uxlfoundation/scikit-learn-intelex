@@ -11,73 +11,69 @@
 .. WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 .. See the License for the specific language governing permissions and
 .. limitations under the License.
-
+.. include:: substitutions.rst
 .. _array_api:
 
 =================
 Array API support
 =================
-The `Array API <https://data-apis.org/array-api/latest/>`_ specification defines
-a standard API for all array manipulation libraries with a NumPy-like API.
-Extension for Scikit-learn doesn't require
-`array-api-compat <https://github.com/data-apis/array-api-compat>`__ to be installed for
-functional support of the array API standard.
-In the current implementation, the functional support of array api follows the functional
-support of different array or DataFrame inputs and does not modify the precision of the
-input and output data formats unless necessary. Any array API input will be converted to host
-numpy.ndarrays and all internal manipulations with data will be done with these representations of
-the input data. DPNP's 'ndarray' and Data Parallel Control's 'usm_ndarray' have special handling
-requirements that are described in the relevant section of this document. Output values will in
-all relevant cases match the input data format.
+
+Overview
+========
+
+|sklearnex| has partial support for input data classes that conform to the
+`Array API <https://data-apis.org/array-api/>`_ specification, such as :external+dpnp:doc:`dpnp.ndarray <reference/ndarray>`
+or `torch.tensor <https://docs.pytorch.org/docs/stable/tensors.html>`__. This is particularly
+useful for GPU computations, as it allows performing operations on inputs that are already
+on GPU without moving the data from host to device.
+
+When passing array API inputs whose data is on a SyCL-enabled device (e.g. an Intel GPU), as
+supported for example by `PyTorch <https://docs.pytorch.org/docs/stable/notes/get_start_xpu.html>`__
+and |dpnp|, computations will be performed on the device where the data lives, without involving any
+data transfers. Note that all of the inputs (e.g. ``X`` and ``y`` passed to ``.fit()`` methods) must
+be allocated on the same device for this to work.
+
+While other array API inputs (e.g. torch arrays with data allocated on a non-SyCL device) are supported
+by the |sklearnex|, note that the data will be transferred to host if it isn't already, and the
+computations will happen on CPU. If array API is :external+sklearn:doc:`enabled for scikit-learn <modules/array_api>`,
+then array API inputs whose data is allocated neither on CPU nor on a SyCL device will be forwarded
+directly to the unpatched methods from |sklearn|, without using the accelerated versions from this library.
+
+When passing array API inputs to methods such as ``.predict()``, the output will be of the same class
+as the inputs, but be aware that array attributes of fitted models (e.g. ``coef_`` in a linear model) will not
+necessarily be of the same class as array API inputs passed to ``.fit()``.
 
 .. note::
-    Currently, only `array-api-strict <https://github.com/data-apis/array-api-strict>`__,
-    `dpctl <https://intelpython.github.io/dpctl/latest/index.html>`__, `dpnp <https://github.com/IntelPython/dpnp>`__
-    and `numpy <https://numpy.org/>`__ are known to work with sklearnex estimators.
-.. note::
-    Stock Scikit-learn’s array API support requires `array-api-compat <https://github.com/data-apis/array-api-compat>`__ to be installed.
-
-
-Support for DPNP and DPCTL
-==========================
-The functional support of input data for sklearnex estimators also extended for SYCL USM array types.
-These include SYCL USM arrays `dpnp's <https://github.com/IntelPython/dpnp>`__ ndarray and
-`Data Parallel Control usm_ndarray <https://intelpython.github.io/dpctl/latest/index.html>`__.
-DPNP ndarray and Data Parallel Control usm_ndarray contain SYCL contexts which can be used for
-`sklearnex` device offloading.
+    Unlike |sklearn|, |sklearnex| does not require `array-api-compat <https://github.com/data-apis/array-api-compat>`__
+    to be installed for array API support.
 
 .. note::
-    Current support for DPNP and DPCTL usm_ndarray data can be copied and moved to and from device in sklearnex and have
-    impacts on memory utilization.
-
-DPCTL or DPNP inputs are not required to use `config_context(target_offload=device)`.
-`sklearnex` will use input usm_ndarray sycl context for device offloading.
-
-.. note::
-    As DPCTL or DPNP inputs contain SYCL contexts, they do not require `config_context(target_offload=device)`.
-    However, the use of `config_context`` will override the contained SYCL context and will force movement
-    of data to the targeted device.
+    As SyCL arrays from array API classes (such as :external+dpnp:doc:`dpnp.ndarray <reference/ndarray>`)
+    contain SyCL contexts, they do not require ``config_context(target_offload=device)`` to run on SyCL devices.
+    However, if such inputs are used under a ``config_context``, it will override the data's SyCL context
+    and might force movement of data to the targeted device.
 
 
-Support for Array API-compatible inputs
-=======================================
-All patched estimators, metrics, tools and non-scikit-learn estimators functionally support Array API standard.
-Extension for Scikit-learn preserves input data format for all outputs. For all array inputs except
-SYCL USM arrays `dpnp's <https://github.com/IntelPython/dpnp>`__ ndarray and
-`Data Parallel Control usm_ndarray <https://intelpython.github.io/dpctl/latest/index.html>`__ all computation
-will be only accomplished on CPU unless specified by a `config_context`` with an available GPU device.
+Supported classes
+=================
 
-Stock scikit-learn uses `config_context(array_api_dispatch=True)` for enabling Array API
-`support <https://scikit-learn.org/1.5/modules/array_api.html>`__.
-If `array_api_dispatch` is enabled and the installed Scikit-Learn version supports array API, then the original
-inputs are used when falling back to Scikit-Learn functionality.
+The following patched classes have support for array API inputs:
+
+- :obj:`sklearnex.basic_statistics.BasicStatistics`
+- :obj:`sklearnex.basic_statistics.IncrementalBasicStatistics`
+- :obj:`sklearn.cluster.DBSCAN`
+- :obj:`sklearn.covariance.EmpiricalCovariance`
+- :obj:`sklearnex.covariance.IncrementalEmpiricalCovariance`
+- :obj:`sklearn.decomposition.PCA`
+- :obj:`sklearn.linear_model.LinearRegression`
+- :obj:`sklearn.linear_model.Ridge`
+- :obj:`sklearnex.linear_model.IncrementalLinearRegression`
+- :obj:`sklearnex.linear_model.IncrementalRidge`
 
 .. note::
-    Data Parallel Control usm_ndarray or DPNP ndarray inputs will use host numpy data copies when
-    falling back to Scikit-Learn since they are not array API compliant.
-.. note::
-    Functional support doesn't guarantee that after the model is trained, fitted attributes that are arrays
-    will also be from the same namespace as the training data.
+    While full array API support is currently not implemented for all classes, :external+dpnp:doc:`dpnp.ndarray <reference/ndarray>`
+    and :external+dpctl:doc:`dpctl.tensor <api_reference/dpctl/tensor>` inputs are supported by all the classes
+    that have `GPU support <oneapi_gpu>`__.
 
 
 Example usage
@@ -86,36 +82,37 @@ Example usage
 DPNP ndarrays
 -------------
 
-Here is an example code to demonstrate how to use `dpnp <https://github.com/IntelPython/dpnp>`__ arrays to
-run `RandomForestRegressor` on a GPU without `config_context(array_api_dispatch=True)`:
+Example code showcasing how to use :external+dpnp:doc:`dpnp.ndarray <reference/ndarray>` arrays to
+run patched :obj:`sklearn.ensemble.RandomForestRegressor` on a GPU without ``config_context(array_api_dispatch=True)``:
 
-.. literalinclude:: ../../examples/sklearnex/random_forest_regressor_dpnp.py
-	   :language: python
+.. collapse:: Example code (click to expand)
 
-
-.. note::
-    Functional support doesn't guarantee that after the model is trained, fitted attributes that are arrays
-    will also be from the same namespace as the training data.
-
-For example, if `dpnp's <https://github.com/IntelPython/dpnp>`__ namespace was used for training,
-then fitted attributes will be on the CPU and `numpy.ndarray` data format.
+    .. literalinclude:: ../../examples/sklearnex/random_forest_regressor_dpnp.py
+           :language: python
+|
 
 DPCTL usm_ndarrays
 ------------------
-Here is an example code to demonstrate how to use `dpctl <https://intelpython.github.io/dpctl/latest/index.html>`__
-arrays to run `RandomForestClassifier` on a GPU without `config_context(array_api_dispatch=True)`:
+Example code showcasing how to use :external+dpctl:doc:`dpctl.tensor <api_reference/dpctl/tensor>` arrays to run
+patched :obj:`sklearn.ensemble.RandomForestClassifier` on a GPU without ``config_context(array_api_dispatch=True)``:
 
-.. literalinclude:: ../../examples/sklearnex/random_forest_classifier_dpctl.py
-	   :language: python
+.. collapse:: Example code (click to expand)
 
-As on previous example, if `dpctl <https://intelpython.github.io/dpctl/latest/index.html>`__ Array API namespace was
-used for training, then fitted attributes will be on the CPU and `numpy.ndarray` data format.
+    .. literalinclude:: ../../examples/sklearnex/random_forest_classifier_dpctl.py
+           :language: python
+|
 
-Use of `array-api-strict`
--------------------------
+As on previous example, if |dpctl| array API namespace was used for training, then fitted attributes will be on the
+CPU, as :obj:`numpy.ndarray` class.
 
-Here is an example code to demonstrate how to use `array-api-strict <https://github.com/data-apis/array-api-strict>`__
-arrays to run `DBSCAN`.
+``array-api-strict``
+--------------------
 
-.. literalinclude:: ../../examples/sklearnex/dbscan_array_api.py
-	   :language: python
+Example code showcasing how to use `array-api-strict <https://github.com/data-apis/array-api-strict>`__
+arrays to run patched :obj:`sklearn.cluster.DBSCAN`.
+
+.. collapse:: Example code (click to expand)
+
+    .. literalinclude:: ../../examples/sklearnex/dbscan_array_api.py
+           :language: python
+|
