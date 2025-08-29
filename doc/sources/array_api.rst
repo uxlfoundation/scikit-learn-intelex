@@ -73,7 +73,7 @@ The following patched classes have support for array API inputs:
 .. note::
     While full array API support is currently not implemented for all classes, :external+dpnp:doc:`dpnp.ndarray <reference/ndarray>`
     and :external+dpctl:doc:`dpctl.tensor <api_reference/dpctl/tensor>` inputs are supported by all the classes
-    that have `GPU support <oneapi_gpu>`__.
+    that have :ref:`GPU support <oneapi_gpu>`.
 
 
 Example usage
