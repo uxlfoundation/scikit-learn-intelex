@@ -85,22 +85,20 @@ DPNP ndarrays
 Example code showcasing how to use :external+dpnp:doc:`dpnp.ndarray <reference/ndarray>` arrays to
 run patched :obj:`sklearn.ensemble.RandomForestRegressor` on a GPU without ``config_context(array_api_dispatch=True)``:
 
-.. collapse:: Example code (click to expand)
+.. toggle::
 
     .. literalinclude:: ../../examples/sklearnex/random_forest_regressor_dpnp.py
            :language: python
-|
 
 DPCTL usm_ndarrays
 ------------------
 Example code showcasing how to use :external+dpctl:doc:`dpctl.tensor <api_reference/dpctl/tensor>` arrays to run
 patched :obj:`sklearn.ensemble.RandomForestClassifier` on a GPU without ``config_context(array_api_dispatch=True)``:
 
-.. collapse:: Example code (click to expand)
+.. toggle::
 
     .. literalinclude:: ../../examples/sklearnex/random_forest_classifier_dpctl.py
            :language: python
-|
 
 As on previous example, if |dpctl| array API namespace was used for training, then fitted attributes will be on the
 CPU, as :obj:`numpy.ndarray` class.
@@ -111,8 +109,7 @@ CPU, as :obj:`numpy.ndarray` class.
 Example code showcasing how to use `array-api-strict <https://github.com/data-apis/array-api-strict>`__
 arrays to run patched :obj:`sklearn.cluster.DBSCAN`.
 
-.. collapse:: Example code (click to expand)
+.. toggle::
 
     .. literalinclude:: ../../examples/sklearnex/dbscan_array_api.py
            :language: python
-|
