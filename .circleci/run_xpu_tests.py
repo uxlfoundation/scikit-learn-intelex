@@ -83,6 +83,8 @@ if __name__ == "__main__":
     if args.json_report_file is not None:
         pytest_params += ["--json-report", f"--json-report-file={args.json_report_file}"]
 
+    os.environ["SCIPY_ARRAY_API"] = "1"
+
     if not args.no_intel_optimized:
         from sklearnex import patch_sklearn
 
