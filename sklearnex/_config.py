@@ -15,7 +15,6 @@
 # ==============================================================================
 
 from contextlib import contextmanager
-from os import environ
 
 from sklearn import get_config as skl_get_config
 from sklearn import set_config as skl_set_config
@@ -95,10 +94,6 @@ def set_config(
     non-default value (e.g ``cpu`` or ``gpu``) without this backend active
     will raise an error.
     """
-
-    array_api_dispatch = sklearn_configs.get("array_api_dispatch", False)
-    if array_api_dispatch and sklearn_check_version("1.6"):
-        environ["SCIPY_ARRAY_API"] = "1"
 
     skl_set_config(**sklearn_configs)
 

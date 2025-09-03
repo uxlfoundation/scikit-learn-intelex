@@ -318,6 +318,10 @@ deselected_tests:
   - cluster/tests/test_k_means.py::test_kmeans_elkan_results[1e-08-sparse
   - cluster/tests/test_k_means.py::test_kmeans_elkan_results[1e-100-sparse
   - cluster/tests/test_k_means.py::test_kmeans_elkan_results[0-sparse
+  # Temporary deselections due to a bug in oneDAL, remove once the issue is fixed.
+  # Probably can also removed the kmeans ones above once these are fixed.
+  - cluster/tests/test_k_means.py::test_float_precision[42-KMeans-sparse_matrix]
+  - cluster/tests/test_k_means.py::test_float_precision[42-KMeans-sparse_array]
 
   # Fails in stock scikit-learn: checks that data is modified in-place when not strictly required
   - linear_model/tests/test_base.py::test_inplace_data_preprocessing
