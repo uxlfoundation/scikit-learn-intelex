@@ -59,26 +59,19 @@ created histogram.
      - Possible values
      - Default value
      - Description
-   * - ``maxBins``
+   * - ``max_bins``
      - `[0, inf)`
      - ``256``
      - Number of bins in the histogram with the discretized training data. The
        value ``0`` disables data discretization.
-   * - ``minBinSize``
+   * - ``min_bin_size``
      - `[1, inf)`
      - ``5``
      - Minimum number of training data points in each bin after discretization.
-   * - ``binningStrategy``
-     - ``quantiles, averages``
-     - ``quantiles``
-     - Selects the algorithm used to calculate bin edges. ``quantiles``
-       results in bins with a similar amount of training data points. ``averages``
-       divides the range of values observed in the training data set into
-       equal-width bins of size `(max - min) / maxBins`.
 
 Note that using discretized training data can greatly accelerate model training
 times, especially for larger data sets. However, due to the reduced fidelity of
 the data, the resulting model can present worse performance metrics compared to
 a model trained on the original data. In such cases, the number of bins can be
-increased with the ``maxBins`` parameter, or binning can be disabled entirely by
-setting ``maxBins=0``.
+increased with the ``max_bins`` parameter, or binning can be disabled entirely by
+setting ``max_bins=0``.
