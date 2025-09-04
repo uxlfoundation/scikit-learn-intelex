@@ -60,10 +60,9 @@ created histogram.
      - Default value
      - Description
    * - ``max_bins``
-     - `[0, inf)`
+     - `[1, inf)`
      - ``256``
-     - Number of bins in the histogram with the discretized training data. The
-       value ``0`` disables data discretization.
+     - Number of bins in the histogram with the discretized training data.
    * - ``min_bin_size``
      - `[1, inf)`
      - ``5``
