@@ -72,5 +72,4 @@ Note that using discretized training data can greatly accelerate model training
 times, especially for larger data sets. However, due to the reduced fidelity of
 the data, the resulting model can present worse performance metrics compared to
 a model trained on the original data. In such cases, the number of bins can be
-increased with the ``max_bins`` parameter, or binning can be disabled entirely by
-setting ``max_bins=0``.
+increased with the ``max_bins`` parameter.
