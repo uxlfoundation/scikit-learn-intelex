@@ -296,6 +296,7 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         return result
 
     def _kneighbors(self, X=None, n_neighbors=None, return_distance=True):
+        use_raw_input = _get_config().get("use_raw_input", False) is True
         n_features = getattr(self, "n_features_in_", None)
         shape = getattr(X, "shape", None)
         if n_features and shape and len(shape) > 1 and shape[1] != n_features:
@@ -320,9 +321,11 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
                     "enter integer value" % type(n_neighbors)
                 )
 
+        # TODO: validate both when X is None and when not None
         if X is not None:
             query_is_train = False
-            X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
+            if not use_raw_input:
+                X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
         else:
             query_is_train = True
             X = self._fit_X
