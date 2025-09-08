@@ -19,7 +19,7 @@
 #include "onedal/common.hpp"
 #include "onedal/version.hpp"
 #include "oneapi/dal/table/common.hpp"
-#include "oneapi/dal/table/homogen.hpp"
+#include "oneapi/dal/table/detail/homogen_utils.hpp"
 #include "oneapi/dal/train.hpp"
 #include "oneapi/dal/infer.hpp"
 #include "oneapi/dal/detail/policy.hpp"
