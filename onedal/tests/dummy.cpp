@@ -37,7 +37,7 @@ struct method2t {
         using namespace dal::dummy;
         const auto method = params["method"].cast<std::string>();
 
-        ONEDAL_PARAM_DISPATCH_VALUE(method, "generate", ops, Float, method::generate);
+        ONEDAL_PARAM_DISPATCH_VALUE(method, "dense", ops, Float, method::dense);
         ONEDAL_PARAM_DISPATCH_VALUE(method, "by_default", ops, Float, method::by_default);
         ONEDAL_PARAM_DISPATCH_THROW_INVALID_VALUE(method);
     }
