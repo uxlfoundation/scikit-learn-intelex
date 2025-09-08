@@ -550,7 +550,6 @@ packages_with_tests = [
     "onedal.neighbors",
     "onedal.primitives",
     "onedal.svm",
-    "onedal.tests",
     "onedal.utils",
     "sklearnex",
     "sklearnex.basic_statistics",
