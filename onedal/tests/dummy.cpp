@@ -48,7 +48,7 @@ struct params2desc {
     // This functor converts the params dictionary into a oneDAL descriptor
     template <typename Float, typename Method, typename Task>
     auto operator()(const py::dict& params) {
-        auto desc = dal::dummy::descriptor<Float, Method, Task>()
+        auto desc = dal::dummy::descriptor<Float, Method, Task>();
 
         // conversion of the params dict to oneDAL params occurs here except
         // for the ``method`` and ``fptype`` parameters.  They are assigned
