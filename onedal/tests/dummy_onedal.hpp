@@ -267,8 +267,8 @@ struct infer_ops {
         // Due to the simplicity of this algorithm, implement it here.
         auto row_c = input.data.get_row_count();
         auto col_c = input.data.get_column_count();
-        assert(input.get_kind() == dal::homogen_table::kind())
-        bytes_t* ptr = dal::detail::get_original_data(static_cast<const dal::homogen_table &>(input.constant)).get_data();
+        assert(input.get_kind() == dal::homogen_table::kind());
+        byte_t* ptr = dal::detail::get_original_data(static_cast<const dal::homogen_table &>(input.constant)).get_data();
         result_t result;
 #ifdef ONEDAL_DATA_PARALLEL
         auto queue = ctx.get_queue();
