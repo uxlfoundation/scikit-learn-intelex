@@ -118,6 +118,11 @@ public:
         return this->data;
     }
 
+    auto& set_data(const table& value) {
+        data = value;
+        return *this;
+    }
+
     // attribute usually hidden in an infer_result_impl class
     table data;
 
@@ -148,6 +153,11 @@ public:
 
     const table& get_data() {
         return this->data;
+    }
+
+    auto& set_data(const table& value) {
+        data = value;
+        return *this;
     }
 
     // attribute usually hidden in an infer_result_impl class
