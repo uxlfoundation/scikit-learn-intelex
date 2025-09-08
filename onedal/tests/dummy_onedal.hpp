@@ -176,6 +176,11 @@ public:
 namespace dummy {
 namespace detail {
 
+using dal::detail::host_policy;
+#ifdef ONEDAL_DATA_PARALLEL
+using dal::detail::data_parallel_policy;
+#endif
+
 template <typename Descriptor>
 struct train_ops {
     using float_t = typename Descriptor::float_t;
@@ -184,7 +189,7 @@ struct train_ops {
     using input_t = train_input<task_t>;
     using result_t = train_result<task_t>;
 
-    auto operator()(const dal::detail::host_policy& ctx, const Descriptor& desc, const input_t& input) const {
+    auto operator()(const host_policy& ctx, const Descriptor& desc, const input_t& input) const {
         // Usually a infer_ops_dispatcher is contained in oneDAL infer_ops.cpp.
         // Due to the simplicity of this algorithm, implement it here.
         dal::array<float_t> array = dal::array<float_t>::full(1, desc.get_constant());
