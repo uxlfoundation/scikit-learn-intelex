@@ -284,7 +284,7 @@ struct infer_ops {
         auto queue = ctx.get_queue();
         dal::array<float_t> array =
             dal::array<float_t>::full(queue, row_c * col_c, *reinterpret_cast<const float_t*>(ptr));
-        result.data = dal::homogen_table::wrap(queue, array, row_c, col_c);
+        result.data = dal::homogen_table::wrap(array, row_c, col_c);
         return result;
     }
 #endif
