@@ -99,7 +99,7 @@ public:
 
     // normally this attribute is hidden in another struct
     double constant;
-}
+};
 }
 /////////////////////////////// common.hpp ////////////////////////////////
 
@@ -184,11 +184,11 @@ struct train_ops {
     using input_t = train_input<task_t>;
     using result_t = train_result<task_t>;
 
-    auto operator()(const host_policy& ctx, const Descriptor& desc, const input_t& input) const {
+    auto operator()(const dal::detail::host_policy& ctx, const Descriptor& desc, const input_t& input) const {
         // Usually a infer_ops_dispatcher is contained in oneDAL infer_ops.cpp.
         // Due to the simplicity of this algorithm, implement it here.
-        dal::array<float_t> array = dal::array::full(1, desc.get_constant());
-        result_t result();
+        dal::array<float_t> array = dal::array<float_t>::full(1, desc.get_constant());
+        result_t result;
         result.data = dal::homogen_table::wrap(array, 1, 1);
         return result;
     }
@@ -201,7 +201,7 @@ struct train_ops {
         // Due to the simplicity of this algorithm, implement it here.
         auto queue = ctx.get_queue();
         dal::array<float_t> array = dal::array::full(queue, 1, desc.get_constant());
-        result_t result();
+        result_t result;
         result.data = dal::homogen_table::wrap(array, 1, 1);
         return result;
     }
@@ -249,7 +249,7 @@ struct infer_ops {
         bytes_t* ptr = dal::detail::get_original_data(input.constant).get_data();
         dal::array<float_t> array =
             dal::array::full(row_c * col_c, *reinterpret_cast<float_t*>(ptr));
-        result_t result();
+        result_t result;
         result.data = dal::homogen_table::wrap(array, row_c, col_c);
         return result;
     }
@@ -266,7 +266,7 @@ struct infer_ops {
         auto queue = ctx.get_queue();
         dal::array<float_t> array =
             dal::array::full(queue, row_c * col_c, *reinterpret_cast<float_t*>(ptr));
-        result_t result();
+        result_t result;
         result.data = dal::homogen_table::wrap(queue, array, row_c, col_c);
         return result;
     }
