@@ -48,13 +48,12 @@ struct params2desc {
     // This functor converts the params dictionary into a oneDAL descriptor
     template <typename Float, typename Method, typename Task>
     auto operator()(const py::dict& params) {
-        using namespace dal::dummy;
-        auto desc = dummy::descriptor<Float, Method, Task>()
+        auto desc = dal::dummy::descriptor<Float, Method, Task>()
 
-            // conversion of the params dict to oneDAL params occurs here except
-            // for the ``method`` and ``fptype`` parameters.  They are assigned
-            // to the descriptor individually here before returning.
-            const auto constant = params["constant"].cast<double>();
+        // conversion of the params dict to oneDAL params occurs here except
+        // for the ``method`` and ``fptype`` parameters.  They are assigned
+        // to the descriptor individually here before returning.
+        const auto constant = params["constant"].cast<double>();
         desc.set_constant(constant);
 
         return desc;
@@ -110,7 +109,7 @@ void init_train_result(py::module_& m) {
 
     py::class_<result_t>(m, "train_result")
         .def(py::init())
-        .DEF_ONEDAL_PY_PROPERTY(constant, result_t)
+        .DEF_ONEDAL_PY_PROPERTY(constant, result_t);
 }
 
 template <typename Task>
