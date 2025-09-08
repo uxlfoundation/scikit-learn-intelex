@@ -253,7 +253,7 @@ struct infer_ops {
         auto col_c = input.data.get_column_count();
         byte_t* ptr = dal::detail::get_original_data(input.constant).get_data();
         dal::array<float_t> array =
-            dal::array::full(row_c * col_c, *reinterpret_cast<float_t*>(ptr));
+            dal::array<float_t>::full(row_c * col_c, *reinterpret_cast<float_t*>(ptr));
         result_t result;
         result.data = dal::homogen_table::wrap(array, row_c, col_c);
         return result;
@@ -270,7 +270,7 @@ struct infer_ops {
         bytes_t* ptr = dal::detail::get_original_data(input.constant).get_data();
         auto queue = ctx.get_queue();
         dal::array<float_t> array =
-            dal::array::full(queue, row_c * col_c, *reinterpret_cast<float_t*>(ptr));
+            dal::array<float_t>::full(queue, row_c * col_c, *reinterpret_cast<float_t*>(ptr));
         result_t result;
         result.data = dal::homogen_table::wrap(queue, array, row_c, col_c);
         return result;
