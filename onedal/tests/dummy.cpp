@@ -110,7 +110,7 @@ void init_train_result(py::module_& m) {
 
     py::class_<result_t>(m, "train_result")
         .def(py::init())
-        .DEF_ONEDAL_PY_PROPERTY(constant, result_t);
+        .DEF_ONEDAL_PY_PROPERTY(data, result_t);
 }
 
 template <typename Task>
