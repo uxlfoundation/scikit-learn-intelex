@@ -131,6 +131,7 @@ ONEDAL_PY_DECLARE_INSTANTIATOR(init_infer_ops);
 } // namespace dummy
 
 ONEDAL_PY_INIT_MODULE(dummy) {
+    using namespace dummy;
     using namespace dal::detail;
     using namespace dal::dummy;
 
