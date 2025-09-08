@@ -98,7 +98,7 @@ public:
     }
 
     // normally this attribute is hidden in another struct
-    double constant
+    double constant;
 }
 }
 /////////////////////////////// common.hpp ////////////////////////////////
@@ -121,18 +121,18 @@ public:
     // attribute usually hidden in an infer_result_impl class
     table data;
 
-}
+};
 
 template <typename Task = task::by_default>
 class train_input : public base {
 public:
-    using task_t = Task
+    using task_t = Task;
 
     train_input(const table& data)
             : data(data) {}
 
     table data;
-}
+};
 }
 
 ///////////////////////////// train_types.hpp /////////////////////////////
@@ -153,7 +153,7 @@ public:
     // attribute usually hidden in an infer_result_impl class
     table data;
 
-}
+};
 
 template <typename Task = task::by_default>
 class infer_input : public base {
@@ -166,7 +166,7 @@ public:
     // attributes usually hidden in an infer_input_impl class
     table data;
     table constant;
-}
+};
 }
 ///////////////////////////// infer_types.hpp /////////////////////////////
 
@@ -206,7 +206,7 @@ struct train_ops {
         return result;
     }
 #endif //ONEDAL_DATA_PARALLEL
-}
+};
 }
 }
 ////////////////////////////// train_ops.hpp //////////////////////////////
@@ -271,7 +271,7 @@ struct infer_ops {
         return result;
     }
 #endif //ONEDAL_DATA_PARALLEL
-}
+};
 }
 }
 ////////////////////////////// infer_ops.hpp //////////////////////////////
