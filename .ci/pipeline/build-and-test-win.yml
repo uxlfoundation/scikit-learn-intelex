@@ -16,7 +16,9 @@
 steps:
   - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
     displayName: Add conda to PATH
-  - script: conda create -q -y -n CB -c conda-forge python=$(PYTHON_VERSION) impi-devel pyyaml
+  - script: |
+      (echo default_channels: & echo   - https://conda.anaconda.org/conda-forge) >> C:\Users\VssAdministrator\.condarc
+      conda create -q -y -n CB -c conda-forge python=$(PYTHON_VERSION) impi-devel pyyaml
     displayName: 'Create Anaconda environment'
   - script: |
       call activate CB
@@ -24,7 +26,7 @@ steps:
       pip install cpufeature
       pip install -r dependencies-dev
       pip list
-      if not defined DALROOT conda install -q -y -c conda-forge dal-devel
+      if not defined DALROOT conda install -q -y -c conda-forge "dal-devel>=2025.6.1"
     displayName: 'Install develop requirements'
     env:
       DALROOT: ${{ variables.DALROOT }}

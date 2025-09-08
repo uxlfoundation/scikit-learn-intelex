@@ -14,6 +14,8 @@
 * limitations under the License.
 *******************************************************************************/
 
+#include <pybind11/operators.h>
+
 #include "onedal/common/sycl_interfaces.hpp"
 #include "onedal/common/pybind11_helpers.hpp"
 
@@ -42,7 +44,9 @@ void instantiate_sycl_interfaces(py::module& m) {
              [](const sycl::queue& queue) {
                  return pack_queue(std::make_shared<sycl::queue>(queue));
              })
-        .def_property_readonly("sycl_device", &sycl::queue::get_device);
+        .def_property_readonly("sycl_device", &sycl::queue::get_device)
+        .def(py::self == py::self)
+        .def(py::self != py::self);
 
     // expose limited sycl device features to python for oneDAL analysis
     py::class_<sycl::device> sycldevice(m, "SyclDevice");
@@ -79,7 +83,9 @@ void instantiate_sycl_interfaces(py::module& m) {
                  return get_device_id(device).value();
              })
         .def_property_readonly("is_cpu", &sycl::device::is_cpu)
-        .def_property_readonly("is_gpu", &sycl::device::is_gpu);
+        .def_property_readonly("is_gpu", &sycl::device::is_gpu)
+        .def(py::self == py::self)
+        .def(py::self != py::self);
 #else
     struct syclqueue {};
     py::class_<syclqueue> syclqueue(m, "SyclQueue");

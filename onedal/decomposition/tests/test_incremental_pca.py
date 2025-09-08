@@ -33,14 +33,16 @@ def test_on_gold_data(queue, is_deterministic, whiten, num_blocks, dtype):
     X = np.array([[-1, -1], [-2, -1], [-3, -2], [1, 1], [2, 1], [3, 2]])
     X = X.astype(dtype=dtype)
     X_split = np.array_split(X, num_blocks)
-    incpca = IncrementalPCA(is_deterministic=is_deterministic, whiten=whiten)
+    incpca = IncrementalPCA(
+        is_deterministic=is_deterministic, whiten=whiten, n_components=2
+    )
 
     for i in range(num_blocks):
         incpca.partial_fit(X_split[i], queue=queue)
 
     result = incpca.finalize_fit()
 
-    transformed_data = incpca.transform(X, queue=queue)
+    transformed_data = incpca.predict(X, queue=queue)
 
     expected_n_components_ = 2
     expected_components_ = np.array([[0.83849224, 0.54491354], [-0.54491354, 0.83849224]])
@@ -118,9 +120,13 @@ def test_on_random_data(
 ):
     seed = 78
     gen = np.random.default_rng(seed)
-    X = gen.uniform(low=-0.3, high=+0.7, size=(row_count, column_count))
+    X = gen.uniform(low=-0.3, high=0.7, size=(row_count, column_count))
     X = X.astype(dtype=dtype)
     X_split = np.array_split(X, num_blocks)
+    # it is necessary to limit n_components by the nature of using
+    # np.linalg.eig to verify PCA computation
+    if n_components is None and X_split[0].shape[0] > column_count:
+        n_components = column_count
     incpca = IncrementalPCA(n_components=n_components, whiten=whiten)
 
     for i in range(num_blocks):
@@ -128,7 +134,7 @@ def test_on_random_data(
 
     incpca.finalize_fit()
 
-    transformed_data = incpca.transform(X, queue=queue)
+    transformed_data = incpca.predict(X, queue=queue)
     tol = 3e-3 if transformed_data.dtype == np.float32 else 2e-6
 
     n_components = incpca.n_components_
@@ -213,7 +219,7 @@ def test_incremental_estimator_pickle(queue, dtype):
     incpca_loaded = pickle.loads(dump)
     seed = 77
     gen = np.random.default_rng(seed)
-    X = gen.uniform(low=-0.3, high=+0.7, size=(10, 10))
+    X = gen.uniform(low=-0.3, high=0.7, size=(10, 10))
     X = X.astype(dtype)
     X_split = np.array_split(X, 2)
     incpca.partial_fit(X_split[0], queue=queue)

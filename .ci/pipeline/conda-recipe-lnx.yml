@@ -15,6 +15,7 @@
 #===============================================================================
 steps:
   - script: |
+      echo -e "default_channels:\n  - https://conda.anaconda.org/conda-forge" >> ~/.condarc
       conda config --add channels conda-forge
       conda config --set channel_priority strict
       conda update -y -q conda python
