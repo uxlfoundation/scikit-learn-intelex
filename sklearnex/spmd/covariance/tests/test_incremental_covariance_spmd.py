@@ -19,6 +19,7 @@ import pytest
 from numpy.testing import assert_allclose
 
 from onedal.tests.utils._dataframes_support import (
+    _as_numpy,
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
@@ -191,5 +192,9 @@ def test_incremental_covariance_partial_fit_spmd_synthetic(
 
     tol = 1e-7
 
-    assert_allclose(inccov_spmd.covariance_, inccov.covariance_, atol=tol)
-    assert_allclose(inccov_spmd.location_, inccov.location_, atol=tol)
+    assert_allclose(
+        _as_numpy(inccov_spmd.covariance_), _as_numpy(inccov.covariance_), atol=tol
+    )
+    assert_allclose(
+        _as_numpy(inccov_spmd.location_), _as_numpy(inccov.location_), atol=tol
+    )

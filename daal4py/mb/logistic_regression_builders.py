@@ -97,21 +97,6 @@ class LogisticDAALModel:
         )
         builder.set_beta(coefs, intercepts)
         self._model = builder.model
-        self._alg_pred_class = logistic_regression_prediction(
-            nClasses=self.n_classes_,
-            fptype=self._fptype,
-            resultsToEvaluate="computeClassLabels",
-        )
-        self._alg_pred_prob = logistic_regression_prediction(
-            nClasses=self.n_classes_,
-            fptype=self._fptype,
-            resultsToEvaluate="computeClassProbabilities",
-        )
-        self._alg_pred_logprob = logistic_regression_prediction(
-            nClasses=self.n_classes_,
-            fptype=self._fptype,
-            resultsToEvaluate="computeClassLogProbabilities",
-        )
 
     @property
     def coef_(self):
@@ -120,6 +105,15 @@ class LogisticDAALModel:
     @property
     def intercept_(self):
         return self._model.Beta[:, 0]
+
+    def _logistic_regression_prediction(
+        self, X: np.ndarray, resultsToEvaluate: str
+    ) -> classifier_prediction_result:
+        return logistic_regression_prediction(
+            nClasses=self.n_classes_,
+            fptype=self._fptype,
+            resultsToEvaluate=resultsToEvaluate,
+        ).compute(X, self._model)
 
     def predict(self, X) -> np.ndarray:
         """
@@ -133,7 +127,7 @@ class LogisticDAALModel:
             The most probable class, as integer indexes
         """
         return (
-            self._alg_pred_class.compute(X, self._model)
+            self._logistic_regression_prediction(X, "computeClassLabels")
             .prediction.reshape(-1)
             .astype(int)
         )
@@ -151,7 +145,9 @@ class LogisticDAALModel:
         proba : array(n_samples, n_classes)
             The predicted probabilities for each class.
         """
-        return self._alg_pred_prob.compute(X, self._model).probabilities
+        return self._logistic_regression_prediction(
+            X, "computeClassProbabilities"
+        ).probabilities
 
     predict_proba.__doc__ = predict_proba.__doc__.replace(r"%docstring_X%", _docstring_X)
 
@@ -166,7 +162,9 @@ class LogisticDAALModel:
         log_proba : array(n_samples, n_classes)
             The logarithms of the predicted probabilities for each class.
         """
-        return self._alg_pred_logprob.compute(X, self._model).logProbabilities
+        return self._logistic_regression_prediction(
+            X, "computeClassLogProbabilities"
+        ).logProbabilities
 
     predict_log_proba.__doc__ = predict_log_proba.__doc__.replace(
         r"%docstring_X%", _docstring_X
@@ -206,11 +204,7 @@ class LogisticDAALModel:
             raise ValueError(
                 "Must request at least one of 'classes', 'proba', 'log_proba'."
             )
-        return logistic_regression_prediction(
-            nClasses=self.n_classes_,
-            fptype=self._fptype,
-            resultsToEvaluate=pred_request,
-        ).compute(X, self._model)
+        return self._logistic_regression_prediction(X, pred_request)
 
     predict_multiple.__doc__ = predict_multiple.__doc__.replace(
         r"%docstring_X%", _docstring_X
