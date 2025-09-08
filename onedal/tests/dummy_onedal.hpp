@@ -256,13 +256,7 @@ struct infer_ops {
     using input_t = infer_input<task_t>;
     using result_t = infer_result<task_t>;
 
-#ifdef ONEDAL_DATA_PARALLEL
-    auto operator()(const data_parallel_policy& ctx,
-                    const Descriptor& desc,
-                    const input_t& input) const {
-#else
     auto operator()(const host_policy& ctx, const Descriptor& desc, const input_t& input) const {
-#endif
         // Usually a infer_ops_dispatcher is contained in oneDAL infer_ops.cpp.
         // Due to the simplicity of this algorithm, implement it here.
         auto row_c = input.data.get_row_count();
@@ -270,19 +264,30 @@ struct infer_ops {
         assert(input.get_kind() == dal::homogen_table::kind());
         byte_t* ptr = dal::detail::get_original_data(static_cast<const dal::homogen_table &>(input.constant)).get_data();
         result_t result;
+        dal::array<float_t> array =
+            dal::array<float_t>::full(row_c * col_c, *reinterpret_cast<float_t*>(ptr));
+        result.data = dal::homogen_table::wrap(array, row_c, col_c);
+        return result;
+    }
+
 #ifdef ONEDAL_DATA_PARALLEL
+    auto operator()(const data_parallel_policy& ctx,
+                    const Descriptor& desc,
+                    const input_t& input) const {
+        // Usually a infer_ops_dispatcher is contained in oneDAL infer_ops.cpp.
+        // Due to the simplicity of this algorithm, implement it here.
+        auto row_c = input.data.get_row_count();
+        auto col_c = input.data.get_column_count();
+        assert(input.get_kind() == dal::homogen_table::kind());
+        byte_t* ptr = dal::detail::get_original_data(static_cast<const dal::homogen_table &>(input.constant)).get_data();
+        result_t result;
         auto queue = ctx.get_queue();
         dal::array<float_t> array =
             dal::array<float_t>::full(queue, row_c * col_c, *reinterpret_cast<float_t*>(ptr));
         result.data = dal::homogen_table::wrap(queue, array, row_c, col_c);
-#else
-        dal::array<float_t> array =
-            dal::array<float_t>::full(row_c * col_c, *reinterpret_cast<float_t*>(ptr));
-        result_t result;
-        result.data = dal::homogen_table::wrap(array, row_c, col_c);
-#endif
         return result;
     }
+#endif
 };
 }
 }
