@@ -34,6 +34,7 @@ struct method2t {
     // defined for each algo.
     template <typename Float>
     auto operator()(const py::dict& params) {
+        using namespace dal::dummy;
         const auto method = params["method"].cast<std::string>();
 
         ONEDAL_PARAM_DISPATCH_VALUE(method, "generate", ops, Float, method::generate);
