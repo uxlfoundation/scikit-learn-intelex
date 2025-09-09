@@ -48,5 +48,5 @@ if [ -n "$(pip list | grep dpctl)" ]; then
     python -c "import dpctl; print(dpctl.get_devices())"
 fi
 
-python scripts/run_sklearn_tests.py -d ${1:-none}
+python scripts/run_sklearn_tests.py -d ${1:-none} -c ../pytest.ini
 exit $?
