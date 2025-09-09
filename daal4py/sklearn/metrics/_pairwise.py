@@ -170,10 +170,6 @@ def _pairwise_distances(
 
 # logic to deprecate `force_all_finite` from sklearn:
 # it was renamed to `ensure_all_finite` since 1.6 and will be removed in 1.8
-import sklearn
-print(sklearn.__version__)
-print(sklearn_check_version("1.8"))
-assert False
 
 if sklearn_check_version("1.3"):
     pairwise_distances_parameters = {
@@ -205,6 +201,11 @@ if sklearn_check_version("1.3"):
                 ensure_all_finite=None,
                 **kwds,
             ):
+                print('first')
+                import sklearn
+                print(sklearn.__version__)
+                print(sklearn_check_version("1.8"))
+                assert False
                 return _pairwise_distances(
                     X,
                     Y,
@@ -230,6 +231,11 @@ if sklearn_check_version("1.3"):
                 force_all_finite = _deprecate_force_all_finite(
                     force_all_finite, ensure_all_finite
                 )
+                print('middle')
+                import sklearn
+                print(sklearn.__version__)
+                print(sklearn_check_version("1.8"))
+                assert False
                 return _pairwise_distances(
                     X, Y, metric, n_jobs=n_jobs, force_all_finite=force_all_finite, **kwds
                 )
@@ -246,6 +252,11 @@ if sklearn_check_version("1.3"):
             force_all_finite=True,
             **kwds,
         ):
+            import sklearn
+            print('last')
+            print(sklearn.__version__)
+            print(sklearn_check_version("1.8"))
+            assert False
             return _pairwise_distances(
                 X,
                 Y,
@@ -262,5 +273,6 @@ if sklearn_check_version("1.3"):
 else:
     pairwise_distances = _pairwise_distances
 pairwise_distances.__doc__ = pairwise_distances_original.__doc__
+
 
 
