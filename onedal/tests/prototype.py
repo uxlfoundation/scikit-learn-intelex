@@ -54,14 +54,11 @@ class DummyEstimator:
     # the same name (in this case ProtoTypeEstimator.compute should call
     # the pybind11 function onedal.backend.finiteness_checker.compute.compute)
     # where backend can be one of 'host', 'dpc' or 'spmd'.
-    @bind_default_backend("dummy.train")
+    @bind_default_backend("dummy.generate")
     def train(self, params, data_table): ...
 
-    @bind_default_backend("dummy.infer")
+    @bind_default_backend("dummy.generate")
     def infer(self, params, model, data_table): ...
-
-    @bind_default_backend("dummy.model")
-    def model(self): ...
 
     @supports_queue
     def fit(self, X, y, queue=None):
