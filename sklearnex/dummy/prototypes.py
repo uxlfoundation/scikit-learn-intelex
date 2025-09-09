@@ -262,7 +262,7 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
     # 2) ``dispatch`` is called. This takes the estimator object, method
     # name, and the two possible evaluation branches and proceeds to call
     # ``_onedal_gpu_supported`` if a SYCL queue is found or set via the
-    # ``target_offload`` config. Otherwise ``_onedal_cpu_supported`` is
+    # target offload config. Otherwise ``_onedal_cpu_supported`` is
     # called.
     #
     # 3) ``_onedal_gpu_supported`` or ``_onedal_cpu_supported`` creates a
@@ -564,6 +564,7 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
     # Docstrings should be inherited from the sklearn estimator if possible
     # In sklearnex-only estimators, they should be written from scratch
     # using the numpy-doc standard.
+    __doc__ = _sklearn_DummyRegressor.__doc__
     fit.__doc__ = _sklearn_DummyRegressor.fit.__doc__
     predict.__doc__ = _sklearn_DummyRegressor.predict.__doc__
     score.__doc__ = _sklearn_DummyRegressor.score.__doc__
