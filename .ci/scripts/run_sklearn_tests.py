@@ -35,13 +35,6 @@ if __name__ == "__main__":
         help="device name",
         choices=["none", "cpu", "gpu"],
     )
-    parser.add_argument(
-        "-c",
-        "--config-file",
-        type=str,
-        default="none",
-        help="pytest configuration file",
-    )
     args, extra_args = parser.parse_known_args()
 
     sklearn_file_dir = os.path.dirname(sklearn.__file__)
@@ -56,9 +49,6 @@ if __name__ == "__main__":
         f"--rootdir={sklearn_file_dir} "
         f'{os.environ["DESELECTED_TESTS"]} {os.environ["SELECTED_TESTS"]}'.split(" ")
     )
-
-    if args.config_file != "none":
-        pytest_args += ("-c", args.config_file)
 
     if rc := os.getenv("COVERAGE_RCFILE"):
         pytest_args += (
@@ -84,3 +74,4 @@ if __name__ == "__main__":
         return_code = pytest.main(pytest_args)
 
     sys.exit(int(return_code))
+
