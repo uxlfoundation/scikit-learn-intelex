@@ -33,7 +33,7 @@ if "%PYTHON%"=="python" (
 %PYTHON% -c "from sklearnex import patch_sklearn; patch_sklearn()" || set exitcode=1
 
 set "PYTEST_ARGS= "
-set /p PYTEST_VERBOSITY_ARGS=<"-c %1pytest.ini"
+set /p PYTEST_CONFIG=<"-c %1pytest.ini"
 
 IF DEFINED COVERAGE_RCFILE (set "PYTEST_ARGS=--cov=onedal --cov=sklearnex --cov-config=%COVERAGE_RCFILE% --cov-append --cov-branch --cov-report= %PYTEST_ARGS%")
 
@@ -48,11 +48,11 @@ if "%~2"=="--json-report" (
 
 echo "NO_DIST=%NO_DIST%"
 setlocal enabledelayedexpansion
-pytest %PYTEST_VERBOSITY_ARGS% -s "%1tests" %PYTEST_ARGS:FILENAME=legacy_report% || set exitcode=1
-pytest %PYTEST_VERBOSITY_ARGS% --pyargs daal4py %PYTEST_ARGS:FILENAME=daal4py_report% || set exitcode=1
-pytest %PYTEST_VERBOSITY_ARGS% --pyargs sklearnex %PYTEST_ARGS:FILENAME=sklearnex_report% || set exitcode=1
-pytest %PYTEST_VERBOSITY_ARGS% --pyargs onedal %PYTEST_ARGS:FILENAME=onedal_report% || set exitcode=1
-pytest %PYTEST_VERBOSITY_ARGS% "%1.ci\scripts\test_global_patch.py" %PYTEST_ARGS:FILENAME=global_patching_report% || set exitcode=1
+pytest %PYTEST_CONFIG% -s "%1tests" %PYTEST_ARGS:FILENAME=legacy_report% || set exitcode=1
+pytest %PYTEST_CONFIG% --pyargs daal4py %PYTEST_ARGS:FILENAME=daal4py_report% || set exitcode=1
+pytest %PYTEST_CONFIG% --pyargs sklearnex %PYTEST_ARGS:FILENAME=sklearnex_report% || set exitcode=1
+pytest %PYTEST_CONFIG% --pyargs onedal %PYTEST_ARGS:FILENAME=onedal_report% || set exitcode=1
+pytest %PYTEST_CONFIG% "%1.ci\scripts\test_global_patch.py" %PYTEST_ARGS:FILENAME=global_patching_report% || set exitcode=1
 if NOT "%NO_DIST%"=="1" (
     %PYTHON% "%1tests\helper_mpi_tests.py"^
         pytest -k spmd --with-mpi %PYTEST_VERBOSITY_ARGS% -s --pyargs sklearnex %PYTEST_ARGS:FILENAME=sklearnex_spmd%
