@@ -93,7 +93,7 @@ test:
     - array-api-strict
   source_files:
     - .ci
-    - .pytest-verbosity-args
+    - pytest.ini
     - examples
     - tests
 
