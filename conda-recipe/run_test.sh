@@ -60,7 +60,7 @@ function generate_pytest_args {
     printf -- "${ARGS[*]}"
 }
 
-PYTEST_CONFIG=$(-c "${sklex_root}/pytest.ini")
+PYTEST_CONFIG="-c ${sklex_root}/pytest.ini"
 
 ${PYTHON} -c "from sklearnex import patch_sklearn; patch_sklearn()"
 return_code=$(($return_code + $?))
