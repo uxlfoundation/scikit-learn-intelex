@@ -65,6 +65,9 @@ PYTEST_VERBOSITY_ARGS=$(cat "${sklex_root}/.pytest-verbosity-args")
 ${PYTHON} -c "from sklearnex import patch_sklearn; patch_sklearn()"
 return_code=$(($return_code + $?))
 
+${PYTHON} -c "from daal4py.sklearn._utils import sklearn_check_version;import sklearn; print(sklearn_check_version('1.8')); print(sklearn.__version__)"
+return_code=$(($return_code + $?))
+
 pytest ${PYTEST_VERBOSITY_ARGS} -s "${sklex_root}/tests" $@ $(generate_pytest_args legacy)
 return_code=$(($return_code + $?))
 
