@@ -210,6 +210,9 @@ if sklearn_check_version("1.3"):
                 )
 
         else:
+            import sklearn
+            print(sklearn.__version__)
+            assert False
             from sklearn.utils.deprecation import _deprecate_force_all_finite
 
             def pairwise_distances(
@@ -257,3 +260,4 @@ if sklearn_check_version("1.3"):
 else:
     pairwise_distances = _pairwise_distances
 pairwise_distances.__doc__ = pairwise_distances_original.__doc__
+
