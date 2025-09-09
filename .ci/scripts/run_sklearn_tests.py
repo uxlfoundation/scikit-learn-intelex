@@ -14,6 +14,32 @@
 # limitations under the License.
 # ===============================================================================
 
+"""Script for running the Scikit-learn pytest test suite using sklearnex patching.
+
+Notes
+-----
+The script will pass all additional arguments to pytest by default. The options
+listed below dependent on environment variables can be manually set instead via
+the command line using this functionality.
+
+It adds the `-d` and `--device` flags which will use sklearnex's target_offload
+functionality in order to run the Scikit-learn test suite on a selected device.
+Supported options are limited to 'cpu' and 'gpu' which default to the first
+option available of that type via the SYCL device_selector.
+
+The script reads the JSON_REPORT_FILE environment variable as the output location
+for the pytest json report plugin when set.
+
+Run_sklearn_test.py also enables coverage statistics for the onedal and sklearnex
+modules to the file listed in the COVERAGE_RCFILE environment variable.
+
+It will acquire requisite deselections and selections of tests from the
+DESELECTED_TESTS and SELECTED_TESTS environment variables respectively.
+
+The environment variable SCIPY_ARRAY_API is set by default, and impacts the
+operation of the Scikit-learn test suite.
+"""
+
 from sklearnex import patch_sklearn
 
 patch_sklearn()
@@ -35,7 +61,7 @@ if __name__ == "__main__":
         help="device name",
         choices=["none", "cpu", "gpu"],
     )
-    args, extra_args = parser.parse_known_args()
+    args, pytest_args = parser.parse_known_args()
 
     sklearn_file_dir = os.path.dirname(sklearn.__file__)
     os.chdir(sklearn_file_dir)
@@ -45,27 +71,25 @@ if __name__ == "__main__":
 
     os.environ["SCIPY_ARRAY_API"] = "1"
 
-    pytest_args = (
+    pytest_args += [
         f"--rootdir={sklearn_file_dir} "
         f'{os.environ["DESELECTED_TESTS"]} {os.environ["SELECTED_TESTS"]}'.split(" ")
-    )
+    ]
 
     if rc := os.getenv("COVERAGE_RCFILE"):
-        pytest_args += (
+        pytest_args += [
             "--cov=onedal",
             "--cov=sklearnex",
             "--cov-branch",
             f"--cov-config={rc}",
             "--cov-report=",
-        )
+        ]
+
     if json_file := os.getenv("JSON_REPORT_FILE"):
-        pytest_args += ("--json-report", f"--json-report-file={json_file}")
+        pytest_args += ["--json-report", f"--json-report-file={json_file}"]
 
     while "" in pytest_args:
         pytest_args.remove("")
-
-    if extra_args:
-        pytest_args += extra_args
 
     if args.device != "none":
         with sklearn.config_context(target_offload=args.device):
@@ -74,4 +98,3 @@ if __name__ == "__main__":
         return_code = pytest.main(pytest_args)
 
     sys.exit(int(return_code))
-
