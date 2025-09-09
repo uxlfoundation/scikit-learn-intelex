@@ -55,12 +55,12 @@ pytest %PYTEST_CONFIG% --pyargs onedal %PYTEST_ARGS:FILENAME=onedal_report% || s
 pytest %PYTEST_CONFIG% "%1.ci\scripts\test_global_patch.py" %PYTEST_ARGS:FILENAME=global_patching_report% || set exitcode=1
 if NOT "%NO_DIST%"=="1" (
     %PYTHON% "%1tests\helper_mpi_tests.py"^
-        pytest -k spmd --with-mpi %PYTEST_VERBOSITY_ARGS% -s --pyargs sklearnex %PYTEST_ARGS:FILENAME=sklearnex_spmd%
+        pytest -k spmd --with-mpi %PYTEST_CONFIG% -s --pyargs sklearnex %PYTEST_ARGS:FILENAME=sklearnex_spmd%
     if !errorlevel! NEQ 0 (
         set exitcode=1
     )
     %PYTHON% "%1tests\helper_mpi_tests.py"^
-        pytest --with-mpi %PYTEST_VERBOSITY_ARGS% -s "%1tests\test_daal4py_spmd_examples.py" %PYTEST_ARGS:FILENAME=mpi_legacy%
+        pytest --with-mpi %PYTEST_CONFIG% -s "%1tests\test_daal4py_spmd_examples.py" %PYTEST_ARGS:FILENAME=mpi_legacy%
     if !errorlevel! NEQ 0 (
         set exitcode=1
     )
