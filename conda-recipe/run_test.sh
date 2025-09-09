@@ -60,7 +60,7 @@ function generate_pytest_args {
     printf -- "${ARGS[*]}"
 }
 
-PYTEST_VERBOSITY_ARGS=$(cat "${sklex_root}/.pytest-verbosity-args")
+PYTEST_VERBOSITY_ARGS=$(-c "${sklex_root}/pytest.ini")
 
 ${PYTHON} -c "from sklearnex import patch_sklearn; patch_sklearn()"
 return_code=$(($return_code + $?))
