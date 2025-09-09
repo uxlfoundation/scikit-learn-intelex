@@ -135,6 +135,13 @@ ONEDAL_PY_INIT_MODULE(dummy) {
     using namespace dal::detail;
     using namespace dal::dummy;
 
+    // the task_list allows for multiple types of tasks (like regression
+    // and classification) template to be evaluated. The use of 'types'
+    // is not required, and has special implications for the
+    // 'bind_default_backend' function as it creates submodules in python
+    // based on the task name. See the covariance implementation
+    // where no task_list is used and a submodule of the algorithm is not
+    // made.
     using task_list = types<task::generate>;
     auto sub = m.def_submodule("dummy");
 
@@ -165,7 +172,8 @@ ONEDAL_PY_INIT_MODULE(dummy) {
     // versus optimized away. The namings in dispatch_utils.hpp are also
     // unfortunate and confusing.
 
-    //
+    // policy_list is defined elsewhere which is dependent on the backend
+    // which is being built.
     ONEDAL_PY_INSTANTIATE(init_train_ops, sub, policy_list, task_list);
     ONEDAL_PY_INSTANTIATE(init_infer_ops, sub, policy_list, task_list);
     ONEDAL_PY_INSTANTIATE(init_train_result, sub, task_list);
