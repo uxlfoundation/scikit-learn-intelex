@@ -60,21 +60,21 @@ namespace task {
 // tasks can be arbitrarily named, ``by_default`` must be defined.
 struct generate {};
 using by_default = generate;
-}
+} // namespace task
 
 namespace method {
 // methods can be arbitrarily named, though this will be used in the
 // python onedal estimator as a parameter
 struct dense {};
 using by_default = dense;
-}
+} // namespace method
 
 namespace detail {
 // This is highly important for central use of train, compute, infer etc.
 // but is not used in sklearnex (and must be included here).
 struct descriptor_tag {};
 
-}
+} // namespace detail
 
 template <typename Float = float,
           typename Method = method::by_default,
@@ -100,7 +100,7 @@ public:
     // normally this attribute is hidden in another struct
     double constant;
 };
-}
+} // namespace dummy
 /////////////////////////////// common.hpp ////////////////////////////////
 
 ///////////////////////////// train_types.hpp /////////////////////////////
@@ -125,7 +125,6 @@ public:
 
     // attribute usually hidden in an infer_result_impl class
     table data;
-
 };
 
 template <typename Task = task::by_default>
@@ -133,12 +132,11 @@ class train_input : public base {
 public:
     using task_t = Task;
 
-    train_input(const table& data)
-            : data(data) {}
+    train_input(const table& data) : data(data) {}
 
     table data;
 };
-}
+} // namespace dummy
 
 ///////////////////////////// train_types.hpp /////////////////////////////
 
@@ -162,7 +160,6 @@ public:
 
     // attribute usually hidden in an infer_result_impl class
     table data;
-
 };
 
 template <typename Task = task::by_default>
@@ -177,7 +174,7 @@ public:
     table data;
     table constant;
 };
-}
+} // namespace dummy
 ///////////////////////////// infer_types.hpp /////////////////////////////
 
 /////// THESE ARE PRIVATE STEPS REQUIRED FOR IT TO WORK WITH ONEDAL ///////
@@ -202,7 +199,8 @@ struct train_ops {
     auto operator()(const host_policy& ctx, const Descriptor& desc, const input_t& input) const {
         // Usually a infer_ops_dispatcher is contained in oneDAL infer_ops.cpp.
         // Due to the simplicity of this algorithm, implement it here.
-        dal::array<float_t> array = dal::array<float_t>::full(1, static_cast<float_t>(desc.get_constant()));
+        dal::array<float_t> array =
+            dal::array<float_t>::full(1, static_cast<float_t>(desc.get_constant()));
         result_t result;
         result.data = dal::homogen_table::wrap(array, 1, 1);
         return result;
@@ -215,15 +213,16 @@ struct train_ops {
         // Usually a infer_ops_dispatcher is contained in oneDAL infer_ops.cpp.
         // Due to the simplicity of this algorithm, implement it here.
         auto queue = ctx.get_queue();
-        dal::array<float_t> array = dal::array<float_t>::full(queue, 1, static_cast<float_t>(desc.get_constant()));
+        dal::array<float_t> array =
+            dal::array<float_t>::full(queue, 1, static_cast<float_t>(desc.get_constant()));
         result_t result;
         result.data = dal::homogen_table::wrap(array, 1, 1);
         return result;
     }
 #endif //ONEDAL_DATA_PARALLEL
 };
-}
-}
+} // namespace detail
+} // namespace dummy
 ////////////////////////////// train_ops.hpp //////////////////////////////
 
 //////////////////////////////// train.hpp ////////////////////////////////
@@ -234,8 +233,8 @@ namespace v1 {
 template <typename Descriptor>
 struct train_ops<Descriptor, dal::dummy::detail::descriptor_tag>
         : dal::dummy::detail::train_ops<Descriptor> {};
-}
-}
+} // namespace v1
+} // namespace detail
 
 //////////////////////////////// train.hpp ////////////////////////////////
 
@@ -262,7 +261,9 @@ struct infer_ops {
         auto row_c = input.data.get_row_count();
         auto col_c = input.data.get_column_count();
         assert(input.get_kind() == dal::homogen_table::kind());
-        const byte_t* ptr = dal::detail::get_original_data(static_cast<const dal::homogen_table &>(input.constant)).get_data();
+        const byte_t* ptr =
+            dal::detail::get_original_data(static_cast<const dal::homogen_table&>(input.constant))
+                .get_data();
         result_t result;
         dal::array<float_t> array =
             dal::array<float_t>::full(row_c * col_c, *reinterpret_cast<const float_t*>(ptr));
@@ -279,7 +280,9 @@ struct infer_ops {
         auto row_c = input.data.get_row_count();
         auto col_c = input.data.get_column_count();
         assert(input.get_kind() == dal::homogen_table::kind());
-        const byte_t* ptr = dal::detail::get_original_data(static_cast<const dal::homogen_table &>(input.constant)).get_data();
+        const byte_t* ptr =
+            dal::detail::get_original_data(static_cast<const dal::homogen_table&>(input.constant))
+                .get_data();
         result_t result;
         auto queue = ctx.get_queue();
         dal::array<float_t> array =
@@ -289,8 +292,8 @@ struct infer_ops {
     }
 #endif
 };
-}
-}
+} // namespace detail
+} // namespace dummy
 ////////////////////////////// infer_ops.hpp //////////////////////////////
 
 //////////////////////////////// infer.hpp ////////////////////////////////
@@ -301,10 +304,10 @@ namespace v1 {
 template <typename Descriptor>
 struct infer_ops<Descriptor, dal::dummy::detail::descriptor_tag>
         : dal::dummy::detail::infer_ops<Descriptor> {};
-}
-}
+} // namespace v1
+} // namespace detail
 
 //////////////////////////////// infer.hpp ////////////////////////////////
 
 ////////////////////////// Dummy oneDAL Algorithm /////////////////////////
-}
+} // namespace oneapi::dal

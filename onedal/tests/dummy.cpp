@@ -108,9 +108,7 @@ void init_train_result(py::module_& m) {
     using namespace dal::dummy;
     using result_t = train_result<Task>;
 
-    py::class_<result_t>(m, "train_result")
-        .def(py::init())
-        .DEF_ONEDAL_PY_PROPERTY(data, result_t);
+    py::class_<result_t>(m, "train_result").def(py::init()).DEF_ONEDAL_PY_PROPERTY(data, result_t);
 }
 
 template <typename Task>

@@ -99,7 +99,7 @@ class DummyEstimator:
         # onedal estimator object.
 
         self.constant_, self.fit_X_, self.fit_y_ = from_table(
-            result.constant, X_t, y_t, like=X
+            result.data, X_t, y_t, like=X
         )
         # The fit_X_ and fit_y_ attributes are not required and are generally
         # discouraged. They set in order to show the process of setting

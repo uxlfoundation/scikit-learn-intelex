@@ -35,7 +35,6 @@ from ..base import oneDALEstimator
 from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.validation import validate_data
 
-
 ################
 # IMPORT NOTES #
 ################
@@ -333,7 +332,7 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
         )
         # return value will be handled by self._onedal_predict
 
-    def _onedal_fit(self, X, y, queue=None):
+    def _onedal_fit(self, X, y, sample_weight=None, queue=None):
         # The queue attribute must be added as the last kwarg to all
         # onedal-facing functions.  The SYCL queue is acquired in
         # ``dispatch`` and is set there before calling ``_onedal_``-prefix
@@ -345,7 +344,8 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
         xp, _ = get_namespace(X, y)
 
         # The second step must always be to validate the data.
-        X, y = validate_data(X, y, dtype=[xp.float64, xp.float32, xp.int32])
+        # This algorithm can accept 2d y inputs (by setting multi_output)
+        X, y = validate_data(self, X, y, dtype=[xp.float64, xp.float32, xp.int32], multi_output=True)
         # validate_data does several things:
         # 1) If not in the proper namespace (depending on array_api configs)
         # convert the data to the proper data format (default: numpy array)
@@ -360,6 +360,8 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
         # for the nature of the class, but would otherwise be unset.
 
         # Conformance to sklearn's DummyRegressor
+        if y.ndim == 1:
+            y = xp.reshape(y, (-1, 1))
         self.n_outputs_ = y.shape[1]
 
         # In the ``fit`` method, a Python onedal estimator object is
@@ -391,7 +393,10 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
         xp, _ = get_namespace(X)
 
         # The second step must always be to validate the data.
-        X = validate_data(X, dtype=[xp.float64, xp.float32], ensure_all_finite=False)
+        # This algorithm can accept 2d y inputs (by setting multi_output)
+        X = validate_data(
+            self, X, dtype=[xp.float64, xp.float32], multi_output=True
+        )
         # queue must be sent back to the onedal Python estimator object
         y = self._onedal_estimator.predict(X, queue=queue)
 
@@ -427,7 +432,7 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
         # in _onedal_gpu_supoorted to get the data into the proper form.
         if method_name == "fit":
             (X, y, sample_weight) = data
-            xp = get_namespace(X, y)
+            xp, _ = get_namespace(X, y)
 
             # the PatchingConditionsChain is validated using
             # ``and_conditions``, use of ``or_conditions`` is highly
@@ -444,8 +449,8 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
                         "only the constant strategy is supported",
                     ),
                     (
-                        hasattr(X, "dtype")
-                        and X.dtype in (xp.int32, xp.float64, xp.float32),
+                        not hasattr(X, "dtype")
+                        or X.dtype in (xp.int32, xp.float64, xp.float32),
                         "oneDAL only supports int32, float64 and float32 inputs",
                     ),
                     (
@@ -458,7 +463,7 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
 
         elif method_name == "predict":
             (X,) = data
-            xp = get_namespace(X)
+            xp, _ = get_namespace(X)
 
             patching_status.and_conditions(
                 [
@@ -483,7 +488,7 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
         )
         if method_name == "fit":
             (X, y, sample_weight) = data
-            xp = get_namespace(X, y)
+            xp, _ = get_namespace(X, y)
 
             # the PatchingConditionsChain is validated using
             # ``and_conditions``, use of ``or_conditions`` is highly
@@ -500,8 +505,8 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
                         "only the constant strategy is supported",
                     ),
                     (
-                        hasattr(X, "dtype")
-                        and X.dtype in (xp.int32, xp.float64, xp.float32),
+                        not hasattr(X, "dtype")
+                        or X.dtype in (xp.int32, xp.float64, xp.float32),
                         "oneDAL only supports int32, float64 and float32 inputs",
                     ),
                     (
@@ -514,7 +519,7 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
 
         elif method_name == "predict":
             (X,) = data
-            xp = get_namespace(X)
+            xp, _ = get_namespace(X)
 
             patching_status.and_conditions(
                 [
@@ -542,7 +547,7 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
         return self._constant_
 
     @constant_.setter
-    def constant(self, value):
+    def constant_(self, value):
         self._constant_ = value
         if hasattr(self, "_onedal_estimator"):
             self._onedal_estimator._onedal_model = None
