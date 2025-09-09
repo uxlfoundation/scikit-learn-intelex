@@ -462,6 +462,14 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
             )
 
         elif method_name == "predict":
+            # There is a very important subtlety about the ``dispatch`` function
+            # and how it interacts with ``_onedal_*_supported`` in that only args
+            # are used in these methods to evaluate oneDAL support. This means
+            # that kwargs to the public API may become args in the call to dispatch
+            # In this case, return_std (from predict) does not impact oneDAL, and
+            # is kept as a kwarg in the ``dispatch`` call in ``predict``. In ``fit``
+            # the kwarg ``sample_weight`` is important for evaluating oneDAL support
+            # and is passed as an arg.
             (X,) = data
             xp, _ = get_namespace(X)
 
@@ -490,10 +498,6 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
             (X, y, sample_weight) = data
             xp, _ = get_namespace(X, y)
 
-            # the PatchingConditionsChain is validated using
-            # ``and_conditions``, use of ``or_conditions`` is highly
-            # discouraged. The following checks are specific to this example
-            # and must be tailored to the specific estimator implementation.
             patching_status.and_conditions(
                 [
                     (
