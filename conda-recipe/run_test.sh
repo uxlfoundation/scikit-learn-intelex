@@ -60,24 +60,24 @@ function generate_pytest_args {
     printf -- "${ARGS[*]}"
 }
 
-PYTEST_VERBOSITY_ARGS=$(-c "${sklex_root}/pytest.ini")
+PYTEST_CONFIG=$(-c "${sklex_root}/pytest.ini")
 
 ${PYTHON} -c "from sklearnex import patch_sklearn; patch_sklearn()"
 return_code=$(($return_code + $?))
 
-pytest ${PYTEST_VERBOSITY_ARGS} -s "${sklex_root}/tests" $@ $(generate_pytest_args legacy)
+pytest ${PYTEST_CONFIG} -s "${sklex_root}/tests" $@ $(generate_pytest_args legacy)
 return_code=$(($return_code + $?))
 
-pytest ${PYTEST_VERBOSITY_ARGS} --pyargs daal4py $@ $(generate_pytest_args daal4py)
+pytest ${PYTEST_CONFIG} --pyargs daal4py $@ $(generate_pytest_args daal4py)
 return_code=$(($return_code + $?))
 
-pytest ${PYTEST_VERBOSITY_ARGS} --pyargs sklearnex $@ $(generate_pytest_args sklearnex)
+pytest ${PYTEST_CONFIG} --pyargs sklearnex $@ $(generate_pytest_args sklearnex)
 return_code=$(($return_code + $?))
 
-pytest ${PYTEST_VERBOSITY_ARGS} --pyargs onedal $@ $(generate_pytest_args onedal)
+pytest ${PYTEST_CONFIG} --pyargs onedal $@ $(generate_pytest_args onedal)
 return_code=$(($return_code + $?))
 
-pytest ${PYTEST_VERBOSITY_ARGS} -s "${sklex_root}/.ci/scripts/test_global_patch.py" $@ $(generate_pytest_args global_patching)
+pytest ${PYTEST_CONFIG} -s "${sklex_root}/.ci/scripts/test_global_patch.py" $@ $(generate_pytest_args global_patching)
 return_code=$(($return_code + $?))
 
 echo "NO_DIST=$NO_DIST"
@@ -92,10 +92,10 @@ if [[ ! $NO_DIST ]]; then
         export EXTRA_MPI_ARGS="-n 4"
     fi
     mpirun ${EXTRA_MPI_ARGS} python "${sklex_root}/tests/helper_mpi_tests.py" \
-        pytest -k spmd --with-mpi ${PYTEST_VERBOSITY_ARGS} --pyargs sklearnex $@ $(generate_pytest_args sklearnex_spmd)
+        pytest -k spmd --with-mpi ${PYTEST_CONFIG} --pyargs sklearnex $@ $(generate_pytest_args sklearnex_spmd)
     return_code=$(($return_code + $?))
     mpirun ${EXTRA_MPI_ARGS} python "${sklex_root}/tests/helper_mpi_tests.py" \
-        pytest ${PYTEST_VERBOSITY_ARGS} -s "${sklex_root}/tests/test_daal4py_spmd_examples.py" $@ $(generate_pytest_args mpi_legacy)
+        pytest ${PYTEST_CONFIG} -s "${sklex_root}/tests/test_daal4py_spmd_examples.py" $@ $(generate_pytest_args mpi_legacy)
     return_code=$(($return_code + $?))
 fi
 
