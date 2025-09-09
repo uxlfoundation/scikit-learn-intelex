@@ -84,4 +84,3 @@ if __name__ == "__main__":
         return_code = pytest.main(pytest_args)
 
     sys.exit(int(return_code))
-
