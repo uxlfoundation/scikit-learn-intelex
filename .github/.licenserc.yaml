@@ -42,8 +42,6 @@ header:
     # Clang-format configs
     - '.clang-format'
     - '_clang-format'
-    # pytest arguments
-    - .pytest-verbosity-args
     # All .csv and .ipynb files
     - '**/*.csv'
     - '**/*.ipynb'
