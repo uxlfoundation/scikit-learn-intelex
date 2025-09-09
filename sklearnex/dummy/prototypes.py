@@ -21,7 +21,7 @@ comments guiding code development should be removed if reused unless
 pertinent to the derivative implementation."""
 import numpy as np
 import scipy.sparse as sp
-from sklearn.dummy import _sklearn_DummyRegressor
+from sklearn.dummy import DummyRegressor as _sklearn_DummyRegressor
 from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
