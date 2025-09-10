@@ -171,11 +171,14 @@ ONEDAL_PY_INIT_MODULE(dummy) {
     // unfortunate and confusing.
 
     // policy_list is defined elsewhere which is dependent on the backend
-    // which is being built.
+    // which is being built. Placed within a macro-check in order to prevent
+    // use with an spmd policy.
+#ifndef ONEDAL_DATA_PARALLEL_SPMD
     ONEDAL_PY_INSTANTIATE(init_train_ops, sub, policy_list, task_list);
     ONEDAL_PY_INSTANTIATE(init_infer_ops, sub, policy_list, task_list);
     ONEDAL_PY_INSTANTIATE(init_train_result, sub, task_list);
     ONEDAL_PY_INSTANTIATE(init_infer_result, sub, task_list);
+#endif
 }
 
 ONEDAL_PY_TYPE2STR(dal::dummy::task::generate, "generate");
