@@ -179,6 +179,8 @@ def test_standard_estimator_stability(estimator, method, dataframe, queue):
         pytest.skip(f"variation observed in {estimator}.score")
     if estimator in ["IncrementalEmpiricalCovariance"] and method == "mahalanobis":
         pytest.skip("allowed fallback to sklearn occurs")
+    if estimator == "DummyRegressor":
+        pytest.skip("default parameters fall back to sklearn")
     _skip_neighbors(estimator, method)
 
     if "NearestNeighbors" in estimator and "radius" in method:
@@ -331,3 +333,4 @@ def test_roc_auc(array_size):
         np.testing.assert_allclose(
             baseline, res, rtol=0.0, atol=0.0, err_msg=str("roc_auc is incorrect")
         )
+
