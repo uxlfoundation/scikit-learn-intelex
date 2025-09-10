@@ -29,12 +29,13 @@ namespace py = pybind11;
 namespace oneapi::dal {
 
 ////////////////////////// Dummy oneDAL Algorithm /////////////////////////
-// These aspects fake the necessary API characteristics of a oneDAL
-// algorithm. This example foregoes the indirections used with impl_
-// attributes characteristic of the oneDAL codebase and only show the
-// necessary APIs. It is also as minimal as possible, dropping some
-// required setters/getters for brevity. It also violates some rules with
-// respect to protected/private, attributes, and compile time type checking.
+// These aspects fake the necessary API characteristics of an algorithm
+// from the oneDAL repository. This example foregoes the indirections used
+// with impl_ attributes characteristic of the oneDAL codebase and only
+// show the necessary APIs. It is also as minimal as possible, dropping
+// some required setters/getters for brevity. It also violates some rules
+// with respect to protected/private, attributes, and compile time type
+// checking.
 //
 // Files which are normally separated in oneDAL for clarity are merged here
 // to provide an overview of what is necessary for interaction in sklearnex
@@ -199,10 +200,11 @@ struct train_ops {
     auto operator()(const host_policy& ctx, const Descriptor& desc, const input_t& input) const {
         // Usually a infer_ops_dispatcher is contained in oneDAL infer_ops.cpp.
         // Due to the simplicity of this algorithm, implement it here.
+        auto col_c = input.data.get_column_count();
         dal::array<float_t> array =
-            dal::array<float_t>::full(1, static_cast<float_t>(desc.get_constant()));
+            dal::array<float_t>::full(col_c, static_cast<float_t>(desc.get_constant()));
         result_t result;
-        result.data = dal::homogen_table::wrap(array, 1, 1);
+        result.data = dal::homogen_table::wrap(array, 1, col_c);
         return result;
     }
 
@@ -212,11 +214,12 @@ struct train_ops {
                     const input_t& input) const {
         // Usually a infer_ops_dispatcher is contained in oneDAL infer_ops.cpp.
         // Due to the simplicity of this algorithm, implement it here.
+        auto col_c = input.data.get_column_count();
         auto queue = ctx.get_queue();
         dal::array<float_t> array =
-            dal::array<float_t>::full(queue, 1, static_cast<float_t>(desc.get_constant()));
+            dal::array<float_t>::full(queue, col_c, static_cast<float_t>(desc.get_constant()));
         result_t result;
-        result.data = dal::homogen_table::wrap(array, 1, 1);
+        result.data = dal::homogen_table::wrap(array, 1, col_c);
         return result;
     }
 #endif //ONEDAL_DATA_PARALLEL
@@ -259,7 +262,7 @@ struct infer_ops {
         // Usually a infer_ops_dispatcher is contained in oneDAL infer_ops.cpp.
         // Due to the simplicity of this algorithm, implement it here.
         auto row_c = input.data.get_row_count();
-        auto col_c = input.data.get_column_count();
+        auto col_c = input.constant.get_column_count();
         assert(input.get_kind() == dal::homogen_table::kind());
         const byte_t* ptr =
             dal::detail::get_original_data(static_cast<const dal::homogen_table&>(input.constant))
@@ -278,7 +281,7 @@ struct infer_ops {
         // Usually a infer_ops_dispatcher is contained in oneDAL infer_ops.cpp.
         // Due to the simplicity of this algorithm, implement it here.
         auto row_c = input.data.get_row_count();
-        auto col_c = input.data.get_column_count();
+        auto col_c = input.constant.get_column_count();
         assert(input.get_kind() == dal::homogen_table::kind());
         const byte_t* ptr =
             dal::detail::get_original_data(static_cast<const dal::homogen_table&>(input.constant))
