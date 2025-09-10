@@ -319,9 +319,13 @@ def test_patch_map_match():
 
     def list_all_attr(string):
         try:
-            modules = set(importlib.import_module(string).__all__)
-        except (ModuleNotFoundError, AttributeError):
-            modules = set([None])
+            mod = importlib.import_module(string)
+        except ModuleNotFoundError:
+            return set([None])
+
+        # Some sklearn estimators exist in python
+        # files rather than folders under sklearn
+        modules = set(getattr(mod, "__all__", [name for name in dir(mod) if not name.startswith('_')]))
         return modules
 
     if _is_preview_enabled():
