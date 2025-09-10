@@ -345,7 +345,7 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
 
         # The second step must always be to validate the data.
         # This algorithm can accept 2d y inputs (by setting multi_output)
-        X, y = validate_data(self, X, y, dtype=[xp.float64, xp.float32, xp.int32], multi_output=True)
+        X, y = validate_data(self, X, y, dtype=[xp.float64, xp.float32, xp.int32], multi_output=True, y_numeric=True)
         # validate_data does several things:
         # 1) If not in the proper namespace (depending on array_api configs)
         # convert the data to the proper data format (default: numpy array)
