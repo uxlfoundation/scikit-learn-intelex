@@ -394,9 +394,7 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
 
         # The second step must always be to validate the data.
         # This algorithm can accept 2d y inputs (by setting multi_output)
-        X = validate_data(
-            self, X, dtype=[xp.float64, xp.float32], multi_output=True
-        )
+        X = validate_data(self, X, dtype=[xp.float64, xp.float32])
         # queue must be sent back to the onedal Python estimator object
         y = self._onedal_estimator.predict(X, queue=queue)
 
