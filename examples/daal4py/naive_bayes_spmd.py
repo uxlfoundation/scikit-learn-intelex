@@ -24,10 +24,8 @@ from numpy import loadtxt
 
 import daal4py as d4p
 
-if __name__ == "__main__":
-    # Initialize SPMD mode
-    d4p.daalinit()
 
+def main():
     # Each process gets its own data
     data_path = Path(__file__).parent / "data" / "batch"
     infile = data_path / "naivebayes_train_dense.csv"
@@ -55,6 +53,10 @@ if __name__ == "__main__":
         # Prediction result provides prediction
         assert presult.prediction.shape == (pdata.shape[0], 1)
 
-        print("All looks good!")
 
+if __name__ == "__main__":
+    # Initialize SPMD mode
+    d4p.daalinit()
+    main()
+    print("All looks good!")
     d4p.daalfini()

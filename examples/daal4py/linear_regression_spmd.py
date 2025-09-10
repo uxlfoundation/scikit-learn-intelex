@@ -22,10 +22,8 @@ from numpy import loadtxt
 
 import daal4py as d4p
 
-if __name__ == "__main__":
-    # Initialize SPMD mode
-    d4p.daalinit()
 
+def main():
     # Each process gets its own data
     infile = (
         "./data/distributed/linear_regression_train_" + str(d4p.my_procid() + 1) + ".csv"
@@ -59,5 +57,10 @@ if __name__ == "__main__":
         # The prediction result provides prediction
         assert predict_result.prediction.shape == (pdata.shape[0], dep_data.shape[1])
 
+
+if __name__ == "__main__":
+    # Initialize SPMD mode
+    d4p.daalinit()
+    main()
     print("All looks good!")
     d4p.daalfini()
