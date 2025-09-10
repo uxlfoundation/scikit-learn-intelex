@@ -138,7 +138,7 @@ SPECIAL_INSTANCES = sklearn_clone_dict(
             LogisticRegression(solver="newton-cg"),
             BasicStatistics(),
             IncrementalBasicStatistics(),
-            DummyRegressor(strategy="constant", constant=1.0) # val set to 1 arbitrarily
+            DummyRegressor(strategy="constant", constant=1.0),  # val set to 1 arbitrarily
         ]
     }
 )

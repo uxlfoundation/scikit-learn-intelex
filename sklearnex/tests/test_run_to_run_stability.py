@@ -333,4 +333,3 @@ def test_roc_auc(array_size):
         np.testing.assert_allclose(
             baseline, res, rtol=0.0, atol=0.0, err_msg=str("roc_auc is incorrect")
         )
-

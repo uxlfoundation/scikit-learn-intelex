@@ -77,8 +77,8 @@ from ..utils.validation import validate_data
 # 8) ``get_namespace`` is key for array_api support, which yields the
 # namespace associated with the given array for use in data conversion
 # necessary for to and from oneDAL. An internal version is preferred due to
-# limitations in sklearn versions and specific IntelPython data framework
-# support (see dpctl tensors and dpnp).
+# limitations in sklearn versions and specific DPEX data framework support
+# (see dpctl tensors and dpnp).
 #
 # 9) ``validate_data`` checks data quality and estimator status before
 # evaluating the function. This replicates a sklearn functionality with key
@@ -87,7 +87,8 @@ from ..utils.validation import validate_data
 #
 # 10) All estimators require validation of the parameters given at
 # initialization. This aspect was introduced in sklearn 1.2, any additional
-# parameters must extend the dictionary for checking.
+# parameters must extend the dictionary for checking.  This validation
+# normally occurs in the ``fit`` method.
 #
 
 ##########################
@@ -345,7 +346,9 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
 
         # The second step must always be to validate the data.
         # This algorithm can accept 2d y inputs (by setting multi_output)
-        X, y = validate_data(self, X, y, dtype=[xp.float64, xp.float32], multi_output=True, y_numeric=True)
+        X, y = validate_data(
+            self, X, y, dtype=[xp.float64, xp.float32], multi_output=True, y_numeric=True
+        )
         # validate_data does several things:
         # 1) If not in the proper namespace (depending on array_api configs)
         # convert the data to the proper data format (default: numpy array)
@@ -393,7 +396,7 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
         xp, _ = get_namespace(X)
 
         # The second step must always be to validate the data.
-        X = validate_data(self, X, dtype=[xp.float64, xp.float32])
+        X = validate_data(self, X, dtype=[xp.float64, xp.float32], reset=False)
         # queue must be sent back to the onedal Python estimator object
         y = self._onedal_estimator.predict(X, queue=queue)
 
@@ -446,13 +449,12 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
                         "only the constant strategy is supported",
                     ),
                     (
-                        not hasattr(X, "dtype")
-                        or X.dtype in (xp.float64, xp.float32),
+                        not hasattr(X, "dtype") or X.dtype in (xp.float64, xp.float32),
                         "oneDAL operates with float64 and float32 inputs",
                     ),
                     (
                         isinstance(self.constant, (int, float)),
-                        "only basic python types are supported",
+                        "only basic Python types are supported",
                     ),
                     (sample_weight is None, "sample_weight is not supported"),
                 ]
@@ -506,13 +508,12 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
                         "only the constant strategy is supported",
                     ),
                     (
-                        not hasattr(X, "dtype")
-                        or X.dtype in (xp.float64, xp.float32),
+                        not hasattr(X, "dtype") or X.dtype in (xp.float64, xp.float32),
                         "oneDAL operates on float64 and float32 inputs",
                     ),
                     (
                         isinstance(self.constant, (int, float)),
-                        "only basic python types are supported",
+                        "only basic Python types are supported",
                     ),
                     (sample_weight is None, "sample_weight is not supported"),
                 ]

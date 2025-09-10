@@ -325,7 +325,11 @@ def test_patch_map_match():
 
         # Some sklearn estimators exist in python
         # files rather than folders under sklearn
-        modules = set(getattr(mod, "__all__", [name for name in dir(mod) if not name.startswith('_')]))
+        modules = set(
+            getattr(
+                mod, "__all__", [name for name in dir(mod) if not name.startswith("_")]
+            )
+        )
         return modules
 
     if _is_preview_enabled():

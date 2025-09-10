@@ -86,9 +86,12 @@ class DummyEstimator:
         result = self.train(params, y_t)
         # In general the naming conventions of ``fit`` match to ``train``,
         # and ``predict`` match oneDAL's ``infer``. Please refer to the oneDAL
-        # design documentation to determine the best translation. Generally the
-        # sklearn naming scheme for class methods should be used here, but
-        # calls to the pybind11 interfaces should follow oneDAL naming.
+        # design documentation to determine the best translation (headers
+        # under oneDAL/tree/main/cpp/oneapi/dal in the oneDAL repository,
+        # like for other correlaries like ``compute`` and ``partial_train``.
+        # Generally the sklearn naming scheme for class methods should be
+        # used here, but calls to the pybind11 interfaces should follow
+        # oneDAL naming.
 
         # Oftentimes oneDAL table objects are attributes of the oneDAL C++
         # object. These can be converted into various common data frameworks
@@ -102,7 +105,7 @@ class DummyEstimator:
             result.data, X_t, y_t, like=X
         )
         # The fit_X_ and fit_y_ attributes are not required and are generally
-        # discouraged. They set in order to show the process of setting
+        # discouraged. They are set in order to show the process of setting
         # and returning array values (and is just an example).  In setting
         # return attributes, post processing of the values beyond conversion
         # needed for sklearn must occur in the sklearnex estimator.
