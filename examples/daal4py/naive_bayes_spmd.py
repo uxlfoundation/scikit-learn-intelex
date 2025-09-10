@@ -27,7 +27,7 @@ import daal4py as d4p
 
 def main():
     # Each process gets its own data
-    data_path = Path(__file__).parent / "data" / "batch"
+    data_path = Path(__file__).parent / "data" / "distributed"
     infile = data_path / "naivebayes_train_dense.csv"
 
     # Configure a training object (20 classes)
@@ -45,7 +45,7 @@ def main():
         palgo = d4p.multinomial_naive_bayes_prediction(20)
         # read test data (with same #features)
         pdata = loadtxt(
-            "./data/batch/naivebayes_test_dense.csv", delimiter=",", usecols=range(20)
+            data_path / "naivebayes_test_dense.csv", delimiter=",", usecols=range(20)
         )
         # now predict using the model from the training above
         presult = palgo.compute(pdata, tresult.model)
