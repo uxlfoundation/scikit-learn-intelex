@@ -320,7 +320,7 @@ def test_patch_map_match():
     def list_all_attr(string):
         try:
             modules = set(importlib.import_module(string).__all__)
-        except ModuleNotFoundError:
+        except (ModuleNotFoundError, AttributeError):
             modules = set([None])
         return modules
 
