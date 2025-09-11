@@ -74,9 +74,6 @@ def test_n_jobs_method_decoration(estimator):
 @pytest.mark.parametrize("n_jobs", [None, -1, 1, 2])
 def test_n_jobs_support(estimator, n_jobs, caplog):
 
-    if estimator == "DummyRegressor":
-        pytest.skip("default parameters fall back to sklearn")
-
     est = _get_estimator_instance(estimator)
     caplog.set_level(logging.DEBUG, logger="sklearnex")
 
