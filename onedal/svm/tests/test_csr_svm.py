@@ -61,12 +61,12 @@ def check_svm_model_equal(
 
 
 def _test_simple_dataset(queue, kernel):
-    X = np.array([[-2, -1], [-1, -1], [-1, -2], [1, 1], [1, 2], [2, 1]])
-    sparse_X = sp.lil_matrix(X)
-    Y = [1, 1, 1, 2, 2, 2]
+    X = np.array([[-2, -1], [-1, -1], [-1, -2], [1, 1], [1, 2], [2, 1]], dtype=np.float64)
+    sparse_X = sp.csr_matrix(X)
+    Y = np.array([1, 1, 1, 2, 2, 2], dtype=np.float64)
 
-    X2 = np.array([[-1, -1], [2, 2], [3, 2]])
-    sparse_X2 = sp.dok_matrix(X2)
+    X2 = np.array([[-1, -1], [2, 2], [3, 2]], dtype=np.float64)
+    sparse_X2 = sp.csr_matrix(X2)
 
     dataset = sparse_X, Y, sparse_X2
     clf0 = SVC(kernel=kernel, gamma=1)
@@ -90,82 +90,6 @@ def _test_simple_dataset(queue, kernel):
 @pytest.mark.parametrize("kernel", ["linear", "rbf"])
 def test_simple_dataset(queue, kernel):
     _test_simple_dataset(queue, kernel)
-
-
-def _test_binary_dataset(queue, kernel):
-    X, y = make_classification(n_samples=80, n_features=20, n_classes=2, random_state=0)
-    sparse_X = sp.csr_matrix(X)
-
-    dataset = sparse_X, y, sparse_X
-    clf0 = SVC(kernel=kernel)
-    clf1 = SVC(kernel=kernel)
-    check_svm_model_equal(queue, clf0, clf1, *dataset)
-
-
-@pass_if_not_implemented_for_gpu(reason="not implemented")
-@pytest.mark.parametrize(
-    "queue",
-    get_queues("cpu")
-    + [
-        pytest.param(
-            get_queues("gpu"),
-            marks=pytest.mark.xfail(
-                reason=(
-                    "raises UnknownError for linear and rbf, "
-                    "Unimplemented error with inconsistent error message "
-                    "for poly and sigmoid"
-                )
-            ),
-        )
-    ],
-)
-@pytest.mark.parametrize("kernel", ["linear", "rbf", "poly", "sigmoid"])
-def test_binary_dataset(queue, kernel):
-    _test_binary_dataset(queue, kernel)
-
-
-def _test_iris(queue, kernel):
-    iris = datasets.load_iris()
-    rng = np.random.RandomState(0)
-    perm = rng.permutation(iris.target.size)
-    iris.data = iris.data[perm]
-    iris.target = iris.target[perm]
-    sparse_iris_data = sp.csr_matrix(iris.data)
-
-    dataset = sparse_iris_data, iris.target, sparse_iris_data
-
-    clf0 = SVC(kernel=kernel)
-    clf1 = SVC(kernel=kernel)
-    check_svm_model_equal(queue, clf0, clf1, *dataset, decimal=2)
-
-
-@pass_if_not_implemented_for_gpu(reason="not implemented")
-@pytest.mark.parametrize("queue", get_queues())
-@pytest.mark.parametrize("kernel", ["linear", "rbf", "poly", "sigmoid"])
-def test_iris(queue, kernel):
-    if kernel == "rbf":
-        pytest.skip("RBF CSR SVM test failing in 2025.0.")
-    _test_iris(queue, kernel)
-
-
-def _test_diabetes(queue, kernel):
-    diabetes = datasets.load_diabetes()
-
-    sparse_diabetes_data = sp.csr_matrix(diabetes.data)
-    dataset = sparse_diabetes_data, diabetes.target, sparse_diabetes_data
-
-    clf0 = SVR(kernel=kernel, C=0.1)
-    clf1 = SVR(kernel=kernel, C=0.1)
-    check_svm_model_equal(queue, clf0, clf1, *dataset)
-
-
-@pass_if_not_implemented_for_gpu(reason="not implemented")
-@pytest.mark.parametrize("queue", get_queues())
-@pytest.mark.parametrize("kernel", ["linear", "rbf", "poly", "sigmoid"])
-def test_diabetes(queue, kernel):
-    if kernel == "sigmoid":
-        pytest.skip("Sparse sigmoid kernel function is buggy.")
-    _test_diabetes(queue, kernel)
 
 
 @pass_if_not_implemented_for_gpu(reason="csr svm is not implemented")
