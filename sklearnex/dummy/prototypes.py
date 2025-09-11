@@ -352,7 +352,13 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
         # therefore this function should not be used in the onedal module.
         # This conformance example is specific to the Dummy Estimators.
         X, y = validate_data(
-            self, X, y, dtype=[xp.float64, xp.float32], multi_output=True, y_numeric=True, ensure_2d=sklearn_check_version("1.2")
+            self,
+            X,
+            y,
+            dtype=[xp.float64, xp.float32],
+            multi_output=True,
+            y_numeric=True,
+            ensure_2d=sklearn_check_version("1.2"),
         )
         # validate_data does several things:
         # 1) If not in the proper namespace (depending on array_api configs)
