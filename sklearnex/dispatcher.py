@@ -135,7 +135,7 @@ def get_patch_map_core(preview=False):
         from .linear_model import IncrementalRidge as IncrementalRidge_sklearnex
         from .linear_model import Lasso as Lasso_sklearnex
         from .linear_model import LinearRegression as LinearRegression_sklearnex
-        from .linear_model import LogisticRegression as LogisticRegression_sklearnex
+        from sklearn.linear_model import LogisticRegression as LogisticRegression_sklearnex
         from .linear_model import Ridge as Ridge_sklearnex
         from .manifold import TSNE as TSNE_sklearnex
         from .metrics import pairwise_distances as pairwise_distances_sklearnex

@@ -280,9 +280,9 @@ def _daal_check_array(
     array_converted : object
         The converted and validated array.
     """
-    if force_all_finite not in (True, False, "allow-nan"):
+    if force_all_finite not in (True, False, "allow-nan", None):
         raise ValueError(
-            'force_all_finite should be a bool or "allow-nan"'
+            'force_all_finite should be a bool, None, or "allow-nan"'
             ". Got {!r} instead".format(force_all_finite)
         )
 

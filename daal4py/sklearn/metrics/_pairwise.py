@@ -170,6 +170,7 @@ def _pairwise_distances(
 
 # logic to deprecate `force_all_finite` from sklearn:
 # it was renamed to `ensure_all_finite` since 1.6 and will be removed in 1.8
+
 if sklearn_check_version("1.3"):
     pairwise_distances_parameters = {
         "X": ["array-like", "sparse matrix"],
@@ -257,3 +258,7 @@ if sklearn_check_version("1.3"):
 else:
     pairwise_distances = _pairwise_distances
 pairwise_distances.__doc__ = pairwise_distances_original.__doc__
+
+
+
+
