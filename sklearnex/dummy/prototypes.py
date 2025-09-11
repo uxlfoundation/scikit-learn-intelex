@@ -407,7 +407,9 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
         xp, _ = get_namespace(X)
 
         # The second step must always be to validate the data.
-        X = validate_data(self, X, dtype=[xp.float64, xp.float32], reset=False)
+        # Not checking of X as 2d is sklearn conformance specific to matching
+        # the Scikit-Learn DummyRegressor and is not normally required.
+        X = validate_data(self, X, dtype=[xp.float64, xp.float32], reset=False, ensure_2d=sklearn_check_version("1.2"))
         # queue must be sent back to the onedal Python estimator object
         y = self._onedal_estimator.predict(X, queue=queue)
 
