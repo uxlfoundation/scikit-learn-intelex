@@ -198,7 +198,7 @@ struct train_ops {
     using result_t = train_result<task_t>;
 
     auto operator()(const host_policy& ctx, const Descriptor& desc, const input_t& input) const {
-        // Usually a infer_ops_dispatcher is contained in oneDAL infer_ops.cpp.
+        // Usually a train_ops_dispatcher is contained in oneDAL train_ops.cpp.
         // Due to the simplicity of this algorithm, implement it here.
         auto col_c = input.data.get_column_count();
         dal::array<float_t> array =
@@ -212,7 +212,7 @@ struct train_ops {
     auto operator()(const data_parallel_policy& ctx,
                     const Descriptor& desc,
                     const input_t& input) const {
-        // Usually a infer_ops_dispatcher is contained in oneDAL infer_ops.cpp.
+        // Usually a train_ops_dispatcher is contained in oneDAL train_ops.cpp.
         // Due to the simplicity of this algorithm, implement it here.
         auto col_c = input.data.get_column_count();
         auto queue = ctx.get_queue();

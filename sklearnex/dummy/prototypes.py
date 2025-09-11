@@ -345,9 +345,20 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
         xp, _ = get_namespace(X, y)
 
         # The second step must always be to validate the data.
-        # This algorithm can accept 2d y inputs (by setting multi_output)
+        # This algorithm can accept 2d y inputs (by setting multi_output).
+        # Note the use of "sklearn_check_version". This is required in order
+        # to conform to changes which occur in sklearn over the supported
+        # versions.  The conformance to sklearn should occur in this object,
+        # therefore this function should not be used in the onedal module.
+        # This conformance example is specific to the Dummy Estimators.
         X, y = validate_data(
-            self, X, y, dtype=[xp.float64, xp.float32], multi_output=True, y_numeric=True
+            self,
+            X,
+            y,
+            dtype=[xp.float64, xp.float32],
+            multi_output=True,
+            y_numeric=True,
+            ensure_2d=sklearn_check_version("1.2"),
         )
         # validate_data does several things:
         # 1) If not in the proper namespace (depending on array_api configs)
@@ -396,7 +407,15 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
         xp, _ = get_namespace(X)
 
         # The second step must always be to validate the data.
-        X = validate_data(self, X, dtype=[xp.float64, xp.float32], reset=False)
+        # Not checking of X as 2d is sklearn conformance specific to matching
+        # the Scikit-Learn DummyRegressor and is not normally required.
+        X = validate_data(
+            self,
+            X,
+            dtype=[xp.float64, xp.float32],
+            reset=False,
+            ensure_2d=sklearn_check_version("1.2"),
+        )
         # queue must be sent back to the onedal Python estimator object
         y = self._onedal_estimator.predict(X, queue=queue)
 
