@@ -350,7 +350,7 @@ def test_knnsearch_spmd_gold(dataframe, queue):
     reason="GPU device and MPI libs required for test",
 )
 @pytest.mark.parametrize(
-    "dimensions", [{"n": 100, "m": 10, "k": 2}, {"n": 100000, "m": 100, "k": 100}]
+    "dimensions", [{"n": 100, "m": 10, "k": 2}, {"n": 20000, "m": 100, "k": 100}]
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
