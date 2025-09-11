@@ -28,6 +28,7 @@
 #include "oneapi/dal/finalize_compute.hpp"
 #include "oneapi/dal/partial_train.hpp"
 #include "oneapi/dal/finalize_train.hpp"
+#include "oneapi/dal/vertex_partitioning.hpp"
 
 #define ONEDAL_PARAM_DISPATCH_VALUE(value, value_case, ops, ...) \
     if (value == value_case) {                                   \
@@ -324,6 +325,24 @@ struct finalize_train_ops_with_hyperparams {
     Input input;
     Ops ops;
     Hyperparams hyperparams;
+};
+
+template <typename Input, typename Ops>
+struct vertex_partitioning_ops {
+    using Task = typename Input::task_t;
+    vertex_partitioning_ops(const Input& input, const Ops& ops)
+        : input(input),
+          ops(ops) {}
+
+    template <typename Float, typename Method, typename... Args>
+    auto operator()(const pybind11::dict& params) {
+        auto desc = ops.template operator()<Float, Method, Task, Args...>(params);
+        // temporary fix for bug in dal/detail/vertex_paritioning_ops.hpp (cannot take an input struct)
+        return dal::preview::vertex_partitioning(desc, input.get_graph(), input.get_initial_partition());
+        }
+
+    Input input;
+    Ops ops;
 };
 
 } // namespace oneapi::dal::python
