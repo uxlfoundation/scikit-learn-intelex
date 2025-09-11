@@ -78,7 +78,6 @@ steps:
       COVERAGE_RCFILE: ${{ variables.COVERAGE_RCFILE }}
       DALROOT: ${{ variables.DALROOT }}
       TBBROOT: ${{ variables.TBBROOT }}
-      NO_DIST: 1
   - script: |
       call activate CB
       if defined DALROOT call "%DALROOT%\env\vars.bat"
@@ -88,6 +87,5 @@ steps:
       SKLEARNEX_PREVIEW: "YES"
       DALROOT: ${{ variables.DALROOT }}
       TBBROOT: ${{ variables.TBBROOT }}
-      NO_DIST: 1
     displayName: 'Sklearn testing [preview]'
     condition: succeededOrFailed()
