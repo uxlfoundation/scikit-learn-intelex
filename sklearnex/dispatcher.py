@@ -101,6 +101,7 @@ def get_patch_map_core(preview=False):
         import sklearn.cluster as cluster_module
         import sklearn.covariance as covariance_module
         import sklearn.decomposition as decomposition_module
+        import sklearn.dummy as dummy_module
         import sklearn.ensemble as ensemble_module
         import sklearn.linear_model as linear_model_module
         import sklearn.manifold as manifold_module
@@ -124,6 +125,7 @@ def get_patch_map_core(preview=False):
             IncrementalEmpiricalCovariance as IncrementalEmpiricalCovariance_sklearnex,
         )
         from .decomposition import PCA as PCA_sklearnex
+        from .dummy import DummyRegressor as DummyRegressor_sklearnex
         from .ensemble import ExtraTreesClassifier as ExtraTreesClassifier_sklearnex
         from .ensemble import ExtraTreesRegressor as ExtraTreesRegressor_sklearnex
         from .ensemble import RandomForestClassifier as RandomForestClassifier_sklearnex
@@ -407,6 +409,18 @@ def get_patch_map_core(preview=False):
                     None,
                 ]
             ]
+
+        # DummyRegressor
+        mapping["dummyregressor"] = [
+            [
+                (
+                    dummy_module,
+                    "DummyRegressor",
+                    DummyRegressor_sklearnex,
+                ),
+                None,
+            ]
+        ]
 
         # Configs
         mapping["set_config"] = [
