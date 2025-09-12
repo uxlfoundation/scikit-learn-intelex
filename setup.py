@@ -556,6 +556,7 @@ packages_with_tests = [
     "sklearnex.cluster",
     "sklearnex.covariance",
     "sklearnex.decomposition",
+    "sklearnex.dummy",
     "sklearnex.ensemble",
     "sklearnex.glob",
     "sklearnex.linear_model",
