@@ -103,6 +103,7 @@ def get_patch_map_core(preview=False):
         import sklearn.decomposition as decomposition_module
         import sklearn.dummy as dummy_module
         import sklearn.ensemble as ensemble_module
+        import sklearn.ensemble._gb as gb_module
         import sklearn.linear_model as linear_model_module
         import sklearn.manifold as manifold_module
         import sklearn.metrics as metrics_module
@@ -415,6 +416,19 @@ def get_patch_map_core(preview=False):
             [
                 (
                     dummy_module,
+                    "DummyRegressor",
+                    DummyRegressor_sklearnex,
+                ),
+                None,
+            ]
+        ]
+
+        # Required patching of DummyRegressor in the gradient boosting
+        # module as it is used in the GradientBoosting algorithms
+        mapping["gb_dummyregressor"] = [
+            [
+                (
+                    gb_module,
                     "DummyRegressor",
                     DummyRegressor_sklearnex,
                 ),
