@@ -49,14 +49,16 @@ def _get_backend(
 
     if gpu_device:
         patching_status = obj._onedal_gpu_supported(method_name, *data)
-        if (
-            not patching_status.get_status()
-            and (config := get_config())["allow_fallback_to_host"]
-        ):
+        if not patching_status.get_status() and get_config()["allow_fallback_to_host"]:
             QM.fallback_to_host()
             return None, patching_status
         return patching_status.get_status(), patching_status
 
+    if get_config()["allow_fallback_to_host"]:
+        # This may trigger if the ``onedal.utils._sycl_queue_manager.__non_queue``
+        # object is the queue (e.g. if non-SYCL device data is encountered)
+        QM.fallback_to_host()
+        return None, None
     raise RuntimeError("Device support is not implemented for the supplied data type.")
 
 
@@ -119,12 +121,9 @@ def dispatch(
     # backend can only be a boolean or None, None signifies an unverified backend
     backend: "bool | None" = None
 
-    # config context needs to be saved, as the sycl_queue_manager interacts with
-    # target_offload, which can regenerate a GPU queue later on. Therefore if a
-    # fallback occurs, then the state of target_offload must be set to default
-    # so that later use of get_global_queue only sends to host. We must modify
-    # the target offload settings, but we must also set the original value at the
-    # end, hence the need of a contextmanager.
+    # The _sycl_queue_manager verifies all arguments are on a single SYCL device or
+    # cpu and will otherwise throw an error. If located on a non-SYCL, non-CPU
+    # device, a special queue is set which will cause a failure in ``_get_backend``
     with QM.manage_global_queue(None, *args):
         if onedal_array_api:
             backend, patching_status = _get_backend(obj, method_name, *args)
@@ -183,8 +182,10 @@ def wrap_output_data(func: Callable) -> Callable:
         result = func(self, *args, **kwargs)
         if not (len(args) == 0 and len(kwargs) == 0):
             data = (*args, *kwargs.values())[0]
-
-            if usm_iface := getattr(data, "__sycl_usm_array_interface__", None):
+            # Remove check for result __sycl_usm_array_interface__ on deprecation of use_raw_inputs
+            if (
+                usm_iface := getattr(data, "__sycl_usm_array_interface__", None)
+            ) and not hasattr(result, "__sycl_usm_array_interface__"):
                 queue = usm_iface["syclobj"]
                 return (
                     copy_to_dpnp(queue, result)

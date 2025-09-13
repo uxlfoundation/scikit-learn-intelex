@@ -77,14 +77,43 @@ ONEDAL_PY_INIT_MODULE(table) {
         // returns a numpy dtype, even if source was not from numpy
         return py::dtype(numpy::convert_dal_to_npy_type(t.get_metadata().get_data_type(0)));
     });
-    table_obj.def("__dlpack__", &dlpack::construct_dlpack);
+    table_obj.def(
+        "__dlpack__",
+        [](const table& t,
+           py::object stream,
+           py::object max_version,
+           py::object dl_device,
+           py::object copyobj) {
+            // do python type checking before calling function
+            if (!stream.is_none())
+                // necessary for array API conformance
+                throw py::buffer_error("dlpack stream is unsupported");
+
+            if (!max_version.is_none() &&
+                (!py::isinstance<py::tuple>(max_version) || py::len(max_version) != 2))
+                throw py::type_error("max_version must be a tuple (major, minor)");
+
+            if (!dl_device.is_none() &&
+                (!py::isinstance<py::tuple>(dl_device) || py::len(dl_device) != 2))
+                throw py::type_error("dl_device must be a tuple (device_type, device_id)");
+
+            if (!copyobj.is_none() && !py::isinstance<py::bool_>(copyobj))
+                throw py::type_error("copy must be a boolean or None");
+
+            return dlpack::construct_dlpack(t, max_version, dl_device, copyobj);
+        },
+        py::kw_only(),
+        py::arg("stream") = py::none(),
+        py::arg("max_version") = py::none(),
+        py::arg("dl_device") = py::none(),
+        py::arg("copy") = py::none());
     table_obj.def("__dlpack_device__", [](const table& t) {
         auto dlpack_device = dlpack::get_dlpack_device(t);
         return py::make_tuple(dlpack_device.device_type, dlpack_device.device_id);
     });
 
 #ifdef ONEDAL_DATA_PARALLEL
-    sycl_usm::define_sycl_usm_array_property(table_obj);
+    table_obj.def_property_readonly("__sycl_usm_array_interface__", &sycl_usm::construct_sua_iface);
 #endif // ONEDAL_DATA_PARALLEL
 
     m.def("to_table", [](py::object obj, py::object queue) {

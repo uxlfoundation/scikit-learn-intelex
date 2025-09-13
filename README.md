@@ -31,7 +31,7 @@
 [![PyPI Version](https://img.shields.io/pypi/v/scikit-learn-intelex)](https://pypi.org/project/scikit-learn-intelex/)
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/scikit-learn-intelex)](https://anaconda.org/conda-forge/scikit-learn-intelex)
 [![python version](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)
-[![scikit-learn supported versions](https://img.shields.io/badge/sklearn-1.0%20%7C%201.2%20%7C%201.3%20%7C%201.4%20%7C%201.5%20%7C%201.6%20%7C%201.7-blue)](https://img.shields.io/badge/sklearn-1.0%20%7C%201.2%20%7C%201.3%20%7C%201.4%20%7C%201.5%20%7C%201.6%20%7C%201.7-blue)
+[![scikit-learn supported versions](https://img.shields.io/badge/sklearn-1.0%20%7C%201.4%20%7C%201.5%20%7C%201.6%20%7C%201.7-blue)](https://img.shields.io/badge/sklearn-1.0%20%7C%201.4%20%7C%201.5%20%7C%201.6%20%7C%201.7-blue)
 
 ---
 </h3>
@@ -47,7 +47,7 @@ The software acceleration is achieved with vector instructions, AI hardware-spec
 With Extension for Scikit-learn, you can:
 
 * Speed up training and inference by up to 100x with equivalent mathematical accuracy
-* Benefit from performance improvements across different CPU hardware configurations, including GPUs and multi-GPU configurations
+* Benefit from performance improvements across different hardware configurations, including [GPUs](https://uxlfoundation.github.io/scikit-learn-intelex/latest/oneapi-gpu.html) and [multi-GPU](https://uxlfoundation.github.io/scikit-learn-intelex/latest/distributed-mode.html) configurations
 * Integrate the extension into your existing Scikit-learn applications without code modifications
 * Continue to use the open-source scikit-learn API
 * Enable and disable the extension with a couple of lines of code or at the command line

@@ -81,12 +81,7 @@ class DummyEstimatorWithTableConversions:
         # oneDAL backend func is needed to check result table checks.
         result = dbscan.compute(params, X_table, to_table(None))
         result_responses_table = result.responses
-        result_responses_df = from_table(
-            result_responses_table,
-            sua_iface=sua_iface,
-            sycl_queue=X.sycl_queue,
-            xp=xp,
-        )
+        result_responses_df = from_table(result_responses_table, like=X)
         return X_table, result_responses_table, result_responses_df
 
 
@@ -272,9 +267,7 @@ def test_input_zero_copy_sycl_usm(dataframe, queue, order, dtype):
     X_table = to_table(X_dp)
     _assert_sua_iface_fields(X_dp, X_table)
 
-    X_dp_from_table = from_table(
-        X_table, sycl_queue=queue, sua_iface=sua_iface, xp=X_dp_namespace
-    )
+    X_dp_from_table = from_table(X_table, like=X_dp)
     _assert_sua_iface_fields(X_table, X_dp_from_table)
     _assert_tensor_attr(X_dp, X_dp_from_table, order)
 
@@ -307,8 +300,13 @@ def test_table_conversions_sycl_usm(dataframe, queue, order, data_shape, dtype):
     alg = DummyEstimatorWithTableConversions()
     X_table, result_responses_table, result_responses_df = alg.fit(X)
 
-    for obj in [X_table, result_responses_table, result_responses_df, X]:
+    for obj in [X_table, result_responses_df, X]:
         assert hasattr(obj, "__sycl_usm_array_interface__"), f"{obj} has no SUA interface"
+
+    assert (
+        hasattr(result_responses_table, "__sycl_usm_array_interface__")
+        != queue.sycl_device.is_cpu
+    )
     _assert_sua_iface_fields(X, X_table)
 
     # Work around for saving compute-follows-data execution
@@ -322,13 +320,14 @@ def test_table_conversions_sycl_usm(dataframe, queue, order, data_shape, dtype):
     # after conversion from onedal table to sua array.
     # Test is not turned off because of this. Only check is skipped.
     skip_data_1 = True
-    _assert_sua_iface_fields(
-        result_responses_df,
-        result_responses_table,
-        skip_data_0=skip_data_0,
-        skip_data_1=skip_data_1,
-        skip_syclobj=skip_syclobj,
-    )
+    if not queue.sycl_device.is_cpu:
+        _assert_sua_iface_fields(
+            result_responses_df,
+            result_responses_table,
+            skip_data_0=skip_data_0,
+            skip_data_1=skip_data_1,
+            skip_syclobj=skip_syclobj,
+        )
     assert X.sycl_queue == result_responses_df.sycl_queue
     if order == "F":
         assert X.flags.f_contiguous == result_responses_df.flags.f_contiguous
@@ -579,7 +578,7 @@ def test_table_conversions_dlpack(dataframe, queue, order, data_shape, dtype):
 
 
 @pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("dpctl,numpy,array_api", "cpu,gpu")
+    "dataframe,queue", get_dataframes_and_queues("numpy,dpctl,array_api", "cpu,gpu")
 )
 @pytest.mark.parametrize("order", ["F", "C"])
 @pytest.mark.parametrize("data_shape", data_shapes)
@@ -617,3 +616,71 @@ def test_table___dlpack__(dataframe, queue, order, data_shape, dtype):
     del capsule
     gc.collect()
     assert_allclose(np.squeeze(from_table(X_table)), np.squeeze(X))
+
+
+@pytest.mark.skipif(
+    not hasattr(np, "from_dlpack"), reason="no dlpack support in installed numpy"
+)
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("dpctl", "cpu,gpu"))
+@pytest.mark.parametrize("order", ["F", "C"])
+@pytest.mark.parametrize("data_shape", data_shapes)
+@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.int32, np.int64])
+def test_table_convert_to_host_dlpack(dataframe, queue, order, data_shape, dtype):
+    """Test if __dlpack__ attribute can be properly consumed by moving data
+    to host from a SYCL device.
+    """
+    rng = np.random.RandomState(0)
+    X = np.array(5 * rng.random_sample(data_shape), dtype=dtype)
+
+    X = ORDER_DICT[order](X)
+
+    X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+
+    X_table = to_table(X_df)
+    # verify that it is on a kDLOneAPI device
+    assert X_df.__dlpack_device__() == X_table.__dlpack_device__()
+
+    # extract to numpy (which should move to host)
+    try:
+        X_out = np.from_dlpack(X_table)
+    except RuntimeError as e:
+        if "Unsupported device in DLTensor." in str(e):
+            pytest.skip("Numpy version cannot request device conversion")
+        else:
+            raise e
+    assert X_out.__dlpack_device__() != X_table.__dlpack_device__()
+
+    if X_out.dtype == X.dtype:
+        assert_array_equal(np.squeeze(X_out), np.squeeze(X))
+    else:
+        assert_allclose(np.squeeze(X_out), np.squeeze(X))
+
+    # verify that table immutability is gone and copy behavior has been followed
+    assert X_out.flags.writeable
+
+
+@pytest.mark.parametrize("queue", get_queues())
+def test_table_writable_dlpack(queue):
+    """Test if __dlpack__ attribute can be properly consumed by moving data
+    to host from a SYCL device.
+    """
+    xp = pytest.importorskip("dpctl.tensor")
+    X = xp.eye(5, 8, dtype=xp.float32, device=queue)
+    X.flags["W"] = False
+    X_table = to_table(X)
+
+    cpu_device = (backend.kDLCPU, 0)
+    # verify that it is on a kDLOneAPI device
+    assert X.__dlpack_device__() == X_table.__dlpack_device__()
+    assert X_table.__dlpack_device__() != cpu_device
+
+    # verify move to host
+    X_table.__dlpack__(dl_device=cpu_device)
+    # verify error is raised when copy=False
+    with pytest.raises(BufferError, match="Cannot transfer data to requested device"):
+        X_table.__dlpack__(dl_device=cpu_device, copy=False)
+
+    for copy_bool in [True, False]:
+        X_out = xp.from_dlpack(X_table, copy=copy_bool)
+        # verify that table immutability is gone and copy behavior has been followed
+        assert X_out.flags["W"] is copy_bool

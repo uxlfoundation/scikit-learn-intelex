@@ -15,6 +15,8 @@
 # ==============================================================================
 
 import logging
+from contextlib import nullcontext
+from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -160,6 +162,11 @@ def test_fallback_to_host(caplog):
     from sklearnex._device_offload import dispatch
     from sklearnex._utils import PatchingConditionsChain
 
+    # This is done due to the use of name mangling in _sycl_queue_manager which
+    # doesn't operate in classes directly. This impacts sklearnex's ``dispatch``
+    # routine, which expects class methods rather than instance methods.
+    is_fallback = lambda: QM.__global_queue == QM.__fallback_queue
+
     class _Estimator:
         def _onedal_gpu_supported(self, method_name, *data):
             patching_status = PatchingConditionsChain("")
@@ -172,11 +179,7 @@ def test_fallback_to_host(caplog):
 
         def _onedal_test(self, *args, queue=None):
             if args[0] == "cpu":
-                assert (
-                    queue is None
-                    and QM.__global_queue == QM.__fallback_queue
-                    and QM.get_global_queue() is None
-                )
+                assert queue is None and is_fallback() and QM.get_global_queue() is None
             elif args[0] == "gpu":
                 assert queue is not None and QM.get_global_queue() is not None
 
@@ -194,7 +197,7 @@ def test_fallback_to_host(caplog):
                 dispatch(
                     est,
                     "test",
-                    {"onedal": est._onedal_test, "sklearn": None},
+                    {"onedal": _Estimator._onedal_test, "sklearn": None},
                     "cpu" if fallback else "gpu",
                 )
 
@@ -205,3 +208,49 @@ def test_fallback_to_host(caplog):
                 in caplog.messages[start:]
             )
             start = len(caplog.messages)
+
+
+def test_other_device_fallback():
+    # force a fallback to cpu with direct use of dispatch and PatchingConditionsChain
+    # it should complete with allow_fallback_to_host. The data should be moved to cpu
+    # by calling ``to_device``.
+    from onedal.utils import _sycl_queue_manager as QM
+    from sklearnex._device_offload import dispatch
+    from sklearnex._utils import PatchingConditionsChain
+
+    class FakeCUDA:
+        def __init__(self, data):
+            self.__data = data
+
+        def to_device(self, *args):
+            return self.__data
+
+        def __dlpack_device__(self):
+            return (2, 0)
+
+    class _CPUEstimator:
+        def _onedal_cpu_supported(self, method_name, *data):
+            patching_status = PatchingConditionsChain("")
+            return patching_status
+
+        def _onedal_test(self, data, queue=None):
+            assert queue is None and QM.get_global_queue() is None
+            assert isinstance(data, np.ndarray)
+
+    est = _CPUEstimator()
+    err_msg = "Device support is not implemented for the supplied data type."
+    data = FakeCUDA(np.eye(5, 8))
+
+    for fallback in [True, False]:
+        ctx = nullcontext() if fallback else pytest.raises(RuntimeError, match=err_msg)
+        _mock = patch.object(FakeCUDA, "to_device", wraps=data.to_device)
+        with sklearnex.config_context(allow_fallback_to_host=fallback), ctx, _mock as spy:
+            dispatch(
+                est,
+                "test",
+                {"onedal": _CPUEstimator._onedal_test, "sklearn": None},
+                data,
+            )
+            if fallback:
+                # verify ``FakeCUDA.to_device`` was used
+                spy.assert_called_once_with("cpu")

@@ -68,7 +68,6 @@ header:
     - '.github/Pull_Request_template.md'
     - '.github/renovate.json'
     # Specific files
-    - 'setup.cfg'
     - 'LICENSE'
     # External copies of copyrighted work
     - 'onedal/datatypes/dlpack/dlpack.h'

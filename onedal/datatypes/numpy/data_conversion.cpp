@@ -24,6 +24,7 @@
 
 #include "onedal/datatypes/numpy/data_conversion.hpp"
 #include "onedal/datatypes/numpy/numpy_utils.hpp"
+#include "onedal/datatypes/common.hpp"
 #include "onedal/version.hpp"
 
 #if ONEDAL_VERSION <= 20230100
@@ -39,32 +40,6 @@ typedef oneapi::dal::detail::csr_table csr_table_t;
 #else
 typedef oneapi::dal::csr_table csr_table_t;
 #endif
-
-template <typename T>
-static dal::array<T> transfer_to_host(const dal::array<T> &array) {
-#ifdef ONEDAL_DATA_PARALLEL
-    auto opt_queue = array.get_queue();
-    if (opt_queue.has_value()) {
-        auto device = opt_queue->get_device();
-        if (!device.is_cpu()) {
-            const auto *device_data = array.get_data();
-
-            auto memory_kind = sycl::get_pointer_type(device_data, opt_queue->get_context());
-            if (memory_kind == sycl::usm::alloc::unknown) {
-                throw std::runtime_error("[convert_to_numpy] Unknown memory type");
-            }
-            if (memory_kind == sycl::usm::alloc::device) {
-                auto host_array = dal::array<T>::empty(array.get_count());
-                opt_queue->memcpy(host_array.get_mutable_data(), device_data, array.get_size())
-                    .wait_and_throw();
-                return host_array;
-            }
-        }
-    }
-#endif
-
-    return array;
-}
 
 template <typename T>
 inline dal::homogen_table convert_to_homogen_impl(PyArrayObject *np_data) {
@@ -153,7 +128,10 @@ inline csr_table_t convert_to_csr_impl(PyObject *py_data,
     return res_table;
 }
 
-dal::table convert_to_table(py::object inp_obj, py::object queue, bool recursed) {
+dal::table convert_to_table(py::object inp_obj,
+                            py::object queue,
+                            bool recursed,
+                            bool require_sparse_with_sorted_indices) {
     dal::table res;
 
     PyObject *obj = inp_obj.ptr();
@@ -213,6 +191,11 @@ dal::table convert_to_table(py::object inp_obj, py::object queue, bool recursed)
     }
     else if (strcmp(Py_TYPE(obj)->tp_name, "csr_matrix") == 0 ||
              strcmp(Py_TYPE(obj)->tp_name, "csr_array") == 0) {
+        if (require_sparse_with_sorted_indices) {
+            if (!py::getattr(obj, "has_sorted_indices").cast<bool>()) {
+                py::reinterpret_borrow<py::object>(obj).attr("sort_indices")();
+            }
+        }
         PyObject *py_data = PyObject_GetAttrString(obj, "data");
         PyObject *py_column_indices = PyObject_GetAttrString(obj, "indices");
         PyObject *py_row_indices = PyObject_GetAttrString(obj, "indptr");

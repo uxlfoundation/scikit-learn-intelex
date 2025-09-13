@@ -69,8 +69,13 @@ Classification
          all parameters except ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
      - Multi-output and sparse data are not supported
    * - :obj:`sklearn.linear_model.LogisticRegression`
-     - All parameters are supported
-     - No limitations
+     - All parameters are supported except:
+
+       - ``solver`` not in [``'lbfgs'``, ``'newton-cg'``]
+       - ``penalty`` in [``'l1'``, ``'elasticnet'``]
+       - ``sample_weight`` != ``None``
+       - ``class_weight`` != ``None``
+     - Sparse data is not supported.
 
 Regression
 **********
@@ -120,7 +125,7 @@ Regression
        - ``solver`` != `'auto'`
        - ``sample_weight`` != `None`
        - ``positive`` = `True`
-       - ``alpha`` must be scalar
+       - ``alpha`` must be a scalar
      - Only dense data is supported.
    * - :obj:`sklearn.linear_model.ElasticNet`
      - All parameters are supported except:
@@ -313,6 +318,7 @@ Classification
        - ``penalty`` != `'l2'`
        - ``dual`` = `True`
        - ``intercept_scaling`` != `1`
+       - ``multi_class`` = `'multinomial'`
        - ``warm_start`` = `True`
        - ``l1_ratio`` != 0 and ``l1_ratio`` != ``None``
        - Only binary classification is supported
@@ -354,6 +360,15 @@ Regression
        - ``weights`` = `'callable'`
        - ``metric`` != `'euclidean'` or `'minkowski'` with ``p`` != `2`
      - Only dense data is supported
+   * - :obj:`sklearn.linear_model.Ridge`
+     - All parameters are supported except:
+
+       - ``solver`` != `'auto'`
+       - ``sample_weight`` != `None`
+       - ``positive`` = `True`
+       - ``alpha`` must be a scalar
+     - Only dense data is supported.
+
    * - :obj:`sklearn.linear_model.LinearRegression`
      - All parameters are supported except:
 
@@ -639,3 +654,6 @@ Scikit-learn Tests
 Monkey-patched scikit-learn classes and functions passes scikit-learn's own test
 suite, with few exceptions, specified in `deselected_tests.yaml
 <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/deselected_tests.yaml>`__.
+
+See the file `scikit-learn-tests.md <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/scikit-learn-tests.md>`__
+for instructions about how to execute the scikit-learn test suite under patching.
