@@ -62,7 +62,6 @@ else:
         LogisticRegression as LogisticRegression_original,
     )
     from sklearn.linear_model._logistic import (
-        _check_multi_class,
         _check_solver,
         _fit_liblinear,
         _logistic_grad_hess,
@@ -84,6 +83,25 @@ else:
 
 from sklearn.linear_model._logistic import _logistic_regression_path as lr_path_original
 from sklearn.preprocessing import LabelBinarizer, LabelEncoder
+
+
+# This code is a patch for sklearn 1.8, which is related to https://github.com/scikit-learn/scikit-learn/pull/32073
+# where the multi_class keyword is deprecated and this aspect is removed.
+def _check_multi_class(multi_class, solver, n_classes):
+    """Computes the multi class type, either "multinomial" or "ovr".
+    For `n_classes` > 2 and a solver that supports it, returns "multinomial".
+    For all other cases, in particular binary classification, return "ovr".
+    """
+    if multi_class == "auto":
+        if solver in ("liblinear",):
+            multi_class = "ovr"
+        elif n_classes > 2:
+            multi_class = "multinomial"
+        else:
+            multi_class = "ovr"
+    if multi_class == "multinomial" and solver in ("liblinear",):
+        raise ValueError("Solver %s does not support a multinomial backend." % solver)
+    return multi_class
 
 
 # Code adapted from sklearn.linear_model.logistic version 0.21
