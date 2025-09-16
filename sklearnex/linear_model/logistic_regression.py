@@ -62,42 +62,80 @@ if daal_check_version((2024, "P", 1)):
                 **_sklearn_LogisticRegression._parameter_constraints
             }
 
-        def __init__(
-            self,
-            penalty="l2",
-            *,
-            dual=False,
-            tol=1e-4,
-            C=1.0,
-            fit_intercept=True,
-            intercept_scaling=1,
-            class_weight=None,
-            random_state=None,
-            solver="lbfgs",
-            max_iter=100,
-            multi_class="deprecated" if sklearn_check_version("1.5") else "auto",
-            verbose=0,
-            warm_start=False,
-            n_jobs=None,
-            l1_ratio=None,
-        ):
-            super().__init__(
-                penalty=penalty,
-                dual=dual,
-                tol=tol,
-                C=C,
-                fit_intercept=fit_intercept,
-                intercept_scaling=intercept_scaling,
-                class_weight=class_weight,
-                random_state=random_state,
-                solver=solver,
-                max_iter=max_iter,
-                multi_class=multi_class,
-                verbose=verbose,
-                warm_start=warm_start,
-                n_jobs=n_jobs,
-                l1_ratio=l1_ratio,
-            )
+        if sklearn_check_version("1.8"):
+   
+            def __init__(
+                self,
+                penalty="l2",
+                *,
+                dual=False,
+                tol=1e-4,
+                C=1.0,
+                fit_intercept=True,
+                intercept_scaling=1,
+                class_weight=None,
+                random_state=None,
+                solver="lbfgs",
+                max_iter=100,
+                verbose=0,
+                warm_start=False,
+                n_jobs=None,
+                l1_ratio=None,
+            ):
+                super().__init__(
+                    penalty=penalty,
+                    dual=dual,
+                    tol=tol,
+                    C=C,
+                    fit_intercept=fit_intercept,
+                    intercept_scaling=intercept_scaling,
+                    class_weight=class_weight,
+                    random_state=random_state,
+                    solver=solver,
+                    max_iter=max_iter,
+                    verbose=verbose,
+                    warm_start=warm_start,
+                    n_jobs=n_jobs,
+                    l1_ratio=l1_ratio,
+                )
+        else:
+
+            def __init__(
+                self,
+                penalty="l2",
+                *,
+                dual=False,
+                tol=1e-4,
+                C=1.0,
+                fit_intercept=True,
+                intercept_scaling=1,
+                class_weight=None,
+                random_state=None,
+                solver="lbfgs",
+                max_iter=100,
+                multi_class="deprecated" if sklearn_check_version("1.5") else "auto",
+                verbose=0,
+                warm_start=False,
+                n_jobs=None,
+                l1_ratio=None,
+            ):
+                super().__init__(
+                    penalty=penalty,
+                    dual=dual,
+                    tol=tol,
+                    C=C,
+                    fit_intercept=fit_intercept,
+                    intercept_scaling=intercept_scaling,
+                    class_weight=class_weight,
+                    random_state=random_state,
+                    solver=solver,
+                    max_iter=max_iter,
+                    multi_class=multi_class,
+                    verbose=verbose,
+                    warm_start=warm_start,
+                    n_jobs=n_jobs,
+                    l1_ratio=l1_ratio,
+                )
 
         _onedal_cpu_fit = daal4py_fit
         decision_function = support_input_format(
@@ -227,7 +265,7 @@ if daal_check_version((2024, "P", 1)):
                     (self.solver == "newton-cg", "Only newton-cg solver is supported."),
                     (self.warm_start == False, "Warm start is not supported."),
                     (
-                        not (self.multi_class == "multinomial"),
+                        skearn_check_version("1.8") or self.multi_class != "multinomial",
                         "multi_class='multinomial is not supported.",
                     ),
                     (
