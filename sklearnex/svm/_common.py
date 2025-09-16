@@ -33,6 +33,9 @@ from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
 from ..utils.validation import validate_data
 
+if sklearn_check_version("1.6"):
+    from sklearn.frozen import FrozenEstimator
+
 
 class BaseSVM(oneDALEstimator):
 
@@ -262,11 +265,17 @@ class BaseSVC(BaseSVM):
         cfg["target_offload"] = queue
         with config_context(**cfg):
             clf_base.fit(X, y)
+            cv_params = {"ensemble":False, "method":"sigmoid"}
+
+            # FrozenEstimator not available for sklearn < 1.4
+            if check_sklearn_version("1.6"):
+                clf_base = FrozenEstimator(clf_base)                  
+            else:
+                cv_params["cv"] = "prefit"
+
             self.clf_prob = CalibratedClassifierCV(
                 clf_base,
-                ensemble=False,
-                cv="prefit",
-                method="sigmoid",
+                **cv_params,
             ).fit(X, y)
 
     def _save_attributes(self):
