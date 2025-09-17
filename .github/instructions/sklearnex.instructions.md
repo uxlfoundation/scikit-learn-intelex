@@ -28,16 +28,10 @@ patch_sklearn(["DBSCAN", "KMeans"])  # Only specific algorithms
 from sklearnex.cluster import DBSCAN  # Always oneDAL implementation
 ```
 
-**Device Control:**
+**Device Control**: See [sklearnex/AGENTS.md](../sklearnex/AGENTS.md) for comprehensive device configuration.
 ```python
 from sklearnex import config_context
-
-# GPU acceleration (requires Intel GPU + drivers)
 with config_context(target_offload="gpu:0"):
-    model.fit(X, y)
-
-# Force CPU
-with config_context(target_offload="cpu"):
     model.fit(X, y)
 ```
 
@@ -53,4 +47,9 @@ pytest sklearnex/tests/test_config.py         # Configuration system
 - All sklearn-compatible algorithms inherit from `base.oneDALEstimator`
 - Fallback to original sklearn if oneDAL implementation unavailable
 - Device offloading requires Intel GPU drivers and SYCL runtime
+
+## Related Instructions
+- `general.instructions.md` - Repository setup and build requirements
+- `onedal.instructions.md` - Low-level backend that sklearnex uses
+- `tests.instructions.md` - Testing the sklearn compatibility layer
 - See `sklearnex/AGENTS.md` for detailed module information

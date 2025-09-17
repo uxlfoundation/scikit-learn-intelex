@@ -23,16 +23,11 @@ Core C++/Cython implementation layer providing the foundation for the entire sta
 4. **Extension Creation**: Python extension modules
 
 ## Development Workflow
+
+See [build-config.instructions.md](build-config.instructions.md) for environment setup.
+
 ```bash
 # Rebuild after C++/Cython changes
-python setup.py build_ext --inplace --force
-
-# For distributed features
-export MPIROOT=/path/to/mpi
-python setup.py develop
-
-# Debug builds
-export DEBUG_BUILD=1
 python setup.py build_ext --inplace --force
 ```
 
@@ -59,4 +54,10 @@ pytest tests/test_daal4py_serialization.py
 - Use `ccache` for faster development builds
 - ASan builds supported for debugging (see INSTALL.md)
 - C++ code must follow clang-format style
+
+## Related Instructions
+- `general.instructions.md` - Repository setup and build requirements
+- `build-config.instructions.md` - Build system and compilation details
+- `onedal.instructions.md` - Python bindings that src/ implements
+- `daal4py.instructions.md` - Higher-level API built on src/
 - See `src/AGENTS.md` for detailed implementation guides

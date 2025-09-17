@@ -6,16 +6,21 @@
 - `deselected_tests.yaml`: Tests skipped in CI due to platform/dependency issues
 
 ## Test Execution Order (CRITICAL)
-```bash
-# 1. Install test dependencies FIRST
-pip install -r requirements-test.txt
 
-# 2. Run test suites in recommended order
+**Preparation**:
+```bash
+pip install -r requirements-test.txt
+```
+
+**Core Test Suites** (run in order):
+```bash
 pytest --verbose -s tests/                    # Legacy daal4py tests
 pytest --verbose --pyargs daal4py             # Native oneDAL API tests
 pytest --verbose --pyargs sklearnex           # sklearn compatibility tests
+```
 
-# 3. Specific test categories
+**Specific Categories**:
+```bash
 pytest tests/test_daal4py_examples.py         # Native API examples
 pytest tests/test_model_builders.py           # XGBoost/LightGBM conversion
 pytest tests/test_daal4py_spmd_examples.py    # Distributed computing (requires MPI)
@@ -68,5 +73,12 @@ pytest --maxfail=1 tests/                     # Stop on first failure
 # Coverage testing
 pytest --cov=sklearnex --cov=daal4py --cov=onedal
 ```
+
+## Related Instructions
+- `general.instructions.md` - Repository setup and core testing commands
+- `sklearnex.instructions.md` - Testing sklearn compatibility layer
+- `daal4py.instructions.md` - Testing native oneDAL algorithms
+- `onedal.instructions.md` - Testing low-level bindings
+- `src.instructions.md` - Testing C++/Cython core and distributed features
 
 See individual module AGENTS.md files for module-specific testing details.

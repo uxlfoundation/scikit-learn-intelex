@@ -79,3 +79,10 @@ ValueError: "'MPIROOT' is not set, cannot build with distributed mode"
 - **Pre-commit**: `.pre-commit-config.yaml` (code quality)
 
 Build timeouts: 120 minutes in CI (can be slow due to oneDAL compilation)
+
+## Related Instructions
+- `general.instructions.md` - Quick start build commands
+- `src.instructions.md` - C++/Cython build details
+- `tests.instructions.md` - Testing after successful builds
+
+For platform-specific build details, see `.ci/AGENTS.md`

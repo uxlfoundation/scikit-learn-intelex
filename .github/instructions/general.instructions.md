@@ -9,34 +9,22 @@
 - **Platforms**: Linux, Windows, macOS; CPU (x86_64, ARM), GPU (Intel via SYCL)
 - **Python**: 3.9-3.13 supported
 
-## Critical Build Requirements (ALWAYS REQUIRED)
+## Quick Start
 
+**Build Setup**: See [build-config.instructions.md](build-config.instructions.md) for complete details.
 ```bash
-# Environment variables (MANDATORY)
-export DALROOT=/path/to/onedal       # Required by setup.py:53-59
-export MPIROOT=/path/to/mpi          # For distributed support
-
-# Build dependencies (INSTALL FIRST)
-pip install -r dependencies-dev     # Cython==3.1.1, numpy>=2.0, pybind11==2.13.6
-
-# Development build (RECOMMENDED)
-python setup.py develop             # Creates editable install
+export DALROOT=/path/to/onedal
+python setup.py develop
 ```
 
-## Testing & Validation (Run in Order)
-
+**Testing**: See [tests.instructions.md](tests.instructions.md) for comprehensive testing.
 ```bash
-# 1. Install test dependencies
-pip install -r requirements-test.txt
+pytest --verbose --pyargs sklearnex
+```
 
-# 2. Core test suites
-pytest --verbose -s tests/                    # Legacy tests
-pytest --verbose --pyargs daal4py             # Native oneDAL tests
-pytest --verbose --pyargs sklearnex           # sklearn compatibility
-
-# 3. Code quality (REQUIRED before commit)
-pre-commit install
-pre-commit run --all-files --show-diff-on-failure
+**Code Quality**:
+```bash
+pre-commit run --all-files
 ```
 
 ## Code Standards
@@ -59,4 +47,12 @@ export PYTHONPATH=$(pwd)            # Add repo to path
 python setup.py develop             # Ensure editable install
 ```
 
-For module-specific details, see the corresponding AGENTS.md files in each directory.
+## Related Instructions
+- `sklearnex.instructions.md` - Primary sklearn interface and patching
+- `daal4py.instructions.md` - Direct oneDAL bindings and model builders
+- `onedal.instructions.md` - Low-level C++ bindings
+- `src.instructions.md` - Core C++/Cython implementation
+- `tests.instructions.md` - Testing infrastructure and validation
+- `build-config.instructions.md` - Build system and environment setup
+
+For detailed implementation guides, see the corresponding AGENTS.md files in each directory.

@@ -21,14 +21,12 @@ model = DBSCAN().fit(X)  # Automatic NumPy → oneDAL conversion
 ```
 
 ## Device Context
-```python
-# Device selection handled through dpctl integration
-import dpctl
-from onedal.cluster import DBSCAN
 
-# GPU execution (requires Intel GPU)
-device = dpctl.SyclDevice("gpu:0")
-with dpctl.device_context(device):
+For comprehensive device management, see [onedal/AGENTS.md](../onedal/AGENTS.md).
+
+```python
+import dpctl
+with dpctl.device_context("gpu:0"):
     model = DBSCAN().fit(X)
 ```
 
@@ -56,4 +54,10 @@ pytest onedal/linear_model/tests/              # Linear models
 - Handles memory management between Python/C++ automatically
 - Provides foundation for both daal4py and sklearnex layers
 - SPMD module enables distributed computing with MPI
+
+## Related Instructions
+- `general.instructions.md` - Repository setup and build requirements
+- `src.instructions.md` - C++/Cython implementation that uses onedal
+- `sklearnex.instructions.md` - High-level layer built on onedal
+- `daal4py.instructions.md` - Alternative interface to onedal
 - See `onedal/AGENTS.md` for detailed technical implementation

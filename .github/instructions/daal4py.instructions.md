@@ -8,48 +8,21 @@ Direct Python bindings to Intel oneDAL for maximum performance and model builder
 2. **sklearn-compatible**: `from daal4py.sklearn import ...` - sklearn API with oneDAL backend
 3. **Model Builders**: `from daal4py.mb import convert_model` - External model conversion
 
-## Native oneDAL Pattern
+## API Overview
+
+For detailed native oneDAL patterns and model builders, see [daal4py/AGENTS.md](../daal4py/AGENTS.md).
+
+**Basic Pattern**:
 ```python
 import daal4py as d4p
-import numpy as np
-
-# Create algorithm with parameters
 algorithm = d4p.dbscan(epsilon=0.5, minObservations=5)
-
-# Run computation
 result = algorithm.compute(data)
-
-# Access results (algorithm-specific attributes)
-cluster_labels = result.assignments
-core_indices = result.coreIndices
 ```
 
-## Common Native Algorithms
-```python
-# Clustering
-d4p.dbscan(epsilon=0.5, minObservations=5)
-d4p.kmeans(nClusters=3, maxIterations=300)
-
-# Decomposition
-d4p.pca(method="defaultDense")
-d4p.svd(method="defaultDense")
-
-# Linear Models
-d4p.linear_regression_training()
-d4p.ridge_regression_training(ridgeParameters=1.0)
-```
-
-## Model Builders (mb/)
+**Model Conversion**:
 ```python
 from daal4py.mb import convert_model
-
-# Convert external models to oneDAL format
-d4p_model = convert_model(xgb_model)      # XGBoost → oneDAL
-d4p_model = convert_model(lgb_model)      # LightGBM → oneDAL
-d4p_model = convert_model(catboost_model) # CatBoost → oneDAL
-
-# Use converted model for fast inference
-predictions = d4p_model.compute(test_data)
+d4p_model = convert_model(xgb_model)  # 10-100x faster inference
 ```
 
 ## Testing
@@ -67,4 +40,10 @@ pytest daal4py/sklearn/tests/                 # sklearn-compatible API
 - Native API provides direct oneDAL algorithm access (fastest performance)
 - sklearn-compatible API in `daal4py/sklearn/` maintains full sklearn compatibility
 - Model builders enable oneDAL inference for models trained with other frameworks
+
+## Related Instructions
+- `general.instructions.md` - Repository setup and build requirements
+- `onedal.instructions.md` - Low-level backend that daal4py wraps
+- `src.instructions.md` - Core C++/Cython implementation details
+- `tests.instructions.md` - Testing native oneDAL algorithms
 - See `daal4py/AGENTS.md` for detailed algorithm usage patterns
