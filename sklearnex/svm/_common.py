@@ -20,13 +20,9 @@ from numbers import Number, Real
 import numpy as np
 from scipy import sparse as sp
 from sklearn.base import ClassifierMixin
-from sklearn.calibration import CalibratedClassifierCV, _fit_calibrator
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import r2_score
 from sklearn.preprocessing import LabelEncoder
-from sklearn.utils import indexable
-from sklearn.utils._response import _get_response_values
-from sklearn.utils.multiclass import check_classification_targets
-from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.utils.validation import get_requires_y_tag
@@ -38,9 +34,12 @@ from ..base import oneDALEstimator
 from ..utils.validation import validate_data
 
 if sklearn_check_version("1.6"):
+    from sklearn.calibration import _fit_calibrator
     from sklearn.frozen import FrozenEstimator
-
-if sklearn_check_version("1.6"):
+    from sklearn.utils import indexable
+    from sklearn.utils._response import _get_response_values
+    from sklearn.utils.multiclass import check_classification_targets
+    from sklearn.utils.validation import check_is_fitted
 
     def _prefit_CalibratedClassifierCV_fit(self, X, y, **fit_params):
         # This is a stop-gap solution where the cv='prefit' of CalibratedClassifierCV
