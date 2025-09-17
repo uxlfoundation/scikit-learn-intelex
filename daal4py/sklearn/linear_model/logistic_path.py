@@ -20,15 +20,13 @@ import numpy as np
 import scipy.optimize as optimize
 import scipy.sparse as sparse
 import sklearn.linear_model._logistic as logistic_module
-from sklearn.linear_model._sag import sag_solver
 from sklearn.utils import (
     check_array,
     check_consistent_length,
     check_random_state,
-    compute_class_weight,
 )
 from sklearn.utils.optimize import _check_optimize_result, _newton_cg
-from sklearn.utils.validation import _check_sample_weight, check_is_fitted
+from sklearn.utils.validation import check_is_fitted
 
 import daal4py as d4p
 
@@ -52,7 +50,6 @@ if sklearn_check_version("1.1"):
         LogisticRegression as LogisticRegression_original,
     )
     from sklearn.linear_model._logistic import (
-        _check_multi_class,
         _check_solver,
     )
 else:
@@ -391,12 +388,13 @@ def daal4py_predict(self, X, resultsToEvaluate):
         f"sklearn.linear_model.LogisticRegression.{_function_name}"
     )
     if _function_name != "predict":
+        multi_class = getattr(self, "multi_class", "auto")
         _patching_status.and_conditions(
             [
                 (
                     self.classes_.size == 2
-                    or logistic_module._check_multi_class(
-                        self.multi_class if self.multi_class != "deprecated" else "auto",
+                    or _check_multi_class(
+                        multi_class if multi_class != "deprecated" else "auto",
                         self.solver,
                         self.classes_.size,
                     )
@@ -404,7 +402,7 @@ def daal4py_predict(self, X, resultsToEvaluate):
                     f"selected multiclass option is not supported for n_classes > 2.",
                 ),
                 (
-                    not (self.classes_.size == 2 and self.multi_class == "multinomial"),
+                    not (self.classes_.size == 2 and multi_class == "multinomial"),
                     "multi_class='multinomial' not supported with binary data",
                 ),
             ],
@@ -475,7 +473,7 @@ def logistic_regression_path(*args, **kwargs):
         [
             (
                 kwargs["solver"] in ["lbfgs", "newton-cg"],
-                f"'{kwargs["solver"]}' solver is not supported. "
+                f"'{kwargs['solver']}' solver is not supported. "
                 "Only 'lbfgs' and 'newton-cg' solvers are supported.",
             ),
             (not sparse.issparse(args[0]), "X is sparse. Sparse input is not supported."),
@@ -494,6 +492,7 @@ def logistic_regression_path(*args, **kwargs):
 
     _patching_status.write_log()
     return res
+
 
 @control_n_jobs(
     decorated_methods=["fit", "predict", "predict_proba", "predict_log_proba"]
