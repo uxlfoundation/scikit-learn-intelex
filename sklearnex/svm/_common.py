@@ -20,7 +20,7 @@ from numbers import Number, Real
 import numpy as np
 from scipy import sparse as sp
 from sklearn.base import ClassifierMixin
-from sklearn.calibration import _fit_calibrator, CalibratedClassifierCV
+from sklearn.calibration import CalibratedClassifierCV, _fit_calibrator
 from sklearn.metrics import r2_score
 from sklearn.preprocessing import LabelEncoder
 from sklearn.utils import indexable

@@ -20,11 +20,7 @@ import numpy as np
 import scipy.optimize as optimize
 import scipy.sparse as sparse
 import sklearn.linear_model._logistic as logistic_module
-from sklearn.utils import (
-    check_array,
-    check_consistent_length,
-    check_random_state,
-)
+from sklearn.utils import check_array, check_consistent_length, check_random_state
 from sklearn.utils.optimize import _check_optimize_result, _newton_cg
 from sklearn.utils.validation import check_is_fitted
 
@@ -49,9 +45,7 @@ if sklearn_check_version("1.1"):
     from sklearn.linear_model._logistic import (
         LogisticRegression as LogisticRegression_original,
     )
-    from sklearn.linear_model._logistic import (
-        _check_solver,
-    )
+    from sklearn.linear_model._logistic import _check_solver
 else:
     from sklearn.linear_model._logistic import _LOGISTIC_SOLVER_CONVERGENCE_MSG
     from sklearn.linear_model._logistic import (
