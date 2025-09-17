@@ -270,6 +270,12 @@ class BaseSVC(BaseSVM):
             # FrozenEstimator not available for sklearn < 1.4
             if sklearn_check_version("1.6"):
                 clf_base = FrozenEstimator(clf_base)
+                # setting the value to one will mimic the use of 'prefit'
+                # when using FrozenEstimator. Note sklearn's SVM implementation
+                # uses a default 5-kFolds strategy. This setting was discussed
+                # and implemented in
+                # https://github.com/uxlfoundation/scikit-learn-intelex/pull/1879
+                cv_params["cv"] = 1
             else:
                 cv_params["cv"] = "prefit"
 

@@ -48,10 +48,11 @@ def dlpack_to_numpy(obj):
     try:
         # Some frameworks implement an __array__ method just to
         # throw a RuntimeError when used (array_api_strict, dpctl),
-        # rather than an AttributeError, therefore a try catch is
-        # necessary (logic is essentially a getattr call + some)
+        # or a TypeError (array_api-strict) rather than an AttributeError
+        # therefore a try catch is necessary (logic is essentially a
+        # getattr call + some)
         obj = obj.__array__()
-    except (AttributeError, RuntimeError):
+    except (AttributeError, RuntimeError, TypeError):
         # requires numpy 1.23
         try:
             obj = np.from_dlpack(obj)
