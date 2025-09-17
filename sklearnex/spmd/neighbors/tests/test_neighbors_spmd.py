@@ -24,7 +24,6 @@ from onedal.tests.utils._dataframes_support import (
 )
 from sklearnex import config_context
 from sklearnex.tests.utils.spmd import (
-    _assert_unordered_allclose,
     _generate_classification_data,
     _generate_regression_data,
     _generate_statistic_data,
@@ -95,8 +94,8 @@ def test_knncls_spmd_gold(dataframe, queue):
     spmd_result = spmd_model.predict(local_dpt_X_test)
     batch_result = batch_model.predict(X_test)
 
-    _assert_unordered_allclose(spmd_indcs, batch_indcs, localize=True)
-    _assert_unordered_allclose(spmd_dists, batch_dists, localize=True)
+    _spmd_assert_allclose(spmd_indcs, batch_indcs)
+    _spmd_assert_allclose(spmd_dists, batch_dists)
     _spmd_assert_allclose(spmd_result, batch_result)
 
 
@@ -165,10 +164,8 @@ def test_knncls_spmd_synthetic(
 
     tol = 1e-4
     if dtype == np.float64:
-        _assert_unordered_allclose(spmd_indcs, batch_indcs, localize=True)
-        _assert_unordered_allclose(
-            spmd_dists, batch_dists, localize=True, rtol=tol, atol=tol
-        )
+        _spmd_assert_allclose(spmd_indcs, batch_indcs)
+        _spmd_assert_allclose(spmd_dists, batch_dists, rtol=tol, atol=tol)
     _spmd_assert_allclose(spmd_result, batch_result)
 
 
@@ -232,8 +229,8 @@ def test_knnreg_spmd_gold(dataframe, queue):
     spmd_result = spmd_model.predict(local_dpt_X_test)
     batch_result = batch_model.predict(X_test)
 
-    _assert_unordered_allclose(spmd_indcs, batch_indcs, localize=True)
-    _assert_unordered_allclose(spmd_dists, batch_dists, localize=True)
+    _spmd_assert_allclose(spmd_indcs, batch_indcs)
+    _spmd_assert_allclose(spmd_dists, batch_dists)
     _spmd_assert_allclose(spmd_result, batch_result)
 
 
@@ -304,10 +301,8 @@ def test_knnreg_spmd_synthetic(
 
     tol = 0.005 if dtype == np.float32 else 1e-4
     if dtype == np.float64:
-        _assert_unordered_allclose(spmd_indcs, batch_indcs, localize=True)
-        _assert_unordered_allclose(
-            spmd_dists, batch_dists, localize=True, rtol=tol, atol=tol
-        )
+        _spmd_assert_allclose(spmd_indcs, batch_indcs)
+        _spmd_assert_allclose(spmd_dists, batch_dists, rtol=tol, atol=tol)
     _spmd_assert_allclose(spmd_result, batch_result, rtol=tol, atol=tol)
 
 
@@ -341,8 +336,8 @@ def test_knnsearch_spmd_gold(dataframe, queue):
     spmd_dists, spmd_indcs = spmd_model.kneighbors(local_dpt_X_train)
     batch_dists, batch_indcs = batch_model.kneighbors(X_train)
 
-    _assert_unordered_allclose(spmd_indcs, batch_indcs, localize=True)
-    _assert_unordered_allclose(spmd_dists, batch_dists, localize=True)
+    _spmd_assert_allclose(spmd_indcs, batch_indcs)
+    _spmd_assert_allclose(spmd_dists, batch_dists)
 
 
 @pytest.mark.skipif(
@@ -350,7 +345,7 @@ def test_knnsearch_spmd_gold(dataframe, queue):
     reason="GPU device and MPI libs required for test",
 )
 @pytest.mark.parametrize(
-    "dimensions", [{"n": 100, "m": 10, "k": 2}, {"n": 20000, "m": 100, "k": 100}]
+    "dimensions", [{"n": 100, "m": 10, "k": 2}, {"n": 100000, "m": 100, "k": 100}]
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
@@ -389,5 +384,5 @@ def test_knnsearch_spmd_synthetic(
     batch_dists, batch_indcs = batch_model.kneighbors(X_train)
 
     tol = 0.005 if dtype == np.float32 else 1e-6
-    _assert_unordered_allclose(spmd_indcs, batch_indcs, localize=True)
-    _assert_unordered_allclose(spmd_dists, batch_dists, localize=True, rtol=tol, atol=tol)
+    _spmd_assert_allclose(spmd_indcs, batch_indcs)
+    _spmd_assert_allclose(spmd_dists, batch_dists, rtol=tol, atol=tol)
