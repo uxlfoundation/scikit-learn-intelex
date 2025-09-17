@@ -258,7 +258,3 @@ if sklearn_check_version("1.3"):
 else:
     pairwise_distances = _pairwise_distances
 pairwise_distances.__doc__ = pairwise_distances_original.__doc__
-
-
-
-
