@@ -201,8 +201,8 @@ struct train_ops {
         // Usually a train_ops_dispatcher is contained in oneDAL train_ops.cpp.
         // Due to the simplicity of this algorithm, implement it here.
         auto col_c = input.data.get_column_count();
-        dal::array<float_t> array =
-            dal::array<float_t>::full(col_c, static_cast<float_t>(desc.get_constant()));
+        oneapi::dal::array<float_t> array =
+            oneapi::dal::array<float_t>::full(col_c, static_cast<float_t>(desc.get_constant()));
         result_t result;
         result.data = dal::homogen_table::wrap(array, 1, col_c);
         return result;
@@ -216,8 +216,8 @@ struct train_ops {
         // Due to the simplicity of this algorithm, implement it here.
         auto col_c = input.data.get_column_count();
         auto queue = ctx.get_queue();
-        dal::array<float_t> array =
-            dal::array<float_t>::full(queue, col_c, static_cast<float_t>(desc.get_constant()));
+        oneapi::dal::array<float_t> array =
+            oneapi::dal::array<float_t>::full(queue, col_c, static_cast<float_t>(desc.get_constant()));
         result_t result;
         result.data = dal::homogen_table::wrap(array, 1, col_c);
         return result;
@@ -268,8 +268,8 @@ struct infer_ops {
             dal::detail::get_original_data(static_cast<const dal::homogen_table&>(input.constant))
                 .get_data();
         result_t result;
-        dal::array<float_t> array =
-            dal::array<float_t>::full(row_c * col_c, *reinterpret_cast<const float_t*>(ptr));
+        oneapi::dal::array<float_t> array =
+            oneapi::dal::array<float_t>::full(row_c * col_c, *reinterpret_cast<const float_t*>(ptr));
         result.data = dal::homogen_table::wrap(array, row_c, col_c);
         return result;
     }
@@ -288,8 +288,8 @@ struct infer_ops {
                 .get_data();
         result_t result;
         auto queue = ctx.get_queue();
-        dal::array<float_t> array =
-            dal::array<float_t>::full(queue, row_c * col_c, *reinterpret_cast<const float_t*>(ptr));
+        oneapi::dal::array<float_t> array =
+            oneapi::dal::array<float_t>::full(queue, row_c * col_c, *reinterpret_cast<const float_t*>(ptr));
         result.data = dal::homogen_table::wrap(array, row_c, col_c);
         return result;
     }
