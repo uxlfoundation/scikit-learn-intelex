@@ -41,7 +41,12 @@ tests_map = {
     "covariance/tests": "test_covariance.py",
     "decomposition/tests": ["test_pca.py", "test_incremental_pca.py"],
     "ensemble/tests": "test_forest.py",
-    "linear_model/tests": ["test_base.py", "test_coordinate_descent.py", "test_ridge.py"],
+    "linear_model/tests": [
+        "test_base.py",
+        "test_coordinate_descent.py",
+        "test_logistic.py",
+        "test_ridge.py",
+    ],
     "manifold/tests": "test_t_sne.py",
     "metrics/tests": ["test_pairwise.py", "test_ranking.py"],
     "model_selection/tests": ["test_split.py", "test_validation.py"],
