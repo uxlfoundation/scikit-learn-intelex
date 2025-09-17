@@ -486,6 +486,7 @@ def logistic_regression_path(*args, **kwargs):
         return lr_path_original(*args, **kwargs)
 
     if sklearn_check_version("1.8"):
+        kwargs.pop("classes", None)
         res = __logistic_regression_path(*(args[:2]), **kwargs)
     else:
         res = __logistic_regression_path(*args, **kwargs)
