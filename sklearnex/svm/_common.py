@@ -268,7 +268,7 @@ class BaseSVC(BaseSVM):
             cv_params = {"ensemble":False, "method":"sigmoid"}
 
             # FrozenEstimator not available for sklearn < 1.4
-            if check_sklearn_version("1.6"):
+            if sklearn_check_version("1.6"):
                 clf_base = FrozenEstimator(clf_base)                  
             else:
                 cv_params["cv"] = "prefit"
