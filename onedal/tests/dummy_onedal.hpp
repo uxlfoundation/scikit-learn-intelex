@@ -179,6 +179,12 @@ public:
 ///////////////////////////// infer_types.hpp /////////////////////////////
 
 /////// THESE ARE PRIVATE STEPS REQUIRED FOR IT TO WORK WITH ONEDAL ///////
+
+using dal::detail::host_policy;
+#ifdef ONEDAL_DATA_PARALLEL
+using dal::detail::data_parallel_policy;
+#endif
+
 template <typename float_t>
 dal::homogen_table create_full_table(const host_policy& ctx,
                                      std::int64_t row_c,
@@ -203,11 +209,6 @@ dal::homogen_table create_full_table(const data_parallel_policy& ctx,
 ////////////////////////////// train_ops.hpp //////////////////////////////
 namespace dummy {
 namespace detail {
-
-using dal::detail::host_policy;
-#ifdef ONEDAL_DATA_PARALLEL
-using dal::detail::data_parallel_policy;
-#endif
 
 template <typename Descriptor>
 struct train_ops {
@@ -248,11 +249,6 @@ struct train_ops<Descriptor, dal::dummy::detail::descriptor_tag>
 ////////////////////////////// infer_ops.hpp //////////////////////////////
 namespace dummy {
 namespace detail {
-
-using dal::detail::host_policy;
-#ifdef ONEDAL_DATA_PARALLEL
-using dal::detail::data_parallel_policy;
-#endif
 
 template <typename Descriptor>
 struct infer_ops {
