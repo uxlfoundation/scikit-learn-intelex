@@ -34,10 +34,11 @@ struct method2t {
     // defined for each algo.
     template <typename Float>
     auto operator()(const py::dict& params) {
+        using namespace dal::dummy;
         const auto method = params["method"].cast<std::string>();
 
-        ONEDAL_PARAM_DISPATCH_VALUE(method, "dense", ops, Float, dal::dummy::method::dense);
-        ONEDAL_PARAM_DISPATCH_VALUE(method, "by_default", ops, Float, dal::dummy::method::by_default);
+        ONEDAL_PARAM_DISPATCH_VALUE(method, "dense", ops, Float, method::dense);
+        ONEDAL_PARAM_DISPATCH_VALUE(method, "by_default", ops, Float, method::by_default);
         ONEDAL_PARAM_DISPATCH_THROW_INVALID_VALUE(method);
     }
 
@@ -68,7 +69,8 @@ struct params2desc {
 template <typename Policy, typename Task>
 void init_train_ops(py::module& m) {
     m.def("train", [](const Policy& policy, const py::dict& params, const table& data) {
-        using input_t = dal::dummy::train_input<Task>;
+        using namespace dal::dummy;
+        using input_t = train_input<Task>;
         // while there is a train_ops defined for each oneDAL algorithm
         // which supports ``train``, this is the train_ops defined in
         // onedal/common/dispatch_utils.hpp
@@ -85,7 +87,8 @@ void init_infer_ops(py::module_& m) {
     m.def(
         "infer",
         [](const Policy& policy, const py::dict& params, const table& constant, const table& data) {
-            using input_t = dal::dummy::infer_input<Task>;
+            using namespace dal::dummy;
+            using input_t = infer_input<Task>;
 
             infer_ops ops(policy, input_t{ data, constant }, params2desc{});
             // with the use of functors the order of operations is as
@@ -102,14 +105,16 @@ void init_infer_ops(py::module_& m) {
 
 template <typename Task>
 void init_train_result(py::module_& m) {
-    using result_t = dal::dummy::train_result<Task>;
+    using namespace dal::dummy;
+    using result_t = train_result<Task>;
 
     py::class_<result_t>(m, "train_result").def(py::init()).DEF_ONEDAL_PY_PROPERTY(data, result_t);
 }
 
 template <typename Task>
 void init_infer_result(py::module_& m) {
-    using result_t = dal::dummy::infer_result<Task>;
+    using namespace dal::dummy;
+    using result_t = infer_result<Task>;
 
     auto cls = py::class_<result_t>(m, "infer_result")
                    .def(py::init())
@@ -124,6 +129,10 @@ ONEDAL_PY_DECLARE_INSTANTIATOR(init_infer_ops);
 } // namespace dummy
 
 ONEDAL_PY_INIT_MODULE(dummy) {
+    using namespace dummy;
+    using namespace dal::detail;
+    using namespace dal::dummy;
+
     // the task_list allows for multiple types of tasks (like regression
     // and classification) template to be evaluated. The use of 'types'
     // is not required, and has special implications for the
@@ -131,7 +140,7 @@ ONEDAL_PY_INIT_MODULE(dummy) {
     // based on the task name. See the covariance implementation
     // where no task_list is used and a submodule of the algorithm is not
     // made.
-    using task_list = types<dal::dummy::task::generate>;
+    using task_list = types<task::generate>;
     auto sub = m.def_submodule("dummy");
 
     // explicitly define the templates based off of the policy and task
