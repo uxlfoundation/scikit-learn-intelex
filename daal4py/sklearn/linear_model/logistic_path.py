@@ -1,4 +1,4 @@
-# ==============================================================================
+    # ==============================================================================
 # Copyright 2014 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,10 +25,9 @@ from sklearn.utils import (
     check_array,
     check_consistent_length,
     check_random_state,
-    compute_class_weight,
 )
 from sklearn.utils.optimize import _check_optimize_result, _newton_cg
-from sklearn.utils.validation import _check_sample_weight, check_is_fitted
+from sklearn.utils.validation import check_is_fitted
 
 import daal4py as d4p
 
@@ -45,14 +44,11 @@ from .logistic_loss import (
 )
 
 if sklearn_check_version("1.1"):
-    from sklearn._loss.loss import HalfBinomialLoss, HalfMultinomialLoss
-    from sklearn.linear_model._linear_loss import LinearModelLoss
     from sklearn.linear_model._logistic import _LOGISTIC_SOLVER_CONVERGENCE_MSG
     from sklearn.linear_model._logistic import (
         LogisticRegression as LogisticRegression_original,
     )
     from sklearn.linear_model._logistic import (
-        _check_multi_class,
         _check_solver,
         _fit_liblinear,
     )
@@ -248,45 +244,6 @@ def __logistic_regression_path(
     .. versionchanged:: 0.19
         The "copy" parameter was removed.
     """
-    _patching_status = PatchingConditionsChain(
-        "sklearn.linear_model.LogisticRegression.fit"
-    )
-    # TODO: remove this fallback workaround after
-    # logistic path is reworked to align with sklearn 1.2
-    _dal_ready = _patching_status.and_conditions(
-        [
-            (
-                not (sklearn_check_version("1.2") and solver == "newton-cholesky"),
-                f"'{solver}' solver is not supported. "
-                "Only 'lbfgs' and 'newton-cg' solvers are supported.",
-            )
-        ]
-    )
-    if not _dal_ready:
-        _patching_status.write_log()
-        return lr_path_original(
-            X,
-            y,
-            pos_class=pos_class,
-            Cs=Cs,
-            fit_intercept=fit_intercept,
-            max_iter=max_iter,
-            tol=tol,
-            verbose=verbose,
-            solver=solver,
-            coef=coef,
-            class_weight=class_weight,
-            dual=dual,
-            penalty=penalty,
-            intercept_scaling=intercept_scaling,
-            multi_class=multi_class,
-            random_state=random_state,
-            check_input=check_input,
-            max_squared_sum=max_squared_sum,
-            sample_weight=sample_weight,
-            l1_ratio=l1_ratio,
-            n_threads=n_threads,
-        )
 
     if isinstance(Cs, numbers.Integral):
         Cs = np.logspace(-4, 4, Cs)
@@ -789,8 +746,6 @@ def __logistic_regression_path(
             for i, ci in enumerate(coefs):
                 coefs[i] = np.delete(ci, 0, axis=-1)
 
-    _patching_status.write_log()
-
     return np.array(coefs), np.array(Cs), n_iter
 
 
@@ -902,75 +857,35 @@ def daal4py_predict(self, X, resultsToEvaluate):
         return LogisticRegression_original.predict_log_proba(self, X)
 
 
-def logistic_regression_path(
-    X,
-    y,
-    pos_class=None,
-    Cs=10,
-    fit_intercept=True,
-    max_iter=100,
-    tol=1e-4,
-    verbose=0,
-    solver="lbfgs",
-    coef=None,
-    class_weight=None,
-    dual=False,
-    penalty="l2",
-    intercept_scaling=1.0,
-    multi_class="auto",
-    random_state=None,
-    check_input=True,
-    max_squared_sum=None,
-    sample_weight=None,
-    l1_ratio=None,
-    n_threads=1,
-):
-    if sklearn_check_version("1.1"):
-        return __logistic_regression_path(
-            X,
-            y,
-            pos_class=pos_class,
-            Cs=Cs,
-            fit_intercept=fit_intercept,
-            max_iter=max_iter,
-            tol=tol,
-            verbose=verbose,
-            solver=solver,
-            coef=coef,
-            class_weight=class_weight,
-            dual=dual,
-            penalty=penalty,
-            intercept_scaling=intercept_scaling,
-            multi_class=multi_class,
-            random_state=random_state,
-            check_input=check_input,
-            max_squared_sum=max_squared_sum,
-            sample_weight=sample_weight,
-            l1_ratio=l1_ratio,
-            n_threads=n_threads,
-        )
-    return __logistic_regression_path(
-        X,
-        y,
-        pos_class=pos_class,
-        Cs=Cs,
-        fit_intercept=fit_intercept,
-        max_iter=max_iter,
-        tol=tol,
-        verbose=verbose,
-        solver=solver,
-        coef=coef,
-        class_weight=class_weight,
-        dual=dual,
-        penalty=penalty,
-        intercept_scaling=intercept_scaling,
-        multi_class=multi_class,
-        random_state=random_state,
-        check_input=check_input,
-        max_squared_sum=max_squared_sum,
-        sample_weight=sample_weight,
-        l1_ratio=l1_ratio,
+def logistic_regression_path(*args, **kwargs):
+    
+    _patching_status = PatchingConditionsChain(
+        "sklearn.linear_model.LogisticRegression.fit"
     )
+    _dal_ready = _patching_status.and_conditions(
+        [
+            (
+                kwargs["solver"] in ["lbfgs", "newton-cg"],
+                f"'{kwargs["solver"]}' solver is not supported. "
+                "Only 'lbfgs' and 'newton-cg' solvers are supported.",
+            ),
+            (not sparse.issparse(args[0]), "X is sparse. Sparse input is not supported."),
+            (kwargs["sample_weight"] is None, "Sample weights are not supported."),
+            (kwargs["class_weight"] is None, "Class weights are not supported."),
+        ]
+    )
+    if not _dal_ready:
+        _patching_status.write_log()
+
+        return lr_path_original(*args, **kwargs)
+
+    if sklearn_check_version("1.8") and len(args) > 2:
+        res = __logistic_regression_path(*(args[:2]), **kwargs)
+    else:
+        res = __logistic_regression_path(*args, **kwargs)
+
+    _patching_status.write_log()
+    return res
 
 
 @control_n_jobs(
