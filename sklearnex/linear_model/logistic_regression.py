@@ -63,7 +63,7 @@ if daal_check_version((2024, "P", 1)):
             }
 
         if sklearn_check_version("1.8"):
-   
+
             def __init__(
                 self,
                 penalty="l2",
@@ -98,6 +98,7 @@ if daal_check_version((2024, "P", 1)):
                     n_jobs=n_jobs,
                     l1_ratio=l1_ratio,
                 )
+
         else:
 
             def __init__(

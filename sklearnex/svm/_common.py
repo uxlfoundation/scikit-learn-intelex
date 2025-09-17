@@ -265,11 +265,11 @@ class BaseSVC(BaseSVM):
         cfg["target_offload"] = queue
         with config_context(**cfg):
             clf_base.fit(X, y)
-            cv_params = {"ensemble":False, "method":"sigmoid"}
+            cv_params = {"ensemble": False, "method": "sigmoid"}
 
             # FrozenEstimator not available for sklearn < 1.4
             if sklearn_check_version("1.6"):
-                clf_base = FrozenEstimator(clf_base)                  
+                clf_base = FrozenEstimator(clf_base)
             else:
                 cv_params["cv"] = "prefit"
 

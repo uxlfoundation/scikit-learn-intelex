@@ -45,7 +45,7 @@ def dlpack_to_numpy(obj):
             raise TypeError(f"cannot move {type(obj)} to cpu")
 
     # convert to numpy
-    try: 
+    try:
         # Some frameworks implement an __array__ method just to
         # throw a RuntimeError when used (array_api_strict, dpctl),
         # rather than an AttributeError, therefore a try catch is
