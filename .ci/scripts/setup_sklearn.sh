@@ -29,7 +29,7 @@ if [ "$sklearn_version" == "main" ]; then
     # install sklearn build dependencies
     pip install threadpoolctl joblib scipy
     # install sklearn from main branch of git repo
-    pip install git+https://github.com/scikit-learn/scikit-learn.git@main
+    pip install git+https://github.com/lorentzenchr/scikit-learn.git@dep_logistic_multiclass
 else
     sed -i.bak -E "s/scikit-learn==[0-9a-zA-Z.]*/scikit-learn==${sklearn_version}.*/" requirements-test.txt
 fi
