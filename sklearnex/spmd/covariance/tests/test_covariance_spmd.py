@@ -19,9 +19,11 @@ import pytest
 from numpy.testing import assert_allclose
 
 from onedal.tests.utils._dataframes_support import (
+    _as_numpy,
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
+from sklearnex import config_context
 from sklearnex.tests.utils.spmd import (
     _generate_statistic_data,
     _get_local_tensor,
@@ -40,7 +42,9 @@ from sklearnex.tests.utils.spmd import (
 @pytest.mark.mpi
 def test_covariance_spmd_gold(dataframe, queue):
     # Import spmd and batch algo
-    from onedal.covariance import EmpiricalCovariance as EmpiricalCovariance_Batch
+    from sklearnex.preview.covariance import (
+        EmpiricalCovariance as EmpiricalCovariance_Batch,
+    )
     from sklearnex.spmd.covariance import EmpiricalCovariance as EmpiricalCovariance_SPMD
 
     # Create gold data and convert to dataframe
@@ -64,8 +68,10 @@ def test_covariance_spmd_gold(dataframe, queue):
     spmd_result = EmpiricalCovariance_SPMD().fit(local_dpt_data)
     batch_result = EmpiricalCovariance_Batch().fit(data)
 
-    assert_allclose(spmd_result.covariance_, batch_result.covariance_)
-    assert_allclose(spmd_result.location_, batch_result.location_)
+    assert_allclose(
+        _as_numpy(spmd_result.covariance_), _as_numpy(batch_result.covariance_)
+    )
+    assert_allclose(_as_numpy(spmd_result.location_), _as_numpy(batch_result.location_))
 
 
 @pytest.mark.skipif(
@@ -77,16 +83,18 @@ def test_covariance_spmd_gold(dataframe, queue):
 @pytest.mark.parametrize("assume_centered", [True, False])
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("use_raw_input", [True, False])
 @pytest.mark.mpi
 def test_covariance_spmd_synthetic(
-    n_samples, n_features, assume_centered, dataframe, queue, dtype
+    n_samples, n_features, assume_centered, dataframe, queue, dtype, use_raw_input
 ):
     # Import spmd and batch algo
-    # TODO: Align sklearnex spmd to sklearnex estimator with bias and swap onedal with sklearnex
-    from onedal.covariance import EmpiricalCovariance as EmpiricalCovariance_Batch
+    from sklearnex.preview.covariance import (
+        EmpiricalCovariance as EmpiricalCovariance_Batch,
+    )
     from sklearnex.spmd.covariance import EmpiricalCovariance as EmpiricalCovariance_SPMD
 
     # Generate data and convert to dataframe
@@ -97,11 +105,16 @@ def test_covariance_spmd_synthetic(
     )
 
     # Ensure results of batch algo match spmd
-    spmd_result = EmpiricalCovariance_SPMD(assume_centered=assume_centered).fit(
-        local_dpt_data
-    )
+    with config_context(use_raw_input=use_raw_input):
+        spmd_result = EmpiricalCovariance_SPMD(assume_centered=assume_centered).fit(
+            local_dpt_data
+        )
     batch_result = EmpiricalCovariance_Batch(assume_centered=assume_centered).fit(data)
 
     atol = 1e-5 if dtype == np.float32 else 1e-7
-    assert_allclose(spmd_result.covariance_, batch_result.covariance_, atol=atol)
-    assert_allclose(spmd_result.location_, batch_result.location_, atol=atol)
+    assert_allclose(
+        _as_numpy(spmd_result.covariance_), _as_numpy(batch_result.covariance_), atol=atol
+    )
+    assert_allclose(
+        _as_numpy(spmd_result.location_), _as_numpy(batch_result.location_), atol=atol
+    )

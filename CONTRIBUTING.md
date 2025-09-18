@@ -17,13 +17,74 @@
 
 # How to Contribute
 
-As an open source project, we welcome community contributions to Intel(R) Extension for Scikit-learn. 
+As an open source project, we welcome community contributions to Extension for Scikit-learn. 
 This document explains how to participate in project conversations, log bugs and enhancement requests, and submit code patches.
 
 ## Licensing 
 
-Intel(R) Extension for Scikit-learn uses the [Apache 2.0 License](https://github.com/intel/scikit-learn-intelex/blob/main/LICENSE). 
-By contributing to the project, you agree to the license and copyright terms and release your own contributions under these terms. 
+Extension for Scikit-learn uses the [Apache 2.0 License](https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/LICENSE). 
+By contributing to the project, you agree to the license and copyright terms and release your own contributions under these terms.
+
+### Copyright Guidelines for Contributions
+
+Each new file added to the project must include the following copyright notice - note that this project is closely tied
+to [oneDAL](https://github.com/uxlfoundation/oneDAL) and hence shares the same copyright header:
+
+* For Python files:
+```python
+# ==============================================================================
+# Copyright contributors to the oneDAL project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+```
+
+* For markdown files:
+````
+<!--
+********************************************************************************
+* Copyright contributors to the oneDAL project
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*******************************************************************************/-->
+````
+
+* For JavaScript files:
+```javascript
+// Copyright contributors to the oneDAL project
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+```
 
 ## Pull Requests 
 
@@ -47,7 +108,7 @@ Continuous Integration (CI) testing is enabled for the repository. Your pull req
 
 ## Code Style
 
-We use [black](https://black.readthedocs.io/en/stable/) version 24.1.1 and [isort](https://pycqa.github.io/isort/) version 5.13.2 formatters for Python* code. The line length is 90 characters; use default options otherwise. You can find the linter configuration in [.pyproject.toml](https://github.com/intel/scikit-learn-intelex/blob/main/pyproject.toml).
+We use [black](https://black.readthedocs.io/en/stable/) version 24.1.1 and [isort](https://pycqa.github.io/isort/) version 5.13.2 formatters for Python* code. The line length is 90 characters; use default options otherwise. You can find the linter configuration in [.pyproject.toml](https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/pyproject.toml).
 
 A GitHub* Action verifies if your changes comply with the output of the auto-formatting tools.
 
@@ -57,3 +118,7 @@ Optionally, you can install pre-commit hooks that do the formatting for you. For
 pip install pre-commit
 pre-commit install
 ```
+
+## Ideas
+
+If you want to contribute but do not know where to start we maintain a [public list](https://uxlfoundation.github.io/scikit-learn-intelex/latest/ideas.html) of projects which include difficulty and effort in our documentation.  These ideas have linked issues on GitHub where you can message us for next steps.

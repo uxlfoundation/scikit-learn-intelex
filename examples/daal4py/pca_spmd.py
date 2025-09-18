@@ -24,10 +24,8 @@ from numpy import allclose, loadtxt
 
 import daal4py as d4p
 
-if __name__ == "__main__":
-    # Initialize SPMD mode
-    d4p.daalinit()
 
+def main():
     # Each process gets its own data
     data_path = Path(__file__).parent / "data" / "distributed"
     infile = data_path / f"pca_normalized_{d4p.my_procid() + 1}.csv"
@@ -37,7 +35,7 @@ if __name__ == "__main__":
     # let's provide a file directly, not a table/array
     result1 = algo.compute(str(infile))
 
-    # We can also load the data ourselfs and provide the numpy array
+    # We can also load the data ourselves and provide the numpy array
     data = loadtxt(infile, delimiter=",")
     result2 = algo.compute(data)
 
@@ -55,5 +53,10 @@ if __name__ == "__main__":
         or allclose(result1.variances, result2.variances)
     )
 
+
+if __name__ == "__main__":
+    # Initialize SPMD mode
+    d4p.daalinit()
+    main()
     print("All looks good!")
     d4p.daalfini()

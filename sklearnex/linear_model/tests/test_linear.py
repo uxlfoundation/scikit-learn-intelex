@@ -29,18 +29,39 @@ from onedal.tests.utils._dataframes_support import (
 from sklearnex.tests.utils import _IS_INTEL
 
 
+@pytest.fixture
+def hyperparameters(request):
+    from sklearnex.linear_model import LinearRegression
+
+    hparams = LinearRegression.get_hyperparameters("fit")
+
+    def restore_hyperparameters():
+        LinearRegression.reset_hyperparameters("fit")
+
+    request.addfinalizer(restore_hyperparameters)
+    return hparams
+
+
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("macro_block", [None, 1024])
+@pytest.mark.parametrize("non_batched_route", [False, True])
 @pytest.mark.parametrize("overdetermined", [False, True])
 @pytest.mark.parametrize("multi_output", [False, True])
 def test_sklearnex_import_linear(
-    dataframe, queue, dtype, macro_block, overdetermined, multi_output
+    hyperparameters,
+    dataframe,
+    queue,
+    dtype,
+    macro_block,
+    non_batched_route,
+    overdetermined,
+    multi_output,
 ):
-    if (overdetermined or multi_output) and not daal_check_version((2025, "P", 1)):
+    if (not overdetermined or multi_output) and not daal_check_version((2025, "P", 1)):
         pytest.skip("Functionality introduced in later versions")
     if (
-        overdetermined
+        not overdetermined
         and queue
         and queue.sycl_device.is_gpu
         and not daal_check_version((2025, "P", 200))
@@ -62,9 +83,13 @@ def test_sklearnex_import_linear(
 
     linreg = LinearRegression()
     if daal_check_version((2024, "P", 0)) and macro_block is not None:
-        hparams = LinearRegression.get_hyperparameters("fit")
-        hparams.cpu_macro_block = macro_block
-        hparams.gpu_macro_block = macro_block
+        hyperparameters.cpu_macro_block = macro_block
+        hyperparameters.gpu_macro_block = macro_block
+        if daal_check_version((2025, "P", 500)) and non_batched_route:
+            # If the non-batched route is requested, set the parameters to use it
+            hyperparameters.cpu_max_cols_batched = 1
+            hyperparameters.cpu_small_rows_threshold = 1
+            hyperparameters.cpu_small_rows_max_cols_batched = 1
 
     X = X.astype(dtype=dtype)
     y = y.astype(dtype=dtype)

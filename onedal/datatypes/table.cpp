@@ -18,18 +18,19 @@
 #include "oneapi/dal/table/homogen.hpp"
 
 #ifdef ONEDAL_DATA_PARALLEL
-#include "onedal/datatypes/data_conversion_sua_iface.hpp"
+#include "onedal/datatypes/sycl_usm/data_conversion.hpp"
 #endif // ONEDAL_DATA_PARALLEL
 
-#include "onedal/datatypes/data_conversion.hpp"
-#include "onedal/datatypes/utils/numpy_helpers.hpp"
+#include "onedal/datatypes/numpy/data_conversion.hpp"
+#include "onedal/datatypes/dlpack/data_conversion.hpp"
+#include "onedal/datatypes/numpy/numpy_utils.hpp"
 #include "onedal/common/pybind11_helpers.hpp"
 #include "onedal/version.hpp"
 
 #if ONEDAL_VERSION <= 20230100
-    #include "oneapi/dal/table/detail/csr.hpp"
+#include "oneapi/dal/table/detail/csr.hpp"
 #else
-    #include "oneapi/dal/table/csr.hpp"
+#include "oneapi/dal/table/csr.hpp"
 #endif
 
 namespace py = pybind11;
@@ -72,30 +73,74 @@ ONEDAL_PY_INIT_MODULE(table) {
         const auto column_count = t.get_column_count();
         return py::make_tuple(row_count, column_count);
     });
-    table_obj.def_property_readonly("dtype", [](const table& t){
+    table_obj.def_property_readonly("dtype", [](const table& t) {
         // returns a numpy dtype, even if source was not from numpy
-        return py::dtype(convert_dal_to_npy_type(t.get_metadata().get_data_type(0)));
+        return py::dtype(numpy::convert_dal_to_npy_type(t.get_metadata().get_data_type(0)));
+    });
+    table_obj.def(
+        "__dlpack__",
+        [](const table& t,
+           py::object stream,
+           py::object max_version,
+           py::object dl_device,
+           py::object copyobj) {
+            // do python type checking before calling function
+            if (!stream.is_none())
+                // necessary for array API conformance
+                throw py::buffer_error("dlpack stream is unsupported");
+
+            if (!max_version.is_none() &&
+                (!py::isinstance<py::tuple>(max_version) || py::len(max_version) != 2))
+                throw py::type_error("max_version must be a tuple (major, minor)");
+
+            if (!dl_device.is_none() &&
+                (!py::isinstance<py::tuple>(dl_device) || py::len(dl_device) != 2))
+                throw py::type_error("dl_device must be a tuple (device_type, device_id)");
+
+            if (!copyobj.is_none() && !py::isinstance<py::bool_>(copyobj))
+                throw py::type_error("copy must be a boolean or None");
+
+            return dlpack::construct_dlpack(t, max_version, dl_device, copyobj);
+        },
+        py::kw_only(),
+        py::arg("stream") = py::none(),
+        py::arg("max_version") = py::none(),
+        py::arg("dl_device") = py::none(),
+        py::arg("copy") = py::none());
+    table_obj.def("__dlpack_device__", [](const table& t) {
+        auto dlpack_device = dlpack::get_dlpack_device(t);
+        return py::make_tuple(dlpack_device.device_type, dlpack_device.device_id);
     });
 
 #ifdef ONEDAL_DATA_PARALLEL
-    define_sycl_usm_array_property(table_obj);
+    table_obj.def_property_readonly("__sycl_usm_array_interface__", &sycl_usm::construct_sua_iface);
 #endif // ONEDAL_DATA_PARALLEL
 
-    m.def("to_table", [](py::object obj) {
-        #ifdef ONEDAL_DATA_PARALLEL
-        if (py::hasattr(obj, "__sycl_usm_array_interface__")) {
-            return convert_from_sua_iface(obj);
+    m.def("to_table", [](py::object obj, py::object queue) {
+        if (py::isinstance<py::array>(obj)) {
+            return numpy::convert_to_table(obj, queue);
         }
-        #endif // ONEDAL_DATA_PARALLEL
-
-        auto* obj_ptr = obj.ptr();
-        return convert_to_table(obj_ptr);
+#ifdef ONEDAL_DATA_PARALLEL
+        if (py::hasattr(obj, "__sycl_usm_array_interface__")) {
+            return sycl_usm::convert_to_table(obj);
+        }
+#endif // ONEDAL_DATA_PARALLEL
+        if (py::hasattr(obj, "__dlpack__")) {
+            return dlpack::convert_to_table(obj, queue);
+        }
+        // assume to be sparse (handled in numpy)
+        return numpy::convert_to_table(obj, queue);
     });
 
-    m.def("from_table", [](const dal::table& t) -> py::handle {
-        auto* obj_ptr = convert_to_pyobject(t);
-        return obj_ptr;
+    m.def("from_table", [](const dal::table& t) -> py::object {
+        auto* obj_ptr = numpy::convert_to_pyobject(t);
+        return py::reinterpret_steal<py::object>(obj_ptr);
     });
+    m.def("dlpack_memory_order", &dlpack::dlpack_memory_order);
+    py::enum_<DLDeviceType>(m, "DLDeviceType")
+        .value("kDLCPU", kDLCPU)
+        .value("kDLOneAPI", kDLOneAPI)
+        .export_values();
 }
 
 } // namespace oneapi::dal::python

@@ -14,8 +14,11 @@
 # limitations under the License.
 # ==============================================================================
 
-from onedal.spmd.basic_statistics import BasicStatistics
+from onedal.spmd.basic_statistics import BasicStatistics as onedal_BasicStatistics
 
-# TODO:
-# Currently it uses `onedal` module interface.
-# Add sklearnex dispatching.
+from ...basic_statistics import BasicStatistics as BasicStatistics_Batch
+
+
+class BasicStatistics(BasicStatistics_Batch):
+    __doc__ = BasicStatistics_Batch.__doc__
+    _onedal_basic_statistics = staticmethod(onedal_BasicStatistics)

@@ -18,6 +18,8 @@ import importlib
 import os
 from glob import glob
 
+from onedal.tests.utils._dataframes_support import test_frameworks
+
 
 def _check_primitive_usage_ban(primitive_name, package, allowed_locations=None):
     """This test blocks the usage of the primitive in
@@ -54,4 +56,16 @@ def test_sklearn_check_version_ban():
 
     # remove this file from the list
     output = "\n".join([i for i in output if "test_common.py" not in i])
-    assert output == "", f"sklearn versioning is occuring in: \n{output}"
+    assert output == "", f"sklearn versioning is occurring in: \n{output}"
+
+
+def test_frameworks_intentionality():
+    """Only silent skip frameworks which are not installed"""
+    fmwks = test_frameworks.replace("array_api", "array_api_strict").split(",")
+    for module in fmwks:
+        try:
+            importlib.import_module(module)
+        # If a module isn't installed, working as intended.
+        # If an ImportError occurs, then something is wrong.
+        except ModuleNotFoundError:
+            pass

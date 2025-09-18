@@ -14,22 +14,68 @@
 # limitations under the License.
 # ==============================================================================
 
-import warnings
-from abc import ABCMeta, abstractmethod
-
-import numpy as np
-
-from ..common._base import BaseEstimator
-from ..datatypes import _convert_to_supported, from_table, to_table
-from ..utils import _is_csr
-from ..utils.validation import _check_array
+from .._device_offload import supports_queue
+from ..common._backend import bind_default_backend
+from ..datatypes import from_table, to_table
+from ..utils.validation import _is_csr
 
 
-class BaseBasicStatistics(BaseEstimator, metaclass=ABCMeta):
-    @abstractmethod
-    def __init__(self, result_options, algorithm):
+class BasicStatistics:
+    """Low order moments oneDAL estimator.
+
+    Calculate basic statistics for data.
+
+    Parameters
+    ----------
+    result_options : str or list, default=str('all')
+        List of statistics to compute.
+
+    algorithm : str, default=str('by_default')
+        Method for statistics computation.
+
+    Attributes
+    ----------
+        min : ndarray of shape (n_features,)
+            Minimum of each feature over all samples.
+
+        max : ndarray of shape (n_features,)
+            Maximum of each feature over all samples.
+
+        sum : ndarray of shape (n_features,)
+            Sum of each feature over all samples.
+
+        mean : ndarray of shape (n_features,)
+            Mean of each feature over all samples.
+
+        variance : ndarray of shape (n_features,)
+            Variance of each feature over all samples.
+
+        variation : ndarray of shape (n_features,)
+            Variation of each feature over all samples.
+
+        sum_squares : ndarray of shape (n_features,)
+            Sum of squares for each feature over all samples.
+
+        standard_deviation : ndarray of shape (n_features,)
+            Standard deviation of each feature over all samples.
+
+        sum_squares_centered : ndarray of shape (n_features,)
+            Centered sum of squares for each feature over all samples.
+
+        second_order_raw_moment : ndarray of shape (n_features,)
+            Second order moment of each feature over all samples.
+
+    Notes
+    -----
+        Attributes are populated only for corresponding result options.
+    """
+
+    def __init__(self, result_options="all", algorithm="by_default"):
         self.options = result_options
         self.algorithm = algorithm
+
+    @bind_default_backend("basic_statistics")
+    def compute(self, params, data_table, weights_table): ...
 
     @staticmethod
     def get_all_result_options():
@@ -46,62 +92,60 @@ class BaseBasicStatistics(BaseEstimator, metaclass=ABCMeta):
             "second_order_raw_moment",
         ]
 
-    def _get_result_options(self, options):
-        if options == "all":
-            options = self.get_all_result_options()
-        if isinstance(options, list):
-            options = "|".join(options)
-        assert isinstance(options, str)
-        return options
+    @property
+    def options(self):
+        if self._options == ["all"]:
+            return self.get_all_result_options()
+        return self._options
 
-    def _get_onedal_params(self, is_csr, dtype=np.float32):
-        options = self._get_result_options(self.options)
+    @options.setter
+    def options(self, opts):
+        # options always to be an iterable
+        self._options = opts.split("|") if isinstance(opts, str) else opts
+
+    def _get_onedal_params(self, is_csr, dtype=None):
         return {
             "fptype": dtype,
             "method": "sparse" if is_csr else self.algorithm,
-            "result_option": options,
+            "result_option": "|".join(self.options),
         }
 
+    @supports_queue
+    def fit(self, X, sample_weight=None, queue=None):
+        """Generate statistics.
 
-class BasicStatistics(BaseBasicStatistics):
-    """
-    Basic Statistics oneDAL implementation.
-    """
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+            Training data batch, where `n_samples` is the number of samples
+            in the batch, and `n_features` is the number of features.
 
-    def __init__(self, result_options="all", algorithm="by_default"):
-        super().__init__(result_options, algorithm)
+        sample_weight : array-like of shape (n_samples,), default=None
+            Individual weights for each sample.
 
-    def fit(self, data, sample_weight=None, queue=None):
-        policy = self._get_policy(queue, data, sample_weight)
+        queue : SyclQueue or None, default=None
+            SYCL Queue object for device code execution. Default
+            value None causes computation on host.
 
-        is_csr = _is_csr(data)
+        Returns
+        -------
+        self : object
+            Returns the instance itself.
+        """
 
-        if data is not None and not is_csr:
-            data = _check_array(data, ensure_2d=False)
-        if sample_weight is not None:
-            sample_weight = _check_array(sample_weight, ensure_2d=False)
+        is_csr = _is_csr(X)
 
-        data, sample_weight = _convert_to_supported(policy, data, sample_weight)
-        is_single_dim = data.ndim == 1
-        data_table, weights_table = to_table(data, sample_weight)
+        is_single_dim = X.ndim == 1
+        X_table, sample_weight_table = to_table(X, sample_weight, queue=queue)
 
-        dtype = data.dtype
-        raw_result = self._compute_raw(data_table, weights_table, policy, dtype, is_csr)
-        for opt, raw_value in raw_result.items():
-            value = from_table(raw_value).ravel()
-            if is_single_dim:
-                setattr(self, opt, value[0])
-            else:
-                setattr(self, opt, value)
+        result = self._compute_raw(X_table, sample_weight_table, X_table.dtype, is_csr)
+
+        for opt in self.options:
+            value = from_table(getattr(result, opt), like=X)[0, :]  # 2D table [1, n]
+            setattr(self, opt + "_", value[0] if is_single_dim else value)
 
         return self
 
-    def _compute_raw(
-        self, data_table, weights_table, policy, dtype=np.float32, is_csr=False
-    ):
-        module = self._get_backend("basic_statistics")
+    def _compute_raw(self, data_table, weights_table, dtype=None, is_csr=False):
         params = self._get_onedal_params(is_csr, dtype)
-        result = module.compute(policy, params, data_table, weights_table)
-        options = self._get_result_options(self.options).split("|")
-
-        return {opt: getattr(result, opt) for opt in options}
+        return self.compute(params, data_table, weights_table)

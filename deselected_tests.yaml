@@ -25,25 +25,48 @@
 #  will exclude deselection in versions 0.18.1, and 0.18.2 only.
 
 deselected_tests:
+  # sklearn 1.6 unsupported features
+  - linear_model/tests/test_base.py::test_linear_regression_sample_weight_consistency[42-True-None-X_shape1]
+  - linear_model/tests/test_base.py::test_linear_regression_sample_weight_consistency[42-True-None-X_shape2]
+  - linear_model/tests/test_ridge.py::test_ridge_shapes_type
+  - linear_model/tests/test_ridge.py::test_ridge_cv_results_predictions[2-False-False]
+  - linear_model/tests/test_ridge.py::test_ridge_cv_results_predictions[2-False-True]
+  - neighbors/tests/test_neighbors.py::test_nan_euclidean_support[KNeighborsClassifier-params0]
+  - neighbors/tests/test_neighbors.py::test_nan_euclidean_support[KNeighborsRegressor-params1]
+  - neighbors/tests/test_neighbors.py::test_nan_euclidean_support[LocalOutlierFactor-params6]
+  - neighbors/tests/test_neighbors.py::test_neighbor_classifiers_loocv[ball_tree-nn_model0]
+  - neighbors/tests/test_neighbors.py::test_neighbor_classifiers_loocv[brute-nn_model0]
+  - neighbors/tests/test_neighbors.py::test_neighbor_classifiers_loocv[kd_tree-nn_model0]
+  - neighbors/tests/test_neighbors.py::test_neighbor_classifiers_loocv[auto-nn_model0]
+
   # Array API support
-  # sklearnex functional Array API support doesn't guaranty namespace consistency for the estimator's array attributes.
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_input_and_values-array_api_strict-None-None]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_input_and_values-array_api_strict-None-None]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_get_precision-array_api_strict-None-None]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_get_precision-array_api_strict-None-None]
-  - linear_model/tests/test_ridge.py::test_ridge_array_api_compliance[Ridge(solver='svd')-check_array_api_attributes-array_api_strict-None-None]
-  - linear_model/tests/test_ridge.py::test_ridge_array_api_compliance[Ridge(solver='svd')-check_array_api_input_and_values-array_api_strict-None-None]
+  # numpy.array_api was experimental and its use in sklearn was not official
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full')-check_array_api_input_and_values-numpy.array_api-None-None] <1.5
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full')-check_array_api_get_precision-numpy.array_api-None-None] <1.5
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=0.1,svd_solver='full',whiten=True)-check_array_api_input_and_values-numpy.array_api-None-None] <1.5
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=0.1,svd_solver='full',whiten=True)-check_array_api_get_precision-numpy.array_api-None-None] <1.5
+  - decomposition/tests/test_pca.py::test_pca_mle_array_api_compliance[PCA(n_components='mle',svd_solver='full')-check_array_api_get_precision-numpy.array_api-None-None] <1.5
+  
   # `train_test_split` inconsistency for Array API inputs.
   - model_selection/tests/test_split.py::test_array_api_train_test_split[True-None-array_api_strict-None-None]
   - model_selection/tests/test_split.py::test_array_api_train_test_split[True-stratify1-array_api_strict-None-None]
   - model_selection/tests/test_split.py::test_array_api_train_test_split[False-None-array_api_strict-None-None]
-  # PCA. Array API functionally supported for all factorizations. power_iteration_normalizer=["LU", "QR"]
-  - decomposition/tests/test_pca.py::test_array_api_error_and_warnings_on_unsupported_params
-  # PCA. InvalidParameterError: The 'M' parameter of randomized_svd must be an instance of 'numpy.ndarray' or a sparse matrix.
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,power_iteration_normalizer='QR',random_state=0,svd_solver='randomized')-check_array_api_input_and_values-array_api_strict-None-None]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,power_iteration_normalizer='QR',random_state=0,svd_solver='randomized')-check_array_api_get_precision-array_api_strict-None-None]
+  - model_selection/tests/test_split.py::test_array_api_train_test_split[True-None-torch-cpu-float64]
+  - model_selection/tests/test_split.py::test_array_api_train_test_split[True-None-torch-cpu-float32]
+  - model_selection/tests/test_split.py::test_array_api_train_test_split[True-stratify1-torch-cpu-float64]
+  - model_selection/tests/test_split.py::test_array_api_train_test_split[True-stratify1-torch-cpu-float32]
+  - model_selection/tests/test_split.py::test_array_api_train_test_split[False-None-torch-cpu-float64]
+  - model_selection/tests/test_split.py::test_array_api_train_test_split[False-None-torch-cpu-float32]
+  - model_selection/tests/test_split.py::test_array_api_train_test_split[True-None-array_api_strict-device1-float32]
+  - model_selection/tests/test_split.py::test_array_api_train_test_split[True-stratify1-array_api_strict-device1-float32]
+  - model_selection/tests/test_split.py::test_array_api_train_test_split[False-None-array_api_strict-device1-float32]
+  - model_selection/tests/test_split.py::test_array_api_train_test_split[True-None-numpy.array_api-None-None]
+  - model_selection/tests/test_split.py::test_array_api_train_test_split[True-stratify1-numpy.array_api-None-None]
+  - model_selection/tests/test_split.py::test_array_api_train_test_split[False-None-numpy.array_api-None-None]
+
   # Ridge regression. Array API functionally supported for all solvers. Not raising error for non-svd solvers.
   - linear_model/tests/test_ridge.py::test_array_api_error_and_warnings_for_solver_parameter[array_api_strict]
+  - linear_model/tests/test_ridge.py::test_array_api_error_and_warnings_for_solver_parameter[torch]
 
   # 'kulsinski' distance was deprecated in scipy 1.11 but still marked as supported in scikit-learn < 1.3
   - neighbors/tests/test_neighbors.py::test_kneighbors_brute_backend[float64-kulsinski] <1.3
@@ -53,6 +76,7 @@ deselected_tests:
   # resulting in solver assignment check failure for sklearn version >= 1.5
   - decomposition/tests/test_pca.py::test_pca_svd_solver_auto[1000-500-400-full] >=1.5
   - decomposition/tests/test_pca.py::test_pca_svd_solver_auto[1000-500-0.5-full] >=1.5
+  - decomposition/tests/test_pca.py::test_pca_svd_solver_auto[10-50-5-full] >=1.5
 
   # Non-critical, but there are significant differences due to different implementations
   - linear_model/tests/test_common.py::test_balance_property[42-True-LinearRegression]
@@ -69,7 +93,7 @@ deselected_tests:
 
   # Sklearnex RandomForestClassifier RNG is different from scikit-learn and daal4py
   # resulting in different feature importances for small number of trees (10).
-  # Issue dissappears with bigger number of trees (>=20)
+  # Issue disappears with bigger number of trees (>=20)
   - inspection/tests/test_permutation_importance.py::test_permutation_importance_correlated_feature_regression_pandas[0.5-1]
   - inspection/tests/test_permutation_importance.py::test_permutation_importance_correlated_feature_regression_pandas[0.5-2]
   - inspection/tests/test_permutation_importance.py::test_permutation_importance_correlated_feature_regression_pandas[1.0-1]
@@ -143,7 +167,7 @@ deselected_tests:
   - svm/tests/test_svm.py::test_custom_kernel_not_array_input[SVR]
 
   # test_non_uniform_strategies fails due to differences in handling of vacuous clusters after update
-  # See https://github.com/IntelPython/daal4py/issues/69
+  # See https://github.com/uxlfoundation/scikit-learn-intelex/issues/69
   - cluster/tests/test_k_means.py::test_kmeans_relocated_clusters >=0.24
 
   # oneAPI Data Analytics Library (oneDAL) does not check convergence for tol == 0.0 for ease of benchmarking
@@ -162,7 +186,7 @@ deselected_tests:
   - ensemble/tests/test_stacking.py::test_stacking_with_sample_weight[StackingClassifier]
 
   # Insufficient accuracy of "coefs" and "intercept" in Elastic Net for multi-target problems
-  # https://github.com/oneapi-src/oneDAL/issues/494
+  # https://github.com/uxlfoundation/oneDAL/issues/494
   - linear_model/tests/test_coordinate_descent.py::test_enet_multitarget
 
   # oneAPI Data Analytics Library (oneDAL) doesn't support sample_weight (back to scikit-learn),
@@ -247,7 +271,6 @@ deselected_tests:
   # test checks only the exact number of options that are used
   - tests/test_config.py::test_config_context
 
-
   # Accuracy of scikit-learn-intelex and scikit-learn may differ due to different approaches
   - manifold/tests/test_t_sne.py::test_bh_match_exact
   - manifold/tests/test_t_sne.py::test_uniform_grid[barnes_hut]
@@ -276,16 +299,7 @@ deselected_tests:
   - tests/test_common.py::test_estimators[LogisticRegression()-check_sample_weights_invariance(kind=zeros)] >=1.4
   - tests/test_multioutput.py::test_classifier_chain_fit_and_predict_with_sparse_data >=1.4
 
-  # Deselected tests for incremental algorithms
-  # Need to rework getting policy to correctly obtain it for method without data (finalize_fit)
-  # and avoid keeping it in class attribute, also need to investigate how to implement
-  # partial result serialization
-  - tests/test_common.py::test_estimators[IncrementalLinearRegression()-check_estimators_pickle]
-  - tests/test_common.py::test_estimators[IncrementalLinearRegression()-check_estimators_pickle(readonly_memmap=True)]
-  - tests/test_common.py::test_estimators[IncrementalRidge()-check_estimators_pickle]
-  - tests/test_common.py::test_estimators[IncrementalRidge()-check_estimators_pickle(readonly_memmap=True)]
   # There are not enough data to run onedal backend
-  - tests/test_common.py::test_estimators[IncrementalLinearRegression()-check_fit2d_1sample]
   - tests/test_common.py::test_estimators[IncrementalRidge()-check_fit2d_1sample]
 
   # Deselection of LogisticRegression tests over accuracy comparisons with sample_weights
@@ -296,10 +310,70 @@ deselected_tests:
 
   # Deselections for 2025.0
   - ensemble/tests/test_forest.py::test_importances[ExtraTreesRegressor-squared_error-float64]
-  - cluster/tests/test_k_means.py::test_kmeans_elkan_results
+  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[42-0.01-sparse
+  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[42-1e-08-sparse
+  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[42-1e-100-sparse
+  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[42-0-sparse
+  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[0.01-sparse
+  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[1e-08-sparse
+  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[1e-100-sparse
+  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[0-sparse
+  # Temporary deselections due to a bug in oneDAL, remove once the issue is fixed.
+  # Probably can also removed the kmeans ones above once these are fixed.
+  - cluster/tests/test_k_means.py::test_float_precision[42-KMeans-sparse_matrix]
+  - cluster/tests/test_k_means.py::test_float_precision[42-KMeans-sparse_array]
 
   # Fails in stock scikit-learn: checks that data is modified in-place when not strictly required
   - linear_model/tests/test_base.py::test_inplace_data_preprocessing
+
+  # Failure occurs in python3.9 on windows CPU only - not easy to reproduce
+  - ensemble/tests/test_weight_boosting.py::test_estimator >= 1.4 win32
+
+  # array_api dispatching for oneDAL is recognized using the sklearn tag system. This is an expected
+  # break in sklearn conformance as additional non-default tags cause errors in this test. This
+  # non-conformance does not impact the verification system of sklearn. A new system (sklearn >=1.6)
+  # allows for public tag addition. Sklearn also acknowledges the abuse of the old system by others,
+  # meaning its not too impactful to use it so long as the default keys and value types set by sklearn
+  # are respected.
+  - tests/test_common.py::test_valid_tag_types <1.6
+
+  # Parameter validation test dbscan only in sklearn 1.1, this is temporary deselected before update
+  # to CI parameters, as parameter validation is globally handled in sklearn version 1.2 onward
+  - cluster/tests/test_dbscan.py::test_dbscan_params_validation
+
+  # Failing tests since sklearn 1.6
+  - tests/test_common.py::test_estimators[CalibratedClassifierCV(cv=3,estimator=LogisticRegression(C=1))-check_sample_weight_equivalence_on_dense_data]
+  - tests/test_common.py::test_estimators[ExtraTreesClassifier(n_estimators=5)-check_sample_weight_equivalence_on_dense_data]
+  - tests/test_common.py::test_estimators[ExtraTreesRegressor(n_estimators=5)-check_sample_weight_equivalence_on_dense_data]
+  - utils/tests/test_estimator_checks.py::test_xfail_count_with_no_fast_fail
+  # XFail vs XPass differs between scikit-learn and scikit-learn-intelex since 1.6
+  - tests/test_common.py::test_estimators[LinearRegression()-check_sample_weight_equivalence_on_dense_data] <1.7
+  - tests/test_common.py::test_estimators[LogisticRegression(max_iter=5)-check_sample_weight_equivalence_on_dense_data]
+  - tests/test_common.py::test_estimators[LogisticRegression(max_iter=5,solver='newton-cg')-check_sample_weight_equivalence_on_dense_data]
+  - tests/test_common.py::test_estimators[NuSVC()-check_class_weight_classifiers]
+  - tests/test_common.py::test_estimators[CalibratedClassifierCV(estimator=LogisticRegression(C=1))-check_sample_weights_invariance(kind=ones)]
+
+  # Logistic regression is not expected to give exact matches due to small differences in numerical tolerances
+  - linear_model/tests/test_logistic.py::test_multinomial_binary_probabilities
+  - linear_model/tests/test_logistic.py::test_logistic_cv_multinomial_score[neg_log_loss-multiclass_agg_list3]
+  - linear_model/tests/test_logistic.py::test_logistic_regression_class_weights
+  - linear_model/tests/test_logistic.py::test_liblinear_decision_function_zero
+  - linear_model/tests/test_logistic.py::test_warm_start
+  - linear_model/tests/test_logistic.py::test_dtype_match
+  - linear_model/tests/test_logistic.py::test_newton_cholesky_fallback_to_lbfgs
+  - linear_model/tests/test_logistic.py::test_logistic_cv_sparse[csr_array]
+  - linear_model/tests/test_logistic.py::test_logistic_cv_sparse[csr_matrix]
+  - tests/test_common.py::test_estimators[LogisticRegressionCV(cv=3,max_iter=5)-check_sample_weight_equivalence_on_dense_data]
+  - ensemble/tests/test_bagging.py::test_estimators_samples >=1.0,<1.1
+  - ensemble/tests/test_voting.py::test_sample_weight >=1.0,<1.1
+
+  # Scikit-learn does not constraint multinomial logistic intercepts to sum to zero.
+  # Softmax function is invariant to additions by a constant, so even though the numbers
+  # might look very off here, the predictions they generate are identical.
+  - linear_model/tests/test_logistic.py::test_logistic_regression_multinomial
+
+  # This particular case does not reach convergence, fails because of a warning
+  - linear_model/tests/test_logistic.py::test_n_iter[newton-cg]
 
   # --------------------------------------------------------
   # No need to test daal4py patching
@@ -370,6 +444,18 @@ public:
   - tests/test_common.py::test_estimators
   # Fails from numpy 2.0 and sklearn 1.4+
   - neighbors/tests/test_neighbors.py::test_KNeighborsClassifier_raise_on_all_zero_weights
+  # floating point error near values == 0 in svm sparse tests using vc oneDAL builds
+  - svm/tests/test_sparse.py::test_unsorted_indices[csr_matrix] <1.7 win32
+  - svm/tests/test_sparse.py::test_unsorted_indices[csr_array] <1.7 win32
+  # numpy <2 with array_api_strict leads to dlpack copy issues with DLManagedTensor
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_input_and_values-array_api_strict-None-None] >=1.5,<1.6
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_input_and_values-array_api_strict-None-None] >=1.5,<1.6
+
+  # sklearn 1.4 has different absolute and relative tolerances for this test,
+  # set of available solvers and corresponding sklearnex rules to choose one
+  # than newer versions resulting in test failure on some systems when
+  # single-threaded computation is used which is a frequent case for CI
+  - decomposition/tests/test_pca.py::test_pca_dtype_preservation[full] <1.5
 
   # --------------------------------------------------------
   # The following tests currently fail with GPU offloading
@@ -378,24 +464,15 @@ gpu:
   - ensemble/tests/test_weight_boosting.py
   # Fails
   - cluster/tests/test_dbscan.py::test_weighted_dbscan
-  - cluster/tests/test_k_means.py::test_kmeans_elkan_results[42-1e-100-sparse-normal]
   - model_selection/tests/test_search.py::test_unsupervised_grid_search
-  - ensemble/tests/test_bagging.py::test_estimators_samples
-  - ensemble/tests/test_voting.py::test_sample_weight
-  - metrics/tests/test_score_objects.py::test_average_precision_pos_label
+  - ensemble/tests/test_voting.py::test_sample_weight[42]
   - model_selection/tests/test_search.py::test_search_default_iid
   - neighbors/tests/test_neighbors.py::test_unsupervised_kneighbors
-  - neighbors/tests/test_neighbors.py::test_neighbors_metrics
-  - svm/tests/test_sparse.py::test_svc
-  - svm/tests/test_sparse.py::test_svc_iris
-  - svm/tests/test_sparse.py::test_sparse_realdata
-  - svm/tests/test_svm.py::test_precomputed
-  - svm/tests/test_svm.py::test_tweak_params
+  - neighbors/tests/test_neighbors.py::test_neighbors_metrics[float64-l2]
   - svm/tests/test_svm.py::test_svm_classifier_sided_sample_weight[estimator0]
   - svm/tests/test_svm.py::test_svm_equivalence_sample_weight_C
   - svm/tests/test_svm.py::test_negative_weights_svc_leave_two_labels[partial-mask-label-1-SVC]
   - svm/tests/test_svm.py::test_negative_weights_svc_leave_two_labels[partial-mask-label-2-SVC]
-  - svm/tests/test_svm.py::test_svc_clone_with_callable_kernel
   # sparse input is not implemented for DBSCAN.
   - tests/test_common.py::test_estimators[RandomForestClassifier()-check_class_weight_classifiers]
   - tests/test_common.py::test_estimators[SVC()-check_sample_weights_not_an_array]
@@ -407,28 +484,11 @@ gpu:
   # Segmentation faults on GPU
   - tests/test_common.py::test_search_cv
 
-  # Other device issues
-  - tests/test_multioutput.py::test_classifier_chain_tuple_order[list]
-  - tests/test_multioutput.py::test_classifier_chain_tuple_order[tuple]
   # KD Tree (not implemented for GPU)
   - neighbors/tests/test_neighbors.py::test_neigh_predictions_algorithm_agnosticity[float64-KNeighborsClassifier-50-500-l2-1000-5-100]
   - neighbors/tests/test_neighbors.py::test_neigh_predictions_algorithm_agnosticity[float64-KNeighborsClassifier-100-1000-l2-1000-5-100]
   - neighbors/tests/test_neighbors.py::test_neigh_predictions_algorithm_agnosticity[float64-KNeighborsRegressor-50-500-l2-1000-5-100]
   - neighbors/tests/test_neighbors.py::test_neigh_predictions_algorithm_agnosticity[float64-KNeighborsRegressor-100-1000-l2-1000-5-100]
-  # failing due to numeric/code error
-  - linear_model/tests/test_common.py::test_balance_property[42-False-LogisticRegressionCV]
-  - sklearn/manifold/tests/test_t_sne.py::test_n_iter_without_progress
-  - model_selection/tests/test_search.py::test_searchcv_raise_warning_with_non_finite_score[RandomizedSearchCV-specialized_params1-False]
-  - model_selection/tests/test_search.py::test_searchcv_raise_warning_with_non_finite_score[RandomizedSearchCV-specialized_params1-True]
-  - tests/test_calibration.py::test_calibrated_classifier_cv_double_sample_weights_equivalence
-  - tests/test_calibration.py::test_calibrated_classifier_cv_zeros_sample_weights_equivalence
-  - tests/test_common.py::test_estimators[FeatureAgglomeration()-check_parameters_default_constructible]
-  - neighbors/tests/test_lof.py::test_novelty_true_common_tests[LocalOutlierFactor(novelty=True)-check_methods_subset_invariance]
-  - tests/test_common.py::test_transformers_get_feature_names_out[StackingRegressor(estimators=[('est1',Ridge(alpha=0.1)),('est2',Ridge(alpha=1))])]
-  - tests/test_common.py::test_transformers_get_feature_names_out[VotingRegressor(estimators=[('est1',Ridge(alpha=0.1)),('est2',Ridge(alpha=1))])]
-  - tests/test_common.py::test_f_contiguous_array_estimator[TSNE]
-  - manifold/tests/test_t_sne.py::test_tsne_works_with_pandas_output
-
   # GPU Forest algorithm implementation does not follow certain Scikit-learn standards
   - ensemble/tests/test_forest.py::test_max_leaf_nodes_max_depth
   - ensemble/tests/test_forest.py::test_min_samples_split[ExtraTreesClassifier]
@@ -441,13 +501,6 @@ gpu:
   - tests/test_common.py::test_estimators[ExtraTreesClassifier()-check_class_weight_classifiers]
   - tests/test_common.py::test_estimators[ExtraTreesRegressor()-check_sample_weights_invariance(kind=zeros)]
   - tests/test_common.py::test_estimators[RandomForestRegressor()-check_regressor_data_not_an_array]
-  - ensemble/tests/test_forest.py::test_max_samples_boundary_classifiers[ExtraTreesClassifier]
-  - tests/test_common.py::test_estimators[ExtraTreesClassifier()-check_classifier_data_not_an_array]
-  - tests/test_common.py::test_estimators[ExtraTreesClassifier()-check_classifiers_train]
-  - tests/test_common.py::test_estimators[ExtraTreesClassifier()-check_classifiers_train(readonly_memmap=True)]
-  - tests/test_common.py::test_estimators[ExtraTreesClassifier()-check_fit_idempotent]
-  - tests/test_common.py::test_estimators[ExtraTreesRegressor()-check_fit_idempotent]
-  - tests/test_common.py::test_estimators[ExtraTreesRegressor()-check_regressor_data_not_an_array]
 
   # GPU implementation of Extra Trees doesn't support sample_weights
   # comparisons to GPU with sample weights will use different algorithms
@@ -458,3 +511,9 @@ gpu:
   # RuntimeError: Device support is not implemented, failing as result of fallback to cpu false
   - svm/tests/test_svm.py::test_unfitted
   - tests/test_common.py::test_estimators[SVC()-check_estimators_unfitted]
+
+  # Introduced with RNG forest updates in oneDAL
+  - ensemble/tests/test_voting.py::test_set_estimator_drop
+
+  # Deselection for Scikit-Learn 1.4 GPU conformance
+  - model_selection/tests/test_validation.py::test_learning_curve_some_failing_fits_warning >=1.4

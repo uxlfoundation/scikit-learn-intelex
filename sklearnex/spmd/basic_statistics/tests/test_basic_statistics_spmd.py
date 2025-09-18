@@ -20,9 +20,11 @@ from numpy.testing import assert_allclose
 
 from onedal.basic_statistics.tests.utils import options_and_tests
 from onedal.tests.utils._dataframes_support import (
+    _as_numpy,
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
+from sklearnex import config_context
 from sklearnex.tests.utils.spmd import (
     _generate_statistic_data,
     _get_local_tensor,
@@ -62,11 +64,13 @@ def test_basic_stats_spmd_gold(dataframe, queue):
     )
 
     # Ensure results of batch algo match spmd
-    spmd_result = BasicStatistics_SPMD().fit(local_dpt_data)
+    spmd = BasicStatistics_SPMD()
+    spmd_result = spmd.fit(local_dpt_data)
     batch_result = BasicStatistics_Batch().fit(data)
 
     for option in options_and_tests:
-        assert_allclose(getattr(spmd_result, option), getattr(batch_result, option))
+        attr = option + "_"
+        assert_allclose(getattr(spmd_result, attr), getattr(batch_result, attr))
 
 
 @pytest.mark.skipif(
@@ -80,8 +84,11 @@ def test_basic_stats_spmd_gold(dataframe, queue):
     "dataframe,queue",
     get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
 )
+@pytest.mark.parametrize("use_raw_input", [True, False])
 @pytest.mark.mpi
-def test_basic_stats_spmd_synthetic(n_samples, n_features, dataframe, queue, dtype):
+def test_basic_stats_spmd_synthetic(
+    n_samples, n_features, dataframe, queue, dtype, use_raw_input
+):
     # Import spmd and batch algo
     from onedal.basic_statistics import BasicStatistics as BasicStatistics_Batch
     from sklearnex.spmd.basic_statistics import BasicStatistics as BasicStatistics_SPMD
@@ -94,14 +101,17 @@ def test_basic_stats_spmd_synthetic(n_samples, n_features, dataframe, queue, dty
     )
 
     # Ensure results of batch algo match spmd
-    spmd_result = BasicStatistics_SPMD().fit(local_dpt_data)
+    # Configure raw input status for spmd estimator
+    with config_context(use_raw_input=use_raw_input):
+        spmd_result = BasicStatistics_SPMD().fit(local_dpt_data)
     batch_result = BasicStatistics_Batch().fit(data)
 
     tol = 1e-5 if dtype == np.float32 else 1e-7
     for option in options_and_tests:
+        attr = option + "_"
         assert_allclose(
-            getattr(spmd_result, option),
-            getattr(batch_result, option),
+            _as_numpy(getattr(spmd_result, attr)),
+            _as_numpy(getattr(batch_result, attr)),
             atol=tol,
             rtol=tol,
         )

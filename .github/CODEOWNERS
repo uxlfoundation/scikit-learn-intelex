@@ -1,41 +1,48 @@
 # Infra and tools
-.ci/                          @napetrov @Alexsandruss @homksei @ahuber21 @ethanglaser
-.github/                      @napetrov @Alexsandruss @homksei @ahuber21 @ethanglaser @samir-nasibli @icfaust
-.circleci/                    @napetrov @Alexsandruss @homksei @ahuber21 @ethanglaser
+.*                            @Alexsandruss @homksei @ahuber21 @ethanglaser @icfaust @david-cortes-intel
+.ci/                          @Alexsandruss @homksei @ahuber21 @ethanglaser @icfaust
+.circleci/                    @Alexsandruss @homksei @ahuber21 @ethanglaser @icfaust
+.github/                      @Alexsandruss @homksei @ahuber21 @ethanglaser @icfaust
 
 # Docs
-*.md                          @maria-Petrova @napetrov @Alexsandruss @samir-nasibli @icfaust @david-cortes-intel
-doc/                          @maria-Petrova @napetrov @Alexsandruss @samir-nasibli @icfaust @david-cortes-intel
-requirements-doc.txt          @Alexsandruss @samir-nasibli @icfaust @david-cortes-intel
+*.md                          @maria-Petrova @napetrov @Alexsandruss @icfaust @david-cortes-intel @Vika-F @syakov-intel @yuejiaointel
+doc/                          @maria-Petrova @Alexsandruss @icfaust @david-cortes-intel @Vika-F @syakov-intel @yuejiaointel
+requirements-doc.txt          @Alexsandruss @icfaust @david-cortes-intel 
 
-# DPC++
-onedal/                       @Alexsandruss @samir-nasibli @icfaust
-sklearnex/                    @Alexsandruss @samir-nasibli @icfaust
+# sklearnex
+onedal/                       @Alexsandruss @icfaust @ethanglaser @Vika-F @david-cortes-intel
+sklearnex/                    @Alexsandruss @icfaust @ethanglaser @Vika-F @david-cortes-intel
 
 # Examples
-examples/                     @maria-Petrova @Alexsandruss @samir-nasibli @napetrov
+examples/                     @syakov-intel @Alexsandruss @napetrov @david-cortes-intel
 
 # Dependencies
-setup.py                      @napetrov @Alexsandruss @samir-nasibli @icfaust
-requirements*                 @napetrov @Alexsandruss @samir-nasibli @homksei @ahuber21 @ethanglaser
-dependencies-dev              @napetrov @Alexsandruss @samir-nasibli @homksei @ahuber21 @ethanglaser
-conda-recipe/                 @napetrov @Alexsandruss
+conda-recipe/                 @napetrov @Alexsandruss @icfaust @david-cortes-intel
+dependencies-dev              @napetrov @Alexsandruss @homksei @ahuber21 @ethanglaser
+pyproject.toml                @napetrov @Alexsandruss @homksei @ahuber21 @ethanglaser
+requirements*                 @napetrov @Alexsandruss @homksei @ahuber21 @ethanglaser
+setup.*                       @napetrov @Alexsandruss @icfaust @david-cortes-intel
 
 # Model builders
-*model_builders*              @razdoburdin @ahuber21 @avolkov-intel
+*model_builders*              @razdoburdin @ahuber21 @avolkov-intel @icfaust @david-cortes-intel
+daal4py/mb/                   @razdoburdin @ahuber21 @avolkov-intel @icfaust @david-cortes-intel
+src/gbt_model_builder*        @razdoburdin @ahuber21 @avolkov-intel @icfaust @david-cortes-intel
 
 # Forests
-*ensemble*                    @ahuber21 @icfaust
+*ensemble*                    @razdoburdin @ahuber21 @avolkov-intel @icfaust @david-cortes-intel
 
 # Testing
-**/test*.py                   @Alexsandruss @samir-nasibli @icfaust
+**/test*.py                   @Alexsandruss @icfaust @yuejiaointel @david-cortes-intel @ahuber21 @ethanglaser
+deselected_tests.yaml         @Alexsandruss @icfaust @yuejiaointel @david-cortes-intel @ahuber21 @ethanglaser
+tests/                        @Alexsandruss @icfaust @yuejiaointel @david-cortes-intel @ahuber21 @ethanglaser
 
 # Distributed
-*spmd*                        @samir-nasibli @ethanglaser
+*spmd*                        @ethanglaser
 
-# Scikit-learn patching
-daal4py/sklearn/              @Alexsandruss @samir-nasibli @icfaust
+# daal4py
+daal4py/sklearn/              @Alexsandruss @icfaust
 
 # Core
-src/                          @Alexsandruss @samir-nasibli @icfaust
-generator/                    @Alexsandruss @samir-nasibli @icfaust
+generator/                    @Alexsandruss @icfaust
+scripts/                      @Alexsandruss @icfaust
+src/                          @Alexsandruss @icfaust

@@ -23,21 +23,42 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
+from sklearnex.preview.covariance import EmpiricalCovariance
+
+
+@pytest.fixture
+def hyperparameters(request):
+    hparams = EmpiricalCovariance.get_hyperparameters("fit")
+
+    def restore_hyperparameters():
+        EmpiricalCovariance.reset_hyperparameters("fit")
+
+    request.addfinalizer(restore_hyperparameters)
+    return hparams
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-@pytest.mark.parametrize("macro_block", [None, 1024])
+@pytest.mark.parametrize("macro_block", [None, 2])
+@pytest.mark.parametrize("grain_size", [None, 2])
 @pytest.mark.parametrize("assume_centered", [True, False])
-def test_sklearnex_import_covariance(dataframe, queue, macro_block, assume_centered):
-    from sklearnex.preview.covariance import EmpiricalCovariance
-
-    X = np.array([[0, 1], [0, 1]])
+def test_sklearnex_import_covariance(
+    hyperparameters, dataframe, queue, macro_block, grain_size, assume_centered
+):
+    X = np.array([[0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1]])
 
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     empcov = EmpiricalCovariance(assume_centered=assume_centered)
-    if daal_check_version((2024, "P", 0)) and macro_block is not None:
-        hparams = EmpiricalCovariance.get_hyperparameters("fit")
-        hparams.cpu_macro_block = macro_block
+
+    if daal_check_version((2025, "P", 700)):
+        if macro_block is not None:
+            if queue and queue.sycl_device.is_gpu:
+                pytest.skip("Test for CPU-only functionality")
+            hyperparameters.cpu_macro_block = macro_block
+        if grain_size is not None:
+            if queue and queue.sycl_device.is_gpu:
+                pytest.skip("Test for CPU-only functionality")
+            hyperparameters.cpu_grain_size = grain_size
+
     result = empcov.fit(X)
 
     expected_covariance = np.array([[0, 0], [0, 0]])
@@ -64,3 +85,28 @@ def test_sklearnex_import_covariance(dataframe, queue, macro_block, assume_cente
 
     assert_allclose(expected_covariance, result.covariance_)
     assert_allclose(expected_means, result.location_)
+
+
+@pytest.mark.skipif(
+    not daal_check_version((2025, "P", 700)),
+    reason="Functionality introduced in a later version",
+)
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize("assume_centered", [True, False])
+def test_non_batched_covariance(hyperparameters, dataframe, queue, assume_centered):
+    if queue and queue.sycl_device.is_gpu:
+        pytest.skip("Test for CPU-only functionality")
+
+    from sklearnex.preview.covariance import EmpiricalCovariance
+
+    X = np.random.default_rng(seed=123).random(size=(20, 5))
+
+    hyperparameters.cpu_max_cols_batched = np.iinfo(np.int32).max
+    res_batched = EmpiricalCovariance(assume_centered=assume_centered).fit(X).covariance_
+
+    hyperparameters.cpu_max_cols_batched = 1
+    res_non_batched = (
+        EmpiricalCovariance(assume_centered=assume_centered).fit(X).covariance_
+    )
+
+    np.testing.assert_allclose(res_non_batched, res_batched)

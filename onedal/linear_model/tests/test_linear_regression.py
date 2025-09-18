@@ -161,21 +161,21 @@ def test_overdetermined_system(queue, dtype, fit_intercept):
     if queue and queue.sycl_device.is_gpu and not daal_check_version((2025, "P", 200)):
         pytest.skip("Functionality introduced in later versions")
     gen = np.random.default_rng(seed=123)
-    X = gen.standard_normal(size=(10, 20))
-    y = gen.standard_normal(size=X.shape[0])
+    X = gen.standard_normal(size=(10, 20)).astype(dtype)
+    y = gen.standard_normal(size=X.shape[0]).astype(dtype)
 
     model = LinearRegression(fit_intercept=fit_intercept).fit(X, y)
     if not fit_intercept:
         A = X.T @ X
         b = X.T @ y
-        x = model.coef_
+        x = np.squeeze(model.coef_)
     else:
         Xi = np.c_[X, np.ones((X.shape[0], 1))]
         A = Xi.T @ Xi
         b = Xi.T @ y
-        x = np.r_[model.coef_, model.intercept_]
+        x = np.r_[np.squeeze(model.coef_), model.intercept_]
     residual = A @ x - b
-    assert np.all(np.abs(residual) < 1e-6)
+    assert np.all(np.abs(residual) < (1e-6 if dtype is np.float64 else 1e-5))
 
 
 @pytest.mark.parametrize("queue", get_queues())
@@ -189,22 +189,22 @@ def test_singular_matrix(queue, dtype, fit_intercept):
     if queue and queue.sycl_device.is_gpu and not daal_check_version((2025, "P", 200)):
         pytest.skip("Functionality introduced in later versions")
     gen = np.random.default_rng(seed=123)
-    X = gen.standard_normal(size=(20, 4))
+    X = gen.standard_normal(size=(20, 4)).astype(dtype)
     X[:, 2] = X[:, 3]
-    y = gen.standard_normal(size=X.shape[0])
+    y = gen.standard_normal(size=X.shape[0]).astype(dtype)
 
     model = LinearRegression(fit_intercept=fit_intercept).fit(X, y)
     if not fit_intercept:
         A = X.T @ X
         b = X.T @ y
-        x = model.coef_
+        x = np.squeeze(model.coef_)
     else:
         Xi = np.c_[X, np.ones((X.shape[0], 1))]
         A = Xi.T @ Xi
         b = Xi.T @ y
-        x = np.r_[model.coef_, model.intercept_]
+        x = np.r_[np.squeeze(model.coef_), model.intercept_]
     residual = A @ x - b
-    assert np.all(np.abs(residual) < 1e-6)
+    assert np.all(np.abs(residual) < (1e-6 if dtype is np.float64 else 1e-5))
 
 
 @pytest.mark.parametrize("queue", get_queues())
@@ -250,10 +250,3 @@ def test_multioutput_regression(queue, dtype, fit_intercept, problem_type):
     expected_pred = X @ model.coef_.T + model.intercept_.reshape((1, -1))
     tol = 1e-5 if pred.dtype == np.float32 else 1e-7
     assert_allclose(pred, expected_pred, rtol=tol)
-
-    # check that it also works when 'y' is a list of lists
-    Y_lists = Y.tolist()
-    model_lists = LinearRegression(fit_intercept=fit_intercept).fit(X, Y_lists)
-    assert_allclose(model.coef_, model_lists.coef_)
-    if fit_intercept:
-        assert_allclose(model.intercept_, model_lists.intercept_)

@@ -16,7 +16,9 @@
 steps:
   - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
     displayName: Add conda to PATH
-  - script: conda create -q -y -n CB -c conda-forge python=$(PYTHON_VERSION) dal-devel impi-devel clang-format pyyaml
+  - script: |
+      (echo default_channels: & echo   - https://conda.anaconda.org/conda-forge) >> C:\Users\VssAdministrator\.condarc
+      conda create -q -y -n CB -c conda-forge python=$(PYTHON_VERSION) impi-devel pyyaml
     displayName: 'Create Anaconda environment'
   - script: |
       call activate CB
@@ -24,7 +26,10 @@ steps:
       pip install cpufeature
       pip install -r dependencies-dev
       pip list
+      if not defined DALROOT conda install -q -y -c conda-forge "dal-devel>=2025.6.1"
     displayName: 'Install develop requirements'
+    env:
+      DALROOT: ${{ variables.DALROOT }}
   - script: |
       set PATH=C:\msys64\usr\bin;%PATH%
       call activate CB
@@ -50,18 +55,37 @@ steps:
     displayName: 'Install testing requirements'
   - script: |
       call activate CB
+      if defined DALROOT call "%DALROOT%\env\vars.bat"
+      if defined TBBROOT call "%TBBROOT%\env\vars.bat"
+      if defined COVERAGE_RCFILE set COVERAGE_FILE=%cd%\.coverage.sklearnex
       cd ..
       call s\conda-recipe\run_test.bat s\ --json-report
     displayName: 'Sklearnex testing'
+    env:
+      COVERAGE_RCFILE: ${{ variables.COVERAGE_RCFILE }}
+      DALROOT: ${{ variables.DALROOT }}
+      TBBROOT: ${{ variables.TBBROOT }}
+      NO_DIST: 1
   - script: |
       call activate CB
+      if defined DALROOT call "%DALROOT%\env\vars.bat"
+      if defined TBBROOT call "%TBBROOT%\env\vars.bat"
+      if defined COVERAGE_RCFILE set COVERAGE_FILE=%cd%\.coverage.sklearn
       bash .ci/scripts/run_sklearn_tests.sh
     displayName: 'Sklearn testing'
     condition: succeededOrFailed()
+    env:
+      COVERAGE_RCFILE: ${{ variables.COVERAGE_RCFILE }}
+      DALROOT: ${{ variables.DALROOT }}
+      TBBROOT: ${{ variables.TBBROOT }}
   - script: |
       call activate CB
+      if defined DALROOT call "%DALROOT%\env\vars.bat"
+      if defined TBBROOT call "%TBBROOT%\env\vars.bat"
       bash .ci/scripts/run_sklearn_tests.sh
     env:
       SKLEARNEX_PREVIEW: "YES"
+      DALROOT: ${{ variables.DALROOT }}
+      TBBROOT: ${{ variables.TBBROOT }}
     displayName: 'Sklearn testing [preview]'
     condition: succeededOrFailed()

@@ -16,17 +16,17 @@
 
 import numpy as np
 
-from daal4py.sklearn._utils import get_dtype
+from onedal._device_offload import supports_queue
+from onedal.common._backend import bind_default_backend
+from onedal.utils import _sycl_queue_manager as QM
 
-from ..datatypes import _convert_to_supported, from_table, to_table
-from ..utils import _check_array
-from .pca import BasePCA
+from .._config import _get_config
+from ..datatypes import from_table, return_type_constructor, to_table
+from .pca import PCA
 
 
-class IncrementalPCA(BasePCA):
-    """
-    Incremental estimator for PCA based on oneDAL implementation.
-    Allows to compute PCA if data are splitted into batches.
+class IncrementalPCA(PCA):
+    """Incremental oneDAL PCA estimator.
 
     Parameters
     ----------
@@ -38,8 +38,8 @@ class IncrementalPCA(BasePCA):
         When True the ``components_`` vectors are chosen in deterministic
         way, otherwise some of them can be oppositely directed.
 
-    method : string, default='cov'
-        Method used on oneDAL side to compute result.
+    method : str, default='cov'
+        Method used in oneDAL computation.
 
     whiten : bool, default=False
         When True the ``components_`` vectors are divided
@@ -82,7 +82,6 @@ class IncrementalPCA(BasePCA):
         noise_variance_ : float
             Equal to the average of (min(n_features, n_samples) - n_components)
             smallest eigenvalues of the covariance matrix of X.
-
     """
 
     def __init__(
@@ -96,14 +95,24 @@ class IncrementalPCA(BasePCA):
         self.method = method
         self.is_deterministic = is_deterministic
         self.whiten = whiten
+        self._queue = None
         self._reset()
 
+    @bind_default_backend("decomposition.dim_reduction")
+    def finalize_train(self, params, partial_result): ...
+
+    @bind_default_backend("decomposition.dim_reduction")
+    def partial_train(self, params, partial_result, X_table): ...
+
+    @bind_default_backend("decomposition.dim_reduction")
+    def partial_train_result(self): ...
+
     def _reset(self):
+        self._onedal_model = None
         self._need_to_finalize = False
-        module = self._get_backend("decomposition", "dim_reduction")
-        if hasattr(self, "components_"):
-            del self.components_
-        self._partial_result = module.partial_train_result()
+        self._queue = None
+        self._outtype = None
+        self._partial_result = self.partial_train_result()
 
     def __getstate__(self):
         # Since finalize_fit can't be dispatched without directly provided queue
@@ -113,11 +122,13 @@ class IncrementalPCA(BasePCA):
         self.finalize_fit()
         data = self.__dict__.copy()
         data.pop("_queue", None)
-
         return data
 
-    def partial_fit(self, X, queue):
-        """Incremental fit with X. All of X is processed as a single batch.
+    @supports_queue
+    def partial_fit(self, X, queue=None):
+        """Generate partial PCA from batch data in `_partial_result`.
+
+        Computes partial data for PCA on from data batch X.
 
         Parameters
         ----------
@@ -125,64 +136,46 @@ class IncrementalPCA(BasePCA):
             Training data, where `n_samples` is the number of samples and
             `n_features` is the number of features.
 
-        y : Ignored
-            Not used, present for API consistency by convention.
+        queue : SyclQueue or None, default=None
+            SYCL Queue object for device code execution. Default
+            value None causes computation on host.
 
         Returns
         -------
         self : object
             Returns the instance itself.
         """
-        X = _check_array(X)
-        n_samples, n_features = X.shape
 
-        first_pass = not hasattr(self, "components_")
+        n_samples, n_features = X.shape
+        first_pass = not self._need_to_finalize
         if first_pass:
             self.components_ = None
             self.n_samples_seen_ = n_samples
             self.n_features_in_ = n_features
+            self.n_components_ = self.n_components if self.n_components else X.shape[0]
         else:
             self.n_samples_seen_ += n_samples
 
-        if self.n_components is None:
-            if self.components_ is None:
-                self.n_components_ = min(n_samples, n_features)
-            else:
-                self.n_components_ = self.components_.shape[0]
-        else:
-            self.n_components_ = self.n_components
-
+        if not self._outtype:
+            self._outtype = return_type_constructor(X)
         self._queue = queue
 
-        policy = self._get_policy(queue, X)
-        X = _convert_to_supported(policy, X)
+        X_table = to_table(X, queue=queue)
 
         if not hasattr(self, "_dtype"):
-            self._dtype = get_dtype(X)
-            self._params = self._get_onedal_params(X)
+            self._dtype = X_table.dtype
+            self._params = self._get_onedal_params(X_table)
 
-        X_table = to_table(X)
-        self._partial_result = self._get_backend(
-            "decomposition",
-            "dim_reduction",
-            "partial_train",
-            policy,
-            self._params,
-            self._partial_result,
-            X_table,
+        self._partial_result = self.partial_train(
+            self._params, self._partial_result, X_table
         )
+        if self._onedal_model is not None:
+            self._onedal_model = None
         self._need_to_finalize = True
         return self
 
-    def finalize_fit(self, queue=None):
-        """
-        Finalizes principal components computation and obtains resulting
-        attributes from the current `_partial_result`.
-
-        Parameters
-        ----------
-        queue : dpctl.SyclQueue
-            Not used here, added for API conformance
+    def finalize_fit(self):
+        """Finalize statistics from the current `_partial_result`.
 
         Returns
         -------
@@ -190,26 +183,36 @@ class IncrementalPCA(BasePCA):
             Returns the instance itself.
         """
         if self._need_to_finalize:
-            module = self._get_backend("decomposition", "dim_reduction")
-            if queue is not None:
-                policy = self._get_policy(queue)
-            else:
-                policy = self._get_policy(self._queue)
-            result = module.finalize_train(policy, self._params, self._partial_result)
-            self.mean_ = from_table(result.means).ravel()
-            self.var_ = from_table(result.variances).ravel()
-            self.components_ = from_table(result.eigenvectors)
-            self.singular_values_ = np.nan_to_num(
-                from_table(result.singular_values).ravel()
+            with QM.manage_global_queue(self._queue):
+                result = self.finalize_train(self._params, self._partial_result)
+
+            (
+                mean_,
+                var_,
+                self.components_,
+                sing_vals_,
+                eigenvalues_,
+                var_ratio,
+            ) = from_table(
+                result.means,
+                result.variances,
+                result.eigenvectors,
+                result.singular_values,
+                result.eigenvalues,
+                result.explained_variances_ratio,
+                like=self._outtype,
             )
-            self.explained_variance_ = np.maximum(
-                from_table(result.eigenvalues).ravel(), 0
-            )
-            self.explained_variance_ratio_ = from_table(
-                result.explained_variances_ratio
-            ).ravel()
-            self.noise_variance_ = self._compute_noise_variance(
-                self.n_components_, min(self.n_samples_seen_, self.n_features_in_)
-            )
-        self._need_to_finalize = False
+
+            # tables are 2d, but outputs are inherently 1d, reduce dimensions
+            self.mean_ = mean_[0, ...]
+            self.var_ = var_[0, ...]
+            self.singular_values_ = sing_vals_[0, ...]
+            self.explained_variance_ = eigenvalues_[0, ...]
+            self.explained_variance_ratio_ = var_ratio[0, ...]
+
+            # set partial result attributes to defaults
+            self._need_to_finalize = False
+            self._outtype = None
+            self._queue = None
+
         return self

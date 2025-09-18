@@ -201,6 +201,12 @@ struct params2desc {
         desc.set_seed(params["seed"].cast<std::int64_t>());
 #endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240000
 
+#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20250700
+        if (params.contains("local_trees_mode")) {
+            desc.set_local_trees_mode(params["local_trees_mode"].cast<bool>());
+        }
+#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20250700
+
         return desc;
     }
 };

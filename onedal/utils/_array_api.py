@@ -17,30 +17,27 @@
 """Tools to support array_api."""
 
 from collections.abc import Iterable
+from functools import lru_cache
 
-from ._dpep_helpers import dpctl_available, dpnp_available
+import numpy as np
+import scipy.sparse as sp
 
-if dpctl_available:
-    from dpctl.tensor import usm_ndarray
+from ..utils._third_party import _is_subclass_fast
 
-if dpnp_available:
-    import dpnp
 
-    def _convert_to_dpnp(array):
-        """Converted input object to dpnp.ndarray format."""
-        # Will be removed and `onedal.utils._array_api._asarray` will be
-        # used instead after DPNP Array API enabling.
-        if isinstance(array, usm_ndarray):
-            return dpnp.array(array, copy=False)
-        elif isinstance(array, Iterable):
-            for i in range(len(array)):
-                array[i] = _convert_to_dpnp(array[i])
-        return array
+def _supports_buffer_protocol(obj):
+    # the array_api standard mandates conversion with the buffer protocol,
+    # which can only be checked via a try-catch in native python
+    try:
+        memoryview(obj)
+    except TypeError:
+        return False
+    return True
 
 
 def _asarray(data, xp, *args, **kwargs):
     """Converted input object to array format of xp namespace provided."""
-    if hasattr(data, "__array_namespace__"):
+    if hasattr(data, "__array_namespace__") or _supports_buffer_protocol(data):
         return xp.asarray(data, *args, **kwargs)
     elif isinstance(data, Iterable):
         if isinstance(data, tuple):
@@ -48,6 +45,8 @@ def _asarray(data, xp, *args, **kwargs):
             for i in range(len(data)):
                 result_data.append(_asarray(data[i], xp, *args, **kwargs))
             data = tuple(result_data)
+        elif sp.issparse(data):
+            pass
         else:
             for i in range(len(data)):
                 data[i] = _asarray(data[i], xp, *args, **kwargs)
@@ -56,7 +55,27 @@ def _asarray(data, xp, *args, **kwargs):
 
 def _is_numpy_namespace(xp):
     """Return True if xp is backed by NumPy."""
-    return xp.__name__ in {"numpy", "array_api_compat.numpy", "numpy.array_api"}
+    return xp.__name__ in {
+        "numpy",
+        "array_api_compat.numpy",
+        "numpy.array_api",
+        "sklearn.externals.array_api_compat.numpy",
+    }
+
+
+@lru_cache(100)
+def _cls_to_sycl_namespace(cls):
+    # use caching to minimize imports, derived from array_api_compat
+    if _is_subclass_fast(cls, "dpctl.tensor", "usm_ndarray"):
+        import dpctl.tensor as dpt
+
+        return dpt
+    elif _is_subclass_fast(cls, "dpnp", "ndarray"):
+        import dpnp
+
+        return dpnp
+    else:
+        raise ValueError(f"SYCL type not recognized: {cls}")
 
 
 def _get_sycl_namespace(*arrays):
@@ -70,12 +89,10 @@ def _get_sycl_namespace(*arrays):
 
     if sua_iface:
         (X,) = sua_iface.values()
+        return (
+            sua_iface,
+            _cls_to_sycl_namespace(type(X)),
+            hasattr(X, "__array_namespace__"),
+        )
 
-        if hasattr(X, "__array_namespace__"):
-            return sua_iface, X.__array_namespace__(), True
-        elif dpnp_available and isinstance(X, dpnp.ndarray):
-            return sua_iface, dpnp, False
-        else:
-            raise ValueError(f"SYCL type not recognized: {sua_iface}")
-
-    return sua_iface, None, False
+    return sua_iface, np, False

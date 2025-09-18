@@ -25,13 +25,15 @@ from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
 
 import daal4py as d4p
+from daal4py.sklearn._utils import sklearn_check_version
 
 from .._n_jobs_support import control_n_jobs
 from .._utils import getFPType
+from ..utils.validation import validate_data
 
 
 @control_n_jobs(decorated_methods=["fit", "predict"])
-class AdaBoostClassifier(BaseEstimator, ClassifierMixin):
+class AdaBoostClassifier(ClassifierMixin, BaseEstimator):
     def __init__(
         self,
         split_criterion="gini",
@@ -80,7 +82,7 @@ class AdaBoostClassifier(BaseEstimator, ClassifierMixin):
                 'Parameter "learning_rate" must be ' "non-zero positive value."
             )
         # it is not clear why it is so but we will get error from
-        # Intel(R) oneAPI Data Analytics
+        # oneAPI Data Analytics
         # Library otherwise
         if self.accuracy_threshold < 0 and self.accuracy_threshold >= 1:
             raise ValueError(
@@ -89,7 +91,7 @@ class AdaBoostClassifier(BaseEstimator, ClassifierMixin):
             )
 
         # Check that X and y have correct shape
-        X, y = check_X_y(X, y, y_numeric=False, dtype=[np.single, np.double])
+        X, y = check_X_y(X, y, y_numeric=False, dtype=[np.float64, np.float32])
 
         check_classification_targets(y)
 
@@ -151,9 +153,7 @@ class AdaBoostClassifier(BaseEstimator, ClassifierMixin):
         check_is_fitted(self)
 
         # Input validation
-        X = check_array(X, dtype=[np.single, np.double])
-        if X.shape[1] != self.n_features_in_:
-            raise ValueError("Shape of input is different from what was seen in `fit`")
+        X = validate_data(self, X, dtype=[np.float64, np.float32], reset=False)
 
         # Trivial case
         if self.n_classes_ == 1:

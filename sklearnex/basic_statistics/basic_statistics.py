@@ -16,36 +16,36 @@
 
 import warnings
 
-import numpy as np
+from scipy.sparse import issparse
 from sklearn.base import BaseEstimator
-from sklearn.utils import check_array
-from sklearn.utils.validation import _check_sample_weight
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
-from daal4py.sklearn._utils import sklearn_check_version
+from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal.basic_statistics import BasicStatistics as onedal_BasicStatistics
+from onedal.utils.validation import _is_csr
 
+from .._config import get_config
 from .._device_offload import dispatch
-from .._utils import IntelEstimator, PatchingConditionsChain
-
-if sklearn_check_version("1.6"):
-    from sklearn.utils.validation import validate_data
-else:
-    validate_data = BaseEstimator._validate_data
+from .._utils import PatchingConditionsChain
+from ..base import oneDALEstimator
+from ..utils._array_api import enable_array_api, get_namespace
+from ..utils.validation import _check_sample_weight, validate_data
 
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import StrOptions
 
 
+@enable_array_api
 @control_n_jobs(decorated_methods=["fit"])
-class BasicStatistics(IntelEstimator, BaseEstimator):
+class BasicStatistics(oneDALEstimator, BaseEstimator):
     """
     Estimator for basic statistics.
-    Allows to compute basic statistics for provided data.
+
+    Compute low order moments and related statistics for given data.
 
     Parameters
     ----------
-    result_options: string or list, default='all'
+    result_options : str or list, default=str('all')
         Used to set statistics to calculate. Possible values are ``'min'``, ``'max'``, ``'sum'``, ``'mean'``, ``'variance'``,
         ``'variation'``, ``sum_squares'``, ``sum_squares_centered'``, ``'standard_deviation'``, ``'second_order_raw_moment'``
         or a list containing any of these values. If set to ``'all'`` then all possible statistics will be
@@ -62,29 +62,25 @@ class BasicStatistics(IntelEstimator, BaseEstimator):
         mean_ : ndarray of shape (n_features,)
             Mean of each feature over all samples.
         variance_ : ndarray of shape (n_features,)
-            Variance of each feature over all samples.
+            Variance of each feature over all samples. Bessel's correction is used.
         variation_ : ndarray of shape (n_features,)
-            Variation of each feature over all samples.
+            Variation of each feature over all samples. Bessel's correction is used.
         sum_squares_ : ndarray of shape (n_features,)
             Sum of squares for each feature over all samples.
         standard_deviation_ : ndarray of shape (n_features,)
-            Standard deviation of each feature over all samples.
+            Unbiased standard deviation of each feature over all samples. Bessel's correction is used.
         sum_squares_centered_ : ndarray of shape (n_features,)
             Centered sum of squares for each feature over all samples.
         second_order_raw_moment_ : ndarray of shape (n_features,)
             Second order moment of each feature over all samples.
 
-    Note
-    ----
+    Notes
+    -----
     Attribute exists only if corresponding result option has been provided.
 
-    Note
-    ----
     Names of attributes without the trailing underscore are
     supported currently but deprecated in 2025.1 and will be removed in 2026.0
 
-    Note
-    ----
     Some results can exhibit small variations due to
     floating point error accumulation and multithreading.
 
@@ -130,30 +126,16 @@ class BasicStatistics(IntelEstimator, BaseEstimator):
 
     def _save_attributes(self):
         assert hasattr(self, "_onedal_estimator")
-
-        if self.result_options == "all":
-            result_options = onedal_BasicStatistics.get_all_result_options()
-        else:
-            result_options = self.result_options
-
-        if isinstance(result_options, str):
-            setattr(
-                self,
-                result_options + "_",
-                getattr(self._onedal_estimator, result_options),
-            )
-        elif isinstance(result_options, list):
-            for option in result_options:
-                setattr(self, option + "_", getattr(self._onedal_estimator, option))
+        for option in self._onedal_estimator.options:
+            option += "_"
+            setattr(self, option, getattr(self._onedal_estimator, option))
 
     def __getattr__(self, attr):
-        if self.result_options == "all":
-            result_options = onedal_BasicStatistics.get_all_result_options()
-        else:
-            result_options = self.result_options
         is_deprecated_attr = (
-            isinstance(result_options, str) and (attr == result_options)
-        ) or (isinstance(result_options, list) and (attr in result_options))
+            attr in self._onedal_estimator.options
+            if "_onedal_estimator" in self.__dict__
+            else False
+        )
         if is_deprecated_attr:
             warnings.warn(
                 "Result attributes without a trailing underscore were deprecated in version 2025.1 and will be removed in 2026.0"
@@ -166,26 +148,53 @@ class BasicStatistics(IntelEstimator, BaseEstimator):
             f"'{self.__class__.__name__}' object has no attribute '{attr}'"
         )
 
-    def _onedal_supported(self, method_name, *data):
+    def _onedal_cpu_supported(self, method_name, *data):
         patching_status = PatchingConditionsChain(
             f"sklearnex.basic_statistics.{self.__class__.__name__}.{method_name}"
         )
         return patching_status
 
-    _onedal_cpu_supported = _onedal_supported
-    _onedal_gpu_supported = _onedal_supported
+    def _onedal_gpu_supported(self, method_name, *data):
+        patching_status = PatchingConditionsChain(
+            f"sklearnex.basic_statistics.{self.__class__.__name__}.{method_name}"
+        )
+        X, sample_weight = data
+
+        is_data_supported = not issparse(X) or (
+            _is_csr(X) and daal_check_version((2025, "P", 200))
+        )
+
+        is_sample_weight_supported = sample_weight is None or not issparse(X)
+
+        patching_status.and_conditions(
+            [
+                (
+                    is_sample_weight_supported,
+                    "Sample weights are not supported for CSR data format",
+                ),
+                (
+                    is_data_supported,
+                    "Supported data formats: Dense, CSR (oneDAL version >= 2025.2.0).",
+                ),
+            ]
+        )
+        return patching_status
 
     def _onedal_fit(self, X, sample_weight=None, queue=None):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
+        if not get_config()["use_raw_input"]:
+            xp, _ = get_namespace(X, sample_weight)
+            X = validate_data(
+                self,
+                X,
+                dtype=[xp.float64, xp.float32],
+                ensure_2d=False,
+                accept_sparse="csr",
+            )
 
-        if sklearn_check_version("1.0"):
-            X = validate_data(self, X, dtype=[np.float64, np.float32], ensure_2d=False)
-        else:
-            X = check_array(X, dtype=[np.float64, np.float32])
-
-        if sample_weight is not None:
-            sample_weight = _check_sample_weight(sample_weight, X)
+            if sample_weight is not None:
+                sample_weight = _check_sample_weight(
+                    sample_weight, X, dtype=[xp.float64, xp.float32]
+                )
 
         onedal_params = {
             "result_options": self.result_options,
@@ -193,11 +202,11 @@ class BasicStatistics(IntelEstimator, BaseEstimator):
 
         if not hasattr(self, "_onedal_estimator"):
             self._onedal_estimator = self._onedal_basic_statistics(**onedal_params)
-        self._onedal_estimator.fit(X, sample_weight, queue)
+        self._onedal_estimator.fit(X, sample_weight, queue=queue)
         self._save_attributes()
         self.n_features_in_ = X.shape[1] if len(X.shape) > 1 else 1
 
-    def fit(self, X, y=None, *, sample_weight=None):
+    def fit(self, X, y=None, sample_weight=None):
         """Calculate statistics of X.
 
         Parameters
@@ -217,6 +226,8 @@ class BasicStatistics(IntelEstimator, BaseEstimator):
         self : object
             Returns the instance itself.
         """
+        if sklearn_check_version("1.2"):
+            self._validate_params()
         dispatch(
             self,
             "fit",

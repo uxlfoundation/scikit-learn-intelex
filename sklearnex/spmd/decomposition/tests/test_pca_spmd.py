@@ -19,9 +19,11 @@ import pytest
 from numpy.testing import assert_allclose
 
 from onedal.tests.utils._dataframes_support import (
+    _as_numpy,
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
+from sklearnex import config_context
 from sklearnex.tests.utils.spmd import (
     _generate_statistic_data,
     _get_local_tensor,
@@ -91,9 +93,10 @@ def test_pca_spmd_gold(dataframe, queue):
     get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("use_raw_input", [True, False])
 @pytest.mark.mpi
 def test_pca_spmd_synthetic(
-    n_samples, n_features, n_components, whiten, dataframe, queue, dtype
+    n_samples, n_features, n_components, whiten, dataframe, queue, dtype, use_raw_input
 ):
     # TODO: Resolve issues with batch fallback and lack of support for n_rows_rank < n_cols
     if n_components == "mle" or n_components == 3:
@@ -113,16 +116,31 @@ def test_pca_spmd_synthetic(
     )
 
     # Ensure results of batch algo match spmd
-    spmd_result = PCA_SPMD(n_components=n_components, whiten=whiten).fit(local_dpt_data)
+    with config_context(use_raw_input=use_raw_input):
+        spmd_result = PCA_SPMD(n_components=n_components, whiten=whiten).fit(
+            local_dpt_data
+        )
     batch_result = PCA_Batch(n_components=n_components, whiten=whiten).fit(data)
 
     tol = 1e-3 if dtype == np.float32 else 1e-7
-    assert_allclose(spmd_result.mean_, batch_result.mean_, atol=tol)
-    assert_allclose(spmd_result.components_, batch_result.components_, atol=tol, rtol=tol)
-    assert_allclose(spmd_result.singular_values_, batch_result.singular_values_, atol=tol)
-    assert_allclose(spmd_result.noise_variance_, batch_result.noise_variance_, atol=tol)
     assert_allclose(
-        spmd_result.explained_variance_ratio_,
-        batch_result.explained_variance_ratio_,
+        _as_numpy(spmd_result.components_),
+        _as_numpy(batch_result.components_),
+        atol=tol,
+        rtol=tol,
+    )
+    assert_allclose(
+        _as_numpy(spmd_result.singular_values_),
+        _as_numpy(batch_result.singular_values_),
+        atol=tol,
+    )
+    assert_allclose(
+        _as_numpy(spmd_result.noise_variance_),
+        _as_numpy(batch_result.noise_variance_),
+        atol=tol,
+    )
+    assert_allclose(
+        _as_numpy(spmd_result.explained_variance_ratio_),
+        _as_numpy(batch_result.explained_variance_ratio_),
         atol=tol,
     )

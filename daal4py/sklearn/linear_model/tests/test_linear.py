@@ -14,6 +14,18 @@
 # limitations under the License.
 # ==============================================================================
 
+
+from os import environ
+
+from daal4py.sklearn._utils import sklearn_check_version
+
+# sklearn requires manual enabling of Scipy array API support
+# if `array-api-compat` package is present in environment
+# TODO: create generic approach to handle this for all tests
+if sklearn_check_version("1.6"):
+    environ["SCIPY_ARRAY_API"] = "1"
+
+
 import numpy as np
 import pytest
 from sklearn.datasets import make_regression
