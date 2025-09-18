@@ -103,7 +103,11 @@ def get_patch_map_core(preview=False):
         import sklearn.decomposition as decomposition_module
         import sklearn.dummy as dummy_module
         import sklearn.ensemble as ensemble_module
-        import sklearn.ensemble._gb as gb_module
+
+        if sklearn_check_version("1.4"):
+            import sklearn.ensemble._gb as gb_module
+        else:
+            import sklearn.ensemble._gb_losses as gb_module
         import sklearn.linear_model as linear_model_module
         import sklearn.manifold as manifold_module
         import sklearn.metrics as metrics_module
