@@ -54,14 +54,14 @@ def convert_model(model) -> "GBTDAALModel | LogisticDAALModel":
     """
     if isinstance(model, LogisticRegression):
         if model.classes_.shape[0] > 2:
-            if (model.multi_class == "ovr") or (
+            if hasattr(model, "multi_class") and (model.multi_class == "ovr") or (
                 model.multi_class == "auto" and model.solver == "liblinear"
             ):
                 raise TypeError(
                     "Supplied 'model' object is a linear classifier, but not multinomial logistic"
                     " (hint: pass multi_class='multinomial' to 'LogisticRegression')."
                 )
-        elif (model.classes_.shape[0] == 2) and (model.multi_class == "multinomial"):
+        elif (model.classes_.shape[0] == 2) and (getattr(model, "multi_class", "auto") == "multinomial"):
             raise TypeError(
                 "Supplied 'model' object is not a logistic regressor "
                 "(hint: pass multi_class='auto' to 'LogisticRegression')."
