@@ -2169,13 +2169,21 @@ def test_logreg_builder_sequential_calls():
 @pytest.mark.parametrize(
     "estimator_skl,n_classes",
     [
-        (
+        pytest.param(
             LogisticRegression(multi_class="ovr"),
             3,
+            marks=pytest.mark.skipif(
+                sklearn_check_version("1.8"),
+                reason="multi_class no longer supported.",
+            ),          
         ),
-        (
+        pytest.param(
             LogisticRegression(multi_class="multinomial"),
             2,
+            marks=pytest.mark.skipif(
+                sklearn_check_version("1.8"),
+                reason="multi_class no longer supported.",
+            ),
         ),
         # case below might change in the future if sklearn improves their modules
         pytest.param(
