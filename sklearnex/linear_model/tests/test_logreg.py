@@ -204,7 +204,7 @@ def test_multinomial_logistic_regression_is_correct():
         def logistic_model_function(predicted_probabilities, coefs):
             neg_log_likelihood = X.shape[0] * log_loss(y, predicted_probabilities)
             sum_squares_coefs = np.dot(coefs.reshape(-1), coefs.reshape(-1))
-            return C * neg_log_likelihood + 0.5 * sum_squares_coefs
+            return params["C"] * neg_log_likelihood + 0.5 * sum_squares_coefs
 
         fn_sklearn = logistic_model_function(
             model_sklearn.predict_proba(X), model_sklearn.coef_
@@ -465,13 +465,14 @@ def test_custom_solvers_are_correct(multi_class, C, solver, n_classes):
         class_sep=0.25,
     )
 
-    params = {"C": C, "solver": solver}
+    params = {"C": C}
     if not sklearn_check_version:
         params["multi_class"] = multi_class
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         model_sklearn = _sklearn_LogisticRegression(**params).fit(X, y)
+        params["solver"] = solver
         model_sklearnex = LogisticRegression(**params, max_iter=1_000, tol=1e-8).fit(X, y)
         model_sklearnex_refitted = (
             LogisticRegression(**params, max_iter=1_000, tol=1e-8, warm_start=True)
@@ -564,4 +565,5 @@ def test_log_proba_doesnt_return_inf(dataframe, queue):
     pred_log_proba = _as_numpy(pred_log_proba)
 
     assert not np.any(np.isinf(pred_log_proba))
+
 
