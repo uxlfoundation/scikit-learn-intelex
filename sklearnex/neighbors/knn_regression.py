@@ -24,12 +24,13 @@ from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.utils.validation import get_requires_y_tag
 from onedal.neighbors import KNeighborsRegressor as onedal_KNeighborsRegressor
+from onedal.tests.utils._dataframes_support import _as_numpy
 
 from .._device_offload import dispatch, wrap_output_data
 from ..utils._array_api import get_namespace
 from ..utils.validation import validate_data
 from .common import KNeighborsDispatchingBase
-from onedal.tests.utils._dataframes_support import _as_numpy
+
 
 @control_n_jobs(decorated_methods=["fit", "predict", "kneighbors", "score"])
 class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegressor):
