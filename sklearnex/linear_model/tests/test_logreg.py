@@ -184,13 +184,17 @@ def test_multinomial_logistic_regression_is_correct():
 
     X = np.array([[-1, 0], [0, 1], [1, 1]])
     y = np.array([2, 1, 0])
-    C = 3.0
+    params = {"C": 3.0}
+    # for sklearn 1.8 and onwards, non-binary class datasets will multinomial
+    if not sklearn_check_version("1.8"):
+        params["multi_class"] = "multinomial"
+    
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=FutureWarning)
-        model_sklearn = _sklearn_LogisticRegression(C=C, multi_class="multinomial").fit(
+        model_sklearn = _sklearn_LogisticRegression(**params).fit(
             X, y
         )
-        model_sklearnex = LogisticRegression(C=C, multi_class="multinomial").fit(X, y)
+        model_sklearnex = LogisticRegression(**params).fit(X, y)
 
     try:
         np.testing.assert_allclose(model_sklearnex.coef_, model_sklearn.coef_)
@@ -560,3 +564,4 @@ def test_log_proba_doesnt_return_inf(dataframe, queue):
     pred_log_proba = _as_numpy(pred_log_proba)
 
     assert not np.any(np.isinf(pred_log_proba))
+
