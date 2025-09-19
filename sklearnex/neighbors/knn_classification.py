@@ -136,6 +136,9 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
 
     def _onedal_fit(self, X, y, queue=None):
         xp, _ = get_namespace(X, y)
+        # Convert device arrays to numpy to avoid implicit conversion errors
+        X = _as_numpy(X)
+        y = _as_numpy(y)
         X, y = validate_data(
             self,
             X,

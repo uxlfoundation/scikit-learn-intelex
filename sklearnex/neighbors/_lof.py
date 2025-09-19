@@ -24,6 +24,7 @@ from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
+from onedal.tests.utils._dataframes_support import _as_numpy
 from sklearnex._device_offload import dispatch, wrap_output_data
 from sklearnex.neighbors.common import KNeighborsDispatchingBase
 from sklearnex.neighbors.knn_unsupervised import NearestNeighbors
@@ -151,6 +152,8 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
     def _kneighbors(self, X=None, n_neighbors=None, return_distance=True):
         if X is not None:
             xp, _ = get_namespace(X)
+            # Convert device arrays to numpy to avoid implicit conversion errors
+            X = _as_numpy(X)
             X = validate_data(
                 self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
             )
