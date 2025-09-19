@@ -2175,7 +2175,7 @@ def test_logreg_builder_sequential_calls():
             marks=pytest.mark.skipif(
                 sklearn_check_version("1.8"),
                 reason="multi_class no longer supported.",
-            ),          
+            ),
         ),
         pytest.param(
             LogisticRegression(multi_class="multinomial"),
