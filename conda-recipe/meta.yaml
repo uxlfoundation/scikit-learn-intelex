@@ -38,18 +38,16 @@ build:
   number: {{ buildnumber }}
   include_recipe: False
   script_env:
-  - DPCPPROOT
-  - DALROOT
-  - NO_DIST=1  # [win]
-  ignore_run_exports:
-  - dpcpp_linux-64  # [linux64]
-  # - dpcpp_win-64  # [win]
+    - DPCPPROOT
+    - DALROOT
+    - NO_DIST=1  # [win]
+  ignore_run_exports_from:
+    - {{ compiler('dpcpp') }}  # [linux64]
 
 requirements:
   build:
     - make  # [linux]
-    - dpcpp_linux-64  # [linux64]
-    # - dpcpp_win-64  # [win]
+    - {{ compiler('dpcpp') }}  # [linux64]
     - {{ compiler('cxx') }}  # [linux64 or win]
     # conda-forge feedstock specific
     # - {{ stdlib("c") }}  # [linux64 or win]
@@ -62,22 +60,22 @@ requirements:
     - jinja2
     - pybind11
     - numpy
-    - impi-devel  # [not win]
     # dal-devel pinning depends on the recipe location (repo or feedstock)
     - dal-devel
     # - dal-devel =={{ version }}
+    - impi-devel  # [not win]
+    - mpi * impi  # [not win]
   run:
     - python
     - numpy
     - scikit-learn
-    # dal pinning depends on the recipe location (repo or feedstock)
-    - dal
-    # - dal =={{ version }}
+    # dal-devel has run_exports on conda-forge, so no need to add it.
+    - mpi * impi  # [not win]
 
 test:
   requires:
     - pyyaml
-    - impi_rt  # [not win]
+    - mpi * impi  # [not win]
     # DPC part of sklearnex is optional
     - dpcpp-cpp-rt  # [linux64]
     # TODO: enable data parallel frameworks when they are available on conda-forge
@@ -95,7 +93,7 @@ test:
     - array-api-strict
   source_files:
     - .ci
-    - .pytest-verbosity-args
+    - setup.cfg
     - examples
     - tests
 
