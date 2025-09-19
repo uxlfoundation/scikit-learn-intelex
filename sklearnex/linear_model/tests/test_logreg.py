@@ -26,7 +26,7 @@ from sklearn.linear_model import LogisticRegression as _sklearn_LogisticRegressi
 from sklearn.metrics import accuracy_score, log_loss
 from sklearn.model_selection import train_test_split
 
-from daal4py.sklearn._utils import daal_check_version
+from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
@@ -247,14 +247,14 @@ def test_binary_multinomial_probabilities(fit_intercept, C):
     )
     y_binary = np.array([1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2], dtype=int)
 
+    params = {"C": C, "fit_intercept": fit_intercept}
+    if not sklearn_check_version("1.8"):
+        params["multi_class"] = "multinomial"
+
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        model_sklearnex = LogisticRegression(
-            C=C, fit_intercept=fit_intercept, multi_class="multinomial"
-        ).fit(X, y_binary)
-        model_sklearn = _sklearn_LogisticRegression(
-            C=C, fit_intercept=fit_intercept, multi_class="multinomial"
-        ).fit(X, y_binary)
+        model_sklearnex = LogisticRegression(**params).fit(X, y_binary)
+        model_sklearn = _sklearn_LogisticRegression(**params).fit(X, y_binary)
     np.testing.assert_allclose(
         model_sklearnex.predict_proba(X),
         model_sklearn.predict_proba(X),
@@ -273,7 +273,9 @@ def test_binary_multinomial_probabilities(fit_intercept, C):
 # correctly when falling back.
 @pytest.mark.parametrize("fit_intercept", [False, True])
 @pytest.mark.parametrize("n_classes", [2, 3])
-@pytest.mark.parametrize("multi_class", ["auto", "multinomial"])
+@pytest.mark.parametrize(
+    "multi_class", ["auto", "multinomial"] if not sklearn_check_version("1.8") else [None]
+)
 @pytest.mark.parametrize("weighted", [False, True])
 @pytest.mark.allow_sklearn_fallback
 def test_warm_start_stateful(fit_intercept, n_classes, multi_class, weighted):
@@ -297,48 +299,40 @@ def test_warm_start_stateful(fit_intercept, n_classes, multi_class, weighted):
     # Note2: this will first compare the results after one iteration, and
     # if those already differ too much (which can be the case given numerical
     # differences), will then skip the rest of test that checks the warm starts.
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        model1 = _sklearn_LogisticRegression(
-            solver="lbfgs",
-            fit_intercept=fit_intercept,
-            multi_class=multi_class,
-            max_iter=1,
-            warm_start=True,
-        ).fit(
-            X,
-            y,
-            np.ones(X.shape[0]) if weighted else None,
-        )
-        model2 = LogisticRegression(
-            solver="lbfgs",
-            fit_intercept=fit_intercept,
-            multi_class=multi_class,
-            max_iter=1,
-            warm_start=True,
-        ).fit(
-            X,
-            y,
-            np.ones(X.shape[0]) if weighted else None,
-        )
+    params = {
+        "solver": "lbfgs",
+        "fit_intercept": fit_intercept,
+        "max_iter": 1,
+        "warm_start": True,
+    }
+    if not sklearn_check_version("1.8"):
+        params["multi_class"] = multi_class
+
+    model1 = _sklearn_LogisticRegression(**params)
+    model2 = LogisticRegression(**params)
+
+    for est in (model1, model2):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            est.fit(
+                X,
+                y,
+                np.ones(X.shape[0]) if weighted else None,
+            )
 
     try:
         np.testing.assert_allclose(model1.coef_, model2.coef_)
     except AssertionError:
         pytest.skip("Too large numerical differences for further comparisons")
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        model1.fit(
-            X,
-            y,
-            np.ones(X.shape[0]) if weighted else None,
-        )
-        model2.fit(
-            X,
-            y,
-            np.ones(X.shape[0]) if weighted else None,
-        )
+    for est in (model1, model2):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            est.fit(
+                X,
+                y,
+                np.ones(X.shape[0]) if weighted else None,
+            )
 
     np.testing.assert_allclose(model1.coef_, model2.coef_)
     if fit_intercept:
@@ -354,7 +348,9 @@ def test_warm_start_stateful(fit_intercept, n_classes, multi_class, weighted):
 # Note: other solvers do not have any internal state and are supposed to yield the
 # same result after one iteration given the current coefficients.
 @pytest.mark.parametrize("fit_intercept", [False, True])
-@pytest.mark.parametrize("multi_class", ["ovr", "multinomial"])
+@pytest.mark.parametrize(
+    "multi_class", ["ovr", "multinomial"] if not sklearn_check_version("1.8") else [None]
+)
 @pytest.mark.parametrize("weighted", [False, True])
 @pytest.mark.allow_sklearn_fallback
 def test_warm_start_binary(fit_intercept, multi_class, weighted):
@@ -369,39 +365,22 @@ def test_warm_start_binary(fit_intercept, multi_class, weighted):
         class_sep=0.5,
     )
 
+    params = {"random_state": 123, "solver": "newton-cg", "fit_intercept": fit_intercept}
+    if not sklearn_check_version("1.8"):
+        params["multi_class"] = multi_class
+
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        model1 = LogisticRegression(
-            random_state=123,
-            solver="newton-cg",
-            fit_intercept=fit_intercept,
-            multi_class=multi_class,
-            max_iter=2,
-        ).fit(
-            X,
-            y,
-            np.ones(X.shape[0]) if weighted else None,
-        )
-        model2 = (
-            LogisticRegression(
-                random_state=123,
-                solver="newton-cg",
-                fit_intercept=fit_intercept,
-                multi_class=multi_class,
-                max_iter=1,
-                warm_start=True,
-            )
-            .fit(
+        model1 = LogisticRegression(**params, max_iter=2)
+        model2 = LogisticRegression(**params, max_iter=1, warm_start=True)
+
+        # fit model2 twice using the same data to get 2 iterations (with warm_start)
+        for est in (model1, model2, model2):
+            est.fit(
                 X,
                 y,
                 np.ones(X.shape[0]) if weighted else None,
             )
-            .fit(
-                X,
-                y,
-                np.ones(X.shape[0]) if weighted else None,
-            )
-        )
 
     np.testing.assert_allclose(model1.coef_, model2.coef_)
     if fit_intercept:
@@ -409,7 +388,9 @@ def test_warm_start_binary(fit_intercept, multi_class, weighted):
 
 
 @pytest.mark.parametrize("fit_intercept", [False, True])
-@pytest.mark.parametrize("multi_class", ["ovr", "multinomial"])
+@pytest.mark.parametrize(
+    "multi_class", ["ovr", "multinomial"] if not sklearn_check_version("1.8") else [None]
+)
 @pytest.mark.parametrize("weighted", [False, True])
 @pytest.mark.allow_sklearn_fallback
 def test_warm_start_multinomial(fit_intercept, multi_class, weighted):
@@ -424,39 +405,22 @@ def test_warm_start_multinomial(fit_intercept, multi_class, weighted):
         class_sep=0.5,
     )
 
+    params = {"random_state": 123, "solver": "newton-cg", "fit_intercept": fit_intercept}
+    if not sklearn_check_version("1.8"):
+        params["multi_class"] = multi_class
+
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        model1 = LogisticRegression(
-            random_state=123,
-            solver="newton-cg",
-            fit_intercept=fit_intercept,
-            multi_class=multi_class,
-            max_iter=2,
-        ).fit(
-            X,
-            y,
-            np.ones(X.shape[0]) if weighted else None,
-        )
-        model2 = (
-            LogisticRegression(
-                random_state=123,
-                solver="newton-cg",
-                fit_intercept=fit_intercept,
-                multi_class=multi_class,
-                max_iter=1,
-                warm_start=True,
-            )
-            .fit(
+        model1 = LogisticRegression(**params, max_iter=2)
+        model2 = LogisticRegression(**params, max_iter=1, warm_start=True)
+
+        # fit model2 twice using the same data to get 2 iterations (with warm_start)
+        for est in (model1, model2, model2):
+            est.fit(
                 X,
                 y,
                 np.ones(X.shape[0]) if weighted else None,
             )
-            .fit(
-                X,
-                y,
-                np.ones(X.shape[0]) if weighted else None,
-            )
-        )
 
     np.testing.assert_allclose(model1.coef_, model2.coef_)
     if fit_intercept:
@@ -477,7 +441,9 @@ def test_warm_start_multinomial(fit_intercept, multi_class, weighted):
 @pytest.mark.skipif(
     not daal_check_version((2025, "P", 800)), reason="Bugs fixed in later oneDAL releases"
 )
-@pytest.mark.parametrize("multi_class", ["auto", "multinomial"])
+@pytest.mark.parametrize(
+    "multi_class", ["auto", "multinomial"] if not sklearn_check_version("1.8") else [None]
+)
 @pytest.mark.parametrize("C", [1, 0.2, 20.0])
 @pytest.mark.parametrize("solver", ["lbfgs", "newton-cg"])
 @pytest.mark.parametrize("n_classes", [2, 3])
@@ -495,24 +461,16 @@ def test_custom_solvers_are_correct(multi_class, C, solver, n_classes):
         class_sep=0.25,
     )
 
+    params = {"C": C, "solver": solver}
+    if not sklearn_check_version:
+        params["multi_class"] = multi_class
+
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        model_sklearn = _sklearn_LogisticRegression(
-            C=C,
-            multi_class=multi_class,
-        ).fit(X, y)
-        model_sklearnex = LogisticRegression(
-            C=C, solver=solver, multi_class=multi_class, max_iter=1_000, tol=1e-8
-        ).fit(X, y)
+        model_sklearn = _sklearn_LogisticRegression(**params).fit(X, y)
+        model_sklearnex = LogisticRegression(**params, max_iter=1_000, tol=1e-8).fit(X, y)
         model_sklearnex_refitted = (
-            LogisticRegression(
-                C=C,
-                solver=solver,
-                multi_class=multi_class,
-                max_iter=1_000,
-                tol=1e-8,
-                warm_start=True,
-            )
+            LogisticRegression(**params, max_iter=1_000, tol=1e-8, warm_start=True)
             .fit(X, y)
             .fit(X, y)
         )
