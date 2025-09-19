@@ -24,6 +24,7 @@ from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.utils.validation import get_requires_y_tag
 from onedal.neighbors import KNeighborsClassifier as onedal_KNeighborsClassifier
+from onedal.tests.utils._dataframes_support import _as_numpy
 
 from .._device_offload import dispatch, wrap_output_data
 from ..utils._array_api import get_namespace
@@ -163,6 +164,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     def _onedal_predict(self, X, queue=None):
         if X is not None:
             xp, _ = get_namespace(X)
+            X = _as_numpy(X)
             X = validate_data(
                 self,
                 X,
@@ -176,6 +178,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     def _onedal_predict_proba(self, X, queue=None):
         if X is not None:
             xp, _ = get_namespace(X)
+            X = _as_numpy(X)
             X = validate_data(
                 self,
                 X,
@@ -191,6 +194,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     ):
         if X is not None:
             xp, _ = get_namespace(X)
+            X = _as_numpy(X)
             X = validate_data(
                 self,
                 X,

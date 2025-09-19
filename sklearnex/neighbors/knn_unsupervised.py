@@ -21,6 +21,7 @@ from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.utils.validation import get_requires_y_tag
 from onedal.neighbors import NearestNeighbors as onedal_NearestNeighbors
+from onedal.tests.utils._dataframes_support import _as_numpy
 
 from .._device_offload import dispatch, wrap_output_data
 from ..utils._array_api import get_namespace
@@ -76,6 +77,8 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
         if X is not None:
             xp, _ = get_namespace(X)
+            # Convert device arrays to numpy to avoid implicit conversion errors
+            X = _as_numpy(X)
             X = validate_data(
                 self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
             )
