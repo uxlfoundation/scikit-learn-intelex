@@ -188,12 +188,10 @@ def test_multinomial_logistic_regression_is_correct():
     # for sklearn 1.8 and onwards, non-binary class datasets will multinomial
     if not sklearn_check_version("1.8"):
         params["multi_class"] = "multinomial"
-    
+
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=FutureWarning)
-        model_sklearn = _sklearn_LogisticRegression(**params).fit(
-            X, y
-        )
+        model_sklearn = _sklearn_LogisticRegression(**params).fit(X, y)
         model_sklearnex = LogisticRegression(**params).fit(X, y)
 
     try:
@@ -565,5 +563,3 @@ def test_log_proba_doesnt_return_inf(dataframe, queue):
     pred_log_proba = _as_numpy(pred_log_proba)
 
     assert not np.any(np.isinf(pred_log_proba))
-
-
