@@ -2180,7 +2180,7 @@ def test_logreg_builder_sequential_calls():
             ),
         ]
         if not sklearn_check_version("1.8")
-        else [[(LogisticRegression(solver="liblinear"), 2)]]
+        else [(LogisticRegression(solver="liblinear"), 2)]
     )
     + [
         # case below might change in the future if sklearn improves their modules
