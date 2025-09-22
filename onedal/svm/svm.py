@@ -24,7 +24,6 @@ from onedal.common._backend import bind_default_backend
 from onedal.utils import _sycl_queue_manager as QM
 
 from ..common._estimator_checks import _check_is_fitted
-from ..common._mixin import ClassifierMixin, RegressorMixin
 from ..datatypes import from_table, to_table
 
 
@@ -171,7 +170,7 @@ class BaseSVM(metaclass=ABCMeta):
         return from_table(self._infer(X, queue).decision_function, like=X)
 
 
-class SVR(RegressorMixin, BaseSVM):
+class SVR(BaseSVM):
 
     def __init__(
         self,
@@ -222,7 +221,7 @@ class SVR(RegressorMixin, BaseSVM):
         return super().predict(X)[0, ...]
 
 
-class SVC(ClassifierMixin, BaseSVM):
+class SVC(BaseSVM):
 
     def __init__(
         self,
@@ -272,7 +271,7 @@ class SVC(ClassifierMixin, BaseSVM):
     def model(self): ...
 
 
-class NuSVR(RegressorMixin, BaseSVM):
+class NuSVR(BaseSVM):
 
     def __init__(
         self,
@@ -321,7 +320,7 @@ class NuSVR(RegressorMixin, BaseSVM):
         return self._predict(X)[0, ...]
 
 
-class NuSVC(ClassifierMixin, BaseSVM):
+class NuSVC(BaseSVM):
 
     def __init__(
         self,
