@@ -15,7 +15,7 @@
 from sklearn.linear_model import LogisticRegression, SGDClassifier
 
 from .logistic_regression_builders import LogisticDAALModel
-from .tree_based_builders import GBTDAALModel
+from .tree_based_builders import GBTDAALBaseModel, GBTDAALModel
 
 __all__ = ["LogisticDAALModel", "GBTDAALModel", "convert_model"]
 
