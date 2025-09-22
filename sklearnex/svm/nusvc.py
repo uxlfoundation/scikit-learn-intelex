@@ -14,24 +14,15 @@
 # limitations under the License.
 # ==============================================================================
 
-from functools import wraps
-
 import numpy as np
 from sklearn.svm import NuSVC as _sklearn_NuSVC
-from sklearn.utils.metaestimators import available_if
-from sklearn.utils.validation import (
-    _deprecate_positional_args,
-    check_array,
-    check_is_fitted,
-)
+from sklearn.utils.validation import _deprecate_positional_args
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal.svm import NuSVC as onedal_NuSVC
 
-from .._device_offload import dispatch, wrap_output_data
-from ..utils._array_api import get_namespace
-from ..utils.validation import validate_data
+from .._device_offload import dispatch
 from ._common import BaseSVC
 
 

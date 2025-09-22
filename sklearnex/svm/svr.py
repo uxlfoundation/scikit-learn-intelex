@@ -14,16 +14,14 @@
 # limitations under the License.
 # ==============================================================================
 
-import numpy as np
 from sklearn.svm import SVR as _sklearn_SVR
-from sklearn.utils.validation import _deprecate_positional_args, check_is_fitted
+from sklearn.utils.validation import _deprecate_positional_args
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal.svm import SVR as onedal_SVR
 
-from .._device_offload import dispatch, wrap_output_data
-from ..utils.validation import validate_data
+from .._device_offload import dispatch
 from ._common import BaseSVR
 
 

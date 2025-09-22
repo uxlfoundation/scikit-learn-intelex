@@ -488,11 +488,6 @@ class BaseSVR(BaseSVM):
 
         self._dualcoef_ = self.dual_coef_
 
-    def _onedal_predict(self, X, queue=None):
-        xp, _ = get_namespace(X)
-        res = super()._onedal_predict(X, queue)
-        return xp.reshape(res, (-1,))
-
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
         return r2_score(
             y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
