@@ -76,7 +76,7 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
         if X is not None:
             from onedal.tests.utils._dataframes_support import _as_numpy
-            
+
             xp, _ = get_namespace(X)
             # Convert device arrays to numpy to avoid implicit conversion errors
             X = _as_numpy(X)
@@ -109,7 +109,7 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         xp, _ = get_namespace(X)
         if X is not None:
             from onedal.tests.utils._dataframes_support import _as_numpy
-            
+
             # Convert device arrays to numpy to avoid implicit conversion errors
             X = _as_numpy(X)
             X = validate_data(
@@ -135,7 +135,7 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         xp, _ = get_namespace(X)
         if X is not None:
             from onedal.tests.utils._dataframes_support import _as_numpy
-            
+
             # Convert device arrays to numpy to avoid implicit conversion errors
             X = _as_numpy(X)
             X = validate_data(
@@ -156,7 +156,7 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
 
     def _onedal_fit(self, X, y=None, queue=None):
         from onedal.tests.utils._dataframes_support import _as_numpy
-        
+
         xp, _ = get_namespace(X, y)
         # Convert device arrays to numpy to avoid implicit conversion errors
         X = _as_numpy(X)
