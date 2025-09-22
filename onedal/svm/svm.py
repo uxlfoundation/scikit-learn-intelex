@@ -75,6 +75,7 @@ class BaseSVM(metaclass=ABCMeta):
         # when oneDAL SVM starts support of 'n_iterations' result
         self.n_iter_ = 1 if max_iter < 1 else max_iter
         class_count = 0 if self.classes_ is None else len(self.classes_)
+
         return {
             "fptype": dtype,
             "c": self.C,
@@ -82,9 +83,9 @@ class BaseSVM(metaclass=ABCMeta):
             "epsilon": self.epsilon,
             "kernel": self.kernel,
             "degree": self.degree,
-            "shift": self.coef0,
-            "scale": self._scale_,  # derived from gamma
-            "sigma": self._sigma_,  # derived from gamma
+            "shift": self.coef0 if self.kernel != "linear" else 0.0,
+            "scale": self.gamma if self.kernel != "linear" else 1.0,
+            "sigma": np.sqrt(0.5 / self.gamma) if self.kernel != "linear" else 1.0,
             "accuracy_threshold": self.tol,
             "shrinking": self.shrinking,
             "cache_size": self.cache_size,
@@ -107,12 +108,6 @@ class BaseSVM(metaclass=ABCMeta):
             data = (X, y)
         self._sparse = sp.issparse(X)
 
-        if self.kernel == "linear":
-            self._scale_, self._sigma_ = 1.0, 1.0
-            self.coef0 = 0.0
-        else:
-            self._scale_, self._sigma_ = self.gamma, np.sqrt(0.5 / self.gamma)
-
         data_t = to_table(*data, queue=QM.get_global_queue())
         params = self._get_onedal_params(data_t[0].dtype)
         result = self.train(params, *data_t)
@@ -126,8 +121,6 @@ class BaseSVM(metaclass=ABCMeta):
 
         self.intercept_ = from_table(result.biases, like=X)[0, ...]
         self.support_ = from_table(result.support_indices, like=X)[0, ...]
-
-        self._gamma = self._scale_
 
         self._onedal_model = result.model
         return self
