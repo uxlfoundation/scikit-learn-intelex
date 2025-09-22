@@ -266,7 +266,7 @@ if daal_check_version((2024, "P", 1)):
                     (self.solver == "newton-cg", "Only newton-cg solver is supported."),
                     (self.warm_start == False, "Warm start is not supported."),
                     (
-                        skearn_check_version("1.8") or self.multi_class != "multinomial",
+                        sklearn_check_version("1.8") or self.multi_class != "multinomial",
                         "multi_class='multinomial is not supported.",
                     ),
                     (
