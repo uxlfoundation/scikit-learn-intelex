@@ -26,7 +26,6 @@ from onedal.utils import _sycl_queue_manager as QM
 from ..common._estimator_checks import _check_is_fitted
 from ..common._mixin import ClassifierMixin, RegressorMixin
 from ..datatypes import from_table, to_table
-from ..utils.validation import _column_or_1d
 
 
 class BaseSVM(metaclass=ABCMeta):
@@ -47,8 +46,6 @@ class BaseSVM(metaclass=ABCMeta):
         max_iter,
         tau,
         class_weight,
-        decision_function_shape,
-        break_ties,
         algorithm,
     ):
         self.C = C
@@ -64,9 +61,8 @@ class BaseSVM(metaclass=ABCMeta):
         self.max_iter = max_iter
         self.tau = tau
         self.class_weight = class_weight
-        self.decision_function_shape = decision_function_shape
-        self.break_ties = break_ties
         self.algorithm = algorithm
+        self._onedal_model = None
 
     @abstractmethod
     def train(self, *args, **kwargs): ...
@@ -82,28 +78,30 @@ class BaseSVM(metaclass=ABCMeta):
         class_count = 0 if self.classes_ is None else len(self.classes_)
         return {
             "fptype": dtype,
-            "method": self.algorithm,
-            "kernel": self.kernel,
             "c": self.C,
             "nu": self.nu,
             "epsilon": self.epsilon,
-            "class_count": class_count,
-            "accuracy_threshold": self.tol,
-            "max_iteration_count": int(max_iter),
-            "scale": self._scale_,
-            "sigma": self._sigma_,
-            "shift": self.coef0,
+            "kernel": self.kernel,
             "degree": self.degree,
-            "tau": self.tau,
+            "shift": self.coef0,
+            "scale": self._scale_,  # derived from gamma
+            "sigma": self._sigma_,  # derived from gamma
+            "accuracy_threshold": self.tol,
             "shrinking": self.shrinking,
             "cache_size": self.cache_size,
+            "max_iteration_count": int(max_iter),
+            "tau": self.tau,
+            "method": self.algorithm,
+            "class_count": class_count,
         }
 
-    def _fit(self, X, y, sample_weight):
+    @supports_queue
+    def fit(self, X, y, sample_weight=None, queue=None):
 
         if sample_weight is not None:
             if self.class_weight_ is not None:
                 for i, v in enumerate(self.class_weight_):
+                    # needs an array API fix here
                     sample_weight[y == i] *= v
             data = (X, y, sample_weight)
         else:
@@ -143,7 +141,8 @@ class BaseSVM(metaclass=ABCMeta):
         m.biases = to_table(self.intercept_)
         return m
 
-    def _infer(self, X, module, queue):
+    @supports_queue
+    def _infer(self, X, queue=None):
         _check_is_fitted(self)
 
         if self._sparse:
@@ -160,18 +159,16 @@ class BaseSVM(metaclass=ABCMeta):
         X = to_table(X, queue=QM.get_global_queue())
         params = self._get_onedal_params(X)
 
-        if hasattr(self, "_onedal_model"):
-            model = self._onedal_model
-        else:
-            model = self._create_model(module)
+        if self._onedal_model is None:
+            self._onedal_model = self._create_model()
 
-        return self.infer(params, model, X)
+        return self.infer(params, self._onedal_model, X)
 
-    def _predict(self, X, module, queue):
-        return from_table(self._infer(X, module, queue).responses)
+    def predict(self, X, queue=None):
+        return from_table(self._infer(X, queue).responses, like=X)
 
-    def _decision_function(self, X, module, queue):
-        return from_table(self._infer(X, module, queue).decision_function)
+    def decision_function(self, X, queue=None):
+        return from_table(self._infer(X, queue).decision_function, like=X)
 
 
 class SVR(RegressorMixin, BaseSVM):
@@ -192,6 +189,8 @@ class SVR(RegressorMixin, BaseSVM):
         tau=1e-12,
         algorithm="thunder",
     ):
+
+        # This hard-codes nu=.5, which may be bad. Needs to be investigated
         super().__init__(
             C=C,
             nu=0.5,
@@ -206,8 +205,6 @@ class SVR(RegressorMixin, BaseSVM):
             max_iter=max_iter,
             tau=tau,
             class_weight=None,
-            decision_function_shape=None,
-            break_ties=False,
             algorithm=algorithm,
         )
 
@@ -220,14 +217,9 @@ class SVR(RegressorMixin, BaseSVM):
     @bind_default_backend("svm.regression")
     def model(self): ...
 
-    @supports_queue
-    def fit(self, X, y, sample_weight=None, queue=None):
-        return self._fit(X, y, sample_weight)
-
-    @supports_queue
     def predict(self, X, queue=None):
         # return 1-dimensional output from 2d oneDAL table
-        return self._predict(X)[0]
+        return super().predict(X)[0, ...]
 
 
 class SVC(ClassifierMixin, BaseSVM):
@@ -246,8 +238,6 @@ class SVC(ClassifierMixin, BaseSVM):
         max_iter=-1,
         tau=1e-12,
         class_weight=None,
-        decision_function_shape="ovr",
-        break_ties=False,
         algorithm="thunder",
     ):
         super().__init__(
@@ -264,13 +254,11 @@ class SVC(ClassifierMixin, BaseSVM):
             max_iter=max_iter,
             tau=tau,
             class_weight=class_weight,
-            decision_function_shape=decision_function_shape,
-            break_ties=break_ties,
             algorithm=algorithm,
         )
 
-    def _create_model(self, module):
-        m = super()._create_model(module)
+    def _create_model(self):
+        m = super()._create_model()
         m.first_class_response, m.second_class_response = 0, 1
         return m
 
@@ -282,18 +270,6 @@ class SVC(ClassifierMixin, BaseSVM):
 
     @bind_default_backend("svm.classification")
     def model(self): ...
-
-    @supports_queue
-    def fit(self, X, y, sample_weight=None, queue=None):
-        return self._fit(X, y, sample_weight)
-
-    @supports_queue
-    def predict(self, X, queue=None):
-        return self._predict(X)
-
-    @supports_queue
-    def decision_function(self, X, queue=None):
-        return self._decision_function(X)
 
 
 class NuSVR(RegressorMixin, BaseSVM):
@@ -328,8 +304,6 @@ class NuSVR(RegressorMixin, BaseSVM):
             max_iter=max_iter,
             tau=tau,
             class_weight=None,
-            decision_function_shape=None,
-            break_ties=False,
             algorithm=algorithm,
         )
 
@@ -342,11 +316,6 @@ class NuSVR(RegressorMixin, BaseSVM):
     @bind_default_backend("svm.nu_regression")
     def model(self): ...
 
-    @supports_queue
-    def fit(self, X, y, sample_weight=None, queue=None):
-        return self._fit(X, y, sample_weight)
-
-    @supports_queue
     def predict(self, X, queue=None):
         # return only a 1-dimensional output from 2d oneDAL table
         return self._predict(X)[0, ...]
@@ -368,8 +337,6 @@ class NuSVC(ClassifierMixin, BaseSVM):
         max_iter=-1,
         tau=1e-12,
         class_weight=None,
-        decision_function_shape="ovr",
-        break_ties=False,
         algorithm="thunder",
     ):
         super().__init__(
@@ -386,13 +353,11 @@ class NuSVC(ClassifierMixin, BaseSVM):
             max_iter=max_iter,
             tau=tau,
             class_weight=class_weight,
-            decision_function_shape=decision_function_shape,
-            break_ties=break_ties,
             algorithm=algorithm,
         )
 
-    def _create_model(self, module):
-        m = super()._create_model(module)
+    def _create_model(self):
+        m = super()._create_model()
         m.first_class_response, m.second_class_response = 0, 1
         return m
 
@@ -404,15 +369,3 @@ class NuSVC(ClassifierMixin, BaseSVM):
 
     @bind_default_backend("svm.nu_classification")
     def model(self): ...
-
-    @supports_queue
-    def fit(self, X, y, sample_weight=None, queue=None):
-        return self._fit(X, y, sample_weight)
-
-    @supports_queue
-    def predict(self, X, queue=None):
-        return self._predict(X)
-
-    @supports_queue
-    def decision_function(self, X, queue=None):
-        return self._decision_function(X)
