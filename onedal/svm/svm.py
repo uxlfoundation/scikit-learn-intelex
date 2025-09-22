@@ -23,20 +23,13 @@ from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
 from onedal.utils import _sycl_queue_manager as QM
 
-from ..common._base import BaseEstimator
 from ..common._estimator_checks import _check_is_fitted
 from ..common._mixin import ClassifierMixin, RegressorMixin
 from ..datatypes import from_table, to_table
-from ..utils.validation import (
-    _check_array,
-    _check_n_features,
-    _check_X_y,
-    _column_or_1d,
-    _validate_targets,
-)
+from ..utils.validation import _column_or_1d
 
 
-class BaseSVM(BaseEstimator, metaclass=ABCMeta):
+class BaseSVM(metaclass=ABCMeta):
     @abstractmethod
     def __init__(
         self,
@@ -81,11 +74,6 @@ class BaseSVM(BaseEstimator, metaclass=ABCMeta):
     @abstractmethod
     def infer(self, *args, **kwargs): ...
 
-    def _validate_targets(self, y, dtype):
-        self.class_weight_ = None
-        self.classes_ = None
-        return _column_or_1d(y, warn=True).astype(dtype, copy=False)
-
     def _get_onedal_params(self, dtype):
         max_iter = 10000 if self.max_iter == -1 else self.max_iter
         # TODO: remove this workaround
@@ -112,32 +100,6 @@ class BaseSVM(BaseEstimator, metaclass=ABCMeta):
         }
 
     def _fit(self, X, y, sample_weight):
-        if hasattr(self, "decision_function_shape"):
-            if self.decision_function_shape not in ("ovr", "ovo", None):
-                raise ValueError(
-                    f"decision_function_shape must be either 'ovr' or 'ovo', "
-                    f"got {self.decision_function_shape}."
-                )
-
-        X, y = _check_X_y(
-            X,
-            y,
-            dtype=[np.float64, np.float32],
-            force_all_finite=True,
-            accept_sparse="csr",
-        )
-        # hard work remains on moving validate targets away from onedal
-        y = self._validate_targets(y, X.dtype)
-        if sample_weight is not None and len(sample_weight) > 0:
-            sample_weight = _check_array(
-                sample_weight,
-                accept_sparse=False,
-                ensure_2d=False,
-                dtype=X.dtype,
-                order="C",
-            )
-        elif self.class_weight is not None:
-            sample_weight = np.ones(X.shape[0], dtype=X.dtype)
 
         if sample_weight is not None:
             if self.class_weight_ is not None:
@@ -162,20 +124,12 @@ class BaseSVM(BaseEstimator, metaclass=ABCMeta):
             self.dual_coef_ = sp.csr_matrix(from_table(result.coeffs).T)
             self.support_vectors_ = sp.csr_matrix(from_table(result.support_vectors))
         else:
-            self.dual_coef_ = from_table(result.coeffs).T
-            self.support_vectors_ = from_table(result.support_vectors)
+            self.dual_coef_ = from_table(result.coeffs, like=X).T
+            self.support_vectors_ = from_table(result.support_vectors, like=X)
 
-        self.intercept_ = from_table(result.biases).ravel()
-        self.support_ = from_table(result.support_indices).ravel().astype("int")
-        self.n_features_in_ = X.shape[1]
-        self.shape_fit_ = X.shape
+        self.intercept_ = from_table(result.biases, like=X)[0, ...]
+        self.support_ = from_table(result.support_indices, like=X)[0, ...]
 
-        # _n_support not used in this object, will be moved to sklearnex
-        if getattr(self, "classes_", None) is not None:
-            indices = y.take(self.support_, axis=0)
-            self._n_support = np.array(
-                [np.sum(indices == i) for i, _ in enumerate(self.classes_)]
-            )
         self._gamma = self._scale_
 
         self._onedal_model = result.model
@@ -211,8 +165,7 @@ class BaseSVM(BaseEstimator, metaclass=ABCMeta):
         else:
             model = self._create_model(module)
 
-        result = self.infer(params, model, X)
-        decision_function = from_table(result.decision_function)
+        return self.infer(params, model, X)
 
     def _predict(self, X, module, queue):
         return from_table(self._infer(X, module, queue).responses)
@@ -273,7 +226,8 @@ class SVR(RegressorMixin, BaseSVM):
 
     @supports_queue
     def predict(self, X, queue=None):
-        return self._predict(X)
+        # return 1-dimensional output from 2d oneDAL table
+        return self._predict(X)[0]
 
 
 class SVC(ClassifierMixin, BaseSVM):
@@ -328,12 +282,6 @@ class SVC(ClassifierMixin, BaseSVM):
 
     @bind_default_backend("svm.classification")
     def model(self): ...
-
-    def _validate_targets(self, y, dtype):
-        y, self.class_weight_, self.classes_ = _validate_targets(
-            y, self.class_weight, dtype
-        )
-        return y
 
     @supports_queue
     def fit(self, X, y, sample_weight=None, queue=None):
@@ -400,7 +348,8 @@ class NuSVR(RegressorMixin, BaseSVM):
 
     @supports_queue
     def predict(self, X, queue=None):
-        return self._predict(X)[0]
+        # return only a 1-dimensional output from 2d oneDAL table
+        return self._predict(X)[0, ...]
 
 
 class NuSVC(ClassifierMixin, BaseSVM):
@@ -455,12 +404,6 @@ class NuSVC(ClassifierMixin, BaseSVM):
 
     @bind_default_backend("svm.nu_classification")
     def model(self): ...
-
-    def _validate_targets(self, y, dtype):
-        y, self.class_weight_, self.classes_ = _validate_targets(
-            y, self.class_weight, dtype
-        )
-        return y
 
     @supports_queue
     def fit(self, X, y, sample_weight=None, queue=None):

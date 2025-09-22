@@ -20,9 +20,10 @@ from numbers import Number, Real
 
 import numpy as np
 from scipy import sparse as sp
-from sklearn.base import BaseEstimator, ClassifierMixin, RegressorMixin
+from sklearn.base import ClassifierMixin, RegressorMixin
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.exceptions import NotFittedError
+from sklearn.utils.metaestimators import available_if
 from sklearn.metrics import accuracy_score, r2_score
 from sklearn.preprocessing import LabelEncoder
 from sklearn.svm._base import BaseLibSVM as _sklearn_BaseLibSVM
@@ -123,7 +124,8 @@ class BaseSVM(oneDALEstimator):
                     # var = E[X^2] - E[X]^2
                     X_sc = (X.multiply(X)).mean() - (X.mean()) ** 2
                 else:
-                    X_sc = X.var()
+                    xp, _ = get_namespace(X)
+                    X_sc = xp.var(X)
                 _gamma = 1.0 / (X.shape[1] * X_sc) if X_sc != 0 else 1.0
             elif self.gamma == "auto":
                 _gamma = 1.0 / X.shape[1]
@@ -167,12 +169,13 @@ class BaseSVM(oneDALEstimator):
                     f"This {self.__class__.__name__} estimator "
                     f"requires y to be passed, but the target y is None."
                 )
+        xp, _ = get_namespace(X, y, sample_weight)
         # finite check occurs in onedal estimator
         X, y = validate_data(
             self,
             X,
             y,
-            dtype=[np.float64, np.float32],
+            dtype=[xp.float64, xp.float32],
             ensure_all_finite=False,
             accept_sparse="csr",
         )
@@ -330,18 +333,6 @@ class BaseSVC(BaseSVM):
             X,
         )
 
-    def _compute_balanced_class_weight(self, y):
-        y_ = _column_or_1d(y)
-        classes, _ = np.unique(y_, return_inverse=True)
-
-        le = LabelEncoder()
-        y_ind = le.fit_transform(y_)
-        if not np.isin(classes, le.classes_).all():
-            raise ValueError("classes should have valid labels that are in y")
-
-        recip_freq = len(y_) / (len(le.classes_) * np.bincount(y_ind).astype(np.float64))
-        return recip_freq[le.transform(classes)]
-
     def _fit_proba(self, X, y, sample_weight=None, queue=None):
         # TODO: rewrite this method when probabilities output is implemented in oneDAL
 
@@ -372,20 +363,21 @@ class BaseSVC(BaseSVM):
                 method="sigmoid",
             ).fit(X, y)
 
-    def _save_attributes(self):
+    def _save_attributes(self, X):
+        # This function requires array API adaptation.
         self.support_vectors_ = self._onedal_estimator.support_vectors_
-        self.n_features_in_ = self._onedal_estimator.n_features_in_
-        self.fit_status_ = 0
+
         self.dual_coef_ = self._onedal_estimator.dual_coef_
-        self.shape_fit_ = self._onedal_estimator.class_weight_
         self.classes_ = self._onedal_estimator.classes_
         if not sklearn_check_version("1.2"):
             self.class_weight_ = self._onedal_estimator.class_weight_
-        self.support_ = self._onedal_estimator.support_
+        self.support_ = self._onedal_estimator.support_.astype(int)
 
         self._icept_ = self._onedal_estimator.intercept_
-        self._n_support = self._onedal_estimator._n_support
         self._sparse = False
+        self.fit_status_ = 0
+        self.shape_fit_ = X.shape
+
         self._gamma = self._onedal_estimator._gamma
         if self.probability:
             length = int(len(self.classes_) * (len(self.classes_) - 1) / 2)
@@ -396,6 +388,11 @@ class BaseSVC(BaseSVM):
             self._probB = np.empty(0)
 
         self._dualcoef_ = self.dual_coef_
+
+        indices = y.take(self.support_, axis=0)
+        self._n_support = np.array(
+            [np.sum(indices == i) for i, _ in enumerate(self.classes_)]
+        )
 
         if sklearn_check_version("1.1"):
             length = int(len(self.classes_) * (len(self.classes_) - 1) / 2)
@@ -492,7 +489,6 @@ class BaseSVC(BaseSVM):
             raise NotFittedError(
                 "predict_proba is not available when fitted with probability=False"
             )
-        from .._config import config_context, get_config
 
         # We use stock metaestimators below, so the only way
         # to pass a queue is using config_context.
@@ -540,13 +536,12 @@ class BaseSVR(BaseSVM):
             sample_weight=sample_weight,
         )
 
-    def _save_attributes(self):
+    def _save_attributes(self, X):
         self.support_vectors_ = self._onedal_estimator.support_vectors_
-        self.n_features_in_ = self._onedal_estimator.n_features_in_
         self.fit_status_ = 0
         self.dual_coef_ = self._onedal_estimator.dual_coef_
-        self.shape_fit_ = self._onedal_estimator.shape_fit_
-        self.support_ = self._onedal_estimator.support_
+        self.shape_fit_ = X.shape
+        self.support_ = self._onedal_estimator.support_.astype(int)
 
         self._icept_ = self._onedal_estimator.intercept_
         self._n_support = [self.support_vectors_.shape[0]]

@@ -129,7 +129,7 @@ class NuSVC(BaseSVC, _sklearn_NuSVC):
         return sample_weight
 
     def _onedal_fit(self, X, y, sample_weight=None, queue=None):
-        X, _, weights = self._onedal_fit_checks(X, y, sample_weight)
+        X, y, weights = self._onedal_fit_checks(X, y, sample_weight)
         onedal_params = {
             "nu": self.nu,
             "kernel": self.kernel,
@@ -156,6 +156,9 @@ class NuSVC(BaseSVC, _sklearn_NuSVC):
                 queue=queue,
             )
 
-        self._save_attributes()
+        indices = y.take(self.support_, axis=0)
+        self._n_support = np.array(
+            [np.sum(indices == i) for i, _ in enumerate(self.classes_)]
+        )
 
     fit.__doc__ = _sklearn_NuSVC.fit.__doc__

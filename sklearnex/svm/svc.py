@@ -189,5 +189,10 @@ class SVC(BaseSVC, _sklearn_SVC):
             )
 
         self._save_attributes()
+        indices = y.take(self.support_, axis=0)
+        self._n_support = np.array(
+            [np.sum(indices == i) for i, _ in enumerate(self.classes_)]
+        )
+
 
     fit.__doc__ = _sklearn_SVC.fit.__doc__
