@@ -142,11 +142,6 @@ class BaseSVM(metaclass=ABCMeta):
                 X = sp.csr_matrix(X)
             else:
                 X.sort_indices()
-        elif sp.issparse(X) and not callable(self.kernel):
-            raise ValueError(
-                "cannot use sparse input in %r trained on dense data"
-                % type(self).__name__
-            )
 
         X = to_table(X, queue=QM.get_global_queue())
         params = self._get_onedal_params(X)

@@ -34,6 +34,7 @@ from ..utils._array_api import get_namespace
 from ..utils.validation import validate_data
 from ._common import BaseSVC
 
+
 @control_n_jobs(
     decorated_methods=["fit", "predict", "_predict_proba", "decision_function", "score"]
 )
@@ -110,26 +111,26 @@ class NuSVC(BaseSVC, _sklearn_NuSVC):
 
         return self
 
-    def _get_sample_weight(self, X, y, sample_weight=None):
-        sample_weight = super()._get_sample_weight(X, y, sample_weight)
-        if sample_weight is None:
-            return sample_weight
+    def _onedal_fit_checks(self, X, y, sample_weight=None):
+        X, y, sample_weight = super()._onedal_fit_checks(X, y, sample_weight)
+        if sample_weight is not None:
+            # This requires adaptation for array API
+            weight_per_class = [
+                np.sum(sample_weight[y == class_label]) for class_label in np.unique(y)
+            ]
 
-        weight_per_class = [
-            np.sum(sample_weight[y == class_label]) for class_label in np.unique(y)
-        ]
+            for i in range(len(weight_per_class)):
+                for j in range(i + 1, len(weight_per_class)):
+                    if self.nu * (weight_per_class[i] + weight_per_class[j]) / 2 > min(
+                        weight_per_class[i], weight_per_class[j]
+                    ):
+                        raise ValueError("specified nu is infeasible")
 
-        for i in range(len(weight_per_class)):
-            for j in range(i + 1, len(weight_per_class)):
-                if self.nu * (weight_per_class[i] + weight_per_class[j]) / 2 > min(
-                    weight_per_class[i], weight_per_class[j]
-                ):
-                    raise ValueError("specified nu is infeasible")
-
-        return sample_weight
+        return X, y, sample_weight
 
     def _onedal_fit(self, X, y, sample_weight=None, queue=None):
-        X, y, weights = self._onedal_fit_checks(X, y, sample_weight)
+        X, _, weights = self._onedal_fit_checks(X, y, sample_weight)
+
         onedal_params = {
             "nu": self.nu,
             "kernel": self.kernel,
@@ -156,9 +157,6 @@ class NuSVC(BaseSVC, _sklearn_NuSVC):
                 queue=queue,
             )
 
-        indices = y.take(self.support_, axis=0)
-        self._n_support = np.array(
-            [np.sum(indices == i) for i, _ in enumerate(self.classes_)]
-        )
+        self._save_attributes()
 
     fit.__doc__ = _sklearn_NuSVC.fit.__doc__

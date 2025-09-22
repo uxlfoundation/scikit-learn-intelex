@@ -143,22 +143,20 @@ class SVC(BaseSVC, _sklearn_SVC):
             return patching_status
         raise RuntimeError(f"Unknown method {method_name} in {class_name}")
 
-    def _get_sample_weight(self, X, y, sample_weight=None):
-        sample_weight = super()._get_sample_weight(X, y, sample_weight)
-        if sample_weight is None:
-            return sample_weight
-
-        if np.any(sample_weight <= 0) and len(np.unique(y[sample_weight > 0])) != len(
-            self.classes_
-        ):
-            raise ValueError(
-                "Invalid input - all samples with positive weights "
-                "belong to the same class"
-                if sklearn_check_version("1.2")
-                else "Invalid input - all samples with positive weights "
-                "have the same label."
-            )
-        return sample_weight
+    def _onedal_fit_checks(self, X, y, sample_weight=None):
+        X, y, sample_weight = super()._onedal_fit_checks(X, y, sample_weight)
+        if sample_weight is not None:
+            if np.any(sample_weight <= 0) and len(np.unique(y[sample_weight > 0])) != len(
+                self.classes_
+            ):
+                raise ValueError(
+                    "Invalid input - all samples with positive weights "
+                    "belong to the same class"
+                    if sklearn_check_version("1.2")
+                    else "Invalid input - all samples with positive weights "
+                    "have the same label."
+                )
+        return X, y, sample_weight
 
     def _onedal_fit(self, X, y, sample_weight=None, queue=None):
         X, _, weights = self._onedal_fit_checks(X, y, sample_weight)
@@ -189,10 +187,5 @@ class SVC(BaseSVC, _sklearn_SVC):
             )
 
         self._save_attributes()
-        indices = y.take(self.support_, axis=0)
-        self._n_support = np.array(
-            [np.sum(indices == i) for i, _ in enumerate(self.classes_)]
-        )
-
 
     fit.__doc__ = _sklearn_SVC.fit.__doc__
