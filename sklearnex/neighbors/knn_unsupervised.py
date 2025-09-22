@@ -75,11 +75,11 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
     @wrap_output_data
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
         if X is not None:
-            from onedal.tests.utils._dataframes_support import _as_numpy
+            # from onedal.tests.utils._dataframes_support import _as_numpy
 
             xp, _ = get_namespace(X)
             # Convert device arrays to numpy to avoid implicit conversion errors
-            X = _as_numpy(X)
+            # X = _as_numpy(X)
             X = validate_data(
                 self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
             )
@@ -108,10 +108,10 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
             _sklearn_NearestNeighbors.fit(self, self._fit_X, getattr(self, "_y", None))
         xp, _ = get_namespace(X)
         if X is not None:
-            from onedal.tests.utils._dataframes_support import _as_numpy
+            # from onedal.tests.utils._dataframes_support import _as_numpy
 
-            # Convert device arrays to numpy to avoid implicit conversion errors
-            X = _as_numpy(X)
+            # # Convert device arrays to numpy to avoid implicit conversion errors
+            # X = _as_numpy(X)
             X = validate_data(
                 self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
             )
@@ -134,10 +134,10 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
     ):
         xp, _ = get_namespace(X)
         if X is not None:
-            from onedal.tests.utils._dataframes_support import _as_numpy
+            # from onedal.tests.utils._dataframes_support import _as_numpy
 
-            # Convert device arrays to numpy to avoid implicit conversion errors
-            X = _as_numpy(X)
+            # # Convert device arrays to numpy to avoid implicit conversion errors
+            # X = _as_numpy(X)
             X = validate_data(
                 self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
             )
@@ -159,9 +159,9 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
 
         xp, _ = get_namespace(X, y)
         # Convert device arrays to numpy to avoid implicit conversion errors
-        X = _as_numpy(X)
-        if y is not None:
-            y = _as_numpy(y)
+        # X = _as_numpy(X)
+        # if y is not None:
+        #     y = _as_numpy(y)
         X = validate_data(
             self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=True
         )

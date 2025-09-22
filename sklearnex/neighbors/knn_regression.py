@@ -119,12 +119,12 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         )
 
     def _onedal_fit(self, X, y, queue=None):
-        from onedal.tests.utils._dataframes_support import _as_numpy
+        # from onedal.tests.utils._dataframes_support import _as_numpy
 
         xp, _ = get_namespace(X, y)
         # Convert device arrays to numpy to avoid implicit conversion errors
-        X = _as_numpy(X)
-        y = _as_numpy(y)
+        # X = _as_numpy(X)
+        # y = _as_numpy(y)
         X, y = validate_data(
             self,
             X,
@@ -152,10 +152,10 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
 
     def _onedal_predict(self, X, queue=None):
         if X is not None:
-            from onedal.tests.utils._dataframes_support import _as_numpy
+            # from onedal.tests.utils._dataframes_support import _as_numpy
 
             xp, _ = get_namespace(X)
-            X = _as_numpy(X)
+            # X = _as_numpy(X)
             X = validate_data(
                 self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
             )
@@ -165,10 +165,10 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         self, X=None, n_neighbors=None, return_distance=True, queue=None
     ):
         if X is not None:
-            from onedal.tests.utils._dataframes_support import _as_numpy
+            # from onedal.tests.utils._dataframes_support import _as_numpy
 
             xp, _ = get_namespace(X)
-            X = _as_numpy(X)
+            # X = _as_numpy(X)
             X = validate_data(
                 self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
             )
