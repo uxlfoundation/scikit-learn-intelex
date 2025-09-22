@@ -15,7 +15,7 @@
 from sklearn.linear_model import LogisticRegression, SGDClassifier
 
 from .logistic_regression_builders import LogisticDAALModel
-from .tree_based_builders import GBTDAALBaseModel, GBTDAALModel
+from .tree_based_builders import GBTDAALModel
 
 __all__ = ["LogisticDAALModel", "GBTDAALModel", "convert_model"]
 
@@ -53,15 +53,23 @@ def convert_model(model) -> "GBTDAALModel | LogisticDAALModel":
         offers faster prediction methods.
     """
     if isinstance(model, LogisticRegression):
+        # The multi_class keyword is removed in scikit-learn 1.8, and OvR functionality
+        # has been replaced by other estimators. Therefore checking for linear classifiers
+        # only dependent on the solver.
         if model.classes_.shape[0] > 2:
-            if hasattr(model, "multi_class") and (
-                (model.multi_class == "ovr")
-                or (model.multi_class == "auto" and model.solver == "liblinear")
-            ):
-                raise TypeError(
-                    "Supplied 'model' object is a linear classifier, but not multinomial logistic"
-                    " (hint: pass multi_class='multinomial' to 'LogisticRegression')."
-                )
+            if not hasattr(model, "multi_class"):
+                if model.solver == "liblinear":
+                    raise TypeError(
+                        "Supplied 'model' object is a linear classifier, but not multinomial logistic")
+            else:
+                if (
+                    (model.multi_class == "ovr")
+                    or (model.multi_class == "auto" and model.solver == "liblinear")
+                ):
+                    raise TypeError(
+                        "Supplied 'model' object is a linear classifier, but not multinomial logistic"
+                        " (hint: pass multi_class='multinomial' to 'LogisticRegression')."
+                    )
         elif (model.classes_.shape[0] == 2) and (
             getattr(model, "multi_class", "auto") == "multinomial"
         ):

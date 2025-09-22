@@ -20,6 +20,11 @@ import numpy as np
 import scipy.optimize as optimize
 import scipy.sparse as sparse
 import sklearn.linear_model._logistic as logistic_module
+from sklearn.linear_model._logistic import _LOGISTIC_SOLVER_CONVERGENCE_MSG
+from sklearn.linear_model._logistic import (
+    LogisticRegression as LogisticRegression_original,
+)
+from sklearn.linear_model._logistic import _check_solver
 from sklearn.utils import check_array, check_consistent_length, check_random_state
 from sklearn.utils.optimize import _check_optimize_result, _newton_cg
 from sklearn.utils.validation import check_is_fitted
@@ -37,21 +42,6 @@ from .logistic_loss import (
     _daal4py_loss_,
     _daal4py_loss_and_grad,
 )
-
-if sklearn_check_version("1.1"):
-    from sklearn._loss.loss import HalfBinomialLoss, HalfMultinomialLoss
-    from sklearn.linear_model._linear_loss import LinearModelLoss
-    from sklearn.linear_model._logistic import _LOGISTIC_SOLVER_CONVERGENCE_MSG
-    from sklearn.linear_model._logistic import (
-        LogisticRegression as LogisticRegression_original,
-    )
-    from sklearn.linear_model._logistic import _check_solver
-else:
-    from sklearn.linear_model._logistic import _LOGISTIC_SOLVER_CONVERGENCE_MSG
-    from sklearn.linear_model._logistic import (
-        LogisticRegression as LogisticRegression_original,
-    )
-    from sklearn.linear_model._logistic import _check_solver
 
 if sklearn_check_version("1.7.1"):
     from sklearn.utils.fixes import _get_additional_lbfgs_options_dict
