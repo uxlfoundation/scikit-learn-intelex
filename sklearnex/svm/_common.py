@@ -312,7 +312,7 @@ class BaseSVC(BaseSVM):
         with config_context(**cfg):
             clf_base.fit(X, y)
 
-            # FrozenEstimator not available for sklearn < 1.4
+            # Forced use of FrozenEstimator starting in sklearn 1.6
             if sklearn_check_version("1.6"):
                 clf_base = FrozenEstimator(clf_base)
 
