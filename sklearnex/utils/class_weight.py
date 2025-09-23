@@ -15,7 +15,7 @@
 # ==============================================================================
 
 from sklearn.preprocessing import LabelEncoder
-from sklearn.validation.class_weight import compute_class_weight
+from sklearn.utils.class_weight import compute_class_weight
 
 from daal4py.sklearn._utils import sklearn_check_version
 
@@ -58,7 +58,7 @@ def _compute_class_weight(class_weight, *, classes, y, sample_weight=None):
         weighted_class_counts = xp.zeros(
             (xp.max(y_ind) + 1,), dtype=sample_weight.dtype, device=y.device
         )
-        for idx, val in enumerate(sample_weights):
+        for idx, val in enumerate(sample_weight):
             weighted_class_counts[y_ind[idx]] += val
 
         recip_freq = xp.sum(weighted_class_counts) / (
