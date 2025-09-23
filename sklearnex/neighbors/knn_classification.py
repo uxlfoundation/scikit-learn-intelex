@@ -137,7 +137,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     def _onedal_fit(self, X, y, queue=None):
         # from onedal.tests.utils._dataframes_support import _as_numpy
 
-        xp, _ = get_namespace(X, y)
+        # xp, _ = get_namespace(X, y)
         # Convert device arrays to numpy to avoid implicit conversion errors
         # X = _as_numpy(X)
         # y = _as_numpy(y)
@@ -145,7 +145,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             self,
             X,
             y=y,
-            dtype=[xp.float64, xp.float32],
+            dtype=[np.float64, np.float32],
             accept_sparse="csr",
             reset=True,
             ensure_all_finite=(self.metric != "nan_euclidean"),
@@ -170,12 +170,12 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         if X is not None:
             # from onedal.tests.utils._dataframes_support import _as_numpy
 
-            xp, _ = get_namespace(X)
+            # xp, _ = get_namespace(X)
             # X = _as_numpy(X)
             X = validate_data(
                 self,
                 X,
-                dtype=[xp.float64, xp.float32],
+                dtype=[np.float64, np.float32],
                 accept_sparse="csr",
                 reset=False,
                 ensure_all_finite=False,
@@ -186,12 +186,12 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         if X is not None:
             # from onedal.tests.utils._dataframes_support import _as_numpy
 
-            xp, _ = get_namespace(X)
+            # xp, _ = get_namespace(X)
             # X = _as_numpy(X)
             X = validate_data(
                 self,
                 X,
-                dtype=[xp.float64, xp.float32],
+                dtype=[np.float64, np.float32],
                 accept_sparse="csr",
                 reset=False,
                 ensure_all_finite=(self.metric != "nan_euclidean"),
@@ -204,12 +204,12 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         if X is not None:
             # from onedal.tests.utils._dataframes_support import _as_numpy
 
-            xp, _ = get_namespace(X)
+            # xp, _ = get_namespace(X)
             # X = _as_numpy(X)
             X = validate_data(
                 self,
                 X,
-                dtype=[xp.float64, xp.float32],
+                dtype=[np.float64, np.float32],
                 accept_sparse="csr",
                 reset=False,
                 ensure_all_finite=(self.metric != "nan_euclidean"),

@@ -31,6 +31,7 @@ from sklearnex.neighbors.knn_unsupervised import NearestNeighbors
 from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.validation import validate_data
 
+
 @enable_array_api
 @control_n_jobs(decorated_methods=["fit", "kneighbors", "_kneighbors"])
 class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor):
@@ -152,11 +153,11 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
         if X is not None:
             # from onedal.tests.utils._dataframes_support import _as_numpy
 
-            xp, _ = get_namespace(X)
+            # xp, _ = get_namespace(X)
             # Convert device arrays to numpy to avoid implicit conversion errors
             # X = _as_numpy(X)
             X = validate_data(
-                self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
+                self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
             )
         check_is_fitted(self)
         return dispatch(
