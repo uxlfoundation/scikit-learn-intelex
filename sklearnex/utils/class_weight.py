@@ -54,7 +54,7 @@ def _compute_class_weight(class_weight, *, classes, y, sample_weight=None):
         # nature of the LabelEncoder (and can be dropped). Therefore only Max is
         # found, and then core logic of bincount is replicated:
         # https://github.com/numpy/numpy/blob/main/numpy/_core/src/multiarray/compiled_base.c
-        weighted_class_counts = xp.zeros((xp.max(y_ind),), dtype=y.dtype, device=y.device)
+        weighted_class_counts = xp.zeros((xp.max(y_ind),), dtype=sample_weight.dtype, device=y.device)
         for idx, val in enumerate(sample_weights):
             weighted_class_counts[y_ind[idx]] += val
 
@@ -75,9 +75,8 @@ def _compute_class_weight(class_weight, *, classes, y, sample_weight=None):
 
         n_weighted_classes = len(classes) - len(unweighted_classes)
         if unweighted_classes and n_weighted_classes != len(class_weight):
-            unweighted_classes_user_friendly_str = np.array(unweighted_classes).tolist()
             raise ValueError(
-                f"The classes, {unweighted_classes_user_friendly_str}, are not in"
+                f"The classes, {unweighted_classes}, are not in"
                 " class_weight"
             )
 
