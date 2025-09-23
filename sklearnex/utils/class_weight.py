@@ -50,9 +50,9 @@ def _compute_class_weight(class_weight, *, classes, y, sample_weight=None):
         sample_weight = _check_sample_weight(sample_weight, y)
         # scikit-learn implementation uses numpy.bincount, which does a combined
         # min and max search, only erroring when a value < 0. Replicating this
-        # excatly via array API would cause another O(n) evaluation (by doing
+        # exactly via array API would cause another O(n) evaluation (by doing
         # min and max separately). However this check can be removed due to the
-        # nature of the LabelEncoder. Therefore only the maximum is found, and 
+        # nature of the LabelEncoder. Therefore only the maximum is found, and
         # then core logic of bincount is replicated:
         # https://github.com/numpy/numpy/blob/main/numpy/_core/src/multiarray/compiled_base.c
         weighted_class_counts = xp.zeros(
