@@ -129,9 +129,9 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
         check_is_fitted(self)
 
         if X is not None:
-            xp, _ = get_namespace(X)
+            # xp, _ = get_namespace(X)
             output = self.decision_function(X) < 0
-            is_inlier = xp.ones_like(output, dtype=int)
+            is_inlier = np.ones_like(output, dtype=int)
             is_inlier[output] = -1
         else:
             is_inlier = np.ones(self.n_samples_fit_, dtype=int)
@@ -151,11 +151,10 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
 
     def _kneighbors(self, X=None, n_neighbors=None, return_distance=True):
         if X is not None:
-            # from onedal.tests.utils._dataframes_support import _as_numpy
+            from onedal.tests.utils._dataframes_support import _as_numpy
 
-            # xp, _ = get_namespace(X)
             # Convert device arrays to numpy to avoid implicit conversion errors
-            # X = _as_numpy(X)
+            X = _as_numpy(X)
             X = validate_data(
                 self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
             )
