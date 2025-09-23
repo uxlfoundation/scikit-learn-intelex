@@ -32,7 +32,7 @@ from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.validation import validate_data
 
 
-@enable_array_api
+# @enable_array_api
 @control_n_jobs(decorated_methods=["fit", "kneighbors", "_kneighbors"])
 class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor):
     __doc__ = (

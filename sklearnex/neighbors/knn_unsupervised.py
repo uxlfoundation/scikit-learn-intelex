@@ -28,7 +28,7 @@ from ..utils.validation import validate_data
 from .common import KNeighborsDispatchingBase
 
 
-@enable_array_api
+# @enable_array_api
 @control_n_jobs(decorated_methods=["fit", "kneighbors", "radius_neighbors"])
 class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
     __doc__ = _sklearn_NearestNeighbors.__doc__

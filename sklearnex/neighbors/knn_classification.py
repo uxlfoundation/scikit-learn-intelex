@@ -31,7 +31,7 @@ from ..utils.validation import validate_data
 from .common import KNeighborsDispatchingBase
 
 
-@enable_array_api
+# @enable_array_api
 @control_n_jobs(
     decorated_methods=["fit", "predict", "predict_proba", "kneighbors", "score"]
 )
