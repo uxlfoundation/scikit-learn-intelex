@@ -28,10 +28,10 @@ from sklearnex._device_offload import dispatch, wrap_output_data
 from sklearnex.neighbors.common import KNeighborsDispatchingBase
 from sklearnex.neighbors.knn_unsupervised import NearestNeighbors
 
-from ..utils._array_api import get_namespace
+from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.validation import validate_data
 
-
+@enable_array_api
 @control_n_jobs(decorated_methods=["fit", "kneighbors", "_kneighbors"])
 class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor):
     __doc__ = (
