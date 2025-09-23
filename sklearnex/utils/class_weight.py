@@ -19,10 +19,8 @@ from sklearn.validation.class_weight import compute_class_weight
 
 from daal4py.sklearn._utils import sklearn_check_version
 
-from .validation import _check_sample_weight, get_namespace
-
-if sklearn_check_version("1.3"):
-    from sklearn.utils._param_validation import validate_params
+from ._array_api import get_namespace
+from .validation import _check_sample_weight
 
 
 def _compute_class_weight(class_weight, *, classes, y, sample_weight=None):
