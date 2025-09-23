@@ -177,7 +177,7 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
         if (
             (estimator == "PCA" and "transform" in method)
             or (estimator == "IncrementalEmpiricalCovariance" and method == "mahalanobis")
-        ) and not _package_check_version("2.0", np.__version__)):
+        ) and not _package_check_version("2.0", np.__version__):
             # issue not to be observed with normal numpy usage
             pytest.skip(
                 f"numpy backend does not properly handle the __dlpack__ attribute."
