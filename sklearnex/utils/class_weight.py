@@ -52,11 +52,11 @@ def _compute_class_weight(class_weight, *, classes, y, sample_weight=None):
         # min and max search, only erroring when a value < 0. Replicating this
         # excatly via array API would cause another O(n) evaluation (by doing
         # min and max separately). However this check can be removed due to the
-        # nature of the LabelEncoder (and can be dropped). Therefore only Max is
-        # found, and then core logic of bincount is replicated:
+        # nature of the LabelEncoder. Therefore only the maximum is found, and 
+        # then core logic of bincount is replicated:
         # https://github.com/numpy/numpy/blob/main/numpy/_core/src/multiarray/compiled_base.c
         weighted_class_counts = xp.zeros(
-            (xp.max(y_ind),), dtype=sample_weight.dtype, device=y.device
+            (xp.max(y_ind) + 1,), dtype=sample_weight.dtype, device=y.device
         )
         for idx, val in enumerate(sample_weights):
             weighted_class_counts[y_ind[idx]] += val
