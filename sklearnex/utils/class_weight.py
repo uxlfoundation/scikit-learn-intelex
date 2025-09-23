@@ -14,15 +14,16 @@
 # limitations under the License.
 # ==============================================================================
 
-from .validation import get_namespace, _check_sample_weight
 from sklearn.preprocessing import LabelEncoder
-
 from sklearn.validation.class_weight import compute_class_weight
 
 from daal4py.sklearn._utils import sklearn_check_version
 
+from .validation import _check_sample_weight, get_namespace
+
 if sklearn_check_version("1.3"):
-  from sklearn.utils._param_validation import validate_params
+    from sklearn.utils._param_validation import validate_params
+
 
 def _compute_class_weight(class_weight, *, classes, y, sample_weight=None):
     # this is set to be private as it lacks certain checks, this duplicates sklearn
@@ -41,7 +42,9 @@ def _compute_class_weight(class_weight, *, classes, y, sample_weight=None):
         weight = xp.ones((classes.shape[0],), dtype=xp.float64, device=classes.device)
     elif class_weight == "balanced":
         if not sklearn_check_version("1.6"):
-            raise RuntimeError("array API support with 'balanced' keyword not supported for sklearn <1.6")
+            raise RuntimeError(
+                "array API support with 'balanced' keyword not supported for sklearn <1.6"
+            )
         # Find the weight of each class as present in y.
         le = LabelEncoder()
         y_ind = le.fit_transform(y)
@@ -54,7 +57,9 @@ def _compute_class_weight(class_weight, *, classes, y, sample_weight=None):
         # nature of the LabelEncoder (and can be dropped). Therefore only Max is
         # found, and then core logic of bincount is replicated:
         # https://github.com/numpy/numpy/blob/main/numpy/_core/src/multiarray/compiled_base.c
-        weighted_class_counts = xp.zeros((xp.max(y_ind),), dtype=sample_weight.dtype, device=y.device)
+        weighted_class_counts = xp.zeros(
+            (xp.max(y_ind),), dtype=sample_weight.dtype, device=y.device
+        )
         for idx, val in enumerate(sample_weights):
             weighted_class_counts[y_ind[idx]] += val
 
@@ -76,8 +81,7 @@ def _compute_class_weight(class_weight, *, classes, y, sample_weight=None):
         n_weighted_classes = len(classes) - len(unweighted_classes)
         if unweighted_classes and n_weighted_classes != len(class_weight):
             raise ValueError(
-                f"The classes, {unweighted_classes}, are not in"
-                " class_weight"
+                f"The classes, {unweighted_classes}, are not in" " class_weight"
             )
 
     return weight
