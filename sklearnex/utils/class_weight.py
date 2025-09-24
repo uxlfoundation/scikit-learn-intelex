@@ -83,8 +83,10 @@ def _compute_class_weight(class_weight, *, classes, y, sample_weight=None):
         weight = xp.ones((classes.shape[0],), dtype=xp.float64, device=classes.device)
         unweighted_classes = []
         for i, c in enumerate(classes):
-            if c in class_weight:
-                weight[i] = class_weight[c]
+            if float(c) in class_weight:
+                # array API has only numeric datatypes, convert to float for generality
+                # complex values should never be observed by this function
+                weight[i] = class_weight[float(c)]
             else:
                 unweighted_classes.append(c)
 
