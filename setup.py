@@ -546,6 +546,7 @@ packages_with_tests = [
     "onedal.covariance",
     "onedal.datatypes",
     "onedal.decomposition",
+    "onedal.dummy",
     "onedal.ensemble",
     "onedal.neighbors",
     "onedal.primitives",
