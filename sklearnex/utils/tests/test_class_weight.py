@@ -16,7 +16,6 @@
 
 import numpy as np
 import pytest
-
 from sklearn.datasets import load_iris
 from sklearn.utils import compute_class_weight
 
