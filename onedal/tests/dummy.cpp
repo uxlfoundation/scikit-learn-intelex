@@ -101,7 +101,8 @@ void init_infer_ops(py::module_& m) {
 }
 
 // This defines the result C++ objects for use in python via pybind11.
-// Return types should be pybind11 native types or oneDAL tables.
+// Result object attributes should be pybind11 native types (like int,
+// float, etc.) or oneDAL tables.
 
 template <typename Task>
 void init_train_result(py::module_& m) {
@@ -116,9 +117,7 @@ void init_infer_result(py::module_& m) {
     using namespace dal::dummy;
     using result_t = infer_result<Task>;
 
-    auto cls = py::class_<result_t>(m, "infer_result")
-                   .def(py::init())
-                   .DEF_ONEDAL_PY_PROPERTY(data, result_t);
+    py::class_<result_t>(m, "infer_result").def(py::init()).DEF_ONEDAL_PY_PROPERTY(data, result_t);
 }
 
 ONEDAL_PY_DECLARE_INSTANTIATOR(init_train_result);

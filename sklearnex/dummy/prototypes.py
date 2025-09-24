@@ -304,10 +304,12 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
         )
         # For sklearnex-only estimators, _onedal_*_supported should either
         # pass or throw an exception. This means the sklearn branch is never
-        # used. In general, the two branches must be the class methods. THe
+        # used. In general, the two branches must be the class methods. The
         # parameters which are passed as arguments are given to
-        # _onedal_*_supported. In this example, the ``sample_weight`` kwarg
-        # is set as an arg for checking.
+        # _onedal_*_supported. In this example, the ``sample_weight`` keyword
+        # argument in the ``fit`` signature is set as an argument to
+        # ``dispatch`` so that it can be properly sent to _onedal_*_supported
+        # for checking oneDAL support.
 
         # methods which do not return a result should return self (sklearn
         # standard)
@@ -461,7 +463,7 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
                 [
                     (
                         not sp.issparse(X),
-                        "estimator set not to check input data with oneDAL",
+                        "sparse data is not supported",
                     ),
                     (
                         self.strategy == "constant",
@@ -496,7 +498,7 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
                     (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained."),
                     (
                         not sp.issparse(X),
-                        "estimator set not to check input data with oneDAL",
+                        "sparse data is not supported",
                     ),
                 ]
             )
@@ -520,7 +522,7 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
                 [
                     (
                         not sp.issparse(X),
-                        "estimator set not to check input data with oneDAL",
+                        "sparse data is not supported",
                     ),
                     (
                         self.strategy == "constant",
@@ -547,7 +549,7 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
                     (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained."),
                     (
                         not sp.issparse(X),
-                        "estimator set not to check input data with oneDAL",
+                        "sparse data is not supported",
                     ),
                 ]
             )

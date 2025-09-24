@@ -105,9 +105,9 @@ def get_patch_map_core(preview=False):
         import sklearn.ensemble as ensemble_module
 
         if sklearn_check_version("1.4"):
-            import sklearn.ensemble._gb as gb_module
+            import sklearn.ensemble._gb as _gb_module
         else:
-            import sklearn.ensemble._gb_losses as gb_module
+            import sklearn.ensemble._gb_losses as _gb_module
         import sklearn.linear_model as linear_model_module
         import sklearn.manifold as manifold_module
         import sklearn.metrics as metrics_module
@@ -432,7 +432,7 @@ def get_patch_map_core(preview=False):
         mapping["gb_dummyregressor"] = [
             [
                 (
-                    gb_module,
+                    _gb_module,
                     "DummyRegressor",
                     DummyRegressor_sklearnex,
                 ),

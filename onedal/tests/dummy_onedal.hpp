@@ -125,6 +125,7 @@ public:
     }
 
     // attribute usually hidden in an infer_result_impl class
+private:
     table data;
 };
 
@@ -135,6 +136,8 @@ public:
 
     train_input(const table& data) : data(data) {}
 
+    // attributes usually hidden in an infer_input_impl class with getters
+    // and setters.
     table data;
 };
 } // namespace dummy
@@ -160,6 +163,7 @@ public:
     }
 
     // attribute usually hidden in an infer_result_impl class
+private:
     table data;
 };
 
@@ -171,7 +175,8 @@ public:
     infer_input(const table& data, const table& constant) : data(data), constant(constant) {}
     // setters and getters for ``data`` and ``model`` removed for brevity
 
-    // attributes usually hidden in an infer_input_impl class
+    // attributes usually hidden in an infer_input_impl class with getters
+    // and setters.
     table data;
     table constant;
 };
@@ -224,8 +229,8 @@ struct train_ops {
         // Due to the simplicity of this algorithm, implement it here.
         auto col_c = input.data.get_column_count();
         result_t result;
-        result.data =
-            create_full_table<float_t>(ctx, 1, col_c, static_cast<float_t>(desc.get_constant()));
+        result.set_data(
+            create_full_table<float_t>(ctx, 1, col_c, static_cast<float_t>(desc.get_constant())));
         return result;
     }
 };
@@ -265,12 +270,32 @@ struct infer_ops {
         auto row_c = input.data.get_row_count();
         auto col_c = input.constant.get_column_count();
         assert(input.get_kind() == dal::homogen_table::kind());
+        result_t result;
         const byte_t* ptr =
             dal::detail::get_original_data(static_cast<const dal::homogen_table&>(input.constant))
                 .get_data();
-        result_t result;
-        result.data =
-            create_full_table<float_t>(ctx, row_c, col_c, *reinterpret_cast<const float_t*>(ptr));
+
+        float_t inp;
+        // only switch those types which can be converted from python to dal tables
+        switch (input.get_metadata().get_data_type(0)) {
+            case dal::data_type::float32: {
+                inp = static_cast<float_t>(*reinterpret_cast<const float*>(ptr));
+                break;
+            }
+            case dal::data_type::float64: {
+                inp = static_cast<float_t>(*reinterpret_cast<const double*>(ptr));
+                break;
+            }
+            case dal::data_type::int32: {
+                inp = static_cast<float_t>(*reinterpret_cast<const std::int32_t*>(ptr));
+                break;
+            }
+            case dal::data_type::int64: {
+                inp = static_cast<float_t>(*reinterpret_cast<const std::int64_t*>(ptr));
+                break;
+            }
+        }
+        result.set_data(create_full_table<float_t>(ctx, row_c, col_c, inp));
         return result;
     }
 };
