@@ -74,7 +74,6 @@ class BaseSVM(metaclass=ABCMeta):
         # TODO: remove this workaround
         # when oneDAL SVM starts support of 'n_iterations' result
         self.n_iter_ = 1 if max_iter < 1 else max_iter
-        class_count = 0 if self.classes_ is None else len(self.classes_)
 
         return {
             "fptype": dtype,
@@ -92,20 +91,18 @@ class BaseSVM(metaclass=ABCMeta):
             "max_iteration_count": int(max_iter),
             "tau": self.tau,
             "method": self.algorithm,
-            "class_count": class_count,
+            "class_count": self.class_count_,
         }
 
     @supports_queue
-    def fit(self, X, y, sample_weight=None, queue=None):
+    def fit(self, X, y, sample_weight=None, class_count=0, queue=None):
+        # oneDAL expects that the user has a priori knowledge of the y data
+        # and has placed them in a oneDAL-acceptable format, most important
+        # for this is the number of classes.
+        self.class_count_ = class_count
 
-        if sample_weight is not None:
-            if self.class_weight_ is not None:
-                for i, v in enumerate(self.class_weight_):
-                    # needs an array API fix here
-                    sample_weight[y == i] *= v
-            data = (X, y, sample_weight)
-        else:
-            data = (X, y)
+        data = (X, y, sample_weight) if sample_weight else (X, y)
+
         self._sparse = sp.issparse(X)
 
         data_t = to_table(*data, queue=QM.get_global_queue())
@@ -178,6 +175,7 @@ class SVR(BaseSVM):
     ):
 
         # This hard-codes nu=.5, which may be bad. Needs to be investigated
+        # as this is different from sklearn and may impact conformance
         super().__init__(
             C=C,
             nu=0.5,
@@ -227,6 +225,8 @@ class SVC(BaseSVM):
         class_weight=None,
         algorithm="thunder",
     ):
+        # This hard-codes nu=.5, which may be bad. Needs to be investigated
+        # as this is different from sklearn and may impact conformance
         super().__init__(
             C=C,
             nu=0.5,
