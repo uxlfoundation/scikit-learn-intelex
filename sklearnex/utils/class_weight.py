@@ -15,18 +15,28 @@
 # ==============================================================================
 
 from sklearn.preprocessing import LabelEncoder as _sklearn_LabelEncoder
-from sklearn.utils.class_weight import compute_class_weight
 
 from daal4py.sklearn._utils import sklearn_check_version
 
 from ._array_api import get_namespace
 from .validation import _check_sample_weight
 
+if not sklearn_check_version("1.7"):
+    from sklearn.utils.class_weight import (
+        compute_class_weight as _sklearn_compute_class_weight,
+    )
+
+    def compute_class_weight(class_weight, *, classes, y, sample_weight=None):
+        return _sklearn_compute_class_weight(class_weight, classes=classes, y=y)
+
+else:
+    from sklearn.utils.class_weight import compute_class_weight
+
 
 def _compute_class_weight(class_weight, *, classes, y, sample_weight=None):
-    # this is set to be private as it lacks certain checks, this duplicates sklearn
-    # code in order to enable it for array API. Note for the use of LabelEncoder this
-    # is only valid for sklearn versions >= 1.6.
+    # this duplicates sklearn code in order to enable it for array API.
+    # Note for the use of LabelEncoder this is only valid for sklearn
+    # versions >= 1.6.
     xp, is_array_api_compliant = get_namespace(class_weight, classes, y)
 
     if not is_array_api_compliant:
