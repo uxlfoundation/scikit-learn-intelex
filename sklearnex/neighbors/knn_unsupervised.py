@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-import numpy as np
+
 from sklearn.neighbors._unsupervised import NearestNeighbors as _sklearn_NearestNeighbors
 from sklearn.utils.validation import _deprecate_positional_args, check_is_fitted
 
@@ -23,12 +23,10 @@ from daal4py.sklearn.utils.validation import get_requires_y_tag
 from onedal.neighbors import NearestNeighbors as onedal_NearestNeighbors
 
 from .._device_offload import dispatch, wrap_output_data
-from ..utils._array_api import enable_array_api, get_namespace
-from ..utils.validation import validate_data
+from ..utils.validation import check_feature_names
 from .common import KNeighborsDispatchingBase
 
 
-# @enable_array_api
 @control_n_jobs(decorated_methods=["fit", "kneighbors", "radius_neighbors"])
 class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
     __doc__ = _sklearn_NearestNeighbors.__doc__
@@ -75,16 +73,9 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
 
     @wrap_output_data
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
-        if X is not None:
-            # from onedal.tests.utils._dataframes_support import _as_numpy
-
-            # xp, _ = get_namespace(X)
-            # Convert device arrays to numpy to avoid implicit conversion errors
-            # X = _as_numpy(X)
-            X = validate_data(
-                self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
-            )
         check_is_fitted(self)
+        if X is not None:
+            check_feature_names(self, X, reset=False)
         return dispatch(
             self,
             "kneighbors",
@@ -107,15 +98,6 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
             and self._fit_method == "kd_tree"
         ):
             _sklearn_NearestNeighbors.fit(self, self._fit_X, getattr(self, "_y", None))
-        # xp, _ = get_namespace(X)
-        if X is not None:
-            # from onedal.tests.utils._dataframes_support import _as_numpy
-
-            # # Convert device arrays to numpy to avoid implicit conversion errors
-            # X = _as_numpy(X)
-            X = validate_data(
-                self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
-            )
         check_is_fitted(self)
         return dispatch(
             self,
@@ -133,15 +115,6 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
     def radius_neighbors_graph(
         self, X=None, radius=None, mode="connectivity", sort_results=False
     ):
-        # xp, _ = get_namespace(X)
-        if X is not None:
-            # from onedal.tests.utils._dataframes_support import _as_numpy
-
-            # # Convert device arrays to numpy to avoid implicit conversion errors
-            # X = _as_numpy(X)
-            X = validate_data(
-                self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
-            )
         return dispatch(
             self,
             "radius_neighbors_graph",
@@ -156,16 +129,6 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         )
 
     def _onedal_fit(self, X, y=None, queue=None):
-        from onedal.tests.utils._dataframes_support import _as_numpy
-
-        # xp, _ = get_namespace(X, y)
-        # Convert device arrays to numpy to avoid implicit conversion errors
-        # X = _as_numpy(X)
-        # if y is not None:
-        #     y = _as_numpy(y)
-        X = validate_data(
-            self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=True
-        )
         onedal_params = {
             "n_neighbors": self.n_neighbors,
             "algorithm": self.algorithm,

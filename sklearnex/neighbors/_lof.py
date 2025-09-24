@@ -28,11 +28,10 @@ from sklearnex._device_offload import dispatch, wrap_output_data
 from sklearnex.neighbors.common import KNeighborsDispatchingBase
 from sklearnex.neighbors.knn_unsupervised import NearestNeighbors
 
-from ..utils._array_api import enable_array_api, get_namespace
-from ..utils.validation import validate_data
+from ..utils._array_api import get_namespace
+from ..utils.validation import check_feature_names
 
 
-# @enable_array_api
 @control_n_jobs(decorated_methods=["fit", "kneighbors", "_kneighbors"])
 class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor):
     __doc__ = (
@@ -129,9 +128,9 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
         check_is_fitted(self)
 
         if X is not None:
-            # xp, _ = get_namespace(X)
+            xp, _ = get_namespace(X)
             output = self.decision_function(X) < 0
-            is_inlier = np.ones_like(output, dtype=int)
+            is_inlier = xp.ones_like(output, dtype=int)
             is_inlier[output] = -1
         else:
             is_inlier = np.ones(self.n_samples_fit_, dtype=int)
@@ -150,15 +149,9 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
         return self.fit(X)._predict()
 
     def _kneighbors(self, X=None, n_neighbors=None, return_distance=True):
-        if X is not None:
-            from onedal.tests.utils._dataframes_support import _as_numpy
-
-            # Convert device arrays to numpy to avoid implicit conversion errors
-            X = _as_numpy(X)
-            X = validate_data(
-                self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
-            )
         check_is_fitted(self)
+        if X is not None:
+            check_feature_names(self, X, reset=False)
         return dispatch(
             self,
             "kneighbors",
