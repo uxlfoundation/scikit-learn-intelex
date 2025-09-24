@@ -14,8 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
-"""This file describes necessary characteristics and design patterns of
-onedal estimators.
+"""This file describes necessary characteristics and design patterns of onedal estimators.
 
 This can be used as a foundation for developing other estimators. Most
 comments guiding code development should be removed unless pertinent to the
