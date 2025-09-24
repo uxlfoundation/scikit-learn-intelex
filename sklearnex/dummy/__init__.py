@@ -14,6 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 
-from .prototypes import DummyRegressor
+from ._dummy import DummyRegressor
 
 __all__ = ["DummyRegressor"]
