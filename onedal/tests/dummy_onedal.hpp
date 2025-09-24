@@ -294,6 +294,7 @@ struct infer_ops {
             case dal::data_type::int64: {
                 inp = static_cast<float_t>(*reinterpret_cast<const std::int64_t*>(ptr));
                 break;
+                default: throw std::runtime_error("incompatible input type");
             }
         }
         result.set_data(create_full_table<float_t>(ctx, row_c, col_c, inp));
