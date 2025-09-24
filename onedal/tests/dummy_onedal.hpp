@@ -99,6 +99,7 @@ public:
     }
 
     // normally this attribute is hidden in another struct
+private:
     double constant;
 };
 } // namespace dummy
@@ -277,7 +278,7 @@ struct infer_ops {
 
         float_t inp;
         // only switch those types which can be converted from python to dal tables
-        switch (input.get_metadata().get_data_type(0)) {
+        switch (input.constant.get_metadata().get_data_type(0)) {
             case dal::data_type::float32: {
                 inp = static_cast<float_t>(*reinterpret_cast<const float*>(ptr));
                 break;
