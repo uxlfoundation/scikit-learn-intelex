@@ -288,7 +288,9 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
         if sklearn_check_version("1.2"):
             self._validate_params()
 
-        # only arguments are passed to _onedal_*_supported, not kwargs.
+        # only arguments from the method signature are passed to
+        # ``_onedal_*_supported`` and not kwargs. The parameters of the
+        # estimator are available by default as they are instance attributes.
         # The choice between sklearn and onedal is based off of the args,
         # and not the keyword arguments.
         dispatch(
