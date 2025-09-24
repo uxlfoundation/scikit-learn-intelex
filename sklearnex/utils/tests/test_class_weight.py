@@ -17,7 +17,6 @@
 import numpy as np
 import pytest
 from sklearn.datasets import load_iris
-from sklearn.utils import compute_class_weight
 
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
@@ -27,6 +26,7 @@ from onedal.tests.utils._dataframes_support import (
 )
 from sklearnex import config_context
 from sklearnex.utils.class_weight import _compute_class_weight
+from sklearnex.utils.class_weight import compute_class_weight as sk_compute_class_weight
 
 
 @pytest.mark.skipif(not sklearn_check_version("1.6"), reason="lacks array API support")
@@ -50,7 +50,7 @@ def test_compute_class_weight_array_api(class_weight, dataframe, queue):
     if class_weight == "ramp":
         class_weight = {int(i): int(i) for i in np.unique(y)}
 
-    weight_np = compute_class_weight(
+    weight_np = sk_compute_class_weight(
         class_weight, classes=classes, y=y, sample_weight=sample_weight
     )
 
