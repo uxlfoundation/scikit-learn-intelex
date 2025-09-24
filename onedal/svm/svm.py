@@ -149,10 +149,10 @@ class BaseSVM(metaclass=ABCMeta):
         return self.infer(params, self._onedal_model, X)
 
     def predict(self, X, queue=None):
-        return from_table(self._infer(X, queue).responses, like=X)
+        return from_table(self._infer(X, queue=queue).responses, like=X)
 
     def decision_function(self, X, queue=None):
-        return from_table(self._infer(X, queue).decision_function, like=X)
+        return from_table(self._infer(X, queue=queue).decision_function, like=X)
 
 
 class SVR(BaseSVM):
@@ -204,7 +204,7 @@ class SVR(BaseSVM):
 
     def predict(self, X, queue=None):
         # return 1-dimensional output from 2d oneDAL table
-        return super().predict(X)[0, ...]
+        return super().predict(X, queue=queue)[0, ...]
 
 
 class SVC(BaseSVM):
@@ -305,7 +305,7 @@ class NuSVR(BaseSVM):
 
     def predict(self, X, queue=None):
         # return only a 1-dimensional output from 2d oneDAL table
-        return self._predict(X)[0, ...]
+        return self._predict(X, queue=queue)[0, ...]
 
 
 class NuSVC(BaseSVM):

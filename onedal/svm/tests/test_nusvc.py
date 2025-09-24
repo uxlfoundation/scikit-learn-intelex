@@ -34,7 +34,7 @@ def _test_libsvm_parameters(queue, array_constr, dtype):
     X = array_constr([[-2, -1], [-1, -1], [-1, -2], [1, 1], [1, 2], [2, 1]], dtype=dtype)
     y = array_constr([0, 0, 0, 1, 1, 1], dtype=dtype)
 
-    clf = NuSVC(kernel="linear").fit(X, y, queue=queue)
+    clf = NuSVC(kernel="linear").fit(X, y, class_count=2, queue=queue)
     assert_array_almost_equal(
         clf.dual_coef_, [[-0.04761905, -0.0952381, 0.0952381, 0.04761905]]
     )
@@ -59,7 +59,7 @@ def test_class_weight(queue):
     y = np.array([0, 0, 0, 1, 1, 1], dtype=np.float64)
 
     clf = NuSVC(class_weight={0: 0.1})
-    clf.fit(X, y, queue=queue)
+    clf.fit(X, y, class_count=2, queue=queue)
     assert_array_almost_equal(clf.predict(X, queue=queue).ravel(), [1] * 6)
 
 
@@ -70,7 +70,7 @@ def test_sample_weight(queue):
     y = np.array([1, 1, 1, 2, 2, 2])
 
     clf = NuSVC(kernel="linear")
-    clf.fit(X, y, sample_weight=[1] * 6, queue=queue)
+    clf.fit(X, y, sample_weight=[1] * 6, class_count=2, queue=queue)
     assert_array_almost_equal(clf.intercept_, [0.0])
 
 
@@ -81,7 +81,7 @@ def test_decision_function(queue):
     Y = np.array([1, 1, 1, 2, 2, 2], dtype=np.float32)
 
     clf = NuSVC(kernel="rbf", gamma=1, decision_function_shape="ovo")
-    clf.fit(X, Y, queue=queue)
+    clf.fit(X, Y, class_count=2, queue=queue)
 
     rbfs = rbf_kernel(X, clf.support_vectors_, gamma=clf.gamma)
     dec = np.dot(rbfs, clf.dual_coef_.T) + clf.intercept_
@@ -92,7 +92,10 @@ def test_decision_function(queue):
 @pytest.mark.parametrize("queue", get_queues())
 def test_iris(queue):
     iris = datasets.load_iris()
-    clf = NuSVC(kernel="linear").fit(iris.data, iris.target, queue=queue)
+    class_count = len(np.unique(iris.target))
+    clf = NuSVC(kernel="linear").fit(
+        iris.data, iris.target, class_count=class_count, queue=queue
+    )
     assert clf.score(iris.data, iris.target, queue=queue) > 0.9
     assert_array_equal(clf.classes_, np.sort(clf.classes_))
 
@@ -101,11 +104,12 @@ def test_iris(queue):
 @pytest.mark.parametrize("queue", get_queues())
 def test_decision_function_shape(queue):
     X, y = make_blobs(n_samples=80, centers=5, random_state=0)
+    class_count = len(np.unique(y))
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
 
     # check shape of ovo_decition_function=True
     clf = NuSVC(kernel="linear", decision_function_shape="ovo").fit(
-        X_train, y_train, queue=queue
+        X_train, y_train, class_count=class_count, queue=queue
     )
     dec = clf.decision_function(X_train, queue=queue)
     assert dec.shape == (len(X_train), 10)
@@ -118,7 +122,10 @@ def test_decision_function_shape(queue):
 @pytest.mark.parametrize("queue", get_queues())
 def test_pickle(queue):
     iris = datasets.load_iris()
-    clf = NuSVC(kernel="linear").fit(iris.data, iris.target, queue=queue)
+    class_count = len(np.unique(iris.target))
+    clf = NuSVC(kernel="linear").fit(
+        iris.data, iris.target, class_count=class_count, queue=queue
+    )
     expected = clf.decision_function(iris.data, queue=queue)
 
     import pickle
@@ -133,13 +140,14 @@ def test_pickle(queue):
 
 def _test_cancer_rbf_compare_with_sklearn(queue, nu, gamma):
     cancer = datasets.load_breast_cancer()
+    class_count = len(np.unique(cancer.target))
 
     clf = NuSVC(kernel="rbf", gamma=gamma, nu=nu)
-    clf.fit(cancer.data, cancer.target, queue=queue)
+    clf.fit(cancer.data, cancer.target, class_count=class_count, queue=queue)
     result = clf.score(cancer.data, cancer.target, queue=queue)
 
     clf = SklearnNuSVC(kernel="rbf", gamma=gamma, nu=nu)
-    clf.fit(cancer.data, cancer.target)
+    clf.fit(cancer.data, cancer.target, class_count=class_count)
     expected = clf.score(cancer.data, cancer.target)
 
     assert result > 0.4
@@ -156,13 +164,14 @@ def test_cancer_rbf_compare_with_sklearn(queue, nu, gamma):
 
 def _test_cancer_linear_compare_with_sklearn(queue, nu):
     cancer = datasets.load_breast_cancer()
+    class_count = len(np.unique(cancer.target))
 
     clf = NuSVC(kernel="linear", nu=nu)
-    clf.fit(cancer.data, cancer.target, queue=queue)
+    clf.fit(cancer.data, cancer.target, class_count=class_count, queue=queue)
     result = clf.score(cancer.data, cancer.target, queue=queue)
 
     clf = SklearnNuSVC(kernel="linear", nu=nu)
-    clf.fit(cancer.data, cancer.target)
+    clf.fit(cancer.data, cancer.target, class_count=class_count)
     expected = clf.score(cancer.data, cancer.target)
 
     assert result > 0.5
@@ -178,13 +187,14 @@ def test_cancer_linear_compare_with_sklearn(queue, nu):
 
 def _test_cancer_poly_compare_with_sklearn(queue, params):
     cancer = datasets.load_breast_cancer()
+    class_count = len(np.unique(cancer.target))
 
     clf = NuSVC(kernel="poly", **params)
-    clf.fit(cancer.data, cancer.target, queue=queue)
+    clf.fit(cancer.data, cancer.target, class_count=class_count, queue=queue)
     result = clf.score(cancer.data, cancer.target, queue=queue)
 
     clf = SklearnNuSVC(kernel="poly", **params)
-    clf.fit(cancer.data, cancer.target)
+    clf.fit(cancer.data, cancer.target, class_count=class_count)
     expected = clf.score(cancer.data, cancer.target)
 
     assert result > 0.5
