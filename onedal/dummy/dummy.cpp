@@ -22,8 +22,10 @@
 
 namespace py = pybind11;
 
+// oneDAL-python interaction code is located in this namespace
 namespace oneapi::dal::python {
 
+// pybind11 structures and functions of the 'dummy' algorithm
 namespace dummy {
 
 template <typename Task, typename Ops>
