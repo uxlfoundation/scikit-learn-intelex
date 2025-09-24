@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder as _sklearn_LabelEncoder
 from sklearn.utils.class_weight import compute_class_weight
 
 from daal4py.sklearn._utils import sklearn_check_version
@@ -44,7 +44,7 @@ def _compute_class_weight(class_weight, *, classes, y, sample_weight=None):
                 "array API support with 'balanced' keyword not supported for sklearn <1.6"
             )
         # Find the weight of each class as present in y.
-        le = LabelEncoder()
+        le = _sklearn_LabelEncoder()
         y_ind = le.fit_transform(y)
 
         sample_weight = _check_sample_weight(sample_weight, y)
