@@ -38,7 +38,7 @@ def test_compute_class_weight_array_api(class_weight, dataframe, queue):
     # This verifies that array_api functionality matches sklearn
 
     _, y = load_iris(return_X_y=True)
-    classes = np.unique()
+    classes = np.unique(y)
 
     y_xp = _convert_to_dataframe(y, target_df=dataframe, device=queue)
     classes_xp = _convert_to_dataframe(classes, target_df=dataframe, device=queue)
