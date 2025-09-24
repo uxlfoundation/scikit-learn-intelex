@@ -16,7 +16,7 @@
 
 #include "onedal/common.hpp"
 #include "onedal/version.hpp"
-#include "onedal/tests/dummy_onedal.hpp"
+#include "onedal/dummy/dummy_onedal.hpp"
 #include "oneapi/dal/table/common.hpp"
 #include "oneapi/dal/table/homogen.hpp"
 
