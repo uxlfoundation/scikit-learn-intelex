@@ -434,7 +434,7 @@ class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
 
     def _onedal_fit(self, X, y):
         # global queue is set as per user configuration (`target_offload`) or from data prior to calling this internal function
-        queue = QM.get_global_queue()       
+        queue = QM.get_global_queue()
         params = self._get_onedal_params(X, y)
         X_table, y_table = to_table(X, y, queue=queue)
         return self.train(params, X_table, y_table).model
