@@ -37,7 +37,7 @@ def _compute_class_weight(class_weight, *, classes, y, sample_weight=None):
     # this duplicates sklearn code in order to enable it for array API.
     # Note for the use of LabelEncoder this is only valid for sklearn
     # versions >= 1.6.
-    xp, is_array_api_compliant = get_namespace(class_weight, classes, y)
+    xp, is_array_api_compliant = get_namespace(classes, y, sample_weight)
 
     if not is_array_api_compliant:
         # use the sklearn version for standard use.
