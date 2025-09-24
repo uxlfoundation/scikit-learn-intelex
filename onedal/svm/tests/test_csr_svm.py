@@ -32,12 +32,13 @@ from onedal.tests.utils._device_selection import (
 def check_svm_model_equal(
     queue, dense_svm, sparse_svm, X_train, y_train, X_test, decimal=6
 ):
-    dense_svm.fit(X_train.toarray(), y_train, queue=queue)
+    class_count = len(np.unique(y_train))
+    dense_svm.fit(X_train.toarray(), y_train, class_count=class_count, queue=queue)
     if sp.issparse(X_test):
         X_test_dense = X_test.toarray()
     else:
         X_test_dense = X_test
-    sparse_svm.fit(X_train, y_train, queue=queue)
+    sparse_svm.fit(X_train, y_train, class_count=class_count, queue=queue)
     assert sp.issparse(sparse_svm.support_vectors_)
     assert sp.issparse(sparse_svm.dual_coef_)
     assert_array_almost_equal(
@@ -268,9 +269,9 @@ def test_sparse_realdata(queue):
             3.0,
         ]
     )
-
-    clf = SVC(kernel="linear").fit(X.toarray(), y, queue=queue)
-    sp_clf = SVC(kernel="linear").fit(X, y, queue=queue)
+    class_count = len(np.unique(y))
+    clf = SVC(kernel="linear").fit(X.toarray(), y, class_count=class_count, queue=queue)
+    sp_clf = SVC(kernel="linear").fit(X, y, class_count=class_count, queue=queue)
 
     assert_array_equal(clf.support_vectors_, sp_clf.support_vectors_.toarray())
     assert_array_equal(clf.dual_coef_, sp_clf.dual_coef_.toarray())
