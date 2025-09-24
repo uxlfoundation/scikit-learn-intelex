@@ -104,8 +104,8 @@ from ..utils.validation import validate_data
 #
 # Tier 2: Methods that use a Tier 1 method with additional Python
 # calculations (usually a sklearn method or applied math function). Examples
-# are ``score`` and ``predict_log_proba``. Oftentimes the additional
-# calculations are trivial, meaning benchmarking is not required.
+# are ``kneighbors_graph`` and ``predict_log_proba``. Oftentimes the
+# additional calculations are trivial, meaning benchmarking is not required.
 #
 # Tier 3: Methods which directly use sklearn functionality. Typically these
 # can be directly inherited, but can be problematic with respect to other
@@ -161,9 +161,19 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
     # in sklearn.
     #
     # Sklearnex estimators follow a Matryoshka doll pattern with respect to
-    # the underlying oneDAL library. The sklearnex estimator is a
-    # public-facing API which mimics sklearn. Sklearnex estimators will
-    # create another estimator, defined in the ``onedal`` module, for
+    # the underlying oneDAL library:
+    #
+    # - The sklearnex estimator is a public-facing API which mimics sklearn.
+    #
+    # - The onedal estimator object which determines and sets characteristics
+    # with respect to oneDAL offloading (including but not limited to
+    # parameters, SYCL queue, data and result conversion).
+    #
+    # - The pybind11 interface objects to oneDAL C++ objects (inputs,
+    # results, and methods).
+    #
+    # These 3 objects interact in the following way: sklearnex estimators
+    # will create another estimator, defined in the ``onedal`` module, for
     # having a Python interface with oneDAL. Finally, this Python object
     # will use pybind11 to call oneDAL directly via pybind11-generated
     # objects and functions This is known as the ``backend``. These are
