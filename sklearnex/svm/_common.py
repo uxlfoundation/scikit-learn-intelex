@@ -39,6 +39,55 @@ from ..base import oneDALEstimator
 from ..utils._array_api import get_namespace
 from ..utils.validation import _check_sample_weight, validate_data
 
+if sklearn_check_version("1.6"):
+    from sklearn.calibration import _fit_calibrator
+    from sklearn.frozen import FrozenEstimator
+    from sklearn.utils import indexable
+    from sklearn.utils._response import _get_response_values
+    from sklearn.utils.multiclass import check_classification_targets
+    from sklearn.utils.validation import check_is_fitted
+
+    def _prefit_CalibratedClassifierCV_fit(self, X, y, **fit_params):
+        # This is a stop-gap solution where the cv='prefit' of CalibratedClassifierCV
+        # was removed and the single fold solution needs to be maintained. Discussion
+        # of the mathematical and performance implications of this choice can be found
+        # here: https://github.com/uxlfoundation/scikit-learn-intelex/pull/1879
+        # This is distilled from the sklearn CalibratedClassifierCV for sklearn <1.8 for
+        # use in sklearn > 1.8 to maintain performance.
+        check_classification_targets(y)
+        X, y = indexable(X, y)
+
+        estimator = self._get_estimator()
+
+        self.calibrated_classifiers_ = []
+        check_is_fitted(self.estimator, attributes=["classes_"])
+        self.classes_ = self.estimator.classes_
+
+        predictions, _ = _get_response_values(
+            estimator,
+            X,
+            response_method=["decision_function", "predict_proba"],
+        )
+        if predictions.ndim == 1:
+            # Reshape binary output from `(n_samples,)` to `(n_samples, 1)`
+            predictions = predictions.reshape(-1, 1)
+
+        calibrated_classifier = _fit_calibrator(
+            estimator,
+            predictions,
+            y,
+            self.classes_,
+            self.method,
+        )
+        self.calibrated_classifiers_.append(calibrated_classifier)
+
+        first_clf = self.calibrated_classifiers_[0].estimator
+        if hasattr(first_clf, "n_features_in_"):
+            self.n_features_in_ = first_clf.n_features_in_
+        if hasattr(first_clf, "feature_names_in_"):
+            self.feature_names_in_ = first_clf.feature_names_in_
+        return self
+
 
 class BaseSVM(oneDALEstimator):
 
@@ -296,12 +345,26 @@ class BaseSVC(BaseSVM):
         cfg["target_offload"] = queue
         with config_context(**cfg):
             clf_base.fit(X, y)
-            self.clf_prob = CalibratedClassifierCV(
-                clf_base,
-                ensemble=False,
-                cv="prefit",
-                method="sigmoid",
-            ).fit(X, y)
+
+            # Forced use of FrozenEstimator starting in sklearn 1.6
+            if sklearn_check_version("1.6"):
+                clf_base = FrozenEstimator(clf_base)
+
+                self.clf_prob = CalibratedClassifierCV(
+                    clf_base,
+                    ensemble=False,
+                    method="sigmoid",
+                )
+                # see custom stopgap solution defined above
+                _prefit_CalibratedClassifierCV_fit(self.clf_prob, X, y)
+            else:
+
+                self.clf_prob = CalibratedClassifierCV(
+                    clf_base,
+                    ensemble=False,
+                    cv="prefit",
+                    method="sigmoid",
+                ).fit(X, y)
 
     def _save_attributes(self, X):
         # This function requires array API adaptation.
