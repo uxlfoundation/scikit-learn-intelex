@@ -45,7 +45,7 @@ def _compute_class_weight(class_weight, *, classes, y, sample_weight=None):
 
     sety = xp.unique_values(y)
     setclasses = xp.unique_values(classes)
-    if len(y) != len(xp.unique_values(xp.concat((sety, setclasses)))):
+    if len(sety) != len(xp.unique_values(xp.concat((sety, setclasses)))):
         raise ValueError("classes should include all valid labels that can be in y")
     if class_weight is None or len(class_weight) == 0:
         # uniform class weights
