@@ -54,7 +54,7 @@ def test_compute_class_weight_array_api(class_weight, dataframe, queue):
         class_weight, classes=classes, y=y, sample_weight=sample_weight
     )
 
-    if sample_weight:
+    if class_weight == "balanced":
         sample_weight = _convert_to_dataframe(
             sample_weight, target_df=dataframe, device=queue
         )
