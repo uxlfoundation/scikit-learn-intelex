@@ -51,7 +51,7 @@ def test_compute_class_weight_array_api(class_weight, dataframe, queue):
         class_weight = {int(i): int(i) for i in np.unique(y)}
 
     weight_np = compute_class_weight(
-        class_weight, classes, y, sample_weight=sample_weight
+        class_weight, classes=classes, y=y, sample_weight=sample_weight
     )
 
     if sample_weight:
@@ -62,7 +62,7 @@ def test_compute_class_weight_array_api(class_weight, dataframe, queue):
     # evaluate custom sklearnex array API functionality
     with config_context(array_api_dispatch=True):
         weight_xp = _compute_class_weight(
-            class_weight, classes_xp, y_xp, sample_weight=sample_weight
+            class_weight, classes=classes_xp, y=y_xp, sample_weight=sample_weight
         )
 
     np.testing.assert_allclose(_as_numpy(weight_xp), weight_np)
