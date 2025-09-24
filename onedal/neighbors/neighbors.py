@@ -19,14 +19,6 @@ from numbers import Integral
 
 import numpy as np
 
-from daal4py import (
-    bf_knn_classification_model,
-    bf_knn_classification_prediction,
-    bf_knn_classification_training,
-    kdtree_knn_classification_model,
-    kdtree_knn_classification_prediction,
-    kdtree_knn_classification_training,
-)
 from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
 from onedal.utils import _sycl_queue_manager as QM
@@ -348,19 +340,10 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
             self._fit_method, self.n_samples_fit_, n_features
         )
 
-        if type(self._onedal_model) in (
-            kdtree_knn_classification_model,
-            bf_knn_classification_model,
-        ):
-            params = super()._get_daal_params(X, n_neighbors=n_neighbors)
-            prediction_results = self._onedal_predict(self._onedal_model, X, params)
-            distances = prediction_results.distances
-            indices = prediction_results.indices
-        else:
-            params = super()._get_onedal_params(X, n_neighbors=n_neighbors)
-            prediction_results = self._onedal_predict(self._onedal_model, X, params)
-            distances = from_table(prediction_results.distances)
-            indices = from_table(prediction_results.indices)
+        params = super()._get_onedal_params(X, n_neighbors=n_neighbors)
+        prediction_results = self._onedal_predict(self._onedal_model, X, params)
+        distances = from_table(prediction_results.distances)
+        indices = from_table(prediction_results.indices)
 
         if method == "kd_tree":
             for i in range(distances.shape[0]):
@@ -451,35 +434,19 @@ class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
 
     def _onedal_fit(self, X, y):
         # global queue is set as per user configuration (`target_offload`) or from data prior to calling this internal function
-        queue = QM.get_global_queue()
-        gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
-        if self.effective_metric_ == "euclidean" and not gpu_device:
-            params = self._get_daal_params(X)
-            if self._fit_method == "brute":
-                train_alg = bf_knn_classification_training
-
-            else:
-                train_alg = kdtree_knn_classification_training
-
-            return train_alg(**params).compute(X, y).model
-        else:
-            params = self._get_onedal_params(X, y)
-            X_table, y_table = to_table(X, y, queue=queue)
-            return self.train(params, X_table, y_table).model
+        queue = QM.get_global_queue()       
+        params = self._get_onedal_params(X, y)
+        X_table, y_table = to_table(X, y, queue=queue)
+        return self.train(params, X_table, y_table).model
 
     def _onedal_predict(self, model, X, params):
-        if type(self._onedal_model) is kdtree_knn_classification_model:
-            return kdtree_knn_classification_prediction(**params).compute(X, model)
-        elif type(self._onedal_model) is bf_knn_classification_model:
-            return bf_knn_classification_prediction(**params).compute(X, model)
-        else:
-            X = to_table(X, queue=QM.get_global_queue())
-            if "responses" not in params["result_option"]:
-                params["result_option"] += "|responses"
-            params["fptype"] = X.dtype
-            result = self.infer(params, model, X)
+        X = to_table(X, queue=QM.get_global_queue())
+        if "responses" not in params["result_option"]:
+            params["result_option"] += "|responses"
+        params["fptype"] = X.dtype
+        result = self.infer(params, model, X)
 
-            return result
+        return result
 
     @supports_queue
     def fit(self, X, y, queue=None):
@@ -511,17 +478,9 @@ class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
 
         self._validate_n_classes()
 
-        if (
-            type(onedal_model) is kdtree_knn_classification_model
-            or type(onedal_model) is bf_knn_classification_model
-        ):
-            params = self._get_daal_params(X)
-            prediction_result = self._onedal_predict(onedal_model, X, params)
-            responses = prediction_result.prediction
-        else:
-            params = self._get_onedal_params(X)
-            prediction_result = self._onedal_predict(onedal_model, X, params)
-            responses = from_table(prediction_result.responses)
+        params = self._get_onedal_params(X)
+        prediction_result = self._onedal_predict(onedal_model, X, params)
+        responses = from_table(prediction_result.responses)
 
         result = self.classes_.take(np.asarray(responses.ravel(), dtype=np.intp))
         return result
@@ -613,15 +572,6 @@ class KNeighborsRegressor(NeighborsBase, RegressorMixin):
         # global queue is set as per user configuration (`target_offload`) or from data prior to calling this internal function
         queue = QM.get_global_queue()
         gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
-        if self.effective_metric_ == "euclidean" and not gpu_device:
-            params = self._get_daal_params(X)
-            if self._fit_method == "brute":
-                train_alg = bf_knn_classification_training
-            else:
-                train_alg = kdtree_knn_classification_training
-
-            return train_alg(**params).compute(X, y).model
-
         X_table, y_table = to_table(X, y, queue=queue)
         params = self._get_onedal_params(X_table, y)
 
@@ -632,11 +582,6 @@ class KNeighborsRegressor(NeighborsBase, RegressorMixin):
 
     def _onedal_predict(self, model, X, params):
         assert self._onedal_model is not None, "Model is not trained"
-
-        if type(model) is kdtree_knn_classification_model:
-            return kdtree_knn_classification_prediction(**params).compute(X, model)
-        elif type(model) is bf_knn_classification_model:
-            return bf_knn_classification_prediction(**params).compute(X, model)
 
         # global queue is set as per user configuration (`target_offload`) or from data prior to calling this internal function
         queue = QM.get_global_queue()
@@ -764,28 +709,11 @@ class NearestNeighbors(NeighborsBase):
     def _onedal_fit(self, X, y):
         # global queue is set as per user configuration (`target_offload`) or from data prior to calling this internal function
         queue = QM.get_global_queue()
-        gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
-        if self.effective_metric_ == "euclidean" and not gpu_device:
-            params = self._get_daal_params(X)
-            if self._fit_method == "brute":
-                train_alg = bf_knn_classification_training
-
-            else:
-                train_alg = kdtree_knn_classification_training
-
-            return train_alg(**params).compute(X, y).model
-
-        else:
-            params = self._get_onedal_params(X, y)
-            X, y = to_table(X, y, queue=queue)
-            return self.train(params, X).model
+        params = self._get_onedal_params(X, y)
+        X, y = to_table(X, y, queue=queue)
+        return self.train(params, X).model
 
     def _onedal_predict(self, model, X, params):
-        if type(self._onedal_model) is kdtree_knn_classification_model:
-            return kdtree_knn_classification_prediction(**params).compute(X, model)
-        elif type(self._onedal_model) is bf_knn_classification_model:
-            return bf_knn_classification_prediction(**params).compute(X, model)
-
         X = to_table(X, queue=QM.get_global_queue())
 
         params["fptype"] = X.dtype
