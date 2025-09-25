@@ -153,7 +153,7 @@ def _test_synth_linear_compare_with_sklearn(queue, C, nu):
 
     clf = NuSVR(kernel="linear", C=C, nu=nu, gamma=gamma)
     clf.fit(x, y, queue=queue)
-    result = r2_score(clf.predict(x, queue=queue))
+    result = r2_score(y, clf.predict(x, queue=queue))
 
     clf = SklearnNuSVR(kernel="linear", C=C, nu=nu, gamma=gamma)
     clf.fit(x, y)
@@ -179,7 +179,7 @@ def _test_synth_poly_compare_with_sklearn(queue, params):
 
     clf = NuSVR(kernel="poly", **params)
     clf.fit(x, y, queue=queue)
-    result = r2_score(clf.predict(x, queue=queue))
+    result = r2_score(y, clf.predict(x, queue=queue))
 
     clf = SklearnNuSVR(kernel="poly", **params)
     clf.fit(x, y)

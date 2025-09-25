@@ -117,7 +117,7 @@ class BaseSVM(metaclass=ABCMeta):
             self.support_vectors_ = from_table(result.support_vectors, like=X)
 
         self.intercept_ = from_table(result.biases, like=X)[0, ...]
-        self.support_ = from_table(result.support_indices, like=X)[0, ...]
+        self.support_ = from_table(result.support_indices, like=X)[:, 0]
 
         self._onedal_model = result.model
         return self
