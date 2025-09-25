@@ -18,6 +18,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose, assert_array_almost_equal, assert_array_equal
 from sklearn import datasets
+from sklearn.base import RegressorMixin
 from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.svm import NuSVR as SklearnNuSVR
 
@@ -36,7 +37,7 @@ def test_diabetes_simple(queue):
     diabetes = datasets.load_diabetes()
     clf = NuSVR(kernel="linear", C=10.0)
     clf.fit(diabetes.data, diabetes.target, queue=queue)
-    assert clf.score(diabetes.data, diabetes.target, queue=queue) > 0.02
+    assert RegressorMixin.score(clf, diabetes.data, diabetes.target, queue=queue) > 0.02
 
 
 @pass_if_not_implemented_for_gpu(reason="not implemented for GPU")
@@ -91,7 +92,7 @@ def _test_diabetes_compare_with_sklearn(queue, kernel):
     diabetes = datasets.load_diabetes()
     clf_onedal = NuSVR(kernel=kernel, nu=0.25, C=10.0)
     clf_onedal.fit(diabetes.data, diabetes.target, queue=queue)
-    result = clf_onedal.score(diabetes.data, diabetes.target, queue=queue)
+    result = RegressorMixin.score(clf_onedal, diabetes.data, diabetes.target, queue=queue)
 
     clf_sklearn = SklearnNuSVR(kernel=kernel, nu=0.25, C=10.0)
     clf_sklearn.fit(diabetes.data, diabetes.target)
@@ -125,7 +126,7 @@ def _test_synth_rbf_compare_with_sklearn(queue, C, nu, gamma):
 
     clf = NuSVR(kernel="rbf", gamma=_gamma, C=C, nu=nu)
     clf.fit(x, y, queue=queue)
-    result = clf.score(x, y, queue=queue)
+    result = RegressorMixin.score(clf, x, y, queue=queue)
 
     clf = SklearnNuSVR(kernel="rbf", gamma=_gamma, C=C, nu=nu)
     clf.fit(x, y)
@@ -152,7 +153,7 @@ def _test_synth_linear_compare_with_sklearn(queue, C, nu):
 
     clf = NuSVR(kernel="linear", C=C, nu=nu, gamma=gamma)
     clf.fit(x, y, queue=queue)
-    result = clf.score(x, y, queue=queue)
+    result = RegressorMixin.score(clf, x, y, queue=queue)
 
     clf = SklearnNuSVR(kernel="linear", C=C, nu=nu, gamma=gamma)
     clf.fit(x, y)
@@ -178,7 +179,7 @@ def _test_synth_poly_compare_with_sklearn(queue, params):
 
     clf = NuSVR(kernel="poly", **params)
     clf.fit(x, y, queue=queue)
-    result = clf.score(x, y, queue=queue)
+    result = RegressorMixin.score(clf, x, y, queue=queue)
 
     clf = SklearnNuSVR(kernel="poly", **params)
     clf.fit(x, y)
