@@ -18,8 +18,8 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 from sklearn import datasets
-from sklearn.base import ClassifierMixin
 from sklearn.datasets import make_blobs
+from sklearn.metrics import accuracy_score
 from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.model_selection import train_test_split
 from sklearn.svm import NuSVC as SklearnNuSVC
@@ -97,7 +97,7 @@ def test_iris(queue):
     clf = NuSVC(kernel="linear").fit(
         iris.data, iris.target, class_count=class_count, queue=queue
     )
-    assert ClassifierMixin.score(clf, iris.data, iris.target, queue=queue) > 0.9
+    assert accuracy_score(iris.target, clf.predict(iris.data, queue=queue)) > 0.9
     assert_array_equal(clf.classes_, np.sort(clf.classes_))
 
 
@@ -141,7 +141,7 @@ def _test_cancer_rbf_compare_with_sklearn(queue, nu, gamma):
 
     clf = NuSVC(kernel="rbf", gamma=gamma, nu=nu)
     clf.fit(cancer.data, cancer.target, class_count=class_count, queue=queue)
-    result = ClassifierMixin.score(clf, cancer.data, cancer.target, queue=queue)
+    result = accuracy_score(cancer.target, clf.predict(cancer.data, queue=queue))
 
     clf = SklearnNuSVC(kernel="rbf", gamma=gamma, nu=nu)
     clf.fit(cancer.data, cancer.target, class_count=class_count)
@@ -165,7 +165,7 @@ def _test_cancer_linear_compare_with_sklearn(queue, nu):
 
     clf = NuSVC(kernel="linear", nu=nu)
     clf.fit(cancer.data, cancer.target, class_count=class_count, queue=queue)
-    result = ClassifierMixin.score(clf, cancer.data, cancer.target, queue=queue)
+    result = accuracy_score(cancer.target, clf.predict(cancer.data, queue=queue))
 
     clf = SklearnNuSVC(kernel="linear", nu=nu)
     clf.fit(cancer.data, cancer.target, class_count=class_count)
@@ -188,7 +188,7 @@ def _test_cancer_poly_compare_with_sklearn(queue, params):
 
     clf = NuSVC(kernel="poly", **params)
     clf.fit(cancer.data, cancer.target, class_count=class_count, queue=queue)
-    result = ClassifierMixin.score(clf, cancer.data, cancer.target, queue=queue)
+    result = accuracy_score(cancer.target, clf.predict(cancer.data, queue=queue))
 
     clf = SklearnNuSVC(kernel="poly", **params)
     clf.fit(cancer.data, cancer.target, class_count=class_count)
