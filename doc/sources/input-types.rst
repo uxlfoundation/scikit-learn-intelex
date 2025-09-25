@@ -39,3 +39,13 @@ like `Polars <https://pola.rs>`__.
 Extension currently does not offer accelerated routines for input types not listed
 here - when receiving an unsupported class, estimators will fall back to stock Scikit-Learn to
 handle it, so make sure to convert them to a supported type when using Extension.
+
+.. warning::
+  In certain cases data could be copied during transition to oneDAL tables.
+  It would affect performance. The affected cases are listed below.
+
+  - Non-contiguous NumPy array (C or F)
+  - SciPy CSR matrix / CSR array
+  - Heterogeneous NumPy array
+  - If :ref:`Array API <array_api>` is not enabled then data from GPU devices are always copied to the host device and then result table 
+    (for applicable methods) is copied to the source device.
