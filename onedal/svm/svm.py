@@ -53,7 +53,7 @@ class BaseSVM(metaclass=ABCMeta):
         self.kernel = kernel
         self.degree = degree
         self.coef0 = coef0
-        self.gamma = gamma
+        self.gamma = gamma 
         self.tol = tol
         self.shrinking = shrinking
         self.cache_size = cache_size
@@ -69,22 +69,23 @@ class BaseSVM(metaclass=ABCMeta):
     @abstractmethod
     def infer(self, *args, **kwargs): ...
 
-    def _get_onedal_params(self, dtype):
+    def _get_onedal_params(self, X):
         max_iter = 10000 if self.max_iter == -1 else self.max_iter
         # TODO: remove this workaround
         # when oneDAL SVM starts support of 'n_iterations' result
         self.n_iter_ = 1 if max_iter < 1 else max_iter
-
+        # if gamma is not given as a value, use sklearn's "auto"
+        gamma = 1 / X.shape[0] if self.gamma is None else self.gamma
         return {
-            "fptype": dtype,
+            "fptype": X.dtype,
             "c": self.C,
             "nu": self.nu,
             "epsilon": self.epsilon,
             "kernel": self.kernel,
             "degree": self.degree,
             "shift": self.coef0 if self.kernel != "linear" else 0.0,
-            "scale": self.gamma if self.kernel != "linear" else 1.0,
-            "sigma": np.sqrt(0.5 / self.gamma) if self.kernel != "linear" else 1.0,
+            "scale": gamma if self.kernel != "linear" else 1.0,
+            "sigma": np.sqrt(0.5 / gamma) if self.kernel != "linear" else 1.0,
             "accuracy_threshold": self.tol,
             "shrinking": self.shrinking,
             "cache_size": self.cache_size,
@@ -164,7 +165,7 @@ class SVR(BaseSVM):
         kernel="rbf",
         *,
         degree=3,
-        gamma="scale",
+        gamma=None,
         coef0=0.0,
         tol=1e-3,
         shrinking=True,
@@ -215,7 +216,7 @@ class SVC(BaseSVM):
         kernel="rbf",
         *,
         degree=3,
-        gamma="scale",
+        gamma=None,
         coef0=0.0,
         tol=1e-3,
         shrinking=True,
@@ -268,7 +269,7 @@ class NuSVR(BaseSVM):
         kernel="rbf",
         *,
         degree=3,
-        gamma="scale",
+        gamma=None,
         coef0=0.0,
         tol=1e-3,
         shrinking=True,
@@ -316,7 +317,7 @@ class NuSVC(BaseSVM):
         kernel="rbf",
         *,
         degree=3,
-        gamma="scale",
+        gamma=None,
         coef0=0.0,
         tol=1e-3,
         shrinking=True,
