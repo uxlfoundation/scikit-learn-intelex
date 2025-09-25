@@ -116,12 +116,18 @@ def test_diabetes_compare_with_sklearn(queue, kernel):
 
 def _test_synth_rbf_compare_with_sklearn(queue, C, nu, gamma):
     x, y = datasets.make_regression(**synth_params)
+    if gamma == "auto":
+        _gamma = 1.0 / x.shape[1]
+    elif gamma == "scale":
+        _gamma = 1.0 / (x.shape[1] * x.var())
+    else:
+        _gamma = gamma
 
-    clf = NuSVR(kernel="rbf", gamma=gamma, C=C, nu=nu)
+    clf = NuSVR(kernel="rbf", gamma=_gamma, C=C, nu=nu)
     clf.fit(x, y, queue=queue)
     result = clf.score(x, y, queue=queue)
 
-    clf = SklearnNuSVR(kernel="rbf", gamma=gamma, C=C, nu=nu)
+    clf = SklearnNuSVR(kernel="rbf", gamma=_gamma, C=C, nu=nu)
     clf.fit(x, y)
     expected = clf.score(x, y)
 
@@ -141,11 +147,14 @@ def test_synth_rbf_compare_with_sklearn(queue, C, nu, gamma):
 def _test_synth_linear_compare_with_sklearn(queue, C, nu):
     x, y = datasets.make_regression(**synth_params)
 
-    clf = NuSVR(kernel="linear", C=C, nu=nu)
+    # gamma is set separately
+    gamma = 1.0 / x.shape[1]
+
+    clf = NuSVR(kernel="linear", C=C, nu=nu, gamma=gamma)
     clf.fit(x, y, queue=queue)
     result = clf.score(x, y, queue=queue)
 
-    clf = SklearnNuSVR(kernel="linear", C=C, nu=nu)
+    clf = SklearnNuSVR(kernel="linear", C=C, nu=nu, gamma=gamma)
     clf.fit(x, y)
     expected = clf.score(x, y)
 
@@ -165,6 +174,7 @@ def test_synth_linear_compare_with_sklearn(queue, C, nu):
 
 def _test_synth_poly_compare_with_sklearn(queue, params):
     x, y = datasets.make_regression(**synth_params)
+    params["gamma"] = 1 / (x.shape[1] * x.var())
 
     clf = NuSVR(kernel="poly", **params)
     clf.fit(x, y, queue=queue)
@@ -183,8 +193,8 @@ def _test_synth_poly_compare_with_sklearn(queue, params):
 @pytest.mark.parametrize(
     "params",
     [
-        {"degree": 2, "coef0": 0.1, "gamma": "scale", "C": 100, "nu": 0.25},
-        {"degree": 3, "coef0": 0.0, "gamma": "scale", "C": 1000, "nu": 0.75},
+        {"degree": 2, "coef0": 0.1, "C": 100, "nu": 0.25},
+        {"degree": 3, "coef0": 0.0, "C": 1000, "nu": 0.75},
     ],
 )
 def test_synth_poly_compare_with_sklearn(queue, params):

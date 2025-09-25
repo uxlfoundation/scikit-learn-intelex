@@ -173,7 +173,7 @@ class BaseSVM(oneDALEstimator):
                 else:
                     xp, _ = get_namespace(X)
                     X_sc = xp.var(X)
-                _gamma = 1.0 / (X.shape[1] * X_sc) if X_sc != 0 else 1.0
+                _gamma = 1.0 / (X.shape[1] * float(X_sc)) if X_sc != 0 else 1.0
             elif self.gamma == "auto":
                 _gamma = 1.0 / X.shape[1]
             else:

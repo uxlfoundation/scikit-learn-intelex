@@ -141,7 +141,7 @@ class BaseSVM(metaclass=ABCMeta):
                 X.sort_indices()
 
         X = to_table(X, queue=QM.get_global_queue())
-        params = self._get_onedal_params(X)
+        params = self._get_onedal_params(X.dtype)
 
         if self._onedal_model is None:
             self._onedal_model = self._create_model()
@@ -305,7 +305,7 @@ class NuSVR(BaseSVM):
 
     def predict(self, X, queue=None):
         # return only a 1-dimensional output from 2d oneDAL table
-        return self._predict(X, queue=queue)[0, ...]
+        return super().predict(X, queue=queue)[0, ...]
 
 
 class NuSVC(BaseSVM):

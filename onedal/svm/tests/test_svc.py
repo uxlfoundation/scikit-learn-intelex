@@ -172,9 +172,7 @@ def test_pickle(queue):
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_svc_sigmoid(queue, dtype):
-    X_train = np.array(
-        [[-1, 2], [0, 0], [2, -1], [+1, +1], [+1, +2], [+2, +1]], dtype=dtype
-    )
+    X_train = np.array([[-1, 2], [0, 0], [2, -1], [1, 1], [1, 2], [2, 1]], dtype=dtype)
     X_test = np.array([[0, 2], [0.5, 0.5], [0.3, 0.1], [2, 0], [-1, -1]], dtype=dtype)
     y_train = np.array([0, 0, 0, 1, 1, 1], dtype=dtype)
     svc = SVC(kernel="sigmoid").fit(X_train, y_train, class_count=2, queue=queue)
