@@ -138,12 +138,18 @@ def test_pickle(queue):
 def _test_cancer_rbf_compare_with_sklearn(queue, nu, gamma):
     cancer = datasets.load_breast_cancer()
     class_count = len(np.unique(cancer.target))
+    if gamma == "auto":
+        _gamma = 1.0 / cancer.data.shape[1]
+    elif gamma == "scale":
+        _gamma = 1.0 / (cancer.data.shape[1] * cancer.data.var())
+    else:
+        _gamma = gamma
 
-    clf = NuSVC(kernel="rbf", gamma=gamma, nu=nu)
+    clf = NuSVC(kernel="rbf", gamma=_gamma, nu=nu)
     clf.fit(cancer.data, cancer.target, class_count=class_count, queue=queue)
     result = accuracy_score(cancer.target, clf.predict(cancer.data, queue=queue))
 
-    clf = SklearnNuSVC(kernel="rbf", gamma=gamma, nu=nu)
+    clf = SklearnNuSVC(kernel="rbf", gamma=_gamma, nu=nu)
     clf.fit(cancer.data, cancer.target, class_count=class_count)
     expected = clf.score(cancer.data, cancer.target)
 
@@ -185,12 +191,13 @@ def test_cancer_linear_compare_with_sklearn(queue, nu):
 def _test_cancer_poly_compare_with_sklearn(queue, params):
     cancer = datasets.load_breast_cancer()
     class_count = len(np.unique(cancer.target))
-
-    clf = NuSVC(kernel="poly", **params)
+    # gamma="scale"
+    _gamma = 1.0 / (cancer.data.shape[1] * cancer.data.var())
+    clf = NuSVC(kernel="poly", gamma=_gamma, **params)
     clf.fit(cancer.data, cancer.target, class_count=class_count, queue=queue)
     result = accuracy_score(cancer.target, clf.predict(cancer.data, queue=queue))
 
-    clf = SklearnNuSVC(kernel="poly", **params)
+    clf = SklearnNuSVC(kernel="poly", gamma=_gamma, **params)
     clf.fit(cancer.data, cancer.target, class_count=class_count)
     expected = clf.score(cancer.data, cancer.target)
 
@@ -203,8 +210,8 @@ def _test_cancer_poly_compare_with_sklearn(queue, params):
 @pytest.mark.parametrize(
     "params",
     [
-        {"degree": 2, "coef0": 0.1, "gamma": "scale", "nu": 0.25},
-        {"degree": 3, "coef0": 0.0, "gamma": "scale", "nu": 0.5},
+        {"degree": 2, "coef0": 0.1, "nu": 0.25},
+        {"degree": 3, "coef0": 0.0, "nu": 0.5},
     ],
 )
 def test_cancer_poly_compare_with_sklearn(queue, params):

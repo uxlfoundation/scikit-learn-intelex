@@ -107,7 +107,7 @@ class BaseSVM(metaclass=ABCMeta):
         self._sparse = sp.issparse(X)
 
         data_t = to_table(*data, queue=QM.get_global_queue())
-        params = self._get_onedal_params(data_t[0].dtype)
+        params = self._get_onedal_params(data_t[0])
         result = self.train(params, *data_t)
 
         if self._sparse:
@@ -142,7 +142,7 @@ class BaseSVM(metaclass=ABCMeta):
                 X.sort_indices()
 
         X = to_table(X, queue=QM.get_global_queue())
-        params = self._get_onedal_params(X.dtype)
+        params = self._get_onedal_params(X)
 
         if self._onedal_model is None:
             self._onedal_model = self._create_model()
