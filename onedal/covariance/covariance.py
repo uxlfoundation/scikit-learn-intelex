@@ -20,7 +20,6 @@ import numpy as np
 from daal4py.sklearn._utils import daal_check_version
 from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
-from onedal.utils.validation import _check_array
 
 from .._config import _get_config
 from ..common.hyperparameters import get_hyperparameters
@@ -101,13 +100,7 @@ class EmpiricalCovariance(BaseEmpiricalCovariance):
         self : object
             Returns the instance itself.
         """
-        use_raw_input = _get_config()["use_raw_input"] is True
-        sua_iface, xp, _ = _get_sycl_namespace(X)
-        if use_raw_input and sua_iface:
-            queue = X.sycl_queue
 
-        if not use_raw_input:
-            X = _check_array(X, dtype=[np.float64, np.float32])
         X_table = to_table(X, queue=queue)
 
         params = self._get_onedal_params(X_table.dtype)
@@ -123,6 +116,6 @@ class EmpiricalCovariance(BaseEmpiricalCovariance):
                 from_table(result.cov_matrix, like=X) * (X.shape[0] - 1) / X.shape[0]
             )
 
-        self.location_ = xp.squeeze(from_table(result.means, like=X))
+        self.location_ = from_table(result.means, like=X)[0, ...]
 
         return self

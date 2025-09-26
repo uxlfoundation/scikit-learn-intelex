@@ -33,6 +33,7 @@ if "%PYTHON%"=="python" (
 %PYTHON% -c "from sklearnex import patch_sklearn; patch_sklearn()" || set exitcode=1
 
 set "PYTEST_ARGS= "
+set "PYTEST_CONFIG=-c %1setup.cfg"
 
 IF DEFINED COVERAGE_RCFILE (set "PYTEST_ARGS=--cov=onedal --cov=sklearnex --cov-config=%COVERAGE_RCFILE% --cov-append --cov-branch --cov-report= %PYTEST_ARGS%")
 
@@ -47,19 +48,19 @@ if "%~2"=="--json-report" (
 
 echo "NO_DIST=%NO_DIST%"
 setlocal enabledelayedexpansion
-pytest --verbose -s "%1tests" %PYTEST_ARGS:FILENAME=legacy_report% || set exitcode=1
-pytest --verbose --pyargs daal4py %PYTEST_ARGS:FILENAME=daal4py_report% || set exitcode=1
-pytest --verbose --pyargs sklearnex %PYTEST_ARGS:FILENAME=sklearnex_report% || set exitcode=1
-pytest --verbose --pyargs onedal %PYTEST_ARGS:FILENAME=onedal_report% || set exitcode=1
-pytest --verbose "%1.ci\scripts\test_global_patch.py" %PYTEST_ARGS:FILENAME=global_patching_report% || set exitcode=1
+pytest %PYTEST_CONFIG% -s "%1tests" %PYTEST_ARGS:FILENAME=legacy_report% || set exitcode=1
+pytest %PYTEST_CONFIG% --pyargs daal4py %PYTEST_ARGS:FILENAME=daal4py_report% || set exitcode=1
+pytest %PYTEST_CONFIG% --pyargs sklearnex %PYTEST_ARGS:FILENAME=sklearnex_report% || set exitcode=1
+pytest %PYTEST_CONFIG% --pyargs onedal %PYTEST_ARGS:FILENAME=onedal_report% || set exitcode=1
+pytest %PYTEST_CONFIG% "%1.ci\scripts\test_global_patch.py" %PYTEST_ARGS:FILENAME=global_patching_report% || set exitcode=1
 if NOT "%NO_DIST%"=="1" (
     %PYTHON% "%1tests\helper_mpi_tests.py"^
-        pytest -k spmd --with-mpi --verbose -s --pyargs sklearnex %PYTEST_ARGS:FILENAME=sklearnex_spmd%
+        pytest -k spmd --with-mpi %PYTEST_CONFIG% -s --pyargs sklearnex %PYTEST_ARGS:FILENAME=sklearnex_spmd%
     if !errorlevel! NEQ 0 (
         set exitcode=1
     )
     %PYTHON% "%1tests\helper_mpi_tests.py"^
-        pytest --with-mpi --verbose -s "%1tests\test_daal4py_spmd_examples.py" %PYTEST_ARGS:FILENAME=mpi_legacy%
+        pytest --with-mpi %PYTEST_CONFIG% -s "%1tests\test_daal4py_spmd_examples.py" %PYTEST_ARGS:FILENAME=mpi_legacy%
     if !errorlevel! NEQ 0 (
         set exitcode=1
     )
