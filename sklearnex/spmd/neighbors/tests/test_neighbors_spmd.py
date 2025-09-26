@@ -386,3 +386,48 @@ def test_knnsearch_spmd_synthetic(
     tol = 0.005 if dtype == np.float32 else 1e-6
     _spmd_assert_allclose(spmd_indcs, batch_indcs)
     _spmd_assert_allclose(spmd_dists, batch_dists, rtol=tol, atol=tol)
+
+
+@pytest.mark.skipif(
+    not _mpi_libs_and_gpu_available,
+    reason="GPU device and MPI libs required for test",
+)
+@pytest.mark.parametrize(
+    "dataframe,queue",
+    get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
+)
+@pytest.mark.mpi
+def test_knn_spmd_empty_kneighbors(dataframe, queue):
+    # Import spmd and batch algo
+    from sklearnex.neighbors import NearestNeighbors as NearestNeighbors_Batch
+    from sklearnex.spmd.neighbors import (
+        KNeighborsClassifier,
+        KNeighborsRegressor,
+        NearestNeighbors,
+    )
+
+    # Create gold data and convert to dataframe
+    X_train = np.array(
+        [[-1, -1], [-2, -1], [-3, -2], [1, 1], [2, 1], [3, 2], [10, 10], [9, 9]]
+    )
+    y_train = np.array([0, 1, 0, 1, 0, 1, 0, 1])
+    local_dpt_X_train = _convert_to_dataframe(
+        _get_local_tensor(X_train), sycl_queue=queue, target_df=dataframe
+    )
+    local_dpt_y_train = _convert_to_dataframe(
+        _get_local_tensor(y_train), sycl_queue=queue, target_df=dataframe
+    )
+
+    # Run each estimator without an input to kneighbors() and ensure functionality and equivalence
+    for CurrentEstimator in [KNeighborsClassifier, KNeighborsRegressor, NearestNeighbors]:
+        spmd_model = CurrentEstimator(n_neighbors=2, algorithm="brute").fit(
+            local_dpt_X_train, local_dpt_y_train
+        )
+        batch_model = NearestNeighbors_Batch(n_neighbors=2, algorithm="brute").fit(
+            X_train, y_train
+        )
+        spmd_dists, spmd_indcs = spmd_model.kneighbors()
+        batch_dists, batch_indcs = batch_model.kneighbors()
+
+        _spmd_assert_allclose(spmd_indcs, batch_indcs)
+        _spmd_assert_allclose(spmd_dists, batch_dists)

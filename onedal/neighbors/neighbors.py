@@ -321,7 +321,6 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
                     "enter integer value" % type(n_neighbors)
                 )
 
-        # TODO: validate both when X is None and when not None
         if X is not None:
             query_is_train = False
             if not use_raw_input:

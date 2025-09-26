@@ -31,6 +31,7 @@ class KNeighborsClassifier(KNeighborsClassifier_Batch):
 
     @support_input_format
     def fit(self, X, y, queue=None):
+        self.spmd_queue_ = queue
         return super().fit(X, y, queue=queue)
 
     @support_input_format
@@ -43,6 +44,8 @@ class KNeighborsClassifier(KNeighborsClassifier_Batch):
 
     @support_input_format
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True, queue=None):
+        if X is None and queue is None:
+            queue = getattr(self, "spmd_queue_", None)
         return super().kneighbors(X, n_neighbors, return_distance, queue=queue)
 
 
@@ -63,6 +66,7 @@ class KNeighborsRegressor(KNeighborsRegressor_Batch):
     @support_input_format
     @supports_queue
     def fit(self, X, y, queue=None):
+        self.spmd_queue_ = queue
         if queue is not None and queue.sycl_device.is_gpu:
             return self._fit(X, y)
         else:
@@ -73,6 +77,8 @@ class KNeighborsRegressor(KNeighborsRegressor_Batch):
 
     @support_input_format
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True, queue=None):
+        if X is None and queue is None:
+            queue = getattr(self, "spmd_queue_", None)
         return super().kneighbors(X, n_neighbors, return_distance, queue=queue)
 
     @support_input_format
@@ -97,8 +103,11 @@ class NearestNeighbors(NearestNeighbors_Batch):
 
     @support_input_format
     def fit(self, X, y=None, queue=None):
+        self.spmd_queue_ = queue
         return super().fit(X, y, queue=queue)
 
     @support_input_format
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True, queue=None):
+        if X is None and queue is None:
+            queue = getattr(self, "spmd_queue_", None)
         return super().kneighbors(X, n_neighbors, return_distance, queue=queue)
