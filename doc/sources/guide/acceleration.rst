@@ -73,3 +73,10 @@ times, especially for larger data sets. However, due to the reduced fidelity of
 the data, the resulting model can present worse performance metrics compared to
 a model trained on the original data. In such cases, the number of bins can be
 increased with the ``max_bins`` parameter.
+
+Another parameter that can improve performance at large scale for Random Forest, 
+specifically the ``sklearnex.spmd.ensemble`` ``RandomForestClassifier`` and 
+``RandomForestRegressor`` classes, is ``local_trees_mode``. This uses an 
+alternative backend that is more conducive to scalability when running on more 
+GPUs. The default is ``False``, but setting to ``True`` enables this functionality. 
+This parameter is only available in the ``spmd`` module, for multi-GPU use.
