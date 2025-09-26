@@ -420,10 +420,10 @@ def test_knn_spmd_empty_kneighbors(dataframe, queue):
 
     # Run each estimator without an input to kneighbors() and ensure functionality and equivalence
     for CurrentEstimator in [KNeighborsClassifier, KNeighborsRegressor, NearestNeighbors]:
-        spmd_model = CurrentEstimator(n_neighbors=2, algorithm="brute").fit(
+        spmd_model = CurrentEstimator(n_neighbors=1, algorithm="brute").fit(
             local_dpt_X_train, local_dpt_y_train
         )
-        batch_model = NearestNeighbors_Batch(n_neighbors=2, algorithm="brute").fit(
+        batch_model = NearestNeighbors_Batch(n_neighbors=1, algorithm="brute").fit(
             X_train, y_train
         )
         spmd_dists, spmd_indcs = spmd_model.kneighbors()
