@@ -38,6 +38,8 @@ deselected_tests:
   - neighbors/tests/test_neighbors.py::test_neighbor_classifiers_loocv[brute-nn_model0]
   - neighbors/tests/test_neighbors.py::test_neighbor_classifiers_loocv[kd_tree-nn_model0]
   - neighbors/tests/test_neighbors.py::test_neighbor_classifiers_loocv[auto-nn_model0]
+  # sklearn 1.7 unsupported features
+  - tests/test_common.py::test_estimators[LinearRegression()-check_sample_weight_equivalence_on_dense_data]
 
   # Array API support
   # numpy.array_api was experimental and its use in sklearn was not official
@@ -366,6 +368,8 @@ deselected_tests:
   - tests/test_common.py::test_estimators[LogisticRegressionCV(cv=3,max_iter=5)-check_sample_weight_equivalence_on_dense_data]
   - ensemble/tests/test_bagging.py::test_estimators_samples >=1.0,<1.1
   - ensemble/tests/test_voting.py::test_sample_weight >=1.0,<1.1
+  - tests/test_multioutput.py::test_multiclass_multioutput_estimator_predict_proba
+  - model_selection/tests/test_search.py::test_search_cv_sample_weight_equivalence[estimator0]
 
   # Scikit-learn does not constraint multinomial logistic intercepts to sum to zero.
   # Softmax function is invariant to additions by a constant, so even though the numbers
@@ -520,3 +524,6 @@ gpu:
 
   # Deselection for Scikit-Learn 1.4 GPU conformance
   - model_selection/tests/test_validation.py::test_learning_curve_some_failing_fits_warning >=1.4
+
+  # Deselection for Scikit-Learn 1.5 GPU conformance (kd-tree knn not implemented for GPU)
+  - neighbors/tests/test_neighbors.py::test_neighbors_metrics[float64-42-l2]
