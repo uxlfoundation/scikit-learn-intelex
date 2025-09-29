@@ -27,7 +27,6 @@ from .._config import _get_config
 from ..common._estimator_checks import _check_is_fitted, _is_classifier, _is_regressor
 from ..common._mixin import ClassifierMixin, RegressorMixin
 from ..datatypes import from_table, to_table
-from ..utils._array_api import _get_sycl_namespace
 from ..utils.validation import (
     _check_array,
     _check_classification_targets,
@@ -220,14 +219,11 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
             self, "effective_metric_params_", self.metric_params
         )
 
-        _, xp, _ = _get_sycl_namespace(X)
-        use_raw_input = _get_config().get("use_raw_input", False) is True
         if y is not None or self.requires_y:
             shape = getattr(y, "shape", None)
-            if not use_raw_input:
-                X, y = super()._validate_data(
-                    X, y, dtype=[np.float64, np.float32], accept_sparse="csr"
-                )
+            X, y = super()._validate_data(
+                X, y, dtype=[np.float64, np.float32], accept_sparse="csr"
+            )
             self._shape = shape if shape is not None else y.shape
 
             if _is_classifier(self):
@@ -251,7 +247,7 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
                 self._validate_n_classes()
             else:
                 self._y = y
-        elif not use_raw_input:
+        else:
             X, _ = super()._validate_data(X, dtype=[np.float64, np.float32])
 
         self.n_samples_fit_ = X.shape[0]
@@ -280,7 +276,7 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         result = self._onedal_fit(X, _fit_y)
 
         if y is not None and _is_regressor(self):
-            self._y = y if self._shape is None else xp.reshape(y, self._shape)
+            self._y = y if self._shape is None else np.reshape(y, self._shape)
 
         self._onedal_model = result
         result = self
@@ -454,9 +450,7 @@ class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
 
     @supports_queue
     def predict(self, X, queue=None):
-        use_raw_input = _get_config().get("use_raw_input", False) is True
-        if not use_raw_input:
-            X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
+        X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
         onedal_model = getattr(self, "_onedal_model", None)
         n_features = getattr(self, "n_features_in_", None)
         n_samples_fit_ = getattr(self, "n_samples_fit_", None)
@@ -606,9 +600,7 @@ class KNeighborsRegressor(NeighborsBase, RegressorMixin):
         return self._kneighbors(X, n_neighbors, return_distance)
 
     def _predict_gpu(self, X):
-        use_raw_input = _get_config().get("use_raw_input", False) is True
-        if not use_raw_input:
-            X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
+        X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
         onedal_model = getattr(self, "_onedal_model", None)
         n_features = getattr(self, "n_features_in_", None)
         n_samples_fit_ = getattr(self, "n_samples_fit_", None)
