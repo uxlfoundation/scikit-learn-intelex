@@ -175,10 +175,9 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
         # to failure. In this case compare to sklearn for the same failure. By design
         # the patching of sklearn should act similarly. Technically this is conformance.
         if (
-            estimator == "PCA"
-            and "transform" in method
-            and not _package_check_version("2.0", np.__version__)
-        ):
+            (estimator == "PCA" and "transform" in method)
+            or (estimator == "IncrementalEmpiricalCovariance" and method == "mahalanobis")
+        ) and not _package_check_version("2.0", np.__version__):
             # issue not to be observed with normal numpy usage
             pytest.skip(
                 f"numpy backend does not properly handle the __dlpack__ attribute."

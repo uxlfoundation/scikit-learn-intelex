@@ -30,7 +30,7 @@ from sklearn.manifold import TSNE
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor, NearestNeighbors
 from sklearn.svm import SVC
 
-from daal4py.sklearn._utils import daal_check_version
+from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 
 MODELS_INFO = [
     {
@@ -84,7 +84,10 @@ MODELS_INFO = [
         "dataset": "classifier",
     },
     {
-        "model": LogisticRegression(max_iter=100, multi_class="multinomial"),
+        "model": LogisticRegression(
+            max_iter=100,
+            **({} if sklearn_check_version("1.8") else {"multi_class": "multinomial"})
+        ),
         "methods": [
             "decision_function",
             "predict",

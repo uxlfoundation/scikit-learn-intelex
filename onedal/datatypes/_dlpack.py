@@ -45,11 +45,14 @@ def dlpack_to_numpy(obj):
             raise TypeError(f"cannot move {type(obj)} to cpu")
 
     # convert to numpy
-    if hasattr(obj, "__array__"):
-        # ``copy`` param for the ``asarray`` is not set.
-        # The object is copied only if needed
-        obj = np.asarray(obj)
-    else:
+    try:
+        # Some frameworks implement an __array__ method just to
+        # throw a RuntimeError when used (array_api_strict, dpctl),
+        # or a TypeError (array_api-strict) rather than an AttributeError
+        # therefore a try catch is necessary (logic is essentially a
+        # getattr call + some)
+        obj = obj.__array__()
+    except (AttributeError, RuntimeError, TypeError):
         # requires numpy 1.23
         try:
             obj = np.from_dlpack(obj)
