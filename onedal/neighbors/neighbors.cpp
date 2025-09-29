@@ -83,6 +83,12 @@ struct metric2t {
                                     Float,
                                     Method,
                                     cosine_distance::descriptor<Float>);
+        ONEDAL_PARAM_DISPATCH_VALUE(metric,
+                                    "correlation",
+                                    ops,
+                                    Float,
+                                    Method,
+                                    correlation_distance::descriptor<Float>);
         ONEDAL_PARAM_DISPATCH_THROW_INVALID_VALUE(metric);
     }
 
