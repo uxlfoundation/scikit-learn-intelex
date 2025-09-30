@@ -53,7 +53,7 @@ class BaseSVM(metaclass=ABCMeta):
         self.kernel = kernel
         self.degree = degree
         self.coef0 = coef0
-        self.gamma = gamma 
+        self.gamma = gamma
         self.tol = tol
         self.shrinking = shrinking
         self.cache_size = cache_size
@@ -102,7 +102,7 @@ class BaseSVM(metaclass=ABCMeta):
         # for this is the number of classes.
         self.class_count_ = class_count
 
-        data = (X, y, sample_weight) if sample_weight else (X, y)
+        data = (X, y) if sample_weight is None else (X, y, sample_weight)
 
         self._sparse = sp.issparse(X)
 

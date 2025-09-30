@@ -131,11 +131,18 @@ def test_diabetes_compare_with_sklearn(queue, kernel):
 
 def _test_synth_rbf_compare_with_sklearn(queue, C, gamma):
     x, y = datasets.make_regression(**synth_params)
-    clf = SVR(kernel="rbf", gamma=gamma, C=C)
+    if gamma == "auto":
+        _gamma = 1.0 / x.shape[1]
+    elif gamma == "scale":
+        _gamma = 1.0 / (x.shape[1] * x.var())
+    else:
+        _gamma = gamma
+
+    clf = SVR(kernel="rbf", gamma=_gamma, C=C)
     clf.fit(x, y, queue=queue)
     result = clf.score(x, y, queue=queue)
 
-    clf = SklearnSVR(kernel="rbf", gamma=gamma, C=C)
+    clf = SklearnSVR(kernel="rbf", gamma=_gamma, C=C)
     clf.fit(x, y)
     expected = clf.score(x, y)
 
@@ -176,6 +183,13 @@ def test_synth_linear_compare_with_sklearn(queue, C):
 
 def _test_synth_poly_compare_with_sklearn(queue, params):
     x, y = datasets.make_regression(**synth_params)
+    if gamma == "auto":
+        _gamma = 1.0 / x.shape[1]
+    elif gamma == "scale":
+        _gamma = 1.0 / (x.shape[1] * x.var())
+    else:
+        _gamma = gamma
+    params["gamma"] = _gamma
     clf = SVR(kernel="poly", **params)
     clf.fit(x, y, queue=queue)
     result = clf.score(x, y, queue=queue)
