@@ -58,6 +58,8 @@ def _compute_class_weight(class_weight, *, classes, y, sample_weight=None):
         # Find the weight of each class as present in y.
         le = _sklearn_LabelEncoder()
         y_ind = le.fit_transform(y)
+        if not all([item in le.classes_ for item in classes]):
+            raise ValueError("classes should have valid labels that are in y")
 
         sample_weight = _check_sample_weight(sample_weight, y)
         # scikit-learn implementation uses numpy.bincount, which does a combined
@@ -70,12 +72,16 @@ def _compute_class_weight(class_weight, *, classes, y, sample_weight=None):
         weighted_class_counts = xp.zeros(
             (xp.max(y_ind) + 1,), dtype=sample_weight.dtype, device=y.device
         )
-        for idx, val in enumerate(sample_weight):
-            weighted_class_counts[y_ind[idx]] += val
+
+        # use a more GPU-friendly summation approach for collecting weighted_class_counts
+        for w_idx in range(len(weighted_class_counts)):
+            weighted_class_counts[w_idx] = xp.sum(sample_weight[y_ind == w_idx])
 
         recip_freq = xp.sum(weighted_class_counts) / (
             len(le.classes_) * weighted_class_counts
         )
+        # guarantee that recip_freq is properly normalized
+        recip_freq /= xp.sum(recip_freq)
 
         weight = xp.take(recip_freq, le.transform(classes))
     else:
