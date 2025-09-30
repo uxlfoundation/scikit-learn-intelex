@@ -43,12 +43,10 @@ def test_compute_class_weight_array_api(class_weight, dataframe, queue):
     y_xp = _convert_to_dataframe(y, target_df=dataframe, device=queue)
     classes_xp = _convert_to_dataframe(classes, target_df=dataframe, device=queue)
 
-    np.random.seed(42)
+    rng = np.random.default_rng(seed=42)
 
     sample_weight = (
-        np.random.random(y.shape).astype(np.float64)
-        if class_weight == "balanced"
-        else None
+        rng.random(y.shape).astype(np.float64) if class_weight == "balanced" else None
     )
 
     if class_weight == "ramp":
