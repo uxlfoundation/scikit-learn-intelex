@@ -31,6 +31,7 @@ class KNeighborsClassifier(KNeighborsClassifier_Batch):
 
     @support_input_format
     def fit(self, X, y, queue=None):
+        # Store queue to use during inference if not provided (if X is none in kneighbors)
         self.spmd_queue_ = queue
         return super().fit(X, y, queue=queue)
 
@@ -66,6 +67,7 @@ class KNeighborsRegressor(KNeighborsRegressor_Batch):
     @support_input_format
     @supports_queue
     def fit(self, X, y, queue=None):
+        # Store queue to use during inference if not provided (if X is none in kneighbors)
         self.spmd_queue_ = queue
         if queue is not None and queue.sycl_device.is_gpu:
             return self._fit(X, y)
@@ -103,6 +105,7 @@ class NearestNeighbors(NearestNeighbors_Batch):
 
     @support_input_format
     def fit(self, X, y=None, queue=None):
+        # Store queue to use during inference if not provided (if X is none in kneighbors)
         self.spmd_queue_ = queue
         return super().fit(X, y, queue=queue)
 
