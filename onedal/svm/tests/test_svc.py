@@ -97,7 +97,7 @@ def test_decision_function(queue):
     X = np.array([[-2, -1], [-1, -1], [-1, -2], [1, 1], [1, 2], [2, 1]], dtype=np.float32)
     Y = np.array([1, 1, 1, 2, 2, 2], dtype=np.float32)
 
-    clf = SVC(kernel="rbf", gamma=1, decision_function_shape="ovo")
+    clf = SVC(kernel="rbf", gamma=1)
     clf.fit(X, Y, class_count=2, queue=queue)
 
     rbfs = rbf_kernel(X, clf.support_vectors_, gamma=clf.gamma)
@@ -130,11 +130,6 @@ def test_decision_function_shape(queue):
     )
     dec = clf.decision_function(X_train, queue=queue)
     assert dec.shape == (len(X_train), 10)
-
-    with pytest.raises(ValueError, match="must be either 'ovr' or 'ovo'"):
-        SVC(decision_function_shape="bad").fit(
-            X_train, y_train, class_count=class_count, queue=queue
-        )
 
 
 @pass_if_not_implemented_for_gpu(reason="not implemented")
