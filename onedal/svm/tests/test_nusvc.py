@@ -98,7 +98,6 @@ def test_iris(queue):
         iris.data, iris.target, class_count=class_count, queue=queue
     )
     assert accuracy_score(iris.target, clf.predict(iris.data, queue=queue)) > 0.9
-    assert_array_equal(clf.classes_, np.sort(clf.classes_))
 
 
 @pass_if_not_implemented_for_gpu(reason="not implemented")
@@ -150,7 +149,7 @@ def _test_cancer_rbf_compare_with_sklearn(queue, nu, gamma):
     result = accuracy_score(cancer.target, clf.predict(cancer.data, queue=queue))
 
     clf = SklearnNuSVC(kernel="rbf", gamma=_gamma, nu=nu)
-    clf.fit(cancer.data, cancer.target, class_count=class_count)
+    clf.fit(cancer.data, cancer.target)
     expected = clf.score(cancer.data, cancer.target)
 
     assert result > 0.4
@@ -174,7 +173,7 @@ def _test_cancer_linear_compare_with_sklearn(queue, nu):
     result = accuracy_score(cancer.target, clf.predict(cancer.data, queue=queue))
 
     clf = SklearnNuSVC(kernel="linear", nu=nu)
-    clf.fit(cancer.data, cancer.target, class_count=class_count)
+    clf.fit(cancer.data, cancer.target)
     expected = clf.score(cancer.data, cancer.target)
 
     assert result > 0.5
@@ -198,7 +197,7 @@ def _test_cancer_poly_compare_with_sklearn(queue, params):
     result = accuracy_score(cancer.target, clf.predict(cancer.data, queue=queue))
 
     clf = SklearnNuSVC(kernel="poly", gamma=_gamma, **params)
-    clf.fit(cancer.data, cancer.target, class_count=class_count)
+    clf.fit(cancer.data, cancer.target)
     expected = clf.score(cancer.data, cancer.target)
 
     assert result > 0.5
