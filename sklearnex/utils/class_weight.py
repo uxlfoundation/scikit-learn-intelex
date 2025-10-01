@@ -80,8 +80,6 @@ def _compute_class_weight(class_weight, *, classes, y, sample_weight=None):
         recip_freq = xp.sum(weighted_class_counts) / (
             len(le.classes_) * weighted_class_counts
         )
-        # guarantee that recip_freq is properly normalized
-        recip_freq /= xp.sum(recip_freq)
 
         weight = xp.take(recip_freq, le.transform(classes))
     else:
