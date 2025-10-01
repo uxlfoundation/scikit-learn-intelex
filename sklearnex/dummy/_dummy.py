@@ -503,7 +503,6 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
             # the kwarg ``sample_weight`` is important for evaluating oneDAL support
             # and is passed as an arg.
             (X,) = data
-            xp, _ = get_namespace(X)
 
             patching_status.and_conditions(
                 [
@@ -554,7 +553,6 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
 
         elif method_name == "predict":
             (X,) = data
-            xp, _ = get_namespace(X)
 
             patching_status.and_conditions(
                 [
