@@ -75,7 +75,7 @@ class BaseSVM(metaclass=ABCMeta):
         # when oneDAL SVM starts support of 'n_iterations' result
         self.n_iter_ = 1 if max_iter < 1 else max_iter
         # if gamma is not given as a value, use sklearn's "auto"
-        gamma = 1 / X.shape[0] if self.gamma is None else self.gamma
+        gamma = 1 / X.shape[1] if self.gamma is None else self.gamma
         return {
             "fptype": X.dtype,
             "c": self.C,
@@ -205,7 +205,7 @@ class SVR(BaseSVM):
 
     def predict(self, X, queue=None):
         # return 1-dimensional output from 2d oneDAL table
-        return super().predict(X, queue=queue)[0, ...]
+        return super().predict(X, queue=queue)[:, 0]
 
 
 class SVC(BaseSVM):
@@ -306,7 +306,7 @@ class NuSVR(BaseSVM):
 
     def predict(self, X, queue=None):
         # return only a 1-dimensional output from 2d oneDAL table
-        return super().predict(X, queue=queue)[0, ...]
+        return super().predict(X, queue=queue)[:, 0]
 
 
 class NuSVC(BaseSVM):
