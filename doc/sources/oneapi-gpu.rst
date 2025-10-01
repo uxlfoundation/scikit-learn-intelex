@@ -81,7 +81,7 @@ Device offloading
 
 |sklearnex| offers two options for running an algorithm on a specified device:
 
-- Use global configurations of |sklearnex|\*:
+- Use global configurations of |sklearnex|:
 
   1. The :code:`target_offload` argument (in ``config_context`` and in ``set_config`` / ``get_config``)
      can be used to set the device primarily used to perform computations. Accepted data types are
