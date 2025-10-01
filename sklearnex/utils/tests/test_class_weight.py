@@ -31,9 +31,7 @@ from sklearnex.utils.class_weight import compute_class_weight as sk_compute_clas
 
 @pytest.mark.skipif(not sklearn_check_version("1.6"), reason="lacks array API support")
 @pytest.mark.parametrize("class_weight", [None, "balanced", "ramp"])
-@pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("array_api,dpctl")
-)
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("array_api,dpctl"))
 def test_compute_class_weight_array_api(class_weight, dataframe, queue):
     # This verifies that array_api functionality matches sklearn
 
