@@ -27,6 +27,7 @@ import pytest
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 from sklearn import datasets
 from sklearn.datasets import make_blobs
+from sklearn.metrics import accuracy_score
 from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.model_selection import train_test_split
 
@@ -113,7 +114,7 @@ def test_iris(queue):
     clf = SVC(kernel="linear").fit(
         iris.data, iris.target, class_count=class_count, queue=queue
     )
-    assert clf.score(iris.data, iris.target, queue=queue) > 0.9
+    assert accuracy_score(iris.target, clf.predict(iris.data, queue=queue)) > 0.9
     assert_array_equal(clf.classes_, np.sort(clf.classes_))
 
 

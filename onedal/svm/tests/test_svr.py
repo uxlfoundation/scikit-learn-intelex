@@ -18,6 +18,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose, assert_array_almost_equal, assert_array_equal
 from sklearn import datasets
+from sklearn.metrics import r2_score
 from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.svm import SVR as SklearnSVR
 
@@ -51,7 +52,7 @@ def test_diabetes_simple(queue):
     diabetes = datasets.load_diabetes()
     clf = SVR(kernel="linear", C=10.0)
     clf.fit(diabetes.data, diabetes.target, queue=queue)
-    assert clf.score(diabetes.data, diabetes.target, queue=queue) > 0.02
+    assert r2_score(diabetes.target, clf.predict(diabetes.data, queue=queue)) > 0.02
 
 
 @pass_if_not_implemented_for_gpu(reason="Regression SVM is not implemented for GPU")
@@ -106,7 +107,7 @@ def _test_diabetes_compare_with_sklearn(queue, kernel):
     diabetes = datasets.load_diabetes()
     clf_onedal = SVR(kernel=kernel, C=10.0, gamma=2)
     clf_onedal.fit(diabetes.data, diabetes.target, queue=queue)
-    result = clf_onedal.score(diabetes.data, diabetes.target, queue=queue)
+    result = r2_score(diabetes.target, clf_onedal.predict(diabetes.data, queue=queue))
 
     clf_sklearn = SklearnSVR(kernel=kernel, C=10.0, gamma=2)
     clf_sklearn.fit(diabetes.data, diabetes.target)
@@ -140,7 +141,7 @@ def _test_synth_rbf_compare_with_sklearn(queue, C, gamma):
 
     clf = SVR(kernel="rbf", gamma=_gamma, C=C)
     clf.fit(x, y, queue=queue)
-    result = clf.score(x, y, queue=queue)
+    result = r2_score(y, clf.predict(x, queue=queue))
 
     clf = SklearnSVR(kernel="rbf", gamma=_gamma, C=C)
     clf.fit(x, y)
@@ -162,7 +163,7 @@ def _test_synth_linear_compare_with_sklearn(queue, C):
     x, y = datasets.make_regression(**synth_params)
     clf = SVR(kernel="linear", C=C)
     clf.fit(x, y, queue=queue)
-    result = clf.score(x, y, queue=queue)
+    result = r2_score(y, clf.predict(x, queue=queue))
 
     clf = SklearnSVR(kernel="linear", C=C)
     clf.fit(x, y)
@@ -192,7 +193,7 @@ def _test_synth_poly_compare_with_sklearn(queue, params):
     params["gamma"] = _gamma
     clf = SVR(kernel="poly", **params)
     clf.fit(x, y, queue=queue)
-    result = clf.score(x, y, queue=queue)
+    result = r2_score(clf.predict(x, queue=queue))
 
     clf = SklearnSVR(kernel="poly", **params)
     clf.fit(x, y)
