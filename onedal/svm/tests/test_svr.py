@@ -18,6 +18,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose, assert_array_almost_equal, assert_array_equal
 from sklearn import datasets
+from sklearn.metrics import r2_score
 from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.svm import SVR as SklearnSVR
 
@@ -176,10 +177,12 @@ def test_synth_linear_compare_with_sklearn(queue, C):
 
 def _test_synth_poly_compare_with_sklearn(queue, params):
     x, y = datasets.make_regression(**synth_params)
-    clf = SVR(kernel="poly", **params)
+    gamma = 1.0 / (x.shape[1] * x.var())
+    clf = SVR(kernel="poly", gamma=gamma, **params)
     clf.fit(x, y, queue=queue)
-    result = clf.score(x, y, queue=queue)
+    result = r2_score(y, clf.predict(x, queue=queue))
 
+    # gamma='scale' by default in sklearn
     clf = SklearnSVR(kernel="poly", **params)
     clf.fit(x, y)
     expected = clf.score(x, y)
@@ -193,8 +196,8 @@ def _test_synth_poly_compare_with_sklearn(queue, params):
 @pytest.mark.parametrize(
     "params",
     [
-        {"degree": 2, "coef0": 0.1, "gamma": "scale", "C": 100},
-        {"degree": 3, "coef0": 0.0, "gamma": "scale", "C": 1000},
+        {"degree": 2, "coef0": 0.1, "C": 100},
+        {"degree": 3, "coef0": 0.0, "C": 1000},
     ],
 )
 def test_synth_poly_compare_with_sklearn(queue, params):
