@@ -21,9 +21,10 @@ Array API support
 Overview
 ========
 
-|sklearnex| has partial support for input data classes that conform to the
-`Array API <https://data-apis.org/array-api/>`_ specification, such as :external+dpnp:doc:`dpnp.ndarray <reference/ndarray>`
-or `torch.tensor <https://docs.pytorch.org/docs/stable/tensors.html>`__. This is particularly
+Many estimators from the |sklearnex| support passing data classes that conform to the
+`Array API <https://data-apis.org/array-api/>`_ specification as inputs to methods like ``.fit()``
+and ``.predict()``, such as :external+dpnp:doc:`dpnp.ndarray <reference/ndarray>` or
+`torch.tensor <https://docs.pytorch.org/docs/stable/tensors.html>`__. This is particularly
 useful for GPU computations, as it allows performing operations on inputs that are already
 on GPU without moving the data from host to device.
 
