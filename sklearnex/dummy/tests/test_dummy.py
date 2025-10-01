@@ -28,7 +28,7 @@ from sklearnex.dummy import DummyRegressor
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 def test_sklearnex_import_DummyRegression(dataframe, queue):
-    rng = np.random.random_rng(seed=42)
+    rng = np.random.default_rng(seed=42)
 
     X = rng.random((10, 4))
     y = rng.random((10, 2))
@@ -42,7 +42,7 @@ def test_sklearnex_import_DummyRegression(dataframe, queue):
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 def test_array_api_cvt_DummyRegression(dataframe, queue):
-    rng = np.random.random_rng(seed=42)
+    rng = np.random.default_rng(seed=42)
 
     X = rng.random((10, 4))
     y = rng.random((10, 2))
