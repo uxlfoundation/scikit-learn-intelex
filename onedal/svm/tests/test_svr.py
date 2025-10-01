@@ -193,7 +193,7 @@ def _test_synth_poly_compare_with_sklearn(queue, params):
     params["gamma"] = _gamma
     clf = SVR(kernel="poly", **params)
     clf.fit(x, y, queue=queue)
-    result = r2_score(clf.predict(x, queue=queue))
+    result = r2_score(y, clf.predict(x, queue=queue))
 
     clf = SklearnSVR(kernel="poly", **params)
     clf.fit(x, y)

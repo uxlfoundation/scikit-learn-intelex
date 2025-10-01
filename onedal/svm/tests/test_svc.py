@@ -85,11 +85,11 @@ def test_class_weight(queue):
 def test_sample_weight(queue):
     if queue and queue.sycl_device.is_gpu:
         pytest.skip("Sporadic failures on GPU sycl_queue.")
-    X = np.array([[-2, 0], [-1, -1], [0, -2], [0, 2], [1, 1], [2, 2]])
-    y = np.array([1, 1, 1, 2, 2, 2])
+    X = np.array([[-2, 0], [-1, -1], [0, -2], [0, 2], [1, 1], [2, 2]], dtype=np.float64)
+    y = np.array([1, 1, 1, 2, 2, 2], dtype=np.float64)
 
     clf = SVC(kernel="linear")
-    clf.fit(X, y, sample_weight=np.array([1] * 6), class_count=2, queue=queue)
+    clf.fit(X, y, sample_weight=np.array([1.0] * 6), class_count=2, queue=queue)
     assert_array_almost_equal(clf.intercept_, [0.0])
 
 
