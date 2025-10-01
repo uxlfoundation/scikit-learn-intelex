@@ -52,5 +52,6 @@ def test_array_api_cvt_DummyRegression(dataframe, queue):
         est = DummyRegressor(strategy="constant", constant=np.e).fit(X, y)
         pred = _as_numpy(est.predict([[0, 0, 0, 0]]))
 
+    np.testing.assert_array_equal(np.full(pred.shape, np.e), est.predict([[0, 0, 0, 0]]))
     est.constant_ = np.ones(est.constant_.shape)
-    np.testing.assert_array_equal(np.ones(pred.shape), pred)
+    np.testing.assert_array_equal(np.ones(pred.shape), est.predict([[0, 0, 0, 0]]))
