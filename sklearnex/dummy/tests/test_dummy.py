@@ -17,6 +17,7 @@
 import numpy as np
 import pytest
 
+from daal4py.sklearn._utils import sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
@@ -40,6 +41,9 @@ def test_sklearnex_import_DummyRegression(dataframe, queue):
     np.testing.assert_array_equal(np.pi * np.ones(pred.shape), pred)
 
 
+@pytest.mark.skipif(
+    not sklearn_check_version("1.3"), reason="lacks sklearn array API support"
+)
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 def test_array_api_cvt_DummyRegression(dataframe, queue):
     rng = np.random.default_rng(seed=42)
