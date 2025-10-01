@@ -13,6 +13,7 @@
 .. limitations under the License.
 
 .. |dpctl| replace:: :external+dpctl:doc:`dpctl <index>`
+.. |dpnp| replace:: :external+dpnp:doc:`dpnp <index>`
 .. |sklearn| replace:: :external+sklearn:doc:`scikit-learn <index>`
 .. |intelex_repo| replace:: |sklearnex| repository
 .. _intelex_repo: https://github.com/uxlfoundation/scikit-learn-intelex
