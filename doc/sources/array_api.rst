@@ -80,10 +80,9 @@ in many cases they are.
     to be installed for array API support.
 
 .. note::
-    As SyCL arrays from array API classes (such as :external+dpnp:doc:`dpnp.ndarray <reference/ndarray>`)
-    contain SyCL contexts, they do not require ``config_context(target_offload="device")`` to run on SyCL devices.
-    However, if such inputs are used under a ``config_context`` with a different ``target_offload`` as argument,
-    it will override the data's SyCL context and might force movement of data to the targeted device.
+    The ``target_offload`` option in config contexts and settings is not intended to work with array API
+    classes that have :external+dpctl:doc:`USM data <dpctl/memory>`. In order to ensure that computations
+    happen on the intended device under array API, make sure that the data is already on the desired device.
 
 
 Supported classes
