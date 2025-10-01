@@ -90,7 +90,9 @@ def test_predict(queue):
 
 def _test_diabetes_compare_with_sklearn(queue, kernel):
     diabetes = datasets.load_diabetes()
-    clf_onedal = NuSVR(kernel=kernel, nu=0.25, C=10.0)
+    gamma = 1.0 / (diabetes.data.shape[1] * diabetes.data.var())
+    # set gamma to value that would occur when gamma="scale"
+    clf_onedal = NuSVR(kernel=kernel, nu=0.25, C=10.0, gamma=gamma)
     clf_onedal.fit(diabetes.data, diabetes.target, queue=queue)
     result = r2_score(diabetes.target, clf_onedal.predict(diabetes.data, queue=queue))
 

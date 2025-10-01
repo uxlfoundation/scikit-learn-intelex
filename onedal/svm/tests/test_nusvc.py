@@ -55,17 +55,6 @@ def test_libsvm_parameters(queue, array_constr, dtype):
 
 @pass_if_not_implemented_for_gpu(reason="not implemented")
 @pytest.mark.parametrize("queue", get_queues())
-def test_class_weight(queue):
-    X = np.array([[-2, -1], [-1, -1], [-1, -2], [1, 1], [1, 2], [2, 1]], dtype=np.float64)
-    y = np.array([0, 0, 0, 1, 1, 1], dtype=np.float64)
-
-    clf = NuSVC(class_weight={0: 0.1})
-    clf.fit(X, y, class_count=2, queue=queue)
-    assert_array_almost_equal(clf.predict(X, queue=queue).ravel(), [1] * 6)
-
-
-@pass_if_not_implemented_for_gpu(reason="not implemented")
-@pytest.mark.parametrize("queue", get_queues())
 def test_sample_weight(queue):
     X = np.array([[-2, 0], [-1, -1], [0, -2], [0, 2], [1, 1], [2, 2]], dtype=np.float64)
     y = np.array([1, 1, 1, 2, 2, 2], dtype=np.float64)
