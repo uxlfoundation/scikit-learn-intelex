@@ -40,7 +40,7 @@ def _test_libsvm_parameters(queue, array_constr, dtype):
         clf.dual_coef_, [[-0.04761905, -0.0952381, 0.0952381, 0.04761905]]
     )
     assert_array_equal(clf.support_, [0, 1, 3, 4])
-    assert_array_equal(clf.support_vectors_, X[clf.support_])
+    assert_array_equal(clf.support_vectors_, X[clf.support_.astype(int)])
     assert_array_equal(clf.intercept_, [0.0])
     assert_array_equal(clf.predict(X, queue=queue).ravel(), y)
 
@@ -67,11 +67,11 @@ def test_class_weight(queue):
 @pass_if_not_implemented_for_gpu(reason="not implemented")
 @pytest.mark.parametrize("queue", get_queues())
 def test_sample_weight(queue):
-    X = np.array([[-2, 0], [-1, -1], [0, -2], [0, 2], [1, 1], [2, 2]])
-    y = np.array([1, 1, 1, 2, 2, 2])
+    X = np.array([[-2, 0], [-1, -1], [0, -2], [0, 2], [1, 1], [2, 2]], dtype=np.float64)
+    y = np.array([1, 1, 1, 2, 2, 2], dtype=np.float64)
 
     clf = NuSVC(kernel="linear")
-    clf.fit(X, y, sample_weight=[1] * 6, class_count=2, queue=queue)
+    clf.fit(X, y, sample_weight=np.array([1.0] * 6), class_count=2, queue=queue)
     assert_array_almost_equal(clf.intercept_, [0.0])
 
 

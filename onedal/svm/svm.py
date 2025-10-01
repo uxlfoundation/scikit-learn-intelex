@@ -44,7 +44,6 @@ class BaseSVM(metaclass=ABCMeta):
         cache_size,
         max_iter,
         tau,
-        class_weight,
         algorithm,
     ):
         self.C = C
@@ -59,7 +58,6 @@ class BaseSVM(metaclass=ABCMeta):
         self.cache_size = cache_size
         self.max_iter = max_iter
         self.tau = tau
-        self.class_weight = class_weight
         self.algorithm = algorithm
         self._onedal_model = None
 
@@ -190,7 +188,6 @@ class SVR(BaseSVM):
             cache_size=cache_size,
             max_iter=max_iter,
             tau=tau,
-            class_weight=None,
             algorithm=algorithm,
         )
 
@@ -223,7 +220,6 @@ class SVC(BaseSVM):
         cache_size=200.0,
         max_iter=-1,
         tau=1e-12,
-        class_weight=None,
         algorithm="thunder",
     ):
         # This hard-codes nu=.5, which may be bad. Needs to be investigated
@@ -241,7 +237,6 @@ class SVC(BaseSVM):
             cache_size=cache_size,
             max_iter=max_iter,
             tau=tau,
-            class_weight=class_weight,
             algorithm=algorithm,
         )
 
@@ -291,7 +286,6 @@ class NuSVR(BaseSVM):
             cache_size=cache_size,
             max_iter=max_iter,
             tau=tau,
-            class_weight=None,
             algorithm=algorithm,
         )
 
@@ -324,7 +318,6 @@ class NuSVC(BaseSVM):
         cache_size=200.0,
         max_iter=-1,
         tau=1e-12,
-        class_weight=None,
         algorithm="thunder",
     ):
         super().__init__(
@@ -340,7 +333,6 @@ class NuSVC(BaseSVM):
             cache_size=cache_size,
             max_iter=max_iter,
             tau=tau,
-            class_weight=class_weight,
             algorithm=algorithm,
         )
 

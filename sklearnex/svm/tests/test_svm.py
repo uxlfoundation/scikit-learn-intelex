@@ -204,3 +204,25 @@ def test_works_with_unsorted_indices():
         pred_single.reshape(-1),
         pred_multi.reshape(-1),
     )
+
+
+@pass_if_not_implemented_for_gpu(reason="class weights are not implemented")
+@pytest.mark.parametrize(
+    "queue",
+    get_queues("cpu")
+    + [
+        pytest.param(
+            get_queues("gpu"),
+            marks=pytest.mark.xfail(
+                reason="class weights are not implemented but the error is not raised"
+            ),
+        )
+    ],
+)
+def test_class_weight(queue):
+    X = np.array([[-2, -1], [-1, -1], [-1, -2], [1, 1], [1, 2], [2, 1]], dtype=np.float64)
+    y = np.array([0, 0, 0, 1, 1, 1], dtype=np.float64)
+
+    clf = SVC(class_weight={0: 0.1})
+    clf.fit(X, y, class_count=2, queue=queue)
+    assert_array_almost_equal(clf.predict(X, queue=queue).ravel(), [1] * 6)
