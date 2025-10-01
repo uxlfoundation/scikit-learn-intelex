@@ -219,11 +219,15 @@ def test_works_with_unsorted_indices():
         )
     ],
 )
-@pytest.mark.parametrize("estimator", [SVC, NuSVC])
 def test_class_weight(queue):
-    X = np.array([[-2, -1], [-1, -1], [-1, -2], [1, 1], [1, 2], [2, 1]], dtype=np.float64)
-    y = np.array([0, 0, 0, 1, 1, 1], dtype=np.float64)
+    from sklearnex.svm import SVC, NuSVC
 
-    clf = estimator(class_weight={0: 0.1})
-    clf.fit(X, y, class_count=2, queue=queue)
-    assert_array_almost_equal(clf.predict(X, queue=queue).ravel(), [1] * 6)
+    for estimator in [SVC, NuSVC]:
+        X = np.array(
+            [[-2, -1], [-1, -1], [-1, -2], [1, 1], [1, 2], [2, 1]], dtype=np.float64
+        )
+        y = np.array([0, 0, 0, 1, 1, 1], dtype=np.float64)
+
+        clf = estimator(class_weight={0: 0.1})
+        clf.fit(X, y, class_count=2, queue=queue)
+        assert_array_almost_equal(clf.predict(X, queue=queue).ravel(), [1] * 6)
