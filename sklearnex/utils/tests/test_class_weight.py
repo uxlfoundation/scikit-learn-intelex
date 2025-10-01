@@ -46,10 +46,8 @@ def test_compute_class_weight_array_api(class_weight, dataframe, queue):
     # support of sample_weights added in sklearn 1.7
     set_sample_weight = class_weight == "balanced" and sklearn_check_version("1.7")
 
-    sample_weight = (
-        rng.random(y.shape).astype(np.float64) if set_sample_weight else None
-    )
-    
+    sample_weight = rng.random(y.shape).astype(np.float64) if set_sample_weight else None
+
     if class_weight == "ramp":
         class_weight = {int(i): int(i) for i in np.unique(y)}
 
