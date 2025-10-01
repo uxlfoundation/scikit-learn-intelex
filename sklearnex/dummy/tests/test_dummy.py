@@ -48,10 +48,11 @@ def test_array_api_cvt_DummyRegression(dataframe, queue):
     y = rng.random((10,))
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     y = _convert_to_dataframe(y, sycl_queue=queue, target_df=dataframe)
+    X_test = _convert_to_dataframe([[0, 0, 0, 0]], sycl_queue=queue, target_df=dataframe)
     with config_context(array_api_dispatch=True):
         est = DummyRegressor(strategy="constant", constant=np.e).fit(X, y)
-        pred = _as_numpy(est.predict([[0, 0, 0, 0]]))
+        pred = _as_numpy(est.predict(X_test))
 
-    np.testing.assert_array_equal(np.full(pred.shape, np.e), est.predict([[0, 0, 0, 0]]))
+    np.testing.assert_array_equal(np.full(pred.shape, np.e), pred)
     est.constant_ = np.ones(est.constant_.shape)
     np.testing.assert_array_equal(np.ones(pred.shape), est.predict([[0, 0, 0, 0]]))
