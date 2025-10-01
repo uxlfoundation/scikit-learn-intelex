@@ -75,35 +75,6 @@ class NeighborsCommonBase(metaclass=ABCMeta):
     @abstractmethod
     def _onedal_fit(self, X, y): ...
 
-    def _validate_data(
-        self, X, y=None, reset=True, validate_separately=None, **check_params
-    ):
-        if y is None:
-            if self.requires_y:
-                raise ValueError(
-                    f"This {self.__class__.__name__} estimator "
-                    f"requires y to be passed, but the target y is None."
-                )
-            X = _check_array(X, **check_params)
-            out = X, y
-        else:
-            if validate_separately:
-                # We need this because some estimators validate X and y
-                # separately, and in general, separately calling _check_array()
-                # on X and y isn't equivalent to just calling _check_X_y()
-                # :(
-                check_X_params, check_y_params = validate_separately
-                X = _check_array(X, **check_X_params)
-                y = _check_array(y, **check_y_params)
-            else:
-                X, y = _check_X_y(X, y, **check_params)
-            out = X, y
-
-        if check_params.get("ensure_2d", True):
-            _check_n_features(self, X, reset=reset)
-
-        return out
-
     def _get_weights(self, dist, weights):
         if weights in (None, "uniform"):
             return None
@@ -221,9 +192,7 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
 
         if y is not None or self.requires_y:
             shape = getattr(y, "shape", None)
-            X, y = super()._validate_data(
-                X, y, dtype=[np.float64, np.float32], accept_sparse="csr"
-            )
+            X, y = _check_X_y(X, y, dtype=[np.float64, np.float32], accept_sparse="csr")
             self._shape = shape if shape is not None else y.shape
 
             if _is_classifier(self):
@@ -248,10 +217,11 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
             else:
                 self._y = y
         else:
-            X, _ = super()._validate_data(X, dtype=[np.float64, np.float32])
+            X = _check_array(X, dtype=[np.float64, np.float32])
 
         self.n_samples_fit_ = X.shape[0]
         self.n_features_in_ = X.shape[1]
+        _check_n_features(self, X, reset=True)
         self._fit_X = X
 
         if self.n_neighbors is not None:
