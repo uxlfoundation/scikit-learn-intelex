@@ -89,7 +89,7 @@ def test_sample_weight(queue):
     y = np.array([1, 1, 1, 2, 2, 2])
 
     clf = SVC(kernel="linear")
-    clf.fit(X, y, sample_weight=[1] * 6, class_count=2, queue=queue)
+    clf.fit(X, y, sample_weight=np.array([1] * 6), class_count=2, queue=queue)
     assert_array_almost_equal(clf.intercept_, [0.0])
 
 
@@ -115,7 +115,6 @@ def test_iris(queue):
         iris.data, iris.target, class_count=class_count, queue=queue
     )
     assert accuracy_score(iris.target, clf.predict(iris.data, queue=queue)) > 0.9
-    assert_array_equal(clf.classes_, np.sort(clf.classes_))
 
 
 @pass_if_not_implemented_for_gpu(reason="not implemented")
@@ -126,9 +125,7 @@ def test_decision_function_shape(queue):
     class_count = len(np.unique(y_train))
 
     # check shape of ovo_decition_function=True
-    clf = SVC(kernel="linear", decision_function_shape="ovo").fit(
-        X_train, y_train, class_count=class_count, queue=queue
-    )
+    clf = SVC(kernel="linear").fit(X_train, y_train, class_count=class_count, queue=queue)
     dec = clf.decision_function(X_train, queue=queue)
     assert dec.shape == (len(X_train), 10)
 

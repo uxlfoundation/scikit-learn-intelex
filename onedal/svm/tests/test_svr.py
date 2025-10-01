@@ -184,9 +184,9 @@ def test_synth_linear_compare_with_sklearn(queue, C):
 
 def _test_synth_poly_compare_with_sklearn(queue, params):
     x, y = datasets.make_regression(**synth_params)
-    if gamma == "auto":
+    if params["gamma"] == "auto":
         _gamma = 1.0 / x.shape[1]
-    elif gamma == "scale":
+    elif params["gamma"] == "scale":
         _gamma = 1.0 / (x.shape[1] * x.var())
     else:
         _gamma = gamma
