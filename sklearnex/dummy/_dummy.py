@@ -581,6 +581,12 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
     def constant_(self):
         return self._constant_
 
+    # The fitted variables match the data framework and device of the inputs.
+    # Modifications of these output attributes to different frameworks or
+    # devices may not work and are not monitored by the oneDAL estimator.
+    # This matches behavior which occurs in sklearn and therefore is up
+    # to the user to guarantee operation, especially in methods which depend
+    # on fitted estimators and attributes (like `transform` or `predict`).
     @constant_.setter
     def constant_(self, value):
         self._constant_ = value
