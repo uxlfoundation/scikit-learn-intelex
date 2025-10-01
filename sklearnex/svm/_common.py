@@ -27,6 +27,8 @@ from sklearn.metrics import accuracy_score, r2_score
 from sklearn.svm._base import BaseLibSVM as _sklearn_BaseLibSVM
 from sklearn.svm._base import BaseSVC as _sklearn_BaseSVC
 from sklearn.utils.metaestimators import available_if
+from sklearn.utils.multiclass import check_classification_targets
+
 from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._utils import sklearn_check_version
@@ -37,6 +39,7 @@ from .._device_offload import dispatch, wrap_output_data
 from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
 from ..utils._array_api import get_namespace
+from ..utils.class_weight import _check_sample_weight
 from ..utils.validation import _check_sample_weight, validate_data
 
 if sklearn_check_version("1.6"):
@@ -44,7 +47,6 @@ if sklearn_check_version("1.6"):
     from sklearn.frozen import FrozenEstimator
     from sklearn.utils import indexable
     from sklearn.utils._response import _get_response_values
-    from sklearn.utils.multiclass import check_classification_targets
     from sklearn.utils.validation import check_is_fitted
 
     def _prefit_CalibratedClassifierCV_fit(self, X, y, **fit_params):
@@ -249,6 +251,27 @@ class BaseSVM(oneDALEstimator):
 
 
 class BaseSVC(BaseSVM):
+    def _onedal_fit_checks(self, X, y, sample_weight=None):
+        X, y, weights = super()._onedal_fit_checks(X, y, sample_weights)
+        xp, is_array_api_compliant = get_namespace(X, y, weights)
+
+        if not is_array_api_compliant:
+            y = self._validate_targets(y)
+            return X, y, weights
+
+        # _validate_targets equivalent:
+        y_ = column_or_1d(y, warn=True)
+        check_classification_targets(y)
+        cls, y = xp.unique_inverse(y_)
+        self.class_weight_ = compute_class_weight(self.class_weight, classes=cls, y=y_)
+        if len(cls) < 2:
+            raise ValueError(
+                "The number of classes has to be greater than one; got %d class"
+                % len(cls)
+            )
+
+        self.classes_ = cls
+        return X, y, weights
 
     @wrap_output_data
     def predict(self, X):

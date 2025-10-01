@@ -149,7 +149,15 @@ class SVC(BaseSVC, _sklearn_SVC):
         return X, y, sample_weight
 
     def _onedal_fit(self, X, y, sample_weight=None, queue=None):
-        X, _, weights = self._onedal_fit_checks(X, y, sample_weight)
+        X, y, weights = self._onedal_fit_checks(X, y, sample_weight)
+
+        if sample_weight is not None:
+            if self.class_weight_ is not None:
+                for i, v in enumerate(self.class_weight_):
+                    sample_weight[y == i] *= v
+        # break_ties
+        # decision_function_shape
+        # class_weight
         onedal_params = {
             "C": self.C,
             "kernel": self.kernel,
@@ -160,9 +168,6 @@ class SVC(BaseSVC, _sklearn_SVC):
             "shrinking": self.shrinking,
             "cache_size": self.cache_size,
             "max_iter": self.max_iter,
-            "class_weight": self.class_weight,
-            "break_ties": self.break_ties,
-            "decision_function_shape": self.decision_function_shape,
         }
 
         self._onedal_estimator = self._onedal_factory(**onedal_params)
