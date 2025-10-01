@@ -31,7 +31,7 @@ def test_sklearnex_import_DummyRegression(dataframe, queue):
     rng = np.random.default_rng(seed=42)
 
     X = rng.random((10, 4))
-    y = rng.random((10, 2))
+    y = rng.random((10,))
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     y = _convert_to_dataframe(y, sycl_queue=queue, target_df=dataframe)
     est = DummyRegressor(strategy="constant", constant=np.pi).fit(X, y)
@@ -45,7 +45,7 @@ def test_array_api_cvt_DummyRegression(dataframe, queue):
     rng = np.random.default_rng(seed=42)
 
     X = rng.random((10, 4))
-    y = rng.random((10, 2))
+    y = rng.random((10,))
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     y = _convert_to_dataframe(y, sycl_queue=queue, target_df=dataframe)
     with config_context(array_api_dispatch=True):
