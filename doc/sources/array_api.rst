@@ -81,7 +81,7 @@ in many cases they are.
 
 .. note::
     The ``target_offload`` option in config contexts and settings is not intended to work with array API
-    classes that have :external+dpctl:doc:`USM data <dpctl/memory>`. In order to ensure that computations
+    classes that have :external+dpctl:doc:`USM data <api_reference/dpctl/memory>`. In order to ensure that computations
     happen on the intended device under array API, make sure that the data is already on the desired device.
 
 
