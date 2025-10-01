@@ -45,7 +45,7 @@ def _compute_class_weight(class_weight, *, classes, y, sample_weight=None):
 
     sety = xp.unique_values(y)
     setclasses = xp.unique_values(classes)
-    if len(sety) != len(xp.unique_values(xp.concat((sety, setclasses)))):
+    if sety.shape[0] != xp.unique_values(xp.concat((sety, setclasses))).shape[0]:
         raise ValueError("classes should include all valid labels that can be in y")
     if class_weight is None or len(class_weight) == 0:
         # uniform class weights
@@ -74,11 +74,11 @@ def _compute_class_weight(class_weight, *, classes, y, sample_weight=None):
         )
 
         # use a more GPU-friendly summation approach for collecting weighted_class_counts
-        for w_idx in range(len(weighted_class_counts)):
+        for w_idx in range(weighted_class_counts.shape[0]):
             weighted_class_counts[w_idx] = xp.sum(sample_weight[y_ind == w_idx])
 
         recip_freq = xp.sum(weighted_class_counts) / (
-            len(le.classes_) * weighted_class_counts
+            le.classes_.shape[0] * weighted_class_counts
         )
 
         weight = xp.take(recip_freq, le.transform(classes))
@@ -94,7 +94,7 @@ def _compute_class_weight(class_weight, *, classes, y, sample_weight=None):
             else:
                 unweighted_classes.append(c)
 
-        n_weighted_classes = len(classes) - len(unweighted_classes)
+        n_weighted_classes = classes.shape[0] - len(unweighted_classes)
         if unweighted_classes and n_weighted_classes != len(class_weight):
             raise ValueError(
                 f"The classes, {unweighted_classes}, are not in" " class_weight"
