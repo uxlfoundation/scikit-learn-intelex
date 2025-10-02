@@ -81,7 +81,6 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     @wrap_output_data
     def predict(self, X):
         check_is_fitted(self)
-        check_feature_names(self, X, reset=False)
         return dispatch(
             self,
             "predict",
@@ -95,7 +94,6 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     @wrap_output_data
     def predict_proba(self, X):
         check_is_fitted(self)
-        check_feature_names(self, X, reset=False)
         return dispatch(
             self,
             "predict_proba",
@@ -109,7 +107,6 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     @wrap_output_data
     def score(self, X, y, sample_weight=None):
         check_is_fitted(self)
-        check_feature_names(self, X, reset=False)
         return dispatch(
             self,
             "score",
@@ -125,8 +122,6 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     @wrap_output_data
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
         check_is_fitted(self)
-        if X is not None:
-            check_feature_names(self, X, reset=False)
         return dispatch(
             self,
             "kneighbors",
@@ -163,21 +158,30 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         self._save_attributes()
 
     def _onedal_predict(self, X, queue=None):
+        xp, _ = get_namespace(X)
+        X = validate_data(self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False)
         return self._onedal_estimator.predict(X, queue=queue)
 
     def _onedal_predict_proba(self, X, queue=None):
+        xp, _ = get_namespace(X)
+        X = validate_data(self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False)
         return self._onedal_estimator.predict_proba(X, queue=queue)
 
     def _onedal_kneighbors(
         self, X=None, n_neighbors=None, return_distance=True, queue=None
     ):
+        if X is not None:
+            xp, _ = get_namespace(X)
+            X = validate_data(self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False)
         return self._onedal_estimator.kneighbors(
             X, n_neighbors, return_distance, queue=queue
         )
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
+        xp, _ = get_namespace(X, y)
+        X = validate_data(self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False)
         return accuracy_score(
-            y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
+            y, self._onedal_estimator.predict(X, queue=queue), sample_weight=sample_weight
         )
 
     def _save_attributes(self):
