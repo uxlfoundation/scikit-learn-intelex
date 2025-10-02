@@ -91,23 +91,4 @@ class SVR(BaseSVR, _sklearn_SVR):
 
         return self
 
-    def _onedal_fit(self, X, y, sample_weight=None, queue=None):
-        X, _, sample_weight = self._onedal_fit_checks(X, y, sample_weight)
-        onedal_params = {
-            "C": self.C,
-            "epsilon": self.epsilon,
-            "kernel": self.kernel,
-            "degree": self.degree,
-            "gamma": self._compute_gamma_sigma(X),
-            "coef0": self.coef0,
-            "tol": self.tol,
-            "shrinking": self.shrinking,
-            "cache_size": self.cache_size,
-            "max_iter": self.max_iter,
-        }
-
-        self._onedal_estimator = self._onedal_factory(**onedal_params)
-        self._onedal_estimator.fit(X, y, sample_weight, queue=queue)
-        self._save_attributes()
-
     fit.__doc__ = _sklearn_SVR.fit.__doc__

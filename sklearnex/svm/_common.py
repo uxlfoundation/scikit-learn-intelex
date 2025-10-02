@@ -220,29 +220,13 @@ class BaseSVM(oneDALEstimator):
 
 
 class BaseSVC(BaseSVM):
-    def _onedal_fit(self, X, y, sample_weight=None):
-        if not sklearn_check_version("1.2"):
-            if self.decision_function_shape not in ("ovr", "ovo", None):
-                raise ValueError(
-                    f"decision_function_shape must be either 'ovr' or 'ovo', "
-                    f"got {self.decision_function_shape}."
-                )
 
-        xp, is_array_api_complaint = get_namespace(X, y, sample_weight)
-
-        X, y = validate_data(
-            self,
-            X,
-            y,
-            dtype=[xp.float64, xp.float32],
-            accept_sparse="csr",
-        )
-
-        if sample_weight:
-            sample_weight = _check_sample_weight(X, sample_weight)
+    # overwrite _validate_targets for array API support
+    def _validate_targets(self, y):
+        xp, is_array_api_complaint = get_namespace(y)
 
         if not is_array_api_compliant:
-            y = self._validate_targets(y)
+            y = super()._validate_targets(y)
         else:
             # _validate_targets equivalent:
             y_ = column_or_1d(y, warn=True)
@@ -258,6 +242,30 @@ class BaseSVC(BaseSVM):
                 )
 
             self.classes_ = cls
+        return y
+
+    def _onedal_fit(self, X, y, sample_weight=None):
+        if not sklearn_check_version("1.2"):
+            if self.decision_function_shape not in ("ovr", "ovo", None):
+                raise ValueError(
+                    f"decision_function_shape must be either 'ovr' or 'ovo', "
+                    f"got {self.decision_function_shape}."
+                )
+
+        xp, _ = get_namespace(X, y, sample_weight)
+
+        X, y = validate_data(
+            self,
+            X,
+            y,
+            dtype=[xp.float64, xp.float32],
+            accept_sparse="csr",
+        )
+
+        y = self._validate_targets(y)
+
+        if sample_weight is not None:
+            sample_weight = _check_sample_weight(X, sample_weight)
 
         # oneDAL only accepts sample_weights, apply class_weight directly
         if sample_weight is not None:
@@ -407,7 +415,7 @@ class BaseSVC(BaseSVM):
                     method="sigmoid",
                 ).fit(X, y)
 
-    def _save_attributes(self, X):
+    def _save_attributes(self, X, y, xp=np):
         # This function requires array API adaptation.
         self.support_vectors_ = self._onedal_estimator.support_vectors_
 
@@ -423,8 +431,9 @@ class BaseSVC(BaseSVM):
         self.shape_fit_ = X.shape
 
         self._gamma = self._onedal_estimator.gamma
+        length = (self.classes_.shape[0] ** 2 - self.classes_.shape[0]) // 2
+
         if self.probability:
-            length = int(len(self.classes_) * (len(self.classes_) - 1) / 2)
             self._probA = np.zeros(length)
             self._probB = np.zeros(length)
         else:
@@ -433,23 +442,23 @@ class BaseSVC(BaseSVM):
 
         self._dualcoef_ = self.dual_coef_
 
-        indices = y.take(self.support_, axis=0)
-        self._n_support = np.array(
-            [np.sum(indices == i) for i, _ in enumerate(self.classes_)]
+        indices = xp.take(y, self.support_, axis=0)
+        self._n_support = xp.array(
+            [xp.sum(indices == i) for i, _ in enumerate(self.classes_)]
         )
 
         if sklearn_check_version("1.1"):
-            length = int(len(self.classes_) * (len(self.classes_) - 1) / 2)
-            self.n_iter_ = np.full((length,), self._onedal_estimator.n_iter_)
+            self.n_iter_ = xp.full((length,), self._onedal_estimator.n_iter_)
 
     def _onedal_predict(self, X, queue=None):
         sv = self.support_vectors_
-        if not self._sparse and sv.size > 0 and self._n_support.sum() != sv.shape[0]:
+
+        xp, _ = get_namespace(X)
+
+        if not self._sparse and sv.size > 0 and xp.sum(self._n_support) != sv.shape[0]:
             raise ValueError(
                 "The internal representation " f"of {self.__class__.__name__} was altered"
             )
-
-        xp, _ = get_namespace(X)
 
         if self.break_ties and self.decision_function_shape == "ovo":
             raise ValueError(
@@ -459,7 +468,7 @@ class BaseSVC(BaseSVM):
         if (
             self.break_ties
             and self.decision_function_shape == "ovr"
-            and len(self.classes_) > 2
+            and self.classes_.shape[0] > 2
         ):
             res = xp.argmax(self._onedal_decision_function(X, queue=queue), axis=1)
         else:
@@ -468,14 +477,16 @@ class BaseSVC(BaseSVM):
         # the extensive reshaping here comes from the previous implementation, and
         # should be sorted out, as this is inefficient and likely can be reduced
         res = xp.asarray(res, dtype=xp.int32)
-        if len(self.classes_) == 2:
+        if self.classes_.shape[0] == 2:
             res = xp.reshape(res, (-1,))
 
         return xp.reshape(xp.take(xp.asarray(self.classes_), res), (-1,))
 
-    def _onedal_ovr_decision_function(self, predictions, confidences, n_classes, xp=np):
+    def _onedal_ovr_decision_function(self, predictions, confidences, n_classes, xp=None):
         # This function is legacy from the original implementation and needs
         # to be refactored.
+        if xp is None:
+            xp, _ = get_namespace(X)
         n_samples = predictions.shape[0]
         votes = xp.zeros((n_samples, n_classes))
         sum_of_confidences = xp.zeros((n_samples, n_classes))
@@ -511,11 +522,12 @@ class BaseSVC(BaseSVM):
 
         decision_function = self._onedal_estimator.decision_function(X, queue=queue)
 
-        if len(self.classes_) == 2:
+        len_classes_ = self.classes_.shape[0]
+        if len_classes_ == 2:
             decision_function = xp.reshape(decision_function, (-1,))
-        elif len(self.classes_) > 2 and self.decision_function_shape == "ovr":
+        elif len_classes_ > 2 and self.decision_function_shape == "ovr":
             decision_function = self._onedal_ovr_decision_function(
-                decision_function < 0, -decision_function, len(self.classes_), xp
+                decision_function < 0, -decision_function, len_classes_, xp
             )
 
         return xp.asarray(decision_function)
@@ -571,6 +583,40 @@ class BaseSVR(BaseSVM):
             y,
             sample_weight=sample_weight,
         )
+
+    def _onedal_fit(self, X, y, sample_weight=None, queue=None):
+        xp, _ = get_namespace(X, y, sample_weight)
+
+        X, y = validate_data(
+            self,
+            X,
+            y,
+            dtype=[xp.float64, xp.float32],
+            accept_sparse="csr",
+        )
+
+        y = self._validate_targets(y)
+
+        if sample_weight is not None:
+            sample_weight = _check_sample_weight(X, sample_weight)
+
+        onedal_params = {
+            "C": self.C,
+            "nu": self.nu,
+            "epsilon": self.epsilon,
+            "kernel": self.kernel,
+            "degree": self.degree,
+            "gamma": self._compute_gamma_sigma(X),
+            "coef0": self.coef0,
+            "tol": self.tol,
+            "shrinking": self.shrinking,
+            "cache_size": self.cache_size,
+            "max_iter": self.max_iter,
+        }
+
+        self._onedal_estimator = self._onedal_factory(**onedal_params)
+        self._onedal_estimator.fit(X, y, sample_weight, queue=queue)
+        self._save_attributes()
 
     def _save_attributes(self, X):
         self.support_vectors_ = self._onedal_estimator.support_vectors_
