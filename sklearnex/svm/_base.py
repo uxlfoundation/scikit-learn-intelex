@@ -223,7 +223,7 @@ class BaseSVC(BaseSVM):
 
     # overwrite _validate_targets for array API support
     def _validate_targets(self, y):
-        xp, is_array_api_complaint = get_namespace(y)
+        xp, is_array_api_compliant = get_namespace(y)
 
         if not is_array_api_compliant:
             y = super()._validate_targets(y)
