@@ -17,10 +17,7 @@
 from .._utils import get_sklearnex_version
 
 if get_sklearnex_version((2021, "P", 300)):
-    from .nusvc import NuSVC
-    from .nusvr import NuSVR
-    from .svc import SVC
-    from .svr import SVR
+    from ._classes import NuSVC, NuSVR, SVC, SVR
 
     __all__ = ["SVR", "SVC", "NuSVC", "NuSVR"]
 else:
