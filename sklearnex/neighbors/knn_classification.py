@@ -137,8 +137,8 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     def _onedal_fit(self, X, y, queue=None):
         xp, _ = get_namespace(X, y)
 
-        X, y = validate_data(
-            self, X, y, dtype=[xp.float64, xp.float32], accept_sparse="csr"
+        X = validate_data(
+            self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr"
         )
 
         onedal_params = {
@@ -185,8 +185,8 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
         xp, _ = get_namespace(X, y)
-        X, y = validate_data(
-            self, X, y, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
+        X = validate_data(
+            self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
         )
         return accuracy_score(
             y, self._onedal_estimator.predict(X, queue=queue), sample_weight=sample_weight
