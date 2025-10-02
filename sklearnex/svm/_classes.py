@@ -32,7 +32,7 @@ from onedal.svm import NuSVR as onedal_NuSVR
 
 from .._device_offload import dispatch
 from .._utils import PatchingConditionsChain
-from ._common import BaseSVC, BaseSVR
+from ._base import BaseSVC, BaseSVR
 
 
 @control_n_jobs(
