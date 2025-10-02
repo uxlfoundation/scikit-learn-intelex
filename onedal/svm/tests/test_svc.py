@@ -89,7 +89,7 @@ def test_sample_weight(queue):
     y = np.array([1, 1, 1, 2, 2, 2])
 
     clf = SVC(kernel="linear")
-    clf.fit(X, y, sample_weight=np.array([1] * 6), queue=queue)
+    clf.fit(X, y, sample_weight=[1] * 6, queue=queue)
     assert_array_almost_equal(clf.intercept_, [0.0])
 
 
