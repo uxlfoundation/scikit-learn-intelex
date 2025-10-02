@@ -158,26 +158,6 @@ class NeighborsCommonBase(metaclass=ABCMeta):
             "result_option": "indices|distances" if y is None else "responses",
         }
 
-    def _get_daal_params(self, data, n_neighbors=None):
-        class_count = 0 if self.classes_ is None else len(self.classes_)
-        weights = getattr(self, "weights", "uniform")
-        params = {
-            "fptype": "float" if data.dtype == np.float32 else "double",
-            "method": "defaultDense",
-            "k": self.n_neighbors if n_neighbors is None else n_neighbors,
-            "voteWeights": "voteUniform" if weights == "uniform" else "voteDistance",
-            "resultsToCompute": "computeIndicesOfNeighbors|computeDistances",
-            "resultsToEvaluate": (
-                "none"
-                if getattr(self, "_y", None) is None or _is_regressor(self)
-                else "computeClassLabels"
-            ),
-        }
-        if class_count != 0:
-            params["nClasses"] = class_count
-        return params
-
-
 class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
     def __init__(
         self,
@@ -426,12 +406,6 @@ class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
     @bind_default_backend("neighbors.classification")
     def infer(self, *args, **kwargs): ...
 
-    def _get_daal_params(self, data):
-        params = super()._get_daal_params(data)
-        params["resultsToEvaluate"] = "computeClassLabels"
-        params["resultsToCompute"] = ""
-        return params
-
     def _onedal_fit(self, X, y):
         # global queue is set as per user configuration (`target_offload`) or from data prior to calling this internal function
         queue = QM.get_global_queue()
@@ -562,12 +536,6 @@ class KNeighborsRegressor(NeighborsBase, RegressorMixin):
     @bind_default_backend("neighbors.regression")
     def infer(self, *args, **kwargs): ...
 
-    def _get_daal_params(self, data):
-        params = super()._get_daal_params(data)
-        params["resultsToCompute"] = "computeIndicesOfNeighbors|computeDistances"
-        params["resultsToEvaluate"] = "none"
-        return params
-
     def _onedal_fit(self, X, y):
         # global queue is set as per user configuration (`target_offload`) or from data prior to calling this internal function
         queue = QM.get_global_queue()
@@ -697,14 +665,6 @@ class NearestNeighbors(NeighborsBase):
 
     @bind_default_backend("neighbors.search")
     def infer(self, *arg, **kwargs): ...
-
-    def _get_daal_params(self, data):
-        params = super()._get_daal_params(data)
-        params["resultsToCompute"] = "computeIndicesOfNeighbors|computeDistances"
-        params["resultsToEvaluate"] = (
-            "none" if getattr(self, "_y", None) is None else "computeClassLabels"
-        )
-        return params
 
     def _onedal_fit(self, X, y):
         # global queue is set as per user configuration (`target_offload`) or from data prior to calling this internal function
