@@ -28,23 +28,23 @@ from ..datatypes import from_table, to_table
 
 
 class BaseSVM(metaclass=ABCMeta):
-    @abstractmethod
+
     def __init__(
         self,
-        C,
+        C,  # Depending on the child class, C, nu, and/or epsilon are not used
         nu,
         epsilon,
         kernel="rbf",
         *,
-        degree,
-        gamma,
-        coef0,
-        tol,
-        shrinking,
-        cache_size,
-        max_iter,
-        tau,
-        algorithm,
+        degree=3,
+        gamma=None,
+        coef0=0.0,
+        tol=1e-3,
+        shrinking=True,
+        cache_size=200.0,
+        max_iter=-1,
+        tau=1e-12,
+        algorithm="thunder",
     ):
         self.C = C
         self.nu = nu
@@ -71,7 +71,7 @@ class BaseSVM(metaclass=ABCMeta):
         max_iter = 10000 if self.max_iter == -1 else self.max_iter
         # TODO: remove this workaround
         # when oneDAL SVM starts support of 'n_iterations' result
-        self.n_iter_ = 1 if max_iter < 1 else max_iter
+        self.n_iter_ = max(1, max_iter)
         # if gamma is not given as a value, use sklearn's "auto"
         gamma = 1 / X.shape[1] if self.gamma is None else self.gamma
         return {
@@ -159,6 +159,7 @@ class SVR(BaseSVM):
     def __init__(
         self,
         C=1.0,
+        nu=None,  # not used
         epsilon=0.1,
         kernel="rbf",
         *,
@@ -173,11 +174,9 @@ class SVR(BaseSVM):
         algorithm="thunder",
     ):
 
-        # This hard-codes nu=.5, which may be bad. Needs to be investigated
-        # as this is different from sklearn and may impact conformance
         super().__init__(
             C=C,
-            nu=0.5,
+            nu=nu,
             epsilon=epsilon,
             kernel=kernel,
             degree=degree,
@@ -200,6 +199,12 @@ class SVR(BaseSVM):
     @bind_default_backend("svm.regression")
     def model(self): ...
 
+    def _get_onedal_params(self, X):
+        params = super()._get_onedal_params(X)
+        # The nu parameter is not set
+        params.pop("nu")
+        return params
+
     def predict(self, X, queue=None):
         # return 1-dimensional output from 2d oneDAL table
         return super().predict(X, queue=queue)[:, 0]
@@ -210,6 +215,8 @@ class SVC(BaseSVM):
     def __init__(
         self,
         C=1.0,
+        nu=None,  # not used
+        epsilon=None,  # not used
         kernel="rbf",
         *,
         degree=3,
@@ -226,8 +233,8 @@ class SVC(BaseSVM):
         # as this is different from sklearn and may impact conformance
         super().__init__(
             C=C,
-            nu=0.5,
-            epsilon=0.0,
+            nu=nu,
+            epsilon=epsilon,
             kernel=kernel,
             degree=degree,
             gamma=gamma,
@@ -245,6 +252,13 @@ class SVC(BaseSVM):
         m.first_class_response, m.second_class_response = 0, 1
         return m
 
+    def _get_onedal_params(self, X):
+        params = super()._get_onedal_params(X)
+        # The nu and epsilon parameter are not used
+        params.pop("nu")
+        params.pop("epsilon")
+        return params
+
     @bind_default_backend("svm.classification")
     def train(self, *args, **kwargs): ...
 
@@ -261,6 +275,7 @@ class NuSVR(BaseSVM):
         self,
         nu=0.5,
         C=1.0,
+        epsilon=None,  # not used
         kernel="rbf",
         *,
         degree=3,
@@ -276,7 +291,7 @@ class NuSVR(BaseSVM):
         super().__init__(
             C=C,
             nu=nu,
-            epsilon=0.0,
+            epsilon=epsilon,
             kernel=kernel,
             degree=degree,
             gamma=gamma,
@@ -288,6 +303,12 @@ class NuSVR(BaseSVM):
             tau=tau,
             algorithm=algorithm,
         )
+
+    def _get_onedal_params(self, X):
+        params = super()._get_onedal_params(X)
+        # The epsilon parameter is not used
+        params.pop("epsilon")
+        return params
 
     @bind_default_backend("svm.nu_regression")
     def train(self, *args, **kwargs): ...
@@ -307,7 +328,9 @@ class NuSVC(BaseSVM):
 
     def __init__(
         self,
+        C=None,  # not used
         nu=0.5,
+        epsilon=None,  # not used
         kernel="rbf",
         *,
         degree=3,
@@ -321,9 +344,9 @@ class NuSVC(BaseSVM):
         algorithm="thunder",
     ):
         super().__init__(
-            C=1.0,
+            C=C,
             nu=nu,
-            epsilon=0.0,
+            epsilon=epsilon,
             kernel=kernel,
             degree=degree,
             gamma=gamma,
@@ -340,6 +363,13 @@ class NuSVC(BaseSVM):
         m = super()._create_model()
         m.first_class_response, m.second_class_response = 0, 1
         return m
+
+    def _get_onedal_params(self, X):
+        params = super()._get_onedal_params(X)
+        # The C and epsilon parameters are not used
+        params.pop("c")
+        params.pop("epsilon")
+        return params
 
     @bind_default_backend("svm.nu_classification")
     def train(self, *args, **kwargs): ...
