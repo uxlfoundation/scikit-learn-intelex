@@ -129,6 +129,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
             dtype=[xp.float64, xp.float32],
             accept_sparse="csr",
             y_numeric=True,
+            ensure_2d=False,
         )
 
         onedal_params = {
@@ -176,6 +177,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
             accept_sparse="csr",
             reset=False,
             y_numeric=True,
+            ensure_2d=False,
         )
         return r2_score(
             y, self._onedal_estimator.predict(X, queue=queue), sample_weight=sample_weight
