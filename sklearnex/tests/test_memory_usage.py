@@ -55,6 +55,7 @@ CPU_SKIP_LIST = (
     "IncrementalPCA",  # TODO fix memory leak issue in private CI for data_shape = (1000, 100), data_transform_function = dataframe_f
     "IncrementalRidge",  # TODO fix memory leak issue in private CI for data_shape = (1000, 100), data_transform_function = dataframe_f
     "LogisticRegression(solver='newton-cg')",  # memory leak fortran (1000, 100)
+    "DummyRegressor",  # default parameters not supported
 )
 
 GPU_SKIP_LIST = (
@@ -73,6 +74,7 @@ GPU_SKIP_LIST = (
     "NuSVC(probability=True)",  # does not support GPU offloading (fails silently)
     "IncrementalLinearRegression",  # issue with potrf with the specific dataset
     "LinearRegression",  # issue with potrf with the specific dataset
+    "DummyRegressor",  # default parameters not supported
 )
 
 
