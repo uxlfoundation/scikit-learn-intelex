@@ -81,7 +81,7 @@ Device offloading
 
 |sklearnex| offers two options for running an algorithm on a specified device:
 
-- Use global configurations of |sklearnex|\*:
+- Use global configurations of |sklearnex|:
 
   1. The :code:`target_offload` argument (in ``config_context`` and in ``set_config`` / ``get_config``)
      can be used to set the device primarily used to perform computations. Accepted data types are
@@ -128,6 +128,12 @@ call :code:`sklearnex.get_config()`.
   located, and the result will be returned as :code:`usm_ndarray` to the same
   device.
 
+  .. important::
+    In order to enable zero-copy operations on GPU arrays, it's necessary to enable
+    :ref:`array API support <array_api>` for scikit-learn. Otherwise, if passing a GPU
+    array and array API support is not enabled, GPU arrays will first be transferred to
+    host and then back to GPU.
+
   .. note::
     All the input data for an algorithm must reside on the same device.
 
@@ -154,7 +160,7 @@ A full example of how to patch your code with Intel CPU/GPU optimizations:
    X = np.array([[1., 2.], [2., 2.], [2., 3.],
                  [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
    with config_context(target_offload="gpu:0"):
-      clustering = DBSCAN(eps=3, min_samples=2).fit(X)
+       clustering = DBSCAN(eps=3, min_samples=2).fit(X)
 
 
 .. note:: Current offloading behavior restricts fitting and predictions (a.k.a. inference) of any models to be

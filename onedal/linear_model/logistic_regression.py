@@ -214,7 +214,7 @@ class BaseLogisticRegression(metaclass=ABCMeta):
         return y
 
     def _predict_proba(self, X):
-        result = result = self._infer(X)
+        result = self._infer(X)
         _, xp, _ = _get_sycl_namespace(X)
         y = from_table(result.probabilities, like=X)
         y = xp.reshape(y, -1)

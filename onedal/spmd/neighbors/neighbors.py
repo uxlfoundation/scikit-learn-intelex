@@ -18,6 +18,7 @@ from ..._device_offload import support_input_format, supports_queue
 from ...common._backend import bind_spmd_backend
 from ...neighbors import KNeighborsClassifier as KNeighborsClassifier_Batch
 from ...neighbors import KNeighborsRegressor as KNeighborsRegressor_Batch
+from ...neighbors import NearestNeighbors as NearestNeighbors_Batch
 
 
 class KNeighborsClassifier(KNeighborsClassifier_Batch):
@@ -30,6 +31,8 @@ class KNeighborsClassifier(KNeighborsClassifier_Batch):
 
     @support_input_format
     def fit(self, X, y, queue=None):
+        # Store queue to use during inference if not provided (if X is none in kneighbors)
+        self.spmd_queue_ = queue
         return super().fit(X, y, queue=queue)
 
     @support_input_format
@@ -42,6 +45,8 @@ class KNeighborsClassifier(KNeighborsClassifier_Batch):
 
     @support_input_format
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True, queue=None):
+        if X is None and queue is None:
+            queue = getattr(self, "spmd_queue_", None)
         return super().kneighbors(X, n_neighbors, return_distance, queue=queue)
 
 
@@ -62,6 +67,8 @@ class KNeighborsRegressor(KNeighborsRegressor_Batch):
     @support_input_format
     @supports_queue
     def fit(self, X, y, queue=None):
+        # Store queue to use during inference if not provided (if X is none in kneighbors)
+        self.spmd_queue_ = queue
         if queue is not None and queue.sycl_device.is_gpu:
             return self._fit(X, y)
         else:
@@ -72,6 +79,8 @@ class KNeighborsRegressor(KNeighborsRegressor_Batch):
 
     @support_input_format
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True, queue=None):
+        if X is None and queue is None:
+            queue = getattr(self, "spmd_queue_", None)
         return super().kneighbors(X, n_neighbors, return_distance, queue=queue)
 
     @support_input_format
@@ -84,3 +93,24 @@ class KNeighborsRegressor(KNeighborsRegressor_Batch):
         if "responses" not in params["result_option"]:
             params["result_option"] += "|responses"
         return params
+
+
+class NearestNeighbors(NearestNeighbors_Batch):
+
+    @bind_spmd_backend("neighbors.search")
+    def train(self, *args, **kwargs): ...
+
+    @bind_spmd_backend("neighbors.search")
+    def infer(self, *args, **kwargs): ...
+
+    @support_input_format
+    def fit(self, X, y=None, queue=None):
+        # Store queue to use during inference if not provided (if X is none in kneighbors)
+        self.spmd_queue_ = queue
+        return super().fit(X, y, queue=queue)
+
+    @support_input_format
+    def kneighbors(self, X=None, n_neighbors=None, return_distance=True, queue=None):
+        if X is None and queue is None:
+            queue = getattr(self, "spmd_queue_", None)
+        return super().kneighbors(X, n_neighbors, return_distance, queue=queue)
