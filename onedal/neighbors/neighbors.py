@@ -35,6 +35,7 @@ from ..utils.validation import (
     _column_or_1d,
     _num_samples,
 )
+from ..utils._array_api import _get_sycl_namespace
 
 
 class NeighborsCommonBase(metaclass=ABCMeta):
@@ -192,7 +193,8 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
 
         if y is not None or self.requires_y:
             shape = getattr(y, "shape", None)
-            X, y = _check_X_y(X, y, dtype=[np.float64, np.float32], accept_sparse="csr")
+            _, xp, _ = _get_sycl_namespace(X)
+            X, y = _check_X_y(X, y, dtype=[xp.float64, xp.float32], accept_sparse="csr")
             self._shape = shape if shape is not None else y.shape
 
             if _is_classifier(self):
@@ -217,7 +219,8 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
             else:
                 self._y = y
         else:
-            X = _check_array(X, dtype=[np.float64, np.float32])
+            _, xp, _ = _get_sycl_namespace(X)
+            X = _check_array(X, dtype=[xp.float64, xp.float32])
 
         self.n_samples_fit_ = X.shape[0]
         self.n_features_in_ = X.shape[1]
@@ -280,7 +283,8 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
 
         if X is not None:
             query_is_train = False
-            X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
+            _, xp, _ = _get_sycl_namespace(X)
+            X = _check_array(X, accept_sparse="csr", dtype=[xp.float64, xp.float32])
         else:
             query_is_train = True
             X = self._fit_X
@@ -420,7 +424,8 @@ class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
 
     @supports_queue
     def predict(self, X, queue=None):
-        X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
+        _, xp, _ = _get_sycl_namespace(X)
+        X = _check_array(X, accept_sparse="csr", dtype=[xp.float64, xp.float32])
         onedal_model = getattr(self, "_onedal_model", None)
         n_features = getattr(self, "n_features_in_", None)
         n_samples_fit_ = getattr(self, "n_samples_fit_", None)
@@ -570,7 +575,8 @@ class KNeighborsRegressor(NeighborsBase, RegressorMixin):
         return self._kneighbors(X, n_neighbors, return_distance)
 
     def _predict_gpu(self, X):
-        X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
+        _, xp, _ = _get_sycl_namespace(X)
+        X = _check_array(X, accept_sparse="csr", dtype=[xp.float64, xp.float32])
         onedal_model = getattr(self, "_onedal_model", None)
         n_features = getattr(self, "n_features_in_", None)
         n_samples_fit_ = getattr(self, "n_samples_fit_", None)

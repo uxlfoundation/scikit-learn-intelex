@@ -66,8 +66,9 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                 self.effective_metric_ = "chebyshev"
 
         if not isinstance(X, (KDTree, BallTree, _sklearn_NeighborsBase)):
+            xp, _ = get_namespace(X)
             self._fit_X = _check_array(
-                X, dtype=[np.float64, np.float32], accept_sparse=True
+                X, dtype=[xp.float64, xp.float32], accept_sparse=True
             )
             self.n_samples_fit_ = _num_samples(self._fit_X)
             self.n_features_in_ = _num_features(self._fit_X)
