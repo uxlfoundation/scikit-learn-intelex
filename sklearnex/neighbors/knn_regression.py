@@ -121,11 +121,16 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
 
     def _onedal_fit(self, X, y, queue=None):
         xp, _ = get_namespace(X, y)
-        
+
         X, y = validate_data(
-            self, X, y, dtype=[xp.float64, xp.float32], accept_sparse="csr"
+            self,
+            X,
+            y,
+            dtype=[xp.float64, xp.float32],
+            accept_sparse="csr",
+            y_numeric=True,
         )
-        
+
         onedal_params = {
             "n_neighbors": self.n_neighbors,
             "weights": self.weights,
@@ -144,7 +149,9 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
 
     def _onedal_predict(self, X, queue=None):
         xp, _ = get_namespace(X)
-        X = validate_data(self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False)
+        X = validate_data(
+            self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
+        )
         return self._onedal_estimator.predict(X, queue=queue)
 
     def _onedal_kneighbors(
@@ -152,14 +159,24 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
     ):
         if X is not None:
             xp, _ = get_namespace(X)
-            X = validate_data(self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False)
+            X = validate_data(
+                self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
+            )
         return self._onedal_estimator.kneighbors(
             X, n_neighbors, return_distance, queue=queue
         )
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
         xp, _ = get_namespace(X, y)
-        X = validate_data(self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False)
+        X, y = validate_data(
+            self,
+            X,
+            y,
+            dtype=[xp.float64, xp.float32],
+            accept_sparse="csr",
+            reset=False,
+            y_numeric=True,
+        )
         return r2_score(
             y, self._onedal_estimator.predict(X, queue=queue), sample_weight=sample_weight
         )

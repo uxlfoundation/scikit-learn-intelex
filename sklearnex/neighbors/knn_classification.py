@@ -136,11 +136,11 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
 
     def _onedal_fit(self, X, y, queue=None):
         xp, _ = get_namespace(X, y)
-        
+
         X, y = validate_data(
             self, X, y, dtype=[xp.float64, xp.float32], accept_sparse="csr"
         )
-        
+
         onedal_params = {
             "n_neighbors": self.n_neighbors,
             "weights": self.weights,
@@ -159,12 +159,16 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
 
     def _onedal_predict(self, X, queue=None):
         xp, _ = get_namespace(X)
-        X = validate_data(self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False)
+        X = validate_data(
+            self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
+        )
         return self._onedal_estimator.predict(X, queue=queue)
 
     def _onedal_predict_proba(self, X, queue=None):
         xp, _ = get_namespace(X)
-        X = validate_data(self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False)
+        X = validate_data(
+            self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
+        )
         return self._onedal_estimator.predict_proba(X, queue=queue)
 
     def _onedal_kneighbors(
@@ -172,14 +176,18 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     ):
         if X is not None:
             xp, _ = get_namespace(X)
-            X = validate_data(self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False)
+            X = validate_data(
+                self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
+            )
         return self._onedal_estimator.kneighbors(
             X, n_neighbors, return_distance, queue=queue
         )
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
         xp, _ = get_namespace(X, y)
-        X = validate_data(self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False)
+        X, y = validate_data(
+            self, X, y, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
+        )
         return accuracy_score(
             y, self._onedal_estimator.predict(X, queue=queue), sample_weight=sample_weight
         )
