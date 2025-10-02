@@ -244,7 +244,7 @@ class BaseSVC(BaseSVM):
             self.classes_ = cls
         return y
 
-    def _onedal_fit(self, X, y, sample_weight=None):
+    def _onedal_fit(self, X, y, sample_weight=None, queue=None):
         if not sklearn_check_version("1.2"):
             if self.decision_function_shape not in ("ovr", "ovo", None):
                 raise ValueError(
