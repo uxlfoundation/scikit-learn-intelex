@@ -40,10 +40,10 @@ Classification
      - Parameters
      - Data formats
    * - :obj:`sklearn.svm.SVC`
-     - All parameters are supported
+     - ``kernel`` must be one of [``"linear"``, ``"rbf"``, ``"poly"``, ``"sigmoid"``]
      - No limitations
    * - :obj:`sklearn.svm.NuSVC`
-     - All parameters are supported
+     - ``kernel`` must be one of [``"linear"``, ``"rbf"``, ``"poly"``, ``"sigmoid"``]
      - No limitations
    * - :obj:`sklearn.ensemble.RandomForestClassifier`
      - All parameters are supported except:
@@ -89,10 +89,10 @@ Regression
      - Parameters
      - Data formats
    * - :obj:`sklearn.svm.SVR`
-     - All parameters are supported
+     - ``kernel`` must be one of [``"linear"``, ``"rbf"``, ``"poly"``, ``"sigmoid"``]
      - No limitations
    * - :obj:`sklearn.svm.NuSVR`
-     - All parameters are supported
+     - ``kernel`` must be one of [``"linear"``, ``"rbf"``, ``"poly"``, ``"sigmoid"``]
      - No limitations
    * - :obj:`sklearn.ensemble.RandomForestRegressor`
      - All parameters are supported except:
@@ -281,7 +281,7 @@ Classification
    * - :obj:`sklearn.svm.SVC`
      - All parameters are supported except:
 
-       - ``kernel`` = `'sigmoid_poly'`
+       - ``kernel`` not in [``"linear"``, ``"rbf"``]
        - ``class_weight`` != `None`
      - Only binary dense data is supported
    * - :obj:`sklearn.ensemble.RandomForestClassifier`
