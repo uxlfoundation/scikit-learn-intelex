@@ -264,6 +264,7 @@ Other Tasks
 
 on GPU
 ------
+.. _sklearn_algorithms_gpu:
 
 .. seealso:: :ref:`oneapi_gpu`
 
