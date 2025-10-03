@@ -31,14 +31,13 @@ from onedal.utils.validation import _check_array, _num_features, _num_samples
 from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
 from ..utils._array_api import get_namespace
-from ..utils.validation import check_feature_names
 
 
 class KNeighborsDispatchingBase(oneDALEstimator):
     def _fit_validation(self, X, y=None):
         if sklearn_check_version("1.2"):
             self._validate_params()
-        check_feature_names(self, X, reset=True)
+
         if self.metric_params is not None and "p" in self.metric_params:
             if self.p is not None:
                 warnings.warn(
@@ -67,8 +66,9 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                 self.effective_metric_ = "chebyshev"
 
         if not isinstance(X, (KDTree, BallTree, _sklearn_NeighborsBase)):
+            xp, _ = get_namespace(X)
             self._fit_X = _check_array(
-                X, dtype=[np.float64, np.float32], accept_sparse=True
+                X, dtype=[xp.float64, xp.float32], accept_sparse=True
             )
             self.n_samples_fit_ = _num_samples(self._fit_X)
             self.n_features_in_ = _num_features(self._fit_X)
