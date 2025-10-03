@@ -158,6 +158,7 @@ class NeighborsCommonBase(metaclass=ABCMeta):
             "result_option": "indices|distances" if y is None else "responses",
         }
 
+
 class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
     def __init__(
         self,
