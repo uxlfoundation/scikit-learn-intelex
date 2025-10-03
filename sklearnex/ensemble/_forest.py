@@ -87,7 +87,7 @@ class BaseForest(oneDALEstimator, ABC):
                 y,
                 multi_output=True,
                 accept_sparse=False,
-                dtype=[np.float64, np.float32],
+                dtype=[xp.float64, xp.float32],
                 ensure_all_finite=False,
                 ensure_2d=True,
             )
@@ -105,8 +105,6 @@ class BaseForest(oneDALEstimator, ABC):
             )
 
         if y.ndim == 1:
-            # reshape is necessary to preserve the data contiguity against vs
-            # [:, np.newaxis] that does not.
             y = xp.reshape(y, (-1, 1))
 
         self._n_samples, self.n_outputs_ = y.shape
@@ -132,6 +130,29 @@ class BaseForest(oneDALEstimator, ABC):
             self.n_classes_ = len(self.classes_)
         self.n_features_in_ = X.shape[1]
 
+        if not self.bootstrap and self.max_samples is not None:
+            raise ValueError(
+                "`max_sample` cannot be set if `bootstrap=False`. "
+                "Either switch to `bootstrap=True` or set "
+                "`max_sample=None`."
+            )
+        elif self.bootstrap:
+            n_samples_bootstrap = _get_n_samples_bootstrap(
+                n_samples=X.shape[0], max_samples=self.max_samples
+            )
+        else:
+            n_samples_bootstrap = None
+
+        self._n_samples_bootstrap = n_samples_bootstrap
+
+        self._validate_estimator()
+
+        if not self.bootstrap and self.oob_score:
+            raise ValueError("Out of bag estimation only available if bootstrap=True")
+
+        rs = check_random_state(self.random_state)
+        seed = rs.randint(0, xp.iinfo("i").max)
+
         onedal_params = {
             "n_estimators": self.n_estimators,
             "criterion": self.criterion,
@@ -140,14 +161,14 @@ class BaseForest(oneDALEstimator, ABC):
             "min_samples_leaf": self.min_samples_leaf,
             "min_weight_fraction_leaf": self.min_weight_fraction_leaf,
             "max_features": self._to_absolute_max_features(
-                self.max_features, self.n_features_in_
+                self.max_features, self.n_features_in_, xp
             ),
             "max_leaf_nodes": self.max_leaf_nodes,
             "min_impurity_decrease": self.min_impurity_decrease,
             "bootstrap": self.bootstrap,
             "oob_score": self.oob_score,
             "n_jobs": self.n_jobs,
-            "random_state": self.random_state,
+            "random_state": seed,
             "verbose": self.verbose,
             "warm_start": self.warm_start,
             "error_metric_mode": self._err if self.oob_score else "none",
@@ -167,7 +188,7 @@ class BaseForest(oneDALEstimator, ABC):
         self._onedal_estimator = self._onedal_factory(**onedal_params)
         self._onedal_estimator.fit(X, xp.reshape(y, (-1,)), sample_weight, queue=queue)
 
-        self._save_attributes()
+        self._save_attributes(xp)
 
         # Decapsulate classes_ attributes
         if hasattr(self, "classes_") and self.n_outputs_ == 1:
@@ -184,15 +205,31 @@ class BaseForest(oneDALEstimator, ABC):
 
         return self
 
-    def _save_attributes(self):
+    def _save_attributes(self, xp):
         if self.oob_score:
             self.oob_score_ = self._onedal_estimator.oob_score_
             if hasattr(self._onedal_estimator, "oob_prediction_"):
                 self.oob_prediction_ = self._onedal_estimator.oob_prediction_
+                if xp.any(self.oob_prediction_ == 0):
+                    warnings.warn(
+                        "Some inputs do not have OOB scores. This probably means "
+                        "too few trees were used to compute any reliable OOB "
+                        "estimates.",
+                        UserWarning,
+                    )
+
             if hasattr(self._onedal_estimator, "oob_decision_function_"):
                 self.oob_decision_function_ = (
                     self._onedal_estimator.oob_decision_function_
                 )
+                if xp.any(self.oob_decision_function_ == 0):
+                    warnings.warn(
+                        "Some inputs do not have OOB scores. This probably means "
+                        "too few trees were used to compute any reliable OOB "
+                        "estimates.",
+                        UserWarning,
+                    )
+
         if self.bootstrap:
             self._n_samples_bootstrap = max(
                 round(
@@ -206,7 +243,7 @@ class BaseForest(oneDALEstimator, ABC):
         self._validate_estimator()
         return self
 
-    def _to_absolute_max_features(self, max_features, n_features):
+    def _to_absolute_max_features(self, max_features, n_features, xp=None):
         if max_features is None:
             return n_features
         if isinstance(max_features, str):
@@ -222,14 +259,14 @@ class BaseForest(oneDALEstimator, ABC):
                             FutureWarning,
                         )
                     return (
-                        max(1, int(np.sqrt(n_features)))
+                        max(1, int(xp.sqrt(n_features)))
                         if isinstance(self, ForestClassifier)
                         else n_features
                     )
             if max_features == "sqrt":
-                return max(1, int(np.sqrt(n_features)))
+                return max(1, int(xp.sqrt(n_features)))
             if max_features == "log2":
-                return max(1, int(np.log2(n_features)))
+                return max(1, int(xp.log2(n_features)))
             allowed_string_values = (
                 '"sqrt" or "log2"'
                 if sklearn_check_version("1.3")
@@ -239,6 +276,7 @@ class BaseForest(oneDALEstimator, ABC):
                 "Invalid value for max_features. Allowed string "
                 f"values are {allowed_string_values}."
             )
+
         if isinstance(max_features, (numbers.Integral, np.integer)):
             return max_features
         if max_features > 0.0:
@@ -337,6 +375,10 @@ class BaseForest(oneDALEstimator, ABC):
         self._cached_estimators_ = estimators
 
     def _estimators_(self):
+        """This attribute provides lazy creation of scikit-learn conformant
+        Decision Trees used for analysis in such as 'apply'. This will stay
+        array_api non-conformant as this is inherently creating sklearn
+        objects which are not array_api conformant"""
         # _estimators_ should only be called if _onedal_estimator exists
         check_is_fitted(self, "_onedal_estimator")
         if hasattr(self, "n_classes_"):
@@ -481,16 +523,11 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         return self
 
     def _onedal_fit_ready(self, patching_status, X, y, sample_weight):
-        if sp.issparse(y):
-            raise ValueError("sparse multilabel-indicator for y is not supported.")
-
+        xp, _ = get_namespace(X)
         if sklearn_check_version("1.2"):
             self._validate_params()
         else:
             self._check_parameters()
-
-        if not self.bootstrap and self.oob_score:
-            raise ValueError("Out of bag estimation only available" " if bootstrap=True")
 
         patching_status.and_conditions(
             [
@@ -530,7 +567,7 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
 
         if patching_status.get_status() and sklearn_check_version("1.4"):
             try:
-                _assert_all_finite(X)
+                assert_all_finite(X)
                 input_is_finite = True
             except ValueError:
                 input_is_finite = False
@@ -545,6 +582,7 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
             )
 
         if patching_status.get_status():
+
             if sklearn_check_version("1.6"):
                 X, y = check_X_y(
                     X,
@@ -581,25 +619,16 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
             patching_status.and_conditions(
                 [
                     (
-                        self.n_outputs_ == 1,
-                        f"Number of outputs ({self.n_outputs_}) is not 1.",
+                        _num_features(y, fallback_1d=True) == 1,
+                        f"Number of outputs is not 1.",
                     ),
                     (
-                        y.dtype in [np.float32, np.float64, np.int32, np.int64],
+                        y.dtype in [xp.float32, xp.float64, xp.int32, xp.int64],
                         f"Datatype ({y.dtype}) for y is not supported.",
                     ),
                 ]
             )
             # TODO: Fix to support integers as input
-
-            _get_n_samples_bootstrap(n_samples=X.shape[0], max_samples=self.max_samples)
-
-            if not self.bootstrap and self.max_samples is not None:
-                raise ValueError(
-                    "`max_sample` cannot be set if `bootstrap=False`. "
-                    "Either switch to `bootstrap=True` or set "
-                    "`max_sample=None`."
-                )
 
             if (
                 patching_status.get_status()
@@ -612,7 +641,7 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
                     RuntimeWarning,
                 )
 
-        return patching_status, X, y, sample_weight
+        return patching_status
 
     @wrap_output_data
     def predict(self, X):
@@ -629,9 +658,6 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
 
     @wrap_output_data
     def predict_proba(self, X):
-        # TODO:
-        # _check_proba()
-        # self._check_proba()
         check_is_fitted(self)
         return dispatch(
             self,
@@ -684,9 +710,7 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         )
 
         if method_name == "fit":
-            patching_status, X, y, sample_weight = self._onedal_fit_ready(
-                patching_status, *data
-            )
+            patching_status = self._onedal_fit_ready(patching_status, *data)
 
             patching_status.and_conditions(
                 [
@@ -696,7 +720,7 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
                         "ExtraTrees only supported starting from oneDAL version 2023.2",
                     ),
                     (
-                        not sp.issparse(sample_weight),
+                        not sp.issparse(data[2]),
                         "sample_weight is sparse. " "Sparse input is not supported.",
                     ),
                 ]
@@ -752,9 +776,7 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         )
 
         if method_name == "fit":
-            patching_status, X, y, sample_weight = self._onedal_fit_ready(
-                patching_status, *data
-            )
+            patching_status = self._onedal_fit_ready(patching_status, *data)
 
             patching_status.and_conditions(
                 [
@@ -767,7 +789,7 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
                         not self.oob_score,
                         "oob_scores using r2 or accuracy not implemented.",
                     ),
-                    (sample_weight is None, "sample_weight is not supported."),
+                    (data[2] is None, "sample_weight is not supported."),
                 ]
             )
 
@@ -807,15 +829,17 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
 
     def _onedal_predict(self, X, queue=None):
         xp, _ = get_namespace(X)
+
         if not get_config()["use_raw_input"]:
             X = validate_data(
                 self,
                 X,
-                dtype=[np.float64, np.float32],
+                dtype=[xp.float64, xp.float32],
                 ensure_all_finite=False,
                 reset=False,
                 ensure_2d=True,
             )
+
             if hasattr(self, "n_features_in_"):
                 try:
                     num_features = _num_features(X)
@@ -832,6 +856,7 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
             check_n_features(self, X, reset=False)
 
         res = self._onedal_estimator.predict(X, queue=queue)
+
         try:
             return xp.take(
                 xp.asarray(self.classes_, device=res.sycl_queue),
@@ -841,12 +866,14 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
             return np.take(self.classes_, res.ravel().astype(np.int64, casting="unsafe"))
 
     def _onedal_predict_proba(self, X, queue=None):
+        xp, _ = get_namespace(X)
+
         use_raw_input = get_config().get("use_raw_input", False) is True
         if not use_raw_input:
             X = validate_data(
                 self,
                 X,
-                dtype=[np.float64, np.float32],
+                dtype=[xp.float64, xp.float32],
                 ensure_all_finite=False,
                 reset=False,
                 ensure_2d=True,
@@ -909,24 +936,10 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
     apply = support_input_format(_sklearn_ForestRegressor.apply)
 
     def _onedal_fit_ready(self, patching_status, X, y, sample_weight):
-        if sp.issparse(y):
-            raise ValueError("sparse multilabel-indicator for y is not supported.")
-
         if sklearn_check_version("1.2"):
             self._validate_params()
         else:
             self._check_parameters()
-
-        if not self.bootstrap and self.oob_score:
-            raise ValueError("Out of bag estimation only available" " if bootstrap=True")
-
-        if not sklearn_check_version("1.2") and self.criterion == "mse":
-            warnings.warn(
-                "Criterion 'mse' was deprecated in v1.0 and will be "
-                "removed in version 1.2. Use `criterion='squared_error'` "
-                "which is equivalent.",
-                FutureWarning,
-            )
 
         patching_status.and_conditions(
             [
@@ -956,7 +969,7 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
 
         if patching_status.get_status() and sklearn_check_version("1.4"):
             try:
-                _assert_all_finite(X)
+                assert_all_finite(X)
                 input_is_finite = True
             except ValueError:
                 input_is_finite = False
@@ -971,6 +984,7 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
             )
 
         if patching_status.get_status():
+
             if sklearn_check_version("1.6"):
                 X, y = check_X_y(
                     X,
@@ -1009,21 +1023,11 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
             patching_status.and_conditions(
                 [
                     (
-                        self.n_outputs_ == 1,
-                        f"Number of outputs ({self.n_outputs_}) is not 1.",
+                        _num_features(y, fallback_1d=True) == 1,
+                        f"Number of outputs is not 1.",
                     )
                 ]
             )
-
-            # Sklearn function used for doing checks on max_samples attribute
-            _get_n_samples_bootstrap(n_samples=X.shape[0], max_samples=self.max_samples)
-
-            if not self.bootstrap and self.max_samples is not None:
-                raise ValueError(
-                    "`max_sample` cannot be set if `bootstrap=False`. "
-                    "Either switch to `bootstrap=True` or set "
-                    "`max_sample=None`."
-                )
 
             if (
                 patching_status.get_status()
@@ -1036,7 +1040,7 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
                     RuntimeWarning,
                 )
 
-        return patching_status, X, y, sample_weight
+        return patching_status
 
     def _onedal_cpu_supported(self, method_name, *data):
         class_name = self.__class__.__name__
@@ -1045,9 +1049,7 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
         )
 
         if method_name == "fit":
-            patching_status, X, y, sample_weight = self._onedal_fit_ready(
-                patching_status, *data
-            )
+            patching_status = self._onedal_fit_ready(patching_status, *data)
 
             patching_status.and_conditions(
                 [
@@ -1057,7 +1059,7 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
                         "ExtraTrees only supported starting from oneDAL version 2023.2",
                     ),
                     (
-                        not sp.issparse(sample_weight),
+                        not sp.issparse(data[2]),
                         "sample_weight is sparse. " "Sparse input is not supported.",
                     ),
                 ]
@@ -1102,9 +1104,7 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
         )
 
         if method_name == "fit":
-            patching_status, X, y, sample_weight = self._onedal_fit_ready(
-                patching_status, *data
-            )
+            patching_status = self._onedal_fit_ready(patching_status, *data)
 
             patching_status.and_conditions(
                 [
@@ -1114,7 +1114,7 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
                         "ExtraTrees only supported starting from oneDAL version 2023.1",
                     ),
                     (not self.oob_score, "oob_score value is not sklearn conformant."),
-                    (sample_weight is None, "sample_weight is not supported."),
+                    (data[2] is None, "sample_weight is not supported."),
                 ]
             )
 
@@ -1152,13 +1152,14 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
 
     def _onedal_predict(self, X, queue=None):
         check_is_fitted(self, "_onedal_estimator")
+        xp, _ = get_namespace(X)
         use_raw_input = get_config().get("use_raw_input", False) is True
 
         if not use_raw_input:
             X = validate_data(
                 self,
                 X,
-                dtype=[np.float64, np.float32],
+                dtype=[xp.float64, xp.float32],
                 ensure_all_finite=False,
                 reset=False,
                 ensure_2d=True,
