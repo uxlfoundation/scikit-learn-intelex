@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
+import numpy as np
 from sklearn.metrics import r2_score
 from sklearn.neighbors._regression import (
     KNeighborsRegressor as _sklearn_KNeighborsRegressor,
@@ -78,6 +79,13 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
     def predict(self, X):
         check_is_fitted(self)
         check_feature_names(self, X, reset=False)
+
+        # Perform preprocessing at sklearnex level
+        from onedal.utils.validation import _check_array
+
+        X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
+        self._validate_feature_count(X, "KNNRegressor")
+
         return dispatch(
             self,
             "predict",
@@ -92,6 +100,13 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
     def score(self, X, y, sample_weight=None):
         check_is_fitted(self)
         check_feature_names(self, X, reset=False)
+
+        # Perform preprocessing at sklearnex level
+        from onedal.utils.validation import _check_array
+
+        X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
+        self._validate_feature_count(X, "score")
+
         return dispatch(
             self,
             "score",
@@ -109,6 +124,16 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         check_is_fitted(self)
         if X is not None:
             check_feature_names(self, X, reset=False)
+            # Perform preprocessing at sklearnex level
+            from onedal.utils.validation import _check_array
+
+            X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
+            self._validate_feature_count(X, "kneighbors")
+
+        # Validate n_neighbors
+        if n_neighbors is not None:
+            self._validate_n_neighbors(n_neighbors)
+
         return dispatch(
             self,
             "kneighbors",
@@ -122,6 +147,17 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         )
 
     def _onedal_fit(self, X, y, queue=None):
+        # Perform preprocessing at sklearnex level
+        X, y = self._validate_data(
+            X, y, dtype=[np.float64, np.float32], accept_sparse="csr"
+        )
+
+        # Validate n_neighbors
+        self._validate_n_neighbors(self.n_neighbors)
+
+        # Parse auto method
+        self._fit_method = self._parse_auto_method(self.algorithm, X.shape[0], X.shape[1])
+
         onedal_params = {
             "n_neighbors": self.n_neighbors,
             "weights": self.weights,
@@ -134,6 +170,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         self._onedal_estimator.requires_y = get_requires_y_tag(self)
         self._onedal_estimator.effective_metric_ = self.effective_metric_
         self._onedal_estimator.effective_metric_params_ = self.effective_metric_params_
+        self._onedal_estimator._fit_method = self._fit_method
         self._onedal_estimator.fit(X, y, queue=queue)
 
         self._save_attributes()
