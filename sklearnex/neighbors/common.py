@@ -34,6 +34,74 @@ from ..utils.validation import check_feature_names
 
 
 class KNeighborsDispatchingBase(oneDALEstimator):
+    
+    def _parse_auto_method(self, method, n_samples, n_features):
+        """Parse auto method selection for neighbors algorithm."""
+        result_method = method
+
+        if method in ["auto", "ball_tree"]:
+            condition = (
+                self.n_neighbors is not None and self.n_neighbors >= n_samples // 2
+            )
+            if self.metric == "precomputed" or n_features > 15 or condition:
+                result_method = "brute"
+            else:
+                if self.metric == "euclidean":
+                    result_method = "kd_tree"
+                else:
+                    result_method = "brute"
+
+        return result_method
+
+    def _get_weights(self, dist, weights):
+        """Get weights for neighbors based on distance and weights parameter."""
+        if weights in (None, "uniform"):
+            return None
+        if weights == "distance":
+            # if user attempts to classify a point that was zero distance from one
+            # or more training points, those training points are weighted as 1.0
+            # and the other points as 0.0
+            if dist.dtype is np.dtype(object):
+                for point_dist_i, point_dist in enumerate(dist):
+                    # check if point_dist is iterable
+                    # (ex: RadiusNeighborClassifier.predict may set an element of
+                    # dist to 1e-6 to represent an 'outlier')
+                    if hasattr(point_dist, "__contains__") and 0.0 in point_dist:
+                        dist[point_dist_i] = point_dist == 0.0
+                    else:
+                        dist[point_dist_i] = 1.0 / point_dist
+            else:
+                with np.errstate(divide="ignore"):
+                    dist = 1.0 / dist
+                inf_mask = np.isinf(dist)
+                inf_row = np.any(inf_mask, axis=1)
+                dist[inf_row] = inf_mask[inf_row]
+            return dist
+        elif callable(weights):
+            return weights(dist)
+        else:
+            raise ValueError(
+                "weights not recognized: should be 'uniform', "
+                "'distance', or a callable function"
+            )
+
+    def _validate_targets(self, y, dtype):
+        """Validate and convert target values."""
+        from onedal.utils.validation import _column_or_1d
+        arr = _column_or_1d(y, warn=True)
+
+        try:
+            return arr.astype(dtype, copy=False)
+        except ValueError:
+            return arr
+
+    def _validate_n_classes(self):
+        """Validate that we have at least 2 classes for classification."""
+        length = 0 if self.classes_ is None else len(self.classes_)
+        if length < 2:
+            raise ValueError(
+                f"The number of classes has to be greater than one; got {length}"
+            )
     def _fit_validation(self, X, y=None):
         if sklearn_check_version("1.2"):
             self._validate_params()

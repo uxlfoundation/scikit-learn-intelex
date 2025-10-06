@@ -14,6 +14,7 @@
 # limitations under the License.
 # ===============================================================================
 
+import numpy as np
 from sklearn.metrics import accuracy_score
 from sklearn.neighbors._classification import (
     KNeighborsClassifier as _sklearn_KNeighborsClassifier,
@@ -24,6 +25,8 @@ from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.utils.validation import get_requires_y_tag
 from onedal.neighbors import KNeighborsClassifier as onedal_KNeighborsClassifier
+from onedal.utils.validation import _check_X_y, _check_classification_targets, _check_n_features
+from onedal.common._estimator_checks import _is_classifier
 
 from .._device_offload import dispatch, wrap_output_data
 from ..utils.validation import check_feature_names
@@ -144,16 +147,20 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         onedal_params = {
             "n_neighbors": self.n_neighbors,
             "weights": self.weights,
-            "algorithm": self.algorithm,
+            "algorithm": self._fit_method,  # Use parsed method
             "metric": self.effective_metric_,
-            "p": self.effective_metric_params_["p"],
+            "p": self.effective_metric_params_["p"] if self.effective_metric_params_ else 2,
         }
 
         self._onedal_estimator = onedal_KNeighborsClassifier(**onedal_params)
-        self._onedal_estimator.requires_y = get_requires_y_tag(self)
         self._onedal_estimator.effective_metric_ = self.effective_metric_
         self._onedal_estimator.effective_metric_params_ = self.effective_metric_params_
-        self._onedal_estimator.fit(X, y, queue=queue)
+        self._onedal_estimator._fit_method = self._fit_method
+        self._onedal_estimator.classes_ = self.classes_
+        
+        # Prepare y for onedal
+        fit_y = self._validate_targets(processed_y, X.dtype).reshape((-1, 1))
+        self._onedal_estimator.fit(X, fit_y, queue=queue)
 
         self._save_attributes()
 

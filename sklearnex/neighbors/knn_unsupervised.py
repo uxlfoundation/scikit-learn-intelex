@@ -14,6 +14,7 @@
 # limitations under the License.
 # ===============================================================================
 
+import numpy as np
 from sklearn.neighbors._unsupervised import NearestNeighbors as _sklearn_NearestNeighbors
 from sklearn.utils.validation import _deprecate_positional_args, check_is_fitted
 
@@ -21,6 +22,7 @@ from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.utils.validation import get_requires_y_tag
 from onedal.neighbors import NearestNeighbors as onedal_NearestNeighbors
+from onedal.utils.validation import _check_array, _check_n_features
 
 from .._device_offload import dispatch, wrap_output_data
 from ..utils.validation import check_feature_names
@@ -131,15 +133,18 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
     def _onedal_fit(self, X, y=None, queue=None):
         onedal_params = {
             "n_neighbors": self.n_neighbors,
-            "algorithm": self.algorithm,
+            "algorithm": self._fit_method,  # Use parsed method
             "metric": self.effective_metric_,
-            "p": self.effective_metric_params_["p"],
+            "p": self.effective_metric_params_["p"] if self.effective_metric_params_ else 2,
         }
 
         self._onedal_estimator = onedal_NearestNeighbors(**onedal_params)
-        self._onedal_estimator.requires_y = get_requires_y_tag(self)
         self._onedal_estimator.effective_metric_ = self.effective_metric_
         self._onedal_estimator.effective_metric_params_ = self.effective_metric_params_
+        self._onedal_estimator._fit_method = self._fit_method
+        self._onedal_estimator.fit(X, y, queue=queue)
+
+        self._save_attributes()
         self._onedal_estimator.fit(X, y, queue=queue)
 
         self._save_attributes()
