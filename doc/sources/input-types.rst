@@ -11,7 +11,7 @@
 .. WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 .. See the License for the specific language governing permissions and
 .. limitations under the License.
-
+.. include:: substitutions.rst
 .. _input_types:
 
 =====================
@@ -21,7 +21,9 @@ Supported input types
 Just like Scikit-Learn estimators, estimators from Extension are able to accept
 and work with different classes of input data, including:
 
-- `Numpy <https://numpy.org/>`__ arrays.
+- :external+numpy:doc:`Numpy arrays <user/whatisnumpy>`.
+
+  - Note: :external+numpy:doc:`masked arrays <reference/maskedarray>` are also supported, but just like in stock |sklearn|, the underlying array values are used without the mask.
 - Other array classes implementing the `Array API <https://data-apis.org/array-api/latest/>`__ protocol
   (see :ref:`array_api` for details).
 - `SciPy sparse arrays and sparse matrices <https://docs.scipy.org/doc/scipy/tutorial/sparse.html>`__ (depending on the estimator).
