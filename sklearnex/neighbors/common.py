@@ -15,6 +15,7 @@
 # ==============================================================================
 
 import warnings
+from numbers import Integral
 
 import numpy as np
 from scipy import sparse as sp
@@ -26,7 +27,14 @@ from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal._device_offload import _transfer_to_host
-from onedal.utils.validation import _check_array, _num_features, _num_samples
+from onedal.utils.validation import (
+    _check_array,
+    _check_classification_targets,
+    _check_X_y,
+    _column_or_1d,
+    _num_features,
+    _num_samples,
+)
 
 from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
@@ -35,6 +43,129 @@ from ..utils.validation import check_feature_names
 
 
 class KNeighborsDispatchingBase(oneDALEstimator):
+    def _parse_auto_method(self, method, n_samples, n_features):
+        result_method = method
+
+        if method in ["auto", "ball_tree"]:
+            condition = (
+                self.n_neighbors is not None and self.n_neighbors >= n_samples // 2
+            )
+            if self.metric == "precomputed" or n_features > 15 or condition:
+                result_method = "brute"
+            else:
+                if self.metric == "euclidean":
+                    result_method = "kd_tree"
+                else:
+                    result_method = "brute"
+
+        return result_method
+
+    def _validate_data(
+        self, X, y=None, reset=True, validate_separately=None, **check_params
+    ):
+        if y is None:
+            if getattr(self, "requires_y", False):
+                raise ValueError(
+                    f"This {self.__class__.__name__} estimator "
+                    f"requires y to be passed, but the target y is None."
+                )
+            X = _check_array(X, **check_params)
+            out = X, y
+        else:
+            if validate_separately:
+                # We need this because some estimators validate X and y
+                # separately, and in general, separately calling _check_array()
+                # on X and y isn't equivalent to just calling _check_X_y()
+                # :(
+                check_X_params, check_y_params = validate_separately
+                X = _check_array(X, **check_X_params)
+                y = _check_array(y, **check_y_params)
+            else:
+                X, y = _check_X_y(X, y, **check_params)
+            out = X, y
+
+        if check_params.get("ensure_2d", True):
+            from onedal.utils.validation import _check_n_features
+
+            _check_n_features(self, X, reset=reset)
+
+        return out
+
+    def _get_weights(self, dist, weights):
+        if weights in (None, "uniform"):
+            return None
+        if weights == "distance":
+            # if user attempts to classify a point that was zero distance from one
+            # or more training points, those training points are weighted as 1.0
+            # and the other points as 0.0
+            if dist.dtype is np.dtype(object):
+                for point_dist_i, point_dist in enumerate(dist):
+                    # check if point_dist is iterable
+                    # (ex: RadiusNeighborClassifier.predict may set an element of
+                    # dist to 1e-6 to represent an 'outlier')
+                    if hasattr(point_dist, "__contains__") and 0.0 in point_dist:
+                        dist[point_dist_i] = point_dist == 0.0
+                    else:
+                        dist[point_dist_i] = 1.0 / point_dist
+            else:
+                with np.errstate(divide="ignore"):
+                    dist = 1.0 / dist
+                inf_mask = np.isinf(dist)
+                inf_row = np.any(inf_mask, axis=1)
+                dist[inf_row] = inf_mask[inf_row]
+            return dist
+        elif callable(weights):
+            return weights(dist)
+        else:
+            raise ValueError(
+                "weights not recognized: should be 'uniform', "
+                "'distance', or a callable function"
+            )
+
+    def _validate_targets(self, y, dtype):
+        arr = _column_or_1d(y, warn=True)
+
+        try:
+            return arr.astype(dtype, copy=False)
+        except ValueError:
+            return arr
+
+    def _validate_n_neighbors(self, n_neighbors):
+        if n_neighbors is not None:
+            if n_neighbors <= 0:
+                raise ValueError("Expected n_neighbors > 0. Got %d" % n_neighbors)
+            if not isinstance(n_neighbors, Integral):
+                raise TypeError(
+                    "n_neighbors does not take %s value, "
+                    "enter integer value" % type(n_neighbors)
+                )
+
+    def _validate_feature_count(self, X, method_name=""):
+        n_features = getattr(self, "n_features_in_", None)
+        shape = getattr(X, "shape", None)
+        if n_features and shape and len(shape) > 1 and shape[1] != n_features:
+            raise ValueError(
+                (
+                    f"X has {X.shape[1]} features, "
+                    f"but {method_name} is expecting "
+                    f"{n_features} features as input"
+                )
+            )
+
+    def _validate_kneighbors_bounds(self, n_neighbors, query_is_train, X):
+        n_samples_fit = self.n_samples_fit_
+        if n_neighbors > n_samples_fit:
+            if query_is_train:
+                n_neighbors -= 1  # ok to modify inplace because an error is raised
+                inequality_str = "n_neighbors < n_samples_fit"
+            else:
+                inequality_str = "n_neighbors <= n_samples_fit"
+            raise ValueError(
+                f"Expected {inequality_str}, but "
+                f"n_neighbors = {n_neighbors}, n_samples_fit = {n_samples_fit}, "
+                f"n_samples = {X.shape[0]}"  # include n_samples for common tests
+            )
+
     def _fit_validation(self, X, y=None):
         if sklearn_check_version("1.2"):
             self._validate_params()

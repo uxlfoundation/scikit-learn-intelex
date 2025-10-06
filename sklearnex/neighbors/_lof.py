@@ -152,6 +152,18 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
         check_is_fitted(self)
         if X is not None:
             check_feature_names(self, X, reset=False)
+            # Perform preprocessing at sklearnex level
+            import numpy as np
+
+            from onedal.utils.validation import _check_array
+
+            X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
+            self._validate_feature_count(X, "kneighbors")
+
+        # Validate n_neighbors
+        if n_neighbors is not None:
+            self._validate_n_neighbors(n_neighbors)
+
         return dispatch(
             self,
             "kneighbors",
