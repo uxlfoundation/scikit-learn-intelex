@@ -269,7 +269,6 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         return result
 
     def _kneighbors(self, X=None, n_neighbors=None, return_distance=True):
-        use_raw_input = _get_config().get("use_raw_input", False) is True
         n_features = getattr(self, "n_features_in_", None)
         shape = getattr(X, "shape", None)
         if n_features and shape and len(shape) > 1 and shape[1] != n_features:
@@ -296,8 +295,12 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
 
         if X is not None:
             query_is_train = False
+<<<<<<< HEAD
             if not use_raw_input:
                 X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
+=======
+            X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
+>>>>>>> e003b37f (fix: try it again)
         else:
             query_is_train = True
             X = self._fit_X
@@ -646,6 +649,7 @@ class NearestNeighbors(NeighborsBase):
         self,
         n_neighbors=5,
         *,
+        weights="uniform",
         algorithm="auto",
         p=2,
         metric="minkowski",
@@ -660,7 +664,7 @@ class NearestNeighbors(NeighborsBase):
             metric_params=metric_params,
             **kwargs,
         )
-        self.requires_y = False
+        self.weights = weights
 
     @bind_default_backend("neighbors.search")
     def train(self, *args, **kwargs): ...
@@ -682,7 +686,7 @@ class NearestNeighbors(NeighborsBase):
         return self.infer(params, model, X)
 
     @supports_queue
-    def fit(self, X, y=None, queue=None):
+    def fit(self, X, y, queue=None):
         return self._fit(X, y)
 
     @supports_queue
