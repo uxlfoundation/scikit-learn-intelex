@@ -174,6 +174,26 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         # print("=" * 50, file=sys.stderr, flush=True)
         # print("DEBUG: _onedal_fit called!", file=sys.stderr, flush=True)
         # print("=" * 50, file=sys.stderr, flush=True)
+
+        # Perform preprocessing at sklearnex level
+        X, y = self._validate_data(
+            X, y, dtype=[np.float64, np.float32], accept_sparse="csr"
+        )
+
+        # Validate n_neighbors
+        self._validate_n_neighbors(self.n_neighbors)
+
+        # Parse auto method
+        self._fit_method = self._parse_auto_method(self.algorithm, X.shape[0], X.shape[1])
+
+        # Validate classification targets
+        from onedal.utils.validation import _check_classification_targets
+
+        _check_classification_targets(y)
+
+        # Handle shape and class processing at sklearnex level
+        y = self._process_classification_targets(y)
+
         onedal_params = {
             "n_neighbors": self.n_neighbors,
             "weights": self.weights,

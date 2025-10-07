@@ -170,15 +170,6 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
 
         if X is not None:
             query_is_train = False
-<<<<<<< HEAD
-<<<<<<< HEAD
-            if not use_raw_input:
-                X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
-=======
-            X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
->>>>>>> e003b37f (fix: try it again)
-=======
->>>>>>> 8cd6f2b2 (fix: first round of refactor move preprocssing function to sklearnex)
         else:
             query_is_train = True
             X = self._fit_X
