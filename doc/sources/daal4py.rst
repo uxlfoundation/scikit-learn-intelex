@@ -406,7 +406,7 @@ Parameters and semantics are described in |onedal-dg-elasticnet|_.
 
 - `Single-Process ElasticNet Regression <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/elasticnet.py>`__
 
-.. autoclass:: daal4py.lelastic_net_training
+.. autoclass:: daal4py.elastic_net_training
    :members: compute
 .. autoclass:: daal4py.elastic_net_training_result
    :members:
