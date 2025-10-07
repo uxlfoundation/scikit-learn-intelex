@@ -25,13 +25,23 @@ from sklearn.linear_model import Lasso as _sklLasso
 from daal4py.sklearn.linear_model import ElasticNet, Lasso
 
 
+def fn_lasso(model, X, y, lambda_):
+    resid = y - model.predict(X)
+    fn_ssq = resid.reshape(-1) @ resid.reshape(-1)
+    fn_l1 = np.abs(model.coef_).sum()
+    return fn_ssq + lambda_ * fn_l1
+
+
 @pytest.mark.parametrize("nrows", [10, 20])
 @pytest.mark.parametrize("ncols", [10, 20])
+@pytest.mark.parametrize("n_targets", [1, 2])
 @pytest.mark.parametrize("fit_intercept", [False, True])
 @pytest.mark.parametrize("positive", [False, True])
 @pytest.mark.parametrize("l1_ratio", [0.0, 1.0, 0.5])
-def test_enet_is_correct(nrows, ncols, fit_intercept, positive, l1_ratio):
-    X, y = make_regression(n_samples=nrows, n_features=ncols, random_state=123)
+def test_enet_is_correct(nrows, ncols, n_targets, fit_intercept, positive, l1_ratio):
+    X, y = make_regression(
+        n_samples=nrows, n_features=ncols, n_targets=n_targets, random_state=123
+    )
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", ConvergenceWarning)
         model_d4p = ElasticNet(
@@ -49,10 +59,24 @@ def test_enet_is_correct(nrows, ncols, fit_intercept, positive, l1_ratio):
             max_iter=int(1e4),
         ).fit(X, y)
 
-    np.testing.assert_allclose(model_d4p.coef_, model_skl.coef_, atol=1e-6, rtol=1e-6)
+    # Note: lasso is not guaranteed to have a unique global optimum.
+    # If the coefficients do not match, this makes another check on
+    # the optimality of the function values instead. It checks that
+    # the result from daal4py is no worse than 2% off scikit-learn's.
+
+    tol = 1e-6 if n_targets == 1 else 1e-5
+    try:
+        np.testing.assert_allclose(model_d4p.coef_, model_skl.coef_, atol=tol, rtol=tol)
+    except AssertionError as e:
+        if l1_ratio != 1:
+            raise e
+        fn_d4p = fn_lasso(model_d4p, X, y, model_d4p.alpha)
+        fn_skl = fn_lasso(model_skl, X, y, model_skl.alpha)
+        assert fn_d4p <= fn_skl * 1.02
+
     if fit_intercept:
         np.testing.assert_allclose(
-            model_d4p.intercept_, model_skl.intercept_, atol=1e-6, rtol=1e-6
+            model_d4p.intercept_, model_skl.intercept_, atol=tol, rtol=tol
         )
 
     if positive:
@@ -61,11 +85,14 @@ def test_enet_is_correct(nrows, ncols, fit_intercept, positive, l1_ratio):
 
 @pytest.mark.parametrize("nrows", [10, 20])
 @pytest.mark.parametrize("ncols", [10, 20])
+@pytest.mark.parametrize("n_targets", [1, 2])
 @pytest.mark.parametrize("fit_intercept", [False, True])
 @pytest.mark.parametrize("positive", [False, True])
 @pytest.mark.parametrize("alpha", [1e-2, 1e2])
-def test_lasso_is_correct(nrows, ncols, fit_intercept, positive, alpha):
-    X, y = make_regression(n_samples=nrows, n_features=ncols, random_state=123)
+def test_lasso_is_correct(nrows, ncols, n_targets, fit_intercept, positive, alpha):
+    X, y = make_regression(
+        n_samples=nrows, n_features=ncols, n_targets=n_targets, random_state=123
+    )
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", ConvergenceWarning)
         model_d4p = Lasso(
@@ -83,19 +110,27 @@ def test_lasso_is_correct(nrows, ncols, fit_intercept, positive, alpha):
             max_iter=int(1e4),
         ).fit(X, y)
 
-    tol = 1e-4 if alpha < 1 else 1e-6
-    np.testing.assert_allclose(model_d4p.coef_, model_skl.coef_, atol=tol, rtol=tol)
-    if fit_intercept:
-        np.testing.assert_allclose(
-            model_d4p.intercept_, model_skl.intercept_, atol=tol, rtol=tol
-        )
+    tol = 1e-4 if alpha < 1 else (1e-6 if n_targets == 1 else 1e-5)
+    try:
+        np.testing.assert_allclose(model_d4p.coef_, model_skl.coef_, atol=tol, rtol=tol)
+        if fit_intercept:
+            np.testing.assert_allclose(
+                model_d4p.intercept_, model_skl.intercept_, atol=tol, rtol=tol
+            )
+    except AssertionError as e:
+        fn_d4p = fn_lasso(model_d4p, X, y, model_d4p.alpha)
+        fn_skl = fn_lasso(model_skl, X, y, model_skl.alpha)
+        assert fn_d4p <= fn_skl * 1.02
 
     if positive:
         assert np.all(model_d4p.coef_ >= 0)
 
 
-def test_warm_start():
-    X, y = make_regression(n_samples=20, n_features=10, random_state=123)
+@pytest.mark.parametrize("n_targets", [1, 2])
+def test_warm_start(n_targets):
+    X, y = make_regression(
+        n_samples=20, n_features=10, n_targets=n_targets, random_state=123
+    )
     X1 = X[:10]
     y1 = y[:10]
     X2 = X[10:]

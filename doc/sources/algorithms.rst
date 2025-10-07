@@ -131,12 +131,12 @@ Regression
      - All parameters are supported except:
 
        - ``sample_weight`` != `None`
-     - Multi-output and sparse data are not supported.
+     - Sparse data is supported.
    * - :obj:`sklearn.linear_model.Lasso`
      - All parameters are supported except:
 
        - ``sample_weight`` != `None`
-     - Multi-output and sparse data are not supported.
+     - Sparse data is not supported.
 
 Clustering
 **********
