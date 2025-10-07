@@ -695,9 +695,6 @@ class ElasticNet(ElasticNet_original):
         _X = check_array(
             X, accept_sparse=["csr", "csc", "coo"], dtype=[np.float64, np.float32]
         )
-        good_shape_for_daal = (
-            True if _X.ndim <= 1 else True if _X.shape[0] >= _X.shape[1] else False
-        )
 
         _patching_status = PatchingConditionsChain(
             "sklearn.linear_model.ElasticNet.predict"
@@ -706,11 +703,6 @@ class ElasticNet(ElasticNet_original):
             [
                 (hasattr(self, "daal_model_"), "oneDAL model was not trained."),
                 (not sp.issparse(_X), "X is sparse. Sparse input is not supported."),
-                (
-                    good_shape_for_daal,
-                    "The shape of X does not satisfy oneDAL requirements: "
-                    "number of features > number of samples.",
-                ),
             ]
         )
         _patching_status.write_log()
@@ -808,20 +800,12 @@ class Lasso(Lasso_original):
         _X = check_array(
             X, accept_sparse=["csr", "csc", "coo"], dtype=[np.float64, np.float32]
         )
-        good_shape_for_daal = (
-            True if _X.ndim <= 1 else True if _X.shape[0] >= _X.shape[1] else False
-        )
 
         _patching_status = PatchingConditionsChain("sklearn.linear_model.Lasso.predict")
         _dal_ready = _patching_status.and_conditions(
             [
                 (hasattr(self, "daal_model_"), "oneDAL model was not trained."),
                 (not sp.issparse(_X), "X is sparse. Sparse input is not supported."),
-                (
-                    good_shape_for_daal,
-                    "The shape of X does not satisfy oneDAL requirements: "
-                    "number of features > number of samples.",
-                ),
             ]
         )
         _patching_status.write_log()
