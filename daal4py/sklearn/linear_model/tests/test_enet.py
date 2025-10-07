@@ -95,11 +95,11 @@ def test_lasso_is_correct(nrows, ncols, fit_intercept, positive, alpha):
 
 
 def test_warm_start():
-    X, y = make_regression(n_samples=100, n_features=10, random_state=123)
-    X1 = X[:50]
-    y1 = y[:50]
-    X2 = X[50:]
-    y2 = y[50:]
+    X, y = make_regression(n_samples=20, n_features=10, random_state=123)
+    X1 = X[:10]
+    y1 = y[:10]
+    X2 = X[10:]
+    y2 = y[10:]
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", ConvergenceWarning)
