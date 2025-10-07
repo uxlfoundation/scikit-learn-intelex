@@ -398,6 +398,25 @@ Parameters and semantics are described in |onedal-dg-least-absolute-shrinkage-an
 .. autoclass:: daal4py.lasso_regression_model
    :members:
 
+ElasticNet Regression
+*********************
+Parameters and semantics are described in |onedal-dg-elasticnet|_.
+
+.. rubric:: Examples:
+
+- `Single-Process ElasticNet Regression <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/elasticnet.py>`__
+
+.. autoclass:: daal4py.lelastic_net_training
+   :members: compute
+.. autoclass:: daal4py.elastic_net_training_result
+   :members:
+.. autoclass:: daal4py.elastic_net_prediction
+   :members: compute
+.. autoclass:: daal4py.elastic_net_prediction_result
+   :members:
+.. autoclass:: daal4py.elastic_net_model
+   :members:
+
 Ridge Regression
 ****************
 Parameters and semantics are described in |onedal-dg-ridge-regression|_.
@@ -1055,6 +1074,9 @@ Parameters and semantics are described in |onedal-dg-sorting|_.
 
 .. |onedal-dg-least-absolute-shrinkage-and-selection-operator| replace:: |onedal| Least Absolute Shrinkage and Selection Operator
 .. _onedal-dg-least-absolute-shrinkage-and-selection-operator: https://uxlfoundation.github.io/oneDAL/daal/algorithms/lasso_elastic_net/lasso.html
+
+.. |onedal-dg-elasticnet| replace:: |onedal| ElasticNet Regression
+.. _onedal-dg-least-absolute-shrinkage-and-selection-operator: https://uxlfoundation.github.io/oneDAL/daal/algorithms/lasso_elastic_net/elastic-net.html
 
 .. |onedal-dg-sorting| replace:: |onedal| Sorting
 .. _onedal-dg-sorting: https://uxlfoundation.github.io/oneDAL/daal/algorithms/sorting/index.html
