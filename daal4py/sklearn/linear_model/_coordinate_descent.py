@@ -177,11 +177,7 @@ def _daal4py_fit_enet(self, X, y_, check_input):
         inputArgument = np.zeros((n_rows, n_cols), dtype=_fptype)
         for i in range(n_rows):
             inputArgument[i][0] = self.intercept_ if (n_rows == 1) else self.intercept_[i]
-            inputArgument[i][1:] = (
-                self.coef_[:].copy(order="C")
-                if (n_rows == 1)
-                else self.coef_[i, :].copy(order="C")
-            )
+            inputArgument[i][1:] = self.coef_[:] if (n_rows == 1) else self.coef_[i, :]
         cd_solver.setup(inputArgument)
     doUse_condition = self.copy_X is False or (
         self.fit_intercept and _normalize and self.copy_X

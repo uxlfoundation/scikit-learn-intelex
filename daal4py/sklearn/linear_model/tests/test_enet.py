@@ -92,3 +92,31 @@ def test_lasso_is_correct(nrows, ncols, fit_intercept, positive, alpha):
 
     if positive:
         assert np.all(model_d4p.coef_ >= 0)
+
+
+def test_warm_start():
+    X, y = make_regression(n_samples=100, n_features=10, random_state=123)
+    X1 = X[:50]
+    y1 = y[:50]
+    X2 = X[50:]
+    y2 = y[50:]
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", ConvergenceWarning)
+        model_d4p = ElasticNet(
+            warm_start=True,
+            tol=1e-7,
+            max_iter=int(1e4),
+        ).fit(X1, y1)
+        coefs_ref = model_d4p.coef_.copy()
+        intercept_ref = model_d4p.intercept_.copy()
+
+        model_d4p.set_params(max_iter=1)
+        model_d4p.fit(X2, y2)
+
+        model_from_scratch = ElasticNet(tol=1e-7, max_iter=int(1e4)).fit(X2, y2)
+
+    diff_ref = np.linalg.norm(model_d4p.coef_ - coefs_ref)
+    diff_from_scratch = np.linalg.norm(model_d4p.coef_ - model_from_scratch.coef_)
+
+    assert diff_ref < diff_from_scratch
