@@ -166,6 +166,41 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                 f"n_samples = {X.shape[0]}"  # include n_samples for common tests
             )
 
+    def _process_classification_targets(self, y):
+        """Process classification targets and set class-related attributes."""
+        import numpy as np
+
+        # Handle shape processing
+        shape = getattr(y, "shape", None)
+        self._shape = shape if shape is not None else y.shape
+
+        if y.ndim == 1 or y.ndim == 2 and y.shape[1] == 1:
+            self.outputs_2d_ = False
+            y = y.reshape((-1, 1))
+        else:
+            self.outputs_2d_ = True
+
+        # Process classes
+        self.classes_ = []
+        self._y = np.empty(y.shape, dtype=int)
+        for k in range(self._y.shape[1]):
+            classes, self._y[:, k] = np.unique(y[:, k], return_inverse=True)
+            self.classes_.append(classes)
+
+        if not self.outputs_2d_:
+            self.classes_ = self.classes_[0]
+            self._y = self._y.ravel()
+
+        return y
+
+    def _process_regression_targets(self, y):
+        """Process regression targets and set shape-related attributes."""
+        # Handle shape processing for regression
+        shape = getattr(y, "shape", None)
+        self._shape = shape if shape is not None else y.shape
+        self._y = y
+        return y
+
     def _fit_validation(self, X, y=None):
         if sklearn_check_version("1.2"):
             self._validate_params()

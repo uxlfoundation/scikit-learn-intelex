@@ -187,6 +187,13 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         self._onedal_estimator.effective_metric_ = self.effective_metric_
         self._onedal_estimator.effective_metric_params_ = self.effective_metric_params_
         self._onedal_estimator._fit_method = self._fit_method
+
+        # Set shape and class attributes on the onedal estimator
+        self._onedal_estimator._shape = self._shape
+        self._onedal_estimator.classes_ = self.classes_
+        self._onedal_estimator._y = self._y
+        self._onedal_estimator.outputs_2d_ = self.outputs_2d_
+
         self._onedal_estimator.fit(X, y, queue=queue)
 
         self._save_attributes()

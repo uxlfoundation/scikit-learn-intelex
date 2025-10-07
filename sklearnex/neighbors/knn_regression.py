@@ -158,6 +158,9 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         # Parse auto method
         self._fit_method = self._parse_auto_method(self.algorithm, X.shape[0], X.shape[1])
 
+        # Handle shape processing at sklearnex level
+        y = self._process_regression_targets(y)
+
         onedal_params = {
             "n_neighbors": self.n_neighbors,
             "weights": self.weights,
@@ -171,6 +174,11 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         self._onedal_estimator.effective_metric_ = self.effective_metric_
         self._onedal_estimator.effective_metric_params_ = self.effective_metric_params_
         self._onedal_estimator._fit_method = self._fit_method
+
+        # Set shape attributes on the onedal estimator
+        self._onedal_estimator._shape = self._shape
+        self._onedal_estimator._y = self._y
+
         self._onedal_estimator.fit(X, y, queue=queue)
 
         self._save_attributes()
