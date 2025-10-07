@@ -1076,7 +1076,7 @@ Parameters and semantics are described in |onedal-dg-sorting|_.
 .. _onedal-dg-least-absolute-shrinkage-and-selection-operator: https://uxlfoundation.github.io/oneDAL/daal/algorithms/lasso_elastic_net/lasso.html
 
 .. |onedal-dg-elasticnet| replace:: |onedal| ElasticNet Regression
-.. _onedal-dg-least-absolute-shrinkage-and-selection-operator: https://uxlfoundation.github.io/oneDAL/daal/algorithms/lasso_elastic_net/elastic-net.html
+.. _onedal-dg-elasticnet: https://uxlfoundation.github.io/oneDAL/daal/algorithms/lasso_elastic_net/elastic-net.html
 
 .. |onedal-dg-sorting| replace:: |onedal| Sorting
 .. _onedal-dg-sorting: https://uxlfoundation.github.io/oneDAL/daal/algorithms/sorting/index.html
