@@ -70,33 +70,17 @@ class NeighborsCommonBase(metaclass=ABCMeta):
 
             fptype = np.float64
 
-        # Handle _fit_method: use if set by sklearnex, otherwise determine it ourselves
+        # _fit_method should be set by sklearnex level before calling oneDAL
         if not hasattr(self, "_fit_method") or self._fit_method is None:
-            # Direct oneDAL usage - determine method ourselves
-            method = getattr(self, "algorithm", "auto")
-            n_samples, n_features = X.shape
-            
-            if method in ["auto", "ball_tree"]:
-                condition = (
-                    self.n_neighbors is not None and self.n_neighbors >= n_samples // 2
-                )
-                if getattr(self, "metric", "minkowski") == "precomputed" or n_features > 15 or condition:
-                    fit_method = "brute"
-                else:
-                    if getattr(self, "effective_metric_", getattr(self, "metric", "minkowski")) == "euclidean":
-                        fit_method = "kd_tree"
-                    else:
-                        fit_method = "brute"
-            else:
-                fit_method = method
-        else:
-            # Use the method set by sklearnex level
-            fit_method = self._fit_method
+            raise ValueError(
+                "_fit_method must be set by sklearnex level before calling oneDAL. "
+                "This indicates improper usage - oneDAL neighbors should not be called directly."
+            )
 
         return {
             "fptype": fptype,
             "vote_weights": "uniform" if weights == "uniform" else "distance",
-            "method": fit_method,
+            "method": self._fit_method,
             "radius": self.radius,
             "class_count": class_count,
             "neighbor_count": self.n_neighbors if n_neighbors is None else n_neighbors,
