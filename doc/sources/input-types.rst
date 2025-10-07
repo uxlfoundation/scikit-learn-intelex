@@ -21,7 +21,9 @@ Supported input types
 Just like |sklearn| estimators, estimators from the |sklearnex| are able to accept
 and work with different classes of input data, including:
 
-- `Numpy <https://numpy.org/>`__ arrays.
+- :external+numpy:doc:`Numpy arrays <user/whatisnumpy>`.
+
+  - Note: :external+numpy:doc:`masked arrays <reference/maskedarray>` are also supported, but just like in stock |sklearn|, the underlying array values are used without the mask.
 - Other array classes implementing the `Array API <https://data-apis.org/array-api/latest/>`__ protocol
   (see :ref:`array_api` for details).
 - SciPy :external+scipy:doc:`sparse arrays and sparse matrices <tutorial/sparse>` (depending on the estimator).
