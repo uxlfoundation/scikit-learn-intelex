@@ -149,6 +149,9 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         # Parse auto method
         self._fit_method = self._parse_auto_method(self.algorithm, X.shape[0], X.shape[1])
 
+        # Set basic attributes for unsupervised
+        self.classes_ = None
+
         onedal_params = {
             "n_neighbors": self.n_neighbors,
             "algorithm": self.algorithm,
@@ -161,6 +164,10 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         self._onedal_estimator.effective_metric_ = self.effective_metric_
         self._onedal_estimator.effective_metric_params_ = self.effective_metric_params_
         self._onedal_estimator._fit_method = self._fit_method
+
+        # Set attributes on the onedal estimator
+        self._onedal_estimator.classes_ = self.classes_
+
         self._onedal_estimator.fit(X, y, queue=queue)
 
         self._save_attributes()

@@ -70,6 +70,13 @@ class NeighborsCommonBase(metaclass=ABCMeta):
 
             fptype = np.float64
 
+        # _fit_method should be set by sklearnex level before calling oneDAL
+        if not hasattr(self, "_fit_method") or self._fit_method is None:
+            raise ValueError(
+                "_fit_method must be set by sklearnex level before calling oneDAL. "
+                "This indicates improper usage - oneDAL neighbors should not be called directly."
+            )
+
         return {
             "fptype": fptype,
             "vote_weights": "uniform" if weights == "uniform" else "distance",
