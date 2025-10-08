@@ -186,7 +186,8 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         self.classes_ = self._onedal_estimator.classes_
         self.n_features_in_ = self._onedal_estimator.n_features_in_
         self.n_samples_fit_ = self._onedal_estimator.n_samples_fit_
-        self._fit_X = self._onedal_estimator._fit_X
+        fit_x = self._onedal_estimator._fit_X
+        self._fit_X = fit_x[0] if isinstance(fit_x, tuple) else fit_x
         self._fit_method = self._onedal_estimator._fit_method
         self._tree = self._onedal_estimator._tree
 
