@@ -117,26 +117,26 @@ Regression
      - All parameters are supported except:
 
        - ``sample_weight`` != `None`
-       - ``positive`` = `True`
+       - ``positive`` = `True` (this is supported through the class :obj:`sklearn.linear_model.ElasticNet`)
      - Only dense data is supported.
    * - :obj:`sklearn.linear_model.Ridge`
      - All parameters are supported except:
 
        - ``solver`` != `'auto'`
        - ``sample_weight`` != `None`
-       - ``positive`` = `True`
+       - ``positive`` = `True` (this is supported through the class :obj:`sklearn.linear_model.ElasticNet`)
        - ``alpha`` must be a scalar
      - Only dense data is supported.
    * - :obj:`sklearn.linear_model.ElasticNet`
      - All parameters are supported except:
 
        - ``sample_weight`` != `None`
-     - Multi-output and sparse data are not supported, `#observations` should be >= `#features`.
+     - Sparse data is not supported.
    * - :obj:`sklearn.linear_model.Lasso`
      - All parameters are supported except:
 
        - ``sample_weight`` != `None`
-     - Multi-output and sparse data are not supported, `#observations` should be >= `#features`.
+     - Sparse data is not supported.
 
 Clustering
 **********
