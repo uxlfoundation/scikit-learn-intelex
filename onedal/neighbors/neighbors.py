@@ -503,7 +503,7 @@ class NearestNeighbors(NeighborsBase):
         return self.infer(params, model, X)
 
     @supports_queue
-    def fit(self, X, y, queue=None):
+    def fit(self, X, y=None, queue=None):
         return self._fit(X, y)
 
     @supports_queue
