@@ -121,6 +121,8 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
 
     @wrap_output_data
     def score(self, X, y, sample_weight=None):
+        import sys
+        print("DEBUG: score called11111!", X, y, file=sys.stderr, flush=True)
         check_is_fitted(self)
         check_feature_names(self, X, reset=False)
 
@@ -144,6 +146,8 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
 
     @wrap_output_data
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
+        import sys
+        print("DEBUG: kneighbors called11111!", X, file=sys.stderr, flush=True)
         check_is_fitted(self)
         if X is not None:
             check_feature_names(self, X, reset=False)
@@ -170,10 +174,8 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         )
 
     def _onedal_fit(self, X, y, queue=None):
-        # import sys
-        # print("=" * 50, file=sys.stderr, flush=True)
-        # print("DEBUG: _onedal_fit called!", file=sys.stderr, flush=True)
-        # print("=" * 50, file=sys.stderr, flush=True)
+        import sys
+        print("DEBUG: _onedal_fit called11111!", X, y, file=sys.stderr, flush=True)
 
         # Perform preprocessing at sklearnex level
         X, y = self._validate_data(
@@ -232,11 +234,17 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         )
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
+        import sys
+        print("DEBUG: _onedal_score called11111!", X, y, file=sys.stderr, flush=True)
+
         return accuracy_score(
             y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
         )
 
     def _save_attributes(self):
+        import sys
+        print("DEBUG: _save_attributes called11111!", self._onedal_estimator, file=sys.stderr, flush=True)
+
         self.classes_ = self._onedal_estimator.classes_
         self.n_features_in_ = self._onedal_estimator.n_features_in_
         self.n_samples_fit_ = self._onedal_estimator.n_samples_fit_
