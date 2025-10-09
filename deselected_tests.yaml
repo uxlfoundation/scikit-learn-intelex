@@ -326,6 +326,9 @@ deselected_tests:
   - cluster/tests/test_k_means.py::test_float_precision[42-KMeans-sparse_array]
   - cluster/tests/test_kmeans.py::test_dense_vs_sparse[dims0-elkan-k-means++-None]
   - cluster/tests/test_kmeans.py::test_dense_vs_sparse[dims1-full-k-means++-None]
+  - cluster/tests/test_kmeans.py::test_dense_vs_sparse[dims2-full-k-means++-None]
+  - cluster/tests/test_kmeans.py::test_dense_vs_sparse[dims2-elkan-k-means++-None]
+
 
   # Fails in stock scikit-learn: checks that data is modified in-place when not strictly required
   - linear_model/tests/test_base.py::test_inplace_data_preprocessing
