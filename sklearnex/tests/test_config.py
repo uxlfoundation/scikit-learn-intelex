@@ -24,7 +24,7 @@ import sklearn
 
 import onedal
 import sklearnex
-from onedal.tests.utils._device_selection import is_dpctl_device_available
+from onedal.tests.utils._device_selection import is_sycl_device_available
 
 
 def test_get_config_contains_sklearn_params():
@@ -152,7 +152,7 @@ def test_host_backend_target_offload(target):
 
 
 @pytest.mark.skipif(
-    not is_dpctl_device_available(["gpu"]), reason="Requires a gpu for fallback testing"
+    not is_sycl_device_available(["gpu"]), reason="Requires a gpu for fallback testing"
 )
 def test_fallback_to_host(caplog):
     # force a fallback to cpu with direct use of dispatch and PatchingConditionsChain
