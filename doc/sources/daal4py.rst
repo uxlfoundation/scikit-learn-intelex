@@ -164,7 +164,7 @@ Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/
 
 AdaBoost Classification
 ***********************
-Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/boosting/adaboost`_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/boosting/adaboost`.
 
 .. rubric:: Examples:
 
