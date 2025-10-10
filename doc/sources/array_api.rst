@@ -31,7 +31,7 @@ on GPU without moving the data from host to device.
 .. important::
     Array API is disabled by default in |sklearn|. In order to get array API support in the |sklearnex|, it must
     be :external+sklearn:doc:`enabled in scikit-learn <modules/array_api>`, which requires either changing
-    global settings or using a ``config_context``.
+    global settings or using a ``config_context``, plus installing additional dependencies such as ``array-api-compat``.
 
 When passing array API inputs whose data is on a SyCL-enabled device (e.g. an Intel GPU), as
 supported for example by `PyTorch <https://docs.pytorch.org/docs/stable/notes/get_start_xpu.html>`__
@@ -74,10 +74,6 @@ in many cases they are.
     make predictions on CPU arrays, and a model fitted with CPU array API inputs cannot make predictions on GPU
     arrays, even if they are of the same class. Attempting to pass data on the wrong device might lead to
     process-wide crashes.
-
-.. note::
-    Unlike |sklearn|, |sklearnex| does not require `array-api-compat <https://github.com/data-apis/array-api-compat>`__
-    to be installed for array API support.
 
 .. note::
     The ``target_offload`` option in config contexts and settings is not intended to work with array API
