@@ -54,6 +54,15 @@
       ],
       "depNameTemplate": "dpcpp-cpp-rt",
       "datasourceTemplate": "pypi"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^\\.ci\\/env\\/apt\\.sh$"],
+      "matchStrings": [
+        ".*\\b(?<depName>intel-oneapi-compiler-dpcpp-cpp)=(?<currentValue>\\d{4}\\.\\d+\\.\\d+-\\d+).*"
+      ],
+      "datasourceTemplate": "deb",
+      "registryUrlTemplate": "https://apt.repos.intel.com/oneapi?suite=all&components=main&binaryArch=amd64"
     }
   ]
 }
