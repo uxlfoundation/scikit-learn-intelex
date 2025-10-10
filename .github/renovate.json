@@ -54,6 +54,14 @@
       ],
       "depNameTemplate": "dpcpp-cpp-rt",
       "datasourceTemplate": "pypi"
+    },
+    {
+      "fileMatch": ["^\\.ci/pipeline/linting\\.yml$"],
+      "matchStrings": [
+        "pre-commit==(?<currentValue>\\d+\\.\\d+\\.\\d+)"
+      ],
+      "depNameTemplate": "pre-commit",
+      "datasourceTemplate": "pypi"
     }
   ]
 }
