@@ -108,7 +108,10 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
             or getattr(self, "_tree", 0) is None
             and self._fit_method == "kd_tree"
         ):
-            _sklearn_NearestNeighbors.fit(self, self._fit_X, getattr(self, "_y", None))
+            # Handle potential tuple in _fit_X (same as _save_attributes logic)
+            fit_x = self._fit_X
+            fit_x_array = fit_x[0] if isinstance(fit_x, tuple) else fit_x
+            _sklearn_NearestNeighbors.fit(self, fit_x_array, getattr(self, "_y", None))
         check_is_fitted(self)
         return dispatch(
             self,
