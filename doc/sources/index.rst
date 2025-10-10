@@ -41,16 +41,16 @@ These performance charts use benchmarks that you can find in the `scikit-learn b
 
 
 Supported Algorithms
----------------------
+--------------------
 
 See all of the :ref:`sklearn_algorithms`.
 
 
 Optimizations
-----------------------------------
+-------------
 
 Enable CPU Optimizations
-*********************************
+************************
 
 .. tabs::
    .. tab:: By patching
@@ -78,7 +78,7 @@ Enable CPU Optimizations
 
 
 Enable GPU optimizations
-*********************************
+************************
 
 Note: executing on GPU has `additional system software requirements <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`__ - see :doc:`oneapi-gpu`.
 
@@ -168,6 +168,8 @@ See :ref:`oneapi_gpu` for other ways of executing on GPU.
 
    algorithms.rst
    oneapi-gpu.rst
+   config-contexts.rst
+   array_api.rst
    distributed-mode.rst
    distributed_daal4py.rst
    non-scikit-algorithms.rst
@@ -175,7 +177,6 @@ See :ref:`oneapi_gpu` for other ways of executing on GPU.
    model_builders.rst
    logistic_model_builder.rst
    input-types.rst
-   array_api.rst
    verbose.rst
    preview.rst
    deprecation.rst
