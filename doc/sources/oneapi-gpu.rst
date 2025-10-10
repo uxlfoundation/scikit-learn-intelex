@@ -15,20 +15,25 @@
 .. include:: substitutions.rst
 .. _oneapi_gpu:
 
-##############################################################
-oneAPI and GPU support in |sklearnex|
-##############################################################
+###########
+GPU support
+###########
 
-|sklearnex| can execute computations on different devices (CPUs and GPUs, including integrated GPUs from laptops and desktops) through the SYCL framework in oneAPI.
+Overview
+--------
 
-The device used for computations can be easily controlled through the target offloading functionality (e.g. through ``sklearnex.config_context(target_offload="gpu")``, which moves data to GPU if it's not already there - see rest of this page for more details), but for finer-grained controlled (e.g. operating on arrays that are already in a given device's memory), it can also interact with objects from package |dpctl|, which offers a Python interface over SYCL concepts such as devices, queues, and USM (unified shared memory) arrays.
+|sklearnex| can execute computations on different devices (CPUs and GPUs, including integrated GPUs from laptops and desktops) supported by the SyCL framework.
 
-While not strictly required, package |dpctl| is recommended for a better experience on GPUs - for example, it can provide GPU-allocated arrays that enable compute-follows-data execution models (i.e. so that ``target_offload`` wouldn't need to move the data from CPU to GPU).
+The device used for computations can be easily controlled through the ``target_offload`` option in config contexts, which moves data to GPU if it's not already there - see :ref:`config_contexts` and rest of this page for more details).
+
+For finer-grained controlled (e.g. operating on arrays that are already in a given device's memory), it can also interact with on-device :ref:`array API classes <array_api>` like |dpnp_array|, and with SyCL-related objects from package |dpctl| such as :obj:`dpctl.SyclQueue`.
+
+.. Note:: Note that not every operation from every estimator is supported on GPU - see the :ref:`GPU support table <sklearn_algorithms_gpu>` for more information.
 
 .. important:: Be aware that GPU usage requires non-Python dependencies on your system, such as the `Intel(R) Compute Runtime <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`_ (see below).
 
-Prerequisites
--------------
+Software Requirements
+---------------------
 
 For execution on GPUs, DPC++ runtime and Intel Compute Runtime (also referred to elsewhere as 'GPGPU drivers') are required.
 
@@ -76,93 +81,116 @@ Be aware that datacenter-grade devices, such as 'Flex' and 'Max', require differ
 
 For more details, see the `DPC++ requirements page <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/oneapi-dpcpp/2025.html>`__.
 
-Device offloading
------------------
+Running operations on GPU
+-------------------------
 
-|sklearnex| offers two options for running an algorithm on a specified device:
+|sklearnex| offers different options for running an algorithm on a specified device (e.g. a GPU):
 
-- Use global configurations of |sklearnex|:
+Target offload option
+~~~~~~~~~~~~~~~~~~~~~
 
-  1. The :code:`target_offload` argument (in ``config_context`` and in ``set_config`` / ``get_config``)
-     can be used to set the device primarily used to perform computations. Accepted data types are
-     :code:`str` and :obj:`dpctl.SyclQueue`. Strings must match to device names recognized by
-     the SYCL* device filter selector - for example, ``"gpu"``. If passing ``"auto"``,
-     the device will be deduced from the location of the input data. Examples:
+Just like |sklearn|, the |sklearnex| can use configuration contexts and global options to modify how it interacts with different inputs - see :ref:`config_contexts` for details.
 
-     .. code-block:: python
-        
-        from sklearnex import config_context
-        from sklearnex.linear_model import LinearRegression
-        
-        with config_context(target_offload="gpu"):
-            model = LinearRegression().fit(X, y)
+In particular, the |sklearnex| allows an option ``target_offload`` which can be passed a SyCL device name like ``"gpu"`` indicating where the operations should be performed, moving the data to that device in the process if it's not already there; or a :obj:`dpctl.SyclQueue` object from an already-existing queue on a device.
 
-     .. code-block:: python
-        
-        from sklearnex import set_config
-        from sklearnex.linear_model import LinearRegression
-        
-        set_config(target_offload="gpu")
-        model = LinearRegression().fit(X, y)
+Example:
 
+.. tabs::
+    .. tab:: Passing a device name
+       .. code-block:: python
 
-     If passing a string different than ``"auto"``,
-     it must be a device 
+           from sklearnex import config_context
+           from sklearnex.linear_model import LinearRegression
+           from sklearn.datasets import make_regression
+           X, y = make_regression()
+           model = LinearRegression()
 
-  2. The :code:`allow_fallback_to_host` argument in those same configuration functions
-     is a Boolean flag. If set to :code:`True`, the computation is allowed
-     to fallback to the host device when a particular estimator does not support
-     the selected device. The default value is :code:`False`.
+           with config_context(target_offload="gpu"):
+               model.fit(X, y)
+               pred = model.predict(X)
 
-These options can be set using :code:`sklearnex.set_config()` function or
-:code:`sklearnex.config_context`. To obtain the current values of these options,
-call :code:`sklearnex.get_config()`.
+    .. tab:: Passing a SyCL queue
+       .. code-block:: python
 
-.. note::
-     Functions :code:`set_config`, :code:`get_config` and :code:`config_context`
-     are always patched after the :code:`sklearnex.patch_sklearn()` call.
+           import dpctl
+           from sklearnex import config_context
+           from sklearnex.linear_model import LinearRegression
+           from sklearn.datasets import make_regression
+           X, y = make_regression()
+           model = LinearRegression()
 
-- Pass input data as :obj:`dpctl.tensor.usm_ndarray` to the algorithm.
-
-  The computation will run on the device where the input data is
-  located, and the result will be returned as :code:`usm_ndarray` to the same
-  device.
-
-  .. important::
-    In order to enable zero-copy operations on GPU arrays, it's necessary to enable
-    :ref:`array API support <array_api>` for scikit-learn. Otherwise, if passing a GPU
-    array and array API support is not enabled, GPU arrays will first be transferred to
-    host and then back to GPU.
-
-  .. note::
-    All the input data for an algorithm must reside on the same device.
-
-  .. warning::
-    The :code:`usm_ndarray` can only be consumed by the base methods
-    like :code:`fit`, :code:`predict`, and :code:`transform`.
-    Note that only the algorithms in |sklearnex| support
-    :code:`usm_ndarray`. The algorithms from the stock version of |sklearn|
-    do not support this feature.
+           queue = dpctl.SyclQueue("gpu")
+           with config_context(target_offload=queue):
+               model.fit(X, y)
+               pred = model.predict(X)
 
 
-Example
--------
+.. warning::
+    When using ``target_offload``, operations on a fitted model must be executed under a context or global option with the same device or queue where the model was fitted - meaning: a model fitted on GPU cannot make predictions on CPU, and vice-versa. Note that upon serialization and subsequent deserialization of models, data is moved to the CPU.
 
-A full example of how to patch your code with Intel CPU/GPU optimizations:
+GPU arrays through array API
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+As another option, computations can also be performed on data that is already on a SyCL device without moving it there if it belongs to an array API-compatible class, such as |dpnp_array| or `torch.tensor <https://docs.pytorch.org/docs/stable/tensors.html>`__.
+
+This is particularly useful when multiple operations are performed on the same data (e.g. cross validators, stacked ensembles, etc.), or when the data is meant to interact with other libraries besides the |sklearnex|. Be aware that it requires enabling array API support in |sklearn|, which comes with additional dependencies.
+
+See :ref:`array_api` for details, instructions, and limitations. Example:
 
 .. code-block:: python
 
-   from sklearnex import patch_sklearn, config_context
-   patch_sklearn()
+    # Array API support from sklearn requires enabling it on SciPy too
+    import os
+    os.environ["SCIPY_ARRAY_API"] = "1"
 
-   from sklearn.cluster import DBSCAN
+    import numpy as np
+    import dpnp
+    from sklearnex import config_context
+    from sklearnex.linear_model import LinearRegression
 
-   X = np.array([[1., 2.], [2., 2.], [2., 3.],
-                 [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
-   with config_context(target_offload="gpu:0"):
-       clustering = DBSCAN(eps=3, min_samples=2).fit(X)
+    # Random data for a regression problem
+    rng = np.random.default_rng(seed=123)
+    X_np = rng.standard_normal(size=(100, 10), dtype=np.float32)
+    y_np = rng.standard_normal(size=100, dtype=np.float32)
+
+    # DPNP offers an array-API-compliant class where data can be on GPU
+    X = dpnp.array(X_np, device="gpu")
+    y = dpnp.array(y_np, device="gpu")
+
+    # Important to note again that array API must be enabled on scikit-learn
+    model = LinearRegression()
+    with config_context(array_api_dispatch=True):
+        model.fit(X, y)
+
+.. note::
+    Not all estimator classes in the |sklearnex| support array API objects - see the list of :ref:`estimators with array API support <array_api_estimators>` for details.
+
+DPNP Arrays
+~~~~~~~~~~~
+
+As a special case, GPU arrays from |dpnp| can be used without enabling array API, even for estimators in the |sklearnex| that do not currently support array API, but note that it involves data movement to host and back and is thus not the most efficient route in computational terms.
+
+Example:
+
+.. code-block:: python
+
+    import numpy as np
+    import dpnp
+    from sklearnex import config_context
+    from sklearnex.linear_model import LinearRegression
+
+    rng = np.random.default_rng(seed=123)
+    X_np = rng.standard_normal(size=(100, 10), dtype=np.float32)
+    y_np = rng.standard_normal(size=100, dtype=np.float32)
+
+    X = dpnp.array(X_np, device="gpu")
+    y = dpnp.array(y_np, device="gpu")
+
+    model = LinearRegression()
+    model.fit(X, y)
 
 
-.. note:: Current offloading behavior restricts fitting and predictions (a.k.a. inference) of any models to be
-     in the same context or absence of context. For example, a model whose ``.fit()`` method was called in a GPU context with
-     ``target_offload="gpu:0"`` will throw an error if a ``.predict()`` call is then made outside the same GPU context.
+Note that, if array API had been enabled, the snippet above would use the data as-is on the device where it resides, but without array API, it implies data movements using the SyCL queue contained by those objects.
+
+.. note::
+    All the input data for an algorithm must reside on the same device.

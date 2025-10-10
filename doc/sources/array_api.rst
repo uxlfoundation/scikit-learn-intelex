@@ -23,9 +23,8 @@ Overview
 
 Many estimators from the |sklearnex| support passing data classes that conform to the
 `Array API <https://data-apis.org/array-api/>`_ specification as inputs to methods like ``.fit()``
-and ``.predict()``, such as :external+dpnp:doc:`dpnp.ndarray <reference/ndarray>` or
-`torch.tensor <https://docs.pytorch.org/docs/stable/tensors.html>`__. This is particularly
-useful for GPU computations, as it allows performing operations on inputs that are already
+and ``.predict()``, such as |dpnp_array| or `torch.tensor <https://docs.pytorch.org/docs/stable/tensors.html>`__.
+This is particularly useful for GPU computations, as it allows performing operations on inputs that are already
 on GPU without moving the data from host to device.
 
 .. important::
@@ -80,6 +79,7 @@ in many cases they are.
     classes that have :external+dpctl:doc:`USM data <api_reference/dpctl/memory>`. In order to ensure that computations
     happen on the intended device under array API, make sure that the data is already on the desired device.
 
+.. _array_api_estimators:
 
 Supported classes
 =================
@@ -98,11 +98,10 @@ The following patched classes have support for array API inputs:
 - :obj:`sklearnex.linear_model.IncrementalRidge`
 
 .. note::
-    While full array API support is currently not implemented for all classes, :external+dpnp:doc:`dpnp.ndarray <reference/ndarray>`
-    and :external+dpctl:doc:`dpctl.tensor <api_reference/dpctl/tensor>` inputs are supported by all the classes
-    that have :ref:`GPU support <oneapi_gpu>`. Note however that if array API support is not enabled in |sklearn|,
-    when passing these classes as inputs, data will be transferred to host and then back to device instead of being
-    used directly.
+    While full array API support is currently not implemented for all classes, |dpnp_array| inputs are supported
+    by all the classes that have :ref:`GPU support <oneapi_gpu>`. Note however that if array API support is not
+    enabled in |sklearn|, when passing these classes as inputs, data will be transferred to host and then back to
+    device instead of being used directly.
 
 
 Example usage

@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
+import sys
 from contextlib import contextmanager
 
 from sklearn import get_config as skl_get_config
@@ -21,6 +22,61 @@ from sklearn import set_config as skl_set_config
 
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal._config import _get_config as onedal_get_config
+
+__all__ = ["get_config", "set_config", "config_context"]
+
+tab = "    " if (sys.version_info.major == 3 and sys.version_info.minor < 13) else ""
+_options_docstring = f"""Parameters
+{tab}----------
+{tab}target_offload : str or dpctl.SyclQueue or None
+{tab}    The device used to perform computations, either as a string indicating a name
+{tab}    recognized by the SyCL runtime, such as ``"gpu"``, ``"gpu:0"``, or as a
+{tab}    :obj:`dpctl.SyclQueue` object indicating where to move the data.
+{tab}
+{tab}    Assuming SyCL-related dependencies are installed, the list of devices recognized
+{tab}    by SyCL can be retrieved through the CLI tool ``sycl-ls`` in a shell, or through
+{tab}    :obj:`dpctl.get_devices` in a Python process.
+{tab}
+{tab}    String ``"auto"`` is also accepted.
+{tab}
+{tab}    Global default: ``"auto"``.
+{tab}
+{tab}allow_fallback_to_host : bool or None
+{tab}    If ``True``, allows computations to fall back to host device (CPU) when an unsupported
+{tab}    operation is attempted on GPU through ``target_offload``.
+{tab}
+{tab}    Global default: ``False``.
+{tab}
+{tab}allow_sklearn_after_onedal : bool or None, default=None
+{tab}    If ``True``, allows computations to fall back to stock scikit-learn when no
+{tab}    accelered version of the operation is available (see :ref:`algorithms`).
+{tab}
+{tab}    Global default: ``True.``
+{tab}
+{tab}use_raw_input : bool or None
+{tab}    If ``True``, uses the raw input data in some SPMD onedal backend computations
+{tab}    without any checks on data consistency or validity. Note that this can be
+{tab}    better achieved through usage of :ref:`array API classes <array_api>` without
+{tab}    ``target_offload``. Not recommended for general use.
+{tab}
+{tab}    Global default: ``False``.
+{tab}
+{tab}    .. deprecated:: 2026.0
+{tab}
+{tab}sklearn_configs : kwargs
+{tab}    Other settings accepted by scikit-learn. See :obj:`sklearn.set_config` for
+{tab}    details.
+{tab}
+{tab}Warnings
+{tab}--------
+{tab}Using ``use_raw_input=True`` is not recommended for general use as it
+{tab}bypasses data consistency checks, which may lead to unexpected behavior. It is
+{tab}recommended to use the newer :ref:`array API <array_api>` instead.
+{tab}
+{tab}Note
+{tab}----
+{tab}Usage of ``target_offload`` requires additional dependencies - see
+{tab}:ref:`GPU support <oneapi_gpu>` for more information."""
 
 
 def get_config():
@@ -47,52 +103,15 @@ def set_config(
     allow_sklearn_after_onedal=None,
     use_raw_input=None,
     **sklearn_configs,
-):
+):  # numpydoc ignore=PR01,PR07
     """Set global configuration.
 
-    Parameters
-    ----------
-    target_offload : str or SyclQueue or None, default=None
-        The device primarily used to perform computations.
-        If string, expected to be "auto" (the execution context
-        is deduced from input data location),
-        or SYCL* filter selector string. Global default: "auto".
-
-    allow_fallback_to_host : bool or None, default=None
-        If True, allows to fallback computation to host device
-        in case particular estimator does not support the selected one.
-        Global default: False.
-
-    allow_sklearn_after_onedal : bool or None, default=None
-        If True, allows to fallback computation to sklearn after onedal
-        backend in case of runtime error on onedal backend computations.
-        Global default: True.
-
-    use_raw_input : bool or None, default=None
-        If True, uses the raw input data in some SPMD onedal backend computations
-        without any checks on data consistency or validity.
-        Not recommended for general use.
-        Global default: False.
-
-        .. deprecated:: 2026.0
-
-    **sklearn_configs : kwargs
-        Scikit-learn configuration settings dependent on the installed version
-        of scikit-learn.
+    %_options_docstring%
 
     See Also
     --------
     config_context : Context manager for global configuration.
     get_config : Retrieve current values of the global configuration.
-
-    Warnings
-    --------
-    Using ``use_raw_input=True`` is not recommended for general use as it
-    bypasses data consistency checks, which may lead to unexpected behavior.
-
-    Use of ``target_offload`` requires the DPC++ backend. Setting a
-    non-default value (e.g ``cpu`` or ``gpu``) without this backend active
-    will raise an error.
     """
 
     skl_set_config(**sklearn_configs)
@@ -109,34 +128,16 @@ def set_config(
         local_config["use_raw_input"] = use_raw_input
 
 
+set_config.__doc__ = set_config.__doc__.replace(
+    "%_options_docstring%", _options_docstring
+)
+
+
 @contextmanager
 def config_context(**new_config):  # numpydoc ignore=PR01,PR07
-    """Context manager for global scikit-learn configuration.
+    """Context manager for local scikit-learn-intelex configurations.
 
-    Parameters
-    ----------
-    target_offload : str or SyclQueue or None, default=None
-        The device primarily used to perform computations.
-        If string, expected to be "auto" (the execution context
-        is deduced from input data location),
-        or SYCL* filter selector string. Global default: "auto".
-
-    allow_fallback_to_host : bool or None, default=None
-        If True, allows to fallback computation to host device
-        in case particular estimator does not support the selected one.
-        Global default: False.
-
-    allow_sklearn_after_onedal : bool or None, default=None
-        If True, allows to fallback computation to sklearn after onedal
-        backend in case of runtime error on onedal backend computations.
-        Global default: True.
-
-    use_raw_input : bool or None, default=None
-        .. deprecated:: 2026.0
-        If True, uses the raw input data in some SPMD onedal backend computations
-        without any checks on data consistency or validity.
-        Not recommended for general use.
-        Global default: False.
+    %_options_docstring%
 
     Notes
     -----
@@ -147,11 +148,6 @@ def config_context(**new_config):  # numpydoc ignore=PR01,PR07
     --------
     set_config : Set global scikit-learn configuration.
     get_config : Retrieve current values of the global configuration.
-
-    Warnings
-    --------
-    Using ``use_raw_input=True`` is not recommended for general use as it
-    bypasses data consistency checks, which may lead to unexpected behavior.
     """
     old_config = get_config()
     set_config(**new_config)
@@ -160,3 +156,8 @@ def config_context(**new_config):  # numpydoc ignore=PR01,PR07
         yield
     finally:
         set_config(**old_config)
+
+
+config_context.__doc__ = config_context.__doc__.replace(
+    "%_options_docstring%", _options_docstring
+)
