@@ -65,6 +65,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "nbsphinx",
     "sphinx_tabs.tabs",
+    "sphinx_togglebutton",
     "notfound.extension",
     "sphinx_design",
     "sphinx_copybutton",
