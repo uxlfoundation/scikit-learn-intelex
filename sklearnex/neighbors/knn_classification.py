@@ -14,6 +14,7 @@
 # limitations under the License.
 # ===============================================================================
 
+import numpy as np
 from sklearn.metrics import accuracy_score
 from sklearn.neighbors._classification import (
     KNeighborsClassifier as _sklearn_KNeighborsClassifier,
@@ -80,6 +81,13 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     def predict(self, X):
         check_is_fitted(self)
         check_feature_names(self, X, reset=False)
+
+        # Perform preprocessing at sklearnex level
+        from onedal.utils.validation import _check_array
+
+        X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
+        self._validate_feature_count(X, "KNNClassifier")
+
         return dispatch(
             self,
             "predict",
@@ -94,6 +102,13 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     def predict_proba(self, X):
         check_is_fitted(self)
         check_feature_names(self, X, reset=False)
+
+        # Perform preprocessing at sklearnex level
+        from onedal.utils.validation import _check_array
+
+        X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
+        self._validate_feature_count(X, "predict_proba")
+
         return dispatch(
             self,
             "predict_proba",
@@ -106,8 +121,17 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
 
     @wrap_output_data
     def score(self, X, y, sample_weight=None):
+        import sys
+        print("DEBUG: score called11111!", X, y, file=sys.stderr, flush=True)
         check_is_fitted(self)
         check_feature_names(self, X, reset=False)
+
+        # Perform preprocessing at sklearnex level
+        from onedal.utils.validation import _check_array
+
+        X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
+        self._validate_feature_count(X, "score")
+
         return dispatch(
             self,
             "score",
@@ -122,9 +146,21 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
 
     @wrap_output_data
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
+        import sys
+        print("DEBUG: kneighbors called11111!", X, file=sys.stderr, flush=True)
         check_is_fitted(self)
         if X is not None:
             check_feature_names(self, X, reset=False)
+            # Perform preprocessing at sklearnex level
+            from onedal.utils.validation import _check_array
+
+            X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
+            self._validate_feature_count(X, "kneighbors")
+
+        # Validate n_neighbors
+        if n_neighbors is not None:
+            self._validate_n_neighbors(n_neighbors)
+
         return dispatch(
             self,
             "kneighbors",
@@ -138,6 +174,28 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         )
 
     def _onedal_fit(self, X, y, queue=None):
+        import sys
+        print("DEBUG: _onedal_fit called11111!", X, y, file=sys.stderr, flush=True)
+
+        # Perform preprocessing at sklearnex level
+        X, y = self._validate_data(
+            X, y, dtype=[np.float64, np.float32], accept_sparse="csr"
+        )
+
+        # Validate n_neighbors
+        self._validate_n_neighbors(self.n_neighbors)
+
+        # Parse auto method
+        self._fit_method = self._parse_auto_method(self.algorithm, X.shape[0], X.shape[1])
+
+        # Validate classification targets
+        from onedal.utils.validation import _check_classification_targets
+
+        _check_classification_targets(y)
+
+        # Handle shape and class processing at sklearnex level
+        y = self._process_classification_targets(y)
+
         onedal_params = {
             "n_neighbors": self.n_neighbors,
             "weights": self.weights,
@@ -150,6 +208,14 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         self._onedal_estimator.requires_y = get_requires_y_tag(self)
         self._onedal_estimator.effective_metric_ = self.effective_metric_
         self._onedal_estimator.effective_metric_params_ = self.effective_metric_params_
+        self._onedal_estimator._fit_method = self._fit_method
+
+        # Set shape and class attributes on the onedal estimator
+        self._onedal_estimator._shape = self._shape
+        self._onedal_estimator.classes_ = self.classes_
+        self._onedal_estimator._y = self._y
+        self._onedal_estimator.outputs_2d_ = self.outputs_2d_
+
         self._onedal_estimator.fit(X, y, queue=queue)
 
         self._save_attributes()
@@ -168,15 +234,22 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         )
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
+        import sys
+        print("DEBUG: _onedal_score called11111!", X, y, file=sys.stderr, flush=True)
+
         return accuracy_score(
             y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
         )
 
     def _save_attributes(self):
+        import sys
+        print("DEBUG: _save_attributes called11111!", self._onedal_estimator, file=sys.stderr, flush=True)
+
         self.classes_ = self._onedal_estimator.classes_
         self.n_features_in_ = self._onedal_estimator.n_features_in_
         self.n_samples_fit_ = self._onedal_estimator.n_samples_fit_
-        self._fit_X = self._onedal_estimator._fit_X
+        fit_x = self._onedal_estimator._fit_X
+        self._fit_X = fit_x[0] if isinstance(fit_x, tuple) else fit_x
         self._y = self._onedal_estimator._y
         self._fit_method = self._onedal_estimator._fit_method
         self.outputs_2d_ = self._onedal_estimator.outputs_2d_

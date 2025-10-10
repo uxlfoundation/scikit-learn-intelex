@@ -14,6 +14,8 @@
 # limitations under the License.
 # ===============================================================================
 
+import sys
+import numpy as np
 from sklearn.neighbors._unsupervised import NearestNeighbors as _sklearn_NearestNeighbors
 from sklearn.utils.validation import _deprecate_positional_args, check_is_fitted
 
@@ -76,6 +78,16 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         check_is_fitted(self)
         if X is not None:
             check_feature_names(self, X, reset=False)
+            # Perform preprocessing at sklearnex level
+            from onedal.utils.validation import _check_array
+
+            X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
+            self._validate_feature_count(X, "kneighbors")
+
+        # Validate n_neighbors
+        if n_neighbors is not None:
+            self._validate_n_neighbors(n_neighbors)
+
         return dispatch(
             self,
             "kneighbors",
@@ -92,12 +104,37 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
     def radius_neighbors(
         self, X=None, radius=None, return_distance=True, sort_results=False
     ):
-        if (
-            hasattr(self, "_onedal_estimator")
-            or getattr(self, "_tree", 0) is None
-            and self._fit_method == "kd_tree"
-        ):
-            _sklearn_NearestNeighbors.fit(self, self._fit_X, getattr(self, "_y", None))
+        print(f"DEBUG radius_neighbors start: hasattr _onedal_estimator: {hasattr(self, '_onedal_estimator')}", file=sys.stderr)
+        print(f"DEBUG radius_neighbors start: _tree: {getattr(self, '_tree', 'NOT_SET')}", file=sys.stderr)
+        print(f"DEBUG radius_neighbors start: _fit_method: {getattr(self, '_fit_method', 'NOT_SET')}", file=sys.stderr)
+        
+        # Check the condition logic
+        has_onedal = hasattr(self, "_onedal_estimator")
+        tree_is_none = getattr(self, "_tree", 0) is None
+        is_kd_tree = getattr(self, "_fit_method", None) == "kd_tree"
+        print(f"DEBUG: has_onedal={has_onedal}, tree_is_none={tree_is_none}, is_kd_tree={is_kd_tree}", file=sys.stderr)
+        
+        condition_met = has_onedal or (tree_is_none and is_kd_tree)
+        print(f"DEBUG: condition_met={condition_met}", file=sys.stderr)
+        
+        if condition_met:
+            print("DEBUG: Entering the fit_x handling block", file=sys.stderr)
+            # Handle potential tuple in _fit_X (same as _save_attributes logic)
+            fit_x = self._fit_X
+            print(f"DEBUG radius_neighbors: _fit_X type: {type(fit_x)}", file=sys.stderr)
+            print(f"DEBUG radius_neighbors: _fit_X shape/content: {fit_x.shape if hasattr(fit_x, 'shape') else fit_x}", file=sys.stderr)
+            fit_x_array = fit_x[0] if isinstance(fit_x, tuple) else fit_x
+            print(f"DEBUG radius_neighbors: fit_x_array type: {type(fit_x_array)}", file=sys.stderr)
+            _sklearn_NearestNeighbors.fit(self, fit_x_array, getattr(self, "_y", None))
+        else:
+            print("DEBUG: NOT entering the fit_x handling block - using default path", file=sys.stderr)
+            # ALWAYS handle potential tuple in _fit_X for robustness
+            if hasattr(self, '_fit_X'):
+                fit_x = self._fit_X
+                print(f"DEBUG fallback path: _fit_X type: {type(fit_x)}", file=sys.stderr)
+                if isinstance(fit_x, tuple):
+                    print("DEBUG fallback path: _fit_X is tuple, extracting first element", file=sys.stderr)
+                    self._fit_X = fit_x[0]
         check_is_fitted(self)
         return dispatch(
             self,
@@ -115,6 +152,12 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
     def radius_neighbors_graph(
         self, X=None, radius=None, mode="connectivity", sort_results=False
     ):
+        print(f"DEBUG radius_neighbors_graph start: _fit_X type: {type(getattr(self, '_fit_X', 'NOT_SET'))}", file=sys.stderr)
+        # Handle potential tuple in _fit_X before calling dispatch
+        if hasattr(self, '_fit_X') and isinstance(self._fit_X, tuple):
+            print("DEBUG radius_neighbors_graph: _fit_X is tuple, extracting first element", file=sys.stderr)
+            self._fit_X = self._fit_X[0]
+            
         return dispatch(
             self,
             "radius_neighbors_graph",
@@ -129,6 +172,18 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         )
 
     def _onedal_fit(self, X, y=None, queue=None):
+        # Perform preprocessing at sklearnex level
+        X, _ = self._validate_data(X, dtype=[np.float64, np.float32], accept_sparse=True)
+
+        # Validate n_neighbors
+        self._validate_n_neighbors(self.n_neighbors)
+
+        # Parse auto method
+        self._fit_method = self._parse_auto_method(self.algorithm, X.shape[0], X.shape[1])
+
+        # Set basic attributes for unsupervised
+        self.classes_ = None
+
         onedal_params = {
             "n_neighbors": self.n_neighbors,
             "algorithm": self.algorithm,
@@ -140,6 +195,11 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         self._onedal_estimator.requires_y = get_requires_y_tag(self)
         self._onedal_estimator.effective_metric_ = self.effective_metric_
         self._onedal_estimator.effective_metric_params_ = self.effective_metric_params_
+        self._onedal_estimator._fit_method = self._fit_method
+
+        # Set attributes on the onedal estimator
+        self._onedal_estimator.classes_ = self.classes_
+
         self._onedal_estimator.fit(X, y, queue=queue)
 
         self._save_attributes()
@@ -155,10 +215,15 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         )
 
     def _save_attributes(self):
+        print(f"DEBUG: _save_attributes - _fit_X type: {type(self._onedal_estimator._fit_X)}", file=sys.stderr)
+        if hasattr(self._onedal_estimator, '_fit_X'):
+            print(f"DEBUG: _fit_X value preview: {str(self._onedal_estimator._fit_X)[:200]}", file=sys.stderr)
+        
         self.classes_ = self._onedal_estimator.classes_
         self.n_features_in_ = self._onedal_estimator.n_features_in_
         self.n_samples_fit_ = self._onedal_estimator.n_samples_fit_
-        self._fit_X = self._onedal_estimator._fit_X
+        fit_x = self._onedal_estimator._fit_X
+        self._fit_X = fit_x[0] if isinstance(fit_x, tuple) else fit_x
         self._fit_method = self._onedal_estimator._fit_method
         self._tree = self._onedal_estimator._tree
 
