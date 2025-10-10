@@ -17,6 +17,7 @@
 from abc import ABCMeta, abstractmethod
 
 import numpy as np
+import sys
 
 from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
@@ -109,6 +110,7 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         self.metric_params = metric_params
 
     def _fit(self, X, y):
+        print(f"DEBUG oneDAL _fit start: X type = {type(X)}", file=sys.stderr)
         self._onedal_model = None
         self._tree = None
         self._shape = None
@@ -145,6 +147,7 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         self.n_samples_fit_ = X.shape[0]
         self.n_features_in_ = X.shape[1]
         self._fit_X = X
+        print(f"DEBUG oneDAL _fit: setting _fit_X = {type(X)}, shape = {X.shape}", file=sys.stderr)
 
         _fit_y = None
         queue = QM.get_global_queue()
@@ -153,6 +156,7 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         if _is_classifier(self) or (_is_regressor(self) and gpu_device):
             _fit_y = y.astype(X.dtype).reshape((-1, 1)) if y is not None else None
         result = self._onedal_fit(X, _fit_y)
+        print(f"DEBUG oneDAL _fit: after _onedal_fit, _fit_X type = {type(self._fit_X)}", file=sys.stderr)
 
         if y is not None and _is_regressor(self):
             self._y = y if self._shape is None else xp.reshape(y, self._shape)
@@ -490,10 +494,14 @@ class NearestNeighbors(NeighborsBase):
     def infer(self, *arg, **kwargs): ...
 
     def _onedal_fit(self, X, y):
+        print(f"DEBUG NearestNeighbors _onedal_fit: X type = {type(X)}, y type = {type(y)}", file=sys.stderr)
         # global queue is set as per user configuration (`target_offload`) or from data prior to calling this internal function
         queue = QM.get_global_queue()
         params = self._get_onedal_params(X, y)
+        print(f"DEBUG NearestNeighbors _onedal_fit: before to_table - X type = {type(X)}, y type = {type(y)}", file=sys.stderr)
         X, y = to_table(X, y, queue=queue)
+        print(f"DEBUG NearestNeighbors _onedal_fit: after to_table - X type = {type(X)}, y type = {type(y)}", file=sys.stderr)
+        print(f"DEBUG NearestNeighbors _onedal_fit: self._fit_X type = {type(self._fit_X)}", file=sys.stderr)
         return self.train(params, X).model
 
     def _onedal_predict(self, model, X, params):
