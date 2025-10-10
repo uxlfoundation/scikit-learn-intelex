@@ -183,6 +183,10 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         )
 
     def _save_attributes(self):
+        print(f"DEBUG: _save_attributes - _fit_X type: {type(self._onedal_estimator._fit_X)}")
+        if hasattr(self._onedal_estimator, '_fit_X'):
+            print(f"DEBUG: _fit_X value preview: {str(self._onedal_estimator._fit_X)[:200]}")
+        
         self.classes_ = self._onedal_estimator.classes_
         self.n_features_in_ = self._onedal_estimator.n_features_in_
         self.n_samples_fit_ = self._onedal_estimator.n_samples_fit_
