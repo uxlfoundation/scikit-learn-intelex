@@ -108,11 +108,16 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         print(f"DEBUG radius_neighbors start: _tree: {getattr(self, '_tree', 'NOT_SET')}", file=sys.stderr)
         print(f"DEBUG radius_neighbors start: _fit_method: {getattr(self, '_fit_method', 'NOT_SET')}", file=sys.stderr)
         
-        if (
-            hasattr(self, "_onedal_estimator")
-            or getattr(self, "_tree", 0) is None
-            and self._fit_method == "kd_tree"
-        ):
+        # Check the condition logic
+        has_onedal = hasattr(self, "_onedal_estimator")
+        tree_is_none = getattr(self, "_tree", 0) is None
+        is_kd_tree = getattr(self, "_fit_method", None) == "kd_tree"
+        print(f"DEBUG: has_onedal={has_onedal}, tree_is_none={tree_is_none}, is_kd_tree={is_kd_tree}", file=sys.stderr)
+        
+        condition_met = has_onedal or (tree_is_none and is_kd_tree)
+        print(f"DEBUG: condition_met={condition_met}", file=sys.stderr)
+        
+        if condition_met:
             print("DEBUG: Entering the fit_x handling block", file=sys.stderr)
             # Handle potential tuple in _fit_X (same as _save_attributes logic)
             fit_x = self._fit_X
@@ -123,6 +128,13 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
             _sklearn_NearestNeighbors.fit(self, fit_x_array, getattr(self, "_y", None))
         else:
             print("DEBUG: NOT entering the fit_x handling block - using default path", file=sys.stderr)
+            # ALWAYS handle potential tuple in _fit_X for robustness
+            if hasattr(self, '_fit_X'):
+                fit_x = self._fit_X
+                print(f"DEBUG fallback path: _fit_X type: {type(fit_x)}", file=sys.stderr)
+                if isinstance(fit_x, tuple):
+                    print("DEBUG fallback path: _fit_X is tuple, extracting first element", file=sys.stderr)
+                    self._fit_X = fit_x[0]
         check_is_fitted(self)
         return dispatch(
             self,
@@ -140,6 +152,12 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
     def radius_neighbors_graph(
         self, X=None, radius=None, mode="connectivity", sort_results=False
     ):
+        print(f"DEBUG radius_neighbors_graph start: _fit_X type: {type(getattr(self, '_fit_X', 'NOT_SET'))}", file=sys.stderr)
+        # Handle potential tuple in _fit_X before calling dispatch
+        if hasattr(self, '_fit_X') and isinstance(self._fit_X, tuple):
+            print("DEBUG radius_neighbors_graph: _fit_X is tuple, extracting first element", file=sys.stderr)
+            self._fit_X = self._fit_X[0]
+            
         return dispatch(
             self,
             "radius_neighbors_graph",
