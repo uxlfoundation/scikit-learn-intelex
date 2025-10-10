@@ -108,13 +108,6 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
             or getattr(self, "_tree", 0) is None
             and self._fit_method == "kd_tree"
         ):
-            # Debug: Check what _fit_X actually is at time of error
-            import sys
-            print(f"DEBUG radius_neighbors: self._fit_X type: {type(self._fit_X)}", file=sys.stderr, flush=True)
-            if isinstance(self._fit_X, tuple):
-                print(f"DEBUG radius_neighbors: _fit_X is tuple of length {len(self._fit_X)}", file=sys.stderr, flush=True)
-                print(f"DEBUG radius_neighbors: tuple contents: {[type(x) for x in self._fit_X]}", file=sys.stderr, flush=True)
-            
             _sklearn_NearestNeighbors.fit(self, self._fit_X, getattr(self, "_y", None))
         check_is_fitted(self)
         return dispatch(
@@ -194,13 +187,6 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         self.n_features_in_ = self._onedal_estimator.n_features_in_
         self.n_samples_fit_ = self._onedal_estimator.n_samples_fit_
         fit_x = self._onedal_estimator._fit_X
-        
-        # Debug: Check if fit_x is unexpectedly a tuple
-        if isinstance(fit_x, tuple):
-            import sys
-            print(f"DEBUG: _onedal_estimator._fit_X is a tuple: {type(fit_x)}, length: {len(fit_x)}", file=sys.stderr, flush=True)
-            print(f"DEBUG: fit_x[0] type: {type(fit_x[0])}, fit_x[1]: {fit_x[1]}", file=sys.stderr, flush=True)
-        
         self._fit_X = fit_x[0] if isinstance(fit_x, tuple) else fit_x
         self._fit_method = self._onedal_estimator._fit_method
         self._tree = self._onedal_estimator._tree
