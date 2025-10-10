@@ -14,6 +14,7 @@
 # limitations under the License.
 # ===============================================================================
 
+import sys
 import numpy as np
 from sklearn.neighbors._unsupervised import NearestNeighbors as _sklearn_NearestNeighbors
 from sklearn.utils.validation import _deprecate_positional_args, check_is_fitted
@@ -103,15 +104,25 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
     def radius_neighbors(
         self, X=None, radius=None, return_distance=True, sort_results=False
     ):
+        print(f"DEBUG radius_neighbors start: hasattr _onedal_estimator: {hasattr(self, '_onedal_estimator')}", file=sys.stderr)
+        print(f"DEBUG radius_neighbors start: _tree: {getattr(self, '_tree', 'NOT_SET')}", file=sys.stderr)
+        print(f"DEBUG radius_neighbors start: _fit_method: {getattr(self, '_fit_method', 'NOT_SET')}", file=sys.stderr)
+        
         if (
             hasattr(self, "_onedal_estimator")
             or getattr(self, "_tree", 0) is None
             and self._fit_method == "kd_tree"
         ):
+            print("DEBUG: Entering the fit_x handling block", file=sys.stderr)
             # Handle potential tuple in _fit_X (same as _save_attributes logic)
             fit_x = self._fit_X
+            print(f"DEBUG radius_neighbors: _fit_X type: {type(fit_x)}", file=sys.stderr)
+            print(f"DEBUG radius_neighbors: _fit_X shape/content: {fit_x.shape if hasattr(fit_x, 'shape') else fit_x}", file=sys.stderr)
             fit_x_array = fit_x[0] if isinstance(fit_x, tuple) else fit_x
+            print(f"DEBUG radius_neighbors: fit_x_array type: {type(fit_x_array)}", file=sys.stderr)
             _sklearn_NearestNeighbors.fit(self, fit_x_array, getattr(self, "_y", None))
+        else:
+            print("DEBUG: NOT entering the fit_x handling block - using default path", file=sys.stderr)
         check_is_fitted(self)
         return dispatch(
             self,
@@ -186,9 +197,9 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         )
 
     def _save_attributes(self):
-        print(f"DEBUG: _save_attributes - _fit_X type: {type(self._onedal_estimator._fit_X)}")
+        print(f"DEBUG: _save_attributes - _fit_X type: {type(self._onedal_estimator._fit_X)}", file=sys.stderr)
         if hasattr(self._onedal_estimator, '_fit_X'):
-            print(f"DEBUG: _fit_X value preview: {str(self._onedal_estimator._fit_X)[:200]}")
+            print(f"DEBUG: _fit_X value preview: {str(self._onedal_estimator._fit_X)[:200]}", file=sys.stderr)
         
         self.classes_ = self._onedal_estimator.classes_
         self.n_features_in_ = self._onedal_estimator.n_features_in_
