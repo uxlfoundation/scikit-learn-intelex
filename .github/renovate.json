@@ -56,10 +56,9 @@
       "datasourceTemplate": "pypi"
     },
     {
+      "customType": "regex",
       "fileMatch": ["^\\.ci/pipeline/linting\\.yml$"],
-      "matchStrings": [
-        "pre-commit==(?<currentValue>\\d+\\.\\d+\\.\\d+)"
-      ],
+      "matchStrings": ["pre-commit==(?<currentValue>\\d+\\.\\d+\\.\\d+)"],
       "depNameTemplate": "pre-commit",
       "datasourceTemplate": "pypi"
     }
