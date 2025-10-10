@@ -139,8 +139,8 @@ def config_context(**new_config):  # numpydoc ignore=PR01,PR07
 
     %_options_docstring%
 
-    Notes
-    -----
+    Note
+    ----
     All settings, not just those presently modified, will be returned to
     their previous values when the context manager is exited.
 
