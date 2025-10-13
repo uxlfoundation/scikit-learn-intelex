@@ -93,6 +93,8 @@ Just like |sklearn|, the |sklearnex| can use configuration contexts and global o
 
 In particular, the |sklearnex| allows an option ``target_offload`` which can be passed a SyCL device name like ``"gpu"`` indicating where the operations should be performed, moving the data to that device in the process if it's not already there; or a :obj:`dpctl.SyclQueue` object from an already-existing queue on a device.
 
+.. hint:: If repeated operations are going to be performed on the same data (e.g. cross-validators, resamplers, missing data imputers, etc.), it's recommended to use the array API option instead - see the next section for details.
+
 Example:
 
 .. tabs::
