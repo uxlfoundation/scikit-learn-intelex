@@ -139,14 +139,14 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         ):
             print("DEBUG: Condition met - calling sklearn fit for preprocessing", file=sys.stderr)
             
-            # Ensure _fit_X is not a tuple before sklearn accesses it
-            fit_x_for_sklearn = self._fit_X
+            # CRITICAL FIX: Ensure _fit_X is properly extracted from tuple if needed
+            # This is essential because sklearn's fit method accesses self._fit_X directly
             if isinstance(self._fit_X, tuple):
-                print("DEBUG radius_neighbors: _fit_X is tuple, extracting first element for sklearn fit", file=sys.stderr)
-                fit_x_for_sklearn = self._fit_X[0]
+                print("DEBUG radius_neighbors: _fit_X is tuple, permanently extracting first element", file=sys.stderr)
+                self._fit_X = self._fit_X[0]  # Fix the attribute permanently
             
-            print(f"DEBUG: Calling _sklearn_NearestNeighbors.fit with fit_x_for_sklearn type: {type(fit_x_for_sklearn)}", file=sys.stderr)
-            _sklearn_NearestNeighbors.fit(self, fit_x_for_sklearn, getattr(self, "_y", None))
+            print(f"DEBUG: Calling _sklearn_NearestNeighbors.fit with self._fit_X type: {type(self._fit_X)}", file=sys.stderr)
+            _sklearn_NearestNeighbors.fit(self, self._fit_X, getattr(self, "_y", None))
             print("DEBUG: sklearn fit completed", file=sys.stderr)
         else:
             print("DEBUG: Condition NOT met - skipping sklearn fit", file=sys.stderr)
@@ -183,8 +183,8 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         
         # Handle potential tuple in _fit_X before calling dispatch
         if hasattr(self, '_fit_X') and isinstance(self._fit_X, tuple):
-            print("DEBUG radius_neighbors_graph: _fit_X is tuple, extracting first element", file=sys.stderr)
-            self._fit_X = self._fit_X[0]
+            print("DEBUG radius_neighbors_graph: _fit_X is tuple, permanently extracting first element", file=sys.stderr)
+            self._fit_X = self._fit_X[0]  # Fix the attribute permanently
             
         print(f"DEBUG radius_neighbors_graph BEFORE DISPATCH:", file=sys.stderr)
         print(f"  self._fit_X type: {type(getattr(self, '_fit_X', 'NOT_SET'))}", file=sys.stderr)
