@@ -35,8 +35,7 @@ class DummyEstimator:
         # This is means that it should not conform to sklearn, only to
         # oneDAL. Don't add unnecessary attributes which only match sklearn,
         # these should be translated by the sklearnex estimator. In this case
-        # the only parameter for the finiteness checker is the 'allow_nan'
-        # param.
+        # the only parameter for the dummy algorithm is the `constant` param.
         self.constant = constant
         self._onedal_model = None
 
@@ -51,7 +50,7 @@ class DummyEstimator:
     # backend is specific to onedal estimators defined in the 'spmd' folder.
     # The binding makes the pybind11 function a method of this class with
     # the same name (in this case ProtoTypeEstimator.compute should call
-    # the pybind11 function onedal.backend.finiteness_checker.compute.compute)
+    # the pybind11 function onedal.backend.dummy.generate.train)
     # where backend can be one of 'host', 'dpc' or 'spmd'.
     @bind_default_backend("dummy.generate")
     def train(self, params, data_table): ...
