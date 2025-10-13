@@ -146,8 +146,13 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
 
         self.n_samples_fit_ = X.shape[0]
         self.n_features_in_ = X.shape[1]
-        self._fit_X = X
-        print(f"DEBUG oneDAL _fit: setting _fit_X = {type(X)}, shape = {X.shape}", file=sys.stderr)
+        # Ensure _fit_X is always an array, never a tuple
+        if isinstance(X, tuple):
+            print(f"DEBUG oneDAL _fit: X is tuple, extracting first element: {type(X)}", file=sys.stderr)
+            self._fit_X = X[0]
+        else:
+            self._fit_X = X
+        print(f"DEBUG oneDAL _fit: setting _fit_X = {type(self._fit_X)}, shape = {self._fit_X.shape}", file=sys.stderr)
 
         _fit_y = None
         queue = QM.get_global_queue()
