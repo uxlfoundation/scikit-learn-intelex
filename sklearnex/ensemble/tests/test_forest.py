@@ -169,12 +169,12 @@ def test_classifiers_work_on_single_class(dataframe, queue):
     y = _convert_to_dataframe(y, sycl_queue=queue, target_df=dataframe)
 
     np.testing.assert_array_equal(
-        RandomForestClassifier(n_estimators=1).fit(X, y).predict(X),
-        y,
+        _as_numpy(RandomForestClassifier(n_estimators=1).fit(X, y).predict(X)),
+        _as_numpy(y),
     )
     np.testing.assert_array_equal(
-        ExtraTreesClassifier(n_estimators=1).fit(X, y).predict(X),
-        y,
+        _as_numpy(ExtraTreesClassifier(n_estimators=1).fit(X, y).predict(X)),
+        _as_numpy(y),
     )
 
 
