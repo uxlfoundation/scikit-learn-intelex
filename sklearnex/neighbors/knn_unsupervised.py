@@ -125,7 +125,30 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
             print(f"DEBUG radius_neighbors: _fit_X shape/content: {fit_x.shape if hasattr(fit_x, 'shape') else fit_x}", file=sys.stderr)
             fit_x_array = fit_x[0] if isinstance(fit_x, tuple) else fit_x
             print(f"DEBUG radius_neighbors: fit_x_array type: {type(fit_x_array)}", file=sys.stderr)
-            _sklearn_NearestNeighbors.fit(self, fit_x_array, getattr(self, "_y", None))
+            
+            # Additional safety check - ensure fit_x_array is not a tuple
+            if isinstance(fit_x_array, tuple):
+                print(f"DEBUG radius_neighbors: fit_x_array is still tuple after extraction: {type(fit_x_array)}", file=sys.stderr)
+                fit_x_array = fit_x_array[0]  # Extract again if needed
+                print(f"DEBUG radius_neighbors: fit_x_array after second extraction: {type(fit_x_array)}", file=sys.stderr)
+            
+            # Temporarily set _fit_X to the extracted array since sklearn accesses it directly
+            original_fit_x = self._fit_X
+            self._fit_X = fit_x_array
+            
+            # Debug the _y value and handle potential tuple
+            y_value = getattr(self, "_y", None)
+            if isinstance(y_value, tuple):
+                print(f"DEBUG: _y is tuple, extracting: {type(y_value)}", file=sys.stderr)
+                y_value = y_value[0] if y_value[0] is not None else None
+            print(f"DEBUG: _y value type: {type(y_value)}, value: {y_value}", file=sys.stderr)
+            
+            try:
+                # Call _fit directly to avoid any preprocessing in fit() that might create tuples
+                _sklearn_NearestNeighbors._fit(self, fit_x_array, y_value)
+            finally:
+                # Restore original _fit_X
+                self._fit_X = original_fit_x
         else:
             print("DEBUG: NOT entering the fit_x handling block - using default path", file=sys.stderr)
             # ALWAYS handle potential tuple in _fit_X for robustness
