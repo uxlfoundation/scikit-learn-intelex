@@ -25,7 +25,7 @@
     {
       "customType": "regex",
       "fileMatch": [
-        "^\\.ci\\/pipeline\\/build-and-test-lnx\\.yml$",
+        "^\\.ci/pipeline/build-and-test-lnx\\.yml$",
         "^\\.github/workflows/ci\\.yml$"
       ],
       "matchStrings": [
@@ -37,8 +37,8 @@
     {
       "customType": "regex",
       "fileMatch": [
-        "^\\.ci\\/pipeline\\/build-and-test-lnx\\.yml$",
-        "^\\.github\\/workflows\\/ci\\.yml$"
+        "^\\.ci/pipeline/build-and-test-lnx\\.yml$",
+        "^\\.github/workflows/ci\\.yml$"
       ],
       "matchStrings": [
         "\\s*DPNP_VERSION: (?<currentValue>\\d+\\.\\d+\\.\\d+)"
@@ -48,7 +48,7 @@
     },
     {
       "customType": "regex",
-      "fileMatch": ["^\\.ci\\/pipeline\\/build-and-test-lnx\\.yml$"],
+      "fileMatch": ["^\\.ci/pipeline/build-and-test-lnx\\.yml$"],
       "matchStrings": [
         "\\s*DPCPP_RT_VERSION: (?<currentValue>\\d+\\.\\d+\\.\\d+)"
       ],
