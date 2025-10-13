@@ -85,6 +85,12 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
     @wrap_output_data
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
         check_is_fitted(self)
+        
+        # CRITICAL FIRST: Ensure _fit_X is always an array before any sklearn operations
+        if hasattr(self, '_fit_X') and isinstance(self._fit_X, tuple):
+            print("DEBUG kneighbors: PREVENTIVE FIX - _fit_X is tuple, permanently extracting first element", file=sys.stderr)
+            self._fit_X = self._fit_X[0]  # Fix the attribute permanently
+            
         if X is not None:
             check_feature_names(self, X, reset=False)
             # Perform preprocessing at sklearnex level
@@ -122,6 +128,11 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         print(f"  _tree: {getattr(self, '_tree', 'NOT_SET')}", file=sys.stderr)
         print(f"  _fit_method: {getattr(self, '_fit_method', 'NOT_SET')}", file=sys.stderr)
         
+        # CRITICAL FIRST: Ensure _fit_X is always an array before any sklearn operations
+        if hasattr(self, '_fit_X') and isinstance(self._fit_X, tuple):
+            print("DEBUG radius_neighbors: PREVENTIVE FIX - _fit_X is tuple, permanently extracting first element", file=sys.stderr)
+            self._fit_X = self._fit_X[0]  # Fix the attribute permanently
+        
         # Preprocessing for X parameter (same as kneighbors)
         if X is not None:
             check_feature_names(self, X, reset=False)
@@ -131,7 +142,7 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
             X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
             self._validate_feature_count(X, "radius_neighbors")
         
-        # Original OneDAL refactoring condition with debug
+        # Original OneDAL refactoring condition with proper validation
         if (
             hasattr(self, "_onedal_estimator")
             or getattr(self, "_tree", 0) is None
@@ -139,14 +150,31 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         ):
             print("DEBUG: Condition met - calling sklearn fit for preprocessing", file=sys.stderr)
             
-            # CRITICAL FIX: Ensure _fit_X is properly extracted from tuple if needed
-            # This is essential because sklearn's fit method accesses self._fit_X directly
-            if isinstance(self._fit_X, tuple):
-                print("DEBUG radius_neighbors: _fit_X is tuple, permanently extracting first element", file=sys.stderr)
-                self._fit_X = self._fit_X[0]  # Fix the attribute permanently
+            # Use sklearnex-level validation instead of raw OneDAL data
+            # This ensures we have proper arrays, not tuples from OneDAL processing
+            fit_x_for_sklearn = getattr(self, "_fit_X", None)
+            fit_y_for_sklearn = getattr(self, "_y", None)
             
-            print(f"DEBUG: Calling _sklearn_NearestNeighbors.fit with self._fit_X type: {type(self._fit_X)}", file=sys.stderr)
-            _sklearn_NearestNeighbors.fit(self, self._fit_X, getattr(self, "_y", None))
+            # Apply sklearnex-level validation to ensure proper data format
+            if fit_x_for_sklearn is not None:
+                # Use the refactored _validate_data method from KNeighborsDispatchingBase
+                fit_x_for_sklearn, _ = self._validate_data(
+                    fit_x_for_sklearn, dtype=[np.float64, np.float32], accept_sparse=True
+                )
+                
+            # CRITICAL FIX: Ensure _fit_X is properly extracted from tuple if needed
+            if isinstance(fit_x_for_sklearn, tuple):
+                print("DEBUG radius_neighbors: fit_x_for_sklearn is tuple, extracting first element", file=sys.stderr)
+                fit_x_for_sklearn = fit_x_for_sklearn[0]
+                
+            # Update the main attribute to ensure consistency
+            self._fit_X = fit_x_for_sklearn
+            
+            print(f"DEBUG: Calling _sklearn_NearestNeighbors.fit with validated data", file=sys.stderr)
+            print(f"  fit_x_for_sklearn type: {type(fit_x_for_sklearn)}", file=sys.stderr)
+            print(f"  fit_y_for_sklearn type: {type(fit_y_for_sklearn)}", file=sys.stderr)
+            
+            _sklearn_NearestNeighbors.fit(self, fit_x_for_sklearn, fit_y_for_sklearn)
             print("DEBUG: sklearn fit completed", file=sys.stderr)
         else:
             print("DEBUG: Condition NOT met - skipping sklearn fit", file=sys.stderr)
