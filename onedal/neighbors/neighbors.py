@@ -153,10 +153,12 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         print(f"DEBUG oneDAL _fit BEFORE setting _fit_X:", file=sys.stderr)
         print(f"  X type: {type(X)}, isinstance(X, tuple): {isinstance(X, tuple)}", file=sys.stderr)
         
-        # Ensure _fit_X is always an array, never a tuple
+        # CRITICAL FIX: Ensure _fit_X is always an array, never a tuple
+        # This is essential because sklearn's _fit method reads from self._fit_X directly
         if isinstance(X, tuple):
             print(f"DEBUG oneDAL _fit: X is tuple, extracting first element: {type(X)}", file=sys.stderr)
-            self._fit_X = X[0]
+            # Extract the actual array from tuple created by from_table/to_table
+            self._fit_X = X[0] if X[0] is not None else X[1]
         else:
             self._fit_X = X
             

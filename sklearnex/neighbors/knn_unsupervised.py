@@ -122,56 +122,35 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         print(f"  _tree: {getattr(self, '_tree', 'NOT_SET')}", file=sys.stderr)
         print(f"  _fit_method: {getattr(self, '_fit_method', 'NOT_SET')}", file=sys.stderr)
         
-        # Check the condition logic
-        has_onedal = hasattr(self, "_onedal_estimator")
-        tree_is_none = getattr(self, "_tree", 0) is None
-        is_kd_tree = getattr(self, "_fit_method", None) == "kd_tree"
-        print(f"DEBUG: has_onedal={has_onedal}, tree_is_none={tree_is_none}, is_kd_tree={is_kd_tree}", file=sys.stderr)
+        # Preprocessing for X parameter (same as kneighbors)
+        if X is not None:
+            check_feature_names(self, X, reset=False)
+            # Perform preprocessing at sklearnex level
+            from onedal.utils.validation import _check_array
+
+            X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
+            self._validate_feature_count(X, "radius_neighbors")
         
-        condition_met = has_onedal or (tree_is_none and is_kd_tree)
-        print(f"DEBUG: condition_met={condition_met}", file=sys.stderr)
-        
-        if condition_met:
-            print("DEBUG: Entering the fit_x handling block", file=sys.stderr)
-            # Handle potential tuple in _fit_X (same as _save_attributes logic)
-            fit_x = self._fit_X
-            print(f"DEBUG radius_neighbors: _fit_X type: {type(fit_x)}", file=sys.stderr)
-            print(f"DEBUG radius_neighbors: _fit_X shape/content: {fit_x.shape if hasattr(fit_x, 'shape') else fit_x}", file=sys.stderr)
-            fit_x_array = fit_x[0] if isinstance(fit_x, tuple) else fit_x
-            print(f"DEBUG radius_neighbors: fit_x_array type: {type(fit_x_array)}", file=sys.stderr)
+        # Original OneDAL refactoring condition with debug
+        if (
+            hasattr(self, "_onedal_estimator")
+            or getattr(self, "_tree", 0) is None
+            and getattr(self, "_fit_method", None) == "kd_tree"
+        ):
+            print("DEBUG: Condition met - calling sklearn fit for preprocessing", file=sys.stderr)
             
-            # Additional safety check - ensure fit_x_array is not a tuple
-            if isinstance(fit_x_array, tuple):
-                print(f"DEBUG radius_neighbors: fit_x_array is still tuple after extraction: {type(fit_x_array)}", file=sys.stderr)
-                fit_x_array = fit_x_array[0]  # Extract again if needed
-                print(f"DEBUG radius_neighbors: fit_x_array after second extraction: {type(fit_x_array)}", file=sys.stderr)
+            # Ensure _fit_X is not a tuple before sklearn accesses it
+            fit_x_for_sklearn = self._fit_X
+            if isinstance(self._fit_X, tuple):
+                print("DEBUG radius_neighbors: _fit_X is tuple, extracting first element for sklearn fit", file=sys.stderr)
+                fit_x_for_sklearn = self._fit_X[0]
             
-            # Temporarily set _fit_X to the extracted array since sklearn accesses it directly
-            original_fit_x = self._fit_X
-            self._fit_X = fit_x_array
-            
-            # Debug the _y value and handle potential tuple
-            y_value = getattr(self, "_y", None)
-            if isinstance(y_value, tuple):
-                print(f"DEBUG: _y is tuple, extracting: {type(y_value)}", file=sys.stderr)
-                y_value = y_value[0] if y_value[0] is not None else None
-            print(f"DEBUG: _y value type: {type(y_value)}, value: {y_value}", file=sys.stderr)
-            
-            try:
-                # Call _fit directly to avoid any preprocessing in fit() that might create tuples
-                _sklearn_NearestNeighbors._fit(self, fit_x_array, y_value)
-            finally:
-                # Restore original _fit_X
-                self._fit_X = original_fit_x
+            print(f"DEBUG: Calling _sklearn_NearestNeighbors.fit with fit_x_for_sklearn type: {type(fit_x_for_sklearn)}", file=sys.stderr)
+            _sklearn_NearestNeighbors.fit(self, fit_x_for_sklearn, getattr(self, "_y", None))
+            print("DEBUG: sklearn fit completed", file=sys.stderr)
         else:
-            print("DEBUG: NOT entering the fit_x handling block - using default path", file=sys.stderr)
-            # ALWAYS handle potential tuple in _fit_X for robustness
-            if hasattr(self, '_fit_X'):
-                fit_x = self._fit_X
-                print(f"DEBUG fallback path: _fit_X type: {type(fit_x)}", file=sys.stderr)
-                if isinstance(fit_x, tuple):
-                    print("DEBUG fallback path: _fit_X is tuple, extracting first element", file=sys.stderr)
-                    self._fit_X = fit_x[0]
+            print("DEBUG: Condition NOT met - skipping sklearn fit", file=sys.stderr)
+        
         check_is_fitted(self)
         
         print(f"DEBUG radius_neighbors BEFORE DISPATCH:", file=sys.stderr)
@@ -301,7 +280,13 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         print(f"  fit_x type: {type(fit_x)}", file=sys.stderr)
         print(f"  isinstance(fit_x, tuple): {isinstance(fit_x, tuple)}", file=sys.stderr)
         
-        self._fit_X = fit_x[0] if isinstance(fit_x, tuple) else fit_x
+        # CRITICAL FIX: OneDAL's to_table() can return tuples (array, None) in recursive calls
+        # We must extract the actual array for sklearn compatibility
+        if isinstance(fit_x, tuple):
+            print(f"DEBUG _save_attributes: fit_x is tuple, extracting array from: {fit_x}", file=sys.stderr)
+            self._fit_X = fit_x[0]  # Extract the array from (array, None) tuple
+        else:
+            self._fit_X = fit_x
         
         print(f"DEBUG _save_attributes AFTER processing:", file=sys.stderr)
         print(f"  self._fit_X type: {type(self._fit_X)}", file=sys.stderr)
