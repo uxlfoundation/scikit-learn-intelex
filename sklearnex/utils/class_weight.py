@@ -43,9 +43,15 @@ def _compute_class_weight(class_weight, *, classes, y, sample_weight=None):
         # use the sklearn version for standard use.
         return compute_class_weight(class_weight, classes, y, sample_weight=sample_weight)
 
-    sety = xp.unique_values(y)
-    setclasses = xp.unique_values(classes)
-    if sety.shape[0] != xp.unique_values(xp.concat((sety, setclasses))).shape[0]:
+    if xp is np and np.__version__.startswith("1"):
+        sety = xp.unique(y)
+        setclasses = xp.unique(classes)
+        ncomb = xp.unique(xp.concat((sety, setclasses))).shape[0]
+    else:
+        sety = xp.unique_values(y)
+        setclasses = xp.unique_values(classes)
+        ncomb = xp.unique_values(xp.concat((sety, setclasses))).shape[0]
+    if sety.shape[0] != ncomb:
         raise ValueError("classes should include all valid labels that can be in y")
     if class_weight is None or len(class_weight) == 0:
         # uniform class weights

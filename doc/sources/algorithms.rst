@@ -51,14 +51,14 @@ Classification
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
        - ``criterion`` != `'gini'`
-     - Multi-output and sparse data are not supported
+     - Multi-output and sparse data are not supported. Number of classes must be at least 2.
    * - :obj:`sklearn.ensemble.ExtraTreesClassifier`
      - All parameters are supported except:
 
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
        - ``criterion`` != `'gini'`
-     - Multi-output and sparse data are not supported
+     - Multi-output and sparse data are not supported. Number of classes must be at least 2.
    * - :obj:`sklearn.neighbors.KNeighborsClassifier`
      -
        - For ``algorithm`` == `'kd_tree'`:
@@ -293,7 +293,7 @@ Classification
        - ``criterion`` != `'gini'`
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
-     - Multi-output and sparse data are not supported
+     - Multi-output and sparse data are not supported. Number of classes must be at least 2.
    * - :obj:`sklearn.ensemble.ExtraTreesClassifier`
      - All parameters are supported except:
 
@@ -302,7 +302,7 @@ Classification
        - ``criterion`` != `'gini'`
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
-     - Multi-output and sparse data are not supported
+     - Multi-output and sparse data are not supported. Number of classes must be at least 2.
    * - :obj:`sklearn.neighbors.KNeighborsClassifier`
      - All parameters are supported except:
 
@@ -488,7 +488,7 @@ Classification
        - ``criterion`` != `'gini'`
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
-     - Multi-output and sparse data are not supported
+     - Multi-output and sparse data are not supported. Number of classes must be at least 2.
    * - :obj:`sklearn.ensemble.ExtraTreesClassifier`
      - All parameters are supported except:
 
@@ -497,7 +497,7 @@ Classification
        - ``criterion`` != `'gini'`
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
-     - Multi-output and sparse data are not supported
+     - Multi-output and sparse data are not supported. Number of classes must be at least 2.
    * - :obj:`sklearn.neighbors.KNeighborsClassifier`
      - All parameters are supported except:
 
