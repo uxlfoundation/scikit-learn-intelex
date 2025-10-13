@@ -79,6 +79,7 @@ steps:
     env:
       TBBROOT: ${{ variables.TBBROOT }}
       COVERAGE_RCFILE: ${{ variables.COVERAGE_RCFILE }}
+      NO_DIST: 1
     displayName: "Sklearnex testing"
   - script: |
       . /usr/share/miniconda/etc/profile.d/conda.sh

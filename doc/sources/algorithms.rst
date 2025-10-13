@@ -40,10 +40,10 @@ Classification
      - Parameters
      - Data formats
    * - :obj:`sklearn.svm.SVC`
-     - All parameters are supported
+     - ``kernel`` must be one of [``"linear"``, ``"rbf"``, ``"poly"``, ``"sigmoid"``]
      - No limitations
    * - :obj:`sklearn.svm.NuSVC`
-     - All parameters are supported
+     - ``kernel`` must be one of [``"linear"``, ``"rbf"``, ``"poly"``, ``"sigmoid"``]
      - No limitations
    * - :obj:`sklearn.ensemble.RandomForestClassifier`
      - All parameters are supported except:
@@ -89,10 +89,10 @@ Regression
      - Parameters
      - Data formats
    * - :obj:`sklearn.svm.SVR`
-     - All parameters are supported
+     - ``kernel`` must be one of [``"linear"``, ``"rbf"``, ``"poly"``, ``"sigmoid"``]
      - No limitations
    * - :obj:`sklearn.svm.NuSVR`
-     - All parameters are supported
+     - ``kernel`` must be one of [``"linear"``, ``"rbf"``, ``"poly"``, ``"sigmoid"``]
      - No limitations
    * - :obj:`sklearn.ensemble.RandomForestRegressor`
      - All parameters are supported except:
@@ -117,26 +117,26 @@ Regression
      - All parameters are supported except:
 
        - ``sample_weight`` != `None`
-       - ``positive`` = `True`
+       - ``positive`` = `True` (this is supported through the class :obj:`sklearn.linear_model.ElasticNet`)
      - Only dense data is supported.
    * - :obj:`sklearn.linear_model.Ridge`
      - All parameters are supported except:
 
        - ``solver`` != `'auto'`
        - ``sample_weight`` != `None`
-       - ``positive`` = `True`
+       - ``positive`` = `True` (this is supported through the class :obj:`sklearn.linear_model.ElasticNet`)
        - ``alpha`` must be a scalar
      - Only dense data is supported.
    * - :obj:`sklearn.linear_model.ElasticNet`
      - All parameters are supported except:
 
        - ``sample_weight`` != `None`
-     - Multi-output and sparse data are not supported, `#observations` should be >= `#features`.
+     - Sparse data is not supported.
    * - :obj:`sklearn.linear_model.Lasso`
      - All parameters are supported except:
 
        - ``sample_weight`` != `None`
-     - Multi-output and sparse data are not supported, `#observations` should be >= `#features`.
+     - Sparse data is not supported.
 
 Clustering
 **********
@@ -264,6 +264,7 @@ Other Tasks
 
 on GPU
 ------
+.. _sklearn_algorithms_gpu:
 
 .. seealso:: :ref:`oneapi_gpu`
 
@@ -281,7 +282,7 @@ Classification
    * - :obj:`sklearn.svm.SVC`
      - All parameters are supported except:
 
-       - ``kernel`` = `'sigmoid_poly'`
+       - ``kernel`` not in [``"linear"``, ``"rbf"``]
        - ``class_weight`` != `None`
      - Only binary dense data is supported
    * - :obj:`sklearn.ensemble.RandomForestClassifier`
