@@ -112,6 +112,8 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
         return self
 
     def fit(self, X, y=None):
+        import sys
+        print(f"DEBUG LocalOutlierFactor.fit START: X type={type(X)}, X shape={getattr(X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
         result = dispatch(
             self,
             "fit",
@@ -122,9 +124,12 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
             X,
             None,
         )
+        print(f"DEBUG LocalOutlierFactor.fit END: result type={type(result)}", file=sys.stderr)
         return result
 
     def _predict(self, X=None):
+        import sys
+        print(f"DEBUG LocalOutlierFactor._predict START: X type={type(X)}", file=sys.stderr)
         check_is_fitted(self)
 
         if X is not None:
@@ -136,6 +141,7 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
             is_inlier = np.ones(self.n_samples_fit_, dtype=int)
             is_inlier[self.negative_outlier_factor_ < self.offset_] = -1
 
+        print(f"DEBUG LocalOutlierFactor._predict END: is_inlier type={type(is_inlier)}", file=sys.stderr)
         return is_inlier
 
     # This had to be done because predict loses the queue when no
@@ -146,25 +152,19 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
     @wraps(_sklearn_LocalOutlierFactor.fit_predict, assigned=["__doc__"])
     @wrap_output_data
     def fit_predict(self, X, y=None):
-        return self.fit(X)._predict()
+        import sys
+        print(f"DEBUG LocalOutlierFactor.fit_predict START: X type={type(X)}", file=sys.stderr)
+        result = self.fit(X)._predict()
+        print(f"DEBUG LocalOutlierFactor.fit_predict END: result type={type(result)}", file=sys.stderr)
+        return result
 
     def _kneighbors(self, X=None, n_neighbors=None, return_distance=True):
+        import sys
+        print(f"DEBUG LocalOutlierFactor._kneighbors START: X type={type(X)}, n_neighbors={n_neighbors}, return_distance={return_distance}", file=sys.stderr)
         check_is_fitted(self)
         if X is not None:
             check_feature_names(self, X, reset=False)
-            # Perform preprocessing at sklearnex level
-            import numpy as np
-
-            from onedal.utils.validation import _check_array
-
-            X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
-            self._validate_feature_count(X, "kneighbors")
-
-        # Validate n_neighbors
-        if n_neighbors is not None:
-            self._validate_n_neighbors(n_neighbors)
-
-        return dispatch(
+        result = dispatch(
             self,
             "kneighbors",
             {
@@ -175,6 +175,8 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
             n_neighbors=n_neighbors,
             return_distance=return_distance,
         )
+        print(f"DEBUG LocalOutlierFactor._kneighbors END: result type={type(result)}", file=sys.stderr)
+        return result
 
     kneighbors = wrap_output_data(_kneighbors)
 
@@ -182,6 +184,8 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
     @wraps(_sklearn_LocalOutlierFactor.score_samples, assigned=["__doc__"])
     @wrap_output_data
     def score_samples(self, X):
+        import sys
+        print(f"DEBUG LocalOutlierFactor.score_samples START: X type={type(X)}", file=sys.stderr)
         check_is_fitted(self)
 
         distances_X, neighbors_indices_X = self._kneighbors(
@@ -195,7 +199,9 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
 
         lrd_ratios_array = self._lrd[neighbors_indices_X] / X_lrd[:, np.newaxis]
 
-        return -np.mean(lrd_ratios_array, axis=1)
+        result = -np.mean(lrd_ratios_array, axis=1)
+        print(f"DEBUG LocalOutlierFactor.score_samples END: result type={type(result)}", file=sys.stderr)
+        return result
 
     fit.__doc__ = _sklearn_LocalOutlierFactor.fit.__doc__
     kneighbors.__doc__ = _sklearn_LocalOutlierFactor.kneighbors.__doc__
