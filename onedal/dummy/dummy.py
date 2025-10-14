@@ -116,6 +116,13 @@ class DummyEstimator:
         # model class defined with serialization and deserialization with a
         # pybind11 interface.
 
+        # When the model is a oneDAL object (see svm), it must maintain a
+        # pybind11 interface to the `serialization` and `deserialization`
+        # oneDAL routines for proper pickling of the oneDAL object. oneDAL
+        # tables must be converted to the array type of the fitted estimator
+        # for pickling/unpickling (see any incremental estimator pybind11
+        # implementation).
+
         # This example just treats a oneDAL table as the model.
         return to_table(self.constant_)
 

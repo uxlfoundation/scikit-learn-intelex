@@ -210,6 +210,12 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
     # attributes with trailing underscores are return values and are of
     # some type of data (and therefore not themselves oneDAL-accelerated).
     #
+    # 5) Attributes of the related scikit-learn estimator which are not
+    # defined or calculated by the oneDAL estimator still must be set in the
+    # scikit-learn-intelex estimator to plausible values. This can be either
+    # derived from available oneDAL estimator data or to a hardcoded value.
+    #
+    #
     # Information about the onedal estimators/objects can be found in an
     # equivalent class file in the onedal module.
 
