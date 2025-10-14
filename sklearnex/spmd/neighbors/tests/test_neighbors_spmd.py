@@ -243,7 +243,7 @@ def test_knnreg_spmd_gold(dataframe, queue):
 @pytest.mark.parametrize("n_neighbors", [1, 5, 20])
 @pytest.mark.parametrize("weights", ["uniform", "distance"])
 @pytest.mark.parametrize(
-    "metric", ["euclidean", "manhattan", "minkowski", "chebyshev", "cosine"]
+    "metric", ["euclidean", "manhattan", "minkowski", "chebyshev", "cosine", "correlation"]
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
