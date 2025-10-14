@@ -93,15 +93,6 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
             
         if X is not None:
             check_feature_names(self, X, reset=False)
-            # Perform preprocessing at sklearnex level
-            from onedal.utils.validation import _check_array
-
-            X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
-            self._validate_feature_count(X, "kneighbors")
-
-        # Validate n_neighbors
-        if n_neighbors is not None:
-            self._validate_n_neighbors(n_neighbors)
 
         return dispatch(
             self,
@@ -133,51 +124,20 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
             print("DEBUG radius_neighbors: PREVENTIVE FIX - _fit_X is tuple, permanently extracting first element", file=sys.stderr)
             self._fit_X = self._fit_X[0]  # Fix the attribute permanently
         
-        # Preprocessing for X parameter (same as kneighbors)
-        if X is not None:
-            check_feature_names(self, X, reset=False)
-            # Perform preprocessing at sklearnex level
-            from onedal.utils.validation import _check_array
-
-            X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
-            self._validate_feature_count(X, "radius_neighbors")
-        
-        # Original OneDAL refactoring condition with proper validation
+        # Original main branch logic - simple conditional fit
         if (
             hasattr(self, "_onedal_estimator")
             or getattr(self, "_tree", 0) is None
-            and getattr(self, "_fit_method", None) == "kd_tree"
+            and self._fit_method == "kd_tree"
         ):
-            print("DEBUG: Condition met - calling sklearn fit for preprocessing", file=sys.stderr)
+            print("DEBUG: Original condition met - calling sklearn fit", file=sys.stderr)
+            print(f"  self._fit_X type before fit: {type(getattr(self, '_fit_X', 'NOT_SET'))}", file=sys.stderr)
+            print(f"  self._y type before fit: {type(getattr(self, '_y', 'NOT_SET'))}", file=sys.stderr)
             
-            # Use sklearnex-level validation instead of raw OneDAL data
-            # This ensures we have proper arrays, not tuples from OneDAL processing
-            fit_x_for_sklearn = getattr(self, "_fit_X", None)
-            fit_y_for_sklearn = getattr(self, "_y", None)
-            
-            # Apply sklearnex-level validation to ensure proper data format
-            if fit_x_for_sklearn is not None:
-                # Use the refactored _validate_data method from KNeighborsDispatchingBase
-                fit_x_for_sklearn, _ = self._validate_data(
-                    fit_x_for_sklearn, dtype=[np.float64, np.float32], accept_sparse=True
-                )
-                
-            # CRITICAL FIX: Ensure _fit_X is properly extracted from tuple if needed
-            if isinstance(fit_x_for_sklearn, tuple):
-                print("DEBUG radius_neighbors: fit_x_for_sklearn is tuple, extracting first element", file=sys.stderr)
-                fit_x_for_sklearn = fit_x_for_sklearn[0]
-                
-            # Update the main attribute to ensure consistency
-            self._fit_X = fit_x_for_sklearn
-            
-            print(f"DEBUG: Calling _sklearn_NearestNeighbors.fit with validated data", file=sys.stderr)
-            print(f"  fit_x_for_sklearn type: {type(fit_x_for_sklearn)}", file=sys.stderr)
-            print(f"  fit_y_for_sklearn type: {type(fit_y_for_sklearn)}", file=sys.stderr)
-            
-            _sklearn_NearestNeighbors.fit(self, fit_x_for_sklearn, fit_y_for_sklearn)
+            _sklearn_NearestNeighbors.fit(self, self._fit_X, getattr(self, "_y", None))
             print("DEBUG: sklearn fit completed", file=sys.stderr)
         else:
-            print("DEBUG: Condition NOT met - skipping sklearn fit", file=sys.stderr)
+            print("DEBUG: Original condition NOT met - skipping sklearn fit", file=sys.stderr)
         
         check_is_fitted(self)
         
@@ -239,21 +199,6 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         print(f"  y type: {type(y)}, y shape: {getattr(y, 'shape', 'NO_SHAPE')}", file=sys.stderr)
         print(f"  queue: {queue}", file=sys.stderr)
         
-        # Perform preprocessing at sklearnex level
-        X, _ = self._validate_data(X, dtype=[np.float64, np.float32], accept_sparse=True)
-        
-        print(f"DEBUG _onedal_fit AFTER _validate_data:", file=sys.stderr)
-        print(f"  X type: {type(X)}, X shape: {getattr(X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
-
-        # Validate n_neighbors
-        self._validate_n_neighbors(self.n_neighbors)
-
-        # Parse auto method
-        self._fit_method = self._parse_auto_method(self.algorithm, X.shape[0], X.shape[1])
-
-        # Set basic attributes for unsupervised
-        self.classes_ = None
-
         onedal_params = {
             "n_neighbors": self.n_neighbors,
             "algorithm": self.algorithm,
@@ -265,10 +210,6 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         self._onedal_estimator.requires_y = get_requires_y_tag(self)
         self._onedal_estimator.effective_metric_ = self.effective_metric_
         self._onedal_estimator.effective_metric_params_ = self.effective_metric_params_
-        self._onedal_estimator._fit_method = self._fit_method
-
-        # Set attributes on the onedal estimator
-        self._onedal_estimator.classes_ = self.classes_
 
         print(f"DEBUG _onedal_fit BEFORE calling onedal_estimator.fit:", file=sys.stderr)
         print(f"  X type: {type(X)}, X shape: {getattr(X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
