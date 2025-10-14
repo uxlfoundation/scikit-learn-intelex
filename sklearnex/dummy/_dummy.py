@@ -213,7 +213,7 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
     # 5) Fitted attributes of the related scikit-learn estimator which are not
     # defined or calculated by the oneDAL estimator still must be set in the
     # scikit-learn-intelex estimator to plausible values. These can be either
-    # derived from available oneDAL estimator data or to hardcoded values.
+    # derived from available oneDAL estimator data or set to hardcoded values.
     #
     #
     # Information about the onedal estimators/objects can be found in an
