@@ -53,9 +53,12 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
     _onedal_kneighbors = NearestNeighbors._onedal_kneighbors
 
     def _onedal_fit(self, X, y, queue=None):
+        import sys
+        print(f"DEBUG LocalOutlierFactor._onedal_fit START: X type={type(X)}, y type={type(y)}", file=sys.stderr)
         if sklearn_check_version("1.2"):
             self._validate_params()
 
+        print(f"DEBUG LocalOutlierFactor._onedal_fit: Calling _onedal_knn_fit", file=sys.stderr)
         self._onedal_knn_fit(X, y, queue=queue)
 
         if self.contamination != "auto":
@@ -75,6 +78,7 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
             )
         self.n_neighbors_ = max(1, min(self.n_neighbors, n_samples - 1))
 
+        print(f"DEBUG LocalOutlierFactor._onedal_fit: Calling _onedal_kneighbors", file=sys.stderr)
         (
             self._distances_fit_X_,
             _neighbors_indices_fit_X_,
@@ -109,6 +113,7 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
                     "Increase the number of neighbors for more accurate results."
                 )
 
+        print(f"DEBUG LocalOutlierFactor._onedal_fit END: _fit_X type={type(getattr(self, '_fit_X', 'NOT_SET'))}", file=sys.stderr)
         return self
 
     def fit(self, X, y=None):
