@@ -105,7 +105,7 @@ Note: executing on GPU has `additional system software requirements <https://www
                import os
                os.environ["SCIPY_ARRAY_API"] = "1"
                import numpy as np
-               import dpnp
+               import torch
                from sklearnex import patch_sklearn
                patch_sklearn()
                from sklearn import config_context
@@ -114,8 +114,8 @@ Note: executing on GPU has `additional system software requirements <https://www
 
                X = np.array([[1., 2.], [2., 2.], [2., 3.],
                              [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
-               X = dpnp.array(X, device="gpu")
-               with config_context(array_api_dispatch=True)
+               X = torch.tensor(X, device="xpu")
+               with config_context(array_api_dispatch=True):
                    clustering = DBSCAN(eps=3, min_samples=2).fit(X)
 
    .. tab:: Without patching
@@ -138,14 +138,14 @@ Note: executing on GPU has `additional system software requirements <https://www
                import os
                os.environ["SCIPY_ARRAY_API"] = "1"
                import numpy as np
-               import dpnp
+               import torch
                from sklearnex import config_context
                from sklearnex.cluster import DBSCAN
 
                X = np.array([[1., 2.], [2., 2.], [2., 3.],
                              [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
-               X = dpnp.array(X, device="gpu")
-               with config_context(array_api_dispatch=True)
+               X = torch.tensor(X, device="xpu")
+               with config_context(array_api_dispatch=True):
                    clustering = DBSCAN(eps=3, min_samples=2).fit(X)
 
 

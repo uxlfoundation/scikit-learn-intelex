@@ -110,52 +110,102 @@ Example usage
 GPU operations on GPU arrays
 ----------------------------
 
-.. code-block:: python
+.. tabs::
+    .. tab:: With Torch tensors
+       .. code-block:: python
 
-    # Array API support from sklearn requires enabling it on SciPy too
-    import os
-    os.environ["SCIPY_ARRAY_API"] = "1"
+           # Array API support from sklearn requires enabling it on SciPy too
+           import os
+           os.environ["SCIPY_ARRAY_API"] = "1"
 
-    import numpy as np
-    import dpnp
-    from sklearnex import config_context
-    from sklearnex.linear_model import LinearRegression
+           import numpy as np
+           import torch
+           from sklearnex import config_context
+           from sklearnex.linear_model import LinearRegression
 
-    # Random data for a regression problem
-    rng = np.random.default_rng(seed=123)
-    X_np = rng.standard_normal(size=(100, 10), dtype=np.float32)
-    y_np = rng.standard_normal(size=100, dtype=np.float32)
+           # Random data for a regression problem
+           rng = np.random.default_rng(seed=123)
+           X_np = rng.standard_normal(size=(100, 10), dtype=np.float32)
+           y_np = rng.standard_normal(size=100, dtype=np.float32)
 
-    # DPNP offers an array-API-compliant class where data can be on GPU
-    X = dpnp.array(X_np, device="gpu")
-    y = dpnp.array(y_np, device="gpu")
+           # Torch offers an array-API-compliant class where data can be on GPU (referred to as 'xpu')
+           X = torch.tensor(X_np, device="xpu")
+           y = torch.tensor(y_np, device="xpu")
 
-    # Important to note again that array API must be enabled on scikit-learn
-    model = LinearRegression()
-    with config_context(array_api_dispatch=True):
-        model.fit(X, y)
+           # Important to note again that array API must be enabled on scikit-learn
+           model = LinearRegression()
+           with config_context(array_api_dispatch=True):
+               model.fit(X, y)
 
-    # Fitted attributes are now of the same class as inputs
-    assert isinstance(model.coef_, X.__class__)
+           # Fitted attributes are now of the same class as inputs
+           assert isinstance(model.coef_, torch.Tensor)
 
-    # Predictions are also of the same class
-    with config_context(array_api_dispatch=True):
-        pred = model.predict(X[:5])
-    assert isinstance(pred, X.__class__)
+           # Predictions are also of the same class
+           with config_context(array_api_dispatch=True):
+               pred = model.predict(X[:5])
+           assert isinstance(pred, torch.Tensor)
 
-    # Fitted models can be passed array API inputs of a different class
-    # than the training data, as long as their data resides in the same
-    # device. This now fits a model using a non-NumPy class whose data is on CPU.
-    X_cpu = dpnp.array(X_np, device="cpu")
-    y_cpu = dpnp.array(y_np, device="cpu")
-    model_cpu = LinearRegression()
-    with config_context(array_api_dispatch=True):
-        model_cpu.fit(X_cpu, y_cpu)
-        pred_dpnp = model_cpu.predict(X_cpu[:5])
-        pred_np = model_cpu.predict(X_cpu[:5].asnumpy())
-    assert isinstance(pred_dpnp, X_cpu.__class__)
-    assert isinstance(pred_np, np.ndarray)
-    assert pred_dpnp.__class__ != pred_np.__class__
+           # Fitted models can be passed array API inputs of a different class
+           # than the training data, as long as their data resides in the same
+           # device. This now fits a model using a non-NumPy class whose data is on CPU.
+           X_cpu = torch.tensor(X_np, device="cpu")
+           y_cpu = torch.tensor(y_np, device="cpu")
+           model_cpu = LinearRegression()
+           with config_context(array_api_dispatch=True):
+               model_cpu.fit(X_cpu, y_cpu)
+               pred_torch = model_cpu.predict(X_cpu[:5])
+               pred_np = model_cpu.predict(X_cpu[:5].numpy())
+           assert isinstance(pred_torch, X_cpu.__class__)
+           assert isinstance(pred_np, np.ndarray)
+           assert pred_torch.__class__ != pred_np.__class__
+
+    .. tab:: With DPNP arrays
+       .. code-block:: python
+
+           # Array API support from sklearn requires enabling it on SciPy too
+           import os
+           os.environ["SCIPY_ARRAY_API"] = "1"
+
+           import numpy as np
+           import dpnp
+           from sklearnex import config_context
+           from sklearnex.linear_model import LinearRegression
+
+           # Random data for a regression problem
+           rng = np.random.default_rng(seed=123)
+           X_np = rng.standard_normal(size=(100, 10), dtype=np.float32)
+           y_np = rng.standard_normal(size=100, dtype=np.float32)
+
+           # DPNP offers an array-API-compliant class where data can be on GPU
+           X = dpnp.array(X_np, device="gpu")
+           y = dpnp.array(y_np, device="gpu")
+
+           # Important to note again that array API must be enabled on scikit-learn
+           model = LinearRegression()
+           with config_context(array_api_dispatch=True):
+               model.fit(X, y)
+
+           # Fitted attributes are now of the same class as inputs
+           assert isinstance(model.coef_, X.__class__)
+
+           # Predictions are also of the same class
+           with config_context(array_api_dispatch=True):
+               pred = model.predict(X[:5])
+           assert isinstance(pred, X.__class__)
+
+           # Fitted models can be passed array API inputs of a different class
+           # than the training data, as long as their data resides in the same
+           # device. This now fits a model using a non-NumPy class whose data is on CPU.
+           X_cpu = dpnp.array(X_np, device="cpu")
+           y_cpu = dpnp.array(y_np, device="cpu")
+           model_cpu = LinearRegression()
+           with config_context(array_api_dispatch=True):
+               model_cpu.fit(X_cpu, y_cpu)
+               pred_dpnp = model_cpu.predict(X_cpu[:5])
+               pred_np = model_cpu.predict(X_cpu[:5].asnumpy())
+           assert isinstance(pred_dpnp, X_cpu.__class__)
+           assert isinstance(pred_np, np.ndarray)
+           assert pred_dpnp.__class__ != pred_np.__class__
 
 
 ``array-api-strict``
