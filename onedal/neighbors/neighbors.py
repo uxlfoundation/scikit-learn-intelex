@@ -185,12 +185,15 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         except ValueError:
             return arr
 
-    def _validate_n_classes(self):
-        length = 0 if self.classes_ is None else len(self.classes_)
-        if length < 2:
-            raise ValueError(
-                f"The number of classes has to be greater than one; got {length}"
-            )
+    # REFACTOR NOTE: _validate_n_classes moved to sklearnex/neighbors/common.py
+    # This method is no longer used in the onedal layer - all validation happens in sklearnex
+    # Commented out for reference only
+    # def _validate_n_classes(self):
+    #     length = 0 if self.classes_ is None else len(self.classes_)
+    #     if length < 2:
+    #         raise ValueError(
+    #             f"The number of classes has to be greater than one; got {length}"
+    #         )
 
     def _fit(self, X, y):
         print(f"DEBUG oneDAL _fit START: X type={type(X)}, X shape={getattr(X, 'shape', 'NO_SHAPE')}, y type={type(y)}", file=sys.stderr)
@@ -480,7 +483,9 @@ class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
             self.algorithm, n_samples_fit_, n_features
         )
 
-        self._validate_n_classes()
+        # REFACTOR NOTE: _validate_n_classes() is now called during fit in sklearnex layer
+        # No need to validate again during predict
+        # self._validate_n_classes()
 
         params = self._get_onedal_params(X)
         prediction_result = self._onedal_predict(onedal_model, X, params)
