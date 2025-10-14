@@ -60,10 +60,7 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         )
 
     def fit(self, X, y=None):
-        print(f"DEBUG NearestNeighbors.fit START:", file=sys.stderr)
-        print(f"  X type: {type(X)}, X shape: {getattr(X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
-        print(f"  y type: {type(y)}, y shape: {getattr(y, 'shape', 'NO_SHAPE')}", file=sys.stderr)
-        
+        print(f"DEBUG NearestNeighbors.fit START: X type={type(X)}, X shape={getattr(X, 'shape', 'NO_SHAPE')}, y type={type(y)}", file=sys.stderr)
         dispatch(
             self,
             "fit",
@@ -74,27 +71,15 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
             X,
             None,
         )
-        
-        print(f"DEBUG NearestNeighbors.fit AFTER dispatch:", file=sys.stderr)
-        print(f"  self._fit_X type: {type(getattr(self, '_fit_X', 'NOT_SET'))}", file=sys.stderr)
-        print(f"  self._fit_X shape: {getattr(getattr(self, '_fit_X', None), 'shape', 'NO_SHAPE')}", file=sys.stderr)
-        print(f"  hasattr _onedal_estimator: {hasattr(self, '_onedal_estimator')}", file=sys.stderr)
-        print(f"  _tree: {getattr(self, '_tree', 'NOT_SET')}", file=sys.stderr)
-        print(f"  _fit_method: {getattr(self, '_fit_method', 'NOT_SET')}", file=sys.stderr)
-        
+        print(f"DEBUG NearestNeighbors.fit END: _fit_X type={type(getattr(self, '_fit_X', 'NOT_SET'))}, _fit_X shape={getattr(getattr(self, '_fit_X', None), 'shape', 'NO_SHAPE')}", file=sys.stderr)
         return self
 
     @wrap_output_data
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
-        print(f"DEBUG NearestNeighbors.kneighbors START:", file=sys.stderr)
-        print(f"  X type: {type(X)}, X shape: {getattr(X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
-        print(f"  n_neighbors: {n_neighbors}, return_distance: {return_distance}", file=sys.stderr)
-        print(f"  self._fit_X type: {type(getattr(self, '_fit_X', 'NOT_SET'))}", file=sys.stderr)
-        
+        print(f"DEBUG NearestNeighbors.kneighbors START: X type={type(X)}, _fit_X type={type(getattr(self, '_fit_X', 'NOT_SET'))}", file=sys.stderr)
         check_is_fitted(self)
         if X is not None:
             check_feature_names(self, X, reset=False)
-
         result = dispatch(
             self,
             "kneighbors",
@@ -106,47 +91,24 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
             n_neighbors=n_neighbors,
             return_distance=return_distance,
         )
-        
-        print(f"DEBUG NearestNeighbors.kneighbors END - result type: {type(result)}", file=sys.stderr)
+        print(f"DEBUG NearestNeighbors.kneighbors END: result type={type(result)}", file=sys.stderr)
         return result
 
     @wrap_output_data
     def radius_neighbors(
         self, X=None, radius=None, return_distance=True, sort_results=False
     ):
-        print(f"DEBUG NearestNeighbors.radius_neighbors START:", file=sys.stderr)
-        print(f"  X type: {type(X)}, X shape: {getattr(X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
-        print(f"  radius: {radius}, return_distance: {return_distance}, sort_results: {sort_results}", file=sys.stderr)
-        print(f"  self._fit_X type: {type(getattr(self, '_fit_X', 'NOT_SET'))}", file=sys.stderr)
-        print(f"  self._fit_X shape: {getattr(getattr(self, '_fit_X', None), 'shape', 'NO_SHAPE')}", file=sys.stderr)
-        print(f"  hasattr _onedal_estimator: {hasattr(self, '_onedal_estimator')}", file=sys.stderr)
-        print(f"  _tree: {getattr(self, '_tree', 'NOT_SET')}", file=sys.stderr)
-        print(f"  _fit_method: {getattr(self, '_fit_method', 'NOT_SET')}", file=sys.stderr)
-        
-        # ORIGINAL MAIN BRANCH LOGIC - EXACTLY AS IT WAS
+        print(f"DEBUG NearestNeighbors.radius_neighbors START: X type={type(X)}, _fit_X type={type(getattr(self, '_fit_X', 'NOT_SET'))}, _fit_X shape={getattr(getattr(self, '_fit_X', None), 'shape', 'NO_SHAPE')}", file=sys.stderr)
+        print(f"DEBUG radius_neighbors: hasattr _onedal_estimator={hasattr(self, '_onedal_estimator')}, _tree={getattr(self, '_tree', 'NOT_SET')}, _fit_method={getattr(self, '_fit_method', 'NOT_SET')}", file=sys.stderr)
         if (
             hasattr(self, "_onedal_estimator")
             or getattr(self, "_tree", 0) is None
             and self._fit_method == "kd_tree"
         ):
-            print("DEBUG NearestNeighbors.radius_neighbors - Condition met, calling sklearn fit", file=sys.stderr)
-            print(f"  About to call _sklearn_NearestNeighbors.fit with:", file=sys.stderr)
-            print(f"    self type: {type(self)}", file=sys.stderr)
-            print(f"    self._fit_X type: {type(getattr(self, '_fit_X', 'NOT_SET'))}", file=sys.stderr)
-            print(f"    self._y type: {type(getattr(self, '_y', 'NOT_SET'))}", file=sys.stderr)
-            
+            print(f"DEBUG radius_neighbors: Calling sklearn fit with _fit_X type={type(self._fit_X)}", file=sys.stderr)
             _sklearn_NearestNeighbors.fit(self, self._fit_X, getattr(self, "_y", None))
-            
-            print("DEBUG NearestNeighbors.radius_neighbors - sklearn fit completed", file=sys.stderr)
-        else:
-            print("DEBUG NearestNeighbors.radius_neighbors - Condition NOT met, skipping sklearn fit", file=sys.stderr)
-        
+            print(f"DEBUG radius_neighbors: sklearn fit completed, _fit_X type now={type(getattr(self, '_fit_X', 'NOT_SET'))}", file=sys.stderr)
         check_is_fitted(self)
-        
-        print(f"DEBUG NearestNeighbors.radius_neighbors BEFORE DISPATCH:", file=sys.stderr)
-        print(f"  self._fit_X type: {type(getattr(self, '_fit_X', 'NOT_SET'))}", file=sys.stderr)
-        print(f"  self._fit_X shape: {getattr(getattr(self, '_fit_X', None), 'shape', 'NO_SHAPE')}", file=sys.stderr)
-        
         result = dispatch(
             self,
             "radius_neighbors",
@@ -159,18 +121,13 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
             return_distance=return_distance,
             sort_results=sort_results,
         )
-        
-        print(f"DEBUG NearestNeighbors.radius_neighbors END - result type: {type(result)}", file=sys.stderr)
+        print(f"DEBUG NearestNeighbors.radius_neighbors END: result type={type(result)}", file=sys.stderr)
         return result
 
     def radius_neighbors_graph(
         self, X=None, radius=None, mode="connectivity", sort_results=False
     ):
-        print(f"DEBUG NearestNeighbors.radius_neighbors_graph START:", file=sys.stderr)
-        print(f"  X type: {type(X)}, X shape: {getattr(X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
-        print(f"  radius: {radius}, mode: {mode}, sort_results: {sort_results}", file=sys.stderr)
-        
-        result = dispatch(
+        return dispatch(
             self,
             "radius_neighbors_graph",
             {
@@ -182,16 +139,9 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
             mode=mode,
             sort_results=sort_results,
         )
-        
-        print(f"DEBUG NearestNeighbors.radius_neighbors_graph END - result type: {type(result)}", file=sys.stderr)
-        return result
 
     def _onedal_fit(self, X, y=None, queue=None):
-        print(f"DEBUG NearestNeighbors._onedal_fit START:", file=sys.stderr)
-        print(f"  X type: {type(X)}, X shape: {getattr(X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
-        print(f"  y type: {type(y)}, y shape: {getattr(y, 'shape', 'NO_SHAPE')}", file=sys.stderr)
-        print(f"  queue: {queue}", file=sys.stderr)
-        
+        print(f"DEBUG NearestNeighbors._onedal_fit START: X type={type(X)}, X shape={getattr(X, 'shape', 'NO_SHAPE')}, y type={type(y)}", file=sys.stderr)
         onedal_params = {
             "n_neighbors": self.n_neighbors,
             "algorithm": self.algorithm,
@@ -199,81 +149,43 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
             "p": self.effective_metric_params_["p"],
         }
 
-        print(f"DEBUG NearestNeighbors._onedal_fit - Creating onedal_NearestNeighbors with params: {onedal_params}", file=sys.stderr)
-        
         self._onedal_estimator = onedal_NearestNeighbors(**onedal_params)
         self._onedal_estimator.requires_y = get_requires_y_tag(self)
         self._onedal_estimator.effective_metric_ = self.effective_metric_
         self._onedal_estimator.effective_metric_params_ = self.effective_metric_params_
-
-        print(f"DEBUG NearestNeighbors._onedal_fit BEFORE calling onedal_estimator.fit:", file=sys.stderr)
-        print(f"  X type: {type(X)}, X shape: {getattr(X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
-        print(f"  y type: {type(y)}, y shape: {getattr(y, 'shape', 'NO_SHAPE')}", file=sys.stderr)
-
+        print(f"DEBUG NearestNeighbors._onedal_fit: Calling onedal_estimator.fit", file=sys.stderr)
         self._onedal_estimator.fit(X, y, queue=queue)
-
-        print(f"DEBUG NearestNeighbors._onedal_fit AFTER calling onedal_estimator.fit:", file=sys.stderr)
-        print(f"  onedal_estimator._fit_X type: {type(getattr(self._onedal_estimator, '_fit_X', 'NOT_SET'))}", file=sys.stderr)
+        print(f"DEBUG NearestNeighbors._onedal_fit: After fit, onedal_estimator._fit_X type={type(getattr(self._onedal_estimator, '_fit_X', 'NOT_SET'))}", file=sys.stderr)
 
         self._save_attributes()
-        
-        print(f"DEBUG NearestNeighbors._onedal_fit END - _save_attributes completed", file=sys.stderr)
+        print(f"DEBUG NearestNeighbors._onedal_fit END: self._fit_X type={type(getattr(self, '_fit_X', 'NOT_SET'))}", file=sys.stderr)
 
     def _onedal_predict(self, X, queue=None):
-        print(f"DEBUG NearestNeighbors._onedal_predict START:", file=sys.stderr)
-        print(f"  X type: {type(X)}, X shape: {getattr(X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
-        
-        result = self._onedal_estimator.predict(X, queue=queue)
-        
-        print(f"DEBUG NearestNeighbors._onedal_predict END - result type: {type(result)}", file=sys.stderr)
-        return result
+        return self._onedal_estimator.predict(X, queue=queue)
 
     def _onedal_kneighbors(
         self, X=None, n_neighbors=None, return_distance=True, queue=None
     ):
-        print(f"DEBUG NearestNeighbors._onedal_kneighbors START:", file=sys.stderr)
-        print(f"  X type: {type(X)}, X shape: {getattr(X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
-        print(f"  n_neighbors: {n_neighbors}, return_distance: {return_distance}", file=sys.stderr)
-        
-        result = self._onedal_estimator.kneighbors(
+        return self._onedal_estimator.kneighbors(
             X, n_neighbors, return_distance, queue=queue
         )
-        
-        print(f"DEBUG NearestNeighbors._onedal_kneighbors END - result type: {type(result)}", file=sys.stderr)
-        return result
 
     def _save_attributes(self):
-        print(f"DEBUG NearestNeighbors._save_attributes START:", file=sys.stderr)
-        print(f"  onedal_estimator._fit_X type: {type(getattr(self._onedal_estimator, '_fit_X', 'NOT_SET'))}", file=sys.stderr)
+        print(f"DEBUG NearestNeighbors._save_attributes START: onedal_estimator._fit_X type={type(getattr(self._onedal_estimator, '_fit_X', 'NOT_SET'))}", file=sys.stderr)
         if hasattr(self._onedal_estimator, '_fit_X'):
             fit_x_preview = str(self._onedal_estimator._fit_X)[:200]
-            print(f"  onedal_estimator._fit_X value preview: {fit_x_preview}", file=sys.stderr)
-        
+            print(f"DEBUG _save_attributes: _fit_X value preview={fit_x_preview}", file=sys.stderr)
         self.classes_ = self._onedal_estimator.classes_
         self.n_features_in_ = self._onedal_estimator.n_features_in_
         self.n_samples_fit_ = self._onedal_estimator.n_samples_fit_
-        
-        # CRITICAL: Check if _fit_X is tuple and handle it
-        fit_x = self._onedal_estimator._fit_X
-        print(f"DEBUG NearestNeighbors._save_attributes processing _fit_X:", file=sys.stderr)
-        print(f"  fit_x type: {type(fit_x)}", file=sys.stderr)
-        print(f"  isinstance(fit_x, tuple): {isinstance(fit_x, tuple)}", file=sys.stderr)
-        
-        if isinstance(fit_x, tuple):
-            print(f"DEBUG NearestNeighbors._save_attributes - fit_x is tuple: {fit_x}", file=sys.stderr)
-            print(f"  Extracting first element: {type(fit_x[0]) if len(fit_x) > 0 else 'EMPTY'}", file=sys.stderr)
-            self._fit_X = fit_x[0]  # Extract the array from (array, None) tuple
-        else:
-            self._fit_X = fit_x
-        
+        # ORIGINAL MAIN BRANCH: Direct assignment without any tuple extraction
+        self._fit_X = self._onedal_estimator._fit_X
+        print(f"DEBUG _save_attributes: AFTER assignment - self._fit_X type={type(self._fit_X)}, has shape attr={hasattr(self._fit_X, 'shape')}", file=sys.stderr)
+        if hasattr(self._fit_X, 'shape'):
+            print(f"DEBUG _save_attributes: self._fit_X.shape={self._fit_X.shape}", file=sys.stderr)
         self._fit_method = self._onedal_estimator._fit_method
         self._tree = self._onedal_estimator._tree
-
-        print(f"DEBUG NearestNeighbors._save_attributes END:", file=sys.stderr)
-        print(f"  self._fit_X type: {type(self._fit_X)}", file=sys.stderr)
-        print(f"  self._fit_X shape: {getattr(self._fit_X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
-        print(f"  self._fit_method: {self._fit_method}", file=sys.stderr)
-        print(f"  self._tree: {self._tree}", file=sys.stderr)
+        print(f"DEBUG NearestNeighbors._save_attributes END: _fit_method={self._fit_method}, _tree={self._tree}", file=sys.stderr)
 
     fit.__doc__ = _sklearn_NearestNeighbors.__doc__
     kneighbors.__doc__ = _sklearn_NearestNeighbors.kneighbors.__doc__
