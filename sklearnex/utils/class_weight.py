@@ -14,7 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 
-import numpy as np
 from sklearn.preprocessing import LabelEncoder as _sklearn_LabelEncoder
 
 from daal4py.sklearn._utils import sklearn_check_version
