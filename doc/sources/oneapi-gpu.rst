@@ -133,7 +133,7 @@ Example:
 GPU arrays through array API
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-As another option, computations can also be performed on data that is already on a SYCL device without moving it there if it belongs to an array API-compatible class, such as |dpnp_array| or `torch.tensor <https://docs.pytorch.org/docs/stable/tensors.html>`__.
+As another option, computations can also be performed on data that is already on a SYCL device without moving it there if it belongs to an array API-compatible class, such as |dpnp_array| or `torch.tensor <https://docs.pytorch.org/docs/stable/tensors.html>`__ (see also the `PyTorch Intel GPU docs <https://docs.pytorch.org/docs/stable/notes/get_start_xpu.html>`__).
 
 This is particularly useful when multiple operations are performed on the same data (e.g. cross validators, stacked ensembles, etc.), or when the data is meant to interact with other libraries besides the |sklearnex|. Be aware that it requires enabling array API support in |sklearn|, which comes with additional dependencies.
 
