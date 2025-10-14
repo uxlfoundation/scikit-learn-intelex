@@ -141,9 +141,9 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         import sys
         print(f"DEBUG KNeighborsRegressor._onedal_fit START: X type={type(X)}, y type={type(y)}", file=sys.stderr)
         
-        # REFACTOR: Use validate_data from sklearnex.utils.validation to convert pandas to numpy
-        X, y = validate_data(
-            self, X, y, dtype=[np.float64, np.float32], accept_sparse="csr", y_numeric=True
+        # REFACTOR: Use validate_data from sklearnex.utils.validation to convert pandas to numpy for X only
+        X = validate_data(
+            self, X, dtype=[np.float64, np.float32], accept_sparse="csr"
         )
         print(f"DEBUG: After validate_data, X type={type(X)}, y type={type(y)}", file=sys.stderr)
         
