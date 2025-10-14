@@ -24,11 +24,11 @@ Overview
 
 |sklearnex| can execute computations on different devices (CPUs and GPUs, including integrated GPUs from laptops and desktops) supported by the SYCL framework.
 
-The device used for computations can be easily controlled through the ``target_offload`` option in config contexts, which moves data to GPU if it's not already there - see :ref:`config_contexts` and rest of this page for more details).
+The device used for computations can be easily controlled through the ``target_offload`` option in config contexts, which moves data to GPU if it's not already there - see :doc:`config-contexts` and rest of this page for more details).
 
 For finer-grained controlled (e.g. operating on arrays that are already in a given device's memory), it can also interact with on-device :ref:`array API classes <array_api>` like |dpnp_array|, and with SYCL-related objects from package |dpctl| such as :obj:`dpctl.SyclQueue`.
 
-.. Note:: Note that not every operation from every estimator is supported on GPU - see the :ref:`GPU support table <sklearn_algorithms_gpu>` for more information. See also :ref:`verbose` to verify where computations are performed.
+.. Note:: Note that not every operation from every estimator is supported on GPU - see the :ref:`GPU support table <sklearn_algorithms_gpu>` for more information. See also :doc:`verbose` to verify where computations are performed.
 
 .. important:: Be aware that GPU usage requires non-Python dependencies on your system, such as the `Intel(R) Compute Runtime <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`_ (see below).
 
@@ -89,7 +89,7 @@ Running operations on GPU
 Target offload option
 ~~~~~~~~~~~~~~~~~~~~~
 
-Just like |sklearn|, the |sklearnex| can use configuration contexts and global options to modify how it interacts with different inputs - see :ref:`config_contexts` for details.
+Just like |sklearn|, the |sklearnex| can use configuration contexts and global options to modify how it interacts with different inputs - see :doc:`config-contexts` for details.
 
 In particular, the |sklearnex| allows an option ``target_offload`` which can be passed a SYCL device name like ``"gpu"`` indicating where the operations should be performed, moving the data to that device in the process if it's not already there; or a :obj:`dpctl.SyclQueue` object from an already-existing queue on a device.
 
@@ -137,7 +137,7 @@ As another option, computations can also be performed on data that is already on
 
 This is particularly useful when multiple operations are performed on the same data (e.g. cross validators, stacked ensembles, etc.), or when the data is meant to interact with other libraries besides the |sklearnex|. Be aware that it requires enabling array API support in |sklearn|, which comes with additional dependencies.
 
-See :ref:`array_api` for details, instructions, and limitations. Example:
+See :doc:`array_api` for details, instructions, and limitations. Example:
 
 .. tabs::
     .. tab:: With Torch tensors

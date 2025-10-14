@@ -26,8 +26,8 @@ locally through a configuration context, or globally through process-wide settin
 by extending the configuration-related functions from |sklearn| (see :obj:`sklearn.config_context`
 for details).
 
-Configurations in the |sklearnex| are particularly useful for :ref:`GPU functionalities <oneapi_gpu>`
-and :ref:`SMPD mode <distributed>`, and are necessary to modify for enabling :ref:`array API <array_api>`.
+Configurations in the |sklearnex| are particularly useful for :doc:`GPU functionalities <oneapi-gpu>`
+and :doc:`SMPD mode <distributed-mode>`, and are necessary to modify for enabling :doc:`array API <array_api>`.
 
 Configuration context and global options manager for the |sklearnex| can either be imported directly
 from the module ``sklearnex``, or can be imported from the ``sklearn`` module after applying patching.
