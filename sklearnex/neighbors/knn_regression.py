@@ -14,7 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 
-import numpy as np
 from sklearn.metrics import r2_score
 from sklearn.neighbors._regression import (
     KNeighborsRegressor as _sklearn_KNeighborsRegressor,
@@ -63,6 +62,8 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         )
 
     def fit(self, X, y):
+        import sys
+        print(f"DEBUG KNeighborsRegressor.fit START: X type={type(X)}, X shape={getattr(X, 'shape', 'NO_SHAPE')}, y type={type(y)}", file=sys.stderr)
         dispatch(
             self,
             "fit",
@@ -73,20 +74,16 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
             X,
             y,
         )
+        print(f"DEBUG KNeighborsRegressor.fit END: _fit_X type={type(getattr(self, '_fit_X', 'NOT_SET'))}", file=sys.stderr)
         return self
 
     @wrap_output_data
     def predict(self, X):
+        import sys
+        print(f"DEBUG KNeighborsRegressor.predict START: X type={type(X)}, X shape={getattr(X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
         check_is_fitted(self)
         check_feature_names(self, X, reset=False)
-
-        # Perform preprocessing at sklearnex level
-        from onedal.utils.validation import _check_array
-
-        X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
-        self._validate_feature_count(X, "KNNRegressor")
-
-        return dispatch(
+        result = dispatch(
             self,
             "predict",
             {
@@ -95,19 +92,16 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
             },
             X,
         )
+        print(f"DEBUG KNeighborsRegressor.predict END: result type={type(result)}", file=sys.stderr)
+        return result
 
     @wrap_output_data
     def score(self, X, y, sample_weight=None):
+        import sys
+        print(f"DEBUG KNeighborsRegressor.score START: X type={type(X)}, y type={type(y)}", file=sys.stderr)
         check_is_fitted(self)
         check_feature_names(self, X, reset=False)
-
-        # Perform preprocessing at sklearnex level
-        from onedal.utils.validation import _check_array
-
-        X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
-        self._validate_feature_count(X, "score")
-
-        return dispatch(
+        result = dispatch(
             self,
             "score",
             {
@@ -118,23 +112,17 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
             y,
             sample_weight=sample_weight,
         )
+        print(f"DEBUG KNeighborsRegressor.score END: result={result}", file=sys.stderr)
+        return result
 
     @wrap_output_data
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
+        import sys
+        print(f"DEBUG KNeighborsRegressor.kneighbors START: X type={type(X)}, n_neighbors={n_neighbors}, return_distance={return_distance}", file=sys.stderr)
         check_is_fitted(self)
         if X is not None:
             check_feature_names(self, X, reset=False)
-            # Perform preprocessing at sklearnex level
-            from onedal.utils.validation import _check_array
-
-            X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
-            self._validate_feature_count(X, "kneighbors")
-
-        # Validate n_neighbors
-        if n_neighbors is not None:
-            self._validate_n_neighbors(n_neighbors)
-
-        return dispatch(
+        result = dispatch(
             self,
             "kneighbors",
             {
@@ -145,22 +133,12 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
             n_neighbors=n_neighbors,
             return_distance=return_distance,
         )
+        print(f"DEBUG KNeighborsRegressor.kneighbors END: result type={type(result)}", file=sys.stderr)
+        return result
 
     def _onedal_fit(self, X, y, queue=None):
-        # Perform preprocessing at sklearnex level
-        X, y = self._validate_data(
-            X, y, dtype=[np.float64, np.float32], accept_sparse="csr"
-        )
-
-        # Validate n_neighbors
-        self._validate_n_neighbors(self.n_neighbors)
-
-        # Parse auto method
-        self._fit_method = self._parse_auto_method(self.algorithm, X.shape[0], X.shape[1])
-
-        # Handle shape processing at sklearnex level
-        y = self._process_regression_targets(y)
-
+        import sys
+        print(f"DEBUG KNeighborsRegressor._onedal_fit START: X type={type(X)}, y type={type(y)}", file=sys.stderr)
         onedal_params = {
             "n_neighbors": self.n_neighbors,
             "weights": self.weights,
@@ -173,39 +151,52 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         self._onedal_estimator.requires_y = get_requires_y_tag(self)
         self._onedal_estimator.effective_metric_ = self.effective_metric_
         self._onedal_estimator.effective_metric_params_ = self.effective_metric_params_
-        self._onedal_estimator._fit_method = self._fit_method
-
-        # Set shape attributes on the onedal estimator
-        self._onedal_estimator._shape = self._shape
-        self._onedal_estimator._y = self._y
-
+        print(f"DEBUG KNeighborsRegressor._onedal_fit: Calling onedal_estimator.fit", file=sys.stderr)
         self._onedal_estimator.fit(X, y, queue=queue)
+        print(f"DEBUG KNeighborsRegressor._onedal_fit: After fit, calling _save_attributes", file=sys.stderr)
 
         self._save_attributes()
+        print(f"DEBUG KNeighborsRegressor._onedal_fit END: self._fit_X type={type(getattr(self, '_fit_X', 'NOT_SET'))}", file=sys.stderr)
 
     def _onedal_predict(self, X, queue=None):
-        return self._onedal_estimator.predict(X, queue=queue)
+        import sys
+        print(f"DEBUG KNeighborsRegressor._onedal_predict START: X type={type(X)}", file=sys.stderr)
+        result = self._onedal_estimator.predict(X, queue=queue)
+        print(f"DEBUG KNeighborsRegressor._onedal_predict END: result type={type(result)}", file=sys.stderr)
+        return result
 
     def _onedal_kneighbors(
         self, X=None, n_neighbors=None, return_distance=True, queue=None
     ):
-        return self._onedal_estimator.kneighbors(
+        import sys
+        print(f"DEBUG KNeighborsRegressor._onedal_kneighbors START: X type={type(X)}, n_neighbors={n_neighbors}, return_distance={return_distance}", file=sys.stderr)
+        result = self._onedal_estimator.kneighbors(
             X, n_neighbors, return_distance, queue=queue
         )
+        print(f"DEBUG KNeighborsRegressor._onedal_kneighbors END: result type={type(result)}", file=sys.stderr)
+        return result
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
-        return r2_score(
+        import sys
+        print(f"DEBUG KNeighborsRegressor._onedal_score START: X type={type(X)}, y type={type(y)}", file=sys.stderr)
+        result = r2_score(
             y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
         )
+        print(f"DEBUG KNeighborsRegressor._onedal_score END: result={result}", file=sys.stderr)
+        return result
 
     def _save_attributes(self):
+        import sys
+        print(f"DEBUG KNeighborsRegressor._save_attributes START", file=sys.stderr)
         self.n_features_in_ = self._onedal_estimator.n_features_in_
         self.n_samples_fit_ = self._onedal_estimator.n_samples_fit_
-        fit_x = self._onedal_estimator._fit_X
-        self._fit_X = fit_x[0] if isinstance(fit_x, tuple) else fit_x
+        self._fit_X = self._onedal_estimator._fit_X
+        print(f"DEBUG KNeighborsRegressor._save_attributes: _fit_X type={type(self._fit_X)}", file=sys.stderr)
         self._y = self._onedal_estimator._y
+        print(f"DEBUG KNeighborsRegressor._save_attributes: _y type={type(self._y)}", file=sys.stderr)
         self._fit_method = self._onedal_estimator._fit_method
         self._tree = self._onedal_estimator._tree
+        print(f"DEBUG KNeighborsRegressor._save_attributes END", file=sys.stderr)
 
     fit.__doc__ = _sklearn_KNeighborsRegressor.__doc__
     predict.__doc__ = _sklearn_KNeighborsRegressor.predict.__doc__
