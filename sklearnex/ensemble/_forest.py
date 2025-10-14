@@ -58,7 +58,6 @@ from onedal.ensemble import ExtraTreesRegressor as onedal_ExtraTreesRegressor
 from onedal.ensemble import RandomForestClassifier as onedal_RandomForestClassifier
 from onedal.ensemble import RandomForestRegressor as onedal_RandomForestRegressor
 from onedal.primitives import get_tree_state_cls, get_tree_state_reg
-from onedal.utils._array_api import _get_sycl_namespace
 from onedal.utils.validation import _num_features, _num_samples
 from sklearnex._utils import register_hyperparameters
 
@@ -594,12 +593,7 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
             # TODO: Fix to support integers as input
 
             if self.n_outputs_ == 1:
-                _, xp, _ = _get_sycl_namespace(y)
-
-                if xp is np and np.__version__.startswith("1"):
-                    sety = np.unique(y)
-                else:
-                    sety = xp.unique_values(y)
+                xp, is_array_api_compliant = get_namespace(y)
                 num_classes = sety.shape[0]
                 patching_status.and_conditions(
                     [
