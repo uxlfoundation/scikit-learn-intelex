@@ -67,11 +67,11 @@ Just like in |sklearn|, in order to ensure that deserialized models work correct
 Serialization of GPU models
 ---------------------------
 
-Be aware that if using the :ref:`target offload option <target_offload>` to fit models on GPU or on another SyCL device, upon deserialization of those models, the internal data behind them will be re-created on host (CPU), hence the deserialized models will become CPU/host ones and will not be able to make predictions on GPU data.
+Be aware that if using the :ref:`target offload option <target_offload>` to fit models on GPU or on another SYCL device, upon deserialization of those models, the internal data behind them will be re-created on host (CPU), hence the deserialized models will become CPU/host ones and will not be able to make predictions on GPU data.
 
 If persistence of GPU-only models is desired, one can instead use :ref:`array API classes with GPU support <array_api>`, which might have a different logic for serialization that preserves the device.
 
-Currently, the only array API library with SyCL support known to provide serializable GPU arrays is `PyTorch <https://docs.pytorch.org/docs/stable/notes/get_start_xpu.html>`__.
+Currently, the only array API library with SYCL support known to provide serializable GPU arrays is `PyTorch <https://docs.pytorch.org/docs/stable/notes/get_start_xpu.html>`__.
 
 .. warning:: If serialization of models is desired, avoid usage of |dpnp| GPU arrays as they are not serilizable.
 
