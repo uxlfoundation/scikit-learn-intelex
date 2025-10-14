@@ -216,8 +216,23 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
                 )
             self._shape = shape if shape is not None else y.shape
 
-            # REFACTOR STEP 1: Classification target processing moved to sklearnex layer
-            # This code is now commented out - processing happens in sklearnex before calling fit
+            # REFACTOR: Classification target processing moved to sklearnex layer
+            # This code is now commented out - processing MUST happen in sklearnex before calling fit
+            # Assertion: Verify that sklearnex has done the preprocessing
+            if _is_classifier(self):
+                if not hasattr(self, 'classes_') or self.classes_ is None:
+                    raise ValueError(
+                        "Classification target processing must be done in sklearnex layer before calling onedal fit. "
+                        "classes_ attribute is not set. This indicates the refactoring is incomplete."
+                    )
+                if not hasattr(self, '_y') or self._y is None:
+                    raise ValueError(
+                        "Classification target processing must be done in sklearnex layer before calling onedal fit. "
+                        "_y attribute is not set. This indicates the refactoring is incomplete."
+                    )
+                print(f"DEBUG oneDAL: Using pre-processed classification targets from sklearnex (classes_={self.classes_})", file=sys.stderr)
+            
+            # Original classification processing code - NOW COMMENTED OUT (moved to sklearnex)
             # if _is_classifier(self):
             #     if y.ndim == 1 or y.ndim == 2 and y.shape[1] == 1:
             #         self.outputs_2d_ = False
@@ -238,10 +253,8 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
 
             #     self._validate_n_classes()
             # else:
-            #     self._y = y
-            
-            # For now, keep basic _y assignment for compatibility
-            if not hasattr(self, '_y'):
+            else:
+                # For regressors, just store y
                 self._y = y
         elif not use_raw_input:
             X, _ = super()._validate_data(X, dtype=[np.float64, np.float32])

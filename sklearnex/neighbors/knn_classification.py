@@ -193,7 +193,8 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         print(f"DEBUG: Set onedal_estimator.classes_={self._onedal_estimator.classes_}", file=sys.stderr)
         print(f"DEBUG: Set onedal_estimator._y shape={self._onedal_estimator._y.shape}", file=sys.stderr)
         
-        print(f"DEBUG KNeighborsClassifier._onedal_fit: Calling onedal_estimator.fit", file=sys.stderr)
+        print(f"DEBUG KNeighborsClassifier._onedal_fit: Calling onedal_estimator.fit with X and original y", file=sys.stderr)
+        # Pass original y to onedal - it will use the pre-set classes_ and _y attributes we just assigned
         self._onedal_estimator.fit(X, y, queue=queue)
         print(f"DEBUG KNeighborsClassifier._onedal_fit: After fit, calling _save_attributes", file=sys.stderr)
 
