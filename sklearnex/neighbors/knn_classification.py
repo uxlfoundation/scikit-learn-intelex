@@ -14,6 +14,7 @@
 # limitations under the License.
 # ===============================================================================
 
+import numpy as np
 from sklearn.metrics import accuracy_score
 from sklearn.neighbors._classification import (
     KNeighborsClassifier as _sklearn_KNeighborsClassifier,
@@ -26,7 +27,7 @@ from daal4py.sklearn.utils.validation import get_requires_y_tag
 from onedal.neighbors import KNeighborsClassifier as onedal_KNeighborsClassifier
 
 from .._device_offload import dispatch, wrap_output_data
-from ..utils.validation import check_feature_names
+from ..utils.validation import check_feature_names, validate_data
 from .common import KNeighborsDispatchingBase
 
 
@@ -159,6 +160,12 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     def _onedal_fit(self, X, y, queue=None):
         import sys
         print(f"DEBUG KNeighborsClassifier._onedal_fit START: X type={type(X)}, y type={type(y)}", file=sys.stderr)
+        
+        # REFACTOR: Use validate_data from sklearnex.utils.validation to convert pandas to numpy
+        X, y = validate_data(
+            self, X, y, dtype=[np.float64, np.float32], accept_sparse="csr"
+        )
+        print(f"DEBUG: After validate_data, X type={type(X)}, y type={type(y)}", file=sys.stderr)
         
         # REFACTOR STEP 1: Process classification targets in sklearnex before passing to onedal
         print(f"DEBUG: Processing classification targets in sklearnex", file=sys.stderr)
