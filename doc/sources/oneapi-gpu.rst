@@ -22,11 +22,11 @@ GPU support
 Overview
 --------
 
-|sklearnex| can execute computations on different devices (CPUs and GPUs, including integrated GPUs from laptops and desktops) supported by the SyCL framework.
+|sklearnex| can execute computations on different devices (CPUs and GPUs, including integrated GPUs from laptops and desktops) supported by the SYCL framework.
 
 The device used for computations can be easily controlled through the ``target_offload`` option in config contexts, which moves data to GPU if it's not already there - see :ref:`config_contexts` and rest of this page for more details).
 
-For finer-grained controlled (e.g. operating on arrays that are already in a given device's memory), it can also interact with on-device :ref:`array API classes <array_api>` like |dpnp_array|, and with SyCL-related objects from package |dpctl| such as :obj:`dpctl.SyclQueue`.
+For finer-grained controlled (e.g. operating on arrays that are already in a given device's memory), it can also interact with on-device :ref:`array API classes <array_api>` like |dpnp_array|, and with SYCL-related objects from package |dpctl| such as :obj:`dpctl.SyclQueue`.
 
 .. Note:: Note that not every operation from every estimator is supported on GPU - see the :ref:`GPU support table <sklearn_algorithms_gpu>` for more information. See also :ref:`verbose` to verify where computations are performed.
 
@@ -91,7 +91,7 @@ Target offload option
 
 Just like |sklearn|, the |sklearnex| can use configuration contexts and global options to modify how it interacts with different inputs - see :ref:`config_contexts` for details.
 
-In particular, the |sklearnex| allows an option ``target_offload`` which can be passed a SyCL device name like ``"gpu"`` indicating where the operations should be performed, moving the data to that device in the process if it's not already there; or a :obj:`dpctl.SyclQueue` object from an already-existing queue on a device.
+In particular, the |sklearnex| allows an option ``target_offload`` which can be passed a SYCL device name like ``"gpu"`` indicating where the operations should be performed, moving the data to that device in the process if it's not already there; or a :obj:`dpctl.SyclQueue` object from an already-existing queue on a device.
 
 .. hint:: If repeated operations are going to be performed on the same data (e.g. cross-validators, resamplers, missing data imputers, etc.), it's recommended to use the array API option instead - see the next section for details.
 
@@ -111,7 +111,7 @@ Example:
                model.fit(X, y)
                pred = model.predict(X)
 
-    .. tab:: Passing a SyCL queue
+    .. tab:: Passing a SYCL queue
        .. code-block:: python
 
            import dpctl
@@ -133,7 +133,7 @@ Example:
 GPU arrays through array API
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-As another option, computations can also be performed on data that is already on a SyCL device without moving it there if it belongs to an array API-compatible class, such as |dpnp_array| or `torch.tensor <https://docs.pytorch.org/docs/stable/tensors.html>`__.
+As another option, computations can also be performed on data that is already on a SYCL device without moving it there if it belongs to an array API-compatible class, such as |dpnp_array| or `torch.tensor <https://docs.pytorch.org/docs/stable/tensors.html>`__.
 
 This is particularly useful when multiple operations are performed on the same data (e.g. cross validators, stacked ensembles, etc.), or when the data is meant to interact with other libraries besides the |sklearnex|. Be aware that it requires enabling array API support in |sklearn|, which comes with additional dependencies.
 
@@ -220,7 +220,7 @@ Example:
     model.fit(X, y)
 
 
-Note that, if array API had been enabled, the snippet above would use the data as-is on the device where it resides, but without array API, it implies data movements using the SyCL queue contained by those objects.
+Note that, if array API had been enabled, the snippet above would use the data as-is on the device where it resides, but without array API, it implies data movements using the SYCL queue contained by those objects.
 
 .. note::
     All the input data for an algorithm must reside on the same device.
