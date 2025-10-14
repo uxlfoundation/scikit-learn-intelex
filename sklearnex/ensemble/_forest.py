@@ -594,11 +594,8 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
 
             if self.n_outputs_ == 1:
                 xp, is_array_api_compliant = get_namespace(y)
-                if xp is np and not np.__version__.startswith("1"):
-                    num_classes = np.unique_counts(y)
-                else:
-                    sety = xp.unique_values(y) if is_array_api_compliant else np.unique(y)
-                    num_classes = sety.shape[0]
+                sety = xp.unique_values(y) if is_array_api_compliant else np.unique(y)
+                num_classes = sety.shape[0]
                 patching_status.and_conditions(
                     [
                         (
