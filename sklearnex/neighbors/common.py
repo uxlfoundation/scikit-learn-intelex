@@ -60,36 +60,36 @@ class KNeighborsDispatchingBase(oneDALEstimator):
 
         return result_method
 
-    def _validate_data(
-        self, X, y=None, reset=True, validate_separately=None, **check_params
-    ):
-        if y is None:
-            if getattr(self, "requires_y", False):
-                raise ValueError(
-                    f"This {self.__class__.__name__} estimator "
-                    f"requires y to be passed, but the target y is None."
-                )
-            X = _check_array(X, **check_params)
-            out = X, y
-        else:
-            if validate_separately:
-                # We need this because some estimators validate X and y
-                # separately, and in general, separately calling _check_array()
-                # on X and y isn't equivalent to just calling _check_X_y()
-                # :(
-                check_X_params, check_y_params = validate_separately
-                X = _check_array(X, **check_X_params)
-                y = _check_array(y, **check_y_params)
-            else:
-                X, y = _check_X_y(X, y, **check_params)
-            out = X, y
+    # def _validate_data(
+    #     self, X, y=None, reset=True, validate_separately=None, **check_params
+    # ):
+    #     if y is None:
+    #         if getattr(self, "requires_y", False):
+    #             raise ValueError(
+    #                 f"This {self.__class__.__name__} estimator "
+    #                 f"requires y to be passed, but the target y is None."
+    #             )
+    #         X = _check_array(X, **check_params)
+    #         out = X, y
+    #     else:
+    #         if validate_separately:
+    #             # We need this because some estimators validate X and y
+    #             # separately, and in general, separately calling _check_array()
+    #             # on X and y isn't equivalent to just calling _check_X_y()
+    #             # :(
+    #             check_X_params, check_y_params = validate_separately
+    #             X = _check_array(X, **check_X_params)
+    #             y = _check_array(y, **check_y_params)
+    #         else:
+    #             X, y = _check_X_y(X, y, **check_params)
+    #         out = X, y
 
-        if check_params.get("ensure_2d", True):
-            from onedal.utils.validation import _check_n_features
+    #     if check_params.get("ensure_2d", True):
+    #         from onedal.utils.validation import _check_n_features
 
-            _check_n_features(self, X, reset=reset)
+    #         _check_n_features(self, X, reset=reset)
 
-        return out
+    #     return out
 
     def _get_weights(self, dist, weights):
         if weights in (None, "uniform"):
