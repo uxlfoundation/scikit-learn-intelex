@@ -25,7 +25,10 @@ from sklearn.neighbors._base import NeighborsBase as _sklearn_NeighborsBase
 from sklearn.neighbors._kd_tree import KDTree
 from sklearn.utils.validation import check_is_fitted
 
+from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
+
+from ..utils.validation import validate_data
 from onedal._device_offload import _transfer_to_host
 from onedal.utils.validation import (
     _check_array,
@@ -167,8 +170,15 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             )
 
     def _process_classification_targets(self, y):
-        """Process classification targets and set class-related attributes."""
-        import numpy as np
+        """Process classification targets and set class-related attributes.
+        
+        Note: y should already be converted to numpy array via validate_data before calling this.
+        """
+        import sys
+        print(f"DEBUG _process_classification_targets: y type={type(y)}, y shape={getattr(y, 'shape', 'NO_SHAPE')}", file=sys.stderr)
+        
+        # y should already be numpy array from validate_data
+        y = np.asarray(y)
 
         # Handle shape processing
         shape = getattr(y, "shape", None)

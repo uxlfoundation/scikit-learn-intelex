@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
+import numpy as np
 from sklearn.metrics import r2_score
 from sklearn.neighbors._regression import (
     KNeighborsRegressor as _sklearn_KNeighborsRegressor,
@@ -26,7 +27,7 @@ from daal4py.sklearn.utils.validation import get_requires_y_tag
 from onedal.neighbors import KNeighborsRegressor as onedal_KNeighborsRegressor
 
 from .._device_offload import dispatch, wrap_output_data
-from ..utils.validation import check_feature_names
+from ..utils.validation import check_feature_names, validate_data
 from .common import KNeighborsDispatchingBase
 
 
@@ -139,6 +140,13 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
     def _onedal_fit(self, X, y, queue=None):
         import sys
         print(f"DEBUG KNeighborsRegressor._onedal_fit START: X type={type(X)}, y type={type(y)}", file=sys.stderr)
+        
+        # REFACTOR: Use validate_data from sklearnex.utils.validation to convert pandas to numpy
+        X, y = validate_data(
+            self, X, y, dtype=[np.float64, np.float32], accept_sparse="csr", y_numeric=True
+        )
+        print(f"DEBUG: After validate_data, X type={type(X)}, y type={type(y)}", file=sys.stderr)
+        
         onedal_params = {
             "n_neighbors": self.n_neighbors,
             "weights": self.weights,
