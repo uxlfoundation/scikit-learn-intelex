@@ -143,6 +143,14 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                     "enter integer value" % type(n_neighbors)
                 )
 
+    def _validate_n_classes(self):
+        """Validate that the classifier has at least 2 classes."""
+        length = 0 if self.classes_ is None else len(self.classes_)
+        if length < 2:
+            raise ValueError(
+                f"The number of classes has to be greater than one; got {length}"
+            )
+
     def _validate_feature_count(self, X, method_name=""):
         n_features = getattr(self, "n_features_in_", None)
         shape = getattr(X, "shape", None)
@@ -190,6 +198,9 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         else:
             self.outputs_2d_ = True
 
+        # Validate classification targets
+        _check_classification_targets(y)
+        
         # Process classes
         self.classes_ = []
         self._y = np.empty(y.shape, dtype=int)
@@ -200,6 +211,9 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         if not self.outputs_2d_:
             self.classes_ = self.classes_[0]
             self._y = self._y.ravel()
+
+        # Validate we have at least 2 classes
+        self._validate_n_classes()
 
         return y
 
