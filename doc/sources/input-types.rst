@@ -50,6 +50,6 @@ enabled the input is unsupported).
   - For SciPy CSR matrix / array, index arrays are always copied. Note that sparse matrices in formats other than CSR
     will be converted to CSR, which implies more than just data copying.
   - Heterogeneous NumPy array
-  - If SyCL queue is provided for device without ``float64`` support but data are ``float64``, data are copied with reduced precision.
+  - If SYCL queue is provided for device without ``float64`` support but data are ``float64``, data are copied with reduced precision.
   - If :ref:`Array API <array_api>` is not enabled then data from GPU devices are always copied to the host device and then result table 
     (for applicable methods) is copied to the source device.

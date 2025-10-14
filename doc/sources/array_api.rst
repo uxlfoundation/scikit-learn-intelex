@@ -32,7 +32,7 @@ on GPU without moving the data from host to device.
     be :external+sklearn:doc:`enabled in scikit-learn <modules/array_api>`, which requires either changing
     global settings or using a ``config_context``, plus installing additional dependencies such as ``array-api-compat``.
 
-When passing array API inputs whose data is on a SyCL-enabled device (e.g. an Intel GPU), as
+When passing array API inputs whose data is on a SYCL-enabled device (e.g. an Intel GPU), as
 supported for example by `PyTorch <https://docs.pytorch.org/docs/stable/notes/get_start_xpu.html>`__
 and |dpnp|, if array API support is enabled and the requested operation (e.g. call to ``.fit()`` / ``.predict()``
 on the estimator class being used) is :ref:`supported on device/GPU <sklearn_algorithms_gpu>`, computations
@@ -50,10 +50,10 @@ through options ``allow_sklearn_after_onedal`` (default is ``True``) and ``allow
 
 If array API is enabled for |sklearn| and the estimator being used has array API support on |sklearn| (which can be
 verified by attribute ``array_api_support`` from :obj:`sklearn.utils.get_tags`), then array API inputs whose data
-is allocated neither on CPU nor on a SyCL device will be forwarded directly to the unpatched methods from |sklearn|,
+is allocated neither on CPU nor on a SYCL device will be forwarded directly to the unpatched methods from |sklearn|,
 without using the accelerated versions from this library, regardless of option ``allow_sklearn_after_onedal``.
 
-While other array API inputs (e.g. torch arrays with data allocated on a non-SyCL device) might be supported
+While other array API inputs (e.g. torch arrays with data allocated on a non-SYCL device) might be supported
 by the |sklearnex| in cases where the same class from |sklearn| doesn't support array API, note that the data will
 be transferred to host if it isn't already, and the computations will happen on CPU.
 
