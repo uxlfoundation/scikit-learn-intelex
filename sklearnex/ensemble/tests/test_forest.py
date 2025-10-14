@@ -179,7 +179,7 @@ def test_classifiers_work_on_single_class(dataframe, queue):
 
 
 @pytest.mark.allow_sklearn_fallback
-def test_classifiers_work_on_single_class_non_array_api():
+def test_classifiers_work_on_single_class_non_numeric():
     from sklearnex.ensemble import ExtraTreesClassifier, RandomForestClassifier
 
     rng = np.random.default_rng(seed=123)
