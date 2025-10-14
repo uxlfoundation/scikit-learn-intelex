@@ -1,5 +1,5 @@
 # ===============================================================================
-# Copyright 2021 Intel Corporation
+# Copyright 2022 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,104 +14,59 @@
 # limitations under the License.
 # ===============================================================================
 
+import numpy as np
 import pytest
-from numpy.testing import assert_allclose
+from numpy.testing import assert_array_equal
+from sklearn import datasets
 
-from onedal.tests.utils._dataframes_support import (
-    _as_numpy,
-    _convert_to_dataframe,
-    get_dataframes_and_queues,
-)
-from sklearnex.neighbors import (
-    KNeighborsClassifier,
-    KNeighborsRegressor,
-    LocalOutlierFactor,
-    NearestNeighbors,
-)
+from onedal.neighbors import KNeighborsClassifier
+from onedal.tests.utils._device_selection import get_queues
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_sklearnex_import_knn_classifier(dataframe, queue):
+@pytest.mark.parametrize("queue", get_queues())
+def test_iris(queue):
     import sys
-    print(f"\n=== DEBUG test_sklearnex_import_knn_classifier START: dataframe={dataframe}, queue={queue} ===", file=sys.stderr)
-    X = _convert_to_dataframe([[0], [1], [2], [3]], sycl_queue=queue, target_df=dataframe)
-    print(f"DEBUG test: X type={type(X)}, X shape={getattr(X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
-    y = _convert_to_dataframe([0, 0, 1, 1], sycl_queue=queue, target_df=dataframe)
-    print(f"DEBUG test: y type={type(y)}", file=sys.stderr)
+    print(f"\n=== DEBUG test_iris START: queue={queue} ===", file=sys.stderr)
+    iris = datasets.load_iris()
+    print(f"DEBUG test: iris.data type={type(iris.data)}, shape={iris.data.shape}", file=sys.stderr)
+    print(f"DEBUG test: iris.target type={type(iris.target)}, shape={iris.target.shape}", file=sys.stderr)
     print(f"DEBUG test: Creating KNeighborsClassifier and calling fit", file=sys.stderr)
-    neigh = KNeighborsClassifier(n_neighbors=3).fit(X, y)
-    print(f"DEBUG test: fit completed, neigh._fit_X type={type(getattr(neigh, '_fit_X', 'NOT_SET'))}", file=sys.stderr)
-    y_test = _convert_to_dataframe([[1.1]], sycl_queue=queue, target_df=dataframe)
-    print(f"DEBUG test: Calling predict with y_test type={type(y_test)}", file=sys.stderr)
-    pred = _as_numpy(neigh.predict(y_test))
-    print(f"DEBUG test: predict completed, pred={pred}", file=sys.stderr)
-    assert "sklearnex" in neigh.__module__
-    assert_allclose(pred, [0])
-    print(f"=== DEBUG test_sklearnex_import_knn_classifier END ===\n", file=sys.stderr)
+    clf = KNeighborsClassifier(2).fit(iris.data, iris.target, queue=queue)
+    print(f"DEBUG test: fit completed, clf._fit_X type={type(getattr(clf, '_fit_X', 'NOT_SET'))}", file=sys.stderr)
+    print(f"DEBUG test: Calling score", file=sys.stderr)
+    score = clf.score(iris.data, iris.target, queue=queue)
+    print(f"DEBUG test: score completed, score={score}", file=sys.stderr)
+    assert score > 0.9
+    assert_array_equal(clf.classes_, np.sort(clf.classes_))
+    print(f"=== DEBUG test_iris END ===\n", file=sys.stderr)
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_sklearnex_import_knn_regression(dataframe, queue):
+@pytest.mark.parametrize("queue", get_queues())
+def test_pickle(queue):
     import sys
-    print(f"\n=== DEBUG test_sklearnex_import_knn_regression START: dataframe={dataframe}, queue={queue} ===", file=sys.stderr)
-    X = _convert_to_dataframe([[0], [1], [2], [3]], sycl_queue=queue, target_df=dataframe)
-    print(f"DEBUG test: X type={type(X)}, X shape={getattr(X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
-    y = _convert_to_dataframe([0, 0, 1, 1], sycl_queue=queue, target_df=dataframe)
-    print(f"DEBUG test: y type={type(y)}", file=sys.stderr)
-    print(f"DEBUG test: Creating KNeighborsRegressor and calling fit", file=sys.stderr)
-    neigh = KNeighborsRegressor(n_neighbors=2).fit(X, y)
-    print(f"DEBUG test: fit completed, neigh._fit_X type={type(getattr(neigh, '_fit_X', 'NOT_SET'))}", file=sys.stderr)
-    y_test = _convert_to_dataframe([[1.5]], sycl_queue=queue, target_df=dataframe)
-    print(f"DEBUG test: Calling predict with y_test type={type(y_test)}", file=sys.stderr)
-    pred = _as_numpy(neigh.predict(y_test)).squeeze()
-    print(f"DEBUG test: predict completed, pred={pred}", file=sys.stderr)
-    assert "sklearnex" in neigh.__module__
-    assert_allclose(pred, 0.5)
-    print(f"=== DEBUG test_sklearnex_import_knn_regression END ===\n", file=sys.stderr)
+    print(f"\n=== DEBUG test_pickle START: queue={queue} ===", file=sys.stderr)
+    if queue and queue.sycl_device.is_gpu:
+        pytest.skip("KNN classifier pickling for the GPU sycl_queue is buggy.")
+    iris = datasets.load_iris()
+    print(f"DEBUG test: iris.data type={type(iris.data)}, shape={iris.data.shape}", file=sys.stderr)
+    print(f"DEBUG test: iris.target type={type(iris.target)}, shape={iris.target.shape}", file=sys.stderr)
+    print(f"DEBUG test: Creating KNeighborsClassifier and calling fit", file=sys.stderr)
+    clf = KNeighborsClassifier(2).fit(iris.data, iris.target, queue=queue)
+    print(f"DEBUG test: fit completed, clf._fit_X type={type(getattr(clf, '_fit_X', 'NOT_SET'))}", file=sys.stderr)
+    print(f"DEBUG test: Calling predict", file=sys.stderr)
+    expected = clf.predict(iris.data, queue=queue)
+    print(f"DEBUG test: predict completed, expected type={type(expected)}, shape={expected.shape}", file=sys.stderr)
 
+    import pickle
 
-@pytest.mark.parametrize("algorithm", ["auto", "brute"])
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-@pytest.mark.parametrize(
-    "estimator",
-    [LocalOutlierFactor, NearestNeighbors],
-)
-def test_sklearnex_kneighbors(algorithm, estimator, dataframe, queue):
-    import sys
-    print(f"\n=== DEBUG test_sklearnex_kneighbors START: algorithm={algorithm}, estimator={estimator.__name__}, dataframe={dataframe}, queue={queue} ===", file=sys.stderr)
-    X = [[0, 0, 2], [1, 0, 0], [0, 0, 1]]
-    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    print(f"DEBUG test: X type={type(X)}, X shape={getattr(X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
-    test = _convert_to_dataframe([[0, 0, 1.3]], sycl_queue=queue, target_df=dataframe)
-    print(f"DEBUG test: test type={type(test)}", file=sys.stderr)
-    print(f"DEBUG test: Creating {estimator.__name__} and calling fit", file=sys.stderr)
-    neigh = estimator(n_neighbors=2, algorithm=algorithm).fit(X)
-    print(f"DEBUG test: fit completed, neigh._fit_X type={type(getattr(neigh, '_fit_X', 'NOT_SET'))}", file=sys.stderr)
-    print(f"DEBUG test: Calling kneighbors", file=sys.stderr)
-    result = neigh.kneighbors(test, 2, return_distance=False)
-    result = _as_numpy(result)
-    print(f"DEBUG test: kneighbors completed, result={result}", file=sys.stderr)
-    assert "sklearnex" in neigh.__module__
-    assert_allclose(result, [[2, 0]])
-    print(f"DEBUG test: Calling kneighbors with no args", file=sys.stderr)
-    result = neigh.kneighbors()
-    print(f"=== DEBUG test_sklearnex_kneighbors END ===\n", file=sys.stderr)
+    print(f"DEBUG test: Pickling classifier", file=sys.stderr)
+    dump = pickle.dumps(clf)
+    print(f"DEBUG test: Unpickling classifier", file=sys.stderr)
+    clf2 = pickle.loads(dump)
 
-
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_sklearnex_import_lof(dataframe, queue):
-    import sys
-    print(f"\n=== DEBUG test_sklearnex_import_lof START: dataframe={dataframe}, queue={queue} ===", file=sys.stderr)
-    X = [[7, 7, 7], [1, 0, 0], [0, 0, 1], [0, 0, 1]]
-    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    print(f"DEBUG test: X type={type(X)}, X shape={getattr(X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
-    print(f"DEBUG test: Creating LocalOutlierFactor and calling fit_predict", file=sys.stderr)
-    lof = LocalOutlierFactor(n_neighbors=2)
-    result = lof.fit_predict(X)
-    result = _as_numpy(result)
-    print(f"DEBUG test: fit_predict completed, result={result}", file=sys.stderr)
-    print(f"DEBUG test: lof._fit_X type={type(getattr(lof, '_fit_X', 'NOT_SET'))}", file=sys.stderr)
-    assert hasattr(lof, "_onedal_estimator")
-    assert "sklearnex" in lof.__module__
-    assert_allclose(result, [-1, 1, 1, 1])
-    print(f"=== DEBUG test_sklearnex_import_lof END ===\n", file=sys.stderr)
+    assert type(clf2) == clf.__class__
+    print(f"DEBUG test: Calling predict on unpickled classifier", file=sys.stderr)
+    result = clf2.predict(iris.data, queue=queue)
+    print(f"DEBUG test: predict completed, result type={type(result)}, shape={result.shape}", file=sys.stderr)
+    assert_array_equal(expected, result)
+    print(f"=== DEBUG test_pickle END ===\n", file=sys.stderr)
