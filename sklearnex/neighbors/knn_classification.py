@@ -159,6 +159,12 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     def _onedal_fit(self, X, y, queue=None):
         import sys
         print(f"DEBUG KNeighborsClassifier._onedal_fit START: X type={type(X)}, y type={type(y)}", file=sys.stderr)
+        
+        # REFACTOR STEP 1: Process classification targets in sklearnex before passing to onedal
+        print(f"DEBUG: Processing classification targets in sklearnex", file=sys.stderr)
+        y_processed = self._process_classification_targets(y)
+        print(f"DEBUG: After _process_classification_targets, y_processed type={type(y_processed)}", file=sys.stderr)
+        
         onedal_params = {
             "n_neighbors": self.n_neighbors,
             "weights": self.weights,
@@ -171,6 +177,15 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         self._onedal_estimator.requires_y = get_requires_y_tag(self)
         self._onedal_estimator.effective_metric_ = self.effective_metric_
         self._onedal_estimator.effective_metric_params_ = self.effective_metric_params_
+        
+        # REFACTOR: Pass both original and processed targets to onedal
+        # onedal needs the processed classes_ and _y attributes that we just set
+        self._onedal_estimator.classes_ = self.classes_
+        self._onedal_estimator._y = self._y
+        self._onedal_estimator.outputs_2d_ = self.outputs_2d_
+        print(f"DEBUG: Set onedal_estimator.classes_={self._onedal_estimator.classes_}", file=sys.stderr)
+        print(f"DEBUG: Set onedal_estimator._y shape={self._onedal_estimator._y.shape}", file=sys.stderr)
+        
         print(f"DEBUG KNeighborsClassifier._onedal_fit: Calling onedal_estimator.fit", file=sys.stderr)
         self._onedal_estimator.fit(X, y, queue=queue)
         print(f"DEBUG KNeighborsClassifier._onedal_fit: After fit, calling _save_attributes", file=sys.stderr)

@@ -197,7 +197,10 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         self._onedal_model = None
         self._tree = None
         self._shape = None
-        self.classes_ = None
+        # REFACTOR STEP 1: Don't reset classes_ - it may have been set by sklearnex layer
+        # self.classes_ = None
+        if not hasattr(self, 'classes_'):
+            self.classes_ = None
         self.effective_metric_ = getattr(self, "effective_metric_", self.metric)
         self.effective_metric_params_ = getattr(
             self, "effective_metric_params_", self.metric_params
@@ -213,26 +216,32 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
                 )
             self._shape = shape if shape is not None else y.shape
 
-            if _is_classifier(self):
-                if y.ndim == 1 or y.ndim == 2 and y.shape[1] == 1:
-                    self.outputs_2d_ = False
-                    y = y.reshape((-1, 1))
-                else:
-                    self.outputs_2d_ = True
+            # REFACTOR STEP 1: Classification target processing moved to sklearnex layer
+            # This code is now commented out - processing happens in sklearnex before calling fit
+            # if _is_classifier(self):
+            #     if y.ndim == 1 or y.ndim == 2 and y.shape[1] == 1:
+            #         self.outputs_2d_ = False
+            #         y = y.reshape((-1, 1))
+            #     else:
+            #         self.outputs_2d_ = True
 
-                _check_classification_targets(y)
-                self.classes_ = []
-                self._y = np.empty(y.shape, dtype=int)
-                for k in range(self._y.shape[1]):
-                    classes, self._y[:, k] = np.unique(y[:, k], return_inverse=True)
-                    self.classes_.append(classes)
+            #     _check_classification_targets(y)
+            #     self.classes_ = []
+            #     self._y = np.empty(y.shape, dtype=int)
+            #     for k in range(self._y.shape[1]):
+            #         classes, self._y[:, k] = np.unique(y[:, k], return_inverse=True)
+            #         self.classes_.append(classes)
 
-                if not self.outputs_2d_:
-                    self.classes_ = self.classes_[0]
-                    self._y = self._y.ravel()
+            #     if not self.outputs_2d_:
+            #         self.classes_ = self.classes_[0]
+            #         self._y = self._y.ravel()
 
-                self._validate_n_classes()
-            else:
+            #     self._validate_n_classes()
+            # else:
+            #     self._y = y
+            
+            # For now, keep basic _y assignment for compatibility
+            if not hasattr(self, '_y'):
                 self._y = y
         elif not use_raw_input:
             X, _ = super()._validate_data(X, dtype=[np.float64, np.float32])
