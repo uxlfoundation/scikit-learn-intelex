@@ -67,7 +67,7 @@ Classification
        - For ``algorithm`` == `'brute'`:
 
          all parameters except ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
-     - Multi-output and sparse data are not supported
+     - Multi-output and sparse data are not supported. Number of classes must be at least 2.
    * - :obj:`sklearn.linear_model.LogisticRegression`
      - All parameters are supported except:
 
@@ -309,7 +309,7 @@ Classification
        - ``algorithm`` != `'brute'`
        - ``weights`` = `'callable'`
        - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
-     - Only dense data is supported
+     - Only dense data is supported. Number of classes must be at least 2.
    * - :obj:`sklearn.linear_model.LogisticRegression`
      - All parameters are supported except:
 
@@ -505,7 +505,7 @@ Classification
        - ``weights`` = `'callable'`
        - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
        - ``predict_proba`` method not supported
-     - Only dense data is supported
+     - Only dense data is supported. Number of classes must be at least 2.
    * - :obj:`sklearn.linear_model.LogisticRegression`
      - All parameters are supported except:
 
