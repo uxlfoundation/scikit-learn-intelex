@@ -193,10 +193,7 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
             )
 
     def _fit(self, X, y):
-        print(f"DEBUG oneDAL _fit START - ENTRY PARAMETERS:", file=sys.stderr)
-        print(f"  X type: {type(X)}, X shape: {getattr(X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
-        print(f"  y type: {type(y)}, y shape: {getattr(y, 'shape', 'NO_SHAPE')}", file=sys.stderr)
-        
+        print(f"DEBUG oneDAL _fit START: X type={type(X)}, X shape={getattr(X, 'shape', 'NO_SHAPE')}, y type={type(y)}", file=sys.stderr)
         self._onedal_model = None
         self._tree = None
         self._shape = None
@@ -261,16 +258,11 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         queue = QM.get_global_queue()
         gpu_device = queue is not None and queue.sycl_device.is_gpu
 
-        print(f"DEBUG oneDAL _fit BEFORE calling _onedal_fit:", file=sys.stderr)
-        print(f"  X type: {type(X)}, X shape: {getattr(X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
-        print(f"  _fit_y type: {type(_fit_y)}, _fit_y shape: {getattr(_fit_y, 'shape', 'NO_SHAPE')}", file=sys.stderr)
-
+        print(f"DEBUG oneDAL _fit: Before _onedal_fit, X type={type(X)}, _fit_y type={type(_fit_y)}", file=sys.stderr)
         if _is_classifier(self) or (_is_regressor(self) and gpu_device):
             _fit_y = self._validate_targets(self._y, X.dtype).reshape((-1, 1))
         result = self._onedal_fit(X, _fit_y)
-        
-        print(f"DEBUG oneDAL _fit AFTER _onedal_fit:", file=sys.stderr)
-        print(f"  self._fit_X type: {type(self._fit_X)}, shape: {getattr(self._fit_X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
+        print(f"DEBUG oneDAL _fit: After _onedal_fit, self._fit_X type={type(self._fit_X)}, shape={getattr(self._fit_X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
 
         if y is not None and _is_regressor(self):
             self._y = y if self._shape is None else xp.reshape(y, self._shape)
@@ -443,9 +435,7 @@ class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
 
     @supports_queue
     def predict(self, X, queue=None):
-        print(f"DEBUG KNeighborsClassifier.predict START:", file=sys.stderr)
-        print(f"  X type: {type(X)}, X shape: {getattr(X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
-        
+        print(f"DEBUG KNeighborsClassifier.predict START: X type={type(X)}, X shape={getattr(X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
         use_raw_input = _get_config().get("use_raw_input", False) is True
         if not use_raw_input:
             X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
@@ -470,18 +460,17 @@ class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
 
         self._validate_n_classes()
 
-        print(f"DEBUG KNeighborsClassifier.predict BEFORE _get_onedal_params:", file=sys.stderr)
         params = self._get_onedal_params(X)
         prediction_result = self._onedal_predict(onedal_model, X, params)
         responses = from_table(prediction_result.responses)
 
         result = self.classes_.take(np.asarray(responses.ravel(), dtype=np.intp))
-        print(f"DEBUG KNeighborsClassifier.predict END - result type: {type(result)}", file=sys.stderr)
+        print(f"DEBUG KNeighborsClassifier.predict END: result type={type(result)}", file=sys.stderr)
         return result
 
     @supports_queue
     def predict_proba(self, X, queue=None):
-        print(f"DEBUG KNeighborsClassifier.predict_proba START:", file=sys.stderr)
+        print(f"DEBUG KNeighborsClassifier.predict_proba START: X type={type(X)}", file=sys.stderr)
         neigh_dist, neigh_ind = self.kneighbors(X, queue=queue)
 
         classes_ = self.classes_
@@ -492,9 +481,13 @@ class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
 
         n_queries = _num_samples(X if X is not None else self._fit_X)
 
-        print(f"DEBUG KNeighborsClassifier.predict_proba - using uniform weights (original main branch logic)", file=sys.stderr)
-        # Use uniform weights for now - weights calculation should be done at sklearnex level
-        weights = np.ones_like(neigh_ind)
+        print(f"DEBUG predict_proba: Calling _get_weights", file=sys.stderr)
+        weights = self._get_weights(neigh_dist, self.weights)
+        if weights is None:
+            print(f"DEBUG predict_proba: weights is None, using ones_like", file=sys.stderr)
+            weights = np.ones_like(neigh_ind)
+        else:
+            print(f"DEBUG predict_proba: weights calculated, type={type(weights)}", file=sys.stderr)
 
         all_rows = np.arange(n_queries)
         probabilities = []
@@ -595,9 +588,6 @@ class KNeighborsRegressor(NeighborsBase, RegressorMixin):
         return self._kneighbors(X, n_neighbors, return_distance)
 
     def _predict_gpu(self, X):
-        print(f"DEBUG KNeighborsRegressor._predict_gpu START:", file=sys.stderr)
-        print(f"  X type: {type(X)}, X shape: {getattr(X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
-        
         use_raw_input = _get_config().get("use_raw_input", False) is True
         if not use_raw_input:
             X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
@@ -620,25 +610,21 @@ class KNeighborsRegressor(NeighborsBase, RegressorMixin):
             self.algorithm, n_samples_fit_, n_features
         )
 
-        print(f"DEBUG KNeighborsRegressor._predict_gpu BEFORE _get_onedal_params:", file=sys.stderr)
         params = self._get_onedal_params(X)
 
         prediction_result = self._onedal_predict(onedal_model, X, params)
         responses = from_table(prediction_result.responses)
         result = responses.ravel()
 
-        print(f"DEBUG KNeighborsRegressor._predict_gpu END - result type: {type(result)}", file=sys.stderr)
         return result
 
     def _predict_skl(self, X):
-        print(f"DEBUG KNeighborsRegressor._predict_skl START:", file=sys.stderr)
-        print(f"  X type: {type(X)}, X shape: {getattr(X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
-        
+        print(f"DEBUG KNeighborsRegressor._predict_skl START: X type={type(X)}, X shape={getattr(X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
         neigh_dist, neigh_ind = self.kneighbors(X)
 
-        print(f"DEBUG KNeighborsRegressor._predict_skl - using uniform weights (original main branch logic)", file=sys.stderr)
-        # Use uniform weights for now - weights calculation should be done at sklearnex level
-        weights = None
+        print(f"DEBUG _predict_skl: Calling _get_weights", file=sys.stderr)
+        weights = self._get_weights(neigh_dist, self.weights)
+        print(f"DEBUG _predict_skl: weights result={type(weights) if weights is not None else 'None'}", file=sys.stderr)
 
         _y = self._y
         if _y.ndim == 1:
@@ -657,26 +643,20 @@ class KNeighborsRegressor(NeighborsBase, RegressorMixin):
         if self._y.ndim == 1:
             y_pred = y_pred.ravel()
 
-        print(f"DEBUG KNeighborsRegressor._predict_skl END - y_pred type: {type(y_pred)}", file=sys.stderr)
+        print(f"DEBUG KNeighborsRegressor._predict_skl END: y_pred type={type(y_pred)}", file=sys.stderr)
         return y_pred
 
     @supports_queue
     def predict(self, X, queue=None):
-        print(f"DEBUG KNeighborsRegressor.predict START:", file=sys.stderr)
-        print(f"  X type: {type(X)}, X shape: {getattr(X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
-        print(f"  queue: {queue}", file=sys.stderr)
-        
+        print(f"DEBUG KNeighborsRegressor.predict START: X type={type(X)}, queue={queue}", file=sys.stderr)
         gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
         is_uniform_weights = getattr(self, "weights", "uniform") == "uniform"
-        
-        print(f"DEBUG KNeighborsRegressor.predict - gpu_device: {gpu_device}, is_uniform_weights: {is_uniform_weights}", file=sys.stderr)
-        
+        print(f"DEBUG KNeighborsRegressor.predict: gpu_device={gpu_device}, is_uniform_weights={is_uniform_weights}", file=sys.stderr)
         if gpu_device and is_uniform_weights:
             result = self._predict_gpu(X)
         else:
             result = self._predict_skl(X)
-            
-        print(f"DEBUG KNeighborsRegressor.predict END - result type: {type(result)}", file=sys.stderr)
+        print(f"DEBUG KNeighborsRegressor.predict END: result type={type(result)}", file=sys.stderr)
         return result
 
 
