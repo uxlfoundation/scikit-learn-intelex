@@ -359,7 +359,7 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
             n_neighbors += 1
 
         n_samples_fit = self.n_samples_fit_
-        # REFACTOR: n_neighbors bounds validation commented out - should be done in sklearnex layer
+        # REFACTOR: n_neighbors bounds validation moved to sklearnex layer (_onedal_kneighbors)
         # Original validation code kept for reference:
         # if n_neighbors > n_samples_fit:
         #     if query_is_train:

@@ -194,6 +194,19 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
             X = validate_data(
                 self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
             )
+        
+        # REFACTOR: Validate n_neighbors bounds when X=None (query_is_train case)
+        # When X=None, oneDAL will add +1 to n_neighbors internally to account for the sample itself
+        # We need to check this BEFORE calling oneDAL to provide proper error messages
+        if X is None and n_neighbors is not None:
+            # oneDAL will add +1, so validate n_neighbors + 1 against n_samples_fit
+            if n_neighbors + 1 > self.n_samples_fit_:
+                raise ValueError(
+                    f"Expected n_neighbors < n_samples_fit, but "
+                    f"n_neighbors = {n_neighbors}, n_samples_fit = {self.n_samples_fit_}, "
+                    f"n_samples = {self.n_samples_fit_}"
+                )
+        
         return self._onedal_estimator.kneighbors(
             X, n_neighbors, return_distance, queue=queue
         )
