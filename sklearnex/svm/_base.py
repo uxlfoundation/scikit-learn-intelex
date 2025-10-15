@@ -497,7 +497,7 @@ class BaseSVC(BaseSVM):
         # This function is legacy from the original implementation and needs
         # to be refactored.
         if xp is None:
-            xp, _ = get_namespace(X)
+            xp, _ = get_namespace(confidences)
         n_samples = predictions.shape[0]
         votes = xp.zeros((n_samples, n_classes))
         sum_of_confidences = xp.zeros((n_samples, n_classes))
@@ -544,7 +544,7 @@ class BaseSVC(BaseSVM):
         return decision_function
 
     def _onedal_predict_proba(self, X, queue=None):
-        if getattr(self, "clf_prob", None) is None:
+        if not hasattr(self, "clf_prob"):
             raise NotFittedError(
                 "predict_proba is not available when fitted with probability=False"
             )
