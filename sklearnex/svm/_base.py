@@ -430,8 +430,6 @@ class BaseSVC(BaseSVM):
         self.support_vectors_ = self._onedal_estimator.support_vectors_
 
         self.dual_coef_ = self._onedal_estimator.dual_coef_
-        if not sklearn_check_version("1.2"):
-            self.class_weight_ = self._onedal_estimator.class_weight_
         self.support_ = xp.asarray(self._onedal_estimator.support_, dtype=xp.int32)
 
         self._icept_ = self._onedal_estimator.intercept_
