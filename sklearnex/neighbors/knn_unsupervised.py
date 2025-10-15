@@ -179,10 +179,11 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         print(f"DEBUG NearestNeighbors._onedal_fit END: self._fit_X type={type(getattr(self, '_fit_X', 'NOT_SET'))}", file=sys.stderr)
 
     def _onedal_predict(self, X, queue=None):
-        # Validate and convert X (pandas to numpy if needed)
-        X = validate_data(
-            self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
-        )
+        # Validate and convert X (pandas to numpy if needed) only if X is not None
+        if X is not None:
+            X = validate_data(
+                self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
+            )
         return self._onedal_estimator.predict(X, queue=queue)
 
     def _onedal_kneighbors(

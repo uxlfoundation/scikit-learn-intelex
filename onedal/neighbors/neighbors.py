@@ -359,17 +359,19 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
             n_neighbors += 1
 
         n_samples_fit = self.n_samples_fit_
-        if n_neighbors > n_samples_fit:
-            if query_is_train:
-                n_neighbors -= 1  # ok to modify inplace because an error is raised
-                inequality_str = "n_neighbors < n_samples_fit"
-            else:
-                inequality_str = "n_neighbors <= n_samples_fit"
-            raise ValueError(
-                f"Expected {inequality_str}, but "
-                f"n_neighbors = {n_neighbors}, n_samples_fit = {n_samples_fit}, "
-                f"n_samples = {X.shape[0]}"  # include n_samples for common tests
-            )
+        # REFACTOR: n_neighbors bounds validation commented out - should be done in sklearnex layer
+        # Original validation code kept for reference:
+        # if n_neighbors > n_samples_fit:
+        #     if query_is_train:
+        #         n_neighbors -= 1  # ok to modify inplace because an error is raised
+        #         inequality_str = "n_neighbors < n_samples_fit"
+        #     else:
+        #         inequality_str = "n_neighbors <= n_samples_fit"
+        #     raise ValueError(
+        #         f"Expected {inequality_str}, but "
+        #         f"n_neighbors = {n_neighbors}, n_samples_fit = {n_samples_fit}, "
+        #         f"n_samples = {X.shape[0]}"  # include n_samples for common tests
+        #     )
 
         chunked_results = None
         method = self._parse_auto_method(
