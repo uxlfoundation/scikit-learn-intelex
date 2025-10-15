@@ -16,6 +16,9 @@
 
 #include "onedal/common.hpp"
 #include "onedal/version.hpp"
+// A fake oneDAL algorithm is include via the `dummy_onedal.hpp` header. In
+// normal circumstances a header for the oneDAL algorithm would be
+// included here from the oneDAL `oneapi/dal/algo/` folder.
 #include "onedal/dummy/dummy_onedal.hpp"
 #include "oneapi/dal/table/common.hpp"
 #include "oneapi/dal/table/homogen.hpp"
@@ -179,6 +182,11 @@ ONEDAL_PY_INIT_MODULE(dummy) {
     ONEDAL_PY_INSTANTIATE(init_infer_ops, sub, policy_list, task_list);
     ONEDAL_PY_INSTANTIATE(init_train_result, sub, task_list);
     ONEDAL_PY_INSTANTIATE(init_infer_result, sub, task_list);
+#else
+    // This is where the pybind11 init functions would be instantiated with
+    // a policy_spmd object. For example, if an init_train_ops existed for
+    // the spmd backend it would be instantiated like:
+    // ONEDAL_PY_INSTANTIATE(init_train_ops, sub, policy_spmd, task_list);
 #endif
 }
 
