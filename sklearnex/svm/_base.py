@@ -37,7 +37,7 @@ from .._device_offload import dispatch, wrap_output_data
 from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
 from ..utils._array_api import get_namespace
-from ..utils.class_weight import compute_class_weight
+from ..utils.class_weight import _compute_class_weight
 from ..utils.validation import _check_sample_weight, validate_data
 
 if sklearn_check_version("1.6"):
@@ -230,7 +230,7 @@ class BaseSVC(BaseSVM):
             y_ = column_or_1d(y, warn=True)
             check_classification_targets(y)
             cls, y = xp.unique_inverse(y_)
-            self.class_weight_ = compute_class_weight(
+            self.class_weight_ = _compute_class_weight(
                 self.class_weight, classes=cls, y=y_
             )
             if len(cls) < 2:
