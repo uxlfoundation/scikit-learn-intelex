@@ -1,5 +1,5 @@
 # ==============================================================================
-# Copyright 2021 Intel Corporation
+# Copyright Contributors to the oneDAL Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,18 +17,17 @@
 import numpy as np
 from scipy import sparse as sp
 from sklearn.svm import SVC as _sklearn_SVC
-from sklearn.svm import NuSVC as _sklearn_NuSVC
 from sklearn.svm import SVR as _sklearn_SVR
+from sklearn.svm import NuSVC as _sklearn_NuSVC
 from sklearn.svm import NuSVR as _sklearn_NuSVR
 from sklearn.utils.validation import _deprecate_positional_args
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal.svm import SVC as onedal_SVC
-from onedal.svm import NuSVC as onedal_NuSVC
 from onedal.svm import SVR as onedal_SVR
+from onedal.svm import NuSVC as onedal_NuSVC
 from onedal.svm import NuSVR as onedal_NuSVR
-
 
 from .._device_offload import dispatch
 from .._utils import PatchingConditionsChain

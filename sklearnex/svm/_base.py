@@ -1,5 +1,5 @@
 # ==============================================================================
-# Copyright 2021 Intel Corporation
+# Copyright Contributors to the oneDAL Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,18 +28,16 @@ from sklearn.svm._base import BaseLibSVM as _sklearn_BaseLibSVM
 from sklearn.svm._base import BaseSVC as _sklearn_BaseSVC
 from sklearn.utils.metaestimators import available_if
 from sklearn.utils.multiclass import check_classification_targets
-
-from sklearn.utils.validation import check_is_fitted
+from sklearn.utils.validation import check_is_fitted, column_or_1d
 
 from daal4py.sklearn._utils import sklearn_check_version
-from daal4py.sklearn.utils.validation import get_requires_y_tag
 
 from .._config import config_context, get_config
 from .._device_offload import dispatch, wrap_output_data
 from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
 from ..utils._array_api import get_namespace
-from ..utils.class_weight import _check_sample_weight
+from ..utils.class_weight import compute_class_weight
 from ..utils.validation import _check_sample_weight, validate_data
 
 if sklearn_check_version("1.6"):
@@ -287,7 +285,9 @@ class BaseSVC(BaseSVM):
         }
 
         self._onedal_estimator = self._onedal_factory(**onedal_params)
-        self._onedal_estimator.fit(X, y, sample_weight, queue=queue)
+        self._onedal_estimator.fit(
+            X, y, sample_weight, class_count=self.classes_.shape[0], queue=queue
+        )
 
         if self.probability:
             self._fit_proba(
@@ -434,6 +434,8 @@ class BaseSVC(BaseSVM):
         length = (self.classes_.shape[0] ** 2 - self.classes_.shape[0]) // 2
 
         if self.probability:
+            # Parameter learned in Platt scaling, exposed as probA_ and probB_
+            # via the sklearn SVM estimator
             self._probA = np.zeros(length)
             self._probB = np.zeros(length)
         else:
@@ -443,7 +445,7 @@ class BaseSVC(BaseSVM):
         self._dualcoef_ = self.dual_coef_
 
         indices = xp.take(y, self.support_, axis=0)
-        self._n_support = xp.array(
+        self.n_support_ = xp.array(
             [xp.sum(indices == i) for i, _ in enumerate(self.classes_)]
         )
 
@@ -455,7 +457,9 @@ class BaseSVC(BaseSVM):
 
         xp, _ = get_namespace(X)
 
-        if not self._sparse and sv.size > 0 and xp.sum(self._n_support) != sv.shape[0]:
+        # sklearn conformance >1.0, with array API conversion
+        # https://github.com/scikit-learn/scikit-learn/pull/21336
+        if not self._sparse and sv.size > 0 and xp.sum(self.n_support_) != sv.shape[0]:
             raise ValueError(
                 "The internal representation " f"of {self.__class__.__name__} was altered"
             )
@@ -507,7 +511,7 @@ class BaseSVC(BaseSVM):
 
     def _onedal_decision_function(self, X, queue=None):
         sv = self.support_vectors_
-        if not self._sparse and sv.size > 0 and self._n_support.sum() != sv.shape[0]:
+        if not self._sparse and sv.size > 0 and self.n_support_.sum() != sv.shape[0]:
             raise ValueError(
                 "The internal representation " f"of {self.__class__.__name__} was altered"
             )
@@ -616,17 +620,18 @@ class BaseSVR(BaseSVM):
 
         self._onedal_estimator = self._onedal_factory(**onedal_params)
         self._onedal_estimator.fit(X, y, sample_weight, queue=queue)
-        self._save_attributes()
+        self._save_attributes(X, xp=xp)
 
-    def _save_attributes(self, X):
+    def _save_attributes(self, X, xp=None):
         self.support_vectors_ = self._onedal_estimator.support_vectors_
         self.fit_status_ = 0
         self.dual_coef_ = self._onedal_estimator.dual_coef_
         self.shape_fit_ = X.shape
-        self.support_ = self._onedal_estimator.support_.astype(int)
+        self.support_ = xp.asarray(self._onedal_estimator.support_, dtype=xp.int32)
 
         self._icept_ = self._onedal_estimator.intercept_
-        self._n_support = [self.support_vectors_.shape[0]]
+        self.n_support_ = xp.array([self.support_vectors_.shape[0]], dtype=xp.int32)
+
         self._sparse = False
         self._gamma = self._onedal_estimator.gamma
         self._probA = None
