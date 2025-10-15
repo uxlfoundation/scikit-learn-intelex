@@ -297,7 +297,7 @@ class BaseSVC(BaseSVM):
                 queue=queue,
             )
 
-        self._save_attributes()
+        self._save_attributes(X, y, xp=xp)
 
     @wrap_output_data
     def predict(self, X):
