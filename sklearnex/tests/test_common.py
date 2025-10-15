@@ -103,6 +103,9 @@ _DESIGN_RULE_VIOLATIONS = {
     "LogisticRegression(solver='newton-cg')-predict-n_jobs_check": "uses daal4py for cpu in sklearnex",
     "LogisticRegression(solver='newton-cg')-predict_log_proba-n_jobs_check": "uses daal4py for cpu in sklearnex",
     "LogisticRegression(solver='newton-cg')-predict_proba-n_jobs_check": "uses daal4py for cpu in sklearnex",
+    "DummyRegressor-fit-n_jobs_check": "default parameters use sklearn",
+    "DummyRegressor-predict-n_jobs_check": "default parameters use sklearn",
+    "DummyRegressor-score-n_jobs_check": "default parameters use sklearn",
     # KNeighborsClassifier validate_data issues - will be fixed later
     "KNeighborsClassifier-fit-call_validate_data": "validate_data implementation needs fixing",
     "KNeighborsClassifier-predict_proba-call_validate_data": "validate_data implementation needs fixing",
