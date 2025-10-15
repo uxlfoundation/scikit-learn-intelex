@@ -363,16 +363,24 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         #     # returned, which is removed later
         #     n_neighbors += 1
         
-        if X is not None:
-            query_is_train = False
-        else:
-            query_is_train = True
-            X = self._fit_X
-            # Include an extra neighbor to account for the sample itself being
-            # returned, which is removed later
-            n_neighbors += 1
+        # REFACTOR: query_is_train handling moved to sklearnex layer
+        # All post-processing now happens in sklearnex._kneighbors_post_processing()
+        # Original code kept for reference:
+        # if X is not None:
+        #     query_is_train = False
+        # else:
+        #     query_is_train = True
+        #     X = self._fit_X
+        #     # Include an extra neighbor to account for the sample itself being
+        #     # returned, which is removed later
+        #     n_neighbors += 1
 
-        n_samples_fit = self.n_samples_fit_
+        # REFACTOR: onedal now just returns raw results, sklearnex does all processing
+        # Following PCA pattern: simple onedal layer
+        if X is None:
+            X = self._fit_X
+
+        # n_samples_fit = self.n_samples_fit_
         # REFACTOR: n_neighbors bounds validation moved to sklearnex layer (_onedal_kneighbors)
         # Original validation code kept for reference:
         # if n_neighbors > n_samples_fit:
@@ -387,62 +395,74 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         #         f"n_samples = {X.shape[0]}"  # include n_samples for common tests
         #     )
 
-        chunked_results = None
+        # chunked_results = None
         method = self._parse_auto_method(
             self._fit_method, self.n_samples_fit_, n_features
         )
 
+        # REFACTOR: Following PCA pattern - onedal just calls backend and returns raw results
+        # All post-processing (kd_tree sorting, removing self, etc.) moved to sklearnex
         params = super()._get_onedal_params(X, n_neighbors=n_neighbors)
         prediction_results = self._onedal_predict(self._onedal_model, X, params)
         distances = from_table(prediction_results.distances)
         indices = from_table(prediction_results.indices)
 
-        if method == "kd_tree":
-            for i in range(distances.shape[0]):
-                seq = distances[i].argsort()
-                indices[i] = indices[i][seq]
-                distances[i] = distances[i][seq]
+        # REFACTOR: kd_tree sorting moved to sklearnex._kneighbors_post_processing()
+        # Original code kept for reference:
+        # if method == "kd_tree":
+        #     for i in range(distances.shape[0]):
+        #         seq = distances[i].argsort()
+        #         indices[i] = indices[i][seq]
+        #         distances[i] = distances[i][seq]
 
         if return_distance:
             results = distances, indices
         else:
             results = indices
 
-        if chunked_results is not None:
-            if return_distance:
-                neigh_dist, neigh_ind = zip(*chunked_results)
-                results = np.vstack(neigh_dist), np.vstack(neigh_ind)
-            else:
-                results = np.vstack(chunked_results)
+        # REFACTOR: chunked_results vstack moved to sklearnex (was dead code anyway)
+        # Original code kept for reference:
+        # if chunked_results is not None:
+        #     if return_distance:
+        #         neigh_dist, neigh_ind = zip(*chunked_results)
+        #         results = np.vstack(neigh_dist), np.vstack(neigh_ind)
+        #     else:
+        #         results = np.vstack(chunked_results)
 
-        if not query_is_train:
-            return results
-
-        # If the query data is the same as the indexed data, we would like
-        # to ignore the first nearest neighbor of every sample, i.e
-        # the sample itself.
-        if return_distance:
-            neigh_dist, neigh_ind = results
-        else:
-            neigh_ind = results
-
-        n_queries, _ = X.shape
-        sample_range = np.arange(n_queries)[:, None]
-        sample_mask = neigh_ind != sample_range
-
-        # Corner case: When the number of duplicates are more
-        # than the number of neighbors, the first NN will not
-        # be the sample, but a duplicate.
-        # In that case mask the first duplicate.
-        dup_gr_nbrs = np.all(sample_mask, axis=1)
-        sample_mask[:, 0][dup_gr_nbrs] = False
-
-        neigh_ind = np.reshape(neigh_ind[sample_mask], (n_queries, n_neighbors - 1))
-
-        if return_distance:
-            neigh_dist = np.reshape(neigh_dist[sample_mask], (n_queries, n_neighbors - 1))
-            return neigh_dist, neigh_ind
-        return neigh_ind
+        # REFACTOR: Removing self from results moved to sklearnex._kneighbors_post_processing()
+        # All query_is_train post-processing now in sklearnex layer
+        # Original code kept for reference:
+        # if not query_is_train:
+        #     return results
+        #
+        # # If the query data is the same as the indexed data, we would like
+        # # to ignore the first nearest neighbor of every sample, i.e
+        # # the sample itself.
+        # if return_distance:
+        #     neigh_dist, neigh_ind = results
+        # else:
+        #     neigh_ind = results
+        #
+        # n_queries, _ = X.shape
+        # sample_range = np.arange(n_queries)[:, None]
+        # sample_mask = neigh_ind != sample_range
+        #
+        # # Corner case: When the number of duplicates are more
+        # # than the number of neighbors, the first NN will not
+        # # be the sample, but a duplicate.
+        # # In that case mask the first duplicate.
+        # dup_gr_nbrs = np.all(sample_mask, axis=1)
+        # sample_mask[:, 0][dup_gr_nbrs] = False
+        #
+        # neigh_ind = np.reshape(neigh_ind[sample_mask], (n_queries, n_neighbors - 1))
+        #
+        # if return_distance:
+        #     neigh_dist = np.reshape(neigh_dist[sample_mask], (n_queries, n_neighbors - 1))
+        #     return neigh_dist, neigh_ind
+        # return neigh_ind
+        
+        # Return raw results - sklearnex will do all post-processing
+        return results
 
 
 class KNeighborsClassifier(NeighborsBase, ClassifierMixin):

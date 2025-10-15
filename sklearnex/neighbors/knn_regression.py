@@ -219,14 +219,19 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
     ):
         import sys
         print(f"DEBUG KNeighborsRegressor._onedal_kneighbors START: X type={type(X)}, n_neighbors={n_neighbors}, return_distance={return_distance}", file=sys.stderr)
-        # Validate and convert X (pandas to numpy if needed)
-        if X is not None:
-            X = validate_data(
-                self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
-            )
+        
+        # REFACTOR: All post-processing now in sklearnex following PCA pattern
+        # Prepare inputs and handle query_is_train case
+        X, n_neighbors, query_is_train = self._prepare_kneighbors_inputs(X, n_neighbors)
+        
+        # Get raw results from onedal backend
         result = self._onedal_estimator.kneighbors(
             X, n_neighbors, return_distance, queue=queue
         )
+        
+        # Apply post-processing (kd_tree sorting, removing self from results)
+        result = self._kneighbors_post_processing(X, n_neighbors, return_distance, result, query_is_train)
+        
         print(f"DEBUG KNeighborsRegressor._onedal_kneighbors END: result type={type(result)}", file=sys.stderr)
         return result
 
