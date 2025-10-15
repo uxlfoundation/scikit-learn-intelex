@@ -247,7 +247,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             self._validate_params()
         check_feature_names(self, X, reset=True)
         # Validate n_neighbors parameter
-        self._validate_n_neighbors()
+        self._validate_n_neighbors(self.n_neighbors)
         if self.metric_params is not None and "p" in self.metric_params:
             if self.p is not None:
                 warnings.warn(
