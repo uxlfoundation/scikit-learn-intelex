@@ -194,6 +194,101 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             query_is_train = X is None or (hasattr(self, '_fit_X') and X is self._fit_X)
             self._validate_kneighbors_bounds(n_neighbors, query_is_train, X if X is not None else self._fit_X)
 
+    def _prepare_kneighbors_inputs(self, X, n_neighbors):
+        """Prepare inputs for kneighbors call to onedal backend.
+        
+        Handles query_is_train case: when X=None, sets X to training data and adds +1 to n_neighbors.
+        
+        Args:
+            X: Query data or None
+            n_neighbors: Number of neighbors or None
+            
+        Returns:
+            Tuple of (X, n_neighbors, query_is_train)
+            - X: Processed query data (self._fit_X if original X was None)
+            - n_neighbors: Adjusted n_neighbors (includes +1 if query_is_train)
+            - query_is_train: Boolean flag indicating if original X was None
+        """
+        query_is_train = X is None
+        
+        if X is not None:
+            # Validate and convert X (pandas to numpy if needed)
+            X = validate_data(
+                self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
+            )
+        else:
+            X = self._fit_X
+            # Include an extra neighbor to account for the sample itself being
+            # returned, which is removed later
+            if n_neighbors is None:
+                n_neighbors = self.n_neighbors
+            n_neighbors += 1
+        
+        return X, n_neighbors, query_is_train
+
+    def _kneighbors_post_processing(self, X, n_neighbors, return_distance, result, query_is_train):
+        """Shared post-processing for kneighbors results.
+        
+        Following PCA pattern: all post-processing in sklearnex, onedal returns raw results.
+        
+        Handles:
+        - query_is_train case (X=None): removes self from results
+        - kd_tree sorting: sorts results by distance
+        
+        Args:
+            X: Query data (self._fit_X if query_is_train)
+            n_neighbors: Number of neighbors (already includes +1 if query_is_train)
+            return_distance: Whether distances are included in result
+            result: Raw result from onedal backend (distances, indices) or just indices
+            query_is_train: Boolean indicating if original X was None
+        
+        Returns:
+            Post-processed result in same format as input result
+        """
+        # POST-PROCESSING: kd_tree sorting (moved from onedal)
+        if self._fit_method == "kd_tree":
+            if return_distance:
+                distances, indices = result
+                for i in range(distances.shape[0]):
+                    seq = distances[i].argsort()
+                    indices[i] = indices[i][seq]
+                    distances[i] = distances[i][seq]
+                result = distances, indices
+            else:
+                indices = result
+                # For indices-only, we still need to sort but we don't have distances
+                # In this case, indices should already be sorted by onedal
+                pass
+        
+        # POST-PROCESSING: Remove self from results when query_is_train (moved from onedal)
+        if query_is_train:
+            if return_distance:
+                neigh_dist, neigh_ind = result
+            else:
+                neigh_ind = result
+            
+            # X is self._fit_X in query_is_train case (set by caller)
+            n_queries, _ = X.shape
+            sample_range = np.arange(n_queries)[:, None]
+            sample_mask = neigh_ind != sample_range
+            
+            # Corner case: When the number of duplicates are more
+            # than the number of neighbors, the first NN will not
+            # be the sample, but a duplicate.
+            # In that case mask the first duplicate.
+            dup_gr_nbrs = np.all(sample_mask, axis=1)
+            sample_mask[:, 0][dup_gr_nbrs] = False
+            
+            neigh_ind = np.reshape(neigh_ind[sample_mask], (n_queries, n_neighbors - 1))
+            
+            if return_distance:
+                neigh_dist = np.reshape(neigh_dist[sample_mask], (n_queries, n_neighbors - 1))
+                result = neigh_dist, neigh_ind
+            else:
+                result = neigh_ind
+        
+        return result
+
     def _process_classification_targets(self, y):
         """Process classification targets and set class-related attributes.
         

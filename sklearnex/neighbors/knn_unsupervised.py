@@ -189,27 +189,23 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
     def _onedal_kneighbors(
         self, X=None, n_neighbors=None, return_distance=True, queue=None
     ):
-        # Validate and convert X (pandas to numpy if needed)
-        if X is not None:
-            X = validate_data(
-                self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
-            )
+        import sys
+        print(f"DEBUG NearestNeighbors._onedal_kneighbors START: X type={type(X)}, n_neighbors={n_neighbors}, return_distance={return_distance}", file=sys.stderr)
         
-        # REFACTOR: Validate n_neighbors bounds when X=None (query_is_train case)
-        # When X=None, oneDAL will add +1 to n_neighbors internally to account for the sample itself
-        # We need to check this BEFORE calling oneDAL to provide proper error messages
-        if X is None and n_neighbors is not None:
-            # oneDAL will add +1, so validate n_neighbors + 1 against n_samples_fit
-            if n_neighbors + 1 > self.n_samples_fit_:
-                raise ValueError(
-                    f"Expected n_neighbors < n_samples_fit, but "
-                    f"n_neighbors = {n_neighbors}, n_samples_fit = {self.n_samples_fit_}, "
-                    f"n_samples = {self.n_samples_fit_}"
-                )
+        # REFACTOR: All post-processing now in sklearnex following PCA pattern
+        # Prepare inputs and handle query_is_train case
+        X, n_neighbors, query_is_train = self._prepare_kneighbors_inputs(X, n_neighbors)
         
-        return self._onedal_estimator.kneighbors(
+        # Get raw results from onedal backend
+        result = self._onedal_estimator.kneighbors(
             X, n_neighbors, return_distance, queue=queue
         )
+        
+        # Apply post-processing (kd_tree sorting, removing self from results)
+        result = self._kneighbors_post_processing(X, n_neighbors, return_distance, result, query_is_train)
+        
+        print(f"DEBUG NearestNeighbors._onedal_kneighbors END: result type={type(result)}", file=sys.stderr)
+        return result
 
     def _save_attributes(self):
         print(f"DEBUG NearestNeighbors._save_attributes START: onedal_estimator._fit_X type={type(getattr(self._onedal_estimator, '_fit_X', 'NOT_SET'))}", file=sys.stderr)
