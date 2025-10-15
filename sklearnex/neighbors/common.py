@@ -177,6 +177,23 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                 f"n_samples = {X.shape[0]}"  # include n_samples for common tests
             )
 
+    def _kneighbors_validation(self, X, n_neighbors):
+        """Shared validation for kneighbors method called from sklearnex layer.
+        
+        Validates:
+        - Feature count matches training data if X is provided
+        - n_neighbors is within valid bounds if provided
+        """
+        # Validate feature count if X is provided
+        if X is not None:
+            self._validate_feature_count(X)
+        
+        # Validate n_neighbors bounds if provided
+        if n_neighbors is not None:
+            # Determine if query is the training set
+            query_is_train = X is None or (hasattr(self, '_fit_X') and X is self._fit_X)
+            self._validate_kneighbors_bounds(n_neighbors, query_is_train, X if X is not None else self._fit_X)
+
     def _process_classification_targets(self, y):
         """Process classification targets and set class-related attributes.
         
@@ -229,6 +246,8 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         if sklearn_check_version("1.2"):
             self._validate_params()
         check_feature_names(self, X, reset=True)
+        # Validate n_neighbors parameter
+        self._validate_n_neighbors()
         if self.metric_params is not None and "p" in self.metric_params:
             if self.p is not None:
                 warnings.warn(
