@@ -29,7 +29,7 @@ from sklearnex.neighbors.common import KNeighborsDispatchingBase
 from sklearnex.neighbors.knn_unsupervised import NearestNeighbors
 
 from ..utils._array_api import get_namespace
-from ..utils.validation import check_feature_names
+from ..utils.validation import check_feature_names, validate_data
 
 
 @control_n_jobs(decorated_methods=["fit", "kneighbors", "_kneighbors"])
@@ -57,6 +57,12 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
         print(f"DEBUG LocalOutlierFactor._onedal_fit START: X type={type(X)}, y type={type(y)}", file=sys.stderr)
         if sklearn_check_version("1.2"):
             self._validate_params()
+
+        # REFACTOR: Use validate_data from sklearnex.utils.validation to convert pandas to numpy
+        X = validate_data(
+            self, X, dtype=[np.float64, np.float32], accept_sparse="csr"
+        )
+        print(f"DEBUG: After validate_data, X type={type(X)}", file=sys.stderr)
 
         print(f"DEBUG LocalOutlierFactor._onedal_fit: Calling _onedal_knn_fit", file=sys.stderr)
         self._onedal_knn_fit(X, y, queue=queue)
@@ -166,9 +172,18 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
     def _kneighbors(self, X=None, n_neighbors=None, return_distance=True):
         import sys
         print(f"DEBUG LocalOutlierFactor._kneighbors START: X type={type(X)}, n_neighbors={n_neighbors}, return_distance={return_distance}", file=sys.stderr)
+        
+        # Validate n_neighbors parameter first (before check_is_fitted)
+        if n_neighbors is not None:
+            self._validate_n_neighbors(n_neighbors)
+        
         check_is_fitted(self)
         if X is not None:
             check_feature_names(self, X, reset=False)
+        
+        # Validate kneighbors parameters (inherited from KNeighborsDispatchingBase)
+        self._kneighbors_validation(X, n_neighbors)
+        
         result = dispatch(
             self,
             "kneighbors",
@@ -192,6 +207,13 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
         import sys
         print(f"DEBUG LocalOutlierFactor.score_samples START: X type={type(X)}", file=sys.stderr)
         check_is_fitted(self)
+        
+        # Validate and convert X (pandas to numpy if needed)
+        X = validate_data(
+            self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
+        )
+        
+        check_feature_names(self, X, reset=False)
 
         distances_X, neighbors_indices_X = self._kneighbors(
             X, n_neighbors=self.n_neighbors_
