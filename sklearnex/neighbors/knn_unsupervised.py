@@ -79,6 +79,11 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
     @wrap_output_data
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
         print(f"DEBUG NearestNeighbors.kneighbors START: X type={type(X)}, _fit_X type={type(getattr(self, '_fit_X', 'NOT_SET'))}", file=sys.stderr)
+        
+        # Validate n_neighbors parameter first (before check_is_fitted)
+        if n_neighbors is not None:
+            self._validate_n_neighbors(n_neighbors)
+        
         check_is_fitted(self)
         if X is not None:
             check_feature_names(self, X, reset=False)
