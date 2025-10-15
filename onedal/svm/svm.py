@@ -25,6 +25,7 @@ from onedal.utils import _sycl_queue_manager as QM
 
 from ..common._estimator_checks import _check_is_fitted
 from ..datatypes import from_table, to_table
+from ..utils.validation import _is_csr
 
 
 class BaseSVM(metaclass=ABCMeta):
@@ -134,12 +135,12 @@ class BaseSVM(metaclass=ABCMeta):
         _check_is_fitted(self)
 
         if self._sparse:
-            if not sp.isspmatrix(X):
-                X = sp.csr_matrix(X)
+            if not _is_csr(X):
+                X = sp.csr_array(X) if hasattr(sp, "csr_array") else sp.csr_matrix(X)
             else:
                 X.sort_indices()
 
-        X = to_table(X, queue=QM.get_global_queue())
+        X = to_table(X, queue=queue)
         params = self._get_onedal_params(X)
 
         if self._onedal_model is None:
@@ -229,8 +230,6 @@ class SVC(BaseSVM):
         tau=1e-12,
         algorithm="thunder",
     ):
-        # This hard-codes nu=.5, which may be bad. Needs to be investigated
-        # as this is different from sklearn and may impact conformance
         super().__init__(
             C=C,
             nu=nu,

@@ -420,10 +420,9 @@ class BaseSVC(BaseSVM):
         self.support_vectors_ = self._onedal_estimator.support_vectors_
 
         self.dual_coef_ = self._onedal_estimator.dual_coef_
-        self.classes_ = self._onedal_estimator.classes_
         if not sklearn_check_version("1.2"):
             self.class_weight_ = self._onedal_estimator.class_weight_
-        self.support_ = self._onedal_estimator.support_.astype(int)
+        self.support_ = xp.asarray(self._onedal_estimator.support_, dtype=xp.int32)
 
         self._icept_ = self._onedal_estimator.intercept_
         self._sparse = False
@@ -436,11 +435,11 @@ class BaseSVC(BaseSVM):
         if self.probability:
             # Parameter learned in Platt scaling, exposed as probA_ and probB_
             # via the sklearn SVM estimator
-            self._probA = np.zeros(length)
-            self._probB = np.zeros(length)
+            self._probA = xp.zeros(length)
+            self._probB = xp.zeros(length)
         else:
-            self._probA = np.empty(0)
-            self._probB = np.empty(0)
+            self._probA = xp.empty(0)
+            self._probB = xp.empty(0)
 
         self._dualcoef_ = self.dual_coef_
 
@@ -534,7 +533,7 @@ class BaseSVC(BaseSVM):
                 decision_function < 0, -decision_function, len_classes_, xp
             )
 
-        return xp.asarray(decision_function)
+        return decision_function
 
     def _onedal_predict_proba(self, X, queue=None):
         if getattr(self, "clf_prob", None) is None:
