@@ -213,10 +213,11 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     def _onedal_predict(self, X, queue=None):
         import sys
         print(f"DEBUG KNeighborsClassifier._onedal_predict START: X type={type(X)}", file=sys.stderr)
-        # Validate and convert X (pandas to numpy if needed)
-        X = validate_data(
-            self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
-        )
+        # Validate and convert X (pandas to numpy if needed) only if X is not None
+        if X is not None:
+            X = validate_data(
+                self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
+            )
         result = self._onedal_estimator.predict(X, queue=queue)
         print(f"DEBUG KNeighborsClassifier._onedal_predict END: result type={type(result)}", file=sys.stderr)
         return result
@@ -224,10 +225,11 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     def _onedal_predict_proba(self, X, queue=None):
         import sys
         print(f"DEBUG KNeighborsClassifier._onedal_predict_proba START: X type={type(X)}", file=sys.stderr)
-        # Validate and convert X (pandas to numpy if needed)
-        X = validate_data(
-            self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
-        )
+        # Validate and convert X (pandas to numpy if needed) only if X is not None
+        if X is not None:
+            X = validate_data(
+                self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
+            )
         result = self._onedal_estimator.predict_proba(X, queue=queue)
         print(f"DEBUG KNeighborsClassifier._onedal_predict_proba END: result type={type(result)}", file=sys.stderr)
         return result
