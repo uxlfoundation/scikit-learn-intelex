@@ -353,23 +353,33 @@ class BaseSVC(BaseSVM):
 
         return xp.log(self.predict_proba(X))
 
-    @wrap_output_data
-    def _predict_proba(self, X):
-        sklearn_pred_proba = (
-            _sklearn_BaseSVC.predict_proba
-            if sklearn_check_version("1.0")
-            else _sklearn_BaseSVC._predict_proba
-        )
+    if sklearn_check_version("1.0"):
 
-        return dispatch(
-            self,
-            "_predict_proba",
-            {
-                "onedal": self.__class__._onedal_predict_proba,
-                "sklearn": sklearn_pred_proba,
-            },
-            X,
-        )
+        @wrap_output_data
+        def _predict_proba(self, X):
+            return dispatch(
+                self,
+                "_predict_proba",
+                {
+                    "onedal": self.__class__._onedal_predict_proba,
+                    "sklearn": _sklearn_BaseSVC.predict_proba,
+                },
+                X,
+            )
+
+    else:
+
+        @wrap_output_data
+        def _predict_proba(self, X):
+            return dispatch(
+                self,
+                "_predict_proba",
+                {
+                    "onedal": self.__class__._onedal_predict_proba,
+                    "sklearn": _sklearn_BaseSVC._predict_proba,
+                },
+                X,
+            )
 
     def _fit_proba(self, X, y, sample_weight=None, queue=None):
         # TODO: rewrite this method when probabilities output is implemented in oneDAL
@@ -444,7 +454,7 @@ class BaseSVC(BaseSVM):
         self._dualcoef_ = self.dual_coef_
 
         indices = xp.take(y, self.support_, axis=0)
-        self.n_support_ = xp.array(
+        self._n_support = xp.array(
             [xp.sum(indices == i) for i, _ in enumerate(self.classes_)]
         )
 
@@ -458,7 +468,7 @@ class BaseSVC(BaseSVM):
 
         # sklearn conformance >1.0, with array API conversion
         # https://github.com/scikit-learn/scikit-learn/pull/21336
-        if not self._sparse and sv.size > 0 and xp.sum(self.n_support_) != sv.shape[0]:
+        if not self._sparse and sv.size > 0 and xp.sum(self._n_support) != sv.shape[0]:
             raise ValueError(
                 "The internal representation " f"of {self.__class__.__name__} was altered"
             )
@@ -510,7 +520,7 @@ class BaseSVC(BaseSVM):
 
     def _onedal_decision_function(self, X, queue=None):
         sv = self.support_vectors_
-        if not self._sparse and sv.size > 0 and self.n_support_.sum() != sv.shape[0]:
+        if not self._sparse and sv.size > 0 and self._n_support.sum() != sv.shape[0]:
             raise ValueError(
                 "The internal representation " f"of {self.__class__.__name__} was altered"
             )
@@ -629,7 +639,7 @@ class BaseSVR(BaseSVM):
         self.support_ = xp.asarray(self._onedal_estimator.support_, dtype=xp.int32)
 
         self._icept_ = self._onedal_estimator.intercept_
-        self.n_support_ = xp.array([self.support_vectors_.shape[0]], dtype=xp.int32)
+        self._n_support = xp.array([self.support_vectors_.shape[0]], dtype=xp.int32)
 
         self._sparse = False
         self._gamma = self._onedal_estimator.gamma
