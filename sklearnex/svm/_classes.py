@@ -32,8 +32,9 @@ from onedal.svm import NuSVR as onedal_NuSVR
 from .._device_offload import dispatch
 from .._utils import PatchingConditionsChain
 from ._base import BaseSVC, BaseSVR
+from ..utils._array_api import enable_array_api
 
-
+@enable_array_api
 @control_n_jobs(
     decorated_methods=["fit", "predict", "_predict_proba", "decision_function", "score"]
 )
