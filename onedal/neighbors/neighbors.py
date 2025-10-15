@@ -210,13 +210,16 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         )
 
         _, xp, _ = _get_sycl_namespace(X)
-        use_raw_input = _get_config().get("use_raw_input", False) is True
+        # REFACTOR: _validate_data call commented out - validation now happens in sklearnex layer
+        # Original code kept for reference:
+        # use_raw_input = _get_config().get("use_raw_input", False) is True
         if y is not None or self.requires_y:
             shape = getattr(y, "shape", None)
-            if not use_raw_input:
-                X, y = super()._validate_data(
-                    X, y, dtype=[np.float64, np.float32], accept_sparse="csr"
-                )
+            # REFACTOR: _validate_data call commented out - validation now happens in sklearnex layer
+            # if not use_raw_input:
+            #     X, y = super()._validate_data(
+            #         X, y, dtype=[np.float64, np.float32], accept_sparse="csr"
+            #     )
             self._shape = shape if shape is not None else y.shape
 
             # REFACTOR: Classification target processing moved to sklearnex layer
@@ -259,21 +262,24 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
             else:
                 # For regressors, just store y
                 self._y = y
-        elif not use_raw_input:
-            X, _ = super()._validate_data(X, dtype=[np.float64, np.float32])
+        # REFACTOR: _validate_data call commented out - validation now happens in sklearnex layer
+        # elif not use_raw_input:
+        #     X, _ = super()._validate_data(X, dtype=[np.float64, np.float32])
 
         self.n_samples_fit_ = X.shape[0]
         self.n_features_in_ = X.shape[1]
         self._fit_X = X
 
-        if self.n_neighbors is not None:
-            if self.n_neighbors <= 0:
-                raise ValueError("Expected n_neighbors > 0. Got %d" % self.n_neighbors)
-            if not isinstance(self.n_neighbors, Integral):
-                raise TypeError(
-                    "n_neighbors does not take %s value, "
-                    "enter integer value" % type(self.n_neighbors)
-                )
+        # REFACTOR: n_neighbors validation commented out - should be done in sklearnex layer
+        # Original code kept for reference:
+        # if self.n_neighbors is not None:
+        #     if self.n_neighbors <= 0:
+        #         raise ValueError("Expected n_neighbors > 0. Got %d" % self.n_neighbors)
+        #     if not isinstance(self.n_neighbors, Integral):
+        #         raise TypeError(
+        #             "n_neighbors does not take %s value, "
+        #             "enter integer value" % type(self.n_neighbors)
+        #         )
 
         self._fit_method = super()._parse_auto_method(
             self.algorithm, self.n_samples_fit_, self.n_features_in_
@@ -298,35 +304,53 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         return result
 
     def _kneighbors(self, X=None, n_neighbors=None, return_distance=True):
-        use_raw_input = _get_config().get("use_raw_input", False) is True
+        # REFACTOR: Feature count validation commented out - should be done in sklearnex layer
+        # Original validation code kept for reference:
+        # use_raw_input = _get_config().get("use_raw_input", False) is True
+        # n_features = getattr(self, "n_features_in_", None)
+        # shape = getattr(X, "shape", None)
+        # if n_features and shape and len(shape) > 1 and shape[1] != n_features:
+        #     raise ValueError(
+        #         (
+        #             f"X has {X.shape[1]} features, "
+        #             f"but kneighbors is expecting "
+        #             f"{n_features} features as input"
+        #         )
+        #     )
+        
+        # Still need n_features for _parse_auto_method call later
         n_features = getattr(self, "n_features_in_", None)
-        shape = getattr(X, "shape", None)
-        if n_features and shape and len(shape) > 1 and shape[1] != n_features:
-            raise ValueError(
-                (
-                    f"X has {X.shape[1]} features, "
-                    f"but kneighbors is expecting "
-                    f"{n_features} features as input"
-                )
-            )
 
         _check_is_fitted(self)
 
         if n_neighbors is None:
             n_neighbors = self.n_neighbors
-        elif n_neighbors <= 0:
-            raise ValueError("Expected n_neighbors > 0. Got %d" % n_neighbors)
-        else:
-            if not isinstance(n_neighbors, Integral):
-                raise TypeError(
-                    "n_neighbors does not take %s value, "
-                    "enter integer value" % type(n_neighbors)
-                )
+        # REFACTOR: n_neighbors validation commented out - should be done in sklearnex layer
+        # Original validation code kept for reference:
+        # elif n_neighbors <= 0:
+        #     raise ValueError("Expected n_neighbors > 0. Got %d" % n_neighbors)
+        # else:
+        #     if not isinstance(n_neighbors, Integral):
+        #         raise TypeError(
+        #             "n_neighbors does not take %s value, "
+        #             "enter integer value" % type(n_neighbors)
+        #         )
 
+        # REFACTOR: X array validation commented out - should be done in sklearnex layer
+        # Original validation code kept for reference:
+        # if X is not None:
+        #     query_is_train = False
+        #     if not use_raw_input:
+        #         X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
+        # else:
+        #     query_is_train = True
+        #     X = self._fit_X
+        #     # Include an extra neighbor to account for the sample itself being
+        #     # returned, which is removed later
+        #     n_neighbors += 1
+        
         if X is not None:
             query_is_train = False
-            if not use_raw_input:
-                X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
         else:
             query_is_train = True
             X = self._fit_X

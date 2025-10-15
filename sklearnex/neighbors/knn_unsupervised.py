@@ -82,6 +82,10 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         check_is_fitted(self)
         if X is not None:
             check_feature_names(self, X, reset=False)
+        
+        # Validate kneighbors parameters (inherited from KNeighborsDispatchingBase)
+        self._kneighbors_validation(X, n_neighbors)
+        
         result = dispatch(
             self,
             "kneighbors",
