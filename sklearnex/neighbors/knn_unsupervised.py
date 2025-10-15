@@ -193,7 +193,7 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         print(f"DEBUG NearestNeighbors._onedal_kneighbors START: X type={type(X)}, n_neighbors={n_neighbors}, return_distance={return_distance}", file=sys.stderr)
         
         # REFACTOR: All post-processing now in sklearnex following PCA pattern
-        # Prepare inputs and handle query_is_train case
+        # Prepare inputs and handle query_is_train case (includes validation AFTER +=1)
         X, n_neighbors, query_is_train = self._prepare_kneighbors_inputs(X, n_neighbors)
         
         # Get raw results from onedal backend

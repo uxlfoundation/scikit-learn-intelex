@@ -198,6 +198,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         """Prepare inputs for kneighbors call to onedal backend.
         
         Handles query_is_train case: when X=None, sets X to training data and adds +1 to n_neighbors.
+        Validates n_neighbors bounds AFTER adding +1 (replicates original onedal behavior).
         
         Args:
             X: Query data or None
@@ -223,6 +224,17 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             if n_neighbors is None:
                 n_neighbors = self.n_neighbors
             n_neighbors += 1
+            
+            # Validate bounds AFTER adding +1 (replicates original onedal behavior)
+            # Original code in onedal had validation after n_neighbors += 1
+            n_samples_fit = self.n_samples_fit_
+            if n_neighbors > n_samples_fit:
+                n_neighbors_for_msg = n_neighbors - 1  # for error message, show original value
+                raise ValueError(
+                    f"Expected n_neighbors < n_samples_fit, but "
+                    f"n_neighbors = {n_neighbors_for_msg}, n_samples_fit = {n_samples_fit}, "
+                    f"n_samples = {X.shape[0]}"
+                )
         
         return X, n_neighbors, query_is_train
 
