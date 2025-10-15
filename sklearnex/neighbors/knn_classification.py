@@ -140,6 +140,11 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
         import sys
         print(f"DEBUG KNeighborsClassifier.kneighbors START: X type={type(X)}, n_neighbors={n_neighbors}, return_distance={return_distance}", file=sys.stderr)
+        
+        # Validate n_neighbors parameter first (before check_is_fitted)
+        if n_neighbors is not None:
+            self._validate_n_neighbors(n_neighbors)
+        
         check_is_fitted(self)
         if X is not None:
             check_feature_names(self, X, reset=False)
