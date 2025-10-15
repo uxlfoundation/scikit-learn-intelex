@@ -106,7 +106,13 @@ class NeighborsCommonBase(metaclass=ABCMeta):
 
     #     return out
 
+    # TODO FUTURE REFACTORING: This method should not be in onedal layer
+    # The entire predict_proba and _predict_skl implementations should be moved to sklearnex layer
+    # Then _get_weights can be removed from onedal entirely (it already exists in sklearnex/neighbors/common.py)
+    # For now keeping it here to avoid circular dependency issues
     def _get_weights(self, dist, weights):
+        # REFACTOR NOTE: Weight parameter validation (raise ValueError) should be in sklearnex
+        # But keeping entire method here temporarily until predict_proba/predict_skl are moved to sklearnex
         if weights in (None, "uniform"):
             return None
         if weights == "distance":
@@ -199,7 +205,11 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         print(f"DEBUG oneDAL _fit START: X type={type(X)}, X shape={getattr(X, 'shape', 'NO_SHAPE')}, y type={type(y)}", file=sys.stderr)
         self._onedal_model = None
         self._tree = None
-        self._shape = None
+        # REFACTOR: Shape processing moved to sklearnex layer
+        # _shape should be set by _process_classification_targets or _process_regression_targets in sklearnex
+        # self._shape = None
+        if not hasattr(self, '_shape'):
+            self._shape = None
         # REFACTOR STEP 1: Don't reset classes_ - it may have been set by sklearnex layer
         # self.classes_ = None
         if not hasattr(self, 'classes_'):
@@ -214,13 +224,15 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         # Original code kept for reference:
         # use_raw_input = _get_config().get("use_raw_input", False) is True
         if y is not None or self.requires_y:
-            shape = getattr(y, "shape", None)
+            # REFACTOR: Shape processing commented out - should be done in sklearnex layer
+            # Original code kept for reference:
+            # shape = getattr(y, "shape", None)
             # REFACTOR: _validate_data call commented out - validation now happens in sklearnex layer
             # if not use_raw_input:
             #     X, y = super()._validate_data(
             #         X, y, dtype=[np.float64, np.float32], accept_sparse="csr"
             #     )
-            self._shape = shape if shape is not None else y.shape
+            # self._shape = shape if shape is not None else y.shape
 
             # REFACTOR: Classification target processing moved to sklearnex layer
             # This code is now commented out - processing MUST happen in sklearnex before calling fit
@@ -295,8 +307,10 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         result = self._onedal_fit(X, _fit_y)
         print(f"DEBUG oneDAL _fit: After _onedal_fit, self._fit_X type={type(self._fit_X)}, shape={getattr(self._fit_X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
 
-        if y is not None and _is_regressor(self):
-            self._y = y if self._shape is None else xp.reshape(y, self._shape)
+        # REFACTOR: Shape-based y reshaping commented out - y should already be properly shaped by sklearnex
+        # Original code kept for reference:
+        # if y is not None and _is_regressor(self):
+        #     self._y = y if self._shape is None else xp.reshape(y, self._shape)
 
         self._onedal_model = result
         result = self

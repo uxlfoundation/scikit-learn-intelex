@@ -235,11 +235,23 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         return y
 
     def _process_regression_targets(self, y):
-        """Process regression targets and set shape-related attributes."""
-        # Handle shape processing for regression
+        """Process regression targets and set shape-related attributes.
+        
+        REFACTOR: This replicates the EXACT shape processing that was in onedal _fit.
+        Original onedal code:
+            shape = getattr(y, "shape", None)
+            self._shape = shape if shape is not None else y.shape
+            # (later, after fit)
+            self._y = y if self._shape is None else xp.reshape(y, self._shape)
+        
+        For now, just store _shape and _y as-is. The reshape happens after onedal fit is complete.
+        """
+        import sys
+        # EXACT replication of original onedal shape processing
         shape = getattr(y, "shape", None)
         self._shape = shape if shape is not None else y.shape
         self._y = y
+        print(f"DEBUG _process_regression_targets: _y type={type(self._y)}, _shape={self._shape}", file=sys.stderr)
         return y
 
     def _fit_validation(self, X, y=None):

@@ -156,6 +156,12 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         )
         print(f"DEBUG: After validate_data, X type={type(X)}, y type={type(y)}", file=sys.stderr)
         
+        # REFACTOR: Process regression targets in sklearnex before passing to onedal
+        # This sets _shape and _y attributes
+        print(f"DEBUG: Processing regression targets in sklearnex", file=sys.stderr)
+        y_processed = self._process_regression_targets(y)
+        print(f"DEBUG: After _process_regression_targets, _shape={self._shape}, _y type={type(self._y)}", file=sys.stderr)
+        
         onedal_params = {
             "n_neighbors": self.n_neighbors,
             "weights": self.weights,
@@ -168,11 +174,32 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         self._onedal_estimator.requires_y = get_requires_y_tag(self)
         self._onedal_estimator.effective_metric_ = self.effective_metric_
         self._onedal_estimator.effective_metric_params_ = self.effective_metric_params_
+        
+        # REFACTOR: Pass pre-processed shape and _y to onedal
+        self._onedal_estimator._shape = self._shape
+        self._onedal_estimator._y = self._y
+        print(f"DEBUG: Set onedal_estimator._shape={self._onedal_estimator._shape}", file=sys.stderr)
+        
         print(f"DEBUG KNeighborsRegressor._onedal_fit: Calling onedal_estimator.fit", file=sys.stderr)
         self._onedal_estimator.fit(X, y, queue=queue)
         print(f"DEBUG KNeighborsRegressor._onedal_fit: After fit, calling _save_attributes", file=sys.stderr)
 
         self._save_attributes()
+        
+        # REFACTOR: Replicate the EXACT post-fit reshaping from original onedal code
+        # Original onedal code (after fit):
+        #     if y is not None and _is_regressor(self):
+        #         _, xp, _ = _get_sycl_namespace(X)
+        #         self._y = y if self._shape is None else xp.reshape(y, self._shape)
+        # Now doing this in sklearnex layer
+        from ..utils._array_api import get_namespace
+        if y is not None:
+            xp, _ = get_namespace(y)
+            self._y = y if self._shape is None else xp.reshape(y, self._shape)
+            # Also update the onedal estimator's _y since that's what gets used in predict
+            self._onedal_estimator._y = self._y
+            print(f"DEBUG: After reshape, self._y type={type(self._y)}, shape={getattr(self._y, 'shape', 'NO_SHAPE')}", file=sys.stderr)
+        
         print(f"DEBUG KNeighborsRegressor._onedal_fit END: self._fit_X type={type(getattr(self, '_fit_X', 'NOT_SET'))}", file=sys.stderr)
 
     def _onedal_predict(self, X, queue=None):
