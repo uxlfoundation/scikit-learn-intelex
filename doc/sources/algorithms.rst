@@ -40,11 +40,9 @@ Classification
      - Parameters
      - Data formats
    * - :obj:`sklearn.svm.SVC`
-     - All parameters are supported
-     - No limitations
+     - All parameters except ``kernel`` not in [`'linear'`, `'rbf'`, `'poly'`, `'sigmoid'`]
    * - :obj:`sklearn.svm.NuSVC`
-     - All parameters are supported
-     - No limitations
+     - All parameters except ``kernel`` not in [`'linear'`, `'rbf'`, `'poly'`, `'sigmoid'`]
    * - :obj:`sklearn.ensemble.RandomForestClassifier`
      - All parameters are supported except:
 
@@ -89,11 +87,9 @@ Regression
      - Parameters
      - Data formats
    * - :obj:`sklearn.svm.SVR`
-     - All parameters are supported
-     - No limitations
+     - All parameters except ``kernel`` not in [`'linear'`, `'rbf'`, `'poly'`, `'sigmoid'`]
    * - :obj:`sklearn.svm.NuSVR`
-     - All parameters are supported
-     - No limitations
+     - All parameters except ``kernel`` not in [`'linear'`, `'rbf'`, `'poly'`, `'sigmoid'`]
    * - :obj:`sklearn.ensemble.RandomForestRegressor`
      - All parameters are supported except:
 

@@ -149,10 +149,10 @@ class BaseSVM(metaclass=ABCMeta):
         return self.infer(params, self._onedal_model, X)
 
     def predict(self, X, queue=None):
-        return from_table(self._infer(X, queue=queue).responses, like=X)
+        return from_table(self._infer(X, queue=queue).responses, like=X)[:, 0]
 
     def decision_function(self, X, queue=None):
-        return from_table(self._infer(X, queue=queue).decision_function, like=X)
+        return from_table(self._infer(X, queue=queue).decision_function, like=X)[:, 0]
 
 
 class SVR(BaseSVM):
