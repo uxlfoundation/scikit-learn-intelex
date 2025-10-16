@@ -207,6 +207,45 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             probabilities = probabilities[0]
         
         return probabilities
+    
+    def _predict_skl_regression(self, X):
+        """SKL prediction path for regression - calls kneighbors, computes predictions.
+        
+        This method handles X=None (LOOCV) properly by calling self.kneighbors which
+        has the query_is_train logic.
+        
+        Args:
+            X: Query samples (or None for LOOCV)
+        Returns:
+            Predicted regression values
+        """
+        neigh_dist, neigh_ind = self.kneighbors(X)
+        return self._compute_weighted_prediction(
+            neigh_dist, neigh_ind, self.weights, self._y
+        )
+
+    def _predict_skl_classification(self, X):
+        """SKL prediction path for classification - calls kneighbors, computes predictions.
+        
+        This method handles X=None (LOOCV) properly by calling self.kneighbors which
+        has the query_is_train logic.
+        
+        Args:
+            X: Query samples (or None for LOOCV)
+        Returns:
+            Predicted class labels
+        """
+        neigh_dist, neigh_ind = self.kneighbors(X)
+        proba = self._compute_class_probabilities(
+            neigh_dist, neigh_ind, self.weights, self._y, self.classes_, self.outputs_2d_
+        )
+        if not self.outputs_2d_:
+            result = self.classes_[np.argmax(proba, axis=1)]
+        else:
+            result = [classes_k[np.argmax(proba_k, axis=1)]
+                      for classes_k, proba_k in zip(self.classes_, proba.T)]
+            result = np.array(result).T
+        return result
 
     def _validate_targets(self, y, dtype):
         arr = _column_or_1d(y, warn=True)
@@ -486,8 +525,10 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                 self.effective_metric_ = "chebyshev"
 
         if not isinstance(X, (KDTree, BallTree, _sklearn_NeighborsBase)):
+            # Don't validate for finite values here - this is just for shape/algorithm determination
+            # Actual validation happens in _onedal_fit (via validate_data) if onedal is used
             self._fit_X = _check_array(
-                X, dtype=[np.float64, np.float32], accept_sparse=True
+                X, dtype=[np.float64, np.float32], accept_sparse=True, force_all_finite=False
             )
             self.n_samples_fit_ = _num_samples(self._fit_X)
             self.n_features_in_ = _num_features(self._fit_X)
