@@ -28,7 +28,7 @@ if daal_check_version((2024, "P", 1)):
     from sklearn.linear_model import LogisticRegression as _sklearn_LogisticRegression
     from sklearn.metrics import accuracy_score
     from sklearn.utils.multiclass import type_of_target
-    from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
+    from sklearn.utils.validation import check_is_fitted
 
     from daal4py.sklearn._n_jobs_support import control_n_jobs
     from daal4py.sklearn._utils import sklearn_check_version

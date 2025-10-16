@@ -21,7 +21,7 @@ from collections.abc import Iterable
 
 import numpy as np
 from scipy import sparse as sp
-from sklearn.base import BaseEstimator, clone
+from sklearn.base import clone
 from sklearn.ensemble import ExtraTreesClassifier as _sklearn_ExtraTreesClassifier
 from sklearn.ensemble import ExtraTreesRegressor as _sklearn_ExtraTreesRegressor
 from sklearn.ensemble import RandomForestClassifier as _sklearn_RandomForestClassifier
