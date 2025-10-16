@@ -500,7 +500,7 @@ class BaseSVC(BaseSVM):
         # This function is legacy from the original implementation and needs
         # to be refactored.
 
-        predictions = decision_function < 0
+        predictions = xp.asarray(decision_function < 0, dtype=xp.int32)
         # array API spec cannot do mask indexing with bools, must be int array
         confidences = -decision_function
 
@@ -511,13 +511,16 @@ class BaseSVC(BaseSVM):
         votes = xp.zeros_like(decision_function[:, :n_classes])
         sum_of_confidences = xp.zeros_like(votes)
 
+        # This is extraordinarily bad, as its doing strided access behind
+        # two python for loops. Its the main math converting an ovo to ovr.
         k = 0
         for i in range(n_classes):
+            votes[:, i] += n_classes - i - 1
             for j in range(i + 1, n_classes):
                 sum_of_confidences[:, i] -= confidences[:, k]
                 sum_of_confidences[:, j] += confidences[:, k]
-                votes[xp.nonzero(~predictions[:, k])[0], i] += 1
-                votes[xp.nonzero(predictions[:, k])[0], j] += 1
+                votes[:, i] -= predictions[:, k]
+                votes[:, j] += predictions[:, k]
                 k += 1
 
         transformed_confidences = sum_of_confidences / (
