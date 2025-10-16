@@ -240,12 +240,8 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         import sys
         print(f"DEBUG KNeighborsRegressor._predict_skl START: X type={type(X)}", file=sys.stderr)
         
-        # Call kneighbors through sklearnex (self.kneighbors is the sklearnex method)
-        # This properly handles X=None case (LOOCV) with query_is_train logic
-        neigh_dist, neigh_ind = self.kneighbors(X)
-        
-        # Use the helper method to compute weighted prediction
-        result = self._compute_weighted_prediction(neigh_dist, neigh_ind, self.weights, self._y)
+        # Use the unified helper from common.py (calls kneighbors + computes prediction)
+        result = self._predict_skl_regression(X)
         
         print(f"DEBUG KNeighborsRegressor._predict_skl END: result type={type(result)}", file=sys.stderr)
         return result

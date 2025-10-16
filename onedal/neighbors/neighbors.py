@@ -106,42 +106,39 @@ class NeighborsCommonBase(metaclass=ABCMeta):
 
     #     return out
 
-    # TODO FUTURE REFACTORING: This method should not be in onedal layer
-    # The entire predict_proba and _predict_skl implementations should be moved to sklearnex layer
-    # Then _get_weights can be removed from onedal entirely (it already exists in sklearnex/neighbors/common.py)
-    # For now keeping it here to avoid circular dependency issues
-    def _get_weights(self, dist, weights):
-        # REFACTOR NOTE: Weight parameter validation (raise ValueError) should be in sklearnex
-        # But keeping entire method here temporarily until predict_proba/predict_skl are moved to sklearnex
-        if weights in (None, "uniform"):
-            return None
-        if weights == "distance":
-            # if user attempts to classify a point that was zero distance from one
-            # or more training points, those training points are weighted as 1.0
-            # and the other points as 0.0
-            if dist.dtype is np.dtype(object):
-                for point_dist_i, point_dist in enumerate(dist):
-                    # check if point_dist is iterable
-                    # (ex: RadiusNeighborClassifier.predict may set an element of
-                    # dist to 1e-6 to represent an 'outlier')
-                    if hasattr(point_dist, "__contains__") and 0.0 in point_dist:
-                        dist[point_dist_i] = point_dist == 0.0
-                    else:
-                        dist[point_dist_i] = 1.0 / point_dist
-            else:
-                with np.errstate(divide="ignore"):
-                    dist = 1.0 / dist
-                inf_mask = np.isinf(dist)
-                inf_row = np.any(inf_mask, axis=1)
-                dist[inf_row] = inf_mask[inf_row]
-            return dist
-        elif callable(weights):
-            return weights(dist)
-        else:
-            raise ValueError(
-                "weights not recognized: should be 'uniform', "
-                "'distance', or a callable function"
-            )
+    # REFACTOR: _get_weights moved to sklearnex/neighbors/common.py
+    # All prediction logic now in sklearnex layer, so this method is no longer needed in onedal
+    # Original code kept for reference only
+    # def _get_weights(self, dist, weights):
+    #     if weights in (None, "uniform"):
+    #         return None
+    #     if weights == "distance":
+    #         # if user attempts to classify a point that was zero distance from one
+    #         # or more training points, those training points are weighted as 1.0
+    #         # and the other points as 0.0
+    #         if dist.dtype is np.dtype(object):
+    #             for point_dist_i, point_dist in enumerate(dist):
+    #                 # check if point_dist is iterable
+    #                 # (ex: RadiusNeighborClassifier.predict may set an element of
+    #                 # dist to 1e-6 to represent an 'outlier')
+    #                 if hasattr(point_dist, "__contains__") and 0.0 in point_dist:
+    #                     dist[point_dist_i] = point_dist == 0.0
+    #                 else:
+    #                     dist[point_dist_i] = 1.0 / point_dist
+    #         else:
+    #             with np.errstate(divide="ignore"):
+    #                 dist = 1.0 / dist
+    #             inf_mask = np.isinf(dist)
+    #             inf_row = np.any(inf_mask, axis=1)
+    #             dist[inf_row] = inf_mask[inf_row]
+    #         return dist
+    #     elif callable(weights):
+    #         return weights(dist)
+    #     else:
+    #         raise ValueError(
+    #             "weights not recognized: should be 'uniform', "
+    #             "'distance', or a callable function"
+    #         )
 
     def _get_onedal_params(self, X, y=None, n_neighbors=None):
         class_count = 0 if self.classes_ is None else len(self.classes_)
@@ -333,7 +330,7 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         #     )
         
         # Still need n_features for _parse_auto_method call later
-        n_features = getattr(self, "n_features_in_", None)
+        # n_features = getattr(self, "n_features_in_", None)
 
         _check_is_fitted(self)
 
@@ -396,9 +393,9 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         #     )
 
         # chunked_results = None
-        method = self._parse_auto_method(
-            self._fit_method, self.n_samples_fit_, n_features
-        )
+        # method = self._parse_auto_method(
+        #     self._fit_method, self.n_samples_fit_, n_features
+        # )
 
         # REFACTOR: Following PCA pattern - onedal just calls backend and returns raw results
         # All post-processing (kd_tree sorting, removing self, return_distance decision) moved to sklearnex
@@ -524,92 +521,100 @@ class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
     def fit(self, X, y, queue=None):
         return self._fit(X, y)
 
-    @supports_queue
-    def predict(self, X, queue=None):
-        print(f"DEBUG KNeighborsClassifier.predict START: X type={type(X)}, X shape={getattr(X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
-        
-        # REFACTOR: _check_array validation commented out - should be done in sklearnex layer
-        # Original validation code kept for reference:
-        # use_raw_input = _get_config().get("use_raw_input", False) is True
-        # if not use_raw_input:
-        #     X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
-        
-        onedal_model = getattr(self, "_onedal_model", None)
-        n_features = getattr(self, "n_features_in_", None)
-        n_samples_fit_ = getattr(self, "n_samples_fit_", None)
-        
-        # REFACTOR: Feature count validation commented out - should be done in sklearnex layer
-        # Original validation code kept for reference:
-        # shape = getattr(X, "shape", None)
-        # if n_features and shape and len(shape) > 1 and shape[1] != n_features:
-        #     raise ValueError(
-        #         (
-        #             f"X has {X.shape[1]} features, "
-        #             f"but KNNClassifier is expecting "
-        #             f"{n_features} features as input"
-        #         )
-        #     )
-
-        _check_is_fitted(self)
-
-        self._fit_method = self._parse_auto_method(
-            self.algorithm, n_samples_fit_, n_features
-        )
-
-        # REFACTOR NOTE: _validate_n_classes() is now called during fit in sklearnex layer
-        # No need to validate again during predict
-        # self._validate_n_classes()
-
-        params = self._get_onedal_params(X)
-        prediction_result = self._onedal_predict(onedal_model, X, params)
-        responses = from_table(prediction_result.responses)
-
-        result = self.classes_.take(np.asarray(responses.ravel(), dtype=np.intp))
-        print(f"DEBUG KNeighborsClassifier.predict END: result type={type(result)}", file=sys.stderr)
-        return result
-
-    @supports_queue
-    def predict_proba(self, X, queue=None):
-        print(f"DEBUG KNeighborsClassifier.predict_proba START: X type={type(X)}", file=sys.stderr)
-        neigh_dist, neigh_ind = self.kneighbors(X, queue=queue)
-
-        classes_ = self.classes_
-        _y = self._y
-        if not self.outputs_2d_:
-            _y = self._y.reshape((-1, 1))
-            classes_ = [self.classes_]
-
-        n_queries = _num_samples(X if X is not None else self._fit_X)
-
-        print(f"DEBUG predict_proba: Calling _get_weights", file=sys.stderr)
-        weights = self._get_weights(neigh_dist, self.weights)
-        if weights is None:
-            print(f"DEBUG predict_proba: weights is None, using ones_like", file=sys.stderr)
-            weights = np.ones_like(neigh_ind)
-        else:
-            print(f"DEBUG predict_proba: weights calculated, type={type(weights)}", file=sys.stderr)
-
-        all_rows = np.arange(n_queries)
-        probabilities = []
-        for k, classes_k in enumerate(classes_):
-            pred_labels = _y[:, k][neigh_ind]
-            proba_k = np.zeros((n_queries, classes_k.size))
-
-            # a simple ':' index doesn't work right
-            for i, idx in enumerate(pred_labels.T):  # loop is O(n_neighbors)
-                proba_k[all_rows, idx] += weights[:, i]
-
-            # normalize 'votes' into real [0,1] probabilities
-            normalizer = proba_k.sum(axis=1)[:, np.newaxis]
-            normalizer[normalizer == 0.0] = 1.0
-            proba_k /= normalizer
-
-            probabilities.append(proba_k)
-
-        if not self.outputs_2d_:
-            probabilities = probabilities[0]
-
-        return probabilities
+    # REFACTOR: All prediction logic moved to sklearnex layer
+    # predict() and predict_proba() are no longer used - sklearnex calls kneighbors() and computes predictions
+    # Original code kept for reference only
+    # @supports_queue
+    # def predict(self, X, queue=None):
+    #     print(f"DEBUG KNeighborsClassifier.predict START: X type={type(X)}, X shape={getattr(X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
+    #     
+    #     # REFACTOR: _check_array validation commented out - should be done in sklearnex layer
+    #     # Original validation code kept for reference:
+    #     # use_raw_input = _get_config().get("use_raw_input", False) is True
+    #     # if not use_raw_input:
+    #     #     X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
+    #     
+    #     onedal_model = getattr(self, "_onedal_model", None)
+    #     n_features = getattr(self, "n_features_in_", None)
+    #     n_samples_fit_ = getattr(self, "n_samples_fit_", None)
+    #     
+    #     # REFACTOR: Feature count validation commented out - should be done in sklearnex layer
+    #     # Original validation code kept for reference:
+    #     # shape = getattr(X, "shape", None)
+    #     # if n_features and shape and len(shape) > 1 and shape[1] != n_features:
+    #     #     raise ValueError(
+    #     #         (
+    #     #             f"X has {X.shape[1]} features, "
+    #     #             f"but KNNClassifier is expecting "
+    #     #             f"{n_features} features as input"
+    #     #         )
+    #     #     )
+    #
+    #     _check_is_fitted(self)
+    #
+    #     self._fit_method = self._parse_auto_method(
+    #         self.algorithm, n_samples_fit_, n_features
+    #     )
+    #
+    #     # REFACTOR NOTE: _validate_n_classes() is now called during fit in sklearnex layer
+    #     # No need to validate again during predict
+    #     # self._validate_n_classes()
+    #
+    #     # Handle X=None case (LOOCV pattern) - use training data
+    #     # This is needed because _get_onedal_params expects X to have .dtype attribute
+    #     if X is None:
+    #         X = self._fit_X
+    #
+    #     params = self._get_onedal_params(X)
+    #     prediction_result = self._onedal_predict(onedal_model, X, params)
+    #     responses = from_table(prediction_result.responses)
+    #
+    #     result = self.classes_.take(np.asarray(responses.ravel(), dtype=np.intp))
+    #     print(f"DEBUG KNeighborsClassifier.predict END: result type={type(result)}", file=sys.stderr)
+    #     return result
+    #
+    # @supports_queue
+    # def predict_proba(self, X, queue=None):
+    #     print(f"DEBUG KNeighborsClassifier.predict_proba START: X type={type(X)}", file=sys.stderr)
+    #     neigh_dist, neigh_ind = self.kneighbors(X, queue=queue)
+    #
+    #     classes_ = self.classes_
+    #     _y = self._y
+    #     if not self.outputs_2d_:
+    #         _y = self._y.reshape((-1, 1))
+    #         classes_ = [self.classes_]
+    #
+    #     n_queries = _num_samples(X)
+    #
+    #     print(f"DEBUG predict_proba: Calling _get_weights", file=sys.stderr)
+    #     weights = self._get_weights(neigh_dist, self.weights)
+    #     if weights is None:
+    #         print(f"DEBUG predict_proba: weights is None, using ones_like", file=sys.stderr)
+    #         weights = np.ones_like(neigh_ind)
+    #     else:
+    #         print(f"DEBUG predict_proba: weights calculated, type={type(weights)}", file=sys.stderr)
+    #
+    #     all_rows = np.arange(n_queries)
+    #     probabilities = []
+    #     for k, classes_k in enumerate(classes_):
+    #         pred_labels = _y[:, k][neigh_ind]
+    #         proba_k = np.zeros((n_queries, classes_k.size))
+    #
+    #         # a simple ':' index doesn't work right
+    #         for i, idx in enumerate(pred_labels.T):  # loop is O(n_neighbors)
+    #             proba_k[all_rows, idx] += weights[:, i]
+    #
+    #         # normalize 'votes' into real [0,1] probabilities
+    #         normalizer = proba_k.sum(axis=1)[:, np.newaxis]
+    #         normalizer[normalizer == 0.0] = 1.0
+    #         proba_k /= normalizer
+    #
+    #         probabilities.append(proba_k)
+    #
+    #     if not self.outputs_2d_:
+    #         probabilities = probabilities[0]
+    #
+    #     return probabilities
 
     @supports_queue
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True, queue=None):
@@ -687,28 +692,14 @@ class KNeighborsRegressor(NeighborsBase, RegressorMixin):
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True, queue=None):
         return self._kneighbors(X, n_neighbors, return_distance)
 
+    # REFACTOR: Keep _predict_gpu for GPU backend support (called by sklearnex)
+    # This is the ONLY prediction method needed in onedal - it calls the backend directly
+    # All computation logic (weights, averaging, etc.) is in sklearnex
     def _predict_gpu(self, X):
-        # REFACTOR: _check_array validation commented out - should be done in sklearnex layer
-        # Original validation code kept for reference:
-        # use_raw_input = _get_config().get("use_raw_input", False) is True
-        # if not use_raw_input:
-        #     X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
-        
+        # REFACTOR: Validation commented out - should be done in sklearnex layer before calling this
         onedal_model = getattr(self, "_onedal_model", None)
         n_features = getattr(self, "n_features_in_", None)
         n_samples_fit_ = getattr(self, "n_samples_fit_", None)
-        
-        # REFACTOR: Feature count validation commented out - should be done in sklearnex layer
-        # Original validation code kept for reference:
-        # shape = getattr(X, "shape", None)
-        # if n_features and shape and len(shape) > 1 and shape[1] != n_features:
-        #     raise ValueError(
-        #         (
-        #             f"X has {X.shape[1]} features, "
-        #             f"but KNNClassifier is expecting "
-        #             f"{n_features} features as input"
-        #         )
-        #     )
 
         _check_is_fitted(self)
 
@@ -722,47 +713,6 @@ class KNeighborsRegressor(NeighborsBase, RegressorMixin):
         responses = from_table(prediction_result.responses)
         result = responses.ravel()
 
-        return result
-
-    def _predict_skl(self, X):
-        print(f"DEBUG KNeighborsRegressor._predict_skl START: X type={type(X)}, X shape={getattr(X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
-        neigh_dist, neigh_ind = self.kneighbors(X)
-
-        print(f"DEBUG _predict_skl: Calling _get_weights", file=sys.stderr)
-        weights = self._get_weights(neigh_dist, self.weights)
-        print(f"DEBUG _predict_skl: weights result={type(weights) if weights is not None else 'None'}", file=sys.stderr)
-
-        _y = self._y
-        if _y.ndim == 1:
-            _y = _y.reshape((-1, 1))
-
-        if weights is None:
-            y_pred = np.mean(_y[neigh_ind], axis=1)
-        else:
-            y_pred = np.empty((X.shape[0], _y.shape[1]), dtype=np.float64)
-            denom = np.sum(weights, axis=1)
-
-            for j in range(_y.shape[1]):
-                num = np.sum(_y[neigh_ind, j] * weights, axis=1)
-                y_pred[:, j] = num / denom
-
-        if self._y.ndim == 1:
-            y_pred = y_pred.ravel()
-
-        print(f"DEBUG KNeighborsRegressor._predict_skl END: y_pred type={type(y_pred)}", file=sys.stderr)
-        return y_pred
-
-    @supports_queue
-    def predict(self, X, queue=None):
-        print(f"DEBUG KNeighborsRegressor.predict START: X type={type(X)}, queue={queue}", file=sys.stderr)
-        gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
-        is_uniform_weights = getattr(self, "weights", "uniform") == "uniform"
-        print(f"DEBUG KNeighborsRegressor.predict: gpu_device={gpu_device}, is_uniform_weights={is_uniform_weights}", file=sys.stderr)
-        if gpu_device and is_uniform_weights:
-            result = self._predict_gpu(X)
-        else:
-            result = self._predict_skl(X)
-        print(f"DEBUG KNeighborsRegressor.predict END: result type={type(result)}", file=sys.stderr)
         return result
 
 

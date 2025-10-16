@@ -215,12 +215,11 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     def _onedal_predict(self, X, queue=None):
         import sys
         print(f"DEBUG KNeighborsClassifier._onedal_predict START: X type={type(X)}", file=sys.stderr)
-        # Validate and convert X (pandas to numpy if needed) only if X is not None
-        if X is not None:
-            X = validate_data(
-                self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
-            )
-        result = self._onedal_estimator.predict(X, queue=queue)
+        
+        # Use the unified helper from common.py (calls kneighbors + computes prediction)
+        # This properly handles X=None (LOOCV) case
+        result = self._predict_skl_classification(X)
+        
         print(f"DEBUG KNeighborsClassifier._onedal_predict END: result type={type(result)}", file=sys.stderr)
         return result
 
