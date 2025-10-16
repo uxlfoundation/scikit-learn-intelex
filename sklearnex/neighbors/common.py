@@ -124,6 +124,89 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                 "weights not recognized: should be 'uniform', "
                 "'distance', or a callable function"
             )
+    
+    def _compute_weighted_prediction(self, neigh_dist, neigh_ind, weights_param, y_train):
+        """Compute weighted prediction for regression.
+        
+        Args:
+            neigh_dist: Distances to neighbors
+            neigh_ind: Indices of neighbors
+            weights_param: Weight parameter ('uniform', 'distance', or callable)
+            y_train: Training target values
+            
+        Returns:
+            Predicted values
+        """
+        weights = self._get_weights(neigh_dist, weights_param)
+        
+        _y = y_train
+        if _y.ndim == 1:
+            _y = _y.reshape((-1, 1))
+        
+        if weights is None:
+            y_pred = np.mean(_y[neigh_ind], axis=1)
+        else:
+            y_pred = np.empty((neigh_ind.shape[0], _y.shape[1]), dtype=np.float64)
+            denom = np.sum(weights, axis=1)
+            
+            for j in range(_y.shape[1]):
+                num = np.sum(_y[neigh_ind, j] * weights, axis=1)
+                y_pred[:, j] = num / denom
+        
+        if y_train.ndim == 1:
+            y_pred = y_pred.ravel()
+        
+        return y_pred
+    
+    def _compute_class_probabilities(self, neigh_dist, neigh_ind, weights_param, y_train, classes, outputs_2d):
+        """Compute class probabilities for classification.
+        
+        Args:
+            neigh_dist: Distances to neighbors
+            neigh_ind: Indices of neighbors
+            weights_param: Weight parameter ('uniform', 'distance', or callable)
+            y_train: Encoded training labels
+            classes: Class labels
+            outputs_2d: Whether output is 2D (multi-output)
+            
+        Returns:
+            Class probabilities
+        """
+        from ..utils.validation import _num_samples
+        
+        _y = y_train
+        classes_ = classes
+        if not outputs_2d:
+            _y = y_train.reshape((-1, 1))
+            classes_ = [classes]
+        
+        n_queries = neigh_ind.shape[0]
+        
+        weights = self._get_weights(neigh_dist, weights_param)
+        if weights is None:
+            weights = np.ones_like(neigh_ind)
+        
+        all_rows = np.arange(n_queries)
+        probabilities = []
+        for k, classes_k in enumerate(classes_):
+            pred_labels = _y[:, k][neigh_ind]
+            proba_k = np.zeros((n_queries, classes_k.size))
+            
+            # a simple ':' index doesn't work right
+            for i, idx in enumerate(pred_labels.T):  # loop is O(n_neighbors)
+                proba_k[all_rows, idx] += weights[:, i]
+            
+            # normalize 'votes' into real [0,1] probabilities
+            normalizer = proba_k.sum(axis=1)[:, np.newaxis]
+            normalizer[normalizer == 0.0] = 1.0
+            proba_k /= normalizer
+            
+            probabilities.append(proba_k)
+        
+        if not outputs_2d:
+            probabilities = probabilities[0]
+        
+        return probabilities
 
     def _validate_targets(self, y, dtype):
         arr = _column_or_1d(y, warn=True)

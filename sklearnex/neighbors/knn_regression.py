@@ -205,13 +205,49 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
     def _onedal_predict(self, X, queue=None):
         import sys
         print(f"DEBUG KNeighborsRegressor._onedal_predict START: X type={type(X)}", file=sys.stderr)
+        
+        # Dispatch between GPU and SKL prediction methods
+        # This logic matches onedal regressor predict() method but computation happens in sklearnex
+        gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
+        is_uniform_weights = getattr(self, "weights", "uniform") == "uniform"
+        
+        if gpu_device and is_uniform_weights:
+            # GPU path: call onedal backend directly
+            result = self._predict_gpu(X, queue=queue)
+        else:
+            # SKL path: call kneighbors (through sklearnex) then compute in sklearnex
+            result = self._predict_skl(X, queue=queue)
+        
+        print(f"DEBUG KNeighborsRegressor._onedal_predict END: result type={type(result)}", file=sys.stderr)
+        return result
+    
+    def _predict_gpu(self, X, queue=None):
+        """GPU prediction path - validates X and calls onedal backend."""
+        import sys
+        print(f"DEBUG KNeighborsRegressor._predict_gpu START: X type={type(X)}", file=sys.stderr)
         # Validate and convert X (pandas to numpy if needed) only if X is not None
         if X is not None:
             X = validate_data(
                 self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
             )
-        result = self._onedal_estimator.predict(X, queue=queue)
-        print(f"DEBUG KNeighborsRegressor._onedal_predict END: result type={type(result)}", file=sys.stderr)
+        # Call onedal backend for GPU prediction
+        result = self._onedal_estimator._predict_gpu(X)
+        print(f"DEBUG KNeighborsRegressor._predict_gpu END: result type={type(result)}", file=sys.stderr)
+        return result
+    
+    def _predict_skl(self, X, queue=None):
+        """SKL prediction path - calls kneighbors through sklearnex, computes prediction here."""
+        import sys
+        print(f"DEBUG KNeighborsRegressor._predict_skl START: X type={type(X)}", file=sys.stderr)
+        
+        # Call kneighbors through sklearnex (self.kneighbors is the sklearnex method)
+        # This properly handles X=None case (LOOCV) with query_is_train logic
+        neigh_dist, neigh_ind = self.kneighbors(X)
+        
+        # Use the helper method to compute weighted prediction
+        result = self._compute_weighted_prediction(neigh_dist, neigh_ind, self.weights, self._y)
+        
+        print(f"DEBUG KNeighborsRegressor._predict_skl END: result type={type(result)}", file=sys.stderr)
         return result
 
     def _onedal_kneighbors(
