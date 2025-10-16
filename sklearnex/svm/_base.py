@@ -455,7 +455,9 @@ class BaseSVC(BaseSVM):
         indices = xp.take(y, self.support_, axis=0)
         self._n_support = xp.zeros_like(self.classes_, dtype=xp.int32)
         for i in range(self.classes_.shape[0]):
-            self._n_support[i] = xp.sum(xp.asarray(indices == i, dtype=xp.int32), dtype=xp.int32)
+            self._n_support[i] = xp.sum(
+                xp.asarray(indices == i, dtype=xp.int32), dtype=xp.int32
+            )
 
         if sklearn_check_version("1.1"):
             self.n_iter_ = xp.full((length,), self._onedal_estimator.n_iter_)
@@ -494,22 +496,28 @@ class BaseSVC(BaseSVM):
 
         return xp.reshape(xp.take(xp.asarray(self.classes_), res), (-1,))
 
-    def _onedal_ovr_decision_function(self, predictions, confidences, n_classes, xp=None):
+    def _onedal_ovr_decision_function(self, decision_function, n_classes, xp=None):
         # This function is legacy from the original implementation and needs
         # to be refactored.
+
+        predictions = decision_function < 0
+        # array API spec cannot do mask indexing with bools, must be int array
+        confidences = -decision_function
+
         if xp is None:
-            xp, _ = get_namespace(confidences)
-        n_samples = predictions.shape[0]
-        votes = xp.zeros((n_samples, n_classes))
-        sum_of_confidences = xp.zeros((n_samples, n_classes))
+            xp, _ = get_namespace(decision_function)
+        # use `zeros_like` to support correct device allocation while still
+        # supporting numpy < 1.26
+        votes = xp.zeros_like(decision_function[:, :n_classes])
+        sum_of_confidences = xp.zeros_like(votes)
 
         k = 0
         for i in range(n_classes):
             for j in range(i + 1, n_classes):
                 sum_of_confidences[:, i] -= confidences[:, k]
                 sum_of_confidences[:, j] += confidences[:, k]
-                votes[predictions[:, k] == False, i] += 1
-                votes[predictions[:, k] == True, j] += 1
+                votes[xp.nonzero(~predictions[:, k])[0], i] += 1
+                votes[xp.nonzero(predictions[:, k])[0], j] += 1
                 k += 1
 
         transformed_confidences = sum_of_confidences / (
@@ -541,7 +549,7 @@ class BaseSVC(BaseSVM):
             decision_function = xp.reshape(decision_function, (-1,))
         elif lencls > 2 and self.decision_function_shape == "ovr":
             decision_function = self._onedal_ovr_decision_function(
-                decision_function < 0, -decision_function, lencls, xp
+                decision_function, lencls, xp
             )
 
         return decision_function
