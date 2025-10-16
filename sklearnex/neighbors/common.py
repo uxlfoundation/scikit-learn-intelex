@@ -98,10 +98,12 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         if weights in (None, "uniform"):
             return None
         if weights == "distance":
+            # Array API support: get namespace from dist array
+            xp, _ = get_namespace(dist)
             # if user attempts to classify a point that was zero distance from one
             # or more training points, those training points are weighted as 1.0
             # and the other points as 0.0
-            if dist.dtype is np.dtype(object):
+            if dist.dtype is xp.asarray(object).dtype:
                 for point_dist_i, point_dist in enumerate(dist):
                     # check if point_dist is iterable
                     # (ex: RadiusNeighborClassifier.predict may set an element of
@@ -111,10 +113,10 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                     else:
                         dist[point_dist_i] = 1.0 / point_dist
             else:
-                with np.errstate(divide="ignore"):
+                with xp.errstate(divide="ignore") if hasattr(xp, 'errstate') else np.errstate(divide="ignore"):
                     dist = 1.0 / dist
-                inf_mask = np.isinf(dist)
-                inf_row = np.any(inf_mask, axis=1)
+                inf_mask = xp.isinf(dist)
+                inf_row = xp.any(inf_mask, axis=1)
                 dist[inf_row] = inf_mask[inf_row]
             return dist
         elif callable(weights):
@@ -137,24 +139,27 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         Returns:
             Predicted values
         """
+        # Array API support: get namespace from input arrays
+        xp, _ = get_namespace(neigh_dist, neigh_ind, y_train)
+        
         weights = self._get_weights(neigh_dist, weights_param)
         
         _y = y_train
         if _y.ndim == 1:
-            _y = _y.reshape((-1, 1))
+            _y = xp.reshape(_y, (-1, 1))
         
         if weights is None:
-            y_pred = np.mean(_y[neigh_ind], axis=1)
+            y_pred = xp.mean(_y[neigh_ind], axis=1)
         else:
-            y_pred = np.empty((neigh_ind.shape[0], _y.shape[1]), dtype=np.float64)
-            denom = np.sum(weights, axis=1)
+            y_pred = xp.empty((neigh_ind.shape[0], _y.shape[1]), dtype=xp.float64)
+            denom = xp.sum(weights, axis=1)
             
             for j in range(_y.shape[1]):
-                num = np.sum(_y[neigh_ind, j] * weights, axis=1)
+                num = xp.sum(_y[neigh_ind, j] * weights, axis=1)
                 y_pred[:, j] = num / denom
         
         if y_train.ndim == 1:
-            y_pred = y_pred.ravel()
+            y_pred = xp.reshape(y_pred, (-1,))
         
         return y_pred
     
@@ -174,30 +179,33 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         """
         from ..utils.validation import _num_samples
         
+        # Array API support: get namespace from input arrays
+        xp, _ = get_namespace(neigh_dist, neigh_ind, y_train)
+        
         _y = y_train
         classes_ = classes
         if not outputs_2d:
-            _y = y_train.reshape((-1, 1))
+            _y = xp.reshape(y_train, (-1, 1))
             classes_ = [classes]
         
         n_queries = neigh_ind.shape[0]
         
         weights = self._get_weights(neigh_dist, weights_param)
         if weights is None:
-            weights = np.ones_like(neigh_ind)
+            weights = xp.ones_like(neigh_ind)
         
-        all_rows = np.arange(n_queries)
+        all_rows = xp.arange(n_queries)
         probabilities = []
         for k, classes_k in enumerate(classes_):
             pred_labels = _y[:, k][neigh_ind]
-            proba_k = np.zeros((n_queries, classes_k.size))
+            proba_k = xp.zeros((n_queries, classes_k.size))
             
             # a simple ':' index doesn't work right
             for i, idx in enumerate(pred_labels.T):  # loop is O(n_neighbors)
                 proba_k[all_rows, idx] += weights[:, i]
             
             # normalize 'votes' into real [0,1] probabilities
-            normalizer = proba_k.sum(axis=1)[:, np.newaxis]
+            normalizer = xp.sum(proba_k, axis=1)[:, xp.newaxis]
             normalizer[normalizer == 0.0] = 1.0
             proba_k /= normalizer
             
@@ -239,12 +247,17 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         proba = self._compute_class_probabilities(
             neigh_dist, neigh_ind, self.weights, self._y, self.classes_, self.outputs_2d_
         )
+        # Array API support: get namespace from probability array
+        xp, _ = get_namespace(proba)
+        
         if not self.outputs_2d_:
-            result = self.classes_[np.argmax(proba, axis=1)]
+            # Single output: classes_[argmax(proba, axis=1)]
+            result = self.classes_[xp.argmax(proba, axis=1)]
         else:
-            result = [classes_k[np.argmax(proba_k, axis=1)]
+            # Multi-output: apply argmax separately for each output
+            result = [classes_k[xp.argmax(proba_k, axis=1)]
                       for classes_k, proba_k in zip(self.classes_, proba.T)]
-            result = np.array(result).T
+            result = xp.asarray(result).T
         return result
 
     def _validate_targets(self, y, dtype):
@@ -381,15 +394,17 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         Returns:
             Post-processed result: (distances, indices) if return_distance else indices
         """
+        # Array API support: get namespace from result arrays
         # onedal always returns both distances and indices (backend computes both)
         distances, indices = result
+        xp, _ = get_namespace(distances, indices)
         
         # POST-PROCESSING STEP 1: kd_tree sorting (moved from onedal)
         # This happens BEFORE deciding what to return, using distances that are always available
         # Matches main branch: sorting uses distances even when return_distance=False
         if self._fit_method == "kd_tree":
             for i in range(distances.shape[0]):
-                seq = distances[i].argsort()
+                seq = xp.argsort(distances[i])
                 indices[i] = indices[i][seq]
                 distances[i] = distances[i][seq]
         
@@ -414,20 +429,20 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         
         # X is self._fit_X in query_is_train case (set by caller)
         n_queries, _ = X.shape
-        sample_range = np.arange(n_queries)[:, None]
+        sample_range = xp.arange(n_queries)[:, xp.newaxis]
         sample_mask = neigh_ind != sample_range
         
         # Corner case: When the number of duplicates are more
         # than the number of neighbors, the first NN will not
         # be the sample, but a duplicate.
         # In that case mask the first duplicate.
-        dup_gr_nbrs = np.all(sample_mask, axis=1)
+        dup_gr_nbrs = xp.all(sample_mask, axis=1)
         sample_mask[:, 0][dup_gr_nbrs] = False
         
-        neigh_ind = np.reshape(neigh_ind[sample_mask], (n_queries, n_neighbors - 1))
+        neigh_ind = xp.reshape(neigh_ind[sample_mask], (n_queries, n_neighbors - 1))
         
         if return_distance:
-            neigh_dist = np.reshape(neigh_dist[sample_mask], (n_queries, n_neighbors - 1))
+            neigh_dist = xp.reshape(neigh_dist[sample_mask], (n_queries, n_neighbors - 1))
             return neigh_dist, neigh_ind
         return neigh_ind
 
@@ -439,8 +454,11 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         import sys
         print(f"DEBUG _process_classification_targets: y type={type(y)}, y shape={getattr(y, 'shape', 'NO_SHAPE')}", file=sys.stderr)
         
+        # Array API support: get namespace from y
+        xp, _ = get_namespace(y)
+        
         # y should already be numpy array from validate_data
-        y = np.asarray(y)
+        y = xp.asarray(y)
 
         # Handle shape processing
         shape = getattr(y, "shape", None)
@@ -448,23 +466,27 @@ class KNeighborsDispatchingBase(oneDALEstimator):
 
         if y.ndim == 1 or y.ndim == 2 and y.shape[1] == 1:
             self.outputs_2d_ = False
-            y = y.reshape((-1, 1))
+            y = xp.reshape(y, (-1, 1))
         else:
             self.outputs_2d_ = True
 
         # Validate classification targets
         _check_classification_targets(y)
         
-        # Process classes
+        # Process classes - note: np.unique is used for class extraction
+        # This is acceptable as classes are typically numpy arrays in sklearn
         self.classes_ = []
-        self._y = np.empty(y.shape, dtype=int)
+        self._y = xp.empty(y.shape, dtype=xp.int32)
         for k in range(self._y.shape[1]):
-            classes, self._y[:, k] = np.unique(y[:, k], return_inverse=True)
+            # Use numpy unique for class extraction (standard sklearn pattern)
+            y_k = np.asarray(y[:, k])
+            classes, indices = np.unique(y_k, return_inverse=True)
             self.classes_.append(classes)
+            self._y[:, k] = xp.asarray(indices)
 
         if not self.outputs_2d_:
             self.classes_ = self.classes_[0]
-            self._y = self._y.ravel()
+            self._y = xp.reshape(self._y, (-1,))
 
         # Validate we have at least 2 classes
         self._validate_n_classes()
@@ -672,9 +694,13 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             y = None
             # To check multioutput, might be overhead
             if len(data) > 1:
-                y = np.asarray(data[1])
+                # Array API support: get namespace from y
+                y_input = data[1]
+                xp, _ = get_namespace(y_input)
+                y = xp.asarray(y_input)
                 if is_classifier:
-                    class_count = len(np.unique(y))
+                    # Use numpy for unique (standard sklearn pattern)
+                    class_count = len(np.unique(np.asarray(y)))
             if hasattr(self, "_onedal_estimator"):
                 y = self._onedal_estimator._y
             if y is not None and hasattr(y, "ndim") and hasattr(y, "shape"):
@@ -757,14 +783,18 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         # requires moving data to host to construct the csr_matrix
         if mode == "connectivity":
             A_ind = self.kneighbors(X, n_neighbors, return_distance=False)
+            # Array API support: get namespace from A_ind
+            xp, _ = get_namespace(A_ind)
             _, (A_ind,) = _transfer_to_host(A_ind)
             n_queries = A_ind.shape[0]
-            A_data = np.ones(n_queries * n_neighbors)
+            A_data = xp.ones((n_queries * n_neighbors,), dtype=xp.float64)
 
         elif mode == "distance":
             A_data, A_ind = self.kneighbors(X, n_neighbors, return_distance=True)
+            # Array API support: get namespace from A_data
+            xp, _ = get_namespace(A_data, A_ind)
             _, (A_data, A_ind) = _transfer_to_host(A_data, A_ind)
-            A_data = np.reshape(A_data, (-1,))
+            A_data = xp.reshape(A_data, (-1,))
 
         else:
             raise ValueError(
@@ -775,10 +805,10 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         n_queries = A_ind.shape[0]
         n_samples_fit = self.n_samples_fit_
         n_nonzero = n_queries * n_neighbors
-        A_indptr = np.arange(0, n_nonzero + 1, n_neighbors)
+        A_indptr = xp.arange(0, n_nonzero + 1, n_neighbors)
 
         kneighbors_graph = sp.csr_matrix(
-            (A_data, np.reshape(A_ind, (-1,)), A_indptr), shape=(n_queries, n_samples_fit)
+            (A_data, xp.reshape(A_ind, (-1,)), A_indptr), shape=(n_queries, n_samples_fit)
         )
 
         return kneighbors_graph

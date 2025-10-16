@@ -216,7 +216,7 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
             self, "effective_metric_params_", self.metric_params
         )
 
-        _, xp, _ = _get_sycl_namespace(X)
+        # _, xp, _ = _get_sycl_namespace(X)
         # REFACTOR: _validate_data call commented out - validation now happens in sklearnex layer
         # Original code kept for reference:
         # use_raw_input = _get_config().get("use_raw_input", False) is True
