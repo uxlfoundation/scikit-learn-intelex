@@ -453,7 +453,10 @@ class BaseSVC(BaseSVM):
 
         indices = xp.take(y, self.support_, axis=0)
         self._n_support = xp.asarray(
-            [xp.sum(indices == i) for i, _ in enumerate(self.classes_)]
+            [
+                xp.sum(xp.asarray(indices == i, dtype=xp.int32))
+                for i in range(self.classes_.shape[0])
+            ]
         )
 
         if sklearn_check_version("1.1"):
