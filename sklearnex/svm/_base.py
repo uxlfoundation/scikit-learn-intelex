@@ -578,7 +578,7 @@ class BaseSVR(BaseSVM):
         if not is_array_api_compliant:
             return super()._validate_targets(y)
 
-        return xp.astype(column_or_1d(y, warn=True), dtype=xp.float64, copy=False)
+        return xp.astype(column_or_1d(y, warn=True), xp.float64, copy=False)
 
     @wrap_output_data
     def predict(self, X):
