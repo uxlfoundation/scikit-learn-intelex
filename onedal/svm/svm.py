@@ -151,9 +151,6 @@ class BaseSVM(metaclass=ABCMeta):
     def predict(self, X, queue=None):
         return from_table(self._infer(X, queue=queue).responses, like=X)[:, 0]
 
-    def decision_function(self, X, queue=None):
-        return from_table(self._infer(X, queue=queue).decision_function, like=X)[:, 0]
-
 
 class SVR(BaseSVM):
 
@@ -205,10 +202,6 @@ class SVR(BaseSVM):
         # The nu parameter is not set
         params.pop("nu")
         return params
-
-    def predict(self, X, queue=None):
-        # return 1-dimensional output from 2d oneDAL table
-        return super().predict(X, queue=queue)[:, 0]
 
 
 class SVC(BaseSVM):
@@ -267,6 +260,9 @@ class SVC(BaseSVM):
     @bind_default_backend("svm.classification")
     def model(self): ...
 
+    def decision_function(self, X, queue=None):
+        return from_table(self._infer(X, queue=queue).decision_function, like=X)[:, 0]
+
 
 class NuSVR(BaseSVM):
 
@@ -317,10 +313,6 @@ class NuSVR(BaseSVM):
 
     @bind_default_backend("svm.nu_regression")
     def model(self): ...
-
-    def predict(self, X, queue=None):
-        # return only a 1-dimensional output from 2d oneDAL table
-        return super().predict(X, queue=queue)[:, 0]
 
 
 class NuSVC(BaseSVM):
@@ -378,3 +370,6 @@ class NuSVC(BaseSVM):
 
     @bind_default_backend("svm.nu_classification")
     def model(self): ...
+
+    def decision_function(self, X, queue=None):
+        return from_table(self._infer(X, queue=queue).decision_function, like=X)[:, 0]
