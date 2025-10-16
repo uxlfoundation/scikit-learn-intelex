@@ -452,7 +452,7 @@ class BaseSVC(BaseSVM):
         self._dualcoef_ = self.dual_coef_
 
         indices = xp.take(y, self.support_, axis=0)
-        self._n_support = xp.asarray(
+        self._n_support = xp.concat(
             [
                 xp.sum(xp.asarray(indices == i, dtype=xp.int32))
                 for i in range(self.classes_.shape[0])
@@ -569,6 +569,12 @@ class BaseSVC(BaseSVM):
 
 
 class BaseSVR(BaseSVM):
+
+    # overwrite _validate_targets for array API support
+    def _validate_targets(self, y):
+        xp, _ = get_namespace(y)
+        return xp.asarray(column_or_1d(y, warn=True), dtype=xp.float64, copy=False)
+
     @wrap_output_data
     def predict(self, X):
         check_is_fitted(self)
