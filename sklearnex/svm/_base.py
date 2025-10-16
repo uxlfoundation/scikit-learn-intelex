@@ -233,7 +233,7 @@ class BaseSVC(BaseSVM):
             self.class_weight_ = _compute_class_weight(
                 self.class_weight, classes=cls, y=y_
             )
-            if len(cls) < 2:
+            if cls.shape[0] < 2:
                 raise ValueError(
                     "The number of classes has to be greater than one; got %d class"
                     % len(cls)
