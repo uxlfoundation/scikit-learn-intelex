@@ -401,7 +401,7 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         )
 
         # REFACTOR: Following PCA pattern - onedal just calls backend and returns raw results
-        # All post-processing (kd_tree sorting, removing self, etc.) moved to sklearnex
+        # All post-processing (kd_tree sorting, removing self, return_distance decision) moved to sklearnex
         params = super()._get_onedal_params(X, n_neighbors=n_neighbors)
         prediction_results = self._onedal_predict(self._onedal_model, X, params)
         distances = from_table(prediction_results.distances)
@@ -415,10 +415,16 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         #         indices[i] = indices[i][seq]
         #         distances[i] = distances[i][seq]
 
-        if return_distance:
-            results = distances, indices
-        else:
-            results = indices
+        # REFACTOR: return_distance decision moved to sklearnex._kneighbors_post_processing()
+        # onedal always returns both distances and indices (backend always computes both)
+        # Original code kept for reference:
+        # if return_distance:
+        #     results = distances, indices
+        # else:
+        #     results = indices
+        
+        # Always return both - sklearnex will decide what to return to user
+        results = distances, indices
 
         # REFACTOR: chunked_results vstack moved to sklearnex (was dead code anyway)
         # Original code kept for reference:
