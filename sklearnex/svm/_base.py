@@ -54,6 +54,7 @@ if sklearn_check_version("1.6"):
         # here: https://github.com/uxlfoundation/scikit-learn-intelex/pull/1879
         # This is distilled from the sklearn CalibratedClassifierCV for sklearn <1.8 for
         # use in sklearn > 1.8 to maintain performance.
+        xp, _ = get_namespace(X, y)
         check_classification_targets(y)
         X, y = indexable(X, y)
 
@@ -70,7 +71,7 @@ if sklearn_check_version("1.6"):
         )
         if predictions.ndim == 1:
             # Reshape binary output from `(n_samples,)` to `(n_samples, 1)`
-            predictions = predictions.reshape(-1, 1)
+            predictions = xp.reshape(predictions, (-1, 1))
 
         calibrated_classifier = _fit_calibrator(
             estimator,
@@ -452,12 +453,9 @@ class BaseSVC(BaseSVM):
         self._dualcoef_ = self.dual_coef_
 
         indices = xp.take(y, self.support_, axis=0)
-        self._n_support = xp.concat(
-            [
-                xp.sum(xp.asarray(indices == i, dtype=xp.int32))
-                for i in range(self.classes_.shape[0])
-            ]
-        )
+        self._n_support = xp.zeros_like(self.classes_, dtype=xp.int32)
+        for i in range(self.classes_.shape[0]):
+            self._n_support[i] = xp.sum(xp.asarray(indices == i, dtype=xp.int32))
 
         if sklearn_check_version("1.1"):
             self.n_iter_ = xp.full((length,), self._onedal_estimator.n_iter_)
@@ -541,7 +539,7 @@ class BaseSVC(BaseSVM):
         lencls = self.classes_.shape[0]
         if lencls == 2:
             decision_function = xp.reshape(decision_function, (-1,))
-        if lencls > 2 and self.decision_function_shape == "ovr":
+        elif lencls > 2 and self.decision_function_shape == "ovr":
             decision_function = self._onedal_ovr_decision_function(
                 decision_function < 0, -decision_function, lencls, xp
             )
@@ -575,8 +573,12 @@ class BaseSVR(BaseSVM):
 
     # overwrite _validate_targets for array API support
     def _validate_targets(self, y):
-        xp, _ = get_namespace(y)
-        return xp.asarray(column_or_1d(y, warn=True), dtype=xp.float64, copy=False)
+        xp, is_array_api_compliant = get_namespace(y)
+
+        if not is_array_api_compliant:
+            y = super()._validate_targets(y)
+
+        return xp.astype(column_or_1d(y, warn=True), dtype=xp.float64, copy=False)
 
     @wrap_output_data
     def predict(self, X):
