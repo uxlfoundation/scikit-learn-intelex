@@ -576,7 +576,7 @@ class BaseSVR(BaseSVM):
         xp, is_array_api_compliant = get_namespace(y)
 
         if not is_array_api_compliant:
-            y = super()._validate_targets(y)
+            return super()._validate_targets(y)
 
         return xp.astype(column_or_1d(y, warn=True), dtype=xp.float64, copy=False)
 

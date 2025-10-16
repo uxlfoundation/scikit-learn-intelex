@@ -21,7 +21,6 @@ from scipy import sparse as sp
 
 from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
-from onedal.utils import _sycl_queue_manager as QM
 
 from ..common._estimator_checks import _check_is_fitted
 from ..datatypes import from_table, to_table
@@ -105,7 +104,7 @@ class BaseSVM(metaclass=ABCMeta):
 
         self._sparse = sp.issparse(X)
 
-        data_t = to_table(*data, queue=QM.get_global_queue())
+        data_t = to_table(*data, queue=queue)
         params = self._get_onedal_params(data_t[0])
         result = self.train(params, *data_t)
 
