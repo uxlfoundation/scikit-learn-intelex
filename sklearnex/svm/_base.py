@@ -452,7 +452,7 @@ class BaseSVC(BaseSVM):
         self._dualcoef_ = self.dual_coef_
 
         indices = xp.take(y, self.support_, axis=0)
-        self._n_support = xp.array(
+        self._n_support = xp.asarray(
             [xp.sum(indices == i) for i, _ in enumerate(self.classes_)]
         )
 
@@ -637,7 +637,7 @@ class BaseSVR(BaseSVM):
         self.support_ = xp.asarray(self._onedal_estimator.support_, dtype=xp.int32)
 
         self._icept_ = self._onedal_estimator.intercept_
-        self._n_support = xp.array([self.support_vectors_.shape[0]], dtype=xp.int32)
+        self._n_support = xp.asarray([self.support_vectors_.shape[0]], dtype=xp.int32)
 
         self._sparse = False
         self._gamma = self._onedal_estimator.gamma

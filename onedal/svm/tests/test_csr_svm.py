@@ -18,11 +18,9 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 from scipy import sparse as sp
-from sklearn import datasets
-from sklearn.datasets import make_classification
 
 from onedal.common._mixin import ClassifierMixin
-from onedal.svm import SVC, SVR
+from onedal.svm import SVC
 from onedal.tests.utils._device_selection import (
     get_queues,
     pass_if_not_implemented_for_gpu,
@@ -33,6 +31,7 @@ def check_svm_model_equal(
     queue, dense_svm, sparse_svm, X_train, y_train, X_test, decimal=6
 ):
     class_count = len(np.unique(y_train))
+
     dense_svm.fit(X_train.toarray(), y_train, class_count=class_count, queue=queue)
     if sp.issparse(X_test):
         X_test_dense = X_test.toarray()
