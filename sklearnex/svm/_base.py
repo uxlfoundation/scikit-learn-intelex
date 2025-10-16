@@ -500,8 +500,7 @@ class BaseSVC(BaseSVM):
         # This function is legacy from the original implementation and needs
         # to be refactored.
 
-        predictions = xp.asarray(decision_function < 0, dtype=xp.int32)
-        # array API spec cannot do mask indexing with bools, must be int array
+        predictions = xp.asarray(decision_function < 0, dtype=decision_function.dtype)
         confidences = -decision_function
 
         if xp is None:
