@@ -34,8 +34,11 @@ from .._utils import PatchingConditionsChain
 from ..utils._array_api import enable_array_api
 from ._base import BaseSVC, BaseSVR
 
+# array API support limited to sklearn 1.5 due to an incorrect array API implementation
+# of `accuracy_score` used in the `score` method.
 
-@enable_array_api
+
+@enable_array_api("1.5")
 @control_n_jobs(
     decorated_methods=["fit", "predict", "_predict_proba", "decision_function", "score"]
 )
@@ -144,6 +147,7 @@ class SVC(BaseSVC, _sklearn_SVC):
     fit.__doc__ = _sklearn_SVC.fit.__doc__
 
 
+@enable_array_api("1.5")
 @control_n_jobs(
     decorated_methods=["fit", "predict", "_predict_proba", "decision_function", "score"]
 )
@@ -223,6 +227,7 @@ class NuSVC(BaseSVC, _sklearn_NuSVC):
     fit.__doc__ = _sklearn_NuSVC.fit.__doc__
 
 
+@enable_array_api
 @control_n_jobs(decorated_methods=["fit", "predict", "score"])
 class SVR(BaseSVR, _sklearn_SVR):
     __doc__ = _sklearn_SVR.__doc__
@@ -292,6 +297,7 @@ class SVR(BaseSVR, _sklearn_SVR):
     fit.__doc__ = _sklearn_SVR.fit.__doc__
 
 
+@enable_array_api
 @control_n_jobs(decorated_methods=["fit", "predict", "score"])
 class NuSVR(BaseSVR, _sklearn_NuSVR):
     __doc__ = _sklearn_NuSVR.__doc__

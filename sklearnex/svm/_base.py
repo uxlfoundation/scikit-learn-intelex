@@ -520,12 +520,8 @@ class BaseSVC(BaseSVM):
         return votes + transformed_confidences
 
     def _onedal_decision_function(self, X, queue=None):
-        sv = self.support_vectors_
-        if not self._sparse and sv.size > 0 and self._n_support.sum() != sv.shape[0]:
-            raise ValueError(
-                "The internal representation " f"of {self.__class__.__name__} was altered"
-            )
         xp, _ = get_namespace(X)
+
         X = validate_data(
             self,
             X,
@@ -533,6 +529,12 @@ class BaseSVC(BaseSVM):
             accept_sparse="csr",
             reset=False,
         )
+
+        sv = self.support_vectors_
+        if not self._sparse and sv.size > 0 and xp.sum(self._n_support) != sv.shape[0]:
+            raise ValueError(
+                "The internal representation " f"of {self.__class__.__name__} was altered"
+            )
 
         decision_function = self._onedal_estimator.decision_function(X, queue=queue)
 
