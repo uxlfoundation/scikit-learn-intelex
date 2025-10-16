@@ -510,8 +510,8 @@ class BaseSVC(BaseSVM):
             for j in range(i + 1, n_classes):
                 sum_of_confidences[:, i] -= confidences[k]
                 sum_of_confidences[:, j] += confidences[k]
-                votes[predictions[:, k] == 0, i] += 1
-                votes[predictions[:, k] == 1, j] += 1
+                votes[predictions[k] == 0, i] += 1
+                votes[predictions[k] == 1, j] += 1
                 k += 1
 
         transformed_confidences = sum_of_confidences / (
