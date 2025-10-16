@@ -242,64 +242,72 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         """Shared post-processing for kneighbors results.
         
         Following PCA pattern: all post-processing in sklearnex, onedal returns raw results.
+        Replicates exact logic from main branch onedal._kneighbors() method.
         
-        Handles:
-        - query_is_train case (X=None): removes self from results
-        - kd_tree sorting: sorts results by distance
+        Handles (in order, matching main branch):
+        1. kd_tree sorting: sorts results by distance (BEFORE deciding what to return)
+        2. query_is_train case (X=None): removes self from results
+        3. return_distance decision: return distances+indices or just indices
         
         Args:
             X: Query data (self._fit_X if query_is_train)
             n_neighbors: Number of neighbors (already includes +1 if query_is_train)
-            return_distance: Whether distances are included in result
-            result: Raw result from onedal backend (distances, indices) or just indices
+            return_distance: Whether to return distances to user
+            result: Raw result from onedal backend - always (distances, indices)
             query_is_train: Boolean indicating if original X was None
         
         Returns:
-            Post-processed result in same format as input result
+            Post-processed result: (distances, indices) if return_distance else indices
         """
-        # POST-PROCESSING: kd_tree sorting (moved from onedal)
+        # onedal always returns both distances and indices (backend computes both)
+        distances, indices = result
+        
+        # POST-PROCESSING STEP 1: kd_tree sorting (moved from onedal)
+        # This happens BEFORE deciding what to return, using distances that are always available
+        # Matches main branch: sorting uses distances even when return_distance=False
         if self._fit_method == "kd_tree":
-            if return_distance:
-                distances, indices = result
-                for i in range(distances.shape[0]):
-                    seq = distances[i].argsort()
-                    indices[i] = indices[i][seq]
-                    distances[i] = distances[i][seq]
-                result = distances, indices
-            else:
-                indices = result
-                # For indices-only, we still need to sort but we don't have distances
-                # In this case, indices should already be sorted by onedal
-                pass
+            for i in range(distances.shape[0]):
+                seq = distances[i].argsort()
+                indices[i] = indices[i][seq]
+                distances[i] = distances[i][seq]
         
-        # POST-PROCESSING: Remove self from results when query_is_train (moved from onedal)
-        if query_is_train:
-            if return_distance:
-                neigh_dist, neigh_ind = result
-            else:
-                neigh_ind = result
-            
-            # X is self._fit_X in query_is_train case (set by caller)
-            n_queries, _ = X.shape
-            sample_range = np.arange(n_queries)[:, None]
-            sample_mask = neigh_ind != sample_range
-            
-            # Corner case: When the number of duplicates are more
-            # than the number of neighbors, the first NN will not
-            # be the sample, but a duplicate.
-            # In that case mask the first duplicate.
-            dup_gr_nbrs = np.all(sample_mask, axis=1)
-            sample_mask[:, 0][dup_gr_nbrs] = False
-            
-            neigh_ind = np.reshape(neigh_ind[sample_mask], (n_queries, n_neighbors - 1))
-            
-            if return_distance:
-                neigh_dist = np.reshape(neigh_dist[sample_mask], (n_queries, n_neighbors - 1))
-                result = neigh_dist, neigh_ind
-            else:
-                result = neigh_ind
+        # POST-PROCESSING STEP 2: Decide what to return (moved from onedal)
+        # This happens AFTER kd_tree sorting
+        if return_distance:
+            results = distances, indices
+        else:
+            results = indices
         
-        return result
+        # POST-PROCESSING STEP 3: Remove self from results when query_is_train (moved from onedal)
+        # This happens LAST, after sorting and after deciding format
+        if not query_is_train:
+            return results
+        
+        # If the query data is the same as the indexed data, we would like
+        # to ignore the first nearest neighbor of every sample, i.e the sample itself.
+        if return_distance:
+            neigh_dist, neigh_ind = results
+        else:
+            neigh_ind = results
+        
+        # X is self._fit_X in query_is_train case (set by caller)
+        n_queries, _ = X.shape
+        sample_range = np.arange(n_queries)[:, None]
+        sample_mask = neigh_ind != sample_range
+        
+        # Corner case: When the number of duplicates are more
+        # than the number of neighbors, the first NN will not
+        # be the sample, but a duplicate.
+        # In that case mask the first duplicate.
+        dup_gr_nbrs = np.all(sample_mask, axis=1)
+        sample_mask[:, 0][dup_gr_nbrs] = False
+        
+        neigh_ind = np.reshape(neigh_ind[sample_mask], (n_queries, n_neighbors - 1))
+        
+        if return_distance:
+            neigh_dist = np.reshape(neigh_dist[sample_mask], (n_queries, n_neighbors - 1))
+            return neigh_dist, neigh_ind
+        return neigh_ind
 
     def _process_classification_targets(self, y):
         """Process classification targets and set class-related attributes.
