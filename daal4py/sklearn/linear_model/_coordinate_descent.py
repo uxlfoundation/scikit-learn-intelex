@@ -177,11 +177,7 @@ def _daal4py_fit_enet(self, X, y_, check_input):
         inputArgument = np.zeros((n_rows, n_cols), dtype=_fptype)
         for i in range(n_rows):
             inputArgument[i][0] = self.intercept_ if (n_rows == 1) else self.intercept_[i]
-            inputArgument[i][1:] = (
-                self.coef_[:].copy(order="C")
-                if (n_rows == 1)
-                else self.coef_[i, :].copy(order="C")
-            )
+            inputArgument[i][1:] = self.coef_[:] if (n_rows == 1) else self.coef_[i, :]
         cd_solver.setup(inputArgument)
     doUse_condition = self.copy_X is False or (
         self.fit_intercept and _normalize and self.copy_X
@@ -695,9 +691,6 @@ class ElasticNet(ElasticNet_original):
         _X = check_array(
             X, accept_sparse=["csr", "csc", "coo"], dtype=[np.float64, np.float32]
         )
-        good_shape_for_daal = (
-            True if _X.ndim <= 1 else True if _X.shape[0] >= _X.shape[1] else False
-        )
 
         _patching_status = PatchingConditionsChain(
             "sklearn.linear_model.ElasticNet.predict"
@@ -706,11 +699,6 @@ class ElasticNet(ElasticNet_original):
             [
                 (hasattr(self, "daal_model_"), "oneDAL model was not trained."),
                 (not sp.issparse(_X), "X is sparse. Sparse input is not supported."),
-                (
-                    good_shape_for_daal,
-                    "The shape of X does not satisfy oneDAL requirements: "
-                    "number of features > number of samples.",
-                ),
             ]
         )
         _patching_status.write_log()
@@ -808,20 +796,12 @@ class Lasso(Lasso_original):
         _X = check_array(
             X, accept_sparse=["csr", "csc", "coo"], dtype=[np.float64, np.float32]
         )
-        good_shape_for_daal = (
-            True if _X.ndim <= 1 else True if _X.shape[0] >= _X.shape[1] else False
-        )
 
         _patching_status = PatchingConditionsChain("sklearn.linear_model.Lasso.predict")
         _dal_ready = _patching_status.and_conditions(
             [
                 (hasattr(self, "daal_model_"), "oneDAL model was not trained."),
                 (not sp.issparse(_X), "X is sparse. Sparse input is not supported."),
-                (
-                    good_shape_for_daal,
-                    "The shape of X does not satisfy oneDAL requirements: "
-                    "number of features > number of samples.",
-                ),
             ]
         )
         _patching_status.write_log()

@@ -65,6 +65,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "nbsphinx",
     "sphinx_tabs.tabs",
+    "sphinx_togglebutton",
     "notfound.extension",
     "sphinx_design",
     "sphinx_copybutton",
@@ -75,8 +76,10 @@ extensions = [
 intersphinx_mapping = {
     "sklearn": ("https://scikit-learn.org/stable/", None),
     "dpctl": ("https://intelpython.github.io/dpctl/latest", None),
+    "dpnp": ("https://intelpython.github.io/dpnp", None),
     "mpi4py": ("https://mpi4py.readthedocs.io/en/stable/", None),
     "xgboost": ("https://xgboost.readthedocs.io/en/stable/", None),
+    "onedal": ("https://uxlfoundation.github.io/oneDAL/", None),
     # from scikit-learn, in case some object in sklearnex points to them:
     # https://github.com/scikit-learn/scikit-learn/blob/main/doc/conf.py
     "python": ("https://docs.python.org/{.major}".format(sys.version_info), None),
