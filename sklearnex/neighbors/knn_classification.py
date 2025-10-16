@@ -227,12 +227,16 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     def _onedal_predict_proba(self, X, queue=None):
         import sys
         print(f"DEBUG KNeighborsClassifier._onedal_predict_proba START: X type={type(X)}", file=sys.stderr)
-        # Validate and convert X (pandas to numpy if needed) only if X is not None
-        if X is not None:
-            X = validate_data(
-                self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
-            )
-        result = self._onedal_estimator.predict_proba(X, queue=queue)
+        
+        # Call kneighbors through sklearnex (self.kneighbors is the sklearnex method)
+        # This properly handles X=None case (LOOCV) with query_is_train logic
+        neigh_dist, neigh_ind = self.kneighbors(X)
+        
+        # Use the helper method to compute class probabilities
+        result = self._compute_class_probabilities(
+            neigh_dist, neigh_ind, self.weights, self._y, self.classes_, self.outputs_2d_
+        )
+        
         print(f"DEBUG KNeighborsClassifier._onedal_predict_proba END: result type={type(result)}", file=sys.stderr)
         return result
 
