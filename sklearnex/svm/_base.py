@@ -455,7 +455,7 @@ class BaseSVC(BaseSVM):
         indices = xp.take(y, self.support_, axis=0)
         self._n_support = xp.zeros_like(self.classes_, dtype=xp.int32)
         for i in range(self.classes_.shape[0]):
-            self._n_support[i] = xp.sum(xp.asarray(indices == i, dtype=xp.int32), dtypte=xp.int32)
+            self._n_support[i] = xp.sum(xp.asarray(indices == i, dtype=xp.int32), dtype=xp.int32)
 
         if sklearn_check_version("1.1"):
             self.n_iter_ = xp.full((length,), self._onedal_estimator.n_iter_)
