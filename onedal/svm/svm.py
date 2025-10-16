@@ -261,7 +261,7 @@ class SVC(BaseSVM):
     def model(self): ...
 
     def decision_function(self, X, queue=None):
-        return from_table(self._infer(X, queue=queue).decision_function, like=X)[:, 0]
+        return from_table(self._infer(X, queue=queue).decision_function, like=X)
 
 
 class NuSVR(BaseSVM):
@@ -372,4 +372,4 @@ class NuSVC(BaseSVM):
     def model(self): ...
 
     def decision_function(self, X, queue=None):
-        return from_table(self._infer(X, queue=queue).decision_function, like=X)[:, 0]
+        return from_table(self._infer(X, queue=queue).decision_function, like=X)

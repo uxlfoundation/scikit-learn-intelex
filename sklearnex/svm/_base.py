@@ -508,10 +508,10 @@ class BaseSVC(BaseSVM):
         k = 0
         for i in range(n_classes):
             for j in range(i + 1, n_classes):
-                sum_of_confidences[:, i] -= confidences[k]
-                sum_of_confidences[:, j] += confidences[k]
-                votes[predictions[k] == 0, i] += 1
-                votes[predictions[k] == 1, j] += 1
+                sum_of_confidences[:, i] -= confidences[:, k]
+                sum_of_confidences[:, j] += confidences[:, k]
+                votes[predictions[:, k] == 0, i] += 1
+                votes[predictions[:, k] == 1, j] += 1
                 k += 1
 
         transformed_confidences = sum_of_confidences / (
@@ -538,9 +538,12 @@ class BaseSVC(BaseSVM):
 
         decision_function = self._onedal_estimator.decision_function(X, queue=queue)
 
-        if (l := self.classes_.shape[0]) > 2 and self.decision_function_shape == "ovr":
+        lencls = self.classes_.shape[0]
+        if lencls == 2:
+            decision_function = xp.reshape(decision_function, (-1,))
+        if lencls > 2 and self.decision_function_shape == "ovr":
             decision_function = self._onedal_ovr_decision_function(
-                decision_function < 0, -decision_function, l, xp
+                decision_function < 0, -decision_function, lencls, xp
             )
 
         return decision_function
