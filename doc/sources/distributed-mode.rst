@@ -27,8 +27,7 @@ also provide distributed, multi-GPU computing capabilities via integration with 
 match those of GPU computing, along with an MPI backend of your choice (`Intel MPI recommended
 <https://www.intel.com/content/www/us/en/developer/tools/oneapi/mpi-library.html>`_, available
 via the ``impi_rt`` python/conda package) and the |mpi4py| python package. If using |sklearnex|
-`installed from sources <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/INSTALL.md#build-from-sources>`_,
-ensure that the spmd_backend is built.
+:doc:`installed from sources <building-from-source>`, ensure that the SPMD backend is built.
 
 .. important::
   SMPD mode requires the |mpi4py| package used at runtime to be compiled with the same MPI backend as the |sklearnex|, or with an ABI-compatible MPI backend. The PyPI and Conda distributions of |sklearnex| are both built with Intel's MPI as backend, which follows the MPICH ABI and hence require an |mpi4py| also built with either Intel's MPI, or with another MPICH-compatible MPI backend (such as MPICH itself) - versions of |mpi4py| built with Intel's MPI can be installed as follows:
