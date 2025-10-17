@@ -433,14 +433,14 @@ class BaseSVC(BaseSVM):
             xp, _ = get_namespace(decision_function)
         # use `zeros_like` to support correct device allocation while still
         # supporting numpy < 1.26
-        votes = xp.zeros_like(decision_function[:, :n_classes])
+        votes = xp.full_like(decision_function[:, :n_classes], n_classes)
         sum_of_confidences = xp.zeros_like(votes)
 
         # This is extraordinarily bad, as its doing strided access behind
         # two python for loops. Its the main math converting an ovo to ovr.
         k = 0
         for i in range(n_classes):
-            votes[:, i] += n_classes - i - 1
+            votes[:, i] -= i + 1
             for j in range(i + 1, n_classes):
                 sum_of_confidences[:, i] -= confidences[:, k]
                 sum_of_confidences[:, j] += confidences[:, k]
