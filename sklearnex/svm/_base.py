@@ -610,6 +610,10 @@ class BaseSVR(BaseSVM):
 
         if sample_weight is not None:
             sample_weight = _check_sample_weight(sample_weight, X)
+            if xp.all(sample_weight <= 0):
+                raise ValueError(
+                    "Invalid input - all samples have zero or negative weights."
+                )
 
         onedal_params = {
             "C": self.C,
