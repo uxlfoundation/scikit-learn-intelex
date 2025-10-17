@@ -188,8 +188,7 @@ def _test_synth_poly_compare_with_sklearn(queue, params):
         _gamma = 1.0 / x.shape[1]
     elif params["gamma"] == "scale":
         _gamma = 1.0 / (x.shape[1] * x.var())
-    else:
-        _gamma = gamma
+
     params["gamma"] = _gamma
     clf = SVR(kernel="poly", **params)
     clf.fit(x, y, queue=queue)

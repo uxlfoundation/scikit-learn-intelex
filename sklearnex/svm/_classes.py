@@ -144,6 +144,21 @@ class SVC(BaseSVC, _sklearn_SVC):
             return patching_status
         raise RuntimeError(f"Unknown method {method_name} in {class_name}")
 
+    def _svm_sample_weight_check(self, sample_weight, y, xp):
+        # This provides SVM estimator differentiation with respect to sample_weight errors
+        super()._svm_sample_weight_check(sample_weight, y, xp)
+        # y is an index type vector (integer), where the variance == 0 shows
+        # that is is constant (i.e) single class. y[sample_weight > 0] should
+        # never be empty due to the previous check.
+        if xp.any(sample_weight <= 0) and xp.var(y[sample_weight > 0]) == 0:
+            raise ValueError(
+                "Invalid input - all samples with positive weights "
+                "belong to the same class"
+                if sklearn_check_version("1.2")
+                else "Invalid input - all samples with positive weights "
+                "have the same label."
+            )
+
     fit.__doc__ = _sklearn_SVC.fit.__doc__
 
 
@@ -223,6 +238,26 @@ class NuSVC(BaseSVC, _sklearn_NuSVC):
         )
 
         return self
+
+    def _svm_sample_weight_check(self, sample_weight, y, xp):
+        # This provides SVM-specific sample_weight conformance checks
+        super()._svm_sample_weight_check(sample_weight, y, xp)
+        # y is an index type vector (integer), where the variance == 0 shows
+        # that is is constant (i.e) single class. y[sample_weight > 0] should
+        # never be empty due to the previous check.
+
+        # taken from previous implementation, can be improved (try to remove for loops).
+        weight_per_class = [
+            xp.sum(sample_weight[y == class_label])
+            for class_label in range(int(xp.max(y)))
+        ]
+
+        for i in range(len(weight_per_class)):
+            for j in range(i + 1, len(weight_per_class)):
+                if self.nu * (weight_per_class[i] + weight_per_class[j]) / 2 > min(
+                    weight_per_class[i], weight_per_class[j]
+                ):
+                    raise ValueError("specified nu is infeasible")
 
     fit.__doc__ = _sklearn_NuSVC.fit.__doc__
 
