@@ -146,7 +146,7 @@ class SVC(BaseSVC, _sklearn_SVC):
         raise RuntimeError(f"Unknown method {method_name} in {class_name}")
 
     @staticmethod
-    def _svm_sample_weight_check(self, sample_weight, y, xp):
+    def _svm_sample_weight_check(sample_weight, y, xp):
         # This provides SVM estimator differentiation with respect to sample_weight errors
         super()._svm_sample_weight_check(sample_weight, y, xp)
         # y is an index type vector (integer), where the variance == 0 shows
@@ -242,7 +242,7 @@ class NuSVC(BaseSVC, _sklearn_NuSVC):
         return self
 
     @staticmethod
-    def _svm_sample_weight_check(self, sample_weight, y, xp):
+    def _svm_sample_weight_check(sample_weight, y, xp):
         # This provides SVM-specific sample_weight conformance checks
         super()._svm_sample_weight_check(sample_weight, y, xp)
         # y is an index type vector (integer), where the variance == 0 shows

@@ -159,7 +159,7 @@ class BaseSVM(oneDALEstimator):
         raise RuntimeError(f"Unknown method {method_name} in {class_name}")
 
     @staticmethod
-    def _svm_sample_weight_check(self, sample_weight, y, xp):
+    def _svm_sample_weight_check(sample_weight, y, xp):
         # This is purely for sklearn conformance. SVM algos in SVM raise unique errors.
         if xp.all(sample_weight <= 0):
             raise ValueError("Invalid input - all samples have zero or negative weights.")
