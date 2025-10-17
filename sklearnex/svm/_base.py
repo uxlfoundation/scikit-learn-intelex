@@ -263,13 +263,17 @@ class BaseSVC(BaseSVM):
 
         y = self._validate_targets(y)
 
-        if self.class_weight is not None:
+        if self.class_weight is not None or sample_weight is not None:
             sample_weight = _check_sample_weight(sample_weight, X)
             # oneDAL only accepts sample_weights, apply class_weight directly
-            for i, v in enumerate(self.class_weight_):
-                sample_weight[y == i] *= v
-        elif sample_weight is not None:
-            sample_weight = _check_sample_weight(sample_weight, X)
+            if self.class_weight is not None:
+                for i, v in enumerate(self.class_weight_):
+                    sample_weight[y == i] *= v
+
+            if xp.all(sample_weight <= 0):
+                raise ValueError(
+                    "Invalid input - all samples have zero or negative weights."
+                )
 
         onedal_params = {
             "C": self.C,
