@@ -242,7 +242,9 @@ class NuSVC(BaseSVC, _sklearn_NuSVC):
 
     def _svm_sample_weight_check(self, sample_weight, y, xp):
         # This provides SVM-specific sample_weight conformance checks
-        super()._svm_sample_weight_check(sample_weight, y, xp)
+        if xp.all(sample_weight <= 0):
+            raise ValueError("negative dimensions are not allowed")
+
         # y is an index type vector (integer), where the variance == 0 shows
         # that is is constant (i.e) single class. y[sample_weight > 0] should
         # never be empty due to the previous check.

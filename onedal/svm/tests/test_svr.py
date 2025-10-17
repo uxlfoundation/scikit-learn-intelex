@@ -185,11 +185,11 @@ def test_synth_linear_compare_with_sklearn(queue, C):
 def _test_synth_poly_compare_with_sklearn(queue, params):
     x, y = datasets.make_regression(**synth_params)
     if params["gamma"] == "auto":
-        _gamma = 1.0 / x.shape[1]
-    elif params["gamma"] == "scale":
-        _gamma = 1.0 / (x.shape[1] * x.var())
+        params["gamma"] = 1.0 / x.shape[1]
 
-    params["gamma"] = _gamma
+    elif params["gamma"] == "scale":
+        params["gamma"] = 1.0 / (x.shape[1] * x.var())
+
     clf = SVR(kernel="poly", **params)
     clf.fit(x, y, queue=queue)
     result = r2_score(y, clf.predict(x, queue=queue))
