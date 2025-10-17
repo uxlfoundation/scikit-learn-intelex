@@ -115,7 +115,9 @@ class BaseSVM(metaclass=ABCMeta):
             self.dual_coef_ = from_table(result.coeffs, like=X).T
             self.support_vectors_ = from_table(result.support_vectors, like=X)
 
-        self.intercept_ = from_table(result.biases, like=X)[0, ...]
+        self.intercept_ = from_table(result.biases, like=X)
+        if len(self.intercept_.shape) > 1:
+            self.intercept_ = self.intercept_[0, ...]
         self.support_ = from_table(result.support_indices, like=X)[:, 0]
 
         self._onedal_model = result.model

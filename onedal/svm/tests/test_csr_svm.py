@@ -30,14 +30,17 @@ from onedal.tests.utils._device_selection import (
 def check_svm_model_equal(
     queue, dense_svm, sparse_svm, X_train, y_train, X_test, decimal=6
 ):
-    class_count = len(np.unique(y_train))
+    if dense_svm.__class__.__module__.startswith("onedal"):
+        params = {"class_count": len(np.unique(y_train)), "queue": queue}
+    else:
+        params = {}
 
-    dense_svm.fit(X_train.toarray(), y_train, class_count=class_count, queue=queue)
+    dense_svm.fit(X_train.toarray(), y_train, **params)
     if sp.issparse(X_test):
         X_test_dense = X_test.toarray()
     else:
         X_test_dense = X_test
-    sparse_svm.fit(X_train, y_train, class_count=class_count, queue=queue)
+    sparse_svm.fit(X_train, y_train, **params)
     assert sp.issparse(sparse_svm.support_vectors_)
     assert sp.issparse(sparse_svm.dual_coef_)
     assert_array_almost_equal(

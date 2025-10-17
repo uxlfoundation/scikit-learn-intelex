@@ -299,88 +299,6 @@ class BaseSVC(BaseSVM):
 
         self._save_attributes(X, y, xp=xp)
 
-    @wrap_output_data
-    def predict(self, X):
-        check_is_fitted(self)
-        return dispatch(
-            self,
-            "predict",
-            {
-                "onedal": self.__class__._onedal_predict,
-                "sklearn": _sklearn_BaseSVC.predict,
-            },
-            X,
-        )
-
-    @wrap_output_data
-    def score(self, X, y, sample_weight=None):
-        check_is_fitted(self)
-        return dispatch(
-            self,
-            "score",
-            {
-                "onedal": self.__class__._onedal_score,
-                "sklearn": _sklearn_BaseSVC.score,
-            },
-            X,
-            y,
-            sample_weight=sample_weight,
-        )
-
-    @wrap_output_data
-    def decision_function(self, X):
-        check_is_fitted(self)
-        return dispatch(
-            self,
-            "decision_function",
-            {
-                "onedal": self.__class__._onedal_decision_function,
-                "sklearn": _sklearn_BaseSVC.decision_function,
-            },
-            X,
-        )
-
-    @available_if(_sklearn_BaseSVC._check_proba)
-    @wraps(_sklearn_BaseSVC.predict_proba, assigned=["__doc__"])
-    def predict_proba(self, X):
-        check_is_fitted(self)
-        return self._predict_proba(X)
-
-    @available_if(_sklearn_BaseSVC._check_proba)
-    @wraps(_sklearn_BaseSVC.predict_log_proba, assigned=["__doc__"])
-    def predict_log_proba(self, X):
-        xp, _ = get_namespace(X)
-
-        return xp.log(self.predict_proba(X))
-
-    if sklearn_check_version("1.0"):
-
-        @wrap_output_data
-        def _predict_proba(self, X):
-            return dispatch(
-                self,
-                "_predict_proba",
-                {
-                    "onedal": self.__class__._onedal_predict_proba,
-                    "sklearn": _sklearn_BaseSVC.predict_proba,
-                },
-                X,
-            )
-
-    else:
-
-        @wrap_output_data
-        def _predict_proba(self, X):
-            return dispatch(
-                self,
-                "_predict_proba",
-                {
-                    "onedal": self.__class__._onedal_predict_proba,
-                    "sklearn": _sklearn_BaseSVC._predict_proba,
-                },
-                X,
-            )
-
     def _fit_proba(self, X, y, sample_weight=None, queue=None):
         # TODO: rewrite this method when probabilities output is implemented in oneDAL
 
@@ -415,7 +333,9 @@ class BaseSVC(BaseSVM):
                     method="sigmoid",
                 )
                 # see custom stopgap solution defined above
-                _prefit_CalibratedClassifierCV_fit(self.clf_prob, X, y)
+                _prefit_CalibratedClassifierCV_fit(
+                    self.clf_prob, X, y, sample_weight=sample_weight
+                )
             else:
 
                 self.clf_prob = CalibratedClassifierCV(
@@ -423,7 +343,7 @@ class BaseSVC(BaseSVM):
                     ensemble=False,
                     cv="prefit",
                     method="sigmoid",
-                ).fit(X, y)
+                ).fit(X, y, sample_weight=sample_weight)
 
     def _save_attributes(self, X, y, xp=np):
         # This function requires array API adaptation.
@@ -573,6 +493,88 @@ class BaseSVC(BaseSVM):
             y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
         )
 
+    @wrap_output_data
+    def predict(self, X):
+        check_is_fitted(self)
+        return dispatch(
+            self,
+            "predict",
+            {
+                "onedal": self.__class__._onedal_predict,
+                "sklearn": _sklearn_BaseSVC.predict,
+            },
+            X,
+        )
+
+    @wrap_output_data
+    def score(self, X, y, sample_weight=None):
+        check_is_fitted(self)
+        return dispatch(
+            self,
+            "score",
+            {
+                "onedal": self.__class__._onedal_score,
+                "sklearn": _sklearn_BaseSVC.score,
+            },
+            X,
+            y,
+            sample_weight=sample_weight,
+        )
+
+    @wrap_output_data
+    def decision_function(self, X):
+        check_is_fitted(self)
+        return dispatch(
+            self,
+            "decision_function",
+            {
+                "onedal": self.__class__._onedal_decision_function,
+                "sklearn": _sklearn_BaseSVC.decision_function,
+            },
+            X,
+        )
+
+    @available_if(_sklearn_BaseSVC._check_proba)
+    @wraps(_sklearn_BaseSVC.predict_proba, assigned=["__doc__"])
+    def predict_proba(self, X):
+        check_is_fitted(self)
+        return self._predict_proba(X)
+
+    @available_if(_sklearn_BaseSVC._check_proba)
+    @wraps(_sklearn_BaseSVC.predict_log_proba, assigned=["__doc__"])
+    def predict_log_proba(self, X):
+        xp, _ = get_namespace(X)
+
+        return xp.log(self.predict_proba(X))
+
+    if sklearn_check_version("1.0"):
+
+        @wrap_output_data
+        def _predict_proba(self, X):
+            return dispatch(
+                self,
+                "_predict_proba",
+                {
+                    "onedal": self.__class__._onedal_predict_proba,
+                    "sklearn": _sklearn_BaseSVC.predict_proba,
+                },
+                X,
+            )
+
+    else:
+
+        @wrap_output_data
+        def _predict_proba(self, X):
+            return dispatch(
+                self,
+                "_predict_proba",
+                {
+                    "onedal": self.__class__._onedal_predict_proba,
+                    "sklearn": _sklearn_BaseSVC._predict_proba,
+                },
+                X,
+            )
+
     predict.__doc__ = _sklearn_BaseSVC.predict.__doc__
     decision_function.__doc__ = _sklearn_BaseSVC.decision_function.__doc__
     score.__doc__ = _sklearn_BaseSVC.score.__doc__
@@ -588,34 +590,6 @@ class BaseSVR(BaseSVM):
             return super()._validate_targets(y)
 
         return xp.astype(column_or_1d(y, warn=True), xp.float64, copy=False)
-
-    @wrap_output_data
-    def predict(self, X):
-        check_is_fitted(self)
-        return dispatch(
-            self,
-            "predict",
-            {
-                "onedal": self.__class__._onedal_predict,
-                "sklearn": _sklearn_BaseLibSVM.predict,
-            },
-            X,
-        )
-
-    @wrap_output_data
-    def score(self, X, y, sample_weight=None):
-        check_is_fitted(self)
-        return dispatch(
-            self,
-            "score",
-            {
-                "onedal": self.__class__._onedal_score,
-                "sklearn": RegressorMixin.score,
-            },
-            X,
-            y,
-            sample_weight=sample_weight,
-        )
 
     def _onedal_fit(self, X, y, sample_weight=None, queue=None):
         xp, _ = get_namespace(X, y, sample_weight)
@@ -674,6 +648,34 @@ class BaseSVR(BaseSVM):
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
         return r2_score(
             y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
+        )
+
+    @wrap_output_data
+    def predict(self, X):
+        check_is_fitted(self)
+        return dispatch(
+            self,
+            "predict",
+            {
+                "onedal": self.__class__._onedal_predict,
+                "sklearn": _sklearn_BaseLibSVM.predict,
+            },
+            X,
+        )
+
+    @wrap_output_data
+    def score(self, X, y, sample_weight=None):
+        check_is_fitted(self)
+        return dispatch(
+            self,
+            "score",
+            {
+                "onedal": self.__class__._onedal_score,
+                "sklearn": RegressorMixin.score,
+            },
+            X,
+            y,
+            sample_weight=sample_weight,
         )
 
     predict.__doc__ = _sklearn_BaseLibSVM.predict.__doc__
