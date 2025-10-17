@@ -158,8 +158,7 @@ class BaseSVM(oneDALEstimator):
             return patching_status
         raise RuntimeError(f"Unknown method {method_name} in {class_name}")
 
-    @staticmethod
-    def _svm_sample_weight_check(sample_weight, y, xp):
+    def _svm_sample_weight_check(self, sample_weight, y, xp):
         # This is purely for sklearn conformance. SVM algos in SVM raise unique errors.
         if xp.all(sample_weight <= 0):
             raise ValueError("Invalid input - all samples have zero or negative weights.")
@@ -554,33 +553,17 @@ class BaseSVC(BaseSVM):
 
         return xp.log(self.predict_proba(X))
 
-    if sklearn_check_version("1.0"):
-
-        @wrap_output_data
-        def _predict_proba(self, X):
-            return dispatch(
-                self,
-                "_predict_proba",
-                {
-                    "onedal": self.__class__._onedal_predict_proba,
-                    "sklearn": _sklearn_BaseSVC.predict_proba,
-                },
-                X,
-            )
-
-    else:
-
-        @wrap_output_data
-        def _predict_proba(self, X):
-            return dispatch(
-                self,
-                "_predict_proba",
-                {
-                    "onedal": self.__class__._onedal_predict_proba,
-                    "sklearn": _sklearn_BaseSVC._predict_proba,
-                },
-                X,
-            )
+    @wrap_output_data
+    def _predict_proba(self, X):
+        return dispatch(
+            self,
+            "_predict_proba",
+            {
+                "onedal": self.__class__._onedal_predict_proba,
+                "sklearn": _sklearn_BaseSVC.predict_proba,
+            },
+            X,
+        )
 
     predict.__doc__ = _sklearn_BaseSVC.predict.__doc__
     decision_function.__doc__ = _sklearn_BaseSVC.decision_function.__doc__
