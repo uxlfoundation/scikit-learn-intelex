@@ -17,10 +17,11 @@
 import numpy as np
 import pytest
 import scipy.sparse as sp
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_array_almost_equal
 from sklearn.datasets import load_diabetes, load_iris, make_classification
 
 from onedal.svm.tests.test_csr_svm import check_svm_model_equal
+from sklearnex import config_context
 
 try:
     from scipy.sparse import csr_array as csr_class
@@ -229,5 +230,6 @@ def test_class_weight(queue):
         y = np.array([0, 0, 0, 1, 1, 1], dtype=np.float64)
 
         clf = estimator(class_weight={0: 0.1})
-        clf.fit(X, y, class_count=2, queue=queue)
-        assert_array_almost_equal(clf.predict(X, queue=queue).ravel(), [1] * 6)
+        with config_context(target_offload=queue):
+            clf.fit(X, y)
+            assert_array_almost_equal(clf.predict(X).ravel(), [1] * 6)
