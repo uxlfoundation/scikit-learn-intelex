@@ -264,12 +264,12 @@ class BaseSVC(BaseSVM):
         y = self._validate_targets(y)
 
         if self.class_weight is not None:
-            sample_weight = _check_sample_weight(X, sample_weight)
+            sample_weight = _check_sample_weight(sample_weight, X)
             # oneDAL only accepts sample_weights, apply class_weight directly
             for i, v in enumerate(self.class_weight_):
                 sample_weight[y == i] *= v
         elif sample_weight is not None:
-            sample_weight = _check_sample_weight(X, sample_weight)
+            sample_weight = _check_sample_weight(sample_weight, X)
 
         onedal_params = {
             "C": self.C,
@@ -631,7 +631,7 @@ class BaseSVR(BaseSVM):
         y = self._validate_targets(y)
 
         if sample_weight is not None:
-            sample_weight = _check_sample_weight(X, sample_weight)
+            sample_weight = _check_sample_weight(sample_weight, X)
 
         onedal_params = {
             "C": self.C,
