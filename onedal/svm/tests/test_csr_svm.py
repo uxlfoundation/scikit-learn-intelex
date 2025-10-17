@@ -25,42 +25,48 @@ from onedal.tests.utils._device_selection import (
     get_queues,
     pass_if_not_implemented_for_gpu,
 )
+from onedal.utils import _sycl_queue_manager as QM
 
 
 def check_svm_model_equal(
     queue, dense_svm, sparse_svm, X_train, y_train, X_test, decimal=6
 ):
     if dense_svm.__class__.__module__.startswith("onedal"):
-        params = {"class_count": len(np.unique(y_train)), "queue": queue}
+        params = {"class_count": len(np.unique(y_train))}
     else:
         params = {}
 
-    dense_svm.fit(X_train.toarray(), y_train, **params)
-    if sp.issparse(X_test):
-        X_test_dense = X_test.toarray()
-    else:
-        X_test_dense = X_test
-    sparse_svm.fit(X_train, y_train, **params)
-    assert sp.issparse(sparse_svm.support_vectors_)
-    assert sp.issparse(sparse_svm.dual_coef_)
-    assert_array_almost_equal(
-        dense_svm.support_vectors_, sparse_svm.support_vectors_.toarray(), decimal
-    )
-    assert_array_almost_equal(
-        dense_svm.dual_coef_, sparse_svm.dual_coef_.toarray(), decimal
-    )
-    assert_array_almost_equal(dense_svm.support_, sparse_svm.support_)
-    assert_array_almost_equal(
-        dense_svm.predict(X_test_dense, queue=queue),
-        sparse_svm.predict(X_test, queue=queue),
-    )
+    with QM.manage_global_queue(queue):
 
-    if isinstance(dense_svm, ClassifierMixin) and isinstance(sparse_svm, ClassifierMixin):
+        dense_svm.fit(X_train.toarray(), y_train, **params)
+        if sp.issparse(X_test):
+            X_test_dense = X_test.toarray()
+        else:
+            X_test_dense = X_test
+        sparse_svm.fit(X_train, y_train, **params)
+
+        assert sp.issparse(sparse_svm.support_vectors_)
+        assert sp.issparse(sparse_svm.dual_coef_)
+
         assert_array_almost_equal(
-            dense_svm.decision_function(X_test_dense, queue=queue),
-            sparse_svm.decision_function(X_test, queue=queue),
-            decimal,
+            dense_svm.support_vectors_, sparse_svm.support_vectors_.toarray(), decimal
         )
+        assert_array_almost_equal(
+            dense_svm.dual_coef_, sparse_svm.dual_coef_.toarray(), decimal
+        )
+        assert_array_almost_equal(dense_svm.support_, sparse_svm.support_)
+        assert_array_almost_equal(
+            dense_svm.predict(X_test_dense), sparse_svm.predict(X_test)
+        )
+
+        if isinstance(dense_svm, ClassifierMixin) and isinstance(
+            sparse_svm, ClassifierMixin
+        ):
+            assert_array_almost_equal(
+                dense_svm.decision_function(X_test_dense),
+                sparse_svm.decision_function(X_test),
+                decimal,
+            )
 
 
 def _test_simple_dataset(queue, kernel):
