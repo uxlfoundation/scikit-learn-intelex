@@ -783,18 +783,18 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         # requires moving data to host to construct the csr_matrix
         if mode == "connectivity":
             A_ind = self.kneighbors(X, n_neighbors, return_distance=False)
-            # Array API support: get namespace from A_ind
-            xp, _ = get_namespace(A_ind)
+            # Transfer to host - after this, arrays are numpy
             _, (A_ind,) = _transfer_to_host(A_ind)
             n_queries = A_ind.shape[0]
-            A_data = xp.ones((n_queries * n_neighbors,), dtype=xp.float64)
+            # Use numpy after transfer to host
+            A_data = np.ones(n_queries * n_neighbors)
 
         elif mode == "distance":
             A_data, A_ind = self.kneighbors(X, n_neighbors, return_distance=True)
-            # Array API support: get namespace from A_data
-            xp, _ = get_namespace(A_data, A_ind)
+            # Transfer to host - after this, arrays are numpy
             _, (A_data, A_ind) = _transfer_to_host(A_data, A_ind)
-            A_data = xp.reshape(A_data, (-1,))
+            # Use numpy after transfer to host
+            A_data = np.reshape(A_data, (-1,))
 
         else:
             raise ValueError(
@@ -805,10 +805,11 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         n_queries = A_ind.shape[0]
         n_samples_fit = self.n_samples_fit_
         n_nonzero = n_queries * n_neighbors
-        A_indptr = xp.arange(0, n_nonzero + 1, n_neighbors)
+        # Use numpy after transfer to host
+        A_indptr = np.arange(0, n_nonzero + 1, n_neighbors)
 
         kneighbors_graph = sp.csr_matrix(
-            (A_data, xp.reshape(A_ind, (-1,)), A_indptr), shape=(n_queries, n_samples_fit)
+            (A_data, np.reshape(A_ind, (-1,)), A_indptr), shape=(n_queries, n_samples_fit)
         )
 
         return kneighbors_graph
