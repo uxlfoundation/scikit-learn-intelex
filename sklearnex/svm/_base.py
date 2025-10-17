@@ -158,6 +158,7 @@ class BaseSVM(oneDALEstimator):
             return patching_status
         raise RuntimeError(f"Unknown method {method_name} in {class_name}")
 
+    @staticmethod
     def _svm_sample_weight_check(self, sample_weight, y, xp):
         # This is purely for sklearn conformance. SVM algos in SVM raise unique errors.
         if xp.all(sample_weight <= 0):
