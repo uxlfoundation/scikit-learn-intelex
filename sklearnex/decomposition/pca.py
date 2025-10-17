@@ -19,7 +19,6 @@ import logging
 from daal4py.sklearn._utils import daal_check_version
 
 if daal_check_version((2024, "P", 100)):
-    from math import sqrt
     from numbers import Integral
     from warnings import warn
 

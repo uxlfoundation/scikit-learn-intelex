@@ -30,7 +30,6 @@ from onedal.utils.validation import _check_array, _num_features, _num_samples
 
 from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
-from ..utils._array_api import get_namespace
 from ..utils.validation import check_feature_names
 
 
