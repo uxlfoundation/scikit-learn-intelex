@@ -27,10 +27,11 @@ from daal4py.sklearn.utils.validation import get_requires_y_tag
 from onedal.neighbors import KNeighborsClassifier as onedal_KNeighborsClassifier
 
 from .._device_offload import dispatch, wrap_output_data
+from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.validation import check_feature_names, validate_data
 from .common import KNeighborsDispatchingBase
 
-
+@enable_array_api
 @control_n_jobs(
     decorated_methods=["fit", "predict", "predict_proba", "kneighbors", "score"]
 )
@@ -170,9 +171,13 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         import sys
         print(f"DEBUG KNeighborsClassifier._onedal_fit START: X type={type(X)}, y type={type(y)}", file=sys.stderr)
         
+        # Get array namespace for array API support
+        xp, _ = get_namespace(X)
+        print(f"DEBUG: Array namespace: {xp}", file=sys.stderr)
+        
         # REFACTOR: Use validate_data from sklearnex.utils.validation to convert pandas to numpy
         X, y = validate_data(
-            self, X, y, dtype=[np.float64, np.float32], accept_sparse="csr"
+            self, X, y, dtype=[xp.float64, xp.float32], accept_sparse="csr"
         )
         print(f"DEBUG: After validate_data, X type={type(X)}, y type={type(y)}", file=sys.stderr)
         

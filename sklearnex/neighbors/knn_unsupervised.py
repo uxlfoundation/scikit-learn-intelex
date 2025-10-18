@@ -26,10 +26,12 @@ from daal4py.sklearn.utils.validation import get_requires_y_tag
 from onedal.neighbors import NearestNeighbors as onedal_NearestNeighbors
 
 from .._device_offload import dispatch, wrap_output_data
+from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.validation import check_feature_names, validate_data
 from .common import KNeighborsDispatchingBase
 
 
+@enable_array_api
 @control_n_jobs(decorated_methods=["fit", "kneighbors", "radius_neighbors"])
 class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
     __doc__ = _sklearn_NearestNeighbors.__doc__
@@ -154,9 +156,13 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
     def _onedal_fit(self, X, y=None, queue=None):
         print(f"DEBUG NearestNeighbors._onedal_fit START: X type={type(X)}, X shape={getattr(X, 'shape', 'NO_SHAPE')}, y type={type(y)}", file=sys.stderr)
         
+        # Get array namespace for array API support
+        xp, _ = get_namespace(X)
+        print(f"DEBUG: Array namespace: {xp}", file=sys.stderr)
+        
         # REFACTOR: Use validate_data from sklearnex.utils.validation to convert pandas to numpy
         X = validate_data(
-            self, X, dtype=[np.float64, np.float32], accept_sparse="csr"
+            self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr"
         )
         print(f"DEBUG: After validate_data, X type={type(X)}", file=sys.stderr)
         
@@ -181,8 +187,9 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
     def _onedal_predict(self, X, queue=None):
         # Validate and convert X (pandas to numpy if needed) only if X is not None
         if X is not None:
+            xp, _ = get_namespace(X)
             X = validate_data(
-                self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
+                self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
             )
         return self._onedal_estimator.predict(X, queue=queue)
 

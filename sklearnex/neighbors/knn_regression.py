@@ -27,10 +27,12 @@ from daal4py.sklearn.utils.validation import get_requires_y_tag
 from onedal.neighbors import KNeighborsRegressor as onedal_KNeighborsRegressor
 
 from .._device_offload import dispatch, wrap_output_data
+from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.validation import check_feature_names, validate_data
 from .common import KNeighborsDispatchingBase
 
 
+@enable_array_api
 @control_n_jobs(decorated_methods=["fit", "predict", "kneighbors", "score"])
 class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegressor):
     __doc__ = _sklearn_KNeighborsRegressor.__doc__
@@ -150,9 +152,13 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         import sys
         print(f"DEBUG KNeighborsRegressor._onedal_fit START: X type={type(X)}, y type={type(y)}", file=sys.stderr)
         
+        # Get array namespace for array API support
+        xp, _ = get_namespace(X)
+        print(f"DEBUG: Array namespace: {xp}", file=sys.stderr)
+        
         # REFACTOR: Use validate_data from sklearnex.utils.validation to convert pandas to numpy for X only
         X = validate_data(
-            self, X, dtype=[np.float64, np.float32], accept_sparse="csr"
+            self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr"
         )
         print(f"DEBUG: After validate_data, X type={type(X)}, y type={type(y)}", file=sys.stderr)
         
@@ -192,7 +198,6 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         #         _, xp, _ = _get_sycl_namespace(X)
         #         self._y = y if self._shape is None else xp.reshape(y, self._shape)
         # Now doing this in sklearnex layer
-        from ..utils._array_api import get_namespace
         if y is not None:
             xp, _ = get_namespace(y)
             self._y = y if self._shape is None else xp.reshape(y, self._shape)
@@ -227,8 +232,9 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         print(f"DEBUG KNeighborsRegressor._predict_gpu START: X type={type(X)}", file=sys.stderr)
         # Validate and convert X (pandas to numpy if needed) only if X is not None
         if X is not None:
+            xp, _ = get_namespace(X)
             X = validate_data(
-                self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
+                self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
             )
         # Call onedal backend for GPU prediction
         result = self._onedal_estimator._predict_gpu(X)
