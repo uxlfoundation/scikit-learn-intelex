@@ -252,7 +252,7 @@ class NuSVC(BaseSVC, _sklearn_NuSVC):
         # taken from previous implementation, can be improved (try to remove for loops).
         weight_per_class = [
             xp.sum(sample_weight[y == class_label])
-            for class_label in range(int(xp.max(y)))
+            for class_label in range(int(xp.max(y)) + 1)
         ]
 
         for i in range(len(weight_per_class)):
