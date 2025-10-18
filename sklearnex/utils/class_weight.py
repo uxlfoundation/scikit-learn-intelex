@@ -46,7 +46,9 @@ def _compute_class_weight(class_weight, *, classes, y, sample_weight=None):
     sety = xp.unique_values(y)
     if class_weight is None or len(class_weight) == 0:
         # uniform class weights
-        weight = xp.ones((classes.shape[0],), dtype=xp.float64, device=classes.device)
+        weight = xp.ones(
+            (classes.shape[0],), dtype=xp.float64, device=getattr(classes, "device", None)
+        )
     elif class_weight == "balanced":
         if not sklearn_check_version("1.6"):
             raise RuntimeError(
@@ -67,7 +69,9 @@ def _compute_class_weight(class_weight, *, classes, y, sample_weight=None):
         # then core logic of bincount is replicated:
         # https://github.com/numpy/numpy/blob/main/numpy/_core/src/multiarray/compiled_base.c
         weighted_class_counts = xp.zeros(
-            (xp.max(y_ind) + 1,), dtype=sample_weight.dtype, device=y.device
+            (xp.max(y_ind) + 1,),
+            dtype=sample_weight.dtype,
+            device=getattr(y, "device", None),
         )
 
         # use a more GPU-friendly summation approach for collecting weighted_class_counts
@@ -81,7 +85,9 @@ def _compute_class_weight(class_weight, *, classes, y, sample_weight=None):
         weight = xp.take(recip_freq, le.transform(classes))
     else:
         # user-defined dictionary
-        weight = xp.ones((classes.shape[0],), dtype=xp.float64, device=classes.device)
+        weight = xp.ones(
+            (classes.shape[0],), dtype=xp.float64, device=getattr(classes, "device", None)
+        )
         unweighted_classes = []
         for i, c in enumerate(classes):
             if (fc := float(c)) in class_weight:
