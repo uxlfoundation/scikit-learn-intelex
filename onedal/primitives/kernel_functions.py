@@ -201,6 +201,7 @@ def sigmoid_kernel(X, Y=None, gamma=1.0, coef0=0.0, queue=None):
         {"method": "dense", "scale": gamma, "shift": coef0}, backend.sigmoid_kernel, X, Y
     )
 
+
 @supports_queue
 def polynomial_kernel(X, Y=None, gamma=1.0, coef0=0.0, degree=3, queue=None):
     """
@@ -242,4 +243,3 @@ def polynomial_kernel(X, Y=None, gamma=1.0, coef0=0.0, degree=3, queue=None):
         X,
         Y,
     )
-
