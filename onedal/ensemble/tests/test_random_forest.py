@@ -14,6 +14,8 @@
 # limitations under the License.
 # ==============================================================================
 
+import numpy as np
+
 import pytest
 from numpy.testing import assert_allclose
 from sklearn.datasets import make_classification, make_regression
@@ -21,6 +23,8 @@ from sklearn.datasets import make_classification, make_regression
 from daal4py.sklearn._utils import daal_check_version
 from onedal.ensemble import RandomForestClassifier, RandomForestRegressor
 from onedal.tests.utils._device_selection import get_queues
+
+PREDICT_DATA = np.array([[0, 0, 0, 0]], dtype=np.float64)
 
 
 @pytest.mark.parametrize("queue", get_queues())
@@ -36,7 +40,7 @@ def test_rf_classifier(queue):
     rf = RandomForestClassifier(max_depth=2, random_state=0).fit(
         X, y, class_count=2, queue=queue
     )
-    assert_allclose([1], rf.predict([[0, 0, 0, 0]], queue=queue))
+    assert_allclose([1], rf.predict(PREDICT_DATA, queue=queue))
 
 
 @pytest.mark.parametrize("queue", get_queues())
@@ -52,14 +56,14 @@ def test_rf_regression(queue):
     # different ensembles of trees, thereby requiring separate check values.
     if queue and queue.sycl_device.is_gpu:
         if daal_check_version((2024, "P", 0)):
-            assert_allclose([1.82], rf.predict([[0, 0, 0, 0]], queue=queue), atol=1e-2)
+            assert_allclose([1.82], rf.predict(PREDICT_DATA, queue=queue), atol=1e-2)
         else:
-            assert_allclose([-6.83], rf.predict([[0, 0, 0, 0]], queue=queue), atol=1e-2)
+            assert_allclose([-6.83], rf.predict(PREDICT_DATA, queue=queue), atol=1e-2)
     else:
         if daal_check_version((2024, "P", 0)):
-            assert_allclose([-6.97], rf.predict([[0, 0, 0, 0]], queue=queue), atol=1e-2)
+            assert_allclose([-6.97], rf.predict(PREDICT_DATA, queue=queue), atol=1e-2)
         else:
-            assert_allclose([-6.83], rf.predict([[0, 0, 0, 0]], queue=queue), atol=1e-2)
+            assert_allclose([-6.83], rf.predict(PREDICT_DATA, queue=queue), atol=1e-2)
 
 
 @pytest.mark.skipif(
@@ -78,7 +82,7 @@ def test_rf_classifier_random_splitter(queue):
     rf = RandomForestClassifier(max_depth=2, random_state=0, splitter_mode="random").fit(
         X, y, class_count=2, queue=queue
     )
-    assert_allclose([1], rf.predict([[0, 0, 0, 0]], queue=queue))
+    assert_allclose([1], rf.predict(PREDICT_DATA, queue=queue))
 
 
 @pytest.mark.parametrize("queue", get_queues("gpu"))
@@ -94,6 +98,6 @@ def test_rf_regression_random_splitter(queue):
         X, y, queue=queue
     )
     if daal_check_version((2024, "P", 0)):
-        assert_allclose([-6.88], rf.predict([[0, 0, 0, 0]], queue=queue), atol=1e-2)
+        assert_allclose([-6.88], rf.predict(PREDICT_DATA, queue=queue), atol=1e-2)
     else:
-        assert_allclose([-6.83], rf.predict([[0, 0, 0, 0]], queue=queue), atol=1e-2)
+        assert_allclose([-6.83], rf.predict(PREDICT_DATA, queue=queue), atol=1e-2)
