@@ -249,7 +249,7 @@ class NuSVC(BaseSVC, _sklearn_NuSVC):
         # checks.
         if sample_weight is None:
             if hasattr(xp, "unique_counts"):
-                weight_per_class = xp.unique_counts(y).counts
+                _, weight_per_class = xp.unique_counts(y)
             else:
                 _, weight_per_class = xp.unique(y, return_counts=True)
         else:
