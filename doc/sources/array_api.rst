@@ -105,10 +105,10 @@ The following patched classes have support for array API inputs:
 - :obj:`sklearn.linear_model.Ridge`
 - :obj:`sklearnex.linear_model.IncrementalLinearRegression`
 - :obj:`sklearnex.linear_model.IncrementalRidge`
-- :obj:`sklearn.svm.NuSVC`
-- :obj:`sklearn.svm.NuSVR`
-- :obj:`sklearn.svm.SVC`
-- :obj:`sklearn.svm.SVR`
+- :obj:`sklearn.neighbors.KNeighborsClassifier`
+- :obj:`sklearn.neighbors.KNeighborsRegressor`
+- :obj:`sklearn.neighbors.NearestNeighbors`
+- :obj:`sklearn.neighbors.LocalOutlierFactor`
 
 .. note::
     While full array API support is currently not implemented for all classes, |dpnp_array| inputs are supported
