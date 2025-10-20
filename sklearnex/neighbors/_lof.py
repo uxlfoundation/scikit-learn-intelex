@@ -253,7 +253,6 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
             dtype=[xp.float64, xp.float32],
             accept_sparse="csr",
             reset=False,
-            ensure_all_finite=False,
         )
 
         # check_feature_names(self, X, reset=False)
