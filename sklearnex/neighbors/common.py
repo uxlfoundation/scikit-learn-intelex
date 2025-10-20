@@ -28,8 +28,6 @@ from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
-
-from ..utils.validation import validate_data
 from onedal._device_offload import _transfer_to_host
 from onedal.utils.validation import (
     _check_array,
@@ -43,7 +41,7 @@ from onedal.utils.validation import (
 from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
 from ..utils._array_api import get_namespace
-from ..utils.validation import check_feature_names
+from ..utils.validation import check_feature_names, validate_data
 
 
 class KNeighborsDispatchingBase(oneDALEstimator):
@@ -114,7 +112,11 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                     else:
                         dist[point_dist_i] = 1.0 / point_dist
             else:
-                with xp.errstate(divide="ignore") if hasattr(xp, 'errstate') else np.errstate(divide="ignore"):
+                with (
+                    xp.errstate(divide="ignore")
+                    if hasattr(xp, "errstate")
+                    else np.errstate(divide="ignore")
+                ):
                     dist = 1.0 / dist
                 inf_mask = xp.isinf(dist)
                 inf_row = xp.any(inf_mask, axis=1)
@@ -127,28 +129,28 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                 "weights not recognized: should be 'uniform', "
                 "'distance', or a callable function"
             )
-    
+
     def _compute_weighted_prediction(self, neigh_dist, neigh_ind, weights_param, y_train):
         """Compute weighted prediction for regression.
-        
+
         Args:
             neigh_dist: Distances to neighbors
             neigh_ind: Indices of neighbors
             weights_param: Weight parameter ('uniform', 'distance', or callable)
             y_train: Training target values
-            
+
         Returns:
             Predicted values
         """
         # Array API support: get namespace from input arrays
         xp, _ = get_namespace(neigh_dist, neigh_ind, y_train)
-        
+
         weights = self._get_weights(neigh_dist, weights_param)
-        
+
         _y = y_train
         if _y.ndim == 1:
             _y = xp.reshape(_y, (-1, 1))
-        
+
         if weights is None:
             # Array API: Use take() per row since array API take() only supports 1-D indices
             # Build result by gathering rows one at a time
@@ -157,35 +159,45 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                 # Get indices for this sample's neighbors
                 sample_indices = neigh_ind[i, ...]  # Shape: (n_neighbors,)
                 # Gather those rows from _y
-                sample_neighbors = xp.take(_y, sample_indices, axis=0)  # Shape: (n_neighbors, n_outputs)
+                sample_neighbors = xp.take(
+                    _y, sample_indices, axis=0
+                )  # Shape: (n_neighbors, n_outputs)
                 gathered_list.append(sample_neighbors)
             # Stack and compute mean
-            gathered = xp.stack(gathered_list, axis=0)  # Shape: (n_samples, n_neighbors, n_outputs)
+            gathered = xp.stack(
+                gathered_list, axis=0
+            )  # Shape: (n_samples, n_neighbors, n_outputs)
             y_pred = xp.mean(gathered, axis=1)
         else:
             y_pred = xp.empty((neigh_ind.shape[0], _y.shape[1]), dtype=xp.float64)
             denom = xp.sum(weights, axis=1)
-            
+
             for j in range(_y.shape[1]):
                 # Array API: Iterate over samples to gather values
                 y_col_j = _y[:, j, ...]  # Shape: (n_train_samples,)
                 gathered_vals = []
                 for i in range(neigh_ind.shape[0]):
                     sample_indices = neigh_ind[i, ...]  # Shape: (n_neighbors,)
-                    sample_vals = xp.take(y_col_j, sample_indices, axis=0)  # Shape: (n_neighbors,)
+                    sample_vals = xp.take(
+                        y_col_j, sample_indices, axis=0
+                    )  # Shape: (n_neighbors,)
                     gathered_vals.append(sample_vals)
-                gathered_j = xp.stack(gathered_vals, axis=0)  # Shape: (n_samples, n_neighbors)
+                gathered_j = xp.stack(
+                    gathered_vals, axis=0
+                )  # Shape: (n_samples, n_neighbors)
                 num = xp.sum(gathered_j * weights, axis=1)
                 y_pred[:, j, ...] = num / denom
-        
+
         if y_train.ndim == 1:
             y_pred = xp.reshape(y_pred, (-1,))
-        
+
         return y_pred
-    
-    def _compute_class_probabilities(self, neigh_dist, neigh_ind, weights_param, y_train, classes, outputs_2d):
+
+    def _compute_class_probabilities(
+        self, neigh_dist, neigh_ind, weights_param, y_train, classes, outputs_2d
+    ):
         """Compute class probabilities for classification.
-        
+
         Args:
             neigh_dist: Distances to neighbors
             neigh_ind: Indices of neighbors
@@ -193,45 +205,47 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             y_train: Encoded training labels
             classes: Class labels
             outputs_2d: Whether output is 2D (multi-output)
-            
+
         Returns:
             Class probabilities
         """
         from ..utils.validation import _num_samples
-        
+
         # Array API support: get namespace from input arrays
         xp, _ = get_namespace(neigh_dist, neigh_ind, y_train)
-        
+
         _y = y_train
         classes_ = classes
         if not outputs_2d:
             _y = xp.reshape(y_train, (-1, 1))
             classes_ = [classes]
-        
+
         n_queries = neigh_ind.shape[0]
-        
+
         weights = self._get_weights(neigh_dist, weights_param)
         if weights is None:
             # REFACTOR: Ensure weights is float for array API type promotion
             # neigh_ind is int, so ones_like would give int, but we need float
             weights = xp.ones_like(neigh_ind, dtype=xp.float64)
-        
+
         probabilities = []
         for k, classes_k in enumerate(classes_):
             # Get predicted labels for each neighbor: shape (n_samples, n_neighbors)
             # _y[:, k] gives training labels for output k, then gather using neigh_ind
             y_col_k = _y[:, k, ...]
-            
+
             # Array API: Use take() with iteration since take() only supports 1-D indices
             pred_labels_list = []
             for i in range(neigh_ind.shape[0]):
                 sample_indices = neigh_ind[i, ...]
                 sample_labels = xp.take(y_col_k, sample_indices, axis=0)
                 pred_labels_list.append(sample_labels)
-            pred_labels = xp.stack(pred_labels_list, axis=0)  # Shape: (n_queries, n_neighbors)
-            
+            pred_labels = xp.stack(
+                pred_labels_list, axis=0
+            )  # Shape: (n_queries, n_neighbors)
+
             proba_k = xp.zeros((n_queries, classes_k.size), dtype=xp.float64)
-            
+
             # Array API: Cannot use fancy indexing __setitem__ like proba_k[all_rows, idx] = ...
             # Instead, build probabilities sample by sample
             proba_list = []
@@ -242,31 +256,37 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                     class_label = int(pred_labels[sample_idx, neighbor_idx])
                     weight = weights[sample_idx, neighbor_idx]
                     # Update probability for this class
-                    sample_proba = xp.asarray([
-                        sample_proba[i] + weight if i == class_label else sample_proba[i]
-                        for i in range(classes_k.size)
-                    ])
+                    sample_proba = xp.asarray(
+                        [
+                            (
+                                sample_proba[i] + weight
+                                if i == class_label
+                                else sample_proba[i]
+                            )
+                            for i in range(classes_k.size)
+                        ]
+                    )
                 proba_list.append(sample_proba)
             proba_k = xp.stack(proba_list, axis=0)  # Shape: (n_queries, n_classes)
-            
+
             # normalize 'votes' into real [0,1] probabilities
             normalizer = xp.sum(proba_k, axis=1)[:, xp.newaxis]
             normalizer[normalizer == 0.0] = 1.0
             proba_k /= normalizer
-            
+
             probabilities.append(proba_k)
-        
+
         if not outputs_2d:
             probabilities = probabilities[0]
-        
+
         return probabilities
-    
+
     def _predict_skl_regression(self, X):
         """SKL prediction path for regression - calls kneighbors, computes predictions.
-        
+
         This method handles X=None (LOOCV) properly by calling self.kneighbors which
         has the query_is_train logic.
-        
+
         Args:
             X: Query samples (or None for LOOCV)
         Returns:
@@ -279,10 +299,10 @@ class KNeighborsDispatchingBase(oneDALEstimator):
 
     def _predict_skl_classification(self, X):
         """SKL prediction path for classification - calls kneighbors, computes predictions.
-        
+
         This method handles X=None (LOOCV) properly by calling self.kneighbors which
         has the query_is_train logic.
-        
+
         Args:
             X: Query samples (or None for LOOCV)
         Returns:
@@ -294,16 +314,18 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         )
         # Array API support: get namespace from probability array
         xp, _ = get_namespace(proba)
-        
+
         if not self.outputs_2d_:
             # Single output: classes_[argmax(proba, axis=1)]
             result = self.classes_[xp.argmax(proba, axis=1)]
         else:
             # Multi-output: apply argmax separately for each output
-            result = [classes_k[xp.argmax(proba_k, axis=1)]
-                      for classes_k, proba_k in zip(self.classes_, proba.T)]
+            result = [
+                classes_k[xp.argmax(proba_k, axis=1)]
+                for classes_k, proba_k in zip(self.classes_, proba.T)
+            ]
             result = xp.asarray(result).T
-        
+
         return result
 
     def _validate_targets(self, y, dtype):
@@ -360,7 +382,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
 
     def _kneighbors_validation(self, X, n_neighbors):
         """Shared validation for kneighbors method called from sklearnex layer.
-        
+
         Validates:
         - Feature count matches training data if X is provided
         - n_neighbors is within valid bounds if provided
@@ -368,23 +390,25 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         # Validate feature count if X is provided
         if X is not None:
             self._validate_feature_count(X)
-        
+
         # Validate n_neighbors bounds if provided
         if n_neighbors is not None:
             # Determine if query is the training set
-            query_is_train = X is None or (hasattr(self, '_fit_X') and X is self._fit_X)
-            self._validate_kneighbors_bounds(n_neighbors, query_is_train, X if X is not None else self._fit_X)
+            query_is_train = X is None or (hasattr(self, "_fit_X") and X is self._fit_X)
+            self._validate_kneighbors_bounds(
+                n_neighbors, query_is_train, X if X is not None else self._fit_X
+            )
 
     def _prepare_kneighbors_inputs(self, X, n_neighbors):
         """Prepare inputs for kneighbors call to onedal backend.
-        
+
         Handles query_is_train case: when X=None, sets X to training data and adds +1 to n_neighbors.
         Validates n_neighbors bounds AFTER adding +1 (replicates original onedal behavior).
-        
+
         Args:
             X: Query data or None
             n_neighbors: Number of neighbors or None
-            
+
         Returns:
             Tuple of (X, n_neighbors, query_is_train)
             - X: Processed query data (self._fit_X if original X was None)
@@ -392,14 +416,12 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             - query_is_train: Boolean flag indicating if original X was None
         """
         query_is_train = X is None
-        
+
         if X is not None:
             # Get the array namespace to use correct dtypes
             xp, _ = get_namespace(X)
             # Use _check_array like main branch, with array API dtype support
-            X = _check_array(
-                X, dtype=[xp.float64, xp.float32], accept_sparse="csr"
-            )
+            X = _check_array(X, dtype=[xp.float64, xp.float32], accept_sparse="csr")
         else:
             X = self._fit_X
             # Include an extra neighbor to account for the sample itself being
@@ -407,38 +429,42 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             if n_neighbors is None:
                 n_neighbors = self.n_neighbors
             n_neighbors += 1
-            
+
             # Validate bounds AFTER adding +1 (replicates original onedal behavior)
             # Original code in onedal had validation after n_neighbors += 1
             n_samples_fit = self.n_samples_fit_
             if n_neighbors > n_samples_fit:
-                n_neighbors_for_msg = n_neighbors - 1  # for error message, show original value
+                n_neighbors_for_msg = (
+                    n_neighbors - 1
+                )  # for error message, show original value
                 raise ValueError(
                     f"Expected n_neighbors < n_samples_fit, but "
                     f"n_neighbors = {n_neighbors_for_msg}, n_samples_fit = {n_samples_fit}, "
                     f"n_samples = {X.shape[0]}"
                 )
-        
+
         return X, n_neighbors, query_is_train
 
-    def _kneighbors_post_processing(self, X, n_neighbors, return_distance, result, query_is_train):
+    def _kneighbors_post_processing(
+        self, X, n_neighbors, return_distance, result, query_is_train
+    ):
         """Shared post-processing for kneighbors results.
-        
+
         Following PCA pattern: all post-processing in sklearnex, onedal returns raw results.
         Replicates exact logic from main branch onedal._kneighbors() method.
-        
+
         Handles (in order, matching main branch):
         1. kd_tree sorting: sorts results by distance (BEFORE deciding what to return)
         2. query_is_train case (X=None): removes self from results
         3. return_distance decision: return distances+indices or just indices
-        
+
         Args:
             X: Query data (self._fit_X if query_is_train)
             n_neighbors: Number of neighbors (already includes +1 if query_is_train)
             return_distance: Whether to return distances to user
             result: Raw result from onedal backend - always (distances, indices)
             query_is_train: Boolean indicating if original X was None
-        
+
         Returns:
             Post-processed result: (distances, indices) if return_distance else indices
         """
@@ -446,7 +472,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         # onedal always returns both distances and indices (backend computes both)
         distances, indices = result
         xp, _ = get_namespace(distances, indices)
-        
+
         # POST-PROCESSING STEP 1: kd_tree sorting (moved from onedal)
         # This happens BEFORE deciding what to return, using distances that are always available
         # Matches main branch: sorting uses distances even when return_distance=False
@@ -455,40 +481,40 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                 seq = xp.argsort(distances[i])
                 indices[i] = indices[i][seq]
                 distances[i] = distances[i][seq]
-        
+
         # POST-PROCESSING STEP 2: Decide what to return (moved from onedal)
         # This happens AFTER kd_tree sorting
         if return_distance:
             results = distances, indices
         else:
             results = indices
-        
+
         # POST-PROCESSING STEP 3: Remove self from results when query_is_train (moved from onedal)
         # This happens LAST, after sorting and after deciding format
         if not query_is_train:
             return results
-        
+
         # If the query data is the same as the indexed data, we would like
         # to ignore the first nearest neighbor of every sample, i.e the sample itself.
         if return_distance:
             neigh_dist, neigh_ind = results
         else:
             neigh_ind = results
-        
+
         # X is self._fit_X in query_is_train case (set by caller)
         n_queries, _ = X.shape
         sample_range = xp.arange(n_queries)[:, xp.newaxis]
         sample_mask = neigh_ind != sample_range
-        
+
         # Corner case: When the number of duplicates are more
         # than the number of neighbors, the first NN will not
         # be the sample, but a duplicate.
         # In that case mask the first duplicate.
         dup_gr_nbrs = xp.all(sample_mask, axis=1)
         sample_mask[:, 0][dup_gr_nbrs] = False
-        
+
         neigh_ind = xp.reshape(neigh_ind[sample_mask], (n_queries, n_neighbors - 1))
-        
+
         if return_distance:
             neigh_dist = xp.reshape(neigh_dist[sample_mask], (n_queries, n_neighbors - 1))
             return neigh_dist, neigh_ind
@@ -496,15 +522,19 @@ class KNeighborsDispatchingBase(oneDALEstimator):
 
     def _process_classification_targets(self, y):
         """Process classification targets and set class-related attributes.
-        
+
         Note: y should already be converted to numpy array via validate_data before calling this.
         """
         import sys
-        print(f"DEBUG _process_classification_targets: y type={type(y)}, y shape={getattr(y, 'shape', 'NO_SHAPE')}", file=sys.stderr)
-        
+
+        print(
+            f"DEBUG _process_classification_targets: y type={type(y)}, y shape={getattr(y, 'shape', 'NO_SHAPE')}",
+            file=sys.stderr,
+        )
+
         # Array API support: get namespace from y
         xp, _ = get_namespace(y)
-        
+
         # y should already be numpy array from validate_data
         y = xp.asarray(y)
 
@@ -520,7 +550,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
 
         # Validate classification targets
         _check_classification_targets(y)
-        
+
         # Process classes - note: np.unique is used for class extraction
         # This is acceptable as classes are typically numpy arrays in sklearn
         self.classes_ = []
@@ -543,26 +573,33 @@ class KNeighborsDispatchingBase(oneDALEstimator):
 
     def _process_regression_targets(self, y):
         """Process regression targets and set shape-related attributes.
-        
+
         REFACTOR: This replicates the EXACT shape processing that was in onedal _fit.
         Original onedal code:
             shape = getattr(y, "shape", None)
             self._shape = shape if shape is not None else y.shape
             # (later, after fit)
             self._y = y if self._shape is None else xp.reshape(y, self._shape)
-        
+
         For now, just store _shape and _y as-is. The reshape happens after onedal fit is complete.
         """
         import sys
+
         # EXACT replication of original onedal shape processing
         shape = getattr(y, "shape", None)
         self._shape = shape if shape is not None else y.shape
         self._y = y
-        print(f"DEBUG _process_regression_targets: _y type={type(self._y)}, _shape={self._shape}", file=sys.stderr)
+        print(
+            f"DEBUG _process_regression_targets: _y type={type(self._y)}, _shape={self._shape}",
+            file=sys.stderr,
+        )
         return y
 
     def _fit_validation(self, X, y=None):
-        print(f"DEBUG _fit_validation CALLED: X type={type(X)}, y type={type(y)}", file=sys.stderr)
+        print(
+            f"DEBUG _fit_validation CALLED: X type={type(X)}, y type={type(y)}",
+            file=sys.stderr,
+        )
         if sklearn_check_version("1.2"):
             self._validate_params()
         # check_feature_names(self, X, reset=True)
@@ -601,7 +638,10 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             # Don't check for NaN - let oneDAL handle it (will fallback to sklearn if needed)
             xp, _ = get_namespace(X)
             self._fit_X = _check_array(
-                X, dtype=[xp.float64, xp.float32], accept_sparse=True, force_all_finite=False
+                X,
+                dtype=[xp.float64, xp.float32],
+                accept_sparse=True,
+                force_all_finite=False,
             )
             self.n_samples_fit_ = _num_samples(self._fit_X)
             self.n_features_in_ = _num_features(self._fit_X)

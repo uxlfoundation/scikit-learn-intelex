@@ -14,11 +14,11 @@
 # limitations under the License.
 # ==============================================================================
 
+import sys
 from abc import ABCMeta, abstractmethod
 from numbers import Integral
 
 import numpy as np
-import sys
 
 from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
@@ -203,17 +203,20 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
     #         )
 
     def _fit(self, X, y):
-        print(f"DEBUG oneDAL _fit START: X type={type(X)}, X shape={getattr(X, 'shape', 'NO_SHAPE')}, y type={type(y)}", file=sys.stderr)
+        print(
+            f"DEBUG oneDAL _fit START: X type={type(X)}, X shape={getattr(X, 'shape', 'NO_SHAPE')}, y type={type(y)}",
+            file=sys.stderr,
+        )
         self._onedal_model = None
         self._tree = None
         # REFACTOR: Shape processing moved to sklearnex layer
         # _shape should be set by _process_classification_targets or _process_regression_targets in sklearnex
         # self._shape = None
-        if not hasattr(self, '_shape'):
+        if not hasattr(self, "_shape"):
             self._shape = None
         # REFACTOR STEP 1: Don't reset classes_ - it may have been set by sklearnex layer
         # self.classes_ = None
-        if not hasattr(self, 'classes_'):
+        if not hasattr(self, "classes_"):
             self.classes_ = None
         self.effective_metric_ = getattr(self, "effective_metric_", self.metric)
         self.effective_metric_params_ = getattr(
@@ -239,18 +242,21 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
             # This code is now commented out - processing MUST happen in sklearnex before calling fit
             # Assertion: Verify that sklearnex has done the preprocessing
             if _is_classifier(self):
-                if not hasattr(self, 'classes_') or self.classes_ is None:
+                if not hasattr(self, "classes_") or self.classes_ is None:
                     raise ValueError(
                         "Classification target processing must be done in sklearnex layer before calling onedal fit. "
                         "classes_ attribute is not set. This indicates the refactoring is incomplete."
                     )
-                if not hasattr(self, '_y') or self._y is None:
+                if not hasattr(self, "_y") or self._y is None:
                     raise ValueError(
                         "Classification target processing must be done in sklearnex layer before calling onedal fit. "
                         "_y attribute is not set. This indicates the refactoring is incomplete."
                     )
-                print(f"DEBUG oneDAL: Using pre-processed classification targets from sklearnex (classes_={self.classes_})", file=sys.stderr)
-            
+                print(
+                    f"DEBUG oneDAL: Using pre-processed classification targets from sklearnex (classes_={self.classes_})",
+                    file=sys.stderr,
+                )
+
             # Original classification processing code - NOW COMMENTED OUT (moved to sklearnex)
             # if _is_classifier(self):
             #     if y.ndim == 1 or y.ndim == 2 and y.shape[1] == 1:
@@ -302,7 +308,10 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         queue = QM.get_global_queue()
         gpu_device = queue is not None and queue.sycl_device.is_gpu
 
-        print(f"DEBUG oneDAL _fit: Before _onedal_fit, X type={type(X)}, _fit_y type={type(_fit_y)}", file=sys.stderr)
+        print(
+            f"DEBUG oneDAL _fit: Before _onedal_fit, X type={type(X)}, _fit_y type={type(_fit_y)}",
+            file=sys.stderr,
+        )
         # REFACTOR: All data preparation including reshaping moved to sklearnex layer
         # Following PCA pattern: onedal is a thin wrapper, no data manipulation
         # sklearnex prepares self._y in the correct shape before calling fit()
@@ -311,12 +320,15 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         #     _fit_y = self._validate_targets(self._y, X.dtype).reshape((-1, 1))
         #     OR for refactor without _validate_targets:
         #     _fit_y = self._y.reshape((-1, 1))
-        
+
         # REFACTOR: Just pass self._y as-is - sklearnex should have already reshaped it
         if _is_classifier(self) or (_is_regressor(self) and gpu_device):
             _fit_y = self._y
         result = self._onedal_fit(X, _fit_y)
-        print(f"DEBUG oneDAL _fit: After _onedal_fit, self._fit_X type={type(self._fit_X)}, shape={getattr(self._fit_X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
+        print(
+            f"DEBUG oneDAL _fit: After _onedal_fit, self._fit_X type={type(self._fit_X)}, shape={getattr(self._fit_X, 'shape', 'NO_SHAPE')}",
+            file=sys.stderr,
+        )
 
         # REFACTOR: Shape-based y reshaping commented out - y should already be properly shaped by sklearnex
         # Original code kept for reference:
@@ -342,7 +354,7 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         #             f"{n_features} features as input"
         #         )
         #     )
-        
+
         # Still need n_features for _parse_auto_method call later
         # n_features = getattr(self, "n_features_in_", None)
 
@@ -373,7 +385,7 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         #     # Include an extra neighbor to account for the sample itself being
         #     # returned, which is removed later
         #     n_neighbors += 1
-        
+
         # REFACTOR: query_is_train handling moved to sklearnex layer
         # All post-processing now happens in sklearnex._kneighbors_post_processing()
         # Original code kept for reference:
@@ -433,7 +445,7 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         #     results = distances, indices
         # else:
         #     results = indices
-        
+
         # Always return both - sklearnex will decide what to return to user
         results = distances, indices
 
@@ -477,7 +489,7 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         #     neigh_dist = np.reshape(neigh_dist[sample_mask], (n_queries, n_neighbors - 1))
         #     return neigh_dist, neigh_ind
         # return neigh_ind
-        
+
         # Return raw results - sklearnex will do all post-processing
         return results
 
@@ -543,17 +555,17 @@ class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
     # @supports_queue
     # def predict(self, X, queue=None):
     #     print(f"DEBUG KNeighborsClassifier.predict START: X type={type(X)}, X shape={getattr(X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
-    #     
+    #
     #     # REFACTOR: _check_array validation commented out - should be done in sklearnex layer
     #     # Original validation code kept for reference:
     #     # use_raw_input = _get_config().get("use_raw_input", False) is True
     #     # if not use_raw_input:
     #     #     X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
-    #     
+    #
     #     onedal_model = getattr(self, "_onedal_model", None)
     #     n_features = getattr(self, "n_features_in_", None)
     #     n_samples_fit_ = getattr(self, "n_samples_fit_", None)
-    #     
+    #
     #     # REFACTOR: Feature count validation commented out - should be done in sklearnex layer
     #     # Original validation code kept for reference:
     #     # shape = getattr(X, "shape", None)
