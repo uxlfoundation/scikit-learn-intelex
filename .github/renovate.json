@@ -54,6 +54,22 @@
       ],
       "depNameTemplate": "dpcpp-cpp-rt",
       "datasourceTemplate": "pypi"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^\\.ci/pipeline/linting\\.yml$"],
+      "matchStrings": ["pre-commit==(?<currentValue>\\d+\\.\\d+\\.\\d+)"],
+      "depNameTemplate": "pre-commit",
+      "datasourceTemplate": "pypi"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^\\.ci\\/scripts\\/install_dpcpp\\.sh$"],
+      "matchStrings": [
+        ".*\\b(?<depName>intel-oneapi-compiler-dpcpp-cpp)=(?<currentValue>\\d{4}\\.\\d+\\.\\d+-\\d+).*"
+      ],
+      "datasourceTemplate": "deb",
+      "registryUrlTemplate": "https://apt.repos.intel.com/oneapi?suite=all&components=main&binaryArch=amd64"
     }
   ]
 }

@@ -122,6 +122,7 @@ __all__ = [
     "_spmd_backend",
     "covariance",
     "decomposition",
+    "dummy",
     "ensemble",
     "neighbors",
     "primitives",

@@ -26,7 +26,7 @@ over the |onedal|. It has been deprecated in favor of the newer ``sklearnex`` mo
 same package, which offers a more idiomatic and higher-level interface for calling accelerated
 routines from the |onedal| in Python.
 
-Internally, ``daal4py`` is a Python wrapper over the `now-deprecated "DAAL" interface <https://uxlfoundation.github.io/oneDAL/index.html#oneapi-vs-daal>`__
+Internally, ``daal4py`` is a Python wrapper over the :ref:`legacy CPU-only "DAAL" interface <onedal:oneapi_vs_daal>`
 of the |onedal|, while ``sklearnex`` is a module built atop of the "oneAPI" interface, offering
 DPC-based features such as :ref:`GPU support <oneapi_gpu>`.
 

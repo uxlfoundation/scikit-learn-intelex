@@ -34,6 +34,7 @@ __all__ = [
     "config_context",
     "covariance",
     "decomposition",
+    "dummy",
     "ensemble",
     "get_config",
     "get_hyperparameters",

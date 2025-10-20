@@ -592,6 +592,19 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
             )
             # TODO: Fix to support integers as input
 
+            if self.n_outputs_ == 1:
+                xp, is_array_api_compliant = get_namespace(y)
+                sety = xp.unique_values(y) if is_array_api_compliant else np.unique(y)
+                num_classes = sety.shape[0]
+                patching_status.and_conditions(
+                    [
+                        (
+                            num_classes >= 2,
+                            "Number of classes must be at least 2.",
+                        ),
+                    ]
+                )
+
             _get_n_samples_bootstrap(n_samples=X.shape[0], max_samples=self.max_samples)
 
             if not self.bootstrap and self.max_samples is not None:

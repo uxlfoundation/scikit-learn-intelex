@@ -14,6 +14,8 @@
 # limitations under the License.
 # ===============================================================================
 
+import numpy as np
+import pandas as pd
 import pytest
 from numpy.testing import assert_allclose
 from sklearn.datasets import make_classification, make_regression
@@ -153,3 +155,42 @@ def test_sklearnex_import_et_regression(dataframe, queue):
     # Check that the trees aren't just empty nodes predicting the mean
     for estimator in rf.estimators_:
         assert estimator.tree_.children_left.shape[0] > 1
+
+
+@pytest.mark.allow_sklearn_fallback
+@pytest.mark.parametrize("dataframe, queue", get_dataframes_and_queues())
+def test_classifiers_work_on_single_class(dataframe, queue):
+    from sklearnex.ensemble import ExtraTreesClassifier, RandomForestClassifier
+
+    rng = np.random.default_rng(seed=123)
+    X = rng.standard_normal(size=(20, 10))
+    y = np.zeros(X.shape[0])
+    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+    y = _convert_to_dataframe(y, sycl_queue=queue, target_df=dataframe)
+
+    np.testing.assert_array_equal(
+        _as_numpy(RandomForestClassifier(n_estimators=1).fit(X, y).predict(X)),
+        _as_numpy(y),
+    )
+    np.testing.assert_array_equal(
+        _as_numpy(ExtraTreesClassifier(n_estimators=1).fit(X, y).predict(X)),
+        _as_numpy(y),
+    )
+
+
+@pytest.mark.allow_sklearn_fallback
+def test_classifiers_work_on_single_class_non_numeric():
+    from sklearnex.ensemble import ExtraTreesClassifier, RandomForestClassifier
+
+    rng = np.random.default_rng(seed=123)
+    X = rng.standard_normal(size=(20, 10))
+    y = pd.Series(np.repeat("qwerty", X.shape[0]))
+
+    np.testing.assert_array_equal(
+        RandomForestClassifier(n_estimators=1).fit(X, y).predict(X),
+        y,
+    )
+    np.testing.assert_array_equal(
+        ExtraTreesClassifier(n_estimators=1).fit(X, y).predict(X),
+        y,
+    )

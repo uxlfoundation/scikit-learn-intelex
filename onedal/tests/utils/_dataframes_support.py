@@ -134,7 +134,7 @@ def _as_numpy(obj, *args, **kwargs):
     if dpctl_available and isinstance(obj, dpt.usm_ndarray):
         return dpt.to_numpy(obj, *args, **kwargs)
     if isinstance(obj, pd.DataFrame) or isinstance(obj, pd.Series):
-        return obj.to_array(*args, **kwargs)
+        return obj.to_numpy(*args, **kwargs)
     if sp.issparse(obj):
         return obj.toarray(*args, **kwargs)
     return np.asarray(obj, *args, **kwargs)

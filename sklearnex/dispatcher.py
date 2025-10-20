@@ -101,7 +101,13 @@ def get_patch_map_core(preview=False):
         import sklearn.cluster as cluster_module
         import sklearn.covariance as covariance_module
         import sklearn.decomposition as decomposition_module
+        import sklearn.dummy as dummy_module
         import sklearn.ensemble as ensemble_module
+
+        if sklearn_check_version("1.4"):
+            import sklearn.ensemble._gb as _gb_module
+        else:
+            import sklearn.ensemble._gb_losses as _gb_module
         import sklearn.linear_model as linear_model_module
         import sklearn.manifold as manifold_module
         import sklearn.metrics as metrics_module
@@ -124,6 +130,7 @@ def get_patch_map_core(preview=False):
             IncrementalEmpiricalCovariance as IncrementalEmpiricalCovariance_sklearnex,
         )
         from .decomposition import PCA as PCA_sklearnex
+        from .dummy import DummyRegressor as DummyRegressor_sklearnex
         from .ensemble import ExtraTreesClassifier as ExtraTreesClassifier_sklearnex
         from .ensemble import ExtraTreesRegressor as ExtraTreesRegressor_sklearnex
         from .ensemble import RandomForestClassifier as RandomForestClassifier_sklearnex
@@ -407,6 +414,31 @@ def get_patch_map_core(preview=False):
                     None,
                 ]
             ]
+
+        # DummyRegressor
+        mapping["dummyregressor"] = [
+            [
+                (
+                    dummy_module,
+                    "DummyRegressor",
+                    DummyRegressor_sklearnex,
+                ),
+                None,
+            ]
+        ]
+
+        # Required patching of DummyRegressor in the gradient boosting
+        # module as it is used in the GradientBoosting algorithms
+        mapping["gb_dummyregressor"] = [
+            [
+                (
+                    _gb_module,
+                    "DummyRegressor",
+                    DummyRegressor_sklearnex,
+                ),
+                None,
+            ]
+        ]
 
         # Configs
         mapping["set_config"] = [
