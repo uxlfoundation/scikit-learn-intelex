@@ -255,17 +255,10 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                 for neighbor_idx in range(pred_labels.shape[1]):
                     class_label = int(pred_labels[sample_idx, neighbor_idx])
                     weight = weights[sample_idx, neighbor_idx]
-                    # Update probability for this class
-                    sample_proba = xp.asarray(
-                        [
-                            (
-                                sample_proba[i] + weight
-                                if i == class_label
-                                else sample_proba[i]
-                            )
-                            for i in range(classes_k.size)
-                        ]
-                    )
+                    # Update probability for this class using array indexing
+                    # Create a mask for this class and add weight where mask is True
+                    mask = xp.arange(classes_k.size) == class_label
+                    sample_proba = sample_proba + xp.where(mask, weight, 0.0)
                 proba_list.append(sample_proba)
             proba_k = xp.stack(proba_list, axis=0)  # Shape: (n_queries, n_classes)
 
