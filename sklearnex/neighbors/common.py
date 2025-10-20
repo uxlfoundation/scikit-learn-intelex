@@ -560,7 +560,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             y_k = np.asarray(y[:, k])
             classes, indices = np.unique(y_k, return_inverse=True)
             self.classes_.append(classes)
-            self._y[:, k] = xp.asarray(indices)
+            self._y[:, k] = xp.asarray(indices, dtype=xp.int32)
 
         if not self.outputs_2d_:
             self.classes_ = self.classes_[0]
