@@ -83,9 +83,9 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
     @wrap_output_data
     def predict(self, X):
         import sys
-        print(f"DEBUG KNeighborsRegressor.predict START: X type={type(X)}, X shape={getattr(X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
+        print(f"DEBUG KNeighborsRegressor.predict START: X type={type(X)}", file=sys.stderr)
         check_is_fitted(self)
-        check_feature_names(self, X, reset=False)
+        
         result = dispatch(
             self,
             "predict",
@@ -103,7 +103,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         import sys
         print(f"DEBUG KNeighborsRegressor.score START: X type={type(X)}, y type={type(y)}", file=sys.stderr)
         check_is_fitted(self)
-        check_feature_names(self, X, reset=False)
+        
         result = dispatch(
             self,
             "score",
@@ -128,8 +128,6 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
             self._validate_n_neighbors(n_neighbors)
         
         check_is_fitted(self)
-        if X is not None:
-            check_feature_names(self, X, reset=False)
         
         # Validate kneighbors parameters (inherited from KNeighborsDispatchingBase)
         self._kneighbors_validation(X, n_neighbors)
@@ -157,9 +155,9 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         print(f"DEBUG: Array namespace: {xp}", file=sys.stderr)
         
         # REFACTOR: Use validate_data to convert pandas to numpy and validate types for X only
-        # force_all_finite=False to allow nan_euclidean metric to work (will fallback to sklearn)
+        # ensure_all_finite=False to allow nan_euclidean metric to work (will fallback to sklearn)
         X = validate_data(
-            self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr"
+            self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", ensure_all_finite=False
         )
         print(f"DEBUG: After validate_data, X type={type(X)}, y type={type(y)}", file=sys.stderr)
         
@@ -239,16 +237,10 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         return result
     
     def _predict_gpu(self, X, queue=None):
-        """GPU prediction path - validates X and calls onedal backend."""
+        """GPU prediction path - calls onedal backend."""
         import sys
         print(f"DEBUG KNeighborsRegressor._predict_gpu START: X type={type(X)}", file=sys.stderr)
-        # Validate and convert X (pandas to numpy if needed) only if X is not None
-        if X is not None:
-            xp, _ = get_namespace(X)
-            X = validate_data(
-                self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False, force_all_finite=False
-            )
-        # Call onedal backend for GPU prediction
+        # Call onedal backend for GPU prediction (X is already validated by predict())
         result = self._onedal_estimator._predict_gpu(X)
         print(f"DEBUG KNeighborsRegressor._predict_gpu END: result type={type(result)}", file=sys.stderr)
         return result
@@ -269,6 +261,13 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
     ):
         import sys
         print(f"DEBUG KNeighborsRegressor._onedal_kneighbors START: X type={type(X)}, n_neighbors={n_neighbors}, return_distance={return_distance}", file=sys.stderr)
+        
+        # Validate X to convert array API/pandas to numpy and check feature names (only if X is not None)
+        if X is not None:
+            xp, _ = get_namespace(X)
+            X = validate_data(
+                self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False, ensure_all_finite=False
+            )
         
         # REFACTOR: All post-processing now in sklearnex following PCA pattern
         # Prepare inputs and handle query_is_train case
