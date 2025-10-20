@@ -200,3 +200,46 @@ def sigmoid_kernel(X, Y=None, gamma=1.0, coef0=0.0, queue=None):
     return _compute_kernel(
         {"method": "dense", "scale": gamma, "shift": coef0}, backend.sigmoid_kernel, X, Y
     )
+
+@supports_queue
+def polynomial_kernel(X, Y=None, gamma=1.0, coef0=0.0, degree=3, queue=None):
+    """
+    Wrapper for poly_kernel to match scikit-learn API.
+
+    Computes the polynomial kernel between X and Y:
+
+        K(x, y) = (gamma * <x, y> + coef0)^degree
+
+    Parameters
+    ----------
+    X : ndarray of shape (n_samples_X, n_features)
+        A feature array.
+
+    Y : ndarray of shape (n_samples_Y, n_features), optional
+        Second feature array. If None, uses X.
+
+    gamma : float, default=1.0
+        Multiplication value to scale the inner product.
+
+    coef0 : float, default=0.0
+        Constant offset added to scaled inner product.
+
+    degree : int, default=3
+        Polynomial degree.
+
+    queue : SyclQueue or None, default=None
+        Optional SYCL Queue object for device code execution.
+
+    Returns
+    -------
+    kernel_matrix : ndarray of shape (n_samples_X, n_samples_Y)
+        The polynomial kernel matrix.
+    """
+    X, Y = _check_inputs(X, Y)
+    return _compute_kernel(
+        {"method": "dense", "scale": gamma, "shift": coef0, "degree": degree},
+        backend.polynomial_kernel,
+        X,
+        Y,
+    )
+
