@@ -259,7 +259,7 @@ class NuSVC(BaseSVC, _sklearn_NuSVC):
 
             weight_per_class = [
                 xp.sum(sample_weight[y == class_label])
-                for class_label in xp.arange(xp.max(y), dtype=y.dtype)
+                for class_label in xp.arange(xp.max(y) + 1, dtype=y.dtype)
             ]
 
         for i in range(len(weight_per_class)):
