@@ -14,10 +14,9 @@
 # limitations under the License.
 # ==============================================================================
 
-import numbers
-import warnings
-from abc import ABCMeta, abstractmethod
 import math
+import numbers
+from abc import ABCMeta, abstractmethod
 
 from daal4py.sklearn._utils import daal_check_version
 from onedal._device_offload import supports_queue
@@ -27,12 +26,11 @@ from sklearnex import get_hyperparameters
 
 from .._config import _get_config
 from ..common._estimator_checks import _check_is_fitted
-from ..common._mixin import ClassifierMixin, RegressorMixin
 from ..datatypes import from_table, to_table
 from ..utils._array_api import _get_sycl_namespace
 
 
-class BaseForest(BaseEnsemble, metaclass=ABCMeta):
+class BaseForest(metaclass=ABCMeta):
     @abstractmethod
     def __init__(
         self,
@@ -110,13 +108,13 @@ class BaseForest(BaseEnsemble, metaclass=ABCMeta):
         if max_samples is None:
             return 1.0
 
-        if isinstance(max_samples, numbers.Integral):
+        elif isinstance(max_samples, numbers.Integral):
             if not (1 <= max_samples <= n_samples):
                 msg = "`max_samples` must be in range 1 to {} but got value {}"
                 raise ValueError(msg.format(n_samples, max_samples))
             return max(float(max_samples / n_samples), 1 / n_samples)
 
-        if isinstance(max_samples, numbers.Real):
+        elif isinstance(max_samples, numbers.Real):
             return max(float(max_samples), 1 / n_samples)
 
         msg = "`max_samples` should be int or float, but got type '{}'"
@@ -125,12 +123,14 @@ class BaseForest(BaseEnsemble, metaclass=ABCMeta):
     def _get_onedal_params(self, data):
         n_samples, n_features = data.shape
 
-        self.observations_per_tree_fraction = self._get_observations_per_tree_fraction(
-            n_samples=n_samples, max_samples=self.max_samples
-        )
         self.observations_per_tree_fraction = (
-            self.observations_per_tree_fraction if bool(self.bootstrap) else 1.0
+            self._get_observations_per_tree_fraction(
+                n_samples=n_samples, max_samples=self.max_samples
+            )
+            if bool(self.bootstrap)
+            else 1.0
         )
+
         min_observations_in_leaf_node = (
             self.min_samples_leaf
             if isinstance(self.min_samples_leaf, numbers.Integral)
@@ -167,159 +167,93 @@ class BaseForest(BaseEnsemble, metaclass=ABCMeta):
             "bootstrap": bool(self.bootstrap),
             "error_metric_mode": self.error_metric_mode,
             "variable_importance_mode": self.variable_importance_mode,
+            "class_count": self.class_count_,
         }
-        if isinstance(self, ClassifierMixin):
-            onedal_params["class_count"] = (
-                0 if self.classes_ is None else len(self.classes_)
-            )
+
         if daal_check_version((2023, "P", 101)):
             onedal_params["splitter_mode"] = self.splitter_mode
         return onedal_params
 
-    def _validate_targets(self, y, dtype):
-        self.class_weight_ = None
-        self.classes_ = None
-        return _column_or_1d(y, warn=True).astype(dtype, copy=False)
-
-    def _get_sample_weight(self, sample_weight, X):
-        sample_weight = np.asarray(sample_weight, dtype=X.dtype).ravel()
-
-        sample_weight = _check_array(
-            sample_weight, accept_sparse=False, ensure_2d=False, dtype=X.dtype, order="C"
-        )
-
-        if sample_weight.size != X.shape[0]:
-            raise ValueError(
-                "sample_weight and X have incompatible shapes: "
-                "%r vs %r\n"
-                "Note: Sparse matrices cannot be indexed w/"
-                "boolean masks (use `indices=True` in CV)."
-                % (sample_weight.shape, X.shape)
-            )
-
-        return sample_weight
-
-    def _fit(self, X, y, sample_weight):
-        use_raw_input = _get_config().get("use_raw_input", False) is True
-        sua_iface, xp, _ = _get_sycl_namespace(X)
-
-        if not use_raw_input:
-            X, y = _check_X_y(
-                X,
-                y,
-                dtype=[np.float64, np.float32],
-                force_all_finite=True,
-                accept_sparse="csr",
-            )
-            y = self._validate_targets(y, X.dtype)
-        else:
-            if sua_iface is not None:
-                queue = X.sycl_queue
-            # try catch needed for raw_inputs + array_api data where unlike
-            # numpy the way to yield unique values is via `unique_values`
-            # This should be removed when refactored for gpu zero-copy
-            try:
-                self.classes_ = xp.unique(y)
-            except AttributeError:
-                self.classes_ = xp.unique_values(y)
-
-        self.n_features_in_ = X.shape[1]
-
+    @supports_queue
+    def fit(self, X, y, sample_weight=None, class_count=0, queue=None):
+        self.class_count_ = class_count
         if sample_weight is not None and len(sample_weight) > 0:
-            if not use_raw_input:
-                sample_weight = self._get_sample_weight(sample_weight, X)
             data = (X, y, sample_weight)
         else:
             data = (X, y)
-        data = to_table(*data, queue=QM.get_global_queue())
+        data = to_table(*data, queue=queue)
         params = self._get_onedal_params(data[0])
         train_result = self.train(params, *data)
 
         self._onedal_model = train_result.model
 
-        if self.oob_score:
-            if isinstance(self, ClassifierMixin):
-                self.oob_score_ = from_table(train_result.oob_err_accuracy).item()
-                self.oob_decision_function_ = from_table(
-                    train_result.oob_err_decision_function
-                )
-            else:
-                self.oob_score_ = from_table(train_result.oob_err_r2).item()
-                self.oob_prediction_ = from_table(train_result.oob_err_prediction)
+        return train_result
 
-        return self
+    @supports_queue
+    def predict(self, X, queue=None):
+        hparams = get_hyperparameters("decision_forest", "infer")
 
-    def _create_model(self, module):
-        # TODO:
-        # update error msg.
-        raise NotImplementedError("Creating model is not supported.")
-
-    def _predict(self, X, hparams=None):
-        _check_is_fitted(self)
-
-        use_raw_input = _get_config().get("use_raw_input", False) is True
-        sua_iface, xp, _ = _get_sycl_namespace(X)
-
-        # All data should use the same sycl queue
-        if use_raw_input and sua_iface is not None:
-            queue = X.sycl_queue
-
-        if not use_raw_input:
-            X = _check_array(
-                X,
-                dtype=[np.float64, np.float32],
-                force_all_finite=True,
-                accept_sparse=False,
-            )
-            _check_n_features(self, X, False)
-
-        model = self._onedal_model
         queue = QM.get_global_queue()
         X_table = to_table(X, queue=queue)
         params = self._get_onedal_params(X_table)
         if hparams is not None and not hparams.is_default:
-            result = self.infer(params, hparams.backend, model, X_table)
+            result = self.infer(params, hparams.backend, self._onedal_model, X_table)
         else:
-            result = self.infer(params, model, X_table)
+            result = self.infer(params, self._onedal_model, X_table)
 
-        y = from_table(result.responses, like=X)
+        y = from_table(result.responses, like=X)[:, 0]
         return y
 
-    def _predict_proba(self, X, hparams=None):
-        _check_is_fitted(self)
-        use_raw_input = _get_config().get("use_raw_input", False) is True
-        sua_iface, xp, _ = _get_sycl_namespace(X)
 
-        # All data should use the same sycl queue
-        if use_raw_input and sua_iface is not None:
-            queue = X.sycl_queue
-        else:
-            queue = QM.get_global_queue()
+class ForestClassifier(BaseForest):
 
-        if not use_raw_input:
-            X = _check_array(
-                X,
-                dtype=[np.float64, np.float32],
-                force_all_finite=True,
-                accept_sparse=False,
-            )
-            _check_n_features(self, X, False)
+    @supports_queue
+    def predict_proba(self, X, queue=None):
+        hparams = get_hyperparameters("decision_forest", "infer")
         X = to_table(X, queue=queue)
         params = self._get_onedal_params(X)
         params["infer_mode"] = "class_probabilities"
 
-        model = self._onedal_model
         if hparams is not None and not hparams.is_default:
-            result = self.infer(params, hparams.backend, model, X)
+            result = self.infer(params, hparams.backend, self._onedal_model, X)
         else:
-            result = self.infer(params, model, X)
+            result = self.infer(params, self._onedal_model, X)
 
         # TODO: fix probabilities out of [0, 1] interval on oneDAL side
         pred = from_table(result.probabilities)
-        return pred.clip(0.0, 1.0)
+        pred[pred > 1.0] = 1.0
+        pred[pred < 0.0] = 0.0
+        return pred
+
+    @supports_queue
+    def fit(self, X, y, sample_weight=None, class_count=0, queue=None):
+        train_result = super().fit(
+            X, y, sample_weight=sample_weight, class_count=class_count, queue=queue
+        )
+
+        self.oob_score_ = float(from_table(train_result.oob_err_accuracy, like=X)[0, 0])
+        self.oob_decision_function_ = from_table(
+            train_result.oob_err_decision_function, like=X
+        )
+
+        return self
 
 
-class RandomForestClassifier(ClassifierMixin, BaseForest, metaclass=ABCMeta):
+class ForestRegressor(BaseForest):
+
+    @supports_queue
+    def fit(self, X, y, sample_weight=None, class_count=0, queue=None):
+        train_result = super().fit(
+            X, y, sample_weight=sample_weight, class_count=class_count, queue=queue
+        )
+
+        self.oob_score_ = float(from_table(train_result.oob_err_r2)[0, 0])
+        self.oob_prediction_ = from_table(train_result.oob_err_prediction)
+
+        return self
+
+
+class RandomForestClassifier(ForestClassifier):
     def __init__(
         self,
         n_estimators=100,
@@ -383,44 +317,8 @@ class RandomForestClassifier(ClassifierMixin, BaseForest, metaclass=ABCMeta):
     @bind_default_backend("decision_forest.classification")
     def infer(self, *args, **kwargs): ...
 
-    def _validate_targets(self, y, dtype):
-        y, self.class_weight_, self.classes_ = _validate_targets(
-            y, self.class_weight, dtype
-        )
 
-        # Decapsulate classes_ attributes
-        # TODO:
-        # align with `n_classes_` and `classes_` attr with daal4py implementations.
-        # if hasattr(self, "classes_"):
-        #    self.n_classes_ = self.classes_
-        return y
-
-    @supports_queue
-    def fit(self, X, y, sample_weight=None, queue=None):
-        return self._fit(X, y, sample_weight)
-
-    @supports_queue
-    def predict(self, X, queue=None):
-        _, xp, _ = _get_sycl_namespace(X)
-        hparams = get_hyperparameters("decision_forest", "infer")
-        pred = xp.reshape(self._predict(X, hparams), -1)
-
-        try:
-            return xp.take(
-                xp.asarray(self.classes_, device=pred.sycl_queue),
-                xp.astype(xp.reshape(pred, (-1,)), xp.int64),
-            )
-        except AttributeError:
-            return np.take(self.classes_, pred.ravel().astype(np.int64, casting="unsafe"))
-
-    @supports_queue
-    def predict_proba(self, X, queue=None):
-        hparams = get_hyperparameters("decision_forest", "infer")
-
-        return super()._predict_proba(X, hparams)
-
-
-class RandomForestRegressor(RegressorMixin, BaseForest, metaclass=ABCMeta):
+class RandomForestRegressor(ForestRegressor):
     def __init__(
         self,
         n_estimators=100,
@@ -483,21 +381,8 @@ class RandomForestRegressor(RegressorMixin, BaseForest, metaclass=ABCMeta):
     @bind_default_backend("decision_forest.regression")
     def infer(self, *args, **kwargs): ...
 
-    @supports_queue
-    def fit(self, X, y, sample_weight=None, queue=None):
-        if sample_weight is not None:
-            if hasattr(sample_weight, "__array__"):
-                sample_weight[sample_weight == 0.0] = 1.0
-            sample_weight = [sample_weight]
-        return self._fit(X, y, sample_weight)
 
-    @supports_queue
-    def predict(self, X, queue=None):
-        _, xp, _ = _get_sycl_namespace(X)
-        return xp.reshape(self._predict(X), -1)
-
-
-class ExtraTreesClassifier(ClassifierMixin, BaseForest, metaclass=ABCMeta):
+class ExtraTreesClassifier(ForestClassifier):
     def __init__(
         self,
         n_estimators=100,
@@ -560,34 +445,8 @@ class ExtraTreesClassifier(ClassifierMixin, BaseForest, metaclass=ABCMeta):
     @bind_default_backend("decision_forest.classification")
     def infer(self, *args, **kwargs): ...
 
-    def _validate_targets(self, y, dtype):
-        y, self.class_weight_, self.classes_ = _validate_targets(
-            y, self.class_weight, dtype
-        )
 
-        # Decapsulate classes_ attributes
-        # TODO:
-        # align with `n_classes_` and `classes_` attr with daal4py implementations.
-        # if hasattr(self, "classes_"):
-        #    self.n_classes_ = self.classes_
-        return y
-
-    @supports_queue
-    def fit(self, X, y, sample_weight=None, queue=None):
-        return self._fit(X, y, sample_weight)
-
-    @supports_queue
-    def predict(self, X, queue=None):
-        pred = self._predict(X)
-
-        return np.take(self.classes_, pred.ravel().astype(np.int64, casting="unsafe"))
-
-    @supports_queue
-    def predict_proba(self, X, queue=None):
-        return super()._predict_proba(X)
-
-
-class ExtraTreesRegressor(RegressorMixin, BaseForest, metaclass=ABCMeta):
+class ExtraTreesRegressor(ForestRegressor):
     def __init__(
         self,
         n_estimators=100,
@@ -649,15 +508,3 @@ class ExtraTreesRegressor(RegressorMixin, BaseForest, metaclass=ABCMeta):
 
     @bind_default_backend("decision_forest.regression")
     def infer(self, *args, **kwargs): ...
-
-    @supports_queue
-    def fit(self, X, y, sample_weight=None, queue=None):
-        if sample_weight is not None:
-            if hasattr(sample_weight, "__array__"):
-                sample_weight[sample_weight == 0.0] = 1.0
-            sample_weight = [sample_weight]
-        return self._fit(X, y, sample_weight)
-
-    @supports_queue
-    def predict(self, X, queue=None):
-        return self._predict(X).ravel()
