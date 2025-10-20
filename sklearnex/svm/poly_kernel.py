@@ -7,7 +7,7 @@
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
-# Unless required by applicable law or agreed to in writing,
+# Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
@@ -15,16 +15,25 @@
 # ==============================================================================
 
 import numpy as np
+from scipy import sparse
+from sklearn.metrics.pairwise import polynomial_kernel as sklearn_poly_kernel
 
 from onedal.primitives import poly_kernel as onedal_poly_kernel
 
 
-def poly_kernel(X, Y=None, gamma=1.0, coef0=0.0, degree=3, queue=None):
+def poly_kernel(
+    X,
+    Y=None,
+    degree=3,
+    gamma=None,
+    coef0=1,
+    queue=None,
+):
     """
-    Sklearnex interface for the polynomial kernel using oneDAL backend.
+    Compute the polynomial kernel using the oneDAL backend when possible.
 
-    K(x, y) = (gamma * <x, y> + coef0) ** degree
-    for each pair of rows x in X and y in Y.
+    Falls back to scikit-learn's ``polynomial_kernel`` for unsupported cases
+    such as sparse inputs.
 
     Parameters
     ----------
@@ -32,16 +41,16 @@ def poly_kernel(X, Y=None, gamma=1.0, coef0=0.0, degree=3, queue=None):
         Input feature array.
 
     Y : array-like of shape (n_samples_Y, n_features), default=None
-        Optional second feature array. If None, Y = X.
-
-    gamma : float, default=1.0
-        Scaling factor for the inner product.
-
-    coef0 : float, default=0.0
-        Constant term added to scaled inner product.
+        Optional second feature array. If None, ``Y = X``.
 
     degree : int, default=3
         Degree of the polynomial kernel.
+
+    gamma : float, default=None
+        Scaling factor for the inner product. If None, ``1 / n_features`` is used.
+
+    coef0 : float, default=1
+        Constant term added to the scaled inner product.
 
     queue : SyclQueue or None, default=None
         Optional SYCL queue for device execution.
@@ -49,8 +58,17 @@ def poly_kernel(X, Y=None, gamma=1.0, coef0=0.0, degree=3, queue=None):
     Returns
     -------
     kernel_matrix : ndarray of shape (n_samples_X, n_samples_Y)
-        Polynomial kernel Gram matrix.
+        Computed polynomial kernel Gram matrix.
     """
+    # Fall back to sklearn if sparse input
+    if sparse.issparse(X) or (Y is not None and sparse.issparse(Y)):
+        return sklearn_poly_kernel(X, Y, degree=degree, gamma=gamma, coef0=coef0)
+
+    # Handle gamma default like sklearn
+    if gamma is None:
+        gamma = 1.0 / X.shape[1]
+
+    # Use oneDAL accelerated path
     return onedal_poly_kernel(
         X, Y=Y, gamma=gamma, coef0=coef0, degree=degree, queue=queue
     )
