@@ -87,8 +87,6 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
             self._validate_n_neighbors(n_neighbors)
         
         check_is_fitted(self)
-        if X is not None:
-            check_feature_names(self, X, reset=False)
         
         # Validate kneighbors parameters (inherited from KNeighborsDispatchingBase)
         self._kneighbors_validation(X, n_neighbors)
@@ -160,9 +158,9 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         xp, _ = get_namespace(X)
         
         # REFACTOR: Use validate_data to convert pandas to numpy and validate types
-        # force_all_finite=False to allow nan_euclidean metric to work (will fallback to sklearn)
+        # ensure_all_finite=False to allow nan_euclidean metric to work (will fallback to sklearn)
         X = validate_data(
-            self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr"
+            self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", ensure_all_finite=False
         )
         print(f"DEBUG: After validate_data, X type={type(X)}", file=sys.stderr)
         
@@ -198,6 +196,13 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
     ):
         import sys
         print(f"DEBUG NearestNeighbors._onedal_kneighbors START: X type={type(X)}, n_neighbors={n_neighbors}, return_distance={return_distance}", file=sys.stderr)
+        
+        # Validate X to convert array API/pandas to numpy and check feature names (only if X is not None)
+        if X is not None:
+            xp, _ = get_namespace(X)
+            X = validate_data(
+                self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False, ensure_all_finite=False
+            )
         
         # REFACTOR: All post-processing now in sklearnex following PCA pattern
         # Prepare inputs and handle query_is_train case (includes validation AFTER +=1)

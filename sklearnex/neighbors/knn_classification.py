@@ -86,7 +86,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         import sys
         print(f"DEBUG KNeighborsClassifier.predict START: X type={type(X)}, X shape={getattr(X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
         check_is_fitted(self)
-        check_feature_names(self, X, reset=False)
+        
         result = dispatch(
             self,
             "predict",
@@ -104,7 +104,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         import sys
         print(f"DEBUG KNeighborsClassifier.predict_proba START: X type={type(X)}, X shape={getattr(X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
         check_is_fitted(self)
-        check_feature_names(self, X, reset=False)
+        
         result = dispatch(
             self,
             "predict_proba",
@@ -122,7 +122,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         import sys
         print(f"DEBUG KNeighborsClassifier.score START: X type={type(X)}, y type={type(y)}", file=sys.stderr)
         check_is_fitted(self)
-        check_feature_names(self, X, reset=False)
+        
         result = dispatch(
             self,
             "score",
@@ -147,8 +147,6 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             self._validate_n_neighbors(n_neighbors)
         
         check_is_fitted(self)
-        if X is not None:
-            check_feature_names(self, X, reset=False)
         
         # Validate kneighbors parameters (inherited from KNeighborsDispatchingBase)
         self._kneighbors_validation(X, n_neighbors)
@@ -176,9 +174,9 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         print(f"DEBUG: Array namespace: {xp}", file=sys.stderr)
         
         # REFACTOR: Use validate_data to convert pandas to numpy and validate types
-        # force_all_finite=False to allow nan_euclidean metric to work (will fallback to sklearn)
+        # ensure_all_finite=False to allow nan_euclidean metric to work (will fallback to sklearn)
         X, y = validate_data(
-            self, X, y, dtype=[xp.float64, xp.float32], accept_sparse="csr"
+            self, X, y, dtype=[xp.float64, xp.float32], accept_sparse="csr", ensure_all_finite=False
         )
         print(f"DEBUG: After validate_data, X type={type(X)}, y type={type(y)}", file=sys.stderr)
         
@@ -222,13 +220,6 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         import sys
         print(f"DEBUG KNeighborsClassifier._onedal_predict START: X type={type(X)}", file=sys.stderr)
         
-        # Validate X to convert array API to numpy
-        if X is not None:
-            xp, _ = get_namespace(X)
-            X = validate_data(
-                self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
-            )
-        
         # Use the unified helper from common.py (calls kneighbors + computes prediction)
         # This properly handles X=None (LOOCV) case
         result = self._predict_skl_classification(X)
@@ -257,6 +248,13 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     ):
         import sys
         print(f"DEBUG KNeighborsClassifier._onedal_kneighbors START: X type={type(X)}, n_neighbors={n_neighbors}, return_distance={return_distance}", file=sys.stderr)
+        
+        # Validate X to convert array API/pandas to numpy and check feature names (only if X is not None)
+        if X is not None:
+            xp, _ = get_namespace(X)
+            X = validate_data(
+                self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False, ensure_all_finite=False
+            )
         
         # REFACTOR: All post-processing now in sklearnex following PCA pattern
         # Prepare inputs and handle query_is_train case

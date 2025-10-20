@@ -58,12 +58,7 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
         if sklearn_check_version("1.2"):
             self._validate_params()
 
-        # REFACTOR: Use validate_data from sklearnex.utils.validation to convert pandas to numpy
-        X = validate_data(
-            self, X, dtype=[np.float64, np.float32], accept_sparse="csr"
-        )
-        print(f"DEBUG: After validate_data, X type={type(X)}", file=sys.stderr)
-
+        # Let _onedal_knn_fit (NearestNeighbors._onedal_fit) handle validation
         print(f"DEBUG LocalOutlierFactor._onedal_fit: Calling _onedal_knn_fit", file=sys.stderr)
         self._onedal_knn_fit(X, y, queue=queue)
 
@@ -178,8 +173,6 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
             self._validate_n_neighbors(n_neighbors)
         
         check_is_fitted(self)
-        if X is not None:
-            check_feature_names(self, X, reset=False)
         
         # Validate kneighbors parameters (inherited from KNeighborsDispatchingBase)
         self._kneighbors_validation(X, n_neighbors)
@@ -209,11 +202,12 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
         check_is_fitted(self)
         
         # Validate and convert X (pandas to numpy if needed)
+        xp, _ = get_namespace(X)
         X = validate_data(
-            self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
+            self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False, ensure_all_finite=False
         )
         
-        check_feature_names(self, X, reset=False)
+        # check_feature_names(self, X, reset=False)
 
         distances_X, neighbors_indices_X = self._kneighbors(
             X, n_neighbors=self.n_neighbors_

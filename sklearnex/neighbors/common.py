@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
+import sys
 import warnings
 from numbers import Integral
 
@@ -561,9 +562,10 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         return y
 
     def _fit_validation(self, X, y=None):
+        print(f"DEBUG _fit_validation CALLED: X type={type(X)}, y type={type(y)}", file=sys.stderr)
         if sklearn_check_version("1.2"):
             self._validate_params()
-        check_feature_names(self, X, reset=True)
+        # check_feature_names(self, X, reset=True)
         # Validate n_neighbors parameter
         self._validate_n_neighbors(self.n_neighbors)
         if self.metric_params is not None and "p" in self.metric_params:
