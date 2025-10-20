@@ -180,13 +180,17 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         self.p = p
         self.metric_params = metric_params
 
-    def _validate_targets(self, y, dtype):
-        arr = _column_or_1d(y, warn=True)
-
-        try:
-            return arr.astype(dtype, copy=False)
-        except ValueError:
-            return arr
+    # REFACTOR: _validate_targets commented out - all data conversion/validation moved to sklearnex layer
+    # Following PCA pattern: onedal should not do any data type conversion
+    # The sklearnex layer prepares data in the correct format before calling onedal
+    # Original code kept for reference:
+    # def _validate_targets(self, y, dtype):
+    #     arr = _column_or_1d(y, warn=True)
+    #
+    #     try:
+    #         return arr.astype(dtype, copy=False)
+    #     except ValueError:
+    #         return arr
 
     # REFACTOR NOTE: _validate_n_classes moved to sklearnex/neighbors/common.py
     # This method is no longer used in the onedal layer - all validation happens in sklearnex
@@ -299,8 +303,18 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         gpu_device = queue is not None and queue.sycl_device.is_gpu
 
         print(f"DEBUG oneDAL _fit: Before _onedal_fit, X type={type(X)}, _fit_y type={type(_fit_y)}", file=sys.stderr)
+        # REFACTOR: All data preparation including reshaping moved to sklearnex layer
+        # Following PCA pattern: onedal is a thin wrapper, no data manipulation
+        # sklearnex prepares self._y in the correct shape before calling fit()
+        # Original code kept for reference:
+        # if _is_classifier(self) or (_is_regressor(self) and gpu_device):
+        #     _fit_y = self._validate_targets(self._y, X.dtype).reshape((-1, 1))
+        #     OR for refactor without _validate_targets:
+        #     _fit_y = self._y.reshape((-1, 1))
+        
+        # REFACTOR: Just pass self._y as-is - sklearnex should have already reshaped it
         if _is_classifier(self) or (_is_regressor(self) and gpu_device):
-            _fit_y = self._validate_targets(self._y, X.dtype).reshape((-1, 1))
+            _fit_y = self._y
         result = self._onedal_fit(X, _fit_y)
         print(f"DEBUG oneDAL _fit: After _onedal_fit, self._fit_X type={type(self._fit_X)}, shape={getattr(self._fit_X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
 
@@ -504,8 +518,10 @@ class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
     def _onedal_fit(self, X, y):
         # global queue is set as per user configuration (`target_offload`) or from data prior to calling this internal function
         queue = QM.get_global_queue()
-        params = self._get_onedal_params(X, y)
+        # REFACTOR: Convert to table FIRST, then get params from table (following PCA pattern)
+        # This ensures dtype is normalized (array API dtype -> numpy dtype)
         X_table, y_table = to_table(X, y, queue=queue)
+        params = self._get_onedal_params(X_table, y)
         return self.train(params, X_table, y_table).model
 
     def _onedal_predict(self, model, X, params):
@@ -746,8 +762,11 @@ class NearestNeighbors(NeighborsBase):
     def _onedal_fit(self, X, y):
         # global queue is set as per user configuration (`target_offload`) or from data prior to calling this internal function
         queue = QM.get_global_queue()
+        # REFACTOR: Convert to table FIRST, then get params from table (following PCA pattern)
+        # This ensures dtype is normalized (array API dtype -> numpy dtype)
+        # Note: NearestNeighbors has no y, so only convert X to avoid y becoming a table
+        X = to_table(X, queue=queue)
         params = self._get_onedal_params(X, y)
-        X, y = to_table(X, y, queue=queue)
         return self.train(params, X).model
 
     def _onedal_predict(self, model, X, params):

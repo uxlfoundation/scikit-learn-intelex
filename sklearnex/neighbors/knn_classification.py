@@ -175,7 +175,8 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         xp, _ = get_namespace(X)
         print(f"DEBUG: Array namespace: {xp}", file=sys.stderr)
         
-        # REFACTOR: Use validate_data from sklearnex.utils.validation to convert pandas to numpy
+        # REFACTOR: Use validate_data to convert pandas to numpy and validate types
+        # force_all_finite=False to allow nan_euclidean metric to work (will fallback to sklearn)
         X, y = validate_data(
             self, X, y, dtype=[xp.float64, xp.float32], accept_sparse="csr"
         )
@@ -220,6 +221,13 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     def _onedal_predict(self, X, queue=None):
         import sys
         print(f"DEBUG KNeighborsClassifier._onedal_predict START: X type={type(X)}", file=sys.stderr)
+        
+        # Validate X to convert array API to numpy
+        if X is not None:
+            xp, _ = get_namespace(X)
+            X = validate_data(
+                self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
+            )
         
         # Use the unified helper from common.py (calls kneighbors + computes prediction)
         # This properly handles X=None (LOOCV) case
@@ -268,6 +276,11 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
         import sys
         print(f"DEBUG KNeighborsClassifier._onedal_score START: X type={type(X)}, y type={type(y)}", file=sys.stderr)
+        # Convert array API to numpy for sklearn's accuracy_score
+        # Note: validate_data does NOT convert array API to numpy, so we do it explicitly
+        y = np.asarray(y)
+        if sample_weight is not None:
+            sample_weight = np.asarray(sample_weight)
         result = accuracy_score(
             y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
         )

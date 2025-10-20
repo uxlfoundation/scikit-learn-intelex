@@ -149,14 +149,33 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             _y = xp.reshape(_y, (-1, 1))
         
         if weights is None:
-            y_pred = xp.mean(_y[neigh_ind], axis=1)
+            # Array API: Use take() per row since array API take() only supports 1-D indices
+            # Build result by gathering rows one at a time
+            gathered_list = []
+            for i in range(neigh_ind.shape[0]):
+                # Get indices for this sample's neighbors
+                sample_indices = neigh_ind[i, ...]  # Shape: (n_neighbors,)
+                # Gather those rows from _y
+                sample_neighbors = xp.take(_y, sample_indices, axis=0)  # Shape: (n_neighbors, n_outputs)
+                gathered_list.append(sample_neighbors)
+            # Stack and compute mean
+            gathered = xp.stack(gathered_list, axis=0)  # Shape: (n_samples, n_neighbors, n_outputs)
+            y_pred = xp.mean(gathered, axis=1)
         else:
             y_pred = xp.empty((neigh_ind.shape[0], _y.shape[1]), dtype=xp.float64)
             denom = xp.sum(weights, axis=1)
             
             for j in range(_y.shape[1]):
-                num = xp.sum(_y[neigh_ind, j] * weights, axis=1)
-                y_pred[:, j] = num / denom
+                # Array API: Iterate over samples to gather values
+                y_col_j = _y[:, j, ...]  # Shape: (n_train_samples,)
+                gathered_vals = []
+                for i in range(neigh_ind.shape[0]):
+                    sample_indices = neigh_ind[i, ...]  # Shape: (n_neighbors,)
+                    sample_vals = xp.take(y_col_j, sample_indices, axis=0)  # Shape: (n_neighbors,)
+                    gathered_vals.append(sample_vals)
+                gathered_j = xp.stack(gathered_vals, axis=0)  # Shape: (n_samples, n_neighbors)
+                num = xp.sum(gathered_j * weights, axis=1)
+                y_pred[:, j, ...] = num / denom
         
         if y_train.ndim == 1:
             y_pred = xp.reshape(y_pred, (-1,))
@@ -192,17 +211,42 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         
         weights = self._get_weights(neigh_dist, weights_param)
         if weights is None:
-            weights = xp.ones_like(neigh_ind)
+            # REFACTOR: Ensure weights is float for array API type promotion
+            # neigh_ind is int, so ones_like would give int, but we need float
+            weights = xp.ones_like(neigh_ind, dtype=xp.float64)
         
-        all_rows = xp.arange(n_queries)
         probabilities = []
         for k, classes_k in enumerate(classes_):
-            pred_labels = _y[:, k][neigh_ind]
-            proba_k = xp.zeros((n_queries, classes_k.size))
+            # Get predicted labels for each neighbor: shape (n_samples, n_neighbors)
+            # _y[:, k] gives training labels for output k, then gather using neigh_ind
+            y_col_k = _y[:, k, ...]
             
-            # a simple ':' index doesn't work right
-            for i, idx in enumerate(pred_labels.T):  # loop is O(n_neighbors)
-                proba_k[all_rows, idx] += weights[:, i]
+            # Array API: Use take() with iteration since take() only supports 1-D indices
+            pred_labels_list = []
+            for i in range(neigh_ind.shape[0]):
+                sample_indices = neigh_ind[i, ...]
+                sample_labels = xp.take(y_col_k, sample_indices, axis=0)
+                pred_labels_list.append(sample_labels)
+            pred_labels = xp.stack(pred_labels_list, axis=0)  # Shape: (n_queries, n_neighbors)
+            
+            proba_k = xp.zeros((n_queries, classes_k.size), dtype=xp.float64)
+            
+            # Array API: Cannot use fancy indexing __setitem__ like proba_k[all_rows, idx] = ...
+            # Instead, build probabilities sample by sample
+            proba_list = []
+            for sample_idx in range(n_queries):
+                sample_proba = xp.zeros((classes_k.size,), dtype=xp.float64)
+                # For this sample, accumulate weights for each neighbor's predicted class
+                for neighbor_idx in range(pred_labels.shape[1]):
+                    class_label = int(pred_labels[sample_idx, neighbor_idx])
+                    weight = weights[sample_idx, neighbor_idx]
+                    # Update probability for this class
+                    sample_proba = xp.asarray([
+                        sample_proba[i] + weight if i == class_label else sample_proba[i]
+                        for i in range(classes_k.size)
+                    ])
+                proba_list.append(sample_proba)
+            proba_k = xp.stack(proba_list, axis=0)  # Shape: (n_queries, n_classes)
             
             # normalize 'votes' into real [0,1] probabilities
             normalizer = xp.sum(proba_k, axis=1)[:, xp.newaxis]
@@ -258,6 +302,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             result = [classes_k[xp.argmax(proba_k, axis=1)]
                       for classes_k, proba_k in zip(self.classes_, proba.T)]
             result = xp.asarray(result).T
+        
         return result
 
     def _validate_targets(self, y, dtype):
@@ -348,9 +393,11 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         query_is_train = X is None
         
         if X is not None:
-            # Validate and convert X (pandas to numpy if needed)
-            X = validate_data(
-                self, X, dtype=[np.float64, np.float32], accept_sparse="csr", reset=False
+            # Get the array namespace to use correct dtypes
+            xp, _ = get_namespace(X)
+            # Use _check_array like main branch, with array API dtype support
+            X = _check_array(
+                X, dtype=[xp.float64, xp.float32], accept_sparse="csr"
             )
         else:
             X = self._fit_X
@@ -547,10 +594,12 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                 self.effective_metric_ = "chebyshev"
 
         if not isinstance(X, (KDTree, BallTree, _sklearn_NeighborsBase)):
-            # Don't validate for finite values here - this is just for shape/algorithm determination
-            # Actual validation happens in _onedal_fit (via validate_data) if onedal is used
+            # Use _check_array like main branch, but with array API dtype support
+            # Get array namespace for array API support
+            # Don't check for NaN - let oneDAL handle it (will fallback to sklearn if needed)
+            xp, _ = get_namespace(X)
             self._fit_X = _check_array(
-                X, dtype=[np.float64, np.float32], accept_sparse=True, force_all_finite=False
+                X, dtype=[xp.float64, xp.float32], accept_sparse=True, force_all_finite=False
             )
             self.n_samples_fit_ = _num_samples(self._fit_X)
             self.n_features_in_ = _num_features(self._fit_X)

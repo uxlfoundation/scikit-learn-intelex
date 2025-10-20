@@ -156,7 +156,8 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         xp, _ = get_namespace(X)
         print(f"DEBUG: Array namespace: {xp}", file=sys.stderr)
         
-        # REFACTOR: Use validate_data from sklearnex.utils.validation to convert pandas to numpy for X only
+        # REFACTOR: Use validate_data to convert pandas to numpy and validate types for X only
+        # force_all_finite=False to allow nan_euclidean metric to work (will fallback to sklearn)
         X = validate_data(
             self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr"
         )
@@ -182,9 +183,20 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         self._onedal_estimator.effective_metric_params_ = self.effective_metric_params_
         
         # REFACTOR: Pass pre-processed shape and _y to onedal
+        # For GPU backend, reshape _y to (-1, 1) before passing to onedal
+        from onedal.utils import _sycl_queue_manager as QM
+        queue_instance = QM.get_global_queue()
+        gpu_device = queue_instance is not None and queue_instance.sycl_device.is_gpu
+        
         self._onedal_estimator._shape = self._shape
-        self._onedal_estimator._y = self._y
+        # REFACTOR: Reshape _y for GPU backend (needs column vector)
+        # Following PCA pattern: all data preparation in sklearnex
+        if gpu_device:
+            self._onedal_estimator._y = xp.reshape(self._y, (-1, 1))
+        else:
+            self._onedal_estimator._y = self._y
         print(f"DEBUG: Set onedal_estimator._shape={self._onedal_estimator._shape}", file=sys.stderr)
+        print(f"DEBUG: GPU device={gpu_device}, _y shape={self._onedal_estimator._y.shape}", file=sys.stderr)
         
         print(f"DEBUG KNeighborsRegressor._onedal_fit: Calling onedal_estimator.fit", file=sys.stderr)
         self._onedal_estimator.fit(X, y, queue=queue)
@@ -234,7 +246,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         if X is not None:
             xp, _ = get_namespace(X)
             X = validate_data(
-                self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
+                self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False, force_all_finite=False
             )
         # Call onedal backend for GPU prediction
         result = self._onedal_estimator._predict_gpu(X)

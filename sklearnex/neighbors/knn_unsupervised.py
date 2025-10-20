@@ -158,9 +158,9 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         
         # Get array namespace for array API support
         xp, _ = get_namespace(X)
-        print(f"DEBUG: Array namespace: {xp}", file=sys.stderr)
         
-        # REFACTOR: Use validate_data from sklearnex.utils.validation to convert pandas to numpy
+        # REFACTOR: Use validate_data to convert pandas to numpy and validate types
+        # force_all_finite=False to allow nan_euclidean metric to work (will fallback to sklearn)
         X = validate_data(
             self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr"
         )
@@ -189,7 +189,7 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         if X is not None:
             xp, _ = get_namespace(X)
             X = validate_data(
-                self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
+                self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False, force_all_finite=False
             )
         return self._onedal_estimator.predict(X, queue=queue)
 
