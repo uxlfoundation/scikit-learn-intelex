@@ -249,9 +249,9 @@ class NuSVC(BaseSVC, _sklearn_NuSVC):
         # checks.
         if sample_weight is None:
             if hasattr(xp, "unique_counts"):
-                _, weight_per_class = xp.unique_counts(y)
+                weight_per_class = xp.astype(xp.unique_counts(y)[1], xp.float64)
             else:
-                _, weight_per_class = xp.unique(y, return_counts=True)
+                weight_per_class = xp.astype(xp.unique(y, return_counts=True)[1], xp.float64)
             wlcls = weight_per_class.shape[0]
         else:
 
@@ -266,7 +266,7 @@ class NuSVC(BaseSVC, _sklearn_NuSVC):
 
         for i in range(wlcls):
             for j in range(i + 1, wlcls):
-                if self.nu * float(weight_per_class[i] + weight_per_class[j]) / 2 > min(
+                if self.nu * (weight_per_class[i] + weight_per_class[j]) / 2 > min(
                     weight_per_class[i], weight_per_class[j]
                 ):
                     raise ValueError("specified nu is infeasible")
