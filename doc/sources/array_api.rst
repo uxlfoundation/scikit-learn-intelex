@@ -96,6 +96,10 @@ The following patched classes have support for array API inputs:
 - :obj:`sklearn.linear_model.Ridge`
 - :obj:`sklearnex.linear_model.IncrementalLinearRegression`
 - :obj:`sklearnex.linear_model.IncrementalRidge`
+- :obj:`sklearn.neighbors.KNeighborsClassifier`
+- :obj:`sklearn.neighbors.KNeighborsRegressor`
+- :obj:`sklearn.neighbors.NearestNeighbors`
+- :obj:`sklearn.neighbors.LocalOutlierFactor`
 
 .. note::
     While full array API support is currently not implemented for all classes, :external+dpnp:doc:`dpnp.ndarray <reference/ndarray>`
