@@ -7,7 +7,7 @@
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
-# Unless required by applicable law or agreed to in writing, software
+# Unless required by applicable law or agreed to in writing,
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
@@ -15,11 +15,13 @@
 # ==============================================================================
 
 import numpy as np
+
 from onedal.primitives import poly_kernel as onedal_poly_kernel
+
 
 def poly_kernel(X, Y=None, gamma=1.0, coef0=0.0, degree=3, queue=None):
     """
-    sklearnex interface for the polynomial kernel using oneDAL backend.
+    Sklearnex interface for the polynomial kernel using oneDAL backend.
 
     K(x, y) = (gamma * <x, y> + coef0) ** degree
     for each pair of rows x in X and y in Y.
@@ -49,4 +51,6 @@ def poly_kernel(X, Y=None, gamma=1.0, coef0=0.0, degree=3, queue=None):
     kernel_matrix : ndarray of shape (n_samples_X, n_samples_Y)
         Polynomial kernel Gram matrix.
     """
-    return onedal_poly_kernel(X, Y=Y, gamma=gamma, coef0=coef0, degree=degree, queue=queue)
+    return onedal_poly_kernel(
+        X, Y=Y, gamma=gamma, coef0=coef0, degree=degree, queue=queue
+    )
