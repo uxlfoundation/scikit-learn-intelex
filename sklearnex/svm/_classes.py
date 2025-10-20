@@ -251,10 +251,10 @@ class NuSVC(BaseSVC, _sklearn_NuSVC):
             if hasattr(xp, "unique_counts"):
                 weight_per_class = xp.astype(xp.unique_counts(y)[1], xp.float64)
             else:
-                weight_per_class = xp.astype(
-                    xp.unique(y, return_counts=True)[1], xp.float64
+                weight_per_class = (
+                    xp.unique(y, return_counts=True)[1].astype(xp.float64)
                 )
-                wlcls = weight_per_class.shape[0]
+            wlcls = weight_per_class.shape[0]
         else:
 
             if xp.all(sample_weight <= 0):
