@@ -252,6 +252,7 @@ class NuSVC(BaseSVC, _sklearn_NuSVC):
                 _, weight_per_class = xp.unique_counts(y)
             else:
                 _, weight_per_class = xp.unique(y, return_counts=True)
+            wlcls = weight_per_class.shape[0]
         else:
 
             if xp.all(sample_weight <= 0):
@@ -261,9 +262,10 @@ class NuSVC(BaseSVC, _sklearn_NuSVC):
                 xp.sum(sample_weight[y == class_label])
                 for class_label in xp.arange(xp.max(y) + 1, dtype=y.dtype)
             ]
+            wlcls = len(weight_per_class)
 
-        for i in range(len(weight_per_class)):
-            for j in range(i + 1, len(weight_per_class)):
+        for i in range(wlcls):
+            for j in range(i + 1, wlcls):
                 if self.nu * (weight_per_class[i] + weight_per_class[j]) / 2 > min(
                     weight_per_class[i], weight_per_class[j]
                 ):
