@@ -232,7 +232,6 @@ class ForestClassifier(BaseForest):
         )
 
         self.oob_score_ = from_table(train_result.oob_err_accuracy, like=X)
-        self.oob_score_ = self.oob_score_[(0,)*self.oob_score_.ndim]
         self.oob_decision_function_ = from_table(
             train_result.oob_err_decision_function, like=X
         )
@@ -249,7 +248,6 @@ class ForestRegressor(BaseForest):
         )
 
         self.oob_score_ = from_table(train_result.oob_err_r2, like=X)
-        self.oob_score_ = self.oob_score_[(0,)*self.oob_score_.ndim]
         self.oob_prediction_ = from_table(train_result.oob_err_prediction, like=X)
 
         return self

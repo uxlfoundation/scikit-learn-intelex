@@ -33,7 +33,9 @@ def test_rf_classifier(queue):
         random_state=0,
         shuffle=False,
     )
-    rf = RandomForestClassifier(max_depth=2, random_state=0).fit(X, y, queue=queue)
+    rf = RandomForestClassifier(max_depth=2, random_state=0).fit(
+        X, y, class_count=2, queue=queue
+    )
     assert_allclose([1], rf.predict([[0, 0, 0, 0]], queue=queue))
 
 
@@ -74,7 +76,7 @@ def test_rf_classifier_random_splitter(queue):
         shuffle=False,
     )
     rf = RandomForestClassifier(max_depth=2, random_state=0, splitter_mode="random").fit(
-        X, y, queue=queue
+        X, y, class_count=2, queue=queue
     )
     assert_allclose([1], rf.predict([[0, 0, 0, 0]], queue=queue))
 
