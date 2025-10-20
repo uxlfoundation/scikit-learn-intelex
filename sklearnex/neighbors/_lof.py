@@ -54,12 +54,19 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
 
     def _onedal_fit(self, X, y, queue=None):
         import sys
-        print(f"DEBUG LocalOutlierFactor._onedal_fit START: X type={type(X)}, y type={type(y)}", file=sys.stderr)
+
+        print(
+            f"DEBUG LocalOutlierFactor._onedal_fit START: X type={type(X)}, y type={type(y)}",
+            file=sys.stderr,
+        )
         if sklearn_check_version("1.2"):
             self._validate_params()
 
         # Let _onedal_knn_fit (NearestNeighbors._onedal_fit) handle validation
-        print(f"DEBUG LocalOutlierFactor._onedal_fit: Calling _onedal_knn_fit", file=sys.stderr)
+        print(
+            f"DEBUG LocalOutlierFactor._onedal_fit: Calling _onedal_knn_fit",
+            file=sys.stderr,
+        )
         self._onedal_knn_fit(X, y, queue=queue)
 
         if self.contamination != "auto":
@@ -79,7 +86,10 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
             )
         self.n_neighbors_ = max(1, min(self.n_neighbors, n_samples - 1))
 
-        print(f"DEBUG LocalOutlierFactor._onedal_fit: Calling _onedal_kneighbors", file=sys.stderr)
+        print(
+            f"DEBUG LocalOutlierFactor._onedal_fit: Calling _onedal_kneighbors",
+            file=sys.stderr,
+        )
         (
             self._distances_fit_X_,
             _neighbors_indices_fit_X_,
@@ -114,12 +124,19 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
                     "Increase the number of neighbors for more accurate results."
                 )
 
-        print(f"DEBUG LocalOutlierFactor._onedal_fit END: _fit_X type={type(getattr(self, '_fit_X', 'NOT_SET'))}", file=sys.stderr)
+        print(
+            f"DEBUG LocalOutlierFactor._onedal_fit END: _fit_X type={type(getattr(self, '_fit_X', 'NOT_SET'))}",
+            file=sys.stderr,
+        )
         return self
 
     def fit(self, X, y=None):
         import sys
-        print(f"DEBUG LocalOutlierFactor.fit START: X type={type(X)}, X shape={getattr(X, 'shape', 'NO_SHAPE')}", file=sys.stderr)
+
+        print(
+            f"DEBUG LocalOutlierFactor.fit START: X type={type(X)}, X shape={getattr(X, 'shape', 'NO_SHAPE')}",
+            file=sys.stderr,
+        )
         result = dispatch(
             self,
             "fit",
@@ -130,12 +147,18 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
             X,
             None,
         )
-        print(f"DEBUG LocalOutlierFactor.fit END: result type={type(result)}", file=sys.stderr)
+        print(
+            f"DEBUG LocalOutlierFactor.fit END: result type={type(result)}",
+            file=sys.stderr,
+        )
         return result
 
     def _predict(self, X=None):
         import sys
-        print(f"DEBUG LocalOutlierFactor._predict START: X type={type(X)}", file=sys.stderr)
+
+        print(
+            f"DEBUG LocalOutlierFactor._predict START: X type={type(X)}", file=sys.stderr
+        )
         check_is_fitted(self)
 
         if X is not None:
@@ -147,7 +170,10 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
             is_inlier = np.ones(self.n_samples_fit_, dtype=int)
             is_inlier[self.negative_outlier_factor_ < self.offset_] = -1
 
-        print(f"DEBUG LocalOutlierFactor._predict END: is_inlier type={type(is_inlier)}", file=sys.stderr)
+        print(
+            f"DEBUG LocalOutlierFactor._predict END: is_inlier type={type(is_inlier)}",
+            file=sys.stderr,
+        )
         return is_inlier
 
     # This had to be done because predict loses the queue when no
@@ -159,24 +185,35 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
     @wrap_output_data
     def fit_predict(self, X, y=None):
         import sys
-        print(f"DEBUG LocalOutlierFactor.fit_predict START: X type={type(X)}", file=sys.stderr)
+
+        print(
+            f"DEBUG LocalOutlierFactor.fit_predict START: X type={type(X)}",
+            file=sys.stderr,
+        )
         result = self.fit(X)._predict()
-        print(f"DEBUG LocalOutlierFactor.fit_predict END: result type={type(result)}", file=sys.stderr)
+        print(
+            f"DEBUG LocalOutlierFactor.fit_predict END: result type={type(result)}",
+            file=sys.stderr,
+        )
         return result
 
     def _kneighbors(self, X=None, n_neighbors=None, return_distance=True):
         import sys
-        print(f"DEBUG LocalOutlierFactor._kneighbors START: X type={type(X)}, n_neighbors={n_neighbors}, return_distance={return_distance}", file=sys.stderr)
-        
+
+        print(
+            f"DEBUG LocalOutlierFactor._kneighbors START: X type={type(X)}, n_neighbors={n_neighbors}, return_distance={return_distance}",
+            file=sys.stderr,
+        )
+
         # Validate n_neighbors parameter first (before check_is_fitted)
         if n_neighbors is not None:
             self._validate_n_neighbors(n_neighbors)
-        
+
         check_is_fitted(self)
-        
+
         # Validate kneighbors parameters (inherited from KNeighborsDispatchingBase)
         self._kneighbors_validation(X, n_neighbors)
-        
+
         result = dispatch(
             self,
             "kneighbors",
@@ -188,7 +225,10 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
             n_neighbors=n_neighbors,
             return_distance=return_distance,
         )
-        print(f"DEBUG LocalOutlierFactor._kneighbors END: result type={type(result)}", file=sys.stderr)
+        print(
+            f"DEBUG LocalOutlierFactor._kneighbors END: result type={type(result)}",
+            file=sys.stderr,
+        )
         return result
 
     kneighbors = wrap_output_data(_kneighbors)
@@ -198,15 +238,24 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
     @wrap_output_data
     def score_samples(self, X):
         import sys
-        print(f"DEBUG LocalOutlierFactor.score_samples START: X type={type(X)}", file=sys.stderr)
+
+        print(
+            f"DEBUG LocalOutlierFactor.score_samples START: X type={type(X)}",
+            file=sys.stderr,
+        )
         check_is_fitted(self)
-        
+
         # Validate and convert X (pandas to numpy if needed)
         xp, _ = get_namespace(X)
         X = validate_data(
-            self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False, ensure_all_finite=False
+            self,
+            X,
+            dtype=[xp.float64, xp.float32],
+            accept_sparse="csr",
+            reset=False,
+            ensure_all_finite=False,
         )
-        
+
         # check_feature_names(self, X, reset=False)
 
         distances_X, neighbors_indices_X = self._kneighbors(
@@ -221,7 +270,10 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
         lrd_ratios_array = self._lrd[neighbors_indices_X] / X_lrd[:, np.newaxis]
 
         result = -np.mean(lrd_ratios_array, axis=1)
-        print(f"DEBUG LocalOutlierFactor.score_samples END: result type={type(result)}", file=sys.stderr)
+        print(
+            f"DEBUG LocalOutlierFactor.score_samples END: result type={type(result)}",
+            file=sys.stderr,
+        )
         return result
 
     fit.__doc__ = _sklearn_LocalOutlierFactor.fit.__doc__
