@@ -147,6 +147,9 @@ class SVC(BaseSVC, _sklearn_SVC):
 
     def _svm_sample_weight_check(self, sample_weight, y, xp):
         # This provides SVM estimator differentiation with respect to sample_weight errors
+        if sample_weight is None:
+            return
+
         super()._svm_sample_weight_check(sample_weight, y, xp)
         # y is an index type vector (integer), where the variance == 0 shows
         # that is is constant (i.e) single class. y[sample_weight > 0] should
@@ -242,18 +245,22 @@ class NuSVC(BaseSVC, _sklearn_NuSVC):
 
     def _svm_sample_weight_check(self, sample_weight, y, xp):
         # This provides SVM-specific sample_weight conformance checks
-        if xp.all(sample_weight <= 0):
-            raise ValueError("negative dimensions are not allowed")
+        # It must still check when sample_weight is None to conform to sklearn
+        # checks.
+        if sample_weight is None:
+            if hasattr(xp, "unique_counts"):
+                weight_per_class = xp.unique_counts(y).counts
+            else:
+                _, weight_per_class = xp.unique(y, return_counts=True)
+        else:
 
-        # y is an index type vector (integer), where the variance == 0 shows
-        # that is is constant (i.e) single class. y[sample_weight > 0] should
-        # never be empty due to the previous check.
+            if xp.all(sample_weight <= 0):
+                raise ValueError("negative dimensions are not allowed")
 
-        # taken from previous implementation, can be improved (try to remove for loops).
-        weight_per_class = [
-            xp.sum(sample_weight[y == class_label])
-            for class_label in range(int(xp.max(y)))
-        ]
+            weight_per_class = [
+                xp.sum(sample_weight[y == class_label])
+                for class_label in xp.arange(xp.max(y), dtype=y.dtype)
+            ]
 
         for i in range(len(weight_per_class)):
             for j in range(i + 1, len(weight_per_class)):

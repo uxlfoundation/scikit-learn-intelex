@@ -160,7 +160,7 @@ class BaseSVM(oneDALEstimator):
 
     def _svm_sample_weight_check(self, sample_weight, y, xp):
         # This is purely for sklearn conformance. SVM algos in SVM raise unique errors.
-        if xp.all(sample_weight <= 0):
+        if sample_weight is not None and xp.all(sample_weight <= 0):
             raise ValueError("Invalid input - all samples have zero or negative weights.")
 
     def _compute_gamma_sigma(self, X):
@@ -271,11 +271,15 @@ class BaseSVC(BaseSVM):
         if self.class_weight is not None or sample_weight is not None:
             sample_weight = _check_sample_weight(sample_weight, X)
             # oneDAL only accepts sample_weights, apply class_weight directly
-            if self.class_weight is not None:
-                for i, v in enumerate(self.class_weight_):
-                    sample_weight[y == i] *= v
 
-            self._svm_sample_weight_check(sample_weight, y, xp)
+        # due to the nature of how sklearn checks nu in NuSVC (by not checking
+        # class_weight-adjusted values, this check must be done here regardless)
+        # Logic can be found in libsvm/svm.cpp in scikit-learn.
+        self._svm_sample_weight_check(sample_weight, y, xp)
+
+        if self.class_weight is not None:
+            for i, v in enumerate(self.class_weight_):
+                sample_weight[y == i] *= v
 
         onedal_params = {
             "C": self.C,
@@ -596,7 +600,8 @@ class BaseSVR(BaseSVM):
 
         if sample_weight is not None:
             sample_weight = _check_sample_weight(sample_weight, X)
-            self._svm_sample_weight_check(sample_weight, y, xp)
+
+        self._svm_sample_weight_check(sample_weight, y, xp)
 
         onedal_params = {
             "C": self.C,
