@@ -137,15 +137,10 @@ def test_binary_dataset(queue, kernel):
         check_svm_model_equal(queue, clf0, clf1, *dataset)
 
 
-@pass_if_not_implemented_for_gpu(reason="csr svm is not implemented")
-@pytest.mark.parametrize("queue", get_queues())
 @pytest.mark.parametrize("kernel", ["linear", "rbf", "poly", "sigmoid"])
 def test_iris(queue, kernel):
-    from sklearnex import config_context
     from sklearnex.svm import SVC
 
-    if kernel == "rbf":
-        pytest.skip("RBF CSR SVM test failing in 2025.0.")
     iris = load_iris()
     rng = np.random.RandomState(0)
     perm = rng.permutation(iris.target.size)
@@ -155,17 +150,13 @@ def test_iris(queue, kernel):
 
     dataset = sparse_iris_data, iris.target, sparse_iris_data
 
-    with config_context(target_offload=queue):
-        clf0 = SVC(kernel=kernel)
-        clf1 = SVC(kernel=kernel)
-        check_svm_model_equal(queue, clf0, clf1, *dataset, decimal=2)
+    clf0 = SVC(kernel=kernel)
+    clf1 = SVC(kernel=kernel)
+    check_svm_model_equal(queue, clf0, clf1, *dataset, decimal=2)
 
 
-@pass_if_not_implemented_for_gpu(reason="csr svm is not implemented")
-@pytest.mark.parametrize("queue", get_queues())
 @pytest.mark.parametrize("kernel", ["linear", "rbf", "poly", "sigmoid"])
 def test_diabetes(queue, kernel):
-    from sklearnex import config_context
     from sklearnex.svm import SVR
 
     if kernel == "sigmoid":
@@ -175,10 +166,9 @@ def test_diabetes(queue, kernel):
     sparse_diabetes_data = sp.csr_matrix(diabetes.data)
     dataset = sparse_diabetes_data, diabetes.target, sparse_diabetes_data
 
-    with config_context(target_offload=queue):
-        clf0 = SVR(kernel=kernel, C=0.1)
-        clf1 = SVR(kernel=kernel, C=0.1)
-        check_svm_model_equal(queue, clf0, clf1, *dataset)
+    clf0 = SVR(kernel=kernel, C=0.1)
+    clf1 = SVR(kernel=kernel, C=0.1)
+    check_svm_model_equal(queue, clf0, clf1, *dataset)
 
 
 # https://github.com/uxlfoundation/scikit-learn-intelex/issues/1880

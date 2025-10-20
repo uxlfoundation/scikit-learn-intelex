@@ -20,6 +20,7 @@ from sklearn.svm import SVC as _sklearn_SVC
 from sklearn.svm import SVR as _sklearn_SVR
 from sklearn.svm import NuSVC as _sklearn_NuSVC
 from sklearn.svm import NuSVR as _sklearn_NuSVR
+from sklearn.utils.multiclass import type_of_target
 from sklearn.utils.validation import _deprecate_positional_args
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
@@ -121,9 +122,6 @@ class SVC(BaseSVC, _sklearn_SVC):
         patching_status = PatchingConditionsChain(
             f"sklearn.svm.{class_name}.{method_name}"
         )
-        if len(data) > 1:
-            self._class_count = len(np.unique(data[1]))
-        self._is_sparse = sp.issparse(data[0])
         conditions = [
             (
                 self.kernel in ["linear", "rbf"],
@@ -131,19 +129,23 @@ class SVC(BaseSVC, _sklearn_SVC):
                 '"linear" and "rbf" are only supported on GPU.',
             ),
             (self.class_weight is None, "Class weight is not supported on GPU."),
-            (not self._is_sparse, "Sparse input is not supported on GPU."),
-            (self._class_count == 2, "Multiclassification is not supported on GPU."),
+            (not sp.issparse(data[0]), "Sparse input is not supported on GPU."),
+            (
+                type_of_target(data[1]) == "binary",
+                "Multiclassification is not supported on GPU.",
+            ),
         ]
         if method_name == "fit":
-            patching_status.and_conditions(conditions)
-            return patching_status
-        if method_name in ["predict", "predict_proba", "decision_function", "score"]:
+            pass
+        elif method_name in self._n_jobs_supported_onedal_methods:
             conditions.append(
                 (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained")
             )
-            patching_status.and_conditions(conditions)
-            return patching_status
-        raise RuntimeError(f"Unknown method {method_name} in {class_name}")
+        else:
+            raise RuntimeError(f"Unknown method {method_name} in {class_name}")
+
+        patching_status.and_conditions(conditions)
+        return patching_status
 
     def _svm_sample_weight_check(self, sample_weight, y, xp):
         # This provides SVM estimator differentiation with respect to sample_weight errors
