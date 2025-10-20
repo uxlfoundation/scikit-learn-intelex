@@ -211,14 +211,12 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         print(f"DEBUG: Array namespace: {xp}", file=sys.stderr)
 
         # REFACTOR: Use validate_data to convert pandas to numpy and validate types
-        # ensure_all_finite=False to allow nan_euclidean metric to work (will fallback to sklearn)
         X, y = validate_data(
             self,
             X,
             y,
             dtype=[xp.float64, xp.float32],
             accept_sparse="csr",
-            ensure_all_finite=False,
         )
         print(
             f"DEBUG: After validate_data, X type={type(X)}, y type={type(y)}",
@@ -342,7 +340,6 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
                 dtype=[xp.float64, xp.float32],
                 accept_sparse="csr",
                 reset=False,
-                ensure_all_finite=False,
             )
 
         # REFACTOR: All post-processing now in sklearnex following PCA pattern

@@ -183,13 +183,11 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         print(f"DEBUG: Array namespace: {xp}", file=sys.stderr)
 
         # REFACTOR: Use validate_data to convert pandas to numpy and validate types for X only
-        # ensure_all_finite=False to allow nan_euclidean metric to work (will fallback to sklearn)
         X = validate_data(
             self,
             X,
             dtype=[xp.float64, xp.float32],
             accept_sparse="csr",
-            ensure_all_finite=False,
         )
         print(
             f"DEBUG: After validate_data, X type={type(X)}, y type={type(y)}",
@@ -353,7 +351,6 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
                 dtype=[xp.float64, xp.float32],
                 accept_sparse="csr",
                 reset=False,
-                ensure_all_finite=False,
             )
 
         # REFACTOR: All post-processing now in sklearnex following PCA pattern
