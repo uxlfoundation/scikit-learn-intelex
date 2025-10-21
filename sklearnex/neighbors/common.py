@@ -283,16 +283,14 @@ class KNeighborsDispatchingBase(oneDALEstimator):
 
         if not self.outputs_2d_:
             # Single output: classes_[argmax(proba, axis=1)]
-            result = self.classes_[xp.argmax(proba, axis=1)]
+            return self.classes_[xp.argmax(proba, axis=1)]
         else:
             # Multi-output: apply argmax separately for each output
             result = [
                 classes_k[xp.argmax(proba_k, axis=1)]
                 for classes_k, proba_k in zip(self.classes_, proba.T)
             ]
-            result = xp.asarray(result).T
-
-        return result
+            return xp.asarray(result).T
 
     def _validate_targets(self, y, dtype):
         arr = _column_or_1d(y, warn=True)

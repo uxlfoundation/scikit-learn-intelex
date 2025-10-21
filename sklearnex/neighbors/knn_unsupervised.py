@@ -84,7 +84,7 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         # Validate kneighbors parameters (inherited from KNeighborsDispatchingBase)
         self._kneighbors_validation(X, n_neighbors)
 
-        result = dispatch(
+        return dispatch(
             self,
             "kneighbors",
             {
@@ -95,7 +95,6 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
             n_neighbors=n_neighbors,
             return_distance=return_distance,
         )
-        return result
 
     @wrap_output_data
     def radius_neighbors(
@@ -108,7 +107,7 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         ):
             _sklearn_NearestNeighbors.fit(self, self._fit_X, getattr(self, "_y", None))
         check_is_fitted(self)
-        result = dispatch(
+        return dispatch(
             self,
             "radius_neighbors",
             {
@@ -120,7 +119,6 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
             return_distance=return_distance,
             sort_results=sort_results,
         )
-        return result
 
     def radius_neighbors_graph(
         self, X=None, radius=None, mode="connectivity", sort_results=False
@@ -197,10 +195,9 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         )
 
         # Apply post-processing (kd_tree sorting, removing self from results)
-        result = self._kneighbors_post_processing(
+        return self._kneighbors_post_processing(
             X, n_neighbors, return_distance, result, query_is_train
         )
-        return result
 
     def _save_attributes(self):
         self.classes_ = self._onedal_estimator.classes_

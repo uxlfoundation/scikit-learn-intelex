@@ -111,7 +111,7 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
         return self
 
     def fit(self, X, y=None):
-        result = dispatch(
+        return dispatch(
             self,
             "fit",
             {
@@ -121,7 +121,6 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
             X,
             None,
         )
-        return result
 
     def _predict(self, X=None):
         check_is_fitted(self)
@@ -144,8 +143,7 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
     @wraps(_sklearn_LocalOutlierFactor.fit_predict, assigned=["__doc__"])
     @wrap_output_data
     def fit_predict(self, X, y=None):
-        result = self.fit(X)._predict()
-        return result
+        return self.fit(X)._predict()
 
     def _kneighbors(self, X=None, n_neighbors=None, return_distance=True):
         # Validate n_neighbors parameter first
@@ -157,7 +155,7 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
         # Validate kneighbors parameters (inherited from KNeighborsDispatchingBase)
         self._kneighbors_validation(X, n_neighbors)
 
-        result = dispatch(
+        return dispatch(
             self,
             "kneighbors",
             {
@@ -168,7 +166,6 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
             n_neighbors=n_neighbors,
             return_distance=return_distance,
         )
-        return result
 
     kneighbors = wrap_output_data(_kneighbors)
 
@@ -199,8 +196,7 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
 
         lrd_ratios_array = self._lrd[neighbors_indices_X] / X_lrd[:, np.newaxis]
 
-        result = -np.mean(lrd_ratios_array, axis=1)
-        return result
+        return -np.mean(lrd_ratios_array, axis=1)
 
     fit.__doc__ = _sklearn_LocalOutlierFactor.fit.__doc__
     kneighbors.__doc__ = _sklearn_LocalOutlierFactor.kneighbors.__doc__
