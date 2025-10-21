@@ -40,12 +40,7 @@ from sklearn.tree import (
 from sklearn.tree._tree import Tree
 from sklearn.utils import check_random_state
 from sklearn.utils.multiclass import type_of_target
-from sklearn.utils.validation import (
-    _check_sample_weight,
-    check_array,
-    check_is_fitted,
-    check_X_y,
-)
+from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import (
@@ -67,7 +62,7 @@ from .._device_offload import dispatch, wrap_output_data
 from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
 from ..utils._array_api import get_namespace
-from ..utils.validation import check_n_features, validate_data
+from ..utils.validation import _check_sample_weight, validate_data
 
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import Interval
@@ -578,22 +573,6 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
             ]
         )
 
-        if patching_status.get_status() and sklearn_check_version("1.4"):
-            try:
-                assert_all_finite(X)
-                input_is_finite = True
-            except ValueError:
-                input_is_finite = False
-            patching_status.and_conditions(
-                [
-                    (input_is_finite, "Non-finite input is not supported."),
-                    (
-                        self.monotonic_cst is None,
-                        "Monotonicity constraints are not supported.",
-                    ),
-                ]
-            )
-
         if patching_status.get_status():
             patching_status.and_conditions(
                 [
@@ -603,6 +582,22 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
                     ),
                 ]
             )
+
+            if sklearn_check_version("1.4"):
+                try:
+                    assert_all_finite(X)
+                    input_is_finite = True
+                except ValueError:
+                    input_is_finite = False
+                patching_status.and_conditions(
+                    [
+                        (input_is_finite, "Non-finite input is not supported."),
+                        (
+                            self.monotonic_cst is None,
+                            "Monotonicity constraints are not supported.",
+                        ),
+                    ]
+                )
 
         return patching_status
 
@@ -791,21 +786,6 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
                 reset=False,
                 ensure_2d=True,
             )
-
-            if hasattr(self, "n_features_in_"):
-                try:
-                    num_features = _num_features(X)
-                except TypeError:
-                    num_features = _num_samples(X)
-                if num_features != self.n_features_in_:
-                    raise ValueError(
-                        (
-                            f"X has {num_features} features, "
-                            f"but {self.__class__.__name__} is expecting "
-                            f"{self.n_features_in_} features as input"
-                        )
-                    )
-            check_n_features(self, X, reset=False)
 
         res = self._onedal_estimator.predict(X, queue=queue)
 
