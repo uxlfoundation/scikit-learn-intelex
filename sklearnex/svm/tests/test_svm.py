@@ -138,7 +138,7 @@ def test_binary_dataset(queue, kernel):
 
 
 @pytest.mark.parametrize("kernel", ["linear", "rbf", "poly", "sigmoid"])
-def test_iris(queue, kernel):
+def test_iris(kernel):
     from sklearnex.svm import SVC
 
     iris = load_iris()
@@ -156,7 +156,7 @@ def test_iris(queue, kernel):
 
 
 @pytest.mark.parametrize("kernel", ["linear", "rbf", "poly", "sigmoid"])
-def test_diabetes(queue, kernel):
+def test_diabetes(kernel):
     from sklearnex.svm import SVR
 
     if kernel == "sigmoid":
@@ -223,3 +223,4 @@ def test_class_weight(queue):
         with config_context(target_offload=queue):
             clf.fit(X, y)
             assert_array_almost_equal(clf.predict(X).ravel(), [1] * 6)
+
