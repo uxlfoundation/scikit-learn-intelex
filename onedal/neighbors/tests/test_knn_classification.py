@@ -20,6 +20,7 @@ from numpy.testing import assert_array_equal
 from sklearn import datasets
 
 from onedal.tests.utils._device_selection import get_queues
+
 # Classification processing now happens in sklearnex layer
 from sklearnex.neighbors import KNeighborsClassifier
 
@@ -42,6 +43,7 @@ def test_pickle(queue):
     clf = KNeighborsClassifier(2).fit(iris.data, iris.target)
     expected = clf.predict(iris.data)
     import pickle
+
     dump = pickle.dumps(clf)
     clf2 = pickle.loads(dump)
 

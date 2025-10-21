@@ -23,13 +23,14 @@ from sklearn.utils.validation import check_is_fitted
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.utils.validation import get_requires_y_tag
+from onedal._device_offload import _transfer_to_host
 from onedal.neighbors import KNeighborsRegressor as onedal_KNeighborsRegressor
 
 from .._device_offload import dispatch, wrap_output_data
 from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.validation import check_feature_names, validate_data
 from .common import KNeighborsDispatchingBase
-from onedal._device_offload import _transfer_to_host
+
 
 @enable_array_api
 @control_n_jobs(decorated_methods=["fit", "predict", "kneighbors", "score"])
@@ -144,7 +145,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         # REFACTOR: Process regression targets in sklearnex before passing to onedal
         # This sets _shape and _y attributes
         self._process_regression_targets(y)
-        
+
         onedal_params = {
             "n_neighbors": self.n_neighbors,
             "weights": self.weights,
@@ -172,7 +173,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
             self._onedal_estimator._y = xp.reshape(self._y, (-1, 1))
         else:
             self._onedal_estimator._y = self._y
-      
+
         self._onedal_estimator.fit(X, y, queue=queue)
         self._save_attributes()
 

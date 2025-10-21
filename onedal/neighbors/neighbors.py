@@ -15,9 +15,11 @@
 # ==============================================================================
 
 from abc import ABCMeta, abstractmethod
+
 from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
 from onedal.utils import _sycl_queue_manager as QM
+
 from ..common._estimator_checks import _check_is_fitted, _is_classifier, _is_regressor
 from ..common._mixin import ClassifierMixin, RegressorMixin
 from ..datatypes import from_table, to_table
@@ -166,7 +168,7 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
 
         if n_neighbors is None:
             n_neighbors = self.n_neighbors
-        
+
         # onedal now just returns raw results, sklearnex does all processing
         # Following PCA pattern: simple onedal layer
         if X is None:
