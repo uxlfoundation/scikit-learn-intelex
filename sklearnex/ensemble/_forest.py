@@ -38,7 +38,8 @@ from sklearn.tree import (
     ExtraTreeRegressor,
 )
 from sklearn.tree._tree import Tree
-from sklearn.utils import check_random_state, deprecated
+from sklearn.utils import check_random_state
+from sklearn.utils.multiclass import type_of_target
 from sklearn.utils.validation import (
     _check_sample_weight,
     check_array,
@@ -70,8 +71,6 @@ from ..utils.validation import check_n_features, validate_data
 
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import Interval
-if sklearn_check_version("1.4"):
-    from daal4py.sklearn.utils import _assert_all_finite
 
 
 class BaseForest(oneDALEstimator, ABC):
@@ -149,6 +148,13 @@ class BaseForest(oneDALEstimator, ABC):
 
         if not self.bootstrap and self.oob_score:
             raise ValueError("Out of bag estimation only available if bootstrap=True")
+
+        if (self.random_state is not None) and (not daal_check_version((2024, "P", 0))):
+            warnings.warn(
+                "Setting 'random_state' value is not supported. "
+                "State set by oneDAL to default value (777).",
+                RuntimeWarning,
+            )
 
         rs = check_random_state(self.random_state)
         seed = rs.randint(0, xp.iinfo("i").max)
@@ -283,80 +289,85 @@ class BaseForest(oneDALEstimator, ABC):
             return max(1, int(max_features * n_features))
         return 0
 
-    def _check_parameters(self):
-        if isinstance(self.min_samples_leaf, numbers.Integral):
-            if not 1 <= self.min_samples_leaf:
-                raise ValueError(
-                    "min_samples_leaf must be at least 1 "
-                    "or in (0, 0.5], got %s" % self.min_samples_leaf
-                )
-        else:  # float
-            if not 0.0 < self.min_samples_leaf <= 0.5:
-                raise ValueError(
-                    "min_samples_leaf must be at least 1 "
-                    "or in (0, 0.5], got %s" % self.min_samples_leaf
-                )
-        if isinstance(self.min_samples_split, numbers.Integral):
-            if not 2 <= self.min_samples_split:
-                raise ValueError(
-                    "min_samples_split must be an integer "
-                    "greater than 1 or a float in (0.0, 1.0]; "
-                    "got the integer %s" % self.min_samples_split
-                )
-        else:  # float
-            if not 0.0 < self.min_samples_split <= 1.0:
-                raise ValueError(
-                    "min_samples_split must be an integer "
-                    "greater than 1 or a float in (0.0, 1.0]; "
-                    "got the float %s" % self.min_samples_split
-                )
-        if not 0 <= self.min_weight_fraction_leaf <= 0.5:
-            raise ValueError("min_weight_fraction_leaf must in [0, 0.5]")
-        if hasattr(self, "min_impurity_split"):
-            warnings.warn(
-                "The min_impurity_split parameter is deprecated. "
-                "Its default value has changed from 1e-7 to 0 in "
-                "version 0.23, and it will be removed in 0.25. "
-                "Use the min_impurity_decrease parameter instead.",
-                FutureWarning,
-            )
+    if not sklearn_check_version("1.2"):
 
-            if getattr(self, "min_impurity_split") < 0.0:
-                raise ValueError(
-                    "min_impurity_split must be greater than " "or equal to 0"
-                )
-        if self.min_impurity_decrease < 0.0:
-            raise ValueError(
-                "min_impurity_decrease must be greater than " "or equal to 0"
-            )
-        if self.max_leaf_nodes is not None:
-            if not isinstance(self.max_leaf_nodes, numbers.Integral):
-                raise ValueError(
-                    "max_leaf_nodes must be integral number but was "
-                    "%r" % self.max_leaf_nodes
-                )
-            if self.max_leaf_nodes < 2:
-                raise ValueError(
-                    ("max_leaf_nodes {0} must be either None " "or larger than 1").format(
-                        self.max_leaf_nodes
+        def _check_parameters(self):
+            if isinstance(self.min_samples_leaf, numbers.Integral):
+                if not 1 <= self.min_samples_leaf:
+                    raise ValueError(
+                        "min_samples_leaf must be at least 1 "
+                        "or in (0, 0.5], got %s" % self.min_samples_leaf
                     )
+            else:  # float
+                if not 0.0 < self.min_samples_leaf <= 0.5:
+                    raise ValueError(
+                        "min_samples_leaf must be at least 1 "
+                        "or in (0, 0.5], got %s" % self.min_samples_leaf
+                    )
+            if isinstance(self.min_samples_split, numbers.Integral):
+                if not 2 <= self.min_samples_split:
+                    raise ValueError(
+                        "min_samples_split must be an integer "
+                        "greater than 1 or a float in (0.0, 1.0]; "
+                        "got the integer %s" % self.min_samples_split
+                    )
+            else:  # float
+                if not 0.0 < self.min_samples_split <= 1.0:
+                    raise ValueError(
+                        "min_samples_split must be an integer "
+                        "greater than 1 or a float in (0.0, 1.0]; "
+                        "got the float %s" % self.min_samples_split
+                    )
+            if not 0 <= self.min_weight_fraction_leaf <= 0.5:
+                raise ValueError("min_weight_fraction_leaf must in [0, 0.5]")
+            if hasattr(self, "min_impurity_split"):
+                warnings.warn(
+                    "The min_impurity_split parameter is deprecated. "
+                    "Its default value has changed from 1e-7 to 0 in "
+                    "version 0.23, and it will be removed in 0.25. "
+                    "Use the min_impurity_decrease parameter instead.",
+                    FutureWarning,
                 )
-        if isinstance(self.max_bins, numbers.Integral):
-            if not 2 <= self.max_bins:
-                raise ValueError("max_bins must be at least 2, got %s" % self.max_bins)
-        else:
-            raise ValueError(
-                "max_bins must be integral number but was " "%r" % self.max_bins
-            )
-        if isinstance(self.min_bin_size, numbers.Integral):
-            if not 1 <= self.min_bin_size:
+
+                if getattr(self, "min_impurity_split") < 0.0:
+                    raise ValueError(
+                        "min_impurity_split must be greater than " "or equal to 0"
+                    )
+            if self.min_impurity_decrease < 0.0:
                 raise ValueError(
-                    "min_bin_size must be at least 1, got %s" % self.min_bin_size
+                    "min_impurity_decrease must be greater than " "or equal to 0"
                 )
-        else:
-            raise ValueError(
-                "min_bin_size must be integral number but was " "%r" % self.min_bin_size
-            )
+            if self.max_leaf_nodes is not None:
+                if not isinstance(self.max_leaf_nodes, numbers.Integral):
+                    raise ValueError(
+                        "max_leaf_nodes must be integral number but was "
+                        "%r" % self.max_leaf_nodes
+                    )
+                if self.max_leaf_nodes < 2:
+                    raise ValueError(
+                        (
+                            "max_leaf_nodes {0} must be either None " "or larger than 1"
+                        ).format(self.max_leaf_nodes)
+                    )
+            if isinstance(self.max_bins, numbers.Integral):
+                if not 2 <= self.max_bins:
+                    raise ValueError(
+                        "max_bins must be at least 2, got %s" % self.max_bins
+                    )
+            else:
+                raise ValueError(
+                    "max_bins must be integral number but was " "%r" % self.max_bins
+                )
+            if isinstance(self.min_bin_size, numbers.Integral):
+                if not 1 <= self.min_bin_size:
+                    raise ValueError(
+                        "min_bin_size must be at least 1, got %s" % self.min_bin_size
+                    )
+            else:
+                raise ValueError(
+                    "min_bin_size must be integral number but was "
+                    "%r" % self.min_bin_size
+                )
 
     @property
     def estimators_(self):
@@ -509,6 +520,10 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
             est.classes_ = self.classes_
 
     def fit(self, X, y, sample_weight=None):
+        if sklearn_check_version("1.2"):
+            self._validate_params()
+        else:
+            self._check_parameters()
         dispatch(
             self,
             "fit",
@@ -523,11 +538,7 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         return self
 
     def _onedal_fit_ready(self, patching_status, X, y, sample_weight):
-        xp, _ = get_namespace(X)
-        if sklearn_check_version("1.2"):
-            self._validate_params()
-        else:
-            self._check_parameters()
+        xp, _ = get_namespace(X, y, sample_weight)
 
         patching_status.and_conditions(
             [
@@ -552,18 +563,20 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
                     self.n_estimators <= 6024,
                     "More than 6024 estimators is not supported.",
                 ),
+                (
+                    not self.bootstrap or self.class_weight != "balanced_subsample",
+                    "'balanced_subsample' for class_weight is not supported",
+                ),
+                (
+                    type_of_target(y)
+                    in [
+                        "binary",
+                        "multiclass",
+                    ],  # This verifies the input to be 1d classification data
+                    "only 'binary' or 'multiclass' y data are supported",
+                ),
             ]
         )
-
-        if self.bootstrap:
-            patching_status.and_conditions(
-                [
-                    (
-                        self.class_weight != "balanced_subsample",
-                        "'balanced_subsample' for class_weight is not supported",
-                    )
-                ]
-            )
 
         if patching_status.get_status() and sklearn_check_version("1.4"):
             try:
@@ -582,86 +595,14 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
             )
 
         if patching_status.get_status():
-
-            if sklearn_check_version("1.6"):
-                X, y = check_X_y(
-                    X,
-                    y,
-                    multi_output=True,
-                    accept_sparse=True,
-                    dtype=[np.float64, np.float32],
-                    ensure_all_finite=False,
-                )
-            else:
-                X, y = check_X_y(
-                    X,
-                    y,
-                    multi_output=True,
-                    accept_sparse=True,
-                    dtype=[np.float64, np.float32],
-                    force_all_finite=False,
-                )
-
-            if y.ndim == 2 and y.shape[1] == 1:
-                warnings.warn(
-                    "A column-vector y was passed when a 1d array was"
-                    " expected. Please change the shape of y to "
-                    "(n_samples,), for example using ravel().",
-                    DataConversionWarning,
-                    stacklevel=2,
-                )
-
-            if y.ndim == 1:
-                y = np.reshape(y, (-1, 1))
-
-            self.n_outputs_ = y.shape[1]
-
             patching_status.and_conditions(
                 [
                     (
-                        _num_features(y, fallback_1d=True) == 1,
-                        f"Number of outputs is not 1.",
-                    ),
-                    (
-                        y.dtype in [xp.float32, xp.float64, xp.int32, xp.int64],
-                        f"Datatype ({y.dtype}) for y is not supported.",
+                        xp.any(y != y[0, ...]),
+                        "Number of classes must be at least 2.",
                     ),
                 ]
             )
-            # TODO: Fix to support integers as input
-
-            if self.n_outputs_ == 1:
-                xp, is_array_api_compliant = get_namespace(y)
-                sety = xp.unique_values(y) if is_array_api_compliant else np.unique(y)
-                num_classes = sety.shape[0]
-                patching_status.and_conditions(
-                    [
-                        (
-                            num_classes >= 2,
-                            "Number of classes must be at least 2.",
-                        ),
-                    ]
-                )
-
-            _get_n_samples_bootstrap(n_samples=X.shape[0], max_samples=self.max_samples)
-
-            if not self.bootstrap and self.max_samples is not None:
-                raise ValueError(
-                    "`max_sample` cannot be set if `bootstrap=False`. "
-                    "Either switch to `bootstrap=True` or set "
-                    "`max_sample=None`."
-                )
-
-            if (
-                patching_status.get_status()
-                and (self.random_state is not None)
-                and (not daal_check_version((2024, "P", 0)))
-            ):
-                warnings.warn(
-                    "Setting 'random_state' value is not supported. "
-                    "State set by oneDAL to default value (777).",
-                    RuntimeWarning,
-                )
 
         return patching_status
 
@@ -761,6 +702,10 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
                         or self.estimator.__class__ == DecisionTreeClassifier,
                         "ExtraTrees only supported starting from oneDAL version 2023.2",
                     ),
+                    (
+                        self.n_outputs_ == 1,
+                        f"Number of outputs ({self.n_outputs_}) is not 1.",
+                    ),
                 ]
             )
 
@@ -771,16 +716,6 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
                             daal_check_version((2021, "P", 400)),
                             "oneDAL version is lower than 2021.4.",
                         )
-                    ]
-                )
-
-            if hasattr(self, "n_outputs_"):
-                patching_status.and_conditions(
-                    [
-                        (
-                            self.n_outputs_ == 1,
-                            f"Number of outputs ({self.n_outputs_}) is not 1.",
-                        ),
                     ]
                 )
 
@@ -830,17 +765,12 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
                         daal_check_version((2023, "P", 100)),
                         "ExtraTrees supported starting from oneDAL version 2023.1",
                     ),
+                    (
+                        self.n_outputs_ == 1,
+                        f"Number of outputs ({self.n_outputs_}) is not 1.",
+                    ),
                 ]
             )
-            if hasattr(self, "n_outputs_"):
-                patching_status.and_conditions(
-                    [
-                        (
-                            self.n_outputs_ == 1,
-                            f"Number of outputs ({self.n_outputs_}) is not 1.",
-                        ),
-                    ]
-                )
 
         else:
             raise RuntimeError(
@@ -958,10 +888,6 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
     apply = support_input_format(_sklearn_ForestRegressor.apply)
 
     def _onedal_fit_ready(self, patching_status, X, y, sample_weight):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
-        else:
-            self._check_parameters()
 
         patching_status.and_conditions(
             [
@@ -986,6 +912,10 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
                     self.n_estimators <= 6024,
                     "More than 6024 estimators is not supported.",
                 ),
+                (
+                    _num_features(y, fallback_1d=True) == 1,
+                    f"Number of outputs is not 1.",
+                ),
             ]
         )
 
@@ -1004,63 +934,6 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
                     ),
                 ]
             )
-
-        if patching_status.get_status():
-
-            if sklearn_check_version("1.6"):
-                X, y = check_X_y(
-                    X,
-                    y,
-                    multi_output=True,
-                    accept_sparse=True,
-                    dtype=[np.float64, np.float32],
-                    ensure_all_finite=False,
-                )
-            else:
-                X, y = check_X_y(
-                    X,
-                    y,
-                    multi_output=True,
-                    accept_sparse=True,
-                    dtype=[np.float64, np.float32],
-                    force_all_finite=False,
-                )
-
-            if y.ndim == 2 and y.shape[1] == 1:
-                warnings.warn(
-                    "A column-vector y was passed when a 1d array was"
-                    " expected. Please change the shape of y to "
-                    "(n_samples,), for example using ravel().",
-                    DataConversionWarning,
-                    stacklevel=2,
-                )
-
-            if y.ndim == 1:
-                # reshape is necessary to preserve the data contiguity against vs
-                # [:, np.newaxis] that does not.
-                y = np.reshape(y, (-1, 1))
-
-            self.n_outputs_ = y.shape[1]
-
-            patching_status.and_conditions(
-                [
-                    (
-                        _num_features(y, fallback_1d=True) == 1,
-                        f"Number of outputs is not 1.",
-                    )
-                ]
-            )
-
-            if (
-                patching_status.get_status()
-                and (self.random_state is not None)
-                and (not daal_check_version((2024, "P", 0)))
-            ):
-                warnings.warn(
-                    "Setting 'random_state' value is not supported. "
-                    "State set by oneDAL to default value (777).",
-                    RuntimeWarning,
-                )
 
         return patching_status
 
@@ -1100,17 +973,12 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
                         or self.estimator.__class__ == DecisionTreeClassifier,
                         "ExtraTrees only supported starting from oneDAL version 2023.2",
                     ),
+                    (
+                        self.n_outputs_ == 1,
+                        f"Number of outputs ({self.n_outputs_}) is not 1.",
+                    ),
                 ]
             )
-            if hasattr(self, "n_outputs_"):
-                patching_status.and_conditions(
-                    [
-                        (
-                            self.n_outputs_ == 1,
-                            f"Number of outputs ({self.n_outputs_}) is not 1.",
-                        ),
-                    ]
-                )
 
         else:
             raise RuntimeError(
@@ -1153,17 +1021,12 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
                         or self.estimator.__class__ == DecisionTreeClassifier,
                         "ExtraTrees only supported starting from oneDAL version 2023.1",
                     ),
+                    (
+                        self.n_outputs_ == 1,
+                        f"Number of outputs ({self.n_outputs_}) is not 1.",
+                    ),
                 ]
             )
-            if hasattr(self, "n_outputs_"):
-                patching_status.and_conditions(
-                    [
-                        (
-                            self.n_outputs_ == 1,
-                            f"Number of outputs ({self.n_outputs_}) is not 1.",
-                        ),
-                    ]
-                )
 
         else:
             raise RuntimeError(
@@ -1195,6 +1058,11 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
         )
 
     def fit(self, X, y, sample_weight=None):
+        if sklearn_check_version("1.2"):
+            self._validate_params()
+        else:
+            self._check_parameters()
+
         dispatch(
             self,
             "fit",
