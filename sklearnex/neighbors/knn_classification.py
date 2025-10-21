@@ -188,12 +188,14 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     def _onedal_predict(self, X, queue=None):
         # Use the unified helper from common.py (calls kneighbors + computes prediction)
         # This properly handles X=None (LOOCV) case
+        # Note: X validation happens in kneighbors
         result = self._predict_skl_classification(X)
         return result
 
     def _onedal_predict_proba(self, X, queue=None):
         # Call kneighbors through sklearnex (self.kneighbors is the sklearnex method)
         # This properly handles X=None case (LOOCV) with query_is_train logic
+        # Note: X validation happens in kneighbors
         neigh_dist, neigh_ind = self.kneighbors(X)
 
         # Use the helper method to compute class probabilities
