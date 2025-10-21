@@ -35,7 +35,6 @@ class BaseForest(metaclass=ABCMeta):
     def __init__(
         self,
         n_estimators,
-        criterion,
         max_depth,
         min_samples_split,
         min_samples_leaf,
@@ -45,11 +44,7 @@ class BaseForest(metaclass=ABCMeta):
         min_impurity_decrease,
         min_impurity_split,
         bootstrap,
-        oob_score,
         random_state,
-        warm_start,
-        class_weight,
-        ccp_alpha,
         max_samples,
         max_bins,
         min_bin_size,
@@ -63,12 +58,8 @@ class BaseForest(metaclass=ABCMeta):
     ):
         self.n_estimators = n_estimators
         self.bootstrap = bootstrap
-        self.oob_score = oob_score
         self.random_state = random_state
-        self.warm_start = warm_start
-        self.class_weight = class_weight
         self.max_samples = max_samples
-        self.criterion = criterion
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
         self.min_samples_leaf = min_samples_leaf
@@ -77,7 +68,6 @@ class BaseForest(metaclass=ABCMeta):
         self.max_leaf_nodes = max_leaf_nodes
         self.min_impurity_decrease = min_impurity_decrease
         self.min_impurity_split = min_impurity_split
-        self.ccp_alpha = ccp_alpha
         self.max_bins = max_bins
         self.min_bin_size = min_bin_size
         self.infer_mode = infer_mode
@@ -146,8 +136,6 @@ class BaseForest(metaclass=ABCMeta):
         onedal_params = {
             "fptype": data.dtype,
             "method": self.algorithm,
-            "infer_mode": self.infer_mode,
-            "voting_mode": self.voting_mode,
             "observations_per_tree_fraction": self.observations_per_tree_fraction,
             "impurity_threshold": float(
                 0.0 if self.min_impurity_split is None else self.min_impurity_split
@@ -167,7 +155,9 @@ class BaseForest(metaclass=ABCMeta):
             "bootstrap": bool(self.bootstrap),
             "error_metric_mode": self.error_metric_mode,
             "variable_importance_mode": self.variable_importance_mode,
-            "class_count": self.class_count_,
+            "class_count": self.class_count_,  # used in classification only
+            "infer_mode": self.infer_mode,  # used in classification only
+            "voting_mode": self.voting_mode,  # used in classification only
         }
 
         if daal_check_version((2023, "P", 101)):
@@ -257,7 +247,6 @@ class RandomForestClassifier(ForestClassifier):
     def __init__(
         self,
         n_estimators=100,
-        criterion="gini",
         max_depth=None,
         min_samples_split=2,
         min_samples_leaf=1,
@@ -267,11 +256,7 @@ class RandomForestClassifier(ForestClassifier):
         min_impurity_decrease=0.0,
         min_impurity_split=None,
         bootstrap=True,
-        oob_score=False,
         random_state=None,
-        warm_start=False,
-        class_weight=None,
-        ccp_alpha=0.0,
         max_samples=None,
         max_bins=256,
         min_bin_size=1,
@@ -284,7 +269,6 @@ class RandomForestClassifier(ForestClassifier):
     ):
         super().__init__(
             n_estimators=n_estimators,
-            criterion=criterion,
             max_depth=max_depth,
             min_samples_split=min_samples_split,
             min_samples_leaf=min_samples_leaf,
@@ -294,11 +278,7 @@ class RandomForestClassifier(ForestClassifier):
             min_impurity_decrease=min_impurity_decrease,
             min_impurity_split=min_impurity_split,
             bootstrap=bootstrap,
-            oob_score=oob_score,
             random_state=random_state,
-            warm_start=warm_start,
-            class_weight=class_weight,
-            ccp_alpha=ccp_alpha,
             max_samples=max_samples,
             max_bins=max_bins,
             min_bin_size=min_bin_size,
@@ -321,7 +301,6 @@ class RandomForestRegressor(ForestRegressor):
     def __init__(
         self,
         n_estimators=100,
-        criterion="squared_error",
         max_depth=None,
         min_samples_split=2,
         min_samples_leaf=1,
@@ -331,24 +310,19 @@ class RandomForestRegressor(ForestRegressor):
         min_impurity_decrease=0.0,
         min_impurity_split=None,
         bootstrap=True,
-        oob_score=False,
         random_state=None,
-        warm_start=False,
-        class_weight=None,
-        ccp_alpha=0.0,
         max_samples=None,
         max_bins=256,
         min_bin_size=1,
-        infer_mode="class_responses",
+        infer_mode="class_responses",  # not used (see forest.cpp)
         splitter_mode="best",
-        voting_mode="weighted",
+        voting_mode="weighted",  # not used (see forest.cpp)
         error_metric_mode="none",
         variable_importance_mode="none",
         algorithm="hist",
     ):
         super().__init__(
             n_estimators=n_estimators,
-            criterion=criterion,
             max_depth=max_depth,
             min_samples_split=min_samples_split,
             min_samples_leaf=min_samples_leaf,
@@ -358,11 +332,7 @@ class RandomForestRegressor(ForestRegressor):
             min_impurity_decrease=min_impurity_decrease,
             min_impurity_split=min_impurity_split,
             bootstrap=bootstrap,
-            oob_score=oob_score,
             random_state=random_state,
-            warm_start=warm_start,
-            class_weight=class_weight,
-            ccp_alpha=ccp_alpha,
             max_samples=max_samples,
             max_bins=max_bins,
             min_bin_size=min_bin_size,
@@ -385,7 +355,6 @@ class ExtraTreesClassifier(ForestClassifier):
     def __init__(
         self,
         n_estimators=100,
-        criterion="gini",
         max_depth=None,
         min_samples_split=2,
         min_samples_leaf=1,
@@ -395,11 +364,7 @@ class ExtraTreesClassifier(ForestClassifier):
         min_impurity_decrease=0.0,
         min_impurity_split=None,
         bootstrap=False,
-        oob_score=False,
         random_state=None,
-        warm_start=False,
-        class_weight=None,
-        ccp_alpha=0.0,
         max_samples=None,
         max_bins=256,
         min_bin_size=1,
@@ -412,7 +377,6 @@ class ExtraTreesClassifier(ForestClassifier):
     ):
         super().__init__(
             n_estimators=n_estimators,
-            criterion=criterion,
             max_depth=max_depth,
             min_samples_split=min_samples_split,
             min_samples_leaf=min_samples_leaf,
@@ -422,11 +386,7 @@ class ExtraTreesClassifier(ForestClassifier):
             min_impurity_decrease=min_impurity_decrease,
             min_impurity_split=min_impurity_split,
             bootstrap=bootstrap,
-            oob_score=oob_score,
             random_state=random_state,
-            warm_start=warm_start,
-            class_weight=class_weight,
-            ccp_alpha=ccp_alpha,
             max_samples=max_samples,
             max_bins=max_bins,
             min_bin_size=min_bin_size,
@@ -449,7 +409,6 @@ class ExtraTreesRegressor(ForestRegressor):
     def __init__(
         self,
         n_estimators=100,
-        criterion="squared_error",
         max_depth=None,
         min_samples_split=2,
         min_samples_leaf=1,
@@ -459,24 +418,19 @@ class ExtraTreesRegressor(ForestRegressor):
         min_impurity_decrease=0.0,
         min_impurity_split=None,
         bootstrap=False,
-        oob_score=False,
         random_state=None,
-        warm_start=False,
-        class_weight=None,
-        ccp_alpha=0.0,
         max_samples=None,
         max_bins=256,
         min_bin_size=1,
-        infer_mode="class_responses",
+        infer_mode="class_responses",  # not used (see forest.cpp)
         splitter_mode="random",
-        voting_mode="weighted",
+        voting_mode="weighted",  # not used (see forest.cpp)
         error_metric_mode="none",
         variable_importance_mode="none",
         algorithm="hist",
     ):
         super().__init__(
             n_estimators=n_estimators,
-            criterion=criterion,
             max_depth=max_depth,
             min_samples_split=min_samples_split,
             min_samples_leaf=min_samples_leaf,
@@ -486,11 +440,7 @@ class ExtraTreesRegressor(ForestRegressor):
             min_impurity_decrease=min_impurity_decrease,
             min_impurity_split=min_impurity_split,
             bootstrap=bootstrap,
-            oob_score=oob_score,
             random_state=random_state,
-            warm_start=warm_start,
-            class_weight=class_weight,
-            ccp_alpha=ccp_alpha,
             max_samples=max_samples,
             max_bins=max_bins,
             min_bin_size=min_bin_size,
