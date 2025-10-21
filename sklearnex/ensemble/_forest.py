@@ -176,9 +176,10 @@ class BaseForest(oneDALEstimator, ABC):
         rs = check_random_state(self.random_state)
         seed = rs.randint(0, xp.iinfo("i").max)
 
+        # These parameters need to reference onedal.ensemble._forest, as some parameters
+        # use defaults set in that module
         onedal_params = {
             "n_estimators": self.n_estimators,
-            "criterion": self.criterion,
             "max_depth": self.max_depth,
             "min_samples_split": self.min_samples_split,
             "min_samples_leaf": self.min_samples_leaf,
@@ -188,26 +189,22 @@ class BaseForest(oneDALEstimator, ABC):
             ),
             "max_leaf_nodes": self.max_leaf_nodes,
             "min_impurity_decrease": self.min_impurity_decrease,
+            "min_impurity_split": None,
             "bootstrap": self.bootstrap,
-            "oob_score": self.oob_score,
             "random_state": seed,
-            "verbose": self.verbose,
-            "warm_start": self.warm_start,
-            "error_metric_mode": self._err if self.oob_score else "none",
-            "variable_importance_mode": "mdi",
-            "class_weight": self.class_weight,
+            "max_samples": self.max_samples,
             "max_bins": self.max_bins,
             "min_bin_size": self.min_bin_size,
-            "max_samples": self.max_samples,
+            "error_metric_mode": self._err if self.oob_score else "none",
+            "variable_importance_mode": "mdi",
         }
-
-        onedal_params["min_impurity_split"] = None
 
         # Lazy evaluation of estimators_
         self._cached_estimators_ = None
 
         # Compute
         self._onedal_estimator = self._onedal_factory(**onedal_params)
+        # should fail here in classification as class_count needs to be set
         self._onedal_estimator.fit(X, xp.reshape(y, (-1,)), sample_weight, queue=queue)
 
         self._save_attributes(xp)
