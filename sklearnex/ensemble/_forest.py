@@ -228,6 +228,119 @@ class BaseForest(oneDALEstimator, ABC):
 
         return self
 
+    def _onedal_cpu_supported(self, method_name, *data):
+        class_name = self.__class__.__name__
+        patching_status = PatchingConditionsChain(
+            f"sklearn.ensemble.{class_name}.{method_name}"
+        )
+
+        if method_name == "fit":
+            patching_status = self._onedal_fit_ready(patching_status, *data)
+
+            patching_status.and_conditions(
+                [
+                    (
+                        daal_check_version((2023, "P", 200))
+                        or self.estimator.__class__ == DecisionTreeClassifier,
+                        "ExtraTrees only supported starting from oneDAL version 2023.2",
+                    ),
+                    (
+                        not sp.issparse(data[2]),
+                        "sample_weight is sparse. " "Sparse input is not supported.",
+                    ),
+                ]
+            )
+
+        elif method_name in self._n_jobs_supported_onedal_methods:
+            X = data[0]
+
+            patching_status.and_conditions(
+                [
+                    (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained."),
+                    (not sp.issparse(X), "X is sparse. Sparse input is not supported."),
+                    (self.warm_start is False, "Warm start is not supported."),
+                    (
+                        daal_check_version((2023, "P", 100))
+                        or self.estimator.__class__ == DecisionTreeClassifier,
+                        "ExtraTrees only supported starting from oneDAL version 2023.2",
+                    ),
+                    (
+                        self.n_outputs_ == 1,
+                        f"Number of outputs ({self.n_outputs_}) is not 1.",
+                    ),
+                ]
+            )
+
+            if method_name == "predict_proba":
+                patching_status.and_conditions(
+                    [
+                        (
+                            daal_check_version((2021, "P", 400)),
+                            "oneDAL version is lower than 2021.4.",
+                        )
+                    ]
+                )
+
+        else:
+            raise RuntimeError(
+                f"Unknown method {method_name} in {self.__class__.__name__}"
+            )
+
+        return patching_status
+
+    def _onedal_gpu_supported(self, method_name, *data):
+        class_name = self.__class__.__name__
+        patching_status = PatchingConditionsChain(
+            f"sklearn.ensemble.{class_name}.{method_name}"
+        )
+
+        if method_name == "fit":
+            patching_status = self._onedal_fit_ready(patching_status, *data)
+
+            patching_status.and_conditions(
+                [
+                    (
+                        daal_check_version((2023, "P", 100))
+                        or self.estimator.__class__ == DecisionTreeClassifier,
+                        "ExtraTrees only supported starting from oneDAL version 2023.1",
+                    ),
+                    (
+                        not self.oob_score,
+                        "oob_scores using r2 or accuracy not implemented.",
+                    ),
+                    (data[2] is None, "sample_weight is not supported."),
+                ]
+            )
+
+        elif method_name in self._n_jobs_supported_onedal_methods:
+            X = data[0]
+
+            patching_status.and_conditions(
+                [
+                    (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained"),
+                    (
+                        not sp.issparse(X),
+                        "X is sparse. Sparse input is not supported.",
+                    ),
+                    (self.warm_start is False, "Warm start is not supported."),
+                    (
+                        daal_check_version((2023, "P", 100)),
+                        "ExtraTrees supported starting from oneDAL version 2023.1",
+                    ),
+                    (
+                        self.n_outputs_ == 1,
+                        f"Number of outputs ({self.n_outputs_}) is not 1.",
+                    ),
+                ]
+            )
+
+        else:
+            raise RuntimeError(
+                f"Unknown method {method_name} in {self.__class__.__name__}"
+            )
+
+        return patching_status
+
     def _save_attributes(self, xp):
         if self.oob_score:
             self.oob_score_ = self._onedal_estimator.oob_score_
@@ -555,7 +668,6 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         return self
 
     def _onedal_fit_ready(self, patching_status, X, y, sample_weight):
-        xp, _ = get_namespace(X, y, sample_weight)
 
         patching_status.and_conditions(
             [
@@ -596,6 +708,8 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         )
 
         if patching_status.get_status():
+            xp, _ = get_namespace(X, y, sample_weight)
+
             patching_status.and_conditions(
                 [
                     (
@@ -683,119 +797,6 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
     predict_proba.__doc__ = _sklearn_ForestClassifier.predict_proba.__doc__
     predict_log_proba.__doc__ = _sklearn_ForestClassifier.predict_log_proba.__doc__
     score.__doc__ = _sklearn_ForestClassifier.score.__doc__
-
-    def _onedal_cpu_supported(self, method_name, *data):
-        class_name = self.__class__.__name__
-        patching_status = PatchingConditionsChain(
-            f"sklearn.ensemble.{class_name}.{method_name}"
-        )
-
-        if method_name == "fit":
-            patching_status = self._onedal_fit_ready(patching_status, *data)
-
-            patching_status.and_conditions(
-                [
-                    (
-                        daal_check_version((2023, "P", 200))
-                        or self.estimator.__class__ == DecisionTreeClassifier,
-                        "ExtraTrees only supported starting from oneDAL version 2023.2",
-                    ),
-                    (
-                        not sp.issparse(data[2]),
-                        "sample_weight is sparse. " "Sparse input is not supported.",
-                    ),
-                ]
-            )
-
-        elif method_name in ["predict", "predict_proba", "score"]:
-            X = data[0]
-
-            patching_status.and_conditions(
-                [
-                    (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained."),
-                    (not sp.issparse(X), "X is sparse. Sparse input is not supported."),
-                    (self.warm_start is False, "Warm start is not supported."),
-                    (
-                        daal_check_version((2023, "P", 100))
-                        or self.estimator.__class__ == DecisionTreeClassifier,
-                        "ExtraTrees only supported starting from oneDAL version 2023.2",
-                    ),
-                    (
-                        self.n_outputs_ == 1,
-                        f"Number of outputs ({self.n_outputs_}) is not 1.",
-                    ),
-                ]
-            )
-
-            if method_name == "predict_proba":
-                patching_status.and_conditions(
-                    [
-                        (
-                            daal_check_version((2021, "P", 400)),
-                            "oneDAL version is lower than 2021.4.",
-                        )
-                    ]
-                )
-
-        else:
-            raise RuntimeError(
-                f"Unknown method {method_name} in {self.__class__.__name__}"
-            )
-
-        return patching_status
-
-    def _onedal_gpu_supported(self, method_name, *data):
-        class_name = self.__class__.__name__
-        patching_status = PatchingConditionsChain(
-            f"sklearn.ensemble.{class_name}.{method_name}"
-        )
-
-        if method_name == "fit":
-            patching_status = self._onedal_fit_ready(patching_status, *data)
-
-            patching_status.and_conditions(
-                [
-                    (
-                        daal_check_version((2023, "P", 100))
-                        or self.estimator.__class__ == DecisionTreeClassifier,
-                        "ExtraTrees only supported starting from oneDAL version 2023.1",
-                    ),
-                    (
-                        not self.oob_score,
-                        "oob_scores using r2 or accuracy not implemented.",
-                    ),
-                    (data[2] is None, "sample_weight is not supported."),
-                ]
-            )
-
-        elif method_name in ["predict", "predict_proba", "score"]:
-            X = data[0]
-
-            patching_status.and_conditions(
-                [
-                    (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained"),
-                    (
-                        not sp.issparse(X),
-                        "X is sparse. Sparse input is not supported.",
-                    ),
-                    (self.warm_start is False, "Warm start is not supported."),
-                    (
-                        daal_check_version((2023, "P", 100)),
-                        "ExtraTrees supported starting from oneDAL version 2023.1",
-                    ),
-                    (
-                        self.n_outputs_ == 1,
-                        f"Number of outputs ({self.n_outputs_}) is not 1.",
-                    ),
-                ]
-            )
-
-        else:
-            raise RuntimeError(
-                f"Unknown method {method_name} in {self.__class__.__name__}"
-            )
-
-        return patching_status
 
     def _onedal_predict(self, X, queue=None):
         xp, is_array_api_compliant = get_namespace(X)
@@ -935,104 +936,6 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
                         "Monotonicity constraints are not supported.",
                     ),
                 ]
-            )
-
-        return patching_status
-
-    def _onedal_cpu_supported(self, method_name, *data):
-        class_name = self.__class__.__name__
-        patching_status = PatchingConditionsChain(
-            f"sklearn.ensemble.{class_name}.{method_name}"
-        )
-
-        if method_name == "fit":
-            patching_status = self._onedal_fit_ready(patching_status, *data)
-
-            patching_status.and_conditions(
-                [
-                    (
-                        daal_check_version((2023, "P", 200))
-                        or self.estimator.__class__ == DecisionTreeClassifier,
-                        "ExtraTrees only supported starting from oneDAL version 2023.2",
-                    ),
-                    (
-                        not sp.issparse(data[2]),
-                        "sample_weight is sparse. " "Sparse input is not supported.",
-                    ),
-                ]
-            )
-
-        elif method_name in ["predict", "score"]:
-            X = data[0]
-
-            patching_status.and_conditions(
-                [
-                    (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained."),
-                    (not sp.issparse(X), "X is sparse. Sparse input is not supported."),
-                    (self.warm_start is False, "Warm start is not supported."),
-                    (
-                        daal_check_version((2023, "P", 200))
-                        or self.estimator.__class__ == DecisionTreeClassifier,
-                        "ExtraTrees only supported starting from oneDAL version 2023.2",
-                    ),
-                    (
-                        self.n_outputs_ == 1,
-                        f"Number of outputs ({self.n_outputs_}) is not 1.",
-                    ),
-                ]
-            )
-
-        else:
-            raise RuntimeError(
-                f"Unknown method {method_name} in {self.__class__.__name__}"
-            )
-
-        return patching_status
-
-    def _onedal_gpu_supported(self, method_name, *data):
-        class_name = self.__class__.__name__
-        patching_status = PatchingConditionsChain(
-            f"sklearn.ensemble.{class_name}.{method_name}"
-        )
-
-        if method_name == "fit":
-            patching_status = self._onedal_fit_ready(patching_status, *data)
-
-            patching_status.and_conditions(
-                [
-                    (
-                        daal_check_version((2023, "P", 100))
-                        or self.estimator.__class__ == DecisionTreeClassifier,
-                        "ExtraTrees only supported starting from oneDAL version 2023.1",
-                    ),
-                    (not self.oob_score, "oob_score value is not sklearn conformant."),
-                    (data[2] is None, "sample_weight is not supported."),
-                ]
-            )
-
-        elif method_name in ["predict", "score"]:
-            X = data[0]
-
-            patching_status.and_conditions(
-                [
-                    (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained."),
-                    (not sp.issparse(X), "X is sparse. Sparse input is not supported."),
-                    (self.warm_start is False, "Warm start is not supported."),
-                    (
-                        daal_check_version((2023, "P", 100))
-                        or self.estimator.__class__ == DecisionTreeClassifier,
-                        "ExtraTrees only supported starting from oneDAL version 2023.1",
-                    ),
-                    (
-                        self.n_outputs_ == 1,
-                        f"Number of outputs ({self.n_outputs_}) is not 1.",
-                    ),
-                ]
-            )
-
-        else:
-            raise RuntimeError(
-                f"Unknown method {method_name} in {self.__class__.__name__}"
             )
 
         return patching_status
