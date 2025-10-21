@@ -223,5 +223,3 @@ def test_class_weight(queue):
         with config_context(target_offload=queue):
             clf.fit(X, y)
             assert_array_almost_equal(clf.predict(X).ravel(), [1] * 6)
-
-
