@@ -18,7 +18,7 @@ from sklearn.metrics import r2_score
 from sklearn.neighbors._regression import (
     KNeighborsRegressor as _sklearn_KNeighborsRegressor,
 )
-from sklearn.utils.validation import check_is_fitted
+from sklearn.utils.validation import check_is_fitted, assert_all_finite
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
@@ -134,13 +134,17 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         return result
 
     def _onedal_fit(self, X, y, queue=None):
-        xp, _ = get_namespace(X)
-        # REFACTOR: Use validate_data to convert pandas to numpy and validate types for X only
-        X = validate_data(
+        xp, _ = get_namespace(X, y)
+        # REFACTOR: Use validate_data with multi_output=True to preserve y shape
+        # (multi_output=False converts column vectors to 1D)
+        X, y = validate_data(
             self,
             X,
+            y,
             dtype=[xp.float64, xp.float32],
             accept_sparse="csr",
+            y_numeric=True,
+            multi_output=True,
         )
         # REFACTOR: Process regression targets in sklearnex before passing to onedal
         # This sets _shape and _y attributes
@@ -192,6 +196,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
     def _onedal_predict(self, X, queue=None):
         # Dispatch between GPU and SKL prediction methods
         # This logic matches onedal regressor predict() method but computation happens in sklearnex
+        # Note: X validation happens in kneighbors (for SKL path) or _predict_gpu (for GPU path)
         gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
         is_uniform_weights = getattr(self, "weights", "uniform") == "uniform"
 
@@ -205,7 +210,22 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
 
     def _predict_gpu(self, X, queue=None):
         """GPU prediction path - calls onedal backend."""
-        # Call onedal backend for GPU prediction (X is already validated by predict())
+        # Validate X for GPU path (SKL path validation happens in kneighbors)
+        if X is not None:
+            xp, _ = get_namespace(X)
+            # For precomputed metric, only check NaN/inf, don't validate features
+            if getattr(self, "effective_metric_", self.metric) == "precomputed":
+                from ..utils.validation import assert_all_finite
+                assert_all_finite(X, allow_nan=False, input_name="X")
+            else:
+                X = validate_data(
+                    self,
+                    X,
+                    dtype=[xp.float64, xp.float32],
+                    accept_sparse="csr",
+                    reset=False,
+                )
+        # Call onedal backend for GPU prediction
         result = self._onedal_estimator._predict_gpu(X)
         return result
 

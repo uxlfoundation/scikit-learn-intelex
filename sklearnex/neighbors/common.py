@@ -320,18 +320,6 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                 f"The number of classes has to be greater than one; got {length}"
             )
 
-    def _validate_feature_count(self, X, method_name=""):
-        n_features = getattr(self, "n_features_in_", None)
-        shape = getattr(X, "shape", None)
-        if n_features and shape and len(shape) > 1 and shape[1] != n_features:
-            raise ValueError(
-                (
-                    f"X has {X.shape[1]} features, "
-                    f"but {method_name} is expecting "
-                    f"{n_features} features as input"
-                )
-            )
-
     def _validate_kneighbors_bounds(self, n_neighbors, query_is_train, X):
         n_samples_fit = self.n_samples_fit_
         if n_neighbors > n_samples_fit:
@@ -350,13 +338,11 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         """Shared validation for kneighbors method called from sklearnex layer.
 
         Validates:
-        - Feature count matches training data if X is provided
         - n_neighbors is within valid bounds if provided
+        
+        Note: Feature validation (count, names, etc.) happens in validate_data 
+        called by _onedal_kneighbors, so we don't duplicate it here.
         """
-        # Validate feature count if X is provided
-        if X is not None:
-            self._validate_feature_count(X)
-
         # Validate n_neighbors bounds if provided
         if n_neighbors is not None:
             # Determine if query is the training set
