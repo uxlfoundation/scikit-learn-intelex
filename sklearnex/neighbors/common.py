@@ -62,37 +62,6 @@ class KNeighborsDispatchingBase(oneDALEstimator):
 
         return result_method
 
-    # def _validate_data(
-    #     self, X, y=None, reset=True, validate_separately=None, **check_params
-    # ):
-    #     if y is None:
-    #         if getattr(self, "requires_y", False):
-    #             raise ValueError(
-    #                 f"This {self.__class__.__name__} estimator "
-    #                 f"requires y to be passed, but the target y is None."
-    #             )
-    #         X = _check_array(X, **check_params)
-    #         out = X, y
-    #     else:
-    #         if validate_separately:
-    #             # We need this because some estimators validate X and y
-    #             # separately, and in general, separately calling _check_array()
-    #             # on X and y isn't equivalent to just calling _check_X_y()
-    #             # :(
-    #             check_X_params, check_y_params = validate_separately
-    #             X = _check_array(X, **check_X_params)
-    #             y = _check_array(y, **check_y_params)
-    #         else:
-    #             X, y = _check_X_y(X, y, **check_params)
-    #         out = X, y
-
-    #     if check_params.get("ensure_2d", True):
-    #         from onedal.utils.validation import _check_n_features
-
-    #         _check_n_features(self, X, reset=reset)
-
-    #     return out
-
     def _get_weights(self, dist, weights):
         if weights in (None, "uniform"):
             return None
@@ -522,13 +491,6 @@ class KNeighborsDispatchingBase(oneDALEstimator):
 
         Note: y should already be converted to numpy array via validate_data before calling this.
         """
-        import sys
-
-        print(
-            f"DEBUG _process_classification_targets: y type={type(y)}, y shape={getattr(y, 'shape', 'NO_SHAPE')}",
-            file=sys.stderr,
-        )
-
         # Array API support: get namespace from y
         xp, _ = get_namespace(y)
 
@@ -586,17 +548,9 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         shape = getattr(y, "shape", None)
         self._shape = shape if shape is not None else y.shape
         self._y = y
-        print(
-            f"DEBUG _process_regression_targets: _y type={type(self._y)}, _shape={self._shape}",
-            file=sys.stderr,
-        )
         return y
 
     def _fit_validation(self, X, y=None):
-        print(
-            f"DEBUG _fit_validation CALLED: X type={type(X)}, y type={type(y)}",
-            file=sys.stderr,
-        )
         if sklearn_check_version("1.2"):
             self._validate_params()
         # check_feature_names(self, X, reset=True)
