@@ -575,7 +575,7 @@ class BaseForest(oneDALEstimator, ABC):
 
         # convert model to estimators
         params = {
-            "criterion": self._onedal_estimator.criterion,
+            "criterion": self.criterion,
             "max_depth": self._onedal_estimator.max_depth,
             "min_samples_split": self._onedal_estimator.min_samples_split,
             "min_samples_leaf": self._onedal_estimator.min_samples_leaf,
