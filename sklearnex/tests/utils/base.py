@@ -399,7 +399,7 @@ def _get_processor_info():
 
 class DummyEstimator(BaseEstimator):
         
-    def fit(self, X, y)
+    def fit(self, X, y):
         X_table = to_table(X)
         y_table = to_table(y)
         # The presence of the fitted attributes (ending with a trailing
