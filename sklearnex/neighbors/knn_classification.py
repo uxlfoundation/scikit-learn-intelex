@@ -67,12 +67,6 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         )
 
     def fit(self, X, y):
-        import sys
-
-        print(
-            f"DEBUG KNeighborsClassifier.fit START: X type={type(X)}, X shape={getattr(X, 'shape', 'NO_SHAPE')}, y type={type(y)}",
-            file=sys.stderr,
-        )
         dispatch(
             self,
             "fit",
@@ -83,20 +77,10 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             X,
             y,
         )
-        print(
-            f"DEBUG KNeighborsClassifier.fit END: _fit_X type={type(getattr(self, '_fit_X', 'NOT_SET'))}",
-            file=sys.stderr,
-        )
         return self
 
     @wrap_output_data
     def predict(self, X):
-        import sys
-
-        print(
-            f"DEBUG KNeighborsClassifier.predict START: X type={type(X)}, X shape={getattr(X, 'shape', 'NO_SHAPE')}",
-            file=sys.stderr,
-        )
         check_is_fitted(self)
 
         result = dispatch(
@@ -108,20 +92,10 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             },
             X,
         )
-        print(
-            f"DEBUG KNeighborsClassifier.predict END: result type={type(result)}",
-            file=sys.stderr,
-        )
         return result
 
     @wrap_output_data
     def predict_proba(self, X):
-        import sys
-
-        print(
-            f"DEBUG KNeighborsClassifier.predict_proba START: X type={type(X)}, X shape={getattr(X, 'shape', 'NO_SHAPE')}",
-            file=sys.stderr,
-        )
         check_is_fitted(self)
 
         result = dispatch(
@@ -133,20 +107,10 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             },
             X,
         )
-        print(
-            f"DEBUG KNeighborsClassifier.predict_proba END: result type={type(result)}",
-            file=sys.stderr,
-        )
         return result
 
     @wrap_output_data
     def score(self, X, y, sample_weight=None):
-        import sys
-
-        print(
-            f"DEBUG KNeighborsClassifier.score START: X type={type(X)}, y type={type(y)}",
-            file=sys.stderr,
-        )
         check_is_fitted(self)
 
         result = dispatch(
@@ -160,19 +124,11 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             y,
             sample_weight=sample_weight,
         )
-        print(f"DEBUG KNeighborsClassifier.score END: result={result}", file=sys.stderr)
         return result
 
     @wrap_output_data
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
-        import sys
-
-        print(
-            f"DEBUG KNeighborsClassifier.kneighbors START: X type={type(X)}, n_neighbors={n_neighbors}, return_distance={return_distance}",
-            file=sys.stderr,
-        )
-
-        # Validate n_neighbors parameter first (before check_is_fitted)
+        # Validate n_neighbors parameter first
         if n_neighbors is not None:
             self._validate_n_neighbors(n_neighbors)
 
@@ -192,25 +148,10 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             n_neighbors=n_neighbors,
             return_distance=return_distance,
         )
-        print(
-            f"DEBUG KNeighborsClassifier.kneighbors END: result type={type(result)}",
-            file=sys.stderr,
-        )
         return result
 
     def _onedal_fit(self, X, y, queue=None):
-        import sys
-
-        print(
-            f"DEBUG KNeighborsClassifier._onedal_fit START: X type={type(X)}, y type={type(y)}",
-            file=sys.stderr,
-        )
-
-        # Get array namespace for array API support
         xp, _ = get_namespace(X)
-        print(f"DEBUG: Array namespace: {xp}", file=sys.stderr)
-
-        # REFACTOR: Use validate_data to convert pandas to numpy and validate types
         X, y = validate_data(
             self,
             X,
@@ -218,19 +159,8 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             dtype=[xp.float64, xp.float32],
             accept_sparse="csr",
         )
-        print(
-            f"DEBUG: After validate_data, X type={type(X)}, y type={type(y)}",
-            file=sys.stderr,
-        )
-
-        # REFACTOR STEP 1: Process classification targets in sklearnex before passing to onedal
-        print(f"DEBUG: Processing classification targets in sklearnex", file=sys.stderr)
-        y_processed = self._process_classification_targets(y)
-        print(
-            f"DEBUG: After _process_classification_targets, y_processed type={type(y_processed)}",
-            file=sys.stderr,
-        )
-
+        # Process classification targets in sklearnex before passing to onedal
+        self._process_classification_targets(y)
         onedal_params = {
             "n_neighbors": self.n_neighbors,
             "weights": self.weights,
@@ -244,68 +174,24 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         self._onedal_estimator.effective_metric_ = self.effective_metric_
         self._onedal_estimator.effective_metric_params_ = self.effective_metric_params_
 
-        # REFACTOR: Pass both original and processed targets to onedal
+        # Pass both original and processed targets to onedal
         # onedal needs the processed classes_ and _y attributes that we just set
         self._onedal_estimator.classes_ = self.classes_
         self._onedal_estimator._y = self._y
         self._onedal_estimator.outputs_2d_ = self.outputs_2d_
         self._onedal_estimator._shape = self._shape  # Pass shape from sklearnex
-        print(
-            f"DEBUG: Set onedal_estimator.classes_={self._onedal_estimator.classes_}",
-            file=sys.stderr,
-        )
-        print(
-            f"DEBUG: Set onedal_estimator._y shape={self._onedal_estimator._y.shape}",
-            file=sys.stderr,
-        )
-        print(
-            f"DEBUG: Set onedal_estimator._shape={self._onedal_estimator._shape}",
-            file=sys.stderr,
-        )
 
-        print(
-            f"DEBUG KNeighborsClassifier._onedal_fit: Calling onedal_estimator.fit with X and original y",
-            file=sys.stderr,
-        )
         # Pass original y to onedal - it will use the pre-set classes_ and _y attributes we just assigned
         self._onedal_estimator.fit(X, y, queue=queue)
-        print(
-            f"DEBUG KNeighborsClassifier._onedal_fit: After fit, calling _save_attributes",
-            file=sys.stderr,
-        )
-
         self._save_attributes()
-        print(
-            f"DEBUG KNeighborsClassifier._onedal_fit END: self._fit_X type={type(getattr(self, '_fit_X', 'NOT_SET'))}",
-            file=sys.stderr,
-        )
 
     def _onedal_predict(self, X, queue=None):
-        import sys
-
-        print(
-            f"DEBUG KNeighborsClassifier._onedal_predict START: X type={type(X)}",
-            file=sys.stderr,
-        )
-
         # Use the unified helper from common.py (calls kneighbors + computes prediction)
         # This properly handles X=None (LOOCV) case
         result = self._predict_skl_classification(X)
-
-        print(
-            f"DEBUG KNeighborsClassifier._onedal_predict END: result type={type(result)}",
-            file=sys.stderr,
-        )
         return result
 
     def _onedal_predict_proba(self, X, queue=None):
-        import sys
-
-        print(
-            f"DEBUG KNeighborsClassifier._onedal_predict_proba START: X type={type(X)}",
-            file=sys.stderr,
-        )
-
         # Call kneighbors through sklearnex (self.kneighbors is the sklearnex method)
         # This properly handles X=None case (LOOCV) with query_is_train logic
         neigh_dist, neigh_ind = self.kneighbors(X)
@@ -314,24 +200,11 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         result = self._compute_class_probabilities(
             neigh_dist, neigh_ind, self.weights, self._y, self.classes_, self.outputs_2d_
         )
-
-        print(
-            f"DEBUG KNeighborsClassifier._onedal_predict_proba END: result type={type(result)}",
-            file=sys.stderr,
-        )
         return result
 
     def _onedal_kneighbors(
         self, X=None, n_neighbors=None, return_distance=True, queue=None
     ):
-        import sys
-
-        print(
-            f"DEBUG KNeighborsClassifier._onedal_kneighbors START: X type={type(X)}, n_neighbors={n_neighbors}, return_distance={return_distance}",
-            file=sys.stderr,
-        )
-
-        # Validate X to convert array API/pandas to numpy and check feature names (only if X is not None)
         if X is not None:
             xp, _ = get_namespace(X)
             X = validate_data(
@@ -342,7 +215,6 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
                 reset=False,
             )
 
-        # REFACTOR: All post-processing now in sklearnex following PCA pattern
         # Prepare inputs and handle query_is_train case
         X, n_neighbors, query_is_train = self._prepare_kneighbors_inputs(X, n_neighbors)
 
@@ -355,20 +227,9 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         result = self._kneighbors_post_processing(
             X, n_neighbors, return_distance, result, query_is_train
         )
-
-        print(
-            f"DEBUG KNeighborsClassifier._onedal_kneighbors END: result type={type(result)}",
-            file=sys.stderr,
-        )
         return result
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
-        import sys
-
-        print(
-            f"DEBUG KNeighborsClassifier._onedal_score START: X type={type(X)}, y type={type(y)}",
-            file=sys.stderr,
-        )
         # Convert array API to numpy for sklearn's accuracy_score
         # Note: validate_data does NOT convert array API to numpy, so we do it explicitly
         y = np.asarray(y)
@@ -377,33 +238,17 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         result = accuracy_score(
             y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
         )
-        print(
-            f"DEBUG KNeighborsClassifier._onedal_score END: result={result}",
-            file=sys.stderr,
-        )
         return result
 
     def _save_attributes(self):
-        import sys
-
-        print(f"DEBUG KNeighborsClassifier._save_attributes START", file=sys.stderr)
         self.classes_ = self._onedal_estimator.classes_
         self.n_features_in_ = self._onedal_estimator.n_features_in_
         self.n_samples_fit_ = self._onedal_estimator.n_samples_fit_
         self._fit_X = self._onedal_estimator._fit_X
-        print(
-            f"DEBUG KNeighborsClassifier._save_attributes: _fit_X type={type(self._fit_X)}",
-            file=sys.stderr,
-        )
         self._y = self._onedal_estimator._y
-        print(
-            f"DEBUG KNeighborsClassifier._save_attributes: _y type={type(self._y)}",
-            file=sys.stderr,
-        )
         self._fit_method = self._onedal_estimator._fit_method
         self.outputs_2d_ = self._onedal_estimator.outputs_2d_
         self._tree = self._onedal_estimator._tree
-        print(f"DEBUG KNeighborsClassifier._save_attributes END", file=sys.stderr)
 
     fit.__doc__ = _sklearn_KNeighborsClassifier.fit.__doc__
     predict.__doc__ = _sklearn_KNeighborsClassifier.predict.__doc__
