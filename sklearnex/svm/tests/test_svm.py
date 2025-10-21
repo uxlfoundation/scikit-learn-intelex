@@ -152,7 +152,7 @@ def test_iris(kernel):
 
     clf0 = SVC(kernel=kernel)
     clf1 = SVC(kernel=kernel)
-    check_svm_model_equal(queue, clf0, clf1, *dataset, decimal=2)
+    check_svm_model_equal(None, clf0, clf1, *dataset, decimal=2)
 
 
 @pytest.mark.parametrize("kernel", ["linear", "rbf", "poly", "sigmoid"])
@@ -168,7 +168,7 @@ def test_diabetes(kernel):
 
     clf0 = SVR(kernel=kernel, C=0.1)
     clf1 = SVR(kernel=kernel, C=0.1)
-    check_svm_model_equal(queue, clf0, clf1, *dataset)
+    check_svm_model_equal(None, clf0, clf1, *dataset)
 
 
 # https://github.com/uxlfoundation/scikit-learn-intelex/issues/1880
@@ -223,4 +223,5 @@ def test_class_weight(queue):
         with config_context(target_offload=queue):
             clf.fit(X, y)
             assert_array_almost_equal(clf.predict(X).ravel(), [1] * 6)
+
 
