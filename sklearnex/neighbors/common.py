@@ -249,6 +249,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             # Array API: Cannot use fancy indexing __setitem__ like proba_k[all_rows, idx] = ...
             # Instead, build probabilities sample by sample
             proba_list = []
+            zero_weight = xp.asarray(0.0, dtype=xp.float64)
             for sample_idx in range(n_queries):
                 sample_proba = xp.zeros((classes_k.size,), dtype=xp.float64)
                 # For this sample, accumulate weights for each neighbor's predicted class
@@ -258,13 +259,16 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                     # Update probability for this class using array indexing
                     # Create a mask for this class and add weight where mask is True
                     mask = xp.arange(classes_k.size) == class_label
-                    sample_proba = sample_proba + xp.where(mask, weight, 0.0)
+                    sample_proba = sample_proba + xp.where(mask, weight, zero_weight)
                 proba_list.append(sample_proba)
             proba_k = xp.stack(proba_list, axis=0)  # Shape: (n_queries, n_classes)
 
             # normalize 'votes' into real [0,1] probabilities
             normalizer = xp.sum(proba_k, axis=1)[:, xp.newaxis]
-            normalizer[normalizer == 0.0] = 1.0
+            # Use array scalar for comparison and assignment
+            zero_scalar = xp.asarray(0.0, dtype=xp.float64)
+            one_scalar = xp.asarray(1.0, dtype=xp.float64)
+            normalizer = xp.where(normalizer == zero_scalar, one_scalar, normalizer)
             proba_k /= normalizer
 
             probabilities.append(proba_k)
