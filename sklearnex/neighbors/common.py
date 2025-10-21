@@ -339,8 +339,8 @@ class KNeighborsDispatchingBase(oneDALEstimator):
 
         Validates:
         - n_neighbors is within valid bounds if provided
-        
-        Note: Feature validation (count, names, etc.) happens in validate_data 
+
+        Note: Feature validation (count, names, etc.) happens in validate_data
         called by _onedal_kneighbors, so we don't duplicate it here.
         """
         # Validate n_neighbors bounds if provided
