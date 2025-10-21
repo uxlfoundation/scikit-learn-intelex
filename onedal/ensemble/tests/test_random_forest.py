@@ -49,7 +49,7 @@ def test_rf_regression(queue):
     X, y = make_regression(
         n_samples=100, n_features=4, n_informative=2, random_state=0, shuffle=False
     )
-    rf = RandomForestRegressor(max_depth=2, random_state=0).fit(X, y, queue=queue)
+    rf = RandomForestRegressor(max_depth=2, random_state=209652396).fit(X, y, queue=queue)
 
     # GPU and CPU implementations of Random Forest use RNGs differently. They build
     # different ensembles of trees, thereby requiring separate check values.
