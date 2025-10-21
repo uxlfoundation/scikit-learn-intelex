@@ -125,6 +125,7 @@ class BaseForest(oneDALEstimator, ABC):
             y = xp.reshape(y, (-1, 1))
 
         self._n_samples, self.n_outputs_ = y.shape
+        self.n_features_in_ = X.shape[1]
 
         if not use_raw_input:
             y, expanded_class_weight = self._validate_y_class_weight(y)
@@ -145,7 +146,6 @@ class BaseForest(oneDALEstimator, ABC):
             except AttributeError:
                 self.classes_ = xp.unique_values(y)
             self.n_classes_ = len(self.classes_)
-        self.n_features_in_ = X.shape[1]
 
         # conform to scikit-learn internal calculations
         if self.bootstrap:
