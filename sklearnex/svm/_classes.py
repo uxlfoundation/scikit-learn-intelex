@@ -102,7 +102,7 @@ class SVC(BaseSVC, _sklearn_SVC):
             # Without this, a segmentation fault with
             # Windows fatal exception: access violation
             # occurs
-            raise ValueError("C <= 0")
+            raise ValueError("'C' must be strictly positive.")
         dispatch(
             self,
             "fit",
@@ -398,7 +398,7 @@ class NuSVR(BaseSVR, _sklearn_NuSVR):
             # Without this, a segmentation fault with
             # Windows fatal exception: access violation
             # occurs
-            raise ValueError("nu <= 0 or nu > 1")
+            raise ValueError("'nu' must be in the range (0, 1].")
         dispatch(
             self,
             "fit",
