@@ -45,7 +45,7 @@ class BaseForest(metaclass=ABCMeta):
         min_impurity_split,
         bootstrap,
         random_state,
-        max_samples,
+        observations_per_tree_fraction,
         max_bins,
         min_bin_size,
         infer_mode,
@@ -54,12 +54,8 @@ class BaseForest(metaclass=ABCMeta):
         error_metric_mode,
         variable_importance_mode,
         algorithm,
-        **kwargs,
     ):
         self.n_estimators = n_estimators
-        self.bootstrap = bootstrap
-        self.random_state = random_state
-        self.max_samples = max_samples
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
         self.min_samples_leaf = min_samples_leaf
@@ -68,6 +64,9 @@ class BaseForest(metaclass=ABCMeta):
         self.max_leaf_nodes = max_leaf_nodes
         self.min_impurity_decrease = min_impurity_decrease
         self.min_impurity_split = min_impurity_split
+        self.bootstrap = bootstrap
+        self.random_state = random_state
+        self.observations_per_tree_fraction = observations_per_tree_fraction
         self.max_bins = max_bins
         self.min_bin_size = min_bin_size
         self.infer_mode = infer_mode
@@ -84,6 +83,12 @@ class BaseForest(metaclass=ABCMeta):
     def infer(self, *args, **kwargs): ...
 
     def _to_absolute_max_features(self, n_features):
+        # This functionality is not used when the onedal estimator is called
+        # by the sklearnex estimator, it is superseded by the
+        # `_to_absolute_max_features` function which handles additional
+        # sklearn conformance. This is kept as accessing the default values
+        # (Classification: sqrt(p), Regression: p/3) is not possible with
+        # current implementation in forest.cpp
         if self.max_features is None:
             return n_features
         elif isinstance(self.max_features, str):
@@ -94,32 +99,8 @@ class BaseForest(metaclass=ABCMeta):
             return max(1, int(self.max_features * n_features))
         return 0
 
-    def _get_observations_per_tree_fraction(self, n_samples, max_samples):
-        if max_samples is None:
-            return 1.0
-
-        elif isinstance(max_samples, numbers.Integral):
-            if not (1 <= max_samples <= n_samples):
-                msg = "`max_samples` must be in range 1 to {} but got value {}"
-                raise ValueError(msg.format(n_samples, max_samples))
-            return max(float(max_samples / n_samples), 1 / n_samples)
-
-        elif isinstance(max_samples, numbers.Real):
-            return max(float(max_samples), 1 / n_samples)
-
-        msg = "`max_samples` should be int or float, but got type '{}'"
-        raise TypeError(msg.format(type(max_samples)))
-
     def _get_onedal_params(self, data):
         n_samples, n_features = data.shape
-
-        self.observations_per_tree_fraction = (
-            self._get_observations_per_tree_fraction(
-                n_samples=n_samples, max_samples=self.max_samples
-            )
-            if bool(self.bootstrap)
-            else 1.0
-        )
 
         min_observations_in_leaf_node = (
             self.min_samples_leaf
@@ -257,7 +238,7 @@ class RandomForestClassifier(ForestClassifier):
         min_impurity_split=None,
         bootstrap=True,
         random_state=None,
-        max_samples=None,
+        observations_per_tree_fraction=1.0,
         max_bins=256,
         min_bin_size=1,
         infer_mode="class_responses",
@@ -279,7 +260,7 @@ class RandomForestClassifier(ForestClassifier):
             min_impurity_split=min_impurity_split,
             bootstrap=bootstrap,
             random_state=random_state,
-            max_samples=max_samples,
+            observations_per_tree_fraction=observations_per_tree_fraction,
             max_bins=max_bins,
             min_bin_size=min_bin_size,
             infer_mode=infer_mode,
@@ -311,7 +292,7 @@ class RandomForestRegressor(ForestRegressor):
         min_impurity_split=None,
         bootstrap=True,
         random_state=None,
-        max_samples=None,
+        observations_per_tree_fraction=1.0,
         max_bins=256,
         min_bin_size=1,
         infer_mode="class_responses",  # not used (see forest.cpp)
@@ -333,7 +314,7 @@ class RandomForestRegressor(ForestRegressor):
             min_impurity_split=min_impurity_split,
             bootstrap=bootstrap,
             random_state=random_state,
-            max_samples=max_samples,
+            observations_per_tree_fraction=observations_per_tree_fraction,
             max_bins=max_bins,
             min_bin_size=min_bin_size,
             infer_mode=infer_mode,
@@ -365,7 +346,7 @@ class ExtraTreesClassifier(ForestClassifier):
         min_impurity_split=None,
         bootstrap=False,
         random_state=None,
-        max_samples=None,
+        observations_per_tree_fraction=1.0,
         max_bins=256,
         min_bin_size=1,
         infer_mode="class_responses",
@@ -387,7 +368,7 @@ class ExtraTreesClassifier(ForestClassifier):
             min_impurity_split=min_impurity_split,
             bootstrap=bootstrap,
             random_state=random_state,
-            max_samples=max_samples,
+            observations_per_tree_fraction=observations_per_tree_fraction,
             max_bins=max_bins,
             min_bin_size=min_bin_size,
             infer_mode=infer_mode,
@@ -419,7 +400,7 @@ class ExtraTreesRegressor(ForestRegressor):
         min_impurity_split=None,
         bootstrap=False,
         random_state=None,
-        max_samples=None,
+        observations_per_tree_fraction=1.0,
         max_bins=256,
         min_bin_size=1,
         infer_mode="class_responses",  # not used (see forest.cpp)
@@ -441,7 +422,7 @@ class ExtraTreesRegressor(ForestRegressor):
             min_impurity_split=min_impurity_split,
             bootstrap=bootstrap,
             random_state=random_state,
-            max_samples=max_samples,
+            observations_per_tree_fraction=observations_per_tree_fraction,
             max_bins=max_bins,
             min_bin_size=min_bin_size,
             infer_mode=infer_mode,

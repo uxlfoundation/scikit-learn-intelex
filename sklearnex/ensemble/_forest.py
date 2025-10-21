@@ -146,25 +146,13 @@ class BaseForest(oneDALEstimator, ABC):
             self.n_classes_ = len(self.classes_)
         self.n_features_in_ = X.shape[1]
 
-        if not self.bootstrap and self.max_samples is not None:
-            raise ValueError(
-                "`max_sample` cannot be set if `bootstrap=False`. "
-                "Either switch to `bootstrap=True` or set "
-                "`max_sample=None`."
-            )
-        elif self.bootstrap:
-            n_samples_bootstrap = _get_n_samples_bootstrap(
+        # conform to scikit-learn internal calculations
+        if self.bootstrap:
+            self._n_samples_bootstrap = _get_n_samples_bootstrap(
                 n_samples=X.shape[0], max_samples=self.max_samples
             )
         else:
-            n_samples_bootstrap = None
-
-        self._n_samples_bootstrap = n_samples_bootstrap
-
-        self._validate_estimator()
-
-        if not self.bootstrap and self.oob_score:
-            raise ValueError("Out of bag estimation only available if bootstrap=True")
+            self._n_samples_bootstrap = None
 
         if (self.random_state is not None) and (not daal_check_version((2024, "P", 0))):
             warnings.warn(
@@ -192,11 +180,17 @@ class BaseForest(oneDALEstimator, ABC):
             "min_impurity_split": None,
             "bootstrap": self.bootstrap,
             "random_state": seed,
-            "max_samples": self.max_samples,
+            "observations_per_tree_fraction": (
+                self._n_samples_bootstrap / self.n_features_in_
+                if self._n_samples_bootstrap is not None
+                else 1.0
+            ),
             "max_bins": self.max_bins,
             "min_bin_size": self.min_bin_size,
+            # voting mode is set by onedal estimator defaults
             "error_metric_mode": self._err if self.oob_score else "none",
             "variable_importance_mode": "mdi",
+            # algorithm mode is set by onedal estimator defaults
         }
 
         # Lazy evaluation of estimators_
@@ -408,18 +402,7 @@ class BaseForest(oneDALEstimator, ABC):
                         UserWarning,
                     )
 
-        if self.bootstrap:
-            self._n_samples_bootstrap = max(
-                round(
-                    self._onedal_estimator.observations_per_tree_fraction
-                    * self._n_samples
-                ),
-                1,
-            )
-        else:
-            self._n_samples_bootstrap = None
         self._validate_estimator()
-        return self
 
     def _to_absolute_max_features(self, max_features, n_features, xp=None):
         if max_features is None:
@@ -728,6 +711,19 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         else:
             self._check_parameters()
 
+        # slight variation on scikit-learn-intelex rules. This is a custom
+        # parameter check which is not covered by self._validate_params()
+        # but is necessary for correct math and scikit-learn conformance.
+        if not self.bootstrap:
+            if self.oob_score:
+                raise ValueError("Out of bag estimation only available if bootstrap=True")
+            elif self.max_samples is not None:
+                raise ValueError(
+                    "`max_sample` cannot be set if `bootstrap=False`. "
+                    "Either switch to `bootstrap=True` or set "
+                    "`max_sample=None`."
+                )
+
         dispatch(
             self,
             "fit",
@@ -918,6 +914,19 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
             self._validate_params()
         else:
             self._check_parameters()
+
+        # slight variation on scikit-learn-intelex rules. This is a custom
+        # parameter check which is not covered by self._validate_params()
+        # but is necessary for correct math and scikit-learn conformance.
+        if not self.bootstrap:
+            if self.oob_score:
+                raise ValueError("Out of bag estimation only available if bootstrap=True")
+            elif self.max_samples is not None:
+                raise ValueError(
+                    "`max_sample` cannot be set if `bootstrap=False`. "
+                    "Either switch to `bootstrap=True` or set "
+                    "`max_sample=None`."
+                )
 
         dispatch(
             self,
