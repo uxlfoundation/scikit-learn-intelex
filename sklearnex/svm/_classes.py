@@ -131,7 +131,7 @@ class SVC(BaseSVC, _sklearn_SVC):
             (self.class_weight is None, "Class weight is not supported on GPU."),
             (not sp.issparse(data[0]), "Sparse input is not supported on GPU."),
             (
-                type_of_target(data[1]) == "binary",
+                len(data) > 1 and type_of_target(data[1]) == "binary",
                 "Multiclassification is not supported on GPU.",
             ),
         ]
