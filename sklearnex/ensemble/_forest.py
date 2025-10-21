@@ -18,10 +18,11 @@ import numbers
 import warnings
 from abc import ABC
 from collections.abc import Iterable
+from functools import partial
 
 import numpy as np
 from scipy import sparse as sp
-from sklearn.base import BaseEstimator, clone
+from sklearn.base import clone
 from sklearn.ensemble import ExtraTreesClassifier as _sklearn_ExtraTreesClassifier
 from sklearn.ensemble import ExtraTreesRegressor as _sklearn_ExtraTreesRegressor
 from sklearn.ensemble import RandomForestClassifier as _sklearn_RandomForestClassifier
@@ -40,7 +41,7 @@ from sklearn.tree import (
 from sklearn.tree._tree import Tree
 from sklearn.utils import check_random_state
 from sklearn.utils.multiclass import type_of_target
-from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
+from sklearn.utils.validation import check_array, check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import (
@@ -54,18 +55,39 @@ from onedal.ensemble import ExtraTreesRegressor as onedal_ExtraTreesRegressor
 from onedal.ensemble import RandomForestClassifier as onedal_RandomForestClassifier
 from onedal.ensemble import RandomForestRegressor as onedal_RandomForestRegressor
 from onedal.primitives import get_tree_state_cls, get_tree_state_reg
-from onedal.utils.validation import _num_features, _num_samples
-from sklearnex._utils import register_hyperparameters
+from onedal.utils.validation import _num_features
 
 from .._config import get_config
 from .._device_offload import dispatch, wrap_output_data
-from .._utils import PatchingConditionsChain
+from .._utils import PatchingConditionsChain, register_hyperparameters
 from ..base import oneDALEstimator
-from ..utils._array_api import get_namespace
-from ..utils.validation import _check_sample_weight, validate_data
+from ..utils._array_api import enable_array_api, get_namespace
+from ..utils.validation import _check_sample_weight, assert_all_finite, validate_data
 
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import Interval
+
+
+if sklearn_check_version("1.6"):
+    _check_array = partial(
+        check_array,
+        ensure_all_finite=False,
+        dtype=None,
+        ensure_2d=False,
+        ensure_min_samples=0,
+        ensure_min_features=0,
+        accept_sparse=True,
+    )
+else:
+    _check_array = partial(
+        check_array,
+        force_all_finite=False,
+        dtype=None,
+        ensure_2d=False,
+        ensure_min_samples=0,
+        ensure_min_features=0,
+        accept_sparse=True,
+    )
 
 
 class BaseForest(oneDALEstimator, ABC):
@@ -585,7 +607,8 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
 
             if sklearn_check_version("1.4"):
                 try:
-                    assert_all_finite(X)
+                    X_test = _check_array(X)
+                    assert_all_finite(X_test)  # minimally verify the data
                     input_is_finite = True
                 except ValueError:
                     input_is_finite = False
@@ -775,7 +798,7 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         return patching_status
 
     def _onedal_predict(self, X, queue=None):
-        xp, _ = get_namespace(X)
+        xp, is_array_api_compliant = get_namespace(X)
 
         if not get_config()["use_raw_input"]:
             X = validate_data(
@@ -788,12 +811,12 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
 
         res = self._onedal_estimator.predict(X, queue=queue)
 
-        try:
+        if is_array_api_compliant:
             return xp.take(
-                xp.asarray(self.classes_, device=res.sycl_queue),
+                xp.asarray(self.classes_, device=res.device),
                 xp.astype(xp.reshape(res, (-1,)), xp.int64),
             )
-        except AttributeError:
+        else:
             return np.take(self.classes_, res.ravel().astype(np.int64, casting="unsafe"))
 
     def _onedal_predict_proba(self, X, queue=None):
@@ -899,7 +922,8 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
 
         if patching_status.get_status() and sklearn_check_version("1.4"):
             try:
-                assert_all_finite(X)
+                X_test = _check_array(X)  # minimally verify the data
+                assert_all_finite(X_test)
                 input_is_finite = True
             except ValueError:
                 input_is_finite = False
@@ -1086,6 +1110,7 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
     score.__doc__ = _sklearn_ForestRegressor.score.__doc__
 
 
+@enable_array_api("1.6")
 @register_hyperparameters({"predict": ("decision_forest", "infer")})
 @control_n_jobs(decorated_methods=["fit", "predict", "predict_proba", "score"])
 class RandomForestClassifier(ForestClassifier):
@@ -1229,6 +1254,7 @@ class RandomForestClassifier(ForestClassifier):
             self.min_bin_size = min_bin_size
 
 
+@enable_array_api("1.5")
 @control_n_jobs(decorated_methods=["fit", "predict", "score"])
 class RandomForestRegressor(ForestRegressor):
     __doc__ = _sklearn_RandomForestRegressor.__doc__
@@ -1367,6 +1393,7 @@ class RandomForestRegressor(ForestRegressor):
             self.min_bin_size = min_bin_size
 
 
+@enable_array_api("1.6")
 @control_n_jobs(decorated_methods=["fit", "predict", "predict_proba", "score"])
 class ExtraTreesClassifier(ForestClassifier):
     __doc__ = _sklearn_ExtraTreesClassifier.__doc__
@@ -1509,6 +1536,7 @@ class ExtraTreesClassifier(ForestClassifier):
             self.min_bin_size = min_bin_size
 
 
+@enable_array_api("1.5")
 @control_n_jobs(decorated_methods=["fit", "predict", "score"])
 class ExtraTreesRegressor(ForestRegressor):
     __doc__ = _sklearn_ExtraTreesRegressor.__doc__
