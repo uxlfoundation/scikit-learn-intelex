@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
+import math
 import numbers
 import warnings
 from abc import ABC
@@ -173,7 +174,7 @@ class BaseForest(oneDALEstimator, ABC):
             "min_samples_leaf": self.min_samples_leaf,
             "min_weight_fraction_leaf": self.min_weight_fraction_leaf,
             "max_features": self._to_absolute_max_features(
-                self.max_features, self.n_features_in_, xp
+                self.max_features, self.n_features_in_
             ),
             "max_leaf_nodes": self.max_leaf_nodes,
             "min_impurity_decrease": self.min_impurity_decrease,
@@ -181,7 +182,7 @@ class BaseForest(oneDALEstimator, ABC):
             "bootstrap": self.bootstrap,
             "random_state": seed,
             "observations_per_tree_fraction": (
-                self._n_samples_bootstrap / self.n_features_in_
+                self._n_samples_bootstrap / self._n_samples
                 if self._n_samples_bootstrap is not None
                 else 1.0
             ),
@@ -404,7 +405,10 @@ class BaseForest(oneDALEstimator, ABC):
 
         self._validate_estimator()
 
-    def _to_absolute_max_features(self, max_features, n_features, xp=None):
+    def _to_absolute_max_features(self, max_features, n_features):
+        # This method handles scikit-learn conformance related to the
+        # max_features input, and is separated for ease of maintenance.
+
         if max_features is None:
             return n_features
         if isinstance(max_features, str):
@@ -420,14 +424,14 @@ class BaseForest(oneDALEstimator, ABC):
                             FutureWarning,
                         )
                     return (
-                        max(1, int(xp.sqrt(n_features)))
+                        max(1, int(math.sqrt(n_features)))
                         if isinstance(self, ForestClassifier)
                         else n_features
                     )
             if max_features == "sqrt":
-                return max(1, int(xp.sqrt(n_features)))
+                return max(1, int(math.sqrt(n_features)))
             if max_features == "log2":
-                return max(1, int(xp.log2(n_features)))
+                return max(1, int(math.log2(n_features)))
             allowed_string_values = (
                 '"sqrt" or "log2"'
                 if sklearn_check_version("1.3")
@@ -439,7 +443,7 @@ class BaseForest(oneDALEstimator, ABC):
             )
 
         if isinstance(max_features, (numbers.Integral, np.integer)):
-            return max_features
+            return int(max_features)
         if max_features > 0.0:
             return max(1, int(max_features * n_features))
         return 0
@@ -447,6 +451,9 @@ class BaseForest(oneDALEstimator, ABC):
     if not sklearn_check_version("1.2"):
 
         def _check_parameters(self):
+            # This provides ensemble parameter checks for older versions
+            # which were centralized in sklearn 1.2. Needed for sklearn
+            # conformance.
             if isinstance(self.min_samples_leaf, numbers.Integral):
                 if not 1 <= self.min_samples_leaf:
                     raise ValueError(
@@ -811,7 +818,7 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
                 xp.astype(xp.reshape(res, (-1,)), xp.int64),
             )
         else:
-            return np.take(self.classes_, res.ravel().astype(np.int64, casting="unsafe"))
+            return xp.take(self.classes_, res.ravel().astype(xp.int64, casting="unsafe"))
 
     def _onedal_predict_proba(self, X, queue=None):
         xp, _ = get_namespace(X)
