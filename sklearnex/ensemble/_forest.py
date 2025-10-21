@@ -228,6 +228,52 @@ class BaseForest(oneDALEstimator, ABC):
 
         return self
 
+    def _onedal_fit_ready(self, patching_status, X, y, sample_weight):
+
+        patching_status.and_conditions(
+            [
+                (
+                    self.oob_score
+                    and daal_check_version((2021, "P", 500))
+                    or not self.oob_score,
+                    "OOB score is only supported starting from 2021.5 version of oneDAL.",
+                ),
+                (self.warm_start is False, "Warm start is not supported."),
+                (
+                    self.ccp_alpha == 0.0,
+                    f"Non-zero 'ccp_alpha' ({self.ccp_alpha}) is not supported.",
+                ),
+                (not sp.issparse(X), "X is sparse. Sparse input is not supported."),
+                (
+                    self.n_estimators <= 6024,
+                    "More than 6024 estimators is not supported.",
+                ),
+                (
+                    not self.bootstrap or self.class_weight != "balanced_subsample",
+                    "'balanced_subsample' for class_weight is not supported",
+                ),
+            ]
+        )
+
+        if patching_status.get_status() and sklearn_check_version("1.4"):
+            try:
+                X_test = _check_array(X)
+                assert_all_finite(X_test)  # minimally verify the data
+                input_is_finite = True
+            except ValueError:
+                input_is_finite = False
+            patching_status.and_conditions(
+                [
+                    (input_is_finite, "Non-finite input is not supported."),
+                    (
+                        self.monotonic_cst is None,
+                        "Monotonicity constraints are not supported.",
+                    ),
+                ]
+            )
+
+        return patching_status
+
     def _onedal_cpu_supported(self, method_name, *data):
         class_name = self.__class__.__name__
         patching_status = PatchingConditionsChain(
@@ -260,7 +306,7 @@ class BaseForest(oneDALEstimator, ABC):
                     (not sp.issparse(X), "X is sparse. Sparse input is not supported."),
                     (self.warm_start is False, "Warm start is not supported."),
                     (
-                        daal_check_version((2023, "P", 100))
+                        daal_check_version((2023, "P", 200))
                         or self.estimator.__class__ == DecisionTreeClassifier,
                         "ExtraTrees only supported starting from oneDAL version 2023.2",
                     ),
@@ -649,11 +695,43 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         for est in self._cached_estimators_:
             est.classes_ = self.classes_
 
+    def _onedal_fit_ready(self, patching_status, X, y, sample_weight):
+
+        patching_status = super()._onedal_fit_ready(patching_status, X, y, sample_weight)
+
+        if patching_status.get_status():
+            xp, _ = get_namespace(X, y, sample_weight)
+
+            patching_status.and_conditions(
+                [
+                    (
+                        self.criterion == "gini",
+                        f"'{self.criterion}' criterion is not supported. "
+                        "Only 'gini' criterion is supported.",
+                    ),
+                    (
+                        type_of_target(y)
+                        in [
+                            "binary",
+                            "multiclass",
+                        ],  # This verifies the input to be 1d-like classification data
+                        "only 'binary' or 'multiclass' y data are supported",
+                    ),
+                    (
+                        xp.any(y != y[0, ...]),
+                        "Number of classes must be at least 2.",
+                    ),
+                ]
+            )
+
+        return patching_status
+
     def fit(self, X, y, sample_weight=None):
         if sklearn_check_version("1.2"):
             self._validate_params()
         else:
             self._check_parameters()
+
         dispatch(
             self,
             "fit",
@@ -666,77 +744,6 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
             sample_weight,
         )
         return self
-
-    def _onedal_fit_ready(self, patching_status, X, y, sample_weight):
-
-        patching_status.and_conditions(
-            [
-                (
-                    self.oob_score
-                    and daal_check_version((2021, "P", 500))
-                    or not self.oob_score,
-                    "OOB score is only supported starting from 2021.5 version of oneDAL.",
-                ),
-                (self.warm_start is False, "Warm start is not supported."),
-                (
-                    self.criterion == "gini",
-                    f"'{self.criterion}' criterion is not supported. "
-                    "Only 'gini' criterion is supported.",
-                ),
-                (
-                    self.ccp_alpha == 0.0,
-                    f"Non-zero 'ccp_alpha' ({self.ccp_alpha}) is not supported.",
-                ),
-                (not sp.issparse(X), "X is sparse. Sparse input is not supported."),
-                (
-                    self.n_estimators <= 6024,
-                    "More than 6024 estimators is not supported.",
-                ),
-                (
-                    not self.bootstrap or self.class_weight != "balanced_subsample",
-                    "'balanced_subsample' for class_weight is not supported",
-                ),
-                (
-                    type_of_target(y)
-                    in [
-                        "binary",
-                        "multiclass",
-                    ],  # This verifies the input to be 1d-like classification data
-                    "only 'binary' or 'multiclass' y data are supported",
-                ),
-            ]
-        )
-
-        if patching_status.get_status():
-            xp, _ = get_namespace(X, y, sample_weight)
-
-            patching_status.and_conditions(
-                [
-                    (
-                        xp.any(y != y[0, ...]),
-                        "Number of classes must be at least 2.",
-                    ),
-                ]
-            )
-
-            if sklearn_check_version("1.4"):
-                try:
-                    X_test = _check_array(X)
-                    assert_all_finite(X_test)  # minimally verify the data
-                    input_is_finite = True
-                except ValueError:
-                    input_is_finite = False
-                patching_status.and_conditions(
-                    [
-                        (input_is_finite, "Non-finite input is not supported."),
-                        (
-                            self.monotonic_cst is None,
-                            "Monotonicity constraints are not supported.",
-                        ),
-                    ]
-                )
-
-        return patching_status
 
     @wrap_output_data
     def predict(self, X):
@@ -792,12 +799,6 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
             sample_weight=sample_weight,
         )
 
-    fit.__doc__ = _sklearn_ForestClassifier.fit.__doc__
-    predict.__doc__ = _sklearn_ForestClassifier.predict.__doc__
-    predict_proba.__doc__ = _sklearn_ForestClassifier.predict_proba.__doc__
-    predict_log_proba.__doc__ = _sklearn_ForestClassifier.predict_log_proba.__doc__
-    score.__doc__ = _sklearn_ForestClassifier.score.__doc__
-
     def _onedal_predict(self, X, queue=None):
         xp, is_array_api_compliant = get_namespace(X)
 
@@ -839,6 +840,12 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         return accuracy_score(
             y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
         )
+
+    fit.__doc__ = _sklearn_ForestClassifier.fit.__doc__
+    predict.__doc__ = _sklearn_ForestClassifier.predict.__doc__
+    predict_proba.__doc__ = _sklearn_ForestClassifier.predict_proba.__doc__
+    predict_log_proba.__doc__ = _sklearn_ForestClassifier.predict_log_proba.__doc__
+    score.__doc__ = _sklearn_ForestClassifier.score.__doc__
 
 
 class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
@@ -891,75 +898,24 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
 
     def _onedal_fit_ready(self, patching_status, X, y, sample_weight):
 
-        patching_status.and_conditions(
-            [
-                (
-                    self.oob_score
-                    and daal_check_version((2021, "P", 500))
-                    or not self.oob_score,
-                    "OOB score is only supported starting from 2021.5 version of oneDAL.",
-                ),
-                (self.warm_start is False, "Warm start is not supported."),
-                (
-                    self.criterion in ["mse", "squared_error"],
-                    f"'{self.criterion}' criterion is not supported. "
-                    "Only 'mse' and 'squared_error' criteria are supported.",
-                ),
-                (
-                    self.ccp_alpha == 0.0,
-                    f"Non-zero 'ccp_alpha' ({self.ccp_alpha}) is not supported.",
-                ),
-                (not sp.issparse(X), "X is sparse. Sparse input is not supported."),
-                (
-                    self.n_estimators <= 6024,
-                    "More than 6024 estimators is not supported.",
-                ),
-                (
-                    _num_features(y, fallback_1d=True) == 1,
-                    f"Number of outputs is not 1.",
-                ),
-            ]
-        )
+        patching_status = super()._onedal_fit_ready(patching_status, X, y, sample_weight)
 
-        if patching_status.get_status() and sklearn_check_version("1.4"):
-            try:
-                X_test = _check_array(X)  # minimally verify the data
-                assert_all_finite(X_test)
-                input_is_finite = True
-            except ValueError:
-                input_is_finite = False
+        if patching_status.get_status():
             patching_status.and_conditions(
                 [
-                    (input_is_finite, "Non-finite input is not supported."),
                     (
-                        self.monotonic_cst is None,
-                        "Monotonicity constraints are not supported.",
+                        self.criterion in ["mse", "squared_error"],
+                        f"'{self.criterion}' criterion is not supported. "
+                        "Only 'mse' and 'squared_error' criteria are supported.",
+                    ),
+                    (
+                        _num_features(y, fallback_1d=True) == 1,
+                        f"Number of outputs is not 1.",
                     ),
                 ]
             )
 
         return patching_status
-
-    def _onedal_predict(self, X, queue=None):
-        check_is_fitted(self, "_onedal_estimator")
-        xp, _ = get_namespace(X)
-        use_raw_input = get_config().get("use_raw_input", False) is True
-
-        if not use_raw_input:
-            X = validate_data(
-                self,
-                X,
-                dtype=[xp.float64, xp.float32],
-                reset=False,
-                ensure_2d=True,
-            )  # Warning, order of dtype matters
-
-        return self._onedal_estimator.predict(X, queue=queue)
-
-    def _onedal_score(self, X, y, sample_weight=None, queue=None):
-        return r2_score(
-            y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
-        )
 
     def fit(self, X, y, sample_weight=None):
         if sklearn_check_version("1.2"):
@@ -1006,6 +962,27 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
             X,
             y,
             sample_weight=sample_weight,
+        )
+
+    def _onedal_predict(self, X, queue=None):
+        check_is_fitted(self, "_onedal_estimator")
+        xp, _ = get_namespace(X)
+        use_raw_input = get_config().get("use_raw_input", False) is True
+
+        if not use_raw_input:
+            X = validate_data(
+                self,
+                X,
+                dtype=[xp.float64, xp.float32],
+                reset=False,
+                ensure_2d=True,
+            )  # Warning, order of dtype matters
+
+        return self._onedal_estimator.predict(X, queue=queue)
+
+    def _onedal_score(self, X, y, sample_weight=None, queue=None):
+        return r2_score(
+            y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
         )
 
     fit.__doc__ = _sklearn_ForestRegressor.fit.__doc__
