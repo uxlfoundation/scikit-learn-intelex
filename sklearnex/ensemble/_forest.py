@@ -567,7 +567,7 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
                     in [
                         "binary",
                         "multiclass",
-                    ],  # This verifies the input to be 1d classification data
+                    ],  # This verifies the input to be 1d-like classification data
                     "only 'binary' or 'multiclass' y data are supported",
                 ),
             ]
@@ -782,7 +782,6 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
                 self,
                 X,
                 dtype=[xp.float64, xp.float32],
-                ensure_all_finite=False,
                 reset=False,
                 ensure_2d=True,
             )
@@ -806,7 +805,6 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
                 self,
                 X,
                 dtype=[xp.float64, xp.float32],
-                ensure_all_finite=False,
                 reset=False,
                 ensure_2d=True,
             )
@@ -1025,7 +1023,6 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
                 self,
                 X,
                 dtype=[xp.float64, xp.float32],
-                ensure_all_finite=False,
                 reset=False,
                 ensure_2d=True,
             )  # Warning, order of dtype matters
