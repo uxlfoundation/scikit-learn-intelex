@@ -134,13 +134,14 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         xp, _ = get_namespace(X, y)
         # Use validate_data with multi_output=True to preserve y shape
         # (multi_output=False converts column vectors to 1D)
+        # Note: Don't use y_numeric=True with multi_output=True for array API
+        # (sklearn's _check_y tries to access dtype.kind which doesn't exist on array API dtypes)
         X, y = validate_data(
             self,
             X,
             y,
             dtype=[xp.float64, xp.float32],
             accept_sparse="csr",
-            y_numeric=True,
             multi_output=True,
         )
         # Process regression targets in sklearnex before passing to onedal
