@@ -83,7 +83,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     def predict(self, X):
         check_is_fitted(self)
 
-        result = dispatch(
+        return dispatch(
             self,
             "predict",
             {
@@ -92,13 +92,12 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             },
             X,
         )
-        return result
 
     @wrap_output_data
     def predict_proba(self, X):
         check_is_fitted(self)
 
-        result = dispatch(
+        return dispatch(
             self,
             "predict_proba",
             {
@@ -107,13 +106,12 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             },
             X,
         )
-        return result
 
     @wrap_output_data
     def score(self, X, y, sample_weight=None):
         check_is_fitted(self)
 
-        result = dispatch(
+        return dispatch(
             self,
             "score",
             {
@@ -124,7 +122,6 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             y,
             sample_weight=sample_weight,
         )
-        return result
 
     @wrap_output_data
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
@@ -137,7 +134,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         # Validate kneighbors parameters (inherited from KNeighborsDispatchingBase)
         self._kneighbors_validation(X, n_neighbors)
 
-        result = dispatch(
+        return dispatch(
             self,
             "kneighbors",
             {
@@ -148,7 +145,6 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             n_neighbors=n_neighbors,
             return_distance=return_distance,
         )
-        return result
 
     def _onedal_fit(self, X, y, queue=None):
         xp, _ = get_namespace(X)
@@ -189,8 +185,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         # Use the unified helper from common.py (calls kneighbors + computes prediction)
         # This properly handles X=None (LOOCV) case
         # Note: X validation happens in kneighbors
-        result = self._predict_skl_classification(X)
-        return result
+        return self._predict_skl_classification(X)
 
     def _onedal_predict_proba(self, X, queue=None):
         # Call kneighbors through sklearnex (self.kneighbors is the sklearnex method)
@@ -199,10 +194,9 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         neigh_dist, neigh_ind = self.kneighbors(X)
 
         # Use the helper method to compute class probabilities
-        result = self._compute_class_probabilities(
+        return self._compute_class_probabilities(
             neigh_dist, neigh_ind, self.weights, self._y, self.classes_, self.outputs_2d_
         )
-        return result
 
     def _onedal_kneighbors(
         self, X=None, n_neighbors=None, return_distance=True, queue=None
@@ -226,10 +220,9 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         )
 
         # Apply post-processing (kd_tree sorting, removing self from results)
-        result = self._kneighbors_post_processing(
+        return self._kneighbors_post_processing(
             X, n_neighbors, return_distance, result, query_is_train
         )
-        return result
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
         # Convert array API to numpy for sklearn's accuracy_score
@@ -237,10 +230,9 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         y = np.asarray(y)
         if sample_weight is not None:
             sample_weight = np.asarray(sample_weight)
-        result = accuracy_score(
+        return accuracy_score(
             y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
         )
-        return result
 
     def _save_attributes(self):
         self.classes_ = self._onedal_estimator.classes_
