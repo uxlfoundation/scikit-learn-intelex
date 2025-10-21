@@ -281,7 +281,6 @@ class RandomForestClassifier(ForestClassifier):
         error_metric_mode="none",
         variable_importance_mode="none",
         algorithm="hist",
-        **kwargs,
     ):
         super().__init__(
             n_estimators=n_estimators,

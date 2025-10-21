@@ -190,7 +190,6 @@ class BaseForest(oneDALEstimator, ABC):
             "min_impurity_decrease": self.min_impurity_decrease,
             "bootstrap": self.bootstrap,
             "oob_score": self.oob_score,
-            "n_jobs": self.n_jobs,
             "random_state": seed,
             "verbose": self.verbose,
             "warm_start": self.warm_start,
