@@ -376,13 +376,20 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
         import sys
 
+        from onedal._device_offload import _transfer_to_host
+
         print(
             f"DEBUG KNeighborsRegressor._onedal_score START: X type={type(X)}, y type={type(y)}",
             file=sys.stderr,
         )
-        result = r2_score(
-            y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
-        )
+        y_pred = self._onedal_predict(X, queue=queue)
+
+        # Convert array API/USM arrays back to numpy for r2_score
+        # r2_score doesn't support Array API, following PCA's pattern with _transfer_to_host
+        _, host_data = _transfer_to_host(y, y_pred, sample_weight)
+        y, y_pred, sample_weight = host_data
+
+        result = r2_score(y, y_pred, sample_weight=sample_weight)
         print(
             f"DEBUG KNeighborsRegressor._onedal_score END: result={result}",
             file=sys.stderr,
