@@ -662,7 +662,7 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
 
     def _save_attributes(self, xp):
         # This assumes that the error_metric_mode variable is set to ._err
-        # class attribute 
+        # class attribute
         if self.oob_score:
             self.oob_score_ = self._onedal_estimator.out_of_bag_score_accuracy_
             self.oob_decision_function_ = (
@@ -892,10 +892,9 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
     decision_path = support_input_format(_sklearn_ForestRegressor.decision_path)
     apply = support_input_format(_sklearn_ForestRegressor.apply)
 
-
     def _save_attributes(self, xp):
         # This assumes that the error_metric_mode variable is set to ._err
-        # class attribute 
+        # class attribute
         if self.oob_score:
             self.oob_score_ = self._onedal_estimator.out_of_bag_score_r2_
             self.oob_prediction_ = self._onedal_estimator.out_of_bag_prediction_
@@ -908,7 +907,7 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
                 )
 
         self._validate_estimator()
-    
+
     def _onedal_fit_ready(self, patching_status, X, y, sample_weight):
 
         patching_status = super()._onedal_fit_ready(patching_status, X, y, sample_weight)
