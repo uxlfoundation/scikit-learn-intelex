@@ -268,7 +268,7 @@ class BaseSVC(BaseSVM):
 
         y = self._validate_targets(y)
 
-        if self.class_weight is not None or sample_weight is not None:
+        if (sw_flag:= sample_weight is not None) or self.class_weight is not None:
             sample_weight = _check_sample_weight(sample_weight, X)
             # oneDAL only accepts sample_weights, apply class_weight directly
 
@@ -278,6 +278,13 @@ class BaseSVC(BaseSVM):
         self._svm_sample_weight_check(sample_weight, y, xp)
 
         if self.class_weight is not None:
+            if sw_flag:
+                # make a copy in order to do modifications of the values
+                sample_weight = xp.copy(sample_weight)
+            # This for loop is O(n*m) where n is # of classes and m # of samples
+            # sklearn's compute_sample_weight (roughly equivalent function) uses
+            # np.searchsorted which is roughly O((log(n)*m) but unavailable in
+            # the array API standard. Be wary of large class counts.
             for i, v in enumerate(self.class_weight_):
                 sample_weight[y == i] *= v
 
