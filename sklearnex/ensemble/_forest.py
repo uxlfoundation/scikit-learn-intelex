@@ -704,7 +704,7 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
                         "only 'binary' or 'multiclass' y data are supported",
                     ),
                     (
-                        xp.any(y != y[0, ...]),
+                        xp.any(y != (getattr(y, "values", y))[0, ...] ),
                         "Number of classes must be at least 2.",
                     ),
                 ]
