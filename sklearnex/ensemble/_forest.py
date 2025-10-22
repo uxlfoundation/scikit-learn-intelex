@@ -681,7 +681,7 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
 
         expanded_class_weight = None
 
-        classes, y_store_unique_indices = np.unique_inverse(y)
+        classes, y_store_unique_indices = xp.unique_inverse(y)
 
         # force 2d to match sklearn return
         self.classes_ = [classes]
