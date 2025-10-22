@@ -165,7 +165,7 @@ class BaseForest(metaclass=ABCMeta):
         if self.variable_importance_mode != "none":
             self.var_importance_ = from_table(train_result.var_importance, like=X)[0, :]
 
-        return train_result
+        return self
 
     @supports_queue
     def predict(self, X, queue=None):
