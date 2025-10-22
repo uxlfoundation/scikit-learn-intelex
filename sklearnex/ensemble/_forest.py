@@ -219,6 +219,12 @@ class BaseForest(oneDALEstimator, ABC):
 
         return self
 
+    def _save_attributes(self, xp):
+        if self.oob_score:
+            self.oob_score_ = self._onedal_estimator.out_of_bag_error_
+
+        self._validate_estimator()
+
     def _onedal_fit_ready(self, patching_status, X, y, sample_weight):
 
         patching_status.and_conditions(
@@ -377,33 +383,6 @@ class BaseForest(oneDALEstimator, ABC):
             )
 
         return patching_status
-
-    def _save_attributes(self, xp):
-        if self.oob_score:
-            self.oob_score_ = self._onedal_estimator.oob_score_
-            if hasattr(self._onedal_estimator, "oob_prediction_"):
-                self.oob_prediction_ = self._onedal_estimator.oob_prediction_
-                if xp.any(self.oob_prediction_ == 0):
-                    warnings.warn(
-                        "Some inputs do not have OOB scores. This probably means "
-                        "too few trees were used to compute any reliable OOB "
-                        "estimates.",
-                        UserWarning,
-                    )
-
-            if hasattr(self._onedal_estimator, "oob_decision_function_"):
-                self.oob_decision_function_ = (
-                    self._onedal_estimator.oob_decision_function_
-                )
-                if xp.any(self.oob_decision_function_ == 0):
-                    warnings.warn(
-                        "Some inputs do not have OOB scores. This probably means "
-                        "too few trees were used to compute any reliable OOB "
-                        "estimates.",
-                        UserWarning,
-                    )
-
-        self._validate_estimator()
 
     def _to_absolute_max_features(self, max_features, n_features):
         # This method handles scikit-learn conformance related to the
@@ -681,6 +660,24 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         for est in self._cached_estimators_:
             est.classes_ = self.classes_
 
+    def _save_attributes(self, xp):
+        # This assumes that the error_metric_mode variable is set to ._err
+        # class attribute 
+        if self.oob_score:
+            self.oob_score_ = self._onedal_estimator.out_of_bag_score_accuracy_
+            self.oob_decision_function_ = (
+                self._onedal_estimator.out_of_bag_decision_function_
+            )
+            if xp.any(self.oob_decision_function_ == 0):
+                warnings.warn(
+                    "Some inputs do not have OOB scores. This probably means "
+                    "too few trees were used to compute any reliable OOB "
+                    "estimates.",
+                    UserWarning,
+                )
+
+        self._validate_estimator()
+
     def _onedal_fit_ready(self, patching_status, X, y, sample_weight):
 
         patching_status = super()._onedal_fit_ready(patching_status, X, y, sample_weight)
@@ -895,6 +892,23 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
     decision_path = support_input_format(_sklearn_ForestRegressor.decision_path)
     apply = support_input_format(_sklearn_ForestRegressor.apply)
 
+
+    def _save_attributes(self, xp):
+        # This assumes that the error_metric_mode variable is set to ._err
+        # class attribute 
+        if self.oob_score:
+            self.oob_score_ = self._onedal_estimator.out_of_bag_score_r2_
+            self.oob_prediction_ = self._onedal_estimator.out_of_bag_prediction_
+            if xp.any(self.oob_prediction_ == 0):
+                warnings.warn(
+                    "Some inputs do not have OOB scores. This probably means "
+                    "too few trees were used to compute any reliable OOB "
+                    "estimates.",
+                    UserWarning,
+                )
+
+        self._validate_estimator()
+    
     def _onedal_fit_ready(self, patching_status, X, y, sample_weight):
 
         patching_status = super()._onedal_fit_ready(patching_status, X, y, sample_weight)
