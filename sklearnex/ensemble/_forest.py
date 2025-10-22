@@ -462,19 +462,7 @@ class BaseForest(oneDALEstimator, ABC):
                     )
             if not 0 <= self.min_weight_fraction_leaf <= 0.5:
                 raise ValueError("min_weight_fraction_leaf must in [0, 0.5]")
-            if hasattr(self, "min_impurity_split"):
-                warnings.warn(
-                    "The min_impurity_split parameter is deprecated. "
-                    "Its default value has changed from 1e-7 to 0 in "
-                    "version 0.23, and it will be removed in 0.25. "
-                    "Use the min_impurity_decrease parameter instead.",
-                    FutureWarning,
-                )
 
-                if getattr(self, "min_impurity_split") < 0.0:
-                    raise ValueError(
-                        "min_impurity_split must be greater than " "or equal to 0"
-                    )
             if self.min_impurity_decrease < 0.0:
                 raise ValueError(
                     "min_impurity_decrease must be greater than " "or equal to 0"
