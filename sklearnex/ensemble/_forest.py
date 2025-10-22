@@ -106,7 +106,7 @@ class BaseForest(oneDALEstimator, ABC):
                 accept_sparse=False,
                 dtype=[xp.float64, xp.float32],
                 ensure_all_finite=False,  # completed in offload check
-                y_numeric=not hasattr(self, "class_weight"),  # trigger for Regressors
+                y_numeric=not hasattr(self, "predict_proba"),  # trigger for Regressors
             )
 
             if sample_weight is not None:
