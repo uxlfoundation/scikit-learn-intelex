@@ -136,8 +136,6 @@ class BaseForest(oneDALEstimator, ABC):
                     sample_weight = sample_weight * expanded_class_weight
                 else:
                     sample_weight = expanded_class_weight
-            if sample_weight is not None:
-                sample_weight = [sample_weight]
 
             # Decapsulate classes_ attributes following scikit-learn's
             # BaseForest.fit. oneDAL does not support multi-output, therefore
