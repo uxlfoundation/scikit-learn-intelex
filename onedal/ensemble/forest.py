@@ -165,7 +165,7 @@ class BaseForest(metaclass=ABCMeta):
             for i in self.error_metric_mode.split("|"):
                 setattr(self, i + "_", from_table(getattr(train_result, i), like=X))
 
-        if "none" not in self.variable_importance_mode:
+        if self.variable_importance_mode != "none":
             self.var_importance_ = from_table(train_result.var_importance, like=X)[0, :]
 
         return train_result
