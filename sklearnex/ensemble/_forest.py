@@ -105,8 +105,8 @@ class BaseForest(oneDALEstimator, ABC):
                 multi_output=True,
                 accept_sparse=False,
                 dtype=[xp.float64, xp.float32],
-                ensure_all_finite=False,
-                ensure_2d=True,
+                ensure_all_finite=False,  # completed in offload check
+                y_numeric=not hasattr(self, "class_weight"),  # trigger for Regressors
             )
 
             if sample_weight is not None:
@@ -145,7 +145,7 @@ class BaseForest(oneDALEstimator, ABC):
                 self.classes_ = xp.unique(y)
             except AttributeError:
                 self.classes_ = xp.unique_values(y)
-            self.n_classes_ = len(self.classes_)
+            self.n_classes_ = self.classes_.shape[0]
 
         # conform to scikit-learn internal calculations
         if self.bootstrap:
@@ -199,8 +199,15 @@ class BaseForest(oneDALEstimator, ABC):
 
         # Compute
         self._onedal_estimator = self._onedal_factory(**onedal_params)
-        # should fail here in classification as class_count needs to be set
-        self._onedal_estimator.fit(X, xp.reshape(y, (-1,)), sample_weight, queue=queue)
+        # class count setting taken via a getattr, which n_classes_ only defined for
+        # Classifiers
+        self._onedal_estimator.fit(
+            X,
+            xp.reshape(y, (-1,)),
+            sample_weight,
+            getattr(self, "n_classes_", 0),
+            queue=queue,
+        )
 
         self._save_attributes(xp)
 
@@ -805,7 +812,6 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
                 X,
                 dtype=[xp.float64, xp.float32],
                 reset=False,
-                ensure_2d=True,
             )
 
         res = self._onedal_estimator.predict(X, queue=queue)
@@ -825,7 +831,6 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
                 X,
                 dtype=[xp.float64, xp.float32],
                 reset=False,
-                ensure_2d=True,
             )
 
         return self._onedal_estimator.predict_proba(X, queue=queue)
@@ -998,7 +1003,6 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
                 X,
                 dtype=[xp.float64, xp.float32],
                 reset=False,
-                ensure_2d=True,
             )  # Warning, order of dtype matters
 
         return self._onedal_estimator.predict(X, queue=queue)
