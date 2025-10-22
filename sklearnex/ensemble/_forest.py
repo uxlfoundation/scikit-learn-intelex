@@ -697,7 +697,12 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
                         "Only 'gini' criterion is supported.",
                     ),
                     (
-                        (xp.unique_values(y) if is_array_api_compliant else xp.unique(y)).shape[0] > 1,
+                        (
+                            xp.unique_values(y)
+                            if is_array_api_compliant
+                            else xp.unique(y)
+                        ).shape[0]
+                        > 1,
                         "Number of classes must be at least 2.",
                     ),
                 ]
