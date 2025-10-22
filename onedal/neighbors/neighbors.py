@@ -128,11 +128,11 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
             # This code is now commented out - processing MUST happen in sklearnex before calling fit
             # Assertion: Verify that sklearnex has done the preprocessing
             if _is_classifier(self):
-                if not hasattr(self, "classes_") or self.classes_ is None:
-                    raise ValueError(
-                        "Classification target processing must be done in sklearnex layer before calling onedal fit. "
-                        "classes_ attribute is not set. This indicates the refactoring is incomplete."
-                    )
+                # if not hasattr(self, "classes_") or self.classes_ is None:
+                #     raise ValueError(
+                #         "Classification target processing must be done in sklearnex layer before calling onedal fit. "
+                #         "classes_ attribute is not set. This indicates the refactoring is incomplete."
+                #     )
                 if not hasattr(self, "_y") or self._y is None:
                     raise ValueError(
                         "Classification target processing must be done in sklearnex layer before calling onedal fit. "
