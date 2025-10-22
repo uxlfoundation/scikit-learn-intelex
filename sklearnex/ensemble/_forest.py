@@ -41,7 +41,6 @@ from sklearn.tree import (
 )
 from sklearn.tree._tree import Tree
 from sklearn.utils import check_random_state
-from sklearn.utils.multiclass import type_of_target
 from sklearn.utils.validation import check_array, check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
@@ -224,7 +223,7 @@ class BaseForest(oneDALEstimator, ABC):
 
     def _save_attributes(self, xp):
         if self.oob_score:
-            self.oob_score_ = self._onedal_estimator.out_of_bag_error_
+            self.oob_score_ = self._onedal_estimator.oob_error_
 
         self._validate_estimator()
 
@@ -251,6 +250,10 @@ class BaseForest(oneDALEstimator, ABC):
                 (
                     not self.bootstrap or self.class_weight != "balanced_subsample",
                     "'balanced_subsample' for class_weight is not supported",
+                ),
+                (
+                    _num_features(y, fallback_1d=True) == 1,
+                    f"Number of outputs is not 1.",
                 ),
             ]
         )
@@ -667,10 +670,8 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         # This assumes that the error_metric_mode variable is set to ._err
         # class attribute
         if self.oob_score:
-            self.oob_score_ = self._onedal_estimator.out_of_bag_score_accuracy_
-            self.oob_decision_function_ = (
-                self._onedal_estimator.out_of_bag_decision_function_
-            )
+            self.oob_score_ = self._onedal_estimator.oob_score_accuracy_
+            self.oob_decision_function_ = self._onedal_estimator.oob_decision_function_
             if xp.any(self.oob_decision_function_ == 0):
                 warnings.warn(
                     "Some inputs do not have OOB scores. This probably means "
@@ -686,7 +687,7 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         patching_status = super()._onedal_fit_ready(patching_status, X, y, sample_weight)
 
         if patching_status.get_status():
-            xp, _ = get_namespace(X, y, sample_weight)
+            xp, is_array_api_compliant = get_namespace(X, y, sample_weight)
 
             patching_status.and_conditions(
                 [
@@ -696,15 +697,7 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
                         "Only 'gini' criterion is supported.",
                     ),
                     (
-                        type_of_target(y)
-                        in [
-                            "binary",
-                            "multiclass",
-                        ],  # This verifies the input to be 1d-like classification data
-                        "only 'binary' or 'multiclass' y data are supported",
-                    ),
-                    (
-                        xp.any(y != getattr(y, "values", y)[0, ...] ),
+                        (xp.unique_values(y) if is_array_api_compliant else xp.unique(y)).shape[0] > 1,
                         "Number of classes must be at least 2.",
                     ),
                 ]
@@ -894,8 +887,8 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
         # This assumes that the error_metric_mode variable is set to ._err
         # class attribute
         if self.oob_score:
-            self.oob_score_ = self._onedal_estimator.out_of_bag_score_r2_
-            self.oob_prediction_ = self._onedal_estimator.out_of_bag_prediction_
+            self.oob_score_ = self._onedal_estimator.oob_score_r2_
+            self.oob_prediction_ = self._onedal_estimator.oob_prediction_
             if xp.any(self.oob_prediction_ == 0):
                 warnings.warn(
                     "Some inputs do not have OOB scores. This probably means "
@@ -917,11 +910,7 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
                         self.criterion in ["mse", "squared_error"],
                         f"'{self.criterion}' criterion is not supported. "
                         "Only 'mse' and 'squared_error' criteria are supported.",
-                    ),
-                    (
-                        _num_features(y, fallback_1d=True) == 1,
-                        f"Number of outputs is not 1.",
-                    ),
+                    )
                 ]
             )
 
