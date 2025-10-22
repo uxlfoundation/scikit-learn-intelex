@@ -158,6 +158,13 @@ class BaseForest(metaclass=ABCMeta):
 
         self._onedal_model = train_result.model
 
+        # set attributes related to the various oob metric modes
+        # naming scheme of mode matches the attribute of the result
+        # object. See decision forest documentation for settings.
+        if "none" not in self.error_metric_mode:
+            for i in self.error_metric_mode.split("|"):
+                setattr(self, i + "_", from_table(getattr(train_result, i), like=X))
+
         return train_result
 
     @supports_queue
@@ -196,36 +203,10 @@ class ForestClassifier(BaseForest):
         pred[pred < 0.0] = 0.0
         return pred
 
-    @supports_queue
-    def fit(self, X, y, sample_weight=None, class_count=0, queue=None):
-        train_result = super().fit(
-            X, y, sample_weight=sample_weight, class_count=class_count, queue=queue
-        )
-
-        if "out_of_bag_error_accuracy" in self.error_metric_mode:
-            self.oob_score_ = from_table(train_result.oob_err_accuracy, like=X)
-        if "out_of_bag_error_decision_function" in self.error_metric_mode:
-            self.oob_decision_function_ = from_table(
-                train_result.oob_err_decision_function, like=X
-            )
-
-        return self
-
 
 class ForestRegressor(BaseForest):
-
-    @supports_queue
-    def fit(self, X, y, sample_weight=None, class_count=0, queue=None):
-        train_result = super().fit(
-            X, y, sample_weight=sample_weight, class_count=class_count, queue=queue
-        )
-
-        if "out_of_bag_error_r2" in self.error_metric_mode:
-            self.oob_score_ = from_table(train_result.oob_err_r2, like=X)
-        if "out_of_bag_error_prediction" in self.error_metric_mode:
-            self.oob_prediction_ = from_table(train_result.oob_err_prediction, like=X)
-
-        return self
+    # included in the case that regression-specific changes are required for operation
+    pass
 
 
 class RandomForestClassifier(ForestClassifier):
