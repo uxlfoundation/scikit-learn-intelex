@@ -121,6 +121,14 @@ class BaseForest(oneDALEstimator, ABC):
                 stacklevel=2,
             )
 
+        if not sklearn_check_version("1.2") and self.criterion == "mse":
+            warnings.warn(
+                "Criterion 'mse' was deprecated in v1.0 and will be "
+                "removed in version 1.2. Use `criterion='squared_error'` "
+                "which is equivalent.",
+                FutureWarning,
+            )
+
         if y.ndim == 1:
             y = xp.reshape(y, (-1, 1))
 
@@ -227,6 +235,10 @@ class BaseForest(oneDALEstimator, ABC):
         self._validate_estimator()
 
     def _onedal_fit_ready(self, patching_status, X, y, sample_weight):
+        # Normally this would be handled in _onedal_fit, but this condition is required
+        # here for scikit-learn conformance as following checks require non-sparse data
+        if sp.issparse(y):
+            raise ValueError("sparse multilabel-indicator for y is not supported.")
 
         patching_status.and_conditions(
             [
