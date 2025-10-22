@@ -356,7 +356,6 @@ class BaseSVC(BaseSVM):
                 ).fit(X, y, sample_weight=sample_weight)
 
     def _save_attributes(self, X, y, xp=np):
-        # This function requires array API adaptation.
         self.support_vectors_ = self._onedal_estimator.support_vectors_
 
         self.dual_coef_ = self._onedal_estimator.dual_coef_
