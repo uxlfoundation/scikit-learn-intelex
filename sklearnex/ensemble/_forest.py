@@ -41,7 +41,7 @@ from sklearn.tree import (
 )
 from sklearn.tree._tree import Tree
 from sklearn.utils import check_random_state
-from sklearn.utils.multiclass import type_of_target
+from sklearn.utils.multiclass import check_classification_targets, type_of_target
 from sklearn.utils.validation import check_array, check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
@@ -63,6 +63,7 @@ from .._device_offload import dispatch, wrap_output_data
 from .._utils import PatchingConditionsChain, register_hyperparameters
 from ..base import oneDALEstimator
 from ..utils._array_api import enable_array_api, get_namespace
+from ..utils.class_weight import _compute_class_weight
 from ..utils.validation import _check_sample_weight, assert_all_finite, validate_data
 
 if sklearn_check_version("1.2"):
@@ -660,6 +661,49 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         super()._estimators_()
         for est in self._cached_estimators_:
             est.classes_ = self.classes_
+
+    def _validate_y_class_weight(self, y):
+
+        xp, is_array_api_compliant = get_namespace(y)
+
+        if not is_array_api_compliant:
+            return super()._validate_y_class_weight(y)
+
+        # array API-only branch. This is meant only for the sklearnex
+        # forest estimators which assume n_outputs = 1, will not interact
+        # with `warm_start`, `balanced_subsample` is not supported and has
+        # `class_weight parameter validation elsewhere (which occurs before
+        # array API support began in sklearn).
+
+        # only works with 1d array API inputs due to indexing issues
+        y = xp.reshape(y, (-1,))
+        check_classification_targets(y)
+
+        expanded_class_weight = None
+
+        classes, y_store_unique_indices = np.unique_inverse(y)
+
+        # force 2d to match sklearn return
+        self.classes_ = [classes]
+        self.n_classes_ = [classes.shape[0]]
+
+        if self.class_weight is not None:
+            class_weights = _compute_class_weight(
+                self.class_weight, classes=classes, y=y_store_unique_indices
+            )
+            expanded_class_weight = xp.ones_like(y)
+            # This for loop is O(n*m) where n is # of classes and m # of samples
+            # sklearn's compute_sample_weight (roughly equivalent function) uses
+            # np.searchsorted which is roughly O((log(n)*m) but unavailable in
+            # the array API standard. Be wary of large class counts.
+            for i, v in enumerate(class_weights):
+                expanded_class_weight[y_store_unique_indices == i] *= v
+
+            # force 2d to match sklearn
+            expanded_class_weight = xp.reshape(expanded_class_weight, (-1, 1))
+        y = xp.reshape(y_store_unique_indices, (-1, 1))
+
+        return y, expanded_class_weight
 
     def _save_attributes(self, xp):
         # This assumes that the error_metric_mode variable is set to ._err
