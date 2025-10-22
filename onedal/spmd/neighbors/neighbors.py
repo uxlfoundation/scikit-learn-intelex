@@ -16,11 +16,9 @@
 
 from ..._device_offload import support_input_format, supports_queue
 from ...common._backend import bind_spmd_backend
-
-# Import from sklearnex instead of onedal to get target processing in sklearnex layer
-from sklearnex.neighbors import KNeighborsClassifier as KNeighborsClassifier_Batch
-from sklearnex.neighbors import KNeighborsRegressor as KNeighborsRegressor_Batch
-from sklearnex.neighbors import NearestNeighbors as NearestNeighbors_Batch
+from ...neighbors import KNeighborsClassifier as KNeighborsClassifier_Batch
+from ...neighbors import KNeighborsRegressor as KNeighborsRegressor_Batch
+from ...neighbors import NearestNeighbors as NearestNeighbors_Batch
 
 
 class KNeighborsClassifier(KNeighborsClassifier_Batch):
