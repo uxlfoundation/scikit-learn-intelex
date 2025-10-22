@@ -24,10 +24,7 @@ from onedal.common._backend import bind_default_backend
 from onedal.utils import _sycl_queue_manager as QM
 from sklearnex import get_hyperparameters
 
-from .._config import _get_config
-from ..common._estimator_checks import _check_is_fitted
 from ..datatypes import from_table, to_table
-from ..utils._array_api import _get_sycl_namespace
 
 
 class BaseForest(metaclass=ABCMeta):
@@ -188,6 +185,12 @@ class BaseForest(metaclass=ABCMeta):
 
 class ForestClassifier(BaseForest):
 
+    @bind_default_backend("decision_forest.classification")
+    def train(self, *args, **kwargs): ...
+
+    @bind_default_backend("decision_forest.classification")
+    def infer(self, *args, **kwargs): ...
+
     @supports_queue
     def predict_proba(self, X, queue=None):
         hparams = get_hyperparameters("decision_forest", "infer")
@@ -208,8 +211,11 @@ class ForestClassifier(BaseForest):
 
 
 class ForestRegressor(BaseForest):
-    # included in the case that regression-specific changes are required for operation
-    pass
+    @bind_default_backend("decision_forest.regression")
+    def train(self, *args, **kwargs): ...
+
+    @bind_default_backend("decision_forest.regression")
+    def infer(self, *args, **kwargs): ...
 
 
 class RandomForestClassifier(ForestClassifier):
@@ -313,12 +319,6 @@ class RandomForestRegressor(ForestRegressor):
             algorithm=algorithm,
         )
 
-    @bind_default_backend("decision_forest.regression")
-    def train(self, *args, **kwargs): ...
-
-    @bind_default_backend("decision_forest.regression")
-    def infer(self, *args, **kwargs): ...
-
 
 class ExtraTreesClassifier(ForestClassifier):
     def __init__(
@@ -367,12 +367,6 @@ class ExtraTreesClassifier(ForestClassifier):
             algorithm=algorithm,
         )
 
-    @bind_default_backend("decision_forest.classification")
-    def train(self, *args, **kwargs): ...
-
-    @bind_default_backend("decision_forest.classification")
-    def infer(self, *args, **kwargs): ...
-
 
 class ExtraTreesRegressor(ForestRegressor):
     def __init__(
@@ -420,9 +414,3 @@ class ExtraTreesRegressor(ForestRegressor):
             variable_importance_mode=variable_importance_mode,
             algorithm=algorithm,
         )
-
-    @bind_default_backend("decision_forest.regression")
-    def train(self, *args, **kwargs): ...
-
-    @bind_default_backend("decision_forest.regression")
-    def infer(self, *args, **kwargs): ...
