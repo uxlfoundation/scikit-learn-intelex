@@ -137,15 +137,26 @@ class BaseForest(oneDALEstimator, ABC):
                     sample_weight = expanded_class_weight
             if sample_weight is not None:
                 sample_weight = [sample_weight]
+
+            # Decapsulate classes_ attributes following scikit-learn's
+            # BaseForest.fit. oneDAL does not support multi-output, therefore
+            # the logic can be hardcoded in comparison to scikit-learn's logic
+            if hasattr(self, "classes_"):
+                self.n_classes_ = self.n_classes_[0]
+                self.classes_ = self.classes_[0]
+
         else:
             # try catch needed for raw_inputs + array_api data where unlike
             # numpy the way to yield unique values is via `unique_values`
             # This should be removed when refactored for gpu zero-copy
-            try:
-                self.classes_ = xp.unique(y)
-            except AttributeError:
-                self.classes_ = xp.unique_values(y)
-            self.n_classes_ = self.classes_.shape[0]
+            if hasattr(self, "class_weight")
+                try:
+                    self.classes_ = xp.unique(y)
+                except AttributeError:
+                    self.classes_ = xp.unique_values(y)
+                self.n_classes_ = self.classes_.shape[0]
+
+
 
         # conform to scikit-learn internal calculations
         if self.bootstrap:
@@ -210,20 +221,6 @@ class BaseForest(oneDALEstimator, ABC):
         )
 
         self._save_attributes(xp)
-
-        # Decapsulate classes_ attributes following scikit-learn's
-        # BaseForest.fit
-        if hasattr(self, "classes_") and self.n_outputs_ == 1:
-            self.n_classes_ = (
-                self.n_classes_[0]
-                if isinstance(self.n_classes_, Iterable)
-                else self.n_classes_
-            )
-            self.classes_ = (
-                self.classes_[0]
-                if isinstance(self.classes_[0], Iterable)
-                else self.classes_
-            )
 
         return self
 
