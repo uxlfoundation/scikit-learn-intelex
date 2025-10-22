@@ -96,10 +96,10 @@ The following patched classes have support for array API inputs:
 - :obj:`sklearn.linear_model.Ridge`
 - :obj:`sklearnex.linear_model.IncrementalLinearRegression`
 - :obj:`sklearnex.linear_model.IncrementalRidge`
-- :obj:`sklearnex.svm.NuSVC`
-- :obj:`sklearnex.svm.NuSVR`
-- :obj:`sklearnex.svm.SVC`
-- :obj:`sklearnex.svm.SVR`
+- :obj:`sklearn.svm.NuSVC`
+- :obj:`sklearn.svm.NuSVR`
+- :obj:`sklearn.svm.SVC`
+- :obj:`sklearn.svm.SVR`
 
 .. note::
     While full array API support is currently not implemented for all classes, :external+dpnp:doc:`dpnp.ndarray <reference/ndarray>`
