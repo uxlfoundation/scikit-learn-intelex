@@ -159,7 +159,9 @@ class BaseForest(metaclass=ABCMeta):
         # naming scheme of mode matches the attribute of the result
         # object. See decision forest documentation for settings.
         if "none" not in self.error_metric_mode:
-            for i in self.error_metric_mode.split("|"):
+            for i in self.error_metric_mode.replace(
+                "out_of_bag_error_", "oob_err_"
+            ).split("|"):
                 setattr(self, i + "_", from_table(getattr(train_result, i), like=X))
 
         if self.variable_importance_mode != "none":

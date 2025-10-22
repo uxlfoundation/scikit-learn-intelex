@@ -670,8 +670,10 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         # This assumes that the error_metric_mode variable is set to ._err
         # class attribute
         if self.oob_score:
-            self.oob_score_ = self._onedal_estimator.oob_score_accuracy_
-            self.oob_decision_function_ = self._onedal_estimator.oob_decision_function_
+            self.oob_score_ = self._onedal_estimator.oob_err_accuracy_
+            self.oob_decision_function_ = (
+                self._onedal_estimator.oob_err_decision_function_
+            )
             if xp.any(self.oob_decision_function_ == 0):
                 warnings.warn(
                     "Some inputs do not have OOB scores. This probably means "
@@ -892,8 +894,8 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
         # This assumes that the error_metric_mode variable is set to ._err
         # class attribute
         if self.oob_score:
-            self.oob_score_ = self._onedal_estimator.oob_score_r2_
-            self.oob_prediction_ = self._onedal_estimator.oob_prediction_
+            self.oob_score_ = self._onedal_estimator.oob_err_r2_
+            self.oob_prediction_ = self._onedal_estimator.oob_err_prediction_
             if xp.any(self.oob_prediction_ == 0):
                 warnings.warn(
                     "Some inputs do not have OOB scores. This probably means "
