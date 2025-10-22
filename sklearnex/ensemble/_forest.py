@@ -204,7 +204,8 @@ class BaseForest(oneDALEstimator, ABC):
 
         self._save_attributes(xp)
 
-        # Decapsulate classes_ attributes
+        # Decapsulate classes_ attributes following scikit-learn's
+        # BaseForest.fit
         if hasattr(self, "classes_") and self.n_outputs_ == 1:
             self.n_classes_ = (
                 self.n_classes_[0]
@@ -810,10 +811,7 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         res = self._onedal_estimator.predict(X, queue=queue)
 
         if is_array_api_compliant:
-            return xp.take(
-                xp.asarray(self.classes_, device=res.device),
-                xp.astype(xp.reshape(res, (-1,)), xp.int64),
-            )
+            return xp.take(self.classes_, xp.astype(xp.reshape(res, (-1,)), xp.int64))
         else:
             return xp.take(self.classes_, res.ravel().astype(xp.int64, casting="unsafe"))
 
