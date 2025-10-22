@@ -202,10 +202,12 @@ class ForestClassifier(BaseForest):
             X, y, sample_weight=sample_weight, class_count=class_count, queue=queue
         )
 
-        self.oob_score_ = from_table(train_result.oob_err_accuracy, like=X)
-        self.oob_decision_function_ = from_table(
-            train_result.oob_err_decision_function, like=X
-        )
+        if "out_of_bag_error_accuracy" in self.error_metric_mode:
+            self.oob_score_ = from_table(train_result.oob_err_accuracy, like=X)
+        if "out_of_bag_error_decision_function" in self.error_metric_mode:
+            self.oob_decision_function_ = from_table(
+                train_result.oob_err_decision_function, like=X
+            )
 
         return self
 
@@ -218,8 +220,10 @@ class ForestRegressor(BaseForest):
             X, y, sample_weight=sample_weight, class_count=class_count, queue=queue
         )
 
-        self.oob_score_ = from_table(train_result.oob_err_r2, like=X)
-        self.oob_prediction_ = from_table(train_result.oob_err_prediction, like=X)
+        if "out_of_bag_error_r2" in self.error_metric_mode:
+            self.oob_score_ = from_table(train_result.oob_err_r2, like=X)
+        if "out_of_bag_error_prediction" in self.error_metric_mode:
+            self.oob_prediction_ = from_table(train_result.oob_err_prediction, like=X)
 
         return self
 
