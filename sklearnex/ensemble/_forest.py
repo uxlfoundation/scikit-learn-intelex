@@ -530,7 +530,7 @@ class BaseForest(oneDALEstimator, ABC):
 
     def _estimators_(self):
         """This attribute provides lazy creation of scikit-learn conformant
-        Decision Trees used for analysis in such as 'apply'. This will stay
+        Decision Trees used for analysis in methods such as 'apply'. This will stay
         array_api non-conformant as this is inherently creating sklearn
         objects which are not array_api conformant"""
         # _estimators_ should only be called if _onedal_estimator exists
