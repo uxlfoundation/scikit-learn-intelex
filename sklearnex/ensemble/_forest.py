@@ -41,6 +41,7 @@ from sklearn.tree import (
 )
 from sklearn.tree._tree import Tree
 from sklearn.utils import check_random_state
+from sklearn.utils.multiclass import type_of_target
 from sklearn.utils.validation import check_array, check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
@@ -106,6 +107,7 @@ class BaseForest(oneDALEstimator, ABC):
                 dtype=[xp.float64, xp.float32],
                 ensure_all_finite=False,  # completed in offload check
                 y_numeric=not hasattr(self, "predict_proba"),  # trigger for Regressors
+                multi_output=True,
             )
 
             if sample_weight is not None:
@@ -250,10 +252,6 @@ class BaseForest(oneDALEstimator, ABC):
                 (
                     not self.bootstrap or self.class_weight != "balanced_subsample",
                     "'balanced_subsample' for class_weight is not supported",
-                ),
-                (
-                    _num_features(y, fallback_1d=True) == 1,
-                    f"Number of outputs is not 1.",
                 ),
             ]
         )
@@ -691,6 +689,14 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         if patching_status.get_status():
             xp, is_array_api_compliant = get_namespace(X, y, sample_weight)
 
+            try:
+                # properly verifies all non array API inputs without conversion
+                correct_target = type_of_target(y) in ["binary", "multiclass"]
+            except IndexError:
+                # handle array API issues where type_of_target for 2D data
+                # which is not supported in type_of_target.
+                correct_target = _num_features(y, fallback_1d=True) == 1
+
             patching_status.and_conditions(
                 [
                     (
@@ -698,6 +704,7 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
                         f"'{self.criterion}' criterion is not supported. "
                         "Only 'gini' criterion is supported.",
                     ),
+                    (correct_target, "Only single output classification data supported"),
                     (
                         (
                             xp.unique_values(y)
@@ -917,7 +924,11 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
                         self.criterion in ["mse", "squared_error"],
                         f"'{self.criterion}' criterion is not supported. "
                         "Only 'mse' and 'squared_error' criteria are supported.",
-                    )
+                    ),
+                    (
+                        _num_features(y, fallback_1d=True) == 1,
+                        f"Number of outputs is not 1.",
+                    ),
                 ]
             )
 
