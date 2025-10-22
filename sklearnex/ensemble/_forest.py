@@ -149,14 +149,12 @@ class BaseForest(oneDALEstimator, ABC):
             # try catch needed for raw_inputs + array_api data where unlike
             # numpy the way to yield unique values is via `unique_values`
             # This should be removed when refactored for gpu zero-copy
-            if hasattr(self, "class_weight")
+            if hasattr(self, "class_weight"):
                 try:
                     self.classes_ = xp.unique(y)
                 except AttributeError:
                     self.classes_ = xp.unique_values(y)
                 self.n_classes_ = self.classes_.shape[0]
-
-
 
         # conform to scikit-learn internal calculations
         if self.bootstrap:
