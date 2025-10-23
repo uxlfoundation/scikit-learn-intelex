@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
-"""Tools to support array_api."""
+"""Tools to support array API."""
 
 import math
 from collections.abc import Callable
