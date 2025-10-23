@@ -179,7 +179,9 @@ class BaseForest(oneDALEstimator, ABC):
             )
 
         rs = check_random_state(self.random_state)
-        seed = rs.randint(0, xp.iinfo(xp.int64).max)
+        # use numpy here due to lack of array API support in sklearn random state
+        # seed is a python integer
+        seed = rs.randint(0, np.iinfo("i").max)
 
         # These parameters need to reference onedal.ensemble._forest, as some parameters
         # use defaults set in that module
