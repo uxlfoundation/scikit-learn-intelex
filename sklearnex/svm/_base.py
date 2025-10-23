@@ -366,7 +366,7 @@ class BaseSVC(BaseSVM):
         self.support_vectors_ = self._onedal_estimator.support_vectors_
 
         self.dual_coef_ = self._onedal_estimator.dual_coef_
-        self.support_ = xp.asarray(self._onedal_estimator.support_, dtype=xp.int32)
+        self.support_ = xp.asarray(self._onedal_estimator.support_, dtype=xp.int64)
 
         self._icept_ = self._onedal_estimator.intercept_
         self._sparse = False
@@ -388,10 +388,10 @@ class BaseSVC(BaseSVM):
         self._dualcoef_ = self.dual_coef_
 
         indices = xp.take(y, self.support_, axis=0)
-        self._n_support = xp.zeros_like(self.classes_, dtype=xp.int32)
+        self._n_support = xp.zeros_like(self.classes_, dtype=xp.int64)
         for i in range(self.classes_.shape[0]):
             self._n_support[i] = xp.sum(
-                xp.asarray(indices == i, dtype=xp.int32), dtype=xp.int32
+                xp.asarray(indices == i, dtype=xp.int64), dtype=xp.int64
             )
 
         if sklearn_check_version("1.1"):
@@ -425,7 +425,7 @@ class BaseSVC(BaseSVM):
 
         # the extensive reshaping here comes from the previous implementation, and
         # should be sorted out, as this is inefficient and likely can be reduced
-        res = xp.asarray(res, dtype=xp.int32)
+        res = xp.asarray(res, dtype=xp.int64)
         if self.classes_.shape[0] == 2:
             res = xp.reshape(res, (-1,))
 
