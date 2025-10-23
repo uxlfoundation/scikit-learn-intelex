@@ -27,7 +27,7 @@ from sklearn.covariance import log_likelihood as _sklearn_log_likelihood
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal.utils._array_api import _get_sycl_namespace, _is_numpy_namespace
 
-from .._utils import get_config
+from .._config import get_config
 from ..base import oneDALEstimator
 
 if sklearn_check_version("1.6"):
