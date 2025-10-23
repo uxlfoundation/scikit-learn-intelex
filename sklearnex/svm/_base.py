@@ -232,18 +232,24 @@ class BaseSVC(BaseSVM):
         # _validate_targets equivalent:
         y_ = column_or_1d(y, warn=True)
         check_classification_targets(y)
-        cls, y = xp.unique_inverse(y_) if is_array_api_compliant else xp.unique(y_, return_inverse=True)
-        self.class_weight_ = _compute_class_weight(
-            self.class_weight, classes=cls, y=y_
+        cls, y = (
+            xp.unique_inverse(y_)
+            if is_array_api_compliant
+            else xp.unique(y_, return_inverse=True)
         )
+        self.class_weight_ = _compute_class_weight(self.class_weight, classes=cls, y=y_)
         if cls.shape[0] < 2:
             raise ValueError(
                 "The number of classes has to be greater than one; got %d class"
                 % len(cls)
             )
 
-            self.classes_ = cls
-        return xp.asarray(y, **({dtype:X.dtype) if is_array_api_compliant else {dtype:X.dtype, order:"C"}))
+        self.classes_ = cls
+        return (
+            xp.asarray(y, dtype=X.dtype)
+            if is_array_api_compliant
+            else xp.asarray(y, dtype=X.dtype, order="C")
+        )
 
     def _onedal_fit(self, X, y, sample_weight=None, queue=None):
         if not sklearn_check_version("1.2"):
@@ -584,7 +590,7 @@ class BaseSVR(BaseSVM):
         # this replicates sklearn's `_valdiate_targets` but with X
         # to prevent unnecessary dtype conversions
         xp, is_array_api_compliant = get_namespace(X, y)
-        
+
         if not is_array_api_compliant:
             return column_or_1d(y, warn=True).astype(X.dtype, copy=False)
 
