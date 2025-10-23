@@ -268,7 +268,7 @@ class BaseSVC(BaseSVM):
 
         y = self._validate_targets(y)
 
-        if (sw_flag:= sample_weight is not None) or self.class_weight is not None:
+        if (sw_flag := sample_weight is not None) or self.class_weight is not None:
             sample_weight = _check_sample_weight(sample_weight, X)
             # oneDAL only accepts sample_weights, apply class_weight directly
 
