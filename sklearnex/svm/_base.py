@@ -138,13 +138,19 @@ class BaseSVM(oneDALEstimator):
             f"sklearn.svm.{class_name}.{method_name}"
         )
         if method_name == "fit":
+            xp, _ = get_namespace(*data)
+            _, _, sample_weight = data
             patching_status.and_conditions(
                 [
                     (
                         self.kernel in ["linear", "rbf", "poly", "sigmoid"],
                         f'Kernel is "{self.kernel}" while '
                         '"linear", "rbf", "poly" and "sigmoid" are only supported.',
-                    )
+                    ),
+                    (
+                        sample_weight is not None or xp.all(sample_weight >= 0),
+                        "negative weights are not supported",
+                    ),
                 ]
             )
             return patching_status
@@ -159,9 +165,7 @@ class BaseSVM(oneDALEstimator):
         raise RuntimeError(f"Unknown method {method_name} in {class_name}")
 
     def _svm_sample_weight_check(self, sample_weight, y, xp):
-        # This is purely for sklearn conformance. SVM algos in SVM raise unique errors.
-        if sample_weight is not None and xp.all(sample_weight <= 0):
-            raise ValueError("Invalid input - all samples have zero or negative weights.")
+        pass
 
     def _compute_gamma_sigma(self, X):
         # only run extended conversion if kernel is not linear
@@ -611,8 +615,6 @@ class BaseSVR(BaseSVM):
 
         if sample_weight is not None:
             sample_weight = _check_sample_weight(sample_weight, X)
-
-        self._svm_sample_weight_check(sample_weight, y, xp)
 
         onedal_params = {
             "C": self.C,

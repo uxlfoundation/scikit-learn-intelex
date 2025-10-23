@@ -32,7 +32,7 @@ from onedal.svm import NuSVR as onedal_NuSVR
 
 from .._device_offload import dispatch
 from .._utils import PatchingConditionsChain
-from ..utils._array_api import enable_array_api
+from ..utils._array_api import enable_array_api, get_namespace
 from ._base import BaseSVC, BaseSVR
 
 # array API support limited to sklearn 1.5 for regressors due to an incorrect array API
@@ -136,7 +136,16 @@ class SVC(BaseSVC, _sklearn_SVC):
             ),
         ]
         if method_name == "fit":
-            pass
+            xp, _ = get_namespace(*data)
+            _, _, sample_weight = data
+            conditions.append(
+                (
+                    (
+                        sample_weight is not None or xp.all(sample_weight >= 0),
+                        "negative weights are not supported",
+                    )
+                )
+            )
         elif method_name in self._n_jobs_supported_onedal_methods:
             conditions.append(
                 (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained")
@@ -146,24 +155,6 @@ class SVC(BaseSVC, _sklearn_SVC):
 
         patching_status.and_conditions(conditions)
         return patching_status
-
-    def _svm_sample_weight_check(self, sample_weight, y, xp):
-        # This provides SVM estimator differentiation with respect to sample_weight errors
-        if sample_weight is None:
-            return
-
-        super()._svm_sample_weight_check(sample_weight, y, xp)
-        # y is an index type vector (integer), where the variance == 0 shows
-        # that is is constant (i.e) single class. y[sample_weight > 0] should
-        # never be empty due to the previous check.
-        if xp.any(sample_weight <= 0) and xp.var(y[sample_weight > 0]) == 0:
-            raise ValueError(
-                "Invalid input - all samples with positive weights "
-                "belong to the same class"
-                if sklearn_check_version("1.2")
-                else "Invalid input - all samples with positive weights "
-                "have the same label."
-            )
 
     fit.__doc__ = _sklearn_SVC.fit.__doc__
 
@@ -256,9 +247,6 @@ class NuSVC(BaseSVC, _sklearn_NuSVC):
                 weight_per_class = xp.unique(y, return_counts=True)[1].astype(xp.float64)
             wlcls = weight_per_class.shape[0]
         else:
-
-            if xp.all(sample_weight <= 0):
-                raise ValueError("negative dimensions are not allowed")
 
             weight_per_class = [
                 xp.sum(sample_weight[y == class_label])
