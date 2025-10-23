@@ -97,7 +97,7 @@ class BaseForest(oneDALEstimator, ABC):
 
     def _onedal_fit(self, X, y, sample_weight=None, queue=None):
         use_raw_input = get_config().get("use_raw_input", False) is True
-        xp, _ = get_namespace(X)
+        xp, _ = get_namespace(X, y, sample_weight)
         if not use_raw_input:
             X, y = validate_data(
                 self,
@@ -851,7 +851,7 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         )
 
     def _onedal_predict(self, X, queue=None):
-        xp, is_array_api_compliant = get_namespace(X)
+        xp, is_array_api_compliant = get_namespace(X, self.classes_)
 
         if not get_config()["use_raw_input"]:
             X = validate_data(
