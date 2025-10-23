@@ -226,27 +226,24 @@ class BaseSVM(oneDALEstimator):
 class BaseSVC(BaseSVM):
 
     # overwrite _validate_targets for array API support
-    def _validate_targets(self, y):
-        xp, is_array_api_compliant = get_namespace(y)
+    def _onedal_validate_targets(self, X, y):
+        xp, is_array_api_compliant = get_namespace(X, y)
 
-        if not is_array_api_compliant:
-            y = super()._validate_targets(y)
-        else:
-            # _validate_targets equivalent:
-            y_ = column_or_1d(y, warn=True)
-            check_classification_targets(y)
-            cls, y = xp.unique_inverse(y_)
-            self.class_weight_ = _compute_class_weight(
-                self.class_weight, classes=cls, y=y_
+        # _validate_targets equivalent:
+        y_ = column_or_1d(y, warn=True)
+        check_classification_targets(y)
+        cls, y = xp.unique_inverse(y_) if is_array_api_compliant else xp.unique(y_, return_inverse=True)
+        self.class_weight_ = _compute_class_weight(
+            self.class_weight, classes=cls, y=y_
+        )
+        if cls.shape[0] < 2:
+            raise ValueError(
+                "The number of classes has to be greater than one; got %d class"
+                % len(cls)
             )
-            if cls.shape[0] < 2:
-                raise ValueError(
-                    "The number of classes has to be greater than one; got %d class"
-                    % len(cls)
-                )
 
             self.classes_ = cls
-        return y
+        return xp.asarray(y, **({dtype:X.dtype) if is_array_api_compliant else {dtype:X.dtype, order:"C"}))
 
     def _onedal_fit(self, X, y, sample_weight=None, queue=None):
         if not sklearn_check_version("1.2"):
@@ -266,7 +263,7 @@ class BaseSVC(BaseSVM):
             accept_sparse="csr",
         )
 
-        y = self._validate_targets(y)
+        y = self._onedal_validate_targets(X, y)
 
         if (sw_flag := sample_weight is not None) or self.class_weight is not None:
             sample_weight = _check_sample_weight(sample_weight, X)
@@ -583,13 +580,15 @@ class BaseSVC(BaseSVM):
 class BaseSVR(BaseSVM):
 
     # overwrite _validate_targets for array API support
-    def _validate_targets(self, y):
-        xp, is_array_api_compliant = get_namespace(y)
-
+    def _onedal_validate_targets(self, X, y):
+        # this replicates sklearn's `_valdiate_targets` but with X
+        # to prevent unnecessary dtype conversions
+        xp, is_array_api_compliant = get_namespace(X, y)
+        
         if not is_array_api_compliant:
-            return super()._validate_targets(y)
+            return column_or_1d(y, warn=True).astype(X.dtype, copy=False)
 
-        return xp.astype(column_or_1d(y, warn=True), xp.float64, copy=False)
+        return xp.astype(column_or_1d(y, warn=True), X.dtype, copy=False)
 
     def _onedal_fit(self, X, y, sample_weight=None, queue=None):
         xp, is_ = get_namespace(X, y, sample_weight)
@@ -602,7 +601,7 @@ class BaseSVR(BaseSVM):
             accept_sparse="csr",
         )
 
-        y = self._validate_targets(y)
+        y = self._onedal_validate_targets(y)
 
         if sample_weight is not None:
             sample_weight = _check_sample_weight(sample_weight, X)
@@ -632,10 +631,10 @@ class BaseSVR(BaseSVM):
         self.fit_status_ = 0
         self.dual_coef_ = self._onedal_estimator.dual_coef_
         self.shape_fit_ = X.shape
-        self.support_ = xp.asarray(self._onedal_estimator.support_, dtype=xp.int32)
+        self.support_ = xp.asarray(self._onedal_estimator.support_, dtype=xp.int64)
 
         self._icept_ = self._onedal_estimator.intercept_
-        self._n_support = xp.asarray([self.support_vectors_.shape[0]], dtype=xp.int32)
+        self._n_support = xp.asarray([self.support_vectors_.shape[0]], dtype=xp.int64)
 
         self._sparse = False
         self._gamma = self._onedal_estimator.gamma
