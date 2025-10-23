@@ -752,7 +752,7 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
                         (
                             xp.unique_values(y)
                             if is_array_api_compliant
-                            else xp.unique(y)
+                            else xp.unique(xp.asarray(y))
                         ).shape[0]
                         > 1,
                         "Number of classes must be at least 2.",
