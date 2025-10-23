@@ -179,7 +179,7 @@ class BaseForest(oneDALEstimator, ABC):
             )
 
         rs = check_random_state(self.random_state)
-        seed = rs.randint(0, xp.iinfo("i").max)
+        seed = rs.randint(0, xp.iinfo(xp.int64).max)
 
         # These parameters need to reference onedal.ensemble._forest, as some parameters
         # use defaults set in that module
