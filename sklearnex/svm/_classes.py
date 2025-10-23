@@ -112,7 +112,7 @@ class SVC(BaseSVC, _sklearn_SVC):
             },
             X,
             y,
-            sample_weight=sample_weight,
+            sample_weight,
         )
 
         return self
@@ -231,7 +231,7 @@ class NuSVC(BaseSVC, _sklearn_NuSVC):
             },
             X,
             y,
-            sample_weight=sample_weight,
+            sample_weight,
         )
 
         return self
@@ -326,7 +326,7 @@ class SVR(BaseSVR, _sklearn_SVR):
             },
             X,
             y,
-            sample_weight=sample_weight,
+            sample_weight,
         )
 
         return self
@@ -396,7 +396,7 @@ class NuSVR(BaseSVR, _sklearn_NuSVR):
             },
             X,
             y,
-            sample_weight=sample_weight,
+            sample_weight,
         )
         return self
 
