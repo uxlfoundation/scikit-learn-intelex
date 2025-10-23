@@ -603,7 +603,9 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             else:
                 self._fit_method = self.algorithm
 
-        if hasattr(self, "_onedal_estimator"):
+        # Only delete _onedal_estimator if it's an instance attribute, not a class attribute
+        # (SPMD classes define _onedal_estimator as a staticmethod at class level)
+        if "_onedal_estimator" in self.__dict__:
             delattr(self, "_onedal_estimator")
         # To cover test case when we pass patched
         # estimator as an input for other estimator
@@ -613,7 +615,8 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             self._fit_method = X._fit_method
             self.n_samples_fit_ = X.n_samples_fit_
             self.n_features_in_ = X.n_features_in_
-            if hasattr(X, "_onedal_estimator"):
+            # Check if X has _onedal_estimator as an instance attribute (not class attribute)
+            if "_onedal_estimator" in X.__dict__:
                 self.effective_metric_params_.pop("p")
                 if self._fit_method == "ball_tree":
                     X._tree = BallTree(
@@ -727,7 +730,8 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                 if is_classifier:
                     # Use numpy for unique (standard sklearn pattern)
                     class_count = len(np.unique(np.asarray(y)))
-            if hasattr(self, "_onedal_estimator"):
+            # Only access _onedal_estimator if it's an instance attribute (not a class-level staticmethod)
+            if "_onedal_estimator" in self.__dict__:
                 y = self._onedal_estimator._y
             if y is not None and hasattr(y, "ndim") and hasattr(y, "shape"):
                 is_single_output = y.ndim == 1 or y.ndim == 2 and y.shape[1] == 1
@@ -786,8 +790,10 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                 )
             return patching_status
         if method_name in ["predict", "predict_proba", "kneighbors", "score"]:
+            # Check if _onedal_estimator is an instance attribute (model was trained)
+            # For SPMD classes, _onedal_estimator is a class-level staticmethod, so we check __dict__
             patching_status.and_condition(
-                hasattr(self, "_onedal_estimator"), "oneDAL model was not trained."
+                "_onedal_estimator" in self.__dict__, "oneDAL model was not trained."
             )
             return patching_status
         raise RuntimeError(f"Unknown method {method_name} in {class_name}")

@@ -101,7 +101,7 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         self, X=None, radius=None, return_distance=True, sort_results=False
     ):
         if (
-            hasattr(self, "_onedal_estimator")
+            "_onedal_estimator" in self.__dict__
             or getattr(self, "_tree", 0) is None
             and self._fit_method == "kd_tree"
         ):

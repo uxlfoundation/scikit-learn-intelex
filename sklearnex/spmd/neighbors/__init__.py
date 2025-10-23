@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
-from onedal.spmd.neighbors import (
+from .neighbors import (
     KNeighborsClassifier,
     KNeighborsRegressor,
     NearestNeighbors,
