@@ -25,13 +25,14 @@ from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.utils.validation import get_requires_y_tag
 from onedal._device_offload import _transfer_to_host
 from onedal.neighbors import KNeighborsRegressor as onedal_KNeighborsRegressor
+from onedal.utils import _sycl_queue_manager as QM
 
+from .._config import get_config
 from .._device_offload import dispatch, wrap_output_data
 from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.validation import check_feature_names, validate_data
 from .common import KNeighborsDispatchingBase
-from .._config import get_config
-from onedal.utils import _sycl_queue_manager as QM
+
 
 @enable_array_api
 @control_n_jobs(decorated_methods=["fit", "predict", "kneighbors", "score"])
@@ -131,9 +132,9 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
             return_distance=return_distance,
         )
 
-    def _onedal_fit(self, X, y, queue=None):        
+    def _onedal_fit(self, X, y, queue=None):
         xp, _ = get_namespace(X, y)
-        
+
         # Validation step (follows PCA pattern)
         if not get_config()["use_raw_input"]:
             X, y = validate_data(
@@ -149,7 +150,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         else:
             # SPMD mode: skip validation but still set effective metric
             self._set_effective_metric()
-        
+
         # Process regression targets before passing to onedal
         self._process_regression_targets(y)
 
@@ -167,7 +168,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         self._onedal_estimator.effective_metric_ = self.effective_metric_
         self._onedal_estimator.effective_metric_params_ = self.effective_metric_params_
         self._onedal_estimator._shape = self._shape
-        
+
         # Reshape _y for GPU backend
         queue_instance = QM.get_global_queue()
         gpu_device = queue_instance is not None and queue_instance.sycl_device.is_gpu
@@ -177,7 +178,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
             self._onedal_estimator._y = self._y
 
         self._onedal_estimator.fit(X, y, queue=queue)
-        
+
         # Post-processing: save attributes and reshape _y
         self._save_attributes()
         if y is not None:
