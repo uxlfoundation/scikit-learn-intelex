@@ -139,8 +139,12 @@ class SVC(BaseSVC, _sklearn_SVC):
             _, _, sample_weight = data
             conditions.append(
                 (
-                    sample_weight is not None or xp.all(sample_weight >= 0),
-                    "negative weights are not supported",
+                    sample_weight is None
+                    or (
+                    xp.all((sw := xp.asarray(sample_weight)) >= 0)
+                    and not xp.all(sw == 0)
+                ),
+                    "negative or all zero weights are not supported",
                 )
             )
         elif method_name in self._n_jobs_supported_onedal_methods:
