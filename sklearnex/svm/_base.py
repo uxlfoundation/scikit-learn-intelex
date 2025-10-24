@@ -139,6 +139,7 @@ class BaseSVM(oneDALEstimator):
         )
         if method_name == "fit":
             xp, _ = get_namespace(*data)
+            _, _, sample_weight = data
             patching_status.and_conditions(
                 [
                     (
@@ -147,7 +148,7 @@ class BaseSVM(oneDALEstimator):
                         '"linear", "rbf", "poly" and "sigmoid" are only supported.',
                     ),
                     (
-                        len(data) < 3 or xp.all(data[2] >= 0),
+                        sapmle_weight is None or xp.all(sample_weight >= 0),
                         "negative weights are not supported",
                     ),
                 ]
