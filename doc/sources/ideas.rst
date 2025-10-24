@@ -12,9 +12,9 @@
 .. See the License for the specific language governing permissions and
 .. limitations under the License.
 
-#####
-Ideas
-#####
+#######################
+Ideas for Contributions
+#######################
 
 As an open-source project, we welcome community contributions to Extension for Scikit-learn.
 This document suggests contribution directions which we consider good introductory projects with meaningful
