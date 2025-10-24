@@ -24,6 +24,7 @@ from sklearn.utils.validation import check_is_fitted
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.utils.validation import get_requires_y_tag
+from onedal._device_offload import _transfer_to_host
 from onedal.neighbors import KNeighborsClassifier as onedal_KNeighborsClassifier
 
 from .._config import get_config
@@ -150,12 +151,8 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     def _onedal_fit(self, X, y, queue=None):
         xp, _ = get_namespace(X)
 
-        # When use_raw_input=True, dispatch bypasses _onedal_supported() which calls _fit_validation()
-        # We need to call it here to set effective_metric_ and effective_metric_params_
-        use_raw_input = get_config()["use_raw_input"]
-        if use_raw_input:
-            self._fit_validation(X, y)
-        else:
+        # Validation step (follows PCA pattern)
+        if not get_config()["use_raw_input"]:
             X, y = validate_data(
                 self,
                 X,
@@ -163,10 +160,16 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
                 dtype=[xp.float64, xp.float32],
                 accept_sparse="csr",
             )
+            # Set effective metric after validation
+            self._set_effective_metric()
+        else:
+            # SPMD mode: skip validation but still set effective metric
+            self._set_effective_metric()
 
-        # Process classification targets in sklearnex before passing to onedal
-        # When use_raw_input=True, y is raw array API (dpctl/dpnp), skip sklearn validation
-        self._process_classification_targets(y, skip_validation=use_raw_input)
+        # Process classification targets before passing to onedal
+        self._process_classification_targets(y, skip_validation=get_config()["use_raw_input"])
+        
+        # Call onedal backend
         onedal_params = {
             "n_neighbors": self.n_neighbors,
             "weights": self.weights,
@@ -179,16 +182,14 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         self._onedal_estimator.requires_y = get_requires_y_tag(self)
         self._onedal_estimator.effective_metric_ = self.effective_metric_
         self._onedal_estimator.effective_metric_params_ = self.effective_metric_params_
-
-        # Pass both original and processed targets to onedal
-        # onedal needs the processed classes_ and _y attributes that we just set
         self._onedal_estimator.classes_ = self.classes_
         self._onedal_estimator._y = self._y
         self._onedal_estimator.outputs_2d_ = self.outputs_2d_
-        self._onedal_estimator._shape = self._shape  # Pass shape from sklearnex
+        self._onedal_estimator._shape = self._shape
 
-        # Pass original y to onedal - it will use the pre-set classes_ and _y attributes we just assigned
         self._onedal_estimator.fit(X, y, queue=queue)
+        
+        # Post-processing
         self._save_attributes()
 
     def _onedal_predict(self, X, queue=None):
@@ -238,14 +239,14 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         )
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
-        # Convert array API to numpy for sklearn's accuracy_score
-        # Note: validate_data does NOT convert array API to numpy, so we do it explicitly
-        y = np.asarray(y)
-        if sample_weight is not None:
-            sample_weight = np.asarray(sample_weight)
-        return accuracy_score(
-            y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
-        )
+        # Get predictions
+        y_pred = self._onedal_predict(X, queue=queue)
+        
+        # Convert array API to numpy for sklearn's accuracy_score using _transfer_to_host
+        # This properly handles Array API arrays that don't allow implicit conversion
+        _, (y, y_pred, sample_weight) = _transfer_to_host(y, y_pred, sample_weight)
+        
+        return accuracy_score(y, y_pred, sample_weight=sample_weight)
 
     def _save_attributes(self):
         self.classes_ = self._onedal_estimator.classes_
