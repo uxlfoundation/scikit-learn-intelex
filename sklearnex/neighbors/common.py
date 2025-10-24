@@ -361,6 +361,10 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         Handles query_is_train case: when X=None, sets X to training data and adds +1 to n_neighbors.
         Validates n_neighbors bounds AFTER adding +1 (replicates original onedal behavior).
 
+        NOTE: Caller is responsible for validating X (via validate_data or _check_array).
+        This function does NOT validate X to avoid double validation and to support
+        use_raw_input mode where validation should be skipped.
+
         Args:
             X: Query data or None
             n_neighbors: Number of neighbors or None
@@ -372,25 +376,32 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             - query_is_train: Boolean flag indicating if original X was None
         """
         query_is_train = X is None
-        X = self._fit_X
-        # Include an extra neighbor to account for the sample itself being
-        # returned, which is removed later
-        if n_neighbors is None:
-            n_neighbors = self.n_neighbors
-        n_neighbors += 1
 
-        # Validate bounds AFTER adding +1 (replicates original onedal behavior)
-        # Original code in onedal had validation after n_neighbors += 1
-        n_samples_fit = self.n_samples_fit_
-        if n_neighbors > n_samples_fit:
-            n_neighbors_for_msg = (
-                n_neighbors - 1
-            )  # for error message, show original value
-            raise ValueError(
-                f"Expected n_neighbors < n_samples_fit, but "
-                f"n_neighbors = {n_neighbors_for_msg}, n_samples_fit = {n_samples_fit}, "
-                f"n_samples = {X.shape[0]}"
-            )
+        if X is not None:
+            # X validation should already be done by caller
+            # Do NOT call _check_array here to avoid double validation
+            # and to support use_raw_input mode
+            pass
+        else:
+            X = self._fit_X
+            # Include an extra neighbor to account for the sample itself being
+            # returned, which is removed later
+            if n_neighbors is None:
+                n_neighbors = self.n_neighbors
+            n_neighbors += 1
+
+            # Validate bounds AFTER adding +1 (replicates original onedal behavior)
+            # Original code in onedal had validation after n_neighbors += 1
+            n_samples_fit = self.n_samples_fit_
+            if n_neighbors > n_samples_fit:
+                n_neighbors_for_msg = (
+                    n_neighbors - 1
+                )  # for error message, show original value
+                raise ValueError(
+                    f"Expected n_neighbors < n_samples_fit, but "
+                    f"n_neighbors = {n_neighbors_for_msg}, n_samples_fit = {n_samples_fit}, "
+                    f"n_samples = {X.shape[0]}"
+                )
 
         return X, n_neighbors, query_is_train
 
