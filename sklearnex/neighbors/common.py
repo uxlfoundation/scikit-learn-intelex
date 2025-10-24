@@ -180,7 +180,13 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         """
         from ..utils.validation import _num_samples
 
-        # Array API support: get namespace from input arrays
+        # Transfer all arrays to host to ensure they're on the same queue/device
+        # This is needed especially for SPMD where arrays might be on different queues
+        _, (neigh_dist, neigh_ind, y_train) = _transfer_to_host(
+            neigh_dist, neigh_ind, y_train
+        )
+
+        # After transfer, get the array namespace (will be numpy for host arrays)
         xp, _ = get_namespace(neigh_dist, neigh_ind, y_train)
 
         _y = y_train
@@ -366,32 +372,25 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             - query_is_train: Boolean flag indicating if original X was None
         """
         query_is_train = X is None
+        X = self._fit_X
+        # Include an extra neighbor to account for the sample itself being
+        # returned, which is removed later
+        if n_neighbors is None:
+            n_neighbors = self.n_neighbors
+        n_neighbors += 1
 
-        if X is not None:
-            # Get the array namespace to use correct dtypes
-            xp, _ = get_namespace(X)
-            # Use _check_array like main branch, with array API dtype support
-            X = _check_array(X, dtype=[xp.float64, xp.float32], accept_sparse="csr")
-        else:
-            X = self._fit_X
-            # Include an extra neighbor to account for the sample itself being
-            # returned, which is removed later
-            if n_neighbors is None:
-                n_neighbors = self.n_neighbors
-            n_neighbors += 1
-
-            # Validate bounds AFTER adding +1 (replicates original onedal behavior)
-            # Original code in onedal had validation after n_neighbors += 1
-            n_samples_fit = self.n_samples_fit_
-            if n_neighbors > n_samples_fit:
-                n_neighbors_for_msg = (
-                    n_neighbors - 1
-                )  # for error message, show original value
-                raise ValueError(
-                    f"Expected n_neighbors < n_samples_fit, but "
-                    f"n_neighbors = {n_neighbors_for_msg}, n_samples_fit = {n_samples_fit}, "
-                    f"n_samples = {X.shape[0]}"
-                )
+        # Validate bounds AFTER adding +1 (replicates original onedal behavior)
+        # Original code in onedal had validation after n_neighbors += 1
+        n_samples_fit = self.n_samples_fit_
+        if n_neighbors > n_samples_fit:
+            n_neighbors_for_msg = (
+                n_neighbors - 1
+            )  # for error message, show original value
+            raise ValueError(
+                f"Expected n_neighbors < n_samples_fit, but "
+                f"n_neighbors = {n_neighbors_for_msg}, n_samples_fit = {n_samples_fit}, "
+                f"n_samples = {X.shape[0]}"
+            )
 
         return X, n_neighbors, query_is_train
 
@@ -470,10 +469,16 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             return neigh_dist, neigh_ind
         return neigh_ind
 
-    def _process_classification_targets(self, y):
+    def _process_classification_targets(self, y, skip_validation=False):
         """Process classification targets and set class-related attributes.
 
-        Note: y should already be converted to numpy array via validate_data before calling this.
+        Parameters
+        ----------
+        y : array-like
+            Target values
+        skip_validation : bool, default=False
+            If True, skip _check_classification_targets validation.
+            Used when use_raw_input=True (raw array API arrays like dpctl.usm_ndarray).
         """
         # Array API support: get namespace from y
         xp, _ = get_namespace(y)
@@ -491,8 +496,9 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         else:
             self.outputs_2d_ = True
 
-        # Validate classification targets
-        _check_classification_targets(y)
+        # Validate classification targets (skip for raw array API inputs)
+        if not skip_validation:
+            _check_classification_targets(y)
 
         # Process classes - note: np.unique is used for class extraction
         # This is acceptable as classes are typically numpy arrays in sklearn
@@ -500,8 +506,9 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         self._y = xp.empty(y.shape, dtype=xp.int32)
         for k in range(self._y.shape[1]):
             # Use numpy unique for class extraction (standard sklearn pattern)
-            y_k = np.asarray(y[:, k])
-            classes, indices = np.unique(y_k, return_inverse=True)
+            # Transfer to host first to ensure proper numpy array conversion
+            y_k_host = np.asarray(_transfer_to_host(y[:, k])[1][0])
+            classes, indices = np.unique(y_k_host, return_inverse=True)
             self.classes_.append(classes)
             self._y[:, k] = xp.asarray(indices, dtype=xp.int32)
 
@@ -526,8 +533,6 @@ class KNeighborsDispatchingBase(oneDALEstimator):
 
         For now, just store _shape and _y as-is. The reshape happens after onedal fit is complete.
         """
-        import sys
-
         # EXACT replication of original onedal shape processing
         shape = getattr(y, "shape", None)
         self._shape = shape if shape is not None else y.shape

@@ -26,6 +26,7 @@ from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.utils.validation import get_requires_y_tag
 from onedal.neighbors import KNeighborsClassifier as onedal_KNeighborsClassifier
 
+from .._config import get_config
 from .._device_offload import dispatch, wrap_output_data
 from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.validation import check_feature_names, validate_data
@@ -148,15 +149,24 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
 
     def _onedal_fit(self, X, y, queue=None):
         xp, _ = get_namespace(X)
-        X, y = validate_data(
-            self,
-            X,
-            y,
-            dtype=[xp.float64, xp.float32],
-            accept_sparse="csr",
-        )
+
+        # When use_raw_input=True, dispatch bypasses _onedal_supported() which calls _fit_validation()
+        # We need to call it here to set effective_metric_ and effective_metric_params_
+        use_raw_input = get_config()["use_raw_input"]
+        if use_raw_input:
+            self._fit_validation(X, y)
+        else:
+            X, y = validate_data(
+                self,
+                X,
+                y,
+                dtype=[xp.float64, xp.float32],
+                accept_sparse="csr",
+            )
+
         # Process classification targets in sklearnex before passing to onedal
-        self._process_classification_targets(y)
+        # When use_raw_input=True, y is raw array API (dpctl/dpnp), skip sklearn validation
+        self._process_classification_targets(y, skip_validation=use_raw_input)
         onedal_params = {
             "n_neighbors": self.n_neighbors,
             "weights": self.weights,
@@ -201,7 +211,10 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     def _onedal_kneighbors(
         self, X=None, n_neighbors=None, return_distance=True, queue=None
     ):
-        if X is not None:
+        # Only skip validation when use_raw_input=True (SPMD mode)
+        use_raw_input = get_config()["use_raw_input"]
+
+        if X is not None and not use_raw_input:
             xp, _ = get_namespace(X)
             X = validate_data(
                 self,
