@@ -21,5 +21,5 @@ rm GPG-PUB-KEY-INTEL-SW-PRODUCTS-2023.PUB
 echo "deb https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
 sudo add-apt-repository -y "deb https://apt.repos.intel.com/oneapi all main"
 sudo apt-get update
-sudo apt-get install -y intel-oneapi-compiler-dpcpp-cpp=2025.2.1-7
+sudo apt-get install -y intel-oneapi-compiler-dpcpp-cpp=2025.3.0-639
 sudo bash -c 'echo libintelocl.so > /etc/OpenCL/vendors/intel-cpu.icd'
