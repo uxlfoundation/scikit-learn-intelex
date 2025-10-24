@@ -71,7 +71,9 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             # if user attempts to classify a point that was zero distance from one
             # or more training points, those training points are weighted as 1.0
             # and the other points as 0.0
-            if dist.dtype is xp.asarray(object).dtype:
+            # Check for object dtype - use string comparison for Array API compatibility
+            is_object_dtype = str(dist.dtype) == 'object' or (hasattr(dist.dtype, 'kind') and dist.dtype.kind == 'O')
+            if is_object_dtype:
                 for point_dist_i, point_dist in enumerate(dist):
                     # check if point_dist is iterable
                     # (ex: RadiusNeighborClassifier.predict may set an element of
@@ -138,7 +140,11 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             )  # Shape: (n_samples, n_neighbors, n_outputs)
             y_pred = xp.mean(gathered, axis=1)
         else:
-            y_pred = xp.empty((neigh_ind.shape[0], _y.shape[1]), dtype=xp.float64)
+            # Create y_pred with proper device/queue by using zeros_like pattern
+            # This ensures device compatibility in SPMD mode
+            y_pred_shape = (neigh_ind.shape[0], _y.shape[1])
+            # Create on same device as neigh_ind to ensure queue compatibility
+            y_pred = xp.zeros(y_pred_shape, dtype=xp.float64, device=getattr(neigh_ind, 'device', None))
             denom = xp.sum(weights, axis=1)
 
             for j in range(_y.shape[1]):
@@ -315,6 +321,40 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                     "n_neighbors does not take %s value, "
                     "enter integer value" % type(n_neighbors)
                 )
+
+    def _set_effective_metric(self):
+        """Set effective_metric_ and effective_metric_params_ without validation.
+        
+        Used when we need to set metrics but can't call _fit_validation
+        (e.g., in SPMD mode with use_raw_input=True where sklearn validation
+        would try to convert array API to numpy).
+        """
+        if self.metric_params is not None and "p" in self.metric_params:
+            if self.p is not None:
+                warnings.warn(
+                    "Parameter p is found in metric_params. "
+                    "The corresponding parameter from __init__ "
+                    "is ignored.",
+                    SyntaxWarning,
+                    stacklevel=2,
+                )
+            self.effective_metric_params_ = self.metric_params.copy()
+            effective_p = self.metric_params["p"]
+        else:
+            self.effective_metric_params_ = {}
+            effective_p = self.p
+        
+        self.effective_metric_params_["p"] = effective_p
+        self.effective_metric_ = self.metric
+        # For minkowski distance, use more efficient methods where available
+        if self.metric == "minkowski":
+            p = self.effective_metric_params_["p"]
+            if p == 1:
+                self.effective_metric_ = "manhattan"
+            elif p == 2:
+                self.effective_metric_ = "euclidean"
+            elif p == np.inf:
+                self.effective_metric_ = "chebyshev"
 
     def _validate_n_classes(self):
         """Validate that the classifier has at least 2 classes."""
@@ -556,32 +596,9 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         # check_feature_names(self, X, reset=True)
         # Validate n_neighbors parameter
         self._validate_n_neighbors(self.n_neighbors)
-        if self.metric_params is not None and "p" in self.metric_params:
-            if self.p is not None:
-                warnings.warn(
-                    "Parameter p is found in metric_params. "
-                    "The corresponding parameter from __init__ "
-                    "is ignored.",
-                    SyntaxWarning,
-                    stacklevel=2,
-                )
-            self.effective_metric_params_ = self.metric_params.copy()
-            effective_p = self.metric_params["p"]
-        else:
-            self.effective_metric_params_ = {}
-            effective_p = self.p
-
-        self.effective_metric_params_["p"] = effective_p
-        self.effective_metric_ = self.metric
-        # For minkowski distance, use more efficient methods where available
-        if self.metric == "minkowski":
-            p = self.effective_metric_params_["p"]
-            if p == 1:
-                self.effective_metric_ = "manhattan"
-            elif p == 2:
-                self.effective_metric_ = "euclidean"
-            elif p == np.inf:
-                self.effective_metric_ = "chebyshev"
+        
+        # Set effective metric and parameters
+        self._set_effective_metric()
 
         if not isinstance(X, (KDTree, BallTree, _sklearn_NeighborsBase)):
             # Use _check_array like main branch, but with array API dtype support

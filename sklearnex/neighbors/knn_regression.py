@@ -30,7 +30,8 @@ from .._device_offload import dispatch, wrap_output_data
 from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.validation import check_feature_names, validate_data
 from .common import KNeighborsDispatchingBase
-
+from .._config import get_config
+from onedal.utils import _sycl_queue_manager as QM
 
 @enable_array_api
 @control_n_jobs(decorated_methods=["fit", "predict", "kneighbors", "score"])
@@ -130,25 +131,29 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
             return_distance=return_distance,
         )
 
-    def _onedal_fit(self, X, y, queue=None):
+    def _onedal_fit(self, X, y, queue=None):        
         xp, _ = get_namespace(X, y)
-        # Use validate_data with multi_output=True to preserve y shape
-        # (multi_output=False converts column vectors to 1D)
-        # Note: Don't use y_numeric=True with multi_output=True for array API
-        # (sklearn's _check_y tries to access dtype.kind which doesn't exist on array API dtypes)
-        X, y = validate_data(
-            self,
-            X,
-            y,
-            dtype=[xp.float64, xp.float32],
-            accept_sparse="csr",
-            multi_output=True,
-            y_numeric=True,
-        )
-        # Process regression targets in sklearnex before passing to onedal
-        # This sets _shape and _y attributes
+        
+        # Validation step (follows PCA pattern)
+        if not get_config()["use_raw_input"]:
+            X, y = validate_data(
+                self,
+                X,
+                y,
+                dtype=[xp.float64, xp.float32],
+                accept_sparse="csr",
+                multi_output=True,
+            )
+            # Set effective metric after validation
+            self._set_effective_metric()
+        else:
+            # SPMD mode: skip validation but still set effective metric
+            self._set_effective_metric()
+        
+        # Process regression targets before passing to onedal
         self._process_regression_targets(y)
 
+        # Call onedal backend
         onedal_params = {
             "n_neighbors": self.n_neighbors,
             "weights": self.weights,
@@ -161,33 +166,23 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         self._onedal_estimator.requires_y = get_requires_y_tag(self)
         self._onedal_estimator.effective_metric_ = self.effective_metric_
         self._onedal_estimator.effective_metric_params_ = self.effective_metric_params_
-
-        # Pass pre-processed shape and _y to onedal
-        # For GPU backend, reshape _y to (-1, 1) before passing to onedal
-        from onedal.utils import _sycl_queue_manager as QM
-
+        self._onedal_estimator._shape = self._shape
+        
+        # Reshape _y for GPU backend
         queue_instance = QM.get_global_queue()
         gpu_device = queue_instance is not None and queue_instance.sycl_device.is_gpu
-
-        self._onedal_estimator._shape = self._shape
-        # Reshape _y for GPU backend (needs column vector)
         if gpu_device:
             self._onedal_estimator._y = xp.reshape(self._y, (-1, 1))
         else:
             self._onedal_estimator._y = self._y
 
         self._onedal_estimator.fit(X, y, queue=queue)
+        
+        # Post-processing: save attributes and reshape _y
         self._save_attributes()
-
-        # Original onedal code (after fit):
-        #     if y is not None and _is_regressor(self):
-        #         _, xp, _ = _get_sycl_namespace(X)
-        #         self._y = y if self._shape is None else xp.reshape(y, self._shape)
-        # Now doing this in sklearnex layer
         if y is not None:
             xp, _ = get_namespace(y)
             self._y = y if self._shape is None else xp.reshape(y, self._shape)
-            # Also update the onedal estimator's _y since that's what gets used in predict
             self._onedal_estimator._y = self._y
 
     def _onedal_predict(self, X, queue=None):
@@ -233,8 +228,8 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
     def _onedal_kneighbors(
         self, X=None, n_neighbors=None, return_distance=True, queue=None
     ):
-        # Validate X to convert array API/pandas to numpy and check feature names (only if X is not None)
-        if X is not None:
+        # Validation step
+        if X is not None and not get_config()["use_raw_input"]:
             xp, _ = get_namespace(X)
             X = validate_data(
                 self,
@@ -244,15 +239,15 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
                 reset=False,
             )
 
-        # Prepare inputs and handle query_is_train case
+        # Prepare inputs
         X, n_neighbors, query_is_train = self._prepare_kneighbors_inputs(X, n_neighbors)
 
-        # Get raw results from onedal backend
+        # Call onedal backend
         result = self._onedal_estimator.kneighbors(
             X, n_neighbors, return_distance, queue=queue
         )
 
-        # Apply post-processing (kd_tree sorting, removing self from results)
+        # Post-processing
         return self._kneighbors_post_processing(
             X, n_neighbors, return_distance, result, query_is_train
         )
