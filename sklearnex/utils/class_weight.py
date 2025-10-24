@@ -41,7 +41,7 @@ def _compute_class_weight(class_weight, *, classes, y, sample_weight=None):
 
     if not is_array_api_compliant:
         # use the sklearn version for standard use.
-        return compute_class_weight(class_weight, classes, y, sample_weight=sample_weight)
+        return compute_class_weight(class_weight, classes=classes, y=y, sample_weight=sample_weight)
 
     sety = xp.unique_values(y)
     if class_weight is None or len(class_weight) == 0:
