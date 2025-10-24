@@ -18,18 +18,23 @@ from sklearn.metrics import r2_score
 from sklearn.neighbors._regression import (
     KNeighborsRegressor as _sklearn_KNeighborsRegressor,
 )
-from sklearn.utils.validation import check_is_fitted
+from sklearn.utils.validation import assert_all_finite, check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.utils.validation import get_requires_y_tag
+from onedal._device_offload import _transfer_to_host
 from onedal.neighbors import KNeighborsRegressor as onedal_KNeighborsRegressor
+from onedal.utils import _sycl_queue_manager as QM
 
+from .._config import get_config
 from .._device_offload import dispatch, wrap_output_data
-from ..utils.validation import check_feature_names
+from ..utils._array_api import enable_array_api, get_namespace
+from ..utils.validation import check_feature_names, validate_data
 from .common import KNeighborsDispatchingBase
 
 
+@enable_array_api
 @control_n_jobs(decorated_methods=["fit", "predict", "kneighbors", "score"])
 class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegressor):
     __doc__ = _sklearn_KNeighborsRegressor.__doc__
@@ -77,7 +82,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
     @wrap_output_data
     def predict(self, X):
         check_is_fitted(self)
-        check_feature_names(self, X, reset=False)
+
         return dispatch(
             self,
             "predict",
@@ -91,7 +96,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
     @wrap_output_data
     def score(self, X, y, sample_weight=None):
         check_is_fitted(self)
-        check_feature_names(self, X, reset=False)
+
         return dispatch(
             self,
             "score",
@@ -106,9 +111,15 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
 
     @wrap_output_data
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
+        # Validate n_neighbors parameter first (before check_is_fitted)
+        if n_neighbors is not None:
+            self._validate_n_neighbors(n_neighbors)
+
         check_is_fitted(self)
-        if X is not None:
-            check_feature_names(self, X, reset=False)
+
+        # Validate kneighbors parameters (inherited from KNeighborsDispatchingBase)
+        self._kneighbors_validation(X, n_neighbors)
+
         return dispatch(
             self,
             "kneighbors",
@@ -122,6 +133,28 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         )
 
     def _onedal_fit(self, X, y, queue=None):
+        xp, _ = get_namespace(X, y)
+
+        # Validation step (follows PCA pattern)
+        if not get_config()["use_raw_input"]:
+            X, y = validate_data(
+                self,
+                X,
+                y,
+                dtype=[xp.float64, xp.float32],
+                accept_sparse="csr",
+                multi_output=True,
+            )
+            # Set effective metric after validation
+            self._set_effective_metric()
+        else:
+            # SPMD mode: skip validation but still set effective metric
+            self._set_effective_metric()
+
+        # Process regression targets before passing to onedal
+        self._process_regression_targets(y)
+
+        # Call onedal backend
         onedal_params = {
             "n_neighbors": self.n_neighbors,
             "weights": self.weights,
@@ -134,24 +167,101 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         self._onedal_estimator.requires_y = get_requires_y_tag(self)
         self._onedal_estimator.effective_metric_ = self.effective_metric_
         self._onedal_estimator.effective_metric_params_ = self.effective_metric_params_
+        self._onedal_estimator._shape = self._shape
+
+        # Reshape _y for GPU backend
+        queue_instance = QM.get_global_queue()
+        gpu_device = queue_instance is not None and queue_instance.sycl_device.is_gpu
+        if gpu_device:
+            self._onedal_estimator._y = xp.reshape(self._y, (-1, 1))
+        else:
+            self._onedal_estimator._y = self._y
+
         self._onedal_estimator.fit(X, y, queue=queue)
 
+        # Post-processing: save attributes and reshape _y
         self._save_attributes()
+        if y is not None:
+            xp, _ = get_namespace(y)
+            self._y = y if self._shape is None else xp.reshape(y, self._shape)
+            self._onedal_estimator._y = self._y
 
     def _onedal_predict(self, X, queue=None):
-        return self._onedal_estimator.predict(X, queue=queue)
+        # Dispatch between GPU and SKL prediction methods
+        # This logic matches onedal regressor predict() method but computation happens in sklearnex
+        # Note: X validation happens in kneighbors (for SKL path) or _predict_gpu (for GPU path)
+        gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
+        is_uniform_weights = getattr(self, "weights", "uniform") == "uniform"
+
+        if gpu_device and is_uniform_weights:
+            # GPU path: call onedal backend directly
+            return self._predict_gpu(X, queue=queue)
+        else:
+            # SKL path: call kneighbors (through sklearnex) then compute in sklearnex
+            return self._predict_skl(X, queue=queue)
+
+    def _predict_gpu(self, X, queue=None):
+        """GPU prediction path - calls onedal backend."""
+        # Validate X for GPU path (SKL path validation happens in kneighbors)
+        if X is not None:
+            xp, _ = get_namespace(X)
+            # For precomputed metric, only check NaN/inf, don't validate features
+            if getattr(self, "effective_metric_", self.metric) == "precomputed":
+                from ..utils.validation import assert_all_finite
+
+                assert_all_finite(X, allow_nan=False, input_name="X")
+            else:
+                X = validate_data(
+                    self,
+                    X,
+                    dtype=[xp.float64, xp.float32],
+                    accept_sparse="csr",
+                    reset=False,
+                )
+        # Call onedal backend for GPU prediction
+        return self._onedal_estimator._predict_gpu(X)
+
+    def _predict_skl(self, X, queue=None):
+        """SKL prediction path - calls kneighbors through sklearnex, computes prediction here."""
+        # Use the unified helper from common.py (calls kneighbors + computes prediction)
+        return self._predict_skl_regression(X)
 
     def _onedal_kneighbors(
         self, X=None, n_neighbors=None, return_distance=True, queue=None
     ):
-        return self._onedal_estimator.kneighbors(
+        # Validation step
+        if X is not None and not get_config()["use_raw_input"]:
+            xp, _ = get_namespace(X)
+            X = validate_data(
+                self,
+                X,
+                dtype=[xp.float64, xp.float32],
+                accept_sparse="csr",
+                reset=False,
+            )
+
+        # Prepare inputs
+        X, n_neighbors, query_is_train = self._prepare_kneighbors_inputs(X, n_neighbors)
+
+        # Call onedal backend
+        result = self._onedal_estimator.kneighbors(
             X, n_neighbors, return_distance, queue=queue
         )
 
-    def _onedal_score(self, X, y, sample_weight=None, queue=None):
-        return r2_score(
-            y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
+        # Post-processing
+        return self._kneighbors_post_processing(
+            X, n_neighbors, return_distance, result, query_is_train
         )
+
+    def _onedal_score(self, X, y, sample_weight=None, queue=None):
+        y_pred = self._onedal_predict(X, queue=queue)
+
+        # Convert array API/USM arrays back to numpy for r2_score
+        # r2_score doesn't support Array API, following PCA's pattern with _transfer_to_host
+        _, host_data = _transfer_to_host(y, y_pred, sample_weight)
+        y, y_pred, sample_weight = host_data
+
+        return r2_score(y, y_pred, sample_weight=sample_weight)
 
     def _save_attributes(self):
         self.n_features_in_ = self._onedal_estimator.n_features_in_
