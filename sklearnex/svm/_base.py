@@ -249,11 +249,7 @@ class BaseSVC(BaseSVM):
             )
 
         self.classes_ = cls
-        return (
-            xp.asarray(y, dtype=X.dtype)
-            if is_array_api_compliant
-            else xp.asarray(y, dtype=X.dtype, order="C")
-        )
+        return xp.asarray(y, dtype=X.dtype)
 
     def _onedal_fit(self, X, y, sample_weight=None, queue=None):
         if not sklearn_check_version("1.2"):
