@@ -72,7 +72,9 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             # or more training points, those training points are weighted as 1.0
             # and the other points as 0.0
             # Check for object dtype - use string comparison for Array API compatibility
-            is_object_dtype = str(dist.dtype) == 'object' or (hasattr(dist.dtype, 'kind') and dist.dtype.kind == 'O')
+            is_object_dtype = str(dist.dtype) == "object" or (
+                hasattr(dist.dtype, "kind") and dist.dtype.kind == "O"
+            )
             if is_object_dtype:
                 for point_dist_i, point_dist in enumerate(dist):
                     # check if point_dist is iterable
@@ -144,7 +146,9 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             # This ensures device compatibility in SPMD mode
             y_pred_shape = (neigh_ind.shape[0], _y.shape[1])
             # Create on same device as neigh_ind to ensure queue compatibility
-            y_pred = xp.zeros(y_pred_shape, dtype=xp.float64, device=getattr(neigh_ind, 'device', None))
+            y_pred = xp.zeros(
+                y_pred_shape, dtype=xp.float64, device=getattr(neigh_ind, "device", None)
+            )
             denom = xp.sum(weights, axis=1)
 
             for j in range(_y.shape[1]):
@@ -324,7 +328,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
 
     def _set_effective_metric(self):
         """Set effective_metric_ and effective_metric_params_ without validation.
-        
+
         Used when we need to set metrics but can't call _fit_validation
         (e.g., in SPMD mode with use_raw_input=True where sklearn validation
         would try to convert array API to numpy).
@@ -343,7 +347,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         else:
             self.effective_metric_params_ = {}
             effective_p = self.p
-        
+
         self.effective_metric_params_["p"] = effective_p
         self.effective_metric_ = self.metric
         # For minkowski distance, use more efficient methods where available
@@ -596,7 +600,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         # check_feature_names(self, X, reset=True)
         # Validate n_neighbors parameter
         self._validate_n_neighbors(self.n_neighbors)
-        
+
         # Set effective metric and parameters
         self._set_effective_metric()
 

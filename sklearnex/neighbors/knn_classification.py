@@ -167,8 +167,10 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             self._set_effective_metric()
 
         # Process classification targets before passing to onedal
-        self._process_classification_targets(y, skip_validation=get_config()["use_raw_input"])
-        
+        self._process_classification_targets(
+            y, skip_validation=get_config()["use_raw_input"]
+        )
+
         # Call onedal backend
         onedal_params = {
             "n_neighbors": self.n_neighbors,
@@ -188,7 +190,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         self._onedal_estimator._shape = self._shape
 
         self._onedal_estimator.fit(X, y, queue=queue)
-        
+
         # Post-processing
         self._save_attributes()
 
@@ -241,11 +243,11 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
         # Get predictions
         y_pred = self._onedal_predict(X, queue=queue)
-        
+
         # Convert array API to numpy for sklearn's accuracy_score using _transfer_to_host
         # This properly handles Array API arrays that don't allow implicit conversion
         _, (y, y_pred, sample_weight) = _transfer_to_host(y, y_pred, sample_weight)
-        
+
         return accuracy_score(y, y_pred, sample_weight=sample_weight)
 
     def _save_attributes(self):
