@@ -128,7 +128,6 @@ class SVC(BaseSVC, _sklearn_SVC):
                 f'Kernel is "{self.kernel}" while '
                 '"linear" and "rbf" are only supported on GPU.',
             ),
-            (self.class_weight is None, "Class weight is not supported on GPU."),
             (not sp.issparse(data[0]), "Sparse input is not supported on GPU."),
             (
                 len(data) < 2 or type_of_target(data[1]) == "binary",
@@ -136,7 +135,14 @@ class SVC(BaseSVC, _sklearn_SVC):
             ),
         ]
         if method_name == "fit":
-            pass
+            xp, _ = get_namespace(*data)
+            _, _, sample_weight = data
+            conditions.append(
+                (
+                    sample_weight is not None or xp.all(sample_weight >= 0),
+                    "negative weights are not supported",
+                )
+            )
         elif method_name in self._n_jobs_supported_onedal_methods:
             conditions.append(
                 (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained")
