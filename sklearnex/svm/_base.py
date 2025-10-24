@@ -611,7 +611,7 @@ class BaseSVR(BaseSVM):
             accept_sparse="csr",
         )
 
-        y = self._onedal_validate_targets(y)
+        y = self._onedal_validate_targets(X, y)
 
         if sample_weight is not None:
             sample_weight = _check_sample_weight(sample_weight, X)
