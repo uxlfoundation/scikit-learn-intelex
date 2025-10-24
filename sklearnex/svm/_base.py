@@ -148,7 +148,11 @@ class BaseSVM(oneDALEstimator):
                         '"linear", "rbf", "poly" and "sigmoid" are only supported.',
                     ),
                     (
-                        sample_weight is None or (xp.all((sw := xp.asarray(sample_weight)) >= 0) and not xp.all(sw == 0)),
+                        sample_weight is None
+                        or (
+                            xp.all((sw := xp.asarray(sample_weight)) >= 0)
+                            and not xp.all(sw == 0)
+                        ),
                         "negative or all zero weights are not supported",
                     ),
                 ]
