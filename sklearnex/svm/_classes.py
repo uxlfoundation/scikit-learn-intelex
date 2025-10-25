@@ -143,8 +143,7 @@ class SVC(BaseSVC, _sklearn_SVC):
                     or (
                         xp.all((sw := xp.asarray(sample_weight)) >= 0)
                         and not xp.all(sw == 0)
-                    )
-                ),
+                    ),
                     "negative or all zero weights are not supported",
                 )
             )
