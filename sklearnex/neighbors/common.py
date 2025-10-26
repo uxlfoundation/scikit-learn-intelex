@@ -350,6 +350,16 @@ class KNeighborsDispatchingBase(oneDALEstimator):
 
         self.effective_metric_params_["p"] = effective_p
         self.effective_metric_ = self.metric
+
+        # Convert sklearn metric aliases to canonical names for oneDAL compatibility
+        metric_aliases = {
+            "cityblock": "manhattan",
+            "l1": "manhattan",
+            "l2": "euclidean",
+        }
+        if self.metric in metric_aliases:
+            self.effective_metric_ = metric_aliases[self.metric]
+
         # For minkowski distance, use more efficient methods where available
         if self.metric == "minkowski":
             p = self.effective_metric_params_["p"]
