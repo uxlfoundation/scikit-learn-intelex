@@ -29,6 +29,7 @@ from sklearn.utils.validation import check_is_fitted
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal._device_offload import _transfer_to_host
+from onedal.utils._array_api import _is_numpy_namespace
 from onedal.utils.validation import (
     _check_array,
     _check_classification_targets,
@@ -142,13 +143,16 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             )  # Shape: (n_samples, n_neighbors, n_outputs)
             y_pred = xp.mean(gathered, axis=1)
         else:
-            # Create y_pred with proper device/queue by using zeros_like pattern
-            # This ensures device compatibility in SPMD mode
+            # Create y_pred array - matches original onedal implementation using empty()
+            # For Array API arrays (dpctl/dpnp), pass device parameter to match input device
+            # For numpy arrays, device parameter is not supported and not needed
             y_pred_shape = (neigh_ind.shape[0], _y.shape[1])
-            # Create on same device as neigh_ind to ensure queue compatibility
-            y_pred = xp.zeros(
-                y_pred_shape, dtype=xp.float64, device=getattr(neigh_ind, "device", None)
-            )
+            if not _is_numpy_namespace(xp):
+                # Array API: pass device to ensure same device as input
+                y_pred = xp.empty(y_pred_shape, dtype=xp.float64, device=neigh_ind.device)
+            else:
+                # Numpy: no device parameter
+                y_pred = xp.empty(y_pred_shape, dtype=xp.float64)
             denom = xp.sum(weights, axis=1)
 
             for j in range(_y.shape[1]):

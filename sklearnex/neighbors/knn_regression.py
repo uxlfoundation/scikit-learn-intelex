@@ -135,7 +135,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
     def _onedal_fit(self, X, y, queue=None):
         xp, _ = get_namespace(X, y)
 
-        # Validation step (follows PCA pattern)
+        # Validation step
         if not get_config()["use_raw_input"]:
             X, y = validate_data(
                 self,
@@ -143,6 +143,8 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
                 y,
                 dtype=[xp.float64, xp.float32],
                 accept_sparse="csr",
+                multi_output=True,
+                y_numeric=True,
             )
             # Set effective metric after validation
             self._set_effective_metric()
