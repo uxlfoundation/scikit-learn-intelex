@@ -135,7 +135,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
     def _onedal_fit(self, X, y, queue=None):
         xp, _ = get_namespace(X, y)
 
-        # Validation step
+        # Validation step - validates and converts dtypes to float32/float64
         if not get_config()["use_raw_input"]:
             X, y = validate_data(
                 self,
@@ -144,6 +144,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
                 dtype=[xp.float64, xp.float32],
                 accept_sparse="csr",
                 multi_output=True,
+                y_numeric=True,  # Ensures y dtype conversion for regressors (int8/16, uint8/16, float16 -> float32/64)
             )
             # Set effective metric after validation
             self._set_effective_metric()
@@ -151,7 +152,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
             # SPMD mode: skip validation but still set effective metric
             self._set_effective_metric()
 
-        # Process regression targets before passing to onedal
+        # Process regression targets before passing to onedal (uses validated y)
         self._process_regression_targets(y)
 
         # Call onedal backend
@@ -177,6 +178,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         else:
             self._onedal_estimator._y = self._y
 
+        # Pass validated X and y to onedal (after validate_data converted dtypes)
         self._onedal_estimator.fit(X, y, queue=queue)
 
         # Post-processing: save attributes and reshape _y
