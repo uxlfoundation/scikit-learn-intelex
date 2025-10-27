@@ -249,6 +249,11 @@ def __logistic_regression_path(
             iprint = [-1, 50, 1, 100, 101][
                 np.searchsorted(np.array([0, 1, 2, 3]), verbose)
             ]
+            # Note: this uses more correction pairs than the implementation in scikit-learn,
+            # which means better approximation of the Hessian at the expense of slower updates.
+            # This is beneficial for high-dimensional convex problems without bound constraints
+            # like the logistic regression being fitted here. For larger problems with sparse
+            # data (currently not supported), it might benefit from increasing the number further.
             opt_res = optimize.minimize(
                 func,
                 w0,
@@ -257,6 +262,7 @@ def __logistic_regression_path(
                 args=extra_args,
                 options={
                     "maxiter": max_iter,
+                    "maxcor": 50,
                     "maxls": 50,
                     "gtol": tol,
                     "ftol": 64 * np.finfo(float).eps,
