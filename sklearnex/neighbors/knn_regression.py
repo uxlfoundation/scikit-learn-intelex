@@ -144,7 +144,6 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
                 dtype=[xp.float64, xp.float32],
                 accept_sparse="csr",
                 multi_output=True,
-                y_numeric=True,
             )
             # Set effective metric after validation
             self._set_effective_metric()
