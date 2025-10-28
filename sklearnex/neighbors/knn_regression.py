@@ -34,7 +34,7 @@ from ..utils.validation import check_feature_names, validate_data
 from .common import KNeighborsDispatchingBase
 
 
-@enable_array_api
+@enable_array_api("1.5")  # validate_data y_numeric requires sklearn >=1.5
 @control_n_jobs(decorated_methods=["fit", "predict", "kneighbors", "score"])
 class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegressor):
     __doc__ = _sklearn_KNeighborsRegressor.__doc__
@@ -144,15 +144,8 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
                 dtype=[xp.float64, xp.float32],
                 accept_sparse="csr",
                 multi_output=True,
-                # Note: y_numeric=True causes issues with Array API (no dtype.kind attribute)
-                # We handle y dtype conversion manually below
+                y_numeric=True,
             )
-
-            # Convert y dtype if needed (handles int8/16, uint8/16, float16 -> float32/64)
-            # This is needed for regressors to ensure y is in the correct dtype
-            target_dtypes = [xp.float64, xp.float32]
-            if y.dtype not in target_dtypes:
-                y = xp.asarray(y, dtype=target_dtypes[0])
 
             # Set effective metric after validation
             self._set_effective_metric()
