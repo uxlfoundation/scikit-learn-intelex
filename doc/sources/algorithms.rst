@@ -99,14 +99,14 @@ Regression
 
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
-       - ``criterion`` != `'mse'`
+       - ``criterion`` != ``'squared_error'`` (or ``'mse'`` depending on version of |sklearn|)
      - Multi-output and sparse data are not supported
    * - :obj:`sklearn.ensemble.ExtraTreesRegressor`
      - All parameters are supported except:
 
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
-       - ``criterion`` != `'mse'`
+       - ``criterion`` != ``'squared_error'`` (or ``'mse'`` depending on version of |sklearn|)
      - Multi-output and sparse data are not supported
    * - :obj:`sklearn.neighbors.KNeighborsRegressor`
      - All parameters are supported except:
@@ -341,7 +341,7 @@ Regression
 
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
-       - ``criterion`` != `'mse'`
+       - ``criterion`` != ``'squared_error'`` (or ``'mse'`` depending on version of |sklearn|)
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
      - Multi-output and sparse data are not supported
@@ -350,7 +350,7 @@ Regression
 
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
-       - ``criterion`` != `'mse'`
+       - ``criterion`` != ``'squared_error'`` (or ``'mse'`` depending on version of |sklearn|)
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
      - Multi-output and sparse data are not supported
@@ -537,7 +537,7 @@ Regression
 
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
-       - ``criterion`` != `'mse'`
+       - ``criterion`` != ``'squared_error'`` (or ``'mse'`` depending on version of |sklearn|)
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
      - Multi-output and sparse data are not supported
@@ -546,7 +546,7 @@ Regression
 
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
-       - ``criterion`` != `'mse'`
+       - ``criterion`` != ``'squared_error'`` (or ``'mse'`` depending on version of |sklearn|)
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
      - Multi-output and sparse data are not supported
