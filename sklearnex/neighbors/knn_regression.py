@@ -144,8 +144,16 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
                 dtype=[xp.float64, xp.float32],
                 accept_sparse="csr",
                 multi_output=True,
-                y_numeric=True,  # Ensures y dtype conversion for regressors (int8/16, uint8/16, float16 -> float32/64)
+                # Note: y_numeric=True causes issues with Array API (no dtype.kind attribute)
+                # We handle y dtype conversion manually below
             )
+
+            # Convert y dtype if needed (handles int8/16, uint8/16, float16 -> float32/64)
+            # This is needed for regressors to ensure y is in the correct dtype
+            target_dtypes = [xp.float64, xp.float32]
+            if y.dtype not in target_dtypes:
+                y = xp.asarray(y, dtype=target_dtypes[0])
+
             # Set effective metric after validation
             self._set_effective_metric()
         else:
