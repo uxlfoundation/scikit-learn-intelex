@@ -153,7 +153,7 @@ See :ref:`oneapi_gpu` for other ways of executing on GPU.
 
 
 .. toctree::
-   :caption: Get Started
+   :caption: Getting Started
    :hidden:
    :maxdepth: 3
 
@@ -162,9 +162,9 @@ See :ref:`oneapi_gpu` for other ways of executing on GPU.
    kaggle.rst
 
 .. toctree::
-   :caption: Developer Guide
+   :caption: Documentation topics
    :hidden:
-   :maxdepth: 2
+   :maxdepth: 4
 
    algorithms.rst
    oneapi-gpu.rst
@@ -188,6 +188,16 @@ See :ref:`oneapi_gpu` for other ways of executing on GPU.
    daal4py.rst
 
 .. toctree::
+   :caption: Development guides
+   :hidden:
+
+   building-from-source.rst
+   tests.rst
+   contribute.rst
+   topics-for-contributors.rst
+   ideas.rst
+
+.. toctree::
    :caption: Performance
    :hidden:
    :maxdepth: 2
@@ -207,7 +217,6 @@ See :ref:`oneapi_gpu` for other ways of executing on GPU.
    :hidden:
    :maxdepth: 2
 
-   Support <support.rst>
-   contribute.rst
-   ideas.rst
+   support.rst
+   code-of-conduct.rst
    license.rst
