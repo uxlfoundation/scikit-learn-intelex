@@ -40,12 +40,6 @@ if [ -z "$TEMP_DOC_FOLDER" ]; then
     exit 1
 fi
 
-# Ensure the build directory exists
-if [ ! -d "$BUILD_DIR" ]; then
-    echo "::error: Documentation build directory not found!"
-    exit 1
-fi
-
 rm -rf $TEMP_DOC_FOLDER
 mkdir -p $TEMP_DOC_FOLDER
 
@@ -72,17 +66,21 @@ if [ "$IS_DEV_MODE" = true ]; then
     # Dev mode: Build and update dev documentation
     echo "Building dev documentation..."
     
-    # Find the built documentation directory
-    BUILT_VERSION_DIR=$(find $BUILD_DIR -mindepth 1 -maxdepth 1 -type d | head -n 1)
-    if [ -z "$BUILT_VERSION_DIR" ]; then
-        echo "::error: No version directory found in build output!"
+    # Ensure the build directory exists
+    if [ ! -d "$BUILD_DIR" ]; then
+        echo "::error: Documentation build directory not found!"
         exit 1
     fi
     
-    # Update dev folder
+    # Copy dev documentation from build directory
+    if [ ! -d "$BUILD_DIR/dev" ]; then
+        echo "::error: Dev documentation not found in build directory!"
+        exit 1
+    fi
+    
     rm -rf $TEMP_DOC_FOLDER/dev
     mkdir -p $TEMP_DOC_FOLDER/dev
-    cp -R $BUILT_VERSION_DIR/* $TEMP_DOC_FOLDER/dev/
+    cp -R $BUILD_DIR/dev/* $TEMP_DOC_FOLDER/dev/
 else
     # Release mode: Copy from dev to create new release version
     echo "Creating release documentation for version $SHORT_DOC_VERSION from dev..."
@@ -102,8 +100,8 @@ else
     cp -R $TEMP_DOC_FOLDER/dev/* $TEMP_DOC_FOLDER/latest/
 fi
 
-# Copy index.html if it exists
-if [ -f "$BUILD_DIR/index.html" ]; then
+# Copy root index.html if it exists (only in dev mode, as release mode doesn't build)
+if [ "$IS_DEV_MODE" = true ] && [ -f "$BUILD_DIR/index.html" ]; then
     cp $BUILD_DIR/index.html $TEMP_DOC_FOLDER/
 fi
 
@@ -132,12 +130,41 @@ ls -la $TEMP_DOC_FOLDER/
 cat $TEMP_DOC_FOLDER/versions.json
 git checkout -- .github/scripts/doc_release.sh
 
-##### Archive to doc_archive branch (release mode only) #####
-if [ "$IS_DEV_MODE" = false ]; then
+##### Archive to doc_archive branch #####
+git config user.name "github-actions[bot]"
+git config user.email "github-actions[bot]@users.noreply.github.com"
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+if [ "$IS_DEV_MODE" = true ]; then
+    # Dev mode: Archive dev documentation
+    echo "Archiving dev documentation to branch $STORAGE_BRANCH..."
+    
+    if git ls-remote --heads origin "$STORAGE_BRANCH" | grep -q "$STORAGE_BRANCH"; then
+        echo "Storage branch exists, updating dev documentation..."
+        git fetch origin $STORAGE_BRANCH
+        git checkout $STORAGE_BRANCH
+        
+        rm -rf dev
+        mkdir -p dev
+        rsync -av $TEMP_DOC_FOLDER/dev/ dev/
+        git add dev
+        git commit -m "Update dev documentation" || echo "No changes to commit for dev"
+    else
+        echo "Creating new storage branch with dev documentation..."
+        git checkout --orphan $STORAGE_BRANCH
+        git rm -rf .
+        
+        mkdir -p dev
+        rsync -av $TEMP_DOC_FOLDER/dev/ dev/
+        git add dev
+        git commit -m "Initialize doc archive branch with dev documentation"
+    fi
+    
+    git push origin $STORAGE_BRANCH
+    git checkout $CURRENT_BRANCH
+else
+    # Release mode: Archive versioned documentation
     echo "Archiving version $SHORT_DOC_VERSION to branch $STORAGE_BRANCH..."
-    git config user.name "github-actions[bot]"
-    git config user.email "github-actions[bot]@users.noreply.github.com"
-    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
     if git ls-remote --heads origin "$STORAGE_BRANCH" | grep -q "$STORAGE_BRANCH"; then
         echo "Storage branch exists, fetching it..."

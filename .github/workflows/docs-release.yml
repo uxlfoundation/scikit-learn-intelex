@@ -79,6 +79,7 @@ jobs:
         else
           echo "Push to main branch detected, building dev documentation"
           echo "IS_DEV_BUILD=true" >> $GITHUB_ENV
+          echo "SHORT_DOC_VERSION=dev" >> $GITHUB_ENV
           exit 0
         fi
         # Error out if cannot find version
@@ -107,11 +108,13 @@ jobs:
         pip install -r dependencies-dev
         pip install -r requirements-doc.txt
     - name: Build daal4py/sklearnex
+      if: env.IS_DEV_BUILD == 'true'
       run: |
         export DALROOT=$(dirname $(dirname $(which python)))
         export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
         ./conda-recipe/build.sh
     - name: Build scikit-learn-intelex Documentation
+      if: env.IS_DEV_BUILD == 'true'
       run: |
         export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
         cd doc
