@@ -221,7 +221,9 @@ def get_exe_cmd(ex, args):
             return None
     if not args.nodist and ex.endswith("spmd.py"):
         if IS_WIN:
-            return 'mpiexec -localonly -n 4 "' + sys.executable + '" -W error "' + ex + '"'
+            return (
+                'mpiexec -localonly -n 4 "' + sys.executable + '" -W error "' + ex + '"'
+            )
         return 'mpirun -n 4 "' + sys.executable + '" -W error "' + ex + '"'
     else:
         return '"' + sys.executable + '" -W error "' + ex + '"'
