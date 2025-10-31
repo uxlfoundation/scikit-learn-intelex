@@ -20,6 +20,7 @@ from collections.abc import Iterable
 from functools import lru_cache
 
 import numpy as np
+import scipy.sparse as sp
 
 from ..utils._third_party import _is_subclass_fast
 
@@ -44,6 +45,8 @@ def _asarray(data, xp, *args, **kwargs):
             for i in range(len(data)):
                 result_data.append(_asarray(data[i], xp, *args, **kwargs))
             data = tuple(result_data)
+        elif sp.issparse(data):
+            pass
         else:
             for i in range(len(data)):
                 data[i] = _asarray(data[i], xp, *args, **kwargs)

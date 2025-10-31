@@ -14,8 +14,10 @@
 # limitations under the License.
 # ==============================================================================
 
-from onedal.spmd.decomposition import PCA
+from onedal.spmd.decomposition import PCA as onedal_PCA
 
-# TODO:
-# Currently it uses `onedal` module interface.
-# Add sklearnex dispatching.
+from ...decomposition import PCA as base_PCA
+
+
+class PCA(base_PCA):
+    _onedal_PCA = staticmethod(onedal_PCA)

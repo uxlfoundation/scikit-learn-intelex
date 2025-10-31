@@ -67,6 +67,11 @@ Debian systems require installing package ``intel-opencl-icd`` (along with its d
 
 For Arch Linux, and for other distributions in general, see the `GPGPU article in the Arch wiki <https://wiki.archlinux.org/title/GPGPU>`__.
 
+.. important::
+    If using the |sklearnex| in a conda environment, GPU support requires the the OpenCL ICD package `for conda <https://github.com/IntelPython/intel-gpu-ocl-icd-system-feedstock>`__ to be installed in the conda environment, **in addition to the system install** of the same package: ::
+
+        conda install -c https://software.repos.intel.com/python/conda/ intel-gpu-ocl-icd-system
+
 Be aware that datacenter-grade devices, such as 'Flex' and 'Max', require different drivers and runtimes. For CentOS and for datacenter-grade devices, see `instructions here <https://dgpu-docs.intel.com/driver/installation.html>`__.
 
 For more details, see the `DPC++ requirements page <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/oneapi-dpcpp/2025.html>`__.
@@ -76,7 +81,7 @@ Device offloading
 
 |sklearnex| offers two options for running an algorithm on a specified device:
 
-- Use global configurations of |sklearnex|\*:
+- Use global configurations of |sklearnex|:
 
   1. The :code:`target_offload` argument (in ``config_context`` and in ``set_config`` / ``get_config``)
      can be used to set the device primarily used to perform computations. Accepted data types are
@@ -123,6 +128,12 @@ call :code:`sklearnex.get_config()`.
   located, and the result will be returned as :code:`usm_ndarray` to the same
   device.
 
+  .. important::
+    In order to enable zero-copy operations on GPU arrays, it's necessary to enable
+    :ref:`array API support <array_api>` for scikit-learn. Otherwise, if passing a GPU
+    array and array API support is not enabled, GPU arrays will first be transferred to
+    host and then back to GPU.
+
   .. note::
     All the input data for an algorithm must reside on the same device.
 
@@ -149,7 +160,7 @@ A full example of how to patch your code with Intel CPU/GPU optimizations:
    X = np.array([[1., 2.], [2., 2.], [2., 3.],
                  [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
    with config_context(target_offload="gpu:0"):
-      clustering = DBSCAN(eps=3, min_samples=2).fit(X)
+       clustering = DBSCAN(eps=3, min_samples=2).fit(X)
 
 
 .. note:: Current offloading behavior restricts fitting and predictions (a.k.a. inference) of any models to be

@@ -78,6 +78,7 @@ ONEDAL_PY_INIT_MODULE(logistic_regression);
 #if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240700
 ONEDAL_PY_INIT_MODULE(finiteness_checker);
 #endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240700
+ONEDAL_PY_INIT_MODULE(dummy);
 #endif // ONEDAL_DATA_PARALLEL_SPMD
 
 #ifdef ONEDAL_DATA_PARALLEL_SPMD
@@ -138,6 +139,7 @@ PYBIND11_MODULE(_onedal_py_host, m) {
 #if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240700
     init_finiteness_checker(m);
 #endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240700
+    init_dummy(m);
 }
 #endif // ONEDAL_DATA_PARALLEL_SPMD
 

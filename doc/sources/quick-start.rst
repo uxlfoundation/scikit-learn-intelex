@@ -189,6 +189,8 @@ To install |sklearnex|, run:
 
   pip install scikit-learn-intelex
 
+.. tip:: Wheels are also available through Intel's index: ``https://software.repos.intel.com/python/pypi``
+
 **Supported Configurations**
 
 .. list-table::

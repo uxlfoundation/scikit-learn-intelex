@@ -32,9 +32,9 @@ jobs:
 
     steps:
       - name: Checkout Scikit-learn-intelex
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           path: coverage
           github-token: ${{ github.token }}

@@ -52,6 +52,7 @@ from daal4py.sklearn._utils import (
     daal_check_version,
     sklearn_check_version,
 )
+from onedal._device_offload import support_input_format
 from onedal.ensemble import ExtraTreesClassifier as onedal_ExtraTreesClassifier
 from onedal.ensemble import ExtraTreesRegressor as onedal_ExtraTreesRegressor
 from onedal.ensemble import RandomForestClassifier as onedal_RandomForestClassifier
@@ -457,6 +458,9 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         if self._onedal_factory is None:
             raise TypeError(f" oneDAL estimator has not been set.")
 
+    decision_path = support_input_format(_sklearn_ForestClassifier.decision_path)
+    apply = support_input_format(_sklearn_ForestClassifier.apply)
+
     def _estimators_(self):
         super()._estimators_()
         for est in self._cached_estimators_:
@@ -587,6 +591,19 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
                 ]
             )
             # TODO: Fix to support integers as input
+
+            if self.n_outputs_ == 1:
+                xp, is_array_api_compliant = get_namespace(y)
+                sety = xp.unique_values(y) if is_array_api_compliant else np.unique(y)
+                num_classes = sety.shape[0]
+                patching_status.and_conditions(
+                    [
+                        (
+                            num_classes >= 2,
+                            "Number of classes must be at least 2.",
+                        ),
+                    ]
+                )
 
             _get_n_samples_bootstrap(n_samples=X.shape[0], max_samples=self.max_samples)
 
@@ -900,6 +917,9 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
 
         if self._onedal_factory is None:
             raise TypeError(f" oneDAL estimator has not been set.")
+
+    decision_path = support_input_format(_sklearn_ForestRegressor.decision_path)
+    apply = support_input_format(_sklearn_ForestRegressor.apply)
 
     def _onedal_fit_ready(self, patching_status, X, y, sample_weight):
         if sp.issparse(y):

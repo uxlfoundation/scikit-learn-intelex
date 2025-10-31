@@ -25,8 +25,8 @@ steps:
       pip install --upgrade setuptools
       pip install cpufeature
       pip install -r dependencies-dev
+      if not defined DALROOT conda install -q -y -c conda-forge "dal-devel>=2025.6.1"
       conda list
-      if not defined DALROOT conda install -q -y -c conda-forge dal-devel
     displayName: 'Install develop requirements'
     env:
       DALROOT: ${{ variables.DALROOT }}
@@ -65,6 +65,7 @@ steps:
       COVERAGE_RCFILE: ${{ variables.COVERAGE_RCFILE }}
       DALROOT: ${{ variables.DALROOT }}
       TBBROOT: ${{ variables.TBBROOT }}
+      NO_DIST: 1
   - script: |
       call activate CB
       if defined DALROOT call "%DALROOT%\env\vars.bat"

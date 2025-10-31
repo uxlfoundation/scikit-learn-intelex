@@ -33,6 +33,7 @@ if daal_check_version((2024, "P", 1)):
     from daal4py.sklearn._n_jobs_support import control_n_jobs
     from daal4py.sklearn._utils import sklearn_check_version
     from daal4py.sklearn.linear_model.logistic_path import daal4py_fit, daal4py_predict
+    from onedal._device_offload import support_input_format
     from onedal.linear_model import LogisticRegression as onedal_LogisticRegression
     from onedal.utils.validation import _num_samples
 
@@ -61,44 +62,86 @@ if daal_check_version((2024, "P", 1)):
                 **_sklearn_LogisticRegression._parameter_constraints
             }
 
-        def __init__(
-            self,
-            penalty="l2",
-            *,
-            dual=False,
-            tol=1e-4,
-            C=1.0,
-            fit_intercept=True,
-            intercept_scaling=1,
-            class_weight=None,
-            random_state=None,
-            solver="lbfgs",
-            max_iter=100,
-            multi_class="deprecated" if sklearn_check_version("1.5") else "auto",
-            verbose=0,
-            warm_start=False,
-            n_jobs=None,
-            l1_ratio=None,
-        ):
-            super().__init__(
-                penalty=penalty,
-                dual=dual,
-                tol=tol,
-                C=C,
-                fit_intercept=fit_intercept,
-                intercept_scaling=intercept_scaling,
-                class_weight=class_weight,
-                random_state=random_state,
-                solver=solver,
-                max_iter=max_iter,
-                multi_class=multi_class,
-                verbose=verbose,
-                warm_start=warm_start,
-                n_jobs=n_jobs,
-                l1_ratio=l1_ratio,
-            )
+        if sklearn_check_version("1.8"):
+
+            def __init__(
+                self,
+                penalty="l2",
+                *,
+                dual=False,
+                tol=1e-4,
+                C=1.0,
+                fit_intercept=True,
+                intercept_scaling=1,
+                class_weight=None,
+                random_state=None,
+                solver="lbfgs",
+                max_iter=100,
+                verbose=0,
+                warm_start=False,
+                n_jobs=None,
+                l1_ratio=None,
+            ):
+                super().__init__(
+                    penalty=penalty,
+                    dual=dual,
+                    tol=tol,
+                    C=C,
+                    fit_intercept=fit_intercept,
+                    intercept_scaling=intercept_scaling,
+                    class_weight=class_weight,
+                    random_state=random_state,
+                    solver=solver,
+                    max_iter=max_iter,
+                    verbose=verbose,
+                    warm_start=warm_start,
+                    n_jobs=n_jobs,
+                    l1_ratio=l1_ratio,
+                )
+
+        else:
+
+            def __init__(
+                self,
+                penalty="l2",
+                *,
+                dual=False,
+                tol=1e-4,
+                C=1.0,
+                fit_intercept=True,
+                intercept_scaling=1,
+                class_weight=None,
+                random_state=None,
+                solver="lbfgs",
+                max_iter=100,
+                multi_class="deprecated" if sklearn_check_version("1.5") else "auto",
+                verbose=0,
+                warm_start=False,
+                n_jobs=None,
+                l1_ratio=None,
+            ):
+                super().__init__(
+                    penalty=penalty,
+                    dual=dual,
+                    tol=tol,
+                    C=C,
+                    fit_intercept=fit_intercept,
+                    intercept_scaling=intercept_scaling,
+                    class_weight=class_weight,
+                    random_state=random_state,
+                    solver=solver,
+                    max_iter=max_iter,
+                    multi_class=multi_class,
+                    verbose=verbose,
+                    warm_start=warm_start,
+                    n_jobs=n_jobs,
+                    l1_ratio=l1_ratio,
+                )
 
         _onedal_cpu_fit = daal4py_fit
+        decision_function = support_input_format(
+            _sklearn_LogisticRegression.decision_function
+        )
 
         def _onedal_gpu_save_attributes(self):
             assert hasattr(self, "_onedal_estimator")
@@ -164,6 +207,19 @@ if daal_check_version((2024, "P", 1)):
             )
 
         @wrap_output_data
+        def decision_function(self, X):
+            check_is_fitted(self)
+            return dispatch(
+                self,
+                "decision_function",
+                {
+                    "onedal": self.__class__._onedal_decision_function,
+                    "sklearn": _sklearn_LogisticRegression.decision_function,
+                },
+                X,
+            )
+
+        @wrap_output_data
         def score(self, X, y, sample_weight=None):
             check_is_fitted(self)
             return dispatch(
@@ -210,6 +266,10 @@ if daal_check_version((2024, "P", 1)):
                     (self.solver == "newton-cg", "Only newton-cg solver is supported."),
                     (self.warm_start == False, "Warm start is not supported."),
                     (
+                        sklearn_check_version("1.8") or self.multi_class != "multinomial",
+                        "multi_class='multinomial is not supported.",
+                    ),
+                    (
                         not self.l1_ratio,
                         "l1 ratio is not supported.",
                     ),
@@ -228,6 +288,7 @@ if daal_check_version((2024, "P", 1)):
                 "predict",
                 "predict_proba",
                 "predict_log_proba",
+                "decision_function",
                 "score",
             ]
 
@@ -241,7 +302,8 @@ if daal_check_version((2024, "P", 1)):
                 [
                     (n_samples > 0, "Number of samples is less than 1."),
                     (
-                        (not any([issparse(i) for i in data])) or _sparsity_enabled,
+                        (_sparsity_enabled and method_name != "decision_function")
+                        or (not any([issparse(i) for i in data])),
                         "Sparse input is not supported.",
                     ),
                     (
@@ -256,7 +318,13 @@ if daal_check_version((2024, "P", 1)):
         def _onedal_gpu_supported(self, method_name, *data):
             if method_name == "fit":
                 return self._onedal_gpu_fit_supported(method_name, *data)
-            if method_name in ["predict", "predict_proba", "predict_log_proba", "score"]:
+            if method_name in [
+                "predict",
+                "predict_proba",
+                "predict_log_proba",
+                "decision_function",
+                "score",
+            ]:
                 return self._onedal_gpu_predict_supported(method_name, *data)
             raise RuntimeError(
                 f"Unknown method {method_name} in {self.__class__.__name__}"
@@ -360,10 +428,26 @@ if daal_check_version((2024, "P", 1)):
             assert hasattr(self, "_onedal_estimator")
             return self._onedal_estimator.predict_log_proba(X, queue=queue)
 
+        def _onedal_decision_function(self, X, queue=None):
+            if queue is None or queue.sycl_device.is_cpu:
+                return super().decision_function(X)
+            X = validate_data(
+                self,
+                X,
+                reset=False,
+                accept_sparse=_sparsity_enabled,
+                accept_large_sparse=_sparsity_enabled,
+                dtype=[np.float64, np.float32],
+            )
+
+            assert hasattr(self, "_onedal_estimator")
+            return self._onedal_estimator.decision_function(X, queue=queue)
+
         fit.__doc__ = _sklearn_LogisticRegression.fit.__doc__
         predict.__doc__ = _sklearn_LogisticRegression.predict.__doc__
         predict_proba.__doc__ = _sklearn_LogisticRegression.predict_proba.__doc__
         predict_log_proba.__doc__ = _sklearn_LogisticRegression.predict_log_proba.__doc__
+        decision_function.__doc__ = _sklearn_LogisticRegression.decision_function.__doc__
         score.__doc__ = _sklearn_LogisticRegression.score.__doc__
 
 else:
