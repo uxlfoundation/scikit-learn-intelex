@@ -90,10 +90,6 @@ catboost_skip_shap_msg = (
     "See https://github.com/catboost/catboost/issues/2556."
 )
 
-# TODO: remove checks using these once treelite becomes compatible with xgboost>=3.1.0
-xgb_is_31_version = xgb.__version__.startswith("3.1")
-tl_xgb_incompat_msg = "Incompatibilities between treelite and xgboost."
-
 
 # Note: models have an attribute telling whether SHAP calculations
 # are supported for it or not. When that attribute is 'False', attempts
@@ -237,8 +233,6 @@ def test_xgb_regression(
 
     xgb_model = make_xgb_model(objective, base_score, sklearn_class, empty_trees)
     if from_treelite:
-        if xgb_is_31_version:
-            pytest.skip(tl_xgb_incompat_msg)
         xgb_model = treelite.frontend.from_xgboost(xgb_model)
     d4p_model = d4p.mb.convert_model(xgb_model)
 
@@ -300,8 +294,6 @@ def test_xgb_regression_shap(
 
     xgb_model = make_xgb_model(objective, base_score, sklearn_class, empty_trees)
     if from_treelite:
-        if xgb_is_31_version:
-            pytest.skip(tl_xgb_incompat_msg)
         tl_model = treelite.frontend.from_xgboost(xgb_model)
         d4p_model = d4p.mb.convert_model(tl_model)
     else:
@@ -355,8 +347,6 @@ def test_xgb_binary_classification(
         pytest.skip()
     xgb_model = make_xgb_model(objective, base_score, sklearn_class, empty_trees)
     if from_treelite:
-        if xgb_is_31_version:
-            pytest.skip(tl_xgb_incompat_msg)
         xgb_model = treelite.frontend.from_xgboost(xgb_model)
     d4p_model = d4p.mb.convert_model(xgb_model)
 
@@ -443,8 +433,6 @@ def test_xgb_binary_classification_shap(
         pytest.skip()
     xgb_model = make_xgb_model(objective, base_score, sklearn_class, empty_trees)
     if from_treelite:
-        if xgb_is_31_version:
-            pytest.skip(tl_xgb_incompat_msg)
         tl_model = treelite.frontend.from_xgboost(xgb_model)
         d4p_model = d4p.mb.convert_model(tl_model)
     else:
@@ -498,8 +486,6 @@ def test_xgb_multiclass_classification(
         pytest.skip()
     xgb_model = make_xgb_model(objective, base_score, sklearn_class, empty_trees)
     if from_treelite:
-        if xgb_is_31_version:
-            pytest.skip(tl_xgb_incompat_msg)
         xgb_model = treelite.frontend.from_xgboost(xgb_model)
     d4p_model = d4p.mb.convert_model(xgb_model)
 
@@ -623,8 +609,6 @@ def test_xgb_unsupported(from_treelite):
     else:
         # In this case, TreeLite handles the drop logic on their end in a
         # format that is consumable by daal4py.
-        if xgb_is_31_version:
-            pytest.skip(tl_xgb_incompat_msg)
         tl_model = treelite.frontend.from_xgboost(xgb_model)
         d4p_model = d4p.mb.convert_model(tl_model)
         np.testing.assert_allclose(
