@@ -26,7 +26,7 @@ while [[ count -ne 0 ]]; do
 done
 
 if [[ count -eq 0 ]]; then
-    echo "run_test.bat did not find the required testing directories"
+    echo "run_test.sh did not find the required testing directories"
     exit 1
 fi
 
