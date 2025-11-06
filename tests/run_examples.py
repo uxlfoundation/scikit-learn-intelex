@@ -163,10 +163,16 @@ req_library["basic_statistics_spmd.py"] = ["dpctl", "dpnp", "mpi4py"]
 req_library["covariance_spmd.py"] = ["dpctl", "dpnp", "mpi4py"]
 req_library["dbscan_spmd.py"] = ["dpctl", "dpnp", "mpi4py"]
 req_library["dbscan_array_api.py"] = ["array_api_strict"]
-req_library["incremental_basic_statistics_dpnp.py"] = ["dpctl" "dpnp",]
+req_library["incremental_basic_statistics_dpnp.py"] = [
+    "dpctl" "dpnp",
+]
 req_library["incremental_covariance_spmd.py"] = ["dpctl", "dpnp", "mpi4py"]
-req_library["incremental_linear_regression_dpnp.py"] = ["dpctl" "dpnp",]
-req_library["incremental_pca_dpnp.py"] = ["dpctl" "dpnp",]
+req_library["incremental_linear_regression_dpnp.py"] = [
+    "dpctl" "dpnp",
+]
+req_library["incremental_pca_dpnp.py"] = [
+    "dpctl" "dpnp",
+]
 req_library["kmeans_spmd.py"] = ["dpctl", "dpnp", "mpi4py"]
 req_library["knn_bf_classification_spmd.py"] = ["dpctl", "dpnp", "mpi4py"]
 req_library["knn_bf_regression_spmd.py"] = ["dpctl", "dpnp", "mpi4py"]

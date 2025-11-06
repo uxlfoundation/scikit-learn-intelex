@@ -28,6 +28,7 @@ def get_local_data(data, comm):
     local_size = (data.shape[0] + num_ranks - 1) // num_ranks
     return data[rank * local_size : (rank + 1) * local_size]
 
+
 # We create SYCL queue and MPI communicator to perform computation on multiple GPUs
 
 q = dpctl.SyclQueue("gpu")

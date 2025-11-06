@@ -19,7 +19,7 @@ import scipy.sparse as sp
 
 from onedal import _default_backend as backend
 
-from ..utils._third_party import is_dpctl_tensor, is_dpnp_ndarray, lazy_import
+from ..utils._third_party import is_dpnp_ndarray, lazy_import
 
 
 def _apply_and_pass(func, *args, **kwargs):
@@ -122,7 +122,7 @@ def return_type_constructor(array):
 def from_table(*args, like=None):
     """Create 2 dimensional arrays from oneDAL tables.
 
-    oneDAL tables are converted to numpy ndarrays, dpnp ndarrays, 
+    oneDAL tables are converted to numpy ndarrays, dpnp ndarrays,
     or array API standard arrays of designated type.
 
     Parameters

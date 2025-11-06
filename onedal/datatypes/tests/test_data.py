@@ -246,9 +246,7 @@ def test_conversion_to_table(dtype):
     not backend.is_dpc,
     reason="__sycl_usm_array_interface__ support requires DPC backend.",
 )
-@pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("dpnp", "cpu,gpu")
-)
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("dpnp", "cpu,gpu"))
 @pytest.mark.parametrize("order", ["C", "F"])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.int32, np.int64])
 def test_input_zero_copy_sycl_usm(dataframe, queue, order, dtype):
@@ -280,9 +278,7 @@ def test_input_zero_copy_sycl_usm(dataframe, queue, order, dtype):
     not backend.is_dpc,
     reason="__sycl_usm_array_interface__ support requires DPC backend.",
 )
-@pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("dpnp", "cpu,gpu")
-)
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("dpnp", "cpu,gpu"))
 @pytest.mark.parametrize("order", ["F", "C"])
 @pytest.mark.parametrize("data_shape", data_shapes)
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
@@ -397,9 +393,7 @@ def test_to_table_non_contiguous_input(dataframe, queue):
     backend.is_dpc,
     reason="Required check should be done if no DPC backend.",
 )
-@pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("dpnp", "cpu,gpu")
-)
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("dpnp", "cpu,gpu"))
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_interop_if_no_dpc_backend_sycl_usm(dataframe, queue, dtype):
     X = np.zeros((10, 20), dtype=dtype)
@@ -523,9 +517,7 @@ def test_basic_ndarray_types_numpy(X):
     test_non_array(np.asarray(X), None)
 
 
-@pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("numpy", "cpu,gpu")
-)
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("numpy", "cpu,gpu"))
 @pytest.mark.parametrize("can_copy", [True, False])
 def test_to_table_non_contiguous_input_dlpack(dataframe, queue, can_copy):
     X, _ = np.mgrid[:10, :10]
