@@ -171,7 +171,7 @@ To build the extensions in-place without installing (recommended for local devel
     python setup.py build_ext --inplace --force # builds daal4py
     python setup.py build # builds onedal extension modules
 
-.. hint:: If building the library in-place without installing, it's then necessary to set environment variable ``$PYTHONPATH`` to point to the root of the repository in order to ble able to import the modules in Python.
+.. hint:: If building the library in-place without installing, it's then necessary to set environment variable ``$PYTHONPATH`` to point to the root of the repository in order to be able to import the modules in Python.
 
 Build using conda
 ~~~~~~~~~~~~~~~~~
