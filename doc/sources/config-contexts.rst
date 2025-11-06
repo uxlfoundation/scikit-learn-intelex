@@ -34,7 +34,7 @@ from the module ``sklearnex``, or can be imported from the ``sklearn`` module af
 
 Note that options in the |sklearnex| are a superset of options from |sklearn|, and options passed to
 the configuration contexts and global settings of the |sklearnex| will also affect |sklearn| if the
-option is supported by it - meaning: the same context manager  or global option setter is used for
+option is supported by it - meaning: the same context manager or global option setter is used for
 both libraries.
 
 Example usage
