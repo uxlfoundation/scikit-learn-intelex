@@ -34,7 +34,7 @@ EX_OK = os.EX_OK if hasattr(os, "EX_OK") else 0
     [
         f
         for f in os.listdir(examples_path)
-        if f.endswith(".py") and "spmd" not in f and "dpnp" not in f and "dpctl" not in f
+        if f.endswith(".py") and "spmd" not in f and "dpnp" not in f
     ],
 )
 def test_sklearn_example(file):

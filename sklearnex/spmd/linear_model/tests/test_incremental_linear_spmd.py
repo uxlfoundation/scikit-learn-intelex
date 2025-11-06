@@ -37,7 +37,7 @@ from sklearnex.tests.utils.spmd import (
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("fit_intercept", [True, False])
 @pytest.mark.parametrize("macro_block", [None, 1024])
@@ -52,7 +52,7 @@ def test_incremental_linear_regression_fit_spmd_gold(
         IncrementalLinearRegression as IncrementalLinearRegression_SPMD,
     )
 
-    # Create gold data and process into dpt
+    # Create gold data and process into dpnp
     X = np.array(
         [
             [0.0, 0.0],
@@ -112,7 +112,7 @@ def test_incremental_linear_regression_fit_spmd_gold(
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("fit_intercept", [True, False])
 @pytest.mark.parametrize("num_blocks", [1, 2])
@@ -129,7 +129,7 @@ def test_incremental_linear_regression_partial_fit_spmd_gold(
         IncrementalLinearRegression as IncrementalLinearRegression_SPMD,
     )
 
-    # Create gold data and process into dpt
+    # Create gold data and process into dpnp
     X = np.array(
         [
             [0.0, 0.0],
@@ -199,7 +199,7 @@ def test_incremental_linear_regression_partial_fit_spmd_gold(
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("fit_intercept", [True, False])
 @pytest.mark.parametrize("num_samples", [100, 1000])
@@ -218,7 +218,7 @@ def test_incremental_linear_regression_fit_spmd_random(
 
     tol = 5e-3 if dtype == np.float32 else 1e-7
 
-    # Generate random data and process into dpt
+    # Generate random data and process into dpnp
     X_train, X_test, y_train, _ = _generate_regression_data(
         num_samples, num_features, dtype
     )
@@ -264,7 +264,7 @@ def test_incremental_linear_regression_fit_spmd_random(
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("fit_intercept", [True, False])
 @pytest.mark.parametrize("num_blocks", [1, 2])
@@ -291,7 +291,7 @@ def test_incremental_linear_regression_partial_fit_spmd_random(
 
     tol = 5e-3 if dtype == np.float32 else 1e-7
 
-    # Generate random data and process into dpt
+    # Generate random data and process into dpnp
     X_train, X_test, y_train, _ = _generate_regression_data(
         num_samples, num_features, dtype, 573
     )

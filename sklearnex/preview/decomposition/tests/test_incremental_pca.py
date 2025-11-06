@@ -339,7 +339,7 @@ def test_sklearnex_incremental_estimatior_pickle(dataframe, queue, dtype):
     )
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("numpy,dpctl"))
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("numpy,dpnp"))
 def test_changed_estimated_attributes(with_array_api, dataframe, queue):
     # check that attributes necessary for the PCA onedal estimator match
     # changes occurring in the sklearnex estimator

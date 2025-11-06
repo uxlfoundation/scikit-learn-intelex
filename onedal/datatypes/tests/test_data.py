@@ -247,7 +247,7 @@ def test_conversion_to_table(dtype):
     reason="__sycl_usm_array_interface__ support requires DPC backend.",
 )
 @pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("dpctl,dpnp", "cpu,gpu")
+    "dataframe,queue", get_dataframes_and_queues("dpnp", "cpu,gpu")
 )
 @pytest.mark.parametrize("order", ["C", "F"])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.int32, np.int64])
@@ -281,7 +281,7 @@ def test_input_zero_copy_sycl_usm(dataframe, queue, order, dtype):
     reason="__sycl_usm_array_interface__ support requires DPC backend.",
 )
 @pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("dpctl,dpnp", "cpu,gpu")
+    "dataframe,queue", get_dataframes_and_queues("dpnp", "cpu,gpu")
 )
 @pytest.mark.parametrize("order", ["F", "C"])
 @pytest.mark.parametrize("data_shape", data_shapes)
@@ -340,7 +340,7 @@ def test_table_conversions_sycl_usm(dataframe, queue, order, data_shape, dtype):
 
 
 @pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("numpy,dpctl,dpnp,array_api", "cpu,gpu")
+    "dataframe,queue", get_dataframes_and_queues("numpy,dpnp,array_api", "cpu,gpu")
 )
 @pytest.mark.parametrize("data_shape", unsupported_data_shapes)
 def test_interop_invalid_shape(dataframe, queue, data_shape):
@@ -357,7 +357,7 @@ def test_interop_invalid_shape(dataframe, queue, data_shape):
 
 
 @pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("dpctl,dpnp,array_api", "cpu,gpu")
+    "dataframe,queue", get_dataframes_and_queues("dpnp,array_api", "cpu,gpu")
 )
 @pytest.mark.parametrize(
     "dtype",
@@ -370,8 +370,7 @@ def test_interop_invalid_shape(dataframe, queue, data_shape):
 def test_interop_unsupported_dtypes(dataframe, queue, dtype):
     # sua iface interobility supported only for oneDAL supported dtypes
     # for input data: int32, int64, float32, float64.
-    # Checking some common dtypes supported by dpctl, dpnp for exception
-    # raise.
+    # Checking some common dtypes supported by dpnp for exception raise.
     X = np.zeros((10, 20), dtype=dtype)
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     expected_err_msg = r"Found unsupported (array|tensor) type"
@@ -381,10 +380,10 @@ def test_interop_unsupported_dtypes(dataframe, queue, dtype):
 
 
 @pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("numpy,dpctl,dpnp", "cpu,gpu")
+    "dataframe,queue", get_dataframes_and_queues("numpy,dpnp", "cpu,gpu")
 )
 def test_to_table_non_contiguous_input(dataframe, queue):
-    if dataframe in "dpnp,dpctl" and not backend.is_dpc:
+    if dataframe == "dpnp" and not backend.is_dpc:
         pytest.skip("__sycl_usm_array_interface__ support requires DPC backend.")
     X, _ = np.mgrid[:10, :10]
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
@@ -399,7 +398,7 @@ def test_to_table_non_contiguous_input(dataframe, queue):
     reason="Required check should be done if no DPC backend.",
 )
 @pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("dpctl,dpnp", "cpu,gpu")
+    "dataframe,queue", get_dataframes_and_queues("dpnp", "cpu,gpu")
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_interop_if_no_dpc_backend_sycl_usm(dataframe, queue, dtype):
@@ -525,7 +524,7 @@ def test_basic_ndarray_types_numpy(X):
 
 
 @pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("dpctl,numpy", "cpu,gpu")
+    "dataframe,queue", get_dataframes_and_queues("numpy", "cpu,gpu")
 )
 @pytest.mark.parametrize("can_copy", [True, False])
 def test_to_table_non_contiguous_input_dlpack(dataframe, queue, can_copy):
@@ -552,7 +551,7 @@ def test_to_table_non_contiguous_input_dlpack(dataframe, queue, can_copy):
 
 
 @pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("dpctl,numpy", "cpu,gpu")
+    "dataframe,queue", get_dataframes_and_queues("dpnp,numpy", "cpu,gpu")
 )
 @pytest.mark.parametrize("order", ["F", "C"])
 @pytest.mark.parametrize("data_shape", data_shapes)
@@ -578,7 +577,7 @@ def test_table_conversions_dlpack(dataframe, queue, order, data_shape, dtype):
 
 
 @pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("numpy,dpctl,array_api", "cpu,gpu")
+    "dataframe,queue", get_dataframes_and_queues("numpy,dpnp,array_api", "cpu,gpu")
 )
 @pytest.mark.parametrize("order", ["F", "C"])
 @pytest.mark.parametrize("data_shape", data_shapes)

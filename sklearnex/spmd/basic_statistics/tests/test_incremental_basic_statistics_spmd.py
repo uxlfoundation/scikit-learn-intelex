@@ -38,7 +38,7 @@ from sklearnex.tests.utils.spmd import (
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("weighted", [True, False])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
@@ -50,7 +50,7 @@ def test_incremental_basic_statistics_fit_spmd_gold(dataframe, queue, weighted, 
         IncrementalBasicStatistics as IncrementalBasicStatistics_SPMD,
     )
 
-    # Create gold data and process into dpt
+    # Create gold data and process into dpnp
     data = np.array(
         [
             [0.0, 0.0, 0.0],
@@ -104,7 +104,7 @@ def test_incremental_basic_statistics_fit_spmd_gold(dataframe, queue, weighted, 
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("num_blocks", [1, 2])
 @pytest.mark.parametrize("weighted", [True, False])
@@ -119,7 +119,7 @@ def test_incremental_basic_statistics_partial_fit_spmd_gold(
         IncrementalBasicStatistics as IncrementalBasicStatistics_SPMD,
     )
 
-    # Create gold data and process into dpt
+    # Create gold data and process into dpnp
     data = np.array(
         [
             [0.0, 0.0, 0.0],
@@ -178,7 +178,7 @@ def test_incremental_basic_statistics_partial_fit_spmd_gold(
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("num_blocks", [1, 2])
 @pytest.mark.parametrize("weighted", [True, False])
@@ -194,7 +194,7 @@ def test_incremental_basic_statistics_single_option_partial_fit_spmd_gold(
         IncrementalBasicStatistics as IncrementalBasicStatistics_SPMD,
     )
 
-    # Create gold data and process into dpt
+    # Create gold data and process into dpnp
     data = np.array(
         [
             [0.0, 0.0, 0.0],
@@ -247,7 +247,7 @@ def test_incremental_basic_statistics_single_option_partial_fit_spmd_gold(
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("num_blocks", [1, 2])
 @pytest.mark.parametrize("weighted", [True, False])
@@ -267,7 +267,7 @@ def test_incremental_basic_statistics_partial_fit_spmd_synthetic(
 
     tol = 2e-3 if dtype == np.float32 else 1e-7
 
-    # Create gold data and process into dpt
+    # Create gold data and process into dpnp
     data = _generate_statistic_data(n_samples, n_features, dtype=dtype)
     local_data = _get_local_tensor(data)
     split_local_data = np.array_split(local_data, num_blocks)
