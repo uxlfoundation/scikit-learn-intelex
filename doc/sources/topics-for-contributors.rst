@@ -193,61 +193,89 @@ Each new file added to the project must include the following copyright notice -
         # limitations under the License.
         # ==============================================================================
 
+- For C++ files:
+
+    .. toggle::
+
+        .. code-block:: cpp
+
+            /*
+             * Copyright contributors to the oneDAL project
+             *
+             * Licensed under the Apache License, Version 2.0 (the "License");
+             * you may not use this file except in compliance with the License.
+             * You may obtain a copy of the License at
+             *
+             *     http://www.apache.org/licenses/LICENSE-2.0
+             *
+             * Unless required by applicable law or agreed to in writing, software
+             * distributed under the License is distributed on an "AS IS" BASIS,
+             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+             * See the License for the specific language governing permissions and
+             * limitations under the License.
+             */
+
 - For markdown files:
 
-    .. code-block::
+    .. toggle::
 
-        <!--
-        ********************************************************************************
-        * Copyright contributors to the oneDAL project
-        *
-        * Licensed under the Apache License, Version 2.0 (the "License");
-        * you may not use this file except in compliance with the License.
-        * You may obtain a copy of the License at
-        *
-        *     http://www.apache.org/licenses/LICENSE-2.0
-        *
-        * Unless required by applicable law or agreed to in writing, software
-        * distributed under the License is distributed on an "AS IS" BASIS,
-        * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-        * See the License for the specific language governing permissions and
-        * limitations under the License.
-        *******************************************************************************/-->
+        .. code-block::
+
+            <!--
+            ********************************************************************************
+            * Copyright contributors to the oneDAL project
+            *
+            * Licensed under the Apache License, Version 2.0 (the "License");
+            * you may not use this file except in compliance with the License.
+            * You may obtain a copy of the License at
+            *
+            *     http://www.apache.org/licenses/LICENSE-2.0
+            *
+            * Unless required by applicable law or agreed to in writing, software
+            * distributed under the License is distributed on an "AS IS" BASIS,
+            * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+            * See the License for the specific language governing permissions and
+            * limitations under the License.
+            *******************************************************************************/-->
 
 - For javascript files:
 
-    .. code-block:: javascript
+    .. toggle::
 
-        // Copyright contributors to the oneDAL project
-        //
-        // Licensed under the Apache License, Version 2.0 (the "License");
-        // you may not use this file except in compliance with the License.
-        // You may obtain a copy of the License at
-        //
-        //     http://www.apache.org/licenses/LICENSE-2.0
-        //
-        // Unless required by applicable law or agreed to in writing, software
-        // distributed under the License is distributed on an "AS IS" BASIS,
-        // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-        // See the License for the specific language governing permissions and
-        // limitations under the License.
+        .. code-block:: javascript
+
+            // Copyright contributors to the oneDAL project
+            //
+            // Licensed under the Apache License, Version 2.0 (the "License");
+            // you may not use this file except in compliance with the License.
+            // You may obtain a copy of the License at
+            //
+            //     http://www.apache.org/licenses/LICENSE-2.0
+            //
+            // Unless required by applicable law or agreed to in writing, software
+            // distributed under the License is distributed on an "AS IS" BASIS,
+            // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+            // See the License for the specific language governing permissions and
+            // limitations under the License.
 
 - For rst files:
-    
-    .. code-block::
 
-        .. Copyright contributors to the oneDAL project
-        ..
-        .. Licensed under the Apache License, Version 2.0 (the "License");
-        .. you may not use this file except in compliance with the License.
-        .. You may obtain a copy of the License at
-        ..
-        ..     http://www.apache.org/licenses/LICENSE-2.0
-        ..
-        .. Unless required by applicable law or agreed to in writing, software
-        .. distributed under the License is distributed on an "AS IS" BASIS,
-        .. WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-        .. See the License for the specific language governing permissions and
-        .. limitations under the License.
+    .. toggle::
+
+        .. code-block::
+
+            .. Copyright contributors to the oneDAL project
+            ..
+            .. Licensed under the Apache License, Version 2.0 (the "License");
+            .. you may not use this file except in compliance with the License.
+            .. You may obtain a copy of the License at
+            ..
+            ..     http://www.apache.org/licenses/LICENSE-2.0
+            ..
+            .. Unless required by applicable law or agreed to in writing, software
+            .. distributed under the License is distributed on an "AS IS" BASIS,
+            .. WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+            .. See the License for the specific language governing permissions and
+            .. limitations under the License.
 
 If for some reason it doesn't make sense to include this copyright header in a text-based file (e.g. json files), said file needs to be added to the `exclusion list <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/.github/.licenserc.yaml>`__, but this should be a rare occurrence.
