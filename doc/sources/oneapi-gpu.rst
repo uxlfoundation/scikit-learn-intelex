@@ -26,7 +26,7 @@ Overview
 
 The device used for computations can be easily controlled through the ``target_offload`` option in config contexts, which moves data to GPU if it's not already there - see :doc:`config-contexts` and rest of this page for more details).
 
-For finer-grained controlled (e.g. operating on arrays that are already in a given device's memory), it can also interact with on-device :ref:`array API classes <array_api>` like |dpnp_array|, and with SYCL-related objects from package |dpctl| such as :obj:`dpctl.SyclQueue`.
+For finer-grained control (e.g. operating on arrays that are already in a given device's memory), it can also interact with on-device :ref:`array API classes <array_api>` like |dpnp_array|, and with SYCL-related objects from package |dpctl| such as :obj:`dpctl.SyclQueue`.
 
 .. Note:: Note that not every operation from every estimator is supported on GPU - see the :ref:`GPU support table <sklearn_algorithms_gpu>` for more information. See also :doc:`verbose` to verify where computations are performed.
 
