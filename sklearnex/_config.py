@@ -51,7 +51,7 @@ _options_docstring = f"""Parameters
 {tab}    If ``True``, allows computations to fall back to stock scikit-learn when no
 {tab}    accelered version of the operation is available (see :ref:`algorithms`).
 {tab}
-{tab}    Global default: ``True.``
+{tab}    Global default: ``True``.
 {tab}
 {tab}use_raw_input : bool or None
 {tab}    If ``True``, uses the raw input data in some SPMD onedal backend computations
