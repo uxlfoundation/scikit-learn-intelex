@@ -24,7 +24,7 @@ Overview
 
 |sklearnex| can execute computations on different devices (CPUs and GPUs, including integrated GPUs from laptops and desktops) supported by the SYCL framework.
 
-The device used for computations can be easily controlled through the ``target_offload`` option in config contexts, which moves data to GPU if it's not already there - see :doc:`config-contexts` and rest of this page for more details).
+The device used for computations can be easily controlled through the ``target_offload`` option in config contexts, which moves data to GPU if it's not already there - see :doc:`config-contexts` and the rest of this page for more details).
 
 For finer-grained control (e.g. operating on arrays that are already in a given device's memory), it can also interact with on-device :ref:`array API classes <array_api>` like |dpnp_array|, and with SYCL-related objects from package |dpctl| such as :obj:`dpctl.SyclQueue`.
 
