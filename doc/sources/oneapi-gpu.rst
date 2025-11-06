@@ -81,8 +81,8 @@ Be aware that datacenter-grade devices, such as 'Flex' and 'Max', require differ
 
 For more details, see the `DPC++ requirements page <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/oneapi-dpcpp/2025.html>`__.
 
-Running operations on GPU
--------------------------
+Running on GPU
+--------------
 
 |sklearnex| offers different options for running an algorithm on a specified device (e.g. a GPU):
 
