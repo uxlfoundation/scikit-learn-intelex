@@ -290,14 +290,14 @@ If experiencing issues during compilation, try removing the existing ``/build`` 
 
     rm -Rf build
 
-TBB runtimes
-~~~~~~~~~~~~
+OneTBB runtimes
+~~~~~~~~~~~~~~~
 
-When building with the ``--abs-rpath`` option, it will use the |onedal| library version with which it was compiled. |onedal| has dependencies on other libraries such as `TBB <https://github.com/uxlfoundation/oneTBB>`__, which is also distributed as a python package through ``pip`` and as a ``conda`` package.
+When building with the ``--abs-rpath`` option, it will use the |onedal| library version with which it was compiled. |onedal| has dependencies on other libraries such as `OneTBB <https://github.com/uxlfoundation/oneTBB>`__, which is also distributed as a python package through ``pip`` and as a ``conda`` package.
 
-By default, a conda environment will first try to load TBB from its own packages if it is installed in the environment, which might cause issues if the |onedal| was compiled with a system TBB instead of a conda one.
+By default, a conda environment will first try to load OneTBB from its own packages if it is installed in the environment, which might cause issues if the |onedal| was compiled with a system OneTBB instead of a conda one.
 
-In such cases, it is advised to either uninstall TBB from ``pip``/``conda`` (it will be loaded from the |onedal| library which links to it), or modify the order of search paths in environment variables like ``$LD_LIBRARY_PATH`` to prefer the one with which the |onedal| was compiled instead of the one from ``conda``.
+In such cases, it is advised to either uninstall OneTBB from ``pip``/``conda`` (it will be loaded from the |onedal| library which links to it), or modify the order of search paths in environment variables like ``$LD_LIBRARY_PATH`` to prefer the one with which the |onedal| was compiled instead of the one from ``conda``.
 
 Building with sanitizers
 ------------------------
