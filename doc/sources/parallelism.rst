@@ -28,7 +28,7 @@ of the original |sklearn| with the following differences:
 * |sklearnex| doesn't use `joblib` for parallelism in patched estimators and functions.
 * The only low-level parallelism library used by |sklearnex| is oneTBB (through oneDAL and MKL).
 * The `threading` parallel backend of `joblib` is not supported by |sklearnex|. User needs to specify desired number of threads
-for each estimator directly using `n_jobs` parameter to avoid thread oversubscription.
+    for each estimator directly using `n_jobs` parameter to avoid thread oversubscription.
 * If `n_jobs` is not specified |sklearnex| uses all available threads while |sklearn| is single-threaded by default.
 
 The only exception is multiclass LogisticRegression, which uses :external+joblib:doc:`joblib <index>` for parallelism across classes.
