@@ -293,9 +293,11 @@ def test_xgb_regression_shap(
         pytest.skip()
 
     xgb_model = make_xgb_model(objective, base_score, sklearn_class, empty_trees)
-    d4p_model = d4p.mb.convert_model(
-        xgb_model if not from_treelite else treelite.frontend.from_xgboost(xgb_model)
-    )
+    if from_treelite:
+        tl_model = treelite.frontend.from_xgboost(xgb_model)
+        d4p_model = d4p.mb.convert_model(tl_model)
+    else:
+        d4p_model = d4p.mb.convert_model(xgb_model)
 
     if sklearn_class:
         xgb_model = xgb_model.get_booster()
@@ -430,9 +432,11 @@ def test_xgb_binary_classification_shap(
     if sklearn_class and from_treelite:
         pytest.skip()
     xgb_model = make_xgb_model(objective, base_score, sklearn_class, empty_trees)
-    d4p_model = d4p.mb.convert_model(
-        xgb_model if not from_treelite else treelite.frontend.from_xgboost(xgb_model)
-    )
+    if from_treelite:
+        tl_model = treelite.frontend.from_xgboost(xgb_model)
+        d4p_model = d4p.mb.convert_model(tl_model)
+    else:
+        d4p_model = d4p.mb.convert_model(xgb_model)
 
     if sklearn_class:
         xgb_model = xgb_model.get_booster()
