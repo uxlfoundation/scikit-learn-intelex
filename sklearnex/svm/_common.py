@@ -72,7 +72,7 @@ if sklearn_check_version("1.6"):
             y,
             self.classes_,
             self.method,
-            xp=y.__array_namespace__() if hasattr(y, "__array_namespace__") else np
+            xp=y.__array_namespace__() if hasattr(y, "__array_namespace__") else np,
         )
         self.calibrated_classifiers_.append(calibrated_classifier)
 
