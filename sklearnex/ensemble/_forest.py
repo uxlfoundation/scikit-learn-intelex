@@ -110,9 +110,9 @@ class BaseForest(oneDALEstimator, ABC):
             y = xp.reshape(y, (-1, 1))
 
         self._n_samples, self.n_outputs_ = y.shape
-          if not use_raw_input:
+        if not use_raw_input:
             y, expanded_class_weight = self._validate_y_class_weight(y)
-            
+
             if expanded_class_weight is not None:
                 if sample_weight is not None:
                     sample_weight = sample_weight * expanded_class_weight
