@@ -110,10 +110,9 @@ class BaseForest(oneDALEstimator, ABC):
             y = xp.reshape(y, (-1, 1))
 
         self._n_samples, self.n_outputs_ = y.shape
-
-        if not use_raw_input:
+          if not use_raw_input:
             y, expanded_class_weight = self._validate_y_class_weight(y)
-
+            
             if expanded_class_weight is not None:
                 if sample_weight is not None:
                     sample_weight = sample_weight * expanded_class_weight
@@ -126,9 +125,16 @@ class BaseForest(oneDALEstimator, ABC):
             # numpy the way to yield unique values is via `unique_values`
             # This should be removed when refactored for gpu zero-copy
             try:
-                self.classes_ = xp.unique(y)
+                classes = xp.unique(y)
             except AttributeError:
-                self.classes_ = xp.unique_values(y)
+                classes = xp.unique_values(y)
+            # Convert to numpy for compatibility with later operations
+            if hasattr(classes, 'asnumpy'):
+                self.classes_ = classes.asnumpy()
+            elif hasattr(xp, 'to_numpy'):
+                self.classes_ = xp.to_numpy(classes)
+            else:
+                self.classes_ = np.asarray(classes)
             self.n_classes_ = len(self.classes_)
         self.n_features_in_ = X.shape[1]
 
@@ -175,11 +181,6 @@ class BaseForest(oneDALEstimator, ABC):
                 self.n_classes_[0]
                 if isinstance(self.n_classes_, Iterable)
                 else self.n_classes_
-            )
-            self.classes_ = (
-                self.classes_[0]
-                if isinstance(self.classes_[0], Iterable)
-                else self.classes_
             )
 
         return self
