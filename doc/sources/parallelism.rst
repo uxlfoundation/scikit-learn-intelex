@@ -46,6 +46,8 @@ If ``n_jobs`` is not specified for underlying estimator(s), |sklearnex| sets it 
 
 .. note::
     `threadpoolctl` context has no effect on |sklearnex| threading if `n_jobs` is specified and non-negative.
+    If `n_jobs` is equal to `0` or not specified then the number from `threadpoolctl` is propagated to |sklearnex|.
+    If `n_jobs` is negative then the `threadpoolctl`'s number will be `max(1, n_threadpoolctl + n_jobs + 1)`.
 
 .. note::
     |sklearnex| threading doesn't automatically avoid nested parallelism when used in conjunction with OpenMP and/or with joblib or python threads.
