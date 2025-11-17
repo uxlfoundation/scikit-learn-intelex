@@ -23,16 +23,16 @@ Parallelism Specifics
 * `n_jobs` parameter is supported for all estimators patched by |sklearnex|,
   while |sklearn| enables it for selected estimators only.
 * `n_jobs` estimator parameter sets the number of threads used by the underlying |oneDAL|.
-* |sklearnex| doesn't use `joblib` for parallelism in patched estimators and functions.
-* The only low-level parallelism library used by |sklearnex| is oneTBB (through oneDAL and MKL).
-* The `threading` parallel backend of `joblib` is not supported by |sklearnex|. User needs to specify desired number of threads 
-  for each estimator directly using `n_jobs` parameter to avoid thread oversubscription.
+* |sklearnex| doesn't use :mod:`joblib` for parallelism in patched estimators and functions.
+* The only low-level parallelism library used by |sklearnex| is [oneTBB](https://github.com/uxlfoundation/oneTBB) 
+  (through the |onedal| and [oneMKL](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl.html)).
 * If `n_jobs` is not specified |sklearnex| uses all available threads whereas |sklearn| is single-threaded by default.
 
 |sklearnex| follows the same rules as |sklearn| for
-`the calculation of the 'n_jobs' parameter value <https://scikit-learn.org/stable/glossary.html#term-n_jobs>`__.
+`the calculation of the :term:`n_jobs` parameter value.
 
-When Scikit-learn's utilities with built-in parallelism are used (for example, :obj:`sklearn.model_selection.GridSearchCV` or :obj:`sklearn.model_selection.VotingClassifier`),
+When Scikit-learn's utilities with built-in parallelism are used 
+(for example, :obj:`sklearn.model_selection.GridSearchCV` or :obj:`sklearn.model_selection.VotingClassifier`),
 |sklearnex| tries to determine the optimal number of threads per job using hints proded by `joblib`.
 If ``n_jobs`` is not specified for underlying estimator(s), |sklearnex| sets it to the number of available threads
 (usually the number of logical CPUs divided by `n_jobs` set for higher-level parallelized entities).
