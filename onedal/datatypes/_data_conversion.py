@@ -19,7 +19,7 @@ import scipy.sparse as sp
 
 from onedal import _default_backend as backend
 
-from ..utils._third_party import is_dpnp_ndarray, lazy_import
+from ..utils._third_party import is_dpctl_tensor, is_dpnp_ndarray, lazy_import
 
 
 def _apply_and_pass(func, *args, **kwargs):
@@ -98,7 +98,13 @@ def return_type_constructor(array):
         xp = array.__array_namespace__()
         # array api support added in dpnp starting in 0.19, will fail for
         # older versions
-        if is_dpnp_ndarray(array):
+        if is_dpctl_tensor(array):
+            func = lambda x: (
+                xp.asarray(x)
+                if hasattr(x, "__sycl_usm_array_interface__")
+                else xp.asarray(backend.from_table(x), device=device)
+            )
+        elif is_dpnp_ndarray(array):
             func = lambda x: (
                 xp.asarray(xp.as_usm_ndarray(x))
                 if hasattr(x, "__sycl_usm_array_interface__")
@@ -122,8 +128,8 @@ def return_type_constructor(array):
 def from_table(*args, like=None):
     """Create 2 dimensional arrays from oneDAL tables.
 
-    oneDAL tables are converted to numpy ndarrays, dpnp ndarrays,
-    or array API standard arrays of designated type.
+    oneDAL tables are converted to numpy ndarrays, dpctl tensors, dpnp
+    ndarrays, or array API standard arrays of designated type.
 
     Parameters
     ----------

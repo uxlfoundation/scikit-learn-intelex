@@ -65,7 +65,12 @@ def _is_numpy_namespace(xp):
 
 @lru_cache(100)
 def _cls_to_sycl_namespace(cls):
-    if _is_subclass_fast(cls, "dpnp", "ndarray"):
+    # use caching to minimize imports, derived from array_api_compat
+    if _is_subclass_fast(cls, "dpctl.tensor", "usm_ndarray"):
+        import dpctl.tensor as dpt
+
+        return dpt
+    elif _is_subclass_fast(cls, "dpnp", "ndarray"):
         import dpnp
 
         return dpnp
