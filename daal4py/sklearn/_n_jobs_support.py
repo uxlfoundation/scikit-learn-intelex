@@ -59,19 +59,13 @@ def get_suggested_n_threads(n_cpus):
     # by the user to something that doesn't match with the number of parallel
     # jobs from joblib - hence this looks at the openmp configuration, even
     # though openmp is not used by oneDAL.
-    n_threads_map = {
-        lib_ctl.internal_api: lib_ctl.get_num_threads()
-        for lib_ctl in threadpool_controller.lib_controllers
-        if lib_ctl.internal_api == "openmp"
-    }
-    # remove default values equal to n_cpus as uninformative
-    for backend in list(n_threads_map.keys()):
-        if n_threads_map[backend] == n_cpus:
-            del n_threads_map[backend]
-    if len(n_threads_map) > 0:
-        return min(n_threads_map.values())
-    else:
-        return None
+    for lib_ctl in threadpool_controller.lib_controllers:
+        if lib_ctl.internal_api == "openmp":
+            n_threads = lib_ctl.get_num_threads()
+            # remove default values equal to n_cpus as uninformative
+            if n_threads is not None and n_threads != n_cpus:
+                return n_threads
+    return None
 
 
 def _run_with_n_jobs(method):
