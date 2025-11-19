@@ -51,7 +51,7 @@ Classification
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
        - ``criterion`` != `'gini'`
-       - ``n_estimators`` >= ``6024``
+       - ``n_estimators`` > ``6024``
      - Multi-output and sparse data are not supported. Number of classes must be at least 2.
    * - :obj:`sklearn.ensemble.ExtraTreesClassifier`
      - All parameters are supported except:
@@ -59,7 +59,7 @@ Classification
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
        - ``criterion`` != `'gini'`
-       - ``n_estimators`` >= ``6024``
+       - ``n_estimators`` > ``6024``
      - Multi-output and sparse data are not supported. Number of classes must be at least 2.
    * - :obj:`sklearn.neighbors.KNeighborsClassifier`
      -
@@ -102,7 +102,7 @@ Regression
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
        - ``criterion`` != `'mse'`
-       - ``n_estimators`` >= ``6024``
+       - ``n_estimators`` > ``6024``
      - Multi-output and sparse data are not supported
    * - :obj:`sklearn.ensemble.ExtraTreesRegressor`
      - All parameters are supported except:
@@ -110,7 +110,7 @@ Regression
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
        - ``criterion`` != `'mse'`
-       - ``n_estimators`` >= ``6024``
+       - ``n_estimators`` > ``6024``
      - Multi-output and sparse data are not supported
    * - :obj:`sklearn.neighbors.KNeighborsRegressor`
      - All parameters are supported except:
@@ -297,7 +297,7 @@ Classification
        - ``criterion`` != `'gini'`
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
-       - ``n_estimators`` >= ``6024``
+       - ``n_estimators`` > ``6024``
      - Multi-output and sparse data are not supported. Number of classes must be at least 2.
    * - :obj:`sklearn.ensemble.ExtraTreesClassifier`
      - All parameters are supported except:
@@ -307,7 +307,7 @@ Classification
        - ``criterion`` != `'gini'`
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
-       - ``n_estimators`` >= ``6024``
+       - ``n_estimators`` > ``6024``
      - Multi-output and sparse data are not supported. Number of classes must be at least 2.
    * - :obj:`sklearn.neighbors.KNeighborsClassifier`
      - All parameters are supported except:
@@ -350,7 +350,7 @@ Regression
        - ``criterion`` != `'mse'`
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
-       - ``n_estimators`` >= ``6024``
+       - ``n_estimators`` > ``6024``
      - Multi-output and sparse data are not supported
    * - :obj:`sklearn.ensemble.ExtraTreesRegressor`
      - All parameters are supported except:
@@ -360,7 +360,7 @@ Regression
        - ``criterion`` != `'mse'`
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
-       - ``n_estimators`` >= ``6024``
+       - ``n_estimators`` > ``6024``
      - Multi-output and sparse data are not supported
    * - :obj:`sklearn.neighbors.KNeighborsRegressor`
      - All parameters are supported except:
@@ -496,7 +496,7 @@ Classification
        - ``criterion`` != `'gini'`
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
-       - ``n_estimators`` >= ``6024``
+       - ``n_estimators`` > ``6024``
      - Multi-output and sparse data are not supported. Number of classes must be at least 2.
    * - :obj:`sklearn.ensemble.ExtraTreesClassifier`
      - All parameters are supported except:
@@ -506,7 +506,7 @@ Classification
        - ``criterion`` != `'gini'`
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
-       - ``n_estimators`` >= ``6024``
+       - ``n_estimators`` > ``6024``
      - Multi-output and sparse data are not supported. Number of classes must be at least 2.
    * - :obj:`sklearn.neighbors.KNeighborsClassifier`
      - All parameters are supported except:
@@ -550,7 +550,7 @@ Regression
        - ``criterion`` != `'mse'`
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
-       - ``n_estimators`` >= ``6024``
+       - ``n_estimators`` > ``6024``
      - Multi-output and sparse data are not supported
    * - :obj:`sklearn.ensemble.ExtraTreesRegressor`
      - All parameters are supported except:
@@ -560,7 +560,7 @@ Regression
        - ``criterion`` != `'mse'`
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
-       - ``n_estimators`` >= ``6024``
+       - ``n_estimators`` > ``6024``
      - Multi-output and sparse data are not supported
    * - :obj:`sklearn.neighbors.KNeighborsRegressor`
      - All parameters are supported except:
