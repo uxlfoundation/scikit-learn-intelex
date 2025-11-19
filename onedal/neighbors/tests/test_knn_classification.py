@@ -19,15 +19,19 @@ import pytest
 from numpy.testing import assert_array_equal
 from sklearn import datasets
 
-from onedal.neighbors import KNeighborsClassifier
 from onedal.tests.utils._device_selection import get_queues
+
+# Classification processing now happens in sklearnex layer
+from sklearnex.neighbors import KNeighborsClassifier
 
 
 @pytest.mark.parametrize("queue", get_queues())
 def test_iris(queue):
+    # queue parameter not used with sklearnex, but kept for test parametrization
     iris = datasets.load_iris()
-    clf = KNeighborsClassifier(2).fit(iris.data, iris.target, queue=queue)
-    assert clf.score(iris.data, iris.target, queue=queue) > 0.9
+    clf = KNeighborsClassifier(2).fit(iris.data, iris.target)
+    score = clf.score(iris.data, iris.target)
+    assert score > 0.9
     assert_array_equal(clf.classes_, np.sort(clf.classes_))
 
 
@@ -36,14 +40,13 @@ def test_pickle(queue):
     if queue and queue.sycl_device.is_gpu:
         pytest.skip("KNN classifier pickling for the GPU sycl_queue is buggy.")
     iris = datasets.load_iris()
-    clf = KNeighborsClassifier(2).fit(iris.data, iris.target, queue=queue)
-    expected = clf.predict(iris.data, queue=queue)
-
+    clf = KNeighborsClassifier(2).fit(iris.data, iris.target)
+    expected = clf.predict(iris.data)
     import pickle
 
     dump = pickle.dumps(clf)
     clf2 = pickle.loads(dump)
 
     assert type(clf2) == clf.__class__
-    result = clf2.predict(iris.data, queue=queue)
+    result = clf2.predict(iris.data)
     assert_array_equal(expected, result)
