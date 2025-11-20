@@ -47,8 +47,7 @@ TARGET_OFFLOAD_ALLOWED_LOCATIONS = [
     "_config.py",
     "_device_offload.py",
     "test",
-    "svc.py",
-    "svm" + os.sep + "_common.py",
+    "svm" + os.sep + "_base.py",
 ]
 
 _DESIGN_RULE_VIOLATIONS = {
