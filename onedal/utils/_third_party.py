@@ -184,12 +184,15 @@ def is_dpnp_ndarray(x: object) -> bool:
 
 def is_dpctl_tensor(x: object) -> bool:
     """Return True if 'x' is a dpctl usm_ndarray.
+
     This function does not import dpctl.tensor if it has not already been
     imported and is therefore cheap to use.
+
     Parameters
     ----------
     x : object
         Any python object.
+
     Returns
     -------
     is_dpctl : bool
