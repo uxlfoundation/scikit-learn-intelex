@@ -104,6 +104,7 @@ Note that not all estimators offer the same functionalities, and thus tests shou
 
 - ``@pytest.mark.allow_sklearn_fallback``: will avoid having tests fail when they end up calling procedures from |sklearn| instead of from the |onedal|. This can be helpful for example when testing that some corner case falls back correctly when it should.
 - ``onedal.tests.utils._dataframes_support._as_numpy``: this function can be used to convert an input array or data frame to NumPy, regardless of whether it lives on host or on device, and regardless of array API support.
+- ``pass_if_not_implemented_for_gpu``: skips tests not implemented for GPU when GPU support is enabled. Requires a skip reason argument that matches the backend's error message.
 
 Tests with optional dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
