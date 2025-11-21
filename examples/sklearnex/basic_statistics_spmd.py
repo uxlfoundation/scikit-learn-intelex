@@ -14,7 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
-import dpctl.tensor as dpt
+import dpnp
 import numpy as np
 from dpctl import SyclQueue
 from mpi4py import MPI
@@ -51,14 +51,14 @@ params_spmd = {"ns": 19, "nf": 31}
 data, weights = generate_data(params_spmd, size, seed=rank)
 weighted_data = np.diag(weights) @ data
 
-dpt_data = dpt.asarray(data, usm_type="device", sycl_queue=q)
-dpt_weights = dpt.asarray(weights, usm_type="device", sycl_queue=q)
+dpnp_data = dpnp.asarray(data, usm_type="device", sycl_queue=q)
+dpnp_weights = dpnp.asarray(weights, usm_type="device", sycl_queue=q)
 
 gtr_mean = np.mean(weighted_data, axis=0)
 gtr_std = np.std(weighted_data, axis=0)
 
 bss = BasicStatisticsSpmd(["mean", "standard_deviation"])
-bss.fit(dpt_data, dpt_weights)
+bss.fit(dpnp_data, dpnp_weights)
 
 print(f"Computed mean on rank {rank}:\n", bss.mean_)
 print(f"Computed std on rank {rank}:\n", bss.standard_deviation_)

@@ -40,10 +40,10 @@ def _get_local_tensor(full_data):
     Called on each rank to extract the subset of data assigned to that rank.
 
     Args:
-        full_data (numpy or dpctl array): The entire set of data
+        full_data (numpy or dpnp array): The entire set of data
 
     Returns:
-        local_data (numpy or dpctl array): The subset of data used by the rank
+        local_data (numpy or dpnp array): The subset of data used by the rank
     """
 
     # create sycl queue and gather communicator details
@@ -52,7 +52,7 @@ def _get_local_tensor(full_data):
     rank = comm.Get_rank()
     size = comm.Get_size()
 
-    # divide data across ranks and move to dpt tensor
+    # divide data across ranks and move to dpnp array
     data_rows = full_data.shape[0]
     local_start = rank * data_rows // size
     local_end = (1 + rank) * data_rows // size
@@ -124,7 +124,7 @@ def _spmd_assert_allclose(spmd_result, batch_result, **kwargs):
     subset of batch result that corresponds to that rank.
 
     Args:
-        spmd_result (numpy or dpctl array): The result for the subset of data on the rank the function is called from, computed by the spmd estimator
+        spmd_result (numpy or dpnp array): The result for the subset of data on the rank the function is called from, computed by the spmd estimator
         batch_result (numpy array): The result for all data, computed by the batch estimator
 
     Raises:
@@ -145,7 +145,7 @@ def _assert_unordered_allclose(spmd_result, batch_result, localize=False, **kwar
     capable of handling localization.
 
     Args:
-        spmd_result (numpy or dpctl array): Result computed by the spmd estimator
+        spmd_result (numpy or dpnp array): Result computed by the spmd estimator
         batch_result (numpy array): Result computed by batch estimator
         localize (bool): Whether of not spmd result is specific to the rank, in which case batch result needs to be localized
 
@@ -179,9 +179,9 @@ def _assert_kmeans_labels_allclose(
     may not match) to identify cluster center and ensure results match.
 
     Args:
-        spmd_labels (numpy or dpctl array): The labels for the subset of data on the rank the function is called from, computed by the spmd estimator
+        spmd_labels (numpy or dpnp array): The labels for the subset of data on the rank the function is called from, computed by the spmd estimator
         batch_labels (numpy array): The labels for all data, computed by the batch estimator
-        spmd_centers (numpy or dpctl array): Centers computed by the spmd estimator
+        spmd_centers (numpy or dpnp array): Centers computed by the spmd estimator
         batch_centers (numpy array): Centers computed by batch estimator
 
     Raises:

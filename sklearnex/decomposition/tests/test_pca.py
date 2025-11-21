@@ -113,7 +113,7 @@ def test_non_batched_covariance(hyperparameters, dataframe, queue):
     assert_allclose(res_non_batched, res_batched)
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("numpy,dpctl"))
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("numpy,dpnp"))
 def test_changed_estimated_attributes(with_array_api, dataframe, queue):
     # check that attributes necessary for the PCA onedal estimator match
     # changes occurring in the sklearnex estimator

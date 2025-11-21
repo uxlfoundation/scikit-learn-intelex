@@ -19,7 +19,7 @@
 #    mpirun -n 4 python ./random_forest_classifier_spmd.py
 
 import dpctl
-import dpctl.tensor as dpt
+import dpnp
 import numpy as np
 from mpi4py import MPI
 
@@ -48,18 +48,18 @@ X_test, y_test = generate_X_y(params_test, mpi_rank + 777)
 
 q = dpctl.SyclQueue("gpu")  # GPU
 
-dpt_X_train = dpt.asarray(X_train, usm_type="device", sycl_queue=q)
-dpt_y_train = dpt.asarray(y_train, usm_type="device", sycl_queue=q)
-dpt_X_test = dpt.asarray(X_test, usm_type="device", sycl_queue=q)
+dpnp_X_train = dpnp.asarray(X_train, usm_type="device", sycl_queue=q)
+dpnp_y_train = dpnp.asarray(y_train, usm_type="device", sycl_queue=q)
+dpnp_X_test = dpnp.asarray(X_test, usm_type="device", sycl_queue=q)
 
-rf = RandomForestClassifier(max_depth=2, random_state=0).fit(dpt_X_train, dpt_y_train)
+rf = RandomForestClassifier(max_depth=2, random_state=0).fit(dpnp_X_train, dpnp_y_train)
 
-pred = rf.predict(dpt_X_test)
+pred = rf.predict(dpnp_X_test)
 
 print("Random Forest classification results:")
 print("Ground truth (first 5 observations on rank {}):\n{}".format(mpi_rank, y_test[:5]))
 print(
     "Classification results (first 5 observations on rank {}):\n{}".format(
-        mpi_rank, dpt.to_numpy(pred)[:5]
+        mpi_rank, dpnp.asnumpy(pred)[:5]
     )
 )

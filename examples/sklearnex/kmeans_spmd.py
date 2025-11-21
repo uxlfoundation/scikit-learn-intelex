@@ -16,7 +16,7 @@
 
 from warnings import warn
 
-import dpctl.tensor as dpt
+import dpnp
 import numpy as np
 from dpctl import SyclQueue
 from mpi4py import MPI
@@ -51,17 +51,17 @@ X, _ = get_train_data(rank, size)
 
 queue = SyclQueue("gpu")
 
-dpt_X = dpt.asarray(X, usm_type="device", sycl_queue=queue)
+dpnp_X = dpnp.asarray(X, usm_type="device", sycl_queue=queue)
 
-model = KMeans(n_clusters=10).fit(dpt_X)
+model = KMeans(n_clusters=10).fit(dpnp_X)
 
 print(f"Number of iterations on {rank}:\n", model.n_iter_)
 print(f"Labels on rank {rank} (slice of 2):\n", model.labels_[:2])
 print(f"Centers on rank {rank} (slice of 2):\n", model.cluster_centers_[:2, :])
 
 X_test, _ = get_test_data(size)
-dpt_X_test = dpt.asarray(X_test, usm_type="device", sycl_queue=queue)
+dpnp_X_test = dpnp.asarray(X_test, usm_type="device", sycl_queue=queue)
 
-result = model.predict(dpt_X_test)
+result = model.predict(dpnp_X_test)
 
-print(f"Result labels on rank {rank} (slice of 5):\n", dpt.to_numpy(result)[:5])
+print(f"Result labels on rank {rank} (slice of 5):\n", dpnp.asnumpy(result)[:5])

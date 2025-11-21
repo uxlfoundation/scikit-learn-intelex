@@ -93,7 +93,7 @@ class DummyEstimator:
 
         # Oftentimes oneDAL table objects are attributes of the oneDAL C++
         # object. These can be converted into various common data frameworks
-        # like ``numpy`` or ``dpctl.tensor`` using ``from_table``. In this
+        # like ``numpy`` or ``dpnp.ndarray`` using ``from_table``. In this
         # case the output is a basic python type (bool) which can be handled
         # easily just with pybind11 without any special code. Attributes of
         # the result object are copied to attributes of the onedal estimator
