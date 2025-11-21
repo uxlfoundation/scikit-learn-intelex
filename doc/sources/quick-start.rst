@@ -284,7 +284,7 @@ To prevent version conflicts, we recommend installing ``scikit-learn-intelex`` i
 Build from Sources
 **********************
 
-See `Installation instructions <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/INSTALL.md#build-from-sources>`_ to build |sklearnex| from the sources.
+See :doc:`building-from-source` for details.
 
 Install Intel*(R) AI Tools
 ****************************
