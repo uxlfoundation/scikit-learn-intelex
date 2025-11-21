@@ -66,7 +66,7 @@ if daal_check_version((2024, "P", 1)):
 
             def __init__(
                 self,
-                penalty="l2",
+                penalty="deprecated",
                 *,
                 dual=False,
                 tol=1e-4,
@@ -77,10 +77,11 @@ if daal_check_version((2024, "P", 1)):
                 random_state=None,
                 solver="lbfgs",
                 max_iter=100,
+                multi_class="deprecated",
                 verbose=0,
                 warm_start=False,
                 n_jobs=None,
-                l1_ratio=None,
+                l1_ratio=0.0,
             ):
                 super().__init__(
                     penalty=penalty,
@@ -93,6 +94,7 @@ if daal_check_version((2024, "P", 1)):
                     random_state=random_state,
                     solver=solver,
                     max_iter=max_iter,
+                    multi_class=multi_class,
                     verbose=verbose,
                     warm_start=warm_start,
                     n_jobs=n_jobs,
@@ -256,7 +258,15 @@ if daal_check_version((2024, "P", 1)):
             )
             patching_status.and_conditions(
                 [
-                    (self.penalty == "l2", "Only l2 penalty is supported."),
+                    (
+                        self.penalty
+                        in (
+                            ["l2", "deprecated"]
+                            if sklearn_check_version("1.8")
+                            else ["l2"]
+                        ),
+                        "Only l2 penalty is supported.",
+                    ),
                     (self.dual == False, "dual=True is not supported."),
                     (
                         self.intercept_scaling == 1,
@@ -271,7 +281,7 @@ if daal_check_version((2024, "P", 1)):
                     ),
                     (
                         not self.l1_ratio,
-                        "l1 ratio is not supported.",
+                        "l1 penalty is not supported.",
                     ),
                     (sample_weight is None, "Sample weight is not supported."),
                     (

@@ -102,7 +102,7 @@ def __logistic_regression_path(
 
     # Comment 2025-08-04: this file might have dead code paths from unsupported solvers.
     # It appears to have initially been a copy-paste of scikit-learn with a few additions
-    # for varying levels of offloading to oneDAL, but later on the check above was added that
+    # for varying levels of offloading to oneDAL, but later on a check was added that
     # calls 'lr_path_original' early on when it won't end up offloading anything to oneDAL.
     # Some parts of the file have been selectively updated since the initial copy-paste
     # to reflect newer additions to sklearn, but they are not synch. The rest of the file
@@ -469,6 +469,12 @@ def logistic_regression_path(*args, **kwargs):
             (not sparse.issparse(args[0]), "X is sparse. Sparse input is not supported."),
             (kwargs["sample_weight"] is None, "Sample weights are not supported."),
             (kwargs["class_weight"] is None, "Class weights are not supported."),
+            (
+                kwargs["penalty"]
+                in (["l2", "deprecated"] if sklearn_check_version("1.8") else ["l2"]),
+                "Penalties other than l2 are not supported.",
+            ),
+            (not kwargs["l1_ratio"], "L1 regularization is not supported."),
         ]
     )
     if not _dal_ready:
