@@ -92,6 +92,10 @@ The following patched classes have support for array API inputs:
 - :obj:`sklearn.covariance.EmpiricalCovariance`
 - :obj:`sklearnex.covariance.IncrementalEmpiricalCovariance`
 - :obj:`sklearn.decomposition.PCA`
+- :obj:`sklearn.ensemble.ExtraTreesClassifier`
+- :obj:`sklearn.ensemble.ExtraTreesRegressor`
+- :obj:`sklearn.ensemble.RandomForestClassifier`
+- :obj:`sklearn.ensemble.RandomForestRegressor`
 - :obj:`sklearn.linear_model.LinearRegression`
 - :obj:`sklearn.linear_model.Ridge`
 - :obj:`sklearnex.linear_model.IncrementalLinearRegression`
