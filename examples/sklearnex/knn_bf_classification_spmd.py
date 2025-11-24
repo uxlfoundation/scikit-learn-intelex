@@ -68,11 +68,11 @@ print("Brute Force Distributed kNN classification results:")
 print("Ground truth (first 5 observations on rank {}):\n{}".format(rank, y_test[:5]))
 print(
     "Classification results (first 5 observations on rank {}):\n{}".format(
-        rank, dpnp.asnumpy(y_predict)[:5]
+        rank, y_predict[:5]
     )
 )
 print(
     "Accuracy for entire rank {} (256 classes): {}\n".format(
-        rank, accuracy_score(y_test, dpnp.asnumpy(y_predict))
+        rank, accuracy_score(y_test, y_predict)
     )
 )

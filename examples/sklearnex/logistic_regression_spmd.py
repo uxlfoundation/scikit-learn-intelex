@@ -68,7 +68,6 @@ X_train, X_test, y_train, y_test = train_test_split(
 dpnp_X_train = dpnp.asarray(X_train, usm_type="device", sycl_queue=q)
 dpnp_y_train = dpnp.asarray(y_train, usm_type="device", sycl_queue=q)
 dpnp_X_test = dpnp.asarray(X_test, usm_type="device", sycl_queue=q)
-dpnp_y_test = dpnp.asarray(y_test, usm_type="device", sycl_queue=q)
 
 model_spmd = LogisticRegression()
 model_spmd.fit(dpnp_X_train, dpnp_y_train)
@@ -81,11 +80,11 @@ print("Intercept on rank {}:\n{}:".format(rank, model_spmd.intercept_))
 print("Ground truth (first 5 observations on rank {}):\n{}".format(rank, y_test[:5]))
 print(
     "Classification results (first 5 observations on rank {}):\n{}".format(
-        rank, dpnp.asnumpy(y_predict)[:5]
+        rank, y_predict[:5]
     )
 )
 print(
     "Accuracy for entire rank {} (2 classes): {}\n".format(
-        rank, accuracy_score(y_test, dpnp.asnumpy(y_predict))
+        rank, accuracy_score(y_test, y_predict)
     )
 )

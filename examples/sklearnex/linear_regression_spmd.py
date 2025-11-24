@@ -73,4 +73,4 @@ dpnp_X_test = dpnp.asarray(X_test, usm_type="device", sycl_queue=queue)
 
 result = model.predict(dpnp_X_test)
 
-print(f"Result on rank {rank}:\n", dpnp.asnumpy(result))
+print(f"Result on rank {rank}:\n", result)

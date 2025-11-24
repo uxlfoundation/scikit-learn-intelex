@@ -74,12 +74,12 @@ print("Brute Force Distributed kNN regression results:")
 print("Ground truth (first 5 observations on rank {}):\n{}".format(rank, y_test[:5]))
 print(
     "Regression results (first 5 observations on rank {}):\n{}".format(
-        rank, dpnp.asnumpy(y_predict)[:5]
+        rank, y_predict[:5]
     )
 )
 print(
     "MSE for entire rank {}: {}\n".format(
         rank,
-        mean_squared_error(y_test, dpnp.asnumpy(y_predict)),
+        mean_squared_error(y_test, y_predict),
     )
 )

@@ -64,4 +64,4 @@ dpnp_X_test = dpnp.asarray(X_test, usm_type="device", sycl_queue=queue)
 
 result = model.predict(dpnp_X_test)
 
-print(f"Result labels on rank {rank} (slice of 5):\n", dpnp.asnumpy(result)[:5])
+print(f"Result labels on rank {rank} (slice of 5):\n", result[:5])
