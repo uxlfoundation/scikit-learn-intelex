@@ -22,18 +22,18 @@ Parallelism Specifics
 
 * `n_jobs` parameter is supported for all estimators patched by |sklearnex|,
   while |sklearn| enables it for selected estimators only.
-* `n_jobs` estimator parameter sets the number of threads used by the underlying |oneDAL|.
+* `n_jobs` estimator parameter sets the number of threads used by the underlying |onedal|.
 * |sklearnex| doesn't use :mod:`joblib` for parallelism in patched estimators and functions.
 * The only low-level parallelism library used by |sklearnex| is [oneTBB](https://github.com/uxlfoundation/oneTBB) 
   (through the |onedal| and [oneMKL](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl.html)).
 * If `n_jobs` is not specified |sklearnex| uses all available threads whereas |sklearn| is single-threaded by default.
 
 |sklearnex| follows the same rules as |sklearn| for
-`the calculation of the :term:`n_jobs` parameter value.
+the calculation of the :term:`n_jobs` parameter value.
 
-When Scikit-learn's utilities with built-in parallelism are used 
+When |sklearn|'s utilities with built-in parallelism are used 
 (for example, :obj:`sklearn.model_selection.GridSearchCV` or :obj:`sklearn.model_selection.VotingClassifier`),
-|sklearnex| tries to determine the optimal number of threads per job using hints proded by `joblib`.
+|sklearnex| tries to determine the optimal number of threads per job using hints provided by :mod:`joblib` / ``threadpoolctl``..
 If ``n_jobs`` is not specified for underlying estimator(s), |sklearnex| sets it to the number of available threads
 (usually the number of logical CPUs divided by `n_jobs` set for higher-level parallelized entities).
 
@@ -50,7 +50,7 @@ If ``n_jobs`` is not specified for underlying estimator(s), |sklearnex| sets it 
     If `n_jobs` is negative then the `threadpoolctl`'s number will be `max(1, n_threadpoolctl + n_jobs + 1)`.
 
 .. note::
-    |sklearnex| threading doesn't automatically avoid nested parallelism when used in conjunction with OpenMP and/or with joblib or python threads.
+    |sklearnex| threading doesn't automatically avoid nested parallelism when used in conjunction with OpenMP and/or python threads.
 
 To track the actual number of threads used by estimators from the |sklearnex|,
 set the `DEBUG` :ref:`verbosity setting <verbose>`.
