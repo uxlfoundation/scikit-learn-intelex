@@ -276,12 +276,6 @@ class TSNE(BaseTSNE):
         random_state = check_random_state(self.random_state)
 
         if not sklearn_check_version("1.2"):
-            if self.early_exaggeration < 1.0:
-                raise ValueError(
-                    "early_exaggeration must be at least 1, but is {}".format(
-                        self.early_exaggeration
-                    )
-                )
             if self.n_iter < 250:
                 raise ValueError("n_iter should be at least 250")
 
