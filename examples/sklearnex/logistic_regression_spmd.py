@@ -85,6 +85,6 @@ print(
 )
 print(
     "Accuracy for entire rank {} (2 classes): {}\n".format(
-        rank, accuracy_score(y_test, y_predict)
+        rank, accuracy_score(y_test, dpnp.asnumpy(y_predict))
     )
 )

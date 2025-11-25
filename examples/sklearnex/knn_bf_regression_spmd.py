@@ -80,6 +80,6 @@ print(
 print(
     "MSE for entire rank {}: {}\n".format(
         rank,
-        mean_squared_error(y_test, y_predict),
+        mean_squared_error(y_test, dpnp.asnumpy(y_predict)),
     )
 )
