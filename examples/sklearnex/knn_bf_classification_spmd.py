@@ -47,8 +47,8 @@ else:
         "SPMD execution mode is implemented only for this device type."
     )
 
-params_train = {"ns": 100000, "nf": 8}
-params_test = {"ns": 100, "nf": 8}
+params_train = {"ns": 100000, "nf": 3}
+params_test = {"ns": 100, "nf": 3}
 
 X_train, y_train = generate_X_y(params_train, rank)
 X_test, y_test = generate_X_y(params_test, rank + 99)

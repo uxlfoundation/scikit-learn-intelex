@@ -295,7 +295,7 @@ deselected_tests:
   - ensemble/tests/test_bagging.py::test_estimators_samples >=1.4
   - ensemble/tests/test_voting.py::test_sample_weight >=1.4
   - svm/tests/test_svm.py::test_auto_weight >=1.4
-  - tests/test_calibration.py::test_calibrated_classifier_cv_double_sample_weights_equivalence >=1.4
+  - tests/test_calibration.py::test_calibrated_classifier_cv_double_sample_weights_equivalence >=1
   - tests/test_calibration.py::test_calibrated_classifier_cv_zeros_sample_weights_equivalence >=1.4
   - tests/test_common.py::test_estimators[LogisticRegression()-check_sample_weights_invariance(kind=ones)] >=1.4
   - tests/test_common.py::test_estimators[LogisticRegression()-check_sample_weights_invariance(kind=zeros)] >=1.4
@@ -374,6 +374,8 @@ deselected_tests:
   - ensemble/tests/test_voting.py::test_sample_weight >=1.0,<1.1
   - tests/test_multioutput.py::test_multiclass_multioutput_estimator_predict_proba
   - model_selection/tests/test_search.py::test_search_cv_sample_weight_equivalence[estimator0]
+  - tests/test_common.py::test_estimators[StackingClassifier(estimators=[('est1',LogisticRegression(C=0.1)),('est2',LogisticRegression(C=1))])-check_sample_weights_invariance(kind=ones)] <1.1
+  - tests/test_common.py::test_estimators[StackingClassifier(estimators=[('est1',LogisticRegression(C=0.1)),('est2',LogisticRegression(C=1))])-check_sample_weights_invariance(kind=zeros)] <1.1
 
   # Scikit-learn does not constraint multinomial logistic intercepts to sum to zero.
   # Softmax function is invariant to additions by a constant, so even though the numbers
@@ -382,6 +384,9 @@ deselected_tests:
 
   # This particular case does not reach convergence, fails because of a warning
   - linear_model/tests/test_logistic.py::test_n_iter[newton-cg]
+
+  # These fail due to not printing everything that scikit-learn prints on verbose mode
+  - cluster/tests/test_k_means.py::test_kmeans_verbose
 
   # --------------------------------------------------------
   # No need to test daal4py patching

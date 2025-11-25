@@ -131,6 +131,7 @@ def support_input_format(func):
             self
             and self.__class__.__name__ in ("KNeighborsClassifier", "KNeighborsRegressor")
             and func.__name__ == "fit"
+            and _get_config()["use_raw_input"] is True
         )
         if override_raw_input:
             pretty_name = f"{self.__class__.__name__}.{func.__name__}"
