@@ -383,7 +383,7 @@ class TSNE(BaseTSNE):
             # input space. Not sure of the implication of using a different
             # metric.
             if sklearn_check_version("1.2") or (
-                self.metric != "euclidean" and self.square_distances is True
+                self.square_distances is True or self.metric == "euclidean"
             ):
                 distances_nn.data **= 2
 
