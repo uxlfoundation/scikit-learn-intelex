@@ -72,7 +72,7 @@ if sklearn_check_version("1.6"):
         if predictions.ndim == 1:
             # Reshape binary output from `(n_samples,)` to `(n_samples, 1)`
             predictions = xp.reshape(predictions, (-1, 1))
-        
+
         calibrated_classifier = _fit_calibrator(
             estimator,
             predictions,
