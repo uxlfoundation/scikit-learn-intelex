@@ -387,7 +387,7 @@ class TSNE(BaseTSNE):
             # Always output a numpy array, no matter what is configured globally
             pca.set_output(transform="default")
             X_embedded = pca.fit_transform(X).astype(np.float32, copy=False)
-            if sklearn_check_version("1.1") and not sklearn_check_version("1.2"):
+            if sklearn_check_version("1.0") and not sklearn_check_version("1.2"):
                 warnings.warn(
                     "The PCA initialization in TSNE will change to "
                     "have the standard deviation of PC1 equal to 1e-4 "
