@@ -29,10 +29,7 @@ and work with different classes of input data, including:
 - SciPy :external+scipy:doc:`sparse arrays and sparse matrices <tutorial/sparse>` (depending on the estimator).
 - Pandas :external+pandas:doc:`DataFrame and Series <user_guide/dsintro>` classes.
 
-In addition, |sklearnex| also supports:
-
-- :external+dpnp:doc:`dpnp.ndarray <reference/ndarray>`.
-- :external+dpctl:doc:`dpctl.tensor <api_reference/dpctl/tensor>`.
+In addition, |sklearnex| also supports |dpnp_array| arrays, which are particularly useful for GPU computations.
 
 Stock Scikit-Learn estimators, depending on the version, might offer support for additional
 input types beyond this list, such as ``DataFrame`` and ``Series`` classes from other libraries
@@ -50,7 +47,8 @@ enabled the input is unsupported).
   The affected cases are listed below.
 
   - Non-contiguous NumPy array - i.e. where strides are wider than one element across both rows and columns
-  - For SciPy CSR matrix / array, index arrays are always copied.
+  - For SciPy CSR matrix / array, index arrays are always copied. Note that sparse matrices in formats other than CSR
+    will be converted to CSR, which implies more than just data copying.
   - Heterogeneous NumPy array
   - If SYCL queue is provided for device without ``float64`` support but data are ``float64``, data are copied with reduced precision.
   - If :ref:`Array API <array_api>` is not enabled then data from GPU devices are always copied to the host device and then result table 

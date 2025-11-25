@@ -76,6 +76,8 @@ def is_dpctl_device_available(targets):
 
 
 def pass_if_not_implemented_for_gpu(reason=""):
+    """Decorator for test functions. Asserts the test fails with the specified `reason` when running on GPU.
+    Used to ensure that a meaningful error message is provided by the backend."""
     assert reason
 
     def decorator(test):
