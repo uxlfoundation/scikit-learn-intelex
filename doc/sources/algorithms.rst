@@ -348,7 +348,7 @@ Regression
 
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
-       - ``criterion`` != ``'squared_error'`` (or ``'mse'`` depending on version of |sklearn|)
+       - ``criterion`` != ``'squared_error'``
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
        - ``n_estimators`` > ``6024``
@@ -358,7 +358,7 @@ Regression
 
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
-       - ``criterion`` != ``'squared_error'`` (or ``'mse'`` depending on version of |sklearn|)
+       - ``criterion`` != ``'squared_error'``
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
        - ``n_estimators`` > ``6024``
@@ -550,7 +550,7 @@ Regression
 
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
-       - ``criterion`` != ``'squared_error'`` (or ``'mse'`` depending on version of |sklearn|)
+       - ``criterion`` != ``'squared_error'``
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
        - ``n_estimators`` > ``6024``
@@ -560,7 +560,7 @@ Regression
 
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
-       - ``criterion`` != ``'squared_error'`` (or ``'mse'`` depending on version of |sklearn|)
+       - ``criterion`` != ``'squared_error'``
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
        - ``n_estimators`` > ``6024``
