@@ -276,6 +276,12 @@ class TSNE(BaseTSNE):
         random_state = check_random_state(self.random_state)
 
         if not sklearn_check_version("1.2"):
+            if self.early_exaggeration < 1.0:
+                raise ValueError(
+                    "early_exaggeration must be at least 1, but is {}".format(
+                        self.early_exaggeration
+                    )
+                )
             if self.n_iter < 250:
                 raise ValueError("n_iter should be at least 250")
 
@@ -311,7 +317,9 @@ class TSNE(BaseTSNE):
                     "All distances should be positive, the " "metric given is not correct"
                 )
 
-            if self.metric != "euclidean":
+            if self.metric != "euclidean" and (
+                sklearn_check_version("1.2") or self.square_distances is True
+            ):
                 distances **= 2
 
             # compute the joint probability distribution for the input space
@@ -374,7 +382,10 @@ class TSNE(BaseTSNE):
             # the method was derived using the euclidean method as in the
             # input space. Not sure of the implication of using a different
             # metric.
-            distances_nn.data **= 2
+            if sklearn_check_version("1.2") or (
+                self.metric != "euclidean" and self.square_distances is True
+            ):
+                distances_nn.data **= 2
 
             # compute the joint probability distribution for the input space
             P = _joint_probabilities_nn(distances_nn, self.perplexity, self.verbose)
