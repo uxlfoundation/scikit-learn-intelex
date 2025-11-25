@@ -99,7 +99,7 @@ Regression
 
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
-       - ``criterion`` != ``'squared_error'`` (or ``'mse'`` depending on version of |sklearn|)
+       - ``criterion`` != ``'squared_error'``
      - Multi-output and sparse data are not supported
    * - :obj:`sklearn.ensemble.ExtraTreesRegressor`
      - All parameters are supported except:
