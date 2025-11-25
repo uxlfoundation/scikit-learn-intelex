@@ -384,8 +384,9 @@ class TSNE(BaseTSNE):
                 n_components=self.n_components,
                 random_state=random_state,
             )
-            # Always output a numpy array, no matter what is configured globally
-            pca.set_output(transform="default")
+            if sklearn_check_version("1.2"):
+                # Always output a numpy array, no matter what is configured globally
+                pca.set_output(transform="default")
             X_embedded = pca.fit_transform(X).astype(np.float32, copy=False)
             if sklearn_check_version("1.0") and not sklearn_check_version("1.2"):
                 warnings.warn(
