@@ -53,9 +53,13 @@ If ``n_jobs`` is not specified for underlying estimator(s), |sklearnex| sets it 
     |sklearnex| threading doesn't automatically avoid nested parallelism when used in conjunction with OpenMP and/or python threads.
 
 .. warning::
-    If several instances of |sklearnex| algorithms are run in parallel with different ``n_jobs`` parameter it is not guaranteed that the
-    parameter would be propagated properly to each instance due to the known issue with [oneTBB](https://github.com/uxlfoundation/oneTBB).
+    If several instances of |sklearnex| algorithms are run sequentially and the ``n_jobs`` parameter for the first run
+    is significantly greater than for subsequent ones it may result in performance degradation due to a known issue
+    with [oneTBB](https://github.com/uxlfoundation/oneTBB).
 
+.. warning::
+    If several instances of |sklearnex| algorithms are run in parallel with different ``n_jobs`` parameters
+    it is not guaranteed that the parameter will be propagated correctly to each instance.
 
 To track the actual number of threads used by estimators from the |sklearnex|,
 set the `DEBUG` :ref:`verbosity setting <verbose>`. If |sklearnex|'s number of threads
