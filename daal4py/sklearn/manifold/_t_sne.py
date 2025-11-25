@@ -196,6 +196,8 @@ class TSNE(BaseTSNE):
                     FutureWarning,
                 )
                 self._learning_rate = 200.0
+            else:
+                self._learning_rate = self.learning_rate
         else:
             self._learning_rate = self.learning_rate
         if self._learning_rate == "auto":
