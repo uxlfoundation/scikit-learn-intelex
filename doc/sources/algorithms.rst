@@ -51,6 +51,7 @@ Classification
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
        - ``criterion`` != `'gini'`
+       - ``n_estimators`` > ``6024``
      - Multi-output and sparse data are not supported. Number of classes must be at least 2.
    * - :obj:`sklearn.ensemble.ExtraTreesClassifier`
      - All parameters are supported except:
@@ -58,6 +59,7 @@ Classification
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
        - ``criterion`` != `'gini'`
+       - ``n_estimators`` > ``6024``
      - Multi-output and sparse data are not supported. Number of classes must be at least 2.
    * - :obj:`sklearn.neighbors.KNeighborsClassifier`
      -
@@ -101,6 +103,7 @@ Regression
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
        - ``criterion`` != `'mse'`
+       - ``n_estimators`` > ``6024``
      - Multi-output and sparse data are not supported
    * - :obj:`sklearn.ensemble.ExtraTreesRegressor`
      - All parameters are supported except:
@@ -108,6 +111,7 @@ Regression
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
        - ``criterion`` != `'mse'`
+       - ``n_estimators`` > ``6024``
      - Multi-output and sparse data are not supported
    * - :obj:`sklearn.neighbors.KNeighborsRegressor`
      - All parameters are supported except:
@@ -156,7 +160,8 @@ Clustering
        - ``algorithm`` != ``'lloyd'`` ('elkan' falls back to 'lloyd')
        - ``n_clusters`` = ``1``
        - ``sample_weight`` must be None, constant, or equal weights
-       - ``init`` = `'k-means++'` falls back to CPU
+       - ``verbose`` = ``True`` will only print results from the last iteration, and will only print
+         inertia numbers, not 'convergence achieved' messages.
      - No limitations
    * - :obj:`sklearn.cluster.DBSCAN`
      - All parameters are supported except:
@@ -294,6 +299,7 @@ Classification
        - ``criterion`` != `'gini'`
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
+       - ``n_estimators`` > ``6024``
      - Multi-output and sparse data are not supported. Number of classes must be at least 2.
    * - :obj:`sklearn.ensemble.ExtraTreesClassifier`
      - All parameters are supported except:
@@ -303,6 +309,7 @@ Classification
        - ``criterion`` != `'gini'`
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
+       - ``n_estimators`` > ``6024``
      - Multi-output and sparse data are not supported. Number of classes must be at least 2.
    * - :obj:`sklearn.neighbors.KNeighborsClassifier`
      - All parameters are supported except:
@@ -343,6 +350,7 @@ Regression
        - ``criterion`` != `'mse'`
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
+       - ``n_estimators`` > ``6024``
      - Multi-output and sparse data are not supported
    * - :obj:`sklearn.ensemble.ExtraTreesRegressor`
      - All parameters are supported except:
@@ -352,6 +360,7 @@ Regression
        - ``criterion`` != `'mse'`
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
+       - ``n_estimators`` > ``6024``
      - Multi-output and sparse data are not supported
    * - :obj:`sklearn.neighbors.KNeighborsRegressor`
      - All parameters are supported except:
@@ -393,7 +402,9 @@ Clustering
        - ``algorithm`` != ``'lloyd'`` ('elkan' falls back to 'lloyd')
        - ``n_clusters`` = ``1``
        - ``sample_weight`` must be None, constant, or equal weights
-       - ``init`` = `'k-means++'` falls back to CPU
+       - ``init`` = ``'k-means++'`` falls back to CPU
+       - ``verbose`` = ``True`` will only print results from the last iteration, and will only print
+         inertia numbers, not 'convergence achieved' messages.
      - No limitations
    * - :obj:`sklearn.cluster.DBSCAN`
      - All parameters are supported except:
@@ -487,6 +498,7 @@ Classification
        - ``criterion`` != `'gini'`
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
+       - ``n_estimators`` > ``6024``
      - Multi-output and sparse data are not supported. Number of classes must be at least 2.
    * - :obj:`sklearn.ensemble.ExtraTreesClassifier`
      - All parameters are supported except:
@@ -496,6 +508,7 @@ Classification
        - ``criterion`` != `'gini'`
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
+       - ``n_estimators`` > ``6024``
      - Multi-output and sparse data are not supported. Number of classes must be at least 2.
    * - :obj:`sklearn.neighbors.KNeighborsClassifier`
      - All parameters are supported except:
@@ -537,6 +550,7 @@ Regression
        - ``criterion`` != `'mse'`
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
+       - ``n_estimators`` > ``6024``
      - Multi-output and sparse data are not supported
    * - :obj:`sklearn.ensemble.ExtraTreesRegressor`
      - All parameters are supported except:
@@ -546,6 +560,7 @@ Regression
        - ``criterion`` != `'mse'`
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
+       - ``n_estimators`` > ``6024``
      - Multi-output and sparse data are not supported
    * - :obj:`sklearn.neighbors.KNeighborsRegressor`
      - All parameters are supported except:
@@ -579,6 +594,8 @@ Clustering
        - ``n_clusters`` = ``1``
        - ``sample_weight`` must be None, constant, or equal weights
        - ``init`` = `'k-means++'` falls back to CPU
+       - ``verbose`` = ``True`` will only print results from the last iteration, and will only print
+         inertia numbers, not 'convergence achieved' messages.
      - No limitations
    * - :obj:`sklearn.cluster.DBSCAN`
      - All parameters are supported except:
