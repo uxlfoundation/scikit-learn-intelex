@@ -475,6 +475,10 @@ def logistic_regression_path(*args, **kwargs):
                 "Penalties other than l2 are not supported.",
             ),
             (not kwargs["l1_ratio"], "L1 regularization is not supported."),
+            (
+                not (kwargs["solver"] == "newton-cg" and not kwargs["fit_intercept"]),
+                "'newton-cg' solver without intercept is not supported.",
+            ),
         ]
     )
     if not _dal_ready:
