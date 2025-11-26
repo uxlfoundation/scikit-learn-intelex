@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
+import warnings
 from functools import wraps
 
 import numpy as np
@@ -22,11 +23,7 @@ from sklearn.exceptions import NotFittedError
 from sklearn.metrics import accuracy_score
 from sklearn.svm import SVC as _sklearn_SVC
 from sklearn.utils.metaestimators import available_if
-from sklearn.utils.validation import (
-    _deprecate_positional_args,
-    check_array,
-    check_is_fitted,
-)
+from sklearn.utils.validation import _deprecate_positional_args, check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
@@ -282,7 +279,7 @@ class SVC(BaseSVC, _sklearn_SVC):
     def _onedal_predict_proba(self, X, queue=None):
         if getattr(self, "clf_prob", None) is None:
             raise NotFittedError(
-                "predict_proba is only available when using 'probability=True'"
+                "predict_proba is not available when fitted with probability=False"
             )
         from .._config import config_context, get_config
 

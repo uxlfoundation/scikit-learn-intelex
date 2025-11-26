@@ -253,7 +253,7 @@ class NuSVC(BaseSVC, _sklearn_NuSVC):
     def _onedal_predict_proba(self, X, queue=None):
         if getattr(self, "clf_prob", None) is None:
             raise NotFittedError(
-                "predict_proba is only available when using 'probability=True'"
+                "predict_proba is not available when fitted with probability=False"
             )
         from .._config import config_context, get_config
 
