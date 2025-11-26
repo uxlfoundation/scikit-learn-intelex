@@ -146,7 +146,7 @@ class BaseSVM(oneDALEstimator):
                     (
                         self.kernel in ["linear", "rbf", "poly", "sigmoid"],
                         f'Kernel is "{self.kernel}" while '
-                        '"linear", "rbf", "poly" and "sigmoid" are only supported.',
+                        'only "linear", "rbf", "poly" and "sigmoid" are supported.',
                     ),
                     (
                         sample_weight is None

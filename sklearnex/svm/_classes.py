@@ -126,7 +126,7 @@ class SVC(BaseSVC, _sklearn_SVC):
             (
                 self.kernel in ["linear", "rbf"],
                 f'Kernel is "{self.kernel}" while '
-                '"linear" and "rbf" are only supported on GPU.',
+                'only "linear" and "rbf" are supported on GPU.',
             ),
             (not sp.issparse(data[0]), "Sparse input is not supported on GPU."),
             (
