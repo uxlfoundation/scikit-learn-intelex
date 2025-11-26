@@ -19,6 +19,8 @@ import pytest
 from numpy.testing import assert_allclose
 from sklearn.metrics.pairwise import pairwise_distances
 
+from daal4py.sklearn._utils import sklearn_check_version
+
 # Note: n_components must be 2 for now
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
@@ -161,8 +163,12 @@ def test_tsne_functionality_and_edge_cases(
         assert np.any(embedding != 0)
 
 
+# Note: since sklearn1.2, the PCA initialization divides by standard deviations of components.
+# Since those will be zeros for constant data, it will end up producing NaNs, hence it's not tested.
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-@pytest.mark.parametrize("init", ["pca", "random"])
+@pytest.mark.parametrize(
+    "init", ["random"] + (["pca"] if not sklearn_check_version("1.2") else [])
+)
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_tsne_constant_data(init, dataframe, queue, dtype):
     from sklearnex.manifold import TSNE
