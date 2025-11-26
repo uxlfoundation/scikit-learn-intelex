@@ -64,25 +64,27 @@ from .._utils import PatchingConditionsChain, register_hyperparameters
 from ..base import oneDALEstimator
 from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.class_weight import _compute_class_weight
-from ..utils.validation import _check_sample_weight, _finite_keyword, assert_all_finite, validate_data
+from ..utils.validation import (
+    _check_sample_weight,
+    _finite_keyword,
+    assert_all_finite,
+    validate_data,
+)
 
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import Interval
 
 
 __check_kwargs = {
-	  "dtype": None,
-	  "ensure_2d": False,
-	  "ensure_min_samples": 0,
-	  "ensure_min_features": 0,
-	  "accepts_sparse": True,
-      _finite_keyword: False,
-	}
+    "dtype": None,
+    "ensure_2d": False,
+    "ensure_min_samples": 0,
+    "ensure_min_features": 0,
+    "accepts_sparse": True,
+    _finite_keyword: False,
+}
 
-_check_array = partial(
-    check_array,
-    **__check_kwargs
-)
+_check_array = partial(check_array, **__check_kwargs)
 
 
 class BaseForest(oneDALEstimator, ABC):
