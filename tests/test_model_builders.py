@@ -2172,23 +2172,21 @@ def test_logreg_builder_sequential_calls():
 # on decides to disallow some of these combinations.
 @pytest.mark.parametrize(
     "estimator_skl,n_classes",
-    [
-        pytest.param(
-            LogisticRegression(multi_class="ovr"),
-            3,
-            marks=pytest.mark.skipif(
-                sklearn_check_version("1.8"),
-                reason="Methodological flaw from sklearn fixed in 1.8",
+    (
+        [
+            (
+                LogisticRegression(multi_class="ovr"),
+                3,
             ),
-        ),
-        pytest.param(
-            LogisticRegression(multi_class="multinomial"),
-            2,
-            marks=pytest.mark.skipif(
-                sklearn_check_version("1.8"),
-                reason="Methodological flaw from sklearn fixed in 1.8",
+            (
+                LogisticRegression(multi_class="multinomial"),
+                2,
             ),
-        ),
+        ]
+        if not sklearn_check_version("1.8")
+        else []
+    )
+    + [
         # case below might change in the future if sklearn improves their modules
         pytest.param(
             SGDClassifier(loss="log_loss"),
