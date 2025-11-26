@@ -23,7 +23,7 @@ from functools import partial
 
 import numpy as np
 from scipy import sparse as sp
-from sklearn.base import clone
+from sklearn.base import clone, is_classifier
 from sklearn.ensemble import ExtraTreesClassifier as _sklearn_ExtraTreesClassifier
 from sklearn.ensemble import ExtraTreesRegressor as _sklearn_ExtraTreesRegressor
 from sklearn.ensemble import RandomForestClassifier as _sklearn_RandomForestClassifier
@@ -107,7 +107,7 @@ class BaseForest(oneDALEstimator, ABC):
                 accept_sparse=False,
                 dtype=[xp.float64, xp.float32],
                 ensure_all_finite=False,  # completed in offload check
-                y_numeric=not hasattr(self, "predict_proba"),  # trigger for Regressors
+                y_numeric=not is_classifier(self),  # trigger for Regressors
             )
 
             if sample_weight is not None:
@@ -156,7 +156,7 @@ class BaseForest(oneDALEstimator, ABC):
             # try catch needed for raw_inputs + array_api data where unlike
             # numpy the way to yield unique values is via `unique_values`
             # This should be removed when refactored for gpu zero-copy
-            if hasattr(self, "class_weight"):
+            if is_classifier(self):
                 try:
                     self.classes_ = xp.unique(y)
                 except AttributeError:
@@ -238,10 +238,6 @@ class BaseForest(oneDALEstimator, ABC):
         self._validate_estimator()
 
     def _onedal_fit_ready(self, patching_status, X, y, sample_weight):
-        # Normally this would be handled in _onedal_fit, but this condition is required
-        # here for scikit-learn conformance as following checks require non-sparse data
-        if sp.issparse(y):
-            raise ValueError("sparse multilabel-indicator for y is not supported.")
 
         patching_status.and_conditions(
             [
@@ -256,7 +252,7 @@ class BaseForest(oneDALEstimator, ABC):
                     self.ccp_alpha == 0.0,
                     f"Non-zero 'ccp_alpha' ({self.ccp_alpha}) is not supported.",
                 ),
-                (not sp.issparse(X), "X is sparse. Sparse input is not supported."),
+                (not sp.issparse(X) and not sp.issparse(y), "Sparse inputs are not supported."),
                 (
                     self.n_estimators <= 6024,
                     "More than 6024 estimators is not supported.",
@@ -712,7 +708,7 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         # class attribute
         if self.oob_score:
             # dimension changes and conversion to python types required by sklearn
-            # coformance, it is known to be 2d from oneDAL tables
+            # conformance, it is known to be 2d from oneDAL tables
             self.oob_score_ = float(self._onedal_estimator.oob_err_accuracy_[0, 0])
             self.oob_decision_function_ = (
                 self._onedal_estimator.oob_err_decision_function_
