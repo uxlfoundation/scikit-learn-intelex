@@ -190,11 +190,11 @@ Dimensionality Reduction
      - All parameters are supported except:
 
        - ``metric`` != 'euclidean' or `'minkowski'` with ``p`` != `2`
-
        - ``n_components`` can only be `2`
-
+       - ``method`` != ``"barnes_hut"``
+       
        Refer to :ref:`TSNE acceleration details <acceleration_tsne>` to learn more.
-     - Sparse data is not supported
+     - Sparse data with ``init`` = ``"pca"`` is not supported
 
 Nearest Neighbors
 *****************
