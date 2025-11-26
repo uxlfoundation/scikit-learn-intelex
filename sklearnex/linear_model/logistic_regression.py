@@ -15,7 +15,6 @@
 # ===============================================================================
 
 import logging
-from abc import ABC
 
 from daal4py.sklearn._utils import daal_check_version
 from daal4py.sklearn.linear_model.logistic_path import (
@@ -28,7 +27,7 @@ if daal_check_version((2024, "P", 1)):
     from sklearn.linear_model import LogisticRegression as _sklearn_LogisticRegression
     from sklearn.metrics import accuracy_score
     from sklearn.utils.multiclass import type_of_target
-    from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
+    from sklearn.utils.validation import check_is_fitted
 
     from daal4py.sklearn._n_jobs_support import control_n_jobs
     from daal4py.sklearn._utils import sklearn_check_version
@@ -68,20 +67,19 @@ if daal_check_version((2024, "P", 1)):
                 self,
                 penalty="deprecated",
                 *,
+                C=1.0,
+                l1_ratio=0.0,
                 dual=False,
                 tol=1e-4,
-                C=1.0,
                 fit_intercept=True,
                 intercept_scaling=1,
                 class_weight=None,
                 random_state=None,
                 solver="lbfgs",
                 max_iter=100,
-                multi_class="deprecated",
                 verbose=0,
                 warm_start=False,
                 n_jobs=None,
-                l1_ratio=0.0,
             ):
                 super().__init__(
                     penalty=penalty,
@@ -94,7 +92,6 @@ if daal_check_version((2024, "P", 1)):
                     random_state=random_state,
                     solver=solver,
                     max_iter=max_iter,
-                    multi_class=multi_class,
                     verbose=verbose,
                     warm_start=warm_start,
                     n_jobs=n_jobs,
