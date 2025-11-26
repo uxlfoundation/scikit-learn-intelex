@@ -64,32 +64,25 @@ from .._utils import PatchingConditionsChain, register_hyperparameters
 from ..base import oneDALEstimator
 from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.class_weight import _compute_class_weight
-from ..utils.validation import _check_sample_weight, assert_all_finite, validate_data
+from ..utils.validation import _check_sample_weight, _finite_keyword, assert_all_finite, validate_data
 
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import Interval
 
 
-if sklearn_check_version("1.6"):
-    _check_array = partial(
-        check_array,
-        ensure_all_finite=False,
-        dtype=None,
-        ensure_2d=False,
-        ensure_min_samples=0,
-        ensure_min_features=0,
-        accept_sparse=True,
-    )
-else:
-    _check_array = partial(
-        check_array,
-        force_all_finite=False,
-        dtype=None,
-        ensure_2d=False,
-        ensure_min_samples=0,
-        ensure_min_features=0,
-        accept_sparse=True,
-    )
+__check_kwargs = {
+	  "dtype": None,
+	  "ensure_2d": False,
+	  "ensure_min_samples": 0,
+	  "ensure_min_features": 0,
+	  "accepts_sparse": True,
+      _finite_keyword: False,
+	}
+
+_check_array = partial(
+    check_array,
+    **__check_kwargs
+)
 
 
 class BaseForest(oneDALEstimator, ABC):
@@ -252,7 +245,10 @@ class BaseForest(oneDALEstimator, ABC):
                     self.ccp_alpha == 0.0,
                     f"Non-zero 'ccp_alpha' ({self.ccp_alpha}) is not supported.",
                 ),
-                (not sp.issparse(X) and not sp.issparse(y), "Sparse inputs are not supported."),
+                (
+                    not sp.issparse(X) and not sp.issparse(y),
+                    "Sparse inputs are not supported.",
+                ),
                 (
                     self.n_estimators <= 6024,
                     "More than 6024 estimators is not supported.",
