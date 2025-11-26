@@ -78,6 +78,7 @@ Classification
        - ``dual`` = ``True``
        - ``sample_weight`` != ``None``
        - ``class_weight`` != ``None``
+       - Solver ``'newton-cg'`` with ``fit_intercept`` = ``False`` is not supported
      - Sparse data is not supported.
 
 Regression
