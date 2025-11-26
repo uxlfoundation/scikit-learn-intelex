@@ -101,7 +101,7 @@ Regression
 
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
-       - ``criterion`` != `'mse'`
+       - ``criterion`` != ``'squared_error'``
        - ``n_estimators`` > ``6024``
      - Multi-output and sparse data are not supported
    * - :obj:`sklearn.ensemble.ExtraTreesRegressor`
@@ -109,7 +109,7 @@ Regression
 
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
-       - ``criterion`` != `'mse'`
+       - ``criterion`` != ``'squared_error'``
        - ``n_estimators`` > ``6024``
      - Multi-output and sparse data are not supported
    * - :obj:`sklearn.neighbors.KNeighborsRegressor`
@@ -348,7 +348,7 @@ Regression
 
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
-       - ``criterion`` != `'mse'`
+       - ``criterion`` != ``'squared_error'``
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
        - ``n_estimators`` > ``6024``
@@ -358,7 +358,7 @@ Regression
 
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
-       - ``criterion`` != `'mse'`
+       - ``criterion`` != ``'squared_error'``
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
        - ``n_estimators`` > ``6024``
@@ -550,7 +550,7 @@ Regression
 
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
-       - ``criterion`` != `'mse'`
+       - ``criterion`` != ``'squared_error'``
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
        - ``n_estimators`` > ``6024``
@@ -560,7 +560,7 @@ Regression
 
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
-       - ``criterion`` != `'mse'`
+       - ``criterion`` != ``'squared_error'``
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
        - ``n_estimators`` > ``6024``
