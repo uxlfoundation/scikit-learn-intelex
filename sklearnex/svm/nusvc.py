@@ -56,7 +56,7 @@ class NuSVC(BaseSVC, _sklearn_NuSVC):
         gamma="scale",
         coef0=0.0,
         shrinking=True,
-        probability=False,
+        probability="deprecated" if sklearn_check_version("1.8") else False,
         tol=1e-3,
         cache_size=200,
         class_weight=None,
@@ -218,7 +218,16 @@ class NuSVC(BaseSVC, _sklearn_NuSVC):
         self._onedal_estimator = onedal_NuSVC(**onedal_params)
         self._onedal_estimator.fit(X, y, weights, queue=queue)
 
-        if self.probability:
+        probability = self.probability
+        if sklearn_check_version("1.8") and self.probability != "deprecated":
+            warnings.warn(
+                "parameter `probability` will be deprecated in version 1.8, "
+                "use `CalibratedClassifierCV(NuSVC(), ensemble=False)` "
+                "instead of `NuSVC(probability=True)`",
+                FutureWarning,
+            )
+            probability = False
+        if probability:
             self._fit_proba(
                 X,
                 y,
@@ -244,7 +253,7 @@ class NuSVC(BaseSVC, _sklearn_NuSVC):
     def _onedal_predict_proba(self, X, queue=None):
         if getattr(self, "clf_prob", None) is None:
             raise NotFittedError(
-                "predict_proba is not available when fitted with probability=False"
+                "predict_proba is only available when using 'probability=True'"
             )
         from .._config import config_context, get_config
 
