@@ -197,7 +197,7 @@ if sklearn_check_version("1.3"):
                 metric="euclidean",
                 *,
                 n_jobs=None,
-                ensure_all_finite=None,
+                ensure_all_finite=True,
                 **kwds,
             ):
                 return _pairwise_distances(

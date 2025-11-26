@@ -103,7 +103,7 @@ Regression
 
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
-       - ``criterion`` != `'mse'`
+       - ``criterion`` != ``'squared_error'``
        - ``n_estimators`` > ``6024``
      - Multi-output and sparse data are not supported
    * - :obj:`sklearn.ensemble.ExtraTreesRegressor`
@@ -111,7 +111,7 @@ Regression
 
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
-       - ``criterion`` != `'mse'`
+       - ``criterion`` != ``'squared_error'``
        - ``n_estimators`` > ``6024``
      - Multi-output and sparse data are not supported
    * - :obj:`sklearn.neighbors.KNeighborsRegressor`
@@ -192,11 +192,11 @@ Dimensionality Reduction
      - All parameters are supported except:
 
        - ``metric`` != 'euclidean' or `'minkowski'` with ``p`` != `2`
-
        - ``n_components`` can only be `2`
-
+       - ``method`` != ``"barnes_hut"``
+       
        Refer to :ref:`TSNE acceleration details <acceleration_tsne>` to learn more.
-     - Sparse data is not supported
+     - Sparse data with ``init`` = ``"pca"`` is not supported
 
 Nearest Neighbors
 *****************
@@ -348,7 +348,7 @@ Regression
 
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
-       - ``criterion`` != `'mse'`
+       - ``criterion`` != ``'squared_error'``
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
        - ``n_estimators`` > ``6024``
@@ -358,7 +358,7 @@ Regression
 
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
-       - ``criterion`` != `'mse'`
+       - ``criterion`` != ``'squared_error'``
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
        - ``n_estimators`` > ``6024``
@@ -548,7 +548,7 @@ Regression
 
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
-       - ``criterion`` != `'mse'`
+       - ``criterion`` != ``'squared_error'``
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
        - ``n_estimators`` > ``6024``
@@ -558,7 +558,7 @@ Regression
 
        - ``warm_start`` = `True`
        - ``ccp_alpha`` != `0`
-       - ``criterion`` != `'mse'`
+       - ``criterion`` != ``'squared_error'``
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
        - ``n_estimators`` > ``6024``
