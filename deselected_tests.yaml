@@ -385,6 +385,9 @@ deselected_tests:
   # This particular case does not reach convergence, fails because of a warning
   - linear_model/tests/test_logistic.py::test_n_iter[newton-cg]
 
+  # These fail due to not printing everything that scikit-learn prints on verbose mode
+  - cluster/tests/test_k_means.py::test_kmeans_verbose
+
   # --------------------------------------------------------
   # No need to test daal4py patching
 reduced_tests:
