@@ -164,7 +164,14 @@ class TSNE(BaseTSNE):
                 (
                     (
                         isinstance(self.init, str)
-                        and self.init in ["random", "pca", "warn"]
+                        and self.init
+                        in ["random", "pca"]
+                        + (
+                            ["warn"]
+                            if sklearn_check_version("1.0")
+                            and not sklearn_check_version("1.2")
+                            else []
+                        )
                     )
                     or isinstance(self.init, np.ndarray),
                     "'init' must be 'exact', 'pca', or a numpy array.",
@@ -175,7 +182,7 @@ class TSNE(BaseTSNE):
         if not _dal_ready:
             return super()._fit(X, skip_num_points)
 
-        if not sklearn_check_version("1.2"):
+        if sklearn_check_version("1.0") and not sklearn_check_version("1.2"):
             if isinstance(self.init, str) and self.init == "warn":
                 warnings.warn(
                     "The default initialization in TSNE will change "
@@ -188,7 +195,7 @@ class TSNE(BaseTSNE):
         else:
             self._init = self.init
 
-        if not sklearn_check_version("1.2"):
+        if sklearn_check_version("1.0") and not sklearn_check_version("1.2"):
             if self.learning_rate == "warn":
                 warnings.warn(
                     "The default learning rate in TSNE will change "
