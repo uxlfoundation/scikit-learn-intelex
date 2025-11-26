@@ -2177,7 +2177,7 @@ def test_logreg_builder_sequential_calls():
             LogisticRegression(multi_class="ovr"),
             3,
             marks=pytest.mark.skipif(
-                not sklearn_check_version("1.8"),
+                sklearn_check_version("1.8"),
                 reason="Methodological flaw from sklearn fixed in 1.8",
             ),
         ),
@@ -2185,7 +2185,7 @@ def test_logreg_builder_sequential_calls():
             LogisticRegression(multi_class="multinomial"),
             2,
             marks=pytest.mark.skipif(
-                not sklearn_check_version("1.8"),
+                sklearn_check_version("1.8"),
                 reason="Methodological flaw from sklearn fixed in 1.8",
             ),
         ),
