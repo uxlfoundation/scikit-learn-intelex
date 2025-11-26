@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
+import warnings
 from functools import wraps
 
 import numpy as np
@@ -21,11 +22,7 @@ from sklearn.exceptions import NotFittedError
 from sklearn.metrics import accuracy_score
 from sklearn.svm import NuSVC as _sklearn_NuSVC
 from sklearn.utils.metaestimators import available_if
-from sklearn.utils.validation import (
-    _deprecate_positional_args,
-    check_array,
-    check_is_fitted,
-)
+from sklearn.utils.validation import _deprecate_positional_args, check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
