@@ -941,7 +941,7 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
         # class attribute
         if self.oob_score:
             # dimension changes and conversion to python types required by sklearn
-            # coformance, it is known to be 2d from oneDAL tables
+            # conformance, it is known to be 2d from oneDAL tables
             self.oob_score_ = float(self._onedal_estimator.oob_err_r2_[0, 0])
             self.oob_prediction_ = xp.reshape(
                 self._onedal_estimator.oob_err_prediction_, (-1,)
