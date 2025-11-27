@@ -80,7 +80,7 @@ __check_kwargs = {
     "ensure_2d": False,
     "ensure_min_samples": 0,
     "ensure_min_features": 0,
-    "accepts_sparse": True,
+    "accept_sparse": True,
     _finite_keyword: False,
 }
 
