@@ -16,7 +16,7 @@
 
 import math
 import numbers
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 
 from daal4py.sklearn._utils import daal_check_version
 from onedal._device_offload import supports_queue
@@ -27,7 +27,7 @@ from sklearnex import get_hyperparameters
 from ..datatypes import from_table, to_table
 
 
-class BaseForest(metaclass=ABCMeta):
+class BaseForest(ABC):
     @abstractmethod
     def __init__(
         self,
