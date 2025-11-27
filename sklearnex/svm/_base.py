@@ -252,7 +252,7 @@ class BaseSVC(BaseSVM):
             y_nonzero = y[sample_weight > 0]
             patching_status.and_conditions(
                 (
-                    (not xp.all(y_nonzero == y_nonzero[0])),
+                    (xp.any(y_nonzero != y_nonzero[0])),
                     "Invalid input - all samples with positive weights belong to the same class.",
                 )
             )
