@@ -101,7 +101,9 @@ class BaseForest(oneDALEstimator, ABC):
                 multi_output=True,
                 accept_sparse=False,
                 dtype=[xp.float64, xp.float32],
-                ensure_all_finite=not sklearn_check_version("1.4"),  # completed in offload check
+                ensure_all_finite=not sklearn_check_version(
+                    "1.4"
+                ),  # completed in offload check
                 y_numeric=not is_classifier(self),  # trigger for Regressors
             )
 
