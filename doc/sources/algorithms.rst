@@ -74,9 +74,11 @@ Classification
      - All parameters are supported except:
 
        - ``solver`` not in [``'lbfgs'``, ``'newton-cg'``]
-       - ``penalty`` in [``'l1'``, ``'elasticnet'``]
+       - ``l1_ratio`` != ``0``
+       - ``dual`` = ``True``
        - ``sample_weight`` != ``None``
        - ``class_weight`` != ``None``
+       - Solver ``'newton-cg'`` with ``fit_intercept`` = ``False`` is not supported
      - Sparse data is not supported.
 
 Regression
@@ -323,12 +325,10 @@ Classification
        - ``solver`` != `'newton-cg'`
        - ``class_weight`` != `None`
        - ``sample_weight`` != `None`
-       - ``penalty`` != `'l2'`
-       - ``dual`` = `True`
+       - ``dual`` = ``True``
        - ``intercept_scaling`` != `1`
-       - ``multi_class`` = `'multinomial'`
-       - ``warm_start`` = `True`
-       - ``l1_ratio`` != 0 and ``l1_ratio`` != ``None``
+       - ``warm_start`` = ``True``
+       - ``l1_ratio`` != ``0``
        - Only binary classification is supported
      - No limitations
 
@@ -525,12 +525,10 @@ Classification
        - ``solver`` != `'newton-cg'`
        - ``class_weight`` != `None`
        - ``sample_weight`` != `None`
-       - ``penalty`` != `'l2'`
-       - ``dual`` = `True`
+       - ``dual`` = ``True``
        - ``intercept_scaling`` != `1`
-       - ``multi_class`` != `'multinomial'`
-       - ``warm_start`` = `True`
-       - ``l1_ratio`` != `None`
+       - ``warm_start`` = ``True``
+       - ``l1_ratio`` != ``0``
        - Only binary classification is supported
      - No limitations
 
