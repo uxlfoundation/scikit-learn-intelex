@@ -158,25 +158,6 @@ class SVC(BaseSVC, _sklearn_SVC):
         patching_status.and_conditions(conditions)
         return patching_status
 
-    def _onedal_cpu_supported(self, method_name, *data):
-        class_name = self.__class__.__name__
-        patching_status = PatchingConditionsChain(
-            f"sklearn.svm.{class_name}.{method_name}"
-        )
-        conditions = []
-        if method_name == "fit":
-            xp, _ = get_namespace(*data)
-            _, y, sample_weight = data
-            y_nonzero = y[sample_weight > xp.full_like(sample_weight, 0)] if sample_weight is not None else y
-            conditions.append(
-                (
-                    (sample_weight is None or not xp.all(y_nonzero == y_nonzero[0])),
-                    "Invalid input - all samples with positive weights belong to the same class.",
-                )
-            )
-        patching_status.and_conditions(conditions)
-        return patching_status
-
     fit.__doc__ = _sklearn_SVC.fit.__doc__
 
 
