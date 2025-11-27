@@ -244,6 +244,20 @@ class BaseSVM(oneDALEstimator):
 
 class BaseSVC(BaseSVM):
 
+    def _onedal_cpu_supported(self, method_name, *data):
+        patching_status = super()._onedal_cpu_supported(method_name, *data)
+        if method_name == "fit" and patching_status.get_status() and data[2] is not None:
+            xp, _ = get_namespace(*data)
+            _, y, sample_weight = data
+            y_nonzero = y[sample_weight > 0]
+            patching_status.and_conditions(
+                (
+                    (not xp.all(y_nonzero == y_nonzero[0])),
+                    "Invalid input - all samples with positive weights belong to the same class.",
+                )
+            )
+        return patching_status
+
     # overwrite _validate_targets for array API support
     def _onedal_validate_targets(self, X, y):
         xp, is_array_api_compliant = get_namespace(X, y)
