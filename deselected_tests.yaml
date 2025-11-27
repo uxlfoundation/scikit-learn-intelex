@@ -390,6 +390,7 @@ deselected_tests:
 
   # These require version numbers of array API packages that are not available on older Python versions
   - metrics/tests/test_classification.py::test_probabilistic_metrics_array_api python<3.12
+  - metrics/tests/test_common.py::test_array_api_compliance python<3.12
   - utils/tests/test_stats.py::test_weighted_percentile_array_api_consistency python<3.12
 
   # --------------------------------------------------------
