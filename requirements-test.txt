@@ -21,3 +21,4 @@ array-api-compat==1.11.2 ; python_version < '3.10'
 array-api-compat==1.12.0 ; python_version >= '3.10'
 array-api-strict==2.3.1 ; python_version < '3.12'
 array-api-strict==2.4.1 ; python_version >= '3.12'
+array-api-extra==0.9.1
