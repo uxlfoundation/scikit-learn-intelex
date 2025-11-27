@@ -48,5 +48,6 @@ if [ -n "$(pip list | grep dpctl)" ]; then
     python -c "import dpctl; print(dpctl.get_devices())"
 fi
 
+conda list
 python scripts/run_sklearn_tests.py -d ${1:-none} -c $( dirname $ci_dir )/setup.cfg
 exit $?
