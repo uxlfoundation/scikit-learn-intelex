@@ -167,7 +167,7 @@ class SVC(BaseSVC, _sklearn_SVC):
         if method_name == "fit":
             xp, _ = get_namespace(*data)
             _, y, sample_weight = data
-            y_nonzero = y[sample_weight > 0] if sample_weight is not None else y
+            y_nonzero = y[sample_weight > xp.full_like(sample_weight, 0)] if sample_weight is not None else y
             conditions.append(
                 (
                     (sample_weight is None or not xp.all(y_nonzero == y_nonzero[0])),
