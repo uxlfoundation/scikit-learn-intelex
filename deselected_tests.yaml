@@ -388,6 +388,9 @@ deselected_tests:
   # These fail due to not printing everything that scikit-learn prints on verbose mode
   - cluster/tests/test_k_means.py::test_kmeans_verbose
 
+  # These require version numbers of array API packages that are not available on older Python versions
+  - metrics/tests/test_classification.py::test_probabilistic_metrics_array_api python<3.12
+
   # --------------------------------------------------------
   # No need to test daal4py patching
 reduced_tests:
