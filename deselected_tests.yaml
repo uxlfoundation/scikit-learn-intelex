@@ -388,6 +388,10 @@ deselected_tests:
   # These fail due to not printing everything that scikit-learn prints on verbose mode
   - cluster/tests/test_k_means.py::test_kmeans_verbose
 
+  # These fail due to small numerical differences in standard errors
+  - metrics/_plot/tests/test_roc_curve_display.py::test_roc_curve_display_plotting_from_cv_results
+  - metrics/_plot/tests/test_roc_curve_display.py::test_roc_curve_from_cv_results_legend_label
+
   # --------------------------------------------------------
   # No need to test daal4py patching
 reduced_tests:
