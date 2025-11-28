@@ -249,12 +249,15 @@ class BaseSVC(BaseSVM):
         if method_name == "fit" and patching_status.get_status() and data[2] is not None:
             xp, _ = get_namespace(*data)
             _, y, sample_weight = data
-            y_nonzero = y[sample_weight > 0]
+            y = xp.reshape(y, (-1,))
+            y_nonzero = y[xp.greater_equal(sample_weight, 0)]
             patching_status.and_conditions(
-                (
-                    (xp.any(y_nonzero != y_nonzero[0])),
-                    "Invalid input - all samples with positive weights belong to the same class.",
-                )
+                [
+                    (
+                        (xp.any(y_nonzero != y_nonzero[0])),
+                        "Invalid input - all samples with positive weights belong to the same class.",
+                    )
+                ]
             )
         return patching_status
 
