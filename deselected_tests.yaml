@@ -322,8 +322,8 @@ deselected_tests:
   - cluster/tests/test_k_means.py::test_kmeans_elkan_results[0-sparse
   # Temporary deselections due to a bug in oneDAL, remove once the issue is fixed.
   # Probably can also removed the kmeans ones above once these are fixed.
-  - cluster/tests/test_k_means.py::test_float_precision[42-KMeans-sparse_matrix]
-  - cluster/tests/test_k_means.py::test_float_precision[42-KMeans-sparse_array]
+  - cluster/tests/test_k_means.py::test_float_precision
+  - cluster/tests/test_k_means.py::test_kmeans_relocated_clusters
   - cluster/tests/test_kmeans.py::test_dense_vs_sparse[dims0-elkan-k-means++-None]
   - cluster/tests/test_kmeans.py::test_dense_vs_sparse[dims1-full-k-means++-None]
   - cluster/tests/test_kmeans.py::test_dense_vs_sparse[dims2-full-k-means++-None]
