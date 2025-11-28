@@ -96,8 +96,6 @@ test:
     - setup.cfg
     - examples
     - tests
-  script_env:
-    - SCIPY_ARRAY_API=1
 
 about:
   home: https://uxlfoundation.github.io/scikit-learn-intelex
