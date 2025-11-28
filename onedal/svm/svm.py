@@ -14,9 +14,9 @@
 # limitations under the License.
 # ==============================================================================
 
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
+from math import sqrt
 
-import numpy as np
 from scipy import sparse as sp
 
 from onedal._device_offload import supports_queue
@@ -27,7 +27,7 @@ from ..datatypes import from_table, to_table
 from ..utils.validation import _is_csr
 
 
-class BaseSVM(metaclass=ABCMeta):
+class BaseSVM(ABC):
 
     def __init__(
         self,
@@ -83,7 +83,7 @@ class BaseSVM(metaclass=ABCMeta):
             "degree": self.degree,
             "shift": self.coef0 if self.kernel != "linear" else 0.0,
             "scale": gamma if self.kernel != "linear" else 1.0,
-            "sigma": np.sqrt(0.5 / gamma) if self.kernel != "linear" else 1.0,
+            "sigma": sqrt(0.5 / gamma) if self.kernel != "linear" else 1.0,
             "accuracy_threshold": self.tol,
             "shrinking": self.shrinking,
             "cache_size": self.cache_size,
