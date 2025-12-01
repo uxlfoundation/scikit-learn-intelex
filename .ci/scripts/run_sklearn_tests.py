@@ -17,6 +17,9 @@
 # from sklearnex import patch_sklearn
 
 # patch_sklearn()
+import os
+
+os.environ["SCIPY_ARRAY_API"] = "1"
 
 import argparse
 import os
@@ -43,7 +46,7 @@ if __name__ == "__main__":
     if os.environ["SELECTED_TESTS"] == "all":
         os.environ["SELECTED_TESTS"] = ""
 
-    os.environ["SCIPY_ARRAY_API"] = "1"
+    # os.environ["SCIPY_ARRAY_API"] = "1"
 
     pytest_args = (
         f"--rootdir={sklearn_file_dir} "
@@ -68,7 +71,8 @@ if __name__ == "__main__":
         pytest_args += extra_args
 
     if args.device != "none":
-        with sklearn.config_context(target_offload=args.device):
+        # with sklearn.config_context(target_offload=args.device):
+        with sklearn.config_context():
             return_code = pytest.main(pytest_args)
     else:
         return_code = pytest.main(pytest_args)
