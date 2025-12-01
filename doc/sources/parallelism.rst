@@ -58,9 +58,19 @@ If ``n_jobs`` is not specified for underlying estimator(s), |sklearnex| sets it 
     with [oneTBB](https://github.com/uxlfoundation/oneTBB).
 
 .. warning::
-    If several instances of |sklearnex| algorithms are run in parallel with different ``n_jobs`` parameters
-    it is not guaranteed that the parameter will be propagated correctly to each instance.
+    In general, accelerated computations offered by estimators from the |sklearnex|
+    do not raise the Python GIL, thus they are not compatible with multi-threading
+    backends that rely on Python threads.
 
-To track the actual number of threads used by estimators from the |sklearnex|,
-set the `DEBUG` :ref:`verbosity setting <verbose>`. If |sklearnex|'s number of threads
-is different from the number of CPU cores it will be mentioned in logs.
+.. warning::
+    Internally, the number of threads for calls to estimator methods from
+    the |sklearnex| is managed through global variables - thus, if multiple
+    calls to estimators with different ``n_jobs`` are performed in parallel
+    through **Python threads**, there might be threading races that override
+    one another's configuration, potentially leading to process-wide crashes.
+    If concurrent calls are to be performed, process-based parallelism should
+    be used instead.
+
+Setting the `DEBUG` :ref:`verbosity setting <verbose>` will produce logs
+indicating when the number of threads used is different from the default
+(number of logical threads in the machine).
