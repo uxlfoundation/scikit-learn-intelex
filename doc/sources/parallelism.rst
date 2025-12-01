@@ -24,9 +24,11 @@ Parallelism Specifics
   while |sklearn| enables it for selected estimators only.
 * `n_jobs` estimator parameter sets the number of threads used by the underlying |onedal|.
 * |sklearnex| doesn't use :mod:`joblib` for parallelism in patched estimators and functions.
-* The only low-level parallelism library used by |sklearnex| is [oneTBB](https://github.com/uxlfoundation/oneTBB) 
-  (through the |onedal| and [oneMKL](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl.html)).
-* If `n_jobs` is not specified |sklearnex| uses all available threads whereas |sklearn| is single-threaded by default.
+* The only low-level parallelism library used by |sklearnex| is `oneTBB <https://github.com/uxlfoundation/oneTBB>`__ 
+  (through the |onedal| and `oneMKL <https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl.html>`__).
+* If `n_jobs` is not specified, |sklearnex| uses all available threads whereas |sklearn| is single-threaded by default.
+  Note that the deprecated :doc:`daal4py <daal4py>` module uses a global configuration instead of per-object ``n_jobs`` arguments, 
+  with the default also being all available threads.
 
 |sklearnex| follows the same rules as |sklearn| for
 the calculation of the :term:`n_jobs` parameter value.
@@ -54,8 +56,8 @@ If ``n_jobs`` is not specified for underlying estimator(s), |sklearnex| sets it 
 
 .. warning::
     If several instances of |sklearnex| algorithms are run sequentially and the ``n_jobs`` parameter for the first run
-    is significantly greater than for subsequent ones it may result in performance degradation due to a known issue
-    with [oneTBB](https://github.com/uxlfoundation/oneTBB).
+    is significantly greater than for subsequent ones, it may result in performance degradation due to a known issue
+    with `oneTBB <https://github.com/uxlfoundation/oneTBB>`__.
 
 .. warning::
     In general, accelerated computations offered by estimators from the |sklearnex|
