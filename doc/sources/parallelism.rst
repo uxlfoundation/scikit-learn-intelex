@@ -41,7 +41,7 @@ If ``n_jobs`` is not specified for underlying estimator(s), |sklearnex| sets it 
 
 .. note::
     Environment variables such as `OMP_NUM_THREADS`, `MKL_NUM_THREADS`, `OPENBLAS_NUM_THREADS`, and others used by
-    low-level parallelism libraries do not affect |sklearnex| as well as 
+    low-level parallelism libraries do not affect |sklearnex|, nor does the 
     `mkl-service <https://github.com/IntelPython/mkl-service>`__ package.
 
 .. note::
