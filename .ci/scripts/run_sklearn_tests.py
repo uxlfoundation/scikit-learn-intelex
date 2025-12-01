@@ -14,9 +14,9 @@
 # limitations under the License.
 # ===============================================================================
 
-from sklearnex import patch_sklearn
+# from sklearnex import patch_sklearn
 
-patch_sklearn()
+# patch_sklearn()
 
 import argparse
 import os
