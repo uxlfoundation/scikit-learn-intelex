@@ -38,6 +38,8 @@ deselected_tests:
   - neighbors/tests/test_neighbors.py::test_neighbor_classifiers_loocv[brute-nn_model0]
   - neighbors/tests/test_neighbors.py::test_neighbor_classifiers_loocv[kd_tree-nn_model0]
   - neighbors/tests/test_neighbors.py::test_neighbor_classifiers_loocv[auto-nn_model0]
+  # sklearn 1.7 unsupported features
+  - tests/test_common.py::test_estimators[LinearRegression()-check_sample_weight_equivalence_on_dense_data]
 
   # Array API support
   # numpy.array_api was experimental and its use in sklearn was not official
@@ -146,8 +148,10 @@ deselected_tests:
   - ensemble/tests/test_bagging.py::test_sparse_classification
 
   # Same results as in scikit-learn, but in a different order
-  - svm/tests/test_svm.py::test_svc_ovr_tie_breaking[SVC]
-  - svm/tests/test_svm.py::test_svc_ovr_tie_breaking[NuSVC]
+  - svm/tests/test_svm.py::test_svc_ovr_tie_breaking[SVC] <1.8
+  - svm/tests/test_svm.py::test_svc_ovr_tie_breaking[NuSVC] <1.8
+  - svm/tests/test_svm.py::test_svc_ovr_tie_breaking[42-SVC] >=1.8
+  - svm/tests/test_svm.py::test_svc_ovr_tie_breaking[42-NuSVC] >=1.8
 
   # Different models between oneAPI Data Analytics Library (oneDAL) and stock scikit-learn with custom and precompute kernel
   - svm/tests/test_svm.py::test_svc_clone_with_callable_kernel
@@ -293,7 +297,7 @@ deselected_tests:
   - ensemble/tests/test_bagging.py::test_estimators_samples >=1.4
   - ensemble/tests/test_voting.py::test_sample_weight >=1.4
   - svm/tests/test_svm.py::test_auto_weight >=1.4
-  - tests/test_calibration.py::test_calibrated_classifier_cv_double_sample_weights_equivalence >=1.4
+  - tests/test_calibration.py::test_calibrated_classifier_cv_double_sample_weights_equivalence >=1
   - tests/test_calibration.py::test_calibrated_classifier_cv_zeros_sample_weights_equivalence >=1.4
   - tests/test_common.py::test_estimators[LogisticRegression()-check_sample_weights_invariance(kind=ones)] >=1.4
   - tests/test_common.py::test_estimators[LogisticRegression()-check_sample_weights_invariance(kind=zeros)] >=1.4
@@ -320,8 +324,12 @@ deselected_tests:
   - cluster/tests/test_k_means.py::test_kmeans_elkan_results[0-sparse
   # Temporary deselections due to a bug in oneDAL, remove once the issue is fixed.
   # Probably can also removed the kmeans ones above once these are fixed.
-  - cluster/tests/test_k_means.py::test_float_precision[42-KMeans-sparse_matrix]
-  - cluster/tests/test_k_means.py::test_float_precision[42-KMeans-sparse_array]
+  - cluster/tests/test_k_means.py::test_float_precision
+  - cluster/tests/test_k_means.py::test_kmeans_relocated_clusters
+  - cluster/tests/test_kmeans.py::test_dense_vs_sparse[dims0-elkan-k-means++-None]
+  - cluster/tests/test_kmeans.py::test_dense_vs_sparse[dims1-full-k-means++-None]
+  - cluster/tests/test_kmeans.py::test_dense_vs_sparse[dims2-full-k-means++-None]
+  - cluster/tests/test_kmeans.py::test_dense_vs_sparse[dims2-elkan-k-means++-None]
 
   # Fails in stock scikit-learn: checks that data is modified in-place when not strictly required
   - linear_model/tests/test_base.py::test_inplace_data_preprocessing
@@ -366,6 +374,10 @@ deselected_tests:
   - tests/test_common.py::test_estimators[LogisticRegressionCV(cv=3,max_iter=5)-check_sample_weight_equivalence_on_dense_data]
   - ensemble/tests/test_bagging.py::test_estimators_samples >=1.0,<1.1
   - ensemble/tests/test_voting.py::test_sample_weight >=1.0,<1.1
+  - tests/test_multioutput.py::test_multiclass_multioutput_estimator_predict_proba
+  - model_selection/tests/test_search.py::test_search_cv_sample_weight_equivalence[estimator0]
+  - tests/test_common.py::test_estimators[StackingClassifier(estimators=[('est1',LogisticRegression(C=0.1)),('est2',LogisticRegression(C=1))])-check_sample_weights_invariance(kind=ones)] <1.1
+  - tests/test_common.py::test_estimators[StackingClassifier(estimators=[('est1',LogisticRegression(C=0.1)),('est2',LogisticRegression(C=1))])-check_sample_weights_invariance(kind=zeros)] <1.1
 
   # Scikit-learn does not constraint multinomial logistic intercepts to sum to zero.
   # Softmax function is invariant to additions by a constant, so even though the numbers
@@ -374,6 +386,15 @@ deselected_tests:
 
   # This particular case does not reach convergence, fails because of a warning
   - linear_model/tests/test_logistic.py::test_n_iter[newton-cg]
+
+  # These fail due to not printing everything that scikit-learn prints on verbose mode
+  - cluster/tests/test_k_means.py::test_kmeans_verbose
+
+  # These require version numbers of array API packages that are not available on older Python versions.
+  # Since it's not possible to select or deselect based on Python version, they are removed entirely.
+  - metrics/tests/test_classification.py::test_probabilistic_metrics_array_api
+  - metrics/tests/test_common.py::test_array_api_compliance
+  - utils/tests/test_stats.py::test_weighted_percentile_array_api_consistency
 
   # --------------------------------------------------------
   # No need to test daal4py patching
@@ -457,6 +478,9 @@ public:
   # single-threaded computation is used which is a frequent case for CI
   - decomposition/tests/test_pca.py::test_pca_dtype_preservation[full] <1.5
 
+  # Convergence failure due to different settings and cost function implementation
+  - linear_model/tests/test_logistic.py::test_logistic_regression_path_convergence_fail
+
   # --------------------------------------------------------
   # The following tests currently fail with GPU offloading
 gpu:
@@ -517,3 +541,6 @@ gpu:
 
   # Deselection for Scikit-Learn 1.4 GPU conformance
   - model_selection/tests/test_validation.py::test_learning_curve_some_failing_fits_warning >=1.4
+
+  # Deselection for Scikit-Learn 1.5 GPU conformance (kd-tree knn not implemented for GPU)
+  - neighbors/tests/test_neighbors.py::test_neighbors_metrics[float64-42-l2]

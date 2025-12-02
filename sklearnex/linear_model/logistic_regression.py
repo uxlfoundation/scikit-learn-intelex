@@ -15,7 +15,6 @@
 # ===============================================================================
 
 import logging
-from abc import ABC
 
 from daal4py.sklearn._utils import daal_check_version
 from daal4py.sklearn.linear_model.logistic_path import (
@@ -28,7 +27,7 @@ if daal_check_version((2024, "P", 1)):
     from sklearn.linear_model import LogisticRegression as _sklearn_LogisticRegression
     from sklearn.metrics import accuracy_score
     from sklearn.utils.multiclass import type_of_target
-    from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
+    from sklearn.utils.validation import check_is_fitted
 
     from daal4py.sklearn._n_jobs_support import control_n_jobs
     from daal4py.sklearn._utils import sklearn_check_version
@@ -62,42 +61,81 @@ if daal_check_version((2024, "P", 1)):
                 **_sklearn_LogisticRegression._parameter_constraints
             }
 
-        def __init__(
-            self,
-            penalty="l2",
-            *,
-            dual=False,
-            tol=1e-4,
-            C=1.0,
-            fit_intercept=True,
-            intercept_scaling=1,
-            class_weight=None,
-            random_state=None,
-            solver="lbfgs",
-            max_iter=100,
-            multi_class="deprecated" if sklearn_check_version("1.5") else "auto",
-            verbose=0,
-            warm_start=False,
-            n_jobs=None,
-            l1_ratio=None,
-        ):
-            super().__init__(
-                penalty=penalty,
-                dual=dual,
-                tol=tol,
-                C=C,
-                fit_intercept=fit_intercept,
-                intercept_scaling=intercept_scaling,
-                class_weight=class_weight,
-                random_state=random_state,
-                solver=solver,
-                max_iter=max_iter,
-                multi_class=multi_class,
-                verbose=verbose,
-                warm_start=warm_start,
-                n_jobs=n_jobs,
-                l1_ratio=l1_ratio,
-            )
+        if sklearn_check_version("1.8"):
+
+            def __init__(
+                self,
+                penalty="deprecated",
+                *,
+                C=1.0,
+                l1_ratio=0.0,
+                dual=False,
+                tol=1e-4,
+                fit_intercept=True,
+                intercept_scaling=1,
+                class_weight=None,
+                random_state=None,
+                solver="lbfgs",
+                max_iter=100,
+                verbose=0,
+                warm_start=False,
+                n_jobs=None,
+            ):
+                super().__init__(
+                    penalty=penalty,
+                    dual=dual,
+                    tol=tol,
+                    C=C,
+                    fit_intercept=fit_intercept,
+                    intercept_scaling=intercept_scaling,
+                    class_weight=class_weight,
+                    random_state=random_state,
+                    solver=solver,
+                    max_iter=max_iter,
+                    verbose=verbose,
+                    warm_start=warm_start,
+                    n_jobs=n_jobs,
+                    l1_ratio=l1_ratio,
+                )
+
+        else:
+
+            def __init__(
+                self,
+                penalty="l2",
+                *,
+                dual=False,
+                tol=1e-4,
+                C=1.0,
+                fit_intercept=True,
+                intercept_scaling=1,
+                class_weight=None,
+                random_state=None,
+                solver="lbfgs",
+                max_iter=100,
+                multi_class="deprecated" if sklearn_check_version("1.5") else "auto",
+                verbose=0,
+                warm_start=False,
+                n_jobs=None,
+                l1_ratio=None,
+            ):
+                super().__init__(
+                    penalty=penalty,
+                    dual=dual,
+                    tol=tol,
+                    C=C,
+                    fit_intercept=fit_intercept,
+                    intercept_scaling=intercept_scaling,
+                    class_weight=class_weight,
+                    random_state=random_state,
+                    solver=solver,
+                    max_iter=max_iter,
+                    multi_class=multi_class,
+                    verbose=verbose,
+                    warm_start=warm_start,
+                    n_jobs=n_jobs,
+                    l1_ratio=l1_ratio,
+                )
 
         _onedal_cpu_fit = daal4py_fit
         decision_function = support_input_format(
@@ -217,7 +255,15 @@ if daal_check_version((2024, "P", 1)):
             )
             patching_status.and_conditions(
                 [
-                    (self.penalty == "l2", "Only l2 penalty is supported."),
+                    (
+                        self.penalty
+                        in (
+                            ["l2", "deprecated"]
+                            if sklearn_check_version("1.8")
+                            else ["l2"]
+                        ),
+                        "Only l2 penalty is supported.",
+                    ),
                     (self.dual == False, "dual=True is not supported."),
                     (
                         self.intercept_scaling == 1,
@@ -227,12 +273,12 @@ if daal_check_version((2024, "P", 1)):
                     (self.solver == "newton-cg", "Only newton-cg solver is supported."),
                     (self.warm_start == False, "Warm start is not supported."),
                     (
-                        not (self.multi_class == "multinomial"),
+                        sklearn_check_version("1.8") or self.multi_class != "multinomial",
                         "multi_class='multinomial is not supported.",
                     ),
                     (
                         not self.l1_ratio,
-                        "l1 ratio is not supported.",
+                        "l1 penalty is not supported.",
                     ),
                     (sample_weight is None, "Sample weight is not supported."),
                     (

@@ -20,15 +20,14 @@ import numpy as np
 import scipy.optimize as optimize
 import scipy.sparse as sparse
 import sklearn.linear_model._logistic as logistic_module
-from sklearn.linear_model._sag import sag_solver
-from sklearn.utils import (
-    check_array,
-    check_consistent_length,
-    check_random_state,
-    compute_class_weight,
+from sklearn.linear_model._logistic import _LOGISTIC_SOLVER_CONVERGENCE_MSG
+from sklearn.linear_model._logistic import (
+    LogisticRegression as LogisticRegression_original,
 )
+from sklearn.linear_model._logistic import _check_solver
+from sklearn.utils import check_array, check_consistent_length, check_random_state
 from sklearn.utils.optimize import _check_optimize_result, _newton_cg
-from sklearn.utils.validation import _check_sample_weight, check_is_fitted
+from sklearn.utils.validation import check_is_fitted
 
 import daal4py as d4p
 
@@ -44,35 +43,6 @@ from .logistic_loss import (
     _daal4py_loss_and_grad,
 )
 
-if sklearn_check_version("1.1"):
-    from sklearn._loss.loss import HalfBinomialLoss, HalfMultinomialLoss
-    from sklearn.linear_model._linear_loss import LinearModelLoss
-    from sklearn.linear_model._logistic import _LOGISTIC_SOLVER_CONVERGENCE_MSG
-    from sklearn.linear_model._logistic import (
-        LogisticRegression as LogisticRegression_original,
-    )
-    from sklearn.linear_model._logistic import (
-        _check_multi_class,
-        _check_solver,
-        _fit_liblinear,
-    )
-else:
-    from sklearn.linear_model._logistic import _LOGISTIC_SOLVER_CONVERGENCE_MSG
-    from sklearn.linear_model._logistic import (
-        LogisticRegression as LogisticRegression_original,
-    )
-    from sklearn.linear_model._logistic import (
-        _check_multi_class,
-        _check_solver,
-        _fit_liblinear,
-        _logistic_grad_hess,
-        _logistic_loss,
-        _logistic_loss_and_grad,
-        _multinomial_grad_hess,
-        _multinomial_loss,
-        _multinomial_loss_grad,
-    )
-
 if sklearn_check_version("1.7.1"):
     from sklearn.utils.fixes import _get_additional_lbfgs_options_dict
 else:
@@ -84,6 +54,25 @@ else:
 
 from sklearn.linear_model._logistic import _logistic_regression_path as lr_path_original
 from sklearn.preprocessing import LabelBinarizer, LabelEncoder
+
+
+# This code is a patch for sklearn 1.8, which is related to https://github.com/scikit-learn/scikit-learn/pull/32073
+# where the multi_class keyword is deprecated and this aspect is removed.
+def _check_multi_class(multi_class, solver, n_classes):
+    """Computes the multi class type, either "multinomial" or "ovr".
+    For `n_classes` > 2 and a solver that supports it, returns "multinomial".
+    For all other cases, in particular binary classification, return "ovr".
+    """
+    if multi_class == "auto":
+        if solver in ("liblinear",):
+            multi_class = "ovr"
+        elif n_classes > 2:
+            multi_class = "multinomial"
+        else:
+            multi_class = "ovr"
+    if multi_class == "multinomial" and solver in ("liblinear",):
+        raise ValueError("Solver %s does not support a multinomial backend." % solver)
+    return multi_class
 
 
 # Code adapted from sklearn.linear_model.logistic version 0.21
@@ -110,50 +99,10 @@ def __logistic_regression_path(
     l1_ratio=None,
     n_threads=1,
 ):
-    _patching_status = PatchingConditionsChain(
-        "sklearn.linear_model.LogisticRegression.fit"
-    )
-    _dal_ready = _patching_status.and_conditions(
-        [
-            (
-                solver in ["lbfgs", "newton-cg"],
-                f"'{solver}' solver is not supported. "
-                "Only 'lbfgs' and 'newton-cg' solvers are supported.",
-            ),
-            (not sparse.issparse(X), "X is sparse. Sparse input is not supported."),
-            (sample_weight is None, "Sample weights are not supported."),
-            (class_weight is None, "Class weights are not supported."),
-        ]
-    )
-    if not _dal_ready:
-        _patching_status.write_log()
-        return lr_path_original(
-            X,
-            y,
-            pos_class=pos_class,
-            Cs=Cs,
-            fit_intercept=fit_intercept,
-            max_iter=max_iter,
-            tol=tol,
-            verbose=verbose,
-            solver=solver,
-            coef=coef,
-            class_weight=class_weight,
-            dual=dual,
-            penalty=penalty,
-            intercept_scaling=intercept_scaling,
-            multi_class=multi_class,
-            random_state=random_state,
-            check_input=check_input,
-            max_squared_sum=max_squared_sum,
-            sample_weight=sample_weight,
-            l1_ratio=l1_ratio,
-            **({"n_threads": n_threads} if sklearn_check_version("1.1") else {}),
-        )
 
     # Comment 2025-08-04: this file might have dead code paths from unsupported solvers.
     # It appears to have initially been a copy-paste of scikit-learn with a few additions
-    # for varying levels of offloading to oneDAL, but later on the check above was added that
+    # for varying levels of offloading to oneDAL, but later on a check was added that
     # calls 'lr_path_original' early on when it won't end up offloading anything to oneDAL.
     # Some parts of the file have been selectively updated since the initial copy-paste
     # to reflect newer additions to sklearn, but they are not synch. The rest of the file
@@ -269,7 +218,6 @@ def __logistic_regression_path(
             func = _daal4py_loss_
             grad = _daal4py_grad_
             hess = _daal4py_grad_hess_
-        warm_start_sag = {"coef": w0.T}
     else:
         target = y_bin
         if solver == "lbfgs":
@@ -280,7 +228,6 @@ def __logistic_regression_path(
             func = _daal4py_loss_
             grad = _daal4py_grad_
             hess = _daal4py_grad_hess_
-        warm_start_sag = {"coef": np.expand_dims(w0, axis=1)}
 
     coefs = list()
     n_iter = np.zeros(len(Cs), dtype=np.int32)
@@ -302,6 +249,11 @@ def __logistic_regression_path(
             iprint = [-1, 50, 1, 100, 101][
                 np.searchsorted(np.array([0, 1, 2, 3]), verbose)
             ]
+            # Note: this uses more correction pairs than the implementation in scikit-learn,
+            # which means better approximation of the Hessian at the expense of slower updates.
+            # This is beneficial for high-dimensional convex problems without bound constraints
+            # like the logistic regression being fitted here. For larger problems with sparse
+            # data (currently not supported), it might benefit from increasing the number further.
             opt_res = optimize.minimize(
                 func,
                 w0,
@@ -310,6 +262,7 @@ def __logistic_regression_path(
                 args=extra_args,
                 options={
                     "maxiter": max_iter,
+                    "maxcor": 50,
                     "maxls": 50,
                     "gtol": tol,
                     "ftol": 64 * np.finfo(float).eps,
@@ -385,8 +338,6 @@ def __logistic_regression_path(
         for i, ci in enumerate(coefs):
             coefs[i] = np.delete(ci, 0, axis=-1)
 
-    _patching_status.write_log()
-
     return np.array(coefs), np.array(Cs), n_iter
 
 
@@ -427,12 +378,13 @@ def daal4py_predict(self, X, resultsToEvaluate):
         f"sklearn.linear_model.LogisticRegression.{_function_name}"
     )
     if _function_name != "predict":
+        multi_class = getattr(self, "multi_class", "auto")
         _patching_status.and_conditions(
             [
                 (
                     self.classes_.size == 2
-                    or logistic_module._check_multi_class(
-                        self.multi_class if self.multi_class != "deprecated" else "auto",
+                    or _check_multi_class(
+                        multi_class if multi_class != "deprecated" else "auto",
                         self.solver,
                         self.classes_.size,
                     )
@@ -440,7 +392,7 @@ def daal4py_predict(self, X, resultsToEvaluate):
                     f"selected multiclass option is not supported for n_classes > 2.",
                 ),
                 (
-                    not (self.classes_.size == 2 and self.multi_class == "multinomial"),
+                    not (self.classes_.size == 2 and multi_class == "multinomial"),
                     "multi_class='multinomial' not supported with binary data",
                 ),
             ],
@@ -502,52 +454,45 @@ def daal4py_predict(self, X, resultsToEvaluate):
         return LogisticRegression_original.predict_log_proba(self, X)
 
 
-def logistic_regression_path(
-    X,
-    y,
-    pos_class=None,
-    Cs=10,
-    fit_intercept=True,
-    max_iter=100,
-    tol=1e-4,
-    verbose=0,
-    solver="lbfgs",
-    coef=None,
-    class_weight=None,
-    dual=False,
-    penalty="l2",
-    intercept_scaling=1.0,
-    multi_class="auto",
-    random_state=None,
-    check_input=True,
-    max_squared_sum=None,
-    sample_weight=None,
-    l1_ratio=None,
-    n_threads=1,
-):
-    return __logistic_regression_path(
-        X,
-        y,
-        pos_class=pos_class,
-        Cs=Cs,
-        fit_intercept=fit_intercept,
-        max_iter=max_iter,
-        tol=tol,
-        verbose=verbose,
-        solver=solver,
-        coef=coef,
-        class_weight=class_weight,
-        dual=dual,
-        penalty=penalty,
-        intercept_scaling=intercept_scaling,
-        multi_class=multi_class,
-        random_state=random_state,
-        check_input=check_input,
-        max_squared_sum=max_squared_sum,
-        sample_weight=sample_weight,
-        l1_ratio=l1_ratio,
-        n_threads=n_threads,
+def logistic_regression_path(*args, **kwargs):
+
+    _patching_status = PatchingConditionsChain(
+        "sklearn.linear_model.LogisticRegression.fit"
     )
+    _dal_ready = _patching_status.and_conditions(
+        [
+            (
+                kwargs["solver"] in ["lbfgs", "newton-cg"],
+                f"'{kwargs['solver']}' solver is not supported. "
+                "Only 'lbfgs' and 'newton-cg' solvers are supported.",
+            ),
+            (not sparse.issparse(args[0]), "X is sparse. Sparse input is not supported."),
+            (kwargs["sample_weight"] is None, "Sample weights are not supported."),
+            (kwargs["class_weight"] is None, "Class weights are not supported."),
+            (
+                kwargs["penalty"]
+                in (["l2", "deprecated"] if sklearn_check_version("1.8") else ["l2"]),
+                "Penalties other than l2 are not supported.",
+            ),
+            (not kwargs["l1_ratio"], "L1 regularization is not supported."),
+            (
+                not (kwargs["solver"] == "newton-cg" and not kwargs["fit_intercept"]),
+                "'newton-cg' solver without intercept is not supported.",
+            ),
+        ]
+    )
+    if not _dal_ready:
+        _patching_status.write_log()
+        return lr_path_original(*args, **kwargs)
+
+    if sklearn_check_version("1.8"):
+        kwargs.pop("classes", None)
+        res = __logistic_regression_path(*(args[:2]), **kwargs)
+    else:
+        res = __logistic_regression_path(*args, **kwargs)
+
+    _patching_status.write_log()
+    return res
 
 
 @control_n_jobs(
