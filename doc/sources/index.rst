@@ -178,6 +178,7 @@ See :ref:`oneapi_gpu` for other ways of executing on GPU.
    logistic_model_builder.rst
    input-types.rst
    verbose.rst
+   parallelism.rst
    preview.rst
    deprecation.rst
 

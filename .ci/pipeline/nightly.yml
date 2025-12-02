@@ -96,8 +96,8 @@ jobs:
   timeoutInMinutes: 120
   strategy:
     matrix:
-      Python3.11_SklearnMain:
-        PYTHON_VERSION: '3.11'
+      Python3.13_SklearnMain:
+        PYTHON_VERSION: '3.13'
         SKLEARN_VERSION: 'main'
   pool:
     vmImage: 'ubuntu-24.04'
@@ -107,8 +107,8 @@ jobs:
   timeoutInMinutes: 120
   strategy:
     matrix:
-      Python3.11_SklearnMain:
-        PYTHON_VERSION: '3.11'
+      Python3.13_SklearnMain:
+        PYTHON_VERSION: '3.13'
         SKLEARN_VERSION: 'main'
   pool:
     vmImage: 'windows-2022'
