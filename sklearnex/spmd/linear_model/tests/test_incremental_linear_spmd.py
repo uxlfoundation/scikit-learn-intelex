@@ -280,7 +280,7 @@ def test_incremental_linear_regression_partial_fit_spmd_random(
     num_features,
     macro_block,
     dtype,
-    use_raw_input
+    use_raw_input,
 ):
     # Import spmd and non-SPMD algo
     from sklearnex.linear_model import IncrementalLinearRegression
