@@ -249,7 +249,9 @@ class BaseSVC(BaseSVM):
         if method_name == "fit" and patching_status.get_status() and data[2] is not None:
             xp, _ = get_namespace(*data)
             _, y, sample_weight = data
-            y_nonzero = xp.asarray(y)[xp.greater_equal(sample_weight, 0)]
+            y_array = xp.asarray(y)
+            sw_array = xp.asarray(sample_weight).ravel()
+            y_nonzero = y_array[xp.greater_equal(sw_array[: y_array.size], 0)]
             patching_status.and_conditions(
                 [
                     (
