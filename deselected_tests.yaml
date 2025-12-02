@@ -148,8 +148,10 @@ deselected_tests:
   - ensemble/tests/test_bagging.py::test_sparse_classification
 
   # Same results as in scikit-learn, but in a different order
-  - svm/tests/test_svm.py::test_svc_ovr_tie_breaking[SVC]
-  - svm/tests/test_svm.py::test_svc_ovr_tie_breaking[NuSVC]
+  - svm/tests/test_svm.py::test_svc_ovr_tie_breaking[SVC] <1.8
+  - svm/tests/test_svm.py::test_svc_ovr_tie_breaking[NuSVC] <1.8
+  - svm/tests/test_svm.py::test_svc_ovr_tie_breaking[42-SVC] >=1.8
+  - svm/tests/test_svm.py::test_svc_ovr_tie_breaking[42-NuSVC] >=1.8
 
   # Different models between oneAPI Data Analytics Library (oneDAL) and stock scikit-learn with custom and precompute kernel
   - svm/tests/test_svm.py::test_svc_clone_with_callable_kernel
