@@ -148,8 +148,10 @@ deselected_tests:
   - ensemble/tests/test_bagging.py::test_sparse_classification
 
   # Same results as in scikit-learn, but in a different order
-  - svm/tests/test_svm.py::test_svc_ovr_tie_breaking[SVC]
-  - svm/tests/test_svm.py::test_svc_ovr_tie_breaking[NuSVC]
+  - svm/tests/test_svm.py::test_svc_ovr_tie_breaking[SVC] <1.8
+  - svm/tests/test_svm.py::test_svc_ovr_tie_breaking[NuSVC] <1.8
+  - svm/tests/test_svm.py::test_svc_ovr_tie_breaking[42-SVC] >=1.8
+  - svm/tests/test_svm.py::test_svc_ovr_tie_breaking[42-NuSVC] >=1.8
 
   # Different models between oneAPI Data Analytics Library (oneDAL) and stock scikit-learn with custom and precompute kernel
   - svm/tests/test_svm.py::test_svc_clone_with_callable_kernel
@@ -322,8 +324,8 @@ deselected_tests:
   - cluster/tests/test_k_means.py::test_kmeans_elkan_results[0-sparse
   # Temporary deselections due to a bug in oneDAL, remove once the issue is fixed.
   # Probably can also removed the kmeans ones above once these are fixed.
-  - cluster/tests/test_k_means.py::test_float_precision[42-KMeans-sparse_matrix]
-  - cluster/tests/test_k_means.py::test_float_precision[42-KMeans-sparse_array]
+  - cluster/tests/test_k_means.py::test_float_precision
+  - cluster/tests/test_k_means.py::test_kmeans_relocated_clusters
   - cluster/tests/test_kmeans.py::test_dense_vs_sparse[dims0-elkan-k-means++-None]
   - cluster/tests/test_kmeans.py::test_dense_vs_sparse[dims1-full-k-means++-None]
   - cluster/tests/test_kmeans.py::test_dense_vs_sparse[dims2-full-k-means++-None]
@@ -384,6 +386,15 @@ deselected_tests:
 
   # This particular case does not reach convergence, fails because of a warning
   - linear_model/tests/test_logistic.py::test_n_iter[newton-cg]
+
+  # These fail due to not printing everything that scikit-learn prints on verbose mode
+  - cluster/tests/test_k_means.py::test_kmeans_verbose
+
+  # These require version numbers of array API packages that are not available on older Python versions.
+  # Since it's not possible to select or deselect based on Python version, they are removed entirely.
+  - metrics/tests/test_classification.py::test_probabilistic_metrics_array_api
+  - metrics/tests/test_common.py::test_array_api_compliance
+  - utils/tests/test_stats.py::test_weighted_percentile_array_api_consistency
 
   # --------------------------------------------------------
   # No need to test daal4py patching
