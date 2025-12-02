@@ -251,7 +251,7 @@ class BaseSVC(BaseSVM):
             _, y, sample_weight = data
             y_array = xp.asarray(y)
             sw_array = xp.asarray(sample_weight).ravel()
-            y_nonzero = y_array[xp.greater_equal(sw_array[: y_array.size], 0)]
+            y_nonzero = y_array[xp.greater(sw_array[: y_array.size], 0)]
             patching_status.and_conditions(
                 [
                     (
