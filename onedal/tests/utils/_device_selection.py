@@ -15,17 +15,23 @@
 # ==============================================================================
 
 import functools
+from collections.abc import Iterable
 
 import pytest
 
-from ...utils._third_party import dpctl_available
+from onedal.utils._third_party import SyclQueue, dpctl_available
 
 if dpctl_available:
     import dpctl
-    from dpctl.memory import MemoryUSMDevice, MemoryUSMShared
+
+    queue_creation_err = dpctl._sycl_queue.SyclQueueCreationError
+else:
+    queue_creation_err = (RuntimeError, ValueError)
 
 
-def get_queues(filter_="cpu,gpu"):
+# lru_cache is used to limit the number of SyclQueues generated
+# @functools.lru_cache()
+def get_queues(filter_: str = "cpu,gpu") -> list[SyclQueue]:
     """Get available dpctl.SycQueues for testing.
 
     This is meant to be used for testing purposes only.
@@ -33,12 +39,14 @@ def get_queues(filter_="cpu,gpu"):
     Parameters
     ----------
     filter_ : str, default="cpu,gpu"
-        Configure output list with available dpctl.SycQueues for testing.
+        Configure output list with available SyclQueues for testing.
+        SyclQueues are generated from a comma-separated string with
+        each element conforming to SYCL's ``filter_selector``.
 
     Returns
     -------
-    list[dpctl.SycQueue]
-        The list of dpctl.SycQueue.
+    list[SyclQueue]
+        The list of SyclQueues.
 
     Notes
     -----
@@ -47,32 +55,41 @@ def get_queues(filter_="cpu,gpu"):
     """
     queues = [None] if "cpu" in filter_ else []
 
-    if dpctl_available:
-        if dpctl.has_cpu_devices() and "cpu" in filter_:
-            queues.append(pytest.param(dpctl.SyclQueue("cpu"), id="SyclQueue_CPU"))
-        if dpctl.has_gpu_devices() and "gpu" in filter_:
-            queues.append(pytest.param(dpctl.SyclQueue("gpu"), id="SyclQueue_GPU"))
+    for i in filter_.split(","):
+        try:
+            queues.append(pytest.param(SyclQueue(i), id=f"SyclQueue_{i.upper()}"))
+        except queue_creation_err:
+            pass
 
     return queues
 
 
-def get_memory_usm():
-    if dpctl_available:
-        return [MemoryUSMDevice, MemoryUSMShared]
-    return []
+def is_sycl_device_available(targets: Iterable[str]) -> bool:
+    """Check if a SYCL device is available.
 
+    This is meant to be used for testing purposes only.
+    The check succeeds if all SYCL devices in targets are
+    available.
 
-def is_dpctl_device_available(targets):
-    if not isinstance(targets, (list, tuple)):
-        raise TypeError("`targets` should be a list or tuple of strings.")
-    if dpctl_available:
-        for device in targets:
-            if device == "cpu" and not dpctl.has_cpu_devices():
-                return False
-            if device == "gpu" and not dpctl.has_gpu_devices():
-                return False
-        return True
-    return False
+    Parameters
+    ----------
+    targets : Iterable[str]
+        SYCL filter strings of possible devices.
+
+    Returns
+    -------
+    bool
+        Flag if all of the SYCL targets are available.
+
+    """
+    if not isinstance(targets, Iterable):
+        raise TypeError("`targets` should be an iterable of strings.")
+    for device in targets:
+        try:
+            SyclQueue(device)
+        except queue_creation_err:
+            return False
+    return True
 
 
 def pass_if_not_implemented_for_gpu(reason=""):
