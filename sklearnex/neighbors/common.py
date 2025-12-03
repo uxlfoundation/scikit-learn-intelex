@@ -151,6 +151,17 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         patching_status = PatchingConditionsChain(
             f"sklearn.neighbors.{class_name}.{method_name}"
         )
+        patching_status.and_conditions(
+            [
+                (
+                    not (
+                        data[0] is None
+                        and method_name in ["predict", "predict_proba", "score"]
+                    ),
+                    "Predictions on 'None' data are handled by internal sklearn methods.",
+                )
+            ]
+        )
         if not patching_status.and_condition(
             "radius" not in method_name, "RadiusNeighbors not implemented in sklearnex"
         ):
