@@ -396,6 +396,9 @@ deselected_tests:
   - metrics/tests/test_common.py::test_array_api_compliance
   - utils/tests/test_stats.py::test_weighted_percentile_array_api_consistency
 
+  # Tests for exact equality, but results have differences in the order of machine epsilon
+  - neighbors/tests/test_neighbors.py::test_KNeighborsClassifier_multioutput
+
   # --------------------------------------------------------
   # No need to test daal4py patching
 reduced_tests:
