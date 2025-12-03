@@ -14,14 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 
-from os import environ
-
-# sklearn requires manual enabling of Scipy array API support
-# if `array-api-compat` package is present in environment
-# TODO: create generic approach to handle this for all tests
-environ["SCIPY_ARRAY_API"] = "1"
-
-
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal, assert_array_equal
