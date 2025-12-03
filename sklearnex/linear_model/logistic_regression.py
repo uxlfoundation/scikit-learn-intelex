@@ -23,14 +23,13 @@ from daal4py.sklearn.linear_model.logistic_path import (
 
 if daal_check_version((2024, "P", 1)):
     import numpy as np
-    from scipy.sparse import issparse
     from sklearn.linear_model import LogisticRegression as _sklearn_LogisticRegression
     from sklearn.metrics import accuracy_score
     from sklearn.utils.multiclass import type_of_target
     from sklearn.utils.validation import check_is_fitted
 
     from daal4py.sklearn._n_jobs_support import control_n_jobs
-    from daal4py.sklearn._utils import sklearn_check_version
+    from daal4py.sklearn._utils import is_sparse, sklearn_check_version
     from daal4py.sklearn.linear_model.logistic_path import daal4py_fit, daal4py_predict
     from onedal._device_offload import support_input_format
     from onedal.linear_model import LogisticRegression as onedal_LogisticRegression
@@ -310,7 +309,7 @@ if daal_check_version((2024, "P", 1)):
                     (n_samples > 0, "Number of samples is less than 1."),
                     (
                         (_sparsity_enabled and method_name != "decision_function")
-                        or (not any([issparse(i) for i in data])),
+                        or (not any([is_sparse(i) for i in data])),
                         "Sparse input is not supported.",
                     ),
                     (

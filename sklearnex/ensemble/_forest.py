@@ -20,7 +20,6 @@ from abc import ABC
 from collections.abc import Iterable
 
 import numpy as np
-from scipy import sparse as sp
 from sklearn.base import BaseEstimator, clone
 from sklearn.ensemble import ExtraTreesClassifier as _sklearn_ExtraTreesClassifier
 from sklearn.ensemble import ExtraTreesRegressor as _sklearn_ExtraTreesRegressor
@@ -50,6 +49,7 @@ from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import (
     check_tree_nodes,
     daal_check_version,
+    is_sparse,
     sklearn_check_version,
 )
 from onedal._device_offload import support_input_format
@@ -481,7 +481,7 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         return self
 
     def _onedal_fit_ready(self, patching_status, X, y, sample_weight):
-        if sp.issparse(y):
+        if is_sparse(y):
             raise ValueError("sparse multilabel-indicator for y is not supported.")
 
         if sklearn_check_version("1.2"):
@@ -510,7 +510,7 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
                     self.ccp_alpha == 0.0,
                     f"Non-zero 'ccp_alpha' ({self.ccp_alpha}) is not supported.",
                 ),
-                (not sp.issparse(X), "X is sparse. Sparse input is not supported."),
+                (not is_sparse(X), "X is sparse. Sparse input is not supported."),
                 (
                     self.n_estimators <= 6024,
                     "More than 6024 estimators is not supported.",
@@ -709,7 +709,7 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
                         "ExtraTrees only supported starting from oneDAL version 2023.2",
                     ),
                     (
-                        not sp.issparse(sample_weight),
+                        not is_sparse(sample_weight),
                         "sample_weight is sparse. " "Sparse input is not supported.",
                     ),
                 ]
@@ -721,7 +721,7 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
             patching_status.and_conditions(
                 [
                     (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained."),
-                    (not sp.issparse(X), "X is sparse. Sparse input is not supported."),
+                    (not is_sparse(X), "X is sparse. Sparse input is not supported."),
                     (self.warm_start is False, "Warm start is not supported."),
                     (
                         daal_check_version((2023, "P", 100))
@@ -791,7 +791,7 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
                 [
                     (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained"),
                     (
-                        not sp.issparse(X),
+                        not is_sparse(X),
                         "X is sparse. Sparse input is not supported.",
                     ),
                     (self.warm_start is False, "Warm start is not supported."),
@@ -922,7 +922,7 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
     apply = support_input_format(_sklearn_ForestRegressor.apply)
 
     def _onedal_fit_ready(self, patching_status, X, y, sample_weight):
-        if sp.issparse(y):
+        if is_sparse(y):
             raise ValueError("sparse multilabel-indicator for y is not supported.")
 
         if sklearn_check_version("1.2"):
@@ -959,7 +959,7 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
                     self.ccp_alpha == 0.0,
                     f"Non-zero 'ccp_alpha' ({self.ccp_alpha}) is not supported.",
                 ),
-                (not sp.issparse(X), "X is sparse. Sparse input is not supported."),
+                (not is_sparse(X), "X is sparse. Sparse input is not supported."),
                 (
                     self.n_estimators <= 6024,
                     "More than 6024 estimators is not supported.",
@@ -1070,7 +1070,7 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
                         "ExtraTrees only supported starting from oneDAL version 2023.2",
                     ),
                     (
-                        not sp.issparse(sample_weight),
+                        not is_sparse(sample_weight),
                         "sample_weight is sparse. " "Sparse input is not supported.",
                     ),
                 ]
@@ -1082,7 +1082,7 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
             patching_status.and_conditions(
                 [
                     (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained."),
-                    (not sp.issparse(X), "X is sparse. Sparse input is not supported."),
+                    (not is_sparse(X), "X is sparse. Sparse input is not supported."),
                     (self.warm_start is False, "Warm start is not supported."),
                     (
                         daal_check_version((2023, "P", 200))
@@ -1137,7 +1137,7 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
             patching_status.and_conditions(
                 [
                     (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained."),
-                    (not sp.issparse(X), "X is sparse. Sparse input is not supported."),
+                    (not is_sparse(X), "X is sparse. Sparse input is not supported."),
                     (self.warm_start is False, "Warm start is not supported."),
                     (
                         daal_check_version((2023, "P", 100))

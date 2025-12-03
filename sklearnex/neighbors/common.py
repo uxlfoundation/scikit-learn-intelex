@@ -24,7 +24,7 @@ from sklearn.neighbors._base import NeighborsBase as _sklearn_NeighborsBase
 from sklearn.neighbors._kd_tree import KDTree
 from sklearn.utils.validation import check_is_fitted
 
-from daal4py.sklearn._utils import sklearn_check_version
+from daal4py.sklearn._utils import is_sparse, sklearn_check_version
 from onedal._device_offload import _transfer_to_host
 from onedal.utils.validation import _check_array, _num_features, _num_samples
 
@@ -187,7 +187,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             return patching_status
 
         if not patching_status.and_condition(
-            not sp.issparse(data[0]), "Sparse input is not supported."
+            not is_sparse(data[0]), "Sparse input is not supported."
         ):
             return patching_status
 

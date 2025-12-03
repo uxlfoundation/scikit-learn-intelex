@@ -16,11 +16,10 @@
 
 import warnings
 
-from scipy.sparse import issparse
 from sklearn.base import BaseEstimator
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
-from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from daal4py.sklearn._utils import daal_check_version, is_sparse, sklearn_check_version
 from onedal.basic_statistics import BasicStatistics as onedal_BasicStatistics
 from onedal.utils.validation import _is_csr
 
@@ -160,11 +159,11 @@ class BasicStatistics(oneDALEstimator, BaseEstimator):
         )
         X, sample_weight = data
 
-        is_data_supported = not issparse(X) or (
+        is_data_supported = not is_sparse(X) or (
             _is_csr(X) and daal_check_version((2025, "P", 200))
         )
 
-        is_sample_weight_supported = sample_weight is None or not issparse(X)
+        is_sample_weight_supported = sample_weight is None or not is_sparse(X)
 
         patching_status.and_conditions(
             [

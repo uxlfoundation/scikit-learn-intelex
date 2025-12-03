@@ -17,7 +17,6 @@
 from functools import wraps
 
 import numpy as np
-from scipy import sparse as sp
 from sklearn.exceptions import NotFittedError
 from sklearn.metrics import accuracy_score
 from sklearn.svm import SVC as _sklearn_SVC
@@ -29,7 +28,7 @@ from sklearn.utils.validation import (
 )
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
-from daal4py.sklearn._utils import sklearn_check_version
+from daal4py.sklearn._utils import is_sparse, sklearn_check_version
 from onedal.svm import SVC as onedal_SVC
 
 from .._device_offload import dispatch, wrap_output_data
@@ -189,7 +188,7 @@ class SVC(BaseSVC, _sklearn_SVC):
         )
         if len(data) > 1:
             self._class_count = len(np.unique(data[1]))
-        self._is_sparse = sp.issparse(data[0])
+        self._is_sparse = is_sparse(data[0])
         conditions = [
             (
                 self.kernel in ["linear", "rbf"],
