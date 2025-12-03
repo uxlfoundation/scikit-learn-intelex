@@ -263,7 +263,7 @@ class BaseSVM(metaclass=ABCMeta):
             if hasattr(self, "_onedal_model"):
                 model = self._onedal_model
             else:
-                model = self._create_model(module)
+                model = self._create_model()
             result = self.infer(params, model, X)
             y = from_table(result.responses)
         return y
@@ -319,7 +319,7 @@ class BaseSVM(metaclass=ABCMeta):
         if hasattr(self, "_onedal_model"):
             model = self._onedal_model
         else:
-            model = self._create_model(module)
+            model = self._create_model()
         result = self.infer(params, model, X)
         decision_function = from_table(result.decision_function)
 
