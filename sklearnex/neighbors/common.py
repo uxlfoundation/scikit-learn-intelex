@@ -154,10 +154,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         patching_status.and_conditions(
             [
                 (
-                    not (
-                        data[0] is None
-                        and method_name in ["predict", "predict_proba", "score"]
-                    ),
+                    not (data[0] is None and method_name in ["predict", "score"]),
                     "Predictions on 'None' data are handled by internal sklearn methods.",
                 )
             ]
