@@ -860,7 +860,7 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         res = self._onedal_estimator.predict(X, queue=queue)
 
         if is_array_api_compliant:
-            return xp.take(self.classes_, xp.astype(xp.reshape(res, (-1,)), xp.int64))
+            return xp.take(xp.asarray(self.classes_, device=res.sycl_queue), xp.astype(xp.reshape(res, (-1,)), xp.int64))
         else:
             return xp.take(self.classes_, res.ravel().astype(xp.int64, casting="unsafe"))
 
