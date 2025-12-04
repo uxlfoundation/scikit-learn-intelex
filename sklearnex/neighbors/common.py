@@ -70,7 +70,10 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                 X,
                 dtype=[np.float64, np.float32],
                 accept_sparse=True,
-                force_all_finite=not self.effective_metric_.startswith("nan"),
+                force_all_finite=not (
+                    isinstance(self.effective_metric_, str)
+                    and self.effective_metric_.startswith("nan")
+                ),
             )
             self.n_samples_fit_ = _num_samples(self._fit_X)
             self.n_features_in_ = _num_features(self._fit_X)
