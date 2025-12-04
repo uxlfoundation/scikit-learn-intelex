@@ -20,6 +20,11 @@ import scipy.sparse as sp
 
 from sklearnex import get_config
 
+from ...utils._third_party import dpctl_available
+
+if dpctl_available:
+    import dpctl.tensor as dpt
+
 try:
     import dpnp
 
@@ -50,7 +55,7 @@ import pandas as pd
 from onedal.tests.utils._device_selection import get_queues
 
 test_frameworks = os.environ.get(
-    "ONEDAL_PYTEST_FRAMEWORKS", "numpy,pandas,dpnp,array_api"
+    "ONEDAL_PYTEST_FRAMEWORKS", "numpy,pandas,dpnp,dpctl,array_api"
 )
 
 
@@ -108,6 +113,8 @@ def get_dataframes_and_queues(dataframe_filter_=None, device_filter_="cpu,gpu"):
                 df_and_q.append(pytest.param(dataframe, queue.values[0], id=id))
         return df_and_q
 
+    if dpctl_available and "dpctl" in dataframe_filter_:
+        dataframes_and_queues.extend(get_df_and_q("dpctl"))
     if dpnp_available and "dpnp" in dataframe_filter_:
         dataframes_and_queues.extend(get_df_and_q("dpnp"))
     if (
@@ -124,6 +131,8 @@ def _as_numpy(obj, *args, **kwargs):
     """Converted input object to numpy.ndarray format."""
     if dpnp_available and isinstance(obj, dpnp.ndarray):
         return obj.asnumpy(*args, **kwargs)
+    if dpctl_available and isinstance(obj, dpt.usm_ndarray):
+        return dpt.to_numpy(obj, *args, **kwargs)
     if isinstance(obj, pd.DataFrame) or isinstance(obj, pd.Series):
         return obj.to_numpy(*args, **kwargs)
     if sp.issparse(obj):
@@ -157,8 +166,12 @@ def _convert_to_dataframe(obj, sycl_queue=None, target_df=None, *args, **kwargs)
         return dpnp.asarray(
             obj, usm_type="device", sycl_queue=sycl_queue, *args, **kwargs
         )
+    elif target_df == "dpctl":
+        # DPCtl tensor.
+        return dpt.asarray(obj, usm_type="device", sycl_queue=sycl_queue, *args, **kwargs)
     elif target_df in array_api_modules:
-        # Array API input other than DPNP ndarray or Numpy ndarray.
+        # Array API input other than DPNP ndarray, DPCtl tensor or
+        # Numpy ndarray.
 
         xp = array_api_modules[target_df]
         return xp.asarray(obj)
