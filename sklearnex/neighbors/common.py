@@ -151,6 +151,11 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         patching_status = PatchingConditionsChain(
             f"sklearn.neighbors.{class_name}.{method_name}"
         )
+        # TODO: with verbosity enabled, here it would emit a log saying that it fell
+        # back to sklearn, but internally, sklearn will end up calling 'kneighbors'
+        # which is overridden in the sklearnex classes, thus it will end up calling
+        # oneDAL in the end, but the log will say otherwise. Find a way to make the
+        # log consistent with what happens in practice.
         patching_status.and_conditions(
             [
                 (
