@@ -272,7 +272,7 @@ notfound_urls_prefix = "/scikit-learn-intelex/"
 linkcheck_ignore = [
     re.compile(r"https://github\.com/.+"),  # Avoid rate error
     re.compile(r"https://.*intel\.com/.+"),  # Avoid permission error
-    re.compile(r"https://medium\.com/.+*"),  # Avoid Medium paywall/rate limit
+    re.compile(r"https://medium\.com/.*"),  # Avoid Medium paywall/rate limit
 ]
 
 # Speed up link-check and fail faster
