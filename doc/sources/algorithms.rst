@@ -196,7 +196,7 @@ Dimensionality Reduction
        - ``method`` != ``"barnes_hut"``
        
        Refer to :ref:`TSNE acceleration details <acceleration_tsne>` to learn more.
-     - Sparse data with ``init`` = ``"pca"`` is not supported
+     - Sparse data is not supported for the initialization and distance calculation stages.
 
 Nearest Neighbors
 *****************

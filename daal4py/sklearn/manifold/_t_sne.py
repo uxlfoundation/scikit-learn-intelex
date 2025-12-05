@@ -147,12 +147,6 @@ class TSNE(BaseTSNE):
                     daal_check_version((2021, "P", 600)),
                     "oneDAL version is lower than 2021.6.",
                 ),
-                (
-                    not (
-                        isinstance(self.init, str) and self.init == "pca" and issparse(X)
-                    ),
-                    "PCA initialization is not supported with sparse input matrices.",
-                ),
                 # Note: these conditions below should result in errors, but stock scikit-learn
                 # does not check for errors at this exact point. Hence, this offloads the erroring
                 # out to the base class, wherever in the process they might be encountered.
