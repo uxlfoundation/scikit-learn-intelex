@@ -16,7 +16,7 @@
 
 import logging
 
-from daal4py.sklearn._utils import daal_check_version
+from daal4py.sklearn._utils import daal_check_version, is_sparse
 
 if daal_check_version((2024, "P", 100)):
     from math import sqrt
@@ -24,7 +24,6 @@ if daal_check_version((2024, "P", 100)):
     from warnings import warn
 
     import numpy as np
-    from scipy.sparse import issparse
     from sklearn.decomposition._pca import _infer_dimension
     from sklearn.utils.extmath import stable_cumsum
     from sklearn.utils.validation import check_is_fitted
@@ -172,7 +171,7 @@ if daal_check_version((2024, "P", 100)):
                                 "solvers are supported."
                             ),
                         ),
-                        (not issparse(X), "oneDAL PCA does not support sparse data"),
+                        (not is_sparse(X), "oneDAL PCA does not support sparse data"),
                     ]
                 )
                 return patching_status
