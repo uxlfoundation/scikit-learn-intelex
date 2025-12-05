@@ -112,8 +112,8 @@ The following patched classes have support for array API inputs:
     enabled in |sklearn|, when passing these classes as inputs, data will be transferred to host and then back to
     device instead of being used directly.
 
-    Result attributes of |sklearnex| classes which contain scikit-learn or |sklearnex| classes may not themselves
-    be array API compliant. For example, ensemble algorithms contain decision tree estimators result objects which
+    Result attributes of |sklearnex| classes which contain |sklearn| or |sklearnex| classes may not themselves be
+    array API compliant. For example, ensemble algorithms contain decision tree estimators result objects which
     do not comply with the array API standard.
 
 
