@@ -49,8 +49,8 @@ same algorithms to much larger problem sizes.
 
         conda install -c conda-forge impi_rt mpi=*=impi
 
-    Using distributed mode with non-MPICH-compatible backends such as OpenMPI requires compiling the
-    library from source with that backend.
+    Using distributed mode with non-MPICH-compatible backends such as OpenMPI requires
+    :doc:`compiling the library from source <building-from-source>` with that backend.
 
     See the docs for :ref:`SPMD mode <distributed>` for more details.
 
