@@ -3,6 +3,7 @@ import warnings
 import numpy as np
 import pandas as pd
 import pytest
+import scipy
 import scipy.sparse as sp
 
 import daal4py  # Note: this is used  through 'eval'
@@ -66,6 +67,25 @@ def make_sparse_array():
     return sp.csc_array(out)
 
 
+# Note: sparse pandas data frames have version requirements on scipy.
+# This skips the tests if they are incompatible.
+def check_sparse_df_is_supported():
+    scipy_version = scipy.__version__.split(".")
+    if int(scipy_version[0]) > 1:
+        return True
+    if int(scipy_version[0]) == 1:
+        if int(scipy_version[1]) > 8:
+            return True
+        if int(scipy_version[1]) == 8 and int(scipy_version[2]) > 1:
+            return True
+    return False
+
+
+SPARSE_DF_SUPPORTED = check_sparse_df_is_supported()
+MSG_UNSUPPORTED_SP_DF = "Requires higher SciPy version"
+
+
+@pytest.mark.skipif(not SPARSE_DF_SUPPORTED, reason=MSG_UNSUPPORTED_SP_DF)
 @pytest.fixture(
     params=[make_sparse_matrix(), make_sparse_df()]
     + ([make_sparse_array()] if hasattr(sp, "csc_array") else [])
@@ -82,6 +102,7 @@ def dense_X(request):
 # If the estimator doesn't support sparse data, passing either sparse data frames
 # or sparse arrays/matrices should result in falling back to scikit-learn.
 @pytest.mark.allow_sklearn_fallback
+@pytest.mark.skipif(not SPARSE_DF_SUPPORTED, reason=MSG_UNSUPPORTED_SP_DF)
 @pytest.mark.parametrize("estimator", [LinearRegression, PCA])
 def test_no_sparse_support_falls_back_to_sklearn(estimator, sparse_X, mocker):
     mocker.patch("onedal.datatypes._data_conversion._convert_one_to_table")
@@ -92,6 +113,7 @@ def test_no_sparse_support_falls_back_to_sklearn(estimator, sparse_X, mocker):
 # Note that some estimators that are implemented through daal4py do
 # not end up using oneDAL tables, so they require a separate test.
 @pytest.mark.allow_sklearn_fallback
+@pytest.mark.skipif(not SPARSE_DF_SUPPORTED, reason=MSG_UNSUPPORTED_SP_DF)
 @pytest.mark.parametrize(
     "estimator,params,internal_function",
     [
@@ -129,6 +151,7 @@ def is_sparse_csr(x):
 # Passing data in any sparse format should result in oneDAL receiving a
 # CSR matrix, regardless of what input it comes in.
 @pytest.mark.parametrize("estimator", [SVR, BasicStatistics])
+@pytest.mark.skipif(not SPARSE_DF_SUPPORTED, reason=MSG_UNSUPPORTED_SP_DF)
 def test_sparse_input_is_passed_as_csr_to_onedal(estimator, sparse_X, mocker):
     # First check that it works without crashing
     with warnings.catch_warnings():
@@ -156,6 +179,7 @@ def test_sparse_input_is_passed_as_csr_to_onedal(estimator, sparse_X, mocker):
 
 # All estimators should be able to support dense data.
 @pytest.mark.parametrize("estimator", [LinearRegression, SVR, BasicStatistics])
+@pytest.mark.skipif(not SPARSE_DF_SUPPORTED, reason=MSG_UNSUPPORTED_SP_DF)
 def test_dense_data_is_not_converted_to_sparse(estimator, dense_X, mocker):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", UserWarning)
@@ -202,6 +226,7 @@ def test_dense_data_is_not_converted_to_sparse(estimator, dense_X, mocker):
         ),
     ],
 )
+@pytest.mark.skipif(not SPARSE_DF_SUPPORTED, reason=MSG_UNSUPPORTED_SP_DF)
 def test_dense_data_is_not_converted_to_sparse_daal4py(
     estimator, params, internal_function, position_X, dense_X, mocker
 ):
