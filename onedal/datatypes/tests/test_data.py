@@ -340,7 +340,7 @@ def test_table_conversions_sycl_usm(dataframe, queue, order, data_shape, dtype):
 
 
 @pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("dpctl,dpnp,array_api", "cpu,gpu")
+    "dataframe,queue", get_dataframes_and_queues("numpy,dpctl,dpnp,array_api", "cpu,gpu")
 )
 @pytest.mark.parametrize("data_shape", unsupported_data_shapes)
 def test_interop_invalid_shape(dataframe, queue, data_shape):
