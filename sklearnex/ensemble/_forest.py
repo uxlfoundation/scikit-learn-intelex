@@ -861,7 +861,7 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
 
         if is_array_api_compliant:
             return xp.take(
-                xp.asarray(self.classes_, device=res.device),
+                xp.asarray(self.classes_, device=getattr(res, "device", None)),
                 xp.astype(xp.reshape(res, (-1,)), xp.int64),
             )
         else:
