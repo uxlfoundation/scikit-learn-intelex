@@ -298,11 +298,7 @@ class BaseForest(oneDALEstimator, ABC):
                         daal_check_version((2023, "P", 200))
                         or self.estimator.__class__ == DecisionTreeClassifier,
                         "ExtraTrees only supported starting from oneDAL version 2023.2",
-                    ),
-                    (
-                        not sp.issparse(data[2]),
-                        "sample_weight is sparse. " "Sparse input is not supported.",
-                    ),
+                    )
                 ]
             )
 
@@ -363,7 +359,6 @@ class BaseForest(oneDALEstimator, ABC):
                         not self.oob_score,
                         "oob_scores using r2 or accuracy not implemented.",
                     ),
-                    (data[2] is None, "sample_weight is not supported."),
                 ]
             )
 
