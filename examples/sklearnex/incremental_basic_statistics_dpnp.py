@@ -15,41 +15,37 @@
 # ==============================================================================
 
 import dpctl
-import dpctl.tensor as dpt
+import dpnp
 
-from sklearnex.linear_model import IncrementalLinearRegression
+from sklearnex.basic_statistics import IncrementalBasicStatistics
 
-# We create GPU SyclQueue and then put data to dpctl tensors using
+# We create GPU SyclQueue and then put data to dpnp arrays using
 # the queue. It allows us to do computation on GPU.
 
 queue = dpctl.SyclQueue("gpu")
 
-inclin = IncrementalLinearRegression()
+incbs = IncrementalBasicStatistics(result_options=["mean", "max", "sum"])
 
 # We do partial_fit for each batch and then print final result.
-X_1, y_1 = dpt.asarray([[0, 1], [1, 2]], sycl_queue=queue), dpt.asarray(
-    [2, 4], sycl_queue=queue
-)
-result = inclin.partial_fit(X_1, y_1)
+X_1 = dpnp.asarray([[0, 1], [0, 1]], sycl_queue=queue)
+result = incbs.partial_fit(X_1)
 
-X_2, y_2 = dpt.asarray([[2, 3]], sycl_queue=queue), dpt.asarray([6], sycl_queue=queue)
-result = inclin.partial_fit(X_2, y_2)
+X_2 = dpnp.asarray([[1, 2]], sycl_queue=queue)
+result = incbs.partial_fit(X_2)
 
-X_3, y_3 = dpt.asarray([[0, 2], [1, 3], [2, 4]], sycl_queue=queue), dpt.asarray(
-    [3, 5, 7], sycl_queue=queue
-)
-result = inclin.partial_fit(X_3, y_3)
+X_3 = dpnp.asarray([[1, 1], [1, 2], [2, 3]], sycl_queue=queue)
+result = incbs.partial_fit(X_3)
 
-print(f"Coefs:\n{result.coef_}")
-print(f"Intercept:\n{result.intercept_}")
+print(f"Mean:\n{result.mean_}")
+print(f"Max:\n{result.max_}")
+print(f"Sum:\n{result.sum_}")
 
 # We put the whole data to fit method, it is split automatically and then
 # partial_fit is called for each batch.
-inclin = IncrementalLinearRegression(batch_size=3)
-X, y = dpt.asarray(
-    [[0, 1], [1, 2], [2, 3], [0, 2], [1, 3], [2, 4]], sycl_queue=queue
-), dpt.asarray([2, 4, 6, 3, 5, 7], sycl_queue=queue)
-result = inclin.fit(X, y)
+incbs = IncrementalBasicStatistics(result_options=["mean", "max", "sum"], batch_size=3)
+X = dpnp.asarray([[0, 1], [0, 1], [1, 2], [1, 1], [1, 2], [2, 3]], sycl_queue=queue)
+result = incbs.fit(X)
 
-print(f"Coefs:\n{result.coef_}")
-print(f"Intercept:\n{result.intercept_}")
+print(f"Mean:\n{result.mean_}")
+print(f"Max:\n{result.max_}")
+print(f"Sum:\n{result.sum_}")
