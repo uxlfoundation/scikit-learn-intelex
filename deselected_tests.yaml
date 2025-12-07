@@ -525,8 +525,7 @@ gpu:
   - tests/test_common.py::test_estimators[ExtraTreesClassifier()-check_class_weight_classifiers]
   - tests/test_common.py::test_estimators[ExtraTreesRegressor()-check_sample_weights_invariance(kind=zeros)]
   - tests/test_common.py::test_estimators[RandomForestRegressor()-check_regressor_data_not_an_array]
-
-  # GPU sample weight support contains numerical issues in ensemble algorithms
+  - tests/test_common.py::test_estimators[ExtraTreesClassifier()-check_sample_weights_invariance(kind=zeros)]
   - ensemble/tests/test_forest.py::test_min_weight_fraction_leaf
 
   # RuntimeError: Device support is not implemented, failing as result of fallback to cpu false
