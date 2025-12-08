@@ -37,6 +37,9 @@ class KNeighborsDispatchingBase(oneDALEstimator):
     def _fit_validation(self, X, y=None):
         if sklearn_check_version("1.2"):
             self._validate_params()
+            effective_metric = self.effective_metric_
+        else:
+            effective_metric = self.metric
         check_feature_names(self, X, reset=True)
         if self.metric_params is not None and "p" in self.metric_params:
             if self.p is not None:
@@ -71,8 +74,8 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                 dtype=[np.float64, np.float32],
                 accept_sparse=True,
                 force_all_finite=not (
-                    isinstance(self.effective_metric_, str)
-                    and self.effective_metric_.startswith("nan")
+                    isinstance(effective_metric, str)
+                    and effective_metric.startswith("nan")
                 ),
             )
             self.n_samples_fit_ = _num_samples(self._fit_X)
