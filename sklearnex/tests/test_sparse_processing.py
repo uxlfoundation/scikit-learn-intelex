@@ -23,6 +23,7 @@ import scipy.sparse as sp
 
 import daal4py  # Note: this is used  through 'eval'
 import onedal
+from daal4py.sklearn._utils import sklearn_check_version
 from sklearnex.basic_statistics import BasicStatistics
 from sklearnex.decomposition import PCA
 from sklearnex.linear_model import Lasso, LinearRegression, LogisticRegression
@@ -141,12 +142,18 @@ def test_no_sparse_support_falls_back_to_sklearn(estimator, sparse_X, mocker):
             {},
             "daal4py.sklearn.linear_model._coordinate_descent._daal4py_fit_lasso",
         ),
-        (
-            TSNE,
-            {"init": "random", "n_components": 2, "method": "barnes_hut"},
-            "daal4py.sklearn.neighbors._base.daal4py_fit",
-        ),
-    ],
+    ]
+    + (
+        [
+            (
+                TSNE,
+                {"init": "random", "n_components": 2, "method": "barnes_hut"},
+                "daal4py.sklearn.neighbors._base.daal4py_fit",
+            ),
+        ]
+        if sklearn_check_version("1.8")
+        else []
+    ),
 )
 def test_no_sparse_support_falls_back_to_sklearn_daal4py(
     estimator, params, internal_function, sparse_X, mocker
