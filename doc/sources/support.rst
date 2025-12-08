@@ -37,7 +37,7 @@ Forum
 -----
 
 Ask questions about |sklearnex| on our `Forum <https://community.intel.com/t5/Intel-Distribution-for-Python/bd-p/distribution-python>`__.
-Make sure to provide all relevant details, so we could help you as soon as possible.
+Make sure to provide all relevant details, so we can help you as soon as possible.
 
 Email
 -----
