@@ -30,7 +30,6 @@ from onedal.utils.validation import _check_array, _num_features, _num_samples
 
 from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
-from ..utils._array_api import get_namespace
 from ..utils.validation import check_feature_names
 
 
@@ -68,7 +67,13 @@ class KNeighborsDispatchingBase(oneDALEstimator):
 
         if not isinstance(X, (KDTree, BallTree, _sklearn_NeighborsBase)):
             self._fit_X = _check_array(
-                X, dtype=[np.float64, np.float32], accept_sparse=True
+                X,
+                dtype=[np.float64, np.float32],
+                accept_sparse=True,
+                force_all_finite=not (
+                    isinstance(self.effective_metric_, str)
+                    and self.effective_metric_.startswith("nan")
+                ),
             )
             self.n_samples_fit_ = _num_samples(self._fit_X)
             self.n_features_in_ = _num_features(self._fit_X)
