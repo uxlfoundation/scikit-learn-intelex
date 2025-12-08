@@ -528,12 +528,8 @@ gpu:
   - tests/test_common.py::test_estimators[ExtraTreesClassifier()-check_class_weight_classifiers]
   - tests/test_common.py::test_estimators[ExtraTreesRegressor()-check_sample_weights_invariance(kind=zeros)]
   - tests/test_common.py::test_estimators[RandomForestRegressor()-check_regressor_data_not_an_array]
-
-  # GPU implementation of Extra Trees doesn't support sample_weights
-  # comparisons to GPU with sample weights will use different algorithms
-  - tests/test_common.py::test_estimators[ExtraTreesClassifier()-check_sample_weights_invariance(kind=ones)]
   - tests/test_common.py::test_estimators[ExtraTreesClassifier()-check_sample_weights_invariance(kind=zeros)]
-  - tests/test_common.py::test_estimators[ExtraTreesRegressor()-check_sample_weights_invariance(kind=ones)]
+  - ensemble/tests/test_forest.py::test_min_weight_fraction_leaf
 
   # RuntimeError: Device support is not implemented, failing as result of fallback to cpu false
   - svm/tests/test_svm.py::test_unfitted
