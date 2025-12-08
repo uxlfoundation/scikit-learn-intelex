@@ -155,7 +155,7 @@ class TSNE(BaseTSNE):
                     or not (
                         isinstance(self.init, str) and self.init == "pca" and issparse(X)
                     ),
-                    "PCA initialization is not supported with sparse input matrices.",
+                    "PCA initialization is not supported with sparse input matrices before scikit-learn 1.8.",
                 ),
                 # Note: these conditions below should result in errors, but stock scikit-learn
                 # does not check for errors at this exact point. Hence, this offloads the erroring
