@@ -41,6 +41,9 @@ if sklearn_check_version("1.6"):
     from sklearn.utils.multiclass import check_classification_targets
     from sklearn.utils.validation import check_is_fitted
 
+    if sklearn_check_version("1.8"):
+        from ..utils._array_api import get_namespace
+
     def _prefit_CalibratedClassifierCV_fit(self, X, y, **fit_params):
         # This is a stop-gap solution where the cv='prefit' of CalibratedClassifierCV
         # was removed and the single fold solution needs to be maintained. Discussion
@@ -66,13 +69,24 @@ if sklearn_check_version("1.6"):
             # Reshape binary output from `(n_samples,)` to `(n_samples, 1)`
             predictions = predictions.reshape(-1, 1)
 
-        calibrated_classifier = _fit_calibrator(
-            estimator,
-            predictions,
-            y,
-            self.classes_,
-            self.method,
-        )
+        if sklearn_check_version("1.8"):
+            xp, _ = get_namespace(X, y)
+            calibrated_classifier = _fit_calibrator(
+                estimator,
+                predictions,
+                y,
+                self.classes_,
+                self.method,
+                xp,
+            )
+        else:
+            calibrated_classifier = _fit_calibrator(
+                estimator,
+                predictions,
+                y,
+                self.classes_,
+                self.method,
+            )
         self.calibrated_classifiers_.append(calibrated_classifier)
 
         first_clf = self.calibrated_classifiers_[0].estimator

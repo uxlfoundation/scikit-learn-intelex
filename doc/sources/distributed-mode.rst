@@ -84,7 +84,7 @@ data on device without this may lead to a runtime error): ::
     export I_MPI_OFFLOAD=1
 
 SMPD-aware versions of estimators can be imported from the ``sklearnex.spmd`` module. Data should be distributed across multiple nodes as
-desired, and should be transferred to a |dpctl| or `dpnp <https://github.com/IntelPython/dpnp>`__ array before being passed to the estimator.
+desired, and should be transferred to a |dpnp_array| before being passed to the estimator.
 
 Note that SPMD estimators allow an additional argument ``queue`` in their ``.fit`` / ``.predict`` methods, which accept :obj:`dpctl.SyclQueue` objects. For example, while the signature for :obj:`sklearn.linear_model.LinearRegression.predict` would be
 

@@ -36,6 +36,8 @@ if [ -z "${PYTHON}" ]; then
     export PYTHON=python
 fi
 
+export SCIPY_ARRAY_API=1
+
 # Note: execute with argument --json-report in order to produce
 # a JSON report under folder '.pytest_reports'. Other arguments
 # will also be forwarded to pytest.

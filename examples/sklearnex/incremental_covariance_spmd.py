@@ -15,7 +15,7 @@
 # ===============================================================================
 
 import dpctl
-import dpctl.tensor as dpt
+import dpnp
 import numpy as np
 from mpi4py import MPI
 
@@ -50,8 +50,8 @@ cov = IncrementalEmpiricalCovariance()
 # Partial fit is called for each batch on each GPU
 
 for i in range(num_batches):
-    dpt_X = dpt.asarray(X_split[i], usm_type="device", sycl_queue=q)
-    cov.partial_fit(dpt_X)
+    dpnp_X = dpnp.asarray(X_split[i], usm_type="device", sycl_queue=q)
+    cov.partial_fit(dpnp_X)
 
 # Finalization of results is performed in a lazy way after requesting results like in non-SPMD incremental estimators.
 

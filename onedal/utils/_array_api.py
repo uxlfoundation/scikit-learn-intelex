@@ -16,6 +16,7 @@
 
 """Tools to support array_api."""
 
+import warnings
 from collections.abc import Iterable
 from functools import lru_cache
 
@@ -68,6 +69,13 @@ def _cls_to_sycl_namespace(cls):
     # use caching to minimize imports, derived from array_api_compat
     if _is_subclass_fast(cls, "dpctl.tensor", "usm_ndarray"):
         import dpctl.tensor as dpt
+
+        warnings.warn(
+            "dpctl tensors are deprecated and support for them in "
+            "scikit-learn-intelex will be removed in 2026.0.0. "
+            "Consider using dpnp arrays instead.",
+            FutureWarning,
+        )
 
         return dpt
     elif _is_subclass_fast(cls, "dpnp", "ndarray"):

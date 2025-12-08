@@ -44,8 +44,8 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
     Incremental estimator for basic statistics.
 
     Calculates basic statistics on the given data, allows for computation
-    when the data are split into batches. The user can use ``partial_fit``
-    method to provide a single batch of data or use the ``fit`` method to
+    when the data are split into batches. The user can use :meth:`partial_fit`
+    method to provide a single batch of data or use the :meth:`fit` method to
     provide the entire dataset.
 
     Parameters
@@ -55,7 +55,7 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
 
     batch_size : int, default=None
         The number of samples to use for each batch. Only used when calling
-        ``fit``. If ``batch_size`` is ``None``, then ``batch_size``
+        :meth:`fit`. If ``batch_size`` is ``None``, then ``batch_size``
         is inferred from the data and set to ``5 * n_features``.
 
     Attributes
@@ -99,7 +99,7 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
             Inferred batch size from ``batch_size``.
 
         n_features_in_ : int
-            Number of features seen during ``fit`` or  ``partial_fit``.
+            Number of features seen during :meth:`fit` or  :meth:`partial_fit`.
 
     Notes
     -----

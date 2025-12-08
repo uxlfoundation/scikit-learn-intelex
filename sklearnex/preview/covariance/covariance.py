@@ -29,6 +29,7 @@ from daal4py.sklearn.metrics import pairwise_distances
 from onedal._device_offload import support_input_format, support_sycl_format
 from onedal.covariance import EmpiricalCovariance as onedal_EmpiricalCovariance
 from onedal.utils._array_api import _is_numpy_namespace
+from onedal.utils.validation import _num_features
 from sklearnex import config_context
 
 from ..._config import get_config
