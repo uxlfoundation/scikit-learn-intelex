@@ -31,9 +31,6 @@ deselected_tests:
   - linear_model/tests/test_ridge.py::test_ridge_shapes_type
   - linear_model/tests/test_ridge.py::test_ridge_cv_results_predictions[2-False-False]
   - linear_model/tests/test_ridge.py::test_ridge_cv_results_predictions[2-False-True]
-  - neighbors/tests/test_neighbors.py::test_nan_euclidean_support[KNeighborsClassifier-params0]
-  - neighbors/tests/test_neighbors.py::test_nan_euclidean_support[KNeighborsRegressor-params1]
-  - neighbors/tests/test_neighbors.py::test_nan_euclidean_support[LocalOutlierFactor-params6]
   # sklearn 1.7 unsupported features
   - tests/test_common.py::test_estimators[LinearRegression()-check_sample_weight_equivalence_on_dense_data]
 
