@@ -118,7 +118,9 @@ def dense_X(request):
 # or sparse arrays/matrices should result in falling back to scikit-learn.
 @pytest.mark.allow_sklearn_fallback
 @pytest.mark.skipif(not SPARSE_DF_SUPPORTED, reason=MSG_UNSUPPORTED_SP_DF)
-@pytest.mark.parametrize("estimator", [LinearRegression, PCA])
+@pytest.mark.parametrize(
+    "estimator", [LinearRegression] + ([PCA] if sklearn_check_version("1.8") else [])
+)
 def test_no_sparse_support_falls_back_to_sklearn(estimator, sparse_X, mocker):
     mocker.patch("onedal.datatypes._data_conversion._convert_one_to_table")
     estimator().fit(sparse_X, np.r_[np.zeros(25), np.ones(25)])
