@@ -28,7 +28,7 @@ if "%PYTHON%"=="python" (
     set NO_DIST=1
 )
 
-
+set SCIPY_ARRAY_API=1
 
 %PYTHON% -c "from sklearnex import patch_sklearn; patch_sklearn()" || set exitcode=1
 

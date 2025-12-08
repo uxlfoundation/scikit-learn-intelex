@@ -41,16 +41,16 @@ These performance charts use benchmarks that you can find in the `scikit-learn b
 
 
 Supported Algorithms
----------------------
+--------------------
 
 See all of the :ref:`sklearn_algorithms`.
 
 
 Optimizations
-----------------------------------
+-------------
 
 Enable CPU Optimizations
-*********************************
+************************
 
 .. tabs::
    .. tab:: By patching
@@ -78,7 +78,7 @@ Enable CPU Optimizations
 
 
 Enable GPU optimizations
-*********************************
+************************
 
 Note: executing on GPU has `additional system software requirements <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`__ - see :doc:`oneapi-gpu`.
 
@@ -105,7 +105,7 @@ Note: executing on GPU has `additional system software requirements <https://www
                import os
                os.environ["SCIPY_ARRAY_API"] = "1"
                import numpy as np
-               import dpnp
+               import torch
                from sklearnex import patch_sklearn
                patch_sklearn()
                from sklearn import config_context
@@ -114,8 +114,8 @@ Note: executing on GPU has `additional system software requirements <https://www
 
                X = np.array([[1., 2.], [2., 2.], [2., 3.],
                              [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
-               X = dpnp.array(X, device="gpu")
-               with config_context(array_api_dispatch=True)
+               X = torch.tensor(X, device="xpu")
+               with config_context(array_api_dispatch=True):
                    clustering = DBSCAN(eps=3, min_samples=2).fit(X)
 
    .. tab:: Without patching
@@ -138,14 +138,14 @@ Note: executing on GPU has `additional system software requirements <https://www
                import os
                os.environ["SCIPY_ARRAY_API"] = "1"
                import numpy as np
-               import dpnp
+               import torch
                from sklearnex import config_context
                from sklearnex.cluster import DBSCAN
 
                X = np.array([[1., 2.], [2., 2.], [2., 3.],
                              [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
-               X = dpnp.array(X, device="gpu")
-               with config_context(array_api_dispatch=True)
+               X = torch.tensor(X, device="xpu")
+               with config_context(array_api_dispatch=True):
                    clustering = DBSCAN(eps=3, min_samples=2).fit(X)
 
 
@@ -168,6 +168,8 @@ See :ref:`oneapi_gpu` for other ways of executing on GPU.
 
    algorithms.rst
    oneapi-gpu.rst
+   config-contexts.rst
+   array_api.rst
    distributed-mode.rst
    distributed_daal4py.rst
    non-scikit-algorithms.rst
@@ -175,8 +177,8 @@ See :ref:`oneapi_gpu` for other ways of executing on GPU.
    model_builders.rst
    logistic_model_builder.rst
    input-types.rst
-   array_api.rst
    verbose.rst
+   parallelism.rst
    preview.rst
    deprecation.rst
 

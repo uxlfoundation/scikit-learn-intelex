@@ -23,9 +23,8 @@ Overview
 
 Many estimators from the |sklearnex| support passing data classes that conform to the
 `Array API <https://data-apis.org/array-api/>`_ specification as inputs to methods like ``.fit()``
-and ``.predict()``, such as :external+dpnp:doc:`dpnp.ndarray <reference/ndarray>` or
-`torch.tensor <https://docs.pytorch.org/docs/stable/tensors.html>`__. This is particularly
-useful for GPU computations, as it allows performing operations on inputs that are already
+and ``.predict()``, such as |dpnp_array| or `torch.tensor <https://docs.pytorch.org/docs/stable/tensors.html>`__.
+This is particularly useful for GPU computations, as it allows performing operations on inputs that are already
 on GPU without moving the data from host to device.
 
 .. important::
@@ -33,7 +32,7 @@ on GPU without moving the data from host to device.
     be :external+sklearn:doc:`enabled in scikit-learn <modules/array_api>`, which requires either changing
     global settings or using a ``config_context``, plus installing additional dependencies such as ``array-api-compat``.
 
-When passing array API inputs whose data is on a SyCL-enabled device (e.g. an Intel GPU), as
+When passing array API inputs whose data is on a SYCL-enabled device (e.g. an Intel GPU), as
 supported for example by `PyTorch <https://docs.pytorch.org/docs/stable/notes/get_start_xpu.html>`__
 and |dpnp|, if array API support is enabled and the requested operation (e.g. call to ``.fit()`` / ``.predict()``
 on the estimator class being used) is :ref:`supported on device/GPU <sklearn_algorithms_gpu>`, computations
@@ -51,10 +50,10 @@ through options ``allow_sklearn_after_onedal`` (default is ``True``) and ``allow
 
 If array API is enabled for |sklearn| and the estimator being used has array API support on |sklearn| (which can be
 verified by attribute ``array_api_support`` from :obj:`sklearn.utils.get_tags`), then array API inputs whose data
-is allocated neither on CPU nor on a SyCL device will be forwarded directly to the unpatched methods from |sklearn|,
+is allocated neither on CPU nor on a SYCL device will be forwarded directly to the unpatched methods from |sklearn|,
 without using the accelerated versions from this library, regardless of option ``allow_sklearn_after_onedal``.
 
-While other array API inputs (e.g. torch arrays with data allocated on a non-SyCL device) might be supported
+While other array API inputs (e.g. torch arrays with data allocated on a non-SYCL device) might be supported
 by the |sklearnex| in cases where the same class from |sklearn| doesn't support array API, note that the data will
 be transferred to host if it isn't already, and the computations will happen on CPU.
 
@@ -69,17 +68,23 @@ in many cases they are.
 
 .. warning::
     If array API inputs are passed to an estimator's ``.fit()``, subsequent data passed to methods such as
-    ``.predict()`` or ``.score()`` of the fitted model might be of a different class than the ``X``/``y`` passed to
-    ``.fit()``, but **it must reside on the same device** - meaning: a model that was fitted with GPU arrays cannot
-    make predictions on CPU arrays, and a model fitted with CPU array API inputs cannot make predictions on GPU
-    arrays, even if they are of the same class. Attempting to pass data on the wrong device might lead to
-    process-wide crashes.
+    ``.predict()`` or ``.score()`` of the fitted model **must reside on the same device** - meaning: a model that
+    was fitted with GPU arrays cannot make predictions on CPU arrays, and a model fitted with CPU array API inputs
+    cannot make predictions on GPU arrays, even if they are of the same class. Attempting to pass data on the
+    wrong device might lead to process-wide crashes.
+
+.. note::
+    An estimator fitted to array API inputs should only be passed objects of the same class that was passed to
+    ``.fit()`` in subsequent calls to ``.predict()``, ``.score()``, and similar. In some cases, it might be
+    possible to pass a different class at prediction time without errors (particularly when fitting on CPU only),
+    but this is generally not supported and users should not rely on these interchanges working reliably.
 
 .. note::
     The ``target_offload`` option in config contexts and settings is not intended to work with array API
     classes that have :external+dpctl:doc:`USM data <api_reference/dpctl/memory>`. In order to ensure that computations
     happen on the intended device under array API, make sure that the data is already on the desired device.
 
+.. _array_api_estimators:
 
 Supported classes
 =================
@@ -92,17 +97,25 @@ The following patched classes have support for array API inputs:
 - :obj:`sklearn.covariance.EmpiricalCovariance`
 - :obj:`sklearnex.covariance.IncrementalEmpiricalCovariance`
 - :obj:`sklearn.decomposition.PCA`
+- :obj:`sklearn.ensemble.ExtraTreesClassifier`
+- :obj:`sklearn.ensemble.ExtraTreesRegressor`
+- :obj:`sklearn.ensemble.RandomForestClassifier`
+- :obj:`sklearn.ensemble.RandomForestRegressor`
 - :obj:`sklearn.linear_model.LinearRegression`
 - :obj:`sklearn.linear_model.Ridge`
 - :obj:`sklearnex.linear_model.IncrementalLinearRegression`
 - :obj:`sklearnex.linear_model.IncrementalRidge`
 
 .. note::
-    While full array API support is currently not implemented for all classes, :external+dpnp:doc:`dpnp.ndarray <reference/ndarray>`
-    and :external+dpctl:doc:`dpctl.tensor <api_reference/dpctl/tensor>` inputs are supported by all the classes
-    that have :ref:`GPU support <oneapi_gpu>`. Note however that if array API support is not enabled in |sklearn|,
-    when passing these classes as inputs, data will be transferred to host and then back to device instead of being
-    used directly.
+    While full array API support is currently not implemented for all classes, |dpnp_array| inputs are supported
+    by all the classes that have :ref:`GPU support <oneapi_gpu>`. Note however that if array API support is not
+    enabled in |sklearn|, when passing these classes as inputs, data will be transferred to host and then back to
+    device instead of being used directly.
+
+    Result attributes of |sklearnex| classes which contain |sklearn| or |sklearnex| classes may not themselves be
+    array API compliant. For example, ensemble algorithms contain decision tree estimators result objects which
+    do not comply with the array API standard.
+
 
 
 Example usage
@@ -111,52 +124,74 @@ Example usage
 GPU operations on GPU arrays
 ----------------------------
 
-.. code-block:: python
+.. tabs::
+    .. tab:: With Torch tensors
+       .. code-block:: python
 
-    # Array API support from sklearn requires enabling it on SciPy too
-    import os
-    os.environ["SCIPY_ARRAY_API"] = "1"
+           # Array API support from sklearn requires enabling it on SciPy too
+           import os
+           os.environ["SCIPY_ARRAY_API"] = "1"
 
-    import numpy as np
-    import dpnp
-    from sklearnex import config_context
-    from sklearnex.linear_model import LinearRegression
+           import numpy as np
+           import torch
+           from sklearnex import config_context
+           from sklearnex.linear_model import LinearRegression
 
-    # Random data for a regression problem
-    rng = np.random.default_rng(seed=123)
-    X_np = rng.standard_normal(size=(100, 10), dtype=np.float32)
-    y_np = rng.standard_normal(size=100, dtype=np.float32)
+           # Random data for a regression problem
+           rng = np.random.default_rng(seed=123)
+           X_np = rng.standard_normal(size=(100, 10), dtype=np.float32)
+           y_np = rng.standard_normal(size=100, dtype=np.float32)
 
-    # DPNP offers an array-API-compliant class where data can be on GPU
-    X = dpnp.array(X_np, device="gpu")
-    y = dpnp.array(y_np, device="gpu")
+           # Torch offers an array-API-compliant class where data can be on GPU (referred to as 'xpu')
+           X = torch.tensor(X_np, device="xpu")
+           y = torch.tensor(y_np, device="xpu")
 
-    # Important to note again that array API must be enabled on scikit-learn
-    model = LinearRegression()
-    with config_context(array_api_dispatch=True):
-        model.fit(X, y)
+           # Important to note again that array API must be enabled on scikit-learn
+           model = LinearRegression()
+           with config_context(array_api_dispatch=True):
+               model.fit(X, y)
 
-    # Fitted attributes are now of the same class as inputs
-    assert isinstance(model.coef_, X.__class__)
+           # Fitted attributes are now of the same class as inputs
+           assert isinstance(model.coef_, torch.Tensor)
 
-    # Predictions are also of the same class
-    with config_context(array_api_dispatch=True):
-        pred = model.predict(X[:5])
-    assert isinstance(pred, X.__class__)
+           # Predictions are also of the same class
+           with config_context(array_api_dispatch=True):
+               pred = model.predict(X[:5])
+           assert isinstance(pred, torch.Tensor)
 
-    # Fitted models can be passed array API inputs of a different class
-    # than the training data, as long as their data resides in the same
-    # device. This now fits a model using a non-NumPy class whose data is on CPU.
-    X_cpu = dpnp.array(X_np, device="cpu")
-    y_cpu = dpnp.array(y_np, device="cpu")
-    model_cpu = LinearRegression()
-    with config_context(array_api_dispatch=True):
-        model_cpu.fit(X_cpu, y_cpu)
-        pred_dpnp = model_cpu.predict(X_cpu[:5])
-        pred_np = model_cpu.predict(X_cpu[:5].asnumpy())
-    assert isinstance(pred_dpnp, X_cpu.__class__)
-    assert isinstance(pred_np, np.ndarray)
-    assert pred_dpnp.__class__ != pred_np.__class__
+    .. tab:: With DPNP arrays
+       .. code-block:: python
+
+           # Array API support from sklearn requires enabling it on SciPy too
+           import os
+           os.environ["SCIPY_ARRAY_API"] = "1"
+
+           import numpy as np
+           import dpnp
+           from sklearnex import config_context
+           from sklearnex.linear_model import LinearRegression
+
+           # Random data for a regression problem
+           rng = np.random.default_rng(seed=123)
+           X_np = rng.standard_normal(size=(100, 10), dtype=np.float32)
+           y_np = rng.standard_normal(size=100, dtype=np.float32)
+
+           # DPNP offers an array-API-compliant class where data can be on GPU
+           X = dpnp.array(X_np, device="gpu")
+           y = dpnp.array(y_np, device="gpu")
+
+           # Important to note again that array API must be enabled on scikit-learn
+           model = LinearRegression()
+           with config_context(array_api_dispatch=True):
+               model.fit(X, y)
+
+           # Fitted attributes are now of the same class as inputs
+           assert isinstance(model.coef_, X.__class__)
+
+           # Predictions are also of the same class
+           with config_context(array_api_dispatch=True):
+               pred = model.predict(X[:5])
+           assert isinstance(pred, X.__class__)
 
 
 ``array-api-strict``
