@@ -19,7 +19,7 @@ import warnings
 from collections import deque
 from copy import deepcopy
 from tempfile import NamedTemporaryFile
-from typing import Any, Deque, Dict, List, Optional, Tuple
+from typing import Any, Deque, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -393,7 +393,7 @@ def get_gbt_model_from_tree_list(
     is_regression: bool,
     n_features: int,
     n_classes: int,
-    base_score: Optional[float] = None,
+    base_score: Optional[Union[float, List[float]]] = None,
 ):
     """Return a GBT Model from TreeList"""
 
@@ -412,11 +412,21 @@ def get_gbt_model_from_tree_list(
         else:
             tree_id = mb.create_tree(n_nodes=tree.n_nodes, class_label=class_label)
 
+        # Note: starting from xgboost>=3.1.0, multi-class classification models have
+        # vector-valued intercepts. Since oneDAL doesn't support these, it instead
+        # adds the scores to all of the terminal leafs in the first tree.
+        if isinstance(base_score, list) and counter <= n_classes:
+            intercept_add = base_score[counter - 1]
+        else:
+            intercept_add = 0.0
+
         if counter % n_iterations == 0:
             class_label += 1
 
         if tree.is_leaf:
-            mb.add_leaf(tree_id=tree_id, response=tree.value, cover=tree.cover)
+            mb.add_leaf(
+                tree_id=tree_id, response=tree.value + intercept_add, cover=tree.cover
+            )
             continue
 
         root_node = tree.root_node
@@ -445,7 +455,7 @@ def get_gbt_model_from_tree_list(
             if node.is_leaf:
                 mb.add_leaf(
                     tree_id=tree_id,
-                    response=node.value,
+                    response=node.value + intercept_add,
                     cover=node.cover,
                     parent_id=node.parent_id,
                     position=node.position,
@@ -468,7 +478,7 @@ def get_gbt_model_from_tree_list(
                     child.position = position
                     node_queue.append(child)
 
-    return mb.model(base_score=base_score)
+    return mb.model(base_score=base_score if isinstance(base_score, float) else None)
 
 
 def get_gbt_model_from_lightgbm(model: Any, booster=None) -> Any:
@@ -543,7 +553,18 @@ def get_gbt_model_from_xgboost(booster: Any, xgb_config=None) -> Any:
 
     n_features = int(xgb_config["learner"]["learner_model_param"]["num_feature"])
     n_classes = int(xgb_config["learner"]["learner_model_param"]["num_class"])
-    base_score = float(xgb_config["learner"]["learner_model_param"]["base_score"])
+    # Note: base scores in XGBoost might be vector-valued starting from version 3.1.0.
+    # When this is the case, the 'base_score' attribute will be a JSON list, otherwise
+    # it will be a scalar. Note that in either case, it will be in the response scale.
+    base_score_str: str = xgb_config["learner"]["learner_model_param"]["base_score"]
+    if base_score_str.startswith("["):
+        base_score = json.loads(base_score_str)
+        if len(base_score) == 1:
+            base_score = base_score[0]
+        elif len(base_score) == 0:
+            base_score = 0.5
+    else:
+        base_score = float(base_score_str)
 
     is_regression = False
     objective_fun = xgb_config["learner"]["learner_train_param"]["objective"]

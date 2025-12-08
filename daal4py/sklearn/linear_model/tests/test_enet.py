@@ -29,7 +29,7 @@ def fn_lasso(model, X, y, lambda_):
     resid = y - model.predict(X)
     fn_ssq = resid.reshape(-1) @ resid.reshape(-1)
     fn_l1 = np.abs(model.coef_).sum()
-    return fn_ssq + lambda_ * fn_l1
+    return (1 / (2 * X.shape[0])) * fn_ssq + lambda_ * fn_l1
 
 
 @pytest.mark.parametrize("nrows", [10, 20])
@@ -62,7 +62,7 @@ def test_enet_is_correct(nrows, ncols, n_targets, fit_intercept, positive, l1_ra
     # Note: lasso is not guaranteed to have a unique global optimum.
     # If the coefficients do not match, this makes another check on
     # the optimality of the function values instead. It checks that
-    # the result from daal4py is no worse than 2% off scikit-learn's.
+    # the result from daal4py is no worse than scikit-learn's.
 
     tol = 1e-6 if n_targets == 1 else 1e-5
     try:
@@ -72,7 +72,7 @@ def test_enet_is_correct(nrows, ncols, n_targets, fit_intercept, positive, l1_ra
             raise e
         fn_d4p = fn_lasso(model_d4p, X, y, model_d4p.alpha)
         fn_skl = fn_lasso(model_skl, X, y, model_skl.alpha)
-        assert fn_d4p <= fn_skl * 1.02
+        assert fn_d4p <= fn_skl
 
     if fit_intercept:
         np.testing.assert_allclose(
@@ -120,7 +120,7 @@ def test_lasso_is_correct(nrows, ncols, n_targets, fit_intercept, positive, alph
     except AssertionError as e:
         fn_d4p = fn_lasso(model_d4p, X, y, model_d4p.alpha)
         fn_skl = fn_lasso(model_skl, X, y, model_skl.alpha)
-        assert fn_d4p <= fn_skl * 1.02
+        assert fn_d4p <= fn_skl
 
     if positive:
         assert np.all(model_d4p.coef_ >= 0)

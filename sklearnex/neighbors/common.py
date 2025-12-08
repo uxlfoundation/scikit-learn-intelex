@@ -67,7 +67,13 @@ class KNeighborsDispatchingBase(oneDALEstimator):
 
         if not isinstance(X, (KDTree, BallTree, _sklearn_NeighborsBase)):
             self._fit_X = _check_array(
-                X, dtype=[np.float64, np.float32], accept_sparse=True
+                X,
+                dtype=[np.float64, np.float32],
+                accept_sparse=True,
+                force_all_finite=not (
+                    isinstance(self.effective_metric_, str)
+                    and self.effective_metric_.startswith("nan")
+                ),
             )
             self.n_samples_fit_ = _num_samples(self._fit_X)
             self.n_features_in_ = _num_features(self._fit_X)
@@ -149,6 +155,19 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         is_unsupervised = not (is_classifier or is_regressor)
         patching_status = PatchingConditionsChain(
             f"sklearn.neighbors.{class_name}.{method_name}"
+        )
+        # TODO: with verbosity enabled, here it would emit a log saying that it fell
+        # back to sklearn, but internally, sklearn will end up calling 'kneighbors'
+        # which is overridden in the sklearnex classes, thus it will end up calling
+        # oneDAL in the end, but the log will say otherwise. Find a way to make the
+        # log consistent with what happens in practice.
+        patching_status.and_conditions(
+            [
+                (
+                    not (data[0] is None and method_name in ["predict", "score"]),
+                    "Predictions on 'None' data are handled by internal sklearn methods.",
+                )
+            ]
         )
         if not patching_status.and_condition(
             "radius" not in method_name, "RadiusNeighbors not implemented in sklearnex"
