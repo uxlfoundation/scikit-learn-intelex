@@ -13,7 +13,7 @@ pandas==2.3.3 ; python_version >= '3.11'
 xgboost==2.1.4 ; python_version < '3.10'
 xgboost==3.1.2 ; python_version >= '3.10'
 lightgbm==4.6.0
-catboost==1.2.8
+catboost==1.2.8 ; python_version < '3.14'
 shap==0.49.1 ; python_version < '3.11'
 shap==0.50.0 ; python_version >= '3.11'
 treelite==4.6.1
