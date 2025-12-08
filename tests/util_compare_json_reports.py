@@ -15,7 +15,7 @@
 # ==============================================================================
 
 # Note: see the docs for instructions about usage of this script:
-# https://uxlfoundation.github.io/scikit-learn-intelex/development/tests.html#scikit-learn-s-test-suite
+# https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/doc/sources/tests.rst
 import json
 import sys
 from typing import Any

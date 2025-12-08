@@ -13,9 +13,9 @@
 .. limitations under the License.
 .. include:: substitutions.rst
 
-=======================
-Topics for Contributors
-=======================
+=====================
+Contributor Reference
+=====================
 
 Adding an estimator
 -------------------

@@ -196,7 +196,7 @@ See :ref:`oneapi_gpu` for other ways of executing on GPU.
    building-from-source.rst
    tests.rst
    contribute.rst
-   topics-for-contributors.rst
+   contributor-reference.rst
    ideas.rst
 
 .. toctree::
