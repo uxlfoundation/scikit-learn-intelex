@@ -36,7 +36,7 @@ Visit the `GitHub Discussions <https://github.com/uxlfoundation/scikit-learn-int
 Forum
 -----
 
-Ask questions about Extension for Scikit-learn on our `Forum <https://community.intel.com/t5/Intel-Distribution-for-Python/bd-p/distribution-python>`__.
+Ask questions about |sklearnex| on our `Forum <https://community.intel.com/t5/Intel-Distribution-for-Python/bd-p/distribution-python>`__.
 Make sure to provide all relevant details, so we could help you as soon as possible.
 
 Email
