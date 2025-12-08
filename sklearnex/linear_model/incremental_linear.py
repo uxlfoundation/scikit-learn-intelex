@@ -162,11 +162,11 @@ class IncrementalLinearRegression(
     _onedal_gpu_supported = _onedal_supported
 
     def _onedal_predict(self, X, queue=None):
+        xp, _ = get_namespace(X)
+
         if not get_config()["use_raw_input"]:
             if sklearn_check_version("1.2"):
                 self._validate_params()
-
-            xp, _ = get_namespace(X)
 
             X = validate_data(
                 self,

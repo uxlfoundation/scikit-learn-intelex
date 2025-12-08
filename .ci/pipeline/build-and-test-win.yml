@@ -25,8 +25,8 @@ steps:
       pip install --upgrade setuptools
       pip install cpufeature
       pip install -r dependencies-dev
-      pip list
       if not defined DALROOT conda install -q -y -c conda-forge "dal-devel>=2025.6.1"
+      conda list
     displayName: 'Install develop requirements'
     env:
       DALROOT: ${{ variables.DALROOT }}
@@ -51,7 +51,7 @@ steps:
       cd ..
       for /f "delims=" %%c in ('python s\.ci\scripts\get_compatible_scipy_version.py') do set SCIPY_VERSION=%%c
       pip install %SCIPY_VERSION%
-      pip list
+      conda list
     displayName: 'Install testing requirements'
   - script: |
       call activate CB
