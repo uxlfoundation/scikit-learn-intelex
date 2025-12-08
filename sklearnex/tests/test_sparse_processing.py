@@ -100,7 +100,6 @@ SPARSE_DF_SUPPORTED = check_sparse_df_is_supported()
 MSG_UNSUPPORTED_SP_DF = "Requires higher SciPy version"
 
 
-@pytest.mark.skipif(not SPARSE_DF_SUPPORTED, reason=MSG_UNSUPPORTED_SP_DF)
 @pytest.fixture(
     params=[make_sparse_matrix(), make_sparse_df()]
     + ([make_sparse_array()] if hasattr(sp, "csc_array") else [])
