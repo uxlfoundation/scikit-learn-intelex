@@ -63,6 +63,7 @@ steps:
       if [ $(echo $(PYTHON_VERSION) | grep '3.9\|3.10\|3.11\|3.12') ] && [ $(SKLEARN_VERSION) != "1.0" ] && [ -z ${NO_DPC} ]; then pip install dpctl==$DPCTL_VERSION dpnp==$DPNP_VERSION; fi
       if [ -z "${NO_DPC}" ]; then pip install dpcpp-cpp-rt==$DPCPP_RT_VERSION; fi
       conda list
+      python -c "import sklearn; sklearn.show_versions()"
     env:
       NO_DPC: ${{ variables.NO_DPC }}
       DPCTL_VERSION: 0.21.0
