@@ -320,7 +320,7 @@ def test_table_conversions_memory_leaks(dataframe, queue, order, data_shape, dty
         and queue.sycl_device.is_gpu
         and (
             os.getenv("ZES_ENABLE_SYSMAN") is None
-            or not is_dpctl_device_available(["gpu"])
+            or not is_sycl_device_available(["gpu"])
         )
     ):
         pytest.skip("SYCL device memory leak check requires the level zero sysman")
