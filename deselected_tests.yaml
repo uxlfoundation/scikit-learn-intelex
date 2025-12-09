@@ -224,7 +224,7 @@ deselected_tests:
   - tests/test_multioutput.py::test_multi_output_classification
 
   # Requires SciPy version which is not available in too old environments
-  - linear_model/tests/test_base.py::test_linear_regression_pd_sparse_dataframe_warning <=1.0
+  - linear_model/tests/test_base.py::test_linear_regression_pd_sparse_dataframe_warning <1.1
 
   # L1 Linear models with sklearn 1.1 + numpy > 1.25 - extra warnings from numpy lead to test fail
   - linear_model/tests/test_coordinate_descent.py::test_assure_warning_when_normalize[True-1-LassoCV] >=1.1,<1.2
