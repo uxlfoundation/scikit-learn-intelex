@@ -19,7 +19,7 @@ steps:
       sudo chown -R $USER $CONDA
       conda config --set always_yes yes --set changeps1 no
       conda update -q conda
-      conda create -n CB -c conda-forge python=$(PYTHON_VERSION) dal-devel mpich clang-format pyyaml
+      conda create -n CB -c conda-forge python=$(PYTHON_VERSION) dal-devel pyyaml
     displayName: Create Anaconda environment
   - script: |
       source activate CB
