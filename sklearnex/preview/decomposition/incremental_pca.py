@@ -14,7 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 
-import numpy as np
 from sklearn.decomposition import IncrementalPCA as _sklearn_IncrementalPCA
 from sklearn.utils import check_array, gen_batches
 from sklearn.utils.validation import check_is_fitted
