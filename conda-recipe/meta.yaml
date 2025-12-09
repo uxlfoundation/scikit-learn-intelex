@@ -83,6 +83,7 @@ test:
     # - dpnp
     # next deps are synced with requirements-test.txt
     - pytest
+    - pytest-mock
     - pandas
     - xgboost
     - lightgbm
