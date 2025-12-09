@@ -26,6 +26,8 @@ sklearn_version=${1:-main}
 if [ "$sklearn_version" == "main" ]; then
     # remove sklearn version from test requirements file
     sed -i.bak -E "s/scikit-learn==[0-9a-zA-Z.]*/scikit-learn/" requirements-test.txt
+    # ensure that it uses the default compiler instead of ICX
+    unset CC CXX CFLAGS CXXFLAGS LDFLAGS MAKEFLAGS
     # install sklearn build dependencies
     pip install threadpoolctl joblib scipy
     # install sklearn from main branch of git repo
