@@ -14,9 +14,8 @@
 # limitations under the License.
 # ==============================================================================
 
-# Note: see file 'scikit-learn-tests.md' for instructions about usage
-# of this script:
-# https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/scikit-learn-tests.md
+# Note: see the docs for instructions about usage of this script:
+# https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/doc/sources/tests.rst
 import json
 import sys
 from typing import Any
