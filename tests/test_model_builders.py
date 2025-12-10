@@ -2184,6 +2184,7 @@ def test_logreg_builder_sequential_calls():
             ),
         ]
         if not sklearn_check_version("1.8")
+        else []
     )
     + [
         # case below might change in the future if sklearn improves their modules
