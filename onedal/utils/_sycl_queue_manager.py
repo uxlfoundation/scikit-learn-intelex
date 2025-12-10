@@ -26,18 +26,19 @@ from ._third_party import SyclQueue, is_torch_tensor
 
 
 class ThreadLocalGlobals:
-    # This special object signifies that the queue system should be
-    # disabled. It will force computation to host. This occurs when the
-    # thread-local queue is set to this value (and therefore should not be
-    # modified).
-    __fallback_queue = object()
-    # Special queue for non-CPU, non-SYCL data associated with dlpack
-    __non_queue = SimpleNamespace(sycl_device=SimpleNamespace(is_cpu=False))
 
     def __init__(self):
         self._local = threading.local()
         self._local.queue = None
         self._local.dlpack_queue = {}
+
+        # This special object signifies that the queue system should be
+        # disabled. It will force computation to host. This occurs when the
+        # thread-local queue is set to this value (and therefore should not be
+        # modified).
+        __fallback_queue = object()
+        # Special queue for non-CPU, non-SYCL data associated with dlpack
+        __non_queue = SimpleNamespace(sycl_device=SimpleNamespace(is_cpu=False))
 
     # Single instance of thread-local queue.
     # This object as a global within the thread.
