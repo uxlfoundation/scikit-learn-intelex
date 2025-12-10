@@ -36,9 +36,9 @@ class ThreadLocalGlobals:
         # disabled. It will force computation to host. This occurs when the
         # thread-local queue is set to this value (and therefore should not be
         # modified).
-        __fallback_queue = object()
+        self.__fallback_queue = object()
         # Special queue for non-CPU, non-SYCL data associated with dlpack
-        __non_queue = SimpleNamespace(sycl_device=SimpleNamespace(is_cpu=False))
+        self.__non_queue = SimpleNamespace(sycl_device=SimpleNamespace(is_cpu=False))
 
     # Single instance of thread-local queue.
     # This object as a global within the thread.
