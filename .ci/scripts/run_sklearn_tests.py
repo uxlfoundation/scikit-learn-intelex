@@ -69,7 +69,7 @@ if __name__ == "__main__":
 
     unpatch_sklearn()
     if args.device != "none":
-        with sklearn.config_context(target_offload=args.device):
+        with sklearn.config_context():
             return_code = pytest.main(pytest_args)
     else:
         return_code = pytest.main(pytest_args)
