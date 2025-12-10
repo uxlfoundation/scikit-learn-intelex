@@ -19,14 +19,11 @@ import os
 import re
 import sys
 import warnings
-from abc import ABC
-
-import sklearn
 
 from daal4py.sklearn._utils import (
     PatchingConditionsChain as daal4py_PatchingConditionsChain,
 )
-from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from daal4py.sklearn._utils import sklearn_check_version
 from onedal.common.hyperparameters import (
     get_hyperparameters as onedal_get_hyperparameters,
 )
@@ -118,10 +115,6 @@ def get_patch_message(s, queue=None, transferred_to_host=True):
             ". All input data transferred to host for further backend computations."
         )
     return message
-
-
-def get_sklearnex_version(rule):
-    return daal_check_version(rule)
 
 
 def register_hyperparameters(hyperparameters_map):
