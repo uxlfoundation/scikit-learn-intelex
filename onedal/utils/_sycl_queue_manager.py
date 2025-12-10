@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
+import threading
 from contextlib import contextmanager
 from types import SimpleNamespace
 
@@ -23,22 +24,46 @@ from .._config import _get_config
 from ..datatypes import get_torch_queue
 from ._third_party import SyclQueue, is_torch_tensor
 
-# This special object signifies that the queue system should be
-# disabled. It will force computation to host. This occurs when the
-# global queue is set to this value (and therefore should not be
-# modified).
-__fallback_queue = object()
-# single instance of global queue
-__global_queue = None
-# dictionary of generic SYCL queues with default SYCL contexts for
-# reuse
-__dlpack_queue = {}
-# Special queue for non-CPU, non-SYCL data associated with dlpack
-__non_queue = SimpleNamespace(sycl_device=SimpleNamespace(is_cpu=False))
+
+class ThreadLocalGlobals:
+    # This special object signifies that the queue system should be
+    # disabled. It will force computation to host. This occurs when the
+    # thread-local queue is set to this value (and therefore should not be
+    # modified).
+    __fallback_queue = object()
+    # Special queue for non-CPU, non-SYCL data associated with dlpack
+    __non_queue = SimpleNamespace(sycl_device=SimpleNamespace(is_cpu=False))
+
+    def __init__(self):
+        self._local = threading.local()
+        self._local.queue = None
+        self._local.dlpack_queue = {}
+
+    # Single instance of thread-local queue.
+    # This object as a global within the thread.
+    @property
+    def queue(self):
+        return self._local.queue
+
+    @queue.setter
+    def queue(self, value):
+        self._local.queue = value
+
+    # dictionary of generic SYCL queues with default SYCL contexts for reuse
+    @property
+    def dlpack_queue(self) -> "dict[SyclQueue]":
+        return self._local.dlpack_queue
+
+    @dlpack_queue.setter
+    def dlpack_queue(self, value):
+        self._local.dlpack_queue = value
+
+
+__globals = ThreadLocalGlobals()
 
 
 def __create_sycl_queue(target):
-    if isinstance(target, SyclQueue) or target is None or target is __non_queue:
+    if isinstance(target, SyclQueue) or target is None or target is __globals.__non_queue:
         return target
     if isinstance(target, (str, int)):
         return SyclQueue(target)
@@ -56,8 +81,8 @@ def get_global_queue():
         SYCL Queue object for device code execution. 'None'
         signifies computation on host.
     """
-    if (queue := __global_queue) is not None:
-        if queue is __fallback_queue:
+    if (queue := __globals.queue) is not None:
+        if queue is __globals.__fallback_queue:
             return None
         return queue
 
@@ -73,8 +98,7 @@ def get_global_queue():
 
 def remove_global_queue():
     """Remove the global queue."""
-    global __global_queue
-    __global_queue = None
+    __globals.queue = None
 
 
 def update_global_queue(queue):
@@ -86,15 +110,13 @@ def update_global_queue(queue):
         SYCL Queue object for device code execution. None
         signifies computation on host.
     """
-    global __global_queue
     queue = __create_sycl_queue(queue)
-    __global_queue = queue
+    __globals.queue = queue
 
 
 def fallback_to_host():
     """Enforce a host queue."""
-    global __global_queue
-    __global_queue = __fallback_queue
+    __globals.queue = __globals.__fallback_queue
 
 
 def _get_dlpack_queue(obj: object) -> SyclQueue:
@@ -105,7 +127,7 @@ def _get_dlpack_queue(obj: object) -> SyclQueue:
     elif device_type != backend.kDLOneAPI:
         # Data exists on a non-SYCL, non-CPU device. This will trigger an error
         # or a fallback if "fallback_to_host" is set in the config
-        return __non_queue
+        return __globals.__non_queue
 
     if is_torch_tensor(obj):
         return get_torch_queue(obj)
@@ -115,11 +137,11 @@ def _get_dlpack_queue(obj: object) -> SyclQueue:
         # with SYCL sub-devices due to limitations in the dlpack standard (not
         # enough info).
         try:
-            queue = __dlpack_queue[device_id]
+            queue = __globals.__dlpack_queue[device_id]
         except KeyError:
             # use filter string capability to yield a queue
             queue = SyclQueue(str(device_id))
-            __dlpack_queue[device_id] = queue
+            __globals.__dlpack_queue[device_id] = queue
         return queue
 
 
