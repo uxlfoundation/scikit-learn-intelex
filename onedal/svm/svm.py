@@ -20,6 +20,7 @@ from enum import Enum
 import numpy as np
 from scipy import sparse as sp
 
+from daal4py.sklearn._utils import is_sparse
 from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
 from onedal.utils import _sycl_queue_manager as QM
@@ -155,7 +156,7 @@ class BaseSVM(metaclass=ABCMeta):
             data = (X, y, sample_weight)
         else:
             data = (X, y)
-        self._sparse = sp.issparse(X)
+        self._sparse = is_sparse(X)
 
         if self.kernel == "linear":
             self._scale_, self._sigma_ = 1.0, 1.0
@@ -251,7 +252,7 @@ class BaseSVM(metaclass=ABCMeta):
             if self._sparse:
                 X.sort_indices()
 
-            if sp.issparse(X) and not self._sparse and not callable(self.kernel):
+            if is_sparse(X) and not self._sparse and not callable(self.kernel):
                 raise ValueError(
                     "cannot use sparse input in %r trained on dense data"
                     % type(self).__name__
@@ -299,7 +300,7 @@ class BaseSVM(metaclass=ABCMeta):
         if self._sparse:
             X.sort_indices()
 
-        if sp.issparse(X) and not self._sparse and not callable(self.kernel):
+        if is_sparse(X) and not self._sparse and not callable(self.kernel):
             raise ValueError(
                 "cannot use sparse input in %r trained on dense data"
                 % type(self).__name__
