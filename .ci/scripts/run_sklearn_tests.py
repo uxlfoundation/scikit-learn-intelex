@@ -17,7 +17,7 @@
 import os
 
 os.environ["SCIPY_ARRAY_API"] = "1"
-from sklearnex import patch_sklearn
+from sklearnex import patch_sklearn, unpatch_sklearn
 
 patch_sklearn()
 
@@ -67,6 +67,7 @@ if __name__ == "__main__":
     if extra_args:
         pytest_args += extra_args
 
+    unpatch_sklearn()
     if args.device != "none":
         with sklearn.config_context(target_offload=args.device):
             return_code = pytest.main(pytest_args)
