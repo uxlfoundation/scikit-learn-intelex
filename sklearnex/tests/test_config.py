@@ -165,7 +165,7 @@ def test_fallback_to_host(caplog):
     # This is done due to the use of name mangling in _sycl_queue_manager which
     # doesn't operate in classes directly. This impacts sklearnex's ``dispatch``
     # routine, which expects class methods rather than instance methods.
-    is_fallback = lambda: QM.__globals.__global_queue == QM.__fallback_queue
+    is_fallback = lambda: QM.__globals.queue == QM.__globals.fallback_queue
 
     class _Estimator:
         def _onedal_gpu_supported(self, method_name, *data):
