@@ -14,10 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
-import numbers
 from abc import ABCMeta
-
-import numpy as np
 
 from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
