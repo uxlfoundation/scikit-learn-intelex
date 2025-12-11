@@ -36,9 +36,9 @@ class ThreadLocalGlobals:
         # disabled. It will force computation to host. This occurs when the
         # thread-local queue is set to this value (and therefore should not be
         # modified).
-        self.__fallback_queue = object()
+        self.fallback_queue = object()
         # Special queue for non-CPU, non-SYCL data associated with dlpack
-        self.__non_queue = SimpleNamespace(sycl_device=SimpleNamespace(is_cpu=False))
+        self.non_queue = SimpleNamespace(sycl_device=SimpleNamespace(is_cpu=False))
 
     # Single instance of thread-local queue.
     # This object as a global within the thread.
@@ -64,7 +64,7 @@ __globals = ThreadLocalGlobals()
 
 
 def __create_sycl_queue(target):
-    if isinstance(target, SyclQueue) or target is None or target is __globals.__non_queue:
+    if isinstance(target, SyclQueue) or target is None or target is __globals.non_queue:
         return target
     if isinstance(target, (str, int)):
         return SyclQueue(target)
@@ -83,7 +83,7 @@ def get_global_queue():
         signifies computation on host.
     """
     if (queue := __globals.queue) is not None:
-        if queue is __globals.__fallback_queue:
+        if queue is __globals.fallback_queue:
             return None
         return queue
 
@@ -117,7 +117,7 @@ def update_global_queue(queue):
 
 def fallback_to_host():
     """Enforce a host queue."""
-    __globals.queue = __globals.__fallback_queue
+    __globals.queue = __globals.fallback_queue
 
 
 def _get_dlpack_queue(obj: object) -> SyclQueue:
@@ -128,7 +128,7 @@ def _get_dlpack_queue(obj: object) -> SyclQueue:
     elif device_type != backend.kDLOneAPI:
         # Data exists on a non-SYCL, non-CPU device. This will trigger an error
         # or a fallback if "fallback_to_host" is set in the config
-        return __globals.__non_queue
+        return __globals.non_queue
 
     if is_torch_tensor(obj):
         return get_torch_queue(obj)
@@ -187,7 +187,7 @@ def from_data(*data):
         if (data_dev and global_dev) is not None and data_dev != global_dev:
             # when all data exists on other devices (e.g. not CPU or SYCL devices)
             # failure will come in backend selection occurring in
-            # sklearnex._device_offload._get_backend when using __non_queue
+            # sklearnex._device_offload._get_backend when using non_queue
             raise ValueError(
                 "Data objects are located on different target devices or not on selected device."
             )
