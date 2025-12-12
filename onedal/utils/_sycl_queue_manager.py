@@ -14,8 +14,8 @@
 # limitations under the License.
 # ==============================================================================
 
-import threading
 from contextlib import contextmanager
+from threading import local
 from types import SimpleNamespace
 
 from onedal import _default_backend as backend
@@ -25,49 +25,20 @@ from ..datatypes import get_torch_queue
 from ._third_party import SyclQueue, is_torch_tensor
 
 
-class ThreadLocalGlobals:
+class ThreadLocalGlobals(local):
 
     def __init__(self):
-        self._local = threading.local()
-        self._initialize_thread_local_variables()
-
         # This special object signifies that the queue system should be
         # disabled. It will force computation to host. This occurs when the
-        # thread-local queue is set to this value (and therefore should not be
+        # global queue is set to this value (and therefore should not be
         # modified).
         self.fallback_queue = object()
+        # single instance of thread-local queue
+        self.queue = None
+        # dictionary of generic SYCL queues with default SYCL contexts for reuse
+        self.dlpack_queue = {}
         # Special queue for non-CPU, non-SYCL data associated with dlpack
         self.non_queue = SimpleNamespace(sycl_device=SimpleNamespace(is_cpu=False))
-
-    # Note: this initializes these variables only in the main thread,
-    # they need to be re-initialized again in every thread the first
-    # time they are used
-    def _initialize_thread_local_variables(self):
-        if not hasattr(self._local, "queue"):
-            self._local.queue = None
-        if not hasattr(self._local, "dlpack_queue"):
-            self._local.dlpack_queue = {}
-
-    # Single instance of thread-local queue.
-    # This object is global within the thread.
-    @property
-    def queue(self):
-        self._initialize_thread_local_variables()
-        return self._local.queue
-
-    @queue.setter
-    def queue(self, value):
-        self._local.queue = value
-
-    # dictionary of generic SYCL queues with default SYCL contexts for reuse
-    @property
-    def dlpack_queue(self) -> "dict[SyclQueue]":
-        self._initialize_thread_local_variables()
-        return self._local.dlpack_queue
-
-    @dlpack_queue.setter
-    def dlpack_queue(self, value):
-        self._local.dlpack_queue = value
 
 
 __globals = ThreadLocalGlobals()
