@@ -49,7 +49,7 @@ class ThreadLocalGlobals:
             self._local.dlpack_queue = {}
 
     # Single instance of thread-local queue.
-    # This object as a global within the thread.
+    # This object is global within the thread.
     @property
     def queue(self):
         self._initialize_thread_local_variables()
