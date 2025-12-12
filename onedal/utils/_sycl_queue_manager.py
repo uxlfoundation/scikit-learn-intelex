@@ -29,6 +29,7 @@ class ThreadLocalGlobals:
 
     def __init__(self):
         self._local = threading.local()
+        self._initialize_thread_local_variables()
 
         # This special object signifies that the queue system should be
         # disabled. It will force computation to host. This occurs when the
@@ -44,12 +45,14 @@ class ThreadLocalGlobals:
     def _initialize_thread_local_variables(self):
         if not hasattr(self._local, "queue"):
             self._local.queue = None
+        if not hasattr(self._local, "dlpack_queue"):
             self._local.dlpack_queue = {}
 
     # Single instance of thread-local queue.
     # This object as a global within the thread.
     @property
     def queue(self):
+        self._initialize_thread_local_variables()
         return self._local.queue
 
     @queue.setter
@@ -59,6 +62,7 @@ class ThreadLocalGlobals:
     # dictionary of generic SYCL queues with default SYCL contexts for reuse
     @property
     def dlpack_queue(self) -> "dict[SyclQueue]":
+        self._initialize_thread_local_variables()
         return self._local.dlpack_queue
 
     @dlpack_queue.setter
