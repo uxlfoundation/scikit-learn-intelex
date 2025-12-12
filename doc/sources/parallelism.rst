@@ -35,7 +35,7 @@ the calculation of the :term:`n_jobs` parameter value.
 
 When |sklearn|'s utilities with built-in parallelism are used 
 (for example, :obj:`sklearn.model_selection.GridSearchCV` or :obj:`sklearn.model_selection.VotingClassifier`),
-|sklearnex| tries to determine the optimal number of threads per job using hints provided by :mod:`joblib` / ``threadpoolctl``..
+|sklearnex| tries to determine the optimal number of threads per job using hints provided by :mod:`joblib` / ``threadpoolctl``.
 If ``n_jobs`` is not specified for underlying estimator(s), |sklearnex| sets it to the number of available threads
 (usually the number of logical CPUs divided by `n_jobs` set for higher-level parallelized entities).
 
