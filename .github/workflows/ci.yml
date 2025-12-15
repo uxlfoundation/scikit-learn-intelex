@@ -84,7 +84,7 @@ jobs:
         with:
           python-version: ${{ matrix.PYTHON_VERSION }}  
       - name: Download oneDAL build artifact
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: __release_lnx
           github-token: ${{ github.token }}
@@ -92,7 +92,7 @@ jobs:
           run-id: ${{ needs.onedal_nightly.outputs.run-id }}
           path: ./__release_lnx
       - name: Download oneDAL environment artifact
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: oneDAL_env
           github-token: ${{ github.token }}
@@ -162,7 +162,7 @@ jobs:
           source .github/scripts/activate_components.sh ${{ steps.set-env.outputs.DPCFLAG }}
           bash .github/scripts/generate_coverage_reports.sh lnx${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }} ${{ steps.set-env.outputs.DPCFLAG }}
       - name: Archive coverage report
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: coverage_lnx_Py${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}
           path: |
@@ -199,7 +199,7 @@ jobs:
         with:
           python-version: ${{ matrix.PYTHON_VERSION }}
       - name: Download oneDAL build artifact
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: __release_win
           github-token: ${{ github.token }}
@@ -207,7 +207,7 @@ jobs:
           run-id: ${{ needs.onedal_nightly.outputs.run-id }}
           path: ./__release_win
       - name: Download Intel BaseKit artifact
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: intel_oneapi_basekit
           github-token: ${{ github.token }}
@@ -234,7 +234,7 @@ jobs:
           echo COVERAGE_RCFILE=%cd%\.coveragerc>> %GITHUB_ENV%
       - name: Download Intel OpenCL CPU Runtime artifact
         if: ${{ steps.set-env.outputs.DPCFLAG == '' }}
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: opencl_rt_installer
           github-token: ${{ github.token }}
@@ -304,7 +304,7 @@ jobs:
           call .\.github\scripts\activate_components.bat ${{ steps.set-env.outputs.DPCFLAG }}
           bash .github/scripts/generate_coverage_reports.sh win${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}
       - name: Archive coverage report
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: coverage_win_Py${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}
           path: |
@@ -337,7 +337,7 @@ jobs:
             **/dependencies-dev
             **/requirements-test.txt
       - name: Download oneDAL build artifact
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: __release_lnx
           github-token: ${{ github.token }}
@@ -345,7 +345,7 @@ jobs:
           run-id: ${{ needs.onedal_nightly.outputs.run-id }}
           path: ./__release_lnx
       - name: Download oneDAL environment artifact
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: oneDAL_env
           github-token: ${{ github.token }}
@@ -380,7 +380,7 @@ jobs:
           source .github/scripts/activate_components.sh ${{ steps.set-env.outputs.DPCFLAG }}
           python setup.py bdist_wheel
       - name: Archive sklearnex build
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: sklearnex_build_${{ env.UXL_PYTHONVERSION }}
           path: |
@@ -412,7 +412,7 @@ jobs:
             **/dependencies-dev
             **/requirements-test.txt
       - name: Download oneDAL build artifact
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: __release_lnx
           github-token: ${{ github.token }}
@@ -420,7 +420,7 @@ jobs:
           run-id: ${{ needs.onedal_nightly.outputs.run-id }}
           path: ./__release_lnx
       - name: Download oneDAL environment artifact
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: oneDAL_env
           github-token: ${{ github.token }}
@@ -457,7 +457,7 @@ jobs:
           pip install $(python .ci/scripts/get_compatible_scipy_version.py ${{ env.UXL_SKLEARVERSION }}) pyyaml
           pip list
       - name: Download sklearnex wheel
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: sklearnex_build_${{ env.UXL_PYTHONVERSION }}
       - name: Install PyTorch
@@ -483,7 +483,7 @@ jobs:
           source .github/scripts/activate_components.sh
           bash .github/scripts/generate_coverage_reports.sh uxl_lnx_${{ matrix.DEVICE }}
       - name: Archive coverage report
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: coverage_uxl_lnx_${{ matrix.DEVICE }}
           path: |
