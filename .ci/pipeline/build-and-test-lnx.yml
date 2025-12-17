@@ -60,7 +60,7 @@ steps:
       pip install --upgrade -r requirements-test.txt
       pip install $(python .ci/scripts/get_compatible_scipy_version.py)
       # dpep installation is set to pypi to avoid conflict of numpy versions from pip and conda
-      if [ $(echo $(PYTHON_VERSION) | grep '3.9\|3.10\|3.11\|3.12') ] && [ $(SKLEARN_VERSION) != "1.0" ] && [ -z ${NO_DPC} ]; then pip install dpctl==$DPCTL_VERSION dpnp==$DPNP_VERSION; fi
+      if [ $(echo $(PYTHON_VERSION) | grep '3.10\|3.11\|3.12\|3.13') ] && [ $(SKLEARN_VERSION) != "1.0" ] && [ -z ${NO_DPC} ]; then pip install dpctl==$DPCTL_VERSION dpnp==$DPNP_VERSION; fi
       if [ -z "${NO_DPC}" ]; then pip install dpcpp-cpp-rt==$DPCPP_RT_VERSION; fi
       conda list
     env:
