@@ -199,7 +199,7 @@ To install |sklearnex|, run:
    * - Operating systems
      - Windows*, Linux*
    * - Python versions
-     - 3.9, 3.10, 3.11, 3.12, 3.13
+     - 3.10, 3.11, 3.12, 3.13, 3.14
    * - Devices
      - CPU, GPU
    * - Modes
@@ -245,7 +245,7 @@ To prevent version conflicts, we recommend installing ``scikit-learn-intelex`` i
          * - Operating systems
            - Windows*, Linux*
          * - Python versions
-           - 3.9, 3.10, 3.11, 3.12, 3.13
+           - 3.10, 3.11, 3.12, 3.13, 3.14
          * - Devices
            - CPU, GPU
          * - Modes
@@ -269,7 +269,7 @@ To prevent version conflicts, we recommend installing ``scikit-learn-intelex`` i
          * - Operating systems
            - Windows*, Linux*
          * - Python versions
-           - 3.9, 3.10, 3.11, 3.12, 3.13
+           - 3.10, 3.11, 3.12, 3.13, 3.14
          * - Devices
            - CPU, GPU
          * - Modes

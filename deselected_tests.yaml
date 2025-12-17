@@ -327,9 +327,6 @@ deselected_tests:
   # Fails in stock scikit-learn: checks that data is modified in-place when not strictly required
   - linear_model/tests/test_base.py::test_inplace_data_preprocessing
 
-  # Failure occurs in python3.9 on windows CPU only - not easy to reproduce
-  - ensemble/tests/test_weight_boosting.py::test_estimator >= 1.4 win32
-
   # array_api dispatching for oneDAL is recognized using the sklearn tag system. This is an expected
   # break in sklearn conformance as additional non-default tags cause errors in this test. This
   # non-conformance does not impact the verification system of sklearn. A new system (sklearn >=1.6)
@@ -464,9 +461,6 @@ public:
   # floating point error near values == 0 in svm sparse tests using vc oneDAL builds
   - svm/tests/test_sparse.py::test_unsorted_indices[csr_matrix] <1.7 win32
   - svm/tests/test_sparse.py::test_unsorted_indices[csr_array] <1.7 win32
-  # numpy <2 with array_api_strict leads to dlpack copy issues with DLManagedTensor
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_input_and_values-array_api_strict-None-None] >=1.5,<1.6
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_input_and_values-array_api_strict-None-None] >=1.5,<1.6
 
   # sklearn 1.4 has different absolute and relative tolerances for this test,
   # set of available solvers and corresponding sklearnex rules to choose one
