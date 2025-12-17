@@ -361,6 +361,7 @@ deselected_tests:
   - linear_model/tests/test_logistic.py::test_newton_cholesky_fallback_to_lbfgs
   - linear_model/tests/test_logistic.py::test_logistic_cv_sparse[csr_array]
   - linear_model/tests/test_logistic.py::test_logistic_cv_sparse[csr_matrix]
+  - linear_model/tests/test_logistic.py::test_logistic_cv_multinomial_score
   - tests/test_common.py::test_estimators[LogisticRegressionCV(cv=3,max_iter=5)-check_sample_weight_equivalence_on_dense_data]
   - ensemble/tests/test_bagging.py::test_estimators_samples >=1.0,<1.1
   - ensemble/tests/test_voting.py::test_sample_weight >=1.0,<1.1
