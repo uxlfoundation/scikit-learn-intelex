@@ -40,16 +40,16 @@ receiving an unsupported class, estimators will either convert to a supported cl
 circumstances (e.g. PyArrow tables might get converted to NumPy arrays when passed to data
 validators from stock |sklearn|), throw an error (e.g. when passing some data format not that's
 not recognized by |sklearn|), or fall back to stock |sklearn| to handle it (when array API is
-enabled the input is unsupported).
+enabled but the input is unsupported).
 
 .. warning::
-  In some cases data passed to estimators might be copied/duplicated during calls to methods such as fit/predict.
-  The affected cases are listed below.
+  In some cases, data passed to estimators might be copied/duplicated during calls to methods such as fit/predict.
+  The affected cases are listed below:
 
   - Non-contiguous NumPy array - i.e. where strides are wider than one element across both rows and columns
   - For SciPy CSR matrix / array, index arrays are always copied. Note that sparse matrices in formats other than CSR
     will be converted to CSR, which implies more than just data copying.
   - Heterogeneous NumPy array
-  - If SYCL queue is provided for device without ``float64`` support but data are ``float64``, data are copied with reduced precision.
-  - If :ref:`Array API <array_api>` is not enabled then data from GPU devices are always copied to the host device and then result table 
+  - If a SYCL queue is provided for device without ``float64`` support but data are ``float64``, data is copied with reduced precision.
+  - If :doc:`array_api` is not enabled then data from GPU devices are always copied to the host device and then result table
     (for applicable methods) is copied to the source device.
