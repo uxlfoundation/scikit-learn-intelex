@@ -479,6 +479,11 @@ def logistic_regression_path(*args, **kwargs):
                 not (kwargs["solver"] == "newton-cg" and not kwargs["fit_intercept"]),
                 "'newton-cg' solver without intercept is not supported.",
             ),
+            (
+                np.isscalar(kwargs["Cs"])
+                or np.asarray(kwargs["Cs"]).reshape(-1).shape[0] == 1,
+                "Regularization path is not supported.",
+            ),
         ]
     )
     if not _dal_ready:
