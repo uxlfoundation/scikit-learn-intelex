@@ -79,7 +79,9 @@ Classification
        - ``sample_weight`` != ``None``
        - ``class_weight`` != ``None``
        - Solver ``'newton-cg'`` with ``fit_intercept`` = ``False`` is not supported
-     - Sparse data is not supported.
+     - Sparse data is not supported. **Important:** this estimator should not be used
+       in parallel Python threads - for concurrent fits (e.g. from :obj:`sklearn.model_selection.GridSearchCV`),
+       process-based parallelism should be used instead (default backend for :mod:`joblib`).
 
 Regression
 **********
