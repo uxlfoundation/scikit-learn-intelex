@@ -346,12 +346,11 @@ def logistic_regression_path_d4p(
 def daal4py_fit(self, X, y, sample_weight=None):
     which, what = logistic_module, "_logistic_regression_path"
     replacer = logistic_regression_path
-    descriptor = getattr(which, what, None)
     try:
         setattr(which, what, replacer)
         clf = LogisticRegression_original.fit(self, X, y, sample_weight)
     finally:
-        setattr(which, what, descriptor)
+        setattr(which, what, lr_path_original)
     return clf
 
 
@@ -610,6 +609,14 @@ def logistic_regression_path_dispatcher(
                 "Regularization paths are not supported.",
             ),
             (max_squared_sum is None, "'max_squared_sum' is not supported."),
+            (
+                not (solver == "newton-cg")
+                and (
+                    (sklearn_check_version("1.8") and len(classes) > 2)
+                    or (multi_class == "multinomial" and np.unique(y).shape[0] > 2)
+                ),
+                "Multinomial model not supported with 'newton-cg' solver.",
+            ),
         ]
     )
     if not _dal_ready:
