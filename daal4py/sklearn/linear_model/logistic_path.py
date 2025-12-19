@@ -609,6 +609,7 @@ def logistic_regression_path_dispatcher(
                 isinstance(Cs, list) and len(Cs) == 1,
                 "Regularization paths are not supported.",
             ),
+            (max_squared_sum is None, "'max_squared_sum' is not supported."),
         ]
     )
     if not _dal_ready:
