@@ -79,7 +79,6 @@ Classification
        - ``sample_weight`` != ``None``
        - ``class_weight`` != ``None``
        - Solver ``'newton-cg'`` with ``fit_intercept`` = ``False`` is not supported
-       - Solver ``'newton-cg'`` is not supported for multinomial (multi-class) models
      - Sparse data is not supported.
 
 Regression
