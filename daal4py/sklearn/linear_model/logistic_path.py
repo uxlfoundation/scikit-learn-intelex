@@ -610,10 +610,12 @@ def logistic_regression_path_dispatcher(
             ),
             (max_squared_sum is None, "'max_squared_sum' is not supported."),
             (
-                not (solver == "newton-cg")
-                and (
-                    (sklearn_check_version("1.8") and len(classes) > 2)
-                    or (multi_class == "multinomial" and np.unique(y).shape[0] > 2)
+                not (
+                    (solver == "newton-cg")
+                    and (
+                        (sklearn_check_version("1.8") and len(classes) > 2)
+                        or (multi_class == "multinomial" and np.unique(y).shape[0] > 2)
+                    )
                 ),
                 "Multinomial model not supported with 'newton-cg' solver.",
             ),
