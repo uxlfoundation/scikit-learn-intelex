@@ -614,7 +614,7 @@ def logistic_regression_path_dispatcher(
     if not _dal_ready:
         _patching_status.write_log()
         if sklearn_check_version("1.8"):
-            return logistic_regression_path(
+            return lr_path_original(
                 X,
                 y,
                 classes=classes,
@@ -637,7 +637,7 @@ def logistic_regression_path_dispatcher(
                 n_threads=n_threads,
             )
         else:
-            return logistic_regression_path(
+            return lr_path_original(
                 X,
                 y,
                 pos_class=pos_class,
