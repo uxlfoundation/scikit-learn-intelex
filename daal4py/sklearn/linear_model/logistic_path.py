@@ -604,10 +604,6 @@ def logistic_regression_path_dispatcher(
                 "'newton-cg' solver without intercept is not supported.",
             ),
             (not dual, "Dual problem formulation is not supported."),
-            (
-                isinstance(Cs, list) and len(Cs) == 1,
-                "Regularization paths are not supported.",
-            ),
             (max_squared_sum is None, "'max_squared_sum' is not supported."),
         ]
     )

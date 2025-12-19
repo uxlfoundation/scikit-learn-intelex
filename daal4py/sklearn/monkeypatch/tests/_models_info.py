@@ -98,6 +98,17 @@ MODELS_INFO = [
         "dataset": "classifier",
     },
     {
+        "model": LogisticRegressionCV(max_iter=100),
+        "methods": [
+            "decision_function",
+            "predict",
+            "predict_proba",
+            "predict_log_proba",
+            "score",
+        ],
+        "dataset": "classifier",
+    },
+    {
         "model": RandomForestRegressor(n_estimators=10),
         "methods": ["predict", "score"],
         "dataset": "regression",
@@ -134,6 +145,11 @@ TO_SKIP = [
     r"KMeans .*score",
     r"PCA .*score",
     r"LogisticRegression .*decision_function",
+    r"LogisticRegressionCV .*decision_function",
+    r"LogisticRegressionCV .*predict",
+    r"LogisticRegressionCV .*predict_proba",
+    r"LogisticRegressionCV .*predict_log_proba",
+    r"LogisticRegressionCV .*score",
     # --------------- Scikit ---------------
     r"Ridge float16 predict",
     r"Ridge float16 score",
