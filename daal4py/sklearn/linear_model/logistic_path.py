@@ -76,9 +76,10 @@ def _check_multi_class(multi_class, solver, n_classes):
 
 
 # Code adapted from sklearn.linear_model.logistic version 0.21
-def __logistic_regression_path(
+def logistic_regression_path_d4p(
     X,
     y,
+    classes=None,
     pos_class=None,
     Cs=10,
     fit_intercept=True,
@@ -126,7 +127,8 @@ def __logistic_regression_path(
         check_consistent_length(X, y)
     _, n_features = X.shape
 
-    classes = np.unique(y)
+    if classes is None:
+        classes = np.unique(y)
     random_state = check_random_state(random_state)
 
     multi_class = _check_multi_class(multi_class, solver, len(classes))
@@ -344,12 +346,11 @@ def __logistic_regression_path(
 def daal4py_fit(self, X, y, sample_weight=None):
     which, what = logistic_module, "_logistic_regression_path"
     replacer = logistic_regression_path
-    descriptor = getattr(which, what, None)
-    setattr(which, what, replacer)
     try:
+        setattr(which, what, replacer)
         clf = LogisticRegression_original.fit(self, X, y, sample_weight)
     finally:
-        setattr(which, what, descriptor)
+        setattr(which, what, lr_path_original)
     return clf
 
 
@@ -377,7 +378,7 @@ def daal4py_predict(self, X, resultsToEvaluate):
     _patching_status = PatchingConditionsChain(
         f"sklearn.linear_model.LogisticRegression.{_function_name}"
     )
-    if _function_name != "predict":
+    if _function_name != "predict" and not sklearn_check_version("1.8"):
         multi_class = getattr(self, "multi_class", "auto")
         _patching_status.and_conditions(
             [
@@ -454,7 +455,130 @@ def daal4py_predict(self, X, resultsToEvaluate):
         return LogisticRegression_original.predict_log_proba(self, X)
 
 
-def logistic_regression_path(*args, **kwargs):
+if sklearn_check_version("1.8"):
+
+    def logistic_regression_path(
+        X,
+        y,
+        *,
+        classes,
+        Cs=10,
+        fit_intercept=True,
+        max_iter=100,
+        tol=1e-4,
+        verbose=0,
+        solver="lbfgs",
+        coef=None,
+        class_weight=None,
+        dual=False,
+        penalty="l2",
+        intercept_scaling=1.0,
+        random_state=None,
+        check_input=True,
+        max_squared_sum=None,
+        sample_weight=None,
+        l1_ratio=None,
+        n_threads=1,
+    ):
+        return logistic_regression_path_dispatcher(
+            X,
+            y,
+            classes=classes,
+            pos_class=None,
+            Cs=Cs,
+            fit_intercept=fit_intercept,
+            max_iter=max_iter,
+            tol=tol,
+            verbose=verbose,
+            solver=solver,
+            coef=coef,
+            class_weight=class_weight,
+            dual=dual,
+            penalty=penalty,
+            intercept_scaling=intercept_scaling,
+            random_state=random_state,
+            check_input=check_input,
+            max_squared_sum=max_squared_sum,
+            sample_weight=sample_weight,
+            l1_ratio=l1_ratio,
+            n_threads=n_threads,
+        )
+
+else:
+
+    def logistic_regression_path(
+        X,
+        y,
+        pos_class=None,
+        Cs=10,
+        fit_intercept=True,
+        max_iter=100,
+        tol=1e-4,
+        verbose=0,
+        solver="lbfgs",
+        coef=None,
+        class_weight=None,
+        dual=False,
+        penalty="l2",
+        intercept_scaling=1.0,
+        multi_class="auto",
+        random_state=None,
+        check_input=True,
+        max_squared_sum=None,
+        sample_weight=None,
+        l1_ratio=None,
+        n_threads=1,
+    ):
+        return logistic_regression_path_dispatcher(
+            X,
+            y,
+            classes=None,
+            pos_class=pos_class,
+            Cs=Cs,
+            fit_intercept=fit_intercept,
+            max_iter=max_iter,
+            tol=tol,
+            verbose=verbose,
+            solver=solver,
+            coef=coef,
+            class_weight=class_weight,
+            dual=dual,
+            penalty=penalty,
+            intercept_scaling=intercept_scaling,
+            multi_class=multi_class,
+            random_state=random_state,
+            check_input=check_input,
+            max_squared_sum=max_squared_sum,
+            sample_weight=sample_weight,
+            l1_ratio=l1_ratio,
+            n_threads=n_threads,
+        )
+
+
+def logistic_regression_path_dispatcher(
+    X,
+    y,
+    classes=None,
+    pos_class=None,
+    Cs=10,
+    fit_intercept=True,
+    max_iter=100,
+    tol=1e-4,
+    verbose=0,
+    solver="lbfgs",
+    coef=None,
+    class_weight=None,
+    dual=False,
+    penalty="l2",
+    intercept_scaling=1.0,
+    multi_class="auto",
+    random_state=None,
+    check_input=True,
+    max_squared_sum=None,
+    sample_weight=None,
+    l1_ratio=None,
+    n_threads=1,
+):
 
     _patching_status = PatchingConditionsChain(
         "sklearn.linear_model.LogisticRegression.fit"
@@ -462,34 +586,124 @@ def logistic_regression_path(*args, **kwargs):
     _dal_ready = _patching_status.and_conditions(
         [
             (
-                kwargs["solver"] in ["lbfgs", "newton-cg"],
-                f"'{kwargs['solver']}' solver is not supported. "
+                solver in ["lbfgs", "newton-cg"],
+                f"'{solver}' solver is not supported. "
                 "Only 'lbfgs' and 'newton-cg' solvers are supported.",
             ),
-            (not sparse.issparse(args[0]), "X is sparse. Sparse input is not supported."),
-            (kwargs["sample_weight"] is None, "Sample weights are not supported."),
-            (kwargs["class_weight"] is None, "Class weights are not supported."),
+            (not sparse.issparse(X), "X is sparse. Sparse input is not supported."),
+            (sample_weight is None, "Sample weights are not supported."),
+            (class_weight is None, "Class weights are not supported."),
             (
-                kwargs["penalty"]
+                penalty
                 in (["l2", "deprecated"] if sklearn_check_version("1.8") else ["l2"]),
                 "Penalties other than l2 are not supported.",
             ),
-            (not kwargs["l1_ratio"], "L1 regularization is not supported."),
+            (not l1_ratio, "L1 regularization is not supported."),
             (
-                not (kwargs["solver"] == "newton-cg" and not kwargs["fit_intercept"]),
+                not (solver == "newton-cg" and not fit_intercept),
                 "'newton-cg' solver without intercept is not supported.",
             ),
+            (not dual, "Dual problem formulation is not supported."),
+            (max_squared_sum is None, "'max_squared_sum' is not supported."),
         ]
     )
     if not _dal_ready:
         _patching_status.write_log()
-        return lr_path_original(*args, **kwargs)
+        if sklearn_check_version("1.8"):
+            return lr_path_original(
+                X,
+                y,
+                classes=classes,
+                Cs=Cs,
+                fit_intercept=fit_intercept,
+                max_iter=max_iter,
+                tol=tol,
+                verbose=verbose,
+                solver=solver,
+                coef=coef,
+                class_weight=class_weight,
+                dual=dual,
+                penalty=penalty,
+                intercept_scaling=intercept_scaling,
+                random_state=random_state,
+                check_input=check_input,
+                max_squared_sum=max_squared_sum,
+                sample_weight=sample_weight,
+                l1_ratio=l1_ratio,
+                n_threads=n_threads,
+            )
+        elif sklearn_check_version("1.1"):
+            return lr_path_original(
+                X,
+                y,
+                pos_class=pos_class,
+                Cs=Cs,
+                fit_intercept=fit_intercept,
+                max_iter=max_iter,
+                tol=tol,
+                verbose=verbose,
+                solver=solver,
+                coef=coef,
+                class_weight=class_weight,
+                dual=dual,
+                penalty=penalty,
+                intercept_scaling=intercept_scaling,
+                multi_class=multi_class,
+                random_state=random_state,
+                check_input=check_input,
+                max_squared_sum=max_squared_sum,
+                sample_weight=sample_weight,
+                l1_ratio=l1_ratio,
+                n_threads=n_threads,
+            )
+        else:
+            return lr_path_original(
+                X,
+                y,
+                pos_class=pos_class,
+                Cs=Cs,
+                fit_intercept=fit_intercept,
+                max_iter=max_iter,
+                tol=tol,
+                verbose=verbose,
+                solver=solver,
+                coef=coef,
+                class_weight=class_weight,
+                dual=dual,
+                penalty=penalty,
+                intercept_scaling=intercept_scaling,
+                multi_class=multi_class,
+                random_state=random_state,
+                check_input=check_input,
+                max_squared_sum=max_squared_sum,
+                sample_weight=sample_weight,
+                l1_ratio=l1_ratio,
+            )
 
-    if sklearn_check_version("1.8"):
-        kwargs.pop("classes", None)
-        res = __logistic_regression_path(*(args[:2]), **kwargs)
-    else:
-        res = __logistic_regression_path(*args, **kwargs)
+    res = logistic_regression_path_d4p(
+        X,
+        y,
+        classes=classes,
+        pos_class=pos_class,
+        Cs=Cs,
+        fit_intercept=fit_intercept,
+        max_iter=max_iter,
+        tol=tol,
+        verbose=verbose,
+        solver=solver,
+        coef=coef,
+        class_weight=class_weight,
+        dual=dual,
+        penalty=penalty,
+        intercept_scaling=intercept_scaling,
+        multi_class=multi_class,
+        random_state=random_state,
+        check_input=check_input,
+        max_squared_sum=max_squared_sum,
+        sample_weight=sample_weight,
+        l1_ratio=l1_ratio,
+        n_threads=n_threads,
+    )
 
     _patching_status.write_log()
     return res
