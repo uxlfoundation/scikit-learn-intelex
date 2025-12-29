@@ -24,7 +24,7 @@ The |sklearnex| predominantly functions as a frontend to the |onedal| by leverag
 
 .. note:: Python packages ``dal`` (conda) and ``daal`` (PyPI) provide the same components, but due to naming availability in these repositories, they are distributed under different names.
 
-As a library, the |sklearnex| consists of a Python codebase with Python extension modules written in C++ and Cython, with some of those modules being optional. These extension modules require compilation before being used, for which a C++ compiler along with other dependencies is required. In the case of GPU-related modules, a SYCL compiler (such as `Intel's DPC++ <https://www.intel.com/content/www/us/en/developer/tools/oneapi/dpc-compiler.html>`__) is required, and in the case of distributed mode, whether on CPU or on GPU, an `MPI <https://en.wikipedia.org/wiki/Message_Passing_Interface>`__ backend is required, such as `Intel's MPI <https://www.intel.com/content/www/us/en/developer/tools/oneapi/mpi-library.html>`__.
+As a library, the |sklearnex| consists of a Python codebase with Python extension modules written in C++ and Cython, with some of those modules being optional. These extension modules require compilation before being used, for which a C++ compiler along with other dependencies is required. In the case of GPU-related modules, a SYCL compiler (such as `Intel's DPC++ <https://www.intel.com/content/www/us/en/developer/tools/oneapi/dpc-compiler.html>`__) is required, and in the case of distributed mode, whether on CPU or on GPU, an `MPI <https://en.wikipedia.org/wiki/Message_Passing_Interface>`__ backend is required, such as `Intel MPI <https://www.intel.com/content/www/us/en/developer/tools/oneapi/mpi-library.html>`__.
 
 The extension modules are as follows:
 
