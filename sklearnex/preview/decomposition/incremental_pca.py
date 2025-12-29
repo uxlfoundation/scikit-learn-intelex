@@ -14,7 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 
-import numpy as np
 import scipy.sparse as sp
 from sklearn.decomposition import IncrementalPCA as _sklearn_IncrementalPCA
 from sklearn.utils import check_array, gen_batches
