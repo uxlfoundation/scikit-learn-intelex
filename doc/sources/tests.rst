@@ -51,7 +51,7 @@ Some tests will only execute depending on the availability of optional dependenc
         mpi4py impi_rt `# for distributed mode, be sure to install from Intel's index` \
         && pip install pytest-mpi `# also required, but not from Intel's index`
 
-.. warning:: It might not be possible to install all of the test dependencies simultaneously in the same Python environment. In particular, dependencies ``torch`` and ``dpctl`` / ``dpnp`` are likely to not be installable in a compatible way in the same environment if using pre-built distributions. Try using different Python environments for each set of dependencies to test.
+.. warning:: It might not be possible to install all of the test dependencies simultaneously in the same Python environment. In particular, dependencies of ``torch`` and ``dpctl`` / ``dpnp`` are potentially incompatible if using pre-built distributions. Try using different Python environments for each set of dependencies to test.
 
 .. warning:: If installing dependencies for distributed mode from ``pip``, be sure to install ``mpi4py`` from the Intel ``pip`` index to ensure that it uses a compatible MPI backend. See :doc:`distributed-mode` for details.
 
