@@ -256,7 +256,7 @@ Tips
 Incremental Compilation
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-The compiled modules are a mixture of Cython and PyBind11. Compilation of the PyBind11 modules is managed through CMake, which offers incremental compilation and parallel compilation, but compilation of the Cython module ``daal4py`` is managed through ``setuptools``, which lacks this feature, and in addition, is compiled under a single thread due to consisting of a single large file. Thus, by default, a call to ``python setup.py build`` can take a long time to finish, with most of that time spent in the single-threaded ``daal4py`` compilation.
+The compiled modules are a mixture of Cython and PyBind11. Compilation of the PyBind11 modules is managed through CMake, which offers incremental compilation and parallel compilation, but compilation of the Cython module ``daal4py`` is managed through ``setuptools``, which lacks this feature, and in addition, is compiled under a single thread as it consists of a single large file. Thus, by default, a call to ``python setup.py build`` can take a long time to finish, with most of that time spent in the single-threaded ``daal4py`` compilation.
 
 For local development, in order to speed up setup, one can instead use ``ccache`` in order to avoid recompiling ``daal4py`` modules throughout multiple calls to ``setup.py``. While the build script doesn't have any explicit option for ``ccache``, it can be configured to use it by setting the compiler to something that would execute under it. Example:
 
