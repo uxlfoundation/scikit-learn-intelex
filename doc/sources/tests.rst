@@ -30,7 +30,7 @@ Requirements
 
 As the library is designed with optional components and integrates with external packages that are optional by design, executing the tests involves additional dependencies, some of which are mandatory and some of which are optional.
 
-The mandatory dependencies for tests with locked versions of packages are listed under a file `requirements-test.txt <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/requirements-test.txt>`__, but it is not strictly necessary to have the exact versions listed there. Those locked requirements can be installed with ``pip`` as follows:
+The mandatory dependencies for tests with locked versions of packages are listed under a file `requirements-test.txt <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/requirements-test.txt>`__, but it is not strictly necessary to have the exact versions listed there. Those versioned requirements can be installed with ``pip`` as follows:
 
 .. code-block:: bash
 
