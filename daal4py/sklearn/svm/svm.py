@@ -141,7 +141,11 @@ def extract_dual_coef(num_classes, sv_ind_by_clf, sv_coef_by_clf, labels):
                     row_index = i
                 else:
                     row_index = j - 1
-                dual_coef[row_index, col_index] = sv_coef_i_vs_j[k]
+                # as of numpy 2.4, 1d arrays are not converted to scalars, handling manually
+                coef_k = sv_coef_i_vs_j[k]
+                if isinstance(coef_k, np.ndarray) and coef_k.size == 1:
+                    coef_k = coef_k.reshape(()).item()
+                dual_coef[row_index, col_index] = coef_k
                 support_[col_index] = sv_index
 
     return dual_coef, support_
