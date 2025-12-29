@@ -472,7 +472,7 @@ class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
             _y = self._y.reshape((-1, 1))
             classes_ = [self.classes_]
 
-        n_queries = _num_samples(X)
+        n_queries = _num_samples(X if X is not None else self._fit_X)
 
         weights = self._get_weights(neigh_dist, self.weights)
         if weights is None:

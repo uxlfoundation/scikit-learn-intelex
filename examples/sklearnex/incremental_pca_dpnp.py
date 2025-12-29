@@ -14,11 +14,11 @@
 # limitations under the License.
 # ==============================================================================
 
-# sklearnex IncrementalPCA example for GPU offloading with DPCtl usm ndarray:
+# sklearnex IncrementalPCA example for GPU offloading with DPNP ndarray:
 #    SKLEARNEX_PREVIEW=YES python ./incremental_pca_dpctl.py
 
 import dpctl
-import dpctl.tensor as dpt
+import dpnp
 
 # Import estimator via sklearnex's patch mechanism from sklearn
 from sklearnex import patch_sklearn, sklearn_is_patched
@@ -35,23 +35,23 @@ from sklearn.decomposition import IncrementalPCA
 # Or just directly import estimator from sklearnex namespace.
 # from sklearnex.preview.decomposition import IncrementalPCA
 
-# We create GPU SyclQueue and then put data to dpctl tensor using
+# We create GPU SyclQueue and then put data to dpnp arrays using
 # the queue. It allows us to do computation on GPU.
 queue = dpctl.SyclQueue("gpu")
 
 incpca = IncrementalPCA()
 
 # We do partial_fit for each batch and then print final result.
-X_1 = dpt.asarray([[-1, -1], [-2, -1]], sycl_queue=queue)
+X_1 = dpnp.asarray([[-1, -1], [-2, -1]], sycl_queue=queue)
 result = incpca.partial_fit(X_1)
 
-X_2 = dpt.asarray([[-3, -2], [1, 1]], sycl_queue=queue)
+X_2 = dpnp.asarray([[-3, -2], [1, 1]], sycl_queue=queue)
 result = incpca.partial_fit(X_2)
 
-X_3 = dpt.asarray([[2, 1], [3, 2]], sycl_queue=queue)
+X_3 = dpnp.asarray([[2, 1], [3, 2]], sycl_queue=queue)
 result = incpca.partial_fit(X_3)
 
-X = dpt.concat((X_1, X_2, X_3))
+X = dpnp.concat((X_1, X_2, X_3))
 transformed_X = incpca.transform(X)
 
 print(f"Principal components:\n{result.components_}")
@@ -61,7 +61,7 @@ print(f"Transformed data:\n{transformed_X}")
 # We put the whole data to fit method, it is split automatically and then
 # partial_fit is called for each batch.
 incpca = IncrementalPCA(batch_size=3)
-X = dpt.asarray([[-1, -1], [-2, -1], [-3, -2], [1, 1], [2, 1], [3, 2]])
+X = dpnp.asarray([[-1, -1], [-2, -1], [-3, -2], [1, 1], [2, 1], [3, 2]])
 result = incpca.fit(X)
 transformed_X = incpca.transform(X)
 

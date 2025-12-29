@@ -34,9 +34,9 @@ The overall acceleration of TSNE depends on the acceleration of each of these al
   - ``metric`` != `'euclidean'` or `'minkowski'` with ``p`` != `2`
 - The Gradient Descent part of the algorithm supports all parameters except:
 
-  - ``n_components`` = `3`
-  - ``method`` = `'exact'`
-  - ``verbose`` != `0`
+  - ``n_components`` > ``2``
+  - ``method`` = ``'exact'``
+  - ``verbose`` != ``0``
 
 To get better performance, use parameters supported by both components.
 
