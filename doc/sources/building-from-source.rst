@@ -20,7 +20,7 @@ Building from Source
 Components
 ----------
 
-The |sklearnex| as a library works mostly as a frontend to the |onedal| by leveraging it as a backend for |sklearn| calls. In order to build the |sklearnex|, it's necessary to have a version of the |onedal| as a shared library already built somewhere along with its headers - for example, by using the Python packages ``dal`` + ``dal-devel`` (conda) / ``daal`` + ``daal-devel`` (PyPI), or the system-wide `offline installer <https://www.intel.com/content/www/us/en/developer/tools/oneapi/onedal-download.html>`__, or by `building oneDAL from source <https://github.com/uxlfoundation/oneDAL/blob/main/INSTALL.md>`__.
+The |sklearnex| predominantly functions as a frontend to the |onedal| by leveraging it as a backend for |sklearn| calls. In order to build the |sklearnex|, it's necessary to have a version of the |onedal| as a shared library already built somewhere along with its headers - for example, by using the Python packages ``dal`` + ``dal-devel`` (conda) / ``daal`` + ``daal-devel`` (PyPI), or the system-wide `offline installer <https://www.intel.com/content/www/us/en/developer/tools/oneapi/onedal-download.html>`__, or by `building oneDAL from source <https://github.com/uxlfoundation/oneDAL/blob/main/INSTALL.md>`__.
 
 .. note:: Python packages ``dal`` (conda) and ``daal`` (PyPI) provide the same components, but due to naming availability in these repositories, they are distributed under different names.
 
