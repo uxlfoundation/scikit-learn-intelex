@@ -265,7 +265,7 @@ For local development, in order to speed up setup, one can instead use ``ccache`
     CC="ccache icx" CXX="ccache icpx" python setup.py build_ext --inplace --force
     CC="ccache icx" CXX="ccache icpx" python setup.py build
 
-Leave components out
+Omitting components
 ~~~~~~~~~~~~~~~~~~~~
 
 When it comes to local development, in many cases the features being developed do not involve an SPMD or GPU component. In such cases, it's faster to compile without those options, and it's likewise usually faster to use the LLD linker and lower the optimization level for the library:
