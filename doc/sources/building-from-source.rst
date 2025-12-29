@@ -38,7 +38,7 @@ The extension modules are as follows:
 Build Requirements
 ------------------
 
-In order to build the library from source, a file `dependencies-dev <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/dependencies-dev>`__ with locked versions of mandatory dependencies is created for usage in CI jobs. Note however that this file does not contain the necessary dependencies for distributed mode, nor does it contain compiler-related dependencies, and it is not strongly necessary to install the exact same versions as in that file for local development purposes.
+The |sklearnex| `dependencies-dev <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/dependencies-dev>`__ provides versioned mandatory dependencies for building from source and usage in CI jobs. Note however that this file does not contain all of the necessary dependencies for distributed mode, nor does it contain compiler-related dependencies, and it is not strongly necessary to install the exact same versions as in that file for local development purposes.
 
 Python dependencies
 ~~~~~~~~~~~~~~~~~~~
