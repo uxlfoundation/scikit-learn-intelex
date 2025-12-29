@@ -57,7 +57,7 @@ To install the necessary Python dependencies:
 
     pip install numpy cython jinja2 pybind11 "setuptools<=79"
 
-.. hint:: Using the compiled library after building it has a different set of requirements, such as the |sklearn| package along with its dependencies. Executing the tests also adds additional dependencies such as ``pytest``.
+.. hint:: Using the compiled library after building it has a different set of requirements, such as the |sklearn| package along with its dependencies. Executing the tests also adds additional dependencies such as ``pytest``. These test dependencies can be installed from file `requirements-test.txt <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/requirements-test.txt>`__.
 
 Non-Python dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~
