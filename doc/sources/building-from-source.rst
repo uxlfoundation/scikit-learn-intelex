@@ -196,7 +196,7 @@ The following are required in order to use ``conda-build``:
 Instructions
 ************
 
-To create and verify the conda package for this library, execute the following command from the root of the repository:
+To create and verify the conda package for this library, execute the following command from the root of the repository **after installing conda-build**:
 
 .. code-block:: bash
 
