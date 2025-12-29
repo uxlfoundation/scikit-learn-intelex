@@ -69,6 +69,7 @@ requirements:
     - python
     - numpy
     - scikit-learn
+    - scikit-learn  <1.6  # [py<=39]
     # dal-devel has run_exports on conda-forge, so no need to add it.
     - mpi * impi  # [not win]
 
@@ -91,6 +92,7 @@ test:
     - treelite
     - array-api-compat
     - array-api-strict
+    - array-api-strict <2.4  # [py<312]
   source_files:
     - .ci
     - setup.cfg
