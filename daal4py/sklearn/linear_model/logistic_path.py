@@ -368,14 +368,6 @@ def daal4py_fit_cv(self, X, y, sample_weight=None, **params):
 
 
 def daal4py_predict(self, X, resultsToEvaluate):
-    check_is_fitted(self)
-    check_feature_names(self, X, reset=False)
-    X = check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
-    try:
-        fptype = getFPType(X)
-    except ValueError:
-        fptype = None
-
     if resultsToEvaluate == "computeClassLabels":
         _function_name = "predict"
     elif resultsToEvaluate == "computeClassProbabilities":
@@ -391,6 +383,25 @@ def daal4py_predict(self, X, resultsToEvaluate):
     _patching_status = PatchingConditionsChain(
         f"sklearn.linear_model.LogisticRegression.{_function_name}"
     )
+    _dal_ready = _patching_status.and_conditions(
+        [
+            (
+                not ((not isinstance(X, np.ndarray)) and hasattr(X, "__dlpack__")),
+                "Array API inputs not supported.",
+            )
+        ]
+    )
+    if not _dal_ready:
+        return getattr(LogisticRegression_original, _function_name)(self, X)
+
+    check_is_fitted(self)
+    check_feature_names(self, X, reset=False)
+    X = check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
+    try:
+        fptype = getFPType(X)
+    except ValueError:
+        fptype = None
+
     if _function_name != "predict":
         multi_class = getattr(self, "multi_class", "auto")
         _patching_status.and_conditions(
@@ -491,6 +502,13 @@ def logistic_regression_path_internal(_patching_status, *args, **kwargs):
                 "Only 'lbfgs' and 'newton-cg' solvers are supported.",
             ),
             (not sparse.issparse(args[0]), "X is sparse. Sparse input is not supported."),
+            (
+                not (
+                    (not isinstance(args[0], np.ndarray))
+                    and hasattr(args[0], "__dlpack__")
+                ),
+                "Array API inputs not supported.",
+            ),
             (kwargs["sample_weight"] is None, "Sample weights are not supported."),
             (kwargs["class_weight"] is None, "Class weights are not supported."),
             (
