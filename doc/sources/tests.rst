@@ -126,7 +126,7 @@ To execute the |sklearn| conformance tests, the following script can be used:
 
 Note that some tests are known to produce failures - for example, :obj:`sklearn.linear_model.LinearRegression` allows an argument ``copy_X``, and one of its tests checks that passing ``copy_X=False`` modifies the 'X' input in-place, while the |sklearnex| never modifies this data regardless of the argument ``copy_X``, hence the test would show a failure under a patched call to |sklearn|, even though the results do not change.
 
-Cases that are known to fail are not executed during these conformance test. The list of deselected tests can be found under `deselected_tests.yaml <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/deselected_tests.yaml>`__.
+Cases that are known to fail are not executed during these conformance tests. The list of deselected tests can be found under `deselected_tests.yaml <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/deselected_tests.yaml>`__.
 
 Selecting tests
 ***************
