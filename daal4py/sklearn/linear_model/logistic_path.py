@@ -24,6 +24,9 @@ from sklearn.linear_model._logistic import _LOGISTIC_SOLVER_CONVERGENCE_MSG
 from sklearn.linear_model._logistic import (
     LogisticRegression as LogisticRegression_original,
 )
+from sklearn.linear_model._logistic import (
+    LogisticRegressionCV as LogisticRegressionCV_original,
+)
 from sklearn.linear_model._logistic import _check_solver
 from sklearn.utils import check_array, check_consistent_length, check_random_state
 from sklearn.utils.optimize import _check_optimize_result, _newton_cg
@@ -353,6 +356,17 @@ def daal4py_fit(self, X, y, sample_weight=None):
     return clf
 
 
+def daal4py_fit_cv(self, X, y, sample_weight=None, **params):
+    which, what = logistic_module, "_logistic_regression_path"
+    replacer = logistic_regression_path_cv
+    try:
+        setattr(which, what, replacer)
+        clf = LogisticRegressionCV_original.fit(self, X, y, sample_weight, **params)
+    finally:
+        setattr(which, what, lr_path_original)
+    return clf
+
+
 def daal4py_predict(self, X, resultsToEvaluate):
     check_is_fitted(self)
     check_feature_names(self, X, reset=False)
@@ -455,10 +469,20 @@ def daal4py_predict(self, X, resultsToEvaluate):
 
 
 def logistic_regression_path(*args, **kwargs):
-
     _patching_status = PatchingConditionsChain(
         "sklearn.linear_model.LogisticRegression.fit"
     )
+    return logistic_regression_path_internal(_patching_status, *args, **kwargs)
+
+
+def logistic_regression_path_cv(*args, **kwargs):
+    _patching_status = PatchingConditionsChain(
+        "sklearn.linear_model.LogisticRegressionCV.fit"
+    )
+    return logistic_regression_path_internal(_patching_status, *args, **kwargs)
+
+
+def logistic_regression_path_internal(_patching_status, *args, **kwargs):
     _dal_ready = _patching_status.and_conditions(
         [
             (
@@ -559,3 +583,27 @@ class LogisticRegression(LogisticRegression_original):
     predict.__doc__ = LogisticRegression_original.predict.__doc__
     predict_log_proba.__doc__ = LogisticRegression_original.predict_log_proba.__doc__
     predict_proba.__doc__ = LogisticRegression_original.predict_proba.__doc__
+
+
+@control_n_jobs(
+    decorated_methods=["fit", "predict", "predict_proba", "predict_log_proba"]
+)
+class LogisticRegressionCV(LogisticRegressionCV_original):
+
+    def fit(self, X, y, sample_weight=None, **params):
+        return daal4py_fit_cv(self, X, y, sample_weight, **params)
+
+    def predict(self, X):
+        return daal4py_predict(self, X, "computeClassLabels")
+
+    def predict_log_proba(self, X):
+        return daal4py_predict(self, X, "computeClassLogProbabilities")
+
+    def predict_proba(self, X):
+        return daal4py_predict(self, X, "computeClassProbabilities")
+
+    __doc__ = LogisticRegressionCV_original.__doc__
+    fit.__doc__ = LogisticRegressionCV_original.fit.__doc__
+    predict.__doc__ = LogisticRegressionCV_original.predict.__doc__
+    predict_log_proba.__doc__ = LogisticRegressionCV_original.predict_log_proba.__doc__
+    predict_proba.__doc__ = LogisticRegressionCV_original.predict_proba.__doc__

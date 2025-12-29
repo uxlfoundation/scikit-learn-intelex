@@ -16,10 +16,14 @@
 
 import logging
 
-from daal4py.sklearn._utils import daal_check_version
+from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from daal4py.sklearn.linear_model.logistic_path import (
     LogisticRegression as _daal4py_LogisticRegression,
 )
+from daal4py.sklearn.linear_model.logistic_path import LogisticRegressionCV
+from onedal._device_offload import support_input_format
+
+from ..base import oneDALEstimator
 
 if daal_check_version((2024, "P", 1)):
     import numpy as np
@@ -30,16 +34,17 @@ if daal_check_version((2024, "P", 1)):
     from sklearn.utils.validation import check_is_fitted
 
     from daal4py.sklearn._n_jobs_support import control_n_jobs
-    from daal4py.sklearn._utils import sklearn_check_version
-    from daal4py.sklearn.linear_model.logistic_path import daal4py_fit, daal4py_predict
-    from onedal._device_offload import support_input_format
+    from daal4py.sklearn.linear_model.logistic_path import (
+        LogisticRegressionCV,
+        daal4py_fit,
+        daal4py_predict,
+    )
     from onedal.linear_model import LogisticRegression as onedal_LogisticRegression
     from onedal.utils.validation import _num_samples
 
     from .._config import get_config
     from .._device_offload import dispatch, wrap_output_data
     from .._utils import PatchingConditionsChain, get_patch_message
-    from ..base import oneDALEstimator
     from ..utils.validation import validate_data
 
     _sparsity_enabled = daal_check_version((2024, "P", 700))
@@ -463,4 +468,12 @@ else:
     logging.warning(
         "Sklearnex LogisticRegression requires oneDAL version >= 2024.0.1 "
         "but it was not found"
+    )
+
+LogisticRegressionCV.fit = support_input_format(LogisticRegressionCV.fit)
+
+if sklearn_check_version("1.4"):
+    LogisticRegressionCV._doc_link_module = "daal4py"
+    LogisticRegressionCV._doc_link_url_param_generator = (
+        oneDALEstimator._doc_link_url_param_generator
     )

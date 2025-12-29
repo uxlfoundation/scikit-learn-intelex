@@ -71,6 +71,7 @@ GPU_SKIP_LIST = (
     "NuSVR",  # does not support GPU offloading (fails silently)
     "NuSVC",  # does not support GPU offloading (fails silently)
     "LogisticRegression",  # default parameters not supported, see solver=newton-cg
+    "LogisticRegressionCV",  # does not support GPU offloading
     "NuSVC(probability=True)",  # does not support GPU offloading (fails silently)
     "IncrementalLinearRegression",  # issue with potrf with the specific dataset
     "LinearRegression",  # issue with potrf with the specific dataset
