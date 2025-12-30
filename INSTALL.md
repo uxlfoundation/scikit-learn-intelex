@@ -43,7 +43,7 @@ Check [System](https://uxlfoundation.github.io/scikit-learn-intelex/latest/syste
 ## Supported Configurations
 
 * Operating systems: Linux*, Windows*
-* Python versions: 3.9 through 3.13
+* Python versions: 3.10 through 3.14
 * Devices: CPU, GPU
 * Distribution channels:
   * PyPI
@@ -132,7 +132,7 @@ The build-process (using setup.py) happens in 4 stages:
 4. Compiling and linking them
 
 ### Prerequisites
-* Python version >= 3.9
+* Python version >= 3.10
 * Jinja2
 * Cython
 * Numpy
