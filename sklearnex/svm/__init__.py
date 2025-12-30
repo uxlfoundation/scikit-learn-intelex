@@ -14,13 +14,10 @@
 # limitations under the License.
 # ==============================================================================
 
-from .._utils import get_sklearnex_version
+from daal4py.sklearn._utils import daal_check_version
 
-if get_sklearnex_version((2021, "P", 300)):
-    from .nusvc import NuSVC
-    from .nusvr import NuSVR
-    from .svc import SVC
-    from .svr import SVR
+if daal_check_version((2021, "P", 300)):
+    from ._classes import SVC, SVR, NuSVC, NuSVR
 
     __all__ = ["SVR", "SVC", "NuSVC", "NuSVR"]
 else:
