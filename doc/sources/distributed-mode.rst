@@ -26,7 +26,7 @@ Several :doc:`GPU-supported algorithms <oneapi-gpu>`
 also provide distributed, multi-GPU computing capabilities via integration with |mpi4py|. The prerequisites
 match those of GPU computing, along with an MPI backend of your choice (`Intel MPI recommended
 <https://www.intel.com/content/www/us/en/developer/tools/oneapi/mpi-library.html>`_, available
-via the ``impi_rt``  / ``impi-rt``python/conda package) and the |mpi4py| python package. If using |sklearnex|
+via the ``impi_rt``  / ``impi-rt`` python/conda package) and the |mpi4py| python package. If using |sklearnex|
 :doc:`installed from sources <building-from-source>`, ensure that the SPMD backend is built.
 
 .. important::
