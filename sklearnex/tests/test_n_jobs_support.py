@@ -16,19 +16,15 @@
 
 import inspect
 import logging
-from multiprocessing import cpu_count
+import os
 
 import pytest
+from joblib import cpu_count
 from sklearn.datasets import make_classification
 from sklearn.exceptions import NotFittedError
+from threadpoolctl import threadpool_info
 
-from sklearnex.tests.utils import (
-    PATCHED_MODELS,
-    SPECIAL_INSTANCES,
-    call_method,
-    gen_dataset,
-    gen_models_info,
-)
+from sklearnex.tests.utils import PATCHED_MODELS, SPECIAL_INSTANCES, call_method
 
 _X, _Y = make_classification(n_samples=40, n_features=4, random_state=42)
 
@@ -49,7 +45,7 @@ def _check_n_jobs_entry_in_logs(records, function_name, n_jobs):
         if f"{function_name}: setting {expected_n_jobs} threads" in rec:
             return True
     # False if n_jobs is set and not found in logs
-    return n_jobs is None
+    return n_jobs is None or expected_n_jobs == cpu_count()
 
 
 @pytest.mark.parametrize("estimator", {**PATCHED_MODELS, **SPECIAL_INSTANCES}.keys())
@@ -109,3 +105,31 @@ def test_n_jobs_support(estimator, n_jobs, caplog):
 
         messages = [msg.message for msg in caplog.records]
         assert _check_n_jobs_entry_in_logs(messages, method_name, n_jobs)
+
+
+@pytest.mark.skipif(
+    not hasattr(os, "sched_setaffinity") or len(os.sched_getaffinity(0)) < 4,
+    reason="python CPU affinity control unavailable or too few threads",
+)
+@pytest.mark.parametrize("estimator", {**PATCHED_MODELS, **SPECIAL_INSTANCES}.keys())
+def test_n_jobs_affinity(estimator, caplog):
+    # verify that n_jobs 1) starts at default value of cpu_count
+    # 2) respects os.sched_setaffinity on supported machines
+    n_t = next(i for i in threadpool_info() if i["user_api"] == "onedal")["num_threads"]
+
+    # get affinity mask of calling process
+    mask = os.sched_getaffinity(0)
+    # by default, oneDAL should match the number of threads made available to the sklearnex pytest suite
+    # This is currently disabled due to thread setting occurring in test_run_to_run_stability
+    # assert len(mask) == n_t
+
+    try:
+        # use half of the available threads
+        newmask = set(list(mask)[: len(mask) // 2])
+        os.sched_setaffinity(0, newmask)
+        # -2 is used as this forces n_jobs to be based on cpu_count and must value match in test
+        test_n_jobs_support(estimator, -2, caplog)
+
+    finally:
+        # reset affinity mask no matter what
+        os.sched_setaffinity(0, mask)
