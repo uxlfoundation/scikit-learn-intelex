@@ -20,7 +20,9 @@ from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from daal4py.sklearn.linear_model.logistic_path import (
     LogisticRegression as _daal4py_LogisticRegression,
 )
-from daal4py.sklearn.linear_model.logistic_path import LogisticRegressionCV
+from daal4py.sklearn.linear_model.logistic_path import (
+    LogisticRegressionCV as _daal4py_LogisticRegressionCV,
+)
 from onedal._device_offload import support_input_format
 
 from ..base import oneDALEstimator
@@ -470,10 +472,11 @@ else:
         "but it was not found"
     )
 
-LogisticRegressionCV.fit = support_input_format(LogisticRegressionCV.fit)
 
-if sklearn_check_version("1.4"):
-    LogisticRegressionCV._doc_link_module = "daal4py"
-    LogisticRegressionCV._doc_link_url_param_generator = (
-        oneDALEstimator._doc_link_url_param_generator
-    )
+# This is necessary due to how sklearn handles array API inputs
+class LogisticRegressionCV(_daal4py_LogisticRegressionCV, LogisticRegression):
+    fit = support_input_format(_daal4py_LogisticRegressionCV.fit)
+    predict_proba = LogisticRegression.predict_proba
+    predict_log_proba = LogisticRegression.predict_log_proba
+    decision_function = LogisticRegression.decision_function
+    score = LogisticRegression.score
