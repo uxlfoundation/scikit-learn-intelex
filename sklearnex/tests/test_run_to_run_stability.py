@@ -22,7 +22,6 @@ from numbers import Number
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
-from scipy import sparse
 from sklearn.datasets import (
     load_breast_cancer,
     load_diabetes,
