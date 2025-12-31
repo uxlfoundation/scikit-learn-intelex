@@ -118,7 +118,7 @@ def _run_test(estimator, method, datasets):
                     or hasattr(b, "__array__")
                     or hasattr(b, "__array_namespace__")
                     or hasattr(b, "__sycl_usm_ndarray__")
-                ):
+                ) and not (hasattr(b, "dtype") and b.dtype == object):
                     assert_allclose(
                         r, b, rtol=0.0, atol=0.0, err_msg=str(n + " is incorrect")
                     )
