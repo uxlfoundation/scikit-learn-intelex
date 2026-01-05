@@ -23,8 +23,7 @@ Introduction
 
 Module :ref:`daal4py <about_daal4py>` within the |sklearnex| offers distributed versions of
 some algorithms that can run on compute clusters managed through the
-`MPI <https://en.wikipedia.org/wiki/Message_Passing_Interface>`__ framework, optionally aided
-by |mpi4py|.
+MPI framework, optionally aided by |mpi4py|.
 
 Compared to the :ref:`SMPD mode <distributed>` in the ``sklearnex`` module which runs on multiple
 GPUs, the distributed mode of algorithms in the ``daal4py`` module runs on CPU-based nodes - i.e.
