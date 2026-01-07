@@ -36,11 +36,7 @@ if daal_check_version((2024, "P", 1)):
     from sklearn.utils.validation import check_is_fitted
 
     from daal4py.sklearn._n_jobs_support import control_n_jobs
-    from daal4py.sklearn.linear_model.logistic_path import (
-        LogisticRegressionCV,
-        daal4py_fit,
-        daal4py_predict,
-    )
+    from daal4py.sklearn.linear_model.logistic_path import daal4py_fit, daal4py_predict
     from onedal.linear_model import LogisticRegression as onedal_LogisticRegression
     from onedal.utils.validation import _num_samples
 
@@ -479,4 +475,5 @@ class LogisticRegressionCV(_daal4py_LogisticRegressionCV, LogisticRegression):
     predict_proba = LogisticRegression.predict_proba
     predict_log_proba = LogisticRegression.predict_log_proba
     decision_function = LogisticRegression.decision_function
-    score = LogisticRegression.score
+
+    __doc__ = _daal4py_LogisticRegressionCV.__doc__
