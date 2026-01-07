@@ -27,6 +27,9 @@ from onedal._device_offload import support_input_format
 
 from ..base import oneDALEstimator
 
+if sklearn_check_version("1.6"):
+    from ..base import Tags
+
 if daal_check_version((2024, "P", 1)):
     import numpy as np
     from scipy.sparse import issparse
@@ -477,3 +480,10 @@ class LogisticRegressionCV(_daal4py_LogisticRegressionCV, LogisticRegression):
     decision_function = LogisticRegression.decision_function
 
     __doc__ = _daal4py_LogisticRegressionCV.__doc__
+
+    if sklearn_check_version("1.6"):
+
+        def __sklearn_tags__(self) -> "Tags":
+            tags = super().__sklearn_tags__()
+            tags.onedal_array_api = False
+            return tags

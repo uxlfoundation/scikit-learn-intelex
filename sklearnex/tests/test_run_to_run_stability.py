@@ -192,6 +192,8 @@ def test_standard_estimator_stability(estimator, method, dataframe, queue):
     if method and not hasattr(est, method):
         pytest.skip(f"sklearn available_if prevents testing {estimator}.{method}")
 
+    # TODO: remove this once scikit-learn implements array API support
+    # for LogisticRegressionCV
     if (
         estimator == "LogisticRegressionCV"
         and dataframe == "array_api"
@@ -226,6 +228,15 @@ def test_special_estimator_stability(estimator, method, dataframe, queue):
 
     if method and not hasattr(est, method):
         pytest.skip(f"sklearn available_if prevents testing {estimator}.{method}")
+
+    # TODO: remove this once scikit-learn implements array API support
+    # for LogisticRegressionCV
+    if (
+        estimator == "LogisticRegressionCV"
+        and dataframe == "array_api"
+        and not get_tags(est).array_api_support
+    ):
+        pytest.skip("Array API inputs not supported in estimator")
 
     params = est.get_params().copy()
     if "random_state" in params:
