@@ -22,6 +22,7 @@ from numbers import Number
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
+from sklearn.base import get_tags
 from sklearn.datasets import (
     load_breast_cancer,
     load_diabetes,
@@ -104,6 +105,7 @@ def eval_method(X, y, est, method):
 
 
 def _run_test(estimator, method, datasets):
+    print("estimator:", estimator.__class__, estimator)
 
     for X, y in datasets:
         baseline, attributes = eval_method(X, y, estimator, method)
@@ -189,6 +191,13 @@ def test_standard_estimator_stability(estimator, method, dataframe, queue):
 
     if method and not hasattr(est, method):
         pytest.skip(f"sklearn available_if prevents testing {estimator}.{method}")
+
+    if (
+        estimator == "LogisticRegressionCV"
+        and dataframe == "array_api"
+        and not get_tags(est).array_api_support
+    ):
+        pytest.skip("Array API inputs not supported in estimator")
 
     params = est.get_params().copy()
     if "random_state" in params:
