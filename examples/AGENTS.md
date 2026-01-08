@@ -36,7 +36,7 @@ Converting XGBoost/LightGBM/CatBoost models to oneDAL format for accelerated inf
 - **SVM**: Classification and regression
 - **Neighbors**: KNN classification and regression
 
-## For AI Agents
+## Usage Guidelines
 - Use examples as templates for new implementations
 - Follow established patterns for performance optimization
 - Include both sklearn and oneDAL performance comparisons

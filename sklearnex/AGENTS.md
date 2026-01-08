@@ -97,7 +97,7 @@ oneDAL GPU → oneDAL CPU → sklearn → Error
 - GPU memory limits
 - Unsupported data types
 
-## For AI Agents
+## Key Implementation Patterns
 - Use config_context for device control and fallback configuration
 - Check `_onedal_*_supported()` methods to understand algorithm constraints
 - Understand three-tier fallback: GPU → CPU → sklearn

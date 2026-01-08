@@ -33,7 +33,7 @@ MPI-based communication layer with gather, broadcast, and reduce operations. Map
 ### Model Building
 Cython interfaces for converting external ML framework models to oneDAL format. Supports tree construction, node splits, and leaf assignments.
 
-## For AI Agents
+## Key Implementation Patterns
 - Performance-critical C++/Cython code requiring compilation
 - Zero-copy memory patterns essential for performance
 - GIL protection required for Python object manipulation

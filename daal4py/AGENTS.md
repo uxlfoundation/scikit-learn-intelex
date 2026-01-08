@@ -171,7 +171,7 @@ Run pytest on `daal4py/sklearn/` and `tests/` for validation. MPI tests require 
 - Inference performance critical
 - Deployment optimization needed
 
-## For AI Agents
+## Key Implementation Patterns
 - Native API provides explicit control, sklearn API provides compatibility
 - Model builders accelerate inference of externally trained models
 - Monkeypatch system enables transparent acceleration via condition checking

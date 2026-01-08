@@ -27,7 +27,7 @@ Automatic backend selection between GPU (DPC++) and CPU (Host) based on availabl
 - **Ensemble**: Random Forest
 - **Statistics**: Basic statistics, covariance
 
-## For AI Agents
+## Key Implementation Patterns
 - Prefer zero-copy operations with `to_table()`
 - Handle CPU/GPU backend availability gracefully
 - Monitor memory usage on GPU
