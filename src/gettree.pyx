@@ -27,7 +27,7 @@ cdef extern from "numpy/arrayobject.h":
     object PyArray_SimpleNewFromData(int nd, cnp.npy_intp* dims, int typenum, void* data)
 
 cdef extern from "daal4py.h":
-    cdef void set_rawp_base(cnp.ndarray, void *)
+    cdef void set_rawp_base[T](cnp.ndarray, T *)
 
 cdef extern from "tree_visitor.h":
     cdef struct skl_tree_node:
@@ -63,7 +63,7 @@ cdef class pyTreeState(object):
     cdef size_t leaf_count
     cdef size_t class_count
 
-    cdef cnp.ndarray _get_node_ndarray(self, void* nodes, size_t count):
+    cdef cnp.ndarray _get_node_ndarray(self, skl_tree_node* nodes, size_t count):
         """Wraps nodes as a NumPy struct array.
         The array keeps a reference to this Tree, which manages the underlying
         memory. Individual fields are publicly accessible as properties of the
@@ -82,7 +82,7 @@ cdef class pyTreeState(object):
         return arr
 
 
-    cdef cnp.ndarray _get_value_ndarray(self, void* values, size_t count, size_t outputs, size_t class_counts):
+    cdef cnp.ndarray _get_value_ndarray(self, double* values, size_t count, size_t outputs, size_t class_counts):
         cdef cnp.npy_intp shape[3]
         shape[0] = <cnp.npy_intp> count
         shape[1] = <cnp.npy_intp> 1
@@ -98,8 +98,8 @@ cdef class pyTreeState(object):
         self.node_count = treeState.node_count
         self.leaf_count = treeState.leaf_count
         self.class_count = treeState.class_count
-        self.node_ar = self._get_node_ndarray(<void*> treeState.node_ar, treeState.node_count)
-        self.value_ar = self._get_value_ndarray(<void*> treeState.value_ar, treeState.node_count, 1, treeState.class_count)
+        self.node_ar = self._get_node_ndarray(treeState.node_ar, treeState.node_count)
+        self.value_ar = self._get_value_ndarray(treeState.value_ar, treeState.node_count, 1, treeState.class_count)
 
 
     @property

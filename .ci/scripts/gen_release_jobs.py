@@ -42,7 +42,7 @@ def generate_python_versions(file="README.md"):
         r"(?<=\[python version\]\(https://img.shields.io/badge/python-).*(?=-blue\)\])"
     )
     sep = "%20%7C%20"
-    pydefaults = ["3.9", "3.10", "3.11"]
+    pydefaults = ["3.10", "3.11", "3.12", "3.13", "3.14"]
     if os.path.isfile(file):
         with open(file, "r") as f:
             pydefaults = re.findall(regex, f.read())[0].split(sep)
@@ -56,7 +56,7 @@ def collect_azp_CI_OS_images(file=f".ci{os.sep}pipeline{os.sep}ci.yml"):
     """Attempt to centralize the supported version from the azp CI pipeline, which
     represents the currently tested versions in Azure Pipelines."""
     regex = r"(?<=vmImage: ').*(?=')"
-    sysdefaults = ["ubuntu-22.04", "windows-2022"]
+    sysdefaults = ["ubuntu-24.04", "windows-2022"]
     if os.path.isfile(file):
         with open(file, "r") as f:
             # find unique values with set

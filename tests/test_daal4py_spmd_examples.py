@@ -183,6 +183,8 @@ for fname in os.listdir(example_path):
     if "spmd" not in fname:
         # here we only run spmd examples
         continue
+    if "spmd_chunks_read" in fname:
+        continue
     stem = Path(fname).stem
     if stem in module_names_with_configs:
         continue

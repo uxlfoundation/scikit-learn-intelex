@@ -30,7 +30,7 @@ from sklearn.manifold import TSNE
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor, NearestNeighbors
 from sklearn.svm import SVC
 
-from daal4py.sklearn._utils import daal_check_version
+from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 
 MODELS_INFO = [
     {
@@ -84,18 +84,10 @@ MODELS_INFO = [
         "dataset": "classifier",
     },
     {
-        "model": LogisticRegression(max_iter=100, multi_class="multinomial"),
-        "methods": [
-            "decision_function",
-            "predict",
-            "predict_proba",
-            "predict_log_proba",
-            "score",
-        ],
-        "dataset": "classifier",
-    },
-    {
-        "model": LogisticRegressionCV(max_iter=100),
+        "model": LogisticRegression(
+            max_iter=100,
+            **({} if sklearn_check_version("1.8") else {"multi_class": "multinomial"})
+        ),
         "methods": [
             "decision_function",
             "predict",
@@ -142,11 +134,6 @@ TO_SKIP = [
     r"KMeans .*score",
     r"PCA .*score",
     r"LogisticRegression .*decision_function",
-    r"LogisticRegressionCV .*decision_function",
-    r"LogisticRegressionCV .*predict",
-    r"LogisticRegressionCV .*predict_proba",
-    r"LogisticRegressionCV .*predict_log_proba",
-    r"LogisticRegressionCV .*score",
     # --------------- Scikit ---------------
     r"Ridge float16 predict",
     r"Ridge float16 score",

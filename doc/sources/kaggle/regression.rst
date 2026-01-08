@@ -39,7 +39,7 @@ Using a Single Regressor
      -
 
        - data preprocessing
-       - search for optimal paramters using Optuna
+       - search for optimal parameters using Optuna
        - training and prediction using scikit-learn-intelex
    * - `Nu Support Vector Regression (nuSVR)
        <https://www.kaggle.com/alexeykolobyanin/tps-aug-nusvr-with-intel-extension-for-sklearn>`__
@@ -75,7 +75,7 @@ Using a Single Regressor
      -
 
        - checking correlation between features
-       - search for best paramters using GridSearchCV
+       - search for best parameters using GridSearchCV
        - training and prediction using scikit-learn-intelex
        - performance comparison to scikit-learn
 

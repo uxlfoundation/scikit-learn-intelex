@@ -16,15 +16,11 @@
 
 import numpy as np
 
-from daal4py.sklearn._utils import make2d
 from onedal._device_offload import supports_queue
 
-from .._config import _get_config
 from ..common._backend import bind_default_backend
 from ..common._mixin import ClusterMixin
 from ..datatypes import from_table, to_table
-from ..utils._array_api import _get_sycl_namespace
-from ..utils.validation import _check_array
 
 
 class DBSCAN(ClusterMixin):
@@ -64,35 +60,21 @@ class DBSCAN(ClusterMixin):
 
     @supports_queue
     def fit(self, X, y=None, sample_weight=None, queue=None):
-        use_raw_input = _get_config().get("use_raw_input", False) is True
-        sua_iface, xp, _ = _get_sycl_namespace(X)
-
-        if not use_raw_input:
-            X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
-            X = make2d(X)
-        elif sua_iface is not None:
-            queue = X.sycl_queue
-
         X_table, sample_weight_table = to_table(X, sample_weight, queue=queue)
 
         params = self._get_onedal_params(X_table.dtype)
         result = self.compute(params, X_table, sample_weight_table)
 
-        self.labels_ = from_table(result.responses, sycl_queue=queue).ravel()
+        # 2d table but only 1d of information
+        self.labels_ = from_table(result.responses, like=X)[:, 0]
         if (
             result.core_observation_indices is not None
-            and not result.core_observation_indices.kind == "empty"
+            and result.core_observation_indices.kind != "empty"
         ):
+            # 2d table to 1d
             self.core_sample_indices_ = from_table(
-                result.core_observation_indices,
-                sycl_queue=queue,
-            ).ravel()
+                result.core_observation_indices, like=X
+            )[:, 0]
         else:
-            # construct keyword arguments for different namespaces (dptcl takes sycl_queue)
-            kwargs = {"dtype": xp.int32}  # always the same
-            if xp is not np:
-                kwargs["sycl_queue"] = queue
-            self.core_sample_indices_ = xp.empty((0,), **kwargs)
-        self.components_ = xp.take(X, self.core_sample_indices_, axis=0)
-        self.n_features_in_ = X.shape[1]
+            self.core_sample_indices_ = None
         return self

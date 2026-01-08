@@ -72,25 +72,24 @@ def _assert_all_finite(
 
     # Data with small size has too big relative overhead
     # TODO: tune threshold size
-    if hasattr(X, "size"):
-        if X.size < 32768:
-            if sklearn_check_version("1.1"):
-                _sklearn_assert_all_finite(
-                    X,
-                    allow_nan=allow_nan,
-                    msg_dtype=msg_dtype,
-                    estimator_name=estimator_name,
-                    input_name=input_name,
-                )
-            else:
-                _sklearn_assert_all_finite(X, allow_nan=allow_nan, msg_dtype=msg_dtype)
-            return
-
     is_df = is_DataFrame(X)
+    if not (is_df or isinstance(X, np.ndarray)) or X.size < 32768:
+        if sklearn_check_version("1.1"):
+            _sklearn_assert_all_finite(
+                X,
+                allow_nan=allow_nan,
+                msg_dtype=msg_dtype,
+                estimator_name=estimator_name,
+                input_name=input_name,
+            )
+        else:
+            _sklearn_assert_all_finite(X, allow_nan=allow_nan, msg_dtype=msg_dtype)
+        return
+
     num_of_types = get_number_of_types(X)
 
     # if X is heterogeneous pandas.DataFrame then
-    # covert it to a list of arrays
+    # convert it to a list of arrays
     if is_df and num_of_types > 1:
         lst = []
         for idx in X:
@@ -281,9 +280,9 @@ def _daal_check_array(
     array_converted : object
         The converted and validated array.
     """
-    if force_all_finite not in (True, False, "allow-nan"):
+    if force_all_finite not in (True, False, "allow-nan", None):
         raise ValueError(
-            'force_all_finite should be a bool or "allow-nan"'
+            'force_all_finite should be a bool, None, or "allow-nan"'
             ". Got {!r} instead".format(force_all_finite)
         )
 
@@ -330,7 +329,7 @@ def _daal_check_array(
     has_pd_integer_array = False
     if hasattr(array, "dtypes") and hasattr(array.dtypes, "__array__"):
         # throw warning if columns are sparse. If all columns are sparse, then
-        # array.sparse exists and sparsity will be perserved (later).
+        # array.sparse exists and sparsity will be preserved (later).
         with suppress(ImportError):
             from pandas import SparseDtype
 

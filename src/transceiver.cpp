@@ -26,7 +26,7 @@ static std::mutex s_mtx;
 
 // We thraed-protect a static variable, which is our transceiver object.
 // If unset, we get the mutex and initialize.
-// We'll initialize at most once, and return the raw pointer to the tranceiver.
+// We'll initialize at most once, and return the raw pointer to the transceiver.
 // We load a python module to get the actual transceiver implementation.
 // We inspect D4P_TRANSCEIVER env var for using a non-default module.
 // We throw an exception if something goes wrong (like the module cannot be loaded).

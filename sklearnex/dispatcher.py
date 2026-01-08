@@ -101,7 +101,13 @@ def get_patch_map_core(preview=False):
         import sklearn.cluster as cluster_module
         import sklearn.covariance as covariance_module
         import sklearn.decomposition as decomposition_module
+        import sklearn.dummy as dummy_module
         import sklearn.ensemble as ensemble_module
+
+        if sklearn_check_version("1.4"):
+            import sklearn.ensemble._gb as _gb_module
+        else:
+            import sklearn.ensemble._gb_losses as _gb_module
         import sklearn.linear_model as linear_model_module
         import sklearn.manifold as manifold_module
         import sklearn.metrics as metrics_module
@@ -118,18 +124,13 @@ def get_patch_map_core(preview=False):
         from ._config import config_context as config_context_sklearnex
         from ._config import get_config as get_config_sklearnex
         from ._config import set_config as set_config_sklearnex
-
-        if sklearn_check_version("1.2.1"):
-            from .utils.parallel import _FuncWrapper as _FuncWrapper_sklearnex
-        else:
-            from .utils.parallel import _FuncWrapperOld as _FuncWrapper_sklearnex
-
         from .cluster import DBSCAN as DBSCAN_sklearnex
         from .cluster import KMeans as KMeans_sklearnex
         from .covariance import (
             IncrementalEmpiricalCovariance as IncrementalEmpiricalCovariance_sklearnex,
         )
         from .decomposition import PCA as PCA_sklearnex
+        from .dummy import DummyRegressor as DummyRegressor_sklearnex
         from .ensemble import ExtraTreesClassifier as ExtraTreesClassifier_sklearnex
         from .ensemble import ExtraTreesRegressor as ExtraTreesRegressor_sklearnex
         from .ensemble import RandomForestClassifier as RandomForestClassifier_sklearnex
@@ -155,6 +156,7 @@ def get_patch_map_core(preview=False):
         from .svm import SVR as SVR_sklearnex
         from .svm import NuSVC as NuSVC_sklearnex
         from .svm import NuSVR as NuSVR_sklearnex
+        from .utils.parallel import _FuncWrapper as _FuncWrapper_sklearnex
 
         # DBSCAN
         mapping.pop("dbscan")
@@ -412,6 +414,31 @@ def get_patch_map_core(preview=False):
                     None,
                 ]
             ]
+
+        # DummyRegressor
+        mapping["dummyregressor"] = [
+            [
+                (
+                    dummy_module,
+                    "DummyRegressor",
+                    DummyRegressor_sklearnex,
+                ),
+                None,
+            ]
+        ]
+
+        # Required patching of DummyRegressor in the gradient boosting
+        # module as it is used in the GradientBoosting algorithms
+        mapping["gb_dummyregressor"] = [
+            [
+                (
+                    _gb_module,
+                    "DummyRegressor",
+                    DummyRegressor_sklearnex,
+                ),
+                None,
+            ]
+        ]
 
         # Configs
         mapping["set_config"] = [

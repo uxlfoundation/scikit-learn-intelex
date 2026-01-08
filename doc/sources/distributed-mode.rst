@@ -26,30 +26,56 @@ Several :doc:`GPU-supported algorithms <oneapi-gpu>`
 also provide distributed, multi-GPU computing capabilities via integration with |mpi4py|. The prerequisites
 match those of GPU computing, along with an MPI backend of your choice (`Intel MPI recommended
 <https://www.intel.com/content/www/us/en/developer/tools/oneapi/mpi-library.html>`_, available
-via ``impi_rt`` python package) and the |mpi4py| python package. If using |sklearnex|
-`installed from sources <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/INSTALL.md#build-from-sources>`_,
-ensure that the spmd_backend is built.
+via the ``impi_rt``  / ``impi-rt`` python/conda package) and the |mpi4py| python package. If using |sklearnex|
+:doc:`installed from sources <building-from-source>`, ensure that the SPMD backend is built.
 
 .. important::
-  SMPD mode requires the |mpi4py| package used at runtime to be compiled with the same MPI backend as the |sklearnex|. The PyPI and Conda distributions of |sklearnex| both use Intel's MPI as backend, and hence require an |mpi4py| also built with Intel's MPI - it can be easily installed from Intel's conda channel as follows::
-    
-    conda install -c https://software.repos.intel.com/python/conda/ -c conda-forge --override-channels mpi4py
+  SMPD mode requires the |mpi4py| package used at runtime to be compiled with the same MPI backend as the |sklearnex|, or with an ABI-compatible MPI backend. The PyPI and Conda distributions of |sklearnex| are both built with Intel's MPI as backend, which follows the MPICH ABI and hence require an |mpi4py| also built with either Intel's MPI, or with another MPICH-compatible MPI backend (such as MPICH itself) - versions of |mpi4py| built with Intel's MPI can be installed as follows:
 
-  .. warning:: Packages from the Intel channel are meant to be compatible with dependencies from ``conda-forge``, and might not work correctly in environments that have packages installed from the ``anaconda`` channel.
+    .. tabs::
+        .. tab:: From conda-forge
+            ::
 
-  It also requires the MPI runtime executable (``mpiexec`` / ``mpirun``) to be from the same library that was used to compile |sklearnex|. Intel's MPI runtime library is offered as a Python package ``impi_rt`` and will be installed together with the ``mpi4py`` package if executing the command above, but otherwise, it can be installed separately from different distribution channels:
+                conda install -c conda-forge mpi4py mpi=*=impi
 
-  - Conda-Forge::
+        .. tab:: From Intel's conda channel
+            ::
 
-      conda install -c conda-forge impi_rt
+                conda install -c https://software.repos.intel.com/python/conda/ -c conda-forge --override-channels mpi4py mpi=*=impi
 
-  .. tip:: ``impi_rt`` is also available from the Intel channel: ``https://software.repos.intel.com/python/conda``.
+            .. warning:: Packages from the Intel channel are meant to be compatible with dependencies from ``conda-forge``, and might not work correctly in environments that have packages installed from the ``anaconda`` channel.
 
-  - PyPI (not recommended, might require setting additional environment variables)::
+        .. tab:: From Intel's pip Index
+            ::
 
-      pip install impi_rt
+                pip install --index-url https://software.repos.intel.com/python/pypi mpi4py impi-rt
 
-  Using other MPI backends (e.g. OpenMPI) requires building |sklearnex| from source with that backend.
+  It also requires the MPI runtime executable (``mpiexec`` / ``mpirun``) to be from the same library that was used to compile |sklearnex| or from a compatible library. Intel's MPI runtime library is offered as a Python package ``impi_rt`` (conda) / ``impi-rt`` (PyPI) and will be installed together with the ``mpi4py`` package if executing the commands above, but otherwise, it can be installed separately from different distribution channels:
+
+    .. tabs::
+        .. tab:: From conda-forge
+            ::
+
+                conda install -c conda-forge impi_rt mpi=*=impi
+
+        .. tab:: From Intel's conda channel
+            ::
+
+                conda install -c https://software.repos.intel.com/python/conda/ -c conda-forge --override-channels impi_rt mpi=*=impi
+
+        .. tab:: From PyPI
+            ::
+
+                pip install impi-rt
+
+        .. tab:: From Intel's pip Index
+            ::
+
+                pip install --index-url https://software.repos.intel.com/python/pypi impi-rt
+
+
+  Using other MPI backends that are not MPICH-compatible (e.g. OpenMPI) requires building |sklearnex| from source with that backend, and using an |mpi4py| built with that same backend.
+
 
 Note that |sklearnex| supports GPU offloading to speed up MPI operations. This is supported automatically with
 some MPI backends, but in order to use GPU offloading with Intel MPI, it is required to set the environment variable ``I_MPI_OFFLOAD`` to ``1`` (providing
@@ -58,7 +84,7 @@ data on device without this may lead to a runtime error): ::
     export I_MPI_OFFLOAD=1
 
 SMPD-aware versions of estimators can be imported from the ``sklearnex.spmd`` module. Data should be distributed across multiple nodes as
-desired, and should be transferred to a |dpctl| or `dpnp <https://github.com/IntelPython/dpnp>`__ array before being passed to the estimator.
+desired, and should be transferred to a |dpnp_array| before being passed to the estimator.
 
 Note that SPMD estimators allow an additional argument ``queue`` in their ``.fit`` / ``.predict`` methods, which accept :obj:`dpctl.SyclQueue` objects. For example, while the signature for :obj:`sklearn.linear_model.LinearRegression.predict` would be
 

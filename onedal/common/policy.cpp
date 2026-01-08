@@ -147,13 +147,14 @@ py::object get_policy(py::object obj) {
 };
 
 ONEDAL_PY_INIT_MODULE(policy) {
+#ifdef ONEDAL_DATA_PARALLEL_SPMD
+    instantiate_spmd_policy(m);
+#else
     instantiate_host_policy(m);
     instantiate_default_host_policy(m);
 #ifdef ONEDAL_DATA_PARALLEL
     instantiate_data_parallel_policy(m);
 #endif // ONEDAL_DATA_PARALLEL
-#ifdef ONEDAL_DATA_PARALLEL_SPMD
-    instantiate_spmd_policy(m);
 #endif // ONEDAL_DATA_PARALLEL_SPMD
     m.def("get_policy", &get_policy, py::arg("queue") = py::none());
 }

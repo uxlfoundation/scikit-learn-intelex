@@ -25,11 +25,11 @@ from sklearn.neighbors._kd_tree import KDTree
 from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._utils import sklearn_check_version
+from onedal._device_offload import _transfer_to_host
 from onedal.utils.validation import _check_array, _num_features, _num_samples
 
 from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
-from ..utils._array_api import get_namespace
 from ..utils.validation import check_feature_names
 
 
@@ -67,7 +67,13 @@ class KNeighborsDispatchingBase(oneDALEstimator):
 
         if not isinstance(X, (KDTree, BallTree, _sklearn_NeighborsBase)):
             self._fit_X = _check_array(
-                X, dtype=[np.float64, np.float32], accept_sparse=True
+                X,
+                dtype=[np.float64, np.float32],
+                accept_sparse=True,
+                force_all_finite=not (
+                    isinstance(self.effective_metric_, str)
+                    and self.effective_metric_.startswith("nan")
+                ),
             )
             self.n_samples_fit_ = _num_samples(self._fit_X)
             self.n_features_in_ = _num_features(self._fit_X)
@@ -149,6 +155,19 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         is_unsupervised = not (is_classifier or is_regressor)
         patching_status = PatchingConditionsChain(
             f"sklearn.neighbors.{class_name}.{method_name}"
+        )
+        # TODO: with verbosity enabled, here it would emit a log saying that it fell
+        # back to sklearn, but internally, sklearn will end up calling 'kneighbors'
+        # which is overridden in the sklearnex classes, thus it will end up calling
+        # oneDAL in the end, but the log will say otherwise. Find a way to make the
+        # log consistent with what happens in practice.
+        patching_status.and_conditions(
+            [
+                (
+                    not (data[0] is None and method_name in ["predict", "score"]),
+                    "Predictions on 'None' data are handled by internal sklearn methods.",
+                )
+            ]
         )
         if not patching_status.and_condition(
             "radius" not in method_name, "RadiusNeighbors not implemented in sklearnex"
@@ -280,16 +299,17 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         # check the input only in self.kneighbors
 
         # construct CSR matrix representation of the k-NN graph
+        # requires moving data to host to construct the csr_matrix
         if mode == "connectivity":
             A_ind = self.kneighbors(X, n_neighbors, return_distance=False)
-            xp, _ = get_namespace(A_ind)
+            _, (A_ind,) = _transfer_to_host(A_ind)
             n_queries = A_ind.shape[0]
-            A_data = xp.ones(n_queries * n_neighbors)
+            A_data = np.ones(n_queries * n_neighbors)
 
         elif mode == "distance":
             A_data, A_ind = self.kneighbors(X, n_neighbors, return_distance=True)
-            xp, _ = get_namespace(A_ind)
-            A_data = xp.reshape(A_data, (-1,))
+            _, (A_data, A_ind) = _transfer_to_host(A_data, A_ind)
+            A_data = np.reshape(A_data, (-1,))
 
         else:
             raise ValueError(
@@ -300,10 +320,10 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         n_queries = A_ind.shape[0]
         n_samples_fit = self.n_samples_fit_
         n_nonzero = n_queries * n_neighbors
-        A_indptr = xp.arange(0, n_nonzero + 1, n_neighbors)
+        A_indptr = np.arange(0, n_nonzero + 1, n_neighbors)
 
         kneighbors_graph = sp.csr_matrix(
-            (A_data, xp.reshape(A_ind, (-1,)), A_indptr), shape=(n_queries, n_samples_fit)
+            (A_data, np.reshape(A_ind, (-1,)), A_indptr), shape=(n_queries, n_samples_fit)
         )
 
         return kneighbors_graph

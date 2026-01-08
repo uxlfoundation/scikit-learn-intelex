@@ -42,7 +42,7 @@ public:
         if (tcvr->me() == 0)
         {
             s2Res = algo.run_step2Master(s2InFromStep1);
-            // get intputs for step3 and send them to all processes
+            // get inputs for step3 and send them to all processes
             auto outputOfStep2ForStep3 = std::get<1>(s2Res)->get(algo.outputOfStep2ForStep3);
             inputOfStep3FromStep2      = daal::services::staticPointerCast<daal::data_management::DataCollection>((*outputOfStep2ForStep3)[0]);
             for (size_t i = 1; i < tcvr->nMembers(); i++)

@@ -18,18 +18,17 @@
 # run like this:
 #    mpirun -n 4 python ./linreg_spmd.py
 
+from pathlib import Path
+
 from numpy import loadtxt
 
 import daal4py as d4p
 
-if __name__ == "__main__":
-    # Initialize SPMD mode
-    d4p.daalinit()
 
+def main():
     # Each process gets its own data
-    infile = (
-        "./data/distributed/linear_regression_train_" + str(d4p.my_procid() + 1) + ".csv"
-    )
+    data_path = Path(__file__).parent / "data" / "distributed"
+    infile = data_path / f"linear_regression_train_{d4p.my_procid() + 1}.csv"
 
     # Configure a Linear regression training object
     train_algo = d4p.linear_regression_training(distributed=True)
@@ -47,7 +46,7 @@ if __name__ == "__main__":
         predict_algo = d4p.linear_regression_prediction()
         # read test data (with same #features)
         pdata = loadtxt(
-            "./data/distributed/linear_regression_test.csv",
+            data_path / "linear_regression_test.csv",
             delimiter=",",
             usecols=range(10),
         )
@@ -59,5 +58,10 @@ if __name__ == "__main__":
         # The prediction result provides prediction
         assert predict_result.prediction.shape == (pdata.shape[0], dep_data.shape[1])
 
+
+if __name__ == "__main__":
+    # Initialize SPMD mode
+    d4p.daalinit()
+    main()
     print("All looks good!")
     d4p.daalfini()

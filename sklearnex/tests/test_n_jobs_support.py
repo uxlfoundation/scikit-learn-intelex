@@ -74,6 +74,9 @@ def test_n_jobs_method_decoration(estimator):
 @pytest.mark.parametrize("n_jobs", [None, -1, 1, 2])
 def test_n_jobs_support(estimator, n_jobs, caplog):
 
+    if estimator == "DummyRegressor":
+        pytest.skip("default parameters fall back to sklearn")
+
     est = _get_estimator_instance(estimator)
     caplog.set_level(logging.DEBUG, logger="sklearnex")
 
@@ -95,7 +98,7 @@ def test_n_jobs_support(estimator, n_jobs, caplog):
             "NearestNeighbors" in estimator and "radius" in method_name
         ):
             # radius_neighbors and radius_neighbors_graph violate sklearn fallback guard
-            # but use sklearnex interally, additional development must be done to those
+            # but use sklearnex internally, additional development must be done to those
             # functions to bring them to design compliance.
             continue
         try:

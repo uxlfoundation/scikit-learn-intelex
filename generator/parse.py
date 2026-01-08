@@ -53,7 +53,7 @@
 # The context also holds a list of classes/functions which should be ignored.
 #
 # Expected C++ format/layout
-#   - every file defines at most one linear namespace hierachy
+#   - every file defines at most one linear namespace hierarchy
 #     an error will occur if there is more than one namespace in another
 #   - namespace declarations followed by '{' will be ignored
 #     - only to be used for forward declarations which will be ignored
@@ -68,7 +68,7 @@
 #       - methods: the argument type must end with 'Method'
 #         we do not understand or map the actual type
 #   - end of struct/class/enum/namespace '};' must be in a separate line
-#     any other code in the same line will result in errorneous parsing
+#     any other code in the same line will result in erroneous parsing
 #     leading spaces are not allowed!
 #   - within a class-declaration, '}\s*;' is not allowed
 #     (except to end the class-def)
@@ -101,7 +101,7 @@ class cpp_class(object):
         self.templates = []  # template member functions
         self.partial = partial  # True if this represents a (partial) spezialization
         self.parent = parent  # list of parent classes
-        self.result = None  # Result type (if Batch, Online or Disributed)
+        self.result = None  # Result type (if Batch, Online or Distributed)
         self.typedefs = {}  # Typedefs
         self.iface = iface
         assert not partial or tpl
@@ -615,7 +615,7 @@ class class_template_parser(object):
         # the else case means we have a template-statement,
         # class, method to follow next line
         if not mt:
-            # let's keep track of occurences of 'template' which we could not digest
+            # let's keep track of occurrences of 'template' which we could not digest
             ctxt.template = False
             mt = re.match(r"template[^<]*<", elem)
             if mt:

@@ -16,24 +16,17 @@
 
 import inspect
 import logging
-from collections.abc import Iterable
 from functools import wraps
+from operator import xor
 
 import numpy as np
 from sklearn import get_config
 
 from ._config import _get_config
+from .datatypes import copy_to_dpnp, copy_to_usm, dlpack_to_numpy
 from .utils import _sycl_queue_manager as QM
-from .utils._array_api import _asarray, _is_numpy_namespace
-from .utils._dpep_helpers import dpctl_available, dpnp_available
-
-if dpctl_available:
-    from dpctl.memory import MemoryUSMDevice, as_usm_memory
-    from dpctl.tensor import usm_ndarray
-else:
-    from onedal import _dpc_backend
-
-    SyclQueue = getattr(_dpc_backend, "SyclQueue", None)
+from .utils._array_api import _asarray, _get_sycl_namespace, _is_numpy_namespace
+from .utils._third_party import is_dpnp_ndarray
 
 logger = logging.getLogger("sklearnex")
 
@@ -69,75 +62,24 @@ def supports_queue(func):
     return wrapper
 
 
-if dpnp_available:
-    import dpnp
-
-    from .utils._array_api import _convert_to_dpnp
-
-
-def _copy_to_usm(queue, array):
-    if not dpctl_available:
-        raise RuntimeError(
-            "dpctl need to be installed to work " "with __sycl_usm_array_interface__"
-        )
-
-    if hasattr(array, "__array__"):
-
-        try:
-            mem = MemoryUSMDevice(array.nbytes, queue=queue)
-            mem.copy_from_host(array.tobytes())
-            return usm_ndarray(array.shape, array.dtype, buffer=mem)
-        except ValueError as e:
-            # ValueError will raise if device does not support the dtype
-            # retry with float32 (needed for fp16 and fp64 support issues)
-            # try again as float32, if it is a float32 just raise the error.
-            if array.dtype == np.float32:
-                raise e
-            return _copy_to_usm(queue, array.astype(np.float32))
-    else:
-        if isinstance(array, Iterable):
-            array = [_copy_to_usm(queue, i) for i in array]
-        return array
-
-
 def _transfer_to_host(*data):
-    has_usm_data, has_host_data = False, False
+    has_usm_data = None
 
     host_data = []
     for item in data:
-        usm_iface = getattr(item, "__sycl_usm_array_interface__", None)
-        array_api = getattr(item, "__array_namespace__", lambda: None)()
-        if usm_iface is not None:
-            if not dpctl_available:
-                raise RuntimeError(
-                    "dpctl need to be installed to work "
-                    "with __sycl_usm_array_interface__"
-                )
+        if item is None:
+            host_data.append(item)
+            continue
 
-            buffer = as_usm_memory(item).copy_to_host()
-            order = "C"
-            if usm_iface["strides"] is not None and len(usm_iface["strides"]) > 1:
-                if usm_iface["strides"][0] < usm_iface["strides"][1]:
-                    order = "F"
-            item = np.ndarray(
-                shape=usm_iface["shape"],
-                dtype=usm_iface["typestr"],
-                buffer=buffer,
-                order=order,
-            )
-            has_usm_data = True
-        elif array_api and not _is_numpy_namespace(array_api):
-            # `copy`` param for the `asarray`` is not setted.
-            # The object is copied only if needed.
-            item = np.asarray(item)
-            has_host_data = True
-        else:
-            has_host_data = True
+        if usm_iface := hasattr(item, "__sycl_usm_array_interface__"):
+            xp = item.__array_namespace__()
+            item = xp.asnumpy(item)
+            has_usm_data = has_usm_data or has_usm_data is None
+        elif not isinstance(item, np.ndarray) and (hasattr(item, "__dlpack_device__")):
+            item = dlpack_to_numpy(item)
 
-        mismatch_host_item = usm_iface is None and item is not None and has_usm_data
-        mismatch_usm_item = usm_iface is not None and has_host_data
-
-        if mismatch_host_item or mismatch_usm_item:
+        # set has_usm_data to boolean and use xor to see if they don't match
+        if xor((has_usm_data := bool(has_usm_data)), usm_iface):
             raise RuntimeError("Input data shall be located on single target device")
 
         host_data.append(item)
@@ -189,6 +131,7 @@ def support_input_format(func):
             self
             and self.__class__.__name__ in ("KNeighborsClassifier", "KNeighborsRegressor")
             and func.__name__ == "fit"
+            and _get_config()["use_raw_input"] is True
         )
         if override_raw_input:
             pretty_name = f"{self.__class__.__name__}.{func.__name__}"
@@ -197,15 +140,16 @@ def support_input_format(func):
             )
         if _get_config()["use_raw_input"] is True and not override_raw_input:
             if "queue" not in kwargs:
-                usm_iface = getattr(args[0], "__sycl_usm_array_interface__", None)
-                data_queue = usm_iface["syclobj"] if usm_iface is not None else None
-                kwargs["queue"] = data_queue
+                if usm_iface := getattr(args[0], "__sycl_usm_array_interface__", None):
+                    kwargs["queue"] = usm_iface["syclobj"]
+                else:
+                    kwargs["queue"] = None
             return invoke_func(self, *args, **kwargs)
         elif len(args) == 0 and len(kwargs) == 0:
             # no arguments, there's nothing we can deduce from them -> just call the function
             return invoke_func(self, *args, **kwargs)
 
-        data = (*args, *kwargs.values())
+        data = (*args, *kwargs.values())[0]
         # get and set the global queue from the kwarg or data
         with QM.manage_global_queue(kwargs.get("queue"), *args) as queue:
             hostargs, hostkwargs = _get_host_inputs(*args, **kwargs)
@@ -214,18 +158,42 @@ def support_input_format(func):
                 hostkwargs["queue"] = queue
             result = invoke_func(self, *hostargs, **hostkwargs)
 
-            usm_iface = getattr(data[0], "__sycl_usm_array_interface__", None)
-            if queue is not None and usm_iface is not None:
-                result = _copy_to_usm(queue, result)
-                if dpnp_available and isinstance(data[0], dpnp.ndarray):
-                    result = _convert_to_dpnp(result)
-                return result
+            if queue and hasattr(data, "__sycl_usm_array_interface__"):
+                return (
+                    copy_to_dpnp(queue, result)
+                    if is_dpnp_ndarray(data)
+                    else copy_to_usm(queue, result)
+                )
 
         if get_config().get("transform_output") in ("default", None):
-            input_array_api = getattr(data[0], "__array_namespace__", lambda: None)()
+            input_array_api = getattr(data, "__array_namespace__", lambda: None)()
             if input_array_api and not _is_numpy_namespace(input_array_api):
-                input_array_api_device = data[0].device
+                input_array_api_device = data.device
                 result = _asarray(result, input_array_api, device=input_array_api_device)
         return result
 
     return wrapper_impl
+
+
+def support_sycl_format(func):
+    # This wrapper enables scikit-learn functions and methods to work with
+    # all sycl data frameworks as they no longer support numpy implicit
+    # conversion and must be manually converted. This is only necessary
+    # when array API is supported but not active.
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if (
+            not get_config().get("array_api_dispatch", False)
+            and _get_sycl_namespace(*args)[2]
+        ):
+            with QM.manage_global_queue(kwargs.get("queue"), *args):
+                if inspect.isfunction(func) and "." in func.__qualname__:
+                    self, (args, kwargs) = args[0], _get_host_inputs(*args[1:], **kwargs)
+                    return func(self, *args, **kwargs)
+                else:
+                    args, kwargs = _get_host_inputs(*args, **kwargs)
+                    return func(*args, **kwargs)
+        return func(*args, **kwargs)
+
+    return wrapper

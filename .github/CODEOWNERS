@@ -1,27 +1,27 @@
 # Infra and tools
-.*                            @Alexsandruss @homksei @ahuber21 @ethanglaser @icfaust @david-cortes-intel
-.ci/                          @Alexsandruss @homksei @ahuber21 @ethanglaser @icfaust
-.circleci/                    @Alexsandruss @homksei @ahuber21 @ethanglaser @icfaust
-.github/                      @Alexsandruss @homksei @ahuber21 @ethanglaser @icfaust
+.*                            @homksei @ahuber21 @ethanglaser @icfaust @david-cortes-intel
+.ci/                          @homksei @ahuber21 @ethanglaser @icfaust
+.circleci/                    @homksei @ahuber21 @ethanglaser @icfaust
+.github/                      @homksei @ahuber21 @ethanglaser @icfaust
 
 # Docs
-*.md                          @maria-Petrova @napetrov @Alexsandruss @icfaust @david-cortes-intel @Vika-F @syakov-intel @yuejiaointel
-doc/                          @maria-Petrova @Alexsandruss @icfaust @david-cortes-intel @Vika-F @syakov-intel @yuejiaointel
-requirements-doc.txt          @Alexsandruss @icfaust @david-cortes-intel 
+*.md                          @maria-Petrova @napetrov @icfaust @david-cortes-intel @Vika-F @syakov-intel @yuejiaointel
+doc/                          @maria-Petrova @icfaust @david-cortes-intel @Vika-F @syakov-intel @yuejiaointel
+requirements-doc.txt          @icfaust @david-cortes-intel 
 
 # sklearnex
-onedal/                       @Alexsandruss @icfaust @ethanglaser @Vika-F @david-cortes-intel
-sklearnex/                    @Alexsandruss @icfaust @ethanglaser @Vika-F @david-cortes-intel
+onedal/                       @icfaust @ethanglaser @Vika-F @david-cortes-intel
+sklearnex/                    @icfaust @ethanglaser @Vika-F @david-cortes-intel
 
 # Examples
-examples/                     @syakov-intel @Alexsandruss @napetrov @david-cortes-intel
+examples/                     @syakov-intel @napetrov @david-cortes-intel
 
 # Dependencies
-conda-recipe/                 @napetrov @Alexsandruss @icfaust @david-cortes-intel
-dependencies-dev              @napetrov @Alexsandruss @homksei @ahuber21 @ethanglaser
-pyproject.toml                @napetrov @Alexsandruss @homksei @ahuber21 @ethanglaser
-requirements*                 @napetrov @Alexsandruss @homksei @ahuber21 @ethanglaser
-setup.*                       @napetrov @Alexsandruss @icfaust @david-cortes-intel
+conda-recipe/                 @napetrov @icfaust @david-cortes-intel
+dependencies-dev              @napetrov @homksei @ahuber21 @ethanglaser
+pyproject.toml                @napetrov @homksei @ahuber21 @ethanglaser
+requirements*                 @napetrov @homksei @ahuber21 @ethanglaser
+setup.*                       @napetrov @icfaust @david-cortes-intel
 
 # Model builders
 *model_builders*              @razdoburdin @ahuber21 @avolkov-intel @icfaust @david-cortes-intel
@@ -32,17 +32,17 @@ src/gbt_model_builder*        @razdoburdin @ahuber21 @avolkov-intel @icfaust @da
 *ensemble*                    @razdoburdin @ahuber21 @avolkov-intel @icfaust @david-cortes-intel
 
 # Testing
-**/test*.py                   @Alexsandruss @icfaust @yuejiaointel @david-cortes-intel @ahuber21 @ethanglaser
-deselected_tests.yaml         @Alexsandruss @icfaust @yuejiaointel @david-cortes-intel @ahuber21 @ethanglaser
-tests/                        @Alexsandruss @icfaust @yuejiaointel @david-cortes-intel @ahuber21 @ethanglaser
+**/test*.py                   @icfaust @yuejiaointel @david-cortes-intel @ahuber21 @ethanglaser
+deselected_tests.yaml         @icfaust @yuejiaointel @david-cortes-intel @ahuber21 @ethanglaser
+tests/                        @icfaust @yuejiaointel @david-cortes-intel @ahuber21 @ethanglaser
 
 # Distributed
 *spmd*                        @ethanglaser
 
 # daal4py
-daal4py/sklearn/              @Alexsandruss @icfaust
+daal4py/sklearn/              @icfaust
 
 # Core
-generator/                    @Alexsandruss @icfaust
-scripts/                      @Alexsandruss @icfaust
-src/                          @Alexsandruss @icfaust
+generator/                    @icfaust
+scripts/                      @icfaust
+src/                          @icfaust

@@ -19,6 +19,7 @@ import pytest
 from numpy.testing import assert_allclose
 
 from onedal.tests.utils._dataframes_support import (
+    _as_numpy,
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
@@ -83,8 +84,8 @@ def test_linear_spmd_gold(dataframe, queue):
     spmd_model = LinearRegression_SPMD().fit(local_dpt_X_train, local_dpt_y_train)
     batch_model = LinearRegression_Batch().fit(X_train, y_train)
 
-    assert_allclose(spmd_model.coef_, batch_model.coef_)
-    assert_allclose(spmd_model.intercept_, batch_model.intercept_)
+    assert_allclose(_as_numpy(spmd_model.coef_), _as_numpy(batch_model.coef_))
+    assert_allclose(_as_numpy(spmd_model.intercept_), _as_numpy(batch_model.intercept_))
 
     # ensure predictions of batch algo match spmd
     spmd_result = spmd_model.predict(local_dpt_X_test)
@@ -142,8 +143,15 @@ def test_linear_spmd_synthetic(
     batch_model = LinearRegression_Batch().fit(X_train, y_train)
 
     tol = 1e-3 if dtype == np.float32 else 1e-7
-    assert_allclose(spmd_model.coef_, batch_model.coef_, rtol=tol, atol=tol)
-    assert_allclose(spmd_model.intercept_, batch_model.intercept_, rtol=tol, atol=tol)
+    assert_allclose(
+        _as_numpy(spmd_model.coef_), _as_numpy(batch_model.coef_), rtol=tol, atol=tol
+    )
+    assert_allclose(
+        _as_numpy(spmd_model.intercept_),
+        _as_numpy(batch_model.intercept_),
+        rtol=tol,
+        atol=tol,
+    )
 
     # ensure predictions of batch algo match spmd
     # Configure raw input status for spmd estimator

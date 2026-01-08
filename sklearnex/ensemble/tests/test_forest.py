@@ -14,6 +14,8 @@
 # limitations under the License.
 # ===============================================================================
 
+import numpy as np
+import pandas as pd
 import pytest
 from numpy.testing import assert_allclose
 from sklearn.datasets import make_classification, make_regression
@@ -35,9 +37,24 @@ hparam_values = [
 ]
 
 
+@pytest.fixture
+def hyperparameters(request):
+    from sklearnex.ensemble import RandomForestClassifier
+
+    hparams = RandomForestClassifier.get_hyperparameters("predict")
+
+    def restore_hyperparameters():
+        RandomForestClassifier.reset_hyperparameters("predict")
+
+    request.addfinalizer(restore_hyperparameters)
+    return hparams
+
+
 @pytest.mark.parametrize("dataframe, queue", get_dataframes_and_queues())
 @pytest.mark.parametrize("block, trees, rows, scale", hparam_values)
-def test_sklearnex_import_rf_classifier(dataframe, queue, block, trees, rows, scale):
+def test_sklearnex_import_rf_classifier(
+    hyperparameters, dataframe, queue, block, trees, rows, scale
+):
     from sklearnex.ensemble import RandomForestClassifier
 
     X, y = make_classification(
@@ -51,12 +68,12 @@ def test_sklearnex_import_rf_classifier(dataframe, queue, block, trees, rows, sc
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     y = _convert_to_dataframe(y, sycl_queue=queue, target_df=dataframe)
     rf = RandomForestClassifier(max_depth=2, random_state=0).fit(X, y)
-    hparams = RandomForestClassifier.get_hyperparameters("infer")
-    if hparams and block is not None:
-        hparams.block_size = block
-        hparams.min_trees_for_threading = trees
-        hparams.min_number_of_rows_for_vect_seq_compute = rows
-        hparams.scale_factor_for_vect_parallel_compute = scale
+
+    if hyperparameters and block is not None:
+        hyperparameters.block_size = block
+        hyperparameters.min_trees_for_threading = trees
+        hyperparameters.min_number_of_rows_for_vect_seq_compute = rows
+        hyperparameters.scale_factor_for_vect_parallel_compute = scale
     assert "sklearnex" in rf.__module__
     assert_allclose([1], _as_numpy(rf.predict([[0, 0, 0, 0]])))
 
@@ -138,3 +155,42 @@ def test_sklearnex_import_et_regression(dataframe, queue):
     # Check that the trees aren't just empty nodes predicting the mean
     for estimator in rf.estimators_:
         assert estimator.tree_.children_left.shape[0] > 1
+
+
+@pytest.mark.allow_sklearn_fallback
+@pytest.mark.parametrize("dataframe, queue", get_dataframes_and_queues())
+def test_classifiers_work_on_single_class(dataframe, queue):
+    from sklearnex.ensemble import ExtraTreesClassifier, RandomForestClassifier
+
+    rng = np.random.default_rng(seed=123)
+    X = rng.standard_normal(size=(20, 10))
+    y = np.zeros(X.shape[0])
+    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+    y = _convert_to_dataframe(y, sycl_queue=queue, target_df=dataframe)
+
+    np.testing.assert_array_equal(
+        _as_numpy(RandomForestClassifier(n_estimators=1).fit(X, y).predict(X)),
+        _as_numpy(y),
+    )
+    np.testing.assert_array_equal(
+        _as_numpy(ExtraTreesClassifier(n_estimators=1).fit(X, y).predict(X)),
+        _as_numpy(y),
+    )
+
+
+@pytest.mark.allow_sklearn_fallback
+def test_classifiers_work_on_single_class_non_numeric():
+    from sklearnex.ensemble import ExtraTreesClassifier, RandomForestClassifier
+
+    rng = np.random.default_rng(seed=123)
+    X = rng.standard_normal(size=(20, 10))
+    y = pd.Series(np.repeat("qwerty", X.shape[0]))
+
+    np.testing.assert_array_equal(
+        RandomForestClassifier(n_estimators=1).fit(X, y).predict(X),
+        y,
+    )
+    np.testing.assert_array_equal(
+        ExtraTreesClassifier(n_estimators=1).fit(X, y).predict(X),
+        y,
+    )

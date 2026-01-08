@@ -21,30 +21,6 @@ from onedal.spmd.cluster import DBSCAN as onedal_DBSCAN
 from ...cluster import DBSCAN as DBSCAN_Batch
 
 
-class BaseDBSCANspmd(ABC):
-    def _onedal_dbscan(self, **onedal_params):
-        return onedal_DBSCAN(**onedal_params)
-
-
-class DBSCAN(BaseDBSCANspmd, DBSCAN_Batch):
+class DBSCAN(DBSCAN_Batch):
     __doc__ = DBSCAN_Batch.__doc__
-
-    def _onedal_cpu_supported(self, method_name, *data):
-        # TODO:
-        # check which methods supported SPMD interface on CPU.
-        ready = super()._onedal_cpu_supported(method_name, *data)
-        if not ready:
-            raise RuntimeError(
-                f"Method {method_name} in {self.__class__.__name__} "
-                "is not supported with given inputs."
-            )
-        return ready
-
-    def _onedal_gpu_supported(self, method_name, *data):
-        ready = super()._onedal_gpu_supported(method_name, *data)
-        if not ready:
-            raise RuntimeError(
-                f"Method {method_name} in {self.__class__.__name__} "
-                "is not supported with given inputs."
-            )
-        return ready
+    _onedal_dbscan = staticmethod(onedal_DBSCAN)

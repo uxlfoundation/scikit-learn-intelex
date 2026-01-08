@@ -132,7 +132,7 @@ ONEDAL_PY_DECLARE_INSTANTIATOR(init_compute_ops);
 ONEDAL_PY_DECLARE_INSTANTIATOR(init_compute_result);
 
 // TODO:
-// change the name of modue for all algos -> cluster.
+// change the name of module for all algos -> cluster.
 ONEDAL_PY_INIT_MODULE(dbscan) {
     using namespace dal::detail;
     using namespace dbscan;

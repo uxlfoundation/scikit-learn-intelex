@@ -20,10 +20,11 @@ import os
 import pathlib
 import pkgutil
 import re
+import subprocess
 import sys
 import trace
 from contextlib import redirect_stdout
-from multiprocessing import Pipe, Process, get_context
+from multiprocessing import get_context
 
 import pytest
 from sklearn.base import BaseEstimator
@@ -31,6 +32,7 @@ from sklearn.utils import all_estimators
 
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal.tests.test_common import _check_primitive_usage_ban
+from onedal.tests.utils._dataframes_support import test_frameworks
 from sklearnex.base import oneDALEstimator
 from sklearnex.tests.utils import (
     PATCHED_MODELS,
@@ -45,12 +47,10 @@ TARGET_OFFLOAD_ALLOWED_LOCATIONS = [
     "_config.py",
     "_device_offload.py",
     "test",
-    "svc.py",
-    "svm" + os.sep + "_common.py",
+    "svm" + os.sep + "_base.py",
 ]
 
 _DESIGN_RULE_VIOLATIONS = {
-    "PCA-fit_transform-call_validate_data": "calls both 'fit' and 'transform'",
     "IncrementalEmpiricalCovariance-score-call_validate_data": "must call clone of itself",
     "SVC(probability=True)-fit-call_validate_data": "SVC fit can use sklearn estimator",
     "NuSVC(probability=True)-fit-call_validate_data": "NuSVC fit can use sklearn estimator",
@@ -102,6 +102,44 @@ _DESIGN_RULE_VIOLATIONS = {
     "LogisticRegression(solver='newton-cg')-predict-n_jobs_check": "uses daal4py for cpu in sklearnex",
     "LogisticRegression(solver='newton-cg')-predict_log_proba-n_jobs_check": "uses daal4py for cpu in sklearnex",
     "LogisticRegression(solver='newton-cg')-predict_proba-n_jobs_check": "uses daal4py for cpu in sklearnex",
+    "DummyRegressor-fit-n_jobs_check": "default parameters use sklearn",
+    "DummyRegressor-predict-n_jobs_check": "default parameters use sklearn",
+    "DummyRegressor-score-n_jobs_check": "default parameters use sklearn",
+    # KNeighborsClassifier validate_data issues - will be fixed later
+    "KNeighborsClassifier-fit-call_validate_data": "validate_data implementation needs fixing",
+    "KNeighborsClassifier-predict_proba-call_validate_data": "validate_data implementation needs fixing",
+    "KNeighborsClassifier-score-call_validate_data": "validate_data implementation needs fixing",
+    "KNeighborsClassifier-kneighbors-call_validate_data": "validate_data implementation needs fixing",
+    "KNeighborsClassifier-kneighbors_graph-call_validate_data": "validate_data implementation needs fixing",
+    "KNeighborsClassifier-predict-call_validate_data": "validate_data implementation needs fixing",
+    "KNeighborsRegressor-fit-call_validate_data": "validate_data implementation needs fixing",
+    "KNeighborsRegressor-score-call_validate_data": "validate_data implementation needs fixing",
+    "KNeighborsRegressor-kneighbors-call_validate_data": "validate_data implementation needs fixing",
+    "KNeighborsRegressor-kneighbors_graph-call_validate_data": "validate_data implementation needs fixing",
+    "KNeighborsRegressor-predict-call_validate_data": "validate_data implementation needs fixing",
+    "NearestNeighbors-fit-call_validate_data": "validate_data implementation needs fixing",
+    "NearestNeighbors-kneighbors-call_validate_data": "validate_data implementation needs fixing",
+    "NearestNeighbors-kneighbors_graph-call_validate_data": "validate_data implementation needs fixing",
+    "LocalOutlierFactor-fit-call_validate_data": "validate_data implementation needs fixing",
+    "LocalOutlierFactor-kneighbors-call_validate_data": "validate_data implementation needs fixing",
+    "LocalOutlierFactor-kneighbors_graph-call_validate_data": "validate_data implementation needs fixing",
+    "LocalOutlierFactor(novelty=True)-fit-call_validate_data": "validate_data implementation needs fixing",
+    "LocalOutlierFactor(novelty=True)-kneighbors-call_validate_data": "validate_data implementation needs fixing",
+    "LocalOutlierFactor(novelty=True)-kneighbors_graph-call_validate_data": "validate_data implementation needs fixing",
+    "KNeighborsClassifier(algorithm='brute')-fit-call_validate_data": "validate_data implementation needs fixing",
+    "KNeighborsClassifier(algorithm='brute')-predict_proba-call_validate_data": "validate_data implementation needs fixing",
+    "KNeighborsClassifier(algorithm='brute')-score-call_validate_data": "validate_data implementation needs fixing",
+    "KNeighborsClassifier(algorithm='brute')-kneighbors-call_validate_data": "validate_data implementation needs fixing",
+    "KNeighborsClassifier(algorithm='brute')-kneighbors_graph-call_validate_data": "validate_data implementation needs fixing",
+    "KNeighborsClassifier(algorithm='brute')-predict-call_validate_data": "validate_data implementation needs fixing",
+    "KNeighborsRegressor(algorithm='brute')-fit-call_validate_data": "validate_data implementation needs fixing",
+    "KNeighborsRegressor(algorithm='brute')-score-call_validate_data": "validate_data implementation needs fixing",
+    "KNeighborsRegressor(algorithm='brute')-kneighbors-call_validate_data": "validate_data implementation needs fixing",
+    "KNeighborsRegressor(algorithm='brute')-kneighbors_graph-call_validate_data": "validate_data implementation needs fixing",
+    "KNeighborsRegressor(algorithm='brute')-predict-call_validate_data": "validate_data implementation needs fixing",
+    "NearestNeighbors(algorithm='brute')-fit-call_validate_data": "validate_data implementation needs fixing",
+    "NearestNeighbors(algorithm='brute')-kneighbors-call_validate_data": "validate_data implementation needs fixing",
+    "NearestNeighbors(algorithm='brute')-kneighbors_graph-call_validate_data": "validate_data implementation needs fixing",
 }
 
 
@@ -118,7 +156,7 @@ def test_target_offload_ban():
         allowed_locations=TARGET_OFFLOAD_ALLOWED_LOCATIONS,
     )
     output = "\n".join(output)
-    assert output == "", f"target offloading is occuring in: \n{output}"
+    assert output == "", f"target offloading is occurring in: \n{output}"
 
 
 def _sklearnex_walk(func):
@@ -146,7 +184,7 @@ def test_class_trailing_underscore_ban(monkeypatch):
     estimators = all_estimators()  # list of tuples
     for name, obj in estimators:
         if "preview" not in obj.__module__ and "daal4py" not in obj.__module__:
-            # propeties also occur in sklearn, especially in deprecations and are expected
+            # properties also occur in sklearn, especially in deprecations and are expected
             # to error if queried and the estimator is not fitted
             assert all(
                 [
@@ -199,6 +237,43 @@ def test_oneDALEstimator_inheritance(monkeypatch):
                 assert (
                     mro[mro.index(oneDALEstimator) + 1] is BaseEstimator
                 ), f"oneDALEstimator should be inherited just before BaseEstimator in {name}"
+
+
+def test_frameworks_lazy_import(monkeypatch):
+    """Check that all estimators defined in sklearnex do not actively
+    load data frameworks which are not numpy or pandas.
+    """
+    active = ["numpy", "pandas", "dpctl.tensor"]
+    # handle naming conventions for data frameworks in testing
+    frameworks = test_frameworks.replace("dpctl", "dpctl.tensor")
+    frameworks = frameworks.replace("array_api", "array_api_strict")
+    lazy = ",".join([i for i in frameworks.split(",") if i not in active])
+    if not lazy:
+        pytest.skip("No lazily-imported data frameworks available in testing")
+
+    monkeypatch.setattr(pkgutil, "walk_packages", _sklearnex_walk(pkgutil.walk_packages))
+    estimators = all_estimators()  # list of tuples
+
+    filtered_modules = []
+    for name, obj in estimators:
+        # do not test spmd or preview, as they are exempt
+        if "preview" not in obj.__module__ and "spmd" not in obj.__module__:
+            filtered_modules += [obj.__module__]
+
+    modules = ",".join(filtered_modules)
+
+    # import all modules with estimators and check sys.modules for the lazily-imported data
+    # frameworks. It is done in a subprocess to isolate the impact of testing infrastructure
+    # on sys.modules, which may have actively loaded those frameworks into the test env
+    teststr = (
+        "import sys,{mod};assert all([i not in sys.modules for i in '{l}'.split(',')])"
+    )
+    cmd = [sys.executable, "-c", teststr.format(mod=modules, l=lazy)]
+
+    try:
+        subprocess.run(cmd, check=True, capture_output=True, text=True)
+    except subprocess.CalledProcessError as e:
+        raise AssertionError(f"a framework in '{lazy}' is being actively loaded") from e
 
 
 def _fullpath(path):

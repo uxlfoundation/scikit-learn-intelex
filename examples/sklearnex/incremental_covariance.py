@@ -33,7 +33,7 @@ result = inccov.partial_fit(X_3)
 print(f"Covariance matrix:\n{result.covariance_}")
 print(f"Means:\n{result.location_}")
 
-# We put the whole data to fit method, it is splitted automatically and then
+# We put the whole data to fit method, it is split automatically and then
 # partial_fit is called for each batch
 X = np.array([[0, 1], [0, 1], [1, 2], [1, 1], [1, 2], [2, 3]])
 result = inccov.fit(X)

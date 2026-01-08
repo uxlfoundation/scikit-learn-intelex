@@ -334,6 +334,7 @@ if daal_check_version((2023, "P", 200)):
             return X
 
         _transform = support_input_format(_sklearn_KMeans._transform)
+        transform = support_input_format(_sklearn_KMeans.transform)
 
         @wrap_output_data
         def score(self, X, y=None, sample_weight=None):

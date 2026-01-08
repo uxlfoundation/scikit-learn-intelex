@@ -36,7 +36,7 @@ def main():
     # let's provide a file directly, not a table/array
     result1 = algo.compute(str(infile))
 
-    # We can also load the data ourselfs and provide the numpy array
+    # We can also load the data ourselves and provide the numpy array
     data = loadtxt(infile, delimiter=",")
     result2 = algo.compute(data)
 

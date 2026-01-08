@@ -41,7 +41,7 @@ def main(readcsv=pd_read_csv):
     # let's provide a file directly, not a table/array
     result1 = algo.compute(str(infile))
 
-    # We can also load the data ourselfs and provide the numpy array
+    # We can also load the data ourselves and provide the numpy array
     data = readcsv(infile)
     result2 = algo.compute(data)
 

@@ -239,7 +239,7 @@ public:
 };
 
 // For wrapping a structured numpy array
-// Avoids copying by using numpy iterators when accesing blocks of data
+// Avoids copying by using numpy iterators when accessing blocks of data
 class NpyStructHandler
 {
 public:
@@ -348,7 +348,7 @@ public:
 };
 
 // Numeric Table wrapping a non-contiguous, homogen numpy array
-// Avoids copying by using numpy iterators when accesing blocks of data
+// Avoids copying by using numpy iterators when accessing blocks of data
 template <typename Hndlr>
 class NpyNumericTable : public daal::data_management::NumericTable
 {

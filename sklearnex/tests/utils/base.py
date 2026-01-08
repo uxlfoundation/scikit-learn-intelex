@@ -39,6 +39,7 @@ from onedal.tests.utils._dataframes_support import _convert_to_dataframe
 from onedal.utils._array_api import _get_sycl_namespace
 from sklearnex import get_patch_map, patch_sklearn, sklearn_is_patched, unpatch_sklearn
 from sklearnex.basic_statistics import BasicStatistics, IncrementalBasicStatistics
+from sklearnex.dummy import DummyRegressor
 from sklearnex.linear_model import LogisticRegression
 from sklearnex.neighbors import (
     KNeighborsClassifier,
@@ -137,6 +138,7 @@ SPECIAL_INSTANCES = sklearn_clone_dict(
             LogisticRegression(solver="newton-cg"),
             BasicStatistics(),
             IncrementalBasicStatistics(),
+            DummyRegressor(strategy="constant", constant=1.0),  # val set to 1 arbitrarily
         ]
     }
 )
@@ -153,7 +155,7 @@ def gen_models_info(algorithms, required_inputs=["X", "y"], fit=False, daal4py=T
     required_inputs : list, tuple of strings or None
         list of required args/kwargs for callable attribute (only non-private,
         non-BaseEstimator attributes).  Only one must be present, None
-        signifies taking all non-private attribues, callable or not.
+        signifies taking all non-private attributes, callable or not.
 
     fit: bool (default False)
         Include "fit" method as an estimator-attribute pair
@@ -398,25 +400,13 @@ def _get_processor_info():
 class DummyEstimator(BaseEstimator):
 
     def fit(self, X, y=None):
-        sua_iface, xp, _ = _get_sycl_namespace(X)
         X_table = to_table(X)
         y_table = to_table(y)
         # The presence of the fitted attributes (ending with a trailing
         # underscore) is required for the correct check. The cleanup of
         # the memory will occur at the estimator instance deletion.
-        if sua_iface:
-            self.x_attr_ = from_table(
-                X_table, sua_iface=sua_iface, sycl_queue=X.sycl_queue, xp=xp
-            )
-            self.y_attr_ = from_table(
-                y_table,
-                sua_iface=sua_iface,
-                sycl_queue=X.sycl_queue if y is None else y.sycl_queue,
-                xp=xp,
-            )
-        else:
-            self.x_attr_ = from_table(X_table)
-            self.y_attr_ = from_table(y_table)
+        self.x_attr_ = from_table(X_table, like=X)
+        self.y_attr_ = from_table(y_table, like=X if y is None else y)
 
         return self
 
@@ -424,13 +414,7 @@ class DummyEstimator(BaseEstimator):
         # Checks if the estimator is fitted by verifying the presence of
         # fitted attributes (ending with a trailing underscore).
         check_is_fitted(self)
-        sua_iface, xp, _ = _get_sycl_namespace(X)
         X_table = to_table(X)
-        if sua_iface:
-            returned_X = from_table(
-                X_table, sua_iface=sua_iface, sycl_queue=X.sycl_queue, xp=xp
-            )
-        else:
-            returned_X = from_table(X_table)
+        returned_X = from_table(X_table, like=X)
 
         return returned_X

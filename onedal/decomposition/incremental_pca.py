@@ -14,20 +14,15 @@
 # limitations under the License.
 # ==============================================================================
 
-import numpy as np
-
 from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
 from onedal.utils import _sycl_queue_manager as QM
 
-from .._config import _get_config
-from ..datatypes import from_table, to_table
-from ..utils._array_api import _get_sycl_namespace
-from ..utils.validation import _check_array
-from .pca import BasePCA
+from ..datatypes import from_table, return_type_constructor, to_table
+from .pca import PCA
 
 
-class IncrementalPCA(BasePCA):
+class IncrementalPCA(PCA):
     """Incremental oneDAL PCA estimator.
 
     Parameters
@@ -110,11 +105,11 @@ class IncrementalPCA(BasePCA):
     def partial_train_result(self): ...
 
     def _reset(self):
+        self._onedal_model = None
         self._need_to_finalize = False
         self._queue = None
+        self._outtype = None
         self._partial_result = self.partial_train_result()
-        if hasattr(self, "components_"):
-            del self.components_
 
     def __getstate__(self):
         # Since finalize_fit can't be dispatched without directly provided queue
@@ -129,6 +124,8 @@ class IncrementalPCA(BasePCA):
     @supports_queue
     def partial_fit(self, X, queue=None):
         """Generate partial PCA from batch data in `_partial_result`.
+
+        Computes partial data for PCA on from data batch X.
 
         Parameters
         ----------
@@ -146,32 +143,18 @@ class IncrementalPCA(BasePCA):
             Returns the instance itself.
         """
 
-        use_raw_input = _get_config().get("use_raw_input", False) is True
-        sua_iface, _, _ = _get_sycl_namespace(X)
-
-        # All data should use the same sycl queue
-        if use_raw_input and sua_iface:
-            queue = X.sycl_queue
-        if not use_raw_input:
-            X = _check_array(X, dtype=[np.float64, np.float32], ensure_2d=True)
-
         n_samples, n_features = X.shape
-        first_pass = not hasattr(self, "components_")
+        first_pass = not self._need_to_finalize
         if first_pass:
             self.components_ = None
             self.n_samples_seen_ = n_samples
             self.n_features_in_ = n_features
+            self.n_components_ = self.n_components if self.n_components else X.shape[0]
         else:
             self.n_samples_seen_ += n_samples
 
-        if self.n_components is None:
-            if self.components_ is None:
-                self.n_components_ = min(n_samples, n_features)
-            else:
-                self.n_components_ = self.components_.shape[0]
-        else:
-            self.n_components_ = self.n_components
-
+        if not self._outtype:
+            self._outtype = return_type_constructor(X)
         self._queue = queue
 
         X_table = to_table(X, queue=queue)
@@ -183,8 +166,9 @@ class IncrementalPCA(BasePCA):
         self._partial_result = self.partial_train(
             self._params, self._partial_result, X_table
         )
+        if self._onedal_model is not None:
+            self._onedal_model = None
         self._need_to_finalize = True
-        self._queue = queue
         return self
 
     def finalize_fit(self):
@@ -198,22 +182,34 @@ class IncrementalPCA(BasePCA):
         if self._need_to_finalize:
             with QM.manage_global_queue(self._queue):
                 result = self.finalize_train(self._params, self._partial_result)
-            self.mean_ = from_table(result.means).ravel()
-            self.var_ = from_table(result.variances).ravel()
-            self.components_ = from_table(result.eigenvectors)
-            self.singular_values_ = np.nan_to_num(
-                from_table(result.singular_values).ravel()
+
+            (
+                mean_,
+                var_,
+                self.components_,
+                sing_vals_,
+                eigenvalues_,
+                var_ratio,
+            ) = from_table(
+                result.means,
+                result.variances,
+                result.eigenvectors,
+                result.singular_values,
+                result.eigenvalues,
+                result.explained_variances_ratio,
+                like=self._outtype,
             )
-            self.explained_variance_ = np.maximum(
-                from_table(result.eigenvalues).ravel(), 0
-            )
-            self.explained_variance_ratio_ = from_table(
-                result.explained_variances_ratio
-            ).ravel()
-            self.noise_variance_ = self._compute_noise_variance(
-                self.n_components_, min(self.n_samples_seen_, self.n_features_in_)
-            )
+
+            # tables are 2d, but outputs are inherently 1d, reduce dimensions
+            self.mean_ = mean_[0, ...]
+            self.var_ = var_[0, ...]
+            self.singular_values_ = sing_vals_[0, ...]
+            self.explained_variance_ = eigenvalues_[0, ...]
+            self.explained_variance_ratio_ = var_ratio[0, ...]
+
+            # set partial result attributes to defaults
             self._need_to_finalize = False
+            self._outtype = None
             self._queue = None
 
         return self
