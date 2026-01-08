@@ -46,13 +46,44 @@ Coverage reporting:
 - `pytest --cov=onedal --cov=sklearnex --cov-config=.coveragerc --cov-branch`
 
 ### MPI/Distributed (SPMD) Testing
-Requirements: MPI installation (Intel MPI or OpenMPI), mpi4py, NO_DIST!=1
 
-Commands:
-- `mpirun -n 4 python tests/helper_mpi_tests.py pytest -k spmd --with-mpi --verbose --pyargs sklearnex`
-- `mpirun -n 4 python tests/helper_mpi_tests.py pytest --verbose -s tests/test_daal4py_spmd_examples.py`
+**Requirements:** MPI installation (Intel MPI or OpenMPI), mpi4py, NO_DIST!=1
 
-Validates distributed algorithms: DBSCAN, K-Means, PCA, Linear Regression, Covariance
+**Setup MPI:**
+```bash
+# Option 1: Via conda (recommended)
+conda install -c conda-forge impi-devel impi_rt mpi4py
+
+# Option 2: System package manager
+# Debian/Ubuntu:
+sudo apt-get install libopenmpi-dev openmpi-bin
+pip install mpi4py
+
+# RedHat/CentOS:
+sudo yum install openmpi-devel
+pip install mpi4py
+
+# Set MPIROOT if not using conda
+export MPIROOT=/path/to/mpi
+```
+
+**Rebuild with MPI support:**
+```bash
+# Ensure NO_DIST is not set
+unset NO_DIST
+python setup.py build_ext --inplace --force
+```
+
+**Run distributed tests:**
+```bash
+# sklearnex SPMD tests
+mpirun -n 4 python tests/helper_mpi_tests.py pytest -k spmd --with-mpi --verbose --pyargs sklearnex
+
+# daal4py SPMD examples
+mpirun -n 4 python tests/helper_mpi_tests.py pytest --verbose -s tests/test_daal4py_spmd_examples.py
+```
+
+**Validates:** DBSCAN, K-Means, PCA, Linear Regression, Covariance (distributed algorithms)
 
 ## scikit-learn Compatibility Testing
 

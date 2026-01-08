@@ -47,15 +47,46 @@ Checks data characteristics (density, dtype, shape), algorithm parameters, and o
 
 ## Model Builders
 
-### Tree-Based Models
-Converts XGBoost, LightGBM, CatBoost gradient boosted trees to oneDAL format. Implemented in `mb/gbt_convertors.py` and `mb/tree_based_builders.py`.
+Convert externally trained models to oneDAL format for **10-100X faster inference** (speedup varies by model complexity and data size).
 
-**Process**: Extract tree structures → Convert parameters → Build oneDAL model → Validate equivalence
+### Supported Frameworks
 
-### Logistic Regression
-Converts sklearn LogisticRegression and SGDClassifier to oneDAL format. Supports binary and multinomial classification.
+**Tree-Based Models:**
+- **XGBoost**: `XGBClassifier`, `XGBRegressor`, `Booster` objects
+- **LightGBM**: `LGBMClassifier`, `LGBMRegressor`, `Booster` objects
+- **CatBoost**: `CatBoostClassifier`, `CatBoostRegressor` objects
+- **TreeLite**: For sklearn `HistGradientBoostingClassifier/Regressor` conversion
 
-**Usage**: Train externally → Convert to oneDAL → Accelerated inference
+**Linear Models:**
+- **sklearn LogisticRegression**: Binary and multinomial classification
+- **sklearn SGDClassifier**: Linear classification models
+
+### Usage Pattern
+
+```python
+from daal4py.mb import convert_model
+import xgboost as xgb
+
+# 1. Train with external framework
+xgb_model = xgb.XGBClassifier().fit(X_train, y_train)
+
+# 2. Convert to oneDAL
+daal_model = convert_model(xgb_model)
+
+# 3. Accelerated inference (10-100X faster)
+predictions = daal_model.predict(X_test)
+```
+
+### Features
+- **No accuracy loss**: Exact prediction equivalence with original models
+- **SHAP support**: Accelerated SHAP value computation for tree models
+- **Batch prediction**: Optimized for large-scale inference workloads
+- **Memory efficient**: Optimized internal representation
+
+### Implementation
+- Tree builders: `mb/gbt_convertors.py`, `mb/tree_based_builders.py`
+- LogReg builders: `mb/logistic_regression_builders.py`
+- Examples: `examples/mb/model_builders_*.py`
 
 ## Distributed Computing (SPMD)
 
@@ -90,19 +121,21 @@ Dense data required for most algorithms. Sparse support limited to SVM and Naive
 
 ## Integration Architecture
 
-### daal4py → onedal
-daal4py wraps onedal/ Python bindings which wrap oneDAL C++ via pybind11.
+### daal4py and onedal - Parallel Bindings
+daal4py and onedal are **separate** Python binding implementations to oneDAL C++:
+- **daal4py**: Cython-based bindings (legacy, src/_daal4py C extension)
+- **onedal**: pybind11-based bindings (modern, GPU-optimized)
+- **sklearnex**: Uses both - onedal for GPU/modern algorithms, daal4py for legacy compatibility
 
 ### Data Flow
-NumPy → daal4py → onedal.datatypes → oneDAL C++ → Results → Python objects
+**daal4py path**: NumPy → Cython bindings → oneDAL C++ → Results
+**onedal path**: NumPy → pybind11 bindings → oneDAL C++ → Results
+**sklearnex**: Chooses appropriate path based on algorithm and device
 
 ### Error Handling
 - Input validation in Python layer
 - C++ exceptions converted to Python exceptions
 - Automatic fallback to sklearn in monkeypatch system when conditions not met
-
-### With sklearnex
-sklearnex provides high-level API with device offloading, delegates to daal4py for compatible cases, falls back to sklearn otherwise.
 
 ## Development Guidelines
 
