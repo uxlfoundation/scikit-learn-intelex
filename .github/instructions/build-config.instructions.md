@@ -1,88 +1,48 @@
 # Build Configuration Files
 
+## Purpose
+Build system configuration for Intel Extension for Scikit-learn using setup.py, conda, and environment variables.
+
 ## Core Build Files
-- `setup.py`: Main build script (500+ lines, complex configuration)
-- `pyproject.toml`: Python project metadata + linting configuration
-- `dependencies-dev`: Build-time dependencies (Cython, numpy, pybind11, cmake)
-- `requirements-test.txt`: Test dependencies with version constraints
-- `conda-recipe/meta.yaml`: Conda package build configuration
+- `setup.py` - Main build script
+- `pyproject.toml` - Python project metadata and linting configuration
+- `dependencies-dev` - Build-time dependencies
+- `requirements-test.txt` - Test dependencies
+- `conda-recipe/meta.yaml` - Conda package configuration
 
-## Environment Variables (Critical)
-```bash
-# MANDATORY for building
-export DALROOT=/path/to/onedal               # oneDAL installation path (required)
+## Environment Variables
+- `DALROOT` - Path to oneDAL installation (required)
+- `MPIROOT` - Path to MPI for distributed features (optional)
+- `NO_DIST` - Disable distributed mode
+- `NO_DPC` - Disable GPU/SYCL support
+- `NO_STREAM` - Disable streaming mode
+- `MAKEFLAGS` - Control parallel build threads
 
-# OPTIONAL but commonly needed
-export MPIROOT=/path/to/mpi                  # MPI for distributed features
-export NO_DIST=1                             # Disable distributed mode
-export NO_DPC=1                              # Disable GPU/SYCL support
-export NO_STREAM=1                           # Disable streaming mode
-export DEBUG_BUILD=1                         # Debug symbols + no optimization
-export MAKEFLAGS=-j$(nproc)                  # Parallel build threads
-```
-
-## Build Process (4 Stages)
-1. **Code Generation**: oneDAL C++ headers → Python/Cython sources
-2. **oneDAL Bindings**: cmake + pybind11 compilation
-3. **Cython Processing**: .pyx files → C++ sources
-4. **Final Compilation**: Link everything into Python extensions
+## Build Process
+1. Code Generation: oneDAL C++ headers → Python/Cython sources
+2. oneDAL Bindings: cmake + pybind11 compilation
+3. Cython Processing: .pyx files → C++ sources
+4. Final Compilation: Link into Python extensions
 
 ## Dependencies
-**Build Dependencies (dependencies-dev):**
-- Cython==3.1.1 (exact version required)
-- numpy>=2.0 (version varies by Python version)
-- pybind11==2.13.6
-- cmake==4.0.2
-- setuptools==79.0.1
-
-**Runtime Dependencies:**
+- Cython 3.1+, numpy 2.0+, pybind11 2.13+, cmake 4.0+, setuptools 79.0+
 - Intel oneDAL 2021.1+ (backwards compatible)
-- numpy (version-specific, see requirements-test.txt)
-- scikit-learn 1.0-1.7 (see compatibility matrix)
+- scikit-learn 1.0+
 
 ## Build Commands
-```bash
-# Development build (RECOMMENDED)
-python setup.py develop                       # Creates .egg-link, editable
+- `python setup.py develop` - Development mode (editable install)
+- `python setup.py install` - Production install
+- `python setup.py build_ext --inplace --force` - Extensions only
 
-# Production builds
-python setup.py install                       # Full install
-python setup.py build_ext --inplace --force   # Extensions only
+## For GitHub Copilot
 
-# Special flags (Linux)
-python setup.py build --abs-rpath             # Absolute RPATH for custom oneDAL
-
-# Conda build
-conda build .                                 # Uses conda-recipe/meta.yaml
-```
-
-## Common Build Issues
-```bash
-# oneDAL not found
-RuntimeError: "Not set DALROOT variable"
-→ Solution: export DALROOT=/path/to/onedal
-
-# MPI required but missing
-ValueError: "'MPIROOT' is not set, cannot build with distributed mode"
-→ Solution: export NO_DIST=1 or set MPIROOT
-
-# Cython version mismatch
-→ Solution: pip install Cython==3.1.1 (exact version)
-
-# Linking issues (Linux)
-→ Solution: Use --abs-rpath flag
-```
-
-## CI/CD Configuration
-- **GitHub Actions**: `.github/workflows/ci.yml`
-- **Azure DevOps**: `.ci/pipeline/ci.yml` (main CI system)
-- **Pre-commit**: `.pre-commit-config.yaml` (code quality)
-
-Build timeouts: 120 minutes in CI (can be slow due to oneDAL compilation)
+See [.ci/AGENTS.md](../.ci/AGENTS.md) for comprehensive information including:
+- Platform-specific build configurations
+- CI/CD pipeline details
+- Common build issues and solutions
+- Environment setup best practices
 
 ## Related Instructions
-- `general.instructions.md` - Quick start build commands
+- `general.instructions.md` - Quick start commands
 - `src.instructions.md` - C++/Cython build details
-- `tests.instructions.md` - Testing after successful builds
-
-For platform-specific build details, see `.ci/AGENTS.md`
+- `tests.instructions.md` - Testing after builds
