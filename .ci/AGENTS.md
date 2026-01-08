@@ -20,9 +20,11 @@ CI/CD infrastructure for building, testing, and releasing Intel Extension for Sc
 - **Coverage**: codecov integration
 
 ## Build Dependencies
+See `dependencies-dev` and `requirements-test.txt` for exact versions.
+
 - **oneDAL**: Downloads nightly builds from upstream oneDAL repo
-- **Python**: 3.9+
-- **sklearn**: 1.0+
+- **Python**: See `setup.py` for supported versions
+- **sklearn**: See `requirements-test.txt` for supported versions
 - **GPU Libraries**: dpctl, dpnp, torch for Intel GPU acceleration and Array API support
 
 ## Release Process

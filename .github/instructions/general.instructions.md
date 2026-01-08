@@ -4,12 +4,14 @@
 
 Intel Extension for Scikit-learn accelerates scikit-learn by 10-100X using Intel oneDAL (varies by algorithm and data). Zero code changes required for existing sklearn applications.
 
-**Architecture**: 4-layer system (sklearnex → daal4py → onedal → Intel oneDAL C++)
+**Architecture**: 4-layer system (sklearnex ⇒ {daal4py, onedal} → Intel oneDAL C++)
 **Platforms**: Linux, Windows; CPU (x86_64, ARM), GPU (Intel via SYCL)
-**Python**: 3.9+ (officially supported versions, see setup.py classifiers)
-**scikit-learn**: 1.0+ (last 4 releases + sklearn 1.0, see requirements-test.txt)
 
-For exact dependency versions, refer to `dependencies-dev` and `requirements-test.txt` as documentation may lag updates.
+**Version Requirements**:
+For current supported versions, always refer to:
+- `setup.py` - Python version classifiers
+- `requirements-test.txt` - scikit-learn and runtime dependencies
+- `dependencies-dev` - Build dependencies
 
 ## Quick Build and Test
 
