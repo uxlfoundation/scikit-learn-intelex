@@ -98,36 +98,36 @@ Most sklearn tests pass with sklearnex acceleration. A subset is deselected due 
 4. **Platform-specific issues**: Environment-dependent test failures
 
 ### Deselected Tests
-Configuration: `deselected_tests.yaml` (292 tests deselected)
+Configuration: `deselected_tests.yaml` (see file for current count and details)
 
-**Categories**:
+**Categories** (see `deselected_tests.yaml` for specifics):
 
-**sklearn Version-Specific** (~20 tests):
+**sklearn Version-Specific**:
 - sklearn 1.6/1.7 features not yet supported
 - Version-specific API changes
 
-**Array API Support** (~50 tests):
+**Array API Support**:
 - Array API standard compliance differences
 - numpy.array_api experimental features
 - torch backend incompatibilities
 
-**Algorithm Implementation Differences** (~100 tests):
+**Algorithm Implementation Differences**:
 - PCA: Auto solver selection differs (uses covariance_eigh instead of full)
 - RandomForest: Different RNG leading to different feature importances for small tree counts
 - SVR: Edge case handling differences (two-sample input)
 - KNN: KDTree rare 0-distance point misses
 
-**Unsupported Features** (~50 tests):
+**Unsupported Features**:
 - SVM: Subset invariance not yet implemented
 - Ridge: Some solver-specific behaviors
 - Parameter validation differences
 
-**Platform-Specific** (~30 tests):
+**Platform-Specific**:
 - Cache directory access issues on some systems
 - Visual Studio build-specific test failures
 - Numerical precision differences across platforms
 
-**Exception Handling** (~40 tests):
+**Exception Handling**:
 - Different exception types (but same error conditions)
 - Different validation error messages
 - oneDAL doesn't throw for non-finite coefficients in some cases

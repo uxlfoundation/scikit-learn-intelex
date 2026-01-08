@@ -134,25 +134,22 @@ python -c "import dpctl; print(dpctl.get_devices())"
 - **MPI errors in SPMD** → Call `daal4py.daalinit()` before distributed operations, `daalfini()` at end
 
 ## Version Compatibility
-- **Python**: 3.9+
-- **scikit-learn**: 1.0+
-- **oneDAL**: 2021.1+ (backwards compatible only)
+
+**For current supported versions, always check:**
+- `setup.py` - Python version classifiers
+- `requirements-test.txt` - scikit-learn and runtime dependencies
+- `dependencies-dev` - Build dependencies
 
 ### Version Support Policy
 
-**Python Support**:
-The project supports officially maintained Python versions. Support for newly released Python versions may be delayed, and support for older versions may extend beyond official end-of-life to accommodate user needs.
+**Python**:
+Supports officially maintained Python versions. Support for newly released versions may be delayed; support for older versions may extend beyond EOL to accommodate user needs.
 
-**scikit-learn Support**:
-The project aims to support the last 4 scikit-learn releases. sklearn 1.0 is maintained as a special case due to continued usage in production environments.
+**scikit-learn**:
+Aims to support the last 4 scikit-learn releases. sklearn 1.0 maintained as special case for production environments.
 
-**Exact Versions**:
-For exact dependency versions, always refer to:
-- `dependencies-dev` - Build dependencies
-- `requirements-test.txt` - Test dependencies
-- `setup.py` - Python version classifiers
-
-Documentation may lag behind actual supported versions.
+**oneDAL**:
+Backwards compatible with oneDAL 2021.1+. Forward compatibility not guaranteed.
 
 ## Code Generation
 The generator/ directory contains automated code generation from oneDAL C++ headers to Python bindings. Modify generator/wrappers.py to add new oneDAL algorithms; use direct Python implementation for sklearn compatibility layers.

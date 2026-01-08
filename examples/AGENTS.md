@@ -1,11 +1,11 @@
 # AGENTS.md - Examples (examples/)
 
 ## Purpose
-113 Python scripts and 19 Jupyter notebooks demonstrating Intel Extension for Scikit-learn usage patterns.
+Comprehensive Python scripts and Jupyter notebooks demonstrating Intel Extension for Scikit-learn usage patterns.
 
 ## Directory Structure
-- `daal4py/`: Native oneDAL API examples (80+ scripts)
-- `sklearnex/`: Accelerated sklearn examples (25+ scripts)
+- `daal4py/`: Native oneDAL API examples
+- `sklearnex/`: Accelerated sklearn examples
 - `mb/`: Model builder examples (XGBoost/LightGBM/CatBoost conversion)
 - `notebooks/`: Jupyter tutorials with real datasets
 - `utils/`: Utility functions
