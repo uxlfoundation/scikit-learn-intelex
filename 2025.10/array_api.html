@@ -1656,7 +1656,7 @@
 <h2>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
 <p>Many estimators from the Extension for Scikit-learn* support passing data classes that conform to the
 <a class="reference external" href="https://data-apis.org/array-api/">Array API</a> specification as inputs to methods like <code class="docutils literal notranslate"><span class="pre">.fit()</span></code>
-and <code class="docutils literal notranslate"><span class="pre">.predict()</span></code>, such as <a class="reference external" href="https://intelpython.github.io/dpnp/reference/ndarray.html" title="(in Data Parallel Extension for NumPy v0.20.0dev1+4.g75b13c532f5)"><span class="xref std std-doc">dpnp.ndarray</span></a> or <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html">torch.tensor</a>.
+and <code class="docutils literal notranslate"><span class="pre">.predict()</span></code>, such as <a class="reference external" href="https://intelpython.github.io/dpnp/reference/ndarray.html" title="(in Data Parallel Extension for NumPy v0.20.0dev1+36.g22b5fce87f1)"><span class="xref std std-doc">dpnp.ndarray</span></a> or <a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html">torch.tensor</a>.
 This is particularly useful for GPU computations, as it allows performing operations on inputs that are already
 on GPU without moving the data from host to device.</p>
 <div class="admonition important">
@@ -1667,7 +1667,7 @@ global settings or using a <code class="docutils literal notranslate"><span clas
 </div>
 <p>When passing array API inputs whose data is on a SYCL-enabled device (e.g. an Intel GPU), as
 supported for example by <a class="reference external" href="https://docs.pytorch.org/docs/stable/notes/get_start_xpu.html">PyTorch</a>
-and <a class="reference external" href="https://intelpython.github.io/dpnp/index.html" title="(in Data Parallel Extension for NumPy v0.20.0dev1+4.g75b13c532f5)"><span class="xref std std-doc">dpnp</span></a>, if array API support is enabled and the requested operation (e.g. call to <code class="docutils literal notranslate"><span class="pre">.fit()</span></code> / <code class="docutils literal notranslate"><span class="pre">.predict()</span></code>
+and <a class="reference external" href="https://intelpython.github.io/dpnp/index.html" title="(in Data Parallel Extension for NumPy v0.20.0dev1+36.g22b5fce87f1)"><span class="xref std std-doc">dpnp</span></a>, if array API support is enabled and the requested operation (e.g. call to <code class="docutils literal notranslate"><span class="pre">.fit()</span></code> / <code class="docutils literal notranslate"><span class="pre">.predict()</span></code>
 on the estimator class being used) is <a class="reference internal" href="algorithms.html#sklearn-algorithms-gpu"><span class="std std-ref">supported on device/GPU</span></a>, computations
 will be performed on the device where the data lives, without involving any data transfers. Note that all of
 the inputs (e.g. <code class="docutils literal notranslate"><span class="pre">X</span></code> and <code class="docutils literal notranslate"><span class="pre">y</span></code> passed to <code class="docutils literal notranslate"><span class="pre">.fit()</span></code> methods) must be allocated on the same device for this to
@@ -1715,7 +1715,7 @@ but this is generally not supported and users should not rely on these interchan
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">target_offload</span></code> option in config contexts and settings is not intended to work with array API
-classes that have <a class="reference external" href="https://intelpython.github.io/dpctl/latest/api_reference/dpctl/memory.html" title="(in Data Parallel Control (dpctl) v0.22.0dev0+70.ge8a53f1b76)"><span class="xref std std-doc">USM data</span></a>. In order to ensure that computations
+classes that have <a class="reference external" href="https://intelpython.github.io/dpctl/latest/api_reference/dpctl/memory.html" title="(in Data Parallel Control (dpctl) v0.22.0dev0+102.g4c57ee79d1)"><span class="xref std std-doc">USM data</span></a>. In order to ensure that computations
 happen on the intended device under array API, make sure that the data is already on the desired device.</p>
 </div>
 </section>
@@ -1736,7 +1736,7 @@ happen on the intended device under array API, make sure that the data is alread
 </ul>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>While full array API support is currently not implemented for all classes, <a class="reference external" href="https://intelpython.github.io/dpnp/reference/ndarray.html" title="(in Data Parallel Extension for NumPy v0.20.0dev1+4.g75b13c532f5)"><span class="xref std std-doc">dpnp.ndarray</span></a> inputs are supported
+<p>While full array API support is currently not implemented for all classes, <a class="reference external" href="https://intelpython.github.io/dpnp/reference/ndarray.html" title="(in Data Parallel Extension for NumPy v0.20.0dev1+36.g22b5fce87f1)"><span class="xref std std-doc">dpnp.ndarray</span></a> inputs are supported
 by all the classes that have <a class="reference internal" href="oneapi-gpu.html#oneapi-gpu"><span class="std std-ref">GPU support</span></a>. Note however that if array API support is not
 enabled in <a class="reference external" href="https://scikit-learn.org/stable/index.html" title="(in scikit-learn v1.8)"><span class="xref std std-doc">scikit-learn</span></a>, when passing these classes as inputs, data will be transferred to host and then back to
 device instead of being used directly.</p>
@@ -1872,7 +1872,7 @@ arrays to run patched <a class="reference external" href="https://scikit-learn.o
   <hr/>
 
   <div role="contentinfo">
-<jinja2.runtime.BlockReference object at 0x7fc819f82f50>
+<jinja2.runtime.BlockReference object at 0x7fe609308e90>
 <a href=
     "https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html" data-cookie-notice="true">
     Cookies

@@ -1712,12 +1712,12 @@ here - these just list the additional options offered by the Extension for Sciki
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>target_offload</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> or </em><a class="reference external" href="https://intelpython.github.io/dpctl/latest/api_reference/dpctl/generated/dpctl.SyclQueue.html#dpctl.SyclQueue" title="(in Data Parallel Control (dpctl) v0.22.0dev0+70.ge8a53f1b76)"><em>dpctl.SyclQueue</em></a><em> or </em><em>None</em>) – <p>The device used to perform computations, either as a string indicating a name
+<li><p><strong>target_offload</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> or </em><a class="reference external" href="https://intelpython.github.io/dpctl/latest/api_reference/dpctl/generated/dpctl.SyclQueue.html#dpctl.SyclQueue" title="(in Data Parallel Control (dpctl) v0.22.0dev0+102.g4c57ee79d1)"><em>dpctl.SyclQueue</em></a><em> or </em><em>None</em>) – <p>The device used to perform computations, either as a string indicating a name
 recognized by the SyCL runtime, such as <code class="docutils literal notranslate"><span class="pre">&quot;gpu&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;gpu:0&quot;</span></code>, or as a
-<a class="reference external" href="https://intelpython.github.io/dpctl/latest/api_reference/dpctl/generated/dpctl.SyclQueue.html#dpctl.SyclQueue" title="(in Data Parallel Control (dpctl) v0.22.0dev0+70.ge8a53f1b76)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dpctl.SyclQueue</span></code></a> object indicating where to move the data.</p>
+<a class="reference external" href="https://intelpython.github.io/dpctl/latest/api_reference/dpctl/generated/dpctl.SyclQueue.html#dpctl.SyclQueue" title="(in Data Parallel Control (dpctl) v0.22.0dev0+102.g4c57ee79d1)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dpctl.SyclQueue</span></code></a> object indicating where to move the data.</p>
 <p>Assuming SyCL-related dependencies are installed, the list of devices recognized
 by SyCL can be retrieved through the CLI tool <code class="docutils literal notranslate"><span class="pre">sycl-ls</span></code> in a shell, or through
-<a class="reference external" href="https://intelpython.github.io/dpctl/latest/api_reference/dpctl/generated/dpctl.get_devices.html#dpctl.get_devices" title="(in Data Parallel Control (dpctl) v0.22.0dev0+70.ge8a53f1b76)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dpctl.get_devices</span></code></a> in a Python process.</p>
+<a class="reference external" href="https://intelpython.github.io/dpctl/latest/api_reference/dpctl/generated/dpctl.get_devices.html#dpctl.get_devices" title="(in Data Parallel Control (dpctl) v0.22.0dev0+102.g4c57ee79d1)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dpctl.get_devices</span></code></a> in a Python process.</p>
 <p>String <code class="docutils literal notranslate"><span class="pre">&quot;auto&quot;</span></code> is also accepted.</p>
 <p>Global default: <code class="docutils literal notranslate"><span class="pre">&quot;auto&quot;</span></code>.</p>
 </p></li>
@@ -1800,12 +1800,12 @@ their previous values when the context manager is exited.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>target_offload</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> or </em><a class="reference external" href="https://intelpython.github.io/dpctl/latest/api_reference/dpctl/generated/dpctl.SyclQueue.html#dpctl.SyclQueue" title="(in Data Parallel Control (dpctl) v0.22.0dev0+70.ge8a53f1b76)"><em>dpctl.SyclQueue</em></a><em> or </em><em>None</em>) – <p>The device used to perform computations, either as a string indicating a name
+<li><p><strong>target_offload</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> or </em><a class="reference external" href="https://intelpython.github.io/dpctl/latest/api_reference/dpctl/generated/dpctl.SyclQueue.html#dpctl.SyclQueue" title="(in Data Parallel Control (dpctl) v0.22.0dev0+102.g4c57ee79d1)"><em>dpctl.SyclQueue</em></a><em> or </em><em>None</em>) – <p>The device used to perform computations, either as a string indicating a name
 recognized by the SyCL runtime, such as <code class="docutils literal notranslate"><span class="pre">&quot;gpu&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;gpu:0&quot;</span></code>, or as a
-<a class="reference external" href="https://intelpython.github.io/dpctl/latest/api_reference/dpctl/generated/dpctl.SyclQueue.html#dpctl.SyclQueue" title="(in Data Parallel Control (dpctl) v0.22.0dev0+70.ge8a53f1b76)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dpctl.SyclQueue</span></code></a> object indicating where to move the data.</p>
+<a class="reference external" href="https://intelpython.github.io/dpctl/latest/api_reference/dpctl/generated/dpctl.SyclQueue.html#dpctl.SyclQueue" title="(in Data Parallel Control (dpctl) v0.22.0dev0+102.g4c57ee79d1)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dpctl.SyclQueue</span></code></a> object indicating where to move the data.</p>
 <p>Assuming SyCL-related dependencies are installed, the list of devices recognized
 by SyCL can be retrieved through the CLI tool <code class="docutils literal notranslate"><span class="pre">sycl-ls</span></code> in a shell, or through
-<a class="reference external" href="https://intelpython.github.io/dpctl/latest/api_reference/dpctl/generated/dpctl.get_devices.html#dpctl.get_devices" title="(in Data Parallel Control (dpctl) v0.22.0dev0+70.ge8a53f1b76)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dpctl.get_devices</span></code></a> in a Python process.</p>
+<a class="reference external" href="https://intelpython.github.io/dpctl/latest/api_reference/dpctl/generated/dpctl.get_devices.html#dpctl.get_devices" title="(in Data Parallel Control (dpctl) v0.22.0dev0+102.g4c57ee79d1)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dpctl.get_devices</span></code></a> in a Python process.</p>
 <p>String <code class="docutils literal notranslate"><span class="pre">&quot;auto&quot;</span></code> is also accepted.</p>
 <p>Global default: <code class="docutils literal notranslate"><span class="pre">&quot;auto&quot;</span></code>.</p>
 </p></li>
@@ -1867,7 +1867,7 @@ recommended to use the newer <a class="reference internal" href="array_api.html#
   <hr/>
 
   <div role="contentinfo">
-<jinja2.runtime.BlockReference object at 0x7fc819c758d0>
+<jinja2.runtime.BlockReference object at 0x7fe609a095d0>
 <a href=
     "https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html" data-cookie-notice="true">
     Cookies

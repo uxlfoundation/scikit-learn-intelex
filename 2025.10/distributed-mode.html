@@ -1706,8 +1706,8 @@ data on device without this may lead to a runtime error):</p>
 </pre></div>
 </div>
 <p>SMPD-aware versions of estimators can be imported from the <code class="docutils literal notranslate"><span class="pre">sklearnex.spmd</span></code> module. Data should be distributed across multiple nodes as
-desired, and should be transferred to a <a class="reference external" href="https://intelpython.github.io/dpnp/reference/ndarray.html" title="(in Data Parallel Extension for NumPy v0.20.0dev1+4.g75b13c532f5)"><span class="xref std std-doc">dpnp.ndarray</span></a> before being passed to the estimator.</p>
-<p>Note that SPMD estimators allow an additional argument <code class="docutils literal notranslate"><span class="pre">queue</span></code> in their <code class="docutils literal notranslate"><span class="pre">.fit</span></code> / <code class="docutils literal notranslate"><span class="pre">.predict</span></code> methods, which accept <a class="reference external" href="https://intelpython.github.io/dpctl/latest/api_reference/dpctl/generated/dpctl.SyclQueue.html#dpctl.SyclQueue" title="(in Data Parallel Control (dpctl) v0.22.0dev0+70.ge8a53f1b76)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dpctl.SyclQueue</span></code></a> objects. For example, while the signature for <a class="reference external" href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html#sklearn.linear_model.LinearRegression.predict" title="(in scikit-learn v1.8)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sklearn.linear_model.LinearRegression.predict</span></code></a> would be</p>
+desired, and should be transferred to a <a class="reference external" href="https://intelpython.github.io/dpnp/reference/ndarray.html" title="(in Data Parallel Extension for NumPy v0.20.0dev1+36.g22b5fce87f1)"><span class="xref std std-doc">dpnp.ndarray</span></a> before being passed to the estimator.</p>
+<p>Note that SPMD estimators allow an additional argument <code class="docutils literal notranslate"><span class="pre">queue</span></code> in their <code class="docutils literal notranslate"><span class="pre">.fit</span></code> / <code class="docutils literal notranslate"><span class="pre">.predict</span></code> methods, which accept <a class="reference external" href="https://intelpython.github.io/dpctl/latest/api_reference/dpctl/generated/dpctl.SyclQueue.html#dpctl.SyclQueue" title="(in Data Parallel Control (dpctl) v0.22.0dev0+102.g4c57ee79d1)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dpctl.SyclQueue</span></code></a> objects. For example, while the signature for <a class="reference external" href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html#sklearn.linear_model.LinearRegression.predict" title="(in scikit-learn v1.8)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sklearn.linear_model.LinearRegression.predict</span></code></a> would be</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span> <span class="o">...</span>
 </pre></div>
 </div>
@@ -1736,7 +1736,7 @@ desired, and should be transferred to a <a class="reference external" href="http
   <hr/>
 
   <div role="contentinfo">
-<jinja2.runtime.BlockReference object at 0x7fc81a8ceb50>
+<jinja2.runtime.BlockReference object at 0x7fe60aed45d0>
 <a href=
     "https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html" data-cookie-notice="true">
     Cookies
