@@ -25,16 +25,31 @@ Use `sklearn_is_patched()` to verify patching state.
 
 ## Configuration API
 
-### Device Control
-Control execution device via `config_context(target_offload=...)`:
-- `"gpu:0"`: GPU acceleration
-- `"cpu"`: Force CPU execution
-- `"auto"`: Automatic device selection based on data location (default)
+Use `config_context()` from `sklearnex` to control behavior:
 
-### Fallback Control
-Configure fallback behavior:
-- `allow_fallback_to_host`: Enable GPU → CPU fallback
-- `allow_sklearn_after_onedal`: Enable oneDAL → sklearn fallback
+```python
+from sklearnex import config_context
+
+with config_context(target_offload="gpu"):
+    model.fit(X, y)  # Uses GPU if supported
+```
+
+### All Configuration Options
+
+**Device Control:**
+- `target_offload`: Device selection
+  - `"auto"` (default): Automatic based on data location
+  - `"cpu"`: Force CPU execution
+  - `"gpu"` or `"gpu:0"`: GPU acceleration (requires Intel GPU + dpctl)
+  - `dpctl.SyclQueue` object: Explicit queue control
+
+**Fallback Control:**
+- `allow_fallback_to_host`: `bool` (default `True`) - Enable GPU → CPU fallback
+- `allow_sklearn_after_onedal`: `bool` (default `True`) - Enable oneDAL → sklearn fallback
+
+**Advanced:**
+- `verbose`: `bool` - Show which implementation is used (helpful for debugging)
+- `array_api_dispatch`: `bool` - Enable Array API namespace dispatch
 
 ## Algorithm Support
 
@@ -50,7 +65,7 @@ Algorithms implement `_onedal_cpu_supported()` and `_onedal_gpu_supported()` to 
 - **Clustering**: DBSCAN, K-Means
 - **Linear Models**: LogisticRegression, Ridge, LinearRegression
 - **Ensemble**: RandomForestClassifier, RandomForestRegressor
-- **Decomposition**: PCA, IncrementalPCA
+- **Decomposition**: PCA, IncrementalPCA (preview)
 - **Neighbors**: KNeighborsClassifier, KNeighborsRegressor
 - **SVM**: SVC, SVR, NuSVC, NuSVR
 
@@ -63,7 +78,13 @@ Algorithms implement `_onedal_cpu_supported()` and `_onedal_gpu_supported()` to 
 Located in `sklearnex/spmd/`. Same API as standard sklearnex, distributed across MPI nodes. Import from `sklearnex.spmd.*` instead of `sklearnex.*`.
 
 ## Preview Features
-Experimental algorithms and enhancements in `sklearnex/preview/`. Activate via `export SKLEARNEX_PREVIEW=1`.
+Experimental algorithms in `sklearnex/preview/`. Activate via `export SKLEARNEX_PREVIEW=1`.
+
+**Available in Preview:**
+- `sklearnex.preview.decomposition.IncrementalPCA`: Enhanced incremental PCA
+- `sklearnex.preview.covariance`: Enhanced covariance implementations
+
+**Note**: Preview APIs may change without deprecation warnings.
 
 ## Error Handling
 

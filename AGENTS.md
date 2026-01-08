@@ -8,14 +8,16 @@
 
 ## Architecture (4 Layers)
 ```text
-User Apps → sklearnex/ → daal4py/ → onedal/ → Intel oneDAL C++
+User Apps → sklearnex/ ⇒ {daal4py/, onedal/} → Intel oneDAL C++
+                             ↓          ↓
+                       (Cython ext)  (pybind11)
 ```
 
 **Layer Functions:**
-- `sklearnex/`: sklearn API compatibility and patching system
-- `daal4py/`: Direct oneDAL access and model builders
-- `onedal/`: Pybind11 bindings and memory management
-- `src/`: C++/Cython core implementation
+- `sklearnex/`: sklearn API compatibility, patching, uses both daal4py and onedal
+- `daal4py/`: Direct oneDAL access via Cython, model builders, legacy compatibility
+- `onedal/`: Modern pybind11 bindings, memory management, GPU/CPU backend selection
+- `src/`: C++/Cython core implementation shared by both bindings
 
 ## Entry Points by Use Case
 
@@ -50,18 +52,31 @@ GPU offloading and device control available through sklearnex config_context for
 - `daal4py/__init__.py`: Native API entry point
 - `src/`: C++/Cython core (distributed computing, memory management)
 
-## Development Setup
+## Installation
 
-### Prerequisites
-- **Python**: 3.9+
-- **oneDAL**: 2021.1+ (backwards compatible)
-- **Dependencies**: Cython, Jinja2, numpy, pybind11, cmake (see dependencies-dev)
+### Quick Install (Users)
+```bash
+# Recommended: via conda
+conda install -c conda-forge scikit-learn-intelex
 
-### Build Commands
-Install dependencies, set DALROOT environment variable, run setup.py develop for development mode.
+# Or via pip
+pip install scikit-learn-intelex
+```
 
-### Environment Options
-- `DALROOT`: Path to oneDAL (required)
+### From Source (Contributors)
+```bash
+# 1. Install oneDAL and set DALROOT
+export DALROOT=/path/to/onedal  # Required
+
+# 2. Install dependencies
+pip install -r requirements-test.txt
+
+# 3. Build in development mode
+python setup.py develop
+```
+
+### Environment Variables
+- `DALROOT`: Path to oneDAL (required for source builds)
 - `MPIROOT`: Path to MPI for distributed support
 - `NO_DPC`: Disable GPU support
 - `NO_DIST`: Disable distributed computing
@@ -93,6 +108,30 @@ oneDAL requires contiguous data for zero-copy operations. C-contiguous preferred
 ## GPU Hardware
 **Supported Intel GPUs**: Integrated (UHD Graphics, Iris Xe), Discrete (Arc series)
 **Requirements**: SYCL/DPC++ support, Intel oneAPI toolkit, Unified Shared Memory (USM)
+
+### GPU Setup & Troubleshooting
+**Verify GPU availability:**
+```bash
+python -c "import dpctl; print(dpctl.get_devices())"
+```
+
+**Common GPU issues:**
+- **"No GPU device found"** → Install Intel GPU drivers and `intel-opencl-icd` (Linux) or Intel Graphics drivers (Windows)
+- **`ImportError: dpctl`** → Install GPU runtime: `pip install dpctl dpnp`
+- **Fallback to CPU** → Check `verbose=True` to see reason (unsupported param, sparse data, etc.)
+- **Out of memory** → Reduce data size or use `target_offload="cpu"`
+
+## Common Errors
+
+**Build/Setup:**
+- **"Not set DALROOT variable"** → Export DALROOT pointing to oneDAL installation
+- **"MPIROOT is not set"** → For distributed mode, set MPIROOT or use `NO_DIST=1`
+
+**Runtime:**
+- **"oneDAL backend not available"** → Algorithm/parameter not supported by oneDAL, fallback to sklearn
+- **"Unsupported parameter"** → Parameter value incompatible with oneDAL (check documentation)
+- **"Sparse data not supported"** → Convert to dense or use sklearn (except SVM, NaiveBayes support CSR)
+- **MPI errors in SPMD** → Call `daal4py.daalinit()` before distributed operations, `daalfini()` at end
 
 ## Version Compatibility
 - **Python**: 3.9+
