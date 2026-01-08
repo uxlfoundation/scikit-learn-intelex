@@ -1,433 +1,149 @@
-# AGENTS.md - daal4py Package
+# AGENTS.md - daal4py Layer
 
 ## Purpose
-**Direct Python bindings to Intel oneDAL** for maximum performance
+Native Python interface to Intel oneDAL with three APIs: native oneDAL algorithms, sklearn-compatible wrappers, and model builders for external ML frameworks.
 
-## Two APIs
-1. **Native oneDAL**: `import daal4py as d4p`
-2. **sklearn-compatible**: `from daal4py.sklearn import ...`
-3. **Model Builders**: `from daal4py.mb import convert_model`
+## Three APIs
 
-## Native oneDAL API Usage
+### 1. Native oneDAL API
+Direct access to oneDAL algorithms with explicit setup/compute/finalize phases. Provides maximum control and performance. Import via `import daal4py as d4p`.
 
-**Basic Pattern:**
-```python
-import daal4py as d4p
-import numpy as np
+### 2. sklearn-Compatible API
+Drop-in replacements for sklearn estimators. Located in `daal4py/sklearn/`. Monkeypatch system provides transparent acceleration via `patch_sklearn()`.
 
-# Create algorithm
-algorithm = d4p.dbscan(epsilon=0.5, minObservations=5)
+### 3. Model Builders API
+Convert trained models from XGBoost, LightGBM, CatBoost to oneDAL format for accelerated inference. Located in `daal4py/mb/`. Provides 10-100X speedup (varies by model and data).
 
-# Run computation
-result = algorithm.compute(data)
+## Key Components
 
-# Access results
-cluster_labels = result.assignments
-core_indices = result.coreIndices
-```
+### Core Files
+- `__init__.py`: Native API entry, algorithm loading
+- `sklearn/`: sklearn-compatible implementations
+- `sklearn/monkeypatch/dispatcher.py`: Patching system
+- `mb/tree_based_builders.py`: Tree model conversions
+- `mb/logistic_regression_builders.py`: LogReg conversions
 
-**Common Algorithms:**
-```python
-# Clustering
-d4p.dbscan(epsilon=0.5, minObservations=5)
-d4p.kmeans(nClusters=3, maxIterations=300)
+### Algorithm Categories
+- **Clustering**: dbscan, kmeans
+- **Classification**: adaboost, brownboost, decision_forest, decision_tree, gbt_classification, logitboost, naive_bayes, stump, svm
+- **Regression**: decision_forest, decision_tree, elastic_net, gbt_regression, lasso, linear, ridge, stump
+- **Decomposition**: pca, svd
+- **Statistics**: covariance, low_order_moments, correlation_distance, cosine_distance
+- **Other**: association_rules, bacon_outlier, cholesky, em_gmm, implicit_als, knn, normalization, qr, pivoted_qr, quantiles, sorting, outlier_detection
 
-# Decomposition
-d4p.pca(method="defaultDense")
-d4p.svd(method="defaultDense")
+## Monkeypatch System
 
-# Linear Models
-d4p.linear_regression_training()
-d4p.ridge_regression_training(ridgeParameters=1.0)
-```
+### Implementation
+Located in `daal4py/sklearn/monkeypatch/dispatcher.py`. Replaces sklearn estimators with daal4py implementations when conditions met.
 
-## sklearn-Compatible API
+### Core Functions
+- `patch_sklearn()`: Replace sklearn algorithms globally
+- `unpatch_sklearn()`: Restore original sklearn
+- `get_patch_map()`: Retrieve algorithm mappings
+- Condition checking via `_daal*_check_supported()` functions
 
-**Usage:**
-```python
-from daal4py.sklearn.cluster import DBSCAN
-from daal4py.sklearn.linear_model import Ridge
+### Patching Logic
+Checks data characteristics (density, dtype, shape), algorithm parameters, and oneDAL compatibility before applying acceleration.
 
-# Use like normal sklearn
-clusterer = DBSCAN(eps=0.5, min_samples=5)
-labels = clusterer.fit_predict(X)
-```
+## Model Builders
 
-**Patching System:**
-```python
-from daal4py.sklearn.monkeypatch import patch_sklearn
-patch_sklearn()  # Replace sklearn algorithms with daal4py versions
-```
+### Tree-Based Models
+Converts XGBoost, LightGBM, CatBoost gradient boosted trees to oneDAL format. Implemented in `mb/gbt_convertors.py` and `mb/tree_based_builders.py`.
 
-## Model Builders (`mb/`)
+**Process**: Extract tree structures → Convert parameters → Build oneDAL model → Validate equivalence
 
-**Purpose**: Convert external ML models to oneDAL for faster inference
+### Logistic Regression
+Converts sklearn LogisticRegression and SGDClassifier to oneDAL format. Supports binary and multinomial classification.
 
-**Supported Frameworks:**
-```python
-from daal4py.mb import convert_model
+**Usage**: Train externally → Convert to oneDAL → Accelerated inference
 
-# XGBoost/LightGBM/CatBoost → oneDAL
-externalModel = xgb.XGBClassifier().fit(X, y)
-d4p_model = convert_model(externalModel)
+## Distributed Computing (SPMD)
 
-# Use oneDAL for fast prediction
-predictions = d4p_model.predict(X_test)
-prob = d4p_model.predict_proba(X_test)
-```
+### Architecture
+MPI-based Single Program Multiple Data execution. Each rank processes data partition, results aggregated at master.
 
-**Benefits**: 10-100x faster inference than original models
+### Implementation
+Core logic in `src/dist_*.h` files. Python entry via mpi4py with `daalinit()` and `daalfini()`.
 
-### 3. Monkeypatch System (`sklearn/monkeypatch/`)
+### Supported Algorithms
+DBSCAN, K-Means, Linear Regression, PCA, Covariance
 
-**Purpose**: Original patching mechanism for scikit-learn replacement
+### Requirements
+MPI installation (Intel MPI or OpenMPI) and mpi4py package. Launch via `mpirun -n <ranks>`.
 
-**Core Implementation** (`dispatcher.py:57-200`):
-```python
-@lru_cache(maxsize=None)
-def _get_map_of_algorithms():
-    mapping = {
-        "pca": [[(decomposition_module, "PCA", PCA_daal4py), None]],
-        "kmeans": [[(cluster_module, "KMeans", KMeans_daal4py), None]],
-        "dbscan": [[(cluster_module, "DBSCAN", DBSCAN_daal4py), None]],
-        # ... complete algorithm mapping
-    }
-    return mapping
-```
+## Performance Optimization
 
-**Patching Functions**:
-- `patch_sklearn()`: Replace sklearn algorithms with daal4py versions
-- `unpatch_sklearn()`: Restore original sklearn implementations
-- `get_patch_map()`: Retrieve current algorithm mappings
-- `enable_patching()`: Context-based patching control
+### Memory Patterns
+- Zero-copy for NumPy contiguous arrays
+- Automatic data type conversion when needed
+- C-contiguous preferred over Fortran-contiguous
+- Direct array access via `make2d()` utility
 
-**Condition Checking**:
-```python
-def _daal4py_check_supported(estimator, method_name, *data):
-    # Check data characteristics (density, dtypes, shape)
-    # Check algorithm parameters
-    # Check oneDAL version compatibility
-    # Return boolean + condition chain
-```
+### Threading
+Intel TBB parallelism across cores. Control via OMP_NUM_THREADS or daal4py threading functions.
 
-### 4. Model Builders (`mb/`)
+### GPU Acceleration
+Limited support via oneDAL backend. Most algorithms CPU-only; GPU support primarily in sklearnex layer.
 
-**Purpose**: Convert external ML library models to oneDAL for accelerated inference
-
-#### Tree-Based Models (`tree_based_builders.py`)
-
-**Supported Libraries**:
-- **XGBoost**: Gradient boosting framework
-- **LightGBM**: Microsoft gradient boosting
-- **CatBoost**: Yandex gradient boosting
-- **Treelite**: Universal tree model format
-
-**Implementation Pattern**:
-```python
-class GBTDAALModel(GBTDAALBaseModel):
-    def __init__(self, model):
-        # 1. Extract model parameters and structure
-        # 2. Convert to oneDAL tree format
-        # 3. Create oneDAL inference model
-
-    def predict(self, X):
-        # Use oneDAL optimized prediction
-
-    def predict_proba(self, X):
-        # Probabilistic predictions for classification
-```
-
-**Conversion Process**:
-1. **Tree Extraction**: Parse external model tree structures
-2. **Parameter Mapping**: Convert hyperparameters to oneDAL format
-3. **Model Creation**: Build oneDAL gradient boosting model
-4. **Validation**: Verify numerical equivalence with original model
-
-#### Logistic Regression Models (`logistic_regression_builders.py`)
-
-**Supported Sources**:
-- sklearn LogisticRegression (binary/multinomial)
-- sklearn SGDClassifier (with log loss)
-- Direct coefficient specification
-
-**Features**:
-- Binary and multinomial classification
-- Coefficient and intercept preservation
-- oneDAL optimized prediction pipeline
-
-### 5. Distributed Computing (SPMD)
-
-**Purpose**: Single Program Multiple Data parallel processing across multiple nodes
-
-**Implementation Location**:
-- C++ Headers: `src/dist_*.h` files
-- Examples: `examples/daal4py/*_spmd.py`
-
-**Architecture**:
-```cpp
-// C++ distributed computing framework (src/dist_custom.h)
-template <typename T1, typename T2>
-class dist {
-    // MPI communication primitives
-    // Data serialization/deserialization
-    // Distributed algorithm coordination
-};
-```
-
-**Supported Algorithms**:
-- **DBSCAN**: `dist_dbscan.h` - Distributed density clustering
-- **K-Means**: `dist_kmeans.h` - Distributed centroid-based clustering
-- **Linear Regression**: Distributed least squares
-- **PCA**: Distributed principal component analysis
-- **Covariance**: Distributed covariance matrix computation
-
-**SPMD Usage Pattern**:
-```python
-import daal4py as d4p
-
-# Initialize distributed backend
-d4p.daalinit()
-
-# Distributed algorithm execution
-result = algorithm.compute(local_data_chunk)
-
-# Finalize and collect results
-d4p.daalfini()
-```
-
-**MPI Integration**:
-- Automatic rank and size detection
-- Efficient data distribution strategies
-- Collective communication operations
-- Fault tolerance and load balancing
-
-## Performance Optimization Strategies
-
-### 1. Memory Management
-
-**Zero-Copy Operations**:
-- Direct NumPy array access via `make2d()` utility
-- In-place data transformations where possible
-- Efficient C++ ↔ Python data exchange
-
-**Memory Layout Optimization**:
-```python
-# Efficient data preparation (daal4py/sklearn/_utils.py)
-def make2d(X):
-    if X.ndim == 1:
-        X = X.reshape(1, -1)
-    return np.ascontiguousarray(X, dtype=np.float64)
-```
-
-### 2. Algorithmic Optimizations
-
-**Solver Selection**:
-- Analytical solutions for overdetermined systems
-- Iterative methods for large-scale problems
-- Specialized algorithms for sparse data
-
-**Parallel Execution**:
-- Intel TBB threading for shared-memory parallelism
-- MPI for distributed-memory parallelism
-- Vectorization via Intel SIMD instructions
-
-### 3. Data Type Optimization
-
-**Precision Selection**:
-```python
-def getFPType(X):
-    """Determine optimal floating-point precision"""
-    if hasattr(X, 'dtype'):
-        if X.dtype == np.float32:
-            return "float"
-        else:
-            return "double"
-    return "double"  # Default to double precision
-```
-
-### 4. Condition-Based Optimization
-
-**Patching Conditions** (Pattern across all algorithms):
-```python
-def _daal4py_supported(self, method_name, *data):
-    conditions = PatchingConditionsChain("daal4py.algorithm.method")
-
-    # Data characteristics
-    conditions.and_condition(not sp.issparse(data[0]), "Sparse not supported")
-    conditions.and_condition(data[0].dtype in [np.float32, np.float64], "Invalid dtype")
-
-    # Algorithm parameters
-    conditions.and_condition(self.metric == "euclidean", "Only euclidean metric")
-    conditions.and_condition(self.algorithm == "auto", "Algorithm must be auto")
-
-    return conditions
-```
+### Data Requirements
+Dense data required for most algorithms. Sparse support limited to SVM and Naive Bayes (CSR format).
 
 ## Integration Architecture
 
-### With oneDAL C++ Library
+### daal4py → onedal
+daal4py wraps onedal/ Python bindings which wrap oneDAL C++ via pybind11.
 
-**Direct Binding Layer**:
-- Cython-based C++ wrapper generation
-- Template instantiation for algorithm variants
-- Exception handling and error propagation
-- Memory management coordination
+### Data Flow
+NumPy → daal4py → onedal.datatypes → oneDAL C++ → Results → Python objects
 
-**Algorithm Instantiation Pattern**:
-```cpp
-// C++ algorithm instantiation (generated via Cython)
-daal::algorithms::dbscan::Batch<float, daal::algorithms::dbscan::defaultDense> algorithm;
-algorithm.parameter.epsilon = eps;
-algorithm.parameter.minObservations = min_samples;
-algorithm.input.set(daal::algorithms::dbscan::data, numericTable);
-daal::algorithms::dbscan::ResultPtr result = algorithm.compute();
-```
+### Error Handling
+- Input validation in Python layer
+- C++ exceptions converted to Python exceptions
+- Automatic fallback to sklearn in monkeypatch system when conditions not met
 
-### With sklearnex Package
-
-**Layered Architecture**:
-1. **sklearnex**: High-level API with device offloading
-2. **daal4py**: Core algorithms and patching
-3. **oneDAL**: Low-level optimized implementations
-
-**API Delegation**:
-```python
-# sklearnex delegates to daal4py for compatible cases
-if _is_daal4py_supported():
-    return daal4py_algorithm.fit(X, y)
-else:
-    return sklearn_algorithm.fit(X, y)
-```
-
-### With External Libraries
-
-**Model Conversion Pipeline**:
-```python
-# XGBoost → oneDAL conversion example
-def get_gbt_model_from_xgboost(xgb_model):
-    # 1. Extract XGBoost JSON representation
-    # 2. Parse tree structures and parameters
-    # 3. Convert to oneDAL tree format
-    # 4. Create oneDAL gradient boosting model
-    # 5. Return optimized prediction interface
-```
-
-## Error Handling and Fallbacks
-
-### Exception Management
-
-**oneDAL Error Handling**:
-- C++ exception translation to Python
-- Detailed error messages with context
-- Graceful degradation to sklearn when possible
-
-**Common Error Patterns**:
-```python
-try:
-    result = daal4py_algorithm.compute(data)
-except RuntimeError as e:
-    if "not supported" in str(e):
-        # Fallback to sklearn
-        return sklearn_algorithm.fit(X, y)
-    else:
-        raise
-```
-
-### Validation and Checks
-
-**Input Validation**:
-- Data type and shape verification
-- Parameter range checking
-- Memory layout validation
-- Feature name consistency
-
-**Compatibility Checking**:
-- oneDAL version requirements
-- Algorithm parameter support
-- Hardware capability detection
+### With sklearnex
+sklearnex provides high-level API with device offloading, delegates to daal4py for compatible cases, falls back to sklearn otherwise.
 
 ## Development Guidelines
 
 ### Adding New Algorithms
+1. Check if oneDAL C++ algorithm exists
+2. Add to generator/wrappers.py if available
+3. Rebuild to generate bindings
+4. Add sklearn wrapper in `daal4py/sklearn/` if needed
+5. Update monkeypatch dispatcher for sklearn compatibility
 
-1. **Create Native Wrapper**:
-   ```python
-   def _daal_algorithm(X, y=None, **params):
-       # Convert inputs to oneDAL format
-       # Configure oneDAL algorithm
-       # Execute computation
-       # Convert results to expected format
-   ```
+### Modifying Existing Algorithms
+- Native API: Modify generated sources or generator templates
+- sklearn API: Direct edits in `daal4py/sklearn/`
+- Model builders: Edit `daal4py/mb/`
 
-2. **Implement sklearn Interface**:
-   ```python
-   class Algorithm(sklearn_Algorithm):
-       def fit(self, X, y=None):
-           return self._daal_fit(X, y)
-   ```
+### Testing
+Run pytest on `daal4py/sklearn/` and `tests/` for validation. MPI tests require `mpirun -n 4`.
 
-3. **Add to Dispatcher**:
-   ```python
-   # Update monkeypatch/dispatcher.py
-   mapping["algorithm"] = [[(module, "Algorithm", Algorithm_daal4py), None]]
-   ```
+## Algorithm Decision Matrix
 
-4. **Create Tests**:
-   ```python
-   # Numerical accuracy tests
-   # Performance benchmarks
-   # Edge case validation
-   ```
+**Use Native daal4py when:**
+- Maximum performance needed
+- Advanced algorithm control required
+- Using distributed (SPMD) mode
 
-### Performance Optimization Guidelines
+**Use sklearn-compatible API when:**
+- Drop-in sklearn replacement desired
+- Gradual migration from sklearn
+- Compatibility with sklearn ecosystem required
 
-- **Minimize Data Copies**: Use views and in-place operations
-- **Leverage oneDAL Optimizations**: Choose appropriate algorithms and parameters
-- **Profile Memory Usage**: Monitor peak memory consumption
-- **Validate Numerically**: Ensure mathematical correctness
-- **Benchmark Performance**: Measure against sklearn baselines
+**Use Model Builders when:**
+- Already trained XGBoost/LightGBM/CatBoost models
+- Inference performance critical
+- Deployment optimization needed
 
-### Distributed Computing Guidelines
-
-- **Design for Scalability**: Consider communication overhead
-- **Handle Data Distribution**: Implement efficient partitioning
-- **Manage Dependencies**: Coordinate between nodes
-- **Test at Scale**: Validate with realistic data sizes
-
-## File Location Reference
-
-### Core Implementation
-- `daal4py/__init__.py:53-73` - Core binding imports and initialization
-- `daal4py/sklearn/monkeypatch/dispatcher.py:57-200` - Algorithm mapping system
-- `src/daal4py.cpp` - Main C++/Cython implementation
-- `src/dist_*.h` - Distributed computing headers
-
-### Algorithm Examples
-- `daal4py/sklearn/cluster/dbscan.py:35-56` - DBSCAN oneDAL integration
-- `daal4py/sklearn/linear_model/_linear.py` - Linear regression implementation
-- `daal4py/sklearn/decomposition/_pca.py` - PCA with oneDAL optimization
-
-### Model Builders
-- `daal4py/mb/tree_based_builders.py:65-200` - GBT model conversion
-- `daal4py/mb/logistic_regression_builders.py` - LogReg model conversion
-- `daal4py/mb/gbt_convertors.py` - External library integration
-
-### Distributed Computing
-- `examples/daal4py/*_spmd.py` - SPMD usage examples
-- `src/dist_dbscan.h:28-100` - Distributed DBSCAN implementation
-- `src/mpi/` - MPI communication layer
-
-## AI Agent Development Guidelines
-
-When working with daal4py, AI agents should:
-
-1. **Understand the Native API**: Recognize direct oneDAL algorithm access patterns
-2. **Respect Performance Requirements**: Maintain zero-copy operations where possible
-3. **Handle Distributed Computing**: Account for MPI coordination and data distribution
-4. **Validate Numerically**: Ensure algorithmic correctness against sklearn
-5. **Consider Memory Constraints**: Monitor memory usage in large-scale scenarios
-6. **Test Across Platforms**: Validate on different hardware configurations
-7. **Document Performance**: Clearly specify optimization benefits and limitations
-8. **Maintain Compatibility**: Preserve sklearn API contracts and behavior
-
-The daal4py package represents the performance-critical foundation of the Intel Extension for Scikit-learn, providing both the algorithmic engine and the compatibility layer that enables seamless acceleration of existing scikit-learn workflows.
+## For AI Agents
+- Native API provides explicit control, sklearn API provides compatibility
+- Model builders accelerate inference of externally trained models
+- Monkeypatch system enables transparent acceleration via condition checking
+- SPMD mode requires MPI for distributed execution across multiple nodes
+- Check algorithm availability in oneDAL C++ before attempting wrapper
+- Generated code in build directories, templates in generator/
+- Zero-copy operations critical for performance
+- Dense data and contiguous arrays required for most algorithms

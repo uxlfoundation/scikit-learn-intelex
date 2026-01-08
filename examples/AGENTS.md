@@ -4,56 +4,37 @@
 113 Python scripts and 19 Jupyter notebooks demonstrating Intel Extension for Scikit-learn usage patterns.
 
 ## Directory Structure
-- `daal4py/` - Native oneDAL API examples (80+ scripts)
-- `sklearnex/` - Accelerated sklearn examples (25+ scripts)
-- `mb/` - Model builder examples (XGBoost/LightGBM/CatBoost conversion)
-- `notebooks/` - Jupyter tutorials with real datasets
-- `utils/` - Utility functions
+- `daal4py/`: Native oneDAL API examples (80+ scripts)
+- `sklearnex/`: Accelerated sklearn examples (25+ scripts)
+- `mb/`: Model builder examples (XGBoost/LightGBM/CatBoost conversion)
+- `notebooks/`: Jupyter tutorials with real datasets
+- `utils/`: Utility functions
 
 ## Key Usage Patterns
 
 ### Native oneDAL API
-```python
-import daal4py as d4p
-algorithm = d4p.dbscan(epsilon=0.5, minObservations=5)
-result = algorithm.compute(data)
-```
+Direct algorithm access via daal4py for maximum performance and control.
 
 ### Accelerated sklearn
-```python
-from sklearnex import patch_sklearn
-patch_sklearn()  # All sklearn imports now accelerated
-from sklearn.cluster import DBSCAN
-```
+Global patching or selective imports to accelerate sklearn code transparently.
 
 ### GPU Acceleration
-```python
-from sklearnex import config_context
-with config_context(target_offload="gpu:0"):
-    model.fit(X, y)
-```
+Device offloading examples using config_context for supported algorithms.
 
-### Distributed Computing
-```python
-import daal4py as d4p
-d4p.daalinit()  # Initialize MPI
-# ... distributed computation
-d4p.daalfini()  # Cleanup
-```
+### Distributed Computing (SPMD)
+MPI-based distributed execution with daalinit/daalfini coordination.
 
 ### Model Conversion
-```python
-from daal4py.mb import convert_model
-d4p_model = convert_model(xgb_model)  # 10-100x faster inference
-```
+Converting XGBoost/LightGBM/CatBoost models to oneDAL format for accelerated inference.
 
 ## Algorithm Categories
 - **Clustering**: DBSCAN, K-Means
-- **Linear Models**: Linear/Ridge/Logistic regression
-- **Ensemble**: Random Forest, Gradient boosting
-- **Decomposition**: PCA, SVD
-- **Statistics**: Moments, covariance
+- **Linear Models**: Linear, Ridge, Logistic regression, Lasso, ElasticNet
+- **Ensemble**: Random Forest, Gradient Boosting
+- **Decomposition**: PCA, SVD, Incremental PCA
+- **Statistics**: Moments, covariance, correlation
 - **SVM**: Classification and regression
+- **Neighbors**: KNN classification and regression
 
 ## For AI Agents
 - Use examples as templates for new implementations

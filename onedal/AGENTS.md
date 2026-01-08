@@ -9,33 +9,14 @@ Low-level Python bindings to Intel oneDAL using pybind11, providing CPU/GPU exec
 - `_device_offload.py` - Device dispatch utilities
 - `common/` - Core infrastructure and policies
 - `datatypes/` - Data conversion (NumPy, SYCL USM, DLPack)
-- Algorithm modules: `cluster/`, `linear_model/`, `decomposition/`, etc.
+- Algorithm modules: `cluster/`, `linear_model/`, `decomposition/`, `svm/`, `ensemble/`, `basic_statistics/`, `covariance/`
 
 ## Backend System
-```python
-# Automatic backend selection
-try:
-    import onedal._onedal_py_dpc  # GPU backend
-except ImportError:
-    import onedal._onedal_py_host  # CPU backend
-```
-
-## Configuration
-```python
-from onedal import config_context
-
-# GPU acceleration
-with config_context(target_offload="gpu:0"):
-    model.fit(X, y)
-
-# Auto device selection (default)
-with config_context(target_offload="auto"):
-    model.fit(X, y)  # Uses data location to choose device
-```
+Automatic backend selection between GPU (DPC++) and CPU (Host) based on available hardware and dependencies.
 
 ## Data Conversion
-- **NumPy**: Zero-copy conversion via `to_table()`
-- **SYCL USM**: GPU memory sharing (`__sycl_usm_array_interface__`)
+- **NumPy**: Zero-copy conversion for CPU arrays
+- **SYCL USM**: GPU memory sharing via `__sycl_usm_array_interface__`
 - **DLPack**: Cross-framework tensor exchange
 
 ## Algorithm Categories
@@ -47,8 +28,7 @@ with config_context(target_offload="auto"):
 - **Statistics**: Basic statistics, covariance
 
 ## For AI Agents
-- Use `config_context` for device selection
 - Prefer zero-copy operations with `to_table()`
-- Handle CPU/GPU fallback gracefully
+- Handle CPU/GPU backend availability gracefully
 - Monitor memory usage on GPU
 - Test across different device configurations
