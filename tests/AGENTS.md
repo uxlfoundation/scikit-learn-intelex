@@ -54,6 +54,75 @@ Commands:
 
 Validates distributed algorithms: DBSCAN, K-Means, PCA, Linear Regression, Covariance
 
+## scikit-learn Compatibility Testing
+
+### Testing Approach
+sklearnex aims for high compatibility with scikit-learn APIs. Tests are run against sklearn's own test suite to validate behavior matches sklearn's implementation.
+
+### Test Coverage
+Most sklearn tests pass with sklearnex acceleration. A subset is deselected due to:
+1. **Intentional differences**: Performance optimizations that produce mathematically equivalent but not identical results
+2. **Unsupported features**: Features not yet implemented in oneDAL backend
+3. **Implementation constraints**: Limitations in oneDAL library or SYCL/GPU execution
+4. **Platform-specific issues**: Environment-dependent test failures
+
+### Deselected Tests
+Configuration: `deselected_tests.yaml` (292 tests deselected)
+
+**Categories**:
+
+**sklearn Version-Specific** (~20 tests):
+- sklearn 1.6/1.7 features not yet supported
+- Version-specific API changes
+
+**Array API Support** (~50 tests):
+- Array API standard compliance differences
+- numpy.array_api experimental features
+- torch backend incompatibilities
+
+**Algorithm Implementation Differences** (~100 tests):
+- PCA: Auto solver selection differs (uses covariance_eigh instead of full)
+- RandomForest: Different RNG leading to different feature importances for small tree counts
+- SVR: Edge case handling differences (two-sample input)
+- KNN: KDTree rare 0-distance point misses
+
+**Unsupported Features** (~50 tests):
+- SVM: Subset invariance not yet implemented
+- Ridge: Some solver-specific behaviors
+- Parameter validation differences
+
+**Platform-Specific** (~30 tests):
+- Cache directory access issues on some systems
+- Visual Studio build-specific test failures
+- Numerical precision differences across platforms
+
+**Exception Handling** (~40 tests):
+- Different exception types (but same error conditions)
+- Different validation error messages
+- oneDAL doesn't throw for non-finite coefficients in some cases
+
+### Version-Specific Deselection
+Tests can be deselected conditionally using version specifiers in `deselected_tests.yaml`:
+```yaml
+- test_name.py::test_function >1.5,<=1.7
+```
+This deselects only for sklearn versions 1.5.1 through 1.7.x.
+
+### Impact on Users
+Deselected tests represent <5% of sklearn's test suite. Most algorithms work identically to sklearn. Differences are:
+- Usually in edge cases or rarely-used features
+- Documented in test deselection comments
+- Tracked for future oneDAL backend improvements
+
+### Running Compatibility Tests
+```bash
+# Full sklearn compatibility test
+pytest --verbose --pyargs sklearnex
+
+# Tests respect deselected_tests.yaml automatically
+# To see what's deselected: cat deselected_tests.yaml
+```
+
 ## For AI Agents
 - Use `np.testing.assert_allclose(atol=1e-05)` for numerical validation
 - Configure timeouts based on algorithm complexity (default 170s, complex up to 480s)

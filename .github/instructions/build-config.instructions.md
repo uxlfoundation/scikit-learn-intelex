@@ -25,9 +25,17 @@ Build system configuration for Intel Extension for Scikit-learn using setup.py, 
 4. Final Compilation: Link into Python extensions
 
 ## Dependencies
+Build dependencies (see `dependencies-dev` for exact versions):
 - Cython 3.1+, numpy 2.0+, pybind11 2.13+, cmake 4.0+, setuptools 79.0+
+
+Runtime dependencies (see `requirements-test.txt`):
 - Intel oneDAL 2021.1+ (backwards compatible)
-- scikit-learn 1.0+
+- scikit-learn 1.0+ (last 4 releases + sklearn 1.0)
+
+**Note**: Exact versions in config files may differ from documentation. Always refer to:
+- `dependencies-dev` - Build dependency versions
+- `requirements-test.txt` - Runtime and test dependencies
+- `setup.py` - Python version classifiers
 
 ## Build Commands
 - `python setup.py develop` - Development mode (editable install)

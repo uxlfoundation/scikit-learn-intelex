@@ -23,6 +23,12 @@ mpirun -n 4 python tests/helper_mpi_tests.py pytest -k spmd --with-mpi --verbose
 mpirun -n 4 python tests/helper_mpi_tests.py pytest --verbose -s tests/test_daal4py_spmd_examples.py
 ```
 
+## scikit-learn Compatibility
+
+sklearnex tests against sklearn's test suite for API compatibility. Some tests are deselected (see `deselected_tests.yaml`) due to intentional implementation differences, unsupported features, or platform-specific issues.
+
+For detailed coverage information, see tests/AGENTS.md.
+
 ## For GitHub Copilot
 
 See [tests/AGENTS.md](../tests/AGENTS.md) for comprehensive information including:
