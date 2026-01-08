@@ -107,7 +107,6 @@ def eval_method(X, y, est, method):
 
 
 def _run_test(estimator, method, datasets):
-    print("estimator:", estimator.__class__, estimator)
 
     for X, y in datasets:
         baseline, attributes = eval_method(X, y, estimator, method)
@@ -197,7 +196,7 @@ def test_standard_estimator_stability(estimator, method, dataframe, queue):
     # TODO: remove this once scikit-learn implements array API support
     # for LogisticRegressionCV
     if (
-        estimator == "LogisticRegressionCV"
+        estimator in ["LogisticRegressionCV", "LogisticRegressionCV()"]
         and dataframe == "array_api"
         and (not sklearn_check_version("1.6") or not get_tags(est).array_api_support)
     ):
@@ -234,7 +233,7 @@ def test_special_estimator_stability(estimator, method, dataframe, queue):
     # TODO: remove this once scikit-learn implements array API support
     # for LogisticRegressionCV
     if (
-        estimator == "LogisticRegressionCV"
+        estimator in ["LogisticRegressionCV", "LogisticRegressionCV()"]
         and dataframe == "array_api"
         and not get_tags(est).array_api_support
     ):
