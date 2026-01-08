@@ -7,7 +7,7 @@
 - **Platforms**: CPU (x86_64, ARM), GPU (Intel via SYCL)
 
 ## Architecture (4 Layers)
-```
+```text
 User Apps → sklearnex/ → daal4py/ → onedal/ → Intel oneDAL C++
 ```
 
