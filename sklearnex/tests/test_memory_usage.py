@@ -54,8 +54,11 @@ CPU_SKIP_LIST = (
     "IncrementalLinearRegression",  # TODO fix memory leak issue in private CI for data_shape = (1000, 100), data_transform_function = dataframe_f
     "IncrementalPCA",  # TODO fix memory leak issue in private CI for data_shape = (1000, 100), data_transform_function = dataframe_f
     "IncrementalRidge",  # TODO fix memory leak issue in private CI for data_shape = (1000, 100), data_transform_function = dataframe_f
-    "LogisticRegression(solver='newton-cg')",  # memory leak fortran (1000, 100)
     "DummyRegressor",  # default parameters not supported
+    # TODO: remove these once memory leaks in oneDAL have been addressed
+    "LogisticRegression(solver='newton-cg')",  # memory leak fortran (1000, 100)
+    "LogisticRegressionCV",  # memory leak from oneDAL side
+    "LogisticRegressionCV()",  # memory leak from oneDAL side
 )
 
 GPU_SKIP_LIST = (

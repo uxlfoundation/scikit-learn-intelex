@@ -190,6 +190,10 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
             pytest.skip(
                 f"array checking in sklearn <1.3 does not fully support array_api inputs, causes sklearnex-only estimator failure"
             )
+        elif estimator == "LogisticRegressionCV" and (
+            not sklearn_check_version("1.6") or not get_tags(est).array_api_support
+        ):
+            pytest.skip("Array API inputs not supported in estimator")
 
         with config_context(array_api_dispatch=True):
             try:
