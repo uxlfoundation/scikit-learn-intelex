@@ -25,7 +25,7 @@ Sphinx-based documentation generation system for Intel Extension for Scikit-lear
 Local development: `make html`
 Production deployment: `./build-doc.sh --gh-pages`
 
-## For AI Agents
+## Documentation Guidelines
 - Use reStructuredText format for documentation files
 - Include proper docstrings for autodoc generation
 - Test documentation builds locally before submitting

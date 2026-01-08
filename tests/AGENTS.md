@@ -98,52 +98,34 @@ Most sklearn tests pass with sklearnex acceleration. A subset is deselected due 
 4. **Platform-specific issues**: Environment-dependent test failures
 
 ### Deselected Tests
-Configuration: `deselected_tests.yaml` (see file for current count and details)
 
-**Categories** (see `deselected_tests.yaml` for specifics):
+**Configuration**: `deselected_tests.yaml` - See this file for current test list, counts, and specific reasons.
 
-**sklearn Version-Specific**:
-- sklearn 1.6/1.7 features not yet supported
-- Version-specific API changes
+**Why Tests Are Deselected** (high-level categories):
 
-**Array API Support**:
-- Array API standard compliance differences
-- numpy.array_api experimental features
-- torch backend incompatibilities
+1. **Intentional Implementation Differences**
+   - Performance-optimized algorithms producing mathematically equivalent but not bit-identical results
+   - Different internal algorithms achieving same outcomes (e.g., alternative solver selection)
+   - Numerical precision variations from optimized computation paths
 
-**Algorithm Implementation Differences**:
-- PCA: Auto solver selection differs (uses covariance_eigh instead of full)
-- RandomForest: Different RNG leading to different feature importances for small tree counts
-- SVR: Edge case handling differences (two-sample input)
-- KNN: KDTree rare 0-distance point misses
+2. **Feature Coverage Gaps**
+   - sklearn features not yet implemented in oneDAL backend
+   - Emerging sklearn APIs (new versions) not yet supported
+   - Experimental features (Array API, specific solvers) with partial support
 
-**Unsupported Features**:
-- SVM: Subset invariance not yet implemented
-- Ridge: Some solver-specific behaviors
-- Parameter validation differences
+3. **Platform/Environment Constraints**
+   - GPU/SYCL execution limitations
+   - Operating system specific behaviors
+   - Build toolchain differences (compiler-specific results)
 
-**Platform-Specific**:
-- Cache directory access issues on some systems
-- Visual Studio build-specific test failures
-- Numerical precision differences across platforms
+4. **Test Infrastructure Differences**
+   - Exception message wording differences (same error conditions, different text)
+   - Parameter validation order differences (both catch invalid input, different sequence)
+   - Edge case handling variations (rare scenarios handled differently but correctly)
 
-**Exception Handling**:
-- Different exception types (but same error conditions)
-- Different validation error messages
-- oneDAL doesn't throw for non-finite coefficients in some cases
+**Version-Conditional Deselection**: Tests can be deselected for specific sklearn version ranges using comparison operators in `deselected_tests.yaml`.
 
-### Version-Specific Deselection
-Tests can be deselected conditionally using version specifiers in `deselected_tests.yaml`:
-```yaml
-- test_name.py::test_function >1.5,<=1.7
-```
-This deselects only for sklearn versions 1.5.1 through 1.7.x.
-
-### Impact on Users
-Deselected tests represent <5% of sklearn's test suite. Most algorithms work identically to sklearn. Differences are:
-- Usually in edge cases or rarely-used features
-- Documented in test deselection comments
-- Tracked for future oneDAL backend improvements
+**Impact**: Deselected tests represent a small subset of sklearn's test suite. The vast majority of algorithms work identically to sklearn. Check `deselected_tests.yaml` for specifics and see inline comments for each deselection reason.
 
 ### Running Compatibility Tests
 ```bash
@@ -154,7 +136,7 @@ pytest --verbose --pyargs sklearnex
 # To see what's deselected: cat deselected_tests.yaml
 ```
 
-## For AI Agents
+## Key Testing Patterns
 - Use `np.testing.assert_allclose(atol=1e-05)` for numerical validation
 - Configure timeouts based on algorithm complexity (default 170s, complex up to 480s)
 - Handle missing dependencies with `skipTest()`

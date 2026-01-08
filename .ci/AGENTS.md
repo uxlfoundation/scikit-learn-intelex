@@ -40,7 +40,7 @@ Key variables for development (from setup.py and CI scripts):
 - `NO_DIST` - Disable distributed computing
 - `MAKEFLAGS` - Control parallel build
 
-## For AI Agents
+## CI/CD Guidelines
 - Follow established build templates in .ci/pipeline/
 - Respect quality gates before submitting changes
 - Use platform-specific configurations appropriately
