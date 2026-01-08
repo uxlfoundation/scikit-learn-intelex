@@ -132,6 +132,9 @@ def logistic_regression_path_d4p(
 
     if classes is None:
         classes = np.unique(y)
+    n_samples, n_features = X.shape
+    n_classes = len(classes)
+    is_binary = n_classes == 2
     random_state = check_random_state(random_state)
 
     multi_class = _check_multi_class(multi_class, solver, len(classes))
@@ -141,56 +144,100 @@ def logistic_regression_path_d4p(
         # np.unique(y) gives labels in sorted order.
         pos_class = classes[1]
 
-    le = LabelEncoder()
+    le = LabelEncoder().fit(classes)
 
-    # For doing a ovr, we need to mask the labels first. for the
-    # multinomial case this is not necessary.
-    if multi_class == "ovr":
-        y_bin = (y == pos_class).astype(X.dtype)
-        w0 = np.zeros(n_features + 1, dtype=X.dtype)
+    if sklearn_check_version("1.8"):
+        if is_binary:
+            y_bin = (y == pos_class).astype(X.dtype)
+            w0 = np.zeros(n_features + 1, dtype=X.dtype)
+        else:
+            Y_multi = le.transform(y).astype(X.dtype, copy=False)
+            w0 = np.zeros((classes.size, n_features + 1), order="C", dtype=X.dtype)
     else:
-        Y_multi = le.fit_transform(y).astype(X.dtype, copy=False)
-        w0 = np.zeros((classes.size, n_features + 1), order="C", dtype=X.dtype)
+        # For doing a ovr, we need to mask the labels first. for the
+        # multinomial case this is not necessary.
+        if multi_class == "ovr":
+            y_bin = (y == pos_class).astype(X.dtype)
+            w0 = np.zeros(n_features + 1, dtype=X.dtype)
+        else:
+            Y_multi = le.fit_transform(y).astype(X.dtype, copy=False)
+            w0 = np.zeros((classes.size, n_features + 1), order="C", dtype=X.dtype)
 
     # Adoption of https://github.com/scikit-learn/scikit-learn/pull/26721
     sw_sum = len(X)
 
     if coef is not None:
-        # it must work both giving the bias term and not
-        if multi_class == "ovr":
-            if coef.size not in (n_features, w0.size):
-                raise ValueError(
-                    "Initialization coef is of shape %d, expected shape "
-                    "%d or %d" % (coef.size, n_features, w0.size)
-                )
-            w0[-coef.size :] = np.roll(coef, 1, -1) if coef.size != n_features else coef
-        else:
-            # For binary problems coef.shape[0] should be 1, otherwise it
-            # should be classes.size.
-            n_classes = classes.size
-            if n_classes == 2:
-                n_classes = 1
-
-            if coef.shape[0] != n_classes or coef.shape[1] not in (
-                n_features,
-                n_features + 1,
-            ):
-                raise ValueError(
-                    "Initialization coef is of shape (%d, %d), expected "
-                    "shape (%d, %d) or (%d, %d)"
-                    % (
-                        coef.shape[0],
-                        coef.shape[1],
-                        classes.size,
-                        n_features,
-                        classes.size,
-                        n_features + 1,
+        if sklearn_check_version("1.8"):
+            if is_binary:
+                if coef.ndim == 1 and coef.shape[0] == n_features + int(fit_intercept):
+                    w0[:] = coef
+                elif (
+                    coef.ndim == 2
+                    and coef.shape[0] == 1
+                    and coef.shape[1] == n_features + int(fit_intercept)
+                ):
+                    w0[-coef.size :] = (
+                        np.roll(coef, 1, -1) if coef.size != n_features else coef
                     )
+                else:
+                    msg = (
+                        f"Initialization coef is of shape {coef.shape}, expected shape "
+                        f"{w0.shape} or (1, {w0.shape[0]})"
+                    )
+                    raise ValueError(msg)
+            else:
+                if (
+                    coef.ndim == 2
+                    and coef.shape[0] == n_classes
+                    and coef.shape[1] == n_features + int(fit_intercept)
+                ):
+                    w0[:, -coef.shape[1] :] = (
+                        np.roll(coef, 1, -1) if coef.shape[1] != n_features else coef
+                    )
+                else:
+                    msg = (
+                        f"Initialization coef is of shape {coef.shape}, expected shape "
+                        f"{w0.shape}"
+                    )
+                    raise ValueError(msg)
+        else:
+            # it must work both giving the bias term and not
+            if multi_class == "ovr":
+                if coef.size not in (n_features, w0.size):
+                    raise ValueError(
+                        "Initialization coef is of shape %d, expected shape "
+                        "%d or %d" % (coef.size, n_features, w0.size)
+                    )
+                w0[-coef.size :] = (
+                    np.roll(coef, 1, -1) if coef.size != n_features else coef
                 )
+            else:
+                # For binary problems coef.shape[0] should be 1, otherwise it
+                # should be classes.size.
+                n_classes = classes.size
+                if n_classes == 2:
+                    n_classes = 1
 
-            w0[:, -coef.shape[1] :] = (
-                np.roll(coef, 1, -1) if coef.shape[1] != n_features else coef
-            )
+                if coef.shape[0] != n_classes or coef.shape[1] not in (
+                    n_features,
+                    n_features + 1,
+                ):
+                    raise ValueError(
+                        "Initialization coef is of shape (%d, %d), expected "
+                        "shape (%d, %d) or (%d, %d)"
+                        % (
+                            coef.shape[0],
+                            coef.shape[1],
+                            classes.size,
+                            n_features,
+                            classes.size,
+                            n_features + 1,
+                        )
+                    )
+
+                w0[:, -coef.shape[1] :] = (
+                    np.roll(coef, 1, -1) if coef.shape[1] != n_features else coef
+                )
 
     C_daal_multiplier = 1
 
