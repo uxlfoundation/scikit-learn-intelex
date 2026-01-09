@@ -169,14 +169,17 @@ def logistic_regression_path_d4p(
     if coef is not None:
         if sklearn_check_version("1.8"):
             if is_binary:
-                if coef.ndim == 1 and coef.shape[0] == n_features + int(fit_intercept):
-                    w0[: coef.shape[0]] = coef
-                elif (
+                # Note: in sklearnex, the intercept is the first column
+                if (
+                    coef.ndim == 1 and coef.shape[0] == n_features + int(fit_intercept)
+                ) or (
                     coef.ndim == 2
                     and coef.shape[0] == 1
                     and coef.shape[1] == n_features + int(fit_intercept)
                 ):
-                    w0[: coef.shape[1]] = coef[0]
+                    w0[-coef.size :] = (
+                        np.roll(coef, 1, -1) if coef.size != n_features else coef
+                    )
                 else:
                     msg = (
                         f"Initialization coef is of shape {coef.shape}, expected shape "
