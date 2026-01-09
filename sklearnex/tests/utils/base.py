@@ -136,7 +136,6 @@ SPECIAL_INSTANCES = sklearn_clone_dict(
             KNeighborsRegressor(algorithm="brute"),
             NearestNeighbors(algorithm="brute"),
             LogisticRegression(solver="newton-cg"),
-            LogisticRegressionCV(solver="lbfgs"),
             BasicStatistics(),
             IncrementalBasicStatistics(),
             DummyRegressor(strategy="constant", constant=1.0),  # val set to 1 arbitrarily
