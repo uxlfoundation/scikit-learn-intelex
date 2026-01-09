@@ -955,8 +955,15 @@ class LogisticRegression(LogisticRegression_original):
 )
 class LogisticRegressionCV(LogisticRegressionCV_original):
 
-    def fit(self, X, y, sample_weight=None, **params):
-        return daal4py_fit_cv(self, X, y, sample_weight, **params)
+    if sklearn_check_version("1.0"):
+
+        def fit(self, X, y, sample_weight=None, **params):
+            return daal4py_fit_cv(self, X, y, sample_weight, **params)
+
+    else:
+
+        def fit(self, X, y, sample_weight=None):
+            return daal4py_fit_cv(self, X, y, sample_weight)
 
     def predict(self, X):
         return daal4py_predict(self, X, "computeClassLabels")
