@@ -22,12 +22,12 @@ if daal_check_version((2024, "P", 600)):
     import numbers
 
     import numpy as np
-    import scipy.sparse as sp
     from sklearn.linear_model import Ridge as _sklearn_Ridge
     from sklearn.metrics import r2_score
     from sklearn.utils.validation import check_is_fitted
 
     from daal4py.sklearn._n_jobs_support import control_n_jobs
+    from daal4py.sklearn._utils import is_sparse
 
     if not sklearn_check_version("1.2"):
         from sklearn.linear_model._base import _deprecate_normalize
@@ -173,7 +173,7 @@ if daal_check_version((2024, "P", 600)):
                         "Only 'auto' solver is supported.",
                     ),
                     (
-                        not sp.issparse(X) and not sp.issparse(y),
+                        not is_sparse(X) and not is_sparse(y),
                         "Sparse input is not supported.",
                     ),
                     (sample_weight is None, "Sample weight is not supported."),
@@ -196,8 +196,8 @@ if daal_check_version((2024, "P", 600)):
             assert len(data) <= 2
 
             n_samples = _num_samples(data[0])
-            model_is_sparse = sp.issparse(self.coef_) or (
-                self.fit_intercept and sp.issparse(self.intercept_)
+            model_is_sparse = is_sparse(self.coef_) or (
+                self.fit_intercept and is_sparse(self.intercept_)
             )
             patching_status.and_conditions(
                 [
@@ -207,7 +207,7 @@ if daal_check_version((2024, "P", 600)):
                         "Only 'auto' solver is supported.",
                     ),
                     (n_samples > 0, "Number of samples is less than 1."),
-                    (not sp.issparse(data[0]), "Sparse input is not supported."),
+                    (not is_sparse(data[0]), "Sparse input is not supported."),
                     (not model_is_sparse, "Sparse coefficients are not supported."),
                 ]
             )
