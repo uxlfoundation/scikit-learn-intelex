@@ -381,6 +381,10 @@ deselected_tests:
   # These fail due to not printing everything that scikit-learn prints on verbose mode
   - cluster/tests/test_k_means.py::test_kmeans_verbose
 
+  # These fail due to small numerical differences that come from LogisticRegression results
+  - metrics/_plot/tests/test_roc_curve_display.py::test_roc_curve_display_plotting_from_cv_results
+  - metrics/_plot/tests/test_roc_curve_display.py::test_roc_curve_from_cv_results_legend_label
+
   # These require version numbers of array API packages that are not available on older Python versions.
   # Since it's not possible to select or deselect based on Python version, they are removed entirely.
   - metrics/tests/test_classification.py::test_probabilistic_metrics_array_api
