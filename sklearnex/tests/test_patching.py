@@ -234,6 +234,10 @@ def test_special_estimator_patching(caplog, dataframe, queue, dtype, estimator, 
             pytest.skip("Hardware does not support fp16 SYCL testing")
         elif dtype == np.float64 and not queue.sycl_device.has_aspect_fp64:
             pytest.skip("Hardware does not support fp64 SYCL testing")
+        if ("LogisticRegressionCV" in estimator) and (
+            not sklearn_check_version("1.6") or not get_tags(est).array_api_support
+        ):
+            pytest.skip("No GPU support on estimator")
 
     if "NearestNeighbors" in estimator and "radius" in method:
         pytest.skip(f"RadiusNeighbors estimator not implemented in sklearnex")
