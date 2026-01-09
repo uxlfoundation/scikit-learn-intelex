@@ -149,7 +149,7 @@ class TSNE(BaseTSNE):
                 ),
                 # Scikit-learn didn't support sparse PCA initialization before 1.8.
                 # This nevertheless offloads it to sklearn because it produces a different
-                # error message than what would be throws by simply passing the input to PCA.
+                # error message than what would be thrown by simply passing the input to PCA.
                 (
                     sklearn_check_version("1.8")
                     or not (
