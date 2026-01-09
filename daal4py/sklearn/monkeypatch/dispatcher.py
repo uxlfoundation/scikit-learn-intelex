@@ -41,6 +41,9 @@ from ..linear_model.coordinate_descent import Lasso as Lasso_daal4py
 from ..linear_model.linear import LinearRegression as LinearRegression_daal4py
 from ..linear_model.logistic_path import LogisticRegression as LogisticRegression_daal4py
 from ..linear_model.logistic_path import (
+    LogisticRegressionCV as LogisticRegressionCV_daal4py,
+)
+from ..linear_model.logistic_path import (
     logistic_regression_path as daal_optimized_logistic_path,
 )
 from ..linear_model.ridge import Ridge as Ridge_daal4py
@@ -81,6 +84,16 @@ def _get_map_of_algorithms():
         "log_reg": [
             [
                 (linear_model_module, "LogisticRegression", LogisticRegression_daal4py),
+                None,
+            ]
+        ],
+        "log_reg_cv": [
+            [
+                (
+                    linear_model_module,
+                    "LogisticRegressionCV",
+                    LogisticRegressionCV_daal4py,
+                ),
                 None,
             ]
         ],
@@ -127,7 +140,6 @@ def _get_map_of_algorithms():
     mapping["randomforestclassifier"] = mapping["random_forest_classifier"]
     mapping["randomforestregressor"] = mapping["random_forest_regressor"]
     mapping["linearregression"] = mapping["linear"]
-    mapping["logisticregression"] = mapping["log_reg"]
     mapping["_logistic_regression_path"] = mapping["logistic"]
     mapping["_assert_all_finite"] = mapping["fin_check"]
     mapping["pairwise_distances"] = mapping["distances"]

@@ -22,7 +22,6 @@ from numbers import Number
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
-from scipy import sparse
 from sklearn.datasets import (
     load_breast_cancer,
     load_diabetes,
@@ -32,7 +31,7 @@ from sklearn.datasets import (
 )
 
 import daal4py as d4p
-from daal4py.sklearn._utils import daal_check_version
+from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import _as_numpy, get_dataframes_and_queues
 from sklearnex.basic_statistics import BasicStatistics
 from sklearnex.cluster import DBSCAN, KMeans
@@ -54,6 +53,9 @@ from sklearnex.tests.utils import (
     gen_models_info,
     sklearn_clone_dict,
 )
+
+if sklearn_check_version("1.6"):
+    from sklearn.base import get_tags
 
 # to reproduce errors even in CI
 d4p.daalinit(nthreads=100)
@@ -118,7 +120,7 @@ def _run_test(estimator, method, datasets):
                     or hasattr(b, "__array__")
                     or hasattr(b, "__array_namespace__")
                     or hasattr(b, "__sycl_usm_ndarray__")
-                ):
+                ) and not (hasattr(b, "dtype") and b.dtype == object and None in b):
                     assert_allclose(
                         r, b, rtol=0.0, atol=0.0, err_msg=str(n + " is incorrect")
                     )
@@ -191,6 +193,15 @@ def test_standard_estimator_stability(estimator, method, dataframe, queue):
     if method and not hasattr(est, method):
         pytest.skip(f"sklearn available_if prevents testing {estimator}.{method}")
 
+    # TODO: remove this once scikit-learn implements array API support
+    # for LogisticRegressionCV
+    if (
+        estimator in ["LogisticRegressionCV", "LogisticRegressionCV()"]
+        and dataframe == "array_api"
+        and (not sklearn_check_version("1.6") or not get_tags(est).array_api_support)
+    ):
+        pytest.skip("Array API inputs not supported in estimator")
+
     params = est.get_params().copy()
     if "random_state" in params:
         params["random_state"] = 0
@@ -218,6 +229,15 @@ def test_special_estimator_stability(estimator, method, dataframe, queue):
 
     if method and not hasattr(est, method):
         pytest.skip(f"sklearn available_if prevents testing {estimator}.{method}")
+
+    # TODO: remove this once scikit-learn implements array API support
+    # for LogisticRegressionCV
+    if (
+        estimator in ["LogisticRegressionCV", "LogisticRegressionCV()"]
+        and dataframe == "array_api"
+        and not get_tags(est).array_api_support
+    ):
+        pytest.skip("Array API inputs not supported in estimator")
 
     params = est.get_params().copy()
     if "random_state" in params:

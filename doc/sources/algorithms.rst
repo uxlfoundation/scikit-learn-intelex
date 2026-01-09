@@ -80,6 +80,16 @@ Classification
        - ``class_weight`` != ``None``
        - Solver ``'newton-cg'`` with ``fit_intercept`` = ``False`` is not supported
      - Sparse data is not supported.
+   * - :obj:`sklearn.linear_model.LogisticRegressionCV`
+     - All parameters are supported except:
+
+       - ``solver`` not in [``'lbfgs'``, ``'newton-cg'``]
+       - ``l1_ratios`` not in [``0``, ``"warn"``]
+       - ``dual`` = ``True``
+       - ``sample_weight`` != ``None``
+       - ``class_weight`` != ``None``
+       - Solver ``'newton-cg'`` with ``fit_intercept`` = ``False`` is not supported
+     - Sparse data is not supported.
 
 Regression
 **********
