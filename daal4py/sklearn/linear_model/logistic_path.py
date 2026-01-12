@@ -955,7 +955,7 @@ class LogisticRegression(LogisticRegression_original):
 )
 class LogisticRegressionCV(LogisticRegressionCV_original):
 
-    if sklearn_check_version("1.0"):
+    if sklearn_check_version("1.1"):
 
         def fit(self, X, y, sample_weight=None, **params):
             return daal4py_fit_cv(self, X, y, sample_weight, **params)
