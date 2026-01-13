@@ -533,5 +533,9 @@ gpu:
   # Deselection for Scikit-Learn 1.4 GPU conformance
   - model_selection/tests/test_validation.py::test_learning_curve_some_failing_fits_warning >=1.4
 
-  # Deselection for Scikit-Learn 1.5 GPU conformance (kd-tree knn not implemented for GPU)
-  - neighbors/tests/test_neighbors.py::test_neighbors_metrics[float64-42-l2]
+  # Deselections for Scikit-Learn 1.6 GPU conformance (no GPU kd tree, no rfe implementation, GPU ensemble misalignment)
+  - neighbors/tests/test_neighbors.py::test_neighbors_metrics[42-float64-l2]
+  - feature_selection/tests/test_rfe.py::test_rfe_with_sample_weight
+  - tests/test_common.py::test_estimators[RandomForestRegressor(n_estimators=5)-check_regressor_data_not_an_array]
+  - tests/test_common.py::test_estimators[RandomForestClassifier(n_estimators=5)-check_class_weight_classifiers]
+  - tests/test_common.py::test_estimators[ExtraTreesClassifier(n_estimators=5)-check_class_weight_classifiers]
