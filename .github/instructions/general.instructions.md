@@ -2,9 +2,9 @@
 
 ## Repository Overview
 
-Intel Extension for Scikit-learn accelerates scikit-learn by 10-100X using Intel oneDAL (varies by algorithm and data). Zero code changes required for existing sklearn applications.
+Extension for Scikit-learn accelerates scikit-learn by 10-100X using oneDAL (varies by algorithm and data). Zero code changes required for existing sklearn applications.
 
-**Architecture**: 4-layer system (sklearnex ⇒ {daal4py, onedal} → Intel oneDAL C++)
+**Architecture**: 4-layer system (sklearnex ⇒ {daal4py, onedal} → oneDAL C++)
 **Platforms**: Linux, Windows; CPU (x86_64, ARM), GPU (Intel via SYCL)
 
 **Version Requirements**:
@@ -18,7 +18,7 @@ For current supported versions, always refer to:
 ```bash
 export DALROOT=/path/to/onedal
 python setup.py develop
-pytest --verbose --pyargs sklearnex
+pytest --verbose sklearnex
 ```
 
 ## For GitHub Copilot

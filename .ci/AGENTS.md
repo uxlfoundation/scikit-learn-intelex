@@ -1,7 +1,7 @@
 # AGENTS.md - CI/CD Infrastructure (.ci/)
 
 ## Purpose
-CI/CD infrastructure for building, testing, and releasing Intel Extension for Scikit-learn across multiple platforms.
+CI/CD infrastructure for building, testing, and releasing Extension for Scikit-learn across multiple platforms.
 
 ## Key Files
 - `.ci/pipeline/ci.yml` - Main CI orchestrator
@@ -45,4 +45,4 @@ Key variables for development (from setup.py and CI scripts):
 - Respect quality gates before submitting changes
 - Use platform-specific configurations appropriately
 - Test across supported Python/sklearn version combinations
-- Use conda environments to avoid dependency conflicts
+- Use conda environments and virtual environments to avoid dependency conflicts

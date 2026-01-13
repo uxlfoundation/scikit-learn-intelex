@@ -1,7 +1,7 @@
 # Build Configuration Files
 
 ## Purpose
-Build system configuration for Intel Extension for Scikit-learn using setup.py, conda, and environment variables.
+Build system configuration for Extension for Scikit-learn using setup.py, conda, and environment variables.
 
 ## Core Build Files
 - `setup.py` - Main build script
@@ -32,14 +32,13 @@ Build system configuration for Intel Extension for Scikit-learn using setup.py, 
 - `setup.py` - Python version classifiers and compatibility
 
 **Key requirements:**
-- Python 3.9+ (see `setup.py` for supported versions)
-- Intel oneDAL (see `requirements-test.txt` for version)
+- Python 3.10+ (see `setup.py` for supported versions)
+- oneDAL (see `requirements-test.txt` for version)
 - scikit-learn (see `requirements-test.txt` for version)
 
 ## Build Commands
 - `python setup.py develop` - Development mode (editable install)
 - `python setup.py install` - Production install
-- `python setup.py build_ext --inplace --force` - Extensions only
 
 ## For GitHub Copilot
 

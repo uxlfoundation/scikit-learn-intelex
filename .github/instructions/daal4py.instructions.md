@@ -1,7 +1,7 @@
 # daal4py/* - Direct oneDAL Python Bindings
 
 ## Purpose
-Direct Python bindings to Intel oneDAL for maximum performance and model builders for XGBoost/LightGBM/CatBoost conversion.
+Direct Python bindings to oneDAL for maximum performance and model builders for XGBoost/LightGBM/CatBoost conversion.
 
 ## Three Sub-APIs
 1. **Native oneDAL**: `import daal4py as d4p` - Direct algorithm access with explicit compute phases
@@ -10,7 +10,7 @@ Direct Python bindings to Intel oneDAL for maximum performance and model builder
 
 ## Testing
 ```bash
-pytest --verbose --pyargs daal4py
+pytest --verbose daal4py
 pytest tests/test_daal4py_examples.py
 pytest tests/test_model_builders.py
 pytest daal4py/sklearn/tests/

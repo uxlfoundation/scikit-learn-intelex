@@ -11,13 +11,13 @@ Comprehensive validation infrastructure ensuring numerical accuracy, performance
 ## Core Test Suites
 ```bash
 pytest --verbose -s tests/
-pytest --verbose --pyargs daal4py
-pytest --verbose --pyargs sklearnex
-pytest --verbose --pyargs onedal
+pytest --verbose daal4py
+pytest --verbose sklearnex
+pytest --verbose onedal
 ```
 
 ## Distributed (SPMD) Testing
-Requirements: MPI installation (Intel MPI or OpenMPI), mpi4py, NO_DIST!=1
+Requirements: MPI installation (Intel MPI or MPICH), mpi4py, NO_DIST!=1
 ```bash
 mpirun -n 4 python tests/helper_mpi_tests.py pytest -k spmd --with-mpi --verbose --pyargs sklearnex
 mpirun -n 4 python tests/helper_mpi_tests.py pytest --verbose -s tests/test_daal4py_spmd_examples.py

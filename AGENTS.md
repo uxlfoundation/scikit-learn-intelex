@@ -89,7 +89,6 @@ Core test suites cover legacy tests, native oneDAL (daal4py), sklearn compatibil
 
 ### Algorithm Support
 oneDAL acceleration requires:
-- Dense data (not sparse)
 - Supported dtypes: float32, float64
 - Contiguous memory layout preferred
 - Algorithm-specific parameter compatibility
