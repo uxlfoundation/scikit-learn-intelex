@@ -1,7 +1,7 @@
 # AGENTS.md - daal4py Layer
 
 ## Purpose
-Native Python interface to Intel oneDAL with three APIs: native oneDAL algorithms, sklearn-compatible wrappers, and model builders for external ML frameworks.
+Native Python interface to oneDAL with three APIs: native oneDAL algorithms, sklearn-compatible wrappers, and model builders for external ML frameworks.
 
 ## Three APIs
 
@@ -100,7 +100,7 @@ Core logic in `src/dist_*.h` files. Python entry via mpi4py with `daalinit()` an
 DBSCAN, K-Means, Linear Regression, PCA, Covariance
 
 ### Requirements
-MPI installation (Intel MPI or OpenMPI) and mpi4py package. Launch via `mpirun -n <ranks>`.
+MPI installation (Intel MPI or MPICH) and mpi4py package. Launch via `mpirun -n <ranks>`.
 
 ## Performance Optimization
 
@@ -111,13 +111,13 @@ MPI installation (Intel MPI or OpenMPI) and mpi4py package. Launch via `mpirun -
 - Direct array access via `make2d()` utility
 
 ### Threading
-Intel TBB parallelism across cores. Control via OMP_NUM_THREADS or daal4py threading functions.
+Intel TBB parallelism across cores. Control via daal4py threading functions.
 
 ### GPU Acceleration
 Limited support via oneDAL backend. Most algorithms CPU-only; GPU support primarily in sklearnex layer.
 
 ### Data Requirements
-Dense data required for most algorithms. Sparse support limited to SVM and Naive Bayes (CSR format).
+Dense data required for most algorithms. Limited sparse support (CSR format) for some.
 
 ## Integration Architecture
 

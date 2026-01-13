@@ -1,7 +1,7 @@
 # onedal/* - Low-Level C++ Bindings
 
 ## Purpose
-Pybind11-based C++ bindings providing the bridge between Python and Intel oneDAL C++ library.
+Pybind11-based C++ bindings providing the bridge between Python and oneDAL C++ library.
 
 ## Key Components
 - `datatypes/` - Memory management and array conversions (NumPy, SYCL USM, DLPack)
@@ -11,7 +11,7 @@ Pybind11-based C++ bindings providing the bridge between Python and Intel oneDAL
 
 ## Testing
 ```bash
-pytest --verbose --pyargs onedal
+pytest --verbose onedal
 pytest onedal/tests/
 pytest onedal/datatypes/tests/
 pytest onedal/common/tests/

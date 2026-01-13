@@ -37,9 +37,9 @@ MPI-aware testing with rank coordination. Skip tests if not running in distribut
 ### Local Development
 Core test suites:
 - `pytest --verbose -s tests/` - Legacy/integration tests
-- `pytest --verbose --pyargs daal4py` - Native oneDAL API tests
-- `pytest --verbose --pyargs sklearnex` - sklearn compatibility tests
-- `pytest --verbose --pyargs onedal` - Low-level backend tests
+- `pytest --verbose daal4py` - Native oneDAL API tests
+- `pytest --verbose sklearnex` - sklearn compatibility tests
+- `pytest --verbose onedal` - Low-level backend tests
 - `pytest --verbose .ci/scripts/test_global_patch.py` - Global patching validation
 
 Coverage reporting:
@@ -47,12 +47,12 @@ Coverage reporting:
 
 ### MPI/Distributed (SPMD) Testing
 
-**Requirements:** MPI installation (Intel MPI or OpenMPI), mpi4py, NO_DIST!=1
+**Requirements:** MPI installation (Intel MPI or MPICH), mpi4py, NO_DIST!=1
 
 **Setup MPI:**
 ```bash
 # Option 1: Via conda (recommended)
-conda install -c conda-forge impi-devel impi_rt mpi4py
+conda install -c conda-forge impi-devel impi_rt mpi4py=*=*impi*
 
 # Option 2: System package manager
 # Debian/Ubuntu:
@@ -77,7 +77,7 @@ python setup.py build_ext --inplace --force
 **Run distributed tests:**
 ```bash
 # sklearnex SPMD tests
-mpirun -n 4 python tests/helper_mpi_tests.py pytest -k spmd --with-mpi --verbose --pyargs sklearnex
+mpirun -n 4 python tests/helper_mpi_tests.py pytest -k spmd --with-mpi --verbose sklearnex
 
 # daal4py SPMD examples
 mpirun -n 4 python tests/helper_mpi_tests.py pytest --verbose -s tests/test_daal4py_spmd_examples.py
@@ -130,7 +130,7 @@ Most sklearn tests pass with sklearnex acceleration. A subset is deselected due 
 ### Running Compatibility Tests
 ```bash
 # Full sklearn compatibility test
-pytest --verbose --pyargs sklearnex
+pytest --verbose sklearnex
 
 # Tests respect deselected_tests.yaml automatically
 # To see what's deselected: cat deselected_tests.yaml
@@ -139,7 +139,7 @@ pytest --verbose --pyargs sklearnex
 ## Key Testing Patterns
 - Use `np.testing.assert_allclose(atol=1e-05)` for numerical validation
 - Configure timeouts based on algorithm complexity (default 170s, complex up to 480s)
-- Handle missing dependencies with `skipTest()`
+- Handle missing dependencies with `pytest.skip()`
 - Test both sklearn compatibility and numerical accuracy
 - Validate model conversion maintains prediction accuracy
 - MPI tests require `mpirun -n 4` and proper MPI setup
