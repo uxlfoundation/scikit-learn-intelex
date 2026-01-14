@@ -96,7 +96,7 @@ oneDAL acceleration requires:
 ### GPU Support Status
 - **Full GPU**: DBSCAN, K-Means, PCA, KNeighbors
 - **Limited GPU**: LogisticRegression, SVM
-- **CPU Only**: RandomForest, Ridge, IncrementalPCA
+- **CPU Only**:  Ridge, IncrementalPCA
 
 ### Error Handling
 Fallback chain: oneDAL → sklearn → error. Configurable via allow_sklearn_after_onedal setting.
@@ -105,7 +105,7 @@ Fallback chain: oneDAL → sklearn → error. Configurable via allow_sklearn_aft
 oneDAL requires contiguous data for zero-copy operations. C-contiguous preferred over Fortran-contiguous.
 
 ## GPU Hardware
-**Supported Intel GPUs**: Integrated (UHD Graphics, Iris Xe), Discrete (Arc series)
+**Supported Intel GPUs**: Integrated (UHD Graphics, Iris Xe), Discrete (Arc series), Datacenter (Flex)
 **Requirements**: SYCL/DPC++ support, Intel oneAPI toolkit, Unified Shared Memory (USM)
 
 ### GPU Setup & Troubleshooting

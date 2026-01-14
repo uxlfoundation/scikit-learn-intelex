@@ -83,7 +83,7 @@ mpirun -n 4 python tests/helper_mpi_tests.py pytest -k spmd --with-mpi --verbose
 mpirun -n 4 python tests/helper_mpi_tests.py pytest --verbose -s tests/test_daal4py_spmd_examples.py
 ```
 
-**Validates:** DBSCAN, K-Means, PCA, Linear Regression, Covariance (distributed algorithms)
+**Validates:** DBSCAN, K-Means, PCA, Linear Regression, Covariance, Random Forest (distributed algorithms)
 
 ## scikit-learn Compatibility Testing
 
@@ -111,16 +111,13 @@ Most sklearn tests pass with sklearnex acceleration. A subset is deselected due 
 2. **Feature Coverage Gaps**
    - sklearn features not yet implemented in oneDAL backend
    - Emerging sklearn APIs (new versions) not yet supported
-   - Experimental features (Array API, specific solvers) with partial support
 
 3. **Platform/Environment Constraints**
-   - GPU/SYCL execution limitations
    - Operating system specific behaviors
    - Build toolchain differences (compiler-specific results)
 
 4. **Test Infrastructure Differences**
    - Exception message wording differences (same error conditions, different text)
-   - Parameter validation order differences (both catch invalid input, different sequence)
    - Edge case handling variations (rare scenarios handled differently but correctly)
 
 **Version-Conditional Deselection**: Tests can be deselected for specific sklearn version ranges using comparison operators in `deselected_tests.yaml`.
@@ -137,7 +134,6 @@ pytest --verbose sklearnex
 ```
 
 ## Key Testing Patterns
-- Use `np.testing.assert_allclose(atol=1e-05)` for numerical validation
 - Configure timeouts based on algorithm complexity (default 170s, complex up to 480s)
 - Handle missing dependencies with `pytest.skip()`
 - Test both sklearn compatibility and numerical accuracy
