@@ -20,7 +20,7 @@
 
 from warnings import warn
 
-import dpctl.tensor as dpt
+import dpnp
 import numpy as np
 from dpctl import SyclQueue
 from mpi4py import MPI
@@ -55,8 +55,8 @@ X, _ = get_train_data(rank, size)
 
 queue = SyclQueue("gpu")
 
-dpt_X = dpt.asarray(X, usm_type="device", sycl_queue=queue)
+dpnp_X = dpnp.asarray(X, usm_type="device", sycl_queue=queue)
 
-model = DBSCAN(eps=3, min_samples=2).fit(dpt_X)
+model = DBSCAN(eps=3, min_samples=2).fit(dpnp_X)
 
 print(f"Labels on rank {rank} (slice of 2):\n", model.labels_[:2])

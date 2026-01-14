@@ -34,7 +34,7 @@ Patching
 **********************
 
 Once you install the |sklearnex|, you can replace estimator classes (algorithms) that exist in the ``sklearn`` module from |sklearn| with their optimized versions from the extension.
-This action is called *patching* or `monkey patching <https://en.wikipedia.org/wiki/Monkey_patch>`__. This is not a permanent change so you can always undo the patching if necessary.
+This action is called *patching* or *monkey patching*. This is not a permanent change so you can always undo the patching if necessary.
 
 To patch |sklearn| with the |sklearnex|, the following methods can be used:
 
@@ -199,7 +199,7 @@ To install |sklearnex|, run:
    * - Operating systems
      - Windows*, Linux*
    * - Python versions
-     - 3.9, 3.10, 3.11, 3.12, 3.13
+     - 3.10, 3.11, 3.12, 3.13, 3.14
    * - Devices
      - CPU, GPU
    * - Modes
@@ -245,7 +245,7 @@ To prevent version conflicts, we recommend installing ``scikit-learn-intelex`` i
          * - Operating systems
            - Windows*, Linux*
          * - Python versions
-           - 3.9, 3.10, 3.11, 3.12, 3.13
+           - 3.10, 3.11, 3.12, 3.13, 3.14
          * - Devices
            - CPU, GPU
          * - Modes
@@ -269,7 +269,7 @@ To prevent version conflicts, we recommend installing ``scikit-learn-intelex`` i
          * - Operating systems
            - Windows*, Linux*
          * - Python versions
-           - 3.9, 3.10, 3.11, 3.12, 3.13
+           - 3.10, 3.11, 3.12, 3.13, 3.14
          * - Devices
            - CPU, GPU
          * - Modes
@@ -284,7 +284,7 @@ To prevent version conflicts, we recommend installing ``scikit-learn-intelex`` i
 Build from Sources
 **********************
 
-See `Installation instructions <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/INSTALL.md#build-from-sources>`_ to build |sklearnex| from the sources.
+See :doc:`building-from-source` for details.
 
 Install Intel*(R) AI Tools
 ****************************
@@ -349,13 +349,10 @@ Software Requirements
 |sklearnex| is compatible with the latest stable releases of |sklearn|:
 
 * 1.0.X
-* 1.1.X
-* 1.2.X
-* 1.3.X
-* 1.4.X
 * 1.5.X
 * 1.6.X
 * 1.7.X
+* 1.8.X
 
 Memory Requirements
 **********************

@@ -19,7 +19,6 @@ import warnings
 from functools import partial
 
 import numpy as np
-from scipy import linalg
 from sklearn.base import BaseEstimator, clone
 from sklearn.covariance import EmpiricalCovariance as _sklearn_EmpiricalCovariance
 from sklearn.utils import gen_batches
