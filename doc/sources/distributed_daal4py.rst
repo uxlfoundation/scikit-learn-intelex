@@ -23,8 +23,7 @@ Introduction
 
 Module :ref:`daal4py <about_daal4py>` within the |sklearnex| offers distributed versions of
 some algorithms that can run on compute clusters managed through the
-`MPI <https://en.wikipedia.org/wiki/Message_Passing_Interface>`__ framework, optionally aided
-by |mpi4py|.
+MPI framework, optionally aided by |mpi4py|.
 
 Compared to the :ref:`SMPD mode <distributed>` in the ``sklearnex`` module which runs on multiple
 GPUs, the distributed mode of algorithms in the ``daal4py`` module runs on CPU-based nodes - i.e.
@@ -49,8 +48,8 @@ same algorithms to much larger problem sizes.
 
         conda install -c conda-forge impi_rt mpi=*=impi
 
-    Using distributed mode with non-MPICH-compatible backends such as OpenMPI requires compiling the
-    library from source with that backend.
+    Using distributed mode with non-MPICH-compatible backends such as OpenMPI requires
+    :doc:`compiling the library from source <building-from-source>` with that backend.
 
     See the docs for :ref:`SPMD mode <distributed>` for more details.
 

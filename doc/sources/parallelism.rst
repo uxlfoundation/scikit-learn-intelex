@@ -35,7 +35,7 @@ the calculation of the :term:`n_jobs` parameter value.
 
 When |sklearn|'s utilities with built-in parallelism are used 
 (for example, :obj:`sklearn.model_selection.GridSearchCV` or :obj:`sklearn.model_selection.VotingClassifier`),
-|sklearnex| tries to determine the optimal number of threads per job using hints provided by :mod:`joblib` / ``threadpoolctl``..
+|sklearnex| tries to determine the optimal number of threads per job using hints provided by :mod:`joblib` / ``threadpoolctl``.
 If ``n_jobs`` is not specified for underlying estimator(s), |sklearnex| sets it to the number of available threads
 (usually the number of logical CPUs divided by `n_jobs` set for higher-level parallelized entities).
 
@@ -75,10 +75,11 @@ If ``n_jobs`` is not specified for underlying estimator(s), |sklearnex| sets it 
     be used instead.
 
 .. warning::
-    The patched class :obj:`sklearn.linear_model.LogisticRegression` in particular is not
+    The patched classes :obj:`sklearn.linear_model.LogisticRegression` and
+    :obj:`sklearn.linear_model.LogisticRegressionCV` in particular are not
     suitable for parallel calls in Python threads regardless of the ``n_jobs`` parameter.
-    Attempting to fit multiple logistic regression models in parallel might result in
-    crashes and incorrect estimations.
+    Attempting to fit multiple logistic regression estimator objects in parallel
+    might result in crashes and incorrect estimations.
 
 Setting the `DEBUG` :ref:`verbosity setting <verbose>` will produce logs
 indicating when the number of threads used is different from the default

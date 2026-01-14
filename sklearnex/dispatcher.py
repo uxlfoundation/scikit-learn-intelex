@@ -143,6 +143,7 @@ def get_patch_map_core(preview=False):
         from .linear_model import Lasso as Lasso_sklearnex
         from .linear_model import LinearRegression as LinearRegression_sklearnex
         from .linear_model import LogisticRegression as LogisticRegression_sklearnex
+        from .linear_model import LogisticRegressionCV as LogisticRegressionCV_sklearnex
         from .linear_model import Ridge as Ridge_sklearnex
         from .manifold import TSNE as TSNE_sklearnex
         from .metrics import pairwise_distances as pairwise_distances_sklearnex
@@ -236,6 +237,18 @@ def get_patch_map_core(preview=False):
             ]
         ]
         mapping["logisticregression"] = mapping["log_reg"]
+
+        mapping.pop("log_reg_cv")
+        mapping["log_reg_cv"] = [
+            [
+                (
+                    linear_model_module,
+                    "LogisticRegressionCV",
+                    LogisticRegressionCV_sklearnex,
+                ),
+                None,
+            ]
+        ]
 
         # Ridge
         mapping.pop("ridge")
