@@ -80,6 +80,16 @@ Classification
        - ``class_weight`` != ``None``
        - Solver ``'newton-cg'`` with ``fit_intercept`` = ``False`` is not supported
      - Sparse data is not supported.
+   * - :obj:`sklearn.linear_model.LogisticRegressionCV`
+     - All parameters are supported except:
+
+       - ``solver`` not in [``'lbfgs'``, ``'newton-cg'``]
+       - ``l1_ratios`` not in [``0``, ``"warn"``]
+       - ``dual`` = ``True``
+       - ``sample_weight`` != ``None``
+       - ``class_weight`` != ``None``
+       - Solver ``'newton-cg'`` with ``fit_intercept`` = ``False`` is not supported
+     - Sparse data is not supported.
 
 Regression
 **********
@@ -196,7 +206,7 @@ Dimensionality Reduction
        - ``method`` != ``"barnes_hut"``
        
        Refer to :ref:`TSNE acceleration details <acceleration_tsne>` to learn more.
-     - Sparse data with ``init`` = ``"pca"`` is not supported
+     - Sparse data is not supported for the initialization and distance calculation stages.
 
 Nearest Neighbors
 *****************
@@ -668,8 +678,4 @@ Scikit-learn Tests
 ------------------
 
 Monkey-patched scikit-learn classes and functions passes scikit-learn's own test
-suite, with few exceptions, specified in `deselected_tests.yaml
-<https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/deselected_tests.yaml>`__.
-
-See the file `scikit-learn-tests.md <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/scikit-learn-tests.md>`__
-for instructions about how to execute the scikit-learn test suite under patching.
+suite, with few exceptions - see :ref:`conformance_tests` for details.

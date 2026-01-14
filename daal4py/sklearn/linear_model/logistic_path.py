@@ -23,6 +23,9 @@ from sklearn.linear_model._logistic import _LOGISTIC_SOLVER_CONVERGENCE_MSG
 from sklearn.linear_model._logistic import (
     LogisticRegression as LogisticRegression_original,
 )
+from sklearn.linear_model._logistic import (
+    LogisticRegressionCV as LogisticRegressionCV_original,
+)
 from sklearn.linear_model._logistic import _check_solver
 from sklearn.utils import check_array, check_consistent_length, check_random_state
 from sklearn.utils.optimize import _check_optimize_result, _newton_cg
@@ -128,6 +131,9 @@ def logistic_regression_path_d4p(
 
     if classes is None:
         classes = np.unique(y)
+    n_samples, n_features = X.shape
+    n_classes = len(classes)
+    is_binary = n_classes == 2
     random_state = check_random_state(random_state)
 
     multi_class = _check_multi_class(multi_class, solver, len(classes))
@@ -137,56 +143,101 @@ def logistic_regression_path_d4p(
         # np.unique(y) gives labels in sorted order.
         pos_class = classes[1]
 
-    le = LabelEncoder()
+    le = LabelEncoder().fit(classes)
 
-    # For doing a ovr, we need to mask the labels first. for the
-    # multinomial case this is not necessary.
-    if multi_class == "ovr":
-        y_bin = (y == pos_class).astype(X.dtype)
-        w0 = np.zeros(n_features + 1, dtype=X.dtype)
+    if sklearn_check_version("1.8"):
+        if is_binary:
+            y_bin = (y == pos_class).astype(X.dtype)
+            w0 = np.zeros(n_features + 1, dtype=X.dtype)
+        else:
+            Y_multi = le.transform(y).astype(X.dtype, copy=False)
+            w0 = np.zeros((classes.size, n_features + 1), order="C", dtype=X.dtype)
     else:
-        Y_multi = le.fit_transform(y).astype(X.dtype, copy=False)
-        w0 = np.zeros((classes.size, n_features + 1), order="C", dtype=X.dtype)
+        # For doing a ovr, we need to mask the labels first. for the
+        # multinomial case this is not necessary.
+        if multi_class == "ovr":
+            y_bin = (y == pos_class).astype(X.dtype)
+            w0 = np.zeros(n_features + 1, dtype=X.dtype)
+        else:
+            Y_multi = le.fit_transform(y).astype(X.dtype, copy=False)
+            w0 = np.zeros((classes.size, n_features + 1), order="C", dtype=X.dtype)
 
     # Adoption of https://github.com/scikit-learn/scikit-learn/pull/26721
     sw_sum = len(X)
 
     if coef is not None:
-        # it must work both giving the bias term and not
-        if multi_class == "ovr":
-            if coef.size not in (n_features, w0.size):
-                raise ValueError(
-                    "Initialization coef is of shape %d, expected shape "
-                    "%d or %d" % (coef.size, n_features, w0.size)
-                )
-            w0[-coef.size :] = np.roll(coef, 1, -1) if coef.size != n_features else coef
-        else:
-            # For binary problems coef.shape[0] should be 1, otherwise it
-            # should be classes.size.
-            n_classes = classes.size
-            if n_classes == 2:
-                n_classes = 1
-
-            if coef.shape[0] != n_classes or coef.shape[1] not in (
-                n_features,
-                n_features + 1,
-            ):
-                raise ValueError(
-                    "Initialization coef is of shape (%d, %d), expected "
-                    "shape (%d, %d) or (%d, %d)"
-                    % (
-                        coef.shape[0],
-                        coef.shape[1],
-                        classes.size,
-                        n_features,
-                        classes.size,
-                        n_features + 1,
+        if sklearn_check_version("1.8"):
+            if is_binary:
+                # Note: in sklearnex, the intercept is the first column
+                if (
+                    coef.ndim == 1 and coef.shape[0] == n_features + int(fit_intercept)
+                ) or (
+                    coef.ndim == 2
+                    and coef.shape[0] == 1
+                    and coef.shape[1] == n_features + int(fit_intercept)
+                ):
+                    w0[-coef.size :] = (
+                        np.roll(coef, 1, -1) if coef.size != n_features else coef
                     )
+                else:
+                    msg = (
+                        f"Initialization coef is of shape {coef.shape}, expected shape "
+                        f"{n_features + int(fit_intercept)} or (1, {n_features + int(fit_intercept)})"
+                    )
+                    raise ValueError(msg)
+            else:
+                if (
+                    coef.ndim == 2
+                    and coef.shape[0] == n_classes
+                    and coef.shape[1] == n_features + int(fit_intercept)
+                ):
+                    w0[:, -coef.shape[1] :] = (
+                        np.roll(coef, 1, -1) if coef.shape[1] != n_features else coef
+                    )
+                else:
+                    msg = (
+                        f"Initialization coef is of shape {coef.shape}, expected shape "
+                        f"{w0.shape}"
+                    )
+                    raise ValueError(msg)
+        else:
+            # it must work both giving the bias term and not
+            if multi_class == "ovr":
+                if coef.size not in (n_features, w0.size):
+                    raise ValueError(
+                        "Initialization coef is of shape %d, expected shape "
+                        "%d or %d" % (coef.size, n_features, w0.size)
+                    )
+                w0[-coef.size :] = (
+                    np.roll(coef, 1, -1) if coef.size != n_features else coef
                 )
+            else:
+                # For binary problems coef.shape[0] should be 1, otherwise it
+                # should be classes.size.
+                n_classes = classes.size
+                if n_classes == 2:
+                    n_classes = 1
 
-            w0[:, -coef.shape[1] :] = (
-                np.roll(coef, 1, -1) if coef.shape[1] != n_features else coef
-            )
+                if coef.shape[0] != n_classes or coef.shape[1] not in (
+                    n_features,
+                    n_features + 1,
+                ):
+                    raise ValueError(
+                        "Initialization coef is of shape (%d, %d), expected "
+                        "shape (%d, %d) or (%d, %d)"
+                        % (
+                            coef.shape[0],
+                            coef.shape[1],
+                            classes.size,
+                            n_features,
+                            classes.size,
+                            n_features + 1,
+                        )
+                    )
+
+                w0[:, -coef.shape[1] :] = (
+                    np.roll(coef, 1, -1) if coef.shape[1] != n_features else coef
+                )
 
     C_daal_multiplier = 1
 
@@ -353,15 +404,18 @@ def daal4py_fit(self, X, y, sample_weight=None):
     return clf
 
 
-def daal4py_predict(self, X, resultsToEvaluate):
-    check_is_fitted(self)
-    check_feature_names(self, X, reset=False)
-    X = check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
+def daal4py_fit_cv(self, X, y, sample_weight=None, **params):
+    which, what = logistic_module, "_logistic_regression_path"
+    replacer = logistic_regression_path_cv
     try:
-        fptype = getFPType(X)
-    except ValueError:
-        fptype = None
+        setattr(which, what, replacer)
+        clf = LogisticRegressionCV_original.fit(self, X, y, sample_weight, **params)
+    finally:
+        setattr(which, what, lr_path_original)
+    return clf
 
+
+def daal4py_predict(self, X, resultsToEvaluate):
     if resultsToEvaluate == "computeClassLabels":
         _function_name = "predict"
     elif resultsToEvaluate == "computeClassProbabilities":
@@ -377,6 +431,25 @@ def daal4py_predict(self, X, resultsToEvaluate):
     _patching_status = PatchingConditionsChain(
         f"sklearn.linear_model.LogisticRegression.{_function_name}"
     )
+    _dal_ready = _patching_status.and_conditions(
+        [
+            (
+                not ((not isinstance(X, np.ndarray)) and hasattr(X, "__dlpack__")),
+                "Array API inputs not supported.",
+            )
+        ]
+    )
+    if not _dal_ready:
+        return getattr(LogisticRegression_original, _function_name)(self, X)
+
+    check_is_fitted(self)
+    check_feature_names(self, X, reset=False)
+    X = check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
+    try:
+        fptype = getFPType(X)
+    except ValueError:
+        fptype = None
+
     if _function_name != "predict" and not sklearn_check_version("1.8"):
         multi_class = getattr(self, "multi_class", "auto")
         _patching_status.and_conditions(
@@ -480,6 +553,55 @@ if sklearn_check_version("1.8"):
         n_threads=1,
     ):
         return logistic_regression_path_dispatcher(
+            "sklearn.linear_model.LogisticRegression.fit",
+            X,
+            y,
+            classes=classes,
+            pos_class=None,
+            Cs=Cs,
+            fit_intercept=fit_intercept,
+            max_iter=max_iter,
+            tol=tol,
+            verbose=verbose,
+            solver=solver,
+            coef=coef,
+            class_weight=class_weight,
+            dual=dual,
+            penalty=penalty,
+            intercept_scaling=intercept_scaling,
+            random_state=random_state,
+            check_input=check_input,
+            max_squared_sum=max_squared_sum,
+            sample_weight=sample_weight,
+            l1_ratio=l1_ratio,
+            n_threads=n_threads,
+        )
+
+    def logistic_regression_path_cv(
+        X,
+        y,
+        *,
+        classes,
+        Cs=10,
+        fit_intercept=True,
+        max_iter=100,
+        tol=1e-4,
+        verbose=0,
+        solver="lbfgs",
+        coef=None,
+        class_weight=None,
+        dual=False,
+        penalty="l2",
+        intercept_scaling=1.0,
+        random_state=None,
+        check_input=True,
+        max_squared_sum=None,
+        sample_weight=None,
+        l1_ratio=None,
+        n_threads=1,
+    ):
+        return logistic_regression_path_dispatcher(
+            "sklearn.linear_model.LogisticRegressionCV.fit",
             X,
             y,
             classes=classes,
@@ -529,6 +651,56 @@ else:
         n_threads=1,
     ):
         return logistic_regression_path_dispatcher(
+            "sklearn.linear_model.LogisticRegression.fit",
+            X,
+            y,
+            classes=None,
+            pos_class=pos_class,
+            Cs=Cs,
+            fit_intercept=fit_intercept,
+            max_iter=max_iter,
+            tol=tol,
+            verbose=verbose,
+            solver=solver,
+            coef=coef,
+            class_weight=class_weight,
+            dual=dual,
+            penalty=penalty,
+            intercept_scaling=intercept_scaling,
+            multi_class=multi_class,
+            random_state=random_state,
+            check_input=check_input,
+            max_squared_sum=max_squared_sum,
+            sample_weight=sample_weight,
+            l1_ratio=l1_ratio,
+            n_threads=n_threads,
+        )
+
+    def logistic_regression_path_cv(
+        X,
+        y,
+        pos_class=None,
+        Cs=10,
+        fit_intercept=True,
+        max_iter=100,
+        tol=1e-4,
+        verbose=0,
+        solver="lbfgs",
+        coef=None,
+        class_weight=None,
+        dual=False,
+        penalty="l2",
+        intercept_scaling=1.0,
+        multi_class="auto",
+        random_state=None,
+        check_input=True,
+        max_squared_sum=None,
+        sample_weight=None,
+        l1_ratio=None,
+        n_threads=1,
+    ):
+        return logistic_regression_path_dispatcher(
+            "sklearn.linear_model.LogisticRegressionCV.fit",
             X,
             y,
             classes=None,
@@ -555,6 +727,7 @@ else:
 
 
 def logistic_regression_path_dispatcher(
+    patching_log_class_name,
     X,
     y,
     classes=None,
@@ -579,9 +752,7 @@ def logistic_regression_path_dispatcher(
     n_threads=1,
 ):
 
-    _patching_status = PatchingConditionsChain(
-        "sklearn.linear_model.LogisticRegression.fit"
-    )
+    _patching_status = PatchingConditionsChain(patching_log_class_name)
     _dal_ready = _patching_status.and_conditions(
         [
             (
@@ -590,6 +761,10 @@ def logistic_regression_path_dispatcher(
                 "Only 'lbfgs' and 'newton-cg' solvers are supported.",
             ),
             (not is_sparse(X), "X is sparse. Sparse input is not supported."),
+            (
+                not ((not isinstance(X, np.ndarray)) and hasattr(X, "__dlpack__")),
+                "Array API inputs not supported.",
+            ),
             (sample_weight is None, "Sample weights are not supported."),
             (class_weight is None, "Class weights are not supported."),
             (
@@ -772,3 +947,34 @@ class LogisticRegression(LogisticRegression_original):
     predict.__doc__ = LogisticRegression_original.predict.__doc__
     predict_log_proba.__doc__ = LogisticRegression_original.predict_log_proba.__doc__
     predict_proba.__doc__ = LogisticRegression_original.predict_proba.__doc__
+
+
+@control_n_jobs(
+    decorated_methods=["fit", "predict", "predict_proba", "predict_log_proba"]
+)
+class LogisticRegressionCV(LogisticRegressionCV_original):
+
+    if sklearn_check_version("1.1"):
+
+        def fit(self, X, y, sample_weight=None, **params):
+            return daal4py_fit_cv(self, X, y, sample_weight, **params)
+
+    else:
+
+        def fit(self, X, y, sample_weight=None):
+            return daal4py_fit_cv(self, X, y, sample_weight)
+
+    def predict(self, X):
+        return daal4py_predict(self, X, "computeClassLabels")
+
+    def predict_log_proba(self, X):
+        return daal4py_predict(self, X, "computeClassLogProbabilities")
+
+    def predict_proba(self, X):
+        return daal4py_predict(self, X, "computeClassProbabilities")
+
+    __doc__ = LogisticRegressionCV_original.__doc__
+    fit.__doc__ = LogisticRegressionCV_original.fit.__doc__
+    predict.__doc__ = LogisticRegressionCV_original.predict.__doc__
+    predict_log_proba.__doc__ = LogisticRegressionCV_original.predict_log_proba.__doc__
+    predict_proba.__doc__ = LogisticRegressionCV_original.predict_proba.__doc__

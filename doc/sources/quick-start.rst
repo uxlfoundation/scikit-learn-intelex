@@ -34,7 +34,7 @@ Patching
 **********************
 
 Once you install the |sklearnex|, you can replace estimator classes (algorithms) that exist in the ``sklearn`` module from |sklearn| with their optimized versions from the extension.
-This action is called *patching* or `monkey patching <https://en.wikipedia.org/wiki/Monkey_patch>`__. This is not a permanent change so you can always undo the patching if necessary.
+This action is called *patching* or *monkey patching*. This is not a permanent change so you can always undo the patching if necessary.
 
 To patch |sklearn| with the |sklearnex|, the following methods can be used:
 
@@ -284,7 +284,7 @@ To prevent version conflicts, we recommend installing ``scikit-learn-intelex`` i
 Build from Sources
 **********************
 
-See `Installation instructions <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/INSTALL.md#build-from-sources>`_ to build |sklearnex| from the sources.
+See :doc:`building-from-source` for details.
 
 Install Intel*(R) AI Tools
 ****************************

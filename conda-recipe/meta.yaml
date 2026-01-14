@@ -71,6 +71,7 @@ requirements:
     - scikit-learn
     # dal-devel has run_exports on conda-forge, so no need to add it.
     - mpi * impi  # [not win]
+    - packaging
 
 test:
   requires:
