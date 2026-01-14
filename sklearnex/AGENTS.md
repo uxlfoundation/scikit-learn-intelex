@@ -48,7 +48,6 @@ with config_context(target_offload="gpu"):
 - `allow_sklearn_after_onedal`: `bool` (default `True`) - Enable oneDAL → sklearn fallback
 
 **Advanced:**
-- `verbose`: `bool` - Show which implementation is used (helpful for debugging)
 - `array_api_dispatch`: `bool` - Enable Array API namespace dispatch
 
 ## Algorithm Support
@@ -72,7 +71,7 @@ Algorithms implement `_onedal_cpu_supported()` and `_onedal_gpu_supported()` to 
 ## GPU Support Status
 - **Full GPU**: DBSCAN, K-Means, PCA, KNeighbors
 - **Limited GPU**: LogisticRegression, SVM
-- **CPU Only**: RandomForest, Ridge, IncrementalPCA
+- **CPU Only**: Ridge, IncrementalPCA
 
 ## Distributed Computing (SPMD)
 Located in `sklearnex/spmd/`. Same API as standard sklearnex, distributed across MPI nodes. Import from `sklearnex.spmd.*` instead of `sklearnex.*`.
