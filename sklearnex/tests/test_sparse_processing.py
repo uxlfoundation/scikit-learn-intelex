@@ -137,7 +137,7 @@ def test_no_sparse_support_falls_back_to_sklearn(estimator, sparse_X, mocker):
         (
             LogisticRegression,
             {},
-            "daal4py.sklearn.linear_model.logistic_path.__logistic_regression_path",
+            "daal4py.sklearn.linear_model.logistic_path.logistic_regression_path_d4p",
         ),
         (
             Lasso,
@@ -232,7 +232,7 @@ def test_dense_data_is_not_converted_to_sparse(estimator, dense_X, mocker):
         (
             LogisticRegression,
             {},
-            "daal4py.sklearn.linear_model.logistic_path.__logistic_regression_path",
+            "daal4py.sklearn.linear_model.logistic_path.logistic_regression_path_d4p",
             0,
         ),
         (
