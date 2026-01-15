@@ -115,7 +115,7 @@ python -c "import dpctl; print(dpctl.get_devices())"
 ```
 
 **Common GPU issues:**
-- **"No GPU device found"** → Install Intel GPU drivers and `intel-opencl-icd` (Linux) or Intel Graphics drivers (Windows)
+- **"No GPU device found"** → Install Intel GPU drivers and `intel-opencl-icd` (Linux) or Intel Graphics drivers (Windows). For conda environments, also install `intel-gpu-ocl-icd-system` from Intel's conda channel.
 - **`ImportError: dpctl`** → Install GPU runtime: `pip install dpctl dpnp`
 - **Fallback to CPU** → Check `verbose=True` to see reason (unsupported param, sparse data, etc.)
 - **Out of memory** → Reduce data size or use `target_offload="cpu"`

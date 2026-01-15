@@ -24,7 +24,7 @@ See `dependencies-dev` and `requirements-test.txt` for exact versions.
 
 - **oneDAL**: Downloads nightly builds from upstream oneDAL repo
 - **Python**: See `setup.py` for supported versions
-- **sklearn**: See `requirements-test.txt` for supported versions
+- **sklearn**: See `doc/sources/quick-start.rst` for supported versions
 - **GPU Libraries**: dpctl, dpnp, torch for Intel GPU acceleration and Array API support
 
 ## Release Process
