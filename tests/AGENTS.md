@@ -54,17 +54,10 @@ Coverage reporting:
 # Option 1: Via conda (recommended)
 conda install -c conda-forge impi-devel impi_rt mpi4py=*=*impi*
 
-# Option 2: System package manager
-# Debian/Ubuntu:
-sudo apt-get install libopenmpi-dev openmpi-bin
-pip install mpi4py
+# Option 2: Via pip (Intel MPI)
+pip install impi-rt mpi4py --index-url https://software.repos.intel.com/python/pypi
 
-# RedHat/CentOS:
-sudo yum install openmpi-devel
-pip install mpi4py
-
-# Set MPIROOT if not using conda
-export MPIROOT=/path/to/mpi
+# See doc/sources/distributed-mode.rst for detailed Intel MPI installation instructions
 ```
 
 **Rebuild with MPI support:**
