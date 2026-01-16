@@ -46,12 +46,18 @@ def get_patch_map_core(preview=False):
         if _is_new_patching_available():
             import sklearn.covariance as covariance_module
             import sklearn.decomposition as decomposition_module
+            import sklearn.linear_model as linear_model_module
 
             # Preview classes for patching
             from .preview.covariance import (
                 EmpiricalCovariance as EmpiricalCovariance_sklearnex,
             )
             from .preview.decomposition import IncrementalPCA as IncrementalPCA_sklearnex
+
+            if daal_check_version((2024, "P", 1)):
+                from .preview.linear_model import (
+                    LogisticRegressionCV as LogisticRegressionCV_sklearnex,
+                )
 
             # Since the state of the lru_cache without preview cannot be
             # guaranteed to not have already enabled sklearnex algorithms
@@ -81,6 +87,22 @@ def get_patch_map_core(preview=False):
                     None,
                 ]
             ]
+
+            # LogisticRegressionCV
+            if daal_check_version((2024, "P", 1)):
+                mapping["log_reg_cv"] = [
+                    [
+                        (
+                            linear_model_module,
+                            "LogisticRegressionCV",
+                            LogisticRegressionCV_sklearnex,
+                        ),
+                        None,
+                    ]
+                ]
+            else:
+                if "log_reg_cv" in mapping:
+                    mapping.pop("log_reg_cv")
 
         return mapping
 
@@ -143,7 +165,6 @@ def get_patch_map_core(preview=False):
         from .linear_model import Lasso as Lasso_sklearnex
         from .linear_model import LinearRegression as LinearRegression_sklearnex
         from .linear_model import LogisticRegression as LogisticRegression_sklearnex
-        from .linear_model import LogisticRegressionCV as LogisticRegressionCV_sklearnex
         from .linear_model import Ridge as Ridge_sklearnex
         from .manifold import TSNE as TSNE_sklearnex
         from .metrics import pairwise_distances as pairwise_distances_sklearnex
@@ -238,17 +259,9 @@ def get_patch_map_core(preview=False):
         ]
         mapping["logisticregression"] = mapping["log_reg"]
 
-        mapping.pop("log_reg_cv")
-        mapping["log_reg_cv"] = [
-            [
-                (
-                    linear_model_module,
-                    "LogisticRegressionCV",
-                    LogisticRegressionCV_sklearnex,
-                ),
-                None,
-            ]
-        ]
+        # This is in sklearnex preview, but daal4py doesn't have preview
+        if "log_reg_cv" in mapping:
+            mapping.pop("log_reg_cv")
 
         # Ridge
         mapping.pop("ridge")
