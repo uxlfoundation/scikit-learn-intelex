@@ -103,6 +103,8 @@ jobs:
     vmImage: 'ubuntu-24.04'
   steps:
   - template: build-and-test-lnx.yml
+    env:
+      RC_DEPS: 1
 - job: WindowsNightly
   timeoutInMinutes: 120
   strategy:
@@ -114,3 +116,5 @@ jobs:
     vmImage: 'windows-2022'
   steps:
   - template: build-and-test-win.yml
+    env:
+      RC_DEPS: 1
