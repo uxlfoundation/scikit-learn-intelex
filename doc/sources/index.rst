@@ -166,6 +166,7 @@ See :ref:`oneapi_gpu` for other ways of executing on GPU.
    :hidden:
    :maxdepth: 4
 
+   patching.rst
    algorithms.rst
    oneapi-gpu.rst
    config-contexts.rst
