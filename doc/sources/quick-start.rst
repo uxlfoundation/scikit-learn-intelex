@@ -69,6 +69,8 @@ To patch |sklearn| with the |sklearnex|, the following methods can be used:
 These patching methods are interchangeable.
 They support different enabling scenarios while producing the same result.
 
+See :doc:`patching` for more details.
+
 
 **Example**
 

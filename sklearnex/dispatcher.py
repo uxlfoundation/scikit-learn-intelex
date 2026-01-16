@@ -18,6 +18,7 @@
 import os
 import sys
 from functools import lru_cache
+from typing import Optional, Union
 
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 
@@ -476,7 +477,7 @@ def get_patch_map_core(preview=False):
 
 # This is necessary to properly cache the patch_map when
 # using preview.
-def get_patch_map():
+def get_patch_map() -> dict[str, bool]:
     preview = _is_preview_enabled()
     return get_patch_map_core(preview=preview)
 
@@ -487,11 +488,66 @@ get_patch_map.cache_clear = get_patch_map_core.cache_clear
 get_patch_map.cache_info = get_patch_map_core.cache_info
 
 
-def get_patch_names():
+def get_patch_names() -> list[str]:
     return list(get_patch_map().keys())
 
 
-def patch_sklearn(name=None, verbose=True, global_patch=False, preview=False):
+def patch_sklearn(
+    name: Optional[Union[str, list[str]]] = None,
+    verbose: bool = True,
+    global_patch: bool = False,
+    preview: bool = False,
+) -> None:
+    """Apply patching to the ``sklearn`` module.
+
+    Patches the ``sklearn`` module from |sklearn| to make calls to the accelerated
+    versions of estimators and functions from the |sklearnex|, either as a whole
+    or on a per-estimator basis.
+
+    Parameters
+    ----------
+    name : str, list of str, or None
+        Names of the desired estimators to patch. Can pass a single instance name (e.g.
+        ``"LogisticRegression"``), or a list of names (e.g. ``["LogisticRegression", "PCA"]``).
+
+        If ``None``, will patch all the supported estimators.
+
+        See the :doc:`algorithm support table <algorithms>` for more information.
+    verbose : bool
+        Whether to print information messages about the patching being applied or not.
+
+        Note that this refers only to a message about patching applied through this
+        function. Passing ``True`` here does **not** enable :doc:`verbose mode <verbose>`
+        for further estimator calls.
+
+        When the message is printed, it will use the Python ``stderr`` stream.
+    global_patch : bool
+        Whether to apply the patching on the installed ``sklearn`` module itself,
+        which is a mechanism that persists across sessions and processes.
+
+        If ``True``, the ``sklearn`` module files will be modified to apply patching
+        immediately upon import of this module, so that next time, importing of
+        ``sklearnex`` will not be necessary.
+    preview : bool
+        Whether to include the :doc:`preview estimators <preview>` in the patching.
+
+        Note that this will forcibly set the environment variable ``SKLEARNEX_PREVIEW``.
+
+        If environment variable ``SKLEARNEX_PREVIEW`` is set at the moment this function
+        is called, preview estimators will be patched regardless.
+
+    Examples
+    --------
+
+    >>> from sklearnex import is_patched_instance
+    >>> from sklearnex import patch_sklearn
+    >>> from sklearn.linear_model import LinearRegression
+    >>> is_patched_instance(LinearRegression())
+    False
+    >>> patch_sklearn()
+    >>> from sklearn.linear_model import LinearRegression # now calls sklearnex
+    >>> is_patched_instance(LinearRegression())
+    True"""
     if preview:
         os.environ["SKLEARNEX_PREVIEW"] = "enabled_via_patch_sklearn"
     if not sklearn_check_version("1.0"):
@@ -527,7 +583,28 @@ def patch_sklearn(name=None, verbose=True, global_patch=False, preview=False):
         )
 
 
-def unpatch_sklearn(name=None, global_unpatch=False):
+def unpatch_sklearn(
+    name: Optional[Union[str, list[str]]] = None, global_unpatch: bool = False
+) -> None:
+    """Unpatch scikit-learn.
+
+    Unpatches the ``sklearn`` module, either as a whole or for selected estimators.
+
+    .. Note
+        If preview mode was enabled through ``patch_sklearn(preview=True)``, it will
+        modify the environment variable ``SKLEARNEX_PREVIEW``, by deleting it.
+
+    Parameters
+    ----------
+    name : str, list of str, or None
+        Names of the desired estimators to check for patching status. Can
+        pass a single instance name (e.g. ``"LogisticRegression"``), or a
+        list of names (e.g. ``["LogisticRegression", "PCA"]``).
+
+        If ``None``, will unpatch all the etimators that are patched.
+    global_unpatch : bool
+        Whether to unpatch the installed ``sklearn`` module itself, if patching had
+        been applied to it (see :obj:`patch_sklearn`)."""
     if global_unpatch:
         from sklearnex.glob.dispatcher import unpatch_sklearn_global
 
@@ -546,30 +623,70 @@ def unpatch_sklearn(name=None, global_unpatch=False):
         os.environ.pop("SKLEARNEX_PREVIEW")
 
 
-def sklearn_is_patched(name=None, return_map=False):
+def sklearn_is_patched(
+    name: Optional[Union[str, list[str]]] = None, return_map: Optional[bool] = False
+) -> Union[bool, dict[str, bool]]:
+    """Check patching status.
+
+    Checks whether patching of |sklearn| estimators has been applied, either as a whole
+    or for a subset of estimators.
+
+    Parameters
+    ----------
+    name : str, list of str, or None
+        Names of the desired estimators to check for patching status. Can
+        pass a single instance name (e.g. ``"LogisticRegression"``), or a
+        list of names (e.g. ``["LogisticRegression", "PCA"]``).
+
+        If ``None``, will check for patching status of all estimators.
+    return_map : bool
+        Whether to return per-estimator patching statuses, or just a single
+        result, which will be ``True`` if all the estimators from ``name``
+        are patched.
+
+        .. important::
+
+            The return map will contain names as used internally by the |sklearnex|.
+            These names come in lower case, contain duplicates, and are a superset
+            of the estimator names used by |sklearn| - for example, if applying full
+            patching, will contain entries along the lines of ``"randomforestclassifier"``
+            and ``"random_forest_classifier"``.
+
+    Returns
+    -------
+    Check : bool or dict[str, bool]
+        The patching status of the desired estimators, either as a whole, or
+        on a per-estimator basis (output type controlled by ``return_map``)."""
     from daal4py.sklearn import sklearn_is_patched as sklearn_is_patched_orig
 
     if isinstance(name, list):
         if return_map:
-            result = {}
+            result: dict[str, bool] = {}
             for algorithm in name:
-                result[algorithm] = sklearn_is_patched_orig(
-                    algorithm, get_map=get_patch_map
-                )
+                try:
+                    result[algorithm] = sklearn_is_patched_orig(
+                        algorithm, get_map=get_patch_map
+                    )
+                except ValueError:
+                    result[algorithm] = False
             return result
         else:
             is_patched = True
             for algorithm in name:
-                is_patched = is_patched and sklearn_is_patched_orig(
-                    algorithm, get_map=get_patch_map
-                )
+                try:
+                    this_name_is_patched: bool = sklearn_is_patched_orig(
+                        algorithm, get_map=get_patch_map
+                    )
+                except ValueError:
+                    this_name_is_patched: bool = False
+                is_patched = is_patched and this_name_is_patched
             return is_patched
     else:
         return sklearn_is_patched_orig(name, get_map=get_patch_map, return_map=return_map)
 
 
 def is_patched_instance(instance: object) -> bool:
-    """Check if given instance is patched with scikit-learn-intelex.
+    """Check if given estimator instance is patched with scikit-learn-intelex.
 
     Parameters
     ----------
@@ -580,6 +697,16 @@ def is_patched_instance(instance: object) -> bool:
     -------
     Check : bool
         Boolean whether instance is a daal4py or sklearnex estimator.
-    """
+
+    Examples
+    --------
+
+    >>> from sklearnex import is_patched_instance
+    >>> from sklearn.linear_model import LinearRegression
+    >>> from sklearnex.linear_model import LinearRegression as patched_LR
+    >>> is_patched_instance(LinearRegression())
+    False
+    >>> is_patched_instance(patched_LR())
+    True"""
     module = getattr(instance, "__module__", "")
     return ("daal4py" in module) or ("sklearnex" in module)
