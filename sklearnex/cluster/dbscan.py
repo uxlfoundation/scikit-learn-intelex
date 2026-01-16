@@ -14,11 +14,10 @@
 # limitations under the License.
 # ===============================================================================
 
-from scipy import sparse as sp
 from sklearn.cluster import DBSCAN as _sklearn_DBSCAN
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
-from daal4py.sklearn._utils import sklearn_check_version
+from daal4py.sklearn._utils import is_sparse, sklearn_check_version
 from onedal.cluster import DBSCAN as onedal_DBSCAN
 from onedal.utils._array_api import _is_numpy_namespace
 
@@ -132,7 +131,7 @@ class DBSCAN(oneDALEstimator, _sklearn_DBSCAN):
                         f"'{self.metric}' (p={self.p}) metric is not supported. "
                         "Only 'euclidean' or 'minkowski' with p=2 metrics are supported.",
                     ),
-                    (not sp.issparse(X), "X is sparse. Sparse input is not supported."),
+                    (not is_sparse(X), "X is sparse. Sparse input is not supported."),
                 ]
             )
             return patching_status
