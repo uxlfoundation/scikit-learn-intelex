@@ -20,15 +20,9 @@ from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from daal4py.sklearn.linear_model.logistic_path import (
     LogisticRegression as _daal4py_LogisticRegression,
 )
-from daal4py.sklearn.linear_model.logistic_path import (
-    LogisticRegressionCV as _daal4py_LogisticRegressionCV,
-)
 from onedal._device_offload import support_input_format
 
 from ..base import oneDALEstimator
-
-if sklearn_check_version("1.6"):
-    from ..base import Tags
 
 if daal_check_version((2024, "P", 1)):
     import numpy as np
@@ -470,20 +464,3 @@ else:
         "Sklearnex LogisticRegression requires oneDAL version >= 2024.0.1 "
         "but it was not found"
     )
-
-
-# This is necessary due to how sklearn handles array API inputs
-class LogisticRegressionCV(_daal4py_LogisticRegressionCV, LogisticRegression):
-    fit = support_input_format(_daal4py_LogisticRegressionCV.fit)
-    predict_proba = LogisticRegression.predict_proba
-    predict_log_proba = LogisticRegression.predict_log_proba
-    decision_function = LogisticRegression.decision_function
-
-    __doc__ = _daal4py_LogisticRegressionCV.__doc__
-
-    if sklearn_check_version("1.6"):
-
-        def __sklearn_tags__(self) -> "Tags":
-            tags = super().__sklearn_tags__()
-            tags.onedal_array_api = False
-            return tags
