@@ -34,7 +34,7 @@ The mandatory dependencies for tests with locked versions of packages are listed
 
 .. code-block:: bash
 
-    pip install -r requirements-test.txt
+    pip install --pre -r requirements-test.txt
 
 Some tests will only execute depending on the availability of optional dependencies at runtime. Other optional dependencies that will trigger additional tests can be installed as follows, assuming a Linux* system:
 

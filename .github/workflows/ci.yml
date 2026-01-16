@@ -138,7 +138,7 @@ jobs:
           source venv/bin/activate
           source .github/scripts/activate_components.sh
           bash .ci/scripts/setup_sklearn.sh ${{ matrix.SKLEARN_VERSION }}
-          pip install --upgrade -r requirements-test.txt
+          pip install --upgrade --pre -r requirements-test.txt
           pip install $(python .ci/scripts/get_compatible_scipy_version.py ${{ matrix.SKLEARN_VERSION }}) pyyaml
           if [ "${{ steps.set-env.outputs.DPCFLAG }}" == "" ]; then pip install dpctl==${{ env.DPCTL_VERSION }} dpnp==${{ env.DPNP_VERSION }}; fi
           pip list
@@ -275,7 +275,7 @@ jobs:
           call .\venv\Scripts\activate.bat
           call .\.github\scripts\activate_components.bat ${{ steps.set-env.outputs.DPCFLAG }}
           bash .ci/scripts/setup_sklearn.sh ${{ matrix.SKLEARN_VERSION }}
-          pip install --upgrade -r requirements-test.txt
+          pip install --upgrade --pre -r requirements-test.txt
           for /f "delims=" %%c in ('python .ci\scripts\get_compatible_scipy_version.py ${{ matrix.SKLEARN_VERSION }}') do set SCIPY_VERSION=%%c
           pip install %SCIPY_VERSION%
           if "${{ steps.set-env.outputs.DPCFLAG }}"=="" pip install dpctl==${{ env.DPCTL_VERSION }} dpnp==${{ env.DPNP_VERSION }}
@@ -453,7 +453,7 @@ jobs:
       - name: Install test requirements
         run: |
           bash .ci/scripts/setup_sklearn.sh ${{ env.UXL_SKLEARNVERSION }}
-          pip install --upgrade -r requirements-test.txt
+          pip install --upgrade --pre -r requirements-test.txt
           pip install $(python .ci/scripts/get_compatible_scipy_version.py ${{ env.UXL_SKLEARNVERSION }}) pyyaml
           pip list
       - name: Download sklearnex wheel
