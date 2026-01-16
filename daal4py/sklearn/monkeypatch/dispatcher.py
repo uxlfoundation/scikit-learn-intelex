@@ -134,6 +134,7 @@ def _get_map_of_algorithms():
     }
     mapping["svc"] = mapping["svm"]
     mapping["logisticregression"] = mapping["log_reg"]
+    mapping["logisticregressioncv"] = mapping["log_reg_cv"]
     mapping["kneighborsclassifier"] = mapping["knn_classifier"]
     mapping["nearestneighbors"] = mapping["nearest_neighbors"]
     mapping["kneighborsregressor"] = mapping["knn_regressor"]

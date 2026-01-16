@@ -90,7 +90,7 @@ def get_patch_map_core(preview=False):
 
             # LogisticRegressionCV
             if daal_check_version((2024, "P", 1)):
-                mapping["log_reg_cv"] = [
+                mapping["logisticregressioncv"] = [
                     [
                         (
                             linear_model_module,
@@ -101,8 +101,10 @@ def get_patch_map_core(preview=False):
                     ]
                 ]
             else:
-                if "log_reg_cv" in mapping:
-                    mapping.pop("log_reg_cv")
+                if "logisticregressioncv" in mapping:
+                    mapping.pop("logisticregressioncv")
+            if "log_reg_cv" in mapping:
+                mapping.pop("log_reg_cv")
 
         return mapping
 
@@ -262,6 +264,8 @@ def get_patch_map_core(preview=False):
         # This is in sklearnex preview, but daal4py doesn't have preview
         if "log_reg_cv" in mapping:
             mapping.pop("log_reg_cv")
+        if "logisticregressioncv" in mapping:
+            mapping.pop("logisticregressioncv")
 
         # Ridge
         mapping.pop("ridge")
