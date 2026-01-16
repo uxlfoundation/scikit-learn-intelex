@@ -74,7 +74,7 @@ jobs:
       conda activate CB
       pip install -r dependencies-dev
       pip install -r requirements-doc.txt
-      pip install -r requirements-test.txt
+      pip install --pre -r requirements-test.txt
       pip install jupyter matplotlib requests
     displayName: 'Install requirements'
   - script: |
