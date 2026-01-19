@@ -504,6 +504,16 @@ def patch_sklearn(
     versions of estimators and functions from the |sklearnex|, either as a whole
     or on a per-estimator basis.
 
+    Notes
+    -----
+    If estimators from ``sklearn`` have already been imported before ``patch_sklearn``
+    is called, they need to be re-imported in order for the patching to take effect.
+
+    See Also
+    --------
+    is_patched_instance: To verify that an instance of an estimator is patched.
+    unpatch_sklearn: To undo the patching.
+
     Parameters
     ----------
     name : str, list of str, or None
