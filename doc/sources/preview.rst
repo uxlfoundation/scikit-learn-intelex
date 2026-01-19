@@ -22,20 +22,21 @@ Preview Functionality
 Some of implemented functionality in |sklearnex| doesn't meet one or few of next requirements
 for being enabled by default for all users:
 
-* The functionality API is not stable and can be changed in future
-* The functionality doesn't have full compatibility with stock Scikit-learn
-* The functionality misses performance targets compared to stock Scikit-learn or previously available version of functionality
-* The functionality is not fully tested
+* The functionality misses performance targets compared to stock |sklearn| or to previously available versions.
+* The functionality API is not stable and may change in future.
+* The functionality doesn't have full compatibility with its analog from |sklearn|.
+* The functionality is not fully tested.
 
 This type of functionality is available under **preview mode** of |sklearnex| and located in
-the corresponding module (`sklearnex.preview`).
+submodule ``sklearnex.preview``.
 
 Functionalities under preview will be made available after patching when preview mode is enabled,
 but note that some might be :ref:`extension estimators <extension_estimators>` without analogs in |sklearn|.
 
-To enable preview functionality, you need to set the `SKLEARNEX_PREVIEW` environment variable
-to non-empty value before patching of Scikit-learn.
-For example, you can set the environment variable in the following way:
+Estimators in preview can be enabled by either setting environment variable ``SKLEARNEX_PREVIEW``
+before patching |sklearn|, or by passing argument ``preview=True`` to function ``patch_sklearn``.
+
+For example, the environment variable can be set from a terminal before starting python:
 
 - On Linux* OS ::
 
@@ -45,7 +46,17 @@ For example, you can set the environment variable in the following way:
 
      set SKLEARNEX_PREVIEW=1
 
-Then, you can import Scikit-learn estimator patched with a preview one from `sklearnex.preview` module::
+Or it can be set within a Python process:
+
+.. code-block:: python
+
+    import os
+    os.environ["SKLEARNEX_PREVIEW"] = "1"
+
+Then, patched estimators in preview mode can be imported from the ``slearn`` module
+when they participate in patching:
+
+.. code-block:: python
 
      from sklearnex import patch_sklearn
      patch_sklearn()
@@ -53,6 +64,14 @@ Then, you can import Scikit-learn estimator patched with a preview one from `skl
      print(IncrementalPCA.__module__)
      # output:
      # sklearnex.preview.decomposition.incremental_pca
+
+Alternatively, estimators can be imported directly from ``sklearnex.preview`` without
+patching and without setting environment variable ``SKLEARNEX_PREVIEW``:
+
+.. code-block:: python
+
+    from sklearnex.preview.covariance import EmpiricalCovariance
+
 
 Current list of preview estimators:
 
@@ -64,9 +83,9 @@ Current list of preview estimators:
    * - Estimator name
      - Module
      - Is patching supported
-   * - EmpiricalCovariance
-     - sklearnex.preview.covariance
+   * - :obj:`sklearn.covariance.EmpiricalCovariance`
+     - ``sklearnex.preview.covariance``
      - Yes
-   * - IncrementalPCA
-     - sklearnex.preview.decomposition
+   * - :obj:`sklearn.decomposition.IncrementalPCA`
+     - ``sklearnex.preview.decomposition``
      - Yes
