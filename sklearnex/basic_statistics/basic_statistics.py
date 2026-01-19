@@ -14,8 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 
-import warnings
-
 from scipy.sparse import issparse
 from sklearn.base import BaseEstimator
 
@@ -126,6 +124,12 @@ class BasicStatistics(oneDALEstimator, BaseEstimator):
             f"sklearnex.basic_statistics.{self.__class__.__name__}.{method_name}"
         )
         return patching_status
+
+    def _save_attributes(self):
+        assert hasattr(self, "_onedal_estimator")
+        for option in self._onedal_estimator.options:
+            option += "_"
+            setattr(self, option, getattr(self._onedal_estimator, option))
 
     def _onedal_gpu_supported(self, method_name, *data):
         patching_status = PatchingConditionsChain(

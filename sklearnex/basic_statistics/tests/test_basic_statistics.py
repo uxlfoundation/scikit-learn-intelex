@@ -385,3 +385,19 @@ def test_1d_input_on_random_data(
 
     tol = fp32tol if res.dtype == np.float32 else fp64tol
     assert_allclose(gtr, res, atol=tol)
+
+
+@pytest.mark.parametrize("underscore_first", [False, True])
+def test_results_have_underscores(underscore_first):
+    X = np.arange(10).reshape((-1, 1))
+    bs = BasicStatistics().fit(X)
+
+    # Note: these are generated dynamically. Need to
+    # test them in different order to ensure calling
+    # one doesn't set the other and then change results.
+    if underscore_first:
+        assert hasattr(bs, "mean_")
+        assert not hasattr(bs, "mean")
+    else:
+        assert not hasattr(bs, "mean")
+        assert hasattr(bs, "mean_")
