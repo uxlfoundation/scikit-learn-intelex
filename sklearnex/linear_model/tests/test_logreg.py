@@ -14,6 +14,7 @@
 # limitations under the License.
 # ===============================================================================
 
+import os
 import warnings
 
 import numpy as np
@@ -46,6 +47,10 @@ def prepare_input(X, y, dataframe, queue):
     return X_train, X_test, y_train, y_test
 
 
+def check_preview_is_enabled() -> bool:
+    return "SKLEARNEX_PREVIEW" in os.environ
+
+
 @pytest.mark.parametrize(
     "dataframe,queue", get_dataframes_and_queues(device_filter_="cpu")
 )
@@ -73,6 +78,8 @@ def test_sklearnex_multiclass_classification(dataframe, queue):
     get_dataframes_and_queues(),
 )
 def test_sklearnex_binary_classification(dataframe, queue):
+    if queue and not check_preview_is_enabled():
+        pytest.skip("Functionality in preview")
     from sklearnex.linear_model import LogisticRegression
 
     X, y = load_breast_cancer(return_X_y=True)
@@ -110,6 +117,8 @@ if daal_check_version((2024, "P", 700)):
     )
     @pytest.mark.allow_sklearn_fallback
     def test_csr(queue, dtype, dims):
+        if queue and not check_preview_is_enabled():
+            pytest.skip("Functionality in preview")
         from sklearnex.linear_model import LogisticRegression
 
         n, p, density = dims
@@ -355,6 +364,9 @@ def test_warm_start_stateful(fit_intercept, n_classes, multi_class, weighted):
 )
 @pytest.mark.parametrize("weighted", [False, True])
 @pytest.mark.allow_sklearn_fallback
+@pytest.mark.skipif(
+    not check_preview_is_enabled(), reason="Functionality in preview mode"
+)
 def test_warm_start_binary(fit_intercept, multi_class, weighted):
     from sklearnex.linear_model import LogisticRegression
 
@@ -395,6 +407,7 @@ def test_warm_start_binary(fit_intercept, multi_class, weighted):
 )
 @pytest.mark.parametrize("weighted", [False, True])
 @pytest.mark.allow_sklearn_fallback
+@pytest.mark.skipif(not check_preview_is_enabled(), reason="Functionality in preview")
 def test_warm_start_multinomial(fit_intercept, multi_class, weighted):
     from sklearnex.linear_model import LogisticRegression
 
@@ -451,6 +464,8 @@ def test_warm_start_multinomial(fit_intercept, multi_class, weighted):
 @pytest.mark.parametrize("n_classes", [2, 3])
 @pytest.mark.allow_sklearn_fallback
 def test_custom_solvers_are_correct(multi_class, C, solver, n_classes):
+    if solver == "newton-cg" and not check_preview_is_enabled():
+        pytest.skip("Functionality in preview mode")
     from sklearnex.linear_model import LogisticRegression
 
     X, y = make_classification(
@@ -549,6 +564,8 @@ def test_gpu_logreg_prediction_shapes(dataframe, queue):
 )
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 def test_log_proba_doesnt_return_inf(dataframe, queue):
+    if queue and not check_preview_is_enabled():
+        pytest.skip("Functionality in preview mode")
     from sklearnex.linear_model import LogisticRegression
 
     X, y = make_classification(random_state=123)
