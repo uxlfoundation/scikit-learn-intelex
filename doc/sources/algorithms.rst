@@ -86,7 +86,7 @@ Classification
        - ``class_weight`` != ``None``
        - Solver ``'newton-cg'`` with ``fit_intercept`` = ``False`` is not supported
      - Sparse data is not supported.
-     - 
+     - Solver ``'newton-cg'`` is **only** available in :doc:`preview mode <preview>`.
    * - :obj:`sklearn.linear_model.LogisticRegressionCV`
      - All parameters are supported except:
 
