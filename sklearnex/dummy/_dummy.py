@@ -19,6 +19,7 @@
 This can be used as a foundation for developing other estimators. Most
 comments guiding code development should be removed if reused unless
 pertinent to the derivative implementation."""
+
 import numpy as np
 import scipy.sparse as sp
 from sklearn.dummy import DummyRegressor as _sklearn_DummyRegressor
@@ -470,7 +471,7 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
         # In no circumstance should ``validate_data`` be called here or
         # in _onedal_gpu_supoorted to get the data into the proper form.
         if method_name == "fit":
-            (X, y, sample_weight) = data
+            X, y, sample_weight = data
             xp, _ = get_namespace(X, y)
 
             # the PatchingConditionsChain is validated using
@@ -532,7 +533,7 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
             f"sklearnex.test.{self.__class__.__name__}.{method_name}"
         )
         if method_name == "fit":
-            (X, y, sample_weight) = data
+            X, y, sample_weight = data
             xp, _ = get_namespace(X, y)
 
             patching_status.and_conditions(
