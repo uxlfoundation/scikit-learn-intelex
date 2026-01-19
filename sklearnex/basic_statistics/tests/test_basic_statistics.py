@@ -385,21 +385,3 @@ def test_1d_input_on_random_data(
 
     tol = fp32tol if res.dtype == np.float32 else fp64tol
     assert_allclose(gtr, res, atol=tol)
-
-
-def test_warning():
-    basicstat = BasicStatistics("all")
-    data = np.array([0, 1])
-
-    basicstat.fit(data)
-    for i in basicstat._onedal_estimator.get_all_result_options():
-        with pytest.warns(
-            UserWarning,
-            match="Result attributes without a trailing underscore were deprecated in version 2025.1 and will be removed in 2026.0",
-        ) as warn_record:
-            getattr(basicstat, i)
-
-        if daal_check_version((2026, "P", 0)):
-            assert len(warn_record) == 0, i
-        else:
-            assert len(warn_record) == 1, i

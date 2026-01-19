@@ -105,9 +105,6 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
     -----
     Attribute exists only if corresponding result option has been provided.
 
-    Names of attributes without the trailing underscore are supported
-    currently but deprecated in 2025.1 and will be removed in 2026.0.
-
     Sparse data formats are not supported. Input dtype must be ``float32`` or ``float64``.
 
     %incremental_serialization_note%
@@ -241,29 +238,6 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
         self._onedal_finalize_fit()
 
         return self
-
-    def __getattr__(self, attr):
-        sattr = attr.removesuffix("_")
-        is_statistic_attr = (
-            sattr in self._onedal_estimator.options
-            if "_onedal_estimator" in self.__dict__
-            else False
-        )
-        if is_statistic_attr:
-            if self._need_to_finalize:
-                self._onedal_finalize_fit()
-            if sattr == attr:
-                warnings.warn(
-                    "Result attributes without a trailing underscore were deprecated in version 2025.1 and will be removed in 2026.0"
-                )
-                attr += "_"
-            return getattr(self._onedal_estimator, attr)
-        if attr in self.__dict__:
-            return self.__dict__[attr]
-
-        raise AttributeError(
-            f"'{self.__class__.__name__}' object has no attribute '{attr}'"
-        )
 
     def partial_fit(self, X, sample_weight=None, check_input=True):
         """Incremental fit with X. All of X is processed as a single batch.
