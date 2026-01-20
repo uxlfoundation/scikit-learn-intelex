@@ -14,8 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 
-import warnings
-
 from sklearn.base import BaseEstimator
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
@@ -77,9 +75,6 @@ class BasicStatistics(oneDALEstimator, BaseEstimator):
     -----
     Attribute exists only if corresponding result option has been provided.
 
-    Names of attributes without the trailing underscore are
-    supported currently but deprecated in 2025.1 and will be removed in 2026.0
-
     Some results can exhibit small variations due to
     floating point error accumulation and multithreading.
 
@@ -128,24 +123,6 @@ class BasicStatistics(oneDALEstimator, BaseEstimator):
         for option in self._onedal_estimator.options:
             option += "_"
             setattr(self, option, getattr(self._onedal_estimator, option))
-
-    def __getattr__(self, attr):
-        is_deprecated_attr = (
-            attr in self._onedal_estimator.options
-            if "_onedal_estimator" in self.__dict__
-            else False
-        )
-        if is_deprecated_attr:
-            warnings.warn(
-                "Result attributes without a trailing underscore were deprecated in version 2025.1 and will be removed in 2026.0"
-            )
-            attr += "_"
-        if attr in self.__dict__:
-            return self.__dict__[attr]
-
-        raise AttributeError(
-            f"'{self.__class__.__name__}' object has no attribute '{attr}'"
-        )
 
     def _onedal_cpu_supported(self, method_name, *data):
         patching_status = PatchingConditionsChain(
