@@ -387,19 +387,17 @@ def test_1d_input_on_random_data(
     assert_allclose(gtr, res, atol=tol)
 
 
-def test_warning():
-    basicstat = BasicStatistics("all")
-    data = np.array([0, 1])
+@pytest.mark.parametrize("underscore_first", [False, True])
+def test_results_have_underscores(underscore_first):
+    X = np.arange(10).reshape((-1, 1))
+    bs = BasicStatistics().fit(X)
 
-    basicstat.fit(data)
-    for i in basicstat._onedal_estimator.get_all_result_options():
-        with pytest.warns(
-            UserWarning,
-            match="Result attributes without a trailing underscore were deprecated in version 2025.1 and will be removed in 2026.0",
-        ) as warn_record:
-            getattr(basicstat, i)
-
-        if daal_check_version((2026, "P", 0)):
-            assert len(warn_record) == 0, i
-        else:
-            assert len(warn_record) == 1, i
+    # Note: these are generated dynamically. Need to
+    # test them in different order to ensure calling
+    # one doesn't set the other and then change results.
+    if underscore_first:
+        assert hasattr(bs, "mean_")
+        assert not hasattr(bs, "mean")
+    else:
+        assert not hasattr(bs, "mean")
+        assert hasattr(bs, "mean_")
