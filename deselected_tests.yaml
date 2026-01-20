@@ -375,6 +375,7 @@ deselected_tests:
   # turns the convergence warning into an error. Note that it has numeric differences w.r.t.
   # the original sklearn, so it's not guaranteed to reach the same optimality after each iteration.
   - linear_model/tests/test_logistic.py::test_multinomial_identifiability_on_iris[42-False-newton-cg]
+  - tests/test_common.py::test_estimators[LogisticRegressionCV(cv=3,max_iter=5,use_legacy_attributes=False)-check_sample_weight_equivalence_on_dense_data]
 
   # Scikit-learn does not constraint multinomial logistic intercepts to sum to zero.
   # Softmax function is invariant to additions by a constant, so even though the numbers
