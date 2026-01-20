@@ -43,7 +43,7 @@ if daal_check_version((2024, "P", 1)):
 
         if sklearn_check_version("1.6"):
 
-            def __sklearn_tags__(self) -> "Tags":
+            def __sklearn_tags__(self) -> Tags:
                 tags = super().__sklearn_tags__()
                 tags.onedal_array_api = False
                 return tags
