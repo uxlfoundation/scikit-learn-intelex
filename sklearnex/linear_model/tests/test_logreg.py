@@ -78,7 +78,7 @@ def test_sklearnex_multiclass_classification(dataframe, queue):
     get_dataframes_and_queues(),
 )
 def test_sklearnex_binary_classification(dataframe, queue):
-    if not queue and not check_preview_is_enabled():
+    if (not queue or queue.sycl_device.is_cpu) and not check_preview_is_enabled():
         pytest.skip("Functionality in preview")
     from sklearnex.linear_model import LogisticRegression
 
@@ -117,7 +117,7 @@ if daal_check_version((2024, "P", 700)):
     )
     @pytest.mark.allow_sklearn_fallback
     def test_csr(queue, dtype, dims):
-        if not queue and not check_preview_is_enabled():
+        if (not queue or queue.sycl_device.is_cpu) and not check_preview_is_enabled():
             pytest.skip("Functionality in preview")
         from sklearnex.linear_model import LogisticRegression
 
@@ -564,7 +564,7 @@ def test_gpu_logreg_prediction_shapes(dataframe, queue):
 )
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 def test_log_proba_doesnt_return_inf(dataframe, queue):
-    if not queue and not check_preview_is_enabled():
+    if (not queue or queue.sycl_device.is_cpu) and not check_preview_is_enabled():
         pytest.skip("Functionality in preview mode")
     from sklearnex.linear_model import LogisticRegression
 
