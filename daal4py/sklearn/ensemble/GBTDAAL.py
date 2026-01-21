@@ -34,6 +34,10 @@ from ..utils.validation import validate_data
 
 
 class GBTDAALBase(BaseEstimator, d4p.mb.GBTDAALBaseModel):
+
+    if sklearn_check_version("1.2"):
+        _parameter_constraints = {}
+
     def __init__(
         self,
         split_method="inexact",

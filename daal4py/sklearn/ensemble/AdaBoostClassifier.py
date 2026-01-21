@@ -34,6 +34,10 @@ from ..utils.validation import validate_data
 
 @control_n_jobs(decorated_methods=["fit", "predict"])
 class AdaBoostClassifier(ClassifierMixin, BaseEstimator):
+
+    if sklearn_check_version("1.2"):
+        _parameter_constraints = {}
+
     def __init__(
         self,
         split_criterion="gini",
