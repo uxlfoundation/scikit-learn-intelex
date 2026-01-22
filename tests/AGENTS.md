@@ -61,6 +61,9 @@ pip install impi-rt mpi4py --index-url https://software.repos.intel.com/python/p
 ```bash
 # Ensure NO_DIST is not set
 unset NO_DIST
+# First build the C++ oneDAL backend (includes SPMD libraries)
+python setup.py build
+# Then compile Python extensions in-place
 python setup.py build_ext --inplace --force
 ```
 
