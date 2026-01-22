@@ -236,7 +236,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
 
         # onedal backend now handles all logic:
         # - X=None case (query_is_train)
-        # - kd_tree sorting  
+        # - kd_tree sorting
         # - removing self from results
         return self._onedal_estimator.kneighbors(
             X, n_neighbors, return_distance, queue=queue

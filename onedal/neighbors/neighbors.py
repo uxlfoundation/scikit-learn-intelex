@@ -244,7 +244,9 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         dup_gr_nbrs = xp.all(sample_mask, axis=1)
         first_col = sample_mask[:, 0]
         first_col = xp.where(dup_gr_nbrs, False, first_col)
-        sample_mask = xp.concatenate([xp.reshape(first_col, (-1, 1)), sample_mask[:, 1:]], axis=1)
+        sample_mask = xp.concatenate(
+            [xp.reshape(first_col, (-1, 1)), sample_mask[:, 1:]], axis=1
+        )
 
         neigh_ind = xp.reshape(neigh_ind[sample_mask], (n_queries, n_neighbors - 1))
 
