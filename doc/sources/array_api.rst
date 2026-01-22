@@ -109,6 +109,10 @@ The following patched classes have support for array API inputs:
 - :obj:`sklearn.neighbors.KNeighborsRegressor`
 - :obj:`sklearn.neighbors.NearestNeighbors`
 - :obj:`sklearn.neighbors.LocalOutlierFactor`
+- :obj:`sklearn.svm.NuSVC`
+- :obj:`sklearn.svm.NuSVR`
+- :obj:`sklearn.svm.SVC`
+- :obj:`sklearn.svm.SVR`
 
 .. note::
     While full array API support is currently not implemented for all classes, |dpnp_array| inputs are supported

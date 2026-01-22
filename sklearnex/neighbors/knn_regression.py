@@ -151,7 +151,6 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
             self._set_effective_metric()
         else:
             # SPMD mode: skip validation but still set effective metric
-            # Note: SPMD tests provide data in correct dtype, no conversion needed
             self._set_effective_metric()
 
         # Process regression targets before passing to onedal (uses validated y)
