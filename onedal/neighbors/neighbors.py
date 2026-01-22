@@ -16,6 +16,8 @@
 
 from abc import ABCMeta, abstractmethod
 
+import numpy as np
+
 from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
 from onedal.utils import _sycl_queue_manager as QM
@@ -178,7 +180,7 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
 
         if X is not None:
             query_is_train = False
-            X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
+            # Validation should be done in sklearnex layer before calling this
         else:
             query_is_train = True
             X = self._fit_X
@@ -205,12 +207,13 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
 
         params = super()._get_onedal_params(X, n_neighbors=n_neighbors)
         prediction_results = self._onedal_predict(self._onedal_model, X, params)
-        distances = from_table(prediction_results.distances)
-        indices = from_table(prediction_results.indices)
+        distances = from_table(prediction_results.distances, like=X)
+        indices = from_table(prediction_results.indices, like=X)
+        _, xp, _ = _get_sycl_namespace(X)
 
         if method == "kd_tree":
             for i in range(distances.shape[0]):
-                seq = distances[i].argsort()
+                seq = xp.argsort(distances[i])
                 indices[i] = indices[i][seq]
                 distances[i] = distances[i][seq]
 
@@ -231,20 +234,22 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
             neigh_ind = results
 
         n_queries, _ = X.shape
-        sample_range = np.arange(n_queries)[:, None]
+        sample_range = xp.reshape(xp.arange(n_queries, dtype=neigh_ind.dtype), (-1, 1))
         sample_mask = neigh_ind != sample_range
 
         # Corner case: When the number of duplicates are more
         # than the number of neighbors, the first NN will not
         # be the sample, but a duplicate.
         # In that case mask the first duplicate.
-        dup_gr_nbrs = np.all(sample_mask, axis=1)
-        sample_mask[:, 0][dup_gr_nbrs] = False
+        dup_gr_nbrs = xp.all(sample_mask, axis=1)
+        first_col = sample_mask[:, 0]
+        first_col = xp.where(dup_gr_nbrs, False, first_col)
+        sample_mask = xp.concatenate([xp.reshape(first_col, (-1, 1)), sample_mask[:, 1:]], axis=1)
 
-        neigh_ind = np.reshape(neigh_ind[sample_mask], (n_queries, n_neighbors - 1))
+        neigh_ind = xp.reshape(neigh_ind[sample_mask], (n_queries, n_neighbors - 1))
 
         if return_distance:
-            neigh_dist = np.reshape(neigh_dist[sample_mask], (n_queries, n_neighbors - 1))
+            neigh_dist = xp.reshape(neigh_dist[sample_mask], (n_queries, n_neighbors - 1))
             return neigh_dist, neigh_ind
         return neigh_ind
 
