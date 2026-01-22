@@ -474,7 +474,8 @@ public:
   # set of available solvers and corresponding sklearnex rules to choose one
   # than newer versions resulting in test failure on some systems when
   # single-threaded computation is used which is a frequent case for CI
-  - decomposition/tests/test_pca.py::test_pca_dtype_preservation[full]
+  - decomposition/tests/test_pca.py::test_pca_dtype_preservation[full] <1.5
+  - decomposition/tests/test_pca.py::test_pca_dtype_preservation[auto]
 
   # Convergence failure due to different settings and cost function implementation
   - linear_model/tests/test_logistic.py::test_logistic_regression_path_convergence_fail
