@@ -15,6 +15,7 @@
 # ===============================================================================
 
 import numpy as np
+import pandas as pd
 import pytest
 from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split as skl_train_test_split
@@ -54,3 +55,51 @@ def test_results_similarity(n_samples):
 
     for i, _ in enumerate(d4p_res):
         assert np.all(d4p_res[i] == skl_res[i]), "train_test_splits have different output"
+
+
+@pytest.mark.parametrize("as_series", [False, True])
+@pytest.mark.parametrize("shuffle", [False, True])
+def test_pandas_indices_are_preserved(as_series, shuffle):
+    nrows = 10
+    X = pd.DataFrame({"val": np.arange(nrows)}, index=[f"row{r}" for r in range(nrows)])
+    if as_series:
+        X = X.squeeze()
+
+    X_train, X_test = d4p_train_test_split(
+        X, test_size=0.5, random_state=123, shuffle=shuffle
+    )
+    np.testing.assert_array_equal(
+        X_train.index,
+        [f"row{r}" for r in X_train] if as_series else [f"row{r}" for r in X_train.val],
+    )
+    np.testing.assert_array_equal(
+        X_test.index,
+        [f"row{r}" for r in X_test] if as_series else [f"row{r}" for r in X_test.val],
+    )
+
+
+@pytest.mark.parametrize("as_series", [False, True])
+@pytest.mark.parametrize("shuffle", [False, True])
+def test_pandas_multidim_indices_are_preserved(as_series, shuffle):
+    nrows = 10
+    X = pd.DataFrame(
+        {"val": np.arange(nrows)},
+        index=pd.MultiIndex.from_tuples(
+            [(f"ind1_{r}", f"ind2_{r % 3}") for r in range(nrows)], names=["d1", "d2"]
+        ),
+    )
+    if as_series:
+        X = X.squeeze()
+
+    X_train, X_test = d4p_train_test_split(
+        X, test_size=0.5, random_state=123, shuffle=shuffle
+    )
+    if as_series:
+        expected_ind_train = X.index.take(X_train.to_numpy())
+        expected_ind_test = X.index.take(X_test.to_numpy())
+    else:
+        expected_ind_train = X.index.take(X_train.val.to_numpy())
+        expected_ind_test = X.index.take(X_test.val.to_numpy())
+
+    assert np.all(X_train.index == expected_ind_train)
+    assert np.all(X_test.index == expected_ind_test)
