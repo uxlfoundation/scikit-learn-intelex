@@ -169,30 +169,84 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         return result
 
     def _kneighbors(self, X=None, n_neighbors=None, return_distance=True):
-        # Still need n_features for _parse_auto_method call later
-        # n_features = getattr(self, "n_features_in_", None)
-
         _check_is_fitted(self)
 
         if n_neighbors is None:
             n_neighbors = self.n_neighbors
 
-        # onedal now just returns raw results, sklearnex does all processing
-        # Following PCA pattern: simple onedal layer
-        if X is None:
-            X = self._fit_X
+        n_features = getattr(self, "n_features_in_", None)
 
-        # onedal just calls backend and returns raw results
-        # All post-processing (kd_tree sorting, removing self, return_distance decision) moved to sklearnex
+        if X is not None:
+            query_is_train = False
+            X = _check_array(X, accept_sparse="csr", dtype=[np.float64, np.float32])
+        else:
+            query_is_train = True
+            X = self._fit_X
+            # Include an extra neighbor to account for the sample itself being
+            # returned, which is removed later
+            n_neighbors += 1
+
+        n_samples_fit = self.n_samples_fit_
+        if n_neighbors > n_samples_fit:
+            if query_is_train:
+                n_neighbors -= 1  # ok to modify inplace because an error is raised
+                inequality_str = "n_neighbors < n_samples_fit"
+            else:
+                inequality_str = "n_neighbors <= n_samples_fit"
+            raise ValueError(
+                f"Expected {inequality_str}, but "
+                f"n_neighbors = {n_neighbors}, n_samples_fit = {n_samples_fit}, "
+                f"n_samples = {X.shape[0]}"  # include n_samples for common tests
+            )
+
+        method = self._parse_auto_method(
+            self._fit_method, self.n_samples_fit_, n_features
+        )
+
         params = super()._get_onedal_params(X, n_neighbors=n_neighbors)
         prediction_results = self._onedal_predict(self._onedal_model, X, params)
         distances = from_table(prediction_results.distances)
         indices = from_table(prediction_results.indices)
 
-        # Always return both - sklearnex will decide what to return to user
-        results = distances, indices
-        # Return raw results - sklearnex will do all post-processing
-        return results
+        if method == "kd_tree":
+            for i in range(distances.shape[0]):
+                seq = distances[i].argsort()
+                indices[i] = indices[i][seq]
+                distances[i] = distances[i][seq]
+
+        if return_distance:
+            results = distances, indices
+        else:
+            results = indices
+
+        if not query_is_train:
+            return results
+
+        # If the query data is the same as the indexed data, we would like
+        # to ignore the first nearest neighbor of every sample, i.e
+        # the sample itself.
+        if return_distance:
+            neigh_dist, neigh_ind = results
+        else:
+            neigh_ind = results
+
+        n_queries, _ = X.shape
+        sample_range = np.arange(n_queries)[:, None]
+        sample_mask = neigh_ind != sample_range
+
+        # Corner case: When the number of duplicates are more
+        # than the number of neighbors, the first NN will not
+        # be the sample, but a duplicate.
+        # In that case mask the first duplicate.
+        dup_gr_nbrs = np.all(sample_mask, axis=1)
+        sample_mask[:, 0][dup_gr_nbrs] = False
+
+        neigh_ind = np.reshape(neigh_ind[sample_mask], (n_queries, n_neighbors - 1))
+
+        if return_distance:
+            neigh_dist = np.reshape(neigh_dist[sample_mask], (n_queries, n_neighbors - 1))
+            return neigh_dist, neigh_ind
+        return neigh_ind
 
 
 class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
