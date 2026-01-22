@@ -170,24 +170,15 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         self._onedal_estimator.effective_metric_ = self.effective_metric_
         self._onedal_estimator.effective_metric_params_ = self.effective_metric_params_
         self._onedal_estimator._shape = self._shape
-
-        # Reshape _y for GPU backend
-        queue_instance = QM.get_global_queue()
-        gpu_device = queue_instance is not None and queue_instance.sycl_device.is_gpu
-        if gpu_device:
-            self._onedal_estimator._y = xp.reshape(self._y, (-1, 1))
-        else:
-            self._onedal_estimator._y = self._y
+        self._onedal_estimator._y = self._y
 
         # Pass validated X and y to onedal (after validate_data converted dtypes)
+        # Note: onedal layer handles backend-specific reshape (GPU needs (-1,1) format)
         self._onedal_estimator.fit(X, y, queue=queue)
 
-        # Post-processing: save attributes and reshape _y
+        # Post-processing: save attributes
+        # Note: _y reshape now happens in onedal layer after fit (matches original main branch logic)
         self._save_attributes()
-        if y is not None:
-            xp, _ = get_namespace(y)
-            self._y = y if self._shape is None else xp.reshape(y, self._shape)
-            self._onedal_estimator._y = self._y
 
     def _onedal_predict(self, X, queue=None):
         # Dispatch between GPU and SKL prediction methods

@@ -23,6 +23,7 @@ from onedal.utils import _sycl_queue_manager as QM
 from ..common._estimator_checks import _check_is_fitted, _is_classifier, _is_regressor
 from ..common._mixin import ClassifierMixin, RegressorMixin
 from ..datatypes import from_table, to_table
+from ..utils._array_api import _get_sycl_namespace
 
 
 class NeighborsCommonBase(metaclass=ABCMeta):
@@ -151,10 +152,17 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         _fit_y = None
         queue = QM.get_global_queue()
         gpu_device = queue is not None and queue.sycl_device.is_gpu
-        # Just pass self._y as-is - sklearnex should have already reshaped it
+        # Backend-specific formatting: GPU backend needs y in (-1, 1) shape
         if _is_classifier(self) or (_is_regressor(self) and gpu_device):
-            _fit_y = self._y
+            _, xp, _ = _get_sycl_namespace(X)
+            _fit_y = xp.reshape(self._y, (-1, 1))
         result = self._onedal_fit(X, _fit_y)
+
+        # Original logic: reassign self._y for regressors after fit
+        if y is not None and _is_regressor(self):
+            _, xp, _ = _get_sycl_namespace(X)
+            self._y = y if self._shape is None else xp.reshape(y, self._shape)
+
         self._onedal_model = result
         result = self
 
