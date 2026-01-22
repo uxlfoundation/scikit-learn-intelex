@@ -234,17 +234,12 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
                 reset=False,
             )
 
-        # Prepare inputs
-        X, n_neighbors, query_is_train = self._prepare_kneighbors_inputs(X, n_neighbors)
-
-        # Call onedal backend
-        result = self._onedal_estimator.kneighbors(
+        # onedal backend now handles all logic:
+        # - X=None case (query_is_train)
+        # - kd_tree sorting  
+        # - removing self from results
+        return self._onedal_estimator.kneighbors(
             X, n_neighbors, return_distance, queue=queue
-        )
-
-        # Post-processing
-        return self._kneighbors_post_processing(
-            X, n_neighbors, return_distance, result, query_is_train
         )
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):

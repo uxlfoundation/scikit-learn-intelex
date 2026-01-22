@@ -186,17 +186,12 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
                 reset=False,
             )
 
-        # Prepare inputs and handle query_is_train case
-        X, n_neighbors, query_is_train = self._prepare_kneighbors_inputs(X, n_neighbors)
-
-        # Get raw results from onedal backend
-        result = self._onedal_estimator.kneighbors(
+        # onedal backend now handles all logic:
+        # - X=None case (query_is_train)
+        # - kd_tree sorting
+        # - removing self from results
+        return self._onedal_estimator.kneighbors(
             X, n_neighbors, return_distance, queue=queue
-        )
-
-        # Apply post-processing (kd_tree sorting, removing self from results)
-        return self._kneighbors_post_processing(
-            X, n_neighbors, return_distance, result, query_is_train
         )
 
     def _save_attributes(self):
