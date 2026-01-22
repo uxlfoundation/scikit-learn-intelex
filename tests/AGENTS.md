@@ -15,9 +15,6 @@ Comprehensive validation infrastructure ensuring numerical accuracy, performance
 
 ## Validation Patterns
 
-### Numerical Accuracy
-Standard tolerance: `np.testing.assert_allclose(actual, expected, atol=1e-05)`
-
 ### Model Builder Testing
 Validate prediction equivalence between original models and converted oneDAL models.
 
