@@ -886,7 +886,7 @@ class cython_interface(object):
                     llt = self.to_lltype(p, all_params[p][0])
                     hlt = self.to_hltype(pns, llt)
                     if hlt and hlt[1] in ["stdtype", "enum", "class"]:
-                        (hlt, hlt_type, hlt_ns) = hlt
+                        hlt, hlt_type, hlt_ns = hlt
                         if hlt_type == "enum":
                             thetype = hlt_ns + "::" + llt.rsplit("::", 1)[-1]
                             if ns in result_to_compute.keys():
@@ -1160,7 +1160,7 @@ class cython_interface(object):
                         cpp_begin += "};\n\n"
 
         for a in algoconfig:
-            (ns, algo) = splitns(a)
+            ns, algo = splitns(a)
             if algo.startswith("Batch"):
                 tmp = wg.gen_wrapper(ns, algo)
                 if tmp:
