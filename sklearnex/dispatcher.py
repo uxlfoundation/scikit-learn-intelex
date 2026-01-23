@@ -170,7 +170,7 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
     from sklearn.svm import NuSVR as NuSVR_sklearn
 
     if sklearn_check_version("1.4"):
-        from sklearn.ensemble._gb_losses import DummyRegressor as DummyRegressor_sklearn
+        from sklearn.ensemble._gb import DummyRegressor as DummyRegressor_sklearn
     else:
         from sklearn.ensemble._gb_losses import DummyRegressor as DummyRegressor_sklearn
     from sklearn import config_context as config_context_sklearn
@@ -181,10 +181,10 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
     from sklearn.model_selection import train_test_split as train_test_split_sklearn
 
     if sklearn_check_version("1.2.1"):
-        from sklearn.utils.parallel import _funcwrapper as _funcwrapper_sklearn
+        from sklearn.utils.parallel import _FuncWrapper as _FuncWrapper_sklearn
         from sklearn.utils.parallel import get_config as parallel_get_config_sklearn
     else:
-        from sklearn.utils.fixes import _funcwrapper as _funcwrapper_sklearn
+        from sklearn.utils.fixes import _FuncWrapper as _FuncWrapper_sklearn
         from sklearn.utils.fixes import get_config as parallel_get_config_sklearn
 
     # Classes and functions for patching
@@ -402,13 +402,16 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
             parallel_module,
             "_FuncWrapper",
             _FuncWrapper_sklearnex,
-            _funcwrapper_sklearn,
+            _FuncWrapper_sklearn,
         ),
     }
 
     if daal_check_version((2024, "P", 600)):
         mapping["sklearn.linear_model.IncrementalRidge"] = (
-            (linear_model_module, "IncrementalRidge", IncrementalRidge_sklearnex, None),
+            linear_model_module,
+            "IncrementalRidge",
+            IncrementalRidge_sklearnex,
+            None,
         )
 
     return mapping
