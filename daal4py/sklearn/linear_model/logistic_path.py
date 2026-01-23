@@ -19,7 +19,6 @@ import os
 
 import numpy as np
 import scipy.optimize as optimize
-import scipy.sparse as sparse
 import sklearn.linear_model._logistic as logistic_module
 from sklearn.linear_model._logistic import _LOGISTIC_SOLVER_CONVERGENCE_MSG
 from sklearn.linear_model._logistic import (
@@ -36,7 +35,7 @@ from sklearn.utils.validation import check_is_fitted
 import daal4py as d4p
 
 from .._n_jobs_support import control_n_jobs
-from .._utils import PatchingConditionsChain, getFPType, sklearn_check_version
+from .._utils import PatchingConditionsChain, getFPType, is_sparse, sklearn_check_version
 from ..utils.validation import check_feature_names
 from .logistic_loss import (
     _daal4py_cross_entropy_loss_extra_args,
@@ -425,10 +424,8 @@ def daal4py_predict(self, X, resultsToEvaluate):
     elif resultsToEvaluate == "computeClassLogProbabilities":
         _function_name = "predict_log_proba"
     else:
-        raise ValueError(
-            "resultsToEvaluate must be in [computeClassLabels, \
-            computeClassProbabilities, computeClassLogProbabilities]"
-        )
+        raise ValueError("resultsToEvaluate must be in [computeClassLabels, \
+            computeClassProbabilities, computeClassLogProbabilities]")
 
     _patching_status = PatchingConditionsChain(
         f"sklearn.linear_model.LogisticRegression.{_function_name}"
@@ -475,9 +472,9 @@ def daal4py_predict(self, X, resultsToEvaluate):
 
     _dal_ready = _patching_status.and_conditions(
         [
-            (not sparse.issparse(X), "X is sparse. Sparse input is not supported."),
+            (not is_sparse(X), "X is sparse. Sparse input is not supported."),
             (
-                not sparse.issparse(self.coef_),
+                not is_sparse(self.coef_),
                 "self.coef_ is sparse. Sparse coefficients are not supported.",
             ),
             (fptype is not None, "Unable to get dtype."),
@@ -513,10 +510,8 @@ def daal4py_predict(self, X, resultsToEvaluate):
         elif resultsToEvaluate == "computeClassLogProbabilities":
             res = res.logProbabilities
         else:
-            raise ValueError(
-                "resultsToEvaluate must be in [computeClassLabels, \
-                computeClassProbabilities, computeClassLogProbabilities]"
-            )
+            raise ValueError("resultsToEvaluate must be in [computeClassLabels, \
+                computeClassProbabilities, computeClassLogProbabilities]")
         if res.shape[1] == 1:
             res = np.ravel(res)
         return res
@@ -764,7 +759,7 @@ def logistic_regression_path_dispatcher(
                 f"'{solver}' solver is not supported. "
                 "Only 'lbfgs' and 'newton-cg' (in preview mode) solvers are supported.",
             ),
-            (not sparse.issparse(X), "X is sparse. Sparse input is not supported."),
+            (not is_sparse(X), "X is sparse. Sparse input is not supported."),
             (
                 not ((not isinstance(X, np.ndarray)) and hasattr(X, "__dlpack__")),
                 "Array API inputs not supported.",
