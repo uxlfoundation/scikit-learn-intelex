@@ -57,7 +57,7 @@ def main(readcsv=pd_read_csv):
 
 
 if __name__ == "__main__":
-    (train_result, predict_result, predict_labels) = main()
+    train_result, predict_result, predict_labels = main()
     print("\nLogistic Regression coefficients:\n", train_result.model.Beta)
     print(
         "\nLogistic regression prediction results (first 10 rows):\n",

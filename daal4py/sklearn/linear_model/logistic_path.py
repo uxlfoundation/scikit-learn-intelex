@@ -423,10 +423,8 @@ def daal4py_predict(self, X, resultsToEvaluate):
     elif resultsToEvaluate == "computeClassLogProbabilities":
         _function_name = "predict_log_proba"
     else:
-        raise ValueError(
-            "resultsToEvaluate must be in [computeClassLabels, \
-            computeClassProbabilities, computeClassLogProbabilities]"
-        )
+        raise ValueError("resultsToEvaluate must be in [computeClassLabels, \
+            computeClassProbabilities, computeClassLogProbabilities]")
 
     _patching_status = PatchingConditionsChain(
         f"sklearn.linear_model.LogisticRegression.{_function_name}"
@@ -511,10 +509,8 @@ def daal4py_predict(self, X, resultsToEvaluate):
         elif resultsToEvaluate == "computeClassLogProbabilities":
             res = res.logProbabilities
         else:
-            raise ValueError(
-                "resultsToEvaluate must be in [computeClassLabels, \
-                computeClassProbabilities, computeClassLogProbabilities]"
-            )
+            raise ValueError("resultsToEvaluate must be in [computeClassLabels, \
+                computeClassProbabilities, computeClassLogProbabilities]")
         if res.shape[1] == 1:
             res = np.ravel(res)
         return res

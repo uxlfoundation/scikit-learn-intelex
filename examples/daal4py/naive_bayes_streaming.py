@@ -72,7 +72,7 @@ def main(readcsv=pd_read_csv, method="defaultDense"):
 
 
 if __name__ == "__main__":
-    (result, labels) = main()
+    result, labels = main()
     print(
         "\nNaiveBayes classification results (first 20 observations):\n",
         result.prediction[0:20],
