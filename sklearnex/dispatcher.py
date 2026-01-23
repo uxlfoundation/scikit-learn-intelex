@@ -148,6 +148,7 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
     from sklearn.cluster import DBSCAN as DBSCAN_sklearn
     from sklearn.cluster import KMeans as KMeans_sklearn
     from sklearn.decomposition import PCA as PCA_sklearn
+    from sklearn.dummy import DummyRegressor as DummyRegressor_sklearn
     from sklearn.ensemble import ExtraTreesClassifier as ExtraTreesClassifier_sklearn
     from sklearn.ensemble import ExtraTreesRegressor as ExtraTreesRegressor_sklearn
     from sklearn.ensemble import RandomForestClassifier as RandomForestClassifier_sklearn
@@ -168,9 +169,11 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
     from sklearn.svm import NuSVR as NuSVR_sklearn
 
     if sklearn_check_version("1.4"):
-        from sklearn.ensemble._gb import DummyRegressor as DummyRegressor_sklearn
+        from sklearn.ensemble._gb import DummyRegressor as DummyRegressor_sklearn_gb
     else:
-        from sklearn.ensemble._gb_losses import DummyRegressor as DummyRegressor_sklearn
+        from sklearn.ensemble._gb_losses import (
+            DummyRegressor as DummyRegressor_sklearn_gb,
+        )
     from sklearn import config_context as config_context_sklearn
     from sklearn import get_config as get_config_sklearn
     from sklearn import set_config as set_config_sklearn
@@ -359,13 +362,13 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
             dummy_module,
             "DummyRegressor",
             DummyRegressor_sklearnex,
-            None,
+            DummyRegressor_sklearn,
         ),
         "sklearn.ensemble._gb_losses.DummyRegressor": (
             _gb_module,
             "DummyRegressor",
             DummyRegressor_sklearnex,
-            DummyRegressor_sklearn,
+            DummyRegressor_sklearn_gb,
         ),
         # These should be patched even if it applying to a single algorithm
         "sklearn.set_config": (
