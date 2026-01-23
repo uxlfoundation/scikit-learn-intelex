@@ -263,10 +263,6 @@ Other Tasks
      - All parameters are supported
      - Only dense data is supported
      - Estimator is **only** available in :doc:`preview mode <preview>`.
-   * - :obj:`sklearn.covariance.IncrementalEmpiricalCovariance`
-     - All parameters are supported
-     - Only dense data is supported
-     - 
    * - :obj:`sklearnex.basic_statistics.BasicStatistics`
      - All parameters are supported
      - Supported data formats:
@@ -519,10 +515,6 @@ Other Tasks
      - All parameters are supported
      - Only dense data is supported
      - Estimator is **only** available in :doc:`preview mode <preview>`.
-   * - :obj:`sklearn.covariance.IncrementalEmpiricalCovariance`
-     - All parameters are supported
-     - Only dense data is supported
-     - 
    * - :obj:`sklearnex.basic_statistics.BasicStatistics`
      - All parameters are supported
      - Supported data formats:
@@ -729,10 +721,6 @@ Other Tasks
      - All parameters are supported
      - Only dense data is supported
      - Estimator is **only** available in :doc:`preview mode <preview>`.
-   * - :obj:`sklearn.covariance.IncrementalEmpiricalCovariance`
-     - All parameters are supported
-     - Only dense data is supported
-     - 
    * - :obj:`sklearnex.basic_statistics.BasicStatistics`
      - All parameters are supported
      - Supported data formats:
