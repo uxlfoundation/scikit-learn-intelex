@@ -158,7 +158,7 @@ def do_patch(name: str, map: PatchMap) -> None:
     descriptor = map.get(name)
     if descriptor is None:
         raise ValueError("Has no patch for: " + name)
-    which, what, replacer = descriptor[0][0]
+    which, what, replacer = descriptor[0]
     if descriptor[1] is None:
         descriptor[1] = getattr(which, what, False)
     setattr(which, what, replacer)
@@ -169,7 +169,7 @@ def do_unpatch(name: str, map: PatchMap) -> None:
     if descriptor is None:
         raise ValueError("Has no patch for: " + name)
     if descriptor[1] is not None:
-        which, what, _ = descriptor[0][0]
+        which, what, _ = descriptor[0]
         if descriptor[1]:
             setattr(which, what, descriptor[1])
         elif hasattr(which, what):
