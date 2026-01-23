@@ -216,8 +216,8 @@ deselected_tests:
   - tests/test_common.py::test_estimators[NuSVC()-check_class_weight_classifiers] <1.0
   - tests/test_multioutput.py::test_multi_output_classification
 
-  # Linear Regression - minor mismatches in error/warning messages
-  - linear_model/tests/test_base.py::test_linear_regression_pd_sparse_dataframe_warning
+  # Requires SciPy version which is not available in too old environments
+  - linear_model/tests/test_base.py::test_linear_regression_pd_sparse_dataframe_warning <1.1
 
   # L1 Linear models with sklearn 1.1 + numpy > 1.25 - extra warnings from numpy lead to test fail
   - linear_model/tests/test_coordinate_descent.py::test_assure_warning_when_normalize[True-1-LassoCV] >=1.1,<1.2
@@ -475,6 +475,7 @@ public:
   # than newer versions resulting in test failure on some systems when
   # single-threaded computation is used which is a frequent case for CI
   - decomposition/tests/test_pca.py::test_pca_dtype_preservation[full] <1.5
+  - decomposition/tests/test_pca.py::test_pca_dtype_preservation[auto]
 
   # Convergence failure due to different settings and cost function implementation
   - linear_model/tests/test_logistic.py::test_logistic_regression_path_convergence_fail

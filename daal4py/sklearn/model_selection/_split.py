@@ -271,8 +271,8 @@ def train_test_split(*arrays, **options):
                     )
 
             if hasattr(arr, "index"):
-                train_arr.index = train
-                test_arr.index = test
+                train_arr.index = arr.index.take(train)
+                test_arr.index = arr.index.take(test)
 
             if hasattr(arr, "columns"):
                 train_arr.columns = arr.columns

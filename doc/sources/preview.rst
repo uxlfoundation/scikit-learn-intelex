@@ -89,3 +89,6 @@ Current list of preview estimators:
    * - :obj:`sklearn.decomposition.IncrementalPCA`
      - ``sklearnex.preview.decomposition``
      - Yes
+   * - LogisticRegressionCV
+     - sklearnex.preview.linear_model
+     - Yes
