@@ -22,7 +22,6 @@ from collections.abc import Iterable
 from functools import partial
 
 import numpy as np
-from scipy import sparse as sp
 from sklearn.base import clone, is_classifier
 from sklearn.ensemble import ExtraTreesClassifier as _sklearn_ExtraTreesClassifier
 from sklearn.ensemble import ExtraTreesRegressor as _sklearn_ExtraTreesRegressor
@@ -48,6 +47,7 @@ from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import (
     check_tree_nodes,
     daal_check_version,
+    is_sparse,
     sklearn_check_version,
 )
 from onedal._device_offload import support_input_format
@@ -250,7 +250,7 @@ class BaseForest(oneDALEstimator, ABC):
                     f"Non-zero 'ccp_alpha' ({self.ccp_alpha}) is not supported.",
                 ),
                 (
-                    not sp.issparse(X) and not sp.issparse(y),
+                    not is_sparse(X) and not is_sparse(y),
                     "Sparse inputs are not supported.",
                 ),
                 (
@@ -308,7 +308,7 @@ class BaseForest(oneDALEstimator, ABC):
             patching_status.and_conditions(
                 [
                     (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained."),
-                    (not sp.issparse(X), "X is sparse. Sparse input is not supported."),
+                    (not is_sparse(X), "X is sparse. Sparse input is not supported."),
                     (self.warm_start is False, "Warm start is not supported."),
                     (
                         daal_check_version((2023, "P", 200))
@@ -369,7 +369,7 @@ class BaseForest(oneDALEstimator, ABC):
                 [
                     (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained"),
                     (
-                        not sp.issparse(X),
+                        not is_sparse(X),
                         "X is sparse. Sparse input is not supported.",
                     ),
                     (self.warm_start is False, "Warm start is not supported."),

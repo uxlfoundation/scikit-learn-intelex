@@ -14,13 +14,12 @@
 # limitations under the License.
 # ===============================================================================
 
-import scipy.sparse as sp
 from sklearn.decomposition import IncrementalPCA as _sklearn_IncrementalPCA
 from sklearn.utils import check_array, gen_batches
 from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
-from daal4py.sklearn._utils import sklearn_check_version
+from daal4py.sklearn._utils import is_sparse, sklearn_check_version
 from onedal.decomposition import IncrementalPCA as onedal_IncrementalPCA
 
 from ..._config import get_config
@@ -248,12 +247,12 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         X = data[0]
         if "fit" in method_name:
             patching_status.and_conditions(
-                [(not sp.issparse(X), "Sparse input is not supported")]
+                [(not is_sparse(X), "Sparse input is not supported")]
             )
         else:
             patching_status.and_conditions(
                 [
-                    (not sp.issparse(X), "Sparse input is not supported"),
+                    (not is_sparse(X), "Sparse input is not supported"),
                     (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained"),
                 ]
             )
@@ -268,14 +267,14 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         if "fit" in method_name:
             patching_status.and_conditions(
                 [
-                    (not sp.issparse(X), "Sparse input is not supported"),
+                    (not is_sparse(X), "Sparse input is not supported"),
                     (self.svd_solver != "onedal_svd", "onedal_svd not supported on GPU"),
                 ]
             )
         else:
             patching_status.and_conditions(
                 [
-                    (not sp.issparse(X), "Sparse input is not supported"),
+                    (not is_sparse(X), "Sparse input is not supported"),
                     (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained"),
                 ]
             )

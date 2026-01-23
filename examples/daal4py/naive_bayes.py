@@ -53,7 +53,7 @@ def main(readcsv=pd_read_csv, method="defaultDense"):
 
 
 if __name__ == "__main__":
-    (presult, plabels) = main()
+    presult, plabels = main()
     print(
         "\nNaiveBayes classification results (first 20 observations):\n",
         presult.prediction[0:20],
