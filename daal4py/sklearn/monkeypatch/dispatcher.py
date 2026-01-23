@@ -17,7 +17,8 @@
 import sys
 import warnings
 from functools import lru_cache
-from typing import ModuleType, Optional, Union
+from types import ModuleType
+from typing import Optional, Union
 
 import sklearn.cluster as cluster_module
 import sklearn.decomposition as decomposition_module
@@ -39,6 +40,9 @@ from sklearn.linear_model import LinearRegression as LinearRegression_sklearn
 from sklearn.linear_model import LogisticRegression as LogisticRegression_sklearn
 from sklearn.linear_model import LogisticRegressionCV as LogisticRegressionCV_sklearn
 from sklearn.linear_model import Ridge as Ridge_sklearn
+from sklearn.linear_model._logistic import (
+    _logistic_regression_path as _logistic_regression_path_sklearn,
+)
 from sklearn.manifold import TSNE as TSNE_sklearn
 from sklearn.metrics import pairwise_distances as pairwise_distances_sklearn
 from sklearn.metrics import roc_auc_score as roc_auc_score_sklearn
