@@ -191,6 +191,13 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
                 f"array checking in sklearn <1.3 does not fully support array_api inputs, causes sklearnex-only estimator failure"
             )
 
+    if (
+        (dataframe == "array_api" or queue)
+        and estimator == "LogisticRegressionCV"
+        and (not sklearn_check_version("1.6") or not get_tags(est).array_api_support)
+    ):
+        pytest.skip("Array API and/or GPU inputs not supported in estimator")
+
         with config_context(array_api_dispatch=True):
             try:
                 _check_estimator_patching(caplog, dataframe, queue, dtype, est, method)

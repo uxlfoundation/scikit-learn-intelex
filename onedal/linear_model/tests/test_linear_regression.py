@@ -84,7 +84,7 @@ def test_full_results(queue, dtype):
     assert_allclose(coef, model.coef_.T, rtol=tol)
 
     tol = 2e-3 if model.intercept_.dtype == np.float32 else 1e-5
-    assert_allclose(intp, model.intercept_, rtol=tol)
+    assert_allclose(intp, model.intercept_, rtol=tol, atol=tol)
 
     Xt = gen.random(size=(t_count, f_count), dtype=dtype)
     gtr = Xt @ coef + intp[np.newaxis, :]

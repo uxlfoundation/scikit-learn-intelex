@@ -1,4 +1,4 @@
-#===============================================================================
+# ==============================================================================
 # Copyright contributors to the oneDAL project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,10 +12,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#===============================================================================
-steps:
-  - script: |
-      python -m pip install --upgrade pip pre-commit==4.5.1
-      pre-commit install
-      pre-commit run --all-files --show-diff-on-failure
-    displayName: 'Linting'
+# ==============================================================================
+
+from .logistic_regression import LogisticRegressionCV
+
+__all__ = ["LogisticRegressionCV"]
