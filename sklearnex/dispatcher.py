@@ -61,6 +61,10 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
         if _is_new_patching_available():
             import sklearn.covariance as covariance_module
             import sklearn.decomposition as decomposition_module
+            from sklearn.covariance import (
+                EmpiricalCovariance as EmpiricalCovariance_sklearn,
+            )
+            from sklearn.decomposition import IncrementalPCA as IncrementalPCA_sklearn
 
             # Preview classes for patching
             from .preview.covariance import (
@@ -75,39 +79,36 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
             # sklearn estimator or function.
             # Covariance
             preview_mapping = {
-                "sklearn.covariance.EmpiricalCovariance": [
-                    (
-                        covariance_module,
-                        "EmpiricalCovariance",
-                        EmpiricalCovariance_sklearnex,
-                    ),
-                    None,
-                ],
-                "sklearn.decomposition.IncrementalPCA": [
-                    (
-                        decomposition_module,
-                        "IncrementalPCA",
-                        IncrementalPCA_sklearnex,
-                    ),
-                    None,
-                ],
+                "sklearn.covariance.EmpiricalCovariance": (
+                    covariance_module,
+                    "EmpiricalCovariance",
+                    EmpiricalCovariance_sklearnex,
+                    EmpiricalCovariance_sklearn,
+                ),
+                "sklearn.decomposition.IncrementalPCA": (
+                    decomposition_module,
+                    "IncrementalPCA",
+                    IncrementalPCA_sklearnex,
+                    IncrementalPCA_sklearn,
+                ),
             }
             if daal_check_version((2024, "P", 1)):
                 import sklearn.linear_model as linear_model_module
+                from sklearn.linear_model import (
+                    LogisticRegressionCV as LogisticRegressionCV_sklearn,
+                )
 
                 from .preview.linear_model import (
                     LogisticRegressionCV as LogisticRegressionCV_sklearnex,
                 )
 
                 preview_mapping["sklearn.linear_model.LogisticRegressionCV"] = (
-                    [
-                        (
-                            linear_model_module,
-                            "LogisticRegressionCV",
-                            LogisticRegressionCV_sklearnex,
-                        ),
-                        None,
-                    ],
+                    (
+                        linear_model_module,
+                        "LogisticRegressionCV",
+                        LogisticRegressionCV_sklearnex,
+                        LogisticRegressionCV_sklearn,
+                    ),
                 )
             return mapping | preview_mapping
 
@@ -145,6 +146,46 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
         import sklearn.utils.parallel as parallel_module
     else:
         import sklearn.utils.fixes as parallel_module
+
+    from sklearn.cluster import DBSCAN as DBSCAN_sklearn
+    from sklearn.cluster import KMeans as KMeans_sklearn
+    from sklearn.decomposition import PCA as PCA_sklearn
+    from sklearn.ensemble import ExtraTreesClassifier as ExtraTreesClassifier_sklearn
+    from sklearn.ensemble import ExtraTreesRegressor as ExtraTreesRegressor_sklearn
+    from sklearn.ensemble import RandomForestClassifier as RandomForestClassifier_sklearn
+    from sklearn.ensemble import RandomForestRegressor as RandomForestRegressor_sklearn
+    from sklearn.linear_model import ElasticNet as ElasticNet_sklearn
+    from sklearn.linear_model import Lasso as Lasso_sklearn
+    from sklearn.linear_model import LinearRegression as LinearRegression_sklearn
+    from sklearn.linear_model import LogisticRegression as LogisticRegression_sklearn
+    from sklearn.linear_model import Ridge as Ridge_sklearn
+    from sklearn.manifold import TSNE as TSNE_sklearn
+    from sklearn.neighbors import KNeighborsClassifier as KNeighborsClassifier_sklearn
+    from sklearn.neighbors import KNeighborsRegressor as KNeighborsRegressor_sklearn
+    from sklearn.neighbors import LocalOutlierFactor as LocalOutlierFactor_sklearn
+    from sklearn.neighbors import NearestNeighbors as NearestNeighbors_sklearn
+    from sklearn.svm import SVC as SVC_sklearn
+    from sklearn.svm import SVR as SVR_sklearn
+    from sklearn.svm import NuSVC as NuSVC_sklearn
+    from sklearn.svm import NuSVR as NuSVR_sklearn
+
+    if sklearn_check_version("1.4"):
+        from sklearn.ensemble._gb_losses import DummyRegressor as DummyRegressor_sklearn
+    else:
+        from sklearn.ensemble._gb_losses import DummyRegressor as DummyRegressor_sklearn
+    from sklearn import config_context as config_context_sklearn
+    from sklearn import get_config as get_config_sklearn
+    from sklearn import set_config as set_config_sklearn
+    from sklearn.metrics import pairwise_distances as pairwise_distances_sklearn
+    from sklearn.metrics import roc_auc_score as roc_auc_score_sklearn
+    from sklearn.model_selection import train_test_split as train_test_split_sklearn
+
+    if sklearn_check_version("1.2.1"):
+        from sklearn.utils.parallel import _funcwrapper as _funcwrapper_sklearn
+        from sklearn.utils.parallel import get_config as parallel_get_config_sklearn
+    else:
+        from sklearn.utils.fixes import _funcwrapper as _funcwrapper_sklearn
+        from sklearn.utils.fixes import get_config as parallel_get_config_sklearn
 
     # Classes and functions for patching
     from ._config import config_context as config_context_sklearnex
@@ -185,187 +226,190 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
     from .utils.parallel import _FuncWrapper as _FuncWrapper_sklearnex
 
     mapping = {
-        "sklearn.cluster.DBSCAN": [(cluster_module, "DBSCAN", DBSCAN_sklearnex), None],
-        "sklearn.cluster.KMeans": [(cluster_module, "KMeans", KMeans_sklearnex), None],
-        "sklearn.decomposition.PCA": [(decomposition_module, "PCA", PCA_sklearnex), None],
-        "sklearn.svm.SVR": [(svm_module, "SVR", SVR_sklearnex), None],
-        "sklearn.svm.SVC": [(svm_module, "SVC", SVC_sklearnex), None],
-        "sklearn.svm.NuSVR": [(svm_module, "NuSVR", NuSVR_sklearnex), None],
-        "sklearn.svm.NuSVC": [(svm_module, "NuSVC", NuSVC_sklearnex), None],
-        "sklearn.linear_model.ElasticNet": [
-            (
-                linear_model_module,
-                "ElasticNet",
-                ElasticNet_sklearnex,
-            ),
+        "sklearn.cluster.DBSCAN": (
+            cluster_module,
+            "DBSCAN",
+            DBSCAN_sklearnex,
+            DBSCAN_sklearn,
+        ),
+        "sklearn.cluster.KMeans": (
+            cluster_module,
+            "KMeans",
+            KMeans_sklearnex,
+            KMeans_sklearn,
+        ),
+        "sklearn.decomposition.PCA": (
+            decomposition_module,
+            "PCA",
+            PCA_sklearnex,
+            PCA_sklearn,
+        ),
+        "sklearn.svm.SVR": (svm_module, "SVR", SVR_sklearnex, SVR_sklearn),
+        "sklearn.svm.SVC": (svm_module, "SVC", SVC_sklearnex, SVC_sklearn),
+        "sklearn.svm.NuSVR": (svm_module, "NuSVR", NuSVR_sklearnex, NuSVR_sklearn),
+        "sklearn.svm.NuSVC": (svm_module, "NuSVC", NuSVC_sklearnex, NuSVC_sklearn),
+        "sklearn.linear_model.ElasticNet": (
+            linear_model_module,
+            "ElasticNet",
+            ElasticNet_sklearnex,
+            ElasticNet_sklearn,
+        ),
+        "sklearn.linear_model.Lasso": (
+            linear_model_module,
+            "Lasso",
+            Lasso_sklearnex,
+            Lasso_sklearn,
+        ),
+        "sklearn.linear_model.LinearRegression": (
+            linear_model_module,
+            "LinearRegression",
+            LinearRegression_sklearnex,
+            LinearRegression_sklearn,
+        ),
+        "sklearn.linear_model.LogisticRegression": (
+            linear_model_module,
+            "LogisticRegression",
+            LogisticRegression_sklearnex,
+            LogisticRegression_sklearn,
+        ),
+        "sklearn.linear_model.Ridge": (
+            linear_model_module,
+            "Ridge",
+            Ridge_sklearnex,
+            Ridge_sklearn,
+        ),
+        "sklearn.linear_model.IncrementalLinearRegression": (
+            linear_model_module,
+            "IncrementalLinearRegression",
+            IncrementalLinearRegression_sklearnex,
             None,
-        ],
-        "sklearn.linear_model.Lasso": [
-            (
-                linear_model_module,
-                "Lasso",
-                Lasso_sklearnex,
-            ),
+        ),
+        "sklearn.manifold.TSNE": (manifold_module, "TSNE", TSNE_sklearnex, TSNE_sklearn),
+        "sklearn.metrics.pairwise_distances": (
+            metrics_module,
+            "pairwise_distances",
+            pairwise_distances_sklearnex,
+            pairwise_distances_sklearn,
+        ),
+        "sklearn.metrics.roc_auc_score": (
+            metrics_module,
+            "roc_auc_score",
+            roc_auc_score_sklearnex,
+            roc_auc_score_sklearn,
+        ),
+        "sklearn.model_selection.train_test_split": (
+            model_selection_module,
+            "train_test_split",
+            train_test_split_sklearnex,
+            train_test_split_sklearn,
+        ),
+        "sklearn.neighbors.KNeighborsClassifier": (
+            neighbors_module,
+            "KNeighborsClassifier",
+            KNeighborsClassifier_sklearnex,
+            KNeighborsClassifier_sklearn,
+        ),
+        "sklearn.neighbors.KNeighborsRegressor": (
+            neighbors_module,
+            "KNeighborsRegressor",
+            KNeighborsRegressor_sklearnex,
+            KNeighborsRegressor_sklearn,
+        ),
+        "sklearn.neighbors.NearestNeighbors": (
+            neighbors_module,
+            "NearestNeighbors",
+            NearestNeighbors_sklearnex,
+            NearestNeighbors_sklearn,
+        ),
+        "sklearn.neighbors.LocalOutlierFactor": (
+            neighbors_module,
+            "LocalOutlierFactor",
+            LocalOutlierFactor_sklearnex,
+            LocalOutlierFactor_sklearn,
+        ),
+        "sklearn.ensemble.ExtraTreesClassifier": (
+            ensemble_module,
+            "ExtraTreesClassifier",
+            ExtraTreesClassifier_sklearnex,
+            ExtraTreesClassifier_sklearn,
+        ),
+        "sklearn.ensemble.ExtraTreesRegressor": (
+            ensemble_module,
+            "ExtraTreesRegressor",
+            ExtraTreesRegressor_sklearnex,
+            ExtraTreesRegressor_sklearn,
+        ),
+        "sklearn.ensemble.RandomForestClassifier": (
+            ensemble_module,
+            "RandomForestClassifier",
+            RandomForestClassifier_sklearnex,
+            RandomForestClassifier_sklearn,
+        ),
+        "sklearn.ensemble.RandomForestRegressor": (
+            ensemble_module,
+            "RandomForestRegressor",
+            RandomForestRegressor_sklearnex,
+            RandomForestRegressor_sklearn,
+        ),
+        "sklearn.covariance.IncrementalEmpiricalCovariance": (
+            covariance_module,
+            "IncrementalEmpiricalCovariance",
+            IncrementalEmpiricalCovariance_sklearnex,
             None,
-        ],
-        "sklearn.linear_model.LinearRegression": [
-            (
-                linear_model_module,
-                "LinearRegression",
-                LinearRegression_sklearnex,
-            ),
+        ),
+        "sklearn.dummy.DummyRegressor": (
+            dummy_module,
+            "DummyRegressor",
+            DummyRegressor_sklearnex,
             None,
-        ],
-        "sklearn.linear_model.LogisticRegression": [
-            (
-                linear_model_module,
-                "LogisticRegression",
-                LogisticRegression_sklearnex,
-            ),
-            None,
-        ],
-        "sklearn.linear_model.Ridge": [
-            (
-                linear_model_module,
-                "Ridge",
-                Ridge_sklearnex,
-            ),
-            None,
-        ],
-        "sklearn.linear_model.IncrementalLinearRegression": [
-            (
-                linear_model_module,
-                "IncrementalLinearRegression",
-                IncrementalLinearRegression_sklearnex,
-            ),
-            None,
-        ],
-        "sklearn.manifold.TSNE": [
-            (manifold_module, "TSNE", TSNE_sklearnex),
-            None,
-        ],
-        "sklearn.metrics.pairwise_distances": [
-            (metrics_module, "pairwise_distances", pairwise_distances_sklearnex),
-            None,
-        ],
-        "sklearn.metrics.roc_auc_score": [
-            (metrics_module, "roc_auc_score", roc_auc_score_sklearnex),
-            None,
-        ],
-        "sklearn.model_selection.train_test_split": [
-            (model_selection_module, "train_test_split", train_test_split_sklearnex),
-            None,
-        ],
-        "sklearn.neighbors.KNeighborsClassifier": [
-            (
-                neighbors_module,
-                "KNeighborsClassifier",
-                KNeighborsClassifier_sklearnex,
-            ),
-            None,
-        ],
-        "sklearn.neighbors.KNeighborsRegressor": [
-            (
-                neighbors_module,
-                "KNeighborsRegressor",
-                KNeighborsRegressor_sklearnex,
-            ),
-            None,
-        ],
-        "sklearn.neighbors.NearestNeighbors": [
-            (neighbors_module, "NearestNeighbors", NearestNeighbors_sklearnex),
-            None,
-        ],
-        "sklearn.neighbors.LocalOutlierFactor": [
-            (neighbors_module, "LocalOutlierFactor", LocalOutlierFactor_sklearnex),
-            None,
-        ],
-        "sklearn.ensemble.ExtraTreesClassifier": [
-            (
-                ensemble_module,
-                "ExtraTreesClassifier",
-                ExtraTreesClassifier_sklearnex,
-            ),
-            None,
-        ],
-        "sklearn.ensemble.ExtraTreesRegressor": [
-            (
-                ensemble_module,
-                "ExtraTreesRegressor",
-                ExtraTreesRegressor_sklearnex,
-            ),
-            None,
-        ],
-        "sklearn.ensemble.RandomForestClassifier": [
-            (
-                ensemble_module,
-                "RandomForestClassifier",
-                RandomForestClassifier_sklearnex,
-            ),
-            None,
-        ],
-        "sklearn.ensemble.RandomForestRegressor": [
-            (
-                ensemble_module,
-                "RandomForestRegressor",
-                RandomForestRegressor_sklearnex,
-            ),
-            None,
-        ],
-        "sklearn.covariance.IncrementalEmpiricalCovariance": [
-            (
-                covariance_module,
-                "IncrementalEmpiricalCovariance",
-                IncrementalEmpiricalCovariance_sklearnex,
-            ),
-            None,
-        ],
-        "sklearn.dummy.DummyRegressor": [
-            (
-                dummy_module,
-                "DummyRegressor",
-                DummyRegressor_sklearnex,
-            ),
-            None,
-        ],
-        "sklearn.ensemble._gb_losses.DummyRegressor": [
-            (
-                _gb_module,
-                "DummyRegressor",
-                DummyRegressor_sklearnex,
-            ),
-            None,
-        ],
+        ),
+        "sklearn.ensemble._gb_losses.DummyRegressor": (
+            _gb_module,
+            "DummyRegressor",
+            DummyRegressor_sklearnex,
+            DummyRegressor_sklearn,
+        ),
         # These should be patched even if it applying to a single algorithm
-        "sklearn.set_config": [(base_module, "set_config", set_config_sklearnex), None],
-        "sklearn.get_config": [(base_module, "get_config", get_config_sklearnex), None],
-        "sklearn.config_context": [
-            (base_module, "config_context", config_context_sklearnex),
-            None,
-        ],
+        "sklearn.set_config": (
+            base_module,
+            "set_config",
+            set_config_sklearnex,
+            set_config_sklearn,
+        ),
+        "sklearn.get_config": (
+            base_module,
+            "get_config",
+            get_config_sklearnex,
+            get_config_sklearn,
+        ),
+        "sklearn.config_context": (
+            base_module,
+            "config_context",
+            config_context_sklearnex,
+            config_context_sklearn,
+        ),
         # Comment 2026-01-20: The comment below was present in earlier code.
         # Whether it's true that is needed or not hasn't been verified.
         # --- end of comment 2026-01-20 ----
         # Necessary for proper work with multiple threads
-        "sklearn.utils.parallel.get_config": [
-            (parallel_module, "get_config", get_config_sklearnex),
-            None,
-        ],
-        "sklearn.utils.parallel._funcwrapper": [
-            (parallel_module, "_FuncWrapper", _FuncWrapper_sklearnex),
-            None,
-        ],
+        "sklearn.utils.parallel.get_config": (
+            parallel_module,
+            "get_config",
+            get_config_sklearnex,
+            parallel_get_config_sklearn,
+        ),
+        "sklearn.utils.parallel._funcwrapper": (
+            parallel_module,
+            "_FuncWrapper",
+            _FuncWrapper_sklearnex,
+            _funcwrapper_sklearn,
+        ),
     }
 
     if daal_check_version((2024, "P", 600)):
-        mapping["sklearn.linear_model.IncrementalRidge"] = [
-            (
-                linear_model_module,
-                "IncrementalRidge",
-                IncrementalRidge_sklearnex,
-            ),
-            None,
-        ]
+        mapping["sklearn.linear_model.IncrementalRidge"] = (
+            (linear_model_module, "IncrementalRidge", IncrementalRidge_sklearnex, None),
+        )
 
     return mapping
 

@@ -30,7 +30,7 @@ def test_monkey_patching():
     _classes = list()
 
     for v in _values:
-        _classes.append(v[0])
+        _classes.append(v)
 
     try:
         sklearnex.patch_sklearn()
@@ -273,3 +273,11 @@ def test_preview_namespace():
         assert "sklearnex" in svc.__module__
     finally:
         sklearnex.unpatch_sklearn()
+
+
+def test_extension_estimators_are_not_left_over():
+    from sklearn import linear_model
+
+    from sklearnex import patch_sklearn, unpatch_sklearn
+
+    assert not hasattr(linear_model, "IncrementalRidge")
