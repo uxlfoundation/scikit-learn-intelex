@@ -77,8 +77,11 @@ To patch |sklearn| with the |sklearnex|, the following methods can be used:
 
           from sklearnex.neighbors import NearestNeighbors
 
-
-These patching methods are interchangeable.
+These patching methods are interchangeable, with the only difference that if importing
+estimators from ``sklearnex`` **without** patching and using them inside metaestimators
+from ``sklearn`` (such as :obj:`sklearn.model_selection.GridSearchCV`), it will not be able
+to correctly propagate all options from :doc:`configuration contexts <config-contexts>`
+from ``sklearnex`` (requires patching).
 
 Unpatching
 ----------
@@ -145,11 +148,11 @@ With global patching, you can:
 
      - If you run the global patching command several times with different parameters, then only the last configuration is applied.
    * - Patch selected algorithms
-     - Use ``--algorithm`` or ``-a`` keys with a list of algorithms to patch. For example, to patch only ``SVC`` and ``RandomForestClassifier`` estimators, run
+     - Use ``--algorithm`` or ``-a`` keys with a list of algorithms to patch. For example, to patch only :obj:`sklearn.svm.SVC` and :obj:`sklearn.ensemble.RandomForestClassifier` estimators, run
 
        ::
 
-           python -m sklearnex.glob patch_sklearn -a svc random_forest_classifier
+           python -m sklearnex.glob patch_sklearn -a sklearn.svm.SVC sklearn.ensemble.RandomForestClassifier
 
      -
    * - Enable global patching via code
@@ -167,7 +170,7 @@ With global patching, you can:
 
        ::
 
-          python -m sklearnex.glob patch_sklearn -a svc random_forest_classifier -nv
+          python -m sklearnex.glob patch_sklearn -a sklearn.svm.SVC sklearn.ensemble.RandomForestClassifier -nv
      -
    * - Disable global patching
      - Run this command:

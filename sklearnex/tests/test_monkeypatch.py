@@ -30,8 +30,7 @@ def test_monkey_patching():
     _classes = list()
 
     for v in _values:
-        for c in v:
-            _classes.append(c[0])
+        _classes.append(v[0])
 
     try:
         sklearnex.patch_sklearn()
@@ -96,7 +95,7 @@ def test_monkey_patching():
 
 def test_patch_by_list_simple():
     try:
-        sklearnex.patch_sklearn(["LogisticRegression"])
+        sklearnex.patch_sklearn(["sklearn.linear_model.LogisticRegression"])
 
         from sklearn.ensemble import RandomForestRegressor
         from sklearn.linear_model import LogisticRegression
@@ -116,7 +115,9 @@ def test_patch_by_list_simple():
 
 def test_patch_by_list_many_estimators():
     try:
-        sklearnex.patch_sklearn(["LogisticRegression", "SVC"])
+        sklearnex.patch_sklearn(
+            ["sklearn.linear_model.LogisticRegression", "sklearn.svm.SVC"]
+        )
 
         from sklearn.ensemble import RandomForestRegressor
         from sklearn.linear_model import LogisticRegression
@@ -158,7 +159,12 @@ def test_unpatch_by_list_many_estimators():
             "sklearnex"
         )
 
-        sklearnex.unpatch_sklearn(["KNeighborsRegressor", "RandomForestRegressor"])
+        sklearnex.unpatch_sklearn(
+            [
+                "sklearn.neighbors.KNeighborsRegressor",
+                "sklearn.ensemble.RandomForestRegressor",
+            ]
+        )
 
         from sklearn.ensemble import RandomForestRegressor
         from sklearn.linear_model import LogisticRegression
@@ -180,7 +186,7 @@ def test_unpatch_by_list_many_estimators():
 
 
 def test_patching_checker():
-    for name in [None, "SVC", "PCA"]:
+    for name in [None, "sklearn.svm.SVC", "sklearn.decomposition.PCA"]:
         try:
             sklearnex.patch_sklearn(name=name)
             assert sklearnex.sklearn_is_patched(name=name)
