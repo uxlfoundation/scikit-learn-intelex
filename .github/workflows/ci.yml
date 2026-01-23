@@ -154,6 +154,7 @@ jobs:
           source venv/bin/activate
           source .github/scripts/activate_components.sh
           export COVERAGE_FILE=$(pwd)/.coverage.sklearn
+          export SKLEARNEX_PREVIEW='YES'
           if [ "${{ steps.set-env.outputs.DPCFLAG }}" == "" ]; then export CPU=cpu; fi
           bash .ci/scripts/run_sklearn_tests.sh $CPU
       - name: Create coverage report
@@ -167,13 +168,6 @@ jobs:
           name: coverage_lnx_Py${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}
           path: |
             *_lnx${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.info
-      - name: Sklearn testing [preview]
-        run: |
-          source venv/bin/activate
-          source .github/scripts/activate_components.sh
-          if [ "${{ steps.set-env.outputs.DPCFLAG }}" == "" ]; then export CPU=cpu; fi
-          export SKLEARNEX_PREVIEW='YES'
-          bash .ci/scripts/run_sklearn_tests.sh $CPU
 
   sklearn_win:
     needs: onedal_nightly
@@ -295,6 +289,7 @@ jobs:
           call .\venv\Scripts\activate.bat
           call .\.github\scripts\activate_components.bat ${{ steps.set-env.outputs.DPCFLAG }}
           set COVERAGE_FILE=%cd%\.coverage.sklearn
+          set SKLEARNEX_PREVIEW=YES
           if "${{ steps.set-env.outputs.DPCFLAG }}"=="" set CPU=cpu
           bash .ci/scripts/run_sklearn_tests.sh %CPU%
       - name: Create coverage report
@@ -309,14 +304,6 @@ jobs:
           name: coverage_win_Py${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}
           path: |
              *_win${{ matrix.PYTHON_VERSION }}_${{ matrix.SKLEARN_VERSION }}.info
-      - name: Sklearn testing [preview]
-        shell: cmd
-        run: |
-          call .\venv\Scripts\activate.bat
-          call .\.github\scripts\activate_components.bat ${{ steps.set-env.outputs.DPCFLAG }}
-          if "${{ steps.set-env.outputs.DPCFLAG }}"=="" set CPU=cpu
-          set SKLEARNEX_PREVIEW=YES
-          bash .ci/scripts/run_sklearn_tests.sh %CPU%
 
   build_uxl:
     if: github.repository == 'uxlfoundation/scikit-learn-intelex'
@@ -477,6 +464,7 @@ jobs:
         run: |
           source .github/scripts/activate_components.sh
           export COVERAGE_FILE=$(pwd)/.coverage.sklearn
+          export SKLEARNEX_PREVIEW='YES'
           bash .ci/scripts/run_sklearn_tests.sh ${{ matrix.DEVICE }}
       - name: Create coverage report
         run: |
@@ -488,8 +476,3 @@ jobs:
           name: coverage_uxl_lnx_${{ matrix.DEVICE }}
           path: |
             *uxl_lnx_${{ matrix.DEVICE }}.info
-      - name: Sklearn testing [preview]
-        run: |
-          source .github/scripts/activate_components.sh
-          export SKLEARNEX_PREVIEW='YES'
-          bash .ci/scripts/run_sklearn_tests.sh ${{ matrix.DEVICE }}
