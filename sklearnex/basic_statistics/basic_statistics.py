@@ -14,13 +14,10 @@
 # limitations under the License.
 # ==============================================================================
 
-import warnings
-
-from scipy.sparse import issparse
 from sklearn.base import BaseEstimator
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
-from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from daal4py.sklearn._utils import daal_check_version, is_sparse, sklearn_check_version
 from onedal.basic_statistics import BasicStatistics as onedal_BasicStatistics
 from onedal.utils.validation import _is_csr
 
@@ -78,9 +75,6 @@ class BasicStatistics(oneDALEstimator, BaseEstimator):
     -----
     Attribute exists only if corresponding result option has been provided.
 
-    Names of attributes without the trailing underscore are
-    supported currently but deprecated in 2025.1 and will be removed in 2026.0
-
     Some results can exhibit small variations due to
     floating point error accumulation and multithreading.
 
@@ -130,24 +124,6 @@ class BasicStatistics(oneDALEstimator, BaseEstimator):
             option += "_"
             setattr(self, option, getattr(self._onedal_estimator, option))
 
-    def __getattr__(self, attr):
-        is_deprecated_attr = (
-            attr in self._onedal_estimator.options
-            if "_onedal_estimator" in self.__dict__
-            else False
-        )
-        if is_deprecated_attr:
-            warnings.warn(
-                "Result attributes without a trailing underscore were deprecated in version 2025.1 and will be removed in 2026.0"
-            )
-            attr += "_"
-        if attr in self.__dict__:
-            return self.__dict__[attr]
-
-        raise AttributeError(
-            f"'{self.__class__.__name__}' object has no attribute '{attr}'"
-        )
-
     def _onedal_cpu_supported(self, method_name, *data):
         patching_status = PatchingConditionsChain(
             f"sklearnex.basic_statistics.{self.__class__.__name__}.{method_name}"
@@ -160,11 +136,11 @@ class BasicStatistics(oneDALEstimator, BaseEstimator):
         )
         X, sample_weight = data
 
-        is_data_supported = not issparse(X) or (
+        is_data_supported = not is_sparse(X) or (
             _is_csr(X) and daal_check_version((2025, "P", 200))
         )
 
-        is_sample_weight_supported = sample_weight is None or not issparse(X)
+        is_sample_weight_supported = sample_weight is None or not is_sparse(X)
 
         patching_status.and_conditions(
             [

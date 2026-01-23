@@ -711,9 +711,7 @@ auto {{algo}}_obj = {{algo}}_type{{ctor}};
 """
 
 # macro to generate the body of a compute function (batch and distributed)
-gen_compute_macro = (
-    gen_inst_algo
-    + """
+gen_compute_macro = gen_inst_algo + """
 {% macro gen_compute(ns, input_args, params_req, params_opt, suffix="",
                      step_spec=None, tonative=True, iomtype=None, setupmode=False) %}
 {% set iom = iomtype if iomtype else "iom"+suffix+"_type" %}
@@ -825,7 +823,6 @@ gen_compute_macro = (
     }
 {%- endmacro %}
 """
-)
 
 # generates the de-templetized *__iface__ struct with providing generic compute(...)
 algo_iface_template = """
@@ -855,10 +852,7 @@ struct {{algo}}__iface__ : public {{prnt}}
 """
 
 # generates "manager" class for managing distributed and batch modes of a given algo
-manager_wrapper_template = (
-    gen_typedefs_macro
-    + gen_compute_macro
-    + """
+manager_wrapper_template = gen_typedefs_macro + gen_compute_macro + """
 {% if template_decl|length == template_args|length %}
 // The type used in cython
 typedef {{algo}}__iface__  c_{{algo}}_manager__iface__;
@@ -1040,7 +1034,6 @@ public:
 
 };
 """
-)
 
 # generates cython class wrappers for given algo
 # also generates defs for __iface__ class

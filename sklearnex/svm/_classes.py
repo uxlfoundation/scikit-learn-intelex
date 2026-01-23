@@ -15,7 +15,6 @@
 # ==============================================================================
 
 import numpy as np
-from scipy import sparse as sp
 from sklearn.svm import SVC as _sklearn_SVC
 from sklearn.svm import SVR as _sklearn_SVR
 from sklearn.svm import NuSVC as _sklearn_NuSVC
@@ -24,7 +23,7 @@ from sklearn.utils.multiclass import type_of_target
 from sklearn.utils.validation import _deprecate_positional_args
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
-from daal4py.sklearn._utils import sklearn_check_version
+from daal4py.sklearn._utils import is_sparse, sklearn_check_version
 from onedal.svm import SVC as onedal_SVC
 from onedal.svm import SVR as onedal_SVR
 from onedal.svm import NuSVC as onedal_NuSVC
@@ -128,7 +127,7 @@ class SVC(BaseSVC, _sklearn_SVC):
                 f'Kernel is "{self.kernel}" while '
                 'only "linear" and "rbf" are supported on GPU.',
             ),
-            (not sp.issparse(data[0]), "Sparse input is not supported on GPU."),
+            (not is_sparse(data[0]), "Sparse input is not supported on GPU."),
             (self.class_weight is None, "Class weight is not supported on GPU."),
             (
                 len(data) < 2 or type_of_target(data[1]) == "binary",

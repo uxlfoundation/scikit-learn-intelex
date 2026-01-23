@@ -19,6 +19,7 @@ from math import sqrt
 
 from scipy import sparse as sp
 
+from daal4py.sklearn._utils import is_sparse
 from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
 
@@ -102,7 +103,7 @@ class BaseSVM(ABC):
 
         data = (X, y) if sample_weight is None else (X, y, sample_weight)
 
-        self._sparse = sp.issparse(X)
+        self._sparse = is_sparse(X)
 
         data_t = to_table(*data, queue=queue)
         params = self._get_onedal_params(data_t[0])
