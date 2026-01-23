@@ -126,7 +126,7 @@ def support_input_format(func):
         else:
             self = None
 
-        if "queue" not in kwargs:
+        if "queue" not in kwargs and "queue" in inspect.signature(func).parameters:
             if usm_iface := getattr(args[0], "__sycl_usm_array_interface__", None):
                 kwargs["queue"] = usm_iface["syclobj"]
         return invoke_func(self, *args, **kwargs)
