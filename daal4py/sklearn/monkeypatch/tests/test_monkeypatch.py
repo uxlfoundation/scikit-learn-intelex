@@ -22,7 +22,7 @@ def test_monkey_patching():
     _values = daal4py.sklearn.sklearn_patch_map().values()
     _classes = list()
     for v in _values:
-        _classes.append(v[0])
+        _classes.append(v)
 
     assert len(_tokens) == len(_classes)
     assert (

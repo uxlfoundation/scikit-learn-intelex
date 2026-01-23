@@ -78,10 +78,10 @@ def _load_all_models(with_sklearnex=True, estimator=True):
 
         models = {}
         for patch_infos in get_patch_map().values():
-            candidate = getattr(patch_infos[0][0], patch_infos[0][1], None)
+            candidate = getattr(patch_infos[0], patch_infos[1], None)
             if candidate is not None and isclass(candidate) == estimator:
                 if not estimator or issubclass(candidate, BaseEstimator):
-                    models[patch_infos[0][1]] = candidate
+                    models[patch_infos[1]] = candidate
     finally:
         if with_sklearnex:
             unpatch_sklearn()
