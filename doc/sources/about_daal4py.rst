@@ -32,7 +32,7 @@ DPC-based features such as :ref:`GPU support <oneapi_gpu>`.
 
 There is a large degree of overlap in the functionalities offered between the two modules
 ``daal4py`` and ``sklearnex`` - module ``sklearnex`` should be preferred whenever possible,
-either by using it directly or through the :ref:`patching mechanism <patching>` - but ``daal4py``
+either by using it directly or through the :doc:`patching mechanism <patching>` - but ``daal4py``
 exposes some additional functionalities from the |onedal| that ``sklearnex`` doesn't:
 
 - :ref:`Algorithms that are outside the scope of scikit-learn <non_sklearn_d4p>`.

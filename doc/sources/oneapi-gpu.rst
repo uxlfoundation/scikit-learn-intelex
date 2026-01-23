@@ -73,7 +73,7 @@ Debian systems require installing package ``intel-opencl-icd`` (along with its d
 For Arch Linux, and for other distributions in general, see the `GPGPU article in the Arch wiki <https://wiki.archlinux.org/title/GPGPU>`__.
 
 .. important::
-    If using the |sklearnex| in a conda environment, GPU support requires the the OpenCL ICD package `for conda <https://github.com/IntelPython/intel-gpu-ocl-icd-system-feedstock>`__ to be installed in the conda environment, **in addition to the system install** of the same package: ::
+    If using the |sklearnex| in a conda environment, GPU support requires the OpenCL ICD package `for conda <https://github.com/IntelPython/intel-gpu-ocl-icd-system-feedstock>`__ to be installed in the conda environment, **in addition to the system install** of the same package: ::
 
         conda install -c https://software.repos.intel.com/python/conda/ intel-gpu-ocl-icd-system
 

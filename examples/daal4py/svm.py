@@ -59,7 +59,7 @@ def main(readcsv=pd_read_csv):
 
 
 if __name__ == "__main__":
-    (decision_function, predict_labels, plabels) = main()
+    decision_function, predict_labels, plabels = main()
 
     print(
         "\nSVM classification decision function (first 20 observations):\n",

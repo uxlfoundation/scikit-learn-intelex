@@ -71,6 +71,7 @@ requirements:
     - scikit-learn
     # dal-devel has run_exports on conda-forge, so no need to add it.
     - mpi * impi  # [not win]
+    - packaging
 
 test:
   requires:
@@ -83,6 +84,7 @@ test:
     # - dpnp
     # next deps are synced with requirements-test.txt
     - pytest
+    - pytest-mock
     - pandas
     - xgboost
     - lightgbm

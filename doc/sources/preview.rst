@@ -70,3 +70,6 @@ Current list of preview estimators:
    * - IncrementalPCA
      - sklearnex.preview.decomposition
      - Yes
+   * - LogisticRegressionCV
+     - sklearnex.preview.linear_model
+     - Yes
