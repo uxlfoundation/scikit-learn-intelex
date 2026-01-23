@@ -42,7 +42,7 @@ work. If the requested operation is not supported on the device where the data l
 back to |sklearn|, or to an accelerated CPU version from the |sklearnex| when supported - these are controllable
 through options ``allow_sklearn_after_onedal`` (default is ``True``) and ``allow_fallback_to_host`` (default is
 ``False``), respectively, which are accepted by ``config_context`` and ``set_config`` after
-:ref:`patching scikit-learn <patching>` or when importing those directly from ``sklearnex``.
+:doc:`patching scikit-learn <patching>` or when importing those directly from ``sklearnex``.
 
 .. note::
     Under default settings for ``set_config`` / ``config_context``, operations that are not supported on GPU will
