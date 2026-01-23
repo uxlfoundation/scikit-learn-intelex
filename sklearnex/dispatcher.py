@@ -103,12 +103,10 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
                 )
 
                 preview_mapping["sklearn.linear_model.LogisticRegressionCV"] = (
-                    (
-                        linear_model_module,
-                        "LogisticRegressionCV",
-                        LogisticRegressionCV_sklearnex,
-                        LogisticRegressionCV_sklearn,
-                    ),
+                    linear_model_module,
+                    "LogisticRegressionCV",
+                    LogisticRegressionCV_sklearnex,
+                    LogisticRegressionCV_sklearn,
                 )
             return mapping | preview_mapping
 

@@ -291,7 +291,7 @@ def _is_enabled(name: str, map: PatchMap) -> bool:
     descriptor = map.get(name)
     if descriptor is None:
         return False
-    which, what, _, replacer = descriptor
+    which, what, replacer, _ = descriptor
     current = getattr(which, what, None)
     if current is None:
         return False
