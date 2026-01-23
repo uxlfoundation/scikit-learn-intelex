@@ -18,6 +18,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose, assert_array_almost_equal, assert_array_equal
 from sklearn import datasets
+from sklearn.metrics import r2_score
 from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.svm import NuSVR as SklearnNuSVR
 
@@ -36,7 +37,7 @@ def test_diabetes_simple(queue):
     diabetes = datasets.load_diabetes()
     clf = NuSVR(kernel="linear", C=10.0)
     clf.fit(diabetes.data, diabetes.target, queue=queue)
-    assert clf.score(diabetes.data, diabetes.target, queue=queue) > 0.02
+    assert r2_score(diabetes.target, clf.predict(diabetes.data, queue=queue)) > 0.02
 
 
 @pass_if_not_implemented_for_gpu(reason="not implemented for GPU")
@@ -89,9 +90,11 @@ def test_predict(queue):
 
 def _test_diabetes_compare_with_sklearn(queue, kernel):
     diabetes = datasets.load_diabetes()
-    clf_onedal = NuSVR(kernel=kernel, nu=0.25, C=10.0)
+    gamma = 1.0 / (diabetes.data.shape[1] * diabetes.data.var())
+    # set gamma to value that would occur when gamma="scale"
+    clf_onedal = NuSVR(kernel=kernel, nu=0.25, C=10.0, gamma=gamma)
     clf_onedal.fit(diabetes.data, diabetes.target, queue=queue)
-    result = clf_onedal.score(diabetes.data, diabetes.target, queue=queue)
+    result = r2_score(diabetes.target, clf_onedal.predict(diabetes.data, queue=queue))
 
     clf_sklearn = SklearnNuSVR(kernel=kernel, nu=0.25, C=10.0)
     clf_sklearn.fit(diabetes.data, diabetes.target)
@@ -116,12 +119,18 @@ def test_diabetes_compare_with_sklearn(queue, kernel):
 
 def _test_synth_rbf_compare_with_sklearn(queue, C, nu, gamma):
     x, y = datasets.make_regression(**synth_params)
+    if gamma == "auto":
+        _gamma = 1.0 / x.shape[1]
+    elif gamma == "scale":
+        _gamma = 1.0 / (x.shape[1] * x.var())
+    else:
+        _gamma = gamma
 
-    clf = NuSVR(kernel="rbf", gamma=gamma, C=C, nu=nu)
+    clf = NuSVR(kernel="rbf", gamma=_gamma, C=C, nu=nu)
     clf.fit(x, y, queue=queue)
-    result = clf.score(x, y, queue=queue)
+    result = r2_score(y, clf.predict(x, queue=queue))
 
-    clf = SklearnNuSVR(kernel="rbf", gamma=gamma, C=C, nu=nu)
+    clf = SklearnNuSVR(kernel="rbf", gamma=_gamma, C=C, nu=nu)
     clf.fit(x, y)
     expected = clf.score(x, y)
 
@@ -141,11 +150,14 @@ def test_synth_rbf_compare_with_sklearn(queue, C, nu, gamma):
 def _test_synth_linear_compare_with_sklearn(queue, C, nu):
     x, y = datasets.make_regression(**synth_params)
 
-    clf = NuSVR(kernel="linear", C=C, nu=nu)
-    clf.fit(x, y, queue=queue)
-    result = clf.score(x, y, queue=queue)
+    # gamma is set separately
+    gamma = 1.0 / x.shape[1]
 
-    clf = SklearnNuSVR(kernel="linear", C=C, nu=nu)
+    clf = NuSVR(kernel="linear", C=C, nu=nu, gamma=gamma)
+    clf.fit(x, y, queue=queue)
+    result = r2_score(y, clf.predict(x, queue=queue))
+
+    clf = SklearnNuSVR(kernel="linear", C=C, nu=nu, gamma=gamma)
     clf.fit(x, y)
     expected = clf.score(x, y)
 
@@ -165,10 +177,11 @@ def test_synth_linear_compare_with_sklearn(queue, C, nu):
 
 def _test_synth_poly_compare_with_sklearn(queue, params):
     x, y = datasets.make_regression(**synth_params)
+    params["gamma"] = 1 / (x.shape[1] * x.var())
 
     clf = NuSVR(kernel="poly", **params)
     clf.fit(x, y, queue=queue)
-    result = clf.score(x, y, queue=queue)
+    result = r2_score(y, clf.predict(x, queue=queue))
 
     clf = SklearnNuSVR(kernel="poly", **params)
     clf.fit(x, y)
@@ -183,8 +196,8 @@ def _test_synth_poly_compare_with_sklearn(queue, params):
 @pytest.mark.parametrize(
     "params",
     [
-        {"degree": 2, "coef0": 0.1, "gamma": "scale", "C": 100, "nu": 0.25},
-        {"degree": 3, "coef0": 0.0, "gamma": "scale", "C": 1000, "nu": 0.75},
+        {"degree": 2, "coef0": 0.1, "C": 100, "nu": 0.25},
+        {"degree": 3, "coef0": 0.0, "C": 1000, "nu": 0.75},
     ],
 )
 def test_synth_poly_compare_with_sklearn(queue, params):
@@ -196,7 +209,7 @@ def test_synth_poly_compare_with_sklearn(queue, params):
 def test_pickle(queue):
     diabetes = datasets.load_diabetes()
 
-    clf = NuSVR(kernel="rbf", C=10.0)
+    clf = NuSVR(kernel="linear", C=10.0)
     clf.fit(diabetes.data, diabetes.target, queue=queue)
     expected = clf.predict(diabetes.data, queue=queue)
 

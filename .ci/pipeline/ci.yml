@@ -80,21 +80,21 @@ jobs:
     COVERAGE_RCFILE: '$(Build.Repository.LocalPath)/.coveragerc'
   strategy:
     matrix:
-      Python3.9_Sklearn1.0:
-        PYTHON_VERSION: '3.9'
-        SKLEARN_VERSION: '1.0'
-      Python3.10_Sklearn1.4:
+      Python3.10_Sklearn1.0:
         PYTHON_VERSION: '3.10'
-        SKLEARN_VERSION: '1.4'
-      Python3.11_Sklearn1.5:
+        SKLEARN_VERSION: '1.0'
+      Python3.11_Sklearn1.6:
         PYTHON_VERSION: '3.11'
-        SKLEARN_VERSION: '1.5'
-      Python3.12_Sklearn1.6:
-        PYTHON_VERSION: '3.12'
         SKLEARN_VERSION: '1.6'
-      Python3.13_Sklearn1.7:
-        PYTHON_VERSION: '3.13'
+      Python3.12_Sklearn1.7:
+        PYTHON_VERSION: '3.12'
         SKLEARN_VERSION: '1.7'
+      Python3.13_Sklearn1.8:
+        PYTHON_VERSION: '3.13'
+        SKLEARN_VERSION: '1.8'
+      Python3.14_Sklearn1.8:
+        PYTHON_VERSION: '3.14'
+        SKLEARN_VERSION: '1.8'
   pool:
     vmImage: 'ubuntu-24.04'
   steps:
@@ -107,21 +107,21 @@ jobs:
     COVERAGE_RCFILE: '$(Build.Repository.LocalPath)\.coveragerc'
   strategy:
     matrix:
-      Python3.9_Sklearn1.0:
-        PYTHON_VERSION: '3.9'
-        SKLEARN_VERSION: '1.0'
-      Python3.10_Sklearn1.4:
+      Python3.10_Sklearn1.0:
         PYTHON_VERSION: '3.10'
-        SKLEARN_VERSION: '1.4'
-      Python3.11_Sklearn1.5:
+        SKLEARN_VERSION: '1.0'
+      Python3.11_Sklearn1.6:
         PYTHON_VERSION: '3.11'
-        SKLEARN_VERSION: '1.5'
-      Python3.12_Sklearn1.6:
-        PYTHON_VERSION: '3.12'
         SKLEARN_VERSION: '1.6'
-      Python3.13_Sklearn1.7:
-        PYTHON_VERSION: '3.13'
+      Python3.12_Sklearn1.7:
+        PYTHON_VERSION: '3.12'
         SKLEARN_VERSION: '1.7'
+      Python3.13_Sklearn1.8:
+        PYTHON_VERSION: '3.13'
+        SKLEARN_VERSION: '1.8'
+      Python3.14_Sklearn1.8:
+        PYTHON_VERSION: '3.14'
+        SKLEARN_VERSION: '1.8'
   pool:
     vmImage: 'windows-2022'
   steps:

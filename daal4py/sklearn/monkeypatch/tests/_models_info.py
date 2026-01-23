@@ -98,7 +98,10 @@ MODELS_INFO = [
         "dataset": "classifier",
     },
     {
-        "model": LogisticRegressionCV(max_iter=100),
+        "model": LogisticRegressionCV(
+            max_iter=100,
+            **({} if sklearn_check_version("1.8") else {"multi_class": "multinomial"})
+        ),
         "methods": [
             "decision_function",
             "predict",
@@ -145,10 +148,8 @@ TO_SKIP = [
     r"KMeans .*score",
     r"PCA .*score",
     r"LogisticRegression .*decision_function",
+    r"LogisticRegressionCV .*score",
     r"LogisticRegressionCV .*decision_function",
-    r"LogisticRegressionCV .*predict",
-    r"LogisticRegressionCV .*predict_proba",
-    r"LogisticRegressionCV .*predict_log_proba",
     r"LogisticRegressionCV .*score",
     # --------------- Scikit ---------------
     r"Ridge float16 predict",

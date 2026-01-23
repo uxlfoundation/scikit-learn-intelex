@@ -14,12 +14,14 @@
 # limitations under the License.
 # ===============================================================================
 
+import os
+
+os.environ["SCIPY_ARRAY_API"] = "1"
 from sklearnex import patch_sklearn
 
 patch_sklearn()
 
 import argparse
-import os
 import sys
 
 import pytest
@@ -42,8 +44,6 @@ if __name__ == "__main__":
 
     if os.environ["SELECTED_TESTS"] == "all":
         os.environ["SELECTED_TESTS"] = ""
-
-    os.environ["SCIPY_ARRAY_API"] = "1"
 
     pytest_args = (
         f"--rootdir={sklearn_file_dir} "

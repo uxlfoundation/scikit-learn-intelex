@@ -15,32 +15,31 @@
 # ===============================================================================
 
 import logging
-from abc import ABC
 
-from daal4py.sklearn._utils import daal_check_version
+from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from daal4py.sklearn.linear_model.logistic_path import (
     LogisticRegression as _daal4py_LogisticRegression,
 )
+from onedal._device_offload import support_input_format
+
+from ..base import oneDALEstimator
 
 if daal_check_version((2024, "P", 1)):
     import numpy as np
-    from scipy.sparse import issparse
     from sklearn.linear_model import LogisticRegression as _sklearn_LogisticRegression
     from sklearn.metrics import accuracy_score
     from sklearn.utils.multiclass import type_of_target
-    from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
+    from sklearn.utils.validation import check_is_fitted
 
     from daal4py.sklearn._n_jobs_support import control_n_jobs
-    from daal4py.sklearn._utils import sklearn_check_version
+    from daal4py.sklearn._utils import is_sparse
     from daal4py.sklearn.linear_model.logistic_path import daal4py_fit, daal4py_predict
-    from onedal._device_offload import support_input_format
     from onedal.linear_model import LogisticRegression as onedal_LogisticRegression
     from onedal.utils.validation import _num_samples
 
     from .._config import get_config
     from .._device_offload import dispatch, wrap_output_data
     from .._utils import PatchingConditionsChain, get_patch_message
-    from ..base import oneDALEstimator
     from ..utils.validation import validate_data
 
     _sparsity_enabled = daal_check_version((2024, "P", 700))
@@ -66,11 +65,12 @@ if daal_check_version((2024, "P", 1)):
 
             def __init__(
                 self,
-                penalty="l2",
+                penalty="deprecated",
                 *,
+                C=1.0,
+                l1_ratio=0.0,
                 dual=False,
                 tol=1e-4,
-                C=1.0,
                 fit_intercept=True,
                 intercept_scaling=1,
                 class_weight=None,
@@ -80,7 +80,6 @@ if daal_check_version((2024, "P", 1)):
                 verbose=0,
                 warm_start=False,
                 n_jobs=None,
-                l1_ratio=None,
             ):
                 super().__init__(
                     penalty=penalty,
@@ -256,7 +255,15 @@ if daal_check_version((2024, "P", 1)):
             )
             patching_status.and_conditions(
                 [
-                    (self.penalty == "l2", "Only l2 penalty is supported."),
+                    (
+                        self.penalty
+                        in (
+                            ["l2", "deprecated"]
+                            if sklearn_check_version("1.8")
+                            else ["l2"]
+                        ),
+                        "Only l2 penalty is supported.",
+                    ),
                     (self.dual == False, "dual=True is not supported."),
                     (
                         self.intercept_scaling == 1,
@@ -271,7 +278,7 @@ if daal_check_version((2024, "P", 1)):
                     ),
                     (
                         not self.l1_ratio,
-                        "l1 ratio is not supported.",
+                        "l1 penalty is not supported.",
                     ),
                     (sample_weight is None, "Sample weight is not supported."),
                     (
@@ -303,7 +310,7 @@ if daal_check_version((2024, "P", 1)):
                     (n_samples > 0, "Number of samples is less than 1."),
                     (
                         (_sparsity_enabled and method_name != "decision_function")
-                        or (not any([issparse(i) for i in data])),
+                        or (not any([is_sparse(i) for i in data])),
                         "Sparse input is not supported.",
                     ),
                     (

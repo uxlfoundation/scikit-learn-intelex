@@ -16,7 +16,12 @@
 
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose
+import scipy.sparse as sp
+from numpy.testing import assert_allclose, assert_array_almost_equal
+from sklearn.datasets import load_diabetes, load_iris, make_classification
+
+from onedal.svm.tests.test_csr_svm import check_svm_model_equal
+from sklearnex import config_context
 
 try:
     from scipy.sparse import csr_array as csr_class
@@ -27,6 +32,10 @@ from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
     get_dataframes_and_queues,
+)
+from onedal.tests.utils._device_selection import (
+    get_queues,
+    pass_if_not_implemented_for_gpu,
 )
 
 
@@ -98,6 +107,70 @@ def test_sklearnex_import_nusvr(dataframe, queue):
     assert_allclose(_as_numpy(svc.support_), [1, 2, 3, 5])
 
 
+@pass_if_not_implemented_for_gpu(reason="csr svm is not implemented")
+@pytest.mark.parametrize(
+    "queue",
+    get_queues("cpu")
+    + [
+        pytest.param(
+            get_queues("gpu"),
+            marks=pytest.mark.xfail(
+                reason="raises UnknownError for linear and rbf, "
+                "Unimplemented error with inconsistent error message "
+                "for poly and sigmoid"
+            ),
+        )
+    ],
+)
+@pytest.mark.parametrize("kernel", ["linear", "rbf", "poly", "sigmoid"])
+def test_binary_dataset(queue, kernel):
+    from sklearnex import config_context
+    from sklearnex.svm import SVC
+
+    X, y = make_classification(n_samples=80, n_features=20, n_classes=2, random_state=0)
+    sparse_X = sp.csr_matrix(X)
+
+    dataset = sparse_X, y, sparse_X
+    with config_context(target_offload=queue):
+        clf0 = SVC(kernel=kernel)
+        clf1 = SVC(kernel=kernel)
+        check_svm_model_equal(queue, clf0, clf1, *dataset)
+
+
+@pytest.mark.parametrize("kernel", ["linear", "rbf", "poly", "sigmoid"])
+def test_iris(kernel):
+    from sklearnex.svm import SVC
+
+    iris = load_iris()
+    rng = np.random.RandomState(0)
+    perm = rng.permutation(iris.target.size)
+    iris.data = iris.data[perm]
+    iris.target = iris.target[perm]
+    sparse_iris_data = sp.csr_matrix(iris.data)
+
+    dataset = sparse_iris_data, iris.target, sparse_iris_data
+
+    clf0 = SVC(kernel=kernel)
+    clf1 = SVC(kernel=kernel)
+    check_svm_model_equal(None, clf0, clf1, *dataset, decimal=2)
+
+
+@pytest.mark.parametrize("kernel", ["linear", "rbf", "poly", "sigmoid"])
+def test_diabetes(kernel):
+    from sklearnex.svm import SVR
+
+    if kernel == "sigmoid":
+        pytest.skip("Sparse sigmoid kernel function is buggy.")
+    diabetes = load_diabetes()
+
+    sparse_diabetes_data = sp.csr_matrix(diabetes.data)
+    dataset = sparse_diabetes_data, diabetes.target, sparse_diabetes_data
+
+    clf0 = SVR(kernel=kernel, C=0.1)
+    clf1 = SVR(kernel=kernel, C=0.1)
+    check_svm_model_equal(None, clf0, clf1, *dataset)
+
+
 # https://github.com/uxlfoundation/scikit-learn-intelex/issues/1880
 def test_works_with_unsorted_indices():
     from sklearnex.svm import SVC
@@ -122,3 +195,31 @@ def test_works_with_unsorted_indices():
         pred_single.reshape(-1),
         pred_multi.reshape(-1),
     )
+
+
+@pass_if_not_implemented_for_gpu(reason="class weights are not implemented")
+@pytest.mark.parametrize(
+    "queue",
+    get_queues("cpu")
+    + [
+        pytest.param(
+            get_queues("gpu"),
+            marks=pytest.mark.xfail(
+                reason="class weights are not implemented but the error is not raised"
+            ),
+        )
+    ],
+)
+def test_class_weight(queue):
+    from sklearnex.svm import SVC, NuSVC
+
+    for estimator in [SVC, NuSVC]:
+        X = np.array(
+            [[-2, -1], [-1, -1], [-1, -2], [1, 1], [1, 2], [2, 1]], dtype=np.float64
+        )
+        y = np.array([0, 0, 0, 1, 1, 1], dtype=np.float64)
+
+        clf = estimator(class_weight={0: 0.1})
+        with config_context(target_offload=queue):
+            clf.fit(X, y)
+            assert_array_almost_equal(clf.predict(X).ravel(), [1] * 6)

@@ -18,17 +18,17 @@ import warnings
 from functools import partial
 
 import numpy as np
-import scipy.sparse as sp
 from sklearn.base import clone
 from sklearn.covariance import EmpiricalCovariance as _sklearn_EmpiricalCovariance
 from sklearn.utils.validation import check_array, check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
-from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from daal4py.sklearn._utils import daal_check_version, is_sparse, sklearn_check_version
 from daal4py.sklearn.metrics import pairwise_distances
 from onedal._device_offload import support_input_format, support_sycl_format
 from onedal.covariance import EmpiricalCovariance as onedal_EmpiricalCovariance
 from onedal.utils._array_api import _is_numpy_namespace
+from onedal.utils.validation import _num_features
 from sklearnex import config_context
 
 from ..._config import get_config
@@ -108,7 +108,7 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
             (X,) = data
             patching_status.and_conditions(
                 [
-                    (not sp.issparse(X), "X is sparse. Sparse input is not supported."),
+                    (not is_sparse(X), "X is sparse. Sparse input is not supported."),
                 ]
             )
             return patching_status
