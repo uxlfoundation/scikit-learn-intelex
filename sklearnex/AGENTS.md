@@ -85,8 +85,6 @@ Experimental algorithms in `sklearnex/preview/`. Activate via `export SKLEARNEX_
 
 **Note**: Preview APIs may change without deprecation warnings.
 
-## Error Handling
-
 ### Fallback Chain
 oneDAL GPU → oneDAL CPU → sklearn → Error
 
