@@ -75,29 +75,15 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             # if user attempts to classify a point that was zero distance from one
             # or more training points, those training points are weighted as 1.0
             # and the other points as 0.0
-            # Check for object dtype - use string comparison for Array API compatibility
-            is_object_dtype = str(dist.dtype) == "object" or (
-                hasattr(dist.dtype, "kind") and dist.dtype.kind == "O"
-            )
-            if is_object_dtype:
-                for point_dist_i, point_dist in enumerate(dist):
-                    # check if point_dist is iterable
-                    # (ex: RadiusNeighborClassifier.predict may set an element of
-                    # dist to 1e-6 to represent an 'outlier')
-                    if hasattr(point_dist, "__contains__") and 0.0 in point_dist:
-                        dist[point_dist_i] = point_dist == 0.0
-                    else:
-                        dist[point_dist_i] = 1.0 / point_dist
-            else:
-                with (
-                    xp.errstate(divide="ignore")
-                    if hasattr(xp, "errstate")
-                    else np.errstate(divide="ignore")
-                ):
-                    dist = 1.0 / dist
-                inf_mask = xp.isinf(dist)
-                inf_row = xp.any(inf_mask, axis=1)
-                dist[inf_row] = inf_mask[inf_row]
+            with (
+                xp.errstate(divide="ignore")
+                if hasattr(xp, "errstate")
+                else np.errstate(divide="ignore")
+            ):
+                dist = 1.0 / dist
+            inf_mask = xp.isinf(dist)
+            inf_row = xp.any(inf_mask, axis=1)
+            dist[inf_row] = inf_mask[inf_row]
             return dist
         elif callable(weights):
             return weights(dist)
@@ -106,14 +92,6 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                 "weights not recognized: should be 'uniform', "
                 "'distance', or a callable function"
             )
-
-    def _validate_targets(self, y, dtype):
-        arr = _column_or_1d(y, warn=True)
-
-        try:
-            return arr.astype(dtype, copy=False)
-        except ValueError:
-            return arr
 
     def _validate_n_neighbors(self, n_neighbors):
         if n_neighbors is not None:
@@ -207,201 +185,6 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             self._validate_kneighbors_bounds(
                 n_neighbors, query_is_train, X if X is not None else self._fit_X
             )
-
-    def _prepare_kneighbors_inputs(self, X, n_neighbors):
-        """Prepare inputs for kneighbors call to onedal backend.
-
-        Handles query_is_train case: when X=None, sets X to training data and adds +1 to n_neighbors.
-        Validates n_neighbors bounds AFTER adding +1 (replicates original onedal behavior).
-
-        NOTE: Caller is responsible for validating X (via validate_data or _check_array).
-        This function does NOT validate X to avoid double validation and to support
-        use_raw_input mode where validation should be skipped.
-
-        Args:
-            X: Query data or None
-            n_neighbors: Number of neighbors or None
-
-        Returns:
-            Tuple of (X, n_neighbors, query_is_train)
-            - X: Processed query data (self._fit_X if original X was None)
-            - n_neighbors: Adjusted n_neighbors (includes +1 if query_is_train)
-            - query_is_train: Boolean flag indicating if original X was None
-        """
-        query_is_train = X is None
-
-        if X is not None:
-            # X validation should already be done by caller
-            # Do NOT call _check_array here to avoid double validation
-            # and to support use_raw_input mode
-            pass
-        else:
-            X = self._fit_X
-            # Include an extra neighbor to account for the sample itself being
-            # returned, which is removed later
-            if n_neighbors is None:
-                n_neighbors = self.n_neighbors
-            n_neighbors += 1
-
-            # Validate bounds AFTER adding +1 (replicates original onedal behavior)
-            # Original code in onedal had validation after n_neighbors += 1
-            n_samples_fit = self.n_samples_fit_
-            if n_neighbors > n_samples_fit:
-                n_neighbors_for_msg = (
-                    n_neighbors - 1
-                )  # for error message, show original value
-                raise ValueError(
-                    f"Expected n_neighbors < n_samples_fit, but "
-                    f"n_neighbors = {n_neighbors_for_msg}, n_samples_fit = {n_samples_fit}, "
-                    f"n_samples = {X.shape[0]}"
-                )
-
-        return X, n_neighbors, query_is_train
-
-    def _kneighbors_post_processing(
-        self, X, n_neighbors, return_distance, result, query_is_train
-    ):
-        """Shared post-processing for kneighbors results.
-
-        Following PCA pattern: all post-processing in sklearnex, onedal returns raw results.
-        Replicates exact logic from main branch onedal._kneighbors() method.
-
-        Handles (in order, matching main branch):
-        1. kd_tree sorting: sorts results by distance (BEFORE deciding what to return)
-        2. query_is_train case (X=None): removes self from results
-        3. return_distance decision: return distances+indices or just indices
-
-        Args:
-            X: Query data (self._fit_X if query_is_train)
-            n_neighbors: Number of neighbors (already includes +1 if query_is_train)
-            return_distance: Whether to return distances to user
-            result: Raw result from onedal backend - always (distances, indices)
-            query_is_train: Boolean indicating if original X was None
-
-        Returns:
-            Post-processed result: (distances, indices) if return_distance else indices
-        """
-        # Array API support: get namespace from result arrays
-        # onedal always returns both distances and indices (backend computes both)
-        distances, indices = result
-        xp, _ = get_namespace(distances, indices)
-
-        # POST-PROCESSING STEP 1: kd_tree sorting (moved from onedal)
-        # This happens BEFORE deciding what to return, using distances that are always available
-        # Matches main branch: sorting uses distances even when return_distance=False
-        if self._fit_method == "kd_tree":
-            for i in range(distances.shape[0]):
-                seq = xp.argsort(distances[i])
-                indices[i] = indices[i][seq]
-                distances[i] = distances[i][seq]
-
-        # POST-PROCESSING STEP 2: Decide what to return (moved from onedal)
-        # This happens AFTER kd_tree sorting
-        if return_distance:
-            results = distances, indices
-        else:
-            results = indices
-
-        # POST-PROCESSING STEP 3: Remove self from results when query_is_train (moved from onedal)
-        # This happens LAST, after sorting and after deciding format
-        if not query_is_train:
-            return results
-
-        # If the query data is the same as the indexed data, we would like
-        # to ignore the first nearest neighbor of every sample, i.e the sample itself.
-        if return_distance:
-            neigh_dist, neigh_ind = results
-        else:
-            neigh_ind = results
-
-        # X is self._fit_X in query_is_train case (set by caller)
-        n_queries, _ = X.shape
-        sample_range = xp.arange(n_queries)[:, xp.newaxis]
-        sample_mask = neigh_ind != sample_range
-
-        # Corner case: When the number of duplicates are more
-        # than the number of neighbors, the first NN will not
-        # be the sample, but a duplicate.
-        # In that case mask the first duplicate.
-        dup_gr_nbrs = xp.all(sample_mask, axis=1)
-        sample_mask[:, 0][dup_gr_nbrs] = False
-
-        neigh_ind = xp.reshape(neigh_ind[sample_mask], (n_queries, n_neighbors - 1))
-
-        if return_distance:
-            neigh_dist = xp.reshape(neigh_dist[sample_mask], (n_queries, n_neighbors - 1))
-            return neigh_dist, neigh_ind
-        return neigh_ind
-
-    def _process_classification_targets(self, y, skip_validation=False):
-        """Process classification targets and set class-related attributes.
-
-        Parameters
-        ----------
-        y : array-like
-            Target values
-        skip_validation : bool, default=False
-            If True, skip _check_classification_targets validation.
-            Used when use_raw_input=True (raw array API arrays like dpctl.usm_ndarray).
-        """
-        # Array API support: get namespace from y
-        xp, _ = get_namespace(y)
-
-        # y should already be numpy array from validate_data
-        y = xp.asarray(y)
-
-        # Handle shape processing
-        shape = getattr(y, "shape", None)
-        self._shape = shape if shape is not None else y.shape
-
-        if y.ndim == 1 or y.ndim == 2 and y.shape[1] == 1:
-            self.outputs_2d_ = False
-            y = xp.reshape(y, (-1, 1))
-        else:
-            self.outputs_2d_ = True
-
-        # Validate classification targets (skip for raw array API inputs)
-        if not skip_validation:
-            _check_classification_targets(y)
-
-        # Process classes - note: np.unique is used for class extraction
-        # This is acceptable as classes are typically numpy arrays in sklearn
-        self.classes_ = []
-        self._y = xp.empty(y.shape, dtype=xp.int32)
-        for k in range(self._y.shape[1]):
-            # Use numpy unique for class extraction (standard sklearn pattern)
-            # Transfer to host first to ensure proper numpy array conversion
-            y_k_host = np.asarray(_transfer_to_host(y[:, k])[1][0])
-            classes, indices = np.unique(y_k_host, return_inverse=True)
-            self.classes_.append(classes)
-            self._y[:, k] = xp.asarray(indices, dtype=xp.int32)
-
-        if not self.outputs_2d_:
-            self.classes_ = self.classes_[0]
-            self._y = xp.reshape(self._y, (-1,))
-
-        # Validate we have at least 2 classes
-        self._validate_n_classes()
-
-        return y
-
-    def _process_regression_targets(self, y):
-        """Process regression targets and set shape-related attributes.
-
-        REFACTOR: This replicates the EXACT shape processing that was in onedal _fit.
-        Original onedal code:
-            shape = getattr(y, "shape", None)
-            self._shape = shape if shape is not None else y.shape
-            # (later, after fit)
-            self._y = y if self._shape is None else xp.reshape(y, self._shape)
-
-        For now, just store _shape and _y as-is. The reshape happens after onedal fit is complete.
-        """
-        # EXACT replication of original onedal shape processing
-        shape = getattr(y, "shape", None)
-        self._shape = shape if shape is not None else y.shape
-        self._y = y
-        return y
 
     def _fit_validation(self, X, y=None):
         if sklearn_check_version("1.2"):

@@ -14,6 +14,7 @@
 # limitations under the License.
 # ===============================================================================
 
+import numpy as np
 from sklearn.metrics import accuracy_score
 from sklearn.neighbors._classification import (
     KNeighborsClassifier as _sklearn_KNeighborsClassifier,
@@ -23,7 +24,9 @@ from sklearn.utils.validation import check_is_fitted
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.utils.validation import get_requires_y_tag
+from onedal._device_offload import _transfer_to_host
 from onedal.neighbors import KNeighborsClassifier as onedal_KNeighborsClassifier
+from onedal.utils.validation import _check_classification_targets
 
 from .._config import get_config
 from .._device_offload import dispatch, wrap_output_data
@@ -190,6 +193,58 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         # Post-processing
         self._save_attributes()
 
+    def _process_classification_targets(self, y, skip_validation=False):
+        """Process classification targets and set class-related attributes.
+
+        Parameters
+        ----------
+        y : array-like
+            Target values
+        skip_validation : bool, default=False
+            If True, skip _check_classification_targets validation.
+            Used when use_raw_input=True (raw array API arrays like dpctl.usm_ndarray).
+        """
+        # Array API support: get namespace from y
+        xp, _ = get_namespace(y)
+
+        # y should already be numpy array from validate_data
+        y = xp.asarray(y)
+
+        # Handle shape processing
+        shape = getattr(y, "shape", None)
+        self._shape = shape if shape is not None else y.shape
+
+        if y.ndim == 1 or y.ndim == 2 and y.shape[1] == 1:
+            self.outputs_2d_ = False
+            y = xp.reshape(y, (-1, 1))
+        else:
+            self.outputs_2d_ = True
+
+        # Validate classification targets (skip for raw array API inputs)
+        if not skip_validation:
+            _check_classification_targets(y)
+
+        # Process classes - note: np.unique is used for class extraction
+        # This is acceptable as classes are typically numpy arrays in sklearn
+        self.classes_ = []
+        self._y = xp.empty(y.shape, dtype=int)
+        for k in range(self._y.shape[1]):
+            # Use numpy unique for class extraction (standard sklearn pattern)
+            # Transfer to host first to ensure proper numpy array conversion
+            y_k_host = np.asarray(_transfer_to_host(y[:, k])[1][0])
+            classes, indices = np.unique(y_k_host, return_inverse=True)
+            self.classes_.append(classes)
+            self._y[:, k] = xp.asarray(indices, dtype=int)
+
+        if not self.outputs_2d_:
+            self.classes_ = self.classes_[0]
+            self._y = xp.reshape(self._y, (-1,))
+
+        # Validate we have at least 2 classes
+        self._validate_n_classes()
+
+        return y
+
     def _compute_class_probabilities(
         self, neigh_dist, neigh_ind, weights_param, y_train, classes, outputs_2d
     ):
@@ -282,27 +337,11 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
 
         return probabilities
 
-    def _predict_skl_classification(self, X):
-        """SKL prediction path for classification - calls kneighbors, computes predictions.
-
-        This method handles X=None (LOOCV) properly by calling self.kneighbors which
-        has the query_is_train logic.
-
-        Parameters
-        ----------
-        X : array-like or None
-            Query samples, or None for LOOCV.
-
-        Returns
-        -------
-        y_pred : array
-            Predicted class labels.
-        """
+    def _onedal_predict(self, X, queue=None):
         neigh_dist, neigh_ind = self.kneighbors(X)
         proba = self._compute_class_probabilities(
             neigh_dist, neigh_ind, self.weights, self._y, self.classes_, self.outputs_2d_
         )
-        # Array API support: get namespace from probability array
         xp, _ = get_namespace(proba)
 
         if not self.outputs_2d_:
@@ -315,12 +354,6 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
                 for classes_k, proba_k in zip(self.classes_, proba.T)
             ]
             return xp.asarray(result).T
-
-    def _onedal_predict(self, X, queue=None):
-        # Use the helper method (calls kneighbors + computes prediction)
-        # This properly handles X=None (LOOCV) case
-        # Note: X validation happens in kneighbors
-        return self._predict_skl_classification(X)
 
     def _onedal_predict_proba(self, X, queue=None):
         # Call kneighbors through sklearnex (self.kneighbors is the sklearnex method)

@@ -131,10 +131,27 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
             return_distance=return_distance,
         )
 
+    def _process_regression_targets(self, y):
+        """Process regression targets and set shape-related attributes.
+
+        REFACTOR: This replicates the EXACT shape processing that was in onedal _fit.
+        Original onedal code:
+            shape = getattr(y, "shape", None)
+            self._shape = shape if shape is not None else y.shape
+            # (later, after fit)
+            self._y = y if self._shape is None else xp.reshape(y, self._shape)
+
+        For now, just store _shape and _y as-is. The reshape happens after onedal fit is complete.
+        """
+        # EXACT replication of original onedal shape processing
+        shape = getattr(y, "shape", None)
+        self._shape = shape if shape is not None else y.shape
+        self._y = y
+        return y
+
     def _onedal_fit(self, X, y, queue=None):
         xp, _ = get_namespace(X, y)
 
-        # Validation step - validates and converts dtypes to float32/float64
         if not get_config()["use_raw_input"]:
             X, y = validate_data(
                 self,
@@ -168,27 +185,21 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         self._onedal_estimator._shape = self._shape
         self._onedal_estimator._y = self._y
 
-        # Pass validated X and y to onedal (after validate_data converted dtypes)
-        # Note: onedal layer handles backend-specific reshape (GPU needs (-1,1) format)
         self._onedal_estimator.fit(X, y, queue=queue)
-
-        # Post-processing: save attributes
-        # Note: _y reshape now happens in onedal layer after fit (matches original main branch logic)
         self._save_attributes()
 
     def _onedal_predict(self, X, queue=None):
         # Dispatch between GPU and SKL prediction methods
-        # This logic matches onedal regressor predict() method but computation happens in sklearnex
-        # Note: X validation happens in kneighbors (for SKL path) or _predict_gpu (for GPU path)
         gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
         is_uniform_weights = getattr(self, "weights", "uniform") == "uniform"
 
         if gpu_device and is_uniform_weights:
-            # GPU path: call onedal backend directly
             return self._predict_gpu(X, queue=queue)
         else:
-            # SKL path: call kneighbors (through sklearnex) then compute in sklearnex
-            return self._predict_skl(X, queue=queue)
+            neigh_dist, neigh_ind = self.kneighbors(X)
+            return self._compute_weighted_prediction(
+                neigh_dist, neigh_ind, self.weights, self._y
+            )
 
     def _predict_gpu(self, X, queue=None):
         """GPU prediction path - calls onedal backend."""
@@ -289,32 +300,6 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
             y_pred = xp.reshape(y_pred, (-1,))
 
         return y_pred
-
-    def _predict_skl_regression(self, X):
-        """SKL prediction path for regression - calls kneighbors, computes predictions.
-
-        This method handles X=None (LOOCV) properly by calling self.kneighbors which
-        has the query_is_train logic.
-
-        Parameters
-        ----------
-        X : array-like or None
-            Query samples, or None for LOOCV.
-
-        Returns
-        -------
-        y_pred : array
-            Predicted regression values.
-        """
-        neigh_dist, neigh_ind = self.kneighbors(X)
-        return self._compute_weighted_prediction(
-            neigh_dist, neigh_ind, self.weights, self._y
-        )
-
-    def _predict_skl(self, X, queue=None):
-        """SKL prediction path - calls kneighbors through sklearnex, computes prediction here."""
-        # Use the helper method (calls kneighbors + computes prediction)
-        return self._predict_skl_regression(X)
 
     def _onedal_kneighbors(
         self, X=None, n_neighbors=None, return_distance=True, queue=None
