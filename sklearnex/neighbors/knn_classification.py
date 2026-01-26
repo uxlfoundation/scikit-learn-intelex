@@ -14,7 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 
-import numpy as np
 from sklearn.metrics import accuracy_score
 from sklearn.neighbors._classification import (
     KNeighborsClassifier as _sklearn_KNeighborsClassifier,
@@ -24,7 +23,6 @@ from sklearn.utils.validation import check_is_fitted
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.utils.validation import get_requires_y_tag
-from onedal._device_offload import _transfer_to_host
 from onedal.neighbors import KNeighborsClassifier as onedal_KNeighborsClassifier
 
 from .._config import get_config
@@ -151,7 +149,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     def _onedal_fit(self, X, y, queue=None):
         xp, _ = get_namespace(X)
 
-        # Validation step (follows PCA pattern)
+        # Validation step
         if not get_config()["use_raw_input"]:
             X, y = validate_data(
                 self,
@@ -160,11 +158,9 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
                 dtype=[xp.float64, xp.float32],
                 accept_sparse="csr",
             )
-            # Set effective metric after validation
-            self._set_effective_metric()
-        else:
-            # SPMD mode: skip validation but still set effective metric
-            self._set_effective_metric()
+
+        # SPMD mode: skip validation but still set effective metric
+        self._set_effective_metric()
 
         # Process classification targets before passing to onedal
         self._process_classification_targets(
@@ -194,8 +190,120 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         # Post-processing
         self._save_attributes()
 
+    def _compute_class_probabilities(
+        self, neigh_dist, neigh_ind, weights_param, y_train, classes, outputs_2d
+    ):
+        """Compute class probabilities for classification.
+
+        Args:
+            neigh_dist: Distances to neighbors
+            neigh_ind: Indices of neighbors
+            weights_param: Weight parameter ('uniform', 'distance', or callable)
+            y_train: Encoded training labels
+            classes: Class labels
+            outputs_2d: Whether output is 2D (multi-output)
+
+        Returns:
+            Class probabilities
+        """
+        # Array API support: get namespace from input arrays
+        xp, _ = get_namespace(neigh_dist, neigh_ind, y_train)
+
+        _y = y_train
+        classes_ = classes
+        if not outputs_2d:
+            _y = xp.reshape(y_train, (-1, 1))
+            classes_ = [classes]
+
+        n_queries = neigh_ind.shape[0]
+
+        weights = self._get_weights(neigh_dist, weights_param)
+        if weights is None:
+            # Ensure weights is float for array API type promotion
+            # neigh_ind is int, so ones_like would give int, but we need float
+            weights = xp.ones_like(neigh_ind, dtype=xp.float64)
+
+        probabilities = []
+        for k, classes_k in enumerate(classes_):
+            # Get predicted labels for each neighbor: shape (n_samples, n_neighbors)
+            # _y[:, k] gives training labels for output k, then gather using neigh_ind
+            y_col_k = _y[:, k, ...]
+
+            # Array API: Use take() with iteration since take() only supports 1-D indices
+            pred_labels_list = []
+            for i in range(neigh_ind.shape[0]):
+                sample_indices = neigh_ind[i, ...]
+                sample_labels = xp.take(y_col_k, sample_indices, axis=0)
+                pred_labels_list.append(sample_labels)
+            pred_labels = xp.stack(
+                pred_labels_list, axis=0
+            )  # Shape: (n_queries, n_neighbors)
+
+            proba_k = xp.zeros((n_queries, classes_k.size), dtype=xp.float64)
+
+            # Array API: Cannot use fancy indexing __setitem__ like proba_k[all_rows, idx] = ...
+            # Instead, build probabilities sample by sample
+            proba_list = []
+            zero_weight = xp.asarray(0.0, dtype=xp.float64)
+            for sample_idx in range(n_queries):
+                sample_proba = xp.zeros((classes_k.size,), dtype=xp.float64)
+                # For this sample, accumulate weights for each neighbor's predicted class
+                for neighbor_idx in range(pred_labels.shape[1]):
+                    class_label = int(pred_labels[sample_idx, neighbor_idx])
+                    weight = weights[sample_idx, neighbor_idx]
+                    # Update probability for this class using array indexing
+                    # Create a mask for this class and add weight where mask is True
+                    mask = xp.arange(classes_k.size) == class_label
+                    sample_proba = sample_proba + xp.where(mask, weight, zero_weight)
+                proba_list.append(sample_proba)
+            proba_k = xp.stack(proba_list, axis=0)  # Shape: (n_queries, n_classes)
+
+            # normalize 'votes' into real [0,1] probabilities
+            normalizer = xp.sum(proba_k, axis=1)[:, xp.newaxis]
+            # Use array scalar for comparison and assignment
+            zero_scalar = xp.asarray(0.0, dtype=xp.float64)
+            one_scalar = xp.asarray(1.0, dtype=xp.float64)
+            normalizer = xp.where(normalizer == zero_scalar, one_scalar, normalizer)
+            proba_k /= normalizer
+
+            probabilities.append(proba_k)
+
+        if not outputs_2d:
+            probabilities = probabilities[0]
+
+        return probabilities
+
+    def _predict_skl_classification(self, X):
+        """SKL prediction path for classification - calls kneighbors, computes predictions.
+
+        This method handles X=None (LOOCV) properly by calling self.kneighbors which
+        has the query_is_train logic.
+
+        Args:
+            X: Query samples (or None for LOOCV)
+        Returns:
+            Predicted class labels
+        """
+        neigh_dist, neigh_ind = self.kneighbors(X)
+        proba = self._compute_class_probabilities(
+            neigh_dist, neigh_ind, self.weights, self._y, self.classes_, self.outputs_2d_
+        )
+        # Array API support: get namespace from probability array
+        xp, _ = get_namespace(proba)
+
+        if not self.outputs_2d_:
+            # Single output: classes_[argmax(proba, axis=1)]
+            return self.classes_[xp.argmax(proba, axis=1)]
+        else:
+            # Multi-output: apply argmax separately for each output
+            result = [
+                classes_k[xp.argmax(proba_k, axis=1)]
+                for classes_k, proba_k in zip(self.classes_, proba.T)
+            ]
+            return xp.asarray(result).T
+
     def _onedal_predict(self, X, queue=None):
-        # Use the unified helper from common.py (calls kneighbors + computes prediction)
+        # Use the helper method (calls kneighbors + computes prediction)
         # This properly handles X=None (LOOCV) case
         # Note: X validation happens in kneighbors
         return self._predict_skl_classification(X)
@@ -237,13 +345,15 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
         # Get predictions
-        y_pred = self._onedal_predict(X, queue=queue)
+        # y_pred = self._onedal_predict(X, queue=queue)
 
         # Convert array API to numpy for sklearn's accuracy_score using _transfer_to_host
         # This properly handles Array API arrays that don't allow implicit conversion
-        _, (y, y_pred, sample_weight) = _transfer_to_host(y, y_pred, sample_weight)
+        # _, (y, y_pred, sample_weight) = _transfer_to_host(y, y_pred, sample_weight)
 
-        return accuracy_score(y, y_pred, sample_weight=sample_weight)
+        return accuracy_score(
+            y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
+        )
 
     def _save_attributes(self):
         self.classes_ = self._onedal_estimator.classes_

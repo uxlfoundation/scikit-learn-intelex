@@ -23,13 +23,12 @@ from sklearn.utils.validation import assert_all_finite, check_is_fitted
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.utils.validation import get_requires_y_tag
-from onedal._device_offload import _transfer_to_host
 from onedal.neighbors import KNeighborsRegressor as onedal_KNeighborsRegressor
 from onedal.utils import _sycl_queue_manager as QM
 
 from .._config import get_config
 from .._device_offload import dispatch, wrap_output_data
-from ..utils._array_api import enable_array_api, get_namespace
+from ..utils._array_api import _is_numpy_namespace, enable_array_api, get_namespace
 from ..utils.validation import check_feature_names, validate_data
 from .common import KNeighborsDispatchingBase
 
@@ -149,9 +148,6 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
 
             # Set effective metric after validation
             self._set_effective_metric()
-        else:
-            # SPMD mode: skip validation but still set effective metric
-            self._set_effective_metric()
 
         # Process regression targets before passing to onedal (uses validated y)
         self._process_regression_targets(y)
@@ -215,9 +211,97 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         # Call onedal backend for GPU prediction
         return self._onedal_estimator._predict_gpu(X)
 
+    def _compute_weighted_prediction(self, neigh_dist, neigh_ind, weights_param, y_train):
+        """Compute weighted prediction for regression.
+
+        Args:
+            neigh_dist: Distances to neighbors
+            neigh_ind: Indices of neighbors
+            weights_param: Weight parameter ('uniform', 'distance', or callable)
+            y_train: Training target values
+
+        Returns:
+            Predicted values
+        """
+        # Array API support: get namespace from input arrays
+        xp, _ = get_namespace(neigh_dist, neigh_ind, y_train)
+
+        weights = self._get_weights(neigh_dist, weights_param)
+
+        _y = y_train
+        if _y.ndim == 1:
+            _y = xp.reshape(_y, (-1, 1))
+
+        if weights is None:
+            # Array API: Use take() per row since array API take() only supports 1-D indices
+            # Build result by gathering rows one at a time
+            gathered_list = []
+            for i in range(neigh_ind.shape[0]):
+                # Get indices for this sample's neighbors
+                sample_indices = neigh_ind[i, ...]  # Shape: (n_neighbors,)
+                # Gather those rows from _y
+                sample_neighbors = xp.take(
+                    _y, sample_indices, axis=0
+                )  # Shape: (n_neighbors, n_outputs)
+                gathered_list.append(sample_neighbors)
+            # Stack and compute mean
+            gathered = xp.stack(
+                gathered_list, axis=0
+            )  # Shape: (n_samples, n_neighbors, n_outputs)
+            y_pred = xp.mean(gathered, axis=1)
+        else:
+            # Create y_pred array - matches original onedal implementation using empty()
+            # For Array API arrays (dpctl/dpnp), pass device parameter to match input device
+            # For numpy arrays, device parameter is not supported and not needed
+            y_pred_shape = (neigh_ind.shape[0], _y.shape[1])
+            if not _is_numpy_namespace(xp):
+                # Array API: pass device to ensure same device as input
+                y_pred = xp.empty(y_pred_shape, dtype=xp.float64, device=neigh_ind.device)
+            else:
+                # Numpy: no device parameter
+                y_pred = xp.empty(y_pred_shape, dtype=xp.float64)
+            denom = xp.sum(weights, axis=1)
+
+            for j in range(_y.shape[1]):
+                # Array API: Iterate over samples to gather values
+                y_col_j = _y[:, j, ...]  # Shape: (n_train_samples,)
+                gathered_vals = []
+                for i in range(neigh_ind.shape[0]):
+                    sample_indices = neigh_ind[i, ...]  # Shape: (n_neighbors,)
+                    sample_vals = xp.take(
+                        y_col_j, sample_indices, axis=0
+                    )  # Shape: (n_neighbors,)
+                    gathered_vals.append(sample_vals)
+                gathered_j = xp.stack(
+                    gathered_vals, axis=0
+                )  # Shape: (n_samples, n_neighbors)
+                num = xp.sum(gathered_j * weights, axis=1)
+                y_pred[:, j, ...] = num / denom
+
+        if y_train.ndim == 1:
+            y_pred = xp.reshape(y_pred, (-1,))
+
+        return y_pred
+
+    def _predict_skl_regression(self, X):
+        """SKL prediction path for regression - calls kneighbors, computes predictions.
+
+        This method handles X=None (LOOCV) properly by calling self.kneighbors which
+        has the query_is_train logic.
+
+        Args:
+            X: Query samples (or None for LOOCV)
+        Returns:
+            Predicted regression values
+        """
+        neigh_dist, neigh_ind = self.kneighbors(X)
+        return self._compute_weighted_prediction(
+            neigh_dist, neigh_ind, self.weights, self._y
+        )
+
     def _predict_skl(self, X, queue=None):
         """SKL prediction path - calls kneighbors through sklearnex, computes prediction here."""
-        # Use the unified helper from common.py (calls kneighbors + computes prediction)
+        # Use the helper method (calls kneighbors + computes prediction)
         return self._predict_skl_regression(X)
 
     def _onedal_kneighbors(
@@ -243,14 +327,9 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         )
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
-        y_pred = self._onedal_predict(X, queue=queue)
-
-        # Convert array API/USM arrays back to numpy for r2_score
-        # r2_score doesn't support Array API, following PCA's pattern with _transfer_to_host
-        _, host_data = _transfer_to_host(y, y_pred, sample_weight)
-        y, y_pred, sample_weight = host_data
-
-        return r2_score(y, y_pred, sample_weight=sample_weight)
+        return r2_score(
+            y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
+        )
 
     def _save_attributes(self):
         self.n_features_in_ = self._onedal_estimator.n_features_in_
