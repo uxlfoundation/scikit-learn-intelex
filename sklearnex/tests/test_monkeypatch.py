@@ -280,4 +280,7 @@ def test_extension_estimators_are_not_left_over():
 
     from sklearnex import patch_sklearn, unpatch_sklearn
 
+    patch_sklearn()
+    unpatch_sklearn()
+
     assert not hasattr(linear_model, "IncrementalRidge")
