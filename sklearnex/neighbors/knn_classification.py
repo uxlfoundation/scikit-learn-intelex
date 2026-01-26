@@ -195,16 +195,25 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     ):
         """Compute class probabilities for classification.
 
-        Args:
-            neigh_dist: Distances to neighbors
-            neigh_ind: Indices of neighbors
-            weights_param: Weight parameter ('uniform', 'distance', or callable)
-            y_train: Encoded training labels
-            classes: Class labels
-            outputs_2d: Whether output is 2D (multi-output)
+        Parameters
+        ----------
+        neigh_dist : array
+            Distances to neighbors.
+        neigh_ind : array
+            Indices of neighbors.
+        weights_param : {'uniform', 'distance'}, callable or None
+            Weight parameter.
+        y_train : array
+            Encoded training labels.
+        classes : array or list of arrays
+            Class labels.
+        outputs_2d : bool
+            Whether output is 2D (multi-output).
 
-        Returns:
-            Class probabilities
+        Returns
+        -------
+        probabilities : array or list of arrays
+            Class probabilities.
         """
         # Array API support: get namespace from input arrays
         xp, _ = get_namespace(neigh_dist, neigh_ind, y_train)
@@ -221,7 +230,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         if weights is None:
             # Ensure weights is float for array API type promotion
             # neigh_ind is int, so ones_like would give int, but we need float
-            weights = xp.ones_like(neigh_ind, dtype=xp.float64)
+            weights = xp.ones_like(neigh_ind, dtype=neigh_dist.dtype)
 
         probabilities = []
         for k, classes_k in enumerate(classes_):
@@ -239,14 +248,14 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
                 pred_labels_list, axis=0
             )  # Shape: (n_queries, n_neighbors)
 
-            proba_k = xp.zeros((n_queries, classes_k.size), dtype=xp.float64)
+            proba_k = xp.zeros((n_queries, classes_k.size), dtype=neigh_dist.dtype)
 
             # Array API: Cannot use fancy indexing __setitem__ like proba_k[all_rows, idx] = ...
             # Instead, build probabilities sample by sample
             proba_list = []
-            zero_weight = xp.asarray(0.0, dtype=xp.float64)
+            zero_weight = xp.asarray(0.0, dtype=neigh_dist.dtype)
             for sample_idx in range(n_queries):
-                sample_proba = xp.zeros((classes_k.size,), dtype=xp.float64)
+                sample_proba = xp.zeros((classes_k.size,), dtype=neigh_dist.dtype)
                 # For this sample, accumulate weights for each neighbor's predicted class
                 for neighbor_idx in range(pred_labels.shape[1]):
                     class_label = int(pred_labels[sample_idx, neighbor_idx])
@@ -261,8 +270,8 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             # normalize 'votes' into real [0,1] probabilities
             normalizer = xp.sum(proba_k, axis=1)[:, xp.newaxis]
             # Use array scalar for comparison and assignment
-            zero_scalar = xp.asarray(0.0, dtype=xp.float64)
-            one_scalar = xp.asarray(1.0, dtype=xp.float64)
+            zero_scalar = xp.asarray(0.0, dtype=neigh_dist.dtype)
+            one_scalar = xp.asarray(1.0, dtype=neigh_dist.dtype)
             normalizer = xp.where(normalizer == zero_scalar, one_scalar, normalizer)
             proba_k /= normalizer
 
@@ -279,10 +288,15 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         This method handles X=None (LOOCV) properly by calling self.kneighbors which
         has the query_is_train logic.
 
-        Args:
-            X: Query samples (or None for LOOCV)
-        Returns:
-            Predicted class labels
+        Parameters
+        ----------
+        X : array-like or None
+            Query samples, or None for LOOCV.
+
+        Returns
+        -------
+        y_pred : array
+            Predicted class labels.
         """
         neigh_dist, neigh_ind = self.kneighbors(X)
         proba = self._compute_class_probabilities(

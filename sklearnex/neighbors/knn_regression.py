@@ -214,14 +214,21 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
     def _compute_weighted_prediction(self, neigh_dist, neigh_ind, weights_param, y_train):
         """Compute weighted prediction for regression.
 
-        Args:
-            neigh_dist: Distances to neighbors
-            neigh_ind: Indices of neighbors
-            weights_param: Weight parameter ('uniform', 'distance', or callable)
-            y_train: Training target values
+        Parameters
+        ----------
+        neigh_dist : array
+            Distances to neighbors.
+        neigh_ind : array
+            Indices of neighbors.
+        weights_param : {'uniform', 'distance'}, callable or None
+            Weight parameter.
+        y_train : array
+            Training target values.
 
-        Returns:
-            Predicted values
+        Returns
+        -------
+        y_pred : array
+            Predicted values.
         """
         # Array API support: get namespace from input arrays
         xp, _ = get_namespace(neigh_dist, neigh_ind, y_train)
@@ -256,10 +263,10 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
             y_pred_shape = (neigh_ind.shape[0], _y.shape[1])
             if not _is_numpy_namespace(xp):
                 # Array API: pass device to ensure same device as input
-                y_pred = xp.empty(y_pred_shape, dtype=xp.float64, device=neigh_ind.device)
+                y_pred = xp.empty(y_pred_shape, dtype=_y.dtype, device=neigh_ind.device)
             else:
                 # Numpy: no device parameter
-                y_pred = xp.empty(y_pred_shape, dtype=xp.float64)
+                y_pred = xp.empty(y_pred_shape, dtype=_y.dtype)
             denom = xp.sum(weights, axis=1)
 
             for j in range(_y.shape[1]):
@@ -289,10 +296,15 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         This method handles X=None (LOOCV) properly by calling self.kneighbors which
         has the query_is_train logic.
 
-        Args:
-            X: Query samples (or None for LOOCV)
-        Returns:
-            Predicted regression values
+        Parameters
+        ----------
+        X : array-like or None
+            Query samples, or None for LOOCV.
+
+        Returns
+        -------
+        y_pred : array
+            Predicted regression values.
         """
         neigh_dist, neigh_ind = self.kneighbors(X)
         return self._compute_weighted_prediction(

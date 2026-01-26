@@ -63,6 +63,10 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         return result_method
 
     def _get_weights(self, dist, weights):
+        """Compute weights from distances.
+
+        Adapted from sklearn.neighbors._base._get_weights with array API support.
+        """
         if weights in (None, "uniform"):
             return None
         if weights == "distance":

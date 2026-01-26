@@ -111,22 +111,22 @@ def test_knn_classifier_pickle():
 @pytest.mark.allow_sklearn_fallback
 def test_knn_classifier_single_class():
     """Test KNeighborsClassifier with single-class data (fallback to sklearn).
-    
+
     oneDAL does not support single-class classification, so this should
     fallback to sklearn's implementation.
     """
     # Create single-class dataset
     X = np.array([[0, 0], [1, 1], [2, 2], [3, 3]])
     y = np.array([0, 0, 0, 0])  # All same class
-    
+
     clf = KNeighborsClassifier(n_neighbors=2)
     clf.fit(X, y)
-    
+
     # Should predict the only class
     predictions = clf.predict(X)
     assert_array_equal(predictions, y)
     assert_array_equal(clf.classes_, [0])
-    
+
     # Test with new data
     X_test = np.array([[1.5, 1.5], [2.5, 2.5]])
     predictions_test = clf.predict(X_test)

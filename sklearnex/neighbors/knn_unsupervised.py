@@ -101,7 +101,7 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         self, X=None, radius=None, return_distance=True, sort_results=False
     ):
         if (
-            "_onedal_estimator" in self.__dict__
+            hasattr(self, "_onedal_estimator")
             or getattr(self, "_tree", 0) is None
             and self._fit_method == "kd_tree"
         ):
@@ -186,10 +186,7 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
                 reset=False,
             )
 
-        # onedal backend now handles all logic:
-        # - X=None case (query_is_train)
-        # - kd_tree sorting
-        # - removing self from results
+        # call onedal backend
         return self._onedal_estimator.kneighbors(
             X, n_neighbors, return_distance, queue=queue
         )
