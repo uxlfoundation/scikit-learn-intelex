@@ -163,8 +163,8 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
                 y_numeric=True,
             )
 
-            # Set effective metric after validation
-            self._set_effective_metric()
+        # Set effective metric after validation
+        self._set_effective_metric()
 
         # Process regression targets before passing to onedal (uses validated y)
         self._process_regression_targets(y)
