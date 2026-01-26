@@ -17,12 +17,12 @@
 import contextlib
 import gc
 import itertools
+import json
 import pickle
 import unittest
 import warnings
 from collections.abc import Callable
 from datetime import datetime
-import json
 
 import lightgbm as lgb
 import numpy as np
@@ -113,10 +113,10 @@ def force_shap_predict(model, X):
 def compute_xgb_tree_depth(booster: xgb.Booster) -> int:
     """
     Compute the maximum depth across all trees in an XGBoost model.
-    
+
     Returns the maximum depth found among all trees.
     """
-    
+
     max_depth = 0
     dump = booster.get_dump(dump_format="json")
     for i, tree_json in enumerate(dump):
@@ -125,6 +125,7 @@ def compute_xgb_tree_depth(booster: xgb.Booster) -> int:
         max_depth = max(depth, max_depth)
 
     return max_depth
+
 
 def _compute_xgb_tree_depth_recursive(tree_structure: dict) -> int:
     if "leaf" in tree_structure:
@@ -141,16 +142,16 @@ def _compute_xgb_tree_depth_recursive(tree_structure: dict) -> int:
 def compute_lgb_tree_depth(booster: lgb.Booster) -> int:
     """
     Compute the maximum depth across all trees in a LightGBM model.
-    
+
     Returns the maximum depth found among all trees.
     """
     model_dump = booster.dump_model()
     max_depth = 0
-    
+
     for tree_info in model_dump.get("tree_info", []):
         depth = _compute_lgb_tree_depth_recursive(tree_info["tree_structure"])
         max_depth = max(max_depth, depth)
-    
+
     return max_depth
 
 
@@ -160,10 +161,10 @@ def _compute_lgb_tree_depth_recursive(tree_structure: dict) -> int:
     """
     if "leaf_index" in tree_structure:
         return 1
-    
+
     left_depth = _compute_lgb_tree_depth_recursive(tree_structure["left_child"])
     right_depth = _compute_lgb_tree_depth_recursive(tree_structure["right_child"])
-    
+
     return 1 + max(left_depth, right_depth)
 
 
@@ -176,7 +177,7 @@ def make_xgb_model(
 ) -> "xgb.Booster | xgb.XGBRegressor | xgb.XGBClassifier":
     params_base_score = {"base_score": base_score} if base_score is not None else {}
     min_split_loss = 1e10 if empty_trees else 0.0
-    
+
     # Use larger dataset and deeper trees for deep_trees tests
     if deep_trees:
         max_depth = 20
@@ -196,7 +197,7 @@ def make_xgb_model(
         n_features = 3
         n_features_reg = 4
         n_informative = 3
-    
+
     if objective.startswith("binary:"):
         X, y = make_classification(
             n_samples=n_samples_binary,
@@ -313,7 +314,14 @@ def make_xgb_model(
 @pytest.mark.parametrize("deep_trees", [False, True])
 @pytest.mark.parametrize("from_treelite", [False, True])
 def test_xgb_regression(
-    objective, base_score, sklearn_class, with_nan, dtype, empty_trees, deep_trees, from_treelite
+    objective,
+    base_score,
+    sklearn_class,
+    with_nan,
+    dtype,
+    empty_trees,
+    deep_trees,
+    from_treelite,
 ):
     if (
         (objective == "reg:logistic")
@@ -328,20 +336,23 @@ def test_xgb_regression(
     if deep_trees and empty_trees:
         pytest.skip()
 
-    xgb_model = make_xgb_model(objective, base_score, sklearn_class, empty_trees, deep_trees)
+    xgb_model = make_xgb_model(
+        objective, base_score, sklearn_class, empty_trees, deep_trees
+    )
 
     if sklearn_class:
         xgb_model = xgb_model.get_booster()
-    
+
     # Check tree depth if deep_trees is enabled
     if deep_trees:
         actual_depth = compute_xgb_tree_depth(xgb_model)
-        assert actual_depth >= 12, f"Expected deep trees (depth >= 12), got depth {actual_depth}"
+        assert (
+            actual_depth >= 12
+        ), f"Expected deep trees (depth >= 12), got depth {actual_depth}"
 
     if from_treelite:
         xgb_model = treelite.frontend.from_xgboost(xgb_model)
     d4p_model = d4p.mb.convert_model(xgb_model)
-
 
     num_features = (
         xgb_model.num_features() if not from_treelite else xgb_model.num_feature
@@ -384,7 +395,14 @@ def test_xgb_regression(
 @pytest.mark.parametrize("deep_trees", [False, True])
 @pytest.mark.parametrize("from_treelite", [False, True])
 def test_xgb_regression_shap(
-    objective, base_score, sklearn_class, with_nan, dtype, empty_trees, deep_trees, from_treelite
+    objective,
+    base_score,
+    sklearn_class,
+    with_nan,
+    dtype,
+    empty_trees,
+    deep_trees,
+    from_treelite,
 ):
     if (
         (objective == "reg:logistic")
@@ -399,22 +417,24 @@ def test_xgb_regression_shap(
     if deep_trees and empty_trees:
         pytest.skip()
 
-    xgb_model = make_xgb_model(objective, base_score, sklearn_class, empty_trees, deep_trees)
-    
+    xgb_model = make_xgb_model(
+        objective, base_score, sklearn_class, empty_trees, deep_trees
+    )
+
     if sklearn_class:
         xgb_model = xgb_model.get_booster()
     # Check tree depth if deep_trees is enabled
     if deep_trees:
         actual_depth = compute_xgb_tree_depth(xgb_model)
-        assert actual_depth >= 12, f"Expected deep trees (depth >= 12), got depth {actual_depth}"
+        assert (
+            actual_depth >= 12
+        ), f"Expected deep trees (depth >= 12), got depth {actual_depth}"
 
     if from_treelite:
         tl_model = treelite.frontend.from_xgboost(xgb_model)
         d4p_model = d4p.mb.convert_model(tl_model)
     else:
         d4p_model = d4p.mb.convert_model(xgb_model)
-
-    
 
     assert d4p_model.model_type == "xgboost" if not from_treelite else "treelite"
     assert d4p_model.is_regressor_
@@ -458,21 +478,32 @@ def test_xgb_regression_shap(
 @pytest.mark.parametrize("deep_trees", [False, True])
 @pytest.mark.parametrize("from_treelite", [False, True])
 def test_xgb_binary_classification(
-    objective, base_score, sklearn_class, with_nan, dtype, empty_trees, deep_trees, from_treelite
-):  
+    objective,
+    base_score,
+    sklearn_class,
+    with_nan,
+    dtype,
+    empty_trees,
+    deep_trees,
+    from_treelite,
+):
     if sklearn_class and from_treelite:
         pytest.skip()
-    if (empty_trees and deep_trees):
+    if empty_trees and deep_trees:
         pytest.skip()
-    xgb_model = make_xgb_model(objective, base_score, sklearn_class, empty_trees, deep_trees)
+    xgb_model = make_xgb_model(
+        objective, base_score, sklearn_class, empty_trees, deep_trees
+    )
 
     if sklearn_class:
         xgb_model = xgb_model.get_booster()
-    
+
     # Check tree depth if deep_trees is enabled
     if deep_trees and not from_treelite:
         actual_depth = compute_xgb_tree_depth(xgb_model)
-        assert actual_depth >= 12, f"Expected deep trees (depth >= 12), got depth {actual_depth}"
+        assert (
+            actual_depth >= 12
+        ), f"Expected deep trees (depth >= 12), got depth {actual_depth}"
 
     if from_treelite:
         xgb_model = treelite.frontend.from_xgboost(xgb_model)
@@ -553,23 +584,34 @@ def test_xgb_binary_classification(
 @pytest.mark.parametrize("deep_trees", [False, True])
 @pytest.mark.parametrize("from_treelite", [False, True])
 def test_xgb_binary_classification_shap(
-    objective, base_score, sklearn_class, with_nan, dtype, empty_trees, deep_trees, from_treelite
+    objective,
+    base_score,
+    sklearn_class,
+    with_nan,
+    dtype,
+    empty_trees,
+    deep_trees,
+    from_treelite,
 ):
     if sklearn_class and from_treelite:
         pytest.skip()
     if empty_trees and deep_trees:
         pytest.skip()
 
-    xgb_model = make_xgb_model(objective, base_score, sklearn_class, empty_trees, deep_trees)
-    
+    xgb_model = make_xgb_model(
+        objective, base_score, sklearn_class, empty_trees, deep_trees
+    )
+
     if sklearn_class:
         xgb_model = xgb_model.get_booster()
 
     # Check tree depth if deep_trees is enabled
     if deep_trees and not from_treelite:
         actual_depth = compute_xgb_tree_depth(xgb_model)
-        assert actual_depth >= 12, f"Expected deep trees (depth >= 12), got depth {actual_depth}"
-    
+        assert (
+            actual_depth >= 12
+        ), f"Expected deep trees (depth >= 12), got depth {actual_depth}"
+
     if from_treelite:
         tl_model = treelite.frontend.from_xgboost(xgb_model)
         d4p_model = d4p.mb.convert_model(tl_model)
@@ -616,24 +658,35 @@ def test_xgb_binary_classification_shap(
 @pytest.mark.parametrize("deep_trees", [False, True])
 @pytest.mark.parametrize("from_treelite", [False, True])
 def test_xgb_multiclass_classification(
-    objective, base_score, sklearn_class, with_nan, dtype, empty_trees, deep_trees, from_treelite
+    objective,
+    base_score,
+    sklearn_class,
+    with_nan,
+    dtype,
+    empty_trees,
+    deep_trees,
+    from_treelite,
 ):
     if sklearn_class and from_treelite:
         pytest.skip()
-    
+
     if empty_trees and deep_trees:
         pytest.skip()
-    
-    xgb_model = make_xgb_model(objective, base_score, sklearn_class, empty_trees, deep_trees)
-    
+
+    xgb_model = make_xgb_model(
+        objective, base_score, sklearn_class, empty_trees, deep_trees
+    )
+
     if sklearn_class:
         xgb_model = xgb_model.get_booster()
-    
+
     # Check tree depth if deep_trees is enabled
     if deep_trees and not from_treelite:
         actual_depth = compute_xgb_tree_depth(xgb_model)
-        assert actual_depth >= 12, f"Expected deep trees (depth >= 12), got depth {actual_depth}"
-    
+        assert (
+            actual_depth >= 12
+        ), f"Expected deep trees (depth >= 12), got depth {actual_depth}"
+
     if from_treelite:
         xgb_model = treelite.frontend.from_xgboost(xgb_model)
     d4p_model = d4p.mb.convert_model(xgb_model)
@@ -824,7 +877,7 @@ def make_lgb_model(
         if boost_from_average is not None
         else {}
     )
-    
+
     # Use larger dataset and deeper trees for deep_trees tests
     if deep_trees:
         max_depth = 20
@@ -846,7 +899,7 @@ def make_lgb_model(
         n_features = 3
         n_features_reg = 4
         n_informative = 3
-    
+
     if objective == "binary":
         X, y = make_classification(
             n_samples=n_samples_binary,
@@ -998,7 +1051,7 @@ def make_lgb_model(
 def test_lgb_regression(
     objective, sklearn_class, with_nan, dtype, empty_trees, boost_from_average, deep_trees
 ):
-    if (deep_trees and empty_trees):
+    if deep_trees and empty_trees:
         pytest.skip()
 
     lgb_model = make_lgb_model(
@@ -1008,12 +1061,13 @@ def test_lgb_regression(
 
     if sklearn_class:
         lgb_model = lgb_model.booster_
-    
+
     # Check tree depth if deep_trees is enabled
     if deep_trees:
         actual_depth = compute_lgb_tree_depth(lgb_model)
-        assert actual_depth >= 15, f"Expected deep trees (depth >= 15), got depth {actual_depth}"
-
+        assert (
+            actual_depth >= 15
+        ), f"Expected deep trees (depth >= 15), got depth {actual_depth}"
 
     assert d4p_model.model_type == "lightgbm"
     assert d4p_model.is_regressor_
@@ -1067,11 +1121,13 @@ def test_lgb_regression_interactions(
 
     if sklearn_class:
         lgb_model = lgb_model.booster_
-    
+
     # Check tree depth if deep_trees is enabled
     if deep_trees:
         actual_depth = compute_lgb_tree_depth(lgb_model)
-        assert actual_depth >= 15, f"Expected deep trees (depth >= 15), got depth {actual_depth}"
+        assert (
+            actual_depth >= 15
+        ), f"Expected deep trees (depth >= 15), got depth {actual_depth}"
 
     assert d4p_model.model_type == "lightgbm"
     assert d4p_model.is_regressor_
@@ -1110,7 +1166,7 @@ def test_lgb_binary_classification(
     sklearn_class, with_nan, dtype, empty_trees, boost_from_average, deep_trees
 ):
 
-    if (deep_trees and empty_trees):
+    if deep_trees and empty_trees:
         pytest.skip()
 
     lgb_model = make_lgb_model(
@@ -1120,11 +1176,13 @@ def test_lgb_binary_classification(
 
     if sklearn_class:
         lgb_model = lgb_model.booster_
-    
+
     # Check tree depth if deep_trees is enabled
     if deep_trees:
         actual_depth = compute_lgb_tree_depth(lgb_model)
-        assert actual_depth >= 15, f"Expected deep trees (depth >= 15), got depth {actual_depth}"
+        assert (
+            actual_depth >= 15
+        ), f"Expected deep trees (depth >= 15), got depth {actual_depth}"
 
     assert d4p_model.model_type == "lightgbm"
     assert d4p_model.is_classifier_
@@ -1178,7 +1236,7 @@ def test_lgb_multiclass_classification(
     sklearn_class, with_nan, dtype, empty_trees, boost_from_average, deep_trees
 ):
 
-    if (deep_trees and empty_trees):
+    if deep_trees and empty_trees:
         pytest.skip()
     lgb_model = make_lgb_model(
         "multiclass", sklearn_class, with_nan, empty_trees, boost_from_average, deep_trees
@@ -1187,12 +1245,13 @@ def test_lgb_multiclass_classification(
 
     if sklearn_class:
         lgb_model = lgb_model.booster_
-    
+
     # Check tree depth if deep_trees is enabled
     if deep_trees:
         actual_depth = compute_lgb_tree_depth(lgb_model)
-        assert actual_depth >= 15, f"Expected deep trees (depth >= 15), got depth {actual_depth}"
-
+        assert (
+            actual_depth >= 15
+        ), f"Expected deep trees (depth >= 15), got depth {actual_depth}"
 
     assert d4p_model.model_type == "lightgbm"
     assert d4p_model.is_classifier_
