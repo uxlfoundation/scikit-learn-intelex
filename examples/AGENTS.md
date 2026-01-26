@@ -5,7 +5,7 @@ Comprehensive Python scripts and Jupyter notebooks demonstrating Intel Extension
 
 ## Directory Structure
 - `daal4py/`: Native oneDAL API examples
-- `sklearnex/`: Accelerated sklearn examples
+- `sklearnex/`: Accelerated sklearn examples, specifically spmd and online algorithm use
 - `mb/`: Model builder examples (XGBoost/LightGBM/CatBoost conversion)
 - `notebooks/`: Jupyter tutorials with real datasets
 - `utils/`: Utility functions

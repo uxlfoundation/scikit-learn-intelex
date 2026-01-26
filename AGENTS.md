@@ -1,4 +1,4 @@
-# AGENTS.md - Intel Extension for Scikit-learn
+# AGENTS.md - Extension for Scikit-learn
 
 ## Quick Context
 - **Purpose**: Accelerate scikit-learn using Intel oneDAL optimizations
@@ -69,7 +69,7 @@ pip install scikit-learn-intelex
 export DALROOT=/path/to/onedal  # Required
 
 # 2. Install dependencies
-pip install -r requirements-test.txt
+pip install -r dependencies-dev
 
 # 3. Build in development mode
 python setup.py develop
