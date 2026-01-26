@@ -358,13 +358,6 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         )
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
-        # Get predictions
-        # y_pred = self._onedal_predict(X, queue=queue)
-
-        # Convert array API to numpy for sklearn's accuracy_score using _transfer_to_host
-        # This properly handles Array API arrays that don't allow implicit conversion
-        # _, (y, y_pred, sample_weight) = _transfer_to_host(y, y_pred, sample_weight)
-
         return accuracy_score(
             y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
         )

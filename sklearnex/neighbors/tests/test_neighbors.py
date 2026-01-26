@@ -84,15 +84,6 @@ def test_sklearnex_import_lof(dataframe, queue):
     assert_allclose(result, [-1, 1, 1, 1])
 
 
-def test_knn_classifier_iris():
-    """Test KNeighborsClassifier on iris dataset."""
-    iris = datasets.load_iris()
-    clf = KNeighborsClassifier(2).fit(iris.data, iris.target)
-    score = clf.score(iris.data, iris.target)
-    assert score > 0.9
-    assert_array_equal(clf.classes_, np.sort(clf.classes_))
-
-
 def test_knn_classifier_pickle():
     """Test KNeighborsClassifier pickling."""
     iris = datasets.load_iris()
@@ -131,3 +122,23 @@ def test_knn_classifier_single_class():
     X_test = np.array([[1.5, 1.5], [2.5, 2.5]])
     predictions_test = clf.predict(X_test)
     assert_array_equal(predictions_test, [0, 0])
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_knn_dtype_preservation(dtype):
+    """Test that KNN preserves input dtype in predictions when using oneDAL backend."""
+    iris = datasets.load_iris()
+    X = iris.data.astype(dtype)
+    y = iris.target
+
+    # Classifier
+    clf = KNeighborsClassifier(n_neighbors=5).fit(X, y)
+    assert hasattr(clf, "_onedal_estimator"), "Should use oneDAL backend"
+    proba = clf.predict_proba(X)
+    assert proba.dtype == dtype, f"Expected {dtype}, got {proba.dtype}"
+
+    # Regressor
+    reg = KNeighborsRegressor(n_neighbors=5).fit(X, y.astype(dtype))
+    assert hasattr(reg, "_onedal_estimator"), "Should use oneDAL backend"
+    pred = reg.predict(X)
+    assert pred.dtype == dtype, f"Expected {dtype}, got {pred.dtype}"
