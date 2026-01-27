@@ -19,7 +19,7 @@ daal4py API Reference
 
 This is the full documentation page for ``daal4py`` functions and classes. Note that for the most
 part, these are simple wrappers over equivalent functions and methods from the |onedal|. See also
-the `documentation of DAAL interfaces <https://uxlfoundation.github.io/oneDAL/daal-interfaces.html>`__ for more details.
+the :external+onedal:doc:`documentation of DAAL interfaces <daal-interfaces>` for more details.
 
 See :ref:`about_daal4py` for an example of how to use ``daal4py`` algorithms.
 
@@ -77,7 +77,7 @@ Results class
 
 Decision Forest Classification
 ******************************
-Parameters and semantics are described in |onedal-dg-classification-decision-forest|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/decision_forest/decision-forest-classification`.
 
 .. rubric:: Examples:
 
@@ -97,7 +97,7 @@ Parameters and semantics are described in |onedal-dg-classification-decision-for
 
 Decision Tree Classification
 ****************************
-Parameters and semantics are described in |onedal-dg-classification-decision-tree|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/decision_tree/decision-tree-classification`.
 
 .. rubric:: Examples:
 
@@ -115,7 +115,7 @@ Parameters and semantics are described in |onedal-dg-classification-decision-tre
 
 Gradient Boosted Classification
 *******************************
-Parameters and semantics are described in |onedal-dg-classification-gradient-boosted-tree|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/gradient_boosted_trees/gradient-boosted-trees-classification`.
 
 .. rubric:: Examples:
 
@@ -133,7 +133,7 @@ Parameters and semantics are described in |onedal-dg-classification-gradient-boo
 
 k-Nearest Neighbors (kNN)
 *************************
-Parameters and semantics are described in |onedal-dg-k-nearest-neighbors-knn|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/k_nearest_neighbors/k-nearest-neighbors-knn-classifier`.
 
 .. rubric:: Examples:
 
@@ -151,7 +151,7 @@ Parameters and semantics are described in |onedal-dg-k-nearest-neighbors-knn|_.
 
 Brute-force k-Nearest Neighbors (kNN)
 *************************************
-Parameters and semantics are described in |onedal-dg-k-nearest-neighbors-knn|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/k_nearest_neighbors/k-nearest-neighbors-knn-classifier`.
 
 .. autoclass:: daal4py.bf_knn_classification_training
    :members: compute
@@ -164,7 +164,7 @@ Parameters and semantics are described in |onedal-dg-k-nearest-neighbors-knn|_.
 
 AdaBoost Classification
 ***********************
-Parameters and semantics are described in |onedal-dg-classification-adaboost|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/boosting/adaboost`.
 
 .. rubric:: Examples:
 
@@ -182,7 +182,7 @@ Parameters and semantics are described in |onedal-dg-classification-adaboost|_.
 
 BrownBoost Classification
 *************************
-Parameters and semantics are described in |onedal-dg-classification-brownboost|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/boosting/brownboost`.
 
 .. rubric:: Examples:
 
@@ -200,7 +200,7 @@ Parameters and semantics are described in |onedal-dg-classification-brownboost|_
 
 LogitBoost Classification
 *************************
-Parameters and semantics are described in |onedal-dg-classification-logitboost|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/boosting/logitboost`.
 
 .. rubric:: Examples:
 
@@ -218,7 +218,7 @@ Parameters and semantics are described in |onedal-dg-classification-logitboost|_
 
 Stump Weak Learner Classification
 *********************************
-Parameters and semantics are described in |onedal-dg-classification-weak-learner-stump|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/stump/classification`.
 
 .. rubric:: Examples:
 
@@ -236,7 +236,7 @@ Parameters and semantics are described in |onedal-dg-classification-weak-learner
 
 Multinomial Naive Bayes
 ***********************
-Parameters and semantics are described in |onedal-dg-naive-bayes|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/naive_bayes/naive-bayes-classifier`.
 
 .. rubric:: Examples:
 
@@ -255,7 +255,7 @@ Parameters and semantics are described in |onedal-dg-naive-bayes|_.
 
 Support Vector Machine (SVM)
 ****************************
-Parameters and semantics are described in |onedal-dg-svm|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/svm/support-vector-machine-classifier`.
 
 Note: For the labels parameter, data is formatted as -1s and 1s
 
@@ -275,7 +275,7 @@ Note: For the labels parameter, data is formatted as -1s and 1s
 
 Logistic Regression
 *******************
-Parameters and semantics are described in |onedal-dg-logistic-regression|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/logistic_regression/logistic-regression`.
 
 .. rubric:: Examples:
 
@@ -298,7 +298,7 @@ Regression
 
 Decision Forest Regression
 **************************
-Parameters and semantics are described in |onedal-dg-regression-decision-forest|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/decision_forest/decision-forest-regression`.
 
 .. rubric:: Examples:
 
@@ -320,7 +320,7 @@ Parameters and semantics are described in |onedal-dg-regression-decision-forest|
 
 Decision Tree Regression
 ************************
-Parameters and semantics are described in |onedal-dg-regression-decision-tree|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/decision_tree/decision-tree-regression`.
 
 .. rubric:: Examples:
 
@@ -340,7 +340,7 @@ Parameters and semantics are described in |onedal-dg-regression-decision-tree|_.
 
 Gradient Boosted Regression
 ***************************
-Parameters and semantics are described in |onedal-dg-regression-gradient-boosted-tree|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/gradient_boosted_trees/gradient-boosted-trees-regression`.
 
 .. rubric:: Examples:
 
@@ -360,7 +360,7 @@ Parameters and semantics are described in |onedal-dg-regression-gradient-boosted
 
 Linear Regression
 *****************
-Parameters and semantics are described in |onedal-dg-linear-regression|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/linear_ridge_regression/linear-regression`.
 
 .. rubric:: Examples:
 
@@ -381,7 +381,7 @@ Parameters and semantics are described in |onedal-dg-linear-regression|_.
 
 LASSO Regression
 ****************
-Parameters and semantics are described in |onedal-dg-least-absolute-shrinkage-and-selection-operator|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/lasso_elastic_net/lasso`.
 
 .. rubric:: Examples:
 
@@ -398,9 +398,28 @@ Parameters and semantics are described in |onedal-dg-least-absolute-shrinkage-an
 .. autoclass:: daal4py.lasso_regression_model
    :members:
 
+ElasticNet Regression
+*********************
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/lasso_elastic_net/elastic-net`.
+
+.. rubric:: Examples:
+
+- `Single-Process ElasticNet Regression <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/elasticnet.py>`__
+
+.. autoclass:: daal4py.elastic_net_training
+   :members: compute
+.. autoclass:: daal4py.elastic_net_training_result
+   :members:
+.. autoclass:: daal4py.elastic_net_prediction
+   :members: compute
+.. autoclass:: daal4py.elastic_net_prediction_result
+   :members:
+.. autoclass:: daal4py.elastic_net_model
+   :members:
+
 Ridge Regression
 ****************
-Parameters and semantics are described in |onedal-dg-ridge-regression|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/linear_ridge_regression/ridge-regression`.
 
 .. rubric:: Examples:
 
@@ -421,7 +440,7 @@ Parameters and semantics are described in |onedal-dg-ridge-regression|_.
 
 Stump Regression
 ****************
-Parameters and semantics are described in |onedal-dg-regression-stump|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/stump/regression`.
 
 .. rubric:: Examples:
 
@@ -444,7 +463,7 @@ Clustering
 
 K-Means Clustering
 ******************
-Parameters and semantics are described in |onedal-dg-k-means-clustering|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/kmeans/k-means-clustering`.
 
 .. rubric:: Examples:
 
@@ -453,7 +472,7 @@ Parameters and semantics are described in |onedal-dg-k-means-clustering|_.
 
 K-Means Initialization
 **********************
-Parameters and semantics are described in |onedal-dg-k-means-initialization|_.
+Parameters and semantics are described in :ref:`oneAPI Data Analytics Library K-Means Initialization <onedal:kmeans_init>`
 
 .. autoclass:: daal4py.kmeans_init
    :members: compute
@@ -471,7 +490,7 @@ Parameters and semantics are described in |onedal-dg-k-means-computation|_.
 
 DBSCAN
 ******
-Parameters and semantics are described in |onedal-dg-density-based-spatial-clustering-of-applications-with-noise|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/dbscan/index`.
 
 .. rubric:: Examples:
 
@@ -484,7 +503,7 @@ Parameters and semantics are described in |onedal-dg-density-based-spatial-clust
 
 Gaussian Mixtures
 *****************
-Parameters and semantics are described in |onedal-dg-expectation-maximization|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/em/expectation-maximization`.
 
 Initialization for the Gaussian Mixture Model
 """""""""""""""""""""""""""""""""""""""""""""
@@ -517,7 +536,7 @@ Dimensionality reduction
 
 Principal Component Analysis (PCA)
 **********************************
-Parameters and semantics are described in |onedal-dg-pca|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/pca/principal-component-analysis`.
 
 .. rubric:: Examples:
 
@@ -531,7 +550,7 @@ Parameters and semantics are described in |onedal-dg-pca|_.
 
 Principal Component Analysis (PCA) Transform
 ********************************************
-Parameters and semantics are described in |onedal-dg-pca-transform|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/pca/transform`.
 
 .. rubric:: Examples:
 
@@ -547,7 +566,7 @@ Outlier detection
 
 Multivariate Outlier Detection
 ******************************
-Parameters and semantics are described in |onedal-dg-multivariate-outlier-detection|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/outlier_detection/multivariate`.
 
 .. rubric:: Examples:
 
@@ -560,7 +579,7 @@ Parameters and semantics are described in |onedal-dg-multivariate-outlier-detect
 
 Univariate Outlier Detection
 ****************************
-Parameters and semantics are described in |onedal-dg-univariate-outlier-detection|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/outlier_detection/univariate`.
 
 .. rubric:: Examples:
 
@@ -573,7 +592,7 @@ Parameters and semantics are described in |onedal-dg-univariate-outlier-detectio
 
 Multivariate Bacon Outlier Detection
 ************************************
-Parameters and semantics are described in |onedal-dg-multivariate-bacon-outlier-detection|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/outlier_detection/multivariate-bacon`.
 
 .. rubric:: Examples:
 
@@ -592,7 +611,7 @@ Objective Functions
 
 Mean Squared Error Algorithm (MSE)
 """"""""""""""""""""""""""""""""""
-Parameters and semantics are described in |onedal-dg-mse|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/optimization-solvers/objective-functions/mse`.
 
 .. rubric:: Examples:
 
@@ -607,7 +626,7 @@ Parameters and semantics are described in |onedal-dg-mse|_.
 
 Logistic Loss
 """""""""""""
-Parameters and semantics are described in |onedal-dg-logistic-loss|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/optimization-solvers/objective-functions/logistic-loss`.
 
 .. rubric:: Examples:
 
@@ -620,7 +639,7 @@ Parameters and semantics are described in |onedal-dg-logistic-loss|_.
 
 Cross-entropy Loss
 """"""""""""""""""
-Parameters and semantics are described in |onedal-dg-cross-entropy-loss|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/optimization-solvers/objective-functions/cross-entropy`.
 
 .. rubric:: Examples:
 
@@ -642,7 +661,7 @@ Iterative Solvers
 
 Stochastic Gradient Descent Algorithm
 """""""""""""""""""""""""""""""""""""
-Parameters and semantics are described in |onedal-dg-sgd|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/optimization-solvers/solvers/stochastic-gradient-descent-algorithm`.
 
 .. rubric:: Examples:
 
@@ -656,7 +675,7 @@ Parameters and semantics are described in |onedal-dg-sgd|_.
 
 Limited-Memory Broyden-Fletcher-Goldfarb-Shanno Algorithm
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""
-Parameters and semantics are described in |onedal-dg-lbfgs|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/optimization-solvers/solvers/lbfgs`.
 
 .. rubric:: Examples:
 
@@ -669,7 +688,7 @@ Parameters and semantics are described in |onedal-dg-lbfgs|_.
 
 Adaptive Subgradient Method
 """""""""""""""""""""""""""
-Parameters and semantics are described in |onedal-dg-adagrad|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/optimization-solvers/solvers/adaptive-subgradient-method`.
 
 .. rubric:: Examples:
 
@@ -682,7 +701,7 @@ Parameters and semantics are described in |onedal-dg-adagrad|_.
 
 Stochastic Average Gradient Descent
 """""""""""""""""""""""""""""""""""
-Parameters and semantics are described in |onedal-dg-stochastic-average-gradient-descent-saga|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/optimization-solvers/solvers/stochastic-average-gradient-accelerated-method`.
 
 .. rubric:: Examples:
 
@@ -695,7 +714,7 @@ Parameters and semantics are described in |onedal-dg-stochastic-average-gradient
 
 Coordinate Descent
 """"""""""""""""""
-Parameters and semantics are described in |onedal-dg-coordinate-descent|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/optimization-solvers/solvers/coordinate-descent`.
 
 .. autoclass:: daal4py.optimization_solver_coordinate_descent
    :members: compute
@@ -704,7 +723,7 @@ Parameters and semantics are described in |onedal-dg-coordinate-descent|_.
 
 Precomputed Function
 """"""""""""""""""""
-Parameters and semantics are described in |onedal-dg-precomputed-objective-function|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/optimization-solvers/objective-functions/with-precomputed-characteristics`.
 
 .. autoclass:: daal4py.optimization_solver_precomputed
    :members: compute
@@ -716,7 +735,7 @@ Recommender systems
 
 Association Rules
 *****************
-Parameters and semantics are described in |onedal-dg-association-rules|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/association_rules/association-rules`.
 
 .. rubric:: Examples:
 
@@ -729,7 +748,7 @@ Parameters and semantics are described in |onedal-dg-association-rules|_.
 
 Implicit Alternating Least Squares (implicit ALS)
 *************************************************
-Parameters and semantics are described in |onedal-dg-implicit-alternating-least-squares|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/implicit_als/implicit-alternating-least-squares`.
 
 .. rubric:: Examples:
 
@@ -751,7 +770,7 @@ Covariance, correlation, and distances
 
 Cosine Distance Matrix
 **********************
-Parameters and semantics are described in |onedal-dg-cosine-distance|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/distance/cosine`.
 
 .. rubric:: Examples:
 
@@ -764,7 +783,7 @@ Parameters and semantics are described in |onedal-dg-cosine-distance|_.
 
 Correlation Distance Matrix
 ***************************
-Parameters and semantics are described in |onedal-dg-correlation-distance|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/distance/correlation`.
 
 .. rubric:: Examples:
 
@@ -777,7 +796,7 @@ Parameters and semantics are described in |onedal-dg-correlation-distance|_.
 
 Correlation and Variance-Covariance Matrices
 ********************************************
-Parameters and semantics are described in |onedal-dg-correlation-and-variance-covariance-matrices|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/covariance/correlation-and-variance-covariance-matrices`.
 
 .. rubric:: Examples:
 
@@ -795,11 +814,11 @@ Data pre-processing
 
 Normalization
 *************
-Parameters and semantics are described in |onedal-dg-normalization|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/normalization/index`.
 
 Z-Score
 """""""
-Parameters and semantics are described in |onedal-dg-z-score|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/normalization/z-score`.
 
 .. rubric:: Examples:
 
@@ -812,7 +831,7 @@ Parameters and semantics are described in |onedal-dg-z-score|_.
 
 Min-Max
 """""""
-Parameters and semantics are described in |onedal-dg-min-max|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/normalization/min-max`.
 
 .. rubric:: Examples:
 
@@ -828,7 +847,7 @@ Statistics
 
 Moments of Low Order
 ********************
-Parameters and semantics are described in |onedal-dg-moments-of-low-order|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/moments/moments-of-low-order`.
 
 .. rubric:: Examples:
 
@@ -843,7 +862,7 @@ Parameters and semantics are described in |onedal-dg-moments-of-low-order|_.
 
 Quantiles
 *********
-Parameters and semantics are described in |onedal-dg-quantiles|_.
+Parameters and semantics are described in:external+onedal:doc:`daal/algorithms/quantiles/index`.
 
 .. rubric:: Examples:
 
@@ -859,7 +878,7 @@ Linear algebra
 
 Cholesky Decomposition
 **********************
-Parameters and semantics are described in |onedal-dg-cholesky-decomposition|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/cholesky/cholesky`.
 
 .. rubric:: Examples:
 
@@ -872,11 +891,11 @@ Parameters and semantics are described in |onedal-dg-cholesky-decomposition|_.
 
 QR Decomposition
 ****************
-Parameters and semantics are described in |onedal-dg-qr-decomposition|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/qr/qr-decomposition`.
 
 QR Decomposition (without pivoting)
 """""""""""""""""""""""""""""""""""
-Parameters and semantics are described in |onedal-dg-qr-decomposition-without-pivoting|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/qr/qr-without-pivoting`.
 
 .. rubric:: Examples:
 
@@ -890,7 +909,7 @@ Parameters and semantics are described in |onedal-dg-qr-decomposition-without-pi
 
 Pivoted QR Decomposition
 """"""""""""""""""""""""
-Parameters and semantics are described in |onedal-dg-pivoted-qr-decomposition|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/qr/qr-pivoted`.
 
 .. rubric:: Examples:
 
@@ -903,7 +922,7 @@ Parameters and semantics are described in |onedal-dg-pivoted-qr-decomposition|_.
 
 Singular Value Decomposition (SVD)
 **********************************
-Parameters and semantics are described in |onedal-dg-svd|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/svd/singular-value-decomposition`.
 
 .. rubric:: Examples:
 
@@ -921,14 +940,14 @@ Random number generation
 
 Random Number Engines
 *********************
-Parameters and semantics are described in |onedal-dg-engines|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/engines/index`.
 
 .. autoclass:: daal4py.engines_result
    :members:
 
 mt19937
 """""""
-Parameters and semantics are described in |onedal-dg-mt19937|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/engines/mt19937`.
 
 .. autoclass:: daal4py.engines_mt19937
    :members: compute
@@ -937,7 +956,7 @@ Parameters and semantics are described in |onedal-dg-mt19937|_.
 
 mt2203
 """"""
-Parameters and semantics are described in |onedal-dg-mt2203|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/engines/mt2203`.
 
 .. autoclass:: daal4py.engines_mt2203
    :members: compute
@@ -946,7 +965,7 @@ Parameters and semantics are described in |onedal-dg-mt2203|_.
 
 mcg59
 """""
-Parameters and semantics are described in |onedal-dg-mcg59|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/engines/mcg59`.
 
 .. autoclass:: daal4py.engines_mcg59
    :members: compute
@@ -971,11 +990,11 @@ philox4x32x10
 
 Distributions
 *************
-Parameters and semantics are described in |onedal-dg-distributions|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/distributions/index`.
 
 Bernoulli
 """""""""
-Parameters and semantics are described in |onedal-dg-bernoulli-distribution|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/distributions/bernoulli`.
 
 .. rubric:: Examples:
 
@@ -988,7 +1007,7 @@ Parameters and semantics are described in |onedal-dg-bernoulli-distribution|_.
 
 Normal
 """"""
-Parameters and semantics are described in |onedal-dg-normal-distribution|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/distributions/normal`.
 
 .. rubric:: Examples:
 
@@ -1001,7 +1020,7 @@ Parameters and semantics are described in |onedal-dg-normal-distribution|_.
 
 Uniform
 """""""
-Parameters and semantics are described in |onedal-dg-uniform-distribution|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/distributions/uniform`.
 
 .. rubric:: Examples:
 
@@ -1015,7 +1034,7 @@ Parameters and semantics are described in |onedal-dg-uniform-distribution|_.
 Sorting
 -------
 
-Parameters and semantics are described in |onedal-dg-sorting|_.
+Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/sorting/index`.
 
 .. rubric:: Examples:
 
@@ -1026,200 +1045,13 @@ Parameters and semantics are described in |onedal-dg-sorting|_.
 .. autoclass:: daal4py.sorting_result
    :members:
 
-
-.. Link replacements
-
-.. |onedal-dg-bernoulli-distribution| replace:: |onedal| Bernoulli Distribution
-.. _onedal-dg-bernoulli-distribution: https://uxlfoundation.github.io/oneDAL/daal/algorithms/distributions/bernoulli.html
-
-.. |onedal-dg-svd| replace:: |onedal| SVD
-.. _onedal-dg-svd: https://uxlfoundation.github.io/oneDAL/daal/algorithms/svd/singular-value-decomposition.html
-
-.. |onedal-dg-regression| replace:: |onedal| Regression
-.. _onedal-dg-regression: https://uxlfoundation.github.io/oneDAL/daal/usage/training-and-prediction/regression.html
-
-.. |onedal-dg-k-means-clustering| replace:: |onedal| K-Means Clustering
-.. _onedal-dg-k-means-clustering: https://uxlfoundation.github.io/oneDAL/daal/algorithms/kmeans/k-means-clustering.html
-
-.. |onedal-dg-lbfgs| replace:: |onedal| LBFGS
-.. _onedal-dg-lbfgs: https://uxlfoundation.github.io/oneDAL/daal/algorithms/optimization-solvers/solvers/lbfgs.html
-
-.. |onedal-dg-naive-bayes| replace:: |onedal| Naive Bayes
-.. _onedal-dg-naive-bayes: https://uxlfoundation.github.io/oneDAL/daal/algorithms/naive_bayes/naive-bayes-classifier.html
-
-.. |onedal-dg-expectation-maximization| replace:: |onedal| Expectation-Maximization
-.. _onedal-dg-expectation-maximization: https://uxlfoundation.github.io/oneDAL/daal/algorithms/em/expectation-maximization.html
-
-.. |onedal-dg-mcg59| replace:: |onedal| mcg59
-.. _onedal-dg-mcg59: https://uxlfoundation.github.io/oneDAL/daal/algorithms/engines/mcg59.html
-
-.. |onedal-dg-least-absolute-shrinkage-and-selection-operator| replace:: |onedal| Least Absolute Shrinkage and Selection Operator
-.. _onedal-dg-least-absolute-shrinkage-and-selection-operator: https://uxlfoundation.github.io/oneDAL/daal/algorithms/lasso_elastic_net/lasso.html
-
-.. |onedal-dg-sorting| replace:: |onedal| Sorting
-.. _onedal-dg-sorting: https://uxlfoundation.github.io/oneDAL/daal/algorithms/sorting/index.html
-
-.. |onedal-dg-expectation-maximization-for-the-gaussian-mixture-model| replace:: |onedal| Expectation-Maximization for the Gaussian Mixture Model
-.. _onedal-dg-expectation-maximization-for-the-gaussian-mixture-model: https://uxlfoundation.github.io/oneDAL/daal/algorithms/em/expectation-maximization.html#em-algorithm-for-the-gaussian-mixture-model
-
-.. |onedal-dg-multivariate-outlier-detection| replace:: |onedal| Multivariate Outlier Detection
-.. _onedal-dg-multivariate-outlier-detection: https://uxlfoundation.github.io/oneDAL/daal/algorithms/outlier_detection/multivariate.html
+.. Note: oneDAL's doc do not have any named object referencing these specific sections,
+.. hence the need for this workaround.
+.. |onedal-dg-k-means-computation| replace:: |onedal| K-Means Computation
+.. _onedal-dg-k-means-computation: https://uxlfoundation.github.io/oneDAL/daal/algorithms/kmeans/k-means-clustering.html#computation
 
 .. |onedal-dg-expectation-maximization-initialization| replace:: |onedal| Expectation-Maximization Initialization
 .. _onedal-dg-expectation-maximization-initialization: https://uxlfoundation.github.io/oneDAL/daal/algorithms/em/expectation-maximization.html#initialization
 
-.. |onedal-dg-pivoted-qr-decomposition| replace:: |onedal| Pivoted QR Decomposition
-.. _onedal-dg-pivoted-qr-decomposition: https://uxlfoundation.github.io/oneDAL/daal/algorithms/qr/qr-pivoted.html
-
-.. |onedal-dg-regression-decision-tree| replace:: |onedal| Regression Decision Tree
-.. _onedal-dg-regression-decision-tree: https://uxlfoundation.github.io/oneDAL/daal/algorithms/decision_tree/decision-tree-regression.html
-
-.. |onedal-dg-k-nearest-neighbors-knn| replace:: |onedal| k-Nearest Neighbors (kNN)
-.. _onedal-dg-k-nearest-neighbors-knn: https://uxlfoundation.github.io/oneDAL/daal/algorithms/k_nearest_neighbors/k-nearest-neighbors-knn-classifier.html
-
-.. |onedal-dg-pca| replace:: |onedal| PCA
-.. _onedal-dg-pca: https://uxlfoundation.github.io/oneDAL/daal/algorithms/pca/principal-component-analysis.html
-
-.. |onedal-dg-sgd| replace:: |onedal| SGD
-.. _onedal-dg-sgd: https://uxlfoundation.github.io/oneDAL/daal/algorithms/optimization-solvers/solvers/stochastic-gradient-descent-algorithm.html
-
-.. |onedal-dg-uniform-distribution| replace:: |onedal| Uniform Distribution
-.. _onedal-dg-uniform-distribution: https://uxlfoundation.github.io/oneDAL/daal/algorithms/distributions/uniform.html
-
-.. |onedal-dg-cross-entropy-loss| replace:: |onedal| Cross Entropy Loss
-.. _onedal-dg-cross-entropy-loss: https://uxlfoundation.github.io/oneDAL/daal/algorithms/optimization-solvers/objective-functions/cross-entropy.html
-
-.. |onedal-dg-classification| replace:: |onedal| Classification
-.. _onedal-dg-classification: https://uxlfoundation.github.io/oneDAL/daal/usage/training-and-prediction/classification.html
-
-.. |onedal-dg-cosine-distance| replace:: |onedal| Cosine Distance
-.. _onedal-dg-cosine-distance: https://uxlfoundation.github.io/oneDAL/daal/algorithms/distance/cosine.html
-
-.. |onedal-dg-regression-stump| replace:: |onedal| Regression Stump
-.. _onedal-dg-regression-stump: https://uxlfoundation.github.io/oneDAL/daal/algorithms/stump/regression.html
-
-.. |onedal-dg-multivariate-bacon-outlier-detection| replace:: |onedal| Multivariate Bacon Outlier Detection
-.. _onedal-dg-multivariate-bacon-outlier-detection: https://uxlfoundation.github.io/oneDAL/daal/algorithms/outlier_detection/multivariate-bacon.html
-
-.. |onedal-dg-logistic-regression| replace:: |onedal| Logistic Regression
-.. _onedal-dg-logistic-regression: https://uxlfoundation.github.io/oneDAL/daal/algorithms/logistic_regression/logistic-regression.html
-
-.. |onedal-dg-quantiles| replace:: |onedal| Quantiles
-.. _onedal-dg-quantiles: https://uxlfoundation.github.io/oneDAL/daal/algorithms/quantiles/index.html
-
-.. |onedal-dg-pca-transform| replace:: |onedal| PCA Transform
-.. _onedal-dg-pca-transform: https://uxlfoundation.github.io/oneDAL/daal/algorithms/pca/transform.html
-
-.. |onedal-dg-correlation-distance| replace:: |onedal| Correlation Distance
-.. _onedal-dg-correlation-distance: https://uxlfoundation.github.io/oneDAL/daal/algorithms/distance/correlation.html
-
-.. |onedal-dg-association-rules| replace:: |onedal| Association Rules
-.. _onedal-dg-association-rules: https://uxlfoundation.github.io/oneDAL/daal/algorithms/association_rules/association-rules.html
-
-.. |onedal-dg-univariate-outlier-detection| replace:: |onedal| Univariate Outlier Detection
-.. _onedal-dg-univariate-outlier-detection: https://uxlfoundation.github.io/oneDAL/daal/algorithms/outlier_detection/univariate.html
-
-.. |onedal-dg-classification-gradient-boosted-tree| replace:: |onedal| Classification Gradient Boosted Tree
-.. _onedal-dg-classification-gradient-boosted-tree: https://uxlfoundation.github.io/oneDAL/daal/algorithms/gradient_boosted_trees/gradient-boosted-trees-classification.html
-
-.. |onedal-dg-classification-brownboost| replace:: |onedal| Classification BrownBoost
-.. _onedal-dg-classification-brownboost: https://uxlfoundation.github.io/oneDAL/daal/algorithms/boosting/brownboost.html
-
-.. |onedal-dg-regression-decision-forest| replace:: |onedal| Regression Decision Forest
-.. _onedal-dg-regression-decision-forest: https://uxlfoundation.github.io/oneDAL/daal/algorithms/decision_forest/decision-forest-regression.html
-
-.. |onedal-dg-z-score| replace:: |onedal| Z-Score
-.. _onedal-dg-z-score: https://uxlfoundation.github.io/oneDAL/daal/algorithms/normalization/z-score.html
-
-.. |onedal-dg-classification-weak-learner-stump| replace:: |onedal| Classification Weak Learner Stump
-.. _onedal-dg-classification-weak-learner-stump: https://uxlfoundation.github.io/oneDAL/daal/algorithms/stump/classification.html
-
-.. |onedal-dg-svm| replace:: |onedal| SVM
-.. _onedal-dg-svm: https://uxlfoundation.github.io/oneDAL/daal/algorithms/svm/support-vector-machine-classifier.html
-
-.. |onedal-dg-regression-gradient-boosted-tree| replace:: |onedal| Regression Gradient Boosted Tree
-.. _onedal-dg-regression-gradient-boosted-tree: https://uxlfoundation.github.io/oneDAL/daal/algorithms/gradient_boosted_trees/gradient-boosted-trees-regression.html
-
-.. |onedal-dg-logistic-loss| replace:: |onedal| Logistic Loss
-.. _onedal-dg-logistic-loss: https://uxlfoundation.github.io/oneDAL/daal/algorithms/optimization-solvers/objective-functions/logistic-loss.html
-
-.. |onedal-dg-adagrad| replace:: |onedal| AdaGrad
-.. _onedal-dg-adagrad: https://uxlfoundation.github.io/oneDAL/daal/algorithms/optimization-solvers/solvers/adaptive-subgradient-method.html
-
-.. |onedal-dg-qr-decomposition| replace:: |onedal| QR Decomposition
-.. _onedal-dg-qr-decomposition: https://uxlfoundation.github.io/oneDAL/daal/algorithms/qr/qr-decomposition.html
-
-.. |onedal-dg-mt19937| replace:: |onedal| mt19937
-.. _onedal-dg-mt19937: https://uxlfoundation.github.io/oneDAL/daal/algorithms/engines/mt19937.html
-
-.. |onedal-dg-implicit-alternating-least-squares| replace:: |onedal| Implicit Alternating Least Squares
-.. _onedal-dg-implicit-alternating-least-squares: https://uxlfoundation.github.io/oneDAL/daal/algorithms/implicit_als/implicit-alternating-least-squares.html
-
-.. |onedal-dg-linear-regression| replace:: |onedal| Linear Regression
-.. _onedal-dg-linear-regression: https://uxlfoundation.github.io/oneDAL/daal/algorithms/linear_ridge_regression/linear-regression.html
-
-.. |onedal-dg-classification-adaboost| replace:: |onedal| Classification AdaBoost
-.. _onedal-dg-classification-adaboost: https://uxlfoundation.github.io/oneDAL/daal/algorithms/boosting/adaboost.html
-
-.. |onedal-dg-distributions| replace:: |onedal| Distributions
-.. _onedal-dg-distributions: https://uxlfoundation.github.io/oneDAL/daal/algorithms/distributions/index.html
-
-.. |onedal-dg-correlation-and-variance-covariance-matrices| replace:: |onedal| Correlation and Variance-Covariance Matrices
-.. _onedal-dg-correlation-and-variance-covariance-matrices: https://uxlfoundation.github.io/oneDAL/daal/algorithms/covariance/correlation-and-variance-covariance-matrices.html
-
-.. |onedal-dg-classification-decision-tree| replace:: |onedal| Classification Decision Tree
-.. _onedal-dg-classification-decision-tree: https://uxlfoundation.github.io/oneDAL/daal/algorithms/decision_tree/decision-tree-classification.html
-
-.. |onedal-dg-ridge-regression| replace:: |onedal| Ridge Regression
-.. _onedal-dg-ridge-regression: https://uxlfoundation.github.io/oneDAL/daal/algorithms/linear_ridge_regression/ridge-regression.html
-
-.. |onedal-dg-classification-logitboost| replace:: |onedal| Classification LogitBoost
-.. _onedal-dg-classification-logitboost: https://uxlfoundation.github.io/oneDAL/daal/algorithms/boosting/logitboost.html
-
-.. |onedal-dg-k-means-initialization| replace:: |onedal| K-Means Initialization
-.. _onedal-dg-k-means-initialization: https://uxlfoundation.github.io/oneDAL/daal/algorithms/kmeans/k-means-clustering.html#initialization
-
-.. |onedal-dg-qr-decomposition-without-pivoting| replace:: |onedal| QR Decomposition without pivoting
-.. _onedal-dg-qr-decomposition-without-pivoting: https://uxlfoundation.github.io/oneDAL/daal/algorithms/qr/qr-without-pivoting.html
-
-.. |onedal-dg-mse| replace:: |onedal| MSE
-.. _onedal-dg-mse: https://uxlfoundation.github.io/oneDAL/daal/algorithms/optimization-solvers/objective-functions/mse.html
-
-.. |onedal-dg-stochastic-average-gradient-descent-saga| replace:: |onedal| Stochastic Average Gradient Descent SAGA
-.. _onedal-dg-stochastic-average-gradient-descent-saga: https://uxlfoundation.github.io/oneDAL/daal/algorithms/optimization-solvers/solvers/stochastic-average-gradient-accelerated-method.html
-
-.. |onedal-dg-coordinate-descent| replace:: |onedal| Coordinate Descent Algorithm
-.. _onedal-dg-coordinate-descent: https://uxlfoundation.github.io/oneDAL/daal/algorithms/optimization-solvers/solvers/coordinate-descent.html
-
-.. |onedal-dg-precomputed-objective-function| replace:: |onedal| Objective Function with Precomputed Characteristics
-.. _onedal-dg-precomputed-objective-function: https://uxlfoundation.github.io/oneDAL/daal/algorithms/optimization-solvers/objective-functions/with-precomputed-characteristics.html
-
-.. |onedal-dg-engines| replace:: |onedal| Engines
-.. _onedal-dg-engines: https://uxlfoundation.github.io/oneDAL/daal/algorithms/engines/index.html
-
-.. |onedal-dg-cholesky-decomposition| replace:: |onedal| Cholesky Decomposition
-.. _onedal-dg-cholesky-decomposition: https://uxlfoundation.github.io/oneDAL/daal/algorithms/cholesky/cholesky.html
-
-.. |onedal-dg-classification-decision-forest| replace:: |onedal| Classification Decision Forest
-.. _onedal-dg-classification-decision-forest: https://uxlfoundation.github.io/oneDAL/daal/algorithms/decision_forest/decision-forest-classification.html
-
-.. |onedal-dg-normalization| replace:: |onedal| Normalization
-.. _onedal-dg-normalization: https://uxlfoundation.github.io/oneDAL/daal/algorithms/normalization/index.html
-
-.. |onedal-dg-density-based-spatial-clustering-of-applications-with-noise| replace:: |onedal| Density-Based Spatial Clustering of Applications with Noise
-.. _onedal-dg-density-based-spatial-clustering-of-applications-with-noise: https://uxlfoundation.github.io/oneDAL/daal/algorithms/dbscan/index.html
-
-.. |onedal-dg-moments-of-low-order| replace:: |onedal| Moments of Low Order
-.. _onedal-dg-moments-of-low-order: https://uxlfoundation.github.io/oneDAL/daal/algorithms/moments/moments-of-low-order.html
-
-.. |onedal-dg-mt2203| replace:: |onedal| mt2203
-.. _onedal-dg-mt2203: https://uxlfoundation.github.io/oneDAL/daal/algorithms/engines/mt2203.html
-
-.. |onedal-dg-normal-distribution| replace:: |onedal| Normal Distribution
-.. _onedal-dg-normal-distribution: https://uxlfoundation.github.io/oneDAL/daal/algorithms/distributions/normal.html
-
-.. |onedal-dg-k-means-computation| replace:: |onedal| K-Means Computation
-.. _onedal-dg-k-means-computation: https://uxlfoundation.github.io/oneDAL/daal/algorithms/kmeans/k-means-clustering.html#computation
-
-.. |onedal-dg-min-max| replace:: |onedal| Min-Max
-.. _onedal-dg-min-max: https://uxlfoundation.github.io/oneDAL/daal/algorithms/normalization/min-max.html
+.. |onedal-dg-expectation-maximization-for-the-gaussian-mixture-model| replace:: |onedal| Expectation-Maximization for the Gaussian Mixture Model
+.. _onedal-dg-expectation-maximization-for-the-gaussian-mixture-model: https://uxlfoundation.github.io/oneDAL/daal/algorithms/em/expectation-maximization.html#em-algorithm-for-the-gaussian-mixture-model

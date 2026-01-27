@@ -24,7 +24,6 @@ if daal_check_version((2023, "P", 200)):
     import warnings
 
     import numpy as np
-    from scipy.sparse import issparse
     from sklearn.cluster import KMeans as _sklearn_KMeans
     from sklearn.utils._openmp_helpers import _openmp_effective_n_threads
     from sklearn.utils.validation import (
@@ -34,7 +33,7 @@ if daal_check_version((2023, "P", 200)):
     )
 
     from daal4py.sklearn._n_jobs_support import control_n_jobs
-    from daal4py.sklearn._utils import sklearn_check_version
+    from daal4py.sklearn._utils import is_sparse, sklearn_check_version
     from onedal._device_offload import support_input_format
     from onedal.cluster import KMeans as onedal_KMeans
     from onedal.utils.validation import _is_csr
@@ -111,7 +110,7 @@ if daal_check_version((2023, "P", 200)):
 
             is_data_supported = (
                 _is_csr(X) and daal_check_version((2024, "P", 700))
-            ) or not issparse(X)
+            ) or not is_sparse(X)
 
             _acceptable_sample_weights = self._validate_sample_weight(sample_weight, X)
 
@@ -209,7 +208,7 @@ if daal_check_version((2023, "P", 200)):
 
             is_data_supported = (
                 _is_csr(X) and daal_check_version((2024, "P", 700))
-            ) or not issparse(X)
+            ) or not is_sparse(X)
 
             # algorithm "auto" has been deprecated since 1.1,
             # algorithm "full" has been replaced by "lloyd"

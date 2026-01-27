@@ -16,40 +16,39 @@
 
 import numbers
 import warnings
+from functools import partial
 
 import numpy as np
-from scipy import linalg
 from sklearn.base import BaseEstimator, clone
 from sklearn.covariance import EmpiricalCovariance as _sklearn_EmpiricalCovariance
-from sklearn.covariance import log_likelihood
-from sklearn.utils import check_array, gen_batches
+from sklearn.utils import gen_batches
 from sklearn.utils.validation import _num_features, check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
-from onedal._device_offload import support_sycl_format
+from daal4py.sklearn.metrics import pairwise_distances
+from onedal._device_offload import support_input_format, support_sycl_format
 from onedal.covariance import (
     IncrementalEmpiricalCovariance as onedal_IncrementalEmpiricalCovariance,
 )
 from onedal.utils._array_api import _is_numpy_namespace
-from sklearnex import config_context
 
-from .._config import get_config
+from .._config import config_context, get_config
 from .._device_offload import dispatch, wrap_output_data
-from .._utils import (
-    PatchingConditionsChain,
-    _add_inc_serialization_note,
-    register_hyperparameters,
-)
+from .._utils import PatchingConditionsChain, _add_inc_serialization_note
 from ..base import oneDALEstimator
-from ..metrics import pairwise_distances
-from ..utils._array_api import get_namespace
-from ..utils.validation import check_feature_names, validate_data
+from ..utils._array_api import _pinvh, enable_array_api, get_namespace, log_likelihood
+from ..utils.validation import validate_data
 
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import Interval
 
+# This is a temporary workaround for issues with sklearnex._device_offload._get_host_inputs
+# passing kwargs with sycl queues with other host data will cause failures
+_mahalanobis = support_input_format(partial(pairwise_distances, metric="mahalanobis"))
 
+
+@enable_array_api
 @control_n_jobs(decorated_methods=["partial_fit", "fit", "_onedal_finalize_fit"])
 class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
     """
@@ -136,9 +135,6 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
             "copy": ["boolean"],
         }
 
-    get_precision = _sklearn_EmpiricalCovariance.get_precision
-    error_norm = wrap_output_data(_sklearn_EmpiricalCovariance.error_norm)
-
     def __init__(
         self, *, store_precision=False, assume_centered=False, batch_size=None, copy=True
     ):
@@ -159,11 +155,12 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         self._need_to_finalize = False
 
         if not daal_check_version((2024, "P", 400)) and self.assume_centered:
+            xp, _ = get_namespace(self._onedal_estimator.location_)
             location = self._onedal_estimator.location_[None, :]
-            self._onedal_estimator.covariance_ += np.dot(location.T, location)
-            self._onedal_estimator.location_ = np.zeros_like(np.squeeze(location))
+            self._onedal_estimator.covariance_ += xp.dot(location.T, location)
+            self._onedal_estimator.location_ = xp.zeros_like(xp.squeeze(location))
         if self.store_precision:
-            self.precision_ = linalg.pinvh(
+            self.precision_ = _pinvh(
                 self._onedal_estimator.covariance_, check_finite=False
             )
         else:
@@ -194,21 +191,14 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
     def _onedal_partial_fit(self, X, queue=None, check_input=True):
         first_pass = not hasattr(self, "n_samples_seen_") or self.n_samples_seen_ == 0
 
-        use_raw_input = get_config().get("use_raw_input", False) is True
-        # never check input when using raw input
-        check_input &= use_raw_input is False
-        # finite check occurs on onedal side
-        if check_input:
-            if sklearn_check_version("1.2"):
-                self._validate_params()
-
+        if check_input and not get_config()["use_raw_input"]:
+            xp, _ = get_namespace(X)
             X = validate_data(
                 self,
                 X,
-                dtype=[np.float64, np.float32],
+                dtype=[xp.float64, xp.float32],
                 reset=first_pass,
                 copy=self.copy,
-                ensure_all_finite=False,
             )
 
         onedal_params = {
@@ -231,39 +221,12 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
 
         return self
 
-    @wrap_output_data
-    @support_sycl_format
-    def score(self, X_test, y=None):
-        xp, _ = get_namespace(X_test)
-
-        check_is_fitted(self)
-        location = self.location_
-        X = validate_data(
-            self,
-            X_test,
-            dtype=[xp.float64, xp.float32],
-            reset=False,
-        )
-
-        if not _is_numpy_namespace(xp):
-            location = xp.asarray(location, device=X_test.device)
-            # depending on the sklearn version, check_array
-            # and validate_data will return only numpy arrays
-            # which will break dpnp/dpctl support. If the
-            # array namespace isn't from numpy and the data
-            # is now a numpy array, it has been validated and
-            # the original can be used.
-            if isinstance(X, np.ndarray):
-                X = X_test
-
-        est = clone(self)
-        est.set_params(**{"assume_centered": True})
-
-        # test_cov is a numpy array, but calculated on device
-        test_cov = est.fit(X - location).covariance_
-        res = log_likelihood(test_cov, self.get_precision())
-
-        return res
+    def get_precision(self):
+        if self.store_precision:
+            precision = self.precision_
+        else:
+            precision = _pinvh(self.covariance_, check_finite=False)
+        return precision
 
     def partial_fit(self, X, y=None, check_input=True):
         """
@@ -286,6 +249,8 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         self : IncrementalEmpiricalCovariance
             Returns the instance itself.
         """
+        if sklearn_check_version("1.2") and check_input:
+            self._validate_params()
         return dispatch(
             self,
             "partial_fit",
@@ -315,7 +280,8 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         self : IncrementalEmpiricalCovariance
             Returns the instance itself.
         """
-
+        if sklearn_check_version("1.2"):
+            self._validate_params()
         return dispatch(
             self,
             "fit",
@@ -331,19 +297,9 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         if hasattr(self, "_onedal_estimator"):
             self._onedal_estimator._reset()
 
-        use_raw_input = get_config().get("use_raw_input", False) is True
-        if not use_raw_input:
-            if sklearn_check_version("1.2"):
-                self._validate_params()
-
-            # finite check occurs on onedal side
-            X = validate_data(
-                self,
-                X,
-                dtype=[np.float64, np.float32],
-                copy=self.copy,
-                ensure_all_finite=False,
-            )
+        if not get_config()["use_raw_input"]:
+            xp, _ = get_namespace(X)
+            X = validate_data(self, X, dtype=[xp.float64, xp.float32], copy=self.copy)
 
         self.batch_size_ = self.batch_size if self.batch_size else 5 * self.n_features_in_
 
@@ -353,40 +309,121 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
             )
 
         for batch in gen_batches(X.shape[0], self.batch_size_):
-            X_batch = X[batch]
+            X_batch = X[batch, ...]
             self._onedal_partial_fit(X_batch, queue=queue, check_input=False)
 
         self._onedal_finalize_fit()
 
         return self
 
-    # expose sklearnex pairwise_distances if mahalanobis distance eventually supported
-    def mahalanobis(self, X):
-        check_feature_names(self, X, reset=False)
+    @wrap_output_data
+    @support_sycl_format
+    def score(self, X_test, y=None):
 
-        xp, _ = get_namespace(X)
+        check_is_fitted(self)
+        # Only covariance evaluated for get_namespace due to dpnp/dpctl
+        # support without array_api_dispatch
+        xp, _ = get_namespace(X_test, self.covariance_)
+
+        X = validate_data(
+            self,
+            X_test,
+            dtype=[xp.float64, xp.float32],
+            reset=False,
+        )
+
+        location = self.location_
         precision = self.get_precision()
-        # compute mahalanobis distances
-        # pairwise_distances will check n_features (via n_feature matching with
-        # self.location_) , and will check for finiteness via check array
-        # check_feature_names will match _validate_data functionally
-        location = self.location_[np.newaxis, :]
+
+        est = clone(self)
+        est.set_params(assume_centered=True)
+
+        # test_cov is a numpy array, but calculated on device
+        test_cov = est.fit(X - self.location_).covariance_
         if not _is_numpy_namespace(xp):
-            # Guarantee that inputs to pairwise_distances match in type and location
-            location = xp.asarray(location, device=X.device)
+            test_cov = xp.asarray(test_cov, device=X_test.device)
+        res = log_likelihood(test_cov, self.get_precision())
 
-        try:
-            dist = pairwise_distances(X, location, metric="mahalanobis", VI=precision)
+        return res
 
-        except ValueError as e:
-            # Throw the expected sklearn error in an n_feature length violation
-            if "Incompatible dimension for X and Y matrices: X.shape[1] ==" in str(e):
-                raise ValueError(
-                    f"X has {_num_features(X)} features, but {self.__class__.__name__} "
-                    f"is expecting {self.n_features_in_} features as input."
-                )
-            else:
-                raise e
+    @wrap_output_data
+    @support_sycl_format
+    def error_norm(self, comp_cov, norm="frobenius", scaling=True, squared=True):
+        # equivalent to the sklearn implementation but written for array API
+        # in the case of numpy-like inputs it will use sklearn's version instead.
+        # This can be deprecated if/when sklearn makes the equivalent array API enabled.
+        # This includes a validate_data call and an unusual call to get_namespace in
+        # order to also support dpnp/dpctl without array_api_dispatch.
+        check_is_fitted(self)
+        # Only covariance evaluated for get_namespace due to dpnp/dpctl
+        # support without array_api_dispatch
+        xp, _ = get_namespace(self.covariance_)
+        c_cov = validate_data(
+            self,
+            comp_cov,
+            dtype=[xp.float64, xp.float32],
+            reset=False,
+        )
+
+        if _is_numpy_namespace(xp):
+            # must be done this way is it does not inherit from sklearn
+            return _sklearn_EmpiricalCovariance.error_norm(
+                self, c_cov, norm=norm, scaling=scaling, squared=squared
+            )
+
+        # compute the error
+        error = c_cov - self.covariance_
+        # compute the error norm
+        if norm == "frobenius":
+            # variance from sklearn version to leverage BLAS GEMM
+            # squared_norm = xp.sum(error**2)
+            squared_norm = xp.matmul(xp.reshape(error, (-1)), xp.reshape(error, (-1)))
+        elif norm == "spectral":
+            squared_norm = xp.max(xp.linalg.svdvals(xp.matmul(error.T, error)))
+        else:
+            raise NotImplementedError("Only spectral and frobenius norms are implemented")
+        # optionally scale the error norm
+        if scaling:
+            squared_norm = squared_norm / error.shape[0]
+        # finally get either the squared norm or the norm
+        if squared:
+            result = squared_norm
+        else:
+            result = xp.sqrt(squared_norm)
+
+        return result
+
+    # expose sklearnex pairwise_distances if mahalanobis distance eventually supported
+    @support_sycl_format
+    def mahalanobis(self, X):
+        # This must be done as ```support_input_format``` is insufficient for array API
+        # support when attributes are non-numpy.
+        check_is_fitted(self)
+        precision = self.get_precision()
+        loc = self.location_[None, :]
+        xp, _ = get_namespace(X, precision, loc)
+        # do not check dtype, done in pairwise_distances
+        X_in = validate_data(self, X, reset=False)
+
+        if not _is_numpy_namespace(xp) and isinstance(X_in, np.ndarray):
+            # corrects issues with respect to dpnp/dpctl support without array_api_dispatch
+            X_in = X
+            loc = xp.asarray(loc, device=X.device)
+            precision = xp.asarray(precision, device=X.device)
+
+        with config_context(assume_finite=True):
+            try:
+                dist = _mahalanobis(X_in, loc, VI=precision)
+
+            except ValueError as e:
+                # Throw the expected sklearn error in an n_feature length violation
+                if "Incompatible dimension for X and Y matrices: X.shape[1] ==" in str(e):
+                    raise ValueError(
+                        f"X has {_num_features(X)} features, but {self.__class__.__name__} "
+                        f"is expecting {self.n_features_in_} features as input."
+                    ) from None
+                else:
+                    raise e
 
         if not _is_numpy_namespace(xp):
             dist = xp.asarray(dist, device=X.device)
@@ -399,3 +436,4 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
     mahalanobis.__doc__ = _sklearn_EmpiricalCovariance.mahalanobis.__doc__
     error_norm.__doc__ = _sklearn_EmpiricalCovariance.error_norm.__doc__
     score.__doc__ = _sklearn_EmpiricalCovariance.score.__doc__
+    get_precision.__doc__ = _sklearn_EmpiricalCovariance.get_precision.__doc__

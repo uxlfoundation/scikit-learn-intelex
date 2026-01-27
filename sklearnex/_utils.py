@@ -19,14 +19,11 @@ import os
 import re
 import sys
 import warnings
-from abc import ABC
-
-import sklearn
 
 from daal4py.sklearn._utils import (
     PatchingConditionsChain as daal4py_PatchingConditionsChain,
 )
-from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from daal4py.sklearn._utils import sklearn_check_version
 from onedal.common.hyperparameters import (
     get_hyperparameters as onedal_get_hyperparameters,
 )
@@ -120,10 +117,6 @@ def get_patch_message(s, queue=None, transferred_to_host=True):
     return message
 
 
-def get_sklearnex_version(rule):
-    return daal_check_version(rule)
-
-
 def register_hyperparameters(hyperparameters_map):
     """Decorator for hyperparameters support in estimator class.
 
@@ -194,7 +187,7 @@ def register_hyperparameters(hyperparameters_map):
     return decorator
 
 
-def _add_inc_serialization_note(class_docstrings: str) -> str:
+def _add_inc_serialization_note(class_docstrings: str, plural: bool = False) -> str:
     """Adds a small note note about serialization for extension estimators that are incremental.
     The class docstrings should leave a placeholder '%incremental_serialization_note%' inside
     their docstrings, which will be replaced by this note.
@@ -202,8 +195,8 @@ def _add_inc_serialization_note(class_docstrings: str) -> str:
     # In python versions >=3.13, leading whitespace in docstrings defined through
     # static strings (but **not through other ways**) is automatically removed
     # from the final docstrings, while in earlier versions is kept.
-    inc_serialization_note = """Note
-----
+    inc_serialization_note = f"""Note{'s' if plural else ''}
+----{'-' if plural else ''}
 Serializing instances of this class will trigger a forced finalization of calculations
 when the inputs are in a sycl queue or when using GPUs. Since (internal method)
 finalize_fit can't be dispatched without directly provided queue and the dispatching

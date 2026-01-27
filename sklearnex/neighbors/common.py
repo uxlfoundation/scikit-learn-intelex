@@ -24,13 +24,12 @@ from sklearn.neighbors._base import NeighborsBase as _sklearn_NeighborsBase
 from sklearn.neighbors._kd_tree import KDTree
 from sklearn.utils.validation import check_is_fitted
 
-from daal4py.sklearn._utils import sklearn_check_version
+from daal4py.sklearn._utils import is_sparse, sklearn_check_version
 from onedal._device_offload import _transfer_to_host
 from onedal.utils.validation import _check_array, _num_features, _num_samples
 
 from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
-from ..utils._array_api import get_namespace
 from ..utils.validation import check_feature_names
 
 
@@ -68,7 +67,13 @@ class KNeighborsDispatchingBase(oneDALEstimator):
 
         if not isinstance(X, (KDTree, BallTree, _sklearn_NeighborsBase)):
             self._fit_X = _check_array(
-                X, dtype=[np.float64, np.float32], accept_sparse=True
+                X,
+                dtype=[np.float64, np.float32],
+                accept_sparse=True,
+                force_all_finite=not (
+                    isinstance(self.effective_metric_, str)
+                    and self.effective_metric_.startswith("nan")
+                ),
             )
             self.n_samples_fit_ = _num_samples(self._fit_X)
             self.n_features_in_ = _num_features(self._fit_X)
@@ -151,6 +156,19 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         patching_status = PatchingConditionsChain(
             f"sklearn.neighbors.{class_name}.{method_name}"
         )
+        # TODO: with verbosity enabled, here it would emit a log saying that it fell
+        # back to sklearn, but internally, sklearn will end up calling 'kneighbors'
+        # which is overridden in the sklearnex classes, thus it will end up calling
+        # oneDAL in the end, but the log will say otherwise. Find a way to make the
+        # log consistent with what happens in practice.
+        patching_status.and_conditions(
+            [
+                (
+                    not (data[0] is None and method_name in ["predict", "score"]),
+                    "Predictions on 'None' data are handled by internal sklearn methods.",
+                )
+            ]
+        )
         if not patching_status.and_condition(
             "radius" not in method_name, "RadiusNeighbors not implemented in sklearnex"
         ):
@@ -187,7 +205,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             return patching_status
 
         if not patching_status.and_condition(
-            not sp.issparse(data[0]), "Sparse input is not supported."
+            not is_sparse(data[0]), "Sparse input is not supported."
         ):
             return patching_status
 

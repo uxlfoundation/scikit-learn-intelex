@@ -27,7 +27,7 @@ import numpy.random as nprnd
 import pytest
 from sklearn.base import BaseEstimator
 
-from daal4py.sklearn._utils import sklearn_check_version
+from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
@@ -174,9 +174,13 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
         # the infrastructure from sklearn that sklearnex depends on is also susceptible
         # to failure. In this case compare to sklearn for the same failure. By design
         # the patching of sklearn should act similarly. Technically this is conformance.
-        if estimator == "PCA" and "score" in method:
+        if (
+            (estimator == "PCA" and "transform" in method)
+            or (estimator == "IncrementalEmpiricalCovariance" and method == "mahalanobis")
+        ) and not _package_check_version("2.0", np.__version__):
+            # issue not to be observed with normal numpy usage
             pytest.skip(
-                f"PCA.{method} has sklearn array_api support which breaks with array_api_dispatching"
+                f"numpy backend does not properly handle the __dlpack__ attribute."
             )
         elif (
             not sklearn_check_version("1.3")
@@ -186,6 +190,13 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
             pytest.skip(
                 f"array checking in sklearn <1.3 does not fully support array_api inputs, causes sklearnex-only estimator failure"
             )
+
+    if (
+        (dataframe == "array_api" or queue)
+        and estimator == "LogisticRegressionCV"
+        and (not sklearn_check_version("1.6") or not get_tags(est).array_api_support)
+    ):
+        pytest.skip("Array API and/or GPU inputs not supported in estimator")
 
         with config_context(array_api_dispatch=True):
             try:
@@ -314,9 +325,17 @@ def test_patch_map_match():
 
     def list_all_attr(string):
         try:
-            modules = set(importlib.import_module(string).__all__)
+            mod = importlib.import_module(string)
         except ModuleNotFoundError:
-            modules = set([None])
+            return set([None])
+
+        # Some sklearn estimators exist in python
+        # files rather than folders under sklearn
+        modules = set(
+            getattr(
+                mod, "__all__", [name for name in dir(mod) if not name.startswith("_")]
+            )
+        )
         return modules
 
     if _is_preview_enabled():

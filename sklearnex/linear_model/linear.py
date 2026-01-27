@@ -16,14 +16,12 @@
 
 import logging
 
-from scipy.sparse import issparse
 from sklearn.linear_model import LinearRegression as _sklearn_LinearRegression
 from sklearn.metrics import r2_score
 from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
-from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
-from onedal.common.hyperparameters import get_hyperparameters
+from daal4py.sklearn._utils import daal_check_version, is_sparse, sklearn_check_version
 from onedal.linear_model import LinearRegression as onedal_LinearRegression
 from onedal.utils.validation import _num_features, _num_samples
 
@@ -212,7 +210,7 @@ class LinearRegression(oneDALEstimator, _sklearn_LinearRegression):
             [
                 (sample_weight is None, "Sample weight is not supported."),
                 (
-                    not issparse(X) and not issparse(y),
+                    not is_sparse(X) and not is_sparse(y),
                     "Sparse input is not supported.",
                 ),
                 (not normalize_is_set, "Normalization is not supported."),
@@ -236,13 +234,13 @@ class LinearRegression(oneDALEstimator, _sklearn_LinearRegression):
 
     def _onedal_predict_supported(self, patching_status, method_name, *data):
         n_samples = _num_samples(data[0])
-        model_is_sparse = issparse(self.coef_) or (
-            self.fit_intercept and issparse(self.intercept_)
+        model_is_sparse = is_sparse(self.coef_) or (
+            self.fit_intercept and is_sparse(self.intercept_)
         )
         patching_status.and_conditions(
             [
                 (n_samples > 0, "Number of samples is less than 1."),
-                (not issparse(data[0]), "Sparse input is not supported."),
+                (not is_sparse(data[0]), "Sparse input is not supported."),
                 (not model_is_sparse, "Sparse coefficients are not supported."),
             ]
         )

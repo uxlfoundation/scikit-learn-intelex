@@ -14,6 +14,8 @@
 # limitations under the License.
 # ==============================================================================
 
+import warnings
+
 import numpy as np
 import scipy.sparse as sp
 
@@ -99,6 +101,12 @@ def return_type_constructor(array):
         # array api support added in dpnp starting in 0.19, will fail for
         # older versions
         if is_dpctl_tensor(array):
+            warnings.warn(
+                "dpctl tensors are deprecated and support for them in "
+                "scikit-learn-intelex will be removed in 2026.0.0. "
+                "Consider using dpnp arrays instead.",
+                FutureWarning,
+            )
             func = lambda x: (
                 xp.asarray(x)
                 if hasattr(x, "__sycl_usm_array_interface__")
@@ -112,7 +120,9 @@ def return_type_constructor(array):
             )
 
     elif hasattr(array, "__array_namespace__"):
-        func = array.__array_namespace__().from_dlpack
+        xp = array.__array_namespace__()
+        device = array.device
+        func = lambda inp: xp.from_dlpack(inp, device=device)
     else:
         try:
             func = _compat_convert(array)

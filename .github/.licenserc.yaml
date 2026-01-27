@@ -42,8 +42,6 @@ header:
     # Clang-format configs
     - '.clang-format'
     - '_clang-format'
-    # pytest arguments
-    - .pytest-verbosity-args
     # All .csv and .ipynb files
     - '**/*.csv'
     - '**/*.ipynb'
@@ -70,7 +68,6 @@ header:
     - '.github/Pull_Request_template.md'
     - '.github/renovate.json'
     # Specific files
-    - 'setup.cfg'
     - 'LICENSE'
     # External copies of copyrighted work
     - 'onedal/datatypes/dlpack/dlpack.h'

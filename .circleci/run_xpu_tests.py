@@ -16,8 +16,10 @@
 # ==============================================================================
 
 # coding: utf-8
-import argparse
 import os
+
+os.environ["SCIPY_ARRAY_API"] = "1"
+import argparse
 
 import pytest
 

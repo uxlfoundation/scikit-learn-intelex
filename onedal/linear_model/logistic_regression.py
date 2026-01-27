@@ -214,7 +214,7 @@ class BaseLogisticRegression(metaclass=ABCMeta):
         return y
 
     def _predict_proba(self, X):
-        result = result = self._infer(X)
+        result = self._infer(X)
         _, xp, _ = _get_sycl_namespace(X)
         y = from_table(result.probabilities, like=X)
         y = xp.reshape(y, -1)
@@ -223,7 +223,22 @@ class BaseLogisticRegression(metaclass=ABCMeta):
     def _predict_log_proba(self, X):
         _, xp, _ = _get_sycl_namespace(X)
         y_proba = self._predict_proba(X)
+        # These are the same thresholds used by oneDAL during the model fitting procedure
+        if y_proba.dtype == np.float32:
+            min_prob = 1e-7
+            max_prob = 1.0 - 1e-7
+        else:
+            min_prob = 1e-15
+            max_prob = 1.0 - 1e-15
+        y_proba = xp.clip(y_proba, min_prob, max_prob)
         return xp.log(y_proba)
+
+    def _decision_function(self, X):
+        _, xp, _ = _get_sycl_namespace(X)
+        raw = xp.matmul(X, xp.reshape(self.coef_, -1))
+        if self.fit_intercept:
+            raw += self.intercept_
+        return raw
 
 
 class LogisticRegression(ClassifierMixin, BaseLogisticRegression):
@@ -272,3 +287,7 @@ class LogisticRegression(ClassifierMixin, BaseLogisticRegression):
     @supports_queue
     def predict_log_proba(self, X, queue=None):
         return self._predict_log_proba(X)
+
+    @supports_queue
+    def decision_function(self, X, queue=None):
+        return self._decision_function(X)

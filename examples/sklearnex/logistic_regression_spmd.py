@@ -17,7 +17,7 @@
 from warnings import warn
 
 import dpctl
-import dpctl.tensor as dpt
+import dpnp
 import numpy as np
 from mpi4py import MPI
 from scipy.special import expit
@@ -65,15 +65,14 @@ X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=rank
 )
 
-dpt_X_train = dpt.asarray(X_train, usm_type="device", sycl_queue=q)
-dpt_y_train = dpt.asarray(y_train, usm_type="device", sycl_queue=q)
-dpt_X_test = dpt.asarray(X_test, usm_type="device", sycl_queue=q)
-dpt_y_test = dpt.asarray(y_test, usm_type="device", sycl_queue=q)
+dpnp_X_train = dpnp.asarray(X_train, usm_type="device", sycl_queue=q)
+dpnp_y_train = dpnp.asarray(y_train, usm_type="device", sycl_queue=q)
+dpnp_X_test = dpnp.asarray(X_test, usm_type="device", sycl_queue=q)
 
 model_spmd = LogisticRegression()
-model_spmd.fit(dpt_X_train, dpt_y_train)
+model_spmd.fit(dpnp_X_train, dpnp_y_train)
 
-y_predict = model_spmd.predict(dpt_X_test)
+y_predict = model_spmd.predict(dpnp_X_test)
 
 print("Distributed LogisticRegression results:")
 print("Coefficients on rank {}:\n{}:".format(rank, model_spmd.coef_))
@@ -81,11 +80,11 @@ print("Intercept on rank {}:\n{}:".format(rank, model_spmd.intercept_))
 print("Ground truth (first 5 observations on rank {}):\n{}".format(rank, y_test[:5]))
 print(
     "Classification results (first 5 observations on rank {}):\n{}".format(
-        rank, dpt.to_numpy(y_predict)[:5]
+        rank, y_predict[:5]
     )
 )
 print(
     "Accuracy for entire rank {} (2 classes): {}\n".format(
-        rank, accuracy_score(y_test, dpt.to_numpy(y_predict))
+        rank, accuracy_score(y_test, dpnp.asnumpy(y_predict))
     )
 )

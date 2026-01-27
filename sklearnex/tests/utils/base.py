@@ -36,9 +36,9 @@ from sklearn.utils.validation import check_is_fitted
 
 from onedal.datatypes import from_table, to_table
 from onedal.tests.utils._dataframes_support import _convert_to_dataframe
-from onedal.utils._array_api import _get_sycl_namespace
 from sklearnex import get_patch_map, patch_sklearn, sklearn_is_patched, unpatch_sklearn
 from sklearnex.basic_statistics import BasicStatistics, IncrementalBasicStatistics
+from sklearnex.dummy import DummyRegressor
 from sklearnex.linear_model import LogisticRegression
 from sklearnex.neighbors import (
     KNeighborsClassifier,
@@ -137,6 +137,7 @@ SPECIAL_INSTANCES = sklearn_clone_dict(
             LogisticRegression(solver="newton-cg"),
             BasicStatistics(),
             IncrementalBasicStatistics(),
+            DummyRegressor(strategy="constant", constant=1.0),  # val set to 1 arbitrarily
         ]
     }
 )

@@ -31,59 +31,17 @@ deselected_tests:
   - linear_model/tests/test_ridge.py::test_ridge_shapes_type
   - linear_model/tests/test_ridge.py::test_ridge_cv_results_predictions[2-False-False]
   - linear_model/tests/test_ridge.py::test_ridge_cv_results_predictions[2-False-True]
-  - neighbors/tests/test_neighbors.py::test_nan_euclidean_support[KNeighborsClassifier-params0]
-  - neighbors/tests/test_neighbors.py::test_nan_euclidean_support[KNeighborsRegressor-params1]
-  - neighbors/tests/test_neighbors.py::test_nan_euclidean_support[LocalOutlierFactor-params6]
-  - neighbors/tests/test_neighbors.py::test_neighbor_classifiers_loocv[ball_tree-nn_model0]
-  - neighbors/tests/test_neighbors.py::test_neighbor_classifiers_loocv[brute-nn_model0]
-  - neighbors/tests/test_neighbors.py::test_neighbor_classifiers_loocv[kd_tree-nn_model0]
-  - neighbors/tests/test_neighbors.py::test_neighbor_classifiers_loocv[auto-nn_model0]
+  # sklearn 1.7 unsupported features
+  - tests/test_common.py::test_estimators[LinearRegression()-check_sample_weight_equivalence_on_dense_data]
 
   # Array API support
-  # sklearnex functional Array API support doesn't guarantee namespace consistency for the estimator's array attributes.
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_input_and_values-array_api_strict-None-None]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_input_and_values-array_api_strict-None-None]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_get_precision-array_api_strict-None-None]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_get_precision-array_api_strict-None-None]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full')-check_array_api_input_and_values-torch-cpu-float64]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full')-check_array_api_input_and_values-torch-cpu-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full')-check_array_api_get_precision-torch-cpu-float64]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full')-check_array_api_get_precision-torch-cpu-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=0.1,svd_solver='full',whiten=True)-check_array_api_input_and_values-torch-cpu-float64]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=0.1,svd_solver='full',whiten=True)-check_array_api_input_and_values-torch-cpu-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=0.1,svd_solver='full',whiten=True)-check_array_api_get_precision-torch-cpu-float64]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=0.1,svd_solver='full',whiten=True)-check_array_api_get_precision-torch-cpu-float32]
-  - decomposition/tests/test_pca.py::test_pca_mle_array_api_compliance[PCA(n_components='mle',svd_solver='full')-check_array_api_get_precision-torch-cpu-float64]
-  - decomposition/tests/test_pca.py::test_pca_mle_array_api_compliance[PCA(n_components='mle',svd_solver='full')-check_array_api_get_precision-torch-cpu-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full')-check_array_api_input_and_values-array_api_strict-device1-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full')-check_array_api_input_and_values-numpy.array_api-None-None]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full')-check_array_api_get_precision-array_api_strict-device1-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full',whiten=True)-check_array_api_input_and_values-array_api_strict-device1-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full',whiten=True)-check_array_api_get_precision-array_api_strict-device1-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=0.1,svd_solver='full',whiten=True)-check_array_api_input_and_values-array_api_strict-device1-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=0.1,svd_solver='full',whiten=True)-check_array_api_input_and_values-numpy.array_api-None-None]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=0.1,svd_solver='full',whiten=True)-check_array_api_get_precision-array_api_strict-device1-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_input_and_values-array_api_strict-CPU_DEVICE-float64]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_input_and_values-array_api_strict-device1-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_input_and_values-torch-cpu-float64]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_input_and_values-torch-cpu-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_get_precision-array_api_strict-CPU_DEVICE-float64]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_get_precision-array_api_strict-device1-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_get_precision-torch-cpu-float64]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh')-check_array_api_get_precision-torch-cpu-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_input_and_values-array_api_strict-CPU_DEVICE-float64]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_input_and_values-array_api_strict-device1-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_input_and_values-torch-cpu-float64]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_input_and_values-torch-cpu-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_get_precision-array_api_strict-CPU_DEVICE-float64]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_get_precision-array_api_strict-device1-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_get_precision-torch-cpu-float64]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='covariance_eigh',whiten=True)-check_array_api_get_precision-torch-cpu-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,power_iteration_normalizer='QR',random_state=0,svd_solver='randomized')-check_array_api_input_and_values-array_api_strict-device1-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,power_iteration_normalizer='QR',random_state=0,svd_solver='randomized')-check_array_api_get_precision-array_api_strict-device1-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,power_iteration_normalizer='QR',random_state=0,svd_solver='randomized')-check_array_api_input_and_values-numpy.array_api-None-None]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,power_iteration_normalizer='QR',random_state=0,svd_solver='randomized')-check_array_api_get_precision-numpy.array_api-None-None]
-  - decomposition/tests/test_pca.py::test_pca_mle_array_api_compliance[PCA(n_components='mle',svd_solver='full')-check_array_api_get_precision-array_api_strict-device1-float32]
+  # numpy.array_api was experimental and its use in sklearn was not official
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full')-check_array_api_input_and_values-numpy.array_api-None-None] <1.5
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,svd_solver='full')-check_array_api_get_precision-numpy.array_api-None-None] <1.5
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=0.1,svd_solver='full',whiten=True)-check_array_api_input_and_values-numpy.array_api-None-None] <1.5
+  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=0.1,svd_solver='full',whiten=True)-check_array_api_get_precision-numpy.array_api-None-None] <1.5
+  - decomposition/tests/test_pca.py::test_pca_mle_array_api_compliance[PCA(n_components='mle',svd_solver='full')-check_array_api_get_precision-numpy.array_api-None-None] <1.5
+  
   # `train_test_split` inconsistency for Array API inputs.
   - model_selection/tests/test_split.py::test_array_api_train_test_split[True-None-array_api_strict-None-None]
   - model_selection/tests/test_split.py::test_array_api_train_test_split[True-stratify1-array_api_strict-None-None]
@@ -101,15 +59,6 @@ deselected_tests:
   - model_selection/tests/test_split.py::test_array_api_train_test_split[True-stratify1-numpy.array_api-None-None]
   - model_selection/tests/test_split.py::test_array_api_train_test_split[False-None-numpy.array_api-None-None]
 
-  # PCA. Array API functionally supported for all factorizations. power_iteration_normalizer=["LU", "QR"]
-  - decomposition/tests/test_pca.py::test_array_api_error_and_warnings_on_unsupported_params
-  # PCA. InvalidParameterError: The 'M' parameter of randomized_svd must be an instance of 'numpy.ndarray' or a sparse matrix.
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,power_iteration_normalizer='QR',random_state=0,svd_solver='randomized')-check_array_api_input_and_values-array_api_strict-None-None]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,power_iteration_normalizer='QR',random_state=0,svd_solver='randomized')-check_array_api_get_precision-array_api_strict-None-None]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,power_iteration_normalizer='QR',random_state=0,svd_solver='randomized')-check_array_api_input_and_values-torch-cpu-float64]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,power_iteration_normalizer='QR',random_state=0,svd_solver='randomized')-check_array_api_input_and_values-torch-cpu-float32]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,power_iteration_normalizer='QR',random_state=0,svd_solver='randomized')-check_array_api_get_precision-torch-cpu-float64]
-  - decomposition/tests/test_pca.py::test_pca_array_api_compliance[PCA(n_components=2,power_iteration_normalizer='QR',random_state=0,svd_solver='randomized')-check_array_api_get_precision-torch-cpu-float32]
   # Ridge regression. Array API functionally supported for all solvers. Not raising error for non-svd solvers.
   - linear_model/tests/test_ridge.py::test_array_api_error_and_warnings_for_solver_parameter[array_api_strict]
   - linear_model/tests/test_ridge.py::test_array_api_error_and_warnings_for_solver_parameter[torch]
@@ -122,6 +71,7 @@ deselected_tests:
   # resulting in solver assignment check failure for sklearn version >= 1.5
   - decomposition/tests/test_pca.py::test_pca_svd_solver_auto[1000-500-400-full] >=1.5
   - decomposition/tests/test_pca.py::test_pca_svd_solver_auto[1000-500-0.5-full] >=1.5
+  - decomposition/tests/test_pca.py::test_pca_svd_solver_auto[10-50-5-full] >=1.5
 
   # Non-critical, but there are significant differences due to different implementations
   - linear_model/tests/test_common.py::test_balance_property[42-True-LinearRegression]
@@ -191,8 +141,10 @@ deselected_tests:
   - ensemble/tests/test_bagging.py::test_sparse_classification
 
   # Same results as in scikit-learn, but in a different order
-  - svm/tests/test_svm.py::test_svc_ovr_tie_breaking[SVC]
-  - svm/tests/test_svm.py::test_svc_ovr_tie_breaking[NuSVC]
+  - svm/tests/test_svm.py::test_svc_ovr_tie_breaking[SVC] <1.8
+  - svm/tests/test_svm.py::test_svc_ovr_tie_breaking[NuSVC] <1.8
+  - svm/tests/test_svm.py::test_svc_ovr_tie_breaking[42-SVC] >=1.8
+  - svm/tests/test_svm.py::test_svc_ovr_tie_breaking[42-NuSVC] >=1.8
 
   # Different models between oneAPI Data Analytics Library (oneDAL) and stock scikit-learn with custom and precompute kernel
   - svm/tests/test_svm.py::test_svc_clone_with_callable_kernel
@@ -264,8 +216,8 @@ deselected_tests:
   - tests/test_common.py::test_estimators[NuSVC()-check_class_weight_classifiers] <1.0
   - tests/test_multioutput.py::test_multi_output_classification
 
-  # Linear Regression - minor mismatches in error/warning messages
-  - linear_model/tests/test_base.py::test_linear_regression_pd_sparse_dataframe_warning
+  # Requires SciPy version which is not available in too old environments
+  - linear_model/tests/test_base.py::test_linear_regression_pd_sparse_dataframe_warning <1.1
 
   # L1 Linear models with sklearn 1.1 + numpy > 1.25 - extra warnings from numpy lead to test fail
   - linear_model/tests/test_coordinate_descent.py::test_assure_warning_when_normalize[True-1-LassoCV] >=1.1,<1.2
@@ -316,7 +268,6 @@ deselected_tests:
   # test checks only the exact number of options that are used
   - tests/test_config.py::test_config_context
 
-
   # Accuracy of scikit-learn-intelex and scikit-learn may differ due to different approaches
   - manifold/tests/test_t_sne.py::test_bh_match_exact
   - manifold/tests/test_t_sne.py::test_uniform_grid[barnes_hut]
@@ -339,7 +290,7 @@ deselected_tests:
   - ensemble/tests/test_bagging.py::test_estimators_samples >=1.4
   - ensemble/tests/test_voting.py::test_sample_weight >=1.4
   - svm/tests/test_svm.py::test_auto_weight >=1.4
-  - tests/test_calibration.py::test_calibrated_classifier_cv_double_sample_weights_equivalence >=1.4
+  - tests/test_calibration.py::test_calibrated_classifier_cv_double_sample_weights_equivalence >=1
   - tests/test_calibration.py::test_calibrated_classifier_cv_zeros_sample_weights_equivalence >=1.4
   - tests/test_common.py::test_estimators[LogisticRegression()-check_sample_weights_invariance(kind=ones)] >=1.4
   - tests/test_common.py::test_estimators[LogisticRegression()-check_sample_weights_invariance(kind=zeros)] >=1.4
@@ -364,12 +315,17 @@ deselected_tests:
   - cluster/tests/test_k_means.py::test_kmeans_elkan_results[1e-08-sparse
   - cluster/tests/test_k_means.py::test_kmeans_elkan_results[1e-100-sparse
   - cluster/tests/test_k_means.py::test_kmeans_elkan_results[0-sparse
+  # Temporary deselections due to a bug in oneDAL, remove once the issue is fixed.
+  # Probably can also removed the kmeans ones above once these are fixed.
+  - cluster/tests/test_k_means.py::test_float_precision
+  - cluster/tests/test_k_means.py::test_kmeans_relocated_clusters
+  - cluster/tests/test_kmeans.py::test_dense_vs_sparse[dims0-elkan-k-means++-None]
+  - cluster/tests/test_kmeans.py::test_dense_vs_sparse[dims1-full-k-means++-None]
+  - cluster/tests/test_kmeans.py::test_dense_vs_sparse[dims2-full-k-means++-None]
+  - cluster/tests/test_kmeans.py::test_dense_vs_sparse[dims2-elkan-k-means++-None]
 
   # Fails in stock scikit-learn: checks that data is modified in-place when not strictly required
   - linear_model/tests/test_base.py::test_inplace_data_preprocessing
-
-  # Failure occurs in python3.9 on windows CPU only - not easy to reproduce
-  - ensemble/tests/test_weight_boosting.py::test_estimator >= 1.4 win32
 
   # array_api dispatching for oneDAL is recognized using the sklearn tag system. This is an expected
   # break in sklearn conformance as additional non-default tags cause errors in this test. This
@@ -405,9 +361,17 @@ deselected_tests:
   - linear_model/tests/test_logistic.py::test_newton_cholesky_fallback_to_lbfgs
   - linear_model/tests/test_logistic.py::test_logistic_cv_sparse[csr_array]
   - linear_model/tests/test_logistic.py::test_logistic_cv_sparse[csr_matrix]
+  - linear_model/tests/test_logistic.py::test_logistic_cv_multinomial_score
   - tests/test_common.py::test_estimators[LogisticRegressionCV(cv=3,max_iter=5)-check_sample_weight_equivalence_on_dense_data]
   - ensemble/tests/test_bagging.py::test_estimators_samples >=1.0,<1.1
   - ensemble/tests/test_voting.py::test_sample_weight >=1.0,<1.1
+  - tests/test_multioutput.py::test_multiclass_multioutput_estimator_predict_proba
+  - model_selection/tests/test_search.py::test_search_cv_sample_weight_equivalence[estimator0]
+  - tests/test_common.py::test_estimators[StackingClassifier(estimators=[('est1',LogisticRegression(C=0.1)),('est2',LogisticRegression(C=1))])-check_sample_weights_invariance(kind=ones)] <1.1
+  - tests/test_common.py::test_estimators[StackingClassifier(estimators=[('est1',LogisticRegression(C=0.1)),('est2',LogisticRegression(C=1))])-check_sample_weights_invariance(kind=zeros)] <1.1
+  - linear_model/tests/test_logistic.py::test_logistic_cv_sparse[42-csr_matrix]
+  - linear_model/tests/test_logistic.py::test_logistic_cv_sparse[42-csr_array]
+  - tests/test_common.py::test_estimators[LogisticRegressionCV(cv=3,max_iter=5,use_legacy_attributes=False)-check_sample_weight_equivalence_on_dense_data]
 
   # Scikit-learn does not constraint multinomial logistic intercepts to sum to zero.
   # Softmax function is invariant to additions by a constant, so even though the numbers
@@ -416,6 +380,22 @@ deselected_tests:
 
   # This particular case does not reach convergence, fails because of a warning
   - linear_model/tests/test_logistic.py::test_n_iter[newton-cg]
+
+  # These fail due to not printing everything that scikit-learn prints on verbose mode
+  - cluster/tests/test_k_means.py::test_kmeans_verbose
+
+  # These fail due to small numerical differences that come from LogisticRegression results
+  - metrics/_plot/tests/test_roc_curve_display.py::test_roc_curve_display_plotting_from_cv_results
+  - metrics/_plot/tests/test_roc_curve_display.py::test_roc_curve_from_cv_results_legend_label
+
+  # These require version numbers of array API packages that are not available on older Python versions.
+  # Since it's not possible to select or deselect based on Python version, they are removed entirely.
+  - metrics/tests/test_classification.py::test_probabilistic_metrics_array_api
+  - metrics/tests/test_common.py::test_array_api_compliance
+  - utils/tests/test_stats.py::test_weighted_percentile_array_api_consistency
+
+  # Tests for exact equality, but results have differences in the order of machine epsilon
+  - neighbors/tests/test_neighbors.py::test_KNeighborsClassifier_multioutput
 
   # --------------------------------------------------------
   # No need to test daal4py patching
@@ -490,6 +470,16 @@ public:
   - svm/tests/test_sparse.py::test_unsorted_indices[csr_matrix] <1.7 win32
   - svm/tests/test_sparse.py::test_unsorted_indices[csr_array] <1.7 win32
 
+  # sklearn 1.4 has different absolute and relative tolerances for this test,
+  # set of available solvers and corresponding sklearnex rules to choose one
+  # than newer versions resulting in test failure on some systems when
+  # single-threaded computation is used which is a frequent case for CI
+  - decomposition/tests/test_pca.py::test_pca_dtype_preservation[full] <1.5
+  - decomposition/tests/test_pca.py::test_pca_dtype_preservation[auto]
+
+  # Convergence failure due to different settings and cost function implementation
+  - linear_model/tests/test_logistic.py::test_logistic_regression_path_convergence_fail
+
   # --------------------------------------------------------
   # The following tests currently fail with GPU offloading
 gpu:
@@ -534,12 +524,8 @@ gpu:
   - tests/test_common.py::test_estimators[ExtraTreesClassifier()-check_class_weight_classifiers]
   - tests/test_common.py::test_estimators[ExtraTreesRegressor()-check_sample_weights_invariance(kind=zeros)]
   - tests/test_common.py::test_estimators[RandomForestRegressor()-check_regressor_data_not_an_array]
-
-  # GPU implementation of Extra Trees doesn't support sample_weights
-  # comparisons to GPU with sample weights will use different algorithms
-  - tests/test_common.py::test_estimators[ExtraTreesClassifier()-check_sample_weights_invariance(kind=ones)]
   - tests/test_common.py::test_estimators[ExtraTreesClassifier()-check_sample_weights_invariance(kind=zeros)]
-  - tests/test_common.py::test_estimators[ExtraTreesRegressor()-check_sample_weights_invariance(kind=ones)]
+  - ensemble/tests/test_forest.py::test_min_weight_fraction_leaf
 
   # RuntimeError: Device support is not implemented, failing as result of fallback to cpu false
   - svm/tests/test_svm.py::test_unfitted
@@ -550,3 +536,10 @@ gpu:
 
   # Deselection for Scikit-Learn 1.4 GPU conformance
   - model_selection/tests/test_validation.py::test_learning_curve_some_failing_fits_warning >=1.4
+
+  # Deselections for Scikit-Learn 1.6 GPU conformance (no GPU kd tree, no rfe implementation, GPU ensemble misalignment)
+  - neighbors/tests/test_neighbors.py::test_neighbors_metrics[42-float64-l2]
+  - feature_selection/tests/test_rfe.py::test_rfe_with_sample_weight
+  - tests/test_common.py::test_estimators[RandomForestRegressor(n_estimators=5)-check_regressor_data_not_an_array]
+  - tests/test_common.py::test_estimators[RandomForestClassifier(n_estimators=5)-check_class_weight_classifiers]
+  - tests/test_common.py::test_estimators[ExtraTreesClassifier(n_estimators=5)-check_class_weight_classifiers]

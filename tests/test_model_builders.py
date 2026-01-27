@@ -293,9 +293,11 @@ def test_xgb_regression_shap(
         pytest.skip()
 
     xgb_model = make_xgb_model(objective, base_score, sklearn_class, empty_trees)
-    d4p_model = d4p.mb.convert_model(
-        xgb_model if not from_treelite else treelite.frontend.from_xgboost(xgb_model)
-    )
+    if from_treelite:
+        tl_model = treelite.frontend.from_xgboost(xgb_model)
+        d4p_model = d4p.mb.convert_model(tl_model)
+    else:
+        d4p_model = d4p.mb.convert_model(xgb_model)
 
     if sklearn_class:
         xgb_model = xgb_model.get_booster()
@@ -430,9 +432,11 @@ def test_xgb_binary_classification_shap(
     if sklearn_class and from_treelite:
         pytest.skip()
     xgb_model = make_xgb_model(objective, base_score, sklearn_class, empty_trees)
-    d4p_model = d4p.mb.convert_model(
-        xgb_model if not from_treelite else treelite.frontend.from_xgboost(xgb_model)
-    )
+    if from_treelite:
+        tl_model = treelite.frontend.from_xgboost(xgb_model)
+        d4p_model = d4p.mb.convert_model(tl_model)
+    else:
+        d4p_model = d4p.mb.convert_model(xgb_model)
 
     if sklearn_class:
         xgb_model = xgb_model.get_booster()
@@ -2146,19 +2150,43 @@ def test_logreg_builder_with_deleted_arrays():
     )
 
 
+# This just checks that it doesn't segfault
+def test_logreg_builder_sequential_calls():
+    rng = np.random.default_rng(seed=123)
+    X = rng.standard_normal(size=(5, 10))
+    coefs = rng.standard_normal(size=(3, 10))
+    intercepts = np.zeros(3)
+    ref_pred = X @ coefs.T
+    ref_probs = softmax(ref_pred, axis=1)
+
+    model_d4p = d4p.mb.LogisticDAALModel(coefs, intercepts)
+    pred = model_d4p.predict_log_proba(X)
+    del pred
+    gc.collect()
+    pred = model_d4p.predict_log_proba(X)
+    del pred
+    gc.collect()
+
+
 # Note: these cases are safe to remove if scikit-learn later
 # on decides to disallow some of these combinations.
 @pytest.mark.parametrize(
     "estimator_skl,n_classes",
-    [
-        (
-            LogisticRegression(multi_class="ovr"),
-            3,
-        ),
-        (
-            LogisticRegression(multi_class="multinomial"),
-            2,
-        ),
+    (
+        [
+            (
+                LogisticRegression(multi_class="ovr"),
+                3,
+            ),
+            (
+                LogisticRegression(multi_class="multinomial"),
+                2,
+            ),
+        ]
+        if not sklearn_check_version("1.8")
+        else []
+    )
+    + [
         # case below might change in the future if sklearn improves their modules
         pytest.param(
             SGDClassifier(loss="log_loss"),
