@@ -43,13 +43,20 @@ EX_OK = os.EX_OK if hasattr(os, "EX_OK") else 0
 @pytest.fixture
 def patch_svc_from_command_line(request):
     err_code = subprocess.call(
-        [sys.executable, "-m", "sklearnex.glob", "patch_sklearn", "-a", "svc"]
+        [sys.executable, "-m", "sklearnex.glob", "patch_sklearn", "-a", "sklearn.svm.SVC"]
     )
     assert err_code == EX_OK
 
     def finalizer():
         err_code = subprocess.call(
-            [sys.executable, "-m", "sklearnex.glob", "unpatch_sklearn", "-a", "svc"]
+            [
+                sys.executable,
+                "-m",
+                "sklearnex.glob",
+                "unpatch_sklearn",
+                "-a",
+                "sklearn.svm.SVC",
+            ]
         )
         assert err_code == EX_OK
 
@@ -60,7 +67,7 @@ def patch_svc_from_command_line(request):
 def test_patching_svc_from_command_line(patch_svc_from_command_line):
     from sklearn.svm import SVC, SVR
 
-    assert SVC.__module__.startswith("daal4py") or SVC.__module__.startswith("sklearnex")
+    assert SVC.__module__.startswith("sklearnex")
     assert not SVR.__module__.startswith("daal4py") and not SVR.__module__.startswith(
         "sklearnex"
     )
@@ -88,10 +95,10 @@ def test_unpatching_svc_from_command_line(patch_svc_from_command_line):
 def patch_svc_from_function(request):
     from sklearnex import patch_sklearn, unpatch_sklearn
 
-    patch_sklearn(name=["svc"], global_patch=True)
+    patch_sklearn(name=["sklearn.svm.SVC"], global_patch=True)
 
     def finalizer():
-        unpatch_sklearn(name=["svc"], global_unpatch=True)
+        unpatch_sklearn(name=["sklearn.svm.SVC"], global_unpatch=True)
 
     request.addfinalizer(finalizer)
     return
@@ -100,7 +107,7 @@ def patch_svc_from_function(request):
 def test_patching_svc_from_function(patch_svc_from_function):
     from sklearn.svm import SVC, SVR
 
-    assert SVC.__module__.startswith("daal4py") or SVC.__module__.startswith("sklearnex")
+    assert SVC.__module__.startswith("sklearnex")
     assert not SVR.__module__.startswith("daal4py") and not SVR.__module__.startswith(
         "sklearnex"
     )
@@ -134,8 +141,8 @@ def patch_all_from_function(request):
 def test_patching_svc_from_function(patch_all_from_function):
     from sklearn.svm import SVC, SVR
 
-    assert SVC.__module__.startswith("daal4py") or SVC.__module__.startswith("sklearnex")
-    assert SVR.__module__.startswith("daal4py") or SVR.__module__.startswith("sklearnex")
+    assert SVC.__module__.startswith("sklearnex")
+    assert SVR.__module__.startswith("sklearnex")
 
 
 def test_unpatching_all_from_function(patch_all_from_function):
