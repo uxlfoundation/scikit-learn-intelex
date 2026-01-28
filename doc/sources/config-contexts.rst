@@ -40,7 +40,7 @@ both libraries.
 .. important::
 
     In order for configuration contexts from the |sklearnex| to work correctly with
-    estimators imported from the ``sklearnex`` module used inside metaestimators from the ``sklearn``
+    estimators imported from the ``sklearnex`` module used inside meta-estimators from the ``sklearn``
     module (such as :obj:`sklearn.model_selection.GridSearchCV`), it is necessary to apply
     :doc:`patching <patching>` to the ``sklearn`` module. Importing estimators from ``sklearnex``
     without patching and passing them to metaestimators from ``sklearn`` might not
