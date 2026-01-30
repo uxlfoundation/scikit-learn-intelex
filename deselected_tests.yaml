@@ -397,6 +397,11 @@ deselected_tests:
   # Tests for exact equality, but results have differences in the order of machine epsilon
   - neighbors/tests/test_neighbors.py::test_KNeighborsClassifier_multioutput
 
+  # These fail on oneDAL public validation due to Unknown Distance Metric: sokalmichener
+  - metrics/tests/test_pairwise.py::test_pairwise_boolean_distance[sokalmichener]
+  - neighbors/tests/test_neighbors.py::test_kneighbors_brute_backend[float64-42-sokalmichener]
+  - neighbors/tests/test_neighbors.py::test_radius_neighbors_brute_backend[42-float64-sokalmichener]
+
   # --------------------------------------------------------
   # No need to test daal4py patching
 reduced_tests:
