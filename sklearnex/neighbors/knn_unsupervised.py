@@ -155,7 +155,7 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
             "p": self.effective_metric_params_["p"],
         }
 
-        estimator_class = getattr(self, '_onedal_estimator', onedal_NearestNeighbors)
+        estimator_class = getattr(self, "_onedal_estimator", onedal_NearestNeighbors)
         self._onedal_estimator = estimator_class(**onedal_params)
         self._onedal_estimator.requires_y = get_requires_y_tag(self)
         self._onedal_estimator.effective_metric_ = self.effective_metric_
