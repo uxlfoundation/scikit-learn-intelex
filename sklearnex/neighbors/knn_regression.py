@@ -40,7 +40,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
     __doc__ = _sklearn_KNeighborsRegressor.__doc__
     # Default onedal estimator class - SPMD subclasses can override this
     _onedal_estimator = onedal_KNeighborsRegressor
-    
+
     if sklearn_check_version("1.2"):
         _parameter_constraints: dict = {
             **_sklearn_KNeighborsRegressor._parameter_constraints
