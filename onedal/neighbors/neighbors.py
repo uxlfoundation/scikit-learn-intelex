@@ -441,11 +441,8 @@ class NearestNeighbors(NeighborsBase):
     def _onedal_fit(self, X, y):
         # global queue is set as per user configuration (`target_offload`) or from data prior to calling this internal function
         queue = QM.get_global_queue()
-        # REFACTOR: Convert to table FIRST, then get params from table (following PCA pattern)
-        # This ensures dtype is normalized (array API dtype -> numpy dtype)
-        # Note: NearestNeighbors has no y, so only convert X to avoid y becoming a table
-        X = to_table(X, queue=queue)
         params = self._get_onedal_params(X, y)
+        X, y = to_table(X, y, queue=queue)
         return self.train(params, X).model
 
     def _onedal_predict(self, model, X, params):
