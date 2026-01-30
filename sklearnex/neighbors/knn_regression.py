@@ -38,6 +38,9 @@ from .common import KNeighborsDispatchingBase
 @control_n_jobs(decorated_methods=["fit", "predict", "kneighbors", "score"])
 class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegressor):
     __doc__ = _sklearn_KNeighborsRegressor.__doc__
+    # Default onedal estimator class - SPMD subclasses can override this
+    _onedal_estimator = onedal_KNeighborsRegressor
+    
     if sklearn_check_version("1.2"):
         _parameter_constraints: dict = {
             **_sklearn_KNeighborsRegressor._parameter_constraints
@@ -165,7 +168,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
             "p": self.effective_metric_params_["p"],
         }
 
-        self._onedal_estimator = onedal_KNeighborsRegressor(**onedal_params)
+        self._onedal_estimator = self._onedal_estimator(**onedal_params)
         self._onedal_estimator.requires_y = get_requires_y_tag(self)
         self._onedal_estimator.effective_metric_ = self.effective_metric_
         self._onedal_estimator.effective_metric_params_ = self.effective_metric_params_

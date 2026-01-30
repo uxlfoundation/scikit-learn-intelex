@@ -292,10 +292,8 @@ class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
     def _onedal_fit(self, X, y):
         # global queue is set as per user configuration (`target_offload`) or from data prior to calling this internal function
         queue = QM.get_global_queue()
-        # REFACTOR: Convert to table FIRST, then get params from table (following PCA pattern)
-        # This ensures dtype is normalized (array API dtype -> numpy dtype)
+        params = self._get_onedal_params(X, y)
         X_table, y_table = to_table(X, y, queue=queue)
-        params = self._get_onedal_params(X_table, y)
         return self.train(params, X_table, y_table).model
 
     def _onedal_predict(self, model, X, params):
@@ -354,8 +352,8 @@ class KNeighborsRegressor(NeighborsBase, RegressorMixin):
         # global queue is set as per user configuration (`target_offload`) or from data prior to calling this internal function
         queue = QM.get_global_queue()
         gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
+        params = self._get_onedal_params(X, y)
         X_table, y_table = to_table(X, y, queue=queue)
-        params = self._get_onedal_params(X_table, y)
 
         if gpu_device:
             return self.train(params, X_table, y_table).model

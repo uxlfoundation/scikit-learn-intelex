@@ -40,6 +40,9 @@ from .common import KNeighborsDispatchingBase
 )
 class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassifier):
     __doc__ = _sklearn_KNeighborsClassifier.__doc__
+    # Default onedal estimator class - SPMD subclasses can override this
+    _onedal_estimator = onedal_KNeighborsClassifier
+    
     if sklearn_check_version("1.2"):
         _parameter_constraints: dict = {
             **_sklearn_KNeighborsClassifier._parameter_constraints
@@ -180,7 +183,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             "p": self.effective_metric_params_["p"],
         }
 
-        self._onedal_estimator = onedal_KNeighborsClassifier(**onedal_params)
+        self._onedal_estimator = self._onedal_estimator(**onedal_params)
         self._onedal_estimator.requires_y = get_requires_y_tag(self)
         self._onedal_estimator.effective_metric_ = self.effective_metric_
         self._onedal_estimator.effective_metric_params_ = self.effective_metric_params_
