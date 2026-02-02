@@ -90,6 +90,15 @@ if daal_check_version((2023, "P", 200)):
                 "verbose": self.verbose,
                 "random_state": self.random_state,
             }
+            
+            import sys
+            logging.info(
+                f"sklearnex.KMeans: Creating onedal estimator with params: "
+                f"n_clusters={self.n_clusters}, init={self.init}, "
+                f"random_state={self.random_state}"
+            )
+            sys.stdout.flush()
+            sys.stderr.flush()
 
             self._onedal_estimator = onedal_KMeans(**onedal_params)
 
@@ -155,6 +164,16 @@ if daal_check_version((2023, "P", 200)):
 
         def _onedal_fit(self, X, _, sample_weight, queue=None):
             xp, _ = get_namespace(X)
+            
+            import sys
+            from scipy.sparse import issparse
+            logging.info(
+                f"sklearnex.KMeans._onedal_fit: X.shape={X.shape}, "
+                f"is_sparse={issparse(X)}, dtype={X.dtype}"
+            )
+            sys.stdout.flush()
+            sys.stderr.flush()
+            
             X = validate_data(
                 self,
                 X,
