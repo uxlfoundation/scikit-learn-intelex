@@ -757,7 +757,7 @@ def logistic_regression_path_dispatcher(
                 in ["lbfgs"]
                 + (["newton-cg"] if "SKLEARNEX_PREVIEW" in os.environ else []),
                 f"'{solver}' solver is not supported. "
-                "Only 'lbfgs' and 'newton-cg' (in preview mode) solvers are supported.",
+                "Only 'lbfgs' and 'newton-cg' solvers are supported. 'newton-cg' is only supported in preview mode.",
             ),
             (not is_sparse(X), "X is sparse. Sparse input is not supported."),
             (
