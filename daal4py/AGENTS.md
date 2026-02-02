@@ -97,7 +97,7 @@ MPI-based Single Program Multiple Data execution. Each rank processes data parti
 Core logic in `src/dist_*.h` files. Python entry via mpi4py with `daalinit()` and `daalfini()`.
 
 ### Supported Algorithms
-DBSCAN, K-Means, Linear Regression, PCA, Covariance
+DBSCAN, K-Means, Linear Regression, Ridge Regression, PCA, Covariance, Low Order Moments, Naive Bayes, QR Decomposition, SVD
 
 ### Requirements
 MPI installation (Intel MPI or MPICH) and mpi4py package. Launch via `mpirun -n <ranks>`.

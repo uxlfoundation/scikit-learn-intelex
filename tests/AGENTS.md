@@ -13,6 +13,13 @@ Comprehensive validation infrastructure ensuring numerical accuracy, performance
 - `helper_mpi_tests.py`: MPI test coordination
 - `unittest_data/`: Reference datasets for validation
 
+### Per-Algorithm Tests
+In addition to the integration tests above, each algorithm module in `onedal/` and `sklearnex/` has its own `tests/` subdirectory with algorithm-specific tests. For example:
+- `sklearnex/basic_statistics/tests/`, `sklearnex/cluster/tests/`, `sklearnex/linear_model/tests/`, etc.
+- `onedal/basic_statistics/tests/`, `onedal/cluster/tests/`, `onedal/linear_model/tests/`, etc.
+
+These per-module tests are run via `pytest --verbose sklearnex` and `pytest --verbose onedal` respectively.
+
 ## Validation Patterns
 
 ### Model Builder Testing
