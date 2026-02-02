@@ -61,9 +61,9 @@ def test_queue_is_thread_local():
         with QM.manage_global_queue(queue_arg):
             barrier.wait()
             if is_cpu:
-                assert not QM.__global.queue.sycl_device.is_gpu
+                assert not QM.__globals.queue.sycl_device.is_gpu
             else:
-                assert QM.__global.queue.sycl_device.is_gpu
+                assert QM.__globals.queue.sycl_device.is_gpu
             barrier.wait()
 
     t1 = Thread(target=fn, args=("cpu", True))
