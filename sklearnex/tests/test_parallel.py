@@ -59,7 +59,7 @@ def test_config_context_in_parallel(with_sklearnex):
 def test_queue_is_thread_local():
     from onedal.utils import _sycl_queue_manager as QM
 
-    barrier = threading.Barrier(2)
+    barrier = Barrier(2)
 
     def fn(queue_arg, is_cpu):
         with QM.manage_global_queue(queue_arg):
