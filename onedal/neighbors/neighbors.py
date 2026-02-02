@@ -156,7 +156,7 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         gpu_device = queue is not None and queue.sycl_device.is_gpu
         # Backend-specific formatting: GPU backend needs y in (-1, 1) shape
         if _is_classifier(self) or (_is_regressor(self) and gpu_device):
-            _, xp, _ = _get_sycl_namespace(X)
+            _, xp, _ = _get_sycl_namespace(self._y)
             _fit_y = xp.reshape(self._y, (-1, 1))
         result = self._onedal_fit(X, _fit_y)
 
