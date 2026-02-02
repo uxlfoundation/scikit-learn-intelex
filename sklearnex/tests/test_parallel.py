@@ -13,8 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import time
-from threading import Thread
+from threading import Barrier, Thread
 
 import pytest
 
@@ -27,6 +26,7 @@ try:
     gpu_is_available = dpctl.has_gpu_devices()
 except (ImportError, ModuleNotFoundError):
     dpctl_is_available = False
+    gpu_is_available = False
 
 
 @pytest.mark.skipif(
@@ -59,18 +59,20 @@ def test_config_context_in_parallel(with_sklearnex):
 def test_queue_is_thread_local():
     from onedal.utils import _sycl_queue_manager as QM
 
+    barrier = threading.Barrier(2)
+
     def fn(queue_arg, is_cpu):
         with QM.manage_global_queue(queue_arg):
-            time.sleep(0.2)
+            barrier.wait()
             if is_cpu:
                 assert not QM.__global.queue.sycl_device.is_gpu
             else:
                 assert QM.__global.queue.sycl_device.is_gpu
+            barrier.wait()
 
     t1 = Thread(target=fn, args=("cpu", True))
-    t1.start()
     t2 = Thread(target=fn, args=("gpu", False))
+    t1.start()
     t2.start()
-
     t1.join()
     t2.join()
