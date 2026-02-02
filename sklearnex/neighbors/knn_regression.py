@@ -168,8 +168,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
             "p": self.effective_metric_params_["p"],
         }
 
-        estimator_class = getattr(self, "_onedal_estimator", onedal_KNeighborsRegressor)
-        self._onedal_estimator = estimator_class(**onedal_params)
+        self._onedal_estimator = onedal_KNeighborsRegressor(**onedal_params)
         self._onedal_estimator.requires_y = get_requires_y_tag(self)
         self._onedal_estimator.effective_metric_ = self.effective_metric_
         self._onedal_estimator.effective_metric_params_ = self.effective_metric_params_

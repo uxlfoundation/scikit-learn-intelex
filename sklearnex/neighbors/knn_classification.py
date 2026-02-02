@@ -183,8 +183,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             "p": self.effective_metric_params_["p"],
         }
 
-        estimator_class = getattr(self, "_onedal_estimator", onedal_KNeighborsClassifier)
-        self._onedal_estimator = estimator_class(**onedal_params)
+        self._onedal_estimator = onedal_KNeighborsClassifier(**onedal_params)
         self._onedal_estimator.requires_y = get_requires_y_tag(self)
         self._onedal_estimator.effective_metric_ = self.effective_metric_
         self._onedal_estimator.effective_metric_params_ = self.effective_metric_params_

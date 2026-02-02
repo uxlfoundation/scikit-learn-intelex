@@ -24,11 +24,11 @@ from ...neighbors import NearestNeighbors as base_NearestNeighbors
 
 
 class KNeighborsClassifier(base_KNeighborsClassifier):
-    _onedal_estimator = onedal_KNeighborsClassifier
+    _onedal_estimator = staticmethod(onedal_KNeighborsClassifier)
 
 
 class KNeighborsRegressor(base_KNeighborsRegressor):
-    _onedal_estimator = onedal_KNeighborsRegressor
+    _onedal_estimator = staticmethod(onedal_KNeighborsRegressor)
 
     def _onedal_predict(self, X, queue=None):
         """Override to always use GPU path in SPMD mode.
@@ -43,4 +43,4 @@ class KNeighborsRegressor(base_KNeighborsRegressor):
 
 
 class NearestNeighbors(base_NearestNeighbors):
-    _onedal_estimator = onedal_NearestNeighbors
+    _onedal_estimator = staticmethod(onedal_NearestNeighbors)
