@@ -219,7 +219,8 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         if weights is None:
             # REFACTOR: Ensure weights is float for array API type promotion
             # neigh_ind is int, so ones_like would give int, but we need float
-            weights = xp.ones_like(neigh_ind, dtype=xp.float64)
+            # Use neigh_dist dtype to preserve input precision (float32/float64)
+            weights = xp.ones_like(neigh_ind, dtype=neigh_dist.dtype)
 
         probabilities = []
         for k, classes_k in enumerate(classes_):
@@ -237,14 +238,14 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                 pred_labels_list, axis=0
             )  # Shape: (n_queries, n_neighbors)
 
-            proba_k = xp.zeros((n_queries, classes_k.size), dtype=xp.float64)
+            proba_k = xp.zeros((n_queries, classes_k.size), dtype=neigh_dist.dtype)
 
             # Array API: Cannot use fancy indexing __setitem__ like proba_k[all_rows, idx] = ...
             # Instead, build probabilities sample by sample
             proba_list = []
-            zero_weight = xp.asarray(0.0, dtype=xp.float64)
+            zero_weight = xp.asarray(0.0, dtype=neigh_dist.dtype)
             for sample_idx in range(n_queries):
-                sample_proba = xp.zeros((classes_k.size,), dtype=xp.float64)
+                sample_proba = xp.zeros((classes_k.size,), dtype=neigh_dist.dtype)
                 # For this sample, accumulate weights for each neighbor's predicted class
                 for neighbor_idx in range(pred_labels.shape[1]):
                     class_label = int(pred_labels[sample_idx, neighbor_idx])
@@ -259,8 +260,8 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             # normalize 'votes' into real [0,1] probabilities
             normalizer = xp.sum(proba_k, axis=1)[:, xp.newaxis]
             # Use array scalar for comparison and assignment
-            zero_scalar = xp.asarray(0.0, dtype=xp.float64)
-            one_scalar = xp.asarray(1.0, dtype=xp.float64)
+            zero_scalar = xp.asarray(0.0, dtype=neigh_dist.dtype)
+            one_scalar = xp.asarray(1.0, dtype=neigh_dist.dtype)
             normalizer = xp.where(normalizer == zero_scalar, one_scalar, normalizer)
             proba_k /= normalizer
 
