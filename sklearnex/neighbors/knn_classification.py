@@ -14,7 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 
-import numpy as np
 from sklearn.metrics import accuracy_score
 from sklearn.neighbors._classification import (
     KNeighborsClassifier as _sklearn_KNeighborsClassifier,
@@ -163,11 +162,9 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
                 dtype=[xp.float64, xp.float32],
                 accept_sparse="csr",
             )
-            # Set effective metric after validation
-            self._set_effective_metric()
-        else:
-            # SPMD mode: skip validation but still set effective metric
-            self._set_effective_metric()
+
+        # SPMD mode: skip validation but still set effective metric
+        self._set_effective_metric()
 
         # Process classification targets before passing to onedal
         self._process_classification_targets(
@@ -234,23 +231,14 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
                 reset=False,
             )
 
-        # onedal backend now handles all logic:
-        # - X=None case (query_is_train)
-        # - kd_tree sorting
-        # - removing self from results
         return self._onedal_estimator.kneighbors(
             X, n_neighbors, return_distance, queue=queue
         )
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
-        # Get predictions
-        y_pred = self._onedal_predict(X, queue=queue)
-
-        # Convert array API to numpy for sklearn's accuracy_score using _transfer_to_host
-        # This properly handles Array API arrays that don't allow implicit conversion
-        _, (y, y_pred, sample_weight) = _transfer_to_host(y, y_pred, sample_weight)
-
-        return accuracy_score(y, y_pred, sample_weight=sample_weight)
+        return accuracy_score(
+            y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
+        )
 
     def _save_attributes(self):
         self.classes_ = self._onedal_estimator.classes_

@@ -150,11 +150,8 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
                 y_numeric=True,
             )
 
-            # Set effective metric after validation
-            self._set_effective_metric()
-        else:
-            # SPMD mode: skip validation but still set effective metric
-            self._set_effective_metric()
+        # SPMD mode: skip validation but still set effective metric
+        self._set_effective_metric()
 
         # Process regression targets before passing to onedal (uses validated y)
         self._process_regression_targets(y)
@@ -241,23 +238,14 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
                 reset=False,
             )
 
-        # onedal backend now handles all logic:
-        # - X=None case (query_is_train)
-        # - kd_tree sorting
-        # - removing self from results
         return self._onedal_estimator.kneighbors(
             X, n_neighbors, return_distance, queue=queue
         )
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
-        y_pred = self._onedal_predict(X, queue=queue)
-
-        # Convert array API/USM arrays back to numpy for r2_score
-        # r2_score doesn't support Array API, following PCA's pattern with _transfer_to_host
-        _, host_data = _transfer_to_host(y, y_pred, sample_weight)
-        y, y_pred, sample_weight = host_data
-
-        return r2_score(y, y_pred, sample_weight=sample_weight)
+        return r2_score(
+            y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
+        )
 
     def _save_attributes(self):
         self.n_features_in_ = self._onedal_estimator.n_features_in_

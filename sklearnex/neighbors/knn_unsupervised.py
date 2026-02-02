@@ -156,7 +156,7 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         }
 
         # Use class-level _onedal_estimator if available (for SPMD), else use module-level
-        if hasattr(self.__class__, "_onedal_estimator"):
+        if "_onedal_estimator" in self.__dict__:
             self._onedal_estimator = self.__class__._onedal_estimator(**onedal_params)
         else:
             self._onedal_estimator = onedal_NearestNeighbors(**onedal_params)
@@ -193,10 +193,6 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
                 reset=False,
             )
 
-        # onedal backend now handles all logic:
-        # - X=None case (query_is_train)
-        # - kd_tree sorting
-        # - removing self from results
         return self._onedal_estimator.kneighbors(
             X, n_neighbors, return_distance, queue=queue
         )

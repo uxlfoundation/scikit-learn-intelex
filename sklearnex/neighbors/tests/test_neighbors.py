@@ -14,14 +14,17 @@
 # limitations under the License.
 # ===============================================================================
 
+import numpy as np
 import pytest
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_array_equal
+from sklearn import datasets
 
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
+from onedal.tests.utils._device_selection import get_queues
 from sklearnex.neighbors import (
     KNeighborsClassifier,
     KNeighborsRegressor,
@@ -80,3 +83,64 @@ def test_sklearnex_import_lof(dataframe, queue):
     assert hasattr(lof, "_onedal_estimator")
     assert "sklearnex" in lof.__module__
     assert_allclose(result, [-1, 1, 1, 1])
+
+
+@pytest.mark.parametrize("queue", get_queues())
+def test_pickle(queue):
+    if queue and queue.sycl_device.is_gpu:
+        pytest.skip("KNN classifier pickling for the GPU sycl_queue is buggy.")
+    iris = datasets.load_iris()
+    clf = KNeighborsClassifier(2).fit(iris.data, iris.target)
+    expected = clf.predict(iris.data)
+    import pickle
+
+    dump = pickle.dumps(clf)
+    clf2 = pickle.loads(dump)
+
+    assert type(clf2) == clf.__class__
+    result = clf2.predict(iris.data)
+    assert_array_equal(expected, result)
+
+
+@pytest.mark.allow_sklearn_fallback
+def test_knn_classifier_single_class():
+    """Test KNeighborsClassifier with single-class data (fallback to sklearn).
+    oneDAL does not support single-class classification, so this should
+    fallback to sklearn's implementation.
+    """
+    # Create single-class dataset
+    X = np.array([[0, 0], [1, 1], [2, 2], [3, 3]])
+    y = np.array([0, 0, 0, 0])  # All same class
+
+    clf = KNeighborsClassifier(n_neighbors=2)
+    clf.fit(X, y)
+
+    # Should predict the only class
+    predictions = clf.predict(X)
+    assert_array_equal(predictions, y)
+    assert_array_equal(clf.classes_, [0])
+
+    # Test with new data
+    X_test = np.array([[1.5, 1.5], [2.5, 2.5]])
+    predictions_test = clf.predict(X_test)
+    assert_array_equal(predictions_test, [0, 0])
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_knn_dtype_preservation(dtype):
+    """Test that KNN preserves input dtype in predictions when using oneDAL backend."""
+    iris = datasets.load_iris()
+    X = iris.data.astype(dtype)
+    y = iris.target
+
+    # Classifier
+    clf = KNeighborsClassifier(n_neighbors=5).fit(X, y)
+    assert hasattr(clf, "_onedal_estimator"), "Should use oneDAL backend"
+    proba = clf.predict_proba(X)
+    assert proba.dtype == dtype, f"Expected {dtype}, got {proba.dtype}"
+
+    # Regressor
+    reg = KNeighborsRegressor(n_neighbors=5).fit(X, y.astype(dtype))
+    assert hasattr(reg, "_onedal_estimator"), "Should use oneDAL backend"
+    pred = reg.predict(X)
+    assert pred.dtype == dtype, f"Expected {dtype}, got {pred.dtype}"

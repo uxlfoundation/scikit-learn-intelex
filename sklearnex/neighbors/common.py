@@ -63,6 +63,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         return result_method
 
     def _get_weights(self, dist, weights):
+        # Adapted from sklearn.neighbors._base._get_weights
         if weights in (None, "uniform"):
             return None
         if weights == "distance":
@@ -71,29 +72,15 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             # if user attempts to classify a point that was zero distance from one
             # or more training points, those training points are weighted as 1.0
             # and the other points as 0.0
-            # Check for object dtype - use string comparison for Array API compatibility
-            is_object_dtype = str(dist.dtype) == "object" or (
-                hasattr(dist.dtype, "kind") and dist.dtype.kind == "O"
-            )
-            if is_object_dtype:
-                for point_dist_i, point_dist in enumerate(dist):
-                    # check if point_dist is iterable
-                    # (ex: RadiusNeighborClassifier.predict may set an element of
-                    # dist to 1e-6 to represent an 'outlier')
-                    if hasattr(point_dist, "__contains__") and 0.0 in point_dist:
-                        dist[point_dist_i] = point_dist == 0.0
-                    else:
-                        dist[point_dist_i] = 1.0 / point_dist
-            else:
-                with (
-                    xp.errstate(divide="ignore")
-                    if hasattr(xp, "errstate")
-                    else np.errstate(divide="ignore")
-                ):
-                    dist = 1.0 / dist
-                inf_mask = xp.isinf(dist)
-                inf_row = xp.any(inf_mask, axis=1)
-                dist[inf_row] = inf_mask[inf_row]
+            with (
+                xp.errstate(divide="ignore")
+                if hasattr(xp, "errstate")
+                else np.errstate(divide="ignore")
+            ):
+                dist = 1.0 / dist
+            inf_mask = xp.isinf(dist)
+            inf_row = xp.any(inf_mask, axis=1)
+            dist[inf_row] = inf_mask[inf_row]
             return dist
         elif callable(weights):
             return weights(dist)
@@ -106,14 +93,21 @@ class KNeighborsDispatchingBase(oneDALEstimator):
     def _compute_weighted_prediction(self, neigh_dist, neigh_ind, weights_param, y_train):
         """Compute weighted prediction for regression.
 
-        Args:
-            neigh_dist: Distances to neighbors
-            neigh_ind: Indices of neighbors
-            weights_param: Weight parameter ('uniform', 'distance', or callable)
-            y_train: Training target values
+        Parameters
+        ----------
+        neigh_dist : array-like
+            Distances to neighbors.
+        neigh_ind : array-like
+            Indices of neighbors.
+        weights_param : str or callable
+            Weight parameter ('uniform', 'distance', or callable).
+        y_train : array-like
+            Training target values.
 
-        Returns:
-            Predicted values
+        Returns
+        -------
+        array-like
+            Predicted values.
         """
         # Array API support: get namespace from input arrays
         xp, _ = get_namespace(neigh_dist, neigh_ind, y_train)
@@ -148,10 +142,12 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             y_pred_shape = (neigh_ind.shape[0], _y.shape[1])
             if not _is_numpy_namespace(xp):
                 # Array API: pass device to ensure same device as input
-                y_pred = xp.empty(y_pred_shape, dtype=xp.float64, device=neigh_ind.device)
+                y_pred = xp.empty(
+                    y_pred_shape, dtype=neigh_dist.dtype, device=neigh_ind.device
+                )
             else:
                 # Numpy: no device parameter
-                y_pred = xp.empty(y_pred_shape, dtype=xp.float64)
+                y_pred = xp.empty(y_pred_shape, dtype=neigh_dist.dtype)
             denom = xp.sum(weights, axis=1)
 
             for j in range(_y.shape[1]):
@@ -180,16 +176,25 @@ class KNeighborsDispatchingBase(oneDALEstimator):
     ):
         """Compute class probabilities for classification.
 
-        Args:
-            neigh_dist: Distances to neighbors
-            neigh_ind: Indices of neighbors
-            weights_param: Weight parameter ('uniform', 'distance', or callable)
-            y_train: Encoded training labels
-            classes: Class labels
-            outputs_2d: Whether output is 2D (multi-output)
+        Parameters
+        ----------
+        neigh_dist : array-like
+            Distances to neighbors.
+        neigh_ind : array-like
+            Indices of neighbors.
+        weights_param : str or callable
+            Weight parameter ('uniform', 'distance', or callable).
+        y_train : array-like
+            Encoded training labels.
+        classes : array-like
+            Class labels.
+        outputs_2d : bool
+            Whether output is 2D (multi-output).
 
-        Returns:
-            Class probabilities
+        Returns
+        -------
+        array-like
+            Class probabilities.
         """
         from ..utils.validation import _num_samples
 
@@ -272,10 +277,15 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         This method handles X=None (LOOCV) properly by calling self.kneighbors which
         has the query_is_train logic.
 
-        Args:
-            X: Query samples (or None for LOOCV)
-        Returns:
-            Predicted regression values
+        Parameters
+        ----------
+        X : array-like or None
+            Query samples (or None for LOOCV).
+
+        Returns
+        -------
+        array-like
+            Predicted regression values.
         """
         neigh_dist, neigh_ind = self.kneighbors(X)
         return self._compute_weighted_prediction(
@@ -288,10 +298,15 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         This method handles X=None (LOOCV) properly by calling self.kneighbors which
         has the query_is_train logic.
 
-        Args:
-            X: Query samples (or None for LOOCV)
-        Returns:
-            Predicted class labels
+        Parameters
+        ----------
+        X : array-like or None
+            Query samples (or None for LOOCV).
+
+        Returns
+        -------
+        array-like
+            Predicted class labels.
         """
         neigh_dist, neigh_ind = self.kneighbors(X)
         proba = self._compute_class_probabilities(
@@ -422,15 +437,21 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         This function does NOT validate X to avoid double validation and to support
         use_raw_input mode where validation should be skipped.
 
-        Args:
-            X: Query data or None
-            n_neighbors: Number of neighbors or None
+        Parameters
+        ----------
+        X : array-like or None
+            Query data or None.
+        n_neighbors : int or None
+            Number of neighbors or None.
 
-        Returns:
-            Tuple of (X, n_neighbors, query_is_train)
-            - X: Processed query data (self._fit_X if original X was None)
-            - n_neighbors: Adjusted n_neighbors (includes +1 if query_is_train)
-            - query_is_train: Boolean flag indicating if original X was None
+        Returns
+        -------
+        X : array-like
+            Processed query data (self._fit_X if original X was None).
+        n_neighbors : int
+            Adjusted n_neighbors (includes +1 if query_is_train).
+        query_is_train : bool
+            Boolean flag indicating if original X was None.
         """
         query_is_train = X is None
 
@@ -475,15 +496,23 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         2. query_is_train case (X=None): removes self from results
         3. return_distance decision: return distances+indices or just indices
 
-        Args:
-            X: Query data (self._fit_X if query_is_train)
-            n_neighbors: Number of neighbors (already includes +1 if query_is_train)
-            return_distance: Whether to return distances to user
-            result: Raw result from onedal backend - always (distances, indices)
-            query_is_train: Boolean indicating if original X was None
+        Parameters
+        ----------
+        X : array-like
+            Query data (self._fit_X if query_is_train).
+        n_neighbors : int
+            Number of neighbors (already includes +1 if query_is_train).
+        return_distance : bool
+            Whether to return distances to user.
+        result : tuple
+            Raw result from onedal backend - always (distances, indices).
+        query_is_train : bool
+            Boolean indicating if original X was None.
 
-        Returns:
-            Post-processed result: (distances, indices) if return_distance else indices
+        Returns
+        -------
+        tuple or array-like
+            Post-processed result: (distances, indices) if return_distance else indices.
         """
         # Array API support: get namespace from result arrays
         # onedal always returns both distances and indices (backend computes both)
@@ -571,14 +600,14 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         # Process classes - note: np.unique is used for class extraction
         # This is acceptable as classes are typically numpy arrays in sklearn
         self.classes_ = []
-        self._y = xp.empty(y.shape, dtype=xp.int32)
+        self._y = xp.empty(y.shape, dtype=int)
         for k in range(self._y.shape[1]):
             # Use numpy unique for class extraction (standard sklearn pattern)
             # Transfer to host first to ensure proper numpy array conversion
             y_k_host = np.asarray(_transfer_to_host(y[:, k])[1][0])
             classes, indices = np.unique(y_k_host, return_inverse=True)
             self.classes_.append(classes)
-            self._y[:, k] = xp.asarray(indices, dtype=xp.int32)
+            self._y[:, k] = xp.asarray(indices, dtype=int)
 
         if not self.outputs_2d_:
             self.classes_ = self.classes_[0]
