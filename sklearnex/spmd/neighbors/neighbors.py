@@ -24,23 +24,20 @@ from ...neighbors import NearestNeighbors as base_NearestNeighbors
 
 
 class KNeighborsClassifier(base_KNeighborsClassifier):
-    _onedal_estimator = staticmethod(onedal_KNeighborsClassifier)
+    _onedal_estimator = onedal_KNeighborsClassifier
+
+    def _onedal_predict(self, X, queue=None):
+        """Override to call SPMD estimator predict directly."""
+        return self._onedal_estimator.predict(X, queue=queue)
 
 
 class KNeighborsRegressor(base_KNeighborsRegressor):
-    _onedal_estimator = staticmethod(onedal_KNeighborsRegressor)
+    _onedal_estimator = onedal_KNeighborsRegressor
 
     def _onedal_predict(self, X, queue=None):
-        """Override to always use GPU path in SPMD mode.
-
-        SPMD KNN regression always trains on GPU (creating regression.model),
-        so we must always use the GPU prediction path even with weights='distance'.
-        The parent class would dispatch to CPU/SKL path for weights='distance',
-        which would call infer_search() expecting search.model, causing type mismatch.
-        """
-        # Always use GPU path - call parent's _predict_gpu directly
-        return self._predict_gpu(X, queue=queue)
+        """Override to call SPMD estimator predict directly."""
+        return self._onedal_estimator.predict(X, queue=queue)
 
 
 class NearestNeighbors(base_NearestNeighbors):
-    _onedal_estimator = staticmethod(onedal_NearestNeighbors)
+    _onedal_estimator = onedal_NearestNeighbors
