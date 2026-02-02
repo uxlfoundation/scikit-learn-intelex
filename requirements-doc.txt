@@ -39,7 +39,6 @@ pexpect==4.9.0
 pickleshare==0.7.5
 prompt-toolkit==3.0.52
 ptyprocess==0.7.0
-pydata-sphinx-theme==0.16.1
 Pygments==2.19.2
 pyparsing==3.2.5
 pyrsistent==0.20.0
