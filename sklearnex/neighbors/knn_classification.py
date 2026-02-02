@@ -184,7 +184,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         }
 
         # Use class-level _onedal_estimator if available (for SPMD), else use module-level
-        if hasattr(self.__class__, '_onedal_estimator'):
+        if hasattr(self.__class__, "_onedal_estimator"):
             self._onedal_estimator = self.__class__._onedal_estimator(**onedal_params)
         else:
             self._onedal_estimator = onedal_KNeighborsClassifier(**onedal_params)
