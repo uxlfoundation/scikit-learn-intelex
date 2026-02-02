@@ -55,6 +55,7 @@ def test_config_context_in_parallel(with_sklearnex):
 # It tries to check that there are no data races when some
 # function is executed concurrently, but there is no guarantee
 # that the mechanism here will result in concurrent execution.
+@pytest.mark.skipif(not gpu_is_available, reason="Requires GPU device")
 def test_queue_is_thread_local():
     from onedal.utils import _sycl_queue_manager as QM
 
