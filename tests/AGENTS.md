@@ -49,7 +49,7 @@ Coverage reporting:
 **Setup MPI:**
 ```bash
 # Option 1: Via conda (recommended)
-conda install -c conda-forge impi-devel impi_rt mpi4py=*=*impi*
+conda install -c conda-forge impi-devel impi_rt mpi4py mpi=*=impi
 
 # Option 2: Via pip (Intel MPI)
 pip install impi-rt mpi4py --index-url https://software.repos.intel.com/python/pypi
