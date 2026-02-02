@@ -13,6 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import time
+from threading import Thread
+
 import pytest
 
 from sklearnex import config_context
@@ -46,3 +49,27 @@ def test_config_context_in_parallel(with_sklearnex):
         )
     except dpctl._sycl_queue.SyclQueueCreationError:
         pass
+
+
+# Note: this test is not guaranteed to work as intended.
+# It tries to check that there are no data races when some
+# function is executed concurrently, but there is no guarantee
+# that the mechanism here will result in concurrent execution.
+def test_queue_is_thread_local():
+    from onedal.utils import _sycl_queue_manager as QM
+
+    def fn(queue_arg, is_cpu):
+        with QM.manage_global_queue(queue_arg):
+            time.sleep(0.2)
+            if is_cpu:
+                assert not QM.__global.queue.sycl_device.is_gpu
+            else:
+                assert QM.__global.queue.sycl_device.is_gpu
+
+    t1 = Thread(target=fn, args=("cpu", True))
+    t1.start()
+    t2 = Thread(target=fn, args=("gpu", False))
+    t2.start()
+
+    t1.join()
+    t2.join()
