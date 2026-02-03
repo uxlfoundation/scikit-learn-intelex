@@ -184,6 +184,19 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         # Note: _y reshape now happens in onedal layer after fit (matches original main branch logic)
         self._save_attributes()
 
+    def _process_regression_targets(self, y):
+        """Process regression targets and set shape-related attributes.
+
+        Parameters
+        ----------
+        y : array-like
+            Target values
+        """
+        # Store original shape for later use
+        shape = getattr(y, "shape", None)
+        self._shape = shape if shape is not None else y.shape
+        self._y = y
+
     def _onedal_predict(self, X, queue=None):
         # Dispatch between GPU and SKL prediction methods
         # This logic matches onedal regressor predict() method but computation happens in sklearnex
