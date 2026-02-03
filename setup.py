@@ -82,7 +82,7 @@ ONEDAL_MAJOR_BINARY_VERSION, ONEDAL_MINOR_BINARY_VERSION = get_onedal_version(
 ONEDAL_VERSION = get_onedal_version(dal_root)
 if ONEDAL_VERSION < 20210300:
     raise ValueError(
-        "OneDAL version is too old. Please use a more recent version (>= 2021.04)."
+        "OneDAL version is too old. Please use a more recent version (>= 2021.4)."
     )
 
 sklearnex_version = (
