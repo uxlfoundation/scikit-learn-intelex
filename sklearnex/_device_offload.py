@@ -24,7 +24,7 @@ from onedal.utils import _sycl_queue_manager as QM
 from onedal.utils._array_api import _asarray, _is_numpy_namespace
 from onedal.utils._third_party import is_dpnp_ndarray
 
-from ._config import config_context, get_config, set_config
+from ._config import get_config
 from ._utils import PatchingConditionsChain, get_tags
 from .base import oneDALEstimator
 
@@ -55,7 +55,7 @@ def _get_backend(
         return patching_status.get_status(), patching_status
 
     if get_config()["allow_fallback_to_host"]:
-        # This may trigger if the ``onedal.utils._sycl_queue_manager.__non_queue``
+        # This may trigger if the ``onedal.utils._sycl_queue_manager.__globals.non_queue``
         # object is the queue (e.g. if non-SYCL device data is encountered)
         QM.fallback_to_host()
         return None, None
