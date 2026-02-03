@@ -1,4 +1,3 @@
-alabaster==1.0.0
 async-generator==1.10
 attrs==25.4.0
 Babel==2.17.0
