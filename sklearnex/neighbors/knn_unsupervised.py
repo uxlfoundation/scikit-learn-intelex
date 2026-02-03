@@ -156,7 +156,7 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         }
 
         # Use class-level _onedal_estimator if available (for SPMD), else use module-level
-        if "_onedal_estimator" in self.__dict__:
+        if hasattr(self.__class__, "_onedal_estimator"):
             self._onedal_estimator = self.__class__._onedal_estimator(**onedal_params)
         else:
             self._onedal_estimator = onedal_NearestNeighbors(**onedal_params)
