@@ -28,16 +28,11 @@ from sklearn.utils.validation import check_is_fitted
 from daal4py.sklearn._utils import is_sparse, sklearn_check_version
 from onedal._device_offload import _transfer_to_host
 from onedal.utils._array_api import _is_numpy_namespace
-from onedal.utils.validation import (
-    _check_array,
-    _num_features,
-    _num_samples,
-)
+from onedal.utils.validation import _check_array, _num_features, _num_samples
 
 from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
 from ..utils._array_api import get_namespace
-from ..utils.validation import check_feature_names, validate_data
 
 
 class KNeighborsDispatchingBase(oneDALEstimator):
