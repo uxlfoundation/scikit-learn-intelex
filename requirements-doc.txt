@@ -51,7 +51,7 @@ six==1.17.0
 scikit-learn==1.8.0
 snowballstemmer==3.0.1
 soupsieve==2.8.3
-Sphinx==8.2.3
+Sphinx==9.1.0
 sphinx-design==0.7.0
 sphinx_copybutton==0.5.2
 sphinx-notfound-page==1.1.0
