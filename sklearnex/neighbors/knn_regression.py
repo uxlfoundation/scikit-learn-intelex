@@ -219,9 +219,30 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         # Call onedal backend for GPU prediction
         return self._onedal_estimator._predict_gpu(X)
 
+    def _predict_skl_regression(self, X):
+        """SKL prediction path for regression - calls kneighbors, computes predictions.
+
+        This method handles X=None (LOOCV) properly by calling self.kneighbors which
+        has the query_is_train logic.
+
+        Parameters
+        ----------
+        X : array-like or None
+            Query samples (or None for LOOCV).
+
+        Returns
+        -------
+        array-like
+            Predicted regression values.
+        """
+        neigh_dist, neigh_ind = self.kneighbors(X)
+        return self._compute_weighted_prediction(
+            neigh_dist, neigh_ind, self.weights, self._y
+        )
+
     def _predict_skl(self, X, queue=None):
         """SKL prediction path - calls kneighbors through sklearnex, computes prediction here."""
-        # Use the unified helper from common.py (calls kneighbors + computes prediction)
+        # Use the helper method (calls kneighbors + computes prediction)
         return self._predict_skl_regression(X)
 
     def _onedal_kneighbors(
