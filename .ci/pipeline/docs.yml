@@ -60,7 +60,7 @@ jobs:
     displayName: 'System info'
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '3.11'
+      versionSpec: '3.13'
       addToPath: true
   - script: sudo apt-get update && sudo apt-get install -y clang-format pandoc 
     displayName: 'apt-get'
