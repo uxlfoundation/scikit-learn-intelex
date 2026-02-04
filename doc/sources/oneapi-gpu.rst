@@ -86,6 +86,9 @@ Running on GPU
 
 |sklearnex| offers different options for running an algorithm on a specified device (e.g. a GPU):
 
+
+.. _target_offload:
+
 Target offload option
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -129,6 +132,9 @@ Example:
 
 .. warning::
     When using ``target_offload``, operations on a fitted model must be executed under a context or global option with the same device or queue where the model was fitted - meaning: a model fitted on GPU cannot make predictions on CPU, and vice-versa. Note that upon serialization and subsequent deserialization of models, data is moved to the CPU.
+
+.. hint::
+    Serialization of model objects that used target offload will move data to CPU upon deserialization. See :doc:`serialization` for detail about serializing GPU models.
 
 GPU arrays through array API
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -191,6 +197,10 @@ See :doc:`array_api` for details, instructions, and limitations. Example:
            model = LinearRegression()
            with config_context(array_api_dispatch=True):
                model.fit(X, y)
+
+       .. hint::
+           If serialization of a GPU model is desired, use Torch tensors instead of DPNP arrays.
+           See :doc:`serialization` for more information.
 
 .. note::
     Not all estimator classes in the |sklearnex| support array API objects - see the list of :ref:`estimators with array API support <array_api_estimators>` for details.
