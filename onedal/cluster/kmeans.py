@@ -115,17 +115,12 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
     def _check_params_vs_input(
         self, X_table, is_csr, default_n_init=10, dtype=np.float32
     ):
-        print(
-            f"onedal.KMeans: _check_params_vs_input called, is_csr={is_csr}", flush=True
-        )
-
         if X_table.shape[0] < self.n_clusters:
             raise ValueError(
                 f"n_samples={X_table.shape[0]} should be >= n_clusters={self.n_clusters}."
             )
         # compute absolute tolerance once we know dtype
         self._tol = self._tolerance(X_table, self.tol, is_csr, dtype)
-        print(f"onedal.KMeans: tolerance computed, _tol={self._tol}", flush=True)
 
         # n_init resolution (kept from your logic)
         self._n_init = self.n_init
@@ -164,7 +159,6 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
 
         # only "lloyd" is supported in this implementation
         assert self.algorithm == "lloyd"
-        print(f"onedal.KMeans: params validated, n_init={self._n_init}", flush=True)
 
     def _get_onedal_params(self, is_csr=False, dtype=np.float32, result_options=None):
         thr = self._tol if self._tol is not None else self.tol
@@ -198,11 +192,6 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         n_centroids=None,
     ):
         n_clusters = self.n_clusters if n_centroids is None else n_centroids
-        init_str = init if isinstance(init, str) else "array-like"
-        print(
-            f"onedal.KMeans: _init_centroids_onedal called, init={init_str}, seed={random_seed}",
-            flush=True,
-        )
 
         if isinstance(init, str) and init == "k-means++":
             algorithm = "plus_plus_dense" if not is_csr else "plus_plus_csr"
@@ -222,21 +211,9 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
             is_csr=is_csr,
         )
         centers = alg.compute_raw(X_table, dtype, queue=QM.get_global_queue())
-        print(
-            f"onedal.KMeans: centroids computed, shape=({centers.row_count}, {centers.column_count})",
-            flush=True,
-        )
         return centers
 
     def _init_centroids_sklearn(self, X, init, random_state, dtype=None):
-        init_str = (
-            init
-            if isinstance(init, str)
-            else "callable" if callable(init) else "array-like"
-        )
-        print(
-            f"onedal.KMeans: _init_centroids_sklearn called, init={init_str}", flush=True
-        )
         xp, _ = get_namespace(X)
         if dtype is None:
             dtype = xp.float32
@@ -289,24 +266,9 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
 
     @supports_queue
     def fit(self, X, y=None, queue=None):
-        print("onedal.KMeans: fit called", flush=True)
         is_csr = _is_csr(X)
-        xp, _ = get_namespace(X)
-
-        if _get_config()["use_raw_input"] is False:
-            X = _check_array(
-                X,
-                dtype=[xp.float64, xp.float32],
-                accept_sparse="csr",
-                force_all_finite=False,
-            )
-
-        X_table = to_table(X, queue=QM.get_global_queue())
+        X_table = to_table(X, queue=queue)
         dtype = X_table.dtype
-        print(
-            f"onedal.KMeans: X converted to table, dtype={dtype}, shape=({X_table.row_count}, {X_table.column_count})",
-            flush=True,
-        )
 
         self._check_params_vs_input(X_table, is_csr, dtype=dtype)
         self.n_features_in_ = X_table.column_count
@@ -333,15 +295,8 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
             self._validate_center_shape(X, init)
 
         use_onedal_init = daal_check_version((2023, "P", 200)) and not callable(self.init)
-        print(
-            f"onedal.KMeans: starting n_init loop, n_init={self._n_init}, use_onedal_init={use_onedal_init}",
-            flush=True,
-        )
 
         for init_idx in range(self._n_init):
-            print(
-                f"onedal.KMeans: n_init iteration {init_idx+1}/{self._n_init}", flush=True
-            )
             if use_onedal_init:
                 seed = random_state.randint(np.iinfo("i").max)
                 centroids_table = self._init_centroids_onedal(
@@ -358,19 +313,11 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
             labels_t, inertia, model, n_iter = self._fit_backend(
                 X_table, centroids_table, dtype, is_csr
             )
-            print(
-                f"onedal.KMeans: iteration {init_idx+1} completed, n_iter={n_iter}, inertia={inertia}",
-                flush=True,
-            )
 
             if self.verbose:
                 print(f"Iteration {n_iter}, inertia {inertia}.")
 
             if is_better(inertia, labels_t):
-                print(
-                    f"onedal.KMeans: iteration {init_idx+1} is new best solution",
-                    flush=True,
-                )
                 best_model, best_n_iter = model, n_iter
                 best_inertia, best_labels = inertia, labels_t
 
@@ -390,10 +337,6 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
                 ConvergenceWarning,
                 stacklevel=2,
             )
-        print(
-            f"onedal.KMeans: fit complete, n_iter={self.n_iter_}, inertia={self.inertia_}",
-            flush=True,
-        )
         return self
 
     @property

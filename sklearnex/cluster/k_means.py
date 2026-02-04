@@ -81,7 +81,6 @@ if daal_check_version((2023, "P", 200)):
             )
 
         def _initialize_onedal_estimator(self):
-            print("sklearnex.KMeans: _initialize_onedal_estimator called", flush=True)
             onedal_params = {
                 "n_clusters": self.n_clusters,
                 "init": self.init,
@@ -93,7 +92,6 @@ if daal_check_version((2023, "P", 200)):
             }
 
             self._onedal_estimator = onedal_KMeans(**onedal_params)
-            print("sklearnex.KMeans: onedal_KMeans instance created", flush=True)
 
         def _onedal_fit_supported(self, method_name, X, y=None, sample_weight=None):
             assert method_name == "fit"
@@ -105,9 +103,8 @@ if daal_check_version((2023, "P", 200)):
             supported_algs = ["auto", "full", "lloyd", "elkan"]
 
             if self.algorithm == "elkan":
-                print(
-                    "sklearnex.KMeans: oneDAL does not support 'elkan', using 'lloyd' algorithm instead.",
-                    flush=True,
+                logging.getLogger("sklearnex").info(
+                    "oneDAL does not support 'elkan', using 'lloyd' algorithm instead."
                 )
             correct_count = self.n_clusters < sample_count
 
@@ -157,19 +154,21 @@ if daal_check_version((2023, "P", 200)):
             return self
 
         def _onedal_fit(self, X, _, sample_weight, queue=None):
-            print("sklearnex.KMeans: _onedal_fit called", flush=True)
+            from .._config import get_config
+
             xp, _ = get_namespace(X)
 
-            X = validate_data(
-                self,
-                X,
-                accept_sparse="csr",
-                dtype=[xp.float64, xp.float32],
-                order="C",
-                copy=self.copy_x,
-                accept_large_sparse=False,
-            )
-            print("sklearnex.KMeans: data validated, calling onedal fit", flush=True)
+            if not get_config()["use_raw_input"]:
+                X = validate_data(
+                    self,
+                    X,
+                    accept_sparse="csr",
+                    dtype=[xp.float64, xp.float32],
+                    order="C",
+                    copy=self.copy_x,
+                    accept_large_sparse=False,
+                    ensure_all_finite=False,
+                )
 
             if sklearn_check_version("1.2"):
                 self._check_params_vs_input(X)
@@ -220,9 +219,8 @@ if daal_check_version((2023, "P", 200)):
             # algorithm "full" has been replaced by "lloyd"
             supported_algs = ["auto", "full", "lloyd", "elkan"]
             if self.algorithm == "elkan":
-                print(
-                    "sklearnex.KMeans: oneDAL does not support 'elkan', using 'lloyd' algorithm instead.",
-                    flush=True,
+                logging.getLogger("sklearnex").info(
+                    "oneDAL does not support 'elkan', using 'lloyd' algorithm instead."
                 )
 
             _acceptable_sample_weights = True
@@ -301,14 +299,18 @@ if daal_check_version((2023, "P", 200)):
                 )
 
         def _onedal_predict(self, X, sample_weight=None, queue=None):
+            from .._config import get_config
+
             xp, _ = get_namespace(X)
-            X = validate_data(
-                self,
-                X,
-                accept_sparse="csr",
-                reset=False,
-                dtype=[xp.float64, xp.float32],
-            )
+
+            if not get_config()["use_raw_input"]:
+                X = validate_data(
+                    self,
+                    X,
+                    accept_sparse="csr",
+                    reset=False,
+                    dtype=[xp.float64, xp.float32],
+                )
 
             if not hasattr(self, "_onedal_estimator"):
                 self._initialize_onedal_estimator()
@@ -360,14 +362,18 @@ if daal_check_version((2023, "P", 200)):
             )
 
         def _onedal_score(self, X, y=None, sample_weight=None, queue=None):
+            from .._config import get_config
+
             xp, _ = get_namespace(X)
-            X = validate_data(
-                self,
-                X,
-                accept_sparse="csr",
-                reset=False,
-                dtype=[xp.float64, xp.float32],
-            )
+
+            if not get_config()["use_raw_input"]:
+                X = validate_data(
+                    self,
+                    X,
+                    accept_sparse="csr",
+                    reset=False,
+                    dtype=[xp.float64, xp.float32],
+                )
 
             if not sklearn_check_version("1.5") and sklearn_check_version("1.3"):
                 if isinstance(sample_weight, str) and sample_weight == "deprecated":
