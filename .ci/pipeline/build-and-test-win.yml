@@ -52,7 +52,7 @@ steps:
       for /f "delims=" %%c in ('python s\.ci\scripts\get_compatible_scipy_version.py') do set SCIPY_VERSION=%%c
       pip install %SCIPY_VERSION%
       conda list
-      python .ci\scripts\print_skl_info.py
+      python s\.ci\scripts\print_skl_info.py
     displayName: 'Install testing requirements'
   - script: |
       call activate CB
