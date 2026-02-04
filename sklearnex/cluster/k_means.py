@@ -81,6 +81,7 @@ if daal_check_version((2023, "P", 200)):
             )
 
         def _initialize_onedal_estimator(self):
+            print("sklearnex.KMeans: _initialize_onedal_estimator called", flush=True)
             onedal_params = {
                 "n_clusters": self.n_clusters,
                 "init": self.init,
@@ -90,17 +91,9 @@ if daal_check_version((2023, "P", 200)):
                 "verbose": self.verbose,
                 "random_state": self.random_state,
             }
-            
-            import sys
-            logging.info(
-                f"sklearnex.KMeans: Creating onedal estimator with params: "
-                f"n_clusters={self.n_clusters}, init={self.init}, "
-                f"random_state={self.random_state}"
-            )
-            sys.stdout.flush()
-            sys.stderr.flush()
 
             self._onedal_estimator = onedal_KMeans(**onedal_params)
+            print("sklearnex.KMeans: onedal_KMeans instance created", flush=True)
 
         def _onedal_fit_supported(self, method_name, X, y=None, sample_weight=None):
             assert method_name == "fit"
@@ -112,8 +105,9 @@ if daal_check_version((2023, "P", 200)):
             supported_algs = ["auto", "full", "lloyd", "elkan"]
 
             if self.algorithm == "elkan":
-                logging.getLogger("sklearnex").info(
-                    "oneDAL does not support 'elkan', using 'lloyd' algorithm instead."
+                print(
+                    "sklearnex.KMeans: oneDAL does not support 'elkan', using 'lloyd' algorithm instead.",
+                    flush=True,
                 )
             correct_count = self.n_clusters < sample_count
 
@@ -163,17 +157,9 @@ if daal_check_version((2023, "P", 200)):
             return self
 
         def _onedal_fit(self, X, _, sample_weight, queue=None):
+            print("sklearnex.KMeans: _onedal_fit called", flush=True)
             xp, _ = get_namespace(X)
-            
-            import sys
-            from scipy.sparse import issparse
-            logging.info(
-                f"sklearnex.KMeans._onedal_fit: X.shape={X.shape}, "
-                f"is_sparse={issparse(X)}, dtype={X.dtype}"
-            )
-            sys.stdout.flush()
-            sys.stderr.flush()
-            
+
             X = validate_data(
                 self,
                 X,
@@ -183,6 +169,7 @@ if daal_check_version((2023, "P", 200)):
                 copy=self.copy_x,
                 accept_large_sparse=False,
             )
+            print("sklearnex.KMeans: data validated, calling onedal fit", flush=True)
 
             if sklearn_check_version("1.2"):
                 self._check_params_vs_input(X)
@@ -233,8 +220,9 @@ if daal_check_version((2023, "P", 200)):
             # algorithm "full" has been replaced by "lloyd"
             supported_algs = ["auto", "full", "lloyd", "elkan"]
             if self.algorithm == "elkan":
-                logging.getLogger("sklearnex").info(
-                    "oneDAL does not support 'elkan', using 'lloyd' algorithm instead."
+                print(
+                    "sklearnex.KMeans: oneDAL does not support 'elkan', using 'lloyd' algorithm instead.",
+                    flush=True,
                 )
 
             _acceptable_sample_weights = True

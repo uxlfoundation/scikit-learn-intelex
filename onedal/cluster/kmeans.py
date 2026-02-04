@@ -14,7 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 
-import logging
 import warnings
 from abc import ABC
 
@@ -105,42 +104,28 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
             )
 
     def _tolerance(self, X_table, rtol, is_csr, dtype):
-        import sys
         if rtol == 0.0:
-            logging.getLogger("sklearnex").info(f"KMeans tolerance: rtol=0.0, returning 0.0")
-            sys.stdout.flush()
-            sys.stderr.flush()
             return 0.0
         dummy = to_table(None)
         bs = self._get_basic_statistics_backend("variance")
         res = bs._compute_raw(X_table, dummy, dtype, is_csr)
         mean_var = from_table(res.variance).mean()
-        abs_tol = mean_var * rtol
-        logging.getLogger("sklearnex").info(
-            f"KMeans tolerance: is_csr={is_csr}, dtype={dtype}, mean_var={mean_var}, "
-            f"rtol={rtol}, abs_tol={abs_tol}"
-        )
-        sys.stdout.flush()
-        sys.stderr.flush()
-        return abs_tol
+        return mean_var * rtol
 
     def _check_params_vs_input(
         self, X_table, is_csr, default_n_init=10, dtype=np.float32
     ):
-        import sys
-        logging.getLogger("sklearnex").info(
-            f"KMeans _check_params_vs_input: is_csr={is_csr}, dtype={dtype}, "
-            f"n_samples={X_table.shape[0]}, n_features={X_table.shape[1]}"
+        print(
+            f"onedal.KMeans: _check_params_vs_input called, is_csr={is_csr}", flush=True
         )
-        sys.stdout.flush()
-        sys.stderr.flush()
-        
+
         if X_table.shape[0] < self.n_clusters:
             raise ValueError(
                 f"n_samples={X_table.shape[0]} should be >= n_clusters={self.n_clusters}."
             )
         # compute absolute tolerance once we know dtype
         self._tol = self._tolerance(X_table, self.tol, is_csr, dtype)
+        print(f"onedal.KMeans: tolerance computed, _tol={self._tol}", flush=True)
 
         # n_init resolution (kept from your logic)
         self._n_init = self.n_init
@@ -179,6 +164,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
 
         # only "lloyd" is supported in this implementation
         assert self.algorithm == "lloyd"
+        print(f"onedal.KMeans: params validated, n_init={self._n_init}", flush=True)
 
     def _get_onedal_params(self, is_csr=False, dtype=np.float32, result_options=None):
         thr = self._tol if self._tol is not None else self.tol
@@ -211,31 +197,18 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         dtype=np.float32,
         n_centroids=None,
     ):
-        import sys
         n_clusters = self.n_clusters if n_centroids is None else n_centroids
-        logging.getLogger("sklearnex").info(
-            f"KMeans _init_centroids_onedal: init={init if isinstance(init, str) else 'array'}, "
-            f"is_csr={is_csr}, dtype={dtype}, n_clusters={n_clusters}, seed={random_seed}"
+        init_str = init if isinstance(init, str) else "array-like"
+        print(
+            f"onedal.KMeans: _init_centroids_onedal called, init={init_str}, seed={random_seed}",
+            flush=True,
         )
-        sys.stdout.flush()
-        sys.stderr.flush()
-        
+
         if isinstance(init, str) and init == "k-means++":
             algorithm = "plus_plus_dense" if not is_csr else "plus_plus_csr"
-            logging.getLogger("sklearnex").info(f"KMeans init: using {algorithm} algorithm")
-            sys.stdout.flush()
-            sys.stderr.flush()
         elif isinstance(init, str) and init == "random":
             algorithm = "random_dense" if not is_csr else "random_csr"
-            logging.getLogger("sklearnex").info(f"KMeans init: using {algorithm} algorithm")
-            sys.stdout.flush()
-            sys.stderr.flush()
         elif _is_arraylike_not_scalar(init):
-            logging.getLogger("sklearnex").info(
-                f"KMeans init: array-like with shape {init.shape}, is_sparse={_is_csr(init)}"
-            )
-            sys.stdout.flush()
-            sys.stderr.flush()
             centers = init.toarray() if _is_csr(init) else np.asarray(init)
             self._validate_center_shape(np.empty((0, X_table.column_count)), centers)
             return to_table(centers, queue=QM.get_global_queue())
@@ -248,16 +221,22 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
             algorithm=algorithm,
             is_csr=is_csr,
         )
-        centers_table = alg.compute_raw(X_table, dtype, queue=QM.get_global_queue())
-        logging.getLogger("sklearnex").info(
-            f"KMeans init: computed centroids with shape ({centers_table.row_count}, {centers_table.column_count})"
+        centers = alg.compute_raw(X_table, dtype, queue=QM.get_global_queue())
+        print(
+            f"onedal.KMeans: centroids computed, shape=({centers.row_count}, {centers.column_count})",
+            flush=True,
         )
-        sys.stdout.flush()
-        sys.stderr.flush()
-        return centers_table
+        return centers
 
     def _init_centroids_sklearn(self, X, init, random_state, dtype=None):
-        logging.getLogger("sklearnex").info("Computing KMeansInit with Stock sklearn")
+        init_str = (
+            init
+            if isinstance(init, str)
+            else "callable" if callable(init) else "array-like"
+        )
+        print(
+            f"onedal.KMeans: _init_centroids_sklearn called, init={init_str}", flush=True
+        )
         xp, _ = get_namespace(X)
         if dtype is None:
             dtype = xp.float32
@@ -310,17 +289,9 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
 
     @supports_queue
     def fit(self, X, y=None, queue=None):
-        import sys
+        print("onedal.KMeans: fit called", flush=True)
         is_csr = _is_csr(X)
         xp, _ = get_namespace(X)
-        
-        logging.getLogger("sklearnex").info(
-            f"KMeans fit: X.shape={X.shape}, is_csr={is_csr}, "
-            f"n_clusters={self.n_clusters}, init={self.init if isinstance(self.init, str) else 'array'}, "
-            f"algorithm={self.algorithm}, random_state={self.random_state}"
-        )
-        sys.stdout.flush()
-        sys.stderr.flush()
 
         if _get_config()["use_raw_input"] is False:
             X = _check_array(
@@ -332,13 +303,10 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
 
         X_table = to_table(X, queue=QM.get_global_queue())
         dtype = X_table.dtype
-        
-        import sys
-        logging.getLogger("sklearnex").info(
-            f"KMeans fit: X_table dtype={dtype}, shape=({X_table.row_count}, {X_table.column_count})"
+        print(
+            f"onedal.KMeans: X converted to table, dtype={dtype}, shape=({X_table.row_count}, {X_table.column_count})",
+            flush=True,
         )
-        sys.stdout.flush()
-        sys.stderr.flush()
 
         self._check_params_vs_input(X_table, is_csr, dtype=dtype)
         self.n_features_in_ = X_table.column_count
@@ -365,29 +333,21 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
             self._validate_center_shape(X, init)
 
         use_onedal_init = daal_check_version((2023, "P", 200)) and not callable(self.init)
-        
-        import sys
-        logging.getLogger("sklearnex").info(
-            f"KMeans fit: n_init={self._n_init}, use_onedal_init={use_onedal_init}, tol={self._tol}"
+        print(
+            f"onedal.KMeans: starting n_init loop, n_init={self._n_init}, use_onedal_init={use_onedal_init}",
+            flush=True,
         )
-        sys.stdout.flush()
-        sys.stderr.flush()
 
         for init_idx in range(self._n_init):
+            print(
+                f"onedal.KMeans: n_init iteration {init_idx+1}/{self._n_init}", flush=True
+            )
             if use_onedal_init:
                 seed = random_state.randint(np.iinfo("i").max)
-                logging.getLogger("sklearnex").info(f"KMeans fit: init {init_idx+1}/{self._n_init}, seed={seed}")
-                sys.stdout.flush()
-                sys.stderr.flush()
                 centroids_table = self._init_centroids_onedal(
                     X_table, init, seed, is_csr, dtype=dtype
                 )
             else:
-                logging.getLogger("sklearnex").info(
-                    f"KMeans fit: init {init_idx+1}/{self._n_init}, using sklearn init"
-                )
-                sys.stdout.flush()
-                sys.stderr.flush()
                 centroids_table = self._init_centroids_sklearn(
                     X, init, random_state, dtype=dtype
                 )
@@ -398,25 +358,19 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
             labels_t, inertia, model, n_iter = self._fit_backend(
                 X_table, centroids_table, dtype, is_csr
             )
-            
-            import sys
-            logging.getLogger("sklearnex").info(
-                f"KMeans fit: init {init_idx+1}/{self._n_init} completed, "
-                f"n_iter={n_iter}, inertia={inertia}"
+            print(
+                f"onedal.KMeans: iteration {init_idx+1} completed, n_iter={n_iter}, inertia={inertia}",
+                flush=True,
             )
-            sys.stdout.flush()
-            sys.stderr.flush()
 
             if self.verbose:
                 print(f"Iteration {n_iter}, inertia {inertia}.")
 
             if is_better(inertia, labels_t):
-                logging.getLogger("sklearnex").info(
-                    f"KMeans fit: init {init_idx+1}/{self._n_init} is better "
-                    f"(inertia {inertia} < {best_inertia})"
+                print(
+                    f"onedal.KMeans: iteration {init_idx+1} is new best solution",
+                    flush=True,
                 )
-                sys.stdout.flush()
-                sys.stderr.flush()
                 best_model, best_n_iter = model, n_iter
                 best_inertia, best_labels = inertia, labels_t
 
@@ -436,14 +390,10 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
                 ConvergenceWarning,
                 stacklevel=2,
             )
-        
-        import sys
-        logging.getLogger("sklearnex").info(
-            f"KMeans fit complete: n_iter={self.n_iter_}, inertia={self.inertia_}, "
-            f"distinct_clusters={distinct_clusters}, cluster_centers shape={self.cluster_centers_.shape}"
+        print(
+            f"onedal.KMeans: fit complete, n_iter={self.n_iter_}, inertia={self.inertia_}",
+            flush=True,
         )
-        sys.stdout.flush()
-        sys.stderr.flush()
         return self
 
     @property
