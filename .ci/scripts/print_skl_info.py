@@ -1,3 +1,4 @@
+# !/usr/bin/env python
 # ==============================================================================
 # Copyright contributors to the oneDAL project
 #
