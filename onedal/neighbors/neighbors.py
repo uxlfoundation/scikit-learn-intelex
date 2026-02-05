@@ -16,8 +16,6 @@
 
 from abc import ABCMeta, abstractmethod
 
-import numpy as np
-
 from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
 from onedal.utils import _sycl_queue_manager as QM
@@ -109,13 +107,8 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
     def _fit(self, X, y):
         self._onedal_model = None
         self._tree = None
-        # REFACTOR: Shape processing moved to sklearnex layer
-        # _shape should be set by _process_classification_targets or _process_regression_targets in sklearnex
-        # self._shape = None
         if not hasattr(self, "_shape"):
             self._shape = None
-        # REFACTOR STEP 1: Don't reset classes_ - it may have been set by sklearnex layer
-        # self.classes_ = None
         if not hasattr(self, "classes_"):
             self.classes_ = None
         self.effective_metric_ = getattr(self, "effective_metric_", self.metric)
@@ -123,19 +116,8 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
             self, "effective_metric_params_", self.metric_params
         )
 
-        # REFACTOR: _validate_data call commented out - validation now happens in sklearnex layer
-        # Original code kept for reference:
-        # use_raw_input = _get_config().get("use_raw_input", False) is True
         if y is not None or self.requires_y:
-            # REFACTOR: Classification target processing moved to sklearnex layer
-            # This code is now commented out - processing MUST happen in sklearnex before calling fit
-            # Assertion: Verify that sklearnex has done the preprocessing
             if _is_classifier(self):
-                # if not hasattr(self, "classes_") or self.classes_ is None:
-                #     raise ValueError(
-                #         "Classification target processing must be done in sklearnex layer before calling onedal fit. "
-                #         "classes_ attribute is not set. This indicates the refactoring is incomplete."
-                #     )
                 if not hasattr(self, "_y") or self._y is None:
                     raise ValueError(
                         "Classification target processing must be done in sklearnex layer before calling onedal fit. "
@@ -160,7 +142,6 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
             _fit_y = xp.reshape(self._y, (-1, 1))
         result = self._onedal_fit(X, _fit_y)
 
-        # Original logic: reassign self._y for regressors after fit
         if y is not None and _is_regressor(self):
             _, xp, _ = _get_sycl_namespace(X)
             self._y = y if self._shape is None else xp.reshape(y, self._shape)
@@ -180,25 +161,22 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
 
         if X is not None:
             query_is_train = False
-            # Validation should be done in sklearnex layer before calling this
         else:
             query_is_train = True
             X = self._fit_X
-            # Include an extra neighbor to account for the sample itself being
-            # returned, which is removed later
             n_neighbors += 1
 
         n_samples_fit = self.n_samples_fit_
         if n_neighbors > n_samples_fit:
             if query_is_train:
-                n_neighbors -= 1  # ok to modify inplace because an error is raised
+                n_neighbors -= 1
                 inequality_str = "n_neighbors < n_samples_fit"
             else:
                 inequality_str = "n_neighbors <= n_samples_fit"
             raise ValueError(
                 f"Expected {inequality_str}, but "
                 f"n_neighbors = {n_neighbors}, n_samples_fit = {n_samples_fit}, "
-                f"n_samples = {X.shape[0]}"  # include n_samples for common tests
+                f"n_samples = {X.shape[0]}"
             )
 
         method = self._parse_auto_method(
@@ -349,7 +327,6 @@ class KNeighborsRegressor(NeighborsBase, RegressorMixin):
     def infer(self, *args, **kwargs): ...
 
     def _onedal_fit(self, X, y):
-        # global queue is set as per user configuration (`target_offload`) or from data prior to calling this internal function
         queue = QM.get_global_queue()
         gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
         params = self._get_onedal_params(X, y)
@@ -363,7 +340,6 @@ class KNeighborsRegressor(NeighborsBase, RegressorMixin):
     def _onedal_predict(self, model, X, params):
         assert self._onedal_model is not None, "Model is not trained"
 
-        # global queue is set as per user configuration (`target_offload`) or from data prior to calling this internal function
         queue = QM.get_global_queue()
         gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
         X = to_table(X, queue=queue)
@@ -385,11 +361,7 @@ class KNeighborsRegressor(NeighborsBase, RegressorMixin):
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True, queue=None):
         return self._kneighbors(X, n_neighbors, return_distance)
 
-    # REFACTOR: Keep _predict_gpu for GPU backend support (called by sklearnex)
-    # This is the ONLY prediction method needed in onedal - it calls the backend directly
-    # All computation logic (weights, averaging, etc.) is in sklearnex
     def _predict_gpu(self, X):
-        # REFACTOR: Validation commented out - should be done in sklearnex layer before calling this
         onedal_model = getattr(self, "_onedal_model", None)
         n_features = getattr(self, "n_features_in_", None)
         n_samples_fit_ = getattr(self, "n_samples_fit_", None)
@@ -437,7 +409,6 @@ class NearestNeighbors(NeighborsBase):
     def infer(self, *arg, **kwargs): ...
 
     def _onedal_fit(self, X, y):
-        # global queue is set as per user configuration (`target_offload`) or from data prior to calling this internal function
         queue = QM.get_global_queue()
         params = self._get_onedal_params(X, y)
         X, y = to_table(X, y, queue=queue)

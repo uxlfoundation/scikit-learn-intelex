@@ -78,13 +78,11 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
 
     @wrap_output_data
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
-        # Validate n_neighbors parameter first
         if n_neighbors is not None:
             self._validate_n_neighbors(n_neighbors)
 
         check_is_fitted(self)
 
-        # Validate kneighbors parameters (inherited from KNeighborsDispatchingBase)
         self._kneighbors_validation(X, n_neighbors)
 
         return dispatch(
@@ -155,7 +153,6 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
             "p": self.effective_metric_params_["p"],
         }
 
-        # Use class-level _onedal_estimator if available (for SPMD), else use module-level
         if hasattr(self.__class__, "_onedal_estimator"):
             self._onedal_estimator = self.__class__._onedal_estimator(**onedal_params)
         else:
@@ -167,7 +164,6 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         self._save_attributes()
 
     def _onedal_predict(self, X, queue=None):
-        # Validate and convert X
         if X is not None:
             xp, _ = get_namespace(X)
             X = validate_data(

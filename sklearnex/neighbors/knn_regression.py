@@ -114,13 +114,11 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
 
     @wrap_output_data
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
-        # Validate n_neighbors parameter first (before check_is_fitted)
         if n_neighbors is not None:
             self._validate_n_neighbors(n_neighbors)
 
         check_is_fitted(self)
 
-        # Validate kneighbors parameters (inherited from KNeighborsDispatchingBase)
         self._kneighbors_validation(X, n_neighbors)
 
         return dispatch(
@@ -138,7 +136,6 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
     def _onedal_fit(self, X, y, queue=None):
         xp, _ = get_namespace(X, y)
 
-        # Validation step - validates and converts dtypes to float32/float64
         if not get_config()["use_raw_input"]:
             X, y = validate_data(
                 self,
@@ -150,13 +147,9 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
                 y_numeric=True,
             )
 
-        # SPMD mode: skip validation but still set effective metric
         self._set_effective_metric()
 
-        # Process regression targets before passing to onedal (uses validated y)
         self._process_regression_targets(y)
-
-        # Call onedal backend
         onedal_params = {
             "n_neighbors": self.n_neighbors,
             "weights": self.weights,
@@ -176,12 +169,8 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         self._onedal_estimator._shape = self._shape
         self._onedal_estimator._y = self._y
 
-        # Pass validated X and y to onedal (after validate_data converted dtypes)
-        # Note: onedal layer handles backend-specific reshape (GPU needs (-1,1) format)
         self._onedal_estimator.fit(X, y, queue=queue)
 
-        # Post-processing: save attributes
-        # Note: _y reshape now happens in onedal layer after fit (matches original main branch logic)
         self._save_attributes()
 
     def _process_regression_targets(self, y):
@@ -192,31 +181,24 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         y : array-like
             Target values
         """
-        # Store original shape for later use
         shape = getattr(y, "shape", None)
         self._shape = shape if shape is not None else y.shape
         self._y = y
 
     def _onedal_predict(self, X, queue=None):
         # Dispatch between GPU and SKL prediction methods
-        # This logic matches onedal regressor predict() method but computation happens in sklearnex
-        # Note: X validation happens in kneighbors (for SKL path) or _predict_gpu (for GPU path)
         gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
         is_uniform_weights = getattr(self, "weights", "uniform") == "uniform"
 
         if gpu_device and is_uniform_weights:
-            # GPU path: call onedal backend directly
             return self._predict_gpu(X, queue=queue)
         else:
-            # SKL path: call kneighbors (through sklearnex) then compute in sklearnex
             return self._predict_skl(X, queue=queue)
 
     def _predict_gpu(self, X, queue=None):
         """GPU prediction path - calls onedal backend."""
-        # Validate X for GPU path (SKL path validation happens in kneighbors)
         if X is not None:
             xp, _ = get_namespace(X)
-            # For precomputed metric, only check NaN/inf, don't validate features
             if getattr(self, "effective_metric_", self.metric) == "precomputed":
                 from ..utils.validation import assert_all_finite
 
@@ -229,7 +211,6 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
                     accept_sparse="csr",
                     reset=False,
                 )
-        # Call onedal backend for GPU prediction
         return self._onedal_estimator._predict_gpu(X)
 
     def _predict_skl_regression(self, X):
@@ -255,13 +236,11 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
 
     def _predict_skl(self, X, queue=None):
         """SKL prediction path - calls kneighbors through sklearnex, computes prediction here."""
-        # Use the helper method (calls kneighbors + computes prediction)
         return self._predict_skl_regression(X)
 
     def _onedal_kneighbors(
         self, X=None, n_neighbors=None, return_distance=True, queue=None
     ):
-        # Validation step
         if X is not None and not get_config()["use_raw_input"]:
             xp, _ = get_namespace(X)
             X = validate_data(

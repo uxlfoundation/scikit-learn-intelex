@@ -155,7 +155,6 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     def _onedal_fit(self, X, y, queue=None):
         xp, _ = get_namespace(X)
 
-        # Validation step (follows PCA pattern)
         if not get_config()["use_raw_input"]:
             X, y = validate_data(
                 self,
@@ -270,14 +269,11 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         proba = self._compute_class_probabilities(
             neigh_dist, neigh_ind, self.weights, self._y, self.classes_, self.outputs_2d_
         )
-        # Array API support: get namespace from probability array
         xp, _ = get_namespace(proba)
 
         if not self.outputs_2d_:
-            # Single output: classes_[argmax(proba, axis=1)]
             return self.classes_[xp.argmax(proba, axis=1)]
         else:
-            # Multi-output: apply argmax separately for each output
             result = [
                 classes_k[xp.argmax(proba_k, axis=1)]
                 for classes_k, proba_k in zip(self.classes_, proba.T)
@@ -285,18 +281,11 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             return xp.asarray(result).T
 
     def _onedal_predict(self, X, queue=None):
-        # Use the unified helper (calls kneighbors + computes prediction)
-        # This properly handles X=None (LOOCV) case
-        # Note: X validation happens in kneighbors
         return self._predict_skl_classification(X)
 
     def _onedal_predict_proba(self, X, queue=None):
-        # Call kneighbors through sklearnex (self.kneighbors is the sklearnex method)
-        # This properly handles X=None case (LOOCV) with query_is_train logic
-        # Note: X validation happens in kneighbors
         neigh_dist, neigh_ind = self.kneighbors(X)
 
-        # Use the helper method to compute class probabilities
         return self._compute_class_probabilities(
             neigh_dist, neigh_ind, self.weights, self._y, self.classes_, self.outputs_2d_
         )
