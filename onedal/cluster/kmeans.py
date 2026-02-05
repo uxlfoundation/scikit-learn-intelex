@@ -168,11 +168,14 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
             seeds = random_state.choice(n_samples, size=self.n_clusters, replace=False)
             centers = X[seeds]
         elif callable(init):
-            centers = init(X, self.n_clusters, random_state)
-            # Ensure dtype matches, using get_namespace to get correct namespace
-            xp_centers, _ = get_namespace(centers)
-            if centers.dtype != dtype:
-                centers = xp_centers.astype(centers, dtype)
+            cc_arr = init(X, self.n_clusters, random_state)
+            if hasattr(cc_arr, "__array_namespace__"):
+                xp_cc_arr, _ = get_namespace(cc_arr)
+                if cc_arr.dtype != dtype:
+                    cc_arr = xp_cc_arr.astype(cc_arr, dtype)
+            else:
+                cc_arr = np.ascontiguousarray(cc_arr, dtype=dtype)
+            centers = cc_arr
         elif _is_arraylike_not_scalar(init):
             centers = init
         else:
