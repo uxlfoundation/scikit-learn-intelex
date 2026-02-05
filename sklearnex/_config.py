@@ -15,6 +15,7 @@
 # ==============================================================================
 
 import sys
+import warnings
 from contextlib import contextmanager
 
 from sklearn import get_config as skl_get_config
@@ -125,6 +126,13 @@ def set_config(
     if allow_sklearn_after_onedal is not None:
         local_config["allow_sklearn_after_onedal"] = allow_sklearn_after_onedal
     if use_raw_input is not None:
+        if use_raw_input:
+            warnings.warn(
+                "The 'use_raw_input' parameter is deprecated and will be removed in version 2026.0. "
+                "On-device input validation can now be achieved by setting 'array_api_dispatch' to True.",
+                FutureWarning,
+                stacklevel=2,
+            )
         local_config["use_raw_input"] = use_raw_input
 
 
