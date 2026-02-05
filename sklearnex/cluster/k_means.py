@@ -480,8 +480,6 @@ if daal_check_version((2023, "P", 200)):
             self.n_iter_ = self._onedal_estimator.n_iter_
             self.n_features_in_ = self._onedal_estimator.n_features_in_
 
-            self._n_init = self._onedal_estimator._n_init
-
         fit.__doc__ = _sklearn_KMeans.fit.__doc__
         predict.__doc__ = _sklearn_KMeans.predict.__doc__
         score.__doc__ = _sklearn_KMeans.score.__doc__
