@@ -16,6 +16,11 @@
       "matchUpdateTypes": ["patch", "minor"],
       "schedule": ["before 2am on the first day of the month"],
       "matchFileNames": ["requirements-doc.txt"]
+    },
+    {
+      "groupName": "numpy build dependencies",
+      "matchPackageNames": ["numpy"],
+      "matchFileNames": ["dependencies-dev", "conda-recipe/meta.yaml"]
     }
   ],
   "pre-commit": {
@@ -70,6 +75,16 @@
       ],
       "datasourceTemplate": "deb",
       "registryUrlTemplate": "https://apt.repos.intel.com/oneapi?suite=all&components=main&binaryArch=amd64"
+    },
+    {
+      "customType": "regex",
+      "description": "Numpy in conda meta.yaml - keep aligned with dependencies-dev",
+      "managerFilePatterns": ["/^conda-recipe\\/meta\\.yaml$/"],
+      "matchStrings": [
+        "- numpy ==(?<currentValue>\\d+\\.\\d+\\.\\d+)\\s+#\\s+\\[py[<>=]{1,2}\\d+\\]"
+      ],
+      "depNameTemplate": "numpy",
+      "datasourceTemplate": "pypi"
     }
   ]
 }

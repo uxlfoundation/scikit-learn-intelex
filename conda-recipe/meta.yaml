@@ -59,7 +59,9 @@ requirements:
     - cython
     - jinja2
     - pybind11
-    - numpy
+    # Align numpy versions with dependencies-dev
+    - numpy ==2.2.6  # [py<=310]
+    - numpy ==2.4.2  # [py>=311]
     # dal-devel pinning depends on the recipe location (repo or feedstock)
     - dal-devel
     # - dal-devel =={{ version }}
