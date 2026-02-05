@@ -168,14 +168,11 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
             seeds = random_state.choice(n_samples, size=self.n_clusters, replace=False)
             centers = X[seeds]
         elif callable(init):
-            cc_arr = init(X, self.n_clusters, random_state)
-            if hasattr(cc_arr, "__array_namespace__"):
-                xp_cc_arr, _ = get_namespace(cc_arr)
-                if cc_arr.dtype != dtype:
-                    cc_arr = xp_cc_arr.astype(cc_arr, dtype)
-            else:
-                cc_arr = np.ascontiguousarray(cc_arr, dtype=dtype)
-            centers = cc_arr
+            centers = init(X, self.n_clusters, random_state)
+            # Ensure dtype matches, using get_namespace to get correct namespace
+            xp_centers, _ = get_namespace(centers)
+            if centers.dtype != dtype:
+                centers = xp_centers.astype(centers, dtype)
         elif _is_arraylike_not_scalar(init):
             centers = init
         else:
@@ -232,7 +229,9 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         init = self.init
         use_onedal_init = daal_check_version((2023, "P", 200)) and not callable(self.init)
 
-        for init_idx in range(self._n_init):
+        # Use _n_init if set (from sklearnex), otherwise use n_init directly
+        n_init_resolved = getattr(self, "_n_init", self.n_init)
+        for init_idx in range(n_init_resolved):
             if use_onedal_init:
                 seed = random_state.randint(np.iinfo("i").max)
                 centroids_table = self._init_centroids_onedal(
