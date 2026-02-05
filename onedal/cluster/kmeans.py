@@ -33,8 +33,6 @@ from sklearn.exceptions import ConvergenceWarning
 from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.utils import check_random_state
 
-from sklearnex.utils._array_api import get_namespace
-
 from .._config import _get_config
 from ..common._mixin import ClusterMixin, TransformerMixin
 from ..datatypes import from_table, to_table
@@ -157,9 +155,8 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         return centers
 
     def _init_centroids_sklearn(self, X, init, random_state, dtype=None):
-        xp, _ = get_namespace(X)
         if dtype is None:
-            dtype = xp.float32
+            dtype = np.float32
 
         n_samples = X.shape[0]
         if isinstance(init, str) and init == "k-means++":
@@ -169,12 +166,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
             centers = X[seeds]
         elif callable(init):
             cc_arr = init(X, self.n_clusters, random_state)
-            if hasattr(cc_arr, "__array_namespace__"):
-                xp_cc_arr, _ = get_namespace(cc_arr)
-                if cc_arr.dtype != dtype:
-                    cc_arr = xp_cc_arr.astype(cc_arr, dtype)
-            else:
-                cc_arr = np.ascontiguousarray(cc_arr, dtype=dtype)
+            cc_arr = np.ascontiguousarray(cc_arr, dtype=dtype)
             centers = cc_arr
         elif _is_arraylike_not_scalar(init):
             centers = init
@@ -232,9 +224,43 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         init = self.init
         use_onedal_init = daal_check_version((2023, "P", 200)) and not callable(self.init)
 
-        # Use _n_init if set (from sklearnex), otherwise use n_init directly
-        n_init_resolved = getattr(self, "_n_init", self.n_init)
-        for init_idx in range(n_init_resolved):
+        # Resolve n_init from 'auto'/'warn' to integer (pattern: like SVM's gamma/max_iter resolution)
+        n_init = self.n_init
+        default_n_init = 10
+        if n_init == "warn":
+            warnings.warn(
+                (
+                    "The default value of `n_init` will change from "
+                    f"{default_n_init} to 'auto' in 1.4. Set `n_init` explicitly "
+                    "to suppress the warning"
+                ),
+                FutureWarning,
+                stacklevel=2,
+            )
+            n_init = default_n_init
+        if n_init == "auto":
+            if isinstance(init, str) and init == "k-means++":
+                n_init = 1
+            elif isinstance(init, str) and init == "random":
+                n_init = default_n_init
+            elif callable(init):
+                n_init = default_n_init
+            else:  # array-like
+                n_init = 1
+
+        if _is_arraylike_not_scalar(init) and n_init != 1:
+            warnings.warn(
+                (
+                    "Explicit initial center position passed: performing only "
+                    f"one init in {self.__class__.__name__} instead of "
+                    f"n_init={n_init}."
+                ),
+                RuntimeWarning,
+                stacklevel=2,
+            )
+            n_init = 1
+
+        for init_idx in range(n_init):
             if use_onedal_init:
                 seed = random_state.randint(np.iinfo("i").max)
                 centroids_table = self._init_centroids_onedal(
@@ -287,14 +313,13 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
 
     @cluster_centers_.setter
     def cluster_centers_(self, cluster_centers):
-        xp, _ = get_namespace(cluster_centers)
-        self._cluster_centers_ = xp.asarray(cluster_centers)
+        self._cluster_centers_ = np.asarray(cluster_centers)
         self.n_iter_ = 0
         self.inertia_ = 0
         # keep backend model in sync
         self.model_.centroids = to_table(self._cluster_centers_)
         self.n_features_in_ = self.model_.centroids.column_count
-        self.labels_ = xp.arange(self.model_.centroids.row_count)
+        self.labels_ = np.arange(self.model_.centroids.row_count)
 
     @cluster_centers_.deleter
     def cluster_centers_(self):

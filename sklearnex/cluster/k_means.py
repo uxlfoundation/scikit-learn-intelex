@@ -255,14 +255,9 @@ if daal_check_version((2023, "P", 200)):
             else:
                 self._check_params(X)
 
-            # Resolve n_init parameter
-            resolved_n_init = self._resolve_n_init()
-
             self._n_features_out = self.n_clusters
 
             self._initialize_onedal_estimator()
-            # Set resolved n_init on the onedal estimator
-            self._onedal_estimator._n_init = resolved_n_init
             self._n_threads = _openmp_effective_n_threads()
             self._onedal_estimator.fit(X, queue=queue)
 
