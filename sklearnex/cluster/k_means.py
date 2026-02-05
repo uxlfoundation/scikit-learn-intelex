@@ -36,7 +36,7 @@ if daal_check_version((2023, "P", 200)):
     from daal4py.sklearn._utils import is_sparse, sklearn_check_version
     from onedal._device_offload import support_input_format
     from onedal.cluster import KMeans as onedal_KMeans
-    from onedal.utils.validation import _is_csr
+    from onedal.utils.validation import _is_arraylike_not_scalar, _is_csr
 
     from .._device_offload import dispatch, wrap_output_data
     from .._utils import PatchingConditionsChain
@@ -153,6 +153,57 @@ if daal_check_version((2023, "P", 200)):
 
             return self
 
+        def _resolve_n_init(self, default_n_init=10):
+            """Resolve n_init parameter from 'auto'/'warn' to integer value."""
+            n_init = self.n_init
+            if n_init == "warn":
+                warnings.warn(
+                    (
+                        "The default value of `n_init` will change from "
+                        f"{default_n_init} to 'auto' in 1.4. Set `n_init` explicitly "
+                        "to suppress the warning"
+                    ),
+                    FutureWarning,
+                    stacklevel=2,
+                )
+                n_init = default_n_init
+            if n_init == "auto":
+                if isinstance(self.init, str) and self.init == "k-means++":
+                    n_init = 1
+                elif isinstance(self.init, str) and self.init == "random":
+                    n_init = default_n_init
+                elif callable(self.init):
+                    n_init = default_n_init
+                else:  # array-like
+                    n_init = 1
+
+            if _is_arraylike_not_scalar(self.init) and n_init != 1:
+                warnings.warn(
+                    (
+                        "Explicit initial center position passed: performing only "
+                        f"one init in {self.__class__.__name__} instead of "
+                        f"n_init={n_init}."
+                    ),
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
+                n_init = 1
+
+            return n_init
+
+        def _validate_center_shape(self, X, centers):
+            """Validate that init centers have correct shape."""
+            if centers.shape[0] != self.n_clusters:
+                raise ValueError(
+                    f"The shape of the initial centers {centers.shape} does not "
+                    f"match the number of clusters {self.n_clusters}."
+                )
+            if centers.shape[1] != X.shape[1]:
+                raise ValueError(
+                    f"The shape of the initial centers {centers.shape} does not "
+                    f"match the number of features of the data {X.shape[1]}."
+                )
+
         def _onedal_fit(self, X, _, sample_weight, queue=None):
             from .._config import get_config
 
@@ -170,14 +221,48 @@ if daal_check_version((2023, "P", 200)):
                     ensure_all_finite=False,
                 )
 
+            # Validate input vs parameters
+            if X.shape[0] < self.n_clusters:
+                raise ValueError(
+                    f"n_samples={X.shape[0]} should be >= n_clusters={self.n_clusters}."
+                )
+
+            # Validate algorithm (only lloyd supported in oneDAL)
+            if self.algorithm not in ["auto", "full", "lloyd", "elkan"]:
+                raise ValueError(
+                    f"Algorithm {self.algorithm} is not supported. "
+                    "Supported algorithms are 'lloyd', 'elkan' (computed as lloyd), 'auto', 'full'."
+                )
+
+            # Validate init parameter if array-like
+            if _is_arraylike_not_scalar(self.init):
+                init = validate_data(
+                    self,
+                    self.init,
+                    dtype=[xp.float64, xp.float32],
+                    accept_sparse="csr",
+                    copy=True,
+                    order="C",
+                    reset=False,
+                )
+                self._validate_center_shape(X, init)
+                # Update the init parameter with validated version
+                self.init = init
+
+            # Call sklearn's parameter validation if available
             if sklearn_check_version("1.2"):
                 self._check_params_vs_input(X)
             else:
                 self._check_params(X)
 
+            # Resolve n_init parameter
+            resolved_n_init = self._resolve_n_init()
+
             self._n_features_out = self.n_clusters
 
             self._initialize_onedal_estimator()
+            # Set resolved n_init on the onedal estimator
+            self._onedal_estimator._n_init = resolved_n_init
             self._n_threads = _openmp_effective_n_threads()
             self._onedal_estimator.fit(X, queue=queue)
 

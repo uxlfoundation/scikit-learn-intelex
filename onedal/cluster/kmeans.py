@@ -91,18 +91,6 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
     def _get_basic_statistics_backend(self, result_options):
         return BasicStatistics(result_options)
 
-    def _validate_center_shape(self, X, centers):
-        if centers.shape[0] != self.n_clusters:
-            raise ValueError(
-                f"The shape of the initial centers {centers.shape} does not "
-                f"match the number of clusters {self.n_clusters}."
-            )
-        if centers.shape[1] != X.shape[1]:
-            raise ValueError(
-                f"The shape of the initial centers {centers.shape} does not "
-                f"match the number of features of the data {X.shape[1]}."
-            )
-
     def _tolerance(self, X_table, rtol, is_csr, dtype):
         if rtol == 0.0:
             return 0.0
@@ -112,53 +100,9 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         mean_var = from_table(res.variance).mean()
         return mean_var * rtol
 
-    def _check_params_vs_input(
-        self, X_table, is_csr, default_n_init=10, dtype=np.float32
-    ):
-        if X_table.shape[0] < self.n_clusters:
-            raise ValueError(
-                f"n_samples={X_table.shape[0]} should be >= n_clusters={self.n_clusters}."
-            )
-        # compute absolute tolerance once we know dtype
+    def _compute_tolerance(self, X_table, is_csr, dtype):
+        """Compute absolute tolerance from relative tolerance using data variance."""
         self._tol = self._tolerance(X_table, self.tol, is_csr, dtype)
-
-        # n_init resolution (kept from your logic)
-        self._n_init = self.n_init
-        if self._n_init == "warn":
-            warnings.warn(
-                (
-                    "The default value of `n_init` will change from "
-                    f"{default_n_init} to 'auto' in 1.4. Set `n_init` explicitly "
-                    "to suppress the warning"
-                ),
-                FutureWarning,
-                stacklevel=2,
-            )
-            self._n_init = default_n_init
-        if self._n_init == "auto":
-            if isinstance(self.init, str) and self.init == "k-means++":
-                self._n_init = 1
-            elif isinstance(self.init, str) and self.init == "random":
-                self._n_init = default_n_init
-            elif callable(self.init):
-                self._n_init = default_n_init
-            else:  # array-like
-                self._n_init = 1
-
-        if _is_arraylike_not_scalar(self.init) and self._n_init != 1:
-            warnings.warn(
-                (
-                    "Explicit initial center position passed: performing only "
-                    f"one init in {self.__class__.__name__} instead of "
-                    f"n_init={self._n_init}."
-                ),
-                RuntimeWarning,
-                stacklevel=2,
-            )
-            self._n_init = 1
-
-        # only "lloyd" is supported in this implementation
-        assert self.algorithm == "lloyd"
 
     def _get_onedal_params(self, is_csr=False, dtype=np.float32, result_options=None):
         thr = self._tol if self._tol is not None else self.tol
@@ -199,7 +143,6 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
             algorithm = "random_dense" if not is_csr else "random_csr"
         elif _is_arraylike_not_scalar(init):
             centers = init.toarray() if _is_csr(init) else np.asarray(init)
-            self._validate_center_shape(np.empty((0, X_table.column_count)), centers)
             return to_table(centers, queue=QM.get_global_queue())
         else:
             raise TypeError("Unsupported type of the `init` value")
@@ -232,7 +175,6 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
                     cc_arr = xp_cc_arr.astype(cc_arr, dtype)
             else:
                 cc_arr = np.ascontiguousarray(cc_arr, dtype=dtype)
-            self._validate_center_shape(X, cc_arr)
             centers = cc_arr
         elif _is_arraylike_not_scalar(init):
             centers = init
@@ -270,7 +212,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         X_table = to_table(X, queue=queue)
         dtype = X_table.dtype
 
-        self._check_params_vs_input(X_table, is_csr, dtype=dtype)
+        self._compute_tolerance(X_table, is_csr, dtype)
         self.n_features_in_ = X_table.column_count
 
         best_model = best_labels = None
@@ -288,12 +230,6 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         random_state = check_random_state(self.random_state)
 
         init = self.init
-        if _is_arraylike_not_scalar(init):
-            init = _check_array(
-                init, dtype=dtype, accept_sparse="csr", copy=True, order="C"
-            )
-            self._validate_center_shape(X, init)
-
         use_onedal_init = daal_check_version((2023, "P", 200)) and not callable(self.init)
 
         for init_idx in range(self._n_init):
