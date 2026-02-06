@@ -167,6 +167,17 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         elif callable(init):
             cc_arr = init(X, self.n_clusters, random_state)
             cc_arr = np.ascontiguousarray(cc_arr, dtype=dtype)
+            # Validate callable return shape (original logic restored)
+            if cc_arr.shape[0] != self.n_clusters:
+                raise ValueError(
+                    f"The shape of the initial centers {cc_arr.shape} does not "
+                    f"match the number of clusters {self.n_clusters}."
+                )
+            if cc_arr.shape[1] != X.shape[1]:
+                raise ValueError(
+                    f"The shape of the initial centers {cc_arr.shape} does not "
+                    f"match the number of features of the data {X.shape[1]}."
+                )
             centers = cc_arr
         elif _is_arraylike_not_scalar(init):
             centers = init
