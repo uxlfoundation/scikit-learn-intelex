@@ -265,7 +265,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         array-like
             Predicted class labels.
         """
-        neigh_dist, neigh_ind = self.kneighbors(X)
+        neigh_dist, neigh_ind = self._onedal_estimator.kneighbors(X)
         proba = self._compute_class_probabilities(
             neigh_dist, neigh_ind, self.weights, self._y, self.classes_, self.outputs_2d_
         )
@@ -284,7 +284,8 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         return self._predict_skl_classification(X)
 
     def _onedal_predict_proba(self, X, queue=None):
-        neigh_dist, neigh_ind = self.kneighbors(X)
+        # Call onedal estimator directly to bypass dispatch overhead
+        neigh_dist, neigh_ind = self._onedal_estimator.kneighbors(X)
 
         return self._compute_class_probabilities(
             neigh_dist, neigh_ind, self.weights, self._y, self.classes_, self.outputs_2d_

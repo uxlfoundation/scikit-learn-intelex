@@ -229,7 +229,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         array-like
             Predicted regression values.
         """
-        neigh_dist, neigh_ind = self.kneighbors(X)
+        neigh_dist, neigh_ind = self._onedal_estimator.kneighbors(X)
         return self._compute_weighted_prediction(
             neigh_dist, neigh_ind, self.weights, self._y
         )

@@ -596,7 +596,9 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         # construct CSR matrix representation of the k-NN graph
         # requires moving data to host to construct the csr_matrix
         if mode == "connectivity":
-            A_ind = self.kneighbors(X, n_neighbors, return_distance=False)
+            A_ind = self._onedal_estimator.kneighbors(
+                X, n_neighbors, return_distance=False
+            )
             # Transfer to host - after this, arrays are numpy
             _, (A_ind,) = _transfer_to_host(A_ind)
             n_queries = A_ind.shape[0]
@@ -604,7 +606,9 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             A_data = np.ones(n_queries * n_neighbors)
 
         elif mode == "distance":
-            A_data, A_ind = self.kneighbors(X, n_neighbors, return_distance=True)
+            A_data, A_ind = self._onedal_estimator.kneighbors(
+                X, n_neighbors, return_distance=True
+            )
             # Transfer to host - after this, arrays are numpy
             _, (A_data, A_ind) = _transfer_to_host(A_data, A_ind)
             # Use numpy after transfer to host
