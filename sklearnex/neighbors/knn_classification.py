@@ -281,10 +281,24 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             return xp.asarray(result).T
 
     def _onedal_predict(self, X, queue=None):
+        if X is not None and not get_config()["use_raw_input"]:
+            xp, _ = get_namespace(X)
+            X = validate_data(
+                self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
+            )
         return self._predict_skl_classification(X)
 
     def _onedal_predict_proba(self, X, queue=None):
-        # Call onedal estimator directly to bypass dispatch overhead
+        if X is not None and not get_config()["use_raw_input"]:
+            xp, _ = get_namespace(X)
+            X = validate_data(
+                self,
+                X,
+                dtype=[xp.float64, xp.float32],
+                accept_sparse="csr",
+                reset=False,
+            )
+
         neigh_dist, neigh_ind = self._onedal_estimator.kneighbors(X)
 
         return self._compute_class_probabilities(

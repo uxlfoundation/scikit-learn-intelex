@@ -229,6 +229,12 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         array-like
             Predicted regression values.
         """
+        if X is not None and not get_config()["use_raw_input"]:
+            xp, _ = get_namespace(X)
+            X = validate_data(
+                self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
+            )
+
         neigh_dist, neigh_ind = self._onedal_estimator.kneighbors(X)
         return self._compute_weighted_prediction(
             neigh_dist, neigh_ind, self.weights, self._y
@@ -236,6 +242,11 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
 
     def _predict_skl(self, X, queue=None):
         """SKL prediction path - calls kneighbors through sklearnex, computes prediction here."""
+        if X is not None and not get_config()["use_raw_input"]:
+            xp, _ = get_namespace(X)
+            X = validate_data(
+                self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
+            )
         return self._predict_skl_regression(X)
 
     def _onedal_kneighbors(

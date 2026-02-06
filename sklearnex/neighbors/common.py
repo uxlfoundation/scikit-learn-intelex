@@ -591,8 +591,6 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         if n_neighbors is None:
             n_neighbors = self.n_neighbors
 
-        # check the input only in self.kneighbors
-
         # construct CSR matrix representation of the k-NN graph
         # requires moving data to host to construct the csr_matrix
         if mode == "connectivity":
