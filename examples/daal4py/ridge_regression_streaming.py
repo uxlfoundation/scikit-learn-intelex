@@ -71,7 +71,7 @@ def main(readcsv=pd_read_csv, *args, **kwargs):
 
 
 if __name__ == "__main__":
-    (predict_result, ptdata) = main()
+    predict_result, ptdata = main()
     print(
         "\nRidge Regression prediction results: (first 10 rows):\n",
         predict_result.prediction[0:10],

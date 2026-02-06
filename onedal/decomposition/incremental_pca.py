@@ -14,13 +14,10 @@
 # limitations under the License.
 # ==============================================================================
 
-import numpy as np
-
 from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
 from onedal.utils import _sycl_queue_manager as QM
 
-from .._config import _get_config
 from ..datatypes import from_table, return_type_constructor, to_table
 from .pca import PCA
 

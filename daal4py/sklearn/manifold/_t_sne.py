@@ -20,7 +20,6 @@ import warnings
 from time import time
 
 import numpy as np
-from scipy.sparse import issparse
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE as BaseTSNE
 from sklearn.manifold._t_sne import _joint_probabilities, _joint_probabilities_nn
@@ -32,6 +31,7 @@ import daal4py
 from daal4py.sklearn._utils import (
     PatchingConditionsChain,
     daal_check_version,
+    is_sparse,
     sklearn_check_version,
 )
 
@@ -147,11 +147,15 @@ class TSNE(BaseTSNE):
                     daal_check_version((2021, "P", 600)),
                     "oneDAL version is lower than 2021.6.",
                 ),
+                # Scikit-learn didn't support sparse PCA initialization before 1.8.
+                # This nevertheless offloads it to sklearn because it produces a different
+                # error message than what would be thrown by simply passing the input to PCA.
                 (
-                    not (
-                        isinstance(self.init, str) and self.init == "pca" and issparse(X)
+                    sklearn_check_version("1.8")
+                    or not (
+                        isinstance(self.init, str) and self.init == "pca" and is_sparse(X)
                     ),
-                    "PCA initialization is not supported with sparse input matrices.",
+                    "PCA initialization is not supported with sparse input matrices before scikit-learn 1.8.",
                 ),
                 # Note: these conditions below should result in errors, but stock scikit-learn
                 # does not check for errors at this exact point. Hence, this offloads the erroring
@@ -273,7 +277,7 @@ class TSNE(BaseTSNE):
                 "should contain positive distances.",
             )
 
-            if self.method == "exact" and issparse(X):
+            if self.method == "exact" and is_sparse(X):
                 raise TypeError(
                     'TSNE with method="exact" does not accept sparse '
                     'precomputed distance matrix. Use method="barnes_hut" '

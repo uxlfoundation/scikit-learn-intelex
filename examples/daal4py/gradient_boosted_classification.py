@@ -67,7 +67,7 @@ def main(readcsv=pd_read_csv):
 
 
 if __name__ == "__main__":
-    (train_result, predict_result, plabels) = main()
+    train_result, predict_result, plabels = main()
     print(
         "\nGradient boosted trees prediction results (first 10 rows):\n",
         predict_result.prediction[0:10],

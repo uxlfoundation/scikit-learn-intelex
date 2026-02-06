@@ -53,7 +53,7 @@ def main():
 if __name__ == "__main__":
     # Initialize SPMD mode
     d4p.daalinit()
-    (_, result) = main()
+    _, result = main()
     # result is available on all processes - but we print only on root
     if d4p.my_procid() == 0:
         print("\nEach process has matrixR but only his part of matrixQ:\n")

@@ -23,8 +23,7 @@ Introduction
 
 Module :ref:`daal4py <about_daal4py>` within the |sklearnex| offers distributed versions of
 some algorithms that can run on compute clusters managed through the
-`MPI <https://en.wikipedia.org/wiki/Message_Passing_Interface>`__ framework, optionally aided
-by |mpi4py|.
+MPI framework, optionally aided by |mpi4py|.
 
 Compared to the :ref:`SMPD mode <distributed>` in the ``sklearnex`` module which runs on multiple
 GPUs, the distributed mode of algorithms in the ``daal4py`` module runs on CPU-based nodes - i.e.
@@ -45,12 +44,12 @@ same algorithms to much larger problem sizes.
     the MPI runtime library managing the computations to be the same MPI backend library
     with which the |sklearnex| library was compiled, or to be ABI compatible with it.
     Distributions of the |sklearnex| in PyPI and conda-forge are both compiled with `Intel's MPI <https://www.intel.com/content/www/us/en/developer/tools/oneapi/mpi-library.html>`__
-    as MPI backend (offered as Python package ``impi_rt`` in both PyPI and conda): ::
+    as MPI backend (offered as Python package ``impi_rt`` in conda, or ``impi-rt`` in PyPI): ::
 
         conda install -c conda-forge impi_rt mpi=*=impi
 
-    Using distributed mode with non-MPICH-compatible backends such as OpenMPI requires compiling the
-    library from source with that backend.
+    Using distributed mode with non-MPICH-compatible backends such as OpenMPI requires
+    :doc:`compiling the library from source <building-from-source>` with that backend.
 
     See the docs for :ref:`SPMD mode <distributed>` for more details.
 
@@ -77,7 +76,7 @@ same algorithms to much larger problem sizes.
         .. tab:: From Intel's pip Index
             ::
 
-                pip install --index-url https://software.repos.intel.com/python/pypi mpi4py impi_rt
+                pip install --index-url https://software.repos.intel.com/python/pypi mpi4py impi-rt
 
 
 Using distributed mode

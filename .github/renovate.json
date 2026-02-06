@@ -5,9 +5,9 @@
     ":preserveSemverRanges"
   ],
   "pip_requirements": {
-    "fileMatch": [
-      "(^|/)requirements.*\\.txt$",
-      "(^|/)dependencies-dev$"
+    "managerFilePatterns": [
+      "/(^|/)requirements.*\\.txt$/",
+      "/(^|/)dependencies-dev$/"
     ]
   },
   "packageRules": [
@@ -24,9 +24,9 @@
 "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": [
-        "^\\.ci/pipeline/build-and-test-lnx\\.yml$",
-        "^\\.github/workflows/ci\\.yml$"
+      "managerFilePatterns": [
+        "/^\\.ci/pipeline/build-and-test-lnx\\.yml$/",
+        "/^\\.github/workflows/ci\\.yml$/"
       ],
       "matchStrings": [
         "\\s*DPCTL_VERSION: (?<currentValue>\\d+\\.\\d+\\.\\d+)"
@@ -36,9 +36,9 @@
     },
     {
       "customType": "regex",
-      "fileMatch": [
-        "^\\.ci/pipeline/build-and-test-lnx\\.yml$",
-        "^\\.github/workflows/ci\\.yml$"
+      "managerFilePatterns": [
+        "/^\\.ci/pipeline/build-and-test-lnx\\.yml$/",
+        "/^\\.github/workflows/ci\\.yml$/"
       ],
       "matchStrings": [
         "\\s*DPNP_VERSION: (?<currentValue>\\d+\\.\\d+\\.\\d+)"
@@ -48,7 +48,7 @@
     },
     {
       "customType": "regex",
-      "fileMatch": ["^\\.ci/pipeline/build-and-test-lnx\\.yml$"],
+      "managerFilePatterns": ["/^\\.ci/pipeline/build-and-test-lnx\\.yml$/"],
       "matchStrings": [
         "\\s*DPCPP_RT_VERSION: (?<currentValue>\\d+\\.\\d+\\.\\d+)"
       ],
@@ -57,14 +57,14 @@
     },
     {
       "customType": "regex",
-      "fileMatch": ["^\\.ci/pipeline/linting\\.yml$"],
+      "managerFilePatterns": ["/^\\.ci/pipeline/linting\\.yml$/"],
       "matchStrings": ["pre-commit==(?<currentValue>\\d+\\.\\d+\\.\\d+)"],
       "depNameTemplate": "pre-commit",
       "datasourceTemplate": "pypi"
     },
     {
       "customType": "regex",
-      "fileMatch": ["^\\.ci\\/scripts\\/install_dpcpp\\.sh$"],
+      "managerFilePatterns": ["/^\\.ci\\/scripts\\/install_dpcpp\\.sh$/"],
       "matchStrings": [
         ".*\\b(?<depName>intel-oneapi-compiler-dpcpp-cpp)=(?<currentValue>\\d{4}\\.\\d+\\.\\d+-\\d+).*"
       ],
@@ -73,3 +73,4 @@
     }
   ]
 }
+

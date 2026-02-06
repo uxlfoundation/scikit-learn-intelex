@@ -42,7 +42,7 @@ work. If the requested operation is not supported on the device where the data l
 back to |sklearn|, or to an accelerated CPU version from the |sklearnex| when supported - these are controllable
 through options ``allow_sklearn_after_onedal`` (default is ``True``) and ``allow_fallback_to_host`` (default is
 ``False``), respectively, which are accepted by ``config_context`` and ``set_config`` after
-:ref:`patching scikit-learn <patching>` or when importing those directly from ``sklearnex``.
+:doc:`patching scikit-learn <patching>` or when importing those directly from ``sklearnex``.
 
 .. note::
     Under default settings for ``set_config`` / ``config_context``, operations that are not supported on GPU will
@@ -97,16 +97,29 @@ The following patched classes have support for array API inputs:
 - :obj:`sklearn.covariance.EmpiricalCovariance`
 - :obj:`sklearnex.covariance.IncrementalEmpiricalCovariance`
 - :obj:`sklearn.decomposition.PCA`
+- :obj:`sklearn.ensemble.ExtraTreesClassifier`
+- :obj:`sklearn.ensemble.ExtraTreesRegressor`
+- :obj:`sklearn.ensemble.RandomForestClassifier`
+- :obj:`sklearn.ensemble.RandomForestRegressor`
 - :obj:`sklearn.linear_model.LinearRegression`
 - :obj:`sklearn.linear_model.Ridge`
 - :obj:`sklearnex.linear_model.IncrementalLinearRegression`
 - :obj:`sklearnex.linear_model.IncrementalRidge`
+- :obj:`sklearn.svm.NuSVC`
+- :obj:`sklearn.svm.NuSVR`
+- :obj:`sklearn.svm.SVC`
+- :obj:`sklearn.svm.SVR`
 
 .. note::
     While full array API support is currently not implemented for all classes, |dpnp_array| inputs are supported
     by all the classes that have :ref:`GPU support <oneapi_gpu>`. Note however that if array API support is not
     enabled in |sklearn|, when passing these classes as inputs, data will be transferred to host and then back to
     device instead of being used directly.
+
+    Result attributes of |sklearnex| classes which contain |sklearn| or |sklearnex| classes may not themselves be
+    array API compliant. For example, ensemble algorithms contain decision tree estimators result objects which
+    do not comply with the array API standard.
+
 
 
 Example usage

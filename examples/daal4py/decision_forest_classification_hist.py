@@ -71,7 +71,7 @@ def main(readcsv=pd_read_csv, method="hist"):
 
 
 if __name__ == "__main__":
-    (train_result, predict_result, plabels) = main()
+    train_result, predict_result, plabels = main()
     print("\nVariable importance results:\n", train_result.variableImportance)
     print("\nOOB error:\n", train_result.outOfBagError)
     print(

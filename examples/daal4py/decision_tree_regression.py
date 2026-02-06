@@ -57,7 +57,7 @@ def main(readcsv=pd_read_csv):
 
 
 if __name__ == "__main__":
-    (train_result, predict_result, ptdata) = main()
+    train_result, predict_result, ptdata = main()
     print(
         "\nDecision tree prediction results (first 20 rows):\n",
         predict_result.prediction[0:20],

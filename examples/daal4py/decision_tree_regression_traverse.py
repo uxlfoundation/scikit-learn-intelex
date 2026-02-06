@@ -47,7 +47,7 @@ def printTree(nodes, values):
 
 if __name__ == "__main__":
     # First get our result and model
-    (train_result, _, _) = dt_regression()
+    train_result, _, _ = dt_regression()
     # Retrieve Tree State for tree as encoded in sklearn.ensamble.tree_.Tree
     treeId = 0
     treeState = d4p.getTreeState(train_result.model, treeId, 5)

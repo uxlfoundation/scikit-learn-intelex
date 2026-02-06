@@ -24,7 +24,7 @@ import subprocess
 import sys
 import trace
 from contextlib import redirect_stdout
-from multiprocessing import Pipe, Process, get_context
+from multiprocessing import get_context
 
 import pytest
 from sklearn.base import BaseEstimator
@@ -47,8 +47,7 @@ TARGET_OFFLOAD_ALLOWED_LOCATIONS = [
     "_config.py",
     "_device_offload.py",
     "test",
-    "svc.py",
-    "svm" + os.sep + "_common.py",
+    "svm" + os.sep + "_base.py",
 ]
 
 _DESIGN_RULE_VIOLATIONS = {
@@ -60,6 +59,16 @@ _DESIGN_RULE_VIOLATIONS = {
     "LogisticRegression-predict-n_jobs_check": "uses daal4py for cpu in sklearnex",
     "LogisticRegression-predict_log_proba-n_jobs_check": "uses daal4py for cpu in sklearnex",
     "LogisticRegression-predict_proba-n_jobs_check": "uses daal4py for cpu in sklearnex",
+    "LogisticRegressionCV()-fit-n_jobs_check": "uses daal4py for cpu in sklearnex",
+    "LogisticRegressionCV()-predict-n_jobs_check": "uses daal4py for cpu in sklearnex",
+    "LogisticRegressionCV()-predict_log_proba-n_jobs_check": "uses daal4py for cpu in sklearnex",
+    "LogisticRegressionCV()-predict_proba-n_jobs_check": "uses daal4py for cpu in sklearnex",
+    "LogisticRegressionCV()-score-n_jobs_check": "uses daal4py for cpu in sklearnex",
+    "LogisticRegressionCV-fit-n_jobs_check": "uses daal4py for cpu in sklearnex",
+    "LogisticRegressionCV-predict-n_jobs_check": "uses daal4py for cpu in sklearnex",
+    "LogisticRegressionCV-predict_log_proba-n_jobs_check": "uses daal4py for cpu in sklearnex",
+    "LogisticRegressionCV-predict_proba-n_jobs_check": "uses daal4py for cpu in sklearnex",
+    "LogisticRegressionCV-score-n_jobs_check": "uses daal4py for cpu in sklearnex",
     "KNeighborsClassifier-kneighbors-n_jobs_check": "uses daal4py for cpu in onedal",
     "KNeighborsClassifier-fit-n_jobs_check": "uses daal4py for cpu in onedal",
     "KNeighborsClassifier-score-n_jobs_check": "uses daal4py for cpu in onedal",

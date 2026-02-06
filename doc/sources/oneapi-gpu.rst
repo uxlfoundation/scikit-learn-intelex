@@ -73,7 +73,7 @@ Debian systems require installing package ``intel-opencl-icd`` (along with its d
 For Arch Linux, and for other distributions in general, see the `GPGPU article in the Arch wiki <https://wiki.archlinux.org/title/GPGPU>`__.
 
 .. important::
-    If using the |sklearnex| in a conda environment, GPU support requires the the OpenCL ICD package `for conda <https://github.com/IntelPython/intel-gpu-ocl-icd-system-feedstock>`__ to be installed in the conda environment, **in addition to the system install** of the same package: ::
+    If using the |sklearnex| in a conda environment, GPU support requires the OpenCL ICD package `for conda <https://github.com/IntelPython/intel-gpu-ocl-icd-system-feedstock>`__ to be installed in the conda environment, **in addition to the system install** of the same package: ::
 
         conda install -c https://software.repos.intel.com/python/conda/ intel-gpu-ocl-icd-system
 
@@ -198,7 +198,7 @@ See :doc:`array_api` for details, instructions, and limitations. Example:
 DPNP Arrays
 ~~~~~~~~~~~
 
-As a special case, GPU arrays from |dpnp| can be used without enabling array API, even for estimators in the |sklearnex| that do not currently support array API, but note that it involves data movement to host and back and is thus not the most efficient route in computational terms.
+As a special case, GPU arrays from |dpnp| can be used without enabling array API, even for estimators in the |sklearnex| that do not currently support array API, but note that using this alternative without array API enabled involves data movement to host and back, thus not being the most efficient route in computational terms.
 
 Example:
 

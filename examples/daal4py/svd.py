@@ -64,6 +64,6 @@ def main(readcsv=pd_read_csv):
 
 
 if __name__ == "__main__":
-    (_, result) = main()
+    _, result = main()
     print(result)
     print("All looks good!")

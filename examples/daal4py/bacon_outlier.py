@@ -45,7 +45,7 @@ def main(readcsv=pd_read_csv):
 
 
 if __name__ == "__main__":
-    (data, res) = main()
+    data, res = main()
 
     print("\nInput data\n", data)
     print("\nOutlier detection result (Bacon method) weights:\n", res.weights)

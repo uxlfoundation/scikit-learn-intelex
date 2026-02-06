@@ -59,7 +59,7 @@ def main(readcsv=pd_read_csv):
 
 
 if __name__ == "__main__":
-    (train_result, predict_result, predict_labels) = main()
+    train_result, predict_result, predict_labels = main()
     print("Brute Force kNN classification results:")
     print("Ground truth(observations #30-34):\n", predict_labels[30:35])
     print(

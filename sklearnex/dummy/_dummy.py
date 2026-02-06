@@ -19,13 +19,13 @@
 This can be used as a foundation for developing other estimators. Most
 comments guiding code development should be removed if reused unless
 pertinent to the derivative implementation."""
+
 import numpy as np
-import scipy.sparse as sp
 from sklearn.dummy import DummyRegressor as _sklearn_DummyRegressor
 from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
-from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from daal4py.sklearn._utils import daal_check_version, is_sparse, sklearn_check_version
 from onedal._device_offload import support_input_format
 from onedal.dummy import DummyEstimator as onedal_DummyEstimator
 
@@ -463,14 +463,14 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
         # of the oneDAL implementation to the aspects of the sklearn
         # estimator.  For example, oneDAL may not support sparse inputs
         # where sklearn might, that would need to be checked with
-        # scipy.sparse.issparse(X). In general the conditions will
-        # correspond to information in the metadata and/or the estimator
-        # parameters.
+        # 'is_sparse(X)' (which is broader that SciPy's 'sparse.issparse')'.
+        # In general the conditions will correspond to information in the
+        # metadata and/or the estimator parameters.
         #
         # In no circumstance should ``validate_data`` be called here or
         # in _onedal_gpu_supoorted to get the data into the proper form.
         if method_name == "fit":
-            (X, y, sample_weight) = data
+            X, y, sample_weight = data
             xp, _ = get_namespace(X, y)
 
             # the PatchingConditionsChain is validated using
@@ -480,7 +480,7 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
             patching_status.and_conditions(
                 [
                     (
-                        not sp.issparse(X),
+                        not is_sparse(X),
                         "sparse data is not supported",
                     ),
                     (
@@ -514,7 +514,7 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
                 [
                     (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained."),
                     (
-                        not sp.issparse(X),
+                        not is_sparse(X),
                         "sparse data is not supported",
                     ),
                 ]
@@ -532,13 +532,13 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
             f"sklearnex.test.{self.__class__.__name__}.{method_name}"
         )
         if method_name == "fit":
-            (X, y, sample_weight) = data
+            X, y, sample_weight = data
             xp, _ = get_namespace(X, y)
 
             patching_status.and_conditions(
                 [
                     (
-                        not sp.issparse(X),
+                        not is_sparse(X),
                         "sparse data is not supported",
                     ),
                     (
@@ -564,7 +564,7 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
                 [
                     (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained."),
                     (
-                        not sp.issparse(X),
+                        not is_sparse(X),
                         "sparse data is not supported",
                     ),
                 ]

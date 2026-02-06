@@ -124,7 +124,7 @@ class GBTDAALBaseModel:
         )
 
     def _convert_model(self, model):
-        (submodule_name, class_name) = (
+        submodule_name, class_name = (
             model.__class__.__module__,
             model.__class__.__name__,
         )

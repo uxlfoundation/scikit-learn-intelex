@@ -36,7 +36,6 @@ from sklearn.utils.validation import check_is_fitted
 
 from onedal.datatypes import from_table, to_table
 from onedal.tests.utils._dataframes_support import _convert_to_dataframe
-from onedal.utils._array_api import _get_sycl_namespace
 from sklearnex import get_patch_map, patch_sklearn, sklearn_is_patched, unpatch_sklearn
 from sklearnex.basic_statistics import BasicStatistics, IncrementalBasicStatistics
 from sklearnex.dummy import DummyRegressor
@@ -79,10 +78,10 @@ def _load_all_models(with_sklearnex=True, estimator=True):
 
         models = {}
         for patch_infos in get_patch_map().values():
-            candidate = getattr(patch_infos[0][0][0], patch_infos[0][0][1], None)
+            candidate = getattr(patch_infos[0], patch_infos[1], None)
             if candidate is not None and isclass(candidate) == estimator:
                 if not estimator or issubclass(candidate, BaseEstimator):
-                    models[patch_infos[0][0][1]] = candidate
+                    models[patch_infos[1]] = candidate
     finally:
         if with_sklearnex:
             unpatch_sklearn()

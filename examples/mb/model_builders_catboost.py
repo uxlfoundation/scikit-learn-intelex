@@ -78,7 +78,7 @@ def main(readcsv=pd_read_csv):
 
 
 if __name__ == "__main__":
-    (cb_prediction, cb_errors_count, daal_prediction, daal_errors_count, y_test) = main()
+    cb_prediction, cb_errors_count, daal_prediction, daal_errors_count, y_test = main()
     print("\nCatboost prediction results (first 10 rows):\n", cb_prediction[0:10])
     print("\ndaal4py prediction results (first 10 rows):\n", daal_prediction[0:10])
     print("\nGround truth (first 10 rows):\n", y_test[0:10])

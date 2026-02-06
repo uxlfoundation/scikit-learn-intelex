@@ -20,7 +20,7 @@ Algorithms not presented in the original scikit-learn are described here. All al
 available for both CPU and GPU (including distributed mode).
 
 .. Note::
-    If using :ref:`patching <patching>`, these classes can be imported either from module ``sklearn``
+    If using :doc:`patching <patching>`, these classes can be imported either from module ``sklearn``
     or from module ``sklearnex``.
 
 .. autoclass:: sklearnex.basic_statistics.BasicStatistics

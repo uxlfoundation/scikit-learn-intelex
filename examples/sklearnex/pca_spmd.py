@@ -15,7 +15,7 @@
 # ==============================================================================
 
 import dpctl
-import dpctl.tensor as dpt
+import dpnp
 import numpy as np
 from mpi4py import MPI
 
@@ -35,9 +35,9 @@ rank = comm.Get_rank()
 size = comm.Get_size()
 
 X = get_data(rank)
-dpt_X = dpt.asarray(X, usm_type="device", sycl_queue=q)
+dpnp_X = dpnp.asarray(X, usm_type="device", sycl_queue=q)
 
-pca = PCA(n_components=2).fit(dpt_X)
+pca = PCA(n_components=2).fit(dpnp_X)
 
 print(f"Singular values on rank {rank}:\n", pca.singular_values_)
 print(f"Explained variance Ratio on rank {rank}:\n", pca.explained_variance_ratio_)

@@ -24,7 +24,7 @@ import sklearn
 
 import onedal
 import sklearnex
-from onedal.tests.utils._device_selection import is_dpctl_device_available
+from onedal.tests.utils._device_selection import is_sycl_device_available
 
 
 def test_get_config_contains_sklearn_params():
@@ -152,7 +152,7 @@ def test_host_backend_target_offload(target):
 
 
 @pytest.mark.skipif(
-    not is_dpctl_device_available(["gpu"]), reason="Requires a gpu for fallback testing"
+    not is_sycl_device_available(["gpu"]), reason="Requires a gpu for fallback testing"
 )
 def test_fallback_to_host(caplog):
     # force a fallback to cpu with direct use of dispatch and PatchingConditionsChain
@@ -165,7 +165,7 @@ def test_fallback_to_host(caplog):
     # This is done due to the use of name mangling in _sycl_queue_manager which
     # doesn't operate in classes directly. This impacts sklearnex's ``dispatch``
     # routine, which expects class methods rather than instance methods.
-    is_fallback = lambda: QM.__global_queue == QM.__fallback_queue
+    is_fallback = lambda: QM.__globals.queue == QM.__globals.fallback_queue
 
     class _Estimator:
         def _onedal_gpu_supported(self, method_name, *data):

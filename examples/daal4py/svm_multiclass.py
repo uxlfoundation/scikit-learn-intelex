@@ -68,7 +68,7 @@ def main(readcsv=pd_read_csv):
 
 
 if __name__ == "__main__":
-    (pred_res, pred_labels) = main()
+    pred_res, pred_labels = main()
     print(
         "\nSVM classification results (first 20 observations):\n",
         pred_res.prediction[0:20],

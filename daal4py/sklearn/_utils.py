@@ -21,6 +21,7 @@ import warnings
 from typing import Any, Tuple
 
 import numpy as np
+import scipy.sparse as sp
 from numpy.lib.recfunctions import require_fields
 from sklearn import __version__ as sklearn_version
 
@@ -193,6 +194,10 @@ def check_tree_nodes(tree_nodes):
         return tree_nodes
     else:
         return convert_to_old_tree_nodes(tree_nodes)
+
+
+def is_sparse(x):
+    return sp.issparse(x) or (is_DataFrame(x) and hasattr(x, "sparse"))
 
 
 class PatchingConditionsChain:

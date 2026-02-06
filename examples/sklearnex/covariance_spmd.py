@@ -15,7 +15,7 @@
 # ==============================================================================
 
 import dpctl
-import dpctl.tensor as dpt
+import dpnp
 import numpy as np
 from mpi4py import MPI
 
@@ -35,8 +35,8 @@ rank = comm.Get_rank()
 size = comm.Get_size()
 
 X = get_data(rank)
-dpt_X = dpt.asarray(X, usm_type="device", sycl_queue=q)
+dpnp_X = dpnp.asarray(X, usm_type="device", sycl_queue=q)
 
-cov = EmpiricalCovariance().fit(dpt_X)
+cov = EmpiricalCovariance().fit(dpnp_X)
 
 print(f"Computed covariance values on rank {rank}:\n", cov.covariance_)

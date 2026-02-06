@@ -57,7 +57,7 @@ def main(readcsv=pd_read_csv):
 
 
 if __name__ == "__main__":
-    (train_result, predict_result, ptdata) = main()
+    train_result, predict_result, ptdata = main()
     print("\nGround truth (first 20 observations):\n", ptdata[:20])
     print(
         "Logitboost classification results: (first 20 observations):\n",
