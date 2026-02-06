@@ -30,9 +30,11 @@ from onedal._device_offload import _transfer_to_host
 from onedal.utils._array_api import _is_numpy_namespace
 from onedal.utils.validation import _check_array, _num_features, _num_samples
 
+from .._config import get_config
 from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
 from ..utils._array_api import get_namespace
+from ..utils.validation import validate_data
 
 
 class KNeighborsDispatchingBase(oneDALEstimator):
@@ -590,6 +592,13 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         check_is_fitted(self)
         if n_neighbors is None:
             n_neighbors = self.n_neighbors
+
+        # Validate X before calling onedal estimator directly
+        if X is not None and not get_config()["use_raw_input"]:
+            xp, _ = get_namespace(X)
+            X = validate_data(
+                self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
+            )
 
         # construct CSR matrix representation of the k-NN graph
         # requires moving data to host to construct the csr_matrix
