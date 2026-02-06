@@ -35,34 +35,34 @@ class BasicStatistics:
 
     Attributes
     ----------
-        min_ : ndarray of shape (n_features,)
+        min : ndarray of shape (n_features,)
             Minimum of each feature over all samples.
 
-        max_ : ndarray of shape (n_features,)
+        max : ndarray of shape (n_features,)
             Maximum of each feature over all samples.
 
-        sum_ : ndarray of shape (n_features,)
+        sum : ndarray of shape (n_features,)
             Sum of each feature over all samples.
 
-        mean_ : ndarray of shape (n_features,)
+        mean : ndarray of shape (n_features,)
             Mean of each feature over all samples.
 
-        variance_ : ndarray of shape (n_features,)
+        variance : ndarray of shape (n_features,)
             Variance of each feature over all samples.
 
-        variation_ : ndarray of shape (n_features,)
+        variation : ndarray of shape (n_features,)
             Variation of each feature over all samples.
 
-        sum_squares_ : ndarray of shape (n_features,)
+        sum_squares : ndarray of shape (n_features,)
             Sum of squares for each feature over all samples.
 
-        standard_deviation_ : ndarray of shape (n_features,)
+        standard_deviation : ndarray of shape (n_features,)
             Standard deviation of each feature over all samples.
 
-        sum_squares_centered_ : ndarray of shape (n_features,)
+        sum_squares_centered : ndarray of shape (n_features,)
             Centered sum of squares for each feature over all samples.
 
-        second_order_raw_moment_ : ndarray of shape (n_features,)
+        second_order_raw_moment : ndarray of shape (n_features,)
             Second order moment of each feature over all samples.
 
     Notes
