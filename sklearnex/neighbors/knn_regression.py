@@ -18,19 +18,17 @@ from sklearn.metrics import r2_score
 from sklearn.neighbors._regression import (
     KNeighborsRegressor as _sklearn_KNeighborsRegressor,
 )
-from sklearn.utils.validation import assert_all_finite, check_is_fitted
+from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.utils.validation import get_requires_y_tag
-from onedal._device_offload import _transfer_to_host
 from onedal.neighbors import KNeighborsRegressor as onedal_KNeighborsRegressor
-from onedal.utils import _sycl_queue_manager as QM
 
 from .._config import get_config
 from .._device_offload import dispatch, wrap_output_data
 from ..utils._array_api import enable_array_api, get_namespace
-from ..utils.validation import check_feature_names, validate_data
+from ..utils.validation import validate_data
 from .common import KNeighborsDispatchingBase
 
 
@@ -229,12 +227,6 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         array-like
             Predicted regression values.
         """
-        if X is not None and not get_config()["use_raw_input"]:
-            xp, _ = get_namespace(X)
-            X = validate_data(
-                self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
-            )
-
         neigh_dist, neigh_ind = self._onedal_estimator.kneighbors(X)
         return self._compute_weighted_prediction(
             neigh_dist, neigh_ind, self.weights, self._y
