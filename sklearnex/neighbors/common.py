@@ -30,6 +30,7 @@ from onedal._device_offload import _transfer_to_host
 from onedal.utils._array_api import _is_numpy_namespace
 from onedal.utils.validation import _check_array, _num_features, _num_samples
 
+from .._config import get_config
 from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
 from ..utils._array_api import get_namespace
@@ -593,7 +594,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             n_neighbors = self.n_neighbors
 
         # Validate X before calling onedal estimator
-        if X is not None:
+        if X is not None and not get_config()["use_raw_input"]:
             xp, _ = get_namespace(X)
             X = validate_data(
                 self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
