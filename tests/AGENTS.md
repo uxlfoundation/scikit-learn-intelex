@@ -81,7 +81,7 @@ mpirun -n 4 python -m pytest --pyargs sklearnex.spmd --with-mpi
 mpirun -n 4 python tests/helper_mpi_tests.py pytest --verbose -s tests/test_daal4py_spmd_examples.py
 ```
 
-**Validates:** DBSCAN, K-Means, PCA, Linear Regression, Covariance, Random Forest (distributed algorithms)
+**Validates:** DBSCAN, K-Means, PCA, Linear Regression, Covariance, Random Forest, KNN, Logistic Regression, and Basic Statistics (distributed algorithms)
 
 ## scikit-learn Compatibility Testing
 
