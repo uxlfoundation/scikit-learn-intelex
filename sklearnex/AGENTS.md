@@ -89,7 +89,6 @@ oneDAL GPU → oneDAL CPU → sklearn → Error
 ### Common Fallback Triggers
 - Sparse data (most algorithms require dense)
 - Unsupported parameters
-- GPU memory limits
 - Unsupported data types
 
 ## Key Implementation Patterns
