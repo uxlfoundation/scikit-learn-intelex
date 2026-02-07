@@ -123,13 +123,16 @@ Most sklearn tests pass with sklearnex acceleration. A subset is deselected due 
 **Impact**: Deselected tests represent a small subset of sklearn's test suite. The vast majority of algorithms work identically to sklearn. Check `deselected_tests.yaml` for specifics and see inline comments for each deselection reason.
 
 ### Running Compatibility Tests
+Tests are configured in .circleci/
 ```bash
-# Full sklearn compatibility test
-pytest --verbose sklearnex
+# Standard run
+python .circleci/run_xpu_tests.py -q -d cpu --reduced --deselected_yml_file deselected_tests.yaml
 
-# Tests respect deselected_tests.yaml automatically
-# To see what's deselected: cat deselected_tests.yaml
-```
+# Run on GPU by specifying device and adding gpu deselections
+python .circleci/run_xpu_tests.py -q -d gpu --reduced --gpu --deselected_yml_file deselected_tests.yaml
+
+# Run tests on stock scikit-learn to compare results
+python .circleci/run_xpu_tests.py -q --no-intel-optimized -d cpu --reduced --deselected_yml_file deselected_tests.yaml
 
 ## Key Testing Patterns
 - Configure timeouts based on algorithm complexity (default 170s, complex up to 480s)
