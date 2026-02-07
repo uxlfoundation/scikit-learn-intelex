@@ -69,8 +69,7 @@ Algorithms implement `_onedal_cpu_supported()` and `_onedal_gpu_supported()` to 
 - **SVM**: SVC, SVR, NuSVC, NuSVR
 
 ## GPU Support Status
-- **Full GPU**: DBSCAN, K-Means, PCA, IncrementalPCA, KNeighbors, Ridge
-- **Limited GPU**: LogisticRegression, SVM
+doc/sources/algorithms.rst details level of support of each algo on CPU, GPU, and multi-GPU spmd configurations
 
 ## Distributed Computing (SPMD)
 Located in `sklearnex/spmd/`. Same API as standard sklearnex, distributed across MPI nodes. Import from `sklearnex.spmd.*` instead of `sklearnex.*`.
