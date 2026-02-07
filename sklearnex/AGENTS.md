@@ -48,7 +48,7 @@ with config_context(target_offload="gpu"):
 - `allow_sklearn_after_onedal`: `bool` (default `True`) - Enable oneDAL → sklearn fallback
 
 **Advanced:**
-- `array_api_dispatch`: `bool` - Enable Array API namespace dispatch
+- `array_api_dispatch`: `bool` - Enable Array API namespace dispatch, should be set to `True` when running GPU algorithms to run data validation without host transfers
 
 ## Algorithm Support
 
