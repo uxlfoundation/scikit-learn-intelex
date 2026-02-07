@@ -74,8 +74,8 @@ python setup.py develop
 
 **Run distributed tests:**
 ```bash
-# sklearnex SPMD tests
-mpirun -n 4 python tests/helper_mpi_tests.py pytest -k spmd --with-mpi --verbose sklearnex
+# sklearnex SPMD tests (requires additional pytest-mpi dependency, plus dpctl and dpnp as sklearnex spmd are on GPU)
+mpirun -n 4 python -m pytest --pyargs sklearnex.spmd --with-mpi
 
 # daal4py SPMD examples
 mpirun -n 4 python tests/helper_mpi_tests.py pytest --verbose -s tests/test_daal4py_spmd_examples.py
