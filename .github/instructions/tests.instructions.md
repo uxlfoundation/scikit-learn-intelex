@@ -17,9 +17,9 @@ pytest --verbose onedal
 ```
 
 ## Distributed (SPMD) Testing
-Requirements: MPI installation (Intel MPI or MPICH), mpi4py, NO_DIST!=1
+Requirements: MPI installation (Intel MPI or MPICH), mpi4py, NO_DIST!=1. For GPU spmd tests in sklearnex/spmd pytest-mpi is also required.
 ```bash
-mpirun -n 4 python tests/helper_mpi_tests.py pytest -k spmd --with-mpi --verbose --pyargs sklearnex
+mpirun -n 4 python -m pytest --pyargs sklearnex.spmd --with-mpi
 mpirun -n 4 python tests/helper_mpi_tests.py pytest --verbose -s tests/test_daal4py_spmd_examples.py
 ```
 
