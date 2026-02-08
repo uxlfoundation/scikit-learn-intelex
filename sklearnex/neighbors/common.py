@@ -593,34 +593,18 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         if n_neighbors is None:
             n_neighbors = self.n_neighbors
 
-        # Transfer to host if needed (for dpctl/dpnp arrays), similar to dispatch()
-        if X is not None:
-            _, (X,) = _transfer_to_host(X)
-
-        # Validate X before calling onedal estimator
-        if X is not None and not get_config()["use_raw_input"]:
-            xp, _ = get_namespace(X)
-            X = validate_data(
-                self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
-            )
-
         # construct CSR matrix representation of the k-NN graph
-        # requires moving data to host to construct the csr_matrix
+        # Use self.kneighbors which handles dispatch, device offload, and validation
         if mode == "connectivity":
-            A_ind = self._onedal_estimator.kneighbors(
-                X, n_neighbors, return_distance=False
-            )
-            # Transfer to host - after this, arrays are numpy
+            A_ind = self.kneighbors(X, n_neighbors, return_distance=False)
+            # Transfer results to host for numpy operations
             _, (A_ind,) = _transfer_to_host(A_ind)
             n_queries = A_ind.shape[0]
-            # Use numpy after transfer to host
             A_data = np.ones(n_queries * n_neighbors)
 
         elif mode == "distance":
-            A_data, A_ind = self._onedal_estimator.kneighbors(
-                X, n_neighbors, return_distance=True
-            )
-            # Transfer to host - after this, arrays are numpy
+            A_data, A_ind = self.kneighbors(X, n_neighbors, return_distance=True)
+            # Transfer results to host for numpy operations
             _, (A_data, A_ind) = _transfer_to_host(A_data, A_ind)
             # Use numpy after transfer to host
             A_data = np.reshape(A_data, (-1,))
