@@ -29,7 +29,7 @@ from sklearnex.neighbors.common import KNeighborsDispatchingBase
 from sklearnex.neighbors.knn_unsupervised import NearestNeighbors
 
 from ..utils._array_api import get_namespace
-from ..utils.validation import check_feature_names
+from ..utils.validation import check_feature_names, validate_data
 
 
 @control_n_jobs(decorated_methods=["fit", "kneighbors", "_kneighbors"])
@@ -56,6 +56,7 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
         if sklearn_check_version("1.2"):
             self._validate_params()
 
+        # Let _onedal_knn_fit (NearestNeighbors._onedal_fit) handle validation
         self._onedal_knn_fit(X, y, queue=queue)
 
         if self.contamination != "auto":
@@ -74,7 +75,6 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
                 % (self.n_neighbors, n_samples)
             )
         self.n_neighbors_ = max(1, min(self.n_neighbors, n_samples - 1))
-
         (
             self._distances_fit_X_,
             _neighbors_indices_fit_X_,
@@ -108,11 +108,10 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
                     "Duplicate values are leading to incorrect results. "
                     "Increase the number of neighbors for more accurate results."
                 )
-
         return self
 
     def fit(self, X, y=None):
-        result = dispatch(
+        return dispatch(
             self,
             "fit",
             {
@@ -122,7 +121,6 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
             X,
             None,
         )
-        return result
 
     def _predict(self, X=None):
         check_is_fitted(self)
@@ -135,7 +133,6 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
         else:
             is_inlier = np.ones(self.n_samples_fit_, dtype=int)
             is_inlier[self.negative_outlier_factor_ < self.offset_] = -1
-
         return is_inlier
 
     # This had to be done because predict loses the queue when no
@@ -149,9 +146,13 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
         return self.fit(X)._predict()
 
     def _kneighbors(self, X=None, n_neighbors=None, return_distance=True):
+        if n_neighbors is not None:
+            self._validate_n_neighbors(n_neighbors)
+
         check_is_fitted(self)
-        if X is not None:
-            check_feature_names(self, X, reset=False)
+
+        self._kneighbors_validation(X, n_neighbors)
+
         return dispatch(
             self,
             "kneighbors",
@@ -171,6 +172,16 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
     @wrap_output_data
     def score_samples(self, X):
         check_is_fitted(self)
+
+        # Validate and convert X
+        xp, _ = get_namespace(X)
+        X = validate_data(
+            self,
+            X,
+            dtype=[xp.float64, xp.float32],
+            accept_sparse="csr",
+            reset=False,
+        )
 
         distances_X, neighbors_indices_X = self._kneighbors(
             X, n_neighbors=self.n_neighbors_
