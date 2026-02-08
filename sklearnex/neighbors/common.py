@@ -593,6 +593,10 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         if n_neighbors is None:
             n_neighbors = self.n_neighbors
 
+        # Transfer to host if needed (for dpctl/dpnp arrays), similar to dispatch()
+        if X is not None:
+            _, (X,) = _transfer_to_host(X)
+
         # Validate X before calling onedal estimator
         if X is not None and not get_config()["use_raw_input"]:
             xp, _ = get_namespace(X)
