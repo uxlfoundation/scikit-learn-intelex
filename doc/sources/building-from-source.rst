@@ -218,6 +218,14 @@ To create and verify the conda package for this library, execute the following c
 
     conda build .
 
+.. hint::
+
+    To clear build environments afterwards, one can issue the following command from the conda environment that executed ``conda build``:
+
+    .. code-block:: bash
+
+        conda build purge
+
 Build-time Options
 ------------------
 
