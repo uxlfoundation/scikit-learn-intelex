@@ -30,7 +30,7 @@ rsync -a --exclude='daal4py_data_science.ipynb' examples/notebooks/*.ipynb doc/$
 
 # build the documentation
 cd doc
-export SPHINXOPTS="-W" # used by sphinx-build
+export SPHINXOPTS="-W -vvv" # used by sphinx-build
 export O=${SPHINXOPTS} # makefile overrides SPHINXOPTS
 
 # Build comes in two variants:
