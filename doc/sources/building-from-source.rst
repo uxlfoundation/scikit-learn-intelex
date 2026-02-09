@@ -184,17 +184,33 @@ Requirements
 The following are required in order to use ``conda-build``:
 
 - Any ``conda`` distribution (`Miniforge <https://github.com/conda-forge/miniforge>`__ is recommended).
-- ``conda-build`` and ``conda-verify`` packages installed in a conda environment:
+- ``conda-build`` package installed in a conda environment:
 
     .. code-block:: bash
 
-        conda install -c conda-forge conda-build conda-verify
+        conda install -c conda-forge conda-build
 
 - On Windows*, an **external** installation of the MSVC compiler **version 2022** is required by default. Other versions can be specified in `conda-recipe/conda_build_config.yaml <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/conda-recipe/conda_build_config.yaml>`__ if needed.
 - Optionally, for DPC++ (GPU) support on Windows*, environment variable ``%DPCPPROOT%`` must be set to point to the DPC++ compiler path.
 
 Instructions
 ************
+
+Just like for installs using ``python setup.py``, for conda builds, it is necessary to set environment variables such as ``$DALROOT`` beforehand. If using a conda install of the |onedal|, this can be accomplished by installing packages ``dal`` and ``dal-devel``, and then setting the environment variables to the root of the conda prefix:
+
+.. code-block:: bash
+
+    export DALROOT="$CONDA_PREFIX"
+
+Note however that, unlike the ``python setup.py`` script, MPI backend in the conda recipe is managed by conda and will be automatically set to IMPI.
+
+.. hint::
+
+    If there was any previous from-source installation or build from a different environment, one might need to delete the ``build/`` folder and the generated ``.so`` / ``.pyd`` modules:
+
+    .. code-block:: bash
+
+        rm -Rf build daal4py/*.so onedal/*.so
 
 To create and verify the conda package for this library, execute the following command from the root of the repository **after installing conda-build**:
 
