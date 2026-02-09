@@ -251,6 +251,16 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         self._validate_n_classes()
 
     def _onedal_predict(self, X, queue=None):
+        if X is not None and not get_config()["use_raw_input"]:
+            xp, _ = get_namespace(X)
+            X = validate_data(
+                self,
+                X,
+                dtype=[xp.float64, xp.float32],
+                accept_sparse="csr",
+                reset=False,
+            )
+
         params = self._onedal_estimator._get_onedal_params(X)
         params["result_option"] = "responses"
         result = self._onedal_estimator._onedal_predict(
