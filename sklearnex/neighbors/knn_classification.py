@@ -25,6 +25,7 @@ from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.utils.validation import get_requires_y_tag
 from onedal._device_offload import _transfer_to_host
+from onedal.datatypes import from_table
 from onedal.neighbors import KNeighborsClassifier as onedal_KNeighborsClassifier
 from onedal.utils.validation import _check_classification_targets
 
@@ -249,44 +250,15 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         # Validate we have at least 2 classes
         self._validate_n_classes()
 
-    def _predict_skl_classification(self, X):
-        """SKL prediction path for classification - calls kneighbors, computes predictions.
-
-        This method handles X=None (LOOCV) properly by calling self.kneighbors which
-        has the query_is_train logic.
-
-        Parameters
-        ----------
-        X : array-like or None
-            Query samples (or None for LOOCV).
-
-        Returns
-        -------
-        array-like
-            Predicted class labels.
-        """
-        neigh_dist, neigh_ind = self._onedal_estimator.kneighbors(X)
-        proba = self._compute_class_probabilities(
-            neigh_dist, neigh_ind, self.weights, self._y, self.classes_, self.outputs_2d_
-        )
-        xp, _ = get_namespace(proba)
-
-        if not self.outputs_2d_:
-            return self.classes_[xp.argmax(proba, axis=1)]
-        else:
-            result = [
-                classes_k[xp.argmax(proba_k, axis=1)]
-                for classes_k, proba_k in zip(self.classes_, proba.T)
-            ]
-            return xp.asarray(result).T
-
     def _onedal_predict(self, X, queue=None):
-        if X is not None and not get_config()["use_raw_input"]:
-            xp, _ = get_namespace(X)
-            X = validate_data(
-                self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
-            )
-        return self._predict_skl_classification(X)
+        params = self._onedal_estimator._get_onedal_params(X)
+        params["result_option"] = "responses"
+        result = self._onedal_estimator._onedal_predict(
+            self._onedal_estimator._onedal_model, X, params
+        )
+        xp, _ = get_namespace(X)
+        responses = from_table(result.responses, like=X)
+        return self.classes_.take(xp.asarray(responses.ravel(), dtype=xp.int64))
 
     def _onedal_predict_proba(self, X, queue=None):
         if X is not None and not get_config()["use_raw_input"]:
