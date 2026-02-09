@@ -117,8 +117,6 @@ if daal_check_version((2024, "P", 700)):
     )
     @pytest.mark.allow_sklearn_fallback
     def test_csr(queue, dtype, dims):
-        if (not queue or queue.sycl_device.is_cpu) and not check_preview_is_enabled():
-            pytest.skip("Functionality in preview")
         from sklearnex.linear_model import LogisticRegression
 
         n, p, density = dims
