@@ -187,7 +187,7 @@ def register_hyperparameters(hyperparameters_map):
     return decorator
 
 
-def _add_inc_serialization_note(class_docstrings: str, plural: bool = False) -> str:
+def _add_inc_serialization_note(class_docstrings: str) -> str:
     """Adds a small note note about serialization for extension estimators that are incremental.
     The class docstrings should leave a placeholder '%incremental_serialization_note%' inside
     their docstrings, which will be replaced by this note.
@@ -195,8 +195,8 @@ def _add_inc_serialization_note(class_docstrings: str, plural: bool = False) -> 
     # In python versions >=3.13, leading whitespace in docstrings defined through
     # static strings (but **not through other ways**) is automatically removed
     # from the final docstrings, while in earlier versions is kept.
-    inc_serialization_note = f"""Note{'s' if plural else ''}
-----{'-' if plural else ''}
+    inc_serialization_note = """Note
+----
 Serializing instances of this class will trigger a forced finalization of calculations
 when the inputs are in a sycl queue or when using GPUs. Since (internal method)
 finalize_fit can't be dispatched without directly provided queue and the dispatching

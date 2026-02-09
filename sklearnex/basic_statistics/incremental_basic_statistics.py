@@ -34,6 +34,7 @@ if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import Interval, StrOptions
 
 import numbers
+import warnings
 
 
 @enable_array_api
@@ -100,11 +101,16 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
         n_features_in_ : int
             Number of features seen during :meth:`fit` or  :meth:`partial_fit`.
 
-    %incremental_serialization_note%
-
+    Notes
+    -----
     Attribute exists only if corresponding result option has been provided.
 
+    Names of attributes without the trailing underscore are supported
+    currently but deprecated in 2025.1 and will be removed in 2026.0.
+
     Sparse data formats are not supported. Input dtype must be ``float32`` or ``float64``.
+
+    %incremental_serialization_note%
 
     Examples
     --------
@@ -125,7 +131,7 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
     np.array([3., 4.])
     """
 
-    __doc__ = _add_inc_serialization_note(__doc__, plural=True)
+    __doc__ = _add_inc_serialization_note(__doc__)
 
     _onedal_incremental_basic_statistics = staticmethod(onedal_IncrementalBasicStatistics)
 
@@ -246,8 +252,18 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
         if is_statistic_attr:
             if self._need_to_finalize:
                 self._onedal_finalize_fit()
+            if sattr == attr:
+                warnings.warn(
+                    "Result attributes without a trailing underscore were deprecated in version 2025.1 and will be removed in 2026.0"
+                )
+                attr += "_"
             return getattr(self._onedal_estimator, attr)
-        return self.__getattribute__(attr)
+        if attr in self.__dict__:
+            return self.__dict__[attr]
+
+        raise AttributeError(
+            f"'{self.__class__.__name__}' object has no attribute '{attr}'"
+        )
 
     def partial_fit(self, X, sample_weight=None, check_input=True):
         """Incremental fit with X. All of X is processed as a single batch.
