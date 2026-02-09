@@ -10,7 +10,7 @@ charset-normalizer==3.4.4
 click==8.3.1
 decorator==5.2.1
 defusedxml==0.7.1
-docutils~=0.22.4
+docutils~=0.21.2
 entrypoints==0.4
 idna==3.11
 imagesize==1.4.1
@@ -26,7 +26,6 @@ jupyter-core==5.9.1
 jupyterlab-pygments==0.3.0
 MarkupSafe==3.0.3
 mistune==3.2.0
-myst-parser~=4.0
 nbclient==0.10.4
 nbconvert==7.17.0
 nbformat==5.10.4
@@ -52,7 +51,7 @@ six==1.17.0
 scikit-learn==1.8.0
 snowballstemmer==3.0.1
 soupsieve==2.8.3
-Sphinx==9.1.0
+Sphinx==8.2.3
 sphinx-design==0.7.0
 sphinx_copybutton==0.5.2
 sphinx-notfound-page==1.1.0
