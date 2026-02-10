@@ -10,7 +10,7 @@ scikit-learn==1.7.2 ; python_version <= '3.10'
 scikit-learn==1.8.0 ; python_version >= '3.11'
 pandas==2.1.3 ; python_version <= '3.10'
 pandas==3.0.0 ; python_version >= '3.11'
-xgboost==3.1.3
+xgboost==3.2.0
 lightgbm==4.6.0
 catboost==1.2.8 ; python_version < '3.14' # TODO: Remove condition when catboost releases py3.14 package
 shap==0.49.1 ; python_version <= '3.10'
