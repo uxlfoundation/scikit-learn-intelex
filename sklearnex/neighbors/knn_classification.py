@@ -231,11 +231,16 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
 
         # Process classes using array API unique_inverse
         self.classes_ = []
-        self._y = xp.empty(y.shape, dtype=int)
+        self._y = xp.empty(y.shape, dtype=xp.int64)
         for k in range(self._y.shape[1]):
             result = xp.unique_inverse(y[:, k])
+            n_classes = result.values.shape[0]
+            if n_classes > xp.iinfo(xp.int64).max:
+                raise ValueError(
+                    f"Number of classes ({n_classes}) exceeds int64 dtype limit."
+                )
             self.classes_.append(result.values)
-            self._y[:, k] = xp.asarray(result.inverse_indices, dtype=int)
+            self._y[:, k] = xp.asarray(result.inverse_indices, dtype=xp.int64)
 
         if not self.outputs_2d_:
             self.classes_ = self.classes_[0]
