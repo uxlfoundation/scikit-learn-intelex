@@ -254,10 +254,17 @@ def test_incremental_basic_statistics_single_option_partial_fit_spmd_gold(
 @pytest.mark.parametrize("n_samples", [100, 10000])
 @pytest.mark.parametrize("n_features", [10, 100])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-@pytest.mark.parametrize("use_raw_input", [True, False])
+@pytest.mark.parametrize(
+    "use_raw_input,array_api_dispatch",
+    [
+        (True, False),
+        (False, True),
+        (False, False),
+    ],
+)
 @pytest.mark.mpi
 def test_incremental_basic_statistics_partial_fit_spmd_synthetic(
-    dataframe, queue, num_blocks, weighted, n_samples, n_features, dtype, use_raw_input
+    dataframe, queue, num_blocks, weighted, n_samples, n_features, dtype, use_raw_input, array_api_dispatch
 ):
     # Import spmd and batch algo
     from sklearnex.basic_statistics import IncrementalBasicStatistics
@@ -297,8 +304,10 @@ def test_incremental_basic_statistics_partial_fit_spmd_synthetic(
             dpt_weights = _convert_to_dataframe(
                 split_weights[i], sycl_queue=queue, target_df=dataframe
             )
-        # Configure raw input status for spmd estimator
-        with config_context(use_raw_input=use_raw_input):
+        # Configure raw input status and array_api_dispatch for spmd estimator
+        with config_context(
+            use_raw_input=use_raw_input, array_api_dispatch=array_api_dispatch
+        ):
             incbs_spmd.partial_fit(
                 local_dpt_data, sample_weight=local_dpt_weights if weighted else None
             )

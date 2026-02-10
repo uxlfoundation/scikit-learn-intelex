@@ -269,7 +269,14 @@ def test_incremental_linear_regression_fit_spmd_random(
 @pytest.mark.parametrize("num_features", [5, 10])
 @pytest.mark.parametrize("macro_block", [None, 1024])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-@pytest.mark.parametrize("use_raw_input", [True, False])
+@pytest.mark.parametrize(
+    "use_raw_input,array_api_dispatch",
+    [
+        (True, False),
+        (False, True),
+        (False, False),
+    ],
+)
 @pytest.mark.mpi
 def test_incremental_linear_regression_partial_fit_spmd_random(
     dataframe,
@@ -281,6 +288,7 @@ def test_incremental_linear_regression_partial_fit_spmd_random(
     macro_block,
     dtype,
     use_raw_input,
+    array_api_dispatch,
 ):
     # Import spmd and non-SPMD algo
     from sklearnex.linear_model import IncrementalLinearRegression
@@ -327,8 +335,10 @@ def test_incremental_linear_regression_partial_fit_spmd_random(
         dpt_X = _convert_to_dataframe(X_split[i], sycl_queue=queue, target_df=dataframe)
         dpt_y = _convert_to_dataframe(y_split[i], sycl_queue=queue, target_df=dataframe)
 
-        # Configure raw input status for spmd estimator
-        with config_context(use_raw_input=use_raw_input):
+        # Configure raw input status and array_api_dispatch for spmd estimator
+        with config_context(
+            use_raw_input=use_raw_input, array_api_dispatch=array_api_dispatch
+        ):
             inclin_spmd.partial_fit(local_dpt_X, local_dpt_y)
         inclin.partial_fit(dpt_X, dpt_y)
 
@@ -338,7 +348,10 @@ def test_incremental_linear_regression_partial_fit_spmd_random(
             _as_numpy(inclin.intercept_), _as_numpy(inclin_spmd.intercept_), atol=tol
         )
 
-    with config_context(use_raw_input=use_raw_input):
+    # Configure raw input status and array_api_dispatch for spmd estimator
+    with config_context(
+        use_raw_input=use_raw_input, array_api_dispatch=array_api_dispatch
+    ):
         y_pred_spmd = inclin_spmd.predict(dpt_X_test)
     y_pred = inclin.predict(dpt_X_test)
 

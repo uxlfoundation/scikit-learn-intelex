@@ -86,10 +86,17 @@ def test_covariance_spmd_gold(dataframe, queue):
     get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-@pytest.mark.parametrize("use_raw_input", [True, False])
+@pytest.mark.parametrize(
+    "use_raw_input,array_api_dispatch",
+    [
+        (True, False),
+        (False, True),
+        (False, False),
+    ],
+)
 @pytest.mark.mpi
 def test_covariance_spmd_synthetic(
-    n_samples, n_features, assume_centered, dataframe, queue, dtype, use_raw_input
+    n_samples, n_features, assume_centered, dataframe, queue, dtype, use_raw_input, array_api_dispatch
 ):
     # Import spmd and batch algo
     from sklearnex.preview.covariance import (
@@ -105,7 +112,10 @@ def test_covariance_spmd_synthetic(
     )
 
     # Ensure results of batch algo match spmd
-    with config_context(use_raw_input=use_raw_input):
+    # Configure raw input status and array_api_dispatch for spmd estimator
+    with config_context(
+        use_raw_input=use_raw_input, array_api_dispatch=array_api_dispatch
+    ):
         spmd_result = EmpiricalCovariance_SPMD(assume_centered=assume_centered).fit(
             local_dpt_data
         )
