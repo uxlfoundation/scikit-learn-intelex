@@ -15,6 +15,7 @@
 # ==============================================================================
 
 import numbers
+import os
 
 import numpy as np
 import scipy.optimize as optimize
@@ -752,9 +753,11 @@ def logistic_regression_path_dispatcher(
     _dal_ready = _patching_status.and_conditions(
         [
             (
-                solver in ["lbfgs", "newton-cg"],
+                solver
+                in ["lbfgs"]
+                + (["newton-cg"] if "SKLEARNEX_PREVIEW" in os.environ else []),
                 f"'{solver}' solver is not supported. "
-                "Only 'lbfgs' and 'newton-cg' solvers are supported.",
+                "Only 'lbfgs' and 'newton-cg' solvers are supported. 'newton-cg' is only supported in preview mode.",
             ),
             (not is_sparse(X), "X is sparse. Sparse input is not supported."),
             (
