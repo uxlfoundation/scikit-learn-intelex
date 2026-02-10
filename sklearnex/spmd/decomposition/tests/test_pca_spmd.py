@@ -103,7 +103,15 @@ def test_pca_spmd_gold(dataframe, queue):
 )
 @pytest.mark.mpi
 def test_pca_spmd_synthetic(
-    n_samples, n_features, n_components, whiten, dataframe, queue, dtype, use_raw_input, array_api_dispatch
+    n_samples,
+    n_features,
+    n_components,
+    whiten,
+    dataframe,
+    queue,
+    dtype,
+    use_raw_input,
+    array_api_dispatch,
 ):
     # TODO: Resolve issues with batch fallback and lack of support for n_rows_rank < n_cols
     if n_components == "mle" or n_components == 3:

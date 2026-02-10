@@ -96,7 +96,14 @@ def test_covariance_spmd_gold(dataframe, queue):
 )
 @pytest.mark.mpi
 def test_covariance_spmd_synthetic(
-    n_samples, n_features, assume_centered, dataframe, queue, dtype, use_raw_input, array_api_dispatch
+    n_samples,
+    n_features,
+    assume_centered,
+    dataframe,
+    queue,
+    dtype,
+    use_raw_input,
+    array_api_dispatch,
 ):
     # Import spmd and batch algo
     from sklearnex.preview.covariance import (

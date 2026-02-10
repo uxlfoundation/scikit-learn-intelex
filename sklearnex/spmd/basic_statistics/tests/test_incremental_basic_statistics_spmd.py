@@ -264,7 +264,15 @@ def test_incremental_basic_statistics_single_option_partial_fit_spmd_gold(
 )
 @pytest.mark.mpi
 def test_incremental_basic_statistics_partial_fit_spmd_synthetic(
-    dataframe, queue, num_blocks, weighted, n_samples, n_features, dtype, use_raw_input, array_api_dispatch
+    dataframe,
+    queue,
+    num_blocks,
+    weighted,
+    n_samples,
+    n_features,
+    dtype,
+    use_raw_input,
+    array_api_dispatch,
 ):
     # Import spmd and batch algo
     from sklearnex.basic_statistics import IncrementalBasicStatistics
