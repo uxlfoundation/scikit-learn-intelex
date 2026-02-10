@@ -468,10 +468,12 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             if len(data) > 1:
                 # Array API support: get namespace from y
                 y_input = data[1]
-                xp, _ = get_namespace(y_input)
+                xp, is_array_api = get_namespace(y_input)
                 y = xp.asarray(y_input)
                 if is_classifier:
-                    class_count = len(xp.unique_values(y))
+                    class_count = (
+                        len(xp.unique_values(y)) if is_array_api else len(xp.unique(y))
+                    )
             # Only access _onedal_estimator if it's an instance attribute (not a class-level staticmethod)
             if "_onedal_estimator" in self.__dict__:
                 y = self._onedal_estimator._y

@@ -210,7 +210,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             Used when use_raw_input=True (raw array API arrays like dpctl.usm_ndarray).
         """
         # Array API support: get namespace from y
-        xp, _ = get_namespace(y)
+        xp, is_array_api = get_namespace(y)
 
         # y should already be numpy array from validate_data
         y = xp.asarray(y)
@@ -229,18 +229,23 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         if not skip_validation:
             _check_classification_targets(y)
 
-        # Process classes using array API unique_inverse
+        # Process classes using unique_inverse (Array API) or unique (numpy)
         self.classes_ = []
         self._y = xp.empty(y.shape, dtype=xp.int64)
         for k in range(self._y.shape[1]):
-            result = xp.unique_inverse(y[:, k])
-            n_classes = result.values.shape[0]
+            if is_array_api:
+                result = xp.unique_inverse(y[:, k])
+                classes_k = result.values
+                inverse_k = result.inverse_indices
+            else:
+                classes_k, inverse_k = xp.unique(y[:, k], return_inverse=True)
+            n_classes = classes_k.shape[0]
             if n_classes > xp.iinfo(xp.int64).max:
                 raise ValueError(
                     f"Number of classes ({n_classes}) exceeds int64 dtype limit."
                 )
-            self.classes_.append(result.values)
-            self._y[:, k] = xp.asarray(result.inverse_indices, dtype=xp.int64)
+            self.classes_.append(classes_k)
+            self._y[:, k] = xp.asarray(inverse_k, dtype=xp.int64)
 
         if not self.outputs_2d_:
             self.classes_ = self.classes_[0]
