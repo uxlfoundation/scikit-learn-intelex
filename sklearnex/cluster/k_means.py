@@ -41,9 +41,10 @@ if daal_check_version((2023, "P", 200)):
     from .._device_offload import dispatch, wrap_output_data
     from .._utils import PatchingConditionsChain
     from ..base import oneDALEstimator
-    from ..utils._array_api import get_namespace
+    from ..utils._array_api import enable_array_api, get_namespace
     from ..utils.validation import validate_data
 
+    @enable_array_api
     @control_n_jobs(decorated_methods=["fit", "fit_transform", "predict", "score"])
     class KMeans(oneDALEstimator, _sklearn_KMeans):
         __doc__ = _sklearn_KMeans.__doc__
@@ -272,14 +273,19 @@ if daal_check_version((2023, "P", 200)):
             ):
                 return True
             else:
-                sample_weight = _check_sample_weight(
-                    sample_weight,
-                    X,
-                    dtype=X.dtype if hasattr(X, "dtype") else None,
-                )
-                if np.all(sample_weight == sample_weight[0]):
-                    return True
-                else:
+                try:
+                    sample_weight = _check_sample_weight(
+                        sample_weight,
+                        X,
+                        dtype=X.dtype if hasattr(X, "dtype") else None,
+                    )
+                    if np.all(sample_weight == sample_weight[0]):
+                        return True
+                    else:
+                        return False
+                except TypeError:
+                    # GPU arrays (dpctl/dpnp) cannot be implicitly converted
+                    # to numpy; reject non-uniform weights for safety.
                     return False
 
         def _onedal_predict_supported(self, method_name, *data):
