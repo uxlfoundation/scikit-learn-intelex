@@ -14,7 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 
-import numpy as np
 from sklearn.metrics import accuracy_score
 from sklearn.neighbors._classification import (
     KNeighborsClassifier as _sklearn_KNeighborsClassifier,
@@ -24,7 +23,6 @@ from sklearn.utils.validation import check_is_fitted
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.utils.validation import get_requires_y_tag
-from onedal._device_offload import _transfer_to_host
 from onedal.datatypes import from_table
 from onedal.neighbors import KNeighborsClassifier as onedal_KNeighborsClassifier
 from onedal.utils.validation import _check_classification_targets
@@ -231,17 +229,13 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         if not skip_validation:
             _check_classification_targets(y)
 
-        # Process classes - note: np.unique is used for class extraction
-        # This is acceptable as classes are typically numpy arrays in sklearn
+        # Process classes using array API unique_inverse
         self.classes_ = []
         self._y = xp.empty(y.shape, dtype=int)
         for k in range(self._y.shape[1]):
-            # Use numpy unique for class extraction (standard sklearn pattern)
-            # Transfer to host first to ensure proper numpy array conversion
-            y_k_host = np.asarray(_transfer_to_host(y[:, k])[1][0])
-            classes, indices = np.unique(y_k_host, return_inverse=True)
-            self.classes_.append(classes)
-            self._y[:, k] = xp.asarray(indices, dtype=int)
+            result = xp.unique_inverse(y[:, k])
+            self.classes_.append(result.values)
+            self._y[:, k] = xp.asarray(result.inverse_indices, dtype=int)
 
         if not self.outputs_2d_:
             self.classes_ = self.classes_[0]

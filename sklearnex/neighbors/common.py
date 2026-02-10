@@ -183,46 +183,21 @@ class KNeighborsDispatchingBase(oneDALEstimator):
 
         weights = self._get_weights(neigh_dist, weights_param)
         if weights is None:
-            # REFACTOR: Ensure weights is float for array API type promotion
-            # neigh_ind is int, so ones_like would give int, but we need float
-            # Use neigh_dist dtype to preserve input precision (float32/float64)
-            weights = xp.ones_like(neigh_ind, dtype=neigh_dist.dtype)
+            weights = xp.ones_like(neigh_ind)
 
+        all_rows = xp.arange(n_queries)
         probabilities = []
         for k, classes_k in enumerate(classes_):
-            # Get predicted labels for each neighbor: shape (n_queries, n_neighbors)
-            # _y[:, k] gives training labels for output k, then gather using neigh_ind
-            y_col_k = _y[:, k, ...]
+            pred_labels = _y[:, k][neigh_ind]
+            proba_k = xp.zeros((n_queries, classes_k.size), dtype=neigh_dist.dtype)
 
-            # Vectorized: flatten 2D indices, single take, reshape
-            flat_ind = xp.reshape(neigh_ind, (-1,))
-            pred_labels_flat = xp.take(y_col_k, flat_ind, axis=0)
-            pred_labels = xp.reshape(
-                pred_labels_flat, neigh_ind.shape
-            )  # Shape: (n_queries, n_neighbors)
-
-            # Vectorized probability accumulation using broadcasting:
-            # One-hot encode pred_labels against class indices, then weight and sum
-            n_classes = classes_k.size
-            pred_labels_3d = xp.reshape(pred_labels, (n_queries, pred_labels.shape[1], 1))
-            class_range = xp.reshape(xp.arange(n_classes), (1, 1, n_classes))
-            one_hot = pred_labels_3d == class_range  # (n_queries, n_neighbors, n_classes)
-
-            # Cast bool to float
-            if _is_numpy_namespace(xp):
-                one_hot_float = one_hot.astype(neigh_dist.dtype)
-            else:
-                one_hot_float = xp.astype(one_hot, neigh_dist.dtype)
-
-            # Weight and sum over neighbors
-            weights_3d = xp.reshape(weights, (n_queries, weights.shape[1], 1))
-            proba_k = xp.sum(
-                one_hot_float * weights_3d, axis=1
-            )  # Shape: (n_queries, n_classes)
+            # a simple ':' index doesn't work right
+            for i, idx in enumerate(pred_labels.T):  # loop is O(n_neighbors)
+                proba_k[all_rows, idx] += weights[:, i]
 
             # normalize 'votes' into real [0,1] probabilities
-            normalizer = xp.sum(proba_k, axis=1)[:, xp.newaxis]
-            normalizer = xp.where(normalizer == 0.0, 1.0, normalizer)
+            normalizer = proba_k.sum(axis=1)[:, xp.newaxis]
+            normalizer[normalizer == 0.0] = 1.0
             proba_k /= normalizer
 
             probabilities.append(proba_k)
@@ -496,8 +471,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                 xp, _ = get_namespace(y_input)
                 y = xp.asarray(y_input)
                 if is_classifier:
-                    # Use numpy for unique (standard sklearn pattern)
-                    class_count = len(np.unique(np.asarray(y)))
+                    class_count = len(xp.unique_values(y))
             # Only access _onedal_estimator if it's an instance attribute (not a class-level staticmethod)
             if "_onedal_estimator" in self.__dict__:
                 y = self._onedal_estimator._y
