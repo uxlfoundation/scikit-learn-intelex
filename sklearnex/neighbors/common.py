@@ -95,20 +95,13 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             _y = xp.reshape(_y, (-1, 1))
 
         if weights is None:
-            # Array API: Use take() per row since array API take() only supports 1-D indices
-            # Build result by gathering rows one at a time
-            gathered_list = []
-            for i in range(neigh_ind.shape[0]):
-                # Get indices for this sample's neighbors
-                sample_indices = neigh_ind[i, ...]  # Shape: (n_neighbors,)
-                # Gather those rows from _y
-                sample_neighbors = xp.take(
-                    _y, sample_indices, axis=0
-                )  # Shape: (n_neighbors, n_outputs)
-                gathered_list.append(sample_neighbors)
-            # Stack and compute mean
-            gathered = xp.stack(
-                gathered_list, axis=0
+            # Vectorized Array API: flatten 2D indices, single take, reshape
+            flat_ind = xp.reshape(neigh_ind, (-1,))
+            gathered_flat = xp.take(
+                _y, flat_ind, axis=0
+            )  # Shape: (n_samples * n_neighbors, n_outputs)
+            gathered = xp.reshape(
+                gathered_flat, (neigh_ind.shape[0], neigh_ind.shape[1], _y.shape[1])
             )  # Shape: (n_samples, n_neighbors, n_outputs)
             y_pred = xp.mean(gathered, axis=1)
         else:
@@ -127,17 +120,14 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             denom = xp.sum(weights, axis=1)
 
             for j in range(_y.shape[1]):
-                # Array API: Iterate over samples to gather values
                 y_col_j = _y[:, j, ...]  # Shape: (n_train_samples,)
-                gathered_vals = []
-                for i in range(neigh_ind.shape[0]):
-                    sample_indices = neigh_ind[i, ...]  # Shape: (n_neighbors,)
-                    sample_vals = xp.take(
-                        y_col_j, sample_indices, axis=0
-                    )  # Shape: (n_neighbors,)
-                    gathered_vals.append(sample_vals)
-                gathered_j = xp.stack(
-                    gathered_vals, axis=0
+                # Vectorized: flatten indices, single take, reshape
+                flat_ind = xp.reshape(neigh_ind, (-1,))
+                gathered_flat = xp.take(
+                    y_col_j, flat_ind, axis=0
+                )  # Shape: (n_samples * n_neighbors,)
+                gathered_j = xp.reshape(
+                    gathered_flat, neigh_ind.shape
                 )  # Shape: (n_samples, n_neighbors)
                 num = xp.sum(gathered_j * weights, axis=1)
                 y_pred[:, j, ...] = num / denom
@@ -200,45 +190,39 @@ class KNeighborsDispatchingBase(oneDALEstimator):
 
         probabilities = []
         for k, classes_k in enumerate(classes_):
-            # Get predicted labels for each neighbor: shape (n_samples, n_neighbors)
+            # Get predicted labels for each neighbor: shape (n_queries, n_neighbors)
             # _y[:, k] gives training labels for output k, then gather using neigh_ind
             y_col_k = _y[:, k, ...]
 
-            # Array API: Use take() with iteration since take() only supports 1-D indices
-            pred_labels_list = []
-            for i in range(neigh_ind.shape[0]):
-                sample_indices = neigh_ind[i, ...]
-                sample_labels = xp.take(y_col_k, sample_indices, axis=0)
-                pred_labels_list.append(sample_labels)
-            pred_labels = xp.stack(
-                pred_labels_list, axis=0
+            # Vectorized: flatten 2D indices, single take, reshape
+            flat_ind = xp.reshape(neigh_ind, (-1,))
+            pred_labels_flat = xp.take(y_col_k, flat_ind, axis=0)
+            pred_labels = xp.reshape(
+                pred_labels_flat, neigh_ind.shape
             )  # Shape: (n_queries, n_neighbors)
 
-            proba_k = xp.zeros((n_queries, classes_k.size), dtype=neigh_dist.dtype)
+            # Vectorized probability accumulation using broadcasting:
+            # One-hot encode pred_labels against class indices, then weight and sum
+            n_classes = classes_k.size
+            pred_labels_3d = xp.reshape(pred_labels, (n_queries, pred_labels.shape[1], 1))
+            class_range = xp.reshape(xp.arange(n_classes), (1, 1, n_classes))
+            one_hot = pred_labels_3d == class_range  # (n_queries, n_neighbors, n_classes)
 
-            # Array API: Cannot use fancy indexing __setitem__ like proba_k[all_rows, idx] = ...
-            # Instead, build probabilities sample by sample
-            proba_list = []
-            zero_weight = xp.asarray(0.0, dtype=neigh_dist.dtype)
-            for sample_idx in range(n_queries):
-                sample_proba = xp.zeros((classes_k.size,), dtype=neigh_dist.dtype)
-                # For this sample, accumulate weights for each neighbor's predicted class
-                for neighbor_idx in range(pred_labels.shape[1]):
-                    class_label = int(pred_labels[sample_idx, neighbor_idx])
-                    weight = weights[sample_idx, neighbor_idx]
-                    # Update probability for this class using array indexing
-                    # Create a mask for this class and add weight where mask is True
-                    mask = xp.arange(classes_k.size) == class_label
-                    sample_proba = sample_proba + xp.where(mask, weight, zero_weight)
-                proba_list.append(sample_proba)
-            proba_k = xp.stack(proba_list, axis=0)  # Shape: (n_queries, n_classes)
+            # Cast bool to float
+            if _is_numpy_namespace(xp):
+                one_hot_float = one_hot.astype(neigh_dist.dtype)
+            else:
+                one_hot_float = xp.astype(one_hot, neigh_dist.dtype)
+
+            # Weight and sum over neighbors
+            weights_3d = xp.reshape(weights, (n_queries, weights.shape[1], 1))
+            proba_k = xp.sum(
+                one_hot_float * weights_3d, axis=1
+            )  # Shape: (n_queries, n_classes)
 
             # normalize 'votes' into real [0,1] probabilities
             normalizer = xp.sum(proba_k, axis=1)[:, xp.newaxis]
-            # Use array scalar for comparison and assignment
-            zero_scalar = xp.asarray(0.0, dtype=neigh_dist.dtype)
-            one_scalar = xp.asarray(1.0, dtype=neigh_dist.dtype)
-            normalizer = xp.where(normalizer == zero_scalar, one_scalar, normalizer)
+            normalizer = xp.where(normalizer == 0.0, 1.0, normalizer)
             proba_k /= normalizer
 
             probabilities.append(proba_k)
