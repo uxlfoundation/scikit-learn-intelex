@@ -225,8 +225,10 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         else:
             self.outputs_2d_ = True
 
-        # Validate classification targets (skip for raw array API inputs)
-        if not skip_validation:
+        # Validate classification targets.
+        # Skip for raw array API inputs and device arrays (dpnp/dpctl),
+        # since _check_classification_targets uses np.asarray internally.
+        if not skip_validation and not hasattr(y, "__sycl_usm_array_interface__"):
             _check_classification_targets(y)
 
         # Process classes using unique_inverse (Array API) or unique (numpy)

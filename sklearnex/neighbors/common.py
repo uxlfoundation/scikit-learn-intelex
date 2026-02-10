@@ -553,6 +553,14 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         if n_neighbors is None:
             n_neighbors = self.n_neighbors
 
+        # If the model was fitted on a device (GPU) but X is a host array,
+        # move X to the same device so dispatch uses the correct queue.
+        # This prevents a segfault from running CPU inference on a GPU model.
+        if X is not None and hasattr(self._fit_X, "__sycl_usm_array_interface__"):
+            if not hasattr(X, "__sycl_usm_array_interface__"):
+                xp, _ = get_namespace(self._fit_X)
+                X = xp.asarray(X, device=self._fit_X.device)
+
         # construct CSR matrix representation of the k-NN graph
         # Use self.kneighbors which handles dispatch, device offload, and validation
         if mode == "connectivity":
