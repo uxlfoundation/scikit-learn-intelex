@@ -209,6 +209,22 @@ if daal_check_version((2023, "P", 200)):
 
             xp, _ = get_namespace(X)
 
+            # Validate init parameter if array-like (before X validation so n_features_in_ not set yet)
+            if _is_arraylike_not_scalar(self.init):
+                init = validate_data(
+                    self,
+                    self.init,
+                    dtype=[xp.float64, xp.float32],
+                    accept_sparse="csr",
+                    copy=True,
+                    order="C",
+                    reset=False,
+                )
+                # Validate shape against X (before X is validated/copied)
+                self._validate_center_shape(X, init)
+                # Update the init parameter with validated version
+                self.init = init
+
             if not get_config()["use_raw_input"]:
                 X = validate_data(
                     self,
@@ -233,21 +249,6 @@ if daal_check_version((2023, "P", 200)):
                     f"Algorithm {self.algorithm} is not supported. "
                     "Supported algorithms are 'lloyd', 'elkan' (computed as lloyd), 'auto', 'full'."
                 )
-
-            # Validate init parameter if array-like
-            if _is_arraylike_not_scalar(self.init):
-                init = validate_data(
-                    self,
-                    self.init,
-                    dtype=[xp.float64, xp.float32],
-                    accept_sparse="csr",
-                    copy=True,
-                    order="C",
-                    reset=False,
-                )
-                self._validate_center_shape(X, init)
-                # Update the init parameter with validated version
-                self.init = init
 
             # Call sklearn's parameter validation if available
             if sklearn_check_version("1.2"):
