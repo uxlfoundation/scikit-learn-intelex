@@ -233,7 +233,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
 
         # Process classes using unique_inverse (Array API) or unique (numpy)
         self.classes_ = []
-        self._y = xp.empty(y.shape, dtype=xp.int64)
+        self._y = xp.empty_like(y, dtype=xp.int64)
         for k in range(self._y.shape[1]):
             if is_array_api:
                 result = xp.unique_inverse(y[:, k])
