@@ -24,18 +24,13 @@ from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
 from onedal.utils import _sycl_queue_manager as QM
 
-from .._config import _get_config
 from ..common._estimator_checks import _check_is_fitted
 from ..common._mixin import ClassifierMixin
 from ..datatypes import from_table, to_table
-from ..utils._array_api import _get_sycl_namespace
 from ..utils.validation import (
-    _check_array,
     _check_n_features,
-    _check_X_y,
     _is_csr,
-    _num_features,
-    _type_of_target,
+    _num_features
 )
 
 
@@ -77,61 +72,45 @@ class BaseLogisticRegression(metaclass=ABCMeta):
         }
 
     def _fit(self, X, y):
-        use_raw_input = _get_config()["use_raw_input"] is True
 
-        sparsity_enabled = daal_check_version((2024, "P", 700))
-        if not use_raw_input:
-            X, y = _check_X_y(
-                X,
-                y,
-                accept_sparse=sparsity_enabled,
-                force_all_finite=True,
-                accept_2d_y=False,
-                dtype=[np.float64, np.float32],
-            )
-            if _type_of_target(y) != "binary":
-                raise ValueError("Only binary classification is supported")
-
-            self.classes_, y = np.unique(y, return_inverse=True)
-            y = y.astype(dtype=np.int32)
-        else:
-            _, xp, _ = _get_sycl_namespace(X)
-            # try catch needed for raw_inputs + array_api data where unlike
-            # numpy the way to yield unique values is via `unique_values`
-            # This should be removed when refactored for gpu zero-copy
-            try:
-                self.classes_ = xp.unique(y)
-            except AttributeError:
-                self.classes_ = xp.unique_values(y)
-
-            n_classes = len(self.classes_)
-            if n_classes != 2:
-                raise ValueError("Only binary classification is supported")
+        # Is sparsity check here fine? - Same in BasicStatistics
         is_csr = _is_csr(X)
 
+        # Is it good place? - Same in LinReg
         self.n_features_in_ = _num_features(X, fallback_1d=True)
+
         X_table, y_table = to_table(X, y, queue=QM.get_global_queue())
         params = self._get_onedal_params(is_csr, X_table.dtype)
 
         result = self.train(params, X_table, y_table)
 
         self._onedal_model = result.model
+        
+        # For now it's fine to keep n_iteration as numpy variable 
         self.n_iter_ = np.array([result.iterations_count])
 
         # _n_inner_iter is the total number of cg-solver iterations
         if daal_check_version((2024, "P", 300)) and self.solver == "newton-cg":
             self._n_inner_iter = result.inner_iterations_count
 
-        coeff = from_table(result.model.packed_coefficients)
+        coeff = from_table(result.model.packed_coefficients, like=X)
         self.coef_, self.intercept_ = coeff[:, 1:], coeff[:, 0]
 
         return self
 
     def _create_model(self):
+        # TODO revise create_model implementation here and in LinearRegression
+
+
+        # TODO do we need to support behavior when model fitted with sklearn 
+        # (e.g. torch tensor or else and then this method is run)
+        # Currently it can't 
         m = self.model()
 
         coefficients = self.coef_
+        # TODO is it fine to use get_dtype
         dtype = get_dtype(coefficients)
+        # TODO check if it's fine to use numpy for coefs
         coefficients = np.asarray(coefficients, dtype=dtype)
 
         if coefficients.ndim == 2:
@@ -145,19 +124,7 @@ class BaseLogisticRegression(metaclass=ABCMeta):
             intercept = np.asarray(intercept, dtype=dtype)
             assert intercept.size == 1
 
-        intercept = _check_array(
-            intercept,
-            dtype=[np.float64, np.float32],
-            force_all_finite=True,
-            ensure_2d=False,
-        )
-        coefficients = _check_array(
-            coefficients,
-            dtype=[np.float64, np.float32],
-            force_all_finite=True,
-            ensure_2d=False,
-        )
-
+        # TODO is it fine to use this func?
         coefficients, intercept = make2d(coefficients), make2d(intercept)
 
         assert coefficients.shape == (1, n_features_in)
@@ -179,66 +146,30 @@ class BaseLogisticRegression(metaclass=ABCMeta):
     def _infer(self, X):
         _check_is_fitted(self)
 
-        sparsity_enabled = daal_check_version((2024, "P", 700))
-
-        if not _get_config()["use_raw_input"]:
-            X = _check_array(
-                X,
-                dtype=[np.float64, np.float32],
-                accept_sparse=sparsity_enabled,
-                force_all_finite=True,
-                ensure_2d=False,
-                accept_large_sparse=sparsity_enabled,
-            )
+        # Is sparsity check here fine? - Same in BasicStatistics
         is_csr = _is_csr(X)
+
+        # Is this check fine? - Same in LinReg
         _check_n_features(self, X, False)
 
-        X = make2d(X)
-
-        if hasattr(self, "_onedal_model"):
-            model = self._onedal_model
-        else:
-            model = self._create_model()
+        if not hasattr(self, "_onedal_model"):
+            self._onedal_model = self._create_model()
 
         X_table = to_table(X, queue=QM.get_global_queue())
-        params = self._get_onedal_params(is_csr, X.dtype)
+        params = self._get_onedal_params(is_csr, X_table.dtype)
 
-        result = self.infer(params, model, X_table)
+        result = self.infer(params, self._onedal_model, X_table)
         return result
 
     def _predict(self, X):
         result = self._infer(X)
-        _, xp, _ = _get_sycl_namespace(X)
         y = from_table(result.responses, like=X)
-        y = xp.take(xp.asarray(self.classes_), xp.reshape(y, (-1,)), axis=0)
         return y
 
     def _predict_proba(self, X):
         result = self._infer(X)
-        _, xp, _ = _get_sycl_namespace(X)
         y = from_table(result.probabilities, like=X)
-        y = xp.reshape(y, -1)
-        return xp.stack([1 - y, y], axis=1)
-
-    def _predict_log_proba(self, X):
-        _, xp, _ = _get_sycl_namespace(X)
-        y_proba = self._predict_proba(X)
-        # These are the same thresholds used by oneDAL during the model fitting procedure
-        if y_proba.dtype == np.float32:
-            min_prob = 1e-7
-            max_prob = 1.0 - 1e-7
-        else:
-            min_prob = 1e-15
-            max_prob = 1.0 - 1e-15
-        y_proba = xp.clip(y_proba, min_prob, max_prob)
-        return xp.log(y_proba)
-
-    def _decision_function(self, X):
-        _, xp, _ = _get_sycl_namespace(X)
-        raw = xp.matmul(X, xp.reshape(self.coef_, -1))
-        if self.fit_intercept:
-            raw += self.intercept_
-        return raw
+        return y
 
 
 class LogisticRegression(ClassifierMixin, BaseLogisticRegression):
@@ -283,11 +214,3 @@ class LogisticRegression(ClassifierMixin, BaseLogisticRegression):
     @supports_queue
     def predict_proba(self, X, queue=None):
         return self._predict_proba(X)
-
-    @supports_queue
-    def predict_log_proba(self, X, queue=None):
-        return self._predict_log_proba(X)
-
-    @supports_queue
-    def decision_function(self, X, queue=None):
-        return self._decision_function(X)
