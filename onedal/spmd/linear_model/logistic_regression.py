@@ -39,6 +39,6 @@ class LogisticRegression(LogisticRegression_Batch):
     def predict_proba(self, X, queue=None):
         return super().predict_proba(X, queue=queue)
 
-    @support_input_format
-    def predict_log_proba(self, X, queue=None):
-        return super().predict_log_proba(X, queue=queue)
+    # @support_input_format
+    # def predict_log_proba(self, X, queue=None):
+    #     return super().predict_log_proba(X, queue=queue)

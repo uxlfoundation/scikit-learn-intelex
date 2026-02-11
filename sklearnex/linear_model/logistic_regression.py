@@ -141,7 +141,9 @@ if daal_check_version((2024, "P", 1)):
                     l1_ratio=l1_ratio,
                 )
 
+        _onedal_LogisticRegression = staticmethod(onedal_LogisticRegression)
         _onedal_cpu_fit = daal4py_fit
+
         # TODO what do we need support_input_format for?
         decision_function = support_input_format(
             _sklearn_LogisticRegression.decision_function
@@ -377,7 +379,7 @@ if daal_check_version((2024, "P", 1)):
                 "solver": self.solver,
                 "max_iter": self.max_iter,
             }
-            self._onedal_estimator = onedal_LogisticRegression(**onedal_params)
+            self._onedal_estimator = self._onedal_LogisticRegression(**onedal_params)
 
         def _onedal_fit(self, X, y, sample_weight=None, queue=None):
             if queue is None or queue.sycl_device.is_cpu:

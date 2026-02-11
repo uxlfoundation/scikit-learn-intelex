@@ -44,14 +44,14 @@ class BaseLogisticRegression(metaclass=ABCMeta):
         self.max_iter = max_iter
         self.algorithm = algorithm
 
-    @abstractmethod
-    def train(self, params, X, y): ...
+    @bind_default_backend("logistic_regression.classification")
+    def train(self, *args, **kwargs): ...
 
-    @abstractmethod
-    def infer(self, params, X): ...
+    @bind_default_backend("logistic_regression.classification")
+    def infer(self, params, model, X): ...
 
-    # direct access to the backend model constructor
-    @abstractmethod
+    # direct access to the backend model class
+    @bind_default_backend("logistic_regression.classification")
     def model(self): ...
 
     def _get_onedal_params(self, is_csr, dtype=np.float32):
@@ -71,15 +71,16 @@ class BaseLogisticRegression(metaclass=ABCMeta):
             ),
         }
 
-    def _fit(self, X, y):
+    @supports_queue
+    def fit(self, X, y, queue=None):
 
         # Is sparsity check here fine? - Same in BasicStatistics
         is_csr = _is_csr(X)
 
         # Is it good place? - Same in LinReg
         self.n_features_in_ = _num_features(X, fallback_1d=True)
-
-        X_table, y_table = to_table(X, y, queue=QM.get_global_queue())
+        
+        X_table, y_table = to_table(X, y, queue=queue)
         params = self._get_onedal_params(is_csr, X_table.dtype)
 
         result = self.train(params, X_table, y_table)
@@ -98,6 +99,7 @@ class BaseLogisticRegression(metaclass=ABCMeta):
 
         return self
 
+    # TODO check if we need to pass queue as an argument
     def _create_model(self):
         # TODO revise create_model implementation here and in LinearRegression
 
@@ -143,7 +145,7 @@ class BaseLogisticRegression(metaclass=ABCMeta):
 
         return m
 
-    def _infer(self, X):
+    def _infer(self, X, queue=None):
         _check_is_fitted(self)
 
         # Is sparsity check here fine? - Same in BasicStatistics
@@ -155,24 +157,26 @@ class BaseLogisticRegression(metaclass=ABCMeta):
         if not hasattr(self, "_onedal_model"):
             self._onedal_model = self._create_model()
 
-        X_table = to_table(X, queue=QM.get_global_queue())
+        X_table = to_table(X, queue=queue)
         params = self._get_onedal_params(is_csr, X_table.dtype)
 
         result = self.infer(params, self._onedal_model, X_table)
         return result
 
-    def _predict(self, X):
-        result = self._infer(X)
+    @supports_queue
+    def predict(self, X, queue=None):
+        result = self._infer(X, queue)
         y = from_table(result.responses, like=X)
         return y
 
-    def _predict_proba(self, X):
-        result = self._infer(X)
+    @supports_queue
+    def predict_proba(self, X, queue=None):
+        result = self._infer(X, queue)
         y = from_table(result.probabilities, like=X)
         return y
 
 
-class LogisticRegression(ClassifierMixin, BaseLogisticRegression):
+class LogisticRegression(BaseLogisticRegression):
 
     def __init__(
         self,
@@ -194,23 +198,23 @@ class LogisticRegression(ClassifierMixin, BaseLogisticRegression):
             algorithm=algorithm,
         )
 
-    @bind_default_backend("logistic_regression.classification")
-    def train(self, params, X, y, queue=None): ...
+    # @bind_default_backend("logistic_regression.classification")
+    # def train(self, params, X, y, queue=None): ...
 
-    @bind_default_backend("logistic_regression.classification")
-    def infer(self, params, X, model, queue=None): ...
+    # @bind_default_backend("logistic_regression.classification")
+    # def infer(self, params, X, model, queue=None): ...
 
-    @bind_default_backend("logistic_regression.classification")
-    def model(self): ...
+    # @bind_default_backend("logistic_regression.classification")
+    # def model(self): ...
 
-    @supports_queue
-    def fit(self, X, y, queue=None):
-        return self._fit(X, y)
+    # @supports_queue
+    # def fit(self, X, y, queue=None):
+    #     return self._fit(X, y)
 
-    @supports_queue
-    def predict(self, X, queue=None):
-        return self._predict(X)
+    # @supports_queue
+    # def predict(self, X, queue=None):
+    #     return self._predict(X)
 
-    @supports_queue
-    def predict_proba(self, X, queue=None):
-        return self._predict_proba(X)
+    # @supports_queue
+    # def predict_proba(self, X, queue=None):
+    #     return self._predict_proba(X)
