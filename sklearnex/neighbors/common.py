@@ -85,6 +85,12 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         array-like
             Predicted values.
         """
+        # Transfer arrays to host for computation
+        # Needed for torch XPU tensors and SPMD device arrays
+        _, (neigh_dist, neigh_ind, y_train) = _transfer_to_host(
+            neigh_dist, neigh_ind, y_train
+        )
+
         # Array API support: get namespace from input arrays
         xp, _ = get_namespace(neigh_dist, neigh_ind, y_train)
 
@@ -166,9 +172,14 @@ class KNeighborsDispatchingBase(oneDALEstimator):
 
         # Transfer all arrays to host to ensure they're on the same queue/device
         # This is needed especially for SPMD where arrays might be on different queues
+        # Also handles torch XPU tensors that can't be used directly with numpy
         _, (neigh_dist, neigh_ind, y_train) = _transfer_to_host(
             neigh_dist, neigh_ind, y_train
         )
+        if isinstance(classes, list):
+            _, classes = _transfer_to_host(*classes)
+        else:
+            _, (classes,) = _transfer_to_host(classes)
 
         # After transfer, get the array namespace (will be numpy for host arrays)
         xp, _ = get_namespace(neigh_dist, neigh_ind, y_train)
@@ -556,10 +567,14 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         # If the model was fitted on a device (GPU) but X is a host array,
         # move X to the same device so dispatch uses the correct queue.
         # This prevents a segfault from running CPU inference on a GPU model.
-        if X is not None and hasattr(self._fit_X, "__sycl_usm_array_interface__"):
-            if not hasattr(X, "__sycl_usm_array_interface__"):
-                xp, _ = get_namespace(self._fit_X)
-                X = xp.asarray(X, device=self._fit_X.device)
+        xp_fit, _ = get_namespace(self._fit_X)
+        if X is not None and not _is_numpy_namespace(xp_fit):
+            xp_X, _ = get_namespace(X)
+            if _is_numpy_namespace(xp_X):
+                X = xp_fit.asarray(X, device=self._fit_X.device)
+
+        # Preserve the input dtype for the output graph
+        input_dtype = (X if X is not None else self._fit_X).dtype
 
         # construct CSR matrix representation of the k-NN graph
         # Use self.kneighbors which handles dispatch, device offload, and validation
@@ -567,15 +582,16 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             A_ind = self.kneighbors(X, n_neighbors, return_distance=False)
             # Transfer results to host for numpy operations
             _, (A_ind,) = _transfer_to_host(A_ind)
+            xp, _ = get_namespace(A_ind)
             n_queries = A_ind.shape[0]
-            A_data = np.ones(n_queries * n_neighbors)
+            A_data = xp.ones(n_queries * n_neighbors, dtype=input_dtype)
 
         elif mode == "distance":
             A_data, A_ind = self.kneighbors(X, n_neighbors, return_distance=True)
             # Transfer results to host for numpy operations
             _, (A_data, A_ind) = _transfer_to_host(A_data, A_ind)
-            # Use numpy after transfer to host
-            A_data = np.reshape(A_data, (-1,))
+            xp, _ = get_namespace(A_data)
+            A_data = xp.reshape(A_data, (-1,)).astype(input_dtype, copy=False)
 
         else:
             raise ValueError(

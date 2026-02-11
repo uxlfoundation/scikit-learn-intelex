@@ -23,6 +23,7 @@ from sklearn.utils.validation import check_is_fitted
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.utils.validation import get_requires_y_tag
+from onedal._device_offload import _transfer_to_host
 from onedal.datatypes import from_table
 from onedal.neighbors import KNeighborsClassifier as onedal_KNeighborsClassifier
 from onedal.utils.validation import _check_classification_targets
@@ -226,15 +227,15 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             self.outputs_2d_ = True
 
         # Validate classification targets.
-        # Skip for raw array API inputs and device arrays (dpnp/dpctl),
-        # since _check_classification_targets uses np.asarray internally.
-        if not skip_validation and not hasattr(y, "__sycl_usm_array_interface__"):
-            _check_classification_targets(y)
+        if not skip_validation:
+            _, (y_host,) = _transfer_to_host(y)
+            _check_classification_targets(y_host)
 
         # Process classes using unique_inverse (Array API) or unique (numpy)
-        self.classes_ = []
+        n_outputs = y.shape[1]
+        self.classes_ = [None] * n_outputs
         self._y = xp.empty_like(y, dtype=xp.int64)
-        for k in range(self._y.shape[1]):
+        for k in range(n_outputs):
             if is_array_api:
                 result = xp.unique_inverse(y[:, k])
                 classes_k = result.values
@@ -246,7 +247,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
                 raise ValueError(
                     f"Number of classes ({n_classes}) exceeds int64 dtype limit."
                 )
-            self.classes_.append(classes_k)
+            self.classes_[k] = classes_k
             self._y[:, k] = xp.asarray(inverse_k, dtype=xp.int64)
 
         if not self.outputs_2d_:
