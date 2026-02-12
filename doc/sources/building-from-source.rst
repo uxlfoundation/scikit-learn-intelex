@@ -196,7 +196,7 @@ The following are required in order to use ``conda-build``:
 Instructions
 ************
 
-When building with conda, dependencies on the |onedal| and MPI are also managed by conda, so it is not necessary to set the environment variables for those dependencies.
+When building with conda, if the environment variables for the |onedal| and MPI are not set, those dependencies will be managed by conda instead, which will use their respective conda packages and set the environment variables internally during the builds.
 
 .. hint::
 
