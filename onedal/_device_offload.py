@@ -126,18 +126,27 @@ def support_input_format(func):
         else:
             self = None
 
-        # For estimator methods (self is not None), skip host conversion
-        # to avoid unnecessary data transfers — estimators handle Array API
-        # natively via get_namespace/validate_data.
-        if self is not None:
-            if "queue" not in kwargs and "queue" in inspect.signature(func).parameters:
+        # KNeighbors*.fit can not be used with raw inputs, ignore `use_raw_input=True`
+        override_raw_input = (
+            self
+            and self.__class__.__name__ in ("KNeighborsClassifier", "KNeighborsRegressor")
+            and func.__name__ == "fit"
+            and _get_config()["use_raw_input"] is True
+        )
+        if override_raw_input:
+            pretty_name = f"{self.__class__.__name__}.{func.__name__}"
+            logger.warning(
+                f"Using raw inputs is not supported for {pretty_name}. Ignoring `use_raw_input=True` setting."
+            )
+        if _get_config()["use_raw_input"] is True and not override_raw_input:
+            if "queue" not in kwargs:
                 if usm_iface := getattr(args[0], "__sycl_usm_array_interface__", None):
                     kwargs["queue"] = usm_iface["syclobj"]
+                else:
+                    kwargs["queue"] = None
             return invoke_func(self, *args, **kwargs)
-
-        # Standalone functions (e.g. train_test_split, roc_auc_score) need
-        # host conversion since they don't handle Array API inputs.
-        if len(args) == 0 and len(kwargs) == 0:
+        elif len(args) == 0 and len(kwargs) == 0:
+            # no arguments, there's nothing we can deduce from them -> just call the function
             return invoke_func(self, *args, **kwargs)
 
         data = (*args, *kwargs.values())[0]
@@ -145,6 +154,7 @@ def support_input_format(func):
         with QM.manage_global_queue(kwargs.get("queue"), *args) as queue:
             hostargs, hostkwargs = _get_host_inputs(*args, **kwargs)
             if "queue" in inspect.signature(func).parameters:
+                # set the queue if it's expected by func
                 hostkwargs["queue"] = queue
             result = invoke_func(self, *hostargs, **hostkwargs)
 
