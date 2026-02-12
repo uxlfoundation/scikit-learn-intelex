@@ -554,6 +554,21 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         raise RuntimeError(f"Unknown method {method_name} in {class_name}")
 
     def _onedal_gpu_supported(self, method_name, *data):
+        # Only support GPU offload for SYCL arrays (dpnp/dpctl).
+        # Non-SYCL array API inputs (e.g. torch XPU) should fall back
+        # to the standard host transfer path via sklearn.
+        has_sycl_data = any(
+            hasattr(x, "__sycl_usm_array_interface__") for x in data if x is not None
+        )
+        if not has_sycl_data:
+            class_name = self.__class__.__name__
+            patching_status = PatchingConditionsChain(
+                f"sklearn.neighbors.{class_name}.{method_name}"
+            )
+            patching_status.and_condition(
+                False, "Non-SYCL array API input is not supported on GPU."
+            )
+            return patching_status
         return self._onedal_supported("gpu", method_name, *data)
 
     def _onedal_cpu_supported(self, method_name, *data):
