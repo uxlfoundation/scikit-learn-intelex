@@ -206,8 +206,8 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         y : array-like
             Target values
         skip_validation : bool, default=False
-            If True, skip _check_classification_targets validation.
-            Used when use_raw_input=True (raw array API arrays like dpctl.usm_ndarray).
+            If True, skip check_classification_targets validation.
+            Used when use_raw_input=True (SPMD mode).
         """
         # Array API support: get namespace from y
         xp, is_array_api = get_namespace(y)
@@ -225,7 +225,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         else:
             self.outputs_2d_ = True
 
-        # Validate classification targets.
+        # Validate classification targets (skipped only for use_raw_input/SPMD mode).
         if not skip_validation:
             check_classification_targets(y)
 
