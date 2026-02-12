@@ -555,16 +555,16 @@ class KNeighborsDispatchingBase(oneDALEstimator):
 
     def _onedal_gpu_supported(self, method_name, *data):
         # Reject non-SYCL array API inputs (e.g. torch XPU tensors).
-        # These are non-numpy arrays that lack __sycl_usm_array_interface__,
-        # and should fall back to the standard host transfer path via sklearn.
-        # Plain numpy arrays are always fine — they may come from dpctl/dpnp data
-        # that was already transferred to host by dispatch().
-        import numpy as np
-
-        for x in data:
-            if x is None or isinstance(x, np.ndarray):
-                continue
-            if not hasattr(x, "__sycl_usm_array_interface__"):
+        # When dispatch() transfers dpctl/dpnp data to host, data arrives here
+        # as numpy arrays (is_array_api=False) which are always valid.
+        # Only reject when data is a non-SYCL array API type (is_array_api=True
+        # but no __sycl_usm_array_interface__).
+        non_none_data = [x for x in data if x is not None]
+        if non_none_data:
+            _, is_array_api = get_namespace(*non_none_data)
+            if is_array_api and not any(
+                hasattr(x, "__sycl_usm_array_interface__") for x in non_none_data
+            ):
                 class_name = self.__class__.__name__
                 patching_status = PatchingConditionsChain(
                     f"sklearn.neighbors.{class_name}.{method_name}"
