@@ -237,9 +237,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         self._y = xp.empty_like(y, dtype=xp.int64)
         for k in range(n_outputs):
             if hasattr(xp, "unique_inverse"):
-                result = xp.unique_inverse(y[:, k])
-                classes_k = result.values
-                inverse_k = result.inverse_indices
+                classes_k, inverse_k = xp.unique_inverse(y[:, k])
             else:
                 classes_k, inverse_k = xp.unique(y[:, k], return_inverse=True)
             n_classes = classes_k.shape[0]
