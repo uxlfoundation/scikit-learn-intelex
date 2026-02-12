@@ -211,7 +211,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             Used when use_raw_input=True (SPMD mode).
         """
         # Array API support: get namespace from y
-        xp, is_array_api = get_namespace(y)
+        xp, _ = get_namespace(y)
 
         # y should already be numpy array from validate_data
         y = xp.asarray(y)
@@ -230,17 +230,14 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         if not skip_validation:
             check_classification_targets(y)
 
-        # Process classes using unique_inverse (Array API) or unique (numpy)
+        # Process classes using unique_inverse
         n_outputs = y.shape[1]
         self.classes_ = [None] * n_outputs
         self._y = xp.empty_like(y, dtype=xp.int64)
         for k in range(n_outputs):
-            if is_array_api:
-                result = xp.unique_inverse(y[:, k])
-                classes_k = result.values
-                inverse_k = result.inverse_indices
-            else:
-                classes_k, inverse_k = xp.unique(y[:, k], return_inverse=True)
+            result = xp.unique_inverse(y[:, k])
+            classes_k = result.values
+            inverse_k = result.inverse_indices
             n_classes = classes_k.shape[0]
             if n_classes > xp.iinfo(xp.int64).max:
                 raise ValueError(
