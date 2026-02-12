@@ -197,18 +197,13 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         """GPU prediction path - calls onedal backend."""
         if X is not None:
             xp, _ = get_namespace(X)
-            if getattr(self, "effective_metric_", self.metric) == "precomputed":
-                from ..utils.validation import assert_all_finite
-
-                assert_all_finite(X, allow_nan=False, input_name="X")
-            else:
-                X = validate_data(
-                    self,
-                    X,
-                    dtype=[xp.float64, xp.float32],
-                    accept_sparse="csr",
-                    reset=False,
-                )
+            X = validate_data(
+                self,
+                X,
+                dtype=[xp.float64, xp.float32],
+                accept_sparse="csr",
+                reset=False,
+            )
         return self._onedal_estimator._predict_gpu(X)
 
     def _predict_skl_regression(self, X):

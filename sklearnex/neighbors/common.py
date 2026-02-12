@@ -23,6 +23,7 @@ from sklearn.neighbors._ball_tree import BallTree
 from sklearn.neighbors._base import VALID_METRICS, KNeighborsMixin
 from sklearn.neighbors._base import NeighborsBase as _sklearn_NeighborsBase
 from sklearn.neighbors._kd_tree import KDTree
+from sklearn.utils._array_api import get_namespace_and_device, move_to
 from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._utils import is_sparse, sklearn_check_version
@@ -567,14 +568,17 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         # If the model was fitted on a device (GPU) but X is a host array,
         # move X to the same device so dispatch uses the correct queue.
         # This prevents a segfault from running CPU inference on a GPU model.
-        xp_fit, _ = get_namespace(self._fit_X)
+        xp_fit, _, device_fit = get_namespace_and_device(self._fit_X)
         if X is not None and not _is_numpy_namespace(xp_fit):
             xp_X, _ = get_namespace(X)
             if _is_numpy_namespace(xp_X):
-                X = xp_fit.asarray(X, device=self._fit_X.device)
+                X = move_to(X, xp=xp_fit, device=device_fit)
 
-        # Preserve the input dtype for the output graph
-        input_dtype = (X if X is not None else self._fit_X).dtype
+        # Preserve the input dtype for the output graph.
+        # Use self._fit_X which is always a proper array (validated during fit,
+        # never pandas/array_api_strict). Convert via .name for numpy compatibility
+        # after _transfer_to_host.
+        input_dtype = self._fit_X.dtype.name
 
         # construct CSR matrix representation of the k-NN graph
         # Use self.kneighbors which handles dispatch, device offload, and validation
@@ -602,11 +606,10 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         n_queries = A_ind.shape[0]
         n_samples_fit = self.n_samples_fit_
         n_nonzero = n_queries * n_neighbors
-        # Use numpy after transfer to host
-        A_indptr = np.arange(0, n_nonzero + 1, n_neighbors)
+        A_indptr = xp.arange(0, n_nonzero + 1, n_neighbors)
 
         kneighbors_graph = sp.csr_matrix(
-            (A_data, np.reshape(A_ind, (-1,)), A_indptr), shape=(n_queries, n_samples_fit)
+            (A_data, xp.reshape(A_ind, (-1,)), A_indptr), shape=(n_queries, n_samples_fit)
         )
 
         return kneighbors_graph
