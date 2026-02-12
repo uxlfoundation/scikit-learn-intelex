@@ -161,6 +161,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
                 y,
                 dtype=[xp.float64, xp.float32],
                 accept_sparse="csr",
+                multi_output=True,
             )
 
         # SPMD mode: skip validation but still set effective metric
