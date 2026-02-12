@@ -196,13 +196,7 @@ The following are required in order to use ``conda-build``:
 Instructions
 ************
 
-Just like for installs using ``python setup.py``, for conda builds, it is necessary to set environment variables such as ``$DALROOT`` beforehand. If using a conda install of the |onedal|, this can be accomplished by installing packages ``dal`` and ``dal-devel``, and then setting the environment variables to the root of the conda prefix:
-
-.. code-block:: bash
-
-    export DALROOT="$CONDA_PREFIX"
-
-Note however that, unlike the ``python setup.py`` script, MPI backend in the conda recipe is managed by conda and will be automatically set to IMPI.
+When building with conda, dependencies on the |onedal| and MPI are also managed by conda, so it is not necessary to set the environment variables for those dependencies.
 
 .. hint::
 
