@@ -126,10 +126,41 @@ def support_input_format(func):
         else:
             self = None
 
-        if "queue" not in kwargs and "queue" in inspect.signature(func).parameters:
-            if usm_iface := getattr(args[0], "__sycl_usm_array_interface__", None):
-                kwargs["queue"] = usm_iface["syclobj"]
-        return invoke_func(self, *args, **kwargs)
+        # For estimator methods (self is not None), skip host conversion
+        # to avoid unnecessary data transfers — estimators handle Array API
+        # natively via get_namespace/validate_data.
+        if self is not None:
+            if "queue" not in kwargs and "queue" in inspect.signature(func).parameters:
+                if usm_iface := getattr(args[0], "__sycl_usm_array_interface__", None):
+                    kwargs["queue"] = usm_iface["syclobj"]
+            return invoke_func(self, *args, **kwargs)
+
+        # Standalone functions (e.g. train_test_split, roc_auc_score) need
+        # host conversion since they don't handle Array API inputs.
+        if len(args) == 0 and len(kwargs) == 0:
+            return invoke_func(self, *args, **kwargs)
+
+        data = (*args, *kwargs.values())[0]
+        # get and set the global queue from the kwarg or data
+        with QM.manage_global_queue(kwargs.get("queue"), *args) as queue:
+            hostargs, hostkwargs = _get_host_inputs(*args, **kwargs)
+            if "queue" in inspect.signature(func).parameters:
+                hostkwargs["queue"] = queue
+            result = invoke_func(self, *hostargs, **hostkwargs)
+
+            if queue and hasattr(data, "__sycl_usm_array_interface__"):
+                return (
+                    copy_to_dpnp(queue, result)
+                    if is_dpnp_ndarray(data)
+                    else copy_to_usm(queue, result)
+                )
+
+        if get_config().get("transform_output") in ("default", None):
+            input_array_api = getattr(data, "__array_namespace__", lambda: None)()
+            if input_array_api and not _is_numpy_namespace(input_array_api):
+                input_array_api_device = data.device
+                result = _asarray(result, input_array_api, device=input_array_api_device)
+        return result
 
     return wrapper_impl
 
