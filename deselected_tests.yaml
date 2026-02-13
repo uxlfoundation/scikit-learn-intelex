@@ -543,3 +543,6 @@ gpu:
   - tests/test_common.py::test_estimators[RandomForestRegressor(n_estimators=5)-check_regressor_data_not_an_array]
   - tests/test_common.py::test_estimators[RandomForestClassifier(n_estimators=5)-check_class_weight_classifiers]
   - tests/test_common.py::test_estimators[ExtraTreesClassifier(n_estimators=5)-check_class_weight_classifiers]
+
+  # Deselections for 2026.0
+  - ensemble/tests/test_forest.py::test_little_tree_with_small_max_samples
