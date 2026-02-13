@@ -14,6 +14,9 @@
 # limitations under the License.
 # ===============================================================================
 
+import warnings
+
+import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 
@@ -80,3 +83,17 @@ def test_sklearnex_import_lof(dataframe, queue):
     assert hasattr(lof, "_onedal_estimator")
     assert "sklearnex" in lof.__module__
     assert_allclose(result, [-1, 1, 1, 1])
+
+
+# Note: this test is assuming that 'KNeighborsRegressor' will fall back
+# to sklearn with a multi-dimensional 'y'. If support for this is added
+# in the future, this test will need to be modified to trigger another
+# fallback route.
+@pytest.mark.allow_sklearn_fallback
+def test_fallback_to_sklearn_doesnt_throw_warning():
+    rng = np.random.default_rng(seed=123)
+    X = rng.standard_normal(size=(25, 3))
+    y = rng.standard_normal(size=(X.shape[0], 2))
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        _ = KNeighborsRegressor().fit(X, y).predict(X)
