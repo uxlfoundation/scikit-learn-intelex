@@ -236,20 +236,9 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         init = self.init
         use_onedal_init = daal_check_version((2023, "P", 200)) and not callable(self.init)
 
-        # Resolve n_init from 'auto'/'warn' to integer (pattern: like SVM's gamma/max_iter resolution)
+        # Resolve n_init from 'auto' to integer (pattern: like SVM's gamma/max_iter resolution)
         n_init = self.n_init
         default_n_init = 10
-        if n_init == "warn":
-            warnings.warn(
-                (
-                    "The default value of `n_init` will change from "
-                    f"{default_n_init} to 'auto' in 1.4. Set `n_init` explicitly "
-                    "to suppress the warning"
-                ),
-                FutureWarning,
-                stacklevel=2,
-            )
-            n_init = default_n_init
         if n_init == "auto":
             if isinstance(init, str) and init == "k-means++":
                 n_init = 1

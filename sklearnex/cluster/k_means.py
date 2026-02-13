@@ -57,17 +57,13 @@ if daal_check_version((2023, "P", 200)):
             n_clusters=8,
             *,
             init="k-means++",
-            n_init=(
-                "auto"
-                if sklearn_check_version("1.4")
-                else "warn" if sklearn_check_version("1.2") else 10
-            ),
+            n_init="auto",
             max_iter=300,
             tol=1e-4,
             verbose=0,
             random_state=None,
             copy_x=True,
-            algorithm="lloyd" if sklearn_check_version("1.1") else "auto",
+            algorithm="lloyd",
         ):
             super().__init__(
                 n_clusters=n_clusters,
@@ -155,19 +151,8 @@ if daal_check_version((2023, "P", 200)):
             return self
 
         def _resolve_n_init(self, default_n_init=10):
-            """Resolve n_init parameter from 'auto'/'warn' to integer value."""
+            """Resolve n_init parameter from 'auto' to integer value."""
             n_init = self.n_init
-            if n_init == "warn":
-                warnings.warn(
-                    (
-                        "The default value of `n_init` will change from "
-                        f"{default_n_init} to 'auto' in 1.4. Set `n_init` explicitly "
-                        "to suppress the warning"
-                    ),
-                    FutureWarning,
-                    stacklevel=2,
-                )
-                n_init = default_n_init
             if n_init == "auto":
                 if isinstance(self.init, str) and self.init == "k-means++":
                     n_init = 1
