@@ -214,7 +214,6 @@ The following algorithms in ``daal4py`` have support for distributed mode:
 - :obj:`SVD <daal4py.svd>`
 - :obj:`Linear Regression <daal4py.linear_regression_training>`
 - :obj:`Ridge Regression <daal4py.ridge_regression_training>`
-- :obj:`Multinomial Naive Bayes <daal4py.multinomial_naive_bayes_training>`
 - :obj:`K-Means <daal4py.kmeans>`
 - :obj:`DBSCAN <daal4py.dbscan>`
 - :obj:`Covariance <daal4py.covariance>`

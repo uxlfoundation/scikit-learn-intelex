@@ -95,24 +95,6 @@ Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/
 .. autoclass:: daal4py.decision_forest_classification_model
    :members:
 
-Decision Tree Classification
-****************************
-Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/decision_tree/decision-tree-classification`.
-
-.. rubric:: Examples:
-
-- `Single-Process Decision Tree Classification
-  <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/decision_tree_classification.py>`__
-
-.. autoclass:: daal4py.decision_tree_classification_training
-   :members: compute
-.. autoclass:: daal4py.decision_tree_classification_training_result
-   :members:
-.. autoclass:: daal4py.decision_tree_classification_prediction
-   :members: compute
-.. autoclass:: daal4py.decision_tree_classification_model
-   :members:
-
 Gradient Boosted Classification
 *******************************
 Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/gradient_boosted_trees/gradient-boosted-trees-classification`.
@@ -160,97 +142,6 @@ Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/
 .. autoclass:: daal4py.bf_knn_classification_prediction
    :members: compute
 .. autoclass:: daal4py.bf_knn_classification_model
-   :members:
-
-AdaBoost Classification
-***********************
-Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/boosting/adaboost`.
-
-.. rubric:: Examples:
-
-- `Single-Process AdaBoost Classification
-  <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/adaboost.py>`__
-
-.. autoclass:: daal4py.adaboost_training
-   :members: compute
-.. autoclass:: daal4py.adaboost_training_result
-   :members:
-.. autoclass:: daal4py.adaboost_prediction
-   :members: compute
-.. autoclass:: daal4py.adaboost_model
-   :members:
-
-BrownBoost Classification
-*************************
-Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/boosting/brownboost`.
-
-.. rubric:: Examples:
-
-- `Single-Process BrownBoost Classification
-  <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/brownboost.py>`__
-
-.. autoclass:: daal4py.brownboost_training
-   :members: compute
-.. autoclass:: daal4py.brownboost_training_result
-   :members:
-.. autoclass:: daal4py.brownboost_prediction
-   :members: compute
-.. autoclass:: daal4py.brownboost_model
-   :members:
-
-LogitBoost Classification
-*************************
-Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/boosting/logitboost`.
-
-.. rubric:: Examples:
-
-- `Single-Process LogitBoost Classification
-  <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/logitboost.py>`__
-
-.. autoclass:: daal4py.logitboost_training
-   :members: compute
-.. autoclass:: daal4py.logitboost_training_result
-   :members:
-.. autoclass:: daal4py.logitboost_prediction
-   :members: compute
-.. autoclass:: daal4py.logitboost_model
-   :members:
-
-Stump Weak Learner Classification
-*********************************
-Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/stump/classification`.
-
-.. rubric:: Examples:
-
-- `Single-Process Stump Weak Learner Classification
-  <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/stump_classification.py>`__
-
-.. autoclass:: daal4py.stump_classification_training
-   :members: compute
-.. autoclass:: daal4py.stump_classification_training_result
-   :members:
-.. autoclass:: daal4py.stump_classification_prediction
-   :members: compute
-.. autoclass:: daal4py.stump_classification_model
-   :members:
-
-Multinomial Naive Bayes
-***********************
-Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/naive_bayes/naive-bayes-classifier`.
-
-.. rubric:: Examples:
-
-- `Single-Process Naive Bayes <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/naive_bayes.py>`__
-- `Streaming Naive Bayes <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/naive_bayes_streaming.py>`__
-- `Multi-Process Naive Bayes <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/naive_bayes_spmd.py>`__
-
-.. autoclass:: daal4py.multinomial_naive_bayes_training
-   :members: compute
-.. autoclass:: daal4py.multinomial_naive_bayes_training_result
-   :members:
-.. autoclass:: daal4py.multinomial_naive_bayes_prediction
-   :members: compute
-.. autoclass:: daal4py.multinomial_naive_bayes_model
    :members:
 
 Support Vector Machine (SVM)
@@ -316,26 +207,6 @@ Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/
 .. autoclass:: daal4py.decision_forest_regression_prediction_result
    :members:
 .. autoclass:: daal4py.decision_forest_regression_model
-   :members:
-
-Decision Tree Regression
-************************
-Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/decision_tree/decision-tree-regression`.
-
-.. rubric:: Examples:
-
-- `Single-Process Decision Tree Regression
-  <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/decision_tree_regression.py>`__
-
-.. autoclass:: daal4py.decision_tree_regression_training
-   :members: compute
-.. autoclass:: daal4py.decision_tree_regression_training_result
-   :members:
-.. autoclass:: daal4py.decision_tree_regression_prediction
-   :members: compute
-.. autoclass:: daal4py.decision_tree_regression_prediction_result
-   :members:
-.. autoclass:: daal4py.decision_tree_regression_model
    :members:
 
 Gradient Boosted Regression
@@ -436,26 +307,6 @@ Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/
 .. autoclass:: daal4py.ridge_regression_prediction_result
    :members:
 .. autoclass:: daal4py.ridge_regression_model
-   :members:
-
-Stump Regression
-****************
-Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/stump/regression`.
-
-.. rubric:: Examples:
-
-- `Single-Process Stump Regression
-  <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/stump_regression.py>`__
-
-.. autoclass:: daal4py.stump_regression_training
-   :members: compute
-.. autoclass:: daal4py.stump_regression_training_result
-   :members:
-.. autoclass:: daal4py.stump_regression_prediction
-   :members: compute
-.. autoclass:: daal4py.stump_regression_prediction_result
-   :members:
-.. autoclass:: daal4py.stump_regression_model
    :members:
 
 Clustering
@@ -561,48 +412,6 @@ Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/
 .. autoclass:: daal4py.pca_transform_result
    :members:
 
-Outlier detection
------------------
-
-Multivariate Outlier Detection
-******************************
-Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/outlier_detection/multivariate`.
-
-.. rubric:: Examples:
-
-- `Single-Process Multivariate Outlier Detection <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/multivariate_outlier.py>`__
-
-.. autoclass:: daal4py.multivariate_outlier_detection
-   :members: compute
-.. autoclass:: daal4py.multivariate_outlier_detection_result
-   :members:
-
-Univariate Outlier Detection
-****************************
-Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/outlier_detection/univariate`.
-
-.. rubric:: Examples:
-
-- `Single-Process Univariate Outlier Detection <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/univariate_outlier.py>`__
-
-.. autoclass:: daal4py.univariate_outlier_detection
-   :members: compute
-.. autoclass:: daal4py.univariate_outlier_detection_result
-   :members:
-
-Multivariate Bacon Outlier Detection
-************************************
-Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/outlier_detection/multivariate-bacon`.
-
-.. rubric:: Examples:
-
-- `Single-Process Bacon Outlier Detection <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/bacon_outlier.py>`__
-
-.. autoclass:: daal4py.bacon_outlier_detection
-   :members: compute
-.. autoclass:: daal4py.bacon_outlier_detection_result
-   :members:
-
 Optimization Solvers
 --------------------
 
@@ -659,20 +468,6 @@ Sum of Functions
 Iterative Solvers
 *****************
 
-Stochastic Gradient Descent Algorithm
-"""""""""""""""""""""""""""""""""""""
-Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/optimization-solvers/solvers/stochastic-gradient-descent-algorithm`.
-
-.. rubric:: Examples:
-
-- `Using Logistic Loss <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/sgd_logistic_loss.py>`__
-- `Using MSE <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/sgd_mse.py>`__
-
-.. autoclass:: daal4py.optimization_solver_sgd
-   :members: compute
-.. autoclass:: daal4py.optimization_solver_sgd_result
-   :members:
-
 Limited-Memory Broyden-Fletcher-Goldfarb-Shanno Algorithm
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""
 Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/optimization-solvers/solvers/lbfgs`.
@@ -684,32 +479,6 @@ Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/
 .. autoclass:: daal4py.optimization_solver_lbfgs
    :members: compute
 .. autoclass:: daal4py.optimization_solver_lbfgs_result
-   :members:
-
-Adaptive Subgradient Method
-"""""""""""""""""""""""""""
-Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/optimization-solvers/solvers/adaptive-subgradient-method`.
-
-.. rubric:: Examples:
-
-- `Using MSE <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/adagrad_mse.py>`__
-
-.. autoclass:: daal4py.optimization_solver_adagrad
-   :members: compute
-.. autoclass:: daal4py.optimization_solver_adagrad_result
-   :members:
-
-Stochastic Average Gradient Descent
-"""""""""""""""""""""""""""""""""""
-Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/optimization-solvers/solvers/stochastic-average-gradient-accelerated-method`.
-
-.. rubric:: Examples:
-
-- `Single Process saga-logistc_loss <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/saga.py>`__
-
-.. autoclass:: daal4py.optimization_solver_saga
-   :members: compute
-.. autoclass:: daal4py.optimization_solver_saga_result
    :members:
 
 Coordinate Descent
@@ -728,22 +497,6 @@ Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/
 .. autoclass:: daal4py.optimization_solver_precomputed
    :members: compute
 .. autoclass:: daal4py.optimization_solver_precomputed_result
-   :members:
-
-Recommender systems
--------------------
-
-Association Rules
-*****************
-Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/association_rules/association-rules`.
-
-.. rubric:: Examples:
-
-- `Single-Process Association Rules <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/association_rules.py>`__
-
-.. autoclass:: daal4py.association_rules
-   :members: compute
-.. autoclass:: daal4py.association_rules_result
    :members:
 
 Implicit Alternating Least Squares (implicit ALS)
@@ -858,19 +611,6 @@ Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/
 .. autoclass:: daal4py.low_order_moments
    :members: compute
 .. autoclass:: daal4py.low_order_moments_result
-   :members:
-
-Quantiles
-*********
-Parameters and semantics are described in:external+onedal:doc:`daal/algorithms/quantiles/index`.
-
-.. rubric:: Examples:
-
-- `Single-Process Quantiles <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/quantiles.py>`__
-
-.. autoclass:: daal4py.quantiles
-   :members: compute
-.. autoclass:: daal4py.quantiles_result
    :members:
 
 Linear algebra

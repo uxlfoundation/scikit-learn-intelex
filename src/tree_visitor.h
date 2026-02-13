@@ -63,11 +63,6 @@ struct TNVT<daal::algorithms::decision_forest::classification::Model>
     typedef daal::algorithms::tree_utils::classification::SplitNodeDescriptor split_desc_type;
 };
 
-// Decision tree classification uses classification visitors
-template <>
-struct TNVT<daal::algorithms::decision_tree::classification::Model> : public TNVT<daal::algorithms::decision_forest::classification::Model>
-{};
-
 // our tree visitor for counting nodes
 // TODO: Needs to store leaf-node response, and split-node impurity/sample_counts values
 template <typename M>
