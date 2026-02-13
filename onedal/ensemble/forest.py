@@ -196,17 +196,17 @@ class ForestClassifier(BaseForest):
     @supports_queue
     def predict_proba(self, X, queue=None):
         hparams = get_hyperparameters("decision_forest", "infer")
-        X = to_table(X, queue=queue)
-        params = self._get_onedal_params(X)
+        X_table = to_table(X, queue=queue)
+        params = self._get_onedal_params(X_table)
         params["infer_mode"] = "class_probabilities"
 
         if hparams is not None and not hparams.is_default:
-            result = self.infer(params, hparams.backend, self._onedal_model, X)
+            result = self.infer(params, hparams.backend, self._onedal_model, X_table)
         else:
-            result = self.infer(params, self._onedal_model, X)
+            result = self.infer(params, self._onedal_model, X_table)
 
         # TODO: fix probabilities out of [0, 1] interval on oneDAL side
-        pred = from_table(result.probabilities)
+        pred = from_table(result.probabilities, like=X)
         pred[pred > 1.0] = 1.0
         pred[pred < 0.0] = 0.0
         return pred
