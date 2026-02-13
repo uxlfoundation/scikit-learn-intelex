@@ -440,7 +440,11 @@ class BaseSVC(BaseSVM):
 
         # sklearn conformance >1.0, with array API conversion
         # https://github.com/scikit-learn/scikit-learn/pull/21336
-        if not self._sparse and sv.size > 0 and xp.sum(self._n_support) != sv.shape[0]:
+        if (
+            not self._sparse
+            and sv.shape[0] > 0
+            and xp.sum(self._n_support) != sv.shape[0]
+        ):
             raise ValueError(
                 "The internal representation " f"of {self.__class__.__name__} was altered"
             )
@@ -510,7 +514,11 @@ class BaseSVC(BaseSVM):
         )
 
         sv = self.support_vectors_
-        if not self._sparse and sv.size > 0 and xp.sum(self._n_support) != sv.shape[0]:
+        if (
+            not self._sparse
+            and sv.shape[0] > 0
+            and xp.sum(self._n_support) != sv.shape[0]
+        ):
             raise ValueError(
                 "The internal representation " f"of {self.__class__.__name__} was altered"
             )
