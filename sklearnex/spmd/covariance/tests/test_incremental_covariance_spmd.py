@@ -151,7 +151,14 @@ def test_incremental_covariance_partial_fit_spmd_gold(
     "dataframe,queue",
     get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
 )
-@pytest.mark.parametrize("use_raw_input", [True, False])
+@pytest.mark.parametrize(
+    "use_raw_input,array_api_dispatch",
+    [
+        (True, False),
+        (False, True),
+        (False, False),
+    ],
+)
 @pytest.mark.mpi
 def test_incremental_covariance_partial_fit_spmd_synthetic(
     n_samples,
@@ -162,6 +169,7 @@ def test_incremental_covariance_partial_fit_spmd_synthetic(
     queue,
     dtype,
     use_raw_input,
+    array_api_dispatch,
 ):
     # Import spmd and batch algo
     from sklearnex.covariance import IncrementalEmpiricalCovariance
@@ -184,8 +192,10 @@ def test_incremental_covariance_partial_fit_spmd_synthetic(
         local_dpt_data = _convert_to_dataframe(
             split_local_data[i], sycl_queue=queue, target_df=dataframe
         )
-        # Configure raw input status for spmd estimator
-        with config_context(use_raw_input=use_raw_input):
+        # Configure raw input status and array_api_dispatch for spmd estimator
+        with config_context(
+            use_raw_input=use_raw_input, array_api_dispatch=array_api_dispatch
+        ):
             inccov_spmd.partial_fit(local_dpt_data)
 
     inccov.fit(dpt_data)
