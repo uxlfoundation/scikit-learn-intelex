@@ -150,7 +150,6 @@ List of algorithms in ``daal4py`` supporting streaming mode:
 - :obj:`SVD <daal4py.svd>`
 - :obj:`Linear Regression <daal4py.linear_regression_training>`
 - :obj:`Ridge Regression <daal4py.ridge_regression_training>`
-- :obj:`Multinomial Naive Bayes <daal4py.multinomial_naive_bayes_training>`
 - :obj:`Moments of Low Order <daal4py.low_order_moments>`
 - :obj:`Covariance <daal4py.covariance>`
 - :obj:`QR decomposition <daal4py.qr>`
