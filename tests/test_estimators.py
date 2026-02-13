@@ -36,7 +36,6 @@ daal_version = (int(dv()[0:4]), dv()[10:11], int(dv()[4:8]))
 print("DAAL version:", daal_version)
 
 from daal4py.sklearn.ensemble import (
-    AdaBoostClassifier,
     GBTDAALClassifier,
     GBTDAALRegressor,
 )
@@ -94,10 +93,6 @@ class Test(unittest.TestCase):
         saved = _replace_and_save(md, ["check_estimators_data_not_an_array"], dummy)
         check_estimator(GBTDAALRegressor())
         _restore_from_saved(md, saved)
-
-    def test_AdaBoostClassifier(self):
-        check_estimator(AdaBoostClassifier())
-
 
 if __name__ == "__main__":
     unittest.main()

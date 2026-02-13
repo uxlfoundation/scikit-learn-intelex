@@ -23,5 +23,4 @@ __all__ = [
     "RandomForestRegressor",
     "GBTDAALClassifier",
     "GBTDAALRegressor",
-    "AdaBoostClassifier",
 ]
