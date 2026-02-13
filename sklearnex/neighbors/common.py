@@ -53,16 +53,15 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             self.effective_metric_params_ = {}
             effective_p = self.p
 
-        self.effective_metric_params_["p"] = effective_p
         self.effective_metric_ = self.metric
         # For minkowski distance, use more efficient methods where available
         if self.metric == "minkowski":
-            p = self.effective_metric_params_["p"]
-            if p == 1:
+            self.effective_metric_params_["p"] = effective_p
+            if effective_p == 1:
                 self.effective_metric_ = "manhattan"
-            elif p == 2:
+            elif effective_p == 2:
                 self.effective_metric_ = "euclidean"
-            elif p == np.inf:
+            elif effective_p == np.inf:
                 self.effective_metric_ = "chebyshev"
 
         if not isinstance(X, (KDTree, BallTree, _sklearn_NeighborsBase)):

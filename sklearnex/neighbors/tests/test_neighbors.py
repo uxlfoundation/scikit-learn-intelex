@@ -85,15 +85,11 @@ def test_sklearnex_import_lof(dataframe, queue):
     assert_allclose(result, [-1, 1, 1, 1])
 
 
-# Note: this test is assuming that 'KNeighborsRegressor' will fall back
-# to sklearn with a multi-dimensional 'y'. If support for this is added
-# in the future, this test will need to be modified to trigger another
-# fallback route.
-@pytest.mark.allow_sklearn_fallback
-def test_fallback_to_sklearn_doesnt_throw_warning():
+def test_no_p_if_metric_is_not_minkowski():
     rng = np.random.default_rng(seed=123)
     X = rng.standard_normal(size=(25, 3))
-    y = rng.standard_normal(size=(X.shape[0], 2))
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        _ = KNeighborsRegressor().fit(X, y).predict(X)
+    y = rng.standard_normal(size=X.shape[0])
+    knn = KNeighborsRegressor(metric="euclidean", p=2).fit(X, y)
+    _ = knn.predict(X)
+    assert knn.effective_metric_ == "euclidean"
+    assert "p" not in knn.effective_metric_params_
