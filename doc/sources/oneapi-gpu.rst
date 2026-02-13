@@ -86,6 +86,8 @@ Running on GPU
 
 |sklearnex| offers different options for running an algorithm on a specified device (e.g. a GPU):
 
+.. _target_offload:
+
 Target offload option
 ~~~~~~~~~~~~~~~~~~~~~
 
