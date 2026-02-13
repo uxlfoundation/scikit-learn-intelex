@@ -325,9 +325,10 @@ Classification
      - All parameters are supported except:
 
        - ``kernel`` not in [``"linear"``, ``"rbf"``]
-       - ``class_weight`` != `None`
-     - Only dense data is supported,
-     - Only binary classification is supported.
+       - ``class_weight`` != ``None``
+       - ``probability`` != ``False`` (see limitations on this)
+     - Only dense data is supported.
+     - Only binary classification is supported. Passing ``probability=True`` will still fit the model on GPU, but will fall back to |sklearn| for calibration procedures, using routines which do not support running on GPU.
    * - :obj:`sklearn.ensemble.RandomForestClassifier`
      - All parameters are supported except:
 
