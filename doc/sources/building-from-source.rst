@@ -348,7 +348,7 @@ The ASan runtime used by ICX is the same as the one by Clang. It's possible to p
 
     export LD_PRELOAD="$(clang -print-file-name=libclang_rt.asan-x86_64.so)"
 
-.. note:: This requires both ``clang`` and its runtime libraries to be installed. If using toolkits from ``conda-forge``, then using ``libclang_rt`` requires installing package ``compiler-rt``, in addition to ``clang`` and ``clangxx``.
+.. note:: This requires both ``clang`` and its runtime libraries to be installed. If using toolkits from ``conda-forge``, then using ``libclang_rt`` requires installing package ``compiler-rt``, in addition to ``clang`` and ``clangxx``. One might also want to install ``llvm-tools`` for enhanced debugging outputs.
 
 Then, the Python memory allocator can be set to ``malloc`` like this:
 
