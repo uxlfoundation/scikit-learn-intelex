@@ -771,20 +771,6 @@ Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/
 .. autoclass:: daal4py.distributions_uniform_result
    :members:
 
-Sorting
--------
-
-Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/sorting/index`.
-
-.. rubric:: Examples:
-
-- `Single-Process Sorting <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/sorting.py>`__
-
-.. autoclass:: daal4py.sorting
-   :members: compute
-.. autoclass:: daal4py.sorting_result
-   :members:
-
 .. Note: oneDAL's doc do not have any named object referencing these specific sections,
 .. hence the need for this workaround.
 .. |onedal-dg-k-means-computation| replace:: |onedal| K-Means Computation
