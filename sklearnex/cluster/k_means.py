@@ -414,8 +414,25 @@ if daal_check_version((2023, "P", 200)):
                 f"Unknown method {method_name} in {self.__class__.__name__}"
             )
 
-        _onedal_gpu_supported = _onedal_supported
         _onedal_cpu_supported = _onedal_supported
+
+        def _onedal_gpu_supported(self, method_name, *data):
+            # callable init uses numpy ops in _init_centroids_sklearn
+            # which don't work on GPU arrays; fall back to sklearn
+            if method_name == "fit" and callable(self.init):
+                patching_status = PatchingConditionsChain(
+                    f"sklearn.cluster.{self.__class__.__name__}.fit"
+                )
+                patching_status.and_conditions(
+                    [
+                        (
+                            False,
+                            "Callable 'init' is not supported on GPU.",
+                        ),
+                    ]
+                )
+                return patching_status
+            return self._onedal_supported(method_name, *data)
 
         def _check_test_data(self, X):
             xp, _ = get_namespace(X)

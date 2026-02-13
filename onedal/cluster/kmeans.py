@@ -33,10 +33,9 @@ from sklearn.exceptions import ConvergenceWarning
 from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.utils import check_random_state
 
-from .._config import _get_config
 from ..common._mixin import ClusterMixin, TransformerMixin
 from ..datatypes import from_table, to_table
-from ..utils.validation import _check_array, _is_arraylike_not_scalar, _is_csr
+from ..utils.validation import _is_arraylike_not_scalar, _is_csr
 
 
 class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
@@ -140,8 +139,9 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         elif isinstance(init, str) and init == "random":
             algorithm = "random_dense" if not is_csr else "random_csr"
         elif _is_arraylike_not_scalar(init):
-            centers = init.toarray() if _is_csr(init) else np.asarray(init)
-            return to_table(centers, queue=QM.get_global_queue())
+            if _is_csr(init):
+                init = init.toarray()
+            return to_table(init, queue=QM.get_global_queue())
         else:
             raise TypeError("Unsupported type of the `init` value")
 
@@ -214,6 +214,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         is_csr = _is_csr(X)
         X_table = to_table(X, queue=queue)
         dtype = X_table.dtype
+        self._input_type = X  # store for from_table(like=...) in properties
 
         self._compute_tolerance(X_table, is_csr, dtype)
         self.n_features_in_ = X_table.column_count
@@ -300,9 +301,11 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         self.model_ = best_model
         self.n_iter_ = best_n_iter
         self.inertia_ = best_inertia
-        self.labels_ = from_table(best_labels).ravel()
+        # from_table without like= returns numpy (needed for np.unique check below)
+        _labels_np = from_table(best_labels).ravel()
+        self.labels_ = from_table(best_labels, like=X).ravel()
 
-        distinct_clusters = len(np.unique(self.labels_))
+        distinct_clusters = len(np.unique(_labels_np))
         if distinct_clusters < self.n_clusters:
             warnings.warn(
                 "Number of distinct clusters ({}) found smaller than n_clusters ({}). "
@@ -319,12 +322,15 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         if self._cluster_centers_ is None:
             if not hasattr(self, "model_") or self.model_ is None:
                 raise NameError("This model has not been trained")
-            self._cluster_centers_ = from_table(self.model_.centroids)
+            self._cluster_centers_ = from_table(
+                self.model_.centroids,
+                like=getattr(self, "_input_type", None),
+            )
         return self._cluster_centers_
 
     @cluster_centers_.setter
     def cluster_centers_(self, cluster_centers):
-        self._cluster_centers_ = np.asarray(cluster_centers)
+        self._cluster_centers_ = cluster_centers
         self.n_iter_ = 0
         self.inertia_ = 0
         # keep backend model in sync
@@ -340,7 +346,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
     def predict(self, X, queue=None):
         X_table = to_table(X, queue=QM.get_global_queue())
         result = self._predict_backend(X_table)
-        return from_table(result.responses).ravel()
+        return from_table(result.responses, like=X).ravel()
 
     @supports_queue
     def score(self, X, queue=None):
