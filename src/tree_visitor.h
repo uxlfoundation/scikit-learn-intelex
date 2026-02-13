@@ -136,22 +136,6 @@ TreeState _getTreeState(M * model, size_t iTree, size_t n_classes)
     return TreeState(tsv);
 }
 
-// This is the function for getting the tree state from a tree which we use in cython
-// we will have different model types, so it's a template
-// Note: the caller will own the memory of the 2 returned arrays!
-template <typename M>
-TreeState _getTreeState(M * model, size_t n_classes)
-{
-    // First count nodes
-    NodeDepthCountNodeVisitor<typename M::ElementType> ncv;
-    (*model)->traverseDFS(ncv);
-    // then do the final tree traversal
-    toSKLearnTreeObjectVisitor<typename M::ElementType> tsv(ncv.depth, ncv.n_nodes, ncv.n_leaf_nodes, n_classes);
-    (*model)->traverseDFS(tsv);
-
-    return TreeState(tsv);
-}
-
 // ****************************************************
 // ****************************************************
 // Visitor implementation
