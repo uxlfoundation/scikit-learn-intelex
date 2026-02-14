@@ -19,13 +19,12 @@ from abc import ABCMeta, abstractmethod
 from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
 from onedal.utils import _sycl_queue_manager as QM
+from sklearnex.utils._array_api import get_namespace
 
 from ..common._estimator_checks import _check_is_fitted, _is_classifier, _is_regressor
 from ..common._mixin import ClassifierMixin, RegressorMixin
 from ..datatypes import from_table, to_table
 from ..utils._array_api import _get_sycl_namespace
-
-from sklearnex.utils._array_api import get_namespace
 
 
 class NeighborsCommonBase(metaclass=ABCMeta):
