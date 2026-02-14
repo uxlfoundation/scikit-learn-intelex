@@ -15,6 +15,7 @@
 # ==============================================================================
 
 import warnings
+from numbers import Integral
 
 import numpy as np
 from scipy import sparse as sp
@@ -26,18 +27,214 @@ from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._utils import is_sparse, sklearn_check_version
 from onedal._device_offload import _transfer_to_host
+from onedal.utils._array_api import _is_numpy_namespace
 from onedal.utils.validation import _check_array, _num_features, _num_samples
 
+from .._config import get_config
 from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
-from ..utils.validation import check_feature_names
+from ..utils._array_api import get_namespace
+from ..utils.validation import validate_data
 
 
 class KNeighborsDispatchingBase(oneDALEstimator):
-    def _fit_validation(self, X, y=None):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
-        check_feature_names(self, X, reset=True)
+    def _get_weights(self, dist, weights):
+        # Adapted from sklearn.neighbors._base._get_weights
+        if weights in (None, "uniform"):
+            return None
+        if weights == "distance":
+            # Array API support: get namespace from dist array
+            xp, _ = get_namespace(dist)
+            # if user attempts to classify a point that was zero distance from one
+            # or more training points, those training points are weighted as 1.0
+            # and the other points as 0.0
+            with (
+                xp.errstate(divide="ignore")
+                if hasattr(xp, "errstate")
+                else np.errstate(divide="ignore")
+            ):
+                dist = 1.0 / dist
+            inf_mask = xp.isinf(dist)
+            inf_row = xp.any(inf_mask, axis=1)
+            dist[inf_row] = inf_mask[inf_row]
+            return dist
+        elif callable(weights):
+            return weights(dist)
+        else:
+            raise ValueError(
+                "weights not recognized: should be 'uniform', "
+                "'distance', or a callable function"
+            )
+
+    def _compute_weighted_prediction(self, neigh_dist, neigh_ind, weights_param, y_train):
+        """Compute weighted prediction for regression.
+
+        Parameters
+        ----------
+        neigh_dist : array-like
+            Distances to neighbors.
+        neigh_ind : array-like
+            Indices of neighbors.
+        weights_param : str or callable
+            Weight parameter ('uniform', 'distance', or callable).
+        y_train : array-like
+            Training target values.
+
+        Returns
+        -------
+        array-like
+            Predicted values.
+        """
+        # Transfer arrays to host for computation
+        # Needed for torch XPU tensors and SPMD device arrays
+        _, (neigh_dist, neigh_ind, y_train) = _transfer_to_host(
+            neigh_dist, neigh_ind, y_train
+        )
+
+        # Array API support: get namespace from input arrays
+        xp, _ = get_namespace(neigh_dist, neigh_ind, y_train)
+
+        weights = self._get_weights(neigh_dist, weights_param)
+
+        _y = y_train
+        if _y.ndim == 1:
+            _y = xp.reshape(_y, (-1, 1))
+
+        if weights is None:
+            # Vectorized Array API: flatten 2D indices, single take, reshape
+            flat_ind = xp.reshape(neigh_ind, (-1,))
+            gathered_flat = xp.take(
+                _y, flat_ind, axis=0
+            )  # Shape: (n_samples * n_neighbors, n_outputs)
+            gathered = xp.reshape(
+                gathered_flat, (neigh_ind.shape[0], neigh_ind.shape[1], _y.shape[1])
+            )  # Shape: (n_samples, n_neighbors, n_outputs)
+            y_pred = xp.mean(gathered, axis=1)
+        else:
+            # Create y_pred array - matches original onedal implementation using empty()
+            # For Array API arrays (dpctl/dpnp), pass device parameter to match input device
+            # For numpy arrays, device parameter is not supported and not needed
+            y_pred_shape = (neigh_ind.shape[0], _y.shape[1])
+            if not _is_numpy_namespace(xp):
+                # Array API: pass device to ensure same device as input
+                y_pred = xp.empty(
+                    y_pred_shape, dtype=neigh_dist.dtype, device=neigh_ind.device
+                )
+            else:
+                # Numpy: no device parameter
+                y_pred = xp.empty(y_pred_shape, dtype=neigh_dist.dtype)
+            denom = xp.sum(weights, axis=1)
+
+            for j in range(_y.shape[1]):
+                y_col_j = _y[:, j, ...]  # Shape: (n_train_samples,)
+                # Vectorized: flatten indices, single take, reshape
+                flat_ind = xp.reshape(neigh_ind, (-1,))
+                gathered_flat = xp.take(
+                    y_col_j, flat_ind, axis=0
+                )  # Shape: (n_samples * n_neighbors,)
+                gathered_j = xp.reshape(
+                    gathered_flat, neigh_ind.shape
+                )  # Shape: (n_samples, n_neighbors)
+                num = xp.sum(gathered_j * weights, axis=1)
+                y_pred[:, j, ...] = num / denom
+
+        if y_train.ndim == 1:
+            y_pred = xp.reshape(y_pred, (-1,))
+
+        return y_pred
+
+    def _compute_class_probabilities(
+        self, neigh_dist, neigh_ind, weights_param, y_train, classes, outputs_2d
+    ):
+        """Compute class probabilities for classification.
+
+        Parameters
+        ----------
+        neigh_dist : array-like
+            Distances to neighbors.
+        neigh_ind : array-like
+            Indices of neighbors.
+        weights_param : str or callable
+            Weight parameter ('uniform', 'distance', or callable).
+        y_train : array-like
+            Encoded training labels.
+        classes : array-like
+            Class labels.
+        outputs_2d : bool
+            Whether output is 2D (multi-output).
+
+        Returns
+        -------
+        array-like
+            Class probabilities.
+        """
+        from ..utils.validation import _num_samples
+
+        # Transfer all arrays to host to ensure they're on the same queue/device
+        # This is needed especially for SPMD where arrays might be on different queues
+        # Also handles torch XPU tensors that can't be used directly with numpy
+        _, (neigh_dist, neigh_ind, y_train) = _transfer_to_host(
+            neigh_dist, neigh_ind, y_train
+        )
+        if isinstance(classes, list):
+            _, classes = _transfer_to_host(*classes)
+        else:
+            _, (classes,) = _transfer_to_host(classes)
+
+        # After transfer, get the array namespace (will be numpy for host arrays)
+        xp, _ = get_namespace(neigh_dist, neigh_ind, y_train)
+
+        _y = y_train
+        classes_ = classes
+        if not outputs_2d:
+            _y = xp.reshape(y_train, (-1, 1))
+            classes_ = [classes]
+
+        n_queries = neigh_ind.shape[0]
+
+        weights = self._get_weights(neigh_dist, weights_param)
+        if weights is None:
+            weights = xp.ones_like(neigh_ind)
+
+        all_rows = xp.arange(n_queries)
+        probabilities = []
+        for k, classes_k in enumerate(classes_):
+            pred_labels = _y[:, k][neigh_ind]
+            proba_k = xp.zeros((n_queries, classes_k.size), dtype=neigh_dist.dtype)
+
+            # a simple ':' index doesn't work right
+            for i, idx in enumerate(pred_labels.T):  # loop is O(n_neighbors)
+                proba_k[all_rows, idx] += weights[:, i]
+
+            # normalize 'votes' into real [0,1] probabilities
+            normalizer = proba_k.sum(axis=1)[:, xp.newaxis]
+            normalizer[normalizer == 0.0] = 1.0
+            proba_k /= normalizer
+
+            probabilities.append(proba_k)
+
+        if not outputs_2d:
+            probabilities = probabilities[0]
+
+        return probabilities
+
+    def _validate_n_neighbors(self, n_neighbors):
+        if n_neighbors is not None:
+            if n_neighbors <= 0:
+                raise ValueError("Expected n_neighbors > 0. Got %d" % n_neighbors)
+            if not isinstance(n_neighbors, Integral):
+                raise TypeError(
+                    "n_neighbors does not take %s value, "
+                    "enter integer value" % type(n_neighbors)
+                )
+
+    def _set_effective_metric(self):
+        """Set effective_metric_ and effective_metric_params_ without validation.
+
+        Used when we need to set metrics but can't call _fit_validation
+        (e.g., in SPMD mode with use_raw_input=True where sklearn validation
+        would try to convert array API to numpy).
+        """
         if self.metric_params is not None and "p" in self.metric_params:
             if self.p is not None:
                 warnings.warn(
@@ -55,6 +252,16 @@ class KNeighborsDispatchingBase(oneDALEstimator):
 
         self.effective_metric_params_["p"] = effective_p
         self.effective_metric_ = self.metric
+
+        # Convert sklearn metric aliases to canonical names for oneDAL compatibility
+        metric_aliases = {
+            "cityblock": "manhattan",
+            "l1": "manhattan",
+            "l2": "euclidean",
+        }
+        if self.metric in metric_aliases:
+            self.effective_metric_ = metric_aliases[self.metric]
+
         # For minkowski distance, use more efficient methods where available
         if self.metric == "minkowski":
             p = self.effective_metric_params_["p"]
@@ -65,15 +272,65 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             elif p == np.inf:
                 self.effective_metric_ = "chebyshev"
 
+    def _validate_n_classes(self):
+        """Validate that the classifier has at least 2 classes."""
+        length = 0 if self.classes_ is None else len(self.classes_)
+        if length < 2:
+            raise ValueError(
+                f"The number of classes has to be greater than one; got {length}"
+            )
+
+    def _validate_kneighbors_bounds(self, n_neighbors, query_is_train, X):
+        n_samples_fit = self.n_samples_fit_
+        if n_neighbors > n_samples_fit:
+            if query_is_train:
+                n_neighbors -= 1  # ok to modify inplace because an error is raised
+                inequality_str = "n_neighbors < n_samples_fit"
+            else:
+                inequality_str = "n_neighbors <= n_samples_fit"
+            raise ValueError(
+                f"Expected {inequality_str}, but "
+                f"n_neighbors = {n_neighbors}, n_samples_fit = {n_samples_fit}, "
+                f"n_samples = {X.shape[0]}"  # include n_samples for common tests
+            )
+
+    def _kneighbors_validation(self, X, n_neighbors):
+        """Shared validation for kneighbors method called from sklearnex layer.
+
+        Validates:
+        - n_neighbors is within valid bounds if provided
+
+        Note: Feature validation (count, names, etc.) happens in validate_data
+        called by _onedal_kneighbors, so we don't duplicate it here.
+        """
+        # Validate n_neighbors bounds if provided
+        if n_neighbors is not None:
+            # Determine if query is the training set
+            query_is_train = X is None or (hasattr(self, "_fit_X") and X is self._fit_X)
+            self._validate_kneighbors_bounds(
+                n_neighbors, query_is_train, X if X is not None else self._fit_X
+            )
+
+    def _fit_validation(self, X, y=None):
+        if sklearn_check_version("1.2"):
+            self._validate_params()
+        # check_feature_names(self, X, reset=True)
+        # Validate n_neighbors parameter
+        self._validate_n_neighbors(self.n_neighbors)
+
+        # Set effective metric and parameters
+        self._set_effective_metric()
+
         if not isinstance(X, (KDTree, BallTree, _sklearn_NeighborsBase)):
+            # Use _check_array like main branch, but with array API dtype support
+            # Get array namespace for array API support
+            # Don't check for NaN - let oneDAL handle it (will fallback to sklearn if needed)
+            xp, _ = get_namespace(X)
             self._fit_X = _check_array(
                 X,
-                dtype=[np.float64, np.float32],
+                dtype=[xp.float64, xp.float32],
                 accept_sparse=True,
-                force_all_finite=not (
-                    isinstance(self.effective_metric_, str)
-                    and self.effective_metric_.startswith("nan")
-                ),
+                force_all_finite=False,
             )
             self.n_samples_fit_ = _num_samples(self._fit_X)
             self.n_features_in_ = _num_features(self._fit_X)
@@ -100,7 +357,9 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             else:
                 self._fit_method = self.algorithm
 
-        if hasattr(self, "_onedal_estimator"):
+        # Only delete _onedal_estimator if it's an instance attribute, not a class attribute
+        # (SPMD classes define _onedal_estimator as a staticmethod at class level)
+        if "_onedal_estimator" in self.__dict__:
             delattr(self, "_onedal_estimator")
         # To cover test case when we pass patched
         # estimator as an input for other estimator
@@ -110,7 +369,8 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             self._fit_method = X._fit_method
             self.n_samples_fit_ = X.n_samples_fit_
             self.n_features_in_ = X.n_features_in_
-            if hasattr(X, "_onedal_estimator"):
+            # Check if X has _onedal_estimator as an instance attribute (not class attribute)
+            if "_onedal_estimator" in X.__dict__:
                 self.effective_metric_params_.pop("p")
                 if self._fit_method == "ball_tree":
                     X._tree = BallTree(
@@ -217,10 +477,16 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             y = None
             # To check multioutput, might be overhead
             if len(data) > 1:
-                y = np.asarray(data[1])
+                # Array API support: get namespace from y
+                y_input = data[1]
+                xp, is_array_api = get_namespace(y_input)
+                y = xp.asarray(y_input)
                 if is_classifier:
-                    class_count = len(np.unique(y))
-            if hasattr(self, "_onedal_estimator"):
+                    class_count = (
+                        len(xp.unique_values(y)) if is_array_api else len(xp.unique(y))
+                    )
+            # Only access _onedal_estimator if it's an instance attribute (not a class-level staticmethod)
+            if "_onedal_estimator" in self.__dict__:
                 y = self._onedal_estimator._y
             if y is not None and hasattr(y, "ndim") and hasattr(y, "shape"):
                 is_single_output = y.ndim == 1 or y.ndim == 2 and y.shape[1] == 1
@@ -279,8 +545,10 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                 )
             return patching_status
         if method_name in ["predict", "predict_proba", "kneighbors", "score"]:
+            # Check if _onedal_estimator is an instance attribute (model was trained)
+            # For SPMD classes, _onedal_estimator is a class-level staticmethod, so we check __dict__
             patching_status.and_condition(
-                hasattr(self, "_onedal_estimator"), "oneDAL model was not trained."
+                "_onedal_estimator" in self.__dict__, "oneDAL model was not trained."
             )
             return patching_status
         raise RuntimeError(f"Unknown method {method_name} in {class_name}")
@@ -296,20 +564,37 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         if n_neighbors is None:
             n_neighbors = self.n_neighbors
 
-        # check the input only in self.kneighbors
+        # If the model was fitted on a device (GPU) but X is a host array,
+        # move X to the same device so dispatch uses the correct queue.
+        # This prevents a segfault from running CPU inference on a GPU model.
+        xp_fit, _ = get_namespace(self._fit_X)
+        if X is not None and not _is_numpy_namespace(xp_fit):
+            xp_X, _ = get_namespace(X)
+            if _is_numpy_namespace(xp_X):
+                X = xp_fit.asarray(X)
+
+        # Preserve the input dtype for the output graph.
+        # Use self._fit_X which is always a proper array (validated during fit,
+        # never pandas/array_api_strict). Convert via .name for numpy compatibility
+        # after _transfer_to_host.
+        input_dtype = self._fit_X.dtype.name
 
         # construct CSR matrix representation of the k-NN graph
-        # requires moving data to host to construct the csr_matrix
+        # Use self.kneighbors which handles dispatch, device offload, and validation
         if mode == "connectivity":
             A_ind = self.kneighbors(X, n_neighbors, return_distance=False)
+            # Transfer results to host for numpy operations
             _, (A_ind,) = _transfer_to_host(A_ind)
+            xp, _ = get_namespace(A_ind)
             n_queries = A_ind.shape[0]
-            A_data = np.ones(n_queries * n_neighbors)
+            A_data = xp.ones(n_queries * n_neighbors, dtype=input_dtype)
 
         elif mode == "distance":
             A_data, A_ind = self.kneighbors(X, n_neighbors, return_distance=True)
+            # Transfer results to host for numpy operations
             _, (A_data, A_ind) = _transfer_to_host(A_data, A_ind)
-            A_data = np.reshape(A_data, (-1,))
+            xp, _ = get_namespace(A_data)
+            A_data = xp.reshape(A_data, (-1,)).astype(input_dtype, copy=False)
 
         else:
             raise ValueError(
@@ -320,10 +605,10 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         n_queries = A_ind.shape[0]
         n_samples_fit = self.n_samples_fit_
         n_nonzero = n_queries * n_neighbors
-        A_indptr = np.arange(0, n_nonzero + 1, n_neighbors)
+        A_indptr = xp.arange(0, n_nonzero + 1, n_neighbors)
 
         kneighbors_graph = sp.csr_matrix(
-            (A_data, np.reshape(A_ind, (-1,)), A_indptr), shape=(n_queries, n_samples_fit)
+            (A_data, xp.reshape(A_ind, (-1,)), A_indptr), shape=(n_queries, n_samples_fit)
         )
 
         return kneighbors_graph

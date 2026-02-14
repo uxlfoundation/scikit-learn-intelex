@@ -25,14 +25,20 @@ from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.utils.validation import get_requires_y_tag
 from onedal.neighbors import KNeighborsRegressor as onedal_KNeighborsRegressor
 
+from .._config import get_config
 from .._device_offload import dispatch, wrap_output_data
-from ..utils.validation import check_feature_names
+from ..utils._array_api import enable_array_api, get_namespace
+from ..utils.validation import validate_data
 from .common import KNeighborsDispatchingBase
 
 
+@enable_array_api("1.5")  # validate_data y_numeric requires sklearn >=1.5
 @control_n_jobs(decorated_methods=["fit", "predict", "kneighbors", "score"])
 class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegressor):
     __doc__ = _sklearn_KNeighborsRegressor.__doc__
+    # Default onedal estimator class - SPMD subclasses can override this
+    _onedal_estimator = onedal_KNeighborsRegressor
+
     if sklearn_check_version("1.2"):
         _parameter_constraints: dict = {
             **_sklearn_KNeighborsRegressor._parameter_constraints
@@ -77,7 +83,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
     @wrap_output_data
     def predict(self, X):
         check_is_fitted(self)
-        check_feature_names(self, X, reset=False)
+
         return dispatch(
             self,
             "predict",
@@ -91,7 +97,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
     @wrap_output_data
     def score(self, X, y, sample_weight=None):
         check_is_fitted(self)
-        check_feature_names(self, X, reset=False)
+
         return dispatch(
             self,
             "score",
@@ -106,9 +112,13 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
 
     @wrap_output_data
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
+        if n_neighbors is not None:
+            self._validate_n_neighbors(n_neighbors)
+
         check_is_fitted(self)
-        if X is not None:
-            check_feature_names(self, X, reset=False)
+
+        self._kneighbors_validation(X, n_neighbors)
+
         return dispatch(
             self,
             "kneighbors",
@@ -122,6 +132,22 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         )
 
     def _onedal_fit(self, X, y, queue=None):
+        xp, _ = get_namespace(X, y)
+
+        if not get_config()["use_raw_input"]:
+            X, y = validate_data(
+                self,
+                X,
+                y,
+                dtype=[xp.float64, xp.float32],
+                accept_sparse="csr",
+                multi_output=True,
+                y_numeric=True,
+            )
+
+        self._set_effective_metric()
+
+        self._process_regression_targets(y)
         onedal_params = {
             "n_neighbors": self.n_neighbors,
             "weights": self.weights,
@@ -130,20 +156,99 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
             "p": self.effective_metric_params_["p"],
         }
 
-        self._onedal_estimator = onedal_KNeighborsRegressor(**onedal_params)
+        # Use class-level _onedal_estimator if available (for SPMD), else use module-level
+        if hasattr(self.__class__, "_onedal_estimator"):
+            self._onedal_estimator = self.__class__._onedal_estimator(**onedal_params)
+        else:
+            self._onedal_estimator = onedal_KNeighborsRegressor(**onedal_params)
         self._onedal_estimator.requires_y = get_requires_y_tag(self)
         self._onedal_estimator.effective_metric_ = self.effective_metric_
         self._onedal_estimator.effective_metric_params_ = self.effective_metric_params_
+        self._onedal_estimator._shape = self._shape
+        self._onedal_estimator._y = self._y
+
         self._onedal_estimator.fit(X, y, queue=queue)
 
         self._save_attributes()
 
+    def _process_regression_targets(self, y):
+        """Process regression targets and set shape-related attributes.
+
+        Parameters
+        ----------
+        y : array-like
+            Target values
+        """
+        shape = getattr(y, "shape", None)
+        self._shape = shape if shape is not None else y.shape
+        self._y = y
+
     def _onedal_predict(self, X, queue=None):
-        return self._onedal_estimator.predict(X, queue=queue)
+        # Dispatch between GPU and SKL prediction methods
+        gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
+        is_uniform_weights = getattr(self, "weights", "uniform") == "uniform"
+
+        if gpu_device and is_uniform_weights:
+            return self._predict_gpu(X, queue=queue)
+        else:
+            return self._predict_skl(X, queue=queue)
+
+    def _predict_gpu(self, X, queue=None):
+        """GPU prediction path - calls onedal backend."""
+        if X is not None:
+            xp, _ = get_namespace(X)
+            X = validate_data(
+                self,
+                X,
+                dtype=[xp.float64, xp.float32],
+                accept_sparse="csr",
+                reset=False,
+            )
+        return self._onedal_estimator._predict_gpu(X)
+
+    def _predict_skl_regression(self, X):
+        """SKL prediction path for regression - calls kneighbors, computes predictions.
+
+        This method handles X=None (LOOCV) properly by calling self.kneighbors which
+        has the query_is_train logic.
+
+        Parameters
+        ----------
+        X : array-like or None
+            Query samples (or None for LOOCV).
+
+        Returns
+        -------
+        array-like
+            Predicted regression values.
+        """
+        neigh_dist, neigh_ind = self._onedal_estimator.kneighbors(X)
+        return self._compute_weighted_prediction(
+            neigh_dist, neigh_ind, self.weights, self._y
+        )
+
+    def _predict_skl(self, X, queue=None):
+        """SKL prediction path - calls kneighbors through sklearnex, computes prediction here."""
+        if X is not None and not get_config()["use_raw_input"]:
+            xp, _ = get_namespace(X)
+            X = validate_data(
+                self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
+            )
+        return self._predict_skl_regression(X)
 
     def _onedal_kneighbors(
         self, X=None, n_neighbors=None, return_distance=True, queue=None
     ):
+        if X is not None and not get_config()["use_raw_input"]:
+            xp, _ = get_namespace(X)
+            X = validate_data(
+                self,
+                X,
+                dtype=[xp.float64, xp.float32],
+                accept_sparse="csr",
+                reset=False,
+            )
+
         return self._onedal_estimator.kneighbors(
             X, n_neighbors, return_distance, queue=queue
         )

@@ -23,13 +23,18 @@ from daal4py.sklearn.utils.validation import get_requires_y_tag
 from onedal.neighbors import NearestNeighbors as onedal_NearestNeighbors
 
 from .._device_offload import dispatch, wrap_output_data
-from ..utils.validation import check_feature_names
+from ..utils._array_api import enable_array_api, get_namespace
+from ..utils.validation import check_feature_names, validate_data
 from .common import KNeighborsDispatchingBase
 
 
+@enable_array_api
 @control_n_jobs(decorated_methods=["fit", "kneighbors", "radius_neighbors"])
 class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
     __doc__ = _sklearn_NearestNeighbors.__doc__
+    # Default onedal estimator class - SPMD subclasses can override this
+    _onedal_estimator = onedal_NearestNeighbors
+
     if sklearn_check_version("1.2"):
         _parameter_constraints: dict = {
             **_sklearn_NearestNeighbors._parameter_constraints
@@ -73,9 +78,13 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
 
     @wrap_output_data
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
+        if n_neighbors is not None:
+            self._validate_n_neighbors(n_neighbors)
+
         check_is_fitted(self)
-        if X is not None:
-            check_feature_names(self, X, reset=False)
+
+        self._kneighbors_validation(X, n_neighbors)
+
         return dispatch(
             self,
             "kneighbors",
@@ -129,6 +138,14 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         )
 
     def _onedal_fit(self, X, y=None, queue=None):
+        xp, _ = get_namespace(X)
+        X = validate_data(
+            self,
+            X,
+            dtype=[xp.float64, xp.float32],
+            accept_sparse="csr",
+        )
+
         onedal_params = {
             "n_neighbors": self.n_neighbors,
             "algorithm": self.algorithm,
@@ -136,20 +153,42 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
             "p": self.effective_metric_params_["p"],
         }
 
-        self._onedal_estimator = onedal_NearestNeighbors(**onedal_params)
+        if hasattr(self.__class__, "_onedal_estimator"):
+            self._onedal_estimator = self.__class__._onedal_estimator(**onedal_params)
+        else:
+            self._onedal_estimator = onedal_NearestNeighbors(**onedal_params)
         self._onedal_estimator.requires_y = get_requires_y_tag(self)
         self._onedal_estimator.effective_metric_ = self.effective_metric_
         self._onedal_estimator.effective_metric_params_ = self.effective_metric_params_
         self._onedal_estimator.fit(X, y, queue=queue)
-
         self._save_attributes()
 
     def _onedal_predict(self, X, queue=None):
+        if X is not None:
+            xp, _ = get_namespace(X)
+            X = validate_data(
+                self,
+                X,
+                dtype=[xp.float64, xp.float32],
+                accept_sparse="csr",
+                reset=False,
+                force_all_finite=False,
+            )
         return self._onedal_estimator.predict(X, queue=queue)
 
     def _onedal_kneighbors(
         self, X=None, n_neighbors=None, return_distance=True, queue=None
     ):
+        if X is not None:
+            xp, _ = get_namespace(X)
+            X = validate_data(
+                self,
+                X,
+                dtype=[xp.float64, xp.float32],
+                accept_sparse="csr",
+                reset=False,
+            )
+
         return self._onedal_estimator.kneighbors(
             X, n_neighbors, return_distance, queue=queue
         )

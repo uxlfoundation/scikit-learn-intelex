@@ -183,9 +183,15 @@ def wrap_output_data(func: Callable) -> Callable:
         if not (len(args) == 0 and len(kwargs) == 0):
             data = (*args, *kwargs.values())[0]
             # Remove check for result __sycl_usm_array_interface__ on deprecation of use_raw_inputs
+            # For tuple/list results (e.g. kneighbors), check elements instead of the container
+            result_on_device = (
+                all(hasattr(r, "__sycl_usm_array_interface__") for r in result)
+                if isinstance(result, (tuple, list))
+                else hasattr(result, "__sycl_usm_array_interface__")
+            )
             if (
                 usm_iface := getattr(data, "__sycl_usm_array_interface__", None)
-            ) and not hasattr(result, "__sycl_usm_array_interface__"):
+            ) and not result_on_device:
                 queue = usm_iface["syclobj"]
                 return (
                     copy_to_dpnp(queue, result)
