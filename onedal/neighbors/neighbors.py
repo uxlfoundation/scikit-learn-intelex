@@ -25,6 +25,8 @@ from ..common._mixin import ClassifierMixin, RegressorMixin
 from ..datatypes import from_table, to_table
 from ..utils._array_api import _get_sycl_namespace
 
+from sklearnex.utils._array_api import get_namespace
+
 
 class NeighborsCommonBase(metaclass=ABCMeta):
     def __init__(self):
@@ -138,13 +140,11 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         gpu_device = queue is not None and queue.sycl_device.is_gpu
         # Backend-specific formatting: GPU backend needs y in (-1, 1) shape
         if _is_classifier(self) or (_is_regressor(self) and gpu_device):
-            _, xp, _ = _get_sycl_namespace(self._y)
-            _fit_y = xp.reshape(self._y, (-1, 1))
+            _fit_y = self._y.reshape((-1, 1))
         result = self._onedal_fit(X, _fit_y)
 
         if y is not None and _is_regressor(self):
-            _, xp, _ = _get_sycl_namespace(X)
-            self._y = y if self._shape is None else xp.reshape(y, self._shape)
+            self._y = y if self._shape is None else y.reshape(self._shape)
 
         self._onedal_model = result
         result = self
@@ -187,7 +187,7 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         prediction_results = self._onedal_predict(self._onedal_model, X, params)
         distances = from_table(prediction_results.distances, like=X)
         indices = from_table(prediction_results.indices, like=X)
-        _, xp, _ = _get_sycl_namespace(X)
+        xp, _ = get_namespace(X)
 
         if method == "kd_tree":
             for i in range(distances.shape[0]):
