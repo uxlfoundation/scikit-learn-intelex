@@ -30,7 +30,7 @@ on GPU without moving the data from host to device.
 .. important::
     Array API is disabled by default in |sklearn|. In order to get array API support in the |sklearnex|, it must
     be :external+sklearn:doc:`enabled in scikit-learn <modules/array_api>`, which requires either changing
-    global settings or using a ``config_context``, plus installing additional dependencies such as ``array-api-compat``.
+    global settings or using a :doc:`config_context <config-contexts>`, plus installing additional dependencies such as ``array-api-compat``.
 
 When passing array API inputs whose data is on a SYCL-enabled device (e.g. an Intel GPU), as
 supported for example by `PyTorch <https://docs.pytorch.org/docs/stable/notes/get_start_xpu.html>`__
@@ -45,7 +45,7 @@ through options ``allow_sklearn_after_onedal`` (default is ``True``) and ``allow
 :doc:`patching scikit-learn <patching>` or when importing those directly from ``sklearnex``.
 
 .. note::
-    Under default settings for ``set_config`` / ``config_context``, operations that are not supported on GPU will
+    Under default settings for :obj:`sklearnex.set_config` / :obj:`sklearnex.config_context`, operations that are not supported on GPU will
     fall back to |sklearn| instead of falling back to CPU versions from the |sklearnex|.
 
 If array API is enabled for |sklearn| and the estimator being used has array API support on |sklearn| (which can be
@@ -80,7 +80,7 @@ in many cases they are.
     but this is generally not supported and users should not rely on these interchanges working reliably.
 
 .. note::
-    The ``target_offload`` option in config contexts and settings is not intended to work with array API
+    The :ref:`target_offload <target_offload>` option in config contexts and settings is not intended to work with array API
     classes that have :external+dpctl:doc:`USM data <api_reference/dpctl/memory>`. In order to ensure that computations
     happen on the intended device under array API, make sure that the data is already on the desired device.
 
