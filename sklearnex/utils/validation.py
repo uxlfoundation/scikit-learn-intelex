@@ -18,6 +18,7 @@ import math
 import numbers
 from collections.abc import Sequence
 
+import numpy as np
 import scipy.sparse as sp
 from sklearn.utils.validation import _assert_all_finite as _sklearn_assert_all_finite
 from sklearn.utils.validation import _num_samples, check_array, check_non_negative
@@ -107,12 +108,29 @@ def validate_data(
     ensure_all_finite = kwargs.pop("ensure_all_finite", True)
     kwargs[_finite_keyword] = False
 
+    # TODO: remove this workaround once this bug in scikit-learn is fixed:
+    # https://github.com/scikit-learn/scikit-learn/issues/33294
+    if (
+        "dtype" in kwargs
+        and isinstance(kwargs["dtype"], (list, tuple))
+        and len(kwargs["dtype"]) == 2
+        and kwargs["dtype"][0] == np.float64
+        and kwargs["dtype"][1] == np.float32
+    ):
+        restore_dtype = True
+        kwargs["dtype"] = "numeric"
+    else:
+        restore_dtype = False
+
     out = _sklearn_validate_data(
         _estimator,
         X=X,
         y=y,
         **kwargs,
     )
+
+    if restore_dtype:
+        kwargs["dtype"] = [np.float64, np.float32]
 
     check_x = not isinstance(X, str) or X != "no_validation"
     check_y = not (y is None or isinstance(y, str) and y == "no_validation")
