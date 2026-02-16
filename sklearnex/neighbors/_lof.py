@@ -24,6 +24,7 @@ from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
+from onedal._device_offload import _transfer_to_host
 from sklearnex._device_offload import dispatch, wrap_output_data
 from sklearnex.neighbors.common import KNeighborsDispatchingBase
 from sklearnex.neighbors.knn_unsupervised import NearestNeighbors
@@ -51,6 +52,18 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
     _save_attributes = NearestNeighbors._save_attributes
     _onedal_knn_fit = NearestNeighbors._onedal_fit
     _onedal_kneighbors = NearestNeighbors._onedal_kneighbors
+
+    def _local_reachability_density(self, distances_X, neighbors_indices):
+        """The local reachability density (LRD).
+
+        Array API compatible override of sklearn's implementation.
+        """
+        xp, _ = get_namespace(distances_X, neighbors_indices)
+        dist_k = self._distances_fit_X_[neighbors_indices, self.n_neighbors_ - 1]
+        reach_dist_array = xp.maximum(distances_X, dist_k)
+
+        # 1e-10 to avoid `nan' when nb of duplicates > n_neighbors_:
+        return 1.0 / (xp.mean(reach_dist_array, axis=1) + 1e-10)
 
     def _onedal_fit(self, X, y, queue=None):
         if sklearn_check_version("1.2"):
@@ -80,30 +93,32 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
             _neighbors_indices_fit_X_,
         ) = self._onedal_kneighbors(n_neighbors=self.n_neighbors_, queue=queue)
 
-        # Sklearn includes a check for float32 at this point which may not be
-        # necessary for onedal
+        xp, _ = get_namespace(self._distances_fit_X_)
 
         self._lrd = self._local_reachability_density(
             self._distances_fit_X_, _neighbors_indices_fit_X_
         )
 
         # Compute lof score over training samples to define offset_:
-        lrd_ratios_array = self._lrd[_neighbors_indices_fit_X_] / self._lrd[:, np.newaxis]
+        lrd_ratios_array = self._lrd[_neighbors_indices_fit_X_] / xp.reshape(
+            self._lrd, (-1, 1)
+        )
 
-        self.negative_outlier_factor_ = -np.mean(lrd_ratios_array, axis=1)
+        self.negative_outlier_factor_ = -xp.mean(lrd_ratios_array, axis=1)
 
         if self.contamination == "auto":
             # inliers score around -1 (the higher, the less abnormal).
             self.offset_ = -1.5
         else:
-            self.offset_ = np.percentile(
-                self.negative_outlier_factor_, 100.0 * self.contamination
-            )
+            # percentile is not available in all array API implementations,
+            # so transfer to host for this scalar computation.
+            _, (nof_host,) = _transfer_to_host(self.negative_outlier_factor_)
+            self.offset_ = np.percentile(nof_host, 100.0 * self.contamination)
 
         # adoption of warning for data with duplicated samples from
         # https://github.com/scikit-learn/scikit-learn/pull/28773
         if sklearn_check_version("1.6"):
-            if np.min(self.negative_outlier_factor_) < -1e7 and not self.novelty:
+            if float(xp.min(self.negative_outlier_factor_)) < -1e7 and not self.novelty:
                 warnings.warn(
                     "Duplicate values are leading to incorrect results. "
                     "Increase the number of neighbors for more accurate results."
@@ -192,9 +207,10 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
             neighbors_indices_X,
         )
 
-        lrd_ratios_array = self._lrd[neighbors_indices_X] / X_lrd[:, np.newaxis]
+        xp, _ = get_namespace(X_lrd)
+        lrd_ratios_array = self._lrd[neighbors_indices_X] / xp.reshape(X_lrd, (-1, 1))
 
-        return -np.mean(lrd_ratios_array, axis=1)
+        return -xp.mean(lrd_ratios_array, axis=1)
 
     fit.__doc__ = _sklearn_LocalOutlierFactor.fit.__doc__
     kneighbors.__doc__ = _sklearn_LocalOutlierFactor.kneighbors.__doc__

@@ -22,6 +22,7 @@ from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.utils.validation import get_requires_y_tag
 from onedal.neighbors import NearestNeighbors as onedal_NearestNeighbors
 
+from .._config import get_config
 from .._device_offload import dispatch, wrap_output_data
 from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.validation import check_feature_names, validate_data
@@ -139,12 +140,14 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
 
     def _onedal_fit(self, X, y=None, queue=None):
         xp, _ = get_namespace(X)
-        X = validate_data(
-            self,
-            X,
-            dtype=[xp.float64, xp.float32],
-            accept_sparse="csr",
-        )
+
+        if not get_config()["use_raw_input"]:
+            X = validate_data(
+                self,
+                X,
+                dtype=[xp.float64, xp.float32],
+                accept_sparse="csr",
+            )
 
         onedal_params = {
             "n_neighbors": self.n_neighbors,

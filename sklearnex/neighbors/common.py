@@ -573,28 +573,20 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             if _is_numpy_namespace(xp_X):
                 X = xp_fit.asarray(X)
 
-        # Preserve the input dtype for the output graph.
-        # Use self._fit_X which is always a proper array (validated during fit,
-        # never pandas/array_api_strict). Convert via .name for numpy compatibility
-        # after _transfer_to_host.
-        input_dtype = self._fit_X.dtype.name
-
         # construct CSR matrix representation of the k-NN graph
-        # Use self.kneighbors which handles dispatch, device offload, and validation
+        # requires moving data to host to construct the csr_matrix
         if mode == "connectivity":
             A_ind = self.kneighbors(X, n_neighbors, return_distance=False)
-            # Transfer results to host for numpy operations
             _, (A_ind,) = _transfer_to_host(A_ind)
             xp, _ = get_namespace(A_ind)
             n_queries = A_ind.shape[0]
-            A_data = xp.ones(n_queries * n_neighbors, dtype=input_dtype)
+            A_data = xp.ones(n_queries * n_neighbors)
 
         elif mode == "distance":
             A_data, A_ind = self.kneighbors(X, n_neighbors, return_distance=True)
-            # Transfer results to host for numpy operations
             _, (A_data, A_ind) = _transfer_to_host(A_data, A_ind)
             xp, _ = get_namespace(A_data)
-            A_data = xp.reshape(A_data, (-1,)).astype(input_dtype, copy=False)
+            A_data = xp.reshape(A_data, (-1,))
 
         else:
             raise ValueError(
