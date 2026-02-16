@@ -54,6 +54,23 @@ if sklearn_check_version("1.6"):
         # here: https://github.com/uxlfoundation/scikit-learn-intelex/pull/1879
         # This is distilled from the sklearn CalibratedClassifierCV for sklearn <1.8 for
         # use in sklearn > 1.8 to maintain performance.
+
+        # Comment 2026-02-16: scikit-learn doesn't have support for array API with the
+        # arguments used for 'CalibratedClassifierCV' inside of '_fit_calibrator', despite
+        # the apparent usage of 'xp' here. As a result, this works when using 'target_offload'
+        # even though some things end up running on CPU (not sure how much of the
+        # workload is CPU vs. GPU in that case), but doesn't work when using array API
+        # classes, and cannot be made to work by simply moving data to host here,
+        # because the metaestimator from scikit-learn will then make calls to
+        # 'SVC.predict' which sklearnex is overriding and which won't work with
+        # NumPy arrays if fitted to array API.
+        # Some discussions throughout scikit-learn GitHub issues indicate that there
+        # is some desire to remove the option for 'probability=True' from SVC, so perhaps
+        # this problem could be ignored as it will disappear in the future.
+        # TODO: find some way to make this work with array API classes. Maybe it
+        # could work by temporarily removing the '_onedal' estimator from the sklearnex
+        # class, casting both the input data and the support vectors to NumPy, and then
+        # reverting all of this.
         xp, _ = get_namespace(X, y)
         check_classification_targets(y)
         X, y = indexable(X, y)

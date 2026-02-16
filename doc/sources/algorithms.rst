@@ -328,7 +328,11 @@ Classification
        - ``class_weight`` != ``None``
        - ``probability`` != ``False`` (see limitations on this)
      - Only dense data is supported.
-     - Only binary classification is supported. Passing ``probability=True`` will still fit the model on GPU, but will fall back to |sklearn| for calibration procedures, using routines which do not support running on GPU.
+     - Only binary classification is supported. If passing ``probability=True``,
+       under :ref:`target_offload <target_offload>`, the initial model will be
+       fitted on GPU, but subsequent calibration will be done on CPU through |sklearn|;
+       whereas if passing array API inputs with ``probability=True``, the whole
+       procedure will fall back to |sklearn| on CPU.
    * - :obj:`sklearn.ensemble.RandomForestClassifier`
      - All parameters are supported except:
 
