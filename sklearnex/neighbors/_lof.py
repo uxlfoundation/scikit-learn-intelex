@@ -141,8 +141,8 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
         check_is_fitted(self)
 
         if X is not None:
-            xp, _ = get_namespace(X)
             output = self.decision_function(X) < 0
+            xp, _ = get_namespace(output)
             is_inlier = xp.ones_like(output, dtype=int)
             is_inlier[output] = -1
         else:
