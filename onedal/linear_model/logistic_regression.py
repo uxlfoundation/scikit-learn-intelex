@@ -25,7 +25,6 @@ from onedal.common._backend import bind_default_backend
 from onedal.utils import _sycl_queue_manager as QM
 
 from ..common._estimator_checks import _check_is_fitted
-from ..common._mixin import ClassifierMixin
 from ..datatypes import from_table, to_table
 from ..utils.validation import (
     _check_n_features,
@@ -45,12 +44,11 @@ class BaseLogisticRegression(metaclass=ABCMeta):
         self.algorithm = algorithm
 
     @bind_default_backend("logistic_regression.classification")
-    def train(self, *args, **kwargs): ...
+    def train(self, params, X, y, queue=None): ...
 
     @bind_default_backend("logistic_regression.classification")
-    def infer(self, params, model, X): ...
+    def infer(self, params, model, X, queue=None): ...
 
-    # direct access to the backend model class
     @bind_default_backend("logistic_regression.classification")
     def model(self): ...
 
@@ -74,10 +72,8 @@ class BaseLogisticRegression(metaclass=ABCMeta):
     @supports_queue
     def fit(self, X, y, queue=None):
 
-        # Is sparsity check here fine? - Same in BasicStatistics
         is_csr = _is_csr(X)
 
-        # Is it good place? - Same in LinReg
         self.n_features_in_ = _num_features(X, fallback_1d=True)
         
         X_table, y_table = to_table(X, y, queue=queue)
@@ -87,7 +83,7 @@ class BaseLogisticRegression(metaclass=ABCMeta):
 
         self._onedal_model = result.model
         
-        # For now it's fine to keep n_iteration as numpy variable 
+        # TODO: we might need to add array api support here later
         self.n_iter_ = np.array([result.iterations_count])
 
         # _n_inner_iter is the total number of cg-solver iterations
@@ -99,20 +95,15 @@ class BaseLogisticRegression(metaclass=ABCMeta):
 
         return self
 
-    # TODO check if we need to pass queue as an argument
+    # TODO Change logic of _create_model to support behaviour when model
+    # was fitted in sklearn and then predict is called with torch.tensor on gpu
+    # Same method exists in LinReg
     def _create_model(self):
-        # TODO revise create_model implementation here and in LinearRegression
 
-
-        # TODO do we need to support behavior when model fitted with sklearn 
-        # (e.g. torch tensor or else and then this method is run)
-        # Currently it can't 
         m = self.model()
 
         coefficients = self.coef_
-        # TODO is it fine to use get_dtype
         dtype = get_dtype(coefficients)
-        # TODO check if it's fine to use numpy for coefs
         coefficients = np.asarray(coefficients, dtype=dtype)
 
         if coefficients.ndim == 2:
@@ -126,7 +117,6 @@ class BaseLogisticRegression(metaclass=ABCMeta):
             intercept = np.asarray(intercept, dtype=dtype)
             assert intercept.size == 1
 
-        # TODO is it fine to use this func?
         coefficients, intercept = make2d(coefficients), make2d(intercept)
 
         assert coefficients.shape == (1, n_features_in)
@@ -148,10 +138,8 @@ class BaseLogisticRegression(metaclass=ABCMeta):
     def _infer(self, X, queue=None):
         _check_is_fitted(self)
 
-        # Is sparsity check here fine? - Same in BasicStatistics
         is_csr = _is_csr(X)
 
-        # Is this check fine? - Same in LinReg
         _check_n_features(self, X, False)
 
         if not hasattr(self, "_onedal_model"):
@@ -197,24 +185,3 @@ class LogisticRegression(BaseLogisticRegression):
             max_iter=max_iter,
             algorithm=algorithm,
         )
-
-    # @bind_default_backend("logistic_regression.classification")
-    # def train(self, params, X, y, queue=None): ...
-
-    # @bind_default_backend("logistic_regression.classification")
-    # def infer(self, params, X, model, queue=None): ...
-
-    # @bind_default_backend("logistic_regression.classification")
-    # def model(self): ...
-
-    # @supports_queue
-    # def fit(self, X, y, queue=None):
-    #     return self._fit(X, y)
-
-    # @supports_queue
-    # def predict(self, X, queue=None):
-    #     return self._predict(X)
-
-    # @supports_queue
-    # def predict_proba(self, X, queue=None):
-    #     return self._predict_proba(X)
