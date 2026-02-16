@@ -35,7 +35,6 @@ if daal_check_version((2024, "P", 1)):
     from daal4py.sklearn._utils import is_sparse
     from daal4py.sklearn.linear_model.logistic_path import daal4py_fit, daal4py_predict
     from onedal.linear_model import LogisticRegression as onedal_LogisticRegression
-    #from onedal.utils.validation import _num_samples
     from sklearn.utils.validation import _num_samples
 
     from .._config import get_config
@@ -46,7 +45,6 @@ if daal_check_version((2024, "P", 1)):
 
     _sparsity_enabled = daal_check_version((2024, "P", 700))
 
-    # TODO1 add array api check, (what to do if version is less than 1.5, what to use instead of validate_data)
     @enable_array_api("1.5")  # validate_data y_numeric requires sklearn >=1.5
     @control_n_jobs(
         decorated_methods=[
@@ -144,7 +142,6 @@ if daal_check_version((2024, "P", 1)):
         _onedal_LogisticRegression = staticmethod(onedal_LogisticRegression)
         _onedal_cpu_fit = daal4py_fit
 
-        # TODO what do we need support_input_format for?
         decision_function = support_input_format(
             _sklearn_LogisticRegression.decision_function
         )
@@ -157,10 +154,7 @@ if daal_check_version((2024, "P", 1)):
             self.n_iter_ = self._onedal_estimator.n_iter_
 
         def fit(self, X, y, sample_weight=None):
-            print("input sklearnex:", X, type(X))
             if sklearn_check_version("1.2"):
-                # TODO1 OK
-                # is validate params array api compatible? - Seems that we use it in other algorithms
                 self._validate_params()
             dispatch(
                 self,
@@ -243,8 +237,6 @@ if daal_check_version((2024, "P", 1)):
             )
 
         def _onedal_score(self, X, y, sample_weight=None, queue=None):
-            # TODO1 - OK 
-            # is accuracy_score array api compatible? Seems it is functions from skelarn it's ARRAY API compatible 
             return accuracy_score(
                 y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
             )
@@ -259,8 +251,6 @@ if daal_check_version((2024, "P", 1)):
                 f"sklearn.linear_model.{class_name}.fit"
             )
 
-            # TODO1 don't use type_of_target check
-            # Result: this function is already array api compatible (do we need to wrap this in try except checker???)
             target_type = (
                 type_of_target(y, input_name="y")
                 if sklearn_check_version("1.1")
@@ -325,10 +315,7 @@ if daal_check_version((2024, "P", 1)):
             patching_status = PatchingConditionsChain(
                 f"sklearn.linear_model.{class_name}.{method_name}"
             )
-            # TODO1 change _num_samples check
-            # Result: changed it to function from sklearn, it should Array API Compatible
             n_samples = _num_samples(data[0])
-            # TODO is sparsity check fine?
             dal_ready = patching_status.and_conditions(
                 [
                     (n_samples > 0, "Number of samples is less than 1."),
@@ -347,8 +334,6 @@ if daal_check_version((2024, "P", 1)):
             return patching_status
 
         def _onedal_gpu_supported(self, method_name, *data):
-            # TODO1 add check that data is binary
-            # Result: no need this check is inside gpu_fit_supported
             if method_name == "fit":
                 return self._onedal_gpu_fit_supported(method_name, *data)
             if method_name in [
@@ -383,19 +368,14 @@ if daal_check_version((2024, "P", 1)):
 
         def _onedal_fit(self, X, y, sample_weight=None, queue=None):
             if queue is None or queue.sycl_device.is_cpu:
-                # Note that here sklearn function is actually called
-                # TODO1: do we need additional checks or this is fine
-                # What to do with data formats that are not supported in stock skelarn
-                # Result: I think it's fine, sklearn should throw error if data is incompatible
+                # TODO make it array-api compliant when sklearn add array api support for LogReg
                 return self._onedal_cpu_fit(X, y, sample_weight)
-
             assert sample_weight is None
 
-            xp, _ = get_namespace(X, y)
+            xp, is_array_api_compliant = get_namespace(X, y)
 
             use_raw_input = get_config().get("use_raw_input", False) is True
             if not use_raw_input:
-                print("_onedal_fit input before validation:", X, type(X))
                 X, y = validate_data(
                     self,
                     X,
@@ -404,27 +384,22 @@ if daal_check_version((2024, "P", 1)):
                     accept_large_sparse=_sparsity_enabled,
                     dtype=[xp.float64, xp.float32],
                 )
-                print("_onedal_fit input after validation:", X, type(X))
 
             # try catch needed for raw_inputs + array_api data where unlike
             # numpy the way to yield unique values is via `unique_values`
             # This should be removed when refactored for gpu zero-copy
-            try:
-                self.classes_ = xp.unique(y)
-            except AttributeError:
-                self.classes_ = xp.unique_values(y)
-
-            # TODO check there's at least 1 class, (2 classes already checked on oneDAL side)
-            # TODO1 add check that number of classes in data is 2
-            # Result: it's in onedal_gpu_fit_supported, no update needed
+            # try:
+            #     self.classes_ = xp.unique(y)
+            # except AttributeError:
+            #     self.classes_ = xp.unique_values(y)
+            # TODO verify if this change is correct and doesn't trigger transfer to host
+            self.classes_ = xp.unique_values(y) if is_array_api_compliant else xp.unique(xp.asarray(y))
 
             self._onedal_gpu_initialize_estimator()
             try:
                 self._onedal_estimator.fit(X, y, queue=queue)
                 self._onedal_gpu_save_attributes()
             except RuntimeError as err:
-                # TODO1 should we transfer data to host in case of fallback to sklearn???
-                # Result: Same logic in LinReg, not presnet in other estimators: (TOASK)
                 if get_config()["allow_sklearn_after_onedal"]:
 
                     logging.getLogger("sklearnex").info(
@@ -439,10 +414,10 @@ if daal_check_version((2024, "P", 1)):
 
         def _onedal_predict(self, X, queue=None):
             if queue is None or queue.sycl_device.is_cpu:
-                #TODO modify function to return array api compliant results???
+                #TODO Do we also need to make daal4py_predit from daal4py array-api compatible?
                 return daal4py_predict(self, X, "computeClassLabels")
 
-            xp, is_array_api_complient = get_namespace(X)
+            xp, is_array_api_compliant = get_namespace(X)
             use_raw_input = get_config().get("use_raw_input", False) is True
             if not use_raw_input:
                 X = validate_data(
@@ -457,15 +432,17 @@ if daal_check_version((2024, "P", 1)):
             assert hasattr(self, "_onedal_estimator")
             res = self._onedal_estimator.predict(X, queue=queue)
 
-            # TODO ARRAY API only branch check how this code can be adapted
-            y = xp.take(xp.asarray(self.classes_, device=getattr(res, "device", None)), xp.reshape(res, (-1,)), axis=0)
+            if is_array_api_compliant:
+                y = xp.take(xp.asarray(self.classes_, device=getattr(res, "device", None)), xp.reshape(res, (-1,)), axis=0)
+            else:
+                y = xp.take(self.classes_, res.ravel().astype(xp.int32, casting="unsafe"))
             return y
 
         def _onedal_predict_proba(self, X, queue=None):
             if queue is None or queue.sycl_device.is_cpu:
                 return daal4py_predict(self, X, "computeClassProbabilities")
 
-            xp, is_array_api_complient = get_namespace(X)
+            xp, _ = get_namespace(X)
             use_raw_input = get_config().get("use_raw_input", False) is True
             if not use_raw_input:
                 X = validate_data(
@@ -479,7 +456,6 @@ if daal_check_version((2024, "P", 1)):
 
             assert hasattr(self, "_onedal_estimator")
             res = self._onedal_estimator.predict_proba(X, queue=queue)
-            # TODO ARRAY API only branch check how this code can be adapted
             y = xp.reshape(res, (-1,))
             return xp.stack([1 - y, y], axis=1)
 
@@ -488,7 +464,7 @@ if daal_check_version((2024, "P", 1)):
                 return daal4py_predict(self, X, "computeClassLogProbabilities")
 
             y_proba = self._onedal_predict_proba(X, queue)
-            xp, is_array_api_complient = get_namespace(X)
+            xp, _ = get_namespace(X)
 
             if y_proba.dtype == xp.float32:
                 min_prob = 1e-7
@@ -497,7 +473,6 @@ if daal_check_version((2024, "P", 1)):
                 min_prob = 1e-15
                 max_prob = 1.0 - 1e-15
 
-            # TODO ARRAY API only branch check how this code can be adapted
             y_proba = xp.clip(y_proba, min_prob, max_prob)
             return xp.log(y_proba)
 
@@ -505,7 +480,7 @@ if daal_check_version((2024, "P", 1)):
             if queue is None or queue.sycl_device.is_cpu:
                 return super().decision_function(X)
 
-            xp, is_array_api_complient = get_namespace(X)
+            xp, _ = get_namespace(X)
             use_raw_input = get_config().get("use_raw_input", False) is True
             if not use_raw_input:
                 X = validate_data(
@@ -519,7 +494,6 @@ if daal_check_version((2024, "P", 1)):
 
             assert hasattr(self, "_onedal_estimator")
 
-            # TODO ARRAY API only branch check how this code can be adapted
             raw = xp.matmul(X, xp.reshape(self.coef_, (-1,)))
             if self.fit_intercept:
                 raw += self.intercept_
