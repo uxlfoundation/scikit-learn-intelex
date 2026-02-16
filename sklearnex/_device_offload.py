@@ -21,10 +21,10 @@ from typing import Any, Union
 from onedal._device_offload import _transfer_to_host
 from onedal.datatypes import copy_to_dpnp, copy_to_usm
 from onedal.utils import _sycl_queue_manager as QM
-from onedal.utils._array_api import _asarray, _get_sycl_namespace, _is_numpy_namespace
+from onedal.utils._array_api import _asarray, _is_numpy_namespace
 from onedal.utils._third_party import is_dpnp_ndarray
 
-from ._config import config_context, get_config, set_config
+from ._config import get_config
 from ._utils import PatchingConditionsChain, get_tags
 from .base import oneDALEstimator
 
@@ -182,10 +182,11 @@ def wrap_output_data(func: Callable) -> Callable:
         result = func(self, *args, **kwargs)
         if not (len(args) == 0 and len(kwargs) == 0):
             data = (*args, *kwargs.values())[0]
-            sycl_type, _, _ = _get_sycl_namespace(data)
-            if sycl_type and not _get_sycl_namespace(result)[0]:
-                (data_sycl,) = sycl_type.values()
-                queue = data_sycl.sycl_queue
+            # Remove check for result __sycl_usm_array_interface__ on deprecation of use_raw_inputs
+            if (
+                usm_iface := getattr(data, "__sycl_usm_array_interface__", None)
+            ) and not hasattr(result, "__sycl_usm_array_interface__"):
+                queue = usm_iface["syclobj"]
                 return (
                     copy_to_dpnp(queue, result)
                     if is_dpnp_ndarray(data)
