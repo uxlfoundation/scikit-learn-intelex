@@ -43,7 +43,7 @@ Classification
    * - :obj:`sklearn.svm.SVC`
      - ``kernel`` must be one of [``"linear"``, ``"rbf"``, ``"poly"``, ``"sigmoid"``]
      - No limitations
-     - 
+     - ``probability=True`` is not supported with array API classes other than NumPy.
    * - :obj:`sklearn.svm.NuSVC`
      - ``kernel`` must be one of [``"linear"``, ``"rbf"``, ``"poly"``, ``"sigmoid"``]
      - No limitations

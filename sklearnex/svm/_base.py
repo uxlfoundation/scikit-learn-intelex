@@ -263,6 +263,24 @@ class BaseSVC(BaseSVM):
 
     def _onedal_cpu_supported(self, method_name, *data):
         patching_status = super()._onedal_cpu_supported(method_name, *data)
+        # TODO: remove this condition once scikit-learn gets array API
+        # support for CalibratedClassifierCV with the arguments used here.
+        if method_name == "fit":
+            X = data[0]
+            skip = patching_status.and_conditions(
+                [
+                    (
+                        not (
+                            self.probability
+                            and hasattr(X, "__dlpack__")
+                            and not isinstance(X, np.ndarray)
+                        ),
+                        "'probability=True' not supported with array API classes.",
+                    ),
+                ]
+            )
+            if skip:
+                return patching_status
         if method_name == "fit" and patching_status.get_status() and data[2] is not None:
             xp, _ = get_namespace(*data)
             _, y, sample_weight = data
@@ -274,7 +292,7 @@ class BaseSVC(BaseSVM):
                     (
                         (xp.any(y_nonzero != y_nonzero[0])),
                         "Invalid input - all samples with positive weights belong to the same class.",
-                    )
+                    ),
                 ]
             )
         return patching_status
