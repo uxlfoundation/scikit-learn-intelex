@@ -42,11 +42,11 @@ Classification
      - Other limitations
    * - :obj:`sklearn.svm.SVC`
      - ``kernel`` must be one of [``"linear"``, ``"rbf"``, ``"poly"``, ``"sigmoid"``]
-     - No limitations
+     - Negative weights are not supported.
      - ``probability=True`` is not supported with array API classes other than NumPy.
    * - :obj:`sklearn.svm.NuSVC`
      - ``kernel`` must be one of [``"linear"``, ``"rbf"``, ``"poly"``, ``"sigmoid"``]
-     - No limitations
+     - Negative weights are not supported.
      - 
    * - :obj:`sklearn.ensemble.RandomForestClassifier`
      - All parameters are supported except:
@@ -112,10 +112,10 @@ Regression
      - Data formats
    * - :obj:`sklearn.svm.SVR`
      - ``kernel`` must be one of [``"linear"``, ``"rbf"``, ``"poly"``, ``"sigmoid"``]
-     - No limitations
+     - Negative weights are not supported.
    * - :obj:`sklearn.svm.NuSVR`
      - ``kernel`` must be one of [``"linear"``, ``"rbf"``, ``"poly"``, ``"sigmoid"``]
-     - No limitations
+     - Negative weights are not supported.
    * - :obj:`sklearn.ensemble.RandomForestRegressor`
      - All parameters are supported except:
 
@@ -327,7 +327,7 @@ Classification
        - ``kernel`` not in [``"linear"``, ``"rbf"``]
        - ``class_weight`` != ``None``
        - ``probability`` != ``False`` (see limitations on this)
-     - Only dense data is supported.
+     - Only dense data is supported. Negative weights are not supported.
      - Only binary classification is supported. If passing ``probability=True``,
        under :ref:`target_offload <target_offload>`, the initial model will be
        fitted on GPU, but subsequent calibration will be done on CPU through |sklearn|;
