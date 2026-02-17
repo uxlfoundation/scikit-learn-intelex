@@ -28,8 +28,4 @@ See :ref:`about_daal4py` for more details about this module.
 
 List of additional machine learning algorithms offered through ``daal4py``:
 
-- :obj:`Association rules <daal4py.association_rules>`
 - :obj:`Implicit ALS <daal4py.implicit_als_training>`
-- :obj:`BACON Outlier Detection <daal4py.bacon_outlier_detection>`
-- :obj:`Stump Regression <daal4py.stump_regression_training>`
-- :obj:`BrownBoost classification <daal4py.brownboost_training>`
