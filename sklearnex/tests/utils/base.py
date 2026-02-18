@@ -155,6 +155,17 @@ DYNAMIC_METHODS: dict[str, str] = {
 }
 
 
+def check_is_dynamic_method(estimator: object, method: str) -> bool:
+    estimator_str = estimator
+    if not isinstance(estimator_str, str):
+        estimator_str = str(estimator())
+    estimator_str_no_params = estimator_str.split("(")[0]
+    return (
+        estimator_str_no_params in DYNAMIC_METHODS
+        and method in DYNAMIC_METHODS[est_str_no_params]
+    )
+
+
 def gen_models_info(algorithms, required_inputs=["X", "y"], fit=False, daal4py=True):
     """Generate estimator-attribute pairs for pytest test collection.
 

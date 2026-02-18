@@ -45,6 +45,7 @@ from sklearnex.tests.utils import (
     UNPATCHED_FUNCTIONS,
     UNPATCHED_MODELS,
     call_method,
+    check_is_dynamic_method,
     gen_dataset,
     gen_models_info,
 )
@@ -130,8 +131,8 @@ def _check_estimator_patching(caplog, dataframe, queue, dtype, est, method):
         est.fit(X, y)
 
         if method:
-            if not hasattr(est, method):
-                pytest.skip(f"sklearn available_if prevents testing {estimator}.{method}")
+            if not hasattr(est, method) and check_is_dynamic_method(est, method):
+                pytest.skip(f"sklearn available_if prevents testing {est}.{method}")
             call_method(est, method, X, y)
 
     assert all(
@@ -169,16 +170,8 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
         pytest.skip(
             "IncrementalLinearRegression fails on oneDAL side with int types because dataset is filled by zeroes"
         )
-    elif method and not hasattr(est, method):
-        est_str = est
-        if not isinstance(est_str, str):
-            est_str = str(est())
-        est_str_no_params = est_str.split("(")[0]
-        if not (
-            est_str_no_params in DYNAMIC_METHODS
-            and method in DYNAMIC_METHODS[est_str_no_params]
-        ):
-            pytest.skip(f"sklearn available_if prevents testing {estimator}.{method}")
+    elif method and not hasattr(est, method) and not check_is_dynamic_method(est, method):
+        pytest.skip(f"sklearn available_if prevents testing {est}.{method}")
 
     if dataframe == "array_api":
         # as array_api dispatching is experimental, sklearn support isn't guaranteed.
