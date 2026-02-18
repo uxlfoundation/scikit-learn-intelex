@@ -143,9 +143,11 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
         if X is not None:
             output = self.decision_function(X) < 0
             xp, _ = get_namespace(output)
-            is_inlier = xp.where(output, xp.asarray(-1), xp.asarray(1))
+            # Use ones_like to ensure constants are on the same device as output
+            ones = xp.ones_like(output, dtype=xp.int32)
+            is_inlier = xp.where(output, -ones, ones)
         else:
-            is_inlier = np.ones(self.n_samples_fit_, dtype=int)
+            is_inlier = np.ones(self.n_samples_fit_, dtype=np.int32)
             is_inlier[self.negative_outlier_factor_ < self.offset_] = -1
         return is_inlier
 

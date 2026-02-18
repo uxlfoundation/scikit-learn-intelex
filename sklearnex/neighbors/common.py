@@ -85,12 +85,6 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         array-like
             Predicted values.
         """
-        # Transfer arrays to host for computation
-        # Needed for torch XPU tensors and SPMD device arrays
-        _, (neigh_dist, neigh_ind, y_train) = _transfer_to_host(
-            neigh_dist, neigh_ind, y_train
-        )
-
         # Array API support: get namespace from input arrays
         xp, _ = get_namespace(neigh_dist, neigh_ind, y_train)
 
@@ -168,20 +162,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         array-like
             Class probabilities.
         """
-        from ..utils.validation import _num_samples
-
-        # Transfer all arrays to host to ensure they're on the same queue/device
-        # This is needed especially for SPMD where arrays might be on different queues
-        # Also handles torch XPU tensors that can't be used directly with numpy
-        _, (neigh_dist, neigh_ind, y_train) = _transfer_to_host(
-            neigh_dist, neigh_ind, y_train
-        )
-        if isinstance(classes, list):
-            _, classes = _transfer_to_host(*classes)
-        else:
-            _, (classes,) = _transfer_to_host(classes)
-
-        # After transfer, get the array namespace (will be numpy for host arrays)
+        # Array API support: get namespace from input arrays
         xp, _ = get_namespace(neigh_dist, neigh_ind, y_train)
 
         _y = y_train
@@ -196,20 +177,30 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         if weights is None:
             weights = xp.ones_like(neigh_ind)
 
-        all_rows = xp.arange(n_queries)
+        if not _is_numpy_namespace(xp):
+            all_rows = xp.arange(n_queries, device=neigh_ind.device)
+        else:
+            all_rows = xp.arange(n_queries)
+
         probabilities = []
         for k, classes_k in enumerate(classes_):
             pred_labels = _y[:, k][neigh_ind]
-            proba_k = xp.zeros((n_queries, classes_k.size), dtype=neigh_dist.dtype)
+            proba_shape = (n_queries, classes_k.shape[0])
+            if not _is_numpy_namespace(xp):
+                proba_k = xp.zeros(
+                    proba_shape, dtype=neigh_dist.dtype, device=neigh_dist.device
+                )
+            else:
+                proba_k = xp.zeros(proba_shape, dtype=neigh_dist.dtype)
 
             # a simple ':' index doesn't work right
             for i, idx in enumerate(pred_labels.T):  # loop is O(n_neighbors)
                 proba_k[all_rows, idx] += weights[:, i]
 
             # normalize 'votes' into real [0,1] probabilities
-            normalizer = proba_k.sum(axis=1)[:, xp.newaxis]
-            normalizer[normalizer == 0.0] = 1.0
-            proba_k /= normalizer
+            normalizer = xp.reshape(xp.sum(proba_k, axis=1), (-1, 1))
+            normalizer = xp.where(normalizer == 0.0, xp.ones_like(normalizer), normalizer)
+            proba_k = proba_k / normalizer
 
             probabilities.append(proba_k)
 
