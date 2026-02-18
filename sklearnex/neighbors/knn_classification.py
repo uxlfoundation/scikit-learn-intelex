@@ -102,7 +102,8 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     def predict_proba(self, X):
         check_is_fitted(self)
 
-        return dispatch(
+        xp, _ = get_namespace(X)
+        result = dispatch(
             self,
             "predict_proba",
             {
@@ -111,6 +112,10 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             },
             X,
         )
+        # Convert result back to the input array namespace (e.g. torch).
+        # Needed because dispatch -> _transfer_to_host converts to numpy,
+        # and wrap_output_data can't convert torch (no __array_namespace__).
+        return xp.asarray(result)
 
     @wrap_output_data
     def score(self, X, y, sample_weight=None):
