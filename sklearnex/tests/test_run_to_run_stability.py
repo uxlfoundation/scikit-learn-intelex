@@ -79,6 +79,8 @@ def eval_method(X, y, est, method):
     est.fit(X, y)
 
     if method:
+        if not hasattr(est, method):
+            pytest.skip(f"sklearn available_if prevents testing {estimator}.{method}")
         res = call_method(est, method, X, y)
 
     if not isinstance(res, Iterable):
@@ -191,7 +193,15 @@ def test_standard_estimator_stability(estimator, method, dataframe, queue):
     est = PATCHED_MODELS[estimator]()
 
     if method and not hasattr(est, method):
-        pytest.skip(f"sklearn available_if prevents testing {estimator}.{method}")
+        est_str = est
+        if not isinstance(est_str, str):
+            est_str = str(est())
+        est_str_no_params = est_str.split("(")[0]
+        if not (
+            est_str_no_params in DYNAMIC_METHODS
+            and method in DYNAMIC_METHODS[est_str_no_params]
+        ):
+            pytest.skip(f"sklearn available_if prevents testing {estimator}.{method}")
 
     # TODO: remove this once scikit-learn implements array API support
     # for LogisticRegressionCV

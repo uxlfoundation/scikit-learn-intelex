@@ -38,6 +38,7 @@ from sklearnex.dispatcher import _is_preview_enabled
 from sklearnex.metrics import pairwise_distances, roc_auc_score
 from sklearnex.tests.utils import (
     DTYPES,
+    DYNAMIC_METHODS,
     PATCHED_FUNCTIONS,
     PATCHED_MODELS,
     SPECIAL_INSTANCES,
@@ -129,6 +130,8 @@ def _check_estimator_patching(caplog, dataframe, queue, dtype, est, method):
         est.fit(X, y)
 
         if method:
+            if not hasattr(est, method):
+                pytest.skip(f"sklearn available_if prevents testing {estimator}.{method}")
             call_method(est, method, X, y)
 
     assert all(
@@ -167,7 +170,15 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
             "IncrementalLinearRegression fails on oneDAL side with int types because dataset is filled by zeroes"
         )
     elif method and not hasattr(est, method):
-        pytest.skip(f"sklearn available_if prevents testing {estimator}.{method}")
+        est_str = est
+        if not isinstance(est_str, str):
+            est_str = str(est())
+        est_str_no_params = est_str.split("(")[0]
+        if not (
+            est_str_no_params in DYNAMIC_METHODS
+            and method in DYNAMIC_METHODS[est_str_no_params]
+        ):
+            pytest.skip(f"sklearn available_if prevents testing {estimator}.{method}")
 
     if dataframe == "array_api":
         # as array_api dispatching is experimental, sklearn support isn't guaranteed.

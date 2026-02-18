@@ -142,6 +142,18 @@ SPECIAL_INSTANCES = sklearn_clone_dict(
     }
 )
 
+# Some estimators have methods that are dynamically defined through '@available_if'
+# after the object has been fitted. The tests check for their existence by calling
+# 'hasattr' before fitting, so exceptions need to be made for these.
+# Note that if the logic of the tests were to be changed to make all the 'hasattr'
+# checks after '.fit()', it would end up doing too many redundant fits (e.g.
+# method 'decision_function' for all regressors), so keeping it like this allows
+# reducing running times significantly.
+DYNAMIC_METHODS: dict[str, str] = {
+    "SVC": ["predict_proba", "predict_log_proba"],
+    "LocalOutlierFactor": ["predict", "fit_predict"],
+}
+
 
 def gen_models_info(algorithms, required_inputs=["X", "y"], fit=False, daal4py=True):
     """Generate estimator-attribute pairs for pytest test collection.
