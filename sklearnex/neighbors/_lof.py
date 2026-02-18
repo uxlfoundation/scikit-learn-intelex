@@ -143,8 +143,7 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
         if X is not None:
             output = self.decision_function(X) < 0
             xp, _ = get_namespace(output)
-            is_inlier = xp.ones_like(output, dtype=int)
-            is_inlier[output] = -1
+            is_inlier = xp.where(output, xp.asarray(-1), xp.asarray(1))
         else:
             is_inlier = np.ones(self.n_samples_fit_, dtype=int)
             is_inlier[self.negative_outlier_factor_ < self.offset_] = -1
@@ -188,15 +187,17 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
     def score_samples(self, X):
         check_is_fitted(self)
 
-        # Validate and convert X
-        xp, _ = get_namespace(X)
-        X = validate_data(
-            self,
-            X,
-            dtype=[xp.float64, xp.float32],
-            accept_sparse="csr",
-            reset=False,
-        )
+        # Validate and convert X. Skip for array API inputs (dpnp, dpctl,
+        # torch, etc.) since _kneighbors -> dispatch handles the conversion.
+        xp, is_array_api = get_namespace(X)
+        if not is_array_api:
+            X = validate_data(
+                self,
+                X,
+                dtype=[xp.float64, xp.float32],
+                accept_sparse="csr",
+                reset=False,
+            )
 
         distances_X, neighbors_indices_X = self._kneighbors(
             X, n_neighbors=self.n_neighbors_
@@ -207,10 +208,12 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
             neighbors_indices_X,
         )
 
-        xp, _ = get_namespace(X_lrd)
-        lrd_ratios_array = self._lrd[neighbors_indices_X] / xp.reshape(X_lrd, (-1, 1))
+        xp_out, _ = get_namespace(X_lrd)
+        lrd_ratios_array = self._lrd[neighbors_indices_X] / xp_out.reshape(X_lrd, (-1, 1))
 
-        return -xp.mean(lrd_ratios_array, axis=1)
+        # Convert result back to the input array namespace (e.g. torch),
+        # similar to how KNN's _onedal_predict uses xp.asarray().
+        return xp.asarray(-xp_out.mean(lrd_ratios_array, axis=1))
 
     fit.__doc__ = _sklearn_LocalOutlierFactor.fit.__doc__
     kneighbors.__doc__ = _sklearn_LocalOutlierFactor.kneighbors.__doc__
