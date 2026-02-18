@@ -474,7 +474,9 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                 y = xp.asarray(y_input)
                 if is_classifier:
                     class_count = (
-                        len(xp.unique_values(y)) if is_array_api else len(xp.unique(y))
+                        xp.unique_values(y).shape[0]
+                        if is_array_api
+                        else len(xp.unique(y))
                     )
             # Only access _onedal_estimator if it's an instance attribute (not a class-level staticmethod)
             if "_onedal_estimator" in self.__dict__:
