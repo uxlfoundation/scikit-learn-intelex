@@ -141,13 +141,15 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
         check_is_fitted(self)
 
         if X is not None:
+            xp, is_array_api = get_namespace(X)
             output = self.decision_function(X) < 0
-            xp, _ = get_namespace(output)
-            # Use ones_like to ensure constants are on the same device as output
-            ones = xp.ones_like(output, dtype=xp.int32)
+            # Array API: follow X's dtype ("everything follows X").
+            # NumPy: return int64 (sklearn convention for float64/pandas).
+            dtype = X.dtype if is_array_api else xp.int64
+            ones = xp.ones_like(output, dtype=dtype)
             is_inlier = xp.where(output, -ones, ones)
         else:
-            is_inlier = np.ones(self.n_samples_fit_, dtype=np.int32)
+            is_inlier = np.ones(self.n_samples_fit_, dtype=np.int64)
             is_inlier[self.negative_outlier_factor_ < self.offset_] = -1
         return is_inlier
 
