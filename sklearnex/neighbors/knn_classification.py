@@ -273,7 +273,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         )
         xp, _ = get_namespace(X)
         responses = from_table(result.responses, like=X)
-        return self.classes_.take(xp.asarray(responses.ravel(), dtype=xp.int64))
+        return xp.take(self.classes_, xp.asarray(responses.ravel(), dtype=xp.int64))
 
     def _onedal_predict_proba(self, X, queue=None):
         if X is not None and not get_config()["use_raw_input"]:

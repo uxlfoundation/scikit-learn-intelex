@@ -194,9 +194,9 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
 
         if method == "kd_tree":
             for i in range(distances.shape[0]):
-                seq = xp.argsort(distances[i])
-                indices[i] = indices[i][seq]
-                distances[i] = distances[i][seq]
+                seq = xp.argsort(distances[i, :])
+                indices[i, :] = indices[i, :][seq]
+                distances[i, :] = distances[i, :][seq]
 
         if return_distance:
             results = distances, indices
