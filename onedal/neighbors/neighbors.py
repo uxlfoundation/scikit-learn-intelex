@@ -19,7 +19,6 @@ from abc import ABCMeta, abstractmethod
 from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
 from onedal.utils import _sycl_queue_manager as QM
-from sklearnex.utils._array_api import get_namespace
 
 from ..common._estimator_checks import _check_is_fitted, _is_classifier, _is_regressor
 from ..common._mixin import ClassifierMixin, RegressorMixin
@@ -139,13 +138,13 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         gpu_device = queue is not None and queue.sycl_device.is_gpu
         # Backend-specific formatting: GPU backend needs y in (-1, 1) shape
         if _is_classifier(self) or (_is_regressor(self) and gpu_device):
-            xp, _ = get_namespace(self._y)
+            _, xp, _ = _get_sycl_namespace(self._y)
             _fit_y = xp.reshape(self._y, (-1, 1))
         result = self._onedal_fit(X, _fit_y)
 
         if y is not None and _is_regressor(self):
             if self._shape is not None:
-                xp, _ = get_namespace(y)
+                _, xp, _ = _get_sycl_namespace(y)
                 y = xp.reshape(y, self._shape)
             self._y = y
 
@@ -190,7 +189,7 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         prediction_results = self._onedal_predict(self._onedal_model, X, params)
         distances = from_table(prediction_results.distances, like=X)
         indices = from_table(prediction_results.indices, like=X)
-        xp, _ = get_namespace(X)
+        _, xp, _ = _get_sycl_namespace(X)
 
         if method == "kd_tree":
             for i in range(distances.shape[0]):

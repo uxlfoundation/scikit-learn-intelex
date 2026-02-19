@@ -31,7 +31,7 @@ from .._config import get_config
 from .._device_offload import dispatch, wrap_output_data
 from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.validation import validate_data
-from .common import KNeighborsDispatchingBase
+from .common import KNeighborsDispatchingBase, _convert_to_numpy
 
 
 @enable_array_api
@@ -189,11 +189,14 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         self._onedal_estimator.requires_y = get_requires_y_tag(self)
         self._onedal_estimator.effective_metric_ = self.effective_metric_
         self._onedal_estimator.effective_metric_params_ = self.effective_metric_params_
-        self._onedal_estimator.classes_ = self.classes_
-        self._onedal_estimator._y = self._y
+        # Convert CPU Array API arrays to numpy for onedal compatibility.
+        # SYCL arrays pass through; wrap_output_data handles converting back.
+        self._onedal_estimator.classes_ = _convert_to_numpy(self.classes_)
+        self._onedal_estimator._y = _convert_to_numpy(self._y)
         self._onedal_estimator.outputs_2d_ = self.outputs_2d_
         self._onedal_estimator._shape = self._shape
 
+        X, y = _convert_to_numpy(X, y)
         self._onedal_estimator.fit(X, y, queue=queue)
 
         # Post-processing
@@ -266,6 +269,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
                 reset=False,
             )
 
+        X = _convert_to_numpy(X)
         params = self._onedal_estimator._get_onedal_params(X)
         params["result_option"] = "responses"
         result = self._onedal_estimator._onedal_predict(
@@ -288,6 +292,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
                 reset=False,
             )
 
+        X = _convert_to_numpy(X)
         neigh_dist, neigh_ind = self._onedal_estimator.kneighbors(X)
 
         return self._compute_class_probabilities(
@@ -310,6 +315,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
                 reset=False,
             )
 
+        X = _convert_to_numpy(X)
         return self._onedal_estimator.kneighbors(
             X, n_neighbors, return_distance, queue=queue
         )

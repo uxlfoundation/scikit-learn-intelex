@@ -37,6 +37,41 @@ from ..utils._array_api import get_namespace
 from ..utils.validation import validate_data
 
 
+def _convert_to_numpy(*arrays):
+    """Convert CPU Array API arrays to numpy for onedal compatibility.
+
+    If the input is a non-SYCL Array API array (e.g. array_api_strict),
+    convert to numpy via np.asarray (zero-copy for CPU data).
+    SYCL arrays (dpnp/dpctl) and numpy arrays are returned as-is.
+
+    Parameters
+    ----------
+    *arrays : array-like
+        Arrays to convert. None values are passed through.
+
+    Returns
+    -------
+    tuple of arrays
+        Converted arrays. Single input returns single array (not tuple).
+    """
+    results = []
+    for arr in arrays:
+        if arr is None:
+            results.append(arr)
+        elif hasattr(arr, "__sycl_usm_array_interface__"):
+            # SYCL array (dpnp/dpctl) — pass through
+            results.append(arr)
+        elif hasattr(arr, "__array_namespace__"):
+            # CPU Array API array — convert to numpy (zero-copy for CPU data)
+            results.append(np.asarray(arr))
+        else:
+            # numpy or other — pass through
+            results.append(arr)
+    if len(results) == 1:
+        return results[0]
+    return tuple(results)
+
+
 class KNeighborsDispatchingBase(oneDALEstimator):
     def _get_weights(self, dist, weights):
         # Adapted from sklearn.neighbors._base._get_weights

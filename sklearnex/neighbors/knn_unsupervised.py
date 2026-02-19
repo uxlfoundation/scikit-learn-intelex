@@ -26,7 +26,7 @@ from .._config import get_config
 from .._device_offload import dispatch, wrap_output_data
 from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.validation import validate_data
-from .common import KNeighborsDispatchingBase
+from .common import KNeighborsDispatchingBase, _convert_to_numpy
 
 
 @enable_array_api
@@ -163,6 +163,9 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         self._onedal_estimator.requires_y = get_requires_y_tag(self)
         self._onedal_estimator.effective_metric_ = self.effective_metric_
         self._onedal_estimator.effective_metric_params_ = self.effective_metric_params_
+        # Convert CPU Array API arrays to numpy for onedal compatibility.
+        # SYCL arrays pass through; wrap_output_data handles converting back.
+        X = _convert_to_numpy(X)
         self._onedal_estimator.fit(X, y, queue=queue)
         self._save_attributes()
 
@@ -192,6 +195,7 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
                 reset=False,
             )
 
+        X = _convert_to_numpy(X)
         return self._onedal_estimator.kneighbors(
             X, n_neighbors, return_distance, queue=queue
         )
