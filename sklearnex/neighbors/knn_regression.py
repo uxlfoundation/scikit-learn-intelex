@@ -260,7 +260,9 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
         return r2_score(
-            y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
+            _convert_to_numpy(y),
+            self._onedal_predict(X, queue=queue),
+            sample_weight=_convert_to_numpy(sample_weight),
         )
 
     def _save_attributes(self):
