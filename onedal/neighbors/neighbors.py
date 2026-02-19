@@ -66,7 +66,7 @@ class NeighborsCommonBase(metaclass=ABCMeta):
     def _onedal_fit(self, X, y): ...
 
     def _get_onedal_params(self, X, y=None, n_neighbors=None):
-        class_count = 0 if self.classes_ is None else len(self.classes_)
+        class_count = 0 if self.classes_ is None else self.classes_.shape[0]
         weights = getattr(self, "weights", "uniform")
         if self.effective_metric_ == "manhattan":
             p = 1.0
