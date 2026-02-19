@@ -177,25 +177,32 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         if weights is None:
             weights = xp.ones_like(neigh_ind)
 
-        if not _is_numpy_namespace(xp):
-            all_rows = xp.arange(n_queries, device=neigh_ind.device)
-        else:
-            all_rows = xp.arange(n_queries)
+        # Cast weights to float dtype to preserve input dtype (e.g. float32)
+        weights = xp.astype(weights, neigh_dist.dtype)
 
         probabilities = []
         for k, classes_k in enumerate(classes_):
             pred_labels = _y[:, k][neigh_ind]
-            proba_shape = (n_queries, classes_k.shape[0])
-            if not _is_numpy_namespace(xp):
+            n_classes = classes_k.shape[0]
+            proba_shape = (n_queries, n_classes)
+
+            if _is_numpy_namespace(xp):
+                # Fast numpy path: use fancy indexing and array iteration
+                all_rows = xp.arange(n_queries)
+                proba_k = xp.zeros(proba_shape, dtype=neigh_dist.dtype)
+                # a simple ':' index doesn't work right
+                for i, idx in enumerate(pred_labels.T):  # loop is O(n_neighbors)
+                    proba_k[all_rows, idx] += weights[:, i]
+            else:
+                # Array API compliant path: iterate over classes (typically small)
+                # Avoids forbidden array iteration and fancy indexing __setitem__
                 proba_k = xp.zeros(
                     proba_shape, dtype=neigh_dist.dtype, device=neigh_dist.device
                 )
-            else:
-                proba_k = xp.zeros(proba_shape, dtype=neigh_dist.dtype)
-
-            # a simple ':' index doesn't work right
-            for i, idx in enumerate(pred_labels.T):  # loop is O(n_neighbors)
-                proba_k[all_rows, idx] += weights[:, i]
+                for c in range(n_classes):
+                    mask = pred_labels == c
+                    mask = xp.astype(mask, neigh_dist.dtype)
+                    proba_k[:, c] = xp.sum(mask * weights, axis=1)
 
             # normalize 'votes' into real [0,1] probabilities
             normalizer = xp.reshape(xp.sum(proba_k, axis=1), (-1, 1))
