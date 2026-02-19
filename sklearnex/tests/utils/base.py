@@ -157,12 +157,14 @@ DYNAMIC_METHODS: dict[str, str] = {
 
 def check_is_dynamic_method(estimator: object, method: str) -> bool:
     estimator_str = estimator
+    if isinstance(estimator_str, type):
+        estimator_str = estimator()
     if not isinstance(estimator_str, str):
-        estimator_str = str(estimator())
+        estimator_str = str(estimator_str)
     estimator_str_no_params = estimator_str.split("(")[0]
     return (
         estimator_str_no_params in DYNAMIC_METHODS
-        and method in DYNAMIC_METHODS[estimator_str_no_params ]
+        and method in DYNAMIC_METHODS[estimator_str_no_params]
     )
 
 
@@ -218,6 +220,8 @@ def gen_models_info(algorithms, required_inputs=["X", "y"], fit=False, daal4py=T
             methods = []
             for attr in candidates:
                 attribute = getattr_static(est, attr)
+                if not callable(attribute) and hasattr(attribute, "fn"):
+                    attribute = attribute.fn
                 if callable(attribute):
                     params = signature(attribute).parameters
                     if any([inp in params for inp in required_inputs]):
