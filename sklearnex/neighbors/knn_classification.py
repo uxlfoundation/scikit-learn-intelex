@@ -18,7 +18,6 @@ from sklearn.metrics import accuracy_score
 from sklearn.neighbors._classification import (
     KNeighborsClassifier as _sklearn_KNeighborsClassifier,
 )
-from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
@@ -26,6 +25,7 @@ from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.utils.validation import get_requires_y_tag
 from onedal.datatypes import from_table
 from onedal.neighbors import KNeighborsClassifier as onedal_KNeighborsClassifier
+from onedal.utils.validation import _check_classification_targets
 
 from .._config import get_config
 from .._device_offload import dispatch, wrap_output_data
@@ -228,7 +228,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
 
         # Validate classification targets (skipped only for use_raw_input/SPMD mode).
         if not skip_validation:
-            check_classification_targets(y)
+            _check_classification_targets(y)
 
         # Process classes using unique_inverse (numpy 2.0+ and Array API)
         # or unique with return_inverse (older numpy)
