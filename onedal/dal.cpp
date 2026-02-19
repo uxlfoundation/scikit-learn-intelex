@@ -61,6 +61,8 @@ ONEDAL_PY_INIT_MODULE(covariance);
 ONEDAL_PY_INIT_MODULE(dbscan);
 ONEDAL_PY_INIT_MODULE(ensemble);
 ONEDAL_PY_INIT_MODULE(decomposition);
+ONEDAL_PY_INIT_MODULE(louvain);
+
 #if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230100
 ONEDAL_PY_INIT_MODULE(basic_statistics);
 ONEDAL_PY_INIT_MODULE(linear_model);
@@ -122,6 +124,7 @@ PYBIND11_MODULE(_onedal_py_host, m) {
     init_dbscan(m);
     init_decomposition(m);
     init_ensemble(m);
+    init_louvain(m);
 #if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230100
     init_basic_statistics(m);
     init_linear_model(m);

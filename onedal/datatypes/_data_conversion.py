@@ -28,7 +28,7 @@ def _apply_and_pass(func, *args, **kwargs):
     if len(args) == 1:
         return func(args[0], **kwargs)
     return tuple(map(lambda arg: func(arg, **kwargs), args))
-
+ 
 
 def _convert_one_to_table(arg, queue=None):
     # All inputs for table conversion must be array-like or sparse, not scalars

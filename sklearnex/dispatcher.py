@@ -59,6 +59,7 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
         mapping = get_patch_map_core(preview=False)
 
         if _is_new_patching_available():
+            import sklearn.cluster as cluster_module
             import sklearn.covariance as covariance_module
             import sklearn.decomposition as decomposition_module
             from sklearn.covariance import (
@@ -67,6 +68,7 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
             from sklearn.decomposition import IncrementalPCA as IncrementalPCA_sklearn
 
             # Preview classes for patching
+            from .preview.cluster import Louvain as Louvain_sklearnex
             from .preview.covariance import (
                 EmpiricalCovariance as EmpiricalCovariance_sklearnex,
             )
@@ -110,6 +112,17 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
                 )
             return mapping | preview_mapping
 
+            # Louvain
+            mapping["louvain"] = [
+                [
+                    (
+                        cluster_module,
+                        "Louvain",
+                        Louvain_sklearnex,
+                    ),
+                    None,
+                ]
+            ]
         return mapping
 
     # Comment 2026-01-20: This route is untested. It was meant to support
