@@ -265,7 +265,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
 
     def _validate_n_classes(self):
         """Validate that the classifier has at least 2 classes."""
-        length = 0 if self.classes_ is None else len(self.classes_)
+        length = 0 if self.classes_ is None else self.classes_.shape[0]
         if length < 2:
             raise ValueError(
                 f"The number of classes has to be greater than one; got {length}"
