@@ -162,7 +162,7 @@ def check_is_dynamic_method(estimator: object, method: str) -> bool:
     estimator_str_no_params = estimator_str.split("(")[0]
     return (
         estimator_str_no_params in DYNAMIC_METHODS
-        and method in DYNAMIC_METHODS[est_str_no_params]
+        and method in DYNAMIC_METHODS[estimator_str_no_params ]
     )
 
 
