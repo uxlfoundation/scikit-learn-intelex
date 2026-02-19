@@ -16,7 +16,6 @@
 
 from .base import (
     DTYPES,
-    DYNAMIC_METHODS,
     PATCHED_FUNCTIONS,
     PATCHED_MODELS,
     SPECIAL_INSTANCES,
@@ -39,7 +38,6 @@ __all__ = [
     "UNPATCHED_FUNCTIONS",
     "UNPATCHED_MODELS",
     "SPECIAL_INSTANCES",
-    "DYNAMIC_METHODS",
     "call_method",
     "check_is_dynamic_method",
     "gen_models_info",

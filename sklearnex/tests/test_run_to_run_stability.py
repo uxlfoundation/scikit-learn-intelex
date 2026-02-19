@@ -193,9 +193,8 @@ def test_standard_estimator_stability(estimator, method, dataframe, queue):
 
     est = PATCHED_MODELS[estimator]()
 
-    if method and not hasattr(est, method):
-        if not check_is_dynamic_method(est, method):
-            pytest.skip(f"sklearn available_if prevents testing {est}.{method}")
+    if method and not hasattr(est, method) and not check_is_dynamic_method(est, method):
+        pytest.skip(f"sklearn available_if prevents testing {est}.{method}")
 
     # TODO: remove this once scikit-learn implements array API support
     # for LogisticRegressionCV

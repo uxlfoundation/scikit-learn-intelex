@@ -142,30 +142,20 @@ SPECIAL_INSTANCES = sklearn_clone_dict(
     }
 )
 
+
 # Some estimators have methods that are dynamically defined through '@available_if'
 # after the object has been fitted. The tests check for their existence by calling
-# 'hasattr' before fitting, so exceptions need to be made for these.
-# Note that if the logic of the tests were to be changed to make all the 'hasattr'
-# checks after '.fit()', it would end up doing too many redundant fits (e.g.
-# method 'decision_function' for all regressors), so keeping it like this allows
-# reducing running times significantly.
-DYNAMIC_METHODS: dict[str, str] = {
-    "SVC": ["predict_proba", "predict_log_proba"],
-    "LocalOutlierFactor": ["predict", "fit_predict"],
-}
-
-
+# 'hasattr' before fitting, which might miss them, hence the need for this function
 def check_is_dynamic_method(estimator: object, method: str) -> bool:
-    estimator_str = estimator
-    if isinstance(estimator_str, type):
-        estimator_str = estimator()
-    if not isinstance(estimator_str, str):
-        estimator_str = str(estimator_str)
-    estimator_str_no_params = estimator_str.split("(")[0]
-    return (
-        estimator_str_no_params in DYNAMIC_METHODS
-        and method in DYNAMIC_METHODS[estimator_str_no_params]
-    )
+    if isinstance(estimator, type):
+        estimator = estimator()
+    if hasattr(estimator, method):
+        return False
+    try:
+        attr = getattr_static(estimator, method)
+        return hasattr(attr, "fn")
+    except AttributeError:
+        return False
 
 
 def gen_models_info(algorithms, required_inputs=["X", "y"], fit=False, daal4py=True):

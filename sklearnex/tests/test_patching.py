@@ -38,7 +38,6 @@ from sklearnex.dispatcher import _is_preview_enabled
 from sklearnex.metrics import pairwise_distances, roc_auc_score
 from sklearnex.tests.utils import (
     DTYPES,
-    DYNAMIC_METHODS,
     PATCHED_FUNCTIONS,
     PATCHED_MODELS,
     SPECIAL_INSTANCES,
@@ -141,7 +140,7 @@ def _check_estimator_patching(caplog, dataframe, queue, dtype, est, method):
             or "fallback to original Scikit-learn" in i.message
             for i in caplog.records
         ]
-    ), f"sklearnex patching issue in {estimator}.{method} with log: \n{caplog.text}"
+    ), f"sklearnex patching issue in {est}.{method} with log: \n{caplog.text}"
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
