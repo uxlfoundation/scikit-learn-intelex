@@ -104,27 +104,3 @@ def _get_sycl_namespace(*arrays):
         )
 
     return sua_iface, np, False
-
-
-def get_namespace(*arrays):
-    """Get the array namespace for the given arrays.
-
-    Checks for SYCL arrays first, then Array API namespace,
-    and falls back to NumPy.
-
-    Returns
-    -------
-    namespace : module
-        Namespace shared by array objects.
-    is_array_api : bool
-        True if the arrays implement the Array API spec.
-    """
-    sycl_type, xp, is_array_api_compliant = _get_sycl_namespace(*arrays)
-    if sycl_type:
-        return xp, is_array_api_compliant
-
-    for array in arrays:
-        if hasattr(array, "__array_namespace__"):
-            return array.__array_namespace__(), True
-
-    return np, False
