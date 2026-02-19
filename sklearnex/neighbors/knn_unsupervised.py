@@ -25,7 +25,7 @@ from onedal.neighbors import NearestNeighbors as onedal_NearestNeighbors
 from .._config import get_config
 from .._device_offload import dispatch, wrap_output_data
 from ..utils._array_api import enable_array_api, get_namespace
-from ..utils.validation import check_feature_names, validate_data
+from ..utils.validation import validate_data
 from .common import KNeighborsDispatchingBase
 
 
