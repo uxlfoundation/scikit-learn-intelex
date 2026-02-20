@@ -447,7 +447,8 @@ def estimator_trace(estimator, method, cache, isolated_trace):
         which calls the function in calledfuncs
     """
     # Skip dynamic methods gated by available_if that are not available
-    # with default estimator parameters
+    # with default estimator parameters (e.g., SVC.predict_proba when
+    # probability=False, LOF.predict when novelty=False)
     est = (
         PATCHED_MODELS[estimator]()
         if estimator in PATCHED_MODELS
