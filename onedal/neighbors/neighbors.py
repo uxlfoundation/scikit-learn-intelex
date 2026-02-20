@@ -20,10 +20,9 @@ from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
 from onedal.utils import _sycl_queue_manager as QM
 
-from ..common._estimator_checks import _check_is_fitted, _is_classifier, _is_regressor
+from ..common._estimator_checks import _check_is_fitted, _is_classifier
 from ..common._mixin import ClassifierMixin, RegressorMixin
 from ..datatypes import from_table, to_table
-from ..utils._array_api import _get_sycl_namespace
 
 
 class NeighborsCommonBase(metaclass=ABCMeta):
@@ -123,8 +122,8 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
                         "Classification target processing must be done in sklearnex layer before calling onedal fit. "
                         "_y attribute is not set. This indicates the refactoring is incomplete."
                     )
-            else:
-                # For regressors, just store y
+            elif y is not None:
+                # For regressors, store y only if provided
                 self._y = y
         self.n_samples_fit_ = X.shape[0]
         self.n_features_in_ = X.shape[1]
@@ -133,20 +132,7 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
             self.algorithm, self.n_samples_fit_, self.n_features_in_
         )
 
-        _fit_y = None
-        queue = QM.get_global_queue()
-        gpu_device = queue is not None and queue.sycl_device.is_gpu
-        # Backend-specific formatting: GPU backend needs y in (-1, 1) shape
-        if _is_classifier(self) or (_is_regressor(self) and gpu_device):
-            _, xp, _ = _get_sycl_namespace(self._y)
-            _fit_y = xp.reshape(self._y, (-1, 1))
-        result = self._onedal_fit(X, _fit_y)
-
-        if y is not None and _is_regressor(self):
-            if self._shape is not None:
-                _, xp, _ = _get_sycl_namespace(y)
-                y = xp.reshape(y, self._shape)
-            self._y = y
+        result = self._onedal_fit(X, y)
 
         self._onedal_model = result
         result = self
@@ -154,86 +140,30 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         return result
 
     def _kneighbors(self, X=None, n_neighbors=None, return_distance=True):
+        """Raw kneighbors: calls C++ backend and returns from_table results.
+
+        All post-processing (kd_tree sorting, query_is_train self-exclusion)
+        is handled in the sklearnex layer (_kneighbors_postprocess).
+
+        Returns numpy arrays (standard intermediate format). The sklearnex
+        layer's wrap_output_data converts to the user's expected type.
+        """
         _check_is_fitted(self)
 
         if n_neighbors is None:
             n_neighbors = self.n_neighbors
 
-        n_features = getattr(self, "n_features_in_", None)
-
-        if X is not None:
-            query_is_train = False
-        else:
-            query_is_train = True
+        if X is None:
             X = self._fit_X
-            n_neighbors += 1
-
-        n_samples_fit = self.n_samples_fit_
-        if n_neighbors > n_samples_fit:
-            if query_is_train:
-                n_neighbors -= 1
-                inequality_str = "n_neighbors < n_samples_fit"
-            else:
-                inequality_str = "n_neighbors <= n_samples_fit"
-            raise ValueError(
-                f"Expected {inequality_str}, but "
-                f"n_neighbors = {n_neighbors}, n_samples_fit = {n_samples_fit}, "
-                f"n_samples = {X.shape[0]}"
-            )
-
-        method = self._parse_auto_method(
-            self._fit_method, self.n_samples_fit_, n_features
-        )
 
         params = super()._get_onedal_params(X, n_neighbors=n_neighbors)
         prediction_results = self._onedal_predict(self._onedal_model, X, params)
-        distances = from_table(prediction_results.distances, like=X)
-        indices = from_table(prediction_results.indices, like=X)
-        _, xp, _ = _get_sycl_namespace(X)
-
-        if method == "kd_tree":
-            for i in range(distances.shape[0]):
-                seq = xp.argsort(distances[i, :])
-                indices[i, :] = indices[i, :][seq]
-                distances[i, :] = distances[i, :][seq]
+        distances = from_table(prediction_results.distances)
+        indices = from_table(prediction_results.indices)
 
         if return_distance:
-            results = distances, indices
-        else:
-            results = indices
-
-        if not query_is_train:
-            return results
-
-        # If the query data is the same as the indexed data, we would like
-        # to ignore the first nearest neighbor of every sample, i.e
-        # the sample itself.
-        if return_distance:
-            neigh_dist, neigh_ind = results
-        else:
-            neigh_ind = results
-
-        n_queries, _ = X.shape
-        sample_range = xp.reshape(xp.arange(n_queries, dtype=neigh_ind.dtype), (-1, 1))
-        sample_mask = neigh_ind != sample_range
-
-        # Corner case: When the number of duplicates are more
-        # than the number of neighbors, the first NN will not
-        # be the sample, but a duplicate.
-        # In that case mask the first duplicate.
-        dup_gr_nbrs = xp.all(sample_mask, axis=1)
-        first_col = sample_mask[:, 0]
-        first_col = xp.where(dup_gr_nbrs, False, first_col)
-        sample_mask = xp.concatenate(
-            [xp.reshape(first_col, (-1, 1)), sample_mask[:, 1:]], axis=1
-        )
-
-        neigh_ind = xp.reshape(neigh_ind[sample_mask], (n_queries, n_neighbors - 1))
-
-        if return_distance:
-            neigh_dist = xp.reshape(neigh_dist[sample_mask], (n_queries, n_neighbors - 1))
-            return neigh_dist, neigh_ind
-        return neigh_ind
+            return distances, indices
+        return indices
 
 
 class KNeighborsClassifier(NeighborsBase, ClassifierMixin):

@@ -195,8 +195,13 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         array-like
             Class probabilities.
         """
-        # Array API support: get namespace from input arrays
-        xp, _ = get_namespace(neigh_dist, neigh_ind, y_train)
+        # Array API support: get namespace from training labels (user's array type)
+        # neigh_dist/neigh_ind may be numpy from from_table(); convert to match y_train
+        xp, _ = get_namespace(y_train)
+        if not _is_numpy_namespace(xp):
+            device = getattr(y_train, "device", None)
+            neigh_dist = xp.asarray(neigh_dist, device=device)
+            neigh_ind = xp.asarray(neigh_ind, device=device)
 
         _y = y_train
         classes_ = classes
@@ -347,6 +352,71 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             self._validate_kneighbors_bounds(
                 n_neighbors, query_is_train, X if X is not None else self._fit_X
             )
+
+    def _kneighbors_postprocess(
+        self, distances, indices, n_neighbors, return_distance, query_is_train
+    ):
+        """Post-process raw kneighbors results from onedal backend.
+
+        Handles kd_tree sorting and query_is_train self-exclusion.
+        Array manipulation is done here in the sklearnex layer,
+        not in the onedal layer, following the Array API pattern.
+
+        Parameters
+        ----------
+        distances : array-like
+            Raw distances from onedal backend.
+        indices : array-like
+            Raw indices from onedal backend.
+        n_neighbors : int
+            Original number of neighbors requested (before +1 adjustment).
+        return_distance : bool
+            Whether to return distances.
+        query_is_train : bool
+            Whether query data is the training data.
+
+        Returns
+        -------
+        distances, indices or just indices
+        """
+        xp, _ = get_namespace(distances)
+
+        # kd_tree sorting: oneDAL kd_tree returns unsorted results
+        if self._fit_method == "kd_tree":
+            for i in range(distances.shape[0]):
+                seq = xp.argsort(distances[i, :])
+                indices[i, :] = indices[i, :][seq]
+                distances[i, :] = distances[i, :][seq]
+
+        if not query_is_train:
+            if return_distance:
+                return distances, indices
+            return indices
+
+        # If the query data is the same as the indexed data, we would like
+        # to ignore the first nearest neighbor of every sample, i.e
+        # the sample itself.
+        n_queries = indices.shape[0]
+        sample_range = xp.reshape(xp.arange(n_queries, dtype=indices.dtype), (-1, 1))
+        sample_mask = indices != sample_range
+
+        # Corner case: When the number of duplicates are more
+        # than the number of neighbors, the first NN will not
+        # be the sample, but a duplicate.
+        # In that case mask the first duplicate.
+        dup_gr_nbrs = xp.all(sample_mask, axis=1)
+        first_col = sample_mask[:, 0]
+        first_col = xp.where(dup_gr_nbrs, False, first_col)
+        sample_mask = xp.concatenate(
+            [xp.reshape(first_col, (-1, 1)), sample_mask[:, 1:]], axis=1
+        )
+
+        indices = xp.reshape(indices[sample_mask], (n_queries, n_neighbors))
+
+        if return_distance:
+            distances = xp.reshape(distances[sample_mask], (n_queries, n_neighbors))
+            return distances, indices
+        return indices
 
     def _fit_validation(self, X, y=None):
         if sklearn_check_version("1.2"):

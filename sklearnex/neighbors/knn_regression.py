@@ -165,12 +165,22 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         self._onedal_estimator.effective_metric_ = self.effective_metric_
         self._onedal_estimator.effective_metric_params_ = self.effective_metric_params_
         self._onedal_estimator._shape = self._shape
-        self._onedal_estimator._y = _convert_to_numpy(self._y)
+        self._onedal_estimator._y = self._y
 
-        # Convert CPU Array API arrays to numpy for onedal compatibility.
-        # SYCL arrays pass through; wrap_output_data handles converting back.
-        X, y = _convert_to_numpy(X, y)
-        self._onedal_estimator.fit(X, y, queue=queue)
+        # GPU regression uses full train (needs y reshaped to (-1, 1))
+        # CPU regression uses train_search (only needs X, y must be None)
+        # Check queue first, then fall back to data's device (use_raw_input path)
+        if queue is not None:
+            gpu_device = getattr(queue.sycl_device, "is_gpu", False)
+        elif hasattr(X, "sycl_queue"):
+            gpu_device = getattr(X.sycl_queue.sycl_device, "is_gpu", False)
+        else:
+            gpu_device = False
+        if gpu_device:
+            fit_y = xp.reshape(y, (-1, 1))
+        else:
+            fit_y = None
+        self._onedal_estimator.fit(X, fit_y, queue=queue)
 
         self._save_attributes()
 
@@ -188,7 +198,13 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
 
     def _onedal_predict(self, X, queue=None):
         # Dispatch between GPU and SKL prediction methods
-        gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
+        # Check queue first, then fall back to data's device (use_raw_input path)
+        if queue is not None:
+            gpu_device = getattr(queue.sycl_device, "is_gpu", False)
+        elif hasattr(X, "sycl_queue"):
+            gpu_device = getattr(X.sycl_queue.sycl_device, "is_gpu", False)
+        else:
+            gpu_device = False
         is_uniform_weights = getattr(self, "weights", "uniform") == "uniform"
 
         if gpu_device and is_uniform_weights:
@@ -225,7 +241,6 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         array-like
             Predicted regression values.
         """
-        X = _convert_to_numpy(X)
         neigh_dist, neigh_ind = self._onedal_estimator.kneighbors(X)
         return self._compute_weighted_prediction(
             neigh_dist, neigh_ind, self.weights, self._y
@@ -243,19 +258,43 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
     def _onedal_kneighbors(
         self, X=None, n_neighbors=None, return_distance=True, queue=None
     ):
-        if X is not None and not get_config()["use_raw_input"]:
-            xp, _ = get_namespace(X)
-            X = validate_data(
-                self,
-                X,
-                dtype=[xp.float64, xp.float32],
-                accept_sparse="csr",
-                reset=False,
-            )
+        # Determine if query is the training data
+        if X is not None:
+            query_is_train = False
+            if not get_config()["use_raw_input"]:
+                xp, _ = get_namespace(X)
+                X = validate_data(
+                    self,
+                    X,
+                    dtype=[xp.float64, xp.float32],
+                    accept_sparse="csr",
+                    reset=False,
+                )
+        else:
+            query_is_train = True
+            X = self._fit_X
 
-        X = _convert_to_numpy(X)
-        return self._onedal_estimator.kneighbors(
-            X, n_neighbors, return_distance, queue=queue
+        # Resolve effective n_neighbors (adjust for self-exclusion)
+        effective_n_neighbors = (
+            n_neighbors if n_neighbors is not None else self.n_neighbors
+        )
+        if query_is_train:
+            effective_n_neighbors += 1
+
+        # Validate bounds with adjusted n_neighbors
+        self._validate_kneighbors_bounds(effective_n_neighbors, query_is_train, X)
+
+        # Always get both distances and indices for post-processing
+        distances, indices = self._onedal_estimator.kneighbors(
+            X, effective_n_neighbors, return_distance=True, queue=queue
+        )
+
+        return self._kneighbors_postprocess(
+            distances,
+            indices,
+            n_neighbors if n_neighbors is not None else self.n_neighbors,
+            return_distance,
+            query_is_train,
         )
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
@@ -269,7 +308,6 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         self.n_features_in_ = self._onedal_estimator.n_features_in_
         self.n_samples_fit_ = self._onedal_estimator.n_samples_fit_
         self._fit_X = self._onedal_estimator._fit_X
-        self._y = self._onedal_estimator._y
         self._fit_method = self._onedal_estimator._fit_method
         self._tree = self._onedal_estimator._tree
 

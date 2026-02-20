@@ -26,7 +26,7 @@ from .._config import get_config
 from .._device_offload import dispatch, wrap_output_data
 from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.validation import validate_data
-from .common import KNeighborsDispatchingBase, _convert_to_numpy
+from .common import KNeighborsDispatchingBase
 
 
 @enable_array_api
@@ -163,9 +163,6 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         self._onedal_estimator.requires_y = get_requires_y_tag(self)
         self._onedal_estimator.effective_metric_ = self.effective_metric_
         self._onedal_estimator.effective_metric_params_ = self.effective_metric_params_
-        # Convert CPU Array API arrays to numpy for onedal compatibility.
-        # SYCL arrays pass through; wrap_output_data handles converting back.
-        X = _convert_to_numpy(X)
         self._onedal_estimator.fit(X, y, queue=queue)
         self._save_attributes()
 
@@ -185,7 +182,9 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
     def _onedal_kneighbors(
         self, X=None, n_neighbors=None, return_distance=True, queue=None
     ):
+        # Determine if query is the training data
         if X is not None:
+            query_is_train = False
             xp, _ = get_namespace(X)
             X = validate_data(
                 self,
@@ -194,10 +193,31 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
                 accept_sparse="csr",
                 reset=False,
             )
+        else:
+            query_is_train = True
+            X = self._fit_X
 
-        X = _convert_to_numpy(X)
-        return self._onedal_estimator.kneighbors(
-            X, n_neighbors, return_distance, queue=queue
+        # Resolve effective n_neighbors (adjust for self-exclusion)
+        effective_n_neighbors = (
+            n_neighbors if n_neighbors is not None else self.n_neighbors
+        )
+        if query_is_train:
+            effective_n_neighbors += 1
+
+        # Validate bounds with adjusted n_neighbors
+        self._validate_kneighbors_bounds(effective_n_neighbors, query_is_train, X)
+
+        # Always get both distances and indices for post-processing
+        distances, indices = self._onedal_estimator.kneighbors(
+            X, effective_n_neighbors, return_distance=True, queue=queue
+        )
+
+        return self._kneighbors_postprocess(
+            distances,
+            indices,
+            n_neighbors if n_neighbors is not None else self.n_neighbors,
+            return_distance,
+            query_is_train,
         )
 
     def _save_attributes(self):

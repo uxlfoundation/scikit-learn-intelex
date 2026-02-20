@@ -30,7 +30,7 @@ from sklearnex.neighbors.common import KNeighborsDispatchingBase
 from sklearnex.neighbors.knn_unsupervised import NearestNeighbors
 
 from ..utils._array_api import get_namespace
-from ..utils.validation import check_feature_names, validate_data
+from ..utils.validation import validate_data
 
 
 @control_n_jobs(decorated_methods=["fit", "kneighbors", "_kneighbors"])
