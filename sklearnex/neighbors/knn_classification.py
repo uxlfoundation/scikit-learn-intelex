@@ -32,7 +32,7 @@ from .._config import get_config
 from .._device_offload import dispatch, wrap_output_data
 from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.validation import validate_data
-from .common import KNeighborsDispatchingBase, _convert_to_numpy
+from .common import KNeighborsDispatchingBase
 
 
 @enable_array_api
@@ -348,9 +348,9 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
         return accuracy_score(
-            _convert_to_numpy(y),
+            y,
             self._onedal_predict(X, queue=queue),
-            sample_weight=_convert_to_numpy(sample_weight),
+            sample_weight=sample_weight,
         )
 
     def _save_attributes(self):

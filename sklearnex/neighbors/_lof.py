@@ -161,7 +161,11 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
     @wraps(_sklearn_LocalOutlierFactor.fit_predict, assigned=["__doc__"])
     @wrap_output_data
     def fit_predict(self, X, y=None):
-        return self.fit(X)._predict()
+        result = self.fit(X)._predict()
+        xp, is_array_api = get_namespace(X)
+        if is_array_api:
+            result = xp.asarray(result, device=X.device)
+        return result
 
     def _kneighbors(self, X=None, n_neighbors=None, return_distance=True):
         if n_neighbors is not None:
