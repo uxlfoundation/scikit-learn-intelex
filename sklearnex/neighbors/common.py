@@ -54,22 +54,20 @@ def _convert_to_numpy(*arrays):
     tuple of arrays
         Converted arrays. Single input returns single array (not tuple).
     """
-    results = []
-    for arr in arrays:
-        if arr is None:
-            results.append(arr)
-        elif hasattr(arr, "__sycl_usm_array_interface__"):
-            # SYCL array (dpnp/dpctl) — pass through
-            results.append(arr)
+
+    def _convert_one(arr):
+        if arr is None or hasattr(arr, "__sycl_usm_array_interface__"):
+            # None or SYCL array (dpnp/dpctl) — pass through
+            return arr
         elif hasattr(arr, "__array_namespace__"):
             # CPU Array API array — convert to numpy (zero-copy for CPU data)
-            results.append(np.asarray(arr))
-        else:
-            # numpy or other — pass through
-            results.append(arr)
-    if len(results) == 1:
-        return results[0]
-    return tuple(results)
+            return np.asarray(arr)
+        # numpy or other — pass through
+        return arr
+
+    if len(arrays) == 1:
+        return _convert_one(arrays[0])
+    return tuple(_convert_one(arr) for arr in arrays)
 
 
 class KNeighborsDispatchingBase(oneDALEstimator):
@@ -232,13 +230,18 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                 weights_k = xp.astype(weights, neigh_dist.dtype)
                 # Array API compliant path: iterate over classes (typically small)
                 # Avoids forbidden array iteration and fancy indexing __setitem__
+                # Build transposed (n_classes, n_queries) for contiguous row writes,
+                # then transpose to (n_queries, n_classes) at the end.
                 proba_k = xp.zeros(
-                    proba_shape, dtype=neigh_dist.dtype, device=neigh_dist.device
+                    (n_classes, n_queries),
+                    dtype=neigh_dist.dtype,
+                    device=neigh_dist.device,
                 )
+                zero = xp.zeros(1, dtype=neigh_dist.dtype, device=neigh_dist.device)
                 for c in range(n_classes):
                     mask = pred_labels == c
-                    mask = xp.astype(mask, neigh_dist.dtype)
-                    proba_k[:, c] = xp.sum(mask * weights_k, axis=1)
+                    proba_k[c, :] = xp.sum(xp.where(mask, weights_k, zero), axis=1)
+                proba_k = xp.asarray(proba_k).T
 
             # normalize 'votes' into real [0,1] probabilities
             normalizer = xp.reshape(xp.sum(proba_k, axis=1), (-1, 1))
