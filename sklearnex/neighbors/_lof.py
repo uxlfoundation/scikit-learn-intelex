@@ -191,17 +191,11 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
     def score_samples(self, X):
         check_is_fitted(self)
 
-        # Validate and convert X. Skip for array API inputs (dpnp, dpctl,
-        # torch, etc.) since _kneighbors -> dispatch handles the conversion.
-        xp, is_array_api = get_namespace(X)
-        if not is_array_api:
-            X = validate_data(
-                self,
-                X,
-                dtype=[xp.float64, xp.float32],
-                accept_sparse="csr",
-                reset=False,
-            )
+        xp, _ = get_namespace(X)
+
+        # Note: validate_data is NOT called here because
+        # _kneighbors -> dispatch -> _onedal_kneighbors already validates X.
+        # Calling it here would double-validate (4 calls instead of 2).
 
         distances_X, neighbors_indices_X = self._kneighbors(
             X, n_neighbors=self.n_neighbors_

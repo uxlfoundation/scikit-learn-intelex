@@ -343,6 +343,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             n_neighbors if n_neighbors is not None else self.n_neighbors,
             return_distance,
             query_is_train,
+            input_data=X,
         )
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):

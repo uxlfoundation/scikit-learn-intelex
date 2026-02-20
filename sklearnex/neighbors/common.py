@@ -118,8 +118,13 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         array-like
             Predicted values.
         """
-        # Array API support: get namespace from input arrays
-        xp, _ = get_namespace(neigh_dist, neigh_ind, y_train)
+        # Array API support: get namespace from training targets (user's array type)
+        # neigh_dist/neigh_ind may be numpy from from_table(); convert to match y_train
+        xp, _ = get_namespace(y_train)
+        if not _is_numpy_namespace(xp):
+            device = getattr(y_train, "device", None)
+            neigh_dist = xp.asarray(neigh_dist, device=device)
+            neigh_ind = xp.asarray(neigh_ind, device=device)
 
         weights = self._get_weights(neigh_dist, weights_param)
 
@@ -354,7 +359,13 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             )
 
     def _kneighbors_postprocess(
-        self, distances, indices, n_neighbors, return_distance, query_is_train
+        self,
+        distances,
+        indices,
+        n_neighbors,
+        return_distance,
+        query_is_train,
+        input_data=None,
     ):
         """Post-process raw kneighbors results from onedal backend.
 
@@ -374,6 +385,9 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             Whether to return distances.
         query_is_train : bool
             Whether query data is the training data.
+        input_data : array-like, optional
+            Original input array (e.g. torch XPU tensor) used to determine
+            the target namespace for converting results.
 
         Returns
         -------
@@ -389,6 +403,9 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                 distances[i, :] = distances[i, :][seq]
 
         if not query_is_train:
+            distances, indices = self._convert_kneighbors_result(
+                distances, indices, input_data
+            )
             if return_distance:
                 return distances, indices
             return indices
@@ -412,11 +429,32 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         )
 
         indices = xp.reshape(indices[sample_mask], (n_queries, n_neighbors))
+        distances = xp.reshape(distances[sample_mask], (n_queries, n_neighbors))
 
+        distances, indices = self._convert_kneighbors_result(
+            distances, indices, input_data
+        )
         if return_distance:
-            distances = xp.reshape(distances[sample_mask], (n_queries, n_neighbors))
             return distances, indices
         return indices
+
+    def _convert_kneighbors_result(self, distances, indices, input_data):
+        """Convert kneighbors results to match the input array namespace.
+
+        Results from onedal are numpy. For Array API inputs (e.g. torch XPU)
+        that wrap_output_data cannot handle, convert here.
+        Skip for dpnp/dpctl which wrap_output_data handles via
+        __sycl_usm_array_interface__.
+        """
+        if input_data is not None and not hasattr(
+            input_data, "__sycl_usm_array_interface__"
+        ):
+            xp, is_array_api = get_namespace(input_data)
+            if is_array_api and not _is_numpy_namespace(xp):
+                device = getattr(input_data, "device", None)
+                distances = xp.asarray(distances, device=device)
+                indices = xp.asarray(indices, device=device)
+        return distances, indices
 
     def _fit_validation(self, X, y=None):
         if sklearn_check_version("1.2"):

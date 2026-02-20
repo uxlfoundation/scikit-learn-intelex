@@ -218,6 +218,7 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
             n_neighbors if n_neighbors is not None else self.n_neighbors,
             return_distance,
             query_is_train,
+            input_data=X,
         )
 
     def _save_attributes(self):

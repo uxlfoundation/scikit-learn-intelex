@@ -24,6 +24,7 @@ from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.utils.validation import get_requires_y_tag
 from onedal.neighbors import KNeighborsRegressor as onedal_KNeighborsRegressor
+from onedal.utils._array_api import _is_numpy_namespace
 
 from .._config import get_config
 from .._device_offload import dispatch, wrap_output_data
@@ -223,7 +224,13 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
                 accept_sparse="csr",
                 reset=False,
             )
-        return self._onedal_estimator._predict_gpu(X)
+        result = self._onedal_estimator._predict_gpu(X)
+        # Convert result to match input array type if needed (e.g. torch XPU)
+        xp, is_array_api = get_namespace(X)
+        if is_array_api and not _is_numpy_namespace(xp):
+            device = getattr(X, "device", None)
+            result = xp.asarray(result, device=device)
+        return result
 
     def _predict_skl_regression(self, X):
         """SKL prediction path for regression - calls kneighbors, computes predictions.
@@ -295,12 +302,13 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
             n_neighbors if n_neighbors is not None else self.n_neighbors,
             return_distance,
             query_is_train,
+            input_data=X,
         )
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
         return r2_score(
             _convert_to_numpy(y),
-            self._onedal_predict(X, queue=queue),
+            _convert_to_numpy(self._onedal_predict(X, queue=queue)),
             sample_weight=_convert_to_numpy(sample_weight),
         )
 
