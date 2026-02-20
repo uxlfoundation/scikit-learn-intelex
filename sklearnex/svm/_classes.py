@@ -121,17 +121,28 @@ class SVC(BaseSVC, _sklearn_SVC):
         patching_status = PatchingConditionsChain(
             f"sklearn.svm.{class_name}.{method_name}"
         )
+        X = data[0]
         conditions = [
             (
                 self.kernel in ["linear", "rbf"],
                 f'Kernel is "{self.kernel}" while '
                 'only "linear" and "rbf" are supported on GPU.',
             ),
-            (not is_sparse(data[0]), "Sparse input is not supported on GPU."),
+            (not is_sparse(X), "Sparse input is not supported on GPU."),
             (self.class_weight is None, "Class weight is not supported on GPU."),
             (
                 len(data) < 2 or type_of_target(data[1]) == "binary",
                 "Multiclassification is not supported on GPU.",
+            ),
+            # TODO: remove this condition once scikit-learn gets array API
+            # support for CalibratedClassifierCV with the arguments used here.
+            (
+                not (
+                    self.probability
+                    and hasattr(X, "__dlpack__")
+                    and not isinstance(X, np.ndarray)
+                ),
+                "'probability=True' not supported with array API classes.",
             ),
         ]
         if method_name == "fit":
