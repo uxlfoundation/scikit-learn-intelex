@@ -86,6 +86,8 @@ Running on GPU
 
 |sklearnex| offers different options for running an algorithm on a specified device (e.g. a GPU):
 
+.. _target_offload:
+
 Target offload option
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -198,7 +200,7 @@ See :doc:`array_api` for details, instructions, and limitations. Example:
 DPNP Arrays
 ~~~~~~~~~~~
 
-As a special case, GPU arrays from |dpnp| can be used without enabling array API, even for estimators in the |sklearnex| that do not currently support array API, but note that it involves data movement to host and back and is thus not the most efficient route in computational terms.
+As a special case, GPU arrays from |dpnp| can be used without enabling array API, even for estimators in the |sklearnex| that do not currently support array API, but note that using this alternative without array API enabled involves data movement to host and back, thus not being the most efficient route in computational terms.
 
 Example:
 

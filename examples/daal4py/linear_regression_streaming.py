@@ -71,7 +71,7 @@ def main(readcsv=pd_read_csv, *args, **kwargs):
 
 
 if __name__ == "__main__":
-    (train_result, predict_result, ptdata) = main()
+    train_result, predict_result, ptdata = main()
     print("\nLinear Regression coefficients:\n", train_result.model.Beta)
     print(
         "\nLinear Regression prediction results: (first 10 rows):\n",

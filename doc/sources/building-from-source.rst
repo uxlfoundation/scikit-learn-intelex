@@ -184,11 +184,11 @@ Requirements
 The following are required in order to use ``conda-build``:
 
 - Any ``conda`` distribution (`Miniforge <https://github.com/conda-forge/miniforge>`__ is recommended).
-- ``conda-build`` and ``conda-verify`` packages installed in a conda environment:
+- ``conda-build`` package installed in a conda environment:
 
     .. code-block:: bash
 
-        conda install -c conda-forge conda-build conda-verify
+        conda install -c conda-forge conda-build
 
 - On Windows*, an **external** installation of the MSVC compiler **version 2022** is required by default. Other versions can be specified in `conda-recipe/conda_build_config.yaml <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/conda-recipe/conda_build_config.yaml>`__ if needed.
 - Optionally, for DPC++ (GPU) support on Windows*, environment variable ``%DPCPPROOT%`` must be set to point to the DPC++ compiler path.
@@ -196,11 +196,29 @@ The following are required in order to use ``conda-build``:
 Instructions
 ************
 
+When building with conda, if the environment variables for the |onedal| and MPI are not set, those dependencies will be managed by conda instead, which will use their respective conda packages and set the environment variables internally during the builds.
+
+.. hint::
+
+    If there was any previous from-source installation or build from a different environment, one might need to delete the ``build/`` folder and the generated ``.so`` / ``.pyd`` modules:
+
+    .. code-block:: bash
+
+        rm -Rf build daal4py/*.so onedal/*.so
+
 To create and verify the conda package for this library, execute the following command from the root of the repository **after installing conda-build**:
 
 .. code-block:: bash
 
     conda build .
+
+.. hint::
+
+    To clear build environments afterwards, one can issue the following command from the conda environment that executed ``conda build``:
+
+    .. code-block:: bash
+
+        conda build purge
 
 Build-time Options
 ------------------
@@ -330,7 +348,7 @@ The ASan runtime used by ICX is the same as the one by Clang. It's possible to p
 
     export LD_PRELOAD="$(clang -print-file-name=libclang_rt.asan-x86_64.so)"
 
-.. note:: This requires both ``clang`` and its runtime libraries to be installed. If using toolkits from ``conda-forge``, then using ``libclang_rt`` requires installing package ``compiler-rt``, in addition to ``clang`` and ``clangxx``.
+.. note:: This requires both ``clang`` and its runtime libraries to be installed. If using toolkits from ``conda-forge``, then using ``libclang_rt`` requires installing package ``compiler-rt``, in addition to ``clang`` and ``clangxx``. One might also want to install ``llvm-tools`` for enhanced debugging outputs.
 
 Then, the Python memory allocator can be set to ``malloc`` like this:
 

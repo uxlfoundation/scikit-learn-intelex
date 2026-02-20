@@ -32,7 +32,7 @@ DPC-based features such as :ref:`GPU support <oneapi_gpu>`.
 
 There is a large degree of overlap in the functionalities offered between the two modules
 ``daal4py`` and ``sklearnex`` - module ``sklearnex`` should be preferred whenever possible,
-either by using it directly or through the :ref:`patching mechanism <patching>` - but ``daal4py``
+either by using it directly or through the :doc:`patching mechanism <patching>` - but ``daal4py``
 exposes some additional functionalities from the |onedal| that ``sklearnex`` doesn't:
 
 - :ref:`Algorithms that are outside the scope of scikit-learn <non_sklearn_d4p>`.
@@ -150,7 +150,6 @@ List of algorithms in ``daal4py`` supporting streaming mode:
 - :obj:`SVD <daal4py.svd>`
 - :obj:`Linear Regression <daal4py.linear_regression_training>`
 - :obj:`Ridge Regression <daal4py.ridge_regression_training>`
-- :obj:`Multinomial Naive Bayes <daal4py.multinomial_naive_bayes_training>`
 - :obj:`Moments of Low Order <daal4py.low_order_moments>`
 - :obj:`Covariance <daal4py.covariance>`
 - :obj:`QR decomposition <daal4py.qr>`

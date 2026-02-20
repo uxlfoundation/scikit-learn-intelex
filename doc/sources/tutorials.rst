@@ -48,18 +48,6 @@ Tutorials
 
       Simple Installation of Extension for Scikit-learn* on Google Colaboratory.
 
-   .. grid-item-card:: Accelerate Machine Learning Workloads: K-means and GPairs Algorithms
-      :link: https://www.intel.com/content/www/us/en/developer/videos/accelerate-ml-workloads-k-means-gpairs-algorithms.html
-      :padding: 1
-
-      An introduction to Extension for Scikit-learn*.
-
-   .. grid-item-card:: Benchmarking Extension for Scikit-learn*: How Much Faster Is It?
-      :link: https://www.intel.com/content/www/us/en/developer/articles/technical/benchmarking-intel-extension-for-scikit-learn.html
-      :padding: 1
-
-      Explore and compare the performance of the Intel Extension for Scikit-learn* vs. stock Scikit-learn*.
-
    .. grid-item-card:: Drive Innovation & Performance into Your scikit-learn* Machine Learning Tasks
       :link: https://www.intel.com/content/www/us/en/developer/videos/drive-innovation-performance-scikit-learn-ml-tasks.html
       :padding: 1

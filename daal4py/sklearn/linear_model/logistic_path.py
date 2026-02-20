@@ -15,6 +15,7 @@
 # ==============================================================================
 
 import numbers
+import os
 
 import numpy as np
 import scipy.optimize as optimize
@@ -423,10 +424,8 @@ def daal4py_predict(self, X, resultsToEvaluate):
     elif resultsToEvaluate == "computeClassLogProbabilities":
         _function_name = "predict_log_proba"
     else:
-        raise ValueError(
-            "resultsToEvaluate must be in [computeClassLabels, \
-            computeClassProbabilities, computeClassLogProbabilities]"
-        )
+        raise ValueError("resultsToEvaluate must be in [computeClassLabels, \
+            computeClassProbabilities, computeClassLogProbabilities]")
 
     _patching_status = PatchingConditionsChain(
         f"sklearn.linear_model.LogisticRegression.{_function_name}"
@@ -511,10 +510,8 @@ def daal4py_predict(self, X, resultsToEvaluate):
         elif resultsToEvaluate == "computeClassLogProbabilities":
             res = res.logProbabilities
         else:
-            raise ValueError(
-                "resultsToEvaluate must be in [computeClassLabels, \
-                computeClassProbabilities, computeClassLogProbabilities]"
-            )
+            raise ValueError("resultsToEvaluate must be in [computeClassLabels, \
+                computeClassProbabilities, computeClassLogProbabilities]")
         if res.shape[1] == 1:
             res = np.ravel(res)
         return res
@@ -756,9 +753,11 @@ def logistic_regression_path_dispatcher(
     _dal_ready = _patching_status.and_conditions(
         [
             (
-                solver in ["lbfgs", "newton-cg"],
+                solver
+                in ["lbfgs"]
+                + (["newton-cg"] if "SKLEARNEX_PREVIEW" in os.environ else []),
                 f"'{solver}' solver is not supported. "
-                "Only 'lbfgs' and 'newton-cg' solvers are supported.",
+                "Only 'lbfgs' and 'newton-cg' solvers are supported. 'newton-cg' is only supported in preview mode.",
             ),
             (not is_sparse(X), "X is sparse. Sparse input is not supported."),
             (

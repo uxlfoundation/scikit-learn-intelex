@@ -78,10 +78,10 @@ def _load_all_models(with_sklearnex=True, estimator=True):
 
         models = {}
         for patch_infos in get_patch_map().values():
-            candidate = getattr(patch_infos[0][0][0], patch_infos[0][0][1], None)
+            candidate = getattr(patch_infos[0], patch_infos[1], None)
             if candidate is not None and isclass(candidate) == estimator:
                 if not estimator or issubclass(candidate, BaseEstimator):
-                    models[patch_infos[0][0][1]] = candidate
+                    models[patch_infos[1]] = candidate
     finally:
         if with_sklearnex:
             unpatch_sklearn()
@@ -143,6 +143,21 @@ SPECIAL_INSTANCES = sklearn_clone_dict(
 )
 
 
+# Some estimators have methods that are dynamically defined through '@available_if'
+# after the object has been fitted. The tests check for their existence by calling
+# 'hasattr' before fitting, which might miss them, hence the need for this function
+def check_is_dynamic_method(estimator: object, method: str) -> bool:
+    if isinstance(estimator, type):
+        estimator = estimator()
+    if hasattr(estimator, method):
+        return False
+    try:
+        attr = getattr_static(estimator, method)
+        return hasattr(attr, "fn")
+    except AttributeError:
+        return False
+
+
 def gen_models_info(algorithms, required_inputs=["X", "y"], fit=False, daal4py=True):
     """Generate estimator-attribute pairs for pytest test collection.
 
@@ -195,6 +210,8 @@ def gen_models_info(algorithms, required_inputs=["X", "y"], fit=False, daal4py=T
             methods = []
             for attr in candidates:
                 attribute = getattr_static(est, attr)
+                if not callable(attribute) and hasattr(attribute, "fn"):
+                    attribute = attribute.fn
                 if callable(attribute):
                     params = signature(attribute).parameters
                     if any([inp in params for inp in required_inputs]):
