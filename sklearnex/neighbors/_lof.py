@@ -24,12 +24,13 @@ from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
+from onedal._device_offload import _transfer_to_host
 from sklearnex._device_offload import dispatch, wrap_output_data
 from sklearnex.neighbors.common import KNeighborsDispatchingBase
 from sklearnex.neighbors.knn_unsupervised import NearestNeighbors
 
 from ..utils._array_api import get_namespace
-from ..utils.validation import check_feature_names
+from ..utils.validation import validate_data
 
 
 @control_n_jobs(decorated_methods=["fit", "kneighbors", "_kneighbors"])
@@ -52,10 +53,23 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
     _onedal_knn_fit = NearestNeighbors._onedal_fit
     _onedal_kneighbors = NearestNeighbors._onedal_kneighbors
 
+    def _local_reachability_density(self, distances_X, neighbors_indices):
+        """The local reachability density (LRD).
+
+        Array API compatible override of sklearn's implementation.
+        """
+        xp, _ = get_namespace(distances_X, neighbors_indices)
+        dist_k = self._distances_fit_X_[neighbors_indices, self.n_neighbors_ - 1]
+        reach_dist_array = xp.maximum(distances_X, dist_k)
+
+        # 1e-10 to avoid `nan' when nb of duplicates > n_neighbors_:
+        return 1.0 / (xp.mean(reach_dist_array, axis=1) + 1e-10)
+
     def _onedal_fit(self, X, y, queue=None):
         if sklearn_check_version("1.2"):
             self._validate_params()
 
+        # Let _onedal_knn_fit (NearestNeighbors._onedal_fit) handle validation
         self._onedal_knn_fit(X, y, queue=queue)
 
         if self.contamination != "auto":
@@ -74,45 +88,45 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
                 % (self.n_neighbors, n_samples)
             )
         self.n_neighbors_ = max(1, min(self.n_neighbors, n_samples - 1))
-
         (
             self._distances_fit_X_,
             _neighbors_indices_fit_X_,
         ) = self._onedal_kneighbors(n_neighbors=self.n_neighbors_, queue=queue)
 
-        # Sklearn includes a check for float32 at this point which may not be
-        # necessary for onedal
+        xp, _ = get_namespace(self._distances_fit_X_)
 
         self._lrd = self._local_reachability_density(
             self._distances_fit_X_, _neighbors_indices_fit_X_
         )
 
         # Compute lof score over training samples to define offset_:
-        lrd_ratios_array = self._lrd[_neighbors_indices_fit_X_] / self._lrd[:, np.newaxis]
+        lrd_ratios_array = self._lrd[_neighbors_indices_fit_X_] / xp.reshape(
+            self._lrd, (-1, 1)
+        )
 
-        self.negative_outlier_factor_ = -np.mean(lrd_ratios_array, axis=1)
+        self.negative_outlier_factor_ = -xp.mean(lrd_ratios_array, axis=1)
 
         if self.contamination == "auto":
             # inliers score around -1 (the higher, the less abnormal).
             self.offset_ = -1.5
         else:
-            self.offset_ = np.percentile(
-                self.negative_outlier_factor_, 100.0 * self.contamination
-            )
+            # percentile is not available in all array API implementations,
+            # so transfer to host for this scalar computation.
+            _, (nof_host,) = _transfer_to_host(self.negative_outlier_factor_)
+            self.offset_ = np.percentile(nof_host, 100.0 * self.contamination)
 
         # adoption of warning for data with duplicated samples from
         # https://github.com/scikit-learn/scikit-learn/pull/28773
         if sklearn_check_version("1.6"):
-            if np.min(self.negative_outlier_factor_) < -1e7 and not self.novelty:
+            if float(xp.min(self.negative_outlier_factor_)) < -1e7 and not self.novelty:
                 warnings.warn(
                     "Duplicate values are leading to incorrect results. "
                     "Increase the number of neighbors for more accurate results."
                 )
-
         return self
 
     def fit(self, X, y=None):
-        result = dispatch(
+        return dispatch(
             self,
             "fit",
             {
@@ -122,20 +136,21 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
             X,
             None,
         )
-        return result
 
     def _predict(self, X=None):
         check_is_fitted(self)
 
         if X is not None:
-            xp, _ = get_namespace(X)
+            xp, is_array_api = get_namespace(X)
             output = self.decision_function(X) < 0
-            is_inlier = xp.ones_like(output, dtype=int)
-            is_inlier[output] = -1
+            # Array API: follow X's dtype ("everything follows X").
+            # NumPy: return int64 (sklearn convention for float64/pandas).
+            dtype = X.dtype if is_array_api else xp.int64
+            ones = xp.ones_like(output, dtype=dtype)
+            is_inlier = xp.where(output, -ones, ones)
         else:
-            is_inlier = np.ones(self.n_samples_fit_, dtype=int)
+            is_inlier = np.ones(self.n_samples_fit_, dtype=np.int64)
             is_inlier[self.negative_outlier_factor_ < self.offset_] = -1
-
         return is_inlier
 
     # This had to be done because predict loses the queue when no
@@ -146,12 +161,20 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
     @wraps(_sklearn_LocalOutlierFactor.fit_predict, assigned=["__doc__"])
     @wrap_output_data
     def fit_predict(self, X, y=None):
-        return self.fit(X)._predict()
+        result = self.fit(X)._predict()
+        xp, is_array_api = get_namespace(X)
+        if is_array_api:
+            result = xp.asarray(result, device=X.device)
+        return result
 
     def _kneighbors(self, X=None, n_neighbors=None, return_distance=True):
+        if n_neighbors is not None:
+            self._validate_n_neighbors(n_neighbors)
+
         check_is_fitted(self)
-        if X is not None:
-            check_feature_names(self, X, reset=False)
+
+        self._kneighbors_validation(X, n_neighbors)
+
         return dispatch(
             self,
             "kneighbors",
@@ -172,6 +195,12 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
     def score_samples(self, X):
         check_is_fitted(self)
 
+        xp, _ = get_namespace(X)
+
+        # Note: validate_data is NOT called here because
+        # _kneighbors -> dispatch -> _onedal_kneighbors already validates X.
+        # Calling it here would double-validate (4 calls instead of 2).
+
         distances_X, neighbors_indices_X = self._kneighbors(
             X, n_neighbors=self.n_neighbors_
         )
@@ -181,9 +210,12 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
             neighbors_indices_X,
         )
 
-        lrd_ratios_array = self._lrd[neighbors_indices_X] / X_lrd[:, np.newaxis]
+        xp_out, _ = get_namespace(X_lrd)
+        lrd_ratios_array = self._lrd[neighbors_indices_X] / xp_out.reshape(X_lrd, (-1, 1))
 
-        return -np.mean(lrd_ratios_array, axis=1)
+        # Convert result back to the input array namespace (e.g. torch),
+        # similar to how KNN's _onedal_predict uses xp.asarray().
+        return xp.asarray(-xp_out.mean(lrd_ratios_array, axis=1))
 
     fit.__doc__ = _sklearn_LocalOutlierFactor.fit.__doc__
     kneighbors.__doc__ = _sklearn_LocalOutlierFactor.kneighbors.__doc__

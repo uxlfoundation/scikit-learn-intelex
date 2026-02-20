@@ -39,6 +39,7 @@ from sklearnex.tests.utils import (
     SPECIAL_INSTANCES,
     UNPATCHED_MODELS,
     call_method,
+    check_is_dynamic_method,
     gen_dataset,
     gen_models_info,
 )
@@ -115,41 +116,6 @@ _DESIGN_RULE_VIOLATIONS = {
     "DummyRegressor-fit-n_jobs_check": "default parameters use sklearn",
     "DummyRegressor-predict-n_jobs_check": "default parameters use sklearn",
     "DummyRegressor-score-n_jobs_check": "default parameters use sklearn",
-    # KNeighborsClassifier validate_data issues - will be fixed later
-    "KNeighborsClassifier-fit-call_validate_data": "validate_data implementation needs fixing",
-    "KNeighborsClassifier-predict_proba-call_validate_data": "validate_data implementation needs fixing",
-    "KNeighborsClassifier-score-call_validate_data": "validate_data implementation needs fixing",
-    "KNeighborsClassifier-kneighbors-call_validate_data": "validate_data implementation needs fixing",
-    "KNeighborsClassifier-kneighbors_graph-call_validate_data": "validate_data implementation needs fixing",
-    "KNeighborsClassifier-predict-call_validate_data": "validate_data implementation needs fixing",
-    "KNeighborsRegressor-fit-call_validate_data": "validate_data implementation needs fixing",
-    "KNeighborsRegressor-score-call_validate_data": "validate_data implementation needs fixing",
-    "KNeighborsRegressor-kneighbors-call_validate_data": "validate_data implementation needs fixing",
-    "KNeighborsRegressor-kneighbors_graph-call_validate_data": "validate_data implementation needs fixing",
-    "KNeighborsRegressor-predict-call_validate_data": "validate_data implementation needs fixing",
-    "NearestNeighbors-fit-call_validate_data": "validate_data implementation needs fixing",
-    "NearestNeighbors-kneighbors-call_validate_data": "validate_data implementation needs fixing",
-    "NearestNeighbors-kneighbors_graph-call_validate_data": "validate_data implementation needs fixing",
-    "LocalOutlierFactor-fit-call_validate_data": "validate_data implementation needs fixing",
-    "LocalOutlierFactor-kneighbors-call_validate_data": "validate_data implementation needs fixing",
-    "LocalOutlierFactor-kneighbors_graph-call_validate_data": "validate_data implementation needs fixing",
-    "LocalOutlierFactor(novelty=True)-fit-call_validate_data": "validate_data implementation needs fixing",
-    "LocalOutlierFactor(novelty=True)-kneighbors-call_validate_data": "validate_data implementation needs fixing",
-    "LocalOutlierFactor(novelty=True)-kneighbors_graph-call_validate_data": "validate_data implementation needs fixing",
-    "KNeighborsClassifier(algorithm='brute')-fit-call_validate_data": "validate_data implementation needs fixing",
-    "KNeighborsClassifier(algorithm='brute')-predict_proba-call_validate_data": "validate_data implementation needs fixing",
-    "KNeighborsClassifier(algorithm='brute')-score-call_validate_data": "validate_data implementation needs fixing",
-    "KNeighborsClassifier(algorithm='brute')-kneighbors-call_validate_data": "validate_data implementation needs fixing",
-    "KNeighborsClassifier(algorithm='brute')-kneighbors_graph-call_validate_data": "validate_data implementation needs fixing",
-    "KNeighborsClassifier(algorithm='brute')-predict-call_validate_data": "validate_data implementation needs fixing",
-    "KNeighborsRegressor(algorithm='brute')-fit-call_validate_data": "validate_data implementation needs fixing",
-    "KNeighborsRegressor(algorithm='brute')-score-call_validate_data": "validate_data implementation needs fixing",
-    "KNeighborsRegressor(algorithm='brute')-kneighbors-call_validate_data": "validate_data implementation needs fixing",
-    "KNeighborsRegressor(algorithm='brute')-kneighbors_graph-call_validate_data": "validate_data implementation needs fixing",
-    "KNeighborsRegressor(algorithm='brute')-predict-call_validate_data": "validate_data implementation needs fixing",
-    "NearestNeighbors(algorithm='brute')-fit-call_validate_data": "validate_data implementation needs fixing",
-    "NearestNeighbors(algorithm='brute')-kneighbors-call_validate_data": "validate_data implementation needs fixing",
-    "NearestNeighbors(algorithm='brute')-kneighbors_graph-call_validate_data": "validate_data implementation needs fixing",
 }
 
 
@@ -480,6 +446,16 @@ def estimator_trace(estimator, method, cache, isolated_trace):
         onedal, sklearn, or sklearnex), and callinglines is the line
         which calls the function in calledfuncs
     """
+    # Skip dynamic methods gated by available_if that are not available
+    # with default estimator parameters
+    est = (
+        PATCHED_MODELS[estimator]()
+        if estimator in PATCHED_MODELS
+        else SPECIAL_INSTANCES[estimator]
+    )
+    if not hasattr(est, method) and check_is_dynamic_method(est, method):
+        pytest.skip(f"sklearn available_if prevents testing {estimator}.{method}")
+
     key = "-".join((str(estimator), method))
     flag = cache.get("key", "") != key
     if flag:
