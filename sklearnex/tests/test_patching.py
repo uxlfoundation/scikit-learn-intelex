@@ -44,6 +44,7 @@ from sklearnex.tests.utils import (
     UNPATCHED_FUNCTIONS,
     UNPATCHED_MODELS,
     call_method,
+    check_is_dynamic_method,
     gen_dataset,
     gen_models_info,
 )
@@ -129,6 +130,8 @@ def _check_estimator_patching(caplog, dataframe, queue, dtype, est, method):
         est.fit(X, y)
 
         if method:
+            if not hasattr(est, method) and check_is_dynamic_method(est, method):
+                pytest.skip(f"sklearn available_if prevents testing {est}.{method}")
             call_method(est, method, X, y)
 
     assert all(
@@ -137,7 +140,7 @@ def _check_estimator_patching(caplog, dataframe, queue, dtype, est, method):
             or "fallback to original Scikit-learn" in i.message
             for i in caplog.records
         ]
-    ), f"sklearnex patching issue in {estimator}.{method} with log: \n{caplog.text}"
+    ), f"sklearnex patching issue in {est}.{method} with log: \n{caplog.text}"
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
@@ -166,8 +169,8 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
         pytest.skip(
             "IncrementalLinearRegression fails on oneDAL side with int types because dataset is filled by zeroes"
         )
-    elif method and not hasattr(est, method):
-        pytest.skip(f"sklearn available_if prevents testing {estimator}.{method}")
+    elif method and not hasattr(est, method) and not check_is_dynamic_method(est, method):
+        pytest.skip(f"sklearn available_if prevents testing {est}.{method}")
 
     if (
         (dataframe == "array_api" or queue)
