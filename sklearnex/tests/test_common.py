@@ -39,6 +39,7 @@ from sklearnex.tests.utils import (
     SPECIAL_INSTANCES,
     UNPATCHED_MODELS,
     call_method,
+    check_is_dynamic_method,
     gen_dataset,
     gen_models_info,
 )
@@ -133,9 +134,13 @@ _DESIGN_RULE_VIOLATIONS = {
     "LocalOutlierFactor-fit-call_validate_data": "validate_data implementation needs fixing",
     "LocalOutlierFactor-kneighbors-call_validate_data": "validate_data implementation needs fixing",
     "LocalOutlierFactor-kneighbors_graph-call_validate_data": "validate_data implementation needs fixing",
+    "LocalOutlierFactor-fit_predict-call_validate_data": "validate_data implementation needs fixing",
     "LocalOutlierFactor(novelty=True)-fit-call_validate_data": "validate_data implementation needs fixing",
     "LocalOutlierFactor(novelty=True)-kneighbors-call_validate_data": "validate_data implementation needs fixing",
     "LocalOutlierFactor(novelty=True)-kneighbors_graph-call_validate_data": "validate_data implementation needs fixing",
+    "LocalOutlierFactor(novelty=True)-score_samples-call_validate_data": "validate_data implementation needs fixing",
+    "LocalOutlierFactor(novelty=True)-predict-call_validate_data": "validate_data implementation needs fixing",
+    "LocalOutlierFactor(novelty=True)-decision_function-call_validate_data": "validate_data implementation needs fixing",
     "KNeighborsClassifier(algorithm='brute')-fit-call_validate_data": "validate_data implementation needs fixing",
     "KNeighborsClassifier(algorithm='brute')-predict_proba-call_validate_data": "validate_data implementation needs fixing",
     "KNeighborsClassifier(algorithm='brute')-score-call_validate_data": "validate_data implementation needs fixing",
@@ -480,6 +485,17 @@ def estimator_trace(estimator, method, cache, isolated_trace):
         onedal, sklearn, or sklearnex), and callinglines is the line
         which calls the function in calledfuncs
     """
+    # Skip dynamic methods gated by available_if that are not available
+    # with default estimator parameters (e.g., SVC.predict_proba when
+    # probability=False, LOF.predict when novelty=False)
+    est = (
+        PATCHED_MODELS[estimator]()
+        if estimator in PATCHED_MODELS
+        else SPECIAL_INSTANCES[estimator]
+    )
+    if not hasattr(est, method) and check_is_dynamic_method(est, method):
+        pytest.skip(f"sklearn available_if prevents testing {estimator}.{method}")
+
     key = "-".join((str(estimator), method))
     flag = cache.get("key", "") != key
     if flag:

@@ -259,7 +259,11 @@ def call_method(estimator, method, X, y, **kwargs):
     func = getattr(estimator, method)
     argdict = signature(func).parameters
     argnum = len(
-        [i for i in argdict if argdict[i].default == Parameter.empty or i in ["X", "y"]]
+        [
+            i
+            for i in argdict
+            if (argdict[i].default == Parameter.empty or i in ["X", "y"]) and i != "self"
+        ]
     )
 
     if method == "inverse_transform":
