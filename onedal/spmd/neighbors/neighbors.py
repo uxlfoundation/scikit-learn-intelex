@@ -69,7 +69,7 @@ class KNeighborsClassifier(KNeighborsClassifier_Batch):
 
     @support_input_format
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True, queue=None):
-        if X is None and queue is None:
+        if queue is None:
             queue = getattr(self, "spmd_queue_", None)
         return super().kneighbors(X, n_neighbors, return_distance, queue=queue)
 
@@ -158,6 +158,6 @@ class NearestNeighbors(NearestNeighbors_Batch):
 
     @support_input_format
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True, queue=None):
-        if X is None and queue is None:
+        if queue is None:
             queue = getattr(self, "spmd_queue_", None)
         return super().kneighbors(X, n_neighbors, return_distance, queue=queue)

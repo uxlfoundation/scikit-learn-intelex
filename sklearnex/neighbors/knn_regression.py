@@ -69,6 +69,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         )
 
     def fit(self, X, y):
+        xp, is_array_api = get_namespace(X)
         dispatch(
             self,
             "fit",
@@ -79,13 +80,18 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
             X,
             y,
         )
+        # Ensure _fit_X matches the input namespace so that
+        # kneighbors(X=None) can use get_namespace(self._fit_X).
+        if is_array_api and not _is_numpy_namespace(xp):
+            device = getattr(X, "device", None)
+            self._fit_X = xp.asarray(self._fit_X, device=device)
         return self
 
     @wrap_output_data
     def predict(self, X):
         check_is_fitted(self)
 
-        return dispatch(
+        result = dispatch(
             self,
             "predict",
             {
@@ -94,6 +100,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
             },
             X,
         )
+        return self._convert_result_to_input_namespace(result, X)
 
     @wrap_output_data
     def score(self, X, y, sample_weight=None):
@@ -111,7 +118,6 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
             sample_weight=sample_weight,
         )
 
-    @wrap_output_data
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
         if n_neighbors is not None:
             self._validate_n_neighbors(n_neighbors)
@@ -120,7 +126,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
 
         self._kneighbors_validation(X, n_neighbors)
 
-        return dispatch(
+        result = dispatch(
             self,
             "kneighbors",
             {
@@ -131,6 +137,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
             n_neighbors=n_neighbors,
             return_distance=return_distance,
         )
+        return self._convert_result_to_input_namespace(result, X)
 
     def _onedal_fit(self, X, y, queue=None):
         xp, _ = get_namespace(X, y)
@@ -170,13 +177,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
 
         # GPU regression uses full train (needs y reshaped to (-1, 1))
         # CPU regression uses train_search (only needs X, y must be None)
-        # Check queue first, then fall back to data's device (use_raw_input path)
-        if queue is not None:
-            gpu_device = getattr(queue.sycl_device, "is_gpu", False)
-        elif hasattr(X, "sycl_queue"):
-            gpu_device = getattr(X.sycl_queue.sycl_device, "is_gpu", False)
-        else:
-            gpu_device = False
+        gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
         if gpu_device:
             fit_y = xp.reshape(y, (-1, 1))
         else:
@@ -199,13 +200,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
 
     def _onedal_predict(self, X, queue=None):
         # Dispatch between GPU and SKL prediction methods
-        # Check queue first, then fall back to data's device (use_raw_input path)
-        if queue is not None:
-            gpu_device = getattr(queue.sycl_device, "is_gpu", False)
-        elif hasattr(X, "sycl_queue"):
-            gpu_device = getattr(X.sycl_queue.sycl_device, "is_gpu", False)
-        else:
-            gpu_device = False
+        gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
         is_uniform_weights = getattr(self, "weights", "uniform") == "uniform"
 
         if gpu_device and is_uniform_weights:
@@ -225,12 +220,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
                 reset=False,
             )
         result = self._onedal_estimator._predict_gpu(X)
-        # Convert result to match input array type if needed (e.g. torch XPU)
-        xp, is_array_api = get_namespace(X)
-        if is_array_api and not _is_numpy_namespace(xp):
-            device = getattr(X, "device", None)
-            result = xp.asarray(result, device=device)
-        return result
+        return self._convert_result_to_input_namespace(result, X)
 
     def _predict_skl_regression(self, X):
         """SKL prediction path for regression - calls kneighbors, computes predictions.
@@ -302,7 +292,6 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
             n_neighbors if n_neighbors is not None else self.n_neighbors,
             return_distance,
             query_is_train,
-            input_data=X,
         )
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):

@@ -25,6 +25,7 @@ from sklearn.utils.validation import check_is_fitted
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal._device_offload import _transfer_to_host
+from onedal.utils._array_api import _is_numpy_namespace
 from sklearnex._device_offload import dispatch, wrap_output_data
 from sklearnex.neighbors.common import KNeighborsDispatchingBase
 from sklearnex.neighbors.knn_unsupervised import NearestNeighbors
@@ -126,7 +127,8 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
         return self
 
     def fit(self, X, y=None):
-        return dispatch(
+        xp, is_array_api = get_namespace(X)
+        dispatch(
             self,
             "fit",
             {
@@ -136,6 +138,12 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
             X,
             None,
         )
+        # Ensure _fit_X matches the input namespace so that
+        # kneighbors(X=None) can use get_namespace(self._fit_X).
+        if is_array_api and not _is_numpy_namespace(xp):
+            device = getattr(X, "device", None)
+            self._fit_X = xp.asarray(self._fit_X, device=device)
+        return self
 
     def _predict(self, X=None):
         check_is_fitted(self)
@@ -151,7 +159,7 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
         else:
             is_inlier = np.ones(self.n_samples_fit_, dtype=np.int64)
             is_inlier[self.negative_outlier_factor_ < self.offset_] = -1
-        return is_inlier
+        return self._convert_result_to_input_namespace(is_inlier, X)
 
     # This had to be done because predict loses the queue when no
     # argument is given and it is a dpctl tensor or dpnp array.
@@ -161,11 +169,7 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
     @wraps(_sklearn_LocalOutlierFactor.fit_predict, assigned=["__doc__"])
     @wrap_output_data
     def fit_predict(self, X, y=None):
-        result = self.fit(X)._predict()
-        xp, is_array_api = get_namespace(X)
-        if is_array_api:
-            result = xp.asarray(result, device=X.device)
-        return result
+        return self.fit(X)._predict()
 
     def _kneighbors(self, X=None, n_neighbors=None, return_distance=True):
         if n_neighbors is not None:
@@ -187,7 +191,11 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
             return_distance=return_distance,
         )
 
-    kneighbors = wrap_output_data(_kneighbors)
+    def _kneighbors_public(self, X=None, n_neighbors=None, return_distance=True):
+        result = self._kneighbors(X, n_neighbors, return_distance)
+        return self._convert_result_to_input_namespace(result, X)
+
+    kneighbors = _kneighbors_public
 
     @available_if(_sklearn_LocalOutlierFactor._check_novelty_score_samples)
     @wraps(_sklearn_LocalOutlierFactor.score_samples, assigned=["__doc__"])
@@ -195,12 +203,13 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
     def score_samples(self, X):
         check_is_fitted(self)
 
-        xp, _ = get_namespace(X)
-
         # Note: validate_data is NOT called here because
         # _kneighbors -> dispatch -> _onedal_kneighbors already validates X.
         # Calling it here would double-validate (4 calls instead of 2).
 
+        # _kneighbors returns raw dispatch result (numpy from host path).
+        # No transfer needed since _lrd and _distances_fit_X_ are also numpy
+        # (computed during fit on host). Only the final result is converted.
         distances_X, neighbors_indices_X = self._kneighbors(
             X, n_neighbors=self.n_neighbors_
         )
@@ -210,12 +219,12 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
             neighbors_indices_X,
         )
 
-        xp_out, _ = get_namespace(X_lrd)
-        lrd_ratios_array = self._lrd[neighbors_indices_X] / xp_out.reshape(X_lrd, (-1, 1))
+        xp, _ = get_namespace(X_lrd)
+        lrd_ratios_array = self._lrd[neighbors_indices_X] / xp.reshape(X_lrd, (-1, 1))
 
-        # Convert result back to the input array namespace (e.g. torch),
-        # similar to how KNN's _onedal_predict uses xp.asarray().
-        return xp.asarray(-xp_out.mean(lrd_ratios_array, axis=1))
+        return self._convert_result_to_input_namespace(
+            -xp.mean(lrd_ratios_array, axis=1), X
+        )
 
     fit.__doc__ = _sklearn_LocalOutlierFactor.fit.__doc__
     kneighbors.__doc__ = _sklearn_LocalOutlierFactor.kneighbors.__doc__

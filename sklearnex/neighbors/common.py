@@ -332,7 +332,6 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         n_neighbors,
         return_distance,
         query_is_train,
-        input_data=None,
     ):
         """Post-process raw kneighbors results from onedal backend.
 
@@ -352,9 +351,6 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             Whether to return distances.
         query_is_train : bool
             Whether query data is the training data.
-        input_data : array-like, optional
-            Original input array (e.g. torch XPU tensor) used to determine
-            the target namespace for converting results.
 
         Returns
         -------
@@ -370,9 +366,6 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                 distances[i, :] = distances[i, :][seq]
 
         if not query_is_train:
-            distances, indices = self._convert_kneighbors_result(
-                distances, indices, input_data
-            )
             if return_distance:
                 return distances, indices
             return indices
@@ -398,30 +391,35 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         indices = xp.reshape(indices[sample_mask], (n_queries, n_neighbors))
         distances = xp.reshape(distances[sample_mask], (n_queries, n_neighbors))
 
-        distances, indices = self._convert_kneighbors_result(
-            distances, indices, input_data
-        )
         if return_distance:
             return distances, indices
         return indices
 
-    def _convert_kneighbors_result(self, distances, indices, input_data):
-        """Convert kneighbors results to match the input array namespace.
+    def _convert_result_to_input_namespace(self, result, X):
+        """Convert dispatch result to match the input array namespace.
 
-        Results from onedal are numpy. For Array API inputs (e.g. torch XPU)
-        that wrap_output_data cannot handle, convert here.
-        Skip for dpnp/dpctl which wrap_output_data handles via
-        __sycl_usm_array_interface__.
+        When dispatch falls back to sklearn with host data, the result is numpy.
+        For Array API inputs (e.g. torch XPU, dpnp GPU), convert here to match
+        the original input type.
+
+        When X=None (kneighbors on training data), uses get_namespace on the
+        fitted _fit_X attribute to determine the target namespace.
         """
-        if input_data is not None and not hasattr(
-            input_data, "__sycl_usm_array_interface__"
-        ):
-            xp, is_array_api = get_namespace(input_data)
-            if is_array_api and not _is_numpy_namespace(xp):
-                device = getattr(input_data, "device", None)
-                distances = xp.asarray(distances, device=device)
-                indices = xp.asarray(indices, device=device)
-        return distances, indices
+        # Determine namespace and device: from X if provided, else from _fit_X
+        if X is not None:
+            xp, is_array_api = get_namespace(X)
+            device = getattr(X, "device", None)
+        elif hasattr(self, "_fit_X"):
+            xp, is_array_api = get_namespace(self._fit_X)
+            device = getattr(self._fit_X, "device", None)
+        else:
+            return result
+        if is_array_api and not _is_numpy_namespace(xp):
+            if isinstance(result, tuple):
+                result = tuple(xp.asarray(r, device=device) for r in result)
+            else:
+                result = xp.asarray(result, device=device)
+        return result
 
     def _fit_validation(self, X, y=None):
         if sklearn_check_version("1.2"):
@@ -602,6 +600,8 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             # Only access _onedal_estimator if it's an instance attribute (not a class-level staticmethod)
             if "_onedal_estimator" in self.__dict__:
                 y = self._onedal_estimator._y
+            elif hasattr(self, "_y"):
+                y = self._y
             if y is not None and hasattr(y, "ndim") and hasattr(y, "shape"):
                 is_single_output = y.ndim == 1 or y.ndim == 2 and y.shape[1] == 1
 

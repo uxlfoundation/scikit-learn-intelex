@@ -21,6 +21,7 @@ from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.utils.validation import get_requires_y_tag
 from onedal.neighbors import NearestNeighbors as onedal_NearestNeighbors
+from onedal.utils._array_api import _is_numpy_namespace
 
 from .._config import get_config
 from .._device_offload import dispatch, wrap_output_data
@@ -65,6 +66,7 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         )
 
     def fit(self, X, y=None):
+        xp, is_array_api = get_namespace(X)
         dispatch(
             self,
             "fit",
@@ -75,9 +77,13 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
             X,
             None,
         )
+        # Ensure _fit_X matches the input namespace so that
+        # kneighbors(X=None) can use get_namespace(self._fit_X).
+        if is_array_api and not _is_numpy_namespace(xp):
+            device = getattr(X, "device", None)
+            self._fit_X = xp.asarray(self._fit_X, device=device)
         return self
 
-    @wrap_output_data
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
         if n_neighbors is not None:
             self._validate_n_neighbors(n_neighbors)
@@ -86,7 +92,7 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
 
         self._kneighbors_validation(X, n_neighbors)
 
-        return dispatch(
+        result = dispatch(
             self,
             "kneighbors",
             {
@@ -97,6 +103,7 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
             n_neighbors=n_neighbors,
             return_distance=return_distance,
         )
+        return self._convert_result_to_input_namespace(result, X)
 
     @wrap_output_data
     def radius_neighbors(
@@ -218,7 +225,6 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
             n_neighbors if n_neighbors is not None else self.n_neighbors,
             return_distance,
             query_is_train,
-            input_data=X,
         )
 
     def _save_attributes(self):

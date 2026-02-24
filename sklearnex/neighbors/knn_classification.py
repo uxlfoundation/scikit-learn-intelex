@@ -26,6 +26,7 @@ from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.utils.validation import get_requires_y_tag
 from onedal.datatypes import from_table
 from onedal.neighbors import KNeighborsClassifier as onedal_KNeighborsClassifier
+from onedal.utils._array_api import _is_numpy_namespace
 from onedal.utils.validation import _check_classification_targets
 
 from .._config import get_config
@@ -73,6 +74,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         )
 
     def fit(self, X, y):
+        xp, is_array_api = get_namespace(X)
         dispatch(
             self,
             "fit",
@@ -83,13 +85,18 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             X,
             y,
         )
+        # Ensure _fit_X matches the input namespace so that
+        # kneighbors(X=None) can use get_namespace(self._fit_X).
+        if is_array_api and not _is_numpy_namespace(xp):
+            device = getattr(X, "device", None)
+            self._fit_X = xp.asarray(self._fit_X, device=device)
         return self
 
     @wrap_output_data
     def predict(self, X):
         check_is_fitted(self)
 
-        return dispatch(
+        result = dispatch(
             self,
             "predict",
             {
@@ -98,12 +105,13 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             },
             X,
         )
+        return self._convert_result_to_input_namespace(result, X)
 
     @wrap_output_data
     def predict_proba(self, X):
         check_is_fitted(self)
 
-        return dispatch(
+        result = dispatch(
             self,
             "predict_proba",
             {
@@ -112,6 +120,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             },
             X,
         )
+        return self._convert_result_to_input_namespace(result, X)
 
     @wrap_output_data
     def score(self, X, y, sample_weight=None):
@@ -129,7 +138,6 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             sample_weight=sample_weight,
         )
 
-    @wrap_output_data
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
         # Validate n_neighbors parameter first
         if n_neighbors is not None:
@@ -140,7 +148,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         # Validate kneighbors parameters (inherited from KNeighborsDispatchingBase)
         self._kneighbors_validation(X, n_neighbors)
 
-        return dispatch(
+        result = dispatch(
             self,
             "kneighbors",
             {
@@ -151,6 +159,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             n_neighbors=n_neighbors,
             return_distance=return_distance,
         )
+        return self._convert_result_to_input_namespace(result, X)
 
     def _onedal_fit(self, X, y, queue=None):
         xp, _ = get_namespace(X)
@@ -233,7 +242,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         # Only validate numpy arrays since _check_classification_targets
         # uses np.asarray internally, which fails for device arrays
         # (dpnp, dpctl, torch XPU, etc.).
-        if not skip_validation and isinstance(y, np.ndarray):
+        if not skip_validation and _is_numpy_namespace(xp):
             _check_classification_targets(y)
 
         # Process classes using unique_inverse (numpy 2.0+ and Array API)
@@ -343,7 +352,6 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             n_neighbors if n_neighbors is not None else self.n_neighbors,
             return_distance,
             query_is_train,
-            input_data=X,
         )
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
