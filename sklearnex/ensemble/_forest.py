@@ -674,7 +674,17 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         for est in self._cached_estimators_:
             est.classes_ = self.classes_
 
-    def _validate_y_class_weight(self, y, sample_weight):
+    if sklearn_check_version("1.9"):
+
+        def _validate_y_class_weight(self, y, sample_weight):
+            return self._validate_y_class_weight_internal(y, sample_weight)
+
+    else:
+
+        def _validate_y_class_weight(self, y):
+            return self._validate_y_class_weight_internal(y, None)
+
+    def _validate_y_class_weight_internal(self, y, sample_weight=None):
 
         xp, is_array_api_compliant = get_namespace(y, sample_weight)
 
