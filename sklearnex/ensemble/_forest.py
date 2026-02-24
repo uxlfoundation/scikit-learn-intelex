@@ -261,6 +261,17 @@ class BaseForest(oneDALEstimator, ABC):
                     not self.bootstrap or self.class_weight != "balanced_subsample",
                     "'balanced_subsample' for class_weight is not supported",
                 ),
+                # Note: scikit-learn changed how they sample observations when
+                # there are sample weights in version 1.9:
+                # https://github.com/scikit-learn/scikit-learn/pull/31529
+                (
+                    not (
+                        sklearn_check_version("1.9")
+                        and sample_weight is not None
+                        and (self.bootstrap or self.max_samples is not None)
+                    ),
+                    "Bootstrapping and/or sub-sampling with sample weights is not supported.",
+                ),
             ]
         )
 
