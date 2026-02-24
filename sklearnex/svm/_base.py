@@ -305,7 +305,7 @@ class BaseSVC(BaseSVM):
         y = self._onedal_validate_targets(X, y)
 
         if (
-            hasattr(self.probability)
+            hasattr(self, "probability")
             and self.probability != "deprecated"
             and not (
                 hasattr(self, "_do_not_warn_on_proba") and self._do_not_warn_on_proba
@@ -434,7 +434,7 @@ class BaseSVC(BaseSVM):
         self._gamma = self._onedal_estimator.gamma
         length = (self.classes_.shape[0] ** 2 - self.classes_.shape[0]) // 2
 
-        if hasattr(self.probability):
+        if hasattr(self, "probability"):
             if self.probability:
                 # Parameter learned in Platt scaling, exposed as probA_ and probB_
                 # via the sklearn SVM estimator
