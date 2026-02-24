@@ -186,6 +186,13 @@ def test_standard_estimator_stability(estimator, method, dataframe, queue):
         pytest.skip("allowed fallback to sklearn occurs")
     if estimator == "DummyRegressor":
         pytest.skip("default parameters fall back to sklearn")
+    if "LocalOutlierFactor" in estimator and method in [
+        "score_samples",
+        "decision_function",
+        "predict",
+        "fit_predict",
+    ]:
+        pytest.skip(f"LOF {method} non-deterministic due to kd_tree tie-breaking")
     _skip_neighbors(estimator, method)
 
     if "NearestNeighbors" in estimator and "radius" in method:
