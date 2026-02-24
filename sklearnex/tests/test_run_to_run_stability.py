@@ -230,6 +230,7 @@ def test_special_estimator_stability(estimator, method, dataframe, queue):
         "score_samples",
         "decision_function",
         "predict",
+        "fit_predict",
     ]:
         pytest.skip(f"LOF {method} non-deterministic due to kd_tree tie-breaking")
     _skip_neighbors(estimator, method)
