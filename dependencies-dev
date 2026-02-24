@@ -5,4 +5,4 @@ numpy==2.4.2 ; python_version >= '3.11'
 pybind11==3.0.1
 cmake==4.2.1
 setuptools==79.0.1
-clang-format==14.0.6
+clang-format==22.1.0
