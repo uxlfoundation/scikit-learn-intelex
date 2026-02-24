@@ -304,6 +304,21 @@ class BaseSVC(BaseSVM):
 
         y = self._onedal_validate_targets(X, y)
 
+        if (
+            hasattr(self.probability)
+            and self.probability != "deprecated"
+            and not (
+                hasattr(self, "_do_not_warn_on_proba") and self._do_not_warn_on_proba
+            )
+        ):
+            warnings.warn(
+                f"The `probability` parameter was deprecated in 1.9 and "
+                f"will be removed in version 1.11. "
+                f"Use `CalibratedClassifierCV({self.__class__.__name__}(), ensemble=False)` "
+                f"instead of `{self.__class__.__name__}(probability=True)`",
+                FutureWarning,
+            )
+
         if (sw_flag := sample_weight is not None) or self.class_weight is not None:
             sample_weight = _check_sample_weight(sample_weight, X)
             # oneDAL only accepts sample_weights, apply class_weight directly
@@ -342,7 +357,7 @@ class BaseSVC(BaseSVM):
             X, y, sample_weight, class_count=self.classes_.shape[0], queue=queue
         )
 
-        if self.probability:
+        if hasattr(self.probability) and self.probability:
             self._fit_proba(
                 X,
                 y,
@@ -374,7 +389,14 @@ class BaseSVC(BaseSVM):
         cfg = get_config()
         cfg["target_offload"] = queue
         with config_context(**cfg):
-            clf_base.fit(X, y)
+            # Comment 2026-02-24: this causes it to fit the model twice.
+            # It looks redundant, but is required when using GPU offloading due to
+            # needing functionalities from sklearn that are not provided by oneDAL.
+            try:
+                clf_base._do_not_warn_on_proba = True
+                clf_base.fit(X, y)
+            finally:
+                clf_base._do_not_warn_on_proba = False
 
             # Forced use of FrozenEstimator starting in sklearn 1.6
             if sklearn_check_version("1.6"):
@@ -412,14 +434,15 @@ class BaseSVC(BaseSVM):
         self._gamma = self._onedal_estimator.gamma
         length = (self.classes_.shape[0] ** 2 - self.classes_.shape[0]) // 2
 
-        if self.probability:
-            # Parameter learned in Platt scaling, exposed as probA_ and probB_
-            # via the sklearn SVM estimator
-            self._probA = xp.zeros(length)
-            self._probB = xp.zeros(length)
-        else:
-            self._probA = xp.empty(0)
-            self._probB = xp.empty(0)
+        if hasattr(self.probability):
+            if self.probability:
+                # Parameter learned in Platt scaling, exposed as probA_ and probB_
+                # via the sklearn SVM estimator
+                self._probA = xp.zeros(length)
+                self._probB = xp.zeros(length)
+            else:
+                self._probA = xp.empty(0)
+                self._probB = xp.empty(0)
 
         self._dualcoef_ = self.dual_coef_
 
@@ -683,8 +706,9 @@ class BaseSVR(BaseSVM):
 
         self._sparse = False
         self._gamma = self._onedal_estimator.gamma
-        self._probA = None
-        self._probB = None
+        if hasattr(self, "probability"):
+            self._probA = None
+            self._probB = None
 
         if sklearn_check_version("1.1"):
             self.n_iter_ = self._onedal_estimator.n_iter_
