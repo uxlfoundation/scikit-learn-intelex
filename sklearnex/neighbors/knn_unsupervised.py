@@ -20,6 +20,7 @@ from sklearn.utils.validation import _deprecate_positional_args, check_is_fitted
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.utils.validation import get_requires_y_tag
+from onedal._device_offload import _transfer_to_host
 from onedal.neighbors import NearestNeighbors as onedal_NearestNeighbors
 from onedal.utils._array_api import _is_numpy_namespace
 
@@ -114,7 +115,10 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
             or getattr(self, "_tree", 0) is None
             and self._fit_method == "kd_tree"
         ):
-            _sklearn_NearestNeighbors.fit(self, self._fit_X, getattr(self, "_y", None))
+            # _fit_X may be on a non-host device (e.g. torch XPU, dpnp GPU)
+            # after Array API fit(). Transfer to host for sklearn refit.
+            _, (fit_X_host,) = _transfer_to_host(self._fit_X)
+            _sklearn_NearestNeighbors.fit(self, fit_X_host, getattr(self, "_y", None))
         check_is_fitted(self)
         return dispatch(
             self,

@@ -36,12 +36,7 @@ from ..utils.validation import validate_data
 
 @control_n_jobs(decorated_methods=["fit", "kneighbors", "_kneighbors"])
 class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor):
-    __doc__ = (
-        _sklearn_LocalOutlierFactor.__doc__
-        + "\n NOTE: When X=None, methods kneighbors, kneighbors_graph, and predict will"
-        + "\n only output numpy arrays. In that case, the only way to offload to gpu"
-        + "\n is to use a global queue (e.g. using config_context)"
-    )
+    __doc__ = _sklearn_LocalOutlierFactor.__doc__
     if sklearn_check_version("1.2"):
         _parameter_constraints: dict = {
             **_sklearn_LocalOutlierFactor._parameter_constraints
