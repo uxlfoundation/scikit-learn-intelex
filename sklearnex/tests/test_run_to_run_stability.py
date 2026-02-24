@@ -226,6 +226,12 @@ def test_special_estimator_stability(estimator, method, dataframe, queue):
         pytest.skip(f"BasicStatistics not deterministic")
     if "NearestNeighbors" in estimator and "radius" in method:
         pytest.skip(f"RadiusNeighbors estimator not implemented in sklearnex")
+    if "LocalOutlierFactor" in estimator and method in [
+        "score_samples",
+        "decision_function",
+        "predict",
+    ]:
+        pytest.skip(f"LOF {method} non-deterministic due to kd_tree tie-breaking")
     _skip_neighbors(estimator, method)
 
     est = SPECIAL_INSTANCES[estimator]
