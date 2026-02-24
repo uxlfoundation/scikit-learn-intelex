@@ -191,11 +191,9 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
             return_distance=return_distance,
         )
 
-    def _kneighbors_public(self, X=None, n_neighbors=None, return_distance=True):
+    def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
         result = self._kneighbors(X, n_neighbors, return_distance)
         return self._convert_result_to_input_namespace(result, X)
-
-    kneighbors = _kneighbors_public
 
     @available_if(_sklearn_LocalOutlierFactor._check_novelty_score_samples)
     @wraps(_sklearn_LocalOutlierFactor.score_samples, assigned=["__doc__"])
