@@ -30,6 +30,11 @@ class KNeighborsClassifier(base_KNeighborsClassifier):
         """Override to call SPMD estimator predict directly."""
         return self._onedal_estimator.predict(X, queue=queue)
 
+    def predict_proba(self, X):
+        raise NotImplementedError(
+            "predict_proba is not supported in distributed (SPMD) mode."
+        )
+
 
 class KNeighborsRegressor(base_KNeighborsRegressor):
     _onedal_estimator = onedal_KNeighborsRegressor
