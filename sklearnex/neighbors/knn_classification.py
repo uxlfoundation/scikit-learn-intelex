@@ -241,11 +241,16 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         if not skip_validation and _is_numpy_namespace(xp):
             _check_classification_targets(y)
 
+        # Process classes using unique_inverse (numpy 2.0+ and Array API)
+        # or unique with return_inverse (older numpy)
         n_outputs = y.shape[1]
         self.classes_ = [None] * n_outputs
         self._y = xp.empty_like(y, dtype=xp.int64)
         for k in range(n_outputs):
-            classes_k, inverse_k = xp.unique_inverse(y[:, k])
+            if hasattr(xp, "unique_inverse"):
+                classes_k, inverse_k = xp.unique_inverse(y[:, k])
+            else:
+                classes_k, inverse_k = xp.unique(y[:, k], return_inverse=True)
             n_classes = classes_k.shape[0]
             if n_classes > xp.iinfo(xp.int64).max:
                 raise ValueError(
