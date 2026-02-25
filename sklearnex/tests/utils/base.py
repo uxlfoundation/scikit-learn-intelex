@@ -219,6 +219,21 @@ def gen_models_info(algorithms, required_inputs=["X", "y"], fit=False, daal4py=T
         else:
             methods = candidates
 
+        # Filter out dynamic methods gated by @available_if that are not
+        # available with the estimator's current parameters (e.g.,
+        # SVC.predict_proba when probability=False, LOF.predict when
+        # novelty=False). These are deterministic at instantiation.
+        if methods:
+            if estimator in SPECIAL_INSTANCES:
+                instance = SPECIAL_INSTANCES[estimator]
+            else:
+                instance = est()
+            methods = [
+                m
+                for m in methods
+                if hasattr(instance, m) or not check_is_dynamic_method(instance, m)
+            ]
+
         output += (
             [(estimator, method) for method in methods]
             if methods
