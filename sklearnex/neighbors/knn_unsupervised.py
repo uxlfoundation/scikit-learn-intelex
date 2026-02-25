@@ -219,8 +219,10 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         self._validate_kneighbors_bounds(effective_n_neighbors, query_is_train, X)
 
         # Always get both distances and indices for post-processing
+        # Pass n_neighbors as keyword to avoid _transfer_to_host mixing
+        # USM array X with int n_neighbors in the same positional args tuple
         distances, indices = self._onedal_estimator.kneighbors(
-            X, effective_n_neighbors, return_distance=True, queue=queue
+            X, n_neighbors=effective_n_neighbors, return_distance=True, queue=queue
         )
 
         return self._kneighbors_postprocess(

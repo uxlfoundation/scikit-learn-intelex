@@ -71,7 +71,9 @@ class KNeighborsClassifier(KNeighborsClassifier_Batch):
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True, queue=None):
         if queue is None:
             queue = getattr(self, "spmd_queue_", None)
-        return super().kneighbors(X, n_neighbors, return_distance, queue=queue)
+        return super().kneighbors(
+            X, n_neighbors=n_neighbors, return_distance=return_distance, queue=queue
+        )
 
 
 class KNeighborsRegressor(KNeighborsRegressor_Batch):
@@ -105,7 +107,9 @@ class KNeighborsRegressor(KNeighborsRegressor_Batch):
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True, queue=None):
         if queue is None:
             queue = getattr(self, "spmd_queue_", None)
-        return super().kneighbors(X, n_neighbors, return_distance, queue=queue)
+        return super().kneighbors(
+            X, n_neighbors=n_neighbors, return_distance=return_distance, queue=queue
+        )
 
     @support_input_format
     @supports_queue
@@ -160,4 +164,6 @@ class NearestNeighbors(NearestNeighbors_Batch):
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True, queue=None):
         if queue is None:
             queue = getattr(self, "spmd_queue_", None)
-        return super().kneighbors(X, n_neighbors, return_distance, queue=queue)
+        return super().kneighbors(
+            X, n_neighbors=n_neighbors, return_distance=return_distance, queue=queue
+        )
