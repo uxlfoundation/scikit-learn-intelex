@@ -134,9 +134,12 @@ class BaseForest(oneDALEstimator, ABC):
 
         if not use_raw_input:
             if is_classifier(self):
-                y, expanded_class_weight = self._validate_y_class_weight_internal(
-                    y, sample_weight
-                )
+                if sklearn_check_version("1.9"):
+                    y, expanded_class_weight = self._validate_y_class_weight(
+                        y, sample_weight
+                    )
+                else:
+                    y, expanded_class_weight = self._validate_y_class_weight(y)
             else:
                 expanded_class_weight = None
 
