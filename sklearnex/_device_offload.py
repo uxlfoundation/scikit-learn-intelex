@@ -27,6 +27,7 @@ from onedal.utils._third_party import is_dpnp_ndarray
 from ._config import get_config
 from ._utils import PatchingConditionsChain, get_tags
 from .base import oneDALEstimator
+from .utils._array_api import get_namespace
 
 
 def _get_backend(
@@ -182,24 +183,46 @@ def wrap_output_data(func: Callable) -> Callable:
         result = func(self, *args, **kwargs)
         if not (len(args) == 0 and len(kwargs) == 0):
             data = (*args, *kwargs.values())[0]
+        else:
+            data = None
+        if data is None:
+            data = getattr(self, "_fit_X", None)
+
+        if data is not None:
+            # Skip ragged object-dtype results (e.g. radius_neighbors)
+            if isinstance(result, tuple):
+                if any(getattr(r, "dtype", None) == object for r in result):
+                    return result
+            elif getattr(result, "dtype", None) == object:
+                return result
+
             # Remove check for result __sycl_usm_array_interface__ on deprecation of use_raw_inputs
             if (
                 usm_iface := getattr(data, "__sycl_usm_array_interface__", None)
             ) and not hasattr(result, "__sycl_usm_array_interface__"):
                 queue = usm_iface["syclobj"]
-                return (
-                    copy_to_dpnp(queue, result)
-                    if is_dpnp_ndarray(data)
-                    else copy_to_usm(queue, result)
-                )
+                convert = copy_to_dpnp if is_dpnp_ndarray(data) else copy_to_usm
+                # Handle tuple/list results (e.g. kneighbors returns (dist, ind))
+                if isinstance(result, (tuple, list)):
+                    return type(result)(convert(queue, r) for r in result)
+                return convert(queue, result)
 
             if get_config().get("transform_output") in ("default", None):
-                input_array_api = getattr(data, "__array_namespace__", lambda: None)()
-                if input_array_api and not _is_numpy_namespace(input_array_api):
-                    input_array_api_device = data.device
-                    result = _asarray(
-                        result, input_array_api, device=input_array_api_device
-                    )
+                # get_namespace detects torch (which lacks __array_namespace__)
+                xp, is_array_api = get_namespace(data)
+                if is_array_api and not _is_numpy_namespace(xp):
+                    input_device = data.device
+                    if isinstance(result, (tuple, list)):
+                        return type(result)(
+                            (
+                                _asarray(r, xp, device=input_device)
+                                if hasattr(r, "__array_interface__")
+                                else r
+                            )
+                            for r in result
+                        )
+                    if hasattr(result, "__array_interface__"):
+                        result = _asarray(result, xp, device=input_device)
         return result
 
     return wrapper

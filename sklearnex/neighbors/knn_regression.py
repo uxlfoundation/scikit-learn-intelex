@@ -91,7 +91,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
     def predict(self, X):
         check_is_fitted(self)
 
-        result = dispatch(
+        return dispatch(
             self,
             "predict",
             {
@@ -100,7 +100,6 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
             },
             X,
         )
-        return self._convert_result_to_input_namespace(result, X)
 
     @wrap_output_data
     def score(self, X, y, sample_weight=None):
@@ -118,6 +117,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
             sample_weight=sample_weight,
         )
 
+    @wrap_output_data
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
         if n_neighbors is not None:
             self._validate_n_neighbors(n_neighbors)
@@ -126,7 +126,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
 
         self._kneighbors_validation(X, n_neighbors)
 
-        result = dispatch(
+        return dispatch(
             self,
             "kneighbors",
             {
@@ -137,7 +137,6 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
             n_neighbors=n_neighbors,
             return_distance=return_distance,
         )
-        return self._convert_result_to_input_namespace(result, X)
 
     def _onedal_fit(self, X, y, queue=None):
         xp, _ = get_namespace(X, y)
@@ -220,7 +219,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
                 reset=False,
             )
         result = self._onedal_estimator._predict_gpu(X)
-        return self._convert_result_to_input_namespace(result, X)
+        return result
 
     def _predict_skl_regression(self, X):
         """SKL prediction path for regression - calls kneighbors, computes predictions.

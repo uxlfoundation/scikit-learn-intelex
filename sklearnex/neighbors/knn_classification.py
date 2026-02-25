@@ -95,8 +95,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     @wrap_output_data
     def predict(self, X):
         check_is_fitted(self)
-
-        result = dispatch(
+        return dispatch(
             self,
             "predict",
             {
@@ -105,13 +104,11 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             },
             X,
         )
-        return self._convert_result_to_input_namespace(result, X)
 
     @wrap_output_data
     def predict_proba(self, X):
         check_is_fitted(self)
-
-        result = dispatch(
+        return dispatch(
             self,
             "predict_proba",
             {
@@ -120,7 +117,6 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             },
             X,
         )
-        return self._convert_result_to_input_namespace(result, X)
 
     @wrap_output_data
     def score(self, X, y, sample_weight=None):
@@ -138,6 +134,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             sample_weight=sample_weight,
         )
 
+    @wrap_output_data
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
         # Validate n_neighbors parameter first
         if n_neighbors is not None:
@@ -148,7 +145,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         # Validate kneighbors parameters (inherited from KNeighborsDispatchingBase)
         self._kneighbors_validation(X, n_neighbors)
 
-        result = dispatch(
+        return dispatch(
             self,
             "kneighbors",
             {
@@ -159,7 +156,6 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             n_neighbors=n_neighbors,
             return_distance=return_distance,
         )
-        return self._convert_result_to_input_namespace(result, X)
 
     def _onedal_fit(self, X, y, queue=None):
         xp, _ = get_namespace(X)
@@ -245,16 +241,11 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         if not skip_validation and _is_numpy_namespace(xp):
             _check_classification_targets(y)
 
-        # Process classes using unique_inverse (numpy 2.0+ and Array API)
-        # or unique with return_inverse (older numpy)
         n_outputs = y.shape[1]
         self.classes_ = [None] * n_outputs
         self._y = xp.empty_like(y, dtype=xp.int64)
         for k in range(n_outputs):
-            if hasattr(xp, "unique_inverse"):
-                classes_k, inverse_k = xp.unique_inverse(y[:, k])
-            else:
-                classes_k, inverse_k = xp.unique(y[:, k], return_inverse=True)
+            classes_k, inverse_k = xp.unique_inverse(y[:, k])
             n_classes = classes_k.shape[0]
             if n_classes > xp.iinfo(xp.int64).max:
                 raise ValueError(

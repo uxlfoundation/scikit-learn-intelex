@@ -154,7 +154,7 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
         else:
             is_inlier = np.ones(self.n_samples_fit_, dtype=np.int64)
             is_inlier[self.negative_outlier_factor_ < self.offset_] = -1
-        return self._convert_result_to_input_namespace(is_inlier, X)
+        return is_inlier
 
     # This had to be done because predict loses the queue when no
     # argument is given and it is a dpctl tensor or dpnp array.
@@ -186,9 +186,9 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
             return_distance=return_distance,
         )
 
+    @wrap_output_data
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
-        result = self._kneighbors(X, n_neighbors, return_distance)
-        return self._convert_result_to_input_namespace(result, X)
+        return self._kneighbors(X, n_neighbors, return_distance)
 
     @available_if(_sklearn_LocalOutlierFactor._check_novelty_score_samples)
     @wraps(_sklearn_LocalOutlierFactor.score_samples, assigned=["__doc__"])
@@ -215,9 +215,7 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
         xp, _ = get_namespace(X_lrd)
         lrd_ratios_array = self._lrd[neighbors_indices_X] / xp.reshape(X_lrd, (-1, 1))
 
-        return self._convert_result_to_input_namespace(
-            -xp.mean(lrd_ratios_array, axis=1), X
-        )
+        return -xp.mean(lrd_ratios_array, axis=1)
 
     fit.__doc__ = _sklearn_LocalOutlierFactor.fit.__doc__
     kneighbors.__doc__ = _sklearn_LocalOutlierFactor.kneighbors.__doc__

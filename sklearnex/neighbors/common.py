@@ -48,11 +48,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             # if user attempts to classify a point that was zero distance from one
             # or more training points, those training points are weighted as 1.0
             # and the other points as 0.0
-            with (
-                xp.errstate(divide="ignore")
-                if hasattr(xp, "errstate")
-                else np.errstate(divide="ignore")
-            ):
+            with xp.errstate(divide="ignore"):
                 dist = 1.0 / dist
             inf_mask = xp.isinf(dist)
             inf_row = xp.any(inf_mask, axis=1)
@@ -394,32 +390,6 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         if return_distance:
             return distances, indices
         return indices
-
-    def _convert_result_to_input_namespace(self, result, X):
-        """Convert dispatch result to match the input array namespace.
-
-        When dispatch falls back to sklearn with host data, the result is numpy.
-        For Array API inputs (e.g. torch XPU, dpnp GPU), convert here to match
-        the original input type.
-
-        When X=None (kneighbors on training data), uses get_namespace on the
-        fitted _fit_X attribute to determine the target namespace.
-        """
-        # Determine namespace and device: from X if provided, else from _fit_X
-        if X is not None:
-            xp, is_array_api = get_namespace(X)
-            device = getattr(X, "device", None)
-        elif hasattr(self, "_fit_X"):
-            xp, is_array_api = get_namespace(self._fit_X)
-            device = getattr(self._fit_X, "device", None)
-        else:
-            return result
-        if is_array_api and not _is_numpy_namespace(xp):
-            if isinstance(result, tuple):
-                result = tuple(xp.asarray(r, device=device) for r in result)
-            else:
-                result = xp.asarray(result, device=device)
-        return result
 
     def _fit_validation(self, X, y=None):
         if sklearn_check_version("1.2"):

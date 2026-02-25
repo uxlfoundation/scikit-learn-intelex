@@ -17,10 +17,12 @@
 from onedal.spmd.neighbors import KNeighborsClassifier as onedal_KNeighborsClassifier
 from onedal.spmd.neighbors import KNeighborsRegressor as onedal_KNeighborsRegressor
 from onedal.spmd.neighbors import NearestNeighbors as onedal_NearestNeighbors
+from onedal.utils._array_api import _is_numpy_namespace
 
 from ...neighbors import KNeighborsClassifier as base_KNeighborsClassifier
 from ...neighbors import KNeighborsRegressor as base_KNeighborsRegressor
 from ...neighbors import NearestNeighbors as base_NearestNeighbors
+from ...utils._array_api import get_namespace
 
 
 class KNeighborsClassifier(base_KNeighborsClassifier):
@@ -38,6 +40,15 @@ class KNeighborsClassifier(base_KNeighborsClassifier):
 
 class KNeighborsRegressor(base_KNeighborsRegressor):
     _onedal_estimator = onedal_KNeighborsRegressor
+
+    def _onedal_fit(self, X, y, queue=None):
+        # SPMD is always GPU; extract queue from data when not provided
+        # (use_raw_input=True bypasses queue detection in dispatch)
+        if queue is None:
+            xp, is_array_api = get_namespace(X)
+            if is_array_api and not _is_numpy_namespace(xp):
+                queue = X.sycl_queue
+        return super()._onedal_fit(X, y, queue=queue)
 
     def _onedal_predict(self, X, queue=None):
         """Override to call SPMD estimator predict directly."""

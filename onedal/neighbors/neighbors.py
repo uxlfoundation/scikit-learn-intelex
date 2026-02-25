@@ -120,7 +120,7 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
                 if not hasattr(self, "_y") or self._y is None:
                     raise ValueError(
                         "Classification target processing must be done in sklearnex layer before calling onedal fit. "
-                        "_y attribute is not set. This indicates the refactoring is incomplete."
+                        "_y attribute is not set."
                     )
             elif y is not None:
                 # For regressors, store y only if provided

@@ -85,6 +85,7 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
             self._fit_X = xp.asarray(self._fit_X, device=device)
         return self
 
+    @wrap_output_data
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
         if n_neighbors is not None:
             self._validate_n_neighbors(n_neighbors)
@@ -93,7 +94,7 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
 
         self._kneighbors_validation(X, n_neighbors)
 
-        result = dispatch(
+        return dispatch(
             self,
             "kneighbors",
             {
@@ -104,7 +105,6 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
             n_neighbors=n_neighbors,
             return_distance=return_distance,
         )
-        return self._convert_result_to_input_namespace(result, X)
 
     @wrap_output_data
     def radius_neighbors(
