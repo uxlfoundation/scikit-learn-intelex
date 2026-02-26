@@ -69,7 +69,7 @@ dpnp_X_train = dpnp.asarray(X_train, usm_type="device", sycl_queue=q)
 dpnp_y_train = dpnp.asarray(y_train, usm_type="device", sycl_queue=q)
 dpnp_X_test = dpnp.asarray(X_test, usm_type="device", sycl_queue=q)
 
-model_spmd = LogisticRegression()
+model_spmd = LogisticRegression(solver='newton-cg')
 model_spmd.fit(dpnp_X_train, dpnp_y_train)
 
 y_predict = model_spmd.predict(dpnp_X_test)
