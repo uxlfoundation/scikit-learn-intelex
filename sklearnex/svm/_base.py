@@ -345,6 +345,7 @@ class BaseSVC(BaseSVM):
             and not (
                 hasattr(self, "_do_not_warn_on_proba") and self._do_not_warn_on_proba
             )
+            and sklearn_check_version("1.9")
         ):
             warnings.warn(
                 f"The `probability` parameter was deprecated in 1.9 and "
