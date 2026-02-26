@@ -172,6 +172,15 @@ def _check_output_type(result, X_input, method, estimator_name, caplog):
     numpy output is acceptable when:
     - The estimator falls back to sklearn (indicated by caplog)
     - The (estimator, method) is a known exception
+
+    Note: This check uses the type of X_input as the expected output type.
+    For predict-like methods the output conceptually matches y, but in this
+    test both X and y are created with the same target_df via gen_dataset,
+    so type(X) == type(y) always holds.
+
+    Note: sklearn's set_output(transform=...) can override transform output
+    types (e.g. to pandas). This test does not set that configuration, so
+    it is not accounted for here.
     """
     if method is None or method in _SCALAR_METHODS:
         return
@@ -209,9 +218,10 @@ def _check_output_type(result, X_input, method, estimator_name, caplog):
             continue
         if hasattr(res, "ndim") and res.ndim == 0:
             continue
-        # Skip sparse matrices — they are inherently not array API compatible
-        # (e.g. kneighbors_graph, decision_path return scipy.sparse matrices)
-        if sp.issparse(res):
+        # Skip sparse matrices and sparse pandas DataFrames — they are
+        # inherently not array API compatible (e.g. kneighbors_graph,
+        # decision_path return scipy.sparse matrices)
+        if sp.issparse(res) or (hasattr(res, "sparse") and hasattr(res, "iloc")):
             continue
 
         if fell_back:
