@@ -147,24 +147,27 @@ def _check_estimator_patching(caplog, dataframe, queue, dtype, est, method):
     return result, X
 
 
-# Methods that return scalars — skip array API type checking
+# Methods that return scalars — skip output type checking
 _SCALAR_METHODS = {"score", "error_norm"}
 
-# (estimator, method) pairs where numpy output is acceptable with array_api
-# input because the method returns fitted attributes directly without
-# array API conversion (e.g., inherited from sklearn mixins returning
+# (estimator, method) pairs where numpy output is acceptable regardless of
+# input type because the method returns fitted attributes directly without
+# output conversion (e.g., inherited from sklearn mixins returning
 # self.labels_ which is a numpy attribute set during fit)
-_ARRAY_API_NUMPY_OK = {
+_NUMPY_OUTPUT_OK = {
     ("DBSCAN", "fit_predict"),  # ClusterMixin.fit_predict returns self.labels_
     ("KMeans", "fit_predict"),  # ClusterMixin.fit_predict returns self.labels_
     ("DummyRegressor", "predict"),  # Not wrapped with wrap_output_data
+    ("PCA", "score_samples"),  # Missing wrap_output_data on GPU path
+    ("NearestNeighbors", "radius_neighbors"),  # Returns ragged numpy arrays
+    ("IncrementalEmpiricalCovariance", "mahalanobis"),  # Missing wrap_output_data
 }
 
 
-def _check_array_api_output(result, X_input, method, estimator_name, caplog):
-    """Check array API conformance: output arrays should match input type.
+def _check_output_type(result, X_input, method, estimator_name, caplog):
+    """Check output type conformance: output arrays should match input type.
 
-    When array API dispatch is enabled and array API inputs are provided,
+    When non-numpy inputs are provided (array_api_strict, dpnp, dpctl, etc.),
     non-scalar outputs should be in the same array namespace as the input.
     numpy output is acceptable when:
     - The estimator falls back to sklearn (indicated by caplog)
@@ -177,7 +180,7 @@ def _check_array_api_output(result, X_input, method, estimator_name, caplog):
         return
 
     # Known exceptions where numpy output is acceptable
-    if (estimator_name, method) in _ARRAY_API_NUMPY_OK:
+    if (estimator_name, method) in _NUMPY_OUTPUT_OK:
         return
 
     # Methods that return self (e.g. partial_fit) are not array outputs
@@ -224,6 +227,13 @@ def _check_array_api_output(result, X_input, method, estimator_name, caplog):
                 f"Array API conformance: {estimator_name}.{method} returned "
                 f"{type(res).__name__} but expected {input_type.__name__}"
             )
+
+    checked = len(results_to_check)
+    status = "sklearn fallback" if fell_back else "accelerated"
+    print(
+        f"Output type check passed: {estimator_name}.{method} "
+        f"({status}, checked {checked} output(s), type={input_type.__name__})"
+    )
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
@@ -309,12 +319,17 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
                 ):
                     raise e
             else:
-                # Check array API return type conformance when no exception
+                # Check return type conformance when no exception
                 # occurred. Output arrays should match the input array type.
-                _check_array_api_output(result, X, method, estimator, caplog)
+                _check_output_type(result, X, method, estimator, caplog)
 
     else:
-        _check_estimator_patching(caplog, dataframe, queue, dtype, est, method)
+        result, X = _check_estimator_patching(
+            caplog, dataframe, queue, dtype, est, method
+        )
+        # Check output type for non-numpy/pandas inputs (dpnp, dpctl)
+        if dataframe not in ("numpy", "pandas"):
+            _check_output_type(result, X, method, estimator, caplog)
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
