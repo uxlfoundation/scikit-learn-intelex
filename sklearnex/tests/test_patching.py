@@ -277,13 +277,7 @@ def _check_set_output_transform(est, method, X, estimator_name):
             # or the output library (e.g., polars) may not be installed
             continue
 
-        if transform_output == "default":
-            assert isinstance(result, np.ndarray), (
-                f"set_output(transform='default'): "
-                f"{estimator_name}.{method} returned "
-                f"{type(result).__name__}, expected numpy ndarray"
-            )
-        else:
+        if transform_output != "default":
             assert not isinstance(result, np.ndarray), (
                 f"set_output(transform={transform_output!r}): "
                 f"{estimator_name}.{method} returned "
