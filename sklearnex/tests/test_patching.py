@@ -185,8 +185,8 @@ def _check_output_type(result, data_input, method, estimator_name, caplog):
         _convert_to_dataframe to both.
 
     Note: sklearn's set_output(transform=...) can override transform output
-    types (e.g. to pandas). This test does not set that configuration, so
-    it is not accounted for here.
+    types (e.g. to pandas). That is tested separately in
+    _check_set_output_transform, not here.
     """
     if method is None or method in _SCALAR_METHODS:
         return
@@ -277,11 +277,22 @@ def _check_set_output_transform(est, method, X, estimator_name):
             # or the output library (e.g., polars) may not be installed
             continue
 
-        if transform_output != "default":
-            assert not isinstance(result, np.ndarray), (
+        if transform_output == "pandas":
+            import pandas as pd
+
+            expected_type = pd.DataFrame
+        elif transform_output == "polars":
+            import polars as pl
+
+            expected_type = pl.DataFrame
+        else:
+            expected_type = None
+
+        if expected_type is not None:
+            assert isinstance(result, expected_type), (
                 f"set_output(transform={transform_output!r}): "
                 f"{estimator_name}.{method} returned "
-                f"numpy ndarray, expected {transform_output} DataFrame"
+                f"{type(result).__name__}, expected {expected_type.__name__}"
             )
         print(
             f"set_output check passed: {estimator_name}.{method} "

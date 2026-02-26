@@ -19,4 +19,5 @@ treelite==4.6.1
 array-api-compat==1.13.0
 array-api-strict==2.3.1 ; python_version <= '3.11'
 array-api-strict==2.5 ; python_version >= '3.12'
+polars==1.27.0
 packaging==26.0
