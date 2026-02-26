@@ -144,7 +144,7 @@ def _check_estimator_patching(caplog, dataframe, queue, dtype, est, method):
         ]
     ), f"sklearnex patching issue in {est}.{method} with log: \n{caplog.text}"
 
-    return result, X
+    return result, y
 
 
 # Methods that return scalars — skip output type checking
@@ -164,7 +164,7 @@ _NUMPY_OUTPUT_OK = {
 }
 
 
-def _check_output_type(result, X_input, method, estimator_name, caplog):
+def _check_output_type(result, data_input, method, estimator_name, caplog):
     """Check output type conformance: output arrays should match input type.
 
     When non-numpy inputs are provided (array_api_strict, dpnp, dpctl, etc.),
@@ -173,10 +173,12 @@ def _check_output_type(result, X_input, method, estimator_name, caplog):
     - The estimator falls back to sklearn (indicated by caplog)
     - The (estimator, method) is a known exception
 
-    Note: This check uses the type of X_input as the expected output type.
-    For predict-like methods the output conceptually matches y, but in this
-    test both X and y are created with the same target_df via gen_dataset,
-    so type(X) == type(y) always holds.
+    Parameters
+    ----------
+    data_input : array-like
+        The y array from the dataset, used to determine the expected output
+        type. Both X and y share the same type since gen_dataset applies
+        _convert_to_dataframe to both.
 
     Note: sklearn's set_output(transform=...) can override transform output
     types (e.g. to pandas). This test does not set that configuration, so
@@ -196,7 +198,7 @@ def _check_output_type(result, X_input, method, estimator_name, caplog):
     if isinstance(result, BaseEstimator):
         return
 
-    input_type = type(X_input)
+    input_type = type(data_input)
 
     # Check if sklearn fallback occurred (any record in caplog)
     fell_back = any(
@@ -306,7 +308,7 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
 
         with config_context(array_api_dispatch=True):
             try:
-                result, X = _check_estimator_patching(
+                result, y = _check_estimator_patching(
                     caplog, dataframe, queue, dtype, est, method
                 )
             except Exception as e:
@@ -331,15 +333,15 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
             else:
                 # Check return type conformance when no exception
                 # occurred. Output arrays should match the input array type.
-                _check_output_type(result, X, method, estimator, caplog)
+                _check_output_type(result, y, method, estimator, caplog)
 
     else:
-        result, X = _check_estimator_patching(
+        result, y = _check_estimator_patching(
             caplog, dataframe, queue, dtype, est, method
         )
         # Check output type for non-numpy/pandas inputs (dpnp, dpctl)
         if dataframe not in ("numpy", "pandas"):
-            _check_output_type(result, X, method, estimator, caplog)
+            _check_output_type(result, y, method, estimator, caplog)
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
