@@ -28,7 +28,11 @@ import pytest
 from scipy import sparse as sp
 from sklearn.base import BaseEstimator
 
-from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
+from daal4py.sklearn._utils import (
+    _package_check_version,
+    is_sparse,
+    sklearn_check_version,
+)
 from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
@@ -223,7 +227,7 @@ def _check_output_type(result, data_input, method, estimator_name, caplog):
         # Skip sparse matrices and sparse pandas DataFrames — they are
         # inherently not array API compatible (e.g. kneighbors_graph,
         # decision_path return scipy.sparse matrices)
-        if sp.issparse(res) or (hasattr(res, "sparse") and hasattr(res, "iloc")):
+        if is_sparse(res):
             continue
 
         if fell_back:
