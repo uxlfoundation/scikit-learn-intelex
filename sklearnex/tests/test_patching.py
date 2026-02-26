@@ -148,7 +148,7 @@ def _check_estimator_patching(caplog, dataframe, queue, dtype, est, method):
         ]
     ), f"sklearnex patching issue in {est}.{method} with log: \n{caplog.text}"
 
-    return result, y
+    return result, y, X
 
 
 # Methods that return scalars — skip output type checking
@@ -252,6 +252,52 @@ def _check_output_type(result, data_input, method, estimator_name, caplog):
     )
 
 
+def _check_set_output_transform(est, method, X, estimator_name):
+    """Test set_output(transform=...) for transform methods.
+
+    Verifies that sklearn's set_output API is respected by sklearnex
+    estimators. When set_output(transform="pandas") is configured,
+    transform() should return a pandas DataFrame, etc.
+
+    Only applies to the 'transform' method (not fit_transform to avoid
+    refitting the estimator).
+    """
+    if method != "transform":
+        return
+    if not hasattr(est, "set_output"):
+        return
+
+    for transform_output in ["default", "pandas", "polars"]:
+        est.set_output(transform=transform_output)
+        try:
+            result = est.transform(X)
+        except Exception:
+            # Some input types (e.g., dpnp, array_api_strict) may not
+            # support conversion to the requested output format,
+            # or the output library (e.g., polars) may not be installed
+            continue
+
+        if transform_output == "default":
+            assert isinstance(result, np.ndarray), (
+                f"set_output(transform='default'): "
+                f"{estimator_name}.{method} returned "
+                f"{type(result).__name__}, expected numpy ndarray"
+            )
+        else:
+            assert not isinstance(result, np.ndarray), (
+                f"set_output(transform={transform_output!r}): "
+                f"{estimator_name}.{method} returned "
+                f"numpy ndarray, expected {transform_output} DataFrame"
+            )
+        print(
+            f"set_output check passed: {estimator_name}.{method} "
+            f"(transform={transform_output!r}, type={type(result).__name__})"
+        )
+
+    # Reset to default
+    est.set_output(transform="default")
+
+
 @pytest.mark.parametrize("dtype", DTYPES)
 @pytest.mark.parametrize("dataframe, queue", get_dataframes_and_queues())
 @pytest.mark.parametrize("estimator, method", gen_models_info(PATCHED_MODELS))
@@ -312,7 +358,7 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
 
         with config_context(array_api_dispatch=True):
             try:
-                result, y = _check_estimator_patching(
+                result, y, X = _check_estimator_patching(
                     caplog, dataframe, queue, dtype, est, method
                 )
             except Exception as e:
@@ -338,14 +384,16 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
                 # Check return type conformance when no exception
                 # occurred. Output arrays should match the input array type.
                 _check_output_type(result, y, method, estimator, caplog)
+                _check_set_output_transform(est, method, X, estimator)
 
     else:
-        result, y = _check_estimator_patching(
+        result, y, X = _check_estimator_patching(
             caplog, dataframe, queue, dtype, est, method
         )
         # Check output type for non-numpy/pandas inputs (dpnp, dpctl)
         if dataframe not in ("numpy", "pandas"):
             _check_output_type(result, y, method, estimator, caplog)
+        _check_set_output_transform(est, method, X, estimator)
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
