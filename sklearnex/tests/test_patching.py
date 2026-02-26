@@ -25,6 +25,7 @@ from inspect import signature
 import numpy as np
 import numpy.random as nprnd
 import pytest
+from scipy import sparse as sp
 from sklearn.base import BaseEstimator
 
 from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
@@ -125,6 +126,7 @@ def _check_estimator_patching(caplog, dataframe, queue, dtype, est, method):
     # This should be modified as more array_api frameworks are tested and for
     # upcoming changes in dpnp and dpctl
 
+    result = None
     with caplog.at_level(logging.WARNING, logger="sklearnex"):
         X, y = gen_dataset(est, queue=queue, target_df=dataframe, dtype=dtype)[0]
         est.fit(X, y)
@@ -132,7 +134,7 @@ def _check_estimator_patching(caplog, dataframe, queue, dtype, est, method):
         if method:
             if not hasattr(est, method) and check_is_dynamic_method(est, method):
                 pytest.skip(f"sklearn available_if prevents testing {est}.{method}")
-            call_method(est, method, X, y)
+            result = call_method(est, method, X, y)
 
     assert all(
         [
@@ -141,6 +143,87 @@ def _check_estimator_patching(caplog, dataframe, queue, dtype, est, method):
             for i in caplog.records
         ]
     ), f"sklearnex patching issue in {est}.{method} with log: \n{caplog.text}"
+
+    return result, X
+
+
+# Methods that return scalars — skip array API type checking
+_SCALAR_METHODS = {"score", "error_norm"}
+
+# (estimator, method) pairs where numpy output is acceptable with array_api
+# input because the method returns fitted attributes directly without
+# array API conversion (e.g., inherited from sklearn mixins returning
+# self.labels_ which is a numpy attribute set during fit)
+_ARRAY_API_NUMPY_OK = {
+    ("DBSCAN", "fit_predict"),  # ClusterMixin.fit_predict returns self.labels_
+    ("KMeans", "fit_predict"),  # ClusterMixin.fit_predict returns self.labels_
+    ("DummyRegressor", "predict"),  # Not wrapped with wrap_output_data
+}
+
+
+def _check_array_api_output(result, X_input, method, estimator_name, caplog):
+    """Check array API conformance: output arrays should match input type.
+
+    When array API dispatch is enabled and array API inputs are provided,
+    non-scalar outputs should be in the same array namespace as the input.
+    numpy output is acceptable when:
+    - The estimator falls back to sklearn (indicated by caplog)
+    - The (estimator, method) is a known exception
+    """
+    if method is None or method in _SCALAR_METHODS:
+        return
+
+    if result is None:
+        return
+
+    # Known exceptions where numpy output is acceptable
+    if (estimator_name, method) in _ARRAY_API_NUMPY_OK:
+        return
+
+    # Methods that return self (e.g. partial_fit) are not array outputs
+    if isinstance(result, BaseEstimator):
+        return
+
+    input_type = type(X_input)
+
+    # Check if sklearn fallback occurred (any record in caplog)
+    fell_back = any(
+        "fallback to original Scikit-learn" in r.message for r in caplog.records
+    )
+
+    # Collect all array results (handle tuples like kneighbors and
+    # lists like multi-output predict_proba)
+    if isinstance(result, (tuple, list)):
+        results_to_check = result
+    else:
+        results_to_check = (result,)
+
+    for res in results_to_check:
+        if res is None:
+            continue
+        # Skip scalar/0-d results
+        if np.isscalar(res):
+            continue
+        if hasattr(res, "ndim") and res.ndim == 0:
+            continue
+        # Skip sparse matrices — they are inherently not array API compatible
+        # (e.g. kneighbors_graph, decision_path return scipy.sparse matrices)
+        if sp.issparse(res):
+            continue
+
+        if fell_back:
+            # Fallback to sklearn: numpy output is acceptable
+            assert isinstance(res, (np.ndarray, input_type)), (
+                f"Array API conformance: {estimator_name}.{method} returned "
+                f"{type(res).__name__} on sklearn fallback, expected numpy or "
+                f"{input_type.__name__}"
+            )
+        else:
+            # Accelerated version: output must match input type
+            assert isinstance(res, input_type), (
+                f"Array API conformance: {estimator_name}.{method} returned "
+                f"{type(res).__name__} but expected {input_type.__name__}"
+            )
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
@@ -203,7 +286,9 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
 
         with config_context(array_api_dispatch=True):
             try:
-                _check_estimator_patching(caplog, dataframe, queue, dtype, est, method)
+                result, X = _check_estimator_patching(
+                    caplog, dataframe, queue, dtype, est, method
+                )
             except Exception as e:
                 # if we are borrowing from sklearn and it fails, then this is something
                 # failing on sklearn-side. It is only allowed to fail if the underlying sklearn
@@ -223,6 +308,10 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
                     != getattr(UNPATCHED_MODELS[estimator], method, None)
                 ):
                     raise e
+            else:
+                # Check array API return type conformance when no exception
+                # occurred. Output arrays should match the input array type.
+                _check_array_api_output(result, X, method, estimator, caplog)
 
     else:
         _check_estimator_patching(caplog, dataframe, queue, dtype, est, method)
