@@ -143,6 +143,21 @@ SPECIAL_INSTANCES = sklearn_clone_dict(
 )
 
 
+# Some estimators have methods that are dynamically defined through '@available_if'
+# after the object has been fitted. The tests check for their existence by calling
+# 'hasattr' before fitting, which might miss them, hence the need for this function
+def check_is_dynamic_method(estimator: object, method: str) -> bool:
+    if isinstance(estimator, type):
+        estimator = estimator()
+    if hasattr(estimator, method):
+        return False
+    try:
+        attr = getattr_static(estimator, method)
+        return hasattr(attr, "fn")
+    except AttributeError:
+        return False
+
+
 def gen_models_info(algorithms, required_inputs=["X", "y"], fit=False, daal4py=True):
     """Generate estimator-attribute pairs for pytest test collection.
 
@@ -195,12 +210,29 @@ def gen_models_info(algorithms, required_inputs=["X", "y"], fit=False, daal4py=T
             methods = []
             for attr in candidates:
                 attribute = getattr_static(est, attr)
+                if not callable(attribute) and hasattr(attribute, "fn"):
+                    attribute = attribute.fn
                 if callable(attribute):
                     params = signature(attribute).parameters
                     if any([inp in params for inp in required_inputs]):
                         methods += [attr]
         else:
             methods = candidates
+
+        # Filter out dynamic methods gated by @available_if that are not
+        # available with the estimator's current parameters (e.g.,
+        # SVC.predict_proba when probability=False, LOF.predict when
+        # novelty=False). These are deterministic at instantiation.
+        if methods:
+            if estimator in SPECIAL_INSTANCES:
+                instance = SPECIAL_INSTANCES[estimator]
+            else:
+                instance = est()
+            methods = [
+                m
+                for m in methods
+                if hasattr(instance, m) or not check_is_dynamic_method(instance, m)
+            ]
 
         output += (
             [(estimator, method) for method in methods]
@@ -242,7 +274,11 @@ def call_method(estimator, method, X, y, **kwargs):
     func = getattr(estimator, method)
     argdict = signature(func).parameters
     argnum = len(
-        [i for i in argdict if argdict[i].default == Parameter.empty or i in ["X", "y"]]
+        [
+            i
+            for i in argdict
+            if (argdict[i].default == Parameter.empty or i in ["X", "y"]) and i != "self"
+        ]
     )
 
     if method == "inverse_transform":

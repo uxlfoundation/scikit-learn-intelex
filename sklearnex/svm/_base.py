@@ -54,6 +54,23 @@ if sklearn_check_version("1.6"):
         # here: https://github.com/uxlfoundation/scikit-learn-intelex/pull/1879
         # This is distilled from the sklearn CalibratedClassifierCV for sklearn <1.8 for
         # use in sklearn > 1.8 to maintain performance.
+
+        # Comment 2026-02-16: scikit-learn doesn't have support for array API with the
+        # arguments used for 'CalibratedClassifierCV' inside of '_fit_calibrator', despite
+        # the apparent usage of 'xp' here. As a result, this works when using 'target_offload'
+        # even though some things end up running on CPU (not sure how much of the
+        # workload is CPU vs. GPU in that case), but doesn't work when using array API
+        # classes, and cannot be made to work by simply moving data to host here,
+        # because the metaestimator from scikit-learn will then make calls to
+        # 'SVC.predict' which sklearnex is overriding and which won't work with
+        # NumPy arrays if fitted to array API.
+        # Some discussions throughout scikit-learn GitHub issues indicate that there
+        # is some desire to remove the option for 'probability=True' from SVC, so perhaps
+        # this problem could be ignored as it will disappear in the future.
+        # TODO: find some way to make this work with array API classes. Maybe it
+        # could work by temporarily removing the '_onedal' estimator from the sklearnex
+        # class, casting both the input data and the support vectors to NumPy, and then
+        # reverting all of this.
         xp, _ = get_namespace(X, y)
         check_classification_targets(y)
         X, y = indexable(X, y)
@@ -246,6 +263,24 @@ class BaseSVC(BaseSVM):
 
     def _onedal_cpu_supported(self, method_name, *data):
         patching_status = super()._onedal_cpu_supported(method_name, *data)
+        # TODO: remove this condition once scikit-learn gets array API
+        # support for CalibratedClassifierCV with the arguments used here.
+        if method_name == "fit":
+            X = data[0]
+            skip = patching_status.and_conditions(
+                [
+                    (
+                        not (
+                            self.probability
+                            and hasattr(X, "__dlpack__")
+                            and not isinstance(X, np.ndarray)
+                        ),
+                        "'probability=True' not supported with array API classes.",
+                    ),
+                ]
+            )
+            if skip:
+                return patching_status
         if method_name == "fit" and patching_status.get_status() and data[2] is not None:
             xp, _ = get_namespace(*data)
             _, y, sample_weight = data
@@ -257,7 +292,7 @@ class BaseSVC(BaseSVM):
                     (
                         (xp.any(y_nonzero != y_nonzero[0])),
                         "Invalid input - all samples with positive weights belong to the same class.",
-                    )
+                    ),
                 ]
             )
         return patching_status
@@ -440,7 +475,11 @@ class BaseSVC(BaseSVM):
 
         # sklearn conformance >1.0, with array API conversion
         # https://github.com/scikit-learn/scikit-learn/pull/21336
-        if not self._sparse and sv.size > 0 and xp.sum(self._n_support) != sv.shape[0]:
+        if (
+            not self._sparse
+            and sv.shape[0] > 0
+            and xp.sum(self._n_support) != sv.shape[0]
+        ):
             raise ValueError(
                 "The internal representation " f"of {self.__class__.__name__} was altered"
             )
@@ -510,7 +549,11 @@ class BaseSVC(BaseSVM):
         )
 
         sv = self.support_vectors_
-        if not self._sparse and sv.size > 0 and xp.sum(self._n_support) != sv.shape[0]:
+        if (
+            not self._sparse
+            and sv.shape[0] > 0
+            and xp.sum(self._n_support) != sv.shape[0]
+        ):
             raise ValueError(
                 "The internal representation " f"of {self.__class__.__name__} was altered"
             )
