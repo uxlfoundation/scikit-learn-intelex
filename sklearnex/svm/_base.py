@@ -392,7 +392,7 @@ class BaseSVC(BaseSVM):
             X, y, sample_weight, class_count=self.classes_.shape[0], queue=queue
         )
 
-        if hasattr(self.probability) and self.probability:
+        if hasattr(self, "probability") and self.probability:
             self._fit_proba(
                 X,
                 y,
