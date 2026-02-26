@@ -370,7 +370,25 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         # to ignore the first nearest neighbor of every sample, i.e
         # the sample itself.
         n_queries = indices.shape[0]
-        sample_range = xp.reshape(xp.arange(n_queries, dtype=indices.dtype), (-1, 1))
+        if not _is_numpy_namespace(xp):
+            # Use sycl_queue for SYCL arrays (dpnp/dpctl) to ensure sample_range is on
+            # the exact same queue as indices. For dpctl usm_ndarray, .device returns only
+            # SyclDevice (hardware), not the queue/context. A new default queue from .device
+            # would differ from the SPMD per-rank queue, causing ExecutionPlacementError.
+            # For non-SYCL arrays (e.g., torch XPU), sycl_queue is None, fall back to .device.
+            sycl_queue = getattr(indices, "sycl_queue", None)
+            if sycl_queue is not None:
+                sample_range = xp.reshape(
+                    xp.arange(n_queries, dtype=indices.dtype, sycl_queue=sycl_queue),
+                    (-1, 1),
+                )
+            else:
+                device = getattr(indices, "device", None)
+                sample_range = xp.reshape(
+                    xp.arange(n_queries, dtype=indices.dtype, device=device), (-1, 1)
+                )
+        else:
+            sample_range = xp.reshape(xp.arange(n_queries, dtype=indices.dtype), (-1, 1))
         sample_mask = indices != sample_range
 
         # Corner case: When the number of duplicates are more
@@ -379,10 +397,19 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         # In that case mask the first duplicate.
         dup_gr_nbrs = xp.all(sample_mask, axis=1)
         first_col = sample_mask[:, 0]
-        first_col = xp.where(dup_gr_nbrs, False, first_col)
-        sample_mask = xp.concatenate(
-            [xp.reshape(first_col, (-1, 1)), sample_mask[:, 1:]], axis=1
-        )
+        # Use zeros_like instead of Python scalar False to avoid 0-d array
+        # iteration errors with dpnp/dpctl when used as xp.where argument.
+        first_col = xp.where(dup_gr_nbrs, xp.zeros_like(first_col), first_col)
+        # Array API standard uses 'concat'; dpctl.tensor only has 'concat' (not
+        # 'concatenate'). Numpy has only 'concatenate'. Use accordingly.
+        if _is_numpy_namespace(xp):
+            sample_mask = xp.concatenate(
+                [xp.reshape(first_col, (-1, 1)), sample_mask[:, 1:]], axis=1
+            )
+        else:
+            sample_mask = xp.concat(
+                [xp.reshape(first_col, (-1, 1)), sample_mask[:, 1:]], axis=1
+            )
 
         indices = xp.reshape(indices[sample_mask], (n_queries, n_neighbors))
         distances = xp.reshape(distances[sample_mask], (n_queries, n_neighbors))
