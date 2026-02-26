@@ -156,6 +156,30 @@ Note that some cases of estimator-specific methods are still fully array API com
 for example, :meth:`sklearn.neighbors.NearestNeighbors.kneighbors` will produce outputs
 of array API classes when fitted to them.
 
+All of the classes with array API support in the |sklearnex| have full support for core
+methods common to base classes for regression and classification:
+
+- ``.fit()``
+- ``.predict()``
+- ``.predict_proba()``
+- ``.predict_log_proba()``
+- ``.score()``
+
+However, some classes have additional methods that might not be fully covered by array API
+support when the corresponding class from stock |sklearn| does not support array API. For
+example, :obj:`sklearn.ensemble.RandomForestClassifier` also offers methods
+:meth:`sklearn.ensemble.RandomForestClassifier.apply` and
+:meth:`sklearn.ensemble.RandomForestClassifier.decision_path()`, which do not have
+accelerated analogs in the |sklearnex| and thus rely on |sklearn| for the computations.
+
+Calling methods such as ``.apply()`` from a ``RandomForestClassifier`` from the |sklearnex|
+that was fitted to array API inputs will work, but it will do so by transferring the data
+to host if not already there, passing the intermediate object to |sklearn|, and outputting
+a host NumPy array, with some exceptions where |dpnp_array| classes might be returned.
+
+Note that some cases of estimator-specific methods are still fully array API compatible -
+for example, :meth:`sklearn.neighbors.NearestNeighbors.kneighbors` will produce outputs
+of array API classes when fitted to them.
 
 Example usage
 =============
