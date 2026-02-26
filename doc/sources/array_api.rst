@@ -143,30 +143,6 @@ methods common to base classes for regression and classification:
 
 However, some classes have additional methods that might not be fully covered by array API
 support when the corresponding class from stock |sklearn| does not support array API. For
-example, :obj:`sklearn.neighbors.KNeighborsClassifier` also offers methods such as
-``radius_neighbors`` and ``kneighbors_graph``, which do not have
-accelerated analogs in the |sklearnex| and thus rely on |sklearn| for the computations.
-
-Calling methods such as ``radius_neighbors`` from a KNN estimator from the |sklearnex|
-that was fitted to array API inputs will work, but it will do so by transferring the data
-to host if not already there, passing the intermediate object to |sklearn|, and outputting
-a host NumPy array.
-
-Note that some cases of estimator-specific methods are still fully array API compatible -
-for example, :meth:`sklearn.neighbors.NearestNeighbors.kneighbors` will produce outputs
-of array API classes when fitted to them.
-
-All of the classes with array API support in the |sklearnex| have full support for core
-methods common to base classes for regression and classification:
-
-- ``.fit()``
-- ``.predict()``
-- ``.predict_proba()``
-- ``.predict_log_proba()``
-- ``.score()``
-
-However, some classes have additional methods that might not be fully covered by array API
-support when the corresponding class from stock |sklearn| does not support array API. For
 example, :obj:`sklearn.ensemble.RandomForestClassifier` also offers methods
 :meth:`sklearn.ensemble.RandomForestClassifier.apply` and
 :meth:`sklearn.ensemble.RandomForestClassifier.decision_path()`, which do not have
@@ -176,6 +152,14 @@ Calling methods such as ``.apply()`` from a ``RandomForestClassifier`` from the 
 that was fitted to array API inputs will work, but it will do so by transferring the data
 to host if not already there, passing the intermediate object to |sklearn|, and outputting
 a host NumPy array, with some exceptions where |dpnp_array| classes might be returned.
+
+Similarly, :obj:`sklearn.neighbors.KNeighborsClassifier` also offers methods such as
+:meth:`~sklearn.neighbors.KNeighborsClassifier.radius_neighbors` and
+:meth:`~sklearn.neighbors.KNeighborsClassifier.kneighbors_graph`, which do not have
+accelerated analogs in the |sklearnex| and thus rely on |sklearn| for the computations.
+Calling such methods from a KNN estimator from the |sklearnex| that was fitted to array
+API inputs will work, but it will do so by transferring the data to host if not already
+there, passing the intermediate object to |sklearn|, and outputting a host NumPy array.
 
 Note that some cases of estimator-specific methods are still fully array API compatible -
 for example, :meth:`sklearn.neighbors.NearestNeighbors.kneighbors` will produce outputs

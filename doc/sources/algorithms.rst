@@ -361,12 +361,13 @@ Classification
        - ``algorithm`` != `'brute'`
        - ``weights`` = `'callable'`
        - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
-       - ``kd_tree`` algorithm falls back to CPU
      - Only dense data is supported.
      - Number of classes must be at least 2.
-       Methods not accelerated by oneDAL (e.g. ``radius_neighbors``) will
-       fall back to |sklearn| on CPU and return NumPy arrays when using
-       array API inputs.
+       The following methods are not accelerated by |sklearnex| and will
+       fall back to |sklearn| on CPU, returning NumPy arrays when using
+       array API inputs:
+       :meth:`~sklearn.neighbors.KNeighborsClassifier.radius_neighbors`,
+       :meth:`~sklearn.neighbors.KNeighborsClassifier.radius_neighbors_graph`.
    * - :obj:`sklearn.linear_model.LogisticRegression`
      - All parameters are supported except:
 
@@ -417,11 +418,12 @@ Regression
        - ``algorithm`` != `'brute'`
        - ``weights`` = `'callable'`
        - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
-       - ``kd_tree`` algorithm falls back to CPU
      - Only dense data is supported.
-       Methods not accelerated by oneDAL (e.g. ``radius_neighbors``) will
-       fall back to |sklearn| on CPU and return NumPy arrays when using
-       array API inputs.
+       The following methods are not accelerated by |sklearnex| and will
+       fall back to |sklearn| on CPU, returning NumPy arrays when using
+       array API inputs:
+       :meth:`~sklearn.neighbors.KNeighborsRegressor.radius_neighbors`,
+       :meth:`~sklearn.neighbors.KNeighborsRegressor.radius_neighbors_graph`.
    * - :obj:`sklearn.linear_model.Ridge`
      - All parameters are supported except:
 
@@ -509,21 +511,22 @@ Nearest Neighbors
 
        - ``algorithm`` != `'brute'`
        - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
-       - ``kd_tree`` algorithm falls back to CPU
      - Only dense data is supported.
-       Methods not accelerated by oneDAL (e.g. ``radius_neighbors``) will
-       fall back to |sklearn| on CPU and return NumPy arrays when using
-       array API inputs.
+       The following methods are not accelerated by |sklearnex| and will
+       fall back to |sklearn| on CPU, returning NumPy arrays when using
+       array API inputs:
+       :meth:`~sklearn.neighbors.NearestNeighbors.radius_neighbors`,
+       :meth:`~sklearn.neighbors.NearestNeighbors.radius_neighbors_graph`.
    * - :obj:`sklearn.neighbors.LocalOutlierFactor`
      - All parameters are supported except:
 
        - ``algorithm`` != `'brute'`
        - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
-       - ``kd_tree`` algorithm falls back to CPU
      - Only dense data is supported.
-       Methods not accelerated by oneDAL (e.g. ``decision_function``) will
-       fall back to |sklearn| on CPU and return NumPy arrays when using
-       array API inputs.
+       The following methods are not accelerated by |sklearnex| and will
+       fall back to |sklearn| on CPU, returning NumPy arrays when using
+       array API inputs:
+       :meth:`~sklearn.neighbors.LocalOutlierFactor.decision_function`.
 
 Other Tasks
 ***********
