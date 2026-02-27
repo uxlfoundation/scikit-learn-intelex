@@ -342,9 +342,6 @@ class BaseSVC(BaseSVM):
         if (
             hasattr(self, "probability")
             and self.probability != "deprecated"
-            and not (
-                hasattr(self, "_do_not_warn_on_proba") and self._do_not_warn_on_proba
-            )
             and sklearn_check_version("1.9")
         ):
             warnings.warn(
@@ -393,7 +390,11 @@ class BaseSVC(BaseSVM):
             X, y, sample_weight, class_count=self.classes_.shape[0], queue=queue
         )
 
-        if hasattr(self, "probability") and self.probability:
+        if (
+            hasattr(self, "probability")
+            and self.probability
+            and self.probability != "deprecated"
+        ):
             self._fit_proba(
                 X,
                 y,
@@ -416,7 +417,10 @@ class BaseSVC(BaseSVM):
             )
 
         params = self.get_params()
-        params["probability"] = False
+        if sklearn_check_version("1.9"):
+            params["probability"] = "deprecated"
+        else:
+            params["probability"] = False
         params["decision_function_shape"] = "ovr"
         clf_base = self.__class__(**params)
 
@@ -428,11 +432,7 @@ class BaseSVC(BaseSVM):
             # Comment 2026-02-24: this causes it to fit the model twice.
             # It looks redundant, but is required when using GPU offloading due to
             # needing functionalities from sklearn that are not provided by oneDAL.
-            try:
-                clf_base._do_not_warn_on_proba = True
-                clf_base.fit(X, y)
-            finally:
-                clf_base._do_not_warn_on_proba = False
+            clf_base.fit(X, y)
 
             # Forced use of FrozenEstimator starting in sklearn 1.6
             if sklearn_check_version("1.6"):
