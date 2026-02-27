@@ -205,11 +205,7 @@ class ForestClassifier(BaseForest):
         else:
             result = self.infer(params, self._onedal_model, X_table)
 
-        # TODO: fix probabilities out of [0, 1] interval on oneDAL side
-        pred = from_table(result.probabilities, like=X)
-        pred[pred > 1.0] = 1.0
-        pred[pred < 0.0] = 0.0
-        return pred
+        return from_table(result.probabilities, like=X)
 
 
 class ForestRegressor(BaseForest):
