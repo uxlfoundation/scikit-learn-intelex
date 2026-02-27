@@ -271,7 +271,9 @@ class BaseSVC(BaseSVM):
                 [
                     (
                         not (
-                            self.probability
+                            hasattr(self, "probability")
+                            and self.probability
+                            and self.probability != "deprecated"
                             and hasattr(X, "__dlpack__")
                             and not isinstance(X, np.ndarray)
                         ),
