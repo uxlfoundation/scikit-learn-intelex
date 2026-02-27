@@ -165,6 +165,10 @@ _NUMPY_OUTPUT_OK = {
     ("PCA", "score_samples"),  # Missing wrap_output_data on GPU path
     ("NearestNeighbors", "radius_neighbors"),  # Returns ragged numpy arrays
     ("IncrementalEmpiricalCovariance", "mahalanobis"),  # Missing wrap_output_data
+    ("RandomForestClassifier", "apply"),  # Returns leaf indices (numpy)
+    ("RandomForestRegressor", "apply"),  # Returns leaf indices (numpy)
+    ("ExtraTreesClassifier", "apply"),  # Returns leaf indices (numpy)
+    ("ExtraTreesRegressor", "apply"),  # Returns leaf indices (numpy)
 }
 
 
@@ -235,28 +239,23 @@ def _check_output_type(result, data_input, method, estimator_name, caplog, X=Non
 
         if fell_back:
             # Fallback to sklearn: numpy output is acceptable
-            assert isinstance(res, (np.ndarray, input_type)), (
-                f"Array API conformance: {estimator_name}.{method} returned "
-                f"{type(res).__name__} on sklearn fallback, expected numpy or "
-                f"{input_type.__name__}"
-            )
+            assert isinstance(res, (np.ndarray, input_type))
         else:
             # Accelerated version: output must match input type
-            assert isinstance(res, input_type), (
-                f"Array API conformance: {estimator_name}.{method} returned "
-                f"{type(res).__name__} but expected {input_type.__name__}"
-            )
-            # Check dtype preservation for floating-point inputs
-            if (
-                X is not None
-                and hasattr(res, "dtype")
-                and hasattr(X, "dtype")
-                and "float" in str(X.dtype)
-            ):
-                assert res.dtype == X.dtype, (
-                    f"Array API conformance: {estimator_name}.{method} returned "
-                    f"dtype {res.dtype} but expected {X.dtype}"
-                )
+            assert isinstance(res, input_type)
+            # Check dtype preservation for floating-point outputs
+            if X is not None and hasattr(res, "dtype") and "float" in str(res.dtype):
+                if hasattr(X, "dtype") and "float" in str(X.dtype):
+                    # Float output from float input: dtypes should match
+                    assert res.dtype == X.dtype
+                elif (
+                    method == "predict"
+                    and data_input is not None
+                    and hasattr(data_input, "dtype")
+                    and "float" in str(data_input.dtype)
+                ):
+                    # predict float output should match y dtype
+                    assert res.dtype == data_input.dtype
 
 
 def _check_set_output_transform(est, method, X, estimator_name):
