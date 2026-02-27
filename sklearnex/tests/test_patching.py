@@ -171,6 +171,16 @@ _NUMPY_OUTPUT_OK = {
     ("ExtraTreesRegressor", "apply"),  # Returns leaf indices (numpy)
 }
 
+# (estimator, method) pairs where dtype preservation is not expected.
+# oneDAL may use a different internal precision for these.
+_DTYPE_CHECK_SKIP = {
+    ("KMeans", "predict"),  # Always returns int32 cluster labels
+    ("SVR", "predict"),  # oneDAL SVM always computes in float64
+    ("NuSVR", "predict"),  # oneDAL SVM always computes in float64
+    ("SVC", "decision_function"),  # oneDAL SVM always computes in float64
+    ("NuSVC", "decision_function"),  # oneDAL SVM always computes in float64
+}
+
 
 def _check_output_type(result, data_input, method, estimator_name, caplog, X=None):
     """Check output type conformance: output arrays should match input type.
@@ -248,7 +258,11 @@ def _check_output_type(result, data_input, method, estimator_name, caplog, X=Non
             x_is_fp16 = (
                 X is not None and hasattr(X, "dtype") and "float16" in str(X.dtype)
             )
-            if hasattr(res, "dtype") and not x_is_fp16:
+            if (
+                hasattr(res, "dtype")
+                and not x_is_fp16
+                and (estimator_name, method) not in _DTYPE_CHECK_SKIP
+            ):
                 if (
                     method == "predict"
                     and data_input is not None
