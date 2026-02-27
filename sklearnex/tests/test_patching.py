@@ -168,7 +168,7 @@ _NUMPY_OUTPUT_OK = {
 }
 
 
-def _check_output_type(result, data_input, method, estimator_name, caplog):
+def _check_output_type(result, data_input, method, estimator_name, caplog, X=None):
     """Check output type conformance: output arrays should match input type.
 
     When non-numpy inputs are provided (array_api_strict, dpnp, dpctl, etc.),
@@ -183,6 +183,9 @@ def _check_output_type(result, data_input, method, estimator_name, caplog):
         The y array from the dataset, used to determine the expected output
         type. Both X and y share the same type since gen_dataset applies
         _convert_to_dataframe to both.
+    X : array-like, optional
+        The feature array, used for dtype preservation checks. If provided,
+        float dtype outputs are compared against X's dtype.
 
     Note: sklearn's set_output(transform=...) can override transform output
     types (e.g. to pandas). That is tested separately in
@@ -243,13 +246,17 @@ def _check_output_type(result, data_input, method, estimator_name, caplog):
                 f"Array API conformance: {estimator_name}.{method} returned "
                 f"{type(res).__name__} but expected {input_type.__name__}"
             )
-
-    checked = len(results_to_check)
-    status = "sklearn fallback" if fell_back else "accelerated"
-    print(
-        f"Output type check passed: {estimator_name}.{method} "
-        f"({status}, checked {checked} output(s), type={input_type.__name__})"
-    )
+            # Check dtype preservation for floating-point inputs
+            if (
+                X is not None
+                and hasattr(res, "dtype")
+                and hasattr(X, "dtype")
+                and "float" in str(X.dtype)
+            ):
+                assert res.dtype == X.dtype, (
+                    f"Array API conformance: {estimator_name}.{method} returned "
+                    f"dtype {res.dtype} but expected {X.dtype}"
+                )
 
 
 def _check_set_output_transform(est, method, X, estimator_name):
@@ -289,15 +296,7 @@ def _check_set_output_transform(est, method, X, estimator_name):
             expected_type = None
 
         if expected_type is not None:
-            assert isinstance(result, expected_type), (
-                f"set_output(transform={transform_output!r}): "
-                f"{estimator_name}.{method} returned "
-                f"{type(result).__name__}, expected {expected_type.__name__}"
-            )
-        print(
-            f"set_output check passed: {estimator_name}.{method} "
-            f"(transform={transform_output!r}, type={type(result).__name__})"
-        )
+            assert isinstance(result, expected_type)
 
     # Reset to default
     est.set_output(transform="default")
@@ -388,7 +387,7 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
             else:
                 # Check return type conformance when no exception
                 # occurred. Output arrays should match the input array type.
-                _check_output_type(result, y, method, estimator, caplog)
+                _check_output_type(result, y, method, estimator, caplog, X=X)
                 _check_set_output_transform(est, method, X, estimator)
 
     else:
@@ -397,7 +396,7 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
         )
         # Check output type for non-numpy/pandas inputs (dpnp, dpctl)
         if dataframe not in ("numpy", "pandas"):
-            _check_output_type(result, y, method, estimator, caplog)
+            _check_output_type(result, y, method, estimator, caplog, X=X)
         _check_set_output_transform(est, method, X, estimator)
 
 
