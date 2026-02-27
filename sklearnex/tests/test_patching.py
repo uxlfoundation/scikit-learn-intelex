@@ -243,19 +243,27 @@ def _check_output_type(result, data_input, method, estimator_name, caplog, X=Non
         else:
             # Accelerated version: output must match input type
             assert isinstance(res, input_type)
-            # Check dtype preservation for floating-point outputs
-            if X is not None and hasattr(res, "dtype") and "float" in str(res.dtype):
-                if hasattr(X, "dtype") and "float" in str(X.dtype):
-                    # Float output from float input: dtypes should match
-                    assert res.dtype == X.dtype
-                elif (
+            # Check dtype preservation (skip float16 — oneDAL doesn't
+            # support it natively and upcasts to float64)
+            x_is_fp16 = (
+                X is not None and hasattr(X, "dtype") and "float16" in str(X.dtype)
+            )
+            if hasattr(res, "dtype") and not x_is_fp16:
+                if (
                     method == "predict"
                     and data_input is not None
                     and hasattr(data_input, "dtype")
-                    and "float" in str(data_input.dtype)
                 ):
-                    # predict float output should match y dtype
+                    # predict output dtype should match y dtype
                     assert res.dtype == data_input.dtype
+                elif (
+                    "float" in str(res.dtype)
+                    and X is not None
+                    and hasattr(X, "dtype")
+                    and "float" in str(X.dtype)
+                ):
+                    # Float output from float input: dtypes should match
+                    assert res.dtype == X.dtype
 
 
 def _check_set_output_transform(est, method, X, estimator_name):
