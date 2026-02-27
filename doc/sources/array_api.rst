@@ -161,6 +161,10 @@ Calling such methods from a KNN estimator from the |sklearnex| that was fitted t
 API inputs will work, but it will do so by transferring the data to host if not already
 there, passing the intermediate object to |sklearn|, and outputting a host NumPy array.
 
+For :obj:`sklearn.neighbors.LocalOutlierFactor`, methods such as ``.fit()``,
+``.fit_predict()``, ``.score_samples()``, ``.decision_function()``, and
+``.kneighbors()`` are fully array API compatible.
+
 Note that some cases of estimator-specific methods are still fully array API compatible -
 for example, :meth:`sklearn.neighbors.NearestNeighbors.kneighbors` will produce outputs
 of array API classes when fitted to them.

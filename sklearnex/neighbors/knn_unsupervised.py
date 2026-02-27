@@ -106,7 +106,9 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
             return_distance=return_distance,
         )
 
-    @wrap_output_data
+    # radius_neighbors always falls back to sklearn on CPU and returns
+    # ragged object-dtype arrays that cannot be converted to array API
+    # or GPU formats, so @wrap_output_data is intentionally omitted.
     def radius_neighbors(
         self, X=None, radius=None, return_distance=True, sort_results=False
     ):

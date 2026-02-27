@@ -448,22 +448,15 @@ Regression
    * - :obj:`sklearn.neighbors.KNeighborsRegressor`
      - All parameters are supported except:
 
-<<<<<<< HEAD
-       - ``algorithm`` != `'brute'`
-       - ``weights`` = `'callable'`
-       - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
+       - ``algorithm`` != ``'brute'``
+       - ``weights`` = ``'callable'``
+       - ``metric`` not in [``'euclidean'``, ``'manhattan'``, ``'minkowski'``, ``'chebyshev'``, ``'cosine'``]
      - Only dense data is supported.
        The following methods are not accelerated by |sklearnex| and will
        fall back to |sklearn| on CPU, returning NumPy arrays when using
        array API inputs:
        :meth:`~sklearn.neighbors.KNeighborsRegressor.radius_neighbors`,
        :meth:`~sklearn.neighbors.KNeighborsRegressor.radius_neighbors_graph`.
-=======
-       - ``algorithm`` != ``'brute'``
-       - ``weights`` = ``'callable'``
-       - ``metric`` != ``'euclidean'`` or ``'minkowski'`` with ``p`` != ``2``
-     - Only dense data is supported
->>>>>>> main
    * - :obj:`sklearn.linear_model.Ridge`
      - All parameters are supported except:
 
@@ -551,7 +544,6 @@ Anomaly Detection
      - All parameters are supported except:
 
        - ``algorithm`` != ``'brute'``
-       - ``weights`` = ``'callable'``
        - ``metric`` not in [``'euclidean'``, ``'manhattan'``, ``'minkowski'``, ``'chebyshev'``, ``'cosine'``]
      - Only dense data is supported
      - If using :doc:`target_offload <config-contexts>`, some computations outside of neighbor calculations (related to thresholds for outlierness) might happen on CPU.
@@ -570,9 +562,8 @@ Nearest Neighbors
    * - :obj:`sklearn.neighbors.NearestNeighbors`
      - All parameters are supported except:
 
-<<<<<<< HEAD
-       - ``algorithm`` != `'brute'`
-       - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
+       - ``algorithm`` != ``'brute'``
+       - ``metric`` not in [``'euclidean'``, ``'manhattan'``, ``'minkowski'``, ``'chebyshev'``, ``'cosine'``]
      - Only dense data is supported.
        The following methods are not accelerated by |sklearnex| and will
        fall back to |sklearn| on CPU, returning NumPy arrays when using
@@ -582,19 +573,9 @@ Nearest Neighbors
    * - :obj:`sklearn.neighbors.LocalOutlierFactor`
      - All parameters are supported except:
 
-       - ``algorithm`` != `'brute'`
-       - ``metric`` not in [`'euclidean'`, `'manhattan'`, `'minkowski'`, `'chebyshev'`, `'cosine'`]
-     - Only dense data is supported.
-       The following methods are not accelerated by |sklearnex| and will
-       fall back to |sklearn| on CPU, returning NumPy arrays when using
-       array API inputs:
-       :meth:`~sklearn.neighbors.LocalOutlierFactor.decision_function`.
-=======
        - ``algorithm`` != ``'brute'``
-       - ``weights`` = ``'callable'``
        - ``metric`` not in [``'euclidean'``, ``'manhattan'``, ``'minkowski'``, ``'chebyshev'``, ``'cosine'``]
-     - Only dense data is supported
->>>>>>> main
+     - Only dense data is supported.
 
 Other Tasks
 ***********
