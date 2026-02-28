@@ -1,5 +1,5 @@
 # ==============================================================================
-# Copyright 2023 Intel Corporation
+# Copyright contributors to the oneDAL project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -57,11 +57,7 @@ class KNeighborsClassifier(KNeighborsClassifier_Batch):
         result = self.infer(params, self._onedal_model, X_table)
 
         responses = from_table(result.responses, like=X)
-        # Use slicing for dpctl compatibility (dpctl arrays don't have .ravel())
-        if hasattr(responses, "ravel"):
-            return responses.ravel()
-        else:
-            return responses[:, 0] if responses.ndim > 1 else responses
+        return responses.reshape(-1)
 
     @support_input_format
     def predict_proba(self, X, queue=None):
@@ -133,11 +129,7 @@ class KNeighborsRegressor(KNeighborsRegressor_Batch):
         result = self.infer(params, self._onedal_model, X_table)
 
         responses = from_table(result.responses, like=X)
-        # Use slicing for dpctl compatibility (dpctl arrays don't have .ravel())
-        if hasattr(responses, "ravel"):
-            return responses.ravel()
-        else:
-            return responses[:, 0] if responses.ndim > 1 else responses
+        return responses.reshape(-1)
 
     def _get_onedal_params(self, X, y=None):
         params = super()._get_onedal_params(X, y)

@@ -119,7 +119,7 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
             if _is_classifier(self):
                 if not hasattr(self, "_y") or self._y is None:
                     raise ValueError(
-                        "Classification target processing must be done in sklearnex layer before calling onedal fit. "
+                        "Internal error: Classification target processing must be done in sklearnex layer before calling onedal fit. "
                         "_y attribute is not set."
                     )
             elif y is not None:

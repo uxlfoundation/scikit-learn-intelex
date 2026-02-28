@@ -58,7 +58,7 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
         dist_k = self._distances_fit_X_[neighbors_indices, self.n_neighbors_ - 1]
         reach_dist_array = xp.maximum(distances_X, dist_k)
 
-        # 1e-10 to avoid `nan' when nb of duplicates > n_neighbors_:
+        # 1e-10 to avoid `nan` when nb of duplicates > n_neighbors_:
         return 1.0 / (xp.mean(reach_dist_array, axis=1) + 1e-10)
 
     def _onedal_fit(self, X, y, queue=None):

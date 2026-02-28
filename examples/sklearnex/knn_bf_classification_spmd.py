@@ -76,10 +76,3 @@ print(
         rank, accuracy_score(y_test, dpnp.asnumpy(y_predict))
     )
 )
-
-# Note: predict_proba is not supported in distributed (SPMD) mode because
-# kneighbors returns global indices across all ranks but _y is local per rank.
-try:
-    model_spmd.predict_proba(dpnp_X_test)
-except NotImplementedError as e:
-    print("predict_proba raised expected error: {}".format(e))
