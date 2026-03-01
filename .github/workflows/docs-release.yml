@@ -19,6 +19,18 @@ on:
   push:
     tags:
       - '[0-9][0-9][0-9][0-9]\.[0-9][0-9]?\.[0-9]' # Trigger on tag pushes
+  pull_request:
+    # Trigger when PR is merged
+    types: [closed]
+    branches:
+      - main
+    paths:
+      - 'doc/**'
+      - 'sklearnex/**'
+      - 'daal4py/**'
+      - 'onedal/**'
+      - '.github/workflows/docs-release.yml'
+      - '.github/scripts/doc_release.sh'
   workflow_dispatch:
     inputs:
       doc_version:
@@ -29,6 +41,8 @@ permissions: read-all
 
 jobs:
   build-docs:
+    # Skip if PR was closed without merging
+    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -59,9 +73,14 @@ jobs:
         if [ -n "${{ github.event.inputs.doc_version }}" ]; then
           export DOC_VERSION="${{ github.event.inputs.doc_version }}"
           echo "Manual dispatch detected with version: $DOC_VERSION"
-        else
+        elif [ "${{ github.ref_type }}" = "tag" ]; then
           export DOC_VERSION="${GITHUB_REF#refs/tags/}"
           echo "Tag trigger detected with version: $DOC_VERSION"
+        else
+          echo "Push to main branch detected, building dev documentation"
+          echo "IS_DEV_BUILD=true" >> $GITHUB_ENV
+          echo "SHORT_DOC_VERSION=dev" >> $GITHUB_ENV
+          exit 0
         fi
         # Error out if cannot find version
         if [ -z "$DOC_VERSION" ]; then
@@ -72,7 +91,9 @@ jobs:
         # export env var in other files
         echo "DOC_VERSION=$DOC_VERSION" >> $GITHUB_ENV
         echo "SHORT_DOC_VERSION=$SHORT_DOC_VERSION" >> $GITHUB_ENV
+        echo "IS_DEV_BUILD=false" >> $GITHUB_ENV
     - name: Checkout release branch
+      if: env.IS_DEV_BUILD == 'false'
       run: |
         if git checkout $DOC_VERSION 2>/dev/null; then
           echo "Successfully checked out tag $DOC_VERSION."
@@ -87,11 +108,13 @@ jobs:
         pip install -r dependencies-dev
         pip install -r requirements-doc.txt
     - name: Build daal4py/sklearnex
+      if: env.IS_DEV_BUILD == 'true'
       run: |
         export DALROOT=$(dirname $(dirname $(which python)))
         export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
         ./conda-recipe/build.sh
     - name: Build scikit-learn-intelex Documentation
+      if: env.IS_DEV_BUILD == 'true'
       run: |
         export LD_LIBRARY_PATH=$(dirname $(dirname $(which python)))/lib:$LD_LIBRARY_PATH
         cd doc
@@ -103,7 +126,11 @@ jobs:
     - name: Prepare Documentation for Deployment
       run: |
         chmod +x .github/scripts/doc_release.sh
-        ./.github/scripts/doc_release.sh
+        if [ "${{ env.IS_DEV_BUILD }}" = "true" ]; then
+          ./.github/scripts/doc_release.sh --dev
+        else
+          ./.github/scripts/doc_release.sh
+        fi
 
     - name: Upload artifact for GitHub Pages
       uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4.0.0
