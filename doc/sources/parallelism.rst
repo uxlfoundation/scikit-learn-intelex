@@ -74,6 +74,13 @@ If ``n_jobs`` is not specified for underlying estimator(s), |sklearnex| sets it 
     If concurrent calls are to be performed, process-based parallelism should
     be used instead.
 
+.. warning::
+    The patched classes :obj:`sklearn.linear_model.LogisticRegression` and
+    :obj:`sklearn.linear_model.LogisticRegressionCV` in particular are not
+    suitable for parallel calls in Python threads regardless of the ``n_jobs`` parameter.
+    Attempting to fit multiple logistic regression estimator objects in parallel
+    might result in crashes and incorrect estimations.
+
 Setting the `DEBUG` :ref:`verbosity setting <verbose>` will produce logs
 indicating when the number of threads used is different from the default
 (number of logical threads in the machine).
