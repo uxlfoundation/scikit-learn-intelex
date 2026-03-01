@@ -56,7 +56,7 @@ def _get_backend(
         return patching_status.get_status(), patching_status
 
     if get_config()["allow_fallback_to_host"]:
-        # This may trigger if the ``onedal.utils._sycl_queue_manager.__non_queue``
+        # This may trigger if the ``onedal.utils._sycl_queue_manager.__globals.non_queue``
         # object is the queue (e.g. if non-SYCL device data is encountered)
         QM.fallback_to_host()
         return None, None
