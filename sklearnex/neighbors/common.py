@@ -260,8 +260,11 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             self.effective_metric_params_ = {}
             effective_p = self.p
 
-        self.effective_metric_params_["p"] = effective_p
         self.effective_metric_ = self.metric
+
+        # Only set "p" for minkowski metric, matching sklearn behavior (see PR #2945)
+        if self.metric == "minkowski":
+            self.effective_metric_params_["p"] = effective_p
 
         # Convert sklearn metric aliases to canonical names for oneDAL compatibility
         metric_aliases = {
@@ -281,14 +284,6 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                 self.effective_metric_ = "euclidean"
             elif p == np.inf:
                 self.effective_metric_ = "chebyshev"
-
-    def _validate_n_classes(self):
-        """Validate that the classifier has at least 2 classes."""
-        length = 0 if self.classes_ is None else self.classes_.shape[0]
-        if length < 2:
-            raise ValueError(
-                f"The number of classes has to be greater than one; got {length}"
-            )
 
     def _validate_kneighbors_bounds(self, n_neighbors, query_is_train, X):
         n_samples_fit = self.n_samples_fit_
@@ -608,11 +603,6 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             if self.effective_metric_ in aliases:
                 self.effective_metric_ = origin
                 break
-        if self.effective_metric_ == "manhattan":
-            self.effective_metric_params_["p"] = 1
-        elif self.effective_metric_ == "euclidean":
-            self.effective_metric_params_["p"] = 2
-
         onedal_brute_metrics = [
             "manhattan",
             "minkowski",

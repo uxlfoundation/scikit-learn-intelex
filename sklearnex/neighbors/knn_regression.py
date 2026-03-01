@@ -160,7 +160,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
             "weights": self.weights,
             "algorithm": self.algorithm,
             "metric": self.effective_metric_,
-            "p": self.effective_metric_params_["p"],
+            "p": self.effective_metric_params_.get("p", 2),
         }
 
         # Use class-level _onedal_estimator if available (for SPMD), else use module-level

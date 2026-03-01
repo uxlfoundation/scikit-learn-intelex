@@ -39,7 +39,6 @@ from sklearnex.tests.utils import (
     SPECIAL_INSTANCES,
     UNPATCHED_MODELS,
     call_method,
-    check_is_dynamic_method,
     gen_dataset,
     gen_models_info,
 )
@@ -446,17 +445,6 @@ def estimator_trace(estimator, method, cache, isolated_trace):
         onedal, sklearn, or sklearnex), and callinglines is the line
         which calls the function in calledfuncs
     """
-    # Skip dynamic methods gated by available_if that are not available
-    # with default estimator parameters (e.g., SVC.predict_proba when
-    # probability=False, LOF.predict when novelty=False)
-    est = (
-        PATCHED_MODELS[estimator]()
-        if estimator in PATCHED_MODELS
-        else SPECIAL_INSTANCES[estimator]
-    )
-    if not hasattr(est, method) and check_is_dynamic_method(est, method):
-        pytest.skip(f"sklearn available_if prevents testing {estimator}.{method}")
-
     key = "-".join((str(estimator), method))
     flag = cache.get("key", "") != key
     if flag:

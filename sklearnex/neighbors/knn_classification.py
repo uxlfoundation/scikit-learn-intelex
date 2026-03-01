@@ -184,7 +184,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             "weights": self.weights,
             "algorithm": self.algorithm,
             "metric": self.effective_metric_,
-            "p": self.effective_metric_params_["p"],
+            "p": self.effective_metric_params_.get("p", 2),
         }
 
         # Use class-level _onedal_estimator if available (for SPMD), else use module-level
@@ -262,9 +262,6 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         if not self.outputs_2d_:
             self.classes_ = self.classes_[0]
             self._y = xp.reshape(self._y, (-1,))
-
-        # Validate we have at least 2 classes
-        self._validate_n_classes()
 
     def _onedal_predict(self, X, queue=None):
         if X is not None and not get_config()["use_raw_input"]:
