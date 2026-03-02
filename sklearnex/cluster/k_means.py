@@ -193,6 +193,8 @@ if daal_check_version((2023, "P", 200)):
         def _onedal_fit(self, X, _, sample_weight, queue=None):
             from .._config import get_config
 
+            from onedal.utils._array_api import _is_numpy_namespace
+
             xp, _ = get_namespace(X)
 
             # Validate init parameter if array-like (before X validation so n_features_in_ not set yet)
@@ -236,11 +238,19 @@ if daal_check_version((2023, "P", 200)):
                     "Supported algorithms are 'lloyd', 'elkan' (computed as lloyd), 'auto', 'full'."
                 )
 
-            # Call sklearn's parameter validation if available
-            if sklearn_check_version("1.2"):
-                self._check_params_vs_input(X)
-            else:
-                self._check_params(X)
+            # Call sklearn's parameter validation if available.
+            # Skip when input is non-numpy array API array (torch, dpnp, etc.)
+            # because sklearn's _check_params_vs_input calls np.var() which fails
+            # on these arrays. The onedal backend computes tolerance internally
+            # via _compute_tolerance.
+            if _is_numpy_namespace(xp) and not get_config()["use_raw_input"]:
+                if sklearn_check_version("1.2"):
+                    self._check_params_vs_input(X)
+                else:
+                    self._check_params(X)
+
+            # Resolve n_init (needed when _check_params_vs_input is skipped)
+            self._n_init = self._resolve_n_init()
 
             self._n_features_out = self.n_clusters
 
