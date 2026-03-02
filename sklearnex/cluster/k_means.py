@@ -82,7 +82,7 @@ if daal_check_version((2023, "P", 200)):
                 "init": self.init,
                 "max_iter": self.max_iter,
                 "tol": self.tol,
-                "n_init": self.n_init,
+                "n_init": self._n_init,
                 "verbose": self.verbose,
                 "random_state": self.random_state,
             }

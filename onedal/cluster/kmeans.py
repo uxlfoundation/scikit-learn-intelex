@@ -236,10 +236,11 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         init = self.init
         use_onedal_init = daal_check_version((2023, "P", 200)) and not callable(self.init)
 
-        # Resolve n_init from 'auto' to integer (pattern: like SVM's gamma/max_iter resolution)
+        # Resolve n_init from 'auto' to integer if not already resolved
+        # by the sklearnex layer (_resolve_n_init).
         n_init = self.n_init
-        default_n_init = 10
-        if n_init == "auto":
+        if isinstance(n_init, str) and n_init == "auto":
+            default_n_init = 10
             if isinstance(init, str) and init == "k-means++":
                 n_init = 1
             elif isinstance(init, str) and init == "random":
