@@ -57,7 +57,7 @@ class KNeighborsClassifier(KNeighborsClassifier_Batch):
         result = self.infer(params, self._onedal_model, X_table)
 
         responses = from_table(result.responses, like=X)
-        return responses.reshape(-1)
+        return responses[:, 0]
 
     @support_input_format
     def predict_proba(self, X, queue=None):
@@ -129,7 +129,7 @@ class KNeighborsRegressor(KNeighborsRegressor_Batch):
         result = self.infer(params, self._onedal_model, X_table)
 
         responses = from_table(result.responses, like=X)
-        return responses.reshape(-1)
+        return responses[:, 0]
 
     def _get_onedal_params(self, X, y=None):
         params = super()._get_onedal_params(X, y)
