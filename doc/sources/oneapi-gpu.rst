@@ -88,7 +88,7 @@ For more details, see the `DPC++ requirements page <https://www.intel.com/conten
 Verifying GPU setup
 -------------------
 
-After installing all the necessary dependencies for GPU support, one might want to check that the device is correctly recognized by the SYCL framework, or one might want to check what are the names assigned to each device if multiple ones are available (e.g. ``"gpu:0"`` or ``"gpu:1``") .
+After installing all the necessary dependencies for GPU support, one might want to check that the device is correctly recognized by the SYCL framework, or one might want to check what are the names assigned to each device if multiple ones are available (e.g. ``"gpu:0"`` or ``"gpu:1"``) .
 
 If using the |dpctl| package, the list of available devices can be obtained as follows:
 
