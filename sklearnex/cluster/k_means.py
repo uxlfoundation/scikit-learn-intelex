@@ -34,7 +34,6 @@ if daal_check_version((2023, "P", 200)):
 
     from daal4py.sklearn._n_jobs_support import control_n_jobs
     from daal4py.sklearn._utils import is_sparse, sklearn_check_version
-    from onedal._device_offload import support_input_format
     from onedal.cluster import KMeans as onedal_KMeans
     from onedal.utils.validation import _is_arraylike_not_scalar, _is_csr
 
@@ -193,8 +192,6 @@ if daal_check_version((2023, "P", 200)):
         def _onedal_fit(self, X, _, sample_weight, queue=None):
             from .._config import get_config
 
-            from onedal.utils._array_api import _is_numpy_namespace
-
             xp, _ = get_namespace(X)
 
             # Validate init parameter if array-like (before X validation so n_features_in_ not set yet)
@@ -238,18 +235,11 @@ if daal_check_version((2023, "P", 200)):
                     "Supported algorithms are 'lloyd', 'elkan' (computed as lloyd), 'auto', 'full'."
                 )
 
-            # Call sklearn's parameter validation if available.
-            # Skip when input is non-numpy array API array (torch, dpnp, etc.)
-            # because sklearn's _check_params_vs_input calls np.var() which fails
-            # on these arrays. The onedal backend computes tolerance internally
-            # via _compute_tolerance.
-            if _is_numpy_namespace(xp) and not get_config()["use_raw_input"]:
-                if sklearn_check_version("1.2"):
-                    self._check_params_vs_input(X)
-                else:
-                    self._check_params(X)
-
-            # Resolve n_init (needed when _check_params_vs_input is skipped)
+            # Skip sklearn's _check_params / _check_params_vs_input entirely:
+            # - We already validate algorithm, n_clusters, and n_init above
+            # - The onedal backend computes tolerance internally via _compute_tolerance
+            # - sklearn's _check_params rejects algorithm='lloyd' on sklearn < 1.1
+            # - sklearn's _check_params_vs_input calls np.var() which fails on GPU arrays
             self._n_init = self._resolve_n_init()
 
             self._n_features_out = self.n_clusters
@@ -403,7 +393,7 @@ if daal_check_version((2023, "P", 200)):
         def _onedal_supported(self, method_name, *data):
             if method_name == "fit":
                 return self._onedal_fit_supported(method_name, *data)
-            if method_name in ["predict", "score"]:
+            if method_name in ["predict", "score", "transform"]:
                 return self._onedal_predict_supported(method_name, *data)
             raise RuntimeError(
                 f"Unknown method {method_name} in {self.__class__.__name__}"
@@ -442,8 +432,41 @@ if daal_check_version((2023, "P", 200)):
             )
             return X
 
-        _transform = support_input_format(_sklearn_KMeans._transform)
-        transform = support_input_format(_sklearn_KMeans.transform)
+        @wrap_output_data
+        def transform(self, X):
+            check_is_fitted(self)
+            return dispatch(
+                self,
+                "transform",
+                {
+                    "onedal": self.__class__._onedal_transform,
+                    "sklearn": _sklearn_KMeans.transform,
+                },
+                X,
+            )
+
+        def _onedal_transform(self, X, queue=None):
+            from sklearn.metrics.pairwise import euclidean_distances
+
+            from .._config import get_config
+
+            xp, _ = get_namespace(X)
+
+            if not get_config()["use_raw_input"]:
+                X = validate_data(
+                    self,
+                    X,
+                    accept_sparse="csr",
+                    reset=False,
+                    dtype=[xp.float64, xp.float32],
+                    order="C",
+                    accept_large_sparse=False,
+                )
+
+            return euclidean_distances(X, self.cluster_centers_)
+
+        def fit_transform(self, X, y=None, sample_weight=None):
+            return self.fit(X, y=y, sample_weight=sample_weight).transform(X)
 
         @wrap_output_data
         def score(self, X, y=None, sample_weight=None):
@@ -501,6 +524,8 @@ if daal_check_version((2023, "P", 200)):
 
         fit.__doc__ = _sklearn_KMeans.fit.__doc__
         predict.__doc__ = _sklearn_KMeans.predict.__doc__
+        transform.__doc__ = _sklearn_KMeans.transform.__doc__
+        fit_transform.__doc__ = _sklearn_KMeans.fit_transform.__doc__
         score.__doc__ = _sklearn_KMeans.score.__doc__
 
 else:

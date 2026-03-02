@@ -292,7 +292,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         self.inertia_ = best_inertia
         # from_table without like= returns numpy (needed for np.unique check below)
         _labels_np = from_table(best_labels).ravel()
-        self.labels_ = from_table(best_labels, like=X).ravel()
+        self.labels_ = from_table(best_labels, like=X)[:, 0]
 
         distinct_clusters = len(np.unique(_labels_np))
         if distinct_clusters < self.n_clusters:
@@ -335,7 +335,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
     def predict(self, X, queue=None):
         X_table = to_table(X, queue=QM.get_global_queue())
         result = self._predict_backend(X_table)
-        return from_table(result.responses, like=X).ravel()
+        return from_table(result.responses, like=X)[:, 0]
 
     @supports_queue
     def score(self, X, queue=None):
