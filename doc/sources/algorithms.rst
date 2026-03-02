@@ -55,6 +55,7 @@ Classification
        - ``ccp_alpha`` != `0`
        - ``criterion`` != `'gini'`
        - ``n_estimators`` > ``6024``
+       - ``bootstrap`` = ``True`` and/or ``max_samples`` != ``None`` are not supported when there are sample weights
      - Multi-output and sparse data are not supported.
      - Number of classes must be at least 2.
    * - :obj:`sklearn.ensemble.ExtraTreesClassifier`
@@ -64,6 +65,7 @@ Classification
        - ``ccp_alpha`` != `0`
        - ``criterion`` != `'gini'`
        - ``n_estimators`` > ``6024``
+       - ``bootstrap`` = ``True`` and/or ``max_samples`` != ``None`` are not supported when there are sample weights
      - Multi-output and sparse data are not supported.
      - Number of classes must be at least 2.
    * - :obj:`sklearn.neighbors.KNeighborsClassifier`
@@ -375,6 +377,7 @@ Classification
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
        - ``n_estimators`` > ``6024``
+       - ``bootstrap`` = ``True`` and/or ``max_samples`` != ``None`` are not supported when there are sample weights
      - Multi-output and sparse data are not supported.
      - Number of classes must be at least 2.
    * - :obj:`sklearn.ensemble.ExtraTreesClassifier`
@@ -386,6 +389,7 @@ Classification
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
        - ``n_estimators`` > ``6024``
+       - ``bootstrap`` = ``True`` and/or ``max_samples`` != ``None`` are not supported when there are sample weights
      - Multi-output and sparse data are not supported.
      - Number of classes must be at least 2.
    * - :obj:`sklearn.neighbors.KNeighborsClassifier`
@@ -610,6 +614,7 @@ Classification
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
        - ``n_estimators`` > ``6024``
+       - ``bootstrap`` = ``True`` and/or ``max_samples`` != ``None`` are not supported when there are sample weights
      - Multi-output and sparse data are not supported.
      - Number of classes must be at least 2.
    * - :obj:`sklearn.ensemble.ExtraTreesClassifier`
@@ -621,6 +626,7 @@ Classification
        - ``oob_score`` = `True`
        - ``sample_weight`` != `None`
        - ``n_estimators`` > ``6024``
+       - ``bootstrap`` = ``True`` and/or ``max_samples`` != ``None`` are not supported when there are sample weights
      - Multi-output and sparse data are not supported.
      - Number of classes must be at least 2.
    * - :obj:`sklearn.neighbors.KNeighborsClassifier`
