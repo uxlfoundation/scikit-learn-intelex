@@ -183,6 +183,14 @@ _DTYPE_CHECK_SKIP = {
     ("ElasticNet", "path"),  # Path computes alphas in float64
     ("Lasso", "predict"),  # Regression predict always returns float
     ("Lasso", "path"),  # Path computes alphas in float64
+    ("LinearRegression", "predict"),  # Regression predict always returns float
+    ("Ridge", "predict"),  # Regression predict always returns float
+    ("IncrementalRidge", "predict"),  # Regression predict always returns float
+    ("KNeighborsRegressor", "predict"),  # Regression predict always returns float
+    ("ExtraTreesRegressor", "predict"),  # Regression predict always returns float
+    ("RandomForestRegressor", "predict"),  # Regression predict always returns float
+    ("LogisticRegression", "decision_function"),  # Returns float64 for float32
+    ("KNeighborsClassifier", "predict_proba"),  # Returns float64 for float32
 }
 
 
