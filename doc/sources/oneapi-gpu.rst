@@ -81,6 +81,50 @@ Be aware that datacenter-grade devices, such as 'Flex' and 'Max', require differ
 
 For more details, see the `DPC++ requirements page <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/oneapi-dpcpp/2025.html>`__.
 
+.. hint::
+
+    If installing all the GPU dependencies on baremetal is not feasible, one might want to use Docker containers with these dependencies instead.
+
+Verifying GPU setup
+-------------------
+
+After installing all the necessary dependencies for GPU support, one might want to check that the device is correctly recognized by the SYCL framework, or one might want to check what are the names assigned to each device if multiple ones are available (e.g. ``"gpu:0"`` or ``"gpu:1"``) .
+
+If using the |dpctl| package, the list of available devices can be obtained as follows:
+
+.. code-block:: bash
+
+    python -m dpctl --full-list
+
+If all the required dependencies are installed and a GPU device is correctly identified, this command should show some output like the following: ::
+
+    Platform  0 ::
+        Name        Intel(R) oneAPI Unified Runtime over Level-Zero
+        Version     1.6
+        Vendor      Intel(R) Corporation
+        Backend     ext_oneapi_level_zero
+        Num Devices 1
+          # 0
+            Name                Intel(R) Data Center GPU Max 1100
+            Version             1.6.33416
+            Filter string       level_zero:gpu:0
+
+Alternatively, if using oneAPI toolkits, the list of recognized devices can be obtained by executing the command ``sycl-ls``:
+
+.. code-block:: bash
+
+    sycl-ls
+
+If a GPU device is correctly identified, it should show an output like the following: ::
+
+    [level_zero:gpu][level_zero:0] Intel(R) oneAPI Unified Runtime over Level-Zero, Intel(R) Data Center GPU Max 1100 12.60.7 [1.6.33416]
+
+If either of these commands shows only ``opencl:cpu`` devices when a GPU is available in the machine, it means that the software dependencies for SYCL are not available in the environment, or the GPU is not set up correctly.
+
+.. hint::
+
+    If installing all the GPU dependencies on baremetal is not feasible, one might want to use Docker containers with these dependencies instead.
+
 Running on GPU
 --------------
 
