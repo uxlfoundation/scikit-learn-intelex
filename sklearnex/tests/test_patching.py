@@ -25,9 +25,14 @@ from inspect import signature
 import numpy as np
 import numpy.random as nprnd
 import pytest
+from scipy import sparse as sp
 from sklearn.base import BaseEstimator
 
-from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
+from daal4py.sklearn._utils import (
+    _package_check_version,
+    is_sparse,
+    sklearn_check_version,
+)
 from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
@@ -125,6 +130,7 @@ def _check_estimator_patching(caplog, dataframe, queue, dtype, est, method):
     # This should be modified as more array_api frameworks are tested and for
     # upcoming changes in dpnp and dpctl
 
+    result = None
     with caplog.at_level(logging.WARNING, logger="sklearnex"):
         X, y = gen_dataset(est, queue=queue, target_df=dataframe, dtype=dtype)[0]
         est.fit(X, y)
@@ -132,7 +138,7 @@ def _check_estimator_patching(caplog, dataframe, queue, dtype, est, method):
         if method:
             if not hasattr(est, method) and check_is_dynamic_method(est, method):
                 pytest.skip(f"sklearn available_if prevents testing {est}.{method}")
-            call_method(est, method, X, y)
+            result = call_method(est, method, X, y)
 
     assert all(
         [
@@ -141,6 +147,192 @@ def _check_estimator_patching(caplog, dataframe, queue, dtype, est, method):
             for i in caplog.records
         ]
     ), f"sklearnex patching issue in {est}.{method} with log: \n{caplog.text}"
+
+    return result, y, X
+
+
+# Methods that return scalars — skip output type checking
+_SCALAR_METHODS = {"score", "error_norm"}
+
+# (estimator, method) pairs where numpy output is acceptable regardless of
+# input type because the method returns fitted attributes directly without
+# output conversion (e.g., inherited from sklearn mixins returning
+# self.labels_ which is a numpy attribute set during fit)
+_NUMPY_OUTPUT_OK = {
+    ("DBSCAN", "fit_predict"),  # ClusterMixin.fit_predict returns self.labels_
+    ("KMeans", "fit_predict"),  # ClusterMixin.fit_predict returns self.labels_
+    ("DummyRegressor", "predict"),  # Not wrapped with wrap_output_data
+    ("PCA", "score_samples"),  # Missing wrap_output_data on GPU path
+    ("NearestNeighbors", "radius_neighbors"),  # Returns ragged numpy arrays
+    ("IncrementalEmpiricalCovariance", "mahalanobis"),  # Missing wrap_output_data
+    ("RandomForestClassifier", "apply"),  # Returns leaf indices (numpy)
+    ("RandomForestRegressor", "apply"),  # Returns leaf indices (numpy)
+    ("ExtraTreesClassifier", "apply"),  # Returns leaf indices (numpy)
+    ("ExtraTreesRegressor", "apply"),  # Returns leaf indices (numpy)
+}
+
+# (estimator, method) pairs where dtype preservation is not expected.
+# oneDAL may use a different internal precision for these.
+_DTYPE_CHECK_SKIP = {
+    ("KMeans", "predict"),  # Always returns int32 cluster labels
+    ("SVR", "predict"),  # oneDAL SVM always computes in float64
+    ("NuSVR", "predict"),  # oneDAL SVM always computes in float64
+    ("SVC", "decision_function"),  # oneDAL SVM always computes in float64
+    ("NuSVC", "decision_function"),  # oneDAL SVM always computes in float64
+    ("ElasticNet", "predict"),  # Regression predict always returns float
+    ("ElasticNet", "path"),  # Path computes alphas in float64
+    ("Lasso", "predict"),  # Regression predict always returns float
+    ("Lasso", "path"),  # Path computes alphas in float64
+    ("LinearRegression", "predict"),  # Regression predict always returns float
+    ("Ridge", "predict"),  # Regression predict always returns float
+    ("IncrementalRidge", "predict"),  # Regression predict always returns float
+    ("KNeighborsRegressor", "predict"),  # Regression predict always returns float
+    ("ExtraTreesRegressor", "predict"),  # Regression predict always returns float
+    ("RandomForestRegressor", "predict"),  # Regression predict always returns float
+    ("LogisticRegression", "decision_function"),  # Returns float64 for float32
+    ("KNeighborsClassifier", "predict_proba"),  # Returns float64 for float32
+}
+
+
+def _check_output_type(result, data_input, method, estimator_name, caplog, X=None):
+    """Check output type conformance: output arrays should match input type.
+
+    When non-numpy inputs are provided (array_api_strict, dpnp, dpctl, etc.),
+    non-scalar outputs should be in the same array namespace as the input.
+    numpy output is acceptable when:
+    - The estimator falls back to sklearn (indicated by caplog)
+    - The (estimator, method) is a known exception
+
+    Parameters
+    ----------
+    data_input : array-like
+        The y array from the dataset, used to determine the expected output
+        type. Both X and y share the same type since gen_dataset applies
+        _convert_to_dataframe to both.
+    X : array-like, optional
+        The feature array, used for dtype preservation checks. If provided,
+        float dtype outputs are compared against X's dtype.
+
+    Note: sklearn's set_output(transform=...) can override transform output
+    types (e.g. to pandas). That is tested separately in
+    _check_set_output_transform, not here.
+    """
+    if method is None or method in _SCALAR_METHODS:
+        return
+
+    if result is None:
+        return
+
+    # Known exceptions where numpy output is acceptable
+    if (estimator_name, method) in _NUMPY_OUTPUT_OK:
+        return
+
+    # Methods that return self (e.g. partial_fit) are not array outputs
+    if isinstance(result, BaseEstimator):
+        return
+
+    input_type = type(data_input)
+
+    # Check if sklearn fallback occurred (any record in caplog)
+    fell_back = any(
+        "fallback to original Scikit-learn" in r.message for r in caplog.records
+    )
+
+    # Collect all array results (handle tuples like kneighbors and
+    # lists like multi-output predict_proba)
+    if isinstance(result, (tuple, list)):
+        results_to_check = result
+    else:
+        results_to_check = (result,)
+
+    for res in results_to_check:
+        if res is None:
+            continue
+        # Skip scalar/0-d results
+        if np.isscalar(res):
+            continue
+        if hasattr(res, "ndim") and res.ndim == 0:
+            continue
+        # Skip sparse matrices and sparse pandas DataFrames — they are
+        # inherently not array API compatible (e.g. kneighbors_graph,
+        # decision_path return scipy.sparse matrices)
+        if is_sparse(res):
+            continue
+
+        if fell_back:
+            # Fallback to sklearn: numpy output is acceptable
+            assert isinstance(res, (np.ndarray, input_type))
+        else:
+            # Accelerated version: output must match input type
+            assert isinstance(res, input_type)
+            # Check dtype preservation (skip float16 — oneDAL doesn't
+            # support it natively and upcasts to float64)
+            x_is_fp16 = (
+                X is not None and hasattr(X, "dtype") and "float16" in str(X.dtype)
+            )
+            if (
+                hasattr(res, "dtype")
+                and not x_is_fp16
+                and (estimator_name, method) not in _DTYPE_CHECK_SKIP
+            ):
+                if (
+                    method == "predict"
+                    and data_input is not None
+                    and hasattr(data_input, "dtype")
+                ):
+                    # predict output dtype should match y dtype
+                    assert res.dtype == data_input.dtype
+                elif (
+                    "float" in str(res.dtype)
+                    and X is not None
+                    and hasattr(X, "dtype")
+                    and "float" in str(X.dtype)
+                ):
+                    # Float output from float input: dtypes should match
+                    assert res.dtype == X.dtype
+
+
+def _check_set_output_transform(est, method, X, estimator_name):
+    """Test set_output(transform=...) for transform methods.
+
+    Verifies that sklearn's set_output API is respected by sklearnex
+    estimators. When set_output(transform="pandas") is configured,
+    transform() should return a pandas DataFrame, etc.
+
+    Only applies to the 'transform' method (not fit_transform to avoid
+    refitting the estimator).
+    """
+    if method != "transform":
+        return
+    if not hasattr(est, "set_output"):
+        return
+
+    for transform_output in ["default", "pandas", "polars"]:
+        est.set_output(transform=transform_output)
+        try:
+            result = est.transform(X)
+        except Exception:
+            # Some input types (e.g., dpnp, array_api_strict) may not
+            # support conversion to the requested output format,
+            # or the output library (e.g., polars) may not be installed
+            continue
+
+        if transform_output == "pandas":
+            import pandas as pd
+
+            expected_type = pd.DataFrame
+        elif transform_output == "polars":
+            import polars as pl
+
+            expected_type = pl.DataFrame
+        else:
+            expected_type = None
+
+        if expected_type is not None:
+            assert isinstance(result, expected_type)
+
+    # Reset to default
+    est.set_output(transform="default")
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
@@ -203,7 +395,9 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
 
         with config_context(array_api_dispatch=True):
             try:
-                _check_estimator_patching(caplog, dataframe, queue, dtype, est, method)
+                result, y, X = _check_estimator_patching(
+                    caplog, dataframe, queue, dtype, est, method
+                )
             except Exception as e:
                 # if we are borrowing from sklearn and it fails, then this is something
                 # failing on sklearn-side. It is only allowed to fail if the underlying sklearn
@@ -223,9 +417,20 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
                     != getattr(UNPATCHED_MODELS[estimator], method, None)
                 ):
                     raise e
+            else:
+                # Check return type conformance when no exception
+                # occurred. Output arrays should match the input array type.
+                _check_output_type(result, y, method, estimator, caplog, X=X)
+                _check_set_output_transform(est, method, X, estimator)
 
     else:
-        _check_estimator_patching(caplog, dataframe, queue, dtype, est, method)
+        result, y, X = _check_estimator_patching(
+            caplog, dataframe, queue, dtype, est, method
+        )
+        # Check output type for non-numpy/pandas inputs (dpnp, dpctl)
+        if dataframe not in ("numpy", "pandas"):
+            _check_output_type(result, y, method, estimator, caplog, X=X)
+        _check_set_output_transform(est, method, X, estimator)
 
 
 @pytest.mark.parametrize("dtype", DTYPES)

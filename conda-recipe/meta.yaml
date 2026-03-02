@@ -93,6 +93,7 @@ test:
     - treelite
     - array-api-compat
     - array-api-strict
+    - polars
   source_files:
     - .ci
     - setup.cfg
