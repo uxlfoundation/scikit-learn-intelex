@@ -179,6 +179,10 @@ _DTYPE_CHECK_SKIP = {
     ("NuSVR", "predict"),  # oneDAL SVM always computes in float64
     ("SVC", "decision_function"),  # oneDAL SVM always computes in float64
     ("NuSVC", "decision_function"),  # oneDAL SVM always computes in float64
+    ("ElasticNet", "predict"),  # Regression predict always returns float
+    ("ElasticNet", "path"),  # Path computes alphas in float64
+    ("Lasso", "predict"),  # Regression predict always returns float
+    ("Lasso", "path"),  # Path computes alphas in float64
 }
 
 
