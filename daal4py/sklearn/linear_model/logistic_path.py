@@ -52,6 +52,12 @@ else:
     # From https://github.com/scikit-learn/scikit-learn/blob/760edca5fb5cc3538b98ebc55171806e2a6e3e84/sklearn/utils/fixes.py#L408
     # This should be removed if SciPy>=1.15 becomes the minimum required at some point
     def _get_additional_lbfgs_options_dict(k, v):
+        import scipy
+
+        if scipy.__version__.startswith("1."):
+            version_minor = scipy.__version__.split(".")[1][:2]
+            if int(version_minor) < 15:
+                return {}
         return {k: v}
 
 
