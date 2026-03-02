@@ -277,12 +277,12 @@ class KNeighborsDispatchingBase(oneDALEstimator):
 
         # For minkowski distance, use more efficient methods where available
         if self.metric == "minkowski":
-            p = self.effective_metric_params_["p"]
-            if p == 1:
+            self.effective_metric_params_["p"] = effective_p
+            if effective_p == 1:
                 self.effective_metric_ = "manhattan"
-            elif p == 2:
+            elif effective_p == 2:
                 self.effective_metric_ = "euclidean"
-            elif p == np.inf:
+            elif effective_p == np.inf:
                 self.effective_metric_ = "chebyshev"
 
     def _validate_kneighbors_bounds(self, n_neighbors, query_is_train, X):

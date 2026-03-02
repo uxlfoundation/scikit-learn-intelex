@@ -144,3 +144,25 @@ def test_knn_dtype_preservation(dtype):
     assert hasattr(reg, "_onedal_estimator"), "Should use oneDAL backend"
     pred = reg.predict(X)
     assert pred.dtype == dtype, f"Expected {dtype}, got {pred.dtype}"
+
+
+def test_no_p_if_metric_is_not_minkowski():
+    rng = np.random.default_rng(seed=123)
+    X = rng.standard_normal(size=(25, 3))
+    y = rng.standard_normal(size=X.shape[0])
+    knn = KNeighborsRegressor(metric="euclidean", p=2).fit(X, y)
+    _ = knn.predict(X)
+    assert knn.effective_metric_ == "euclidean"
+    assert "p" not in knn.effective_metric_params_
+
+
+@pytest.mark.allow_sklearn_fallback
+def test_p_present_if_metric_is_minkowski():
+    rng = np.random.default_rng(seed=123)
+    X = rng.standard_normal(size=(25, 3))
+    y = rng.standard_normal(size=X.shape[0])
+    knn = KNeighborsRegressor(metric="minkowski", p=3).fit(X, y)
+    _ = knn.predict(X)
+    assert knn.effective_metric_ == "minkowski"
+    assert "p" in knn.effective_metric_params_
+    assert knn.effective_metric_params_["p"] == 3
