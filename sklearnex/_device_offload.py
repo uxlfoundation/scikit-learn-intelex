@@ -27,6 +27,7 @@ from onedal.utils._third_party import is_dpnp_ndarray
 from ._config import get_config
 from ._utils import PatchingConditionsChain, get_tags
 from .base import oneDALEstimator
+from .utils._array_api import get_namespace
 
 
 def _get_backend(
@@ -194,12 +195,10 @@ def wrap_output_data(func: Callable) -> Callable:
                 )
 
             if get_config().get("transform_output") in ("default", None):
-                input_array_api = getattr(data, "__array_namespace__", lambda: None)()
-                if input_array_api and not _is_numpy_namespace(input_array_api):
-                    input_array_api_device = data.device
-                    result = _asarray(
-                        result, input_array_api, device=input_array_api_device
-                    )
+                # get_namespace detects torch (which lacks __array_namespace__)
+                xp, is_array_api = get_namespace(data)
+                if is_array_api and not _is_numpy_namespace(xp):
+                    result = _asarray(result, xp, device=data.device)
         return result
 
     return wrapper

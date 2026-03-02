@@ -1,5 +1,5 @@
 # ==============================================================================
-# Copyright 2023 Intel Corporation
+# Copyright contributors to the oneDAL project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -36,8 +36,28 @@ class KNeighborsClassifier(KNeighborsClassifier_Batch):
         return super().fit(X, y, queue=queue)
 
     @support_input_format
+    @supports_queue
     def predict(self, X, queue=None):
-        return super().predict(X, queue=queue)
+        # SPMD classification: call the SPMD backend's inference directly
+        from ...common._estimator_checks import _check_is_fitted
+        from ...datatypes import from_table, to_table
+
+        _check_is_fitted(self)
+
+        # Use the SPMD backend for classification prediction
+        params = super()._get_onedal_params(X)
+        if "responses" not in params["result_option"]:
+            params["result_option"] += "|responses"
+
+        # Call SPMD classification inference backend
+        X_table = to_table(
+            X, queue=queue if queue else getattr(self, "spmd_queue_", None)
+        )
+        params["fptype"] = X_table.dtype
+        result = self.infer(params, self._onedal_model, X_table)
+
+        responses = from_table(result.responses, like=X)
+        return responses.reshape(-1)
 
     @support_input_format
     def predict_proba(self, X, queue=None):
@@ -45,9 +65,11 @@ class KNeighborsClassifier(KNeighborsClassifier_Batch):
 
     @support_input_format
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True, queue=None):
-        if X is None and queue is None:
+        if queue is None:
             queue = getattr(self, "spmd_queue_", None)
-        return super().kneighbors(X, n_neighbors, return_distance, queue=queue)
+        return super().kneighbors(
+            X, n_neighbors=n_neighbors, return_distance=return_distance, queue=queue
+        )
 
 
 class KNeighborsRegressor(KNeighborsRegressor_Batch):
@@ -79,14 +101,35 @@ class KNeighborsRegressor(KNeighborsRegressor_Batch):
 
     @support_input_format
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True, queue=None):
-        if X is None and queue is None:
+        if queue is None:
             queue = getattr(self, "spmd_queue_", None)
-        return super().kneighbors(X, n_neighbors, return_distance, queue=queue)
+        return super().kneighbors(
+            X, n_neighbors=n_neighbors, return_distance=return_distance, queue=queue
+        )
 
     @support_input_format
     @supports_queue
     def predict(self, X, queue=None):
-        return self._predict_gpu(X)
+        # SPMD regression: call the SPMD backend's inference directly
+        from ...common._estimator_checks import _check_is_fitted
+        from ...datatypes import from_table, to_table
+
+        _check_is_fitted(self)
+
+        # Use the SPMD backend for regression prediction
+        params = super()._get_onedal_params(X)
+        if "responses" not in params["result_option"]:
+            params["result_option"] += "|responses"
+
+        # Call SPMD regression inference backend
+        X_table = to_table(
+            X, queue=queue if queue else getattr(self, "spmd_queue_", None)
+        )
+        params["fptype"] = X_table.dtype
+        result = self.infer(params, self._onedal_model, X_table)
+
+        responses = from_table(result.responses, like=X)
+        return responses.reshape(-1)
 
     def _get_onedal_params(self, X, y=None):
         params = super()._get_onedal_params(X, y)
@@ -111,6 +154,8 @@ class NearestNeighbors(NearestNeighbors_Batch):
 
     @support_input_format
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True, queue=None):
-        if X is None and queue is None:
+        if queue is None:
             queue = getattr(self, "spmd_queue_", None)
-        return super().kneighbors(X, n_neighbors, return_distance, queue=queue)
+        return super().kneighbors(
+            X, n_neighbors=n_neighbors, return_distance=return_distance, queue=queue
+        )

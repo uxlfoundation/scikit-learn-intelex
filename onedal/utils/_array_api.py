@@ -38,7 +38,14 @@ def _supports_buffer_protocol(obj):
 
 def _asarray(data, xp, *args, **kwargs):
     """Converted input object to array format of xp namespace provided."""
-    if hasattr(data, "__array_namespace__") or _supports_buffer_protocol(data):
+    # __dlpack__ covers SYCL-device torch tensors which lack __array_namespace__
+    # on the tensor itself (only exposed via array_api_compat) and have no
+    # host-accessible buffer protocol, but can be zero-copy converted via DLPack.
+    if (
+        hasattr(data, "__array_namespace__")
+        or hasattr(data, "__dlpack__")
+        or _supports_buffer_protocol(data)
+    ):
         return xp.asarray(data, *args, **kwargs)
     elif isinstance(data, Iterable):
         if isinstance(data, tuple):
