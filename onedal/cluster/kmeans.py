@@ -34,7 +34,7 @@ from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.utils import check_random_state
 
 from ..common._mixin import ClusterMixin, TransformerMixin
-from ..datatypes import from_table, to_table
+from ..datatypes import from_table, return_type_constructor, to_table
 from ..utils.validation import _is_arraylike_not_scalar, _is_csr
 
 
@@ -217,7 +217,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         is_csr = _is_csr(X)
         X_table = to_table(X, queue=queue)
         dtype = X_table.dtype
-        self._input_type = X  # store for from_table(like=...) in properties
+        self._input_type = return_type_constructor(X)  # lightweight callable
 
         self._compute_tolerance(X_table, is_csr, dtype)
         self.n_features_in_ = X_table.column_count

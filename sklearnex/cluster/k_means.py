@@ -86,7 +86,7 @@ if daal_check_version((2023, "P", 200)):
                 "init": self.init,
                 "max_iter": self.max_iter,
                 "tol": self.tol,
-                "n_init": self._n_init,
+                "n_init": getattr(self, "_n_init", self._resolve_n_init()),
                 "verbose": self.verbose,
                 "random_state": self.random_state,
             }
@@ -223,7 +223,6 @@ if daal_check_version((2023, "P", 200)):
                     order="C",
                     copy=self.copy_x,
                     accept_large_sparse=False,
-                    ensure_all_finite=False,
                 )
 
             # Validate critical parameters to match sklearn's _check_params
