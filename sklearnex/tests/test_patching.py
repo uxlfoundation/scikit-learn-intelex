@@ -332,6 +332,20 @@ _FITTED_ATTR_NUMPY_OK = {
     ("DummyRegressor", "constant_"),
     # TSNE — embedding_ not converted
     ("TSNE", "embedding_"),
+    # Linear models without array API support for fitted attrs
+    ("ElasticNet", "coef_"),
+    ("ElasticNet", "intercept_"),
+    ("Lasso", "coef_"),
+    ("Lasso", "intercept_"),
+    ("LogisticRegression", "coef_"),
+    ("LogisticRegression", "intercept_"),
+    # Neighbor estimators without array API support for fitted attrs
+    ("LocalOutlierFactor", "negative_outlier_factor_"),
+    # classes_ is always stored as numpy by sklearn internals
+    ("KNeighborsClassifier", "classes_"),
+    ("LogisticRegression", "classes_"),
+    # Clusterer attrs are numpy
+    ("KMeans", "cluster_centers_"),
 }
 
 # (estimator, attribute) pairs where dtype preservation is not expected
@@ -401,7 +415,10 @@ def _check_fitted_attributes(est, X, estimator_name, caplog):
             continue  # integer attributes don't need to match X.dtype
         if isinstance(est, BaseLibSVM):
             continue  # SVM always computes in float64
-        if (estimator_name, attr_name) in _FITTED_ATTR_DTYPE_SKIP:
+        if (estimator_name, attr_name) in _FITTED_ATTR_DTYPE_SKIP or (
+            estimator_name,
+            attr_name,
+        ) in _FITTED_ATTR_NUMPY_OK:
             continue
         if fell_back:
             continue  # sklearn fallback may change dtypes
