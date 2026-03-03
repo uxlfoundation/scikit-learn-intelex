@@ -172,8 +172,6 @@ Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/
 
 - `Single-Process Binary Class Logistic Regression
   <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/log_reg_binary_dense.py>`__
-- `Single-Process Logistic Regression
-  <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/log_reg_dense.py>`__
 
 .. autoclass:: daal4py.logistic_regression_training
    :members: compute
