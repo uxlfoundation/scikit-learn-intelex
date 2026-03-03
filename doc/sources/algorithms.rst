@@ -56,7 +56,7 @@ Classification
        - ``criterion`` != `'gini'`
        - ``n_estimators`` > ``6024``
        - Non-integer ``max_samples`` larger than 1 with ``bootstrap=True``
-     - Multi-output and sparse data are not supported.
+     - Multi-output and sparse data are not supported. Missing values and infinite values are not supported.
      - Number of classes must be at least 2.
    * - :obj:`sklearn.ensemble.ExtraTreesClassifier`
      - All parameters are supported except:
@@ -66,7 +66,7 @@ Classification
        - ``criterion`` != `'gini'`
        - ``n_estimators`` > ``6024``
        - Non-integer ``max_samples`` larger than 1 with ``bootstrap=True``
-     - Multi-output and sparse data are not supported.
+     - Multi-output and sparse data are not supported. Missing values and infinite values are not supported.
      - Number of classes must be at least 2.
    * - :obj:`sklearn.neighbors.KNeighborsClassifier`
      -
@@ -128,7 +128,7 @@ Regression
        - ``criterion`` != ``'squared_error'``
        - ``n_estimators`` > ``6024``
        - Non-integer ``max_samples`` larger than 1 with ``bootstrap=True``
-     - Multi-output and sparse data are not supported
+     - Multi-output and sparse data are not supported. Missing values and infinite values are not supported.
    * - :obj:`sklearn.ensemble.ExtraTreesRegressor`
      - All parameters are supported except:
 
@@ -137,7 +137,7 @@ Regression
        - ``criterion`` != ``'squared_error'``
        - ``n_estimators`` > ``6024``
        - Non-integer ``max_samples`` larger than 1 with ``bootstrap=True``
-     - Multi-output and sparse data are not supported
+     - Multi-output and sparse data are not supported. Missing values and infinite values are not supported.
    * - :obj:`sklearn.neighbors.KNeighborsRegressor`
      -
        - For ``algorithm`` == ``'kd_tree'``:
@@ -380,7 +380,7 @@ Classification
        - ``sample_weight`` != `None`
        - ``n_estimators`` > ``6024``
        - Non-integer ``max_samples`` larger than 1 with ``bootstrap=True``
-     - Multi-output and sparse data are not supported.
+     - Multi-output and sparse data are not supported. Missing values and infinite values are not supported.
      - Number of classes must be at least 2.
    * - :obj:`sklearn.ensemble.ExtraTreesClassifier`
      - All parameters are supported except:
@@ -392,7 +392,7 @@ Classification
        - ``sample_weight`` != `None`
        - ``n_estimators`` > ``6024``
        - Non-integer ``max_samples`` larger than 1 with ``bootstrap=True``
-     - Multi-output and sparse data are not supported.
+     - Multi-output and sparse data are not supported. Missing values and infinite values are not supported.
      - Number of classes must be at least 2.
    * - :obj:`sklearn.neighbors.KNeighborsClassifier`
      - All parameters are supported except:
@@ -436,7 +436,7 @@ Regression
        - ``sample_weight`` != `None`
        - ``n_estimators`` > ``6024``
        - Non-integer ``max_samples`` larger than 1 with ``bootstrap=True``
-     - Multi-output and sparse data are not supported
+     - Multi-output and sparse data are not supported. Missing values and infinite values are not supported.
    * - :obj:`sklearn.ensemble.ExtraTreesRegressor`
      - All parameters are supported except:
 
@@ -447,7 +447,7 @@ Regression
        - ``sample_weight`` != `None`
        - ``n_estimators`` > ``6024``
        - Non-integer ``max_samples`` larger than 1 with ``bootstrap=True``
-     - Multi-output and sparse data are not supported
+     - Multi-output and sparse data are not supported. Missing values and infinite values are not supported.
    * - :obj:`sklearn.neighbors.KNeighborsRegressor`
      - All parameters are supported except:
 
@@ -619,7 +619,7 @@ Classification
        - ``sample_weight`` != `None`
        - ``n_estimators`` > ``6024``
        - Non-integer ``max_samples`` larger than 1 with ``bootstrap=True``
-     - Multi-output and sparse data are not supported.
+     - Multi-output and sparse data are not supported. Missing values and infinite values are not supported.
      - Number of classes must be at least 2.
    * - :obj:`sklearn.ensemble.ExtraTreesClassifier`
      - All parameters are supported except:
@@ -631,7 +631,7 @@ Classification
        - ``sample_weight`` != `None`
        - ``n_estimators`` > ``6024``
        - Non-integer ``max_samples`` larger than 1 with ``bootstrap=True``
-     - Multi-output and sparse data are not supported.
+     - Multi-output and sparse data are not supported. Missing values and infinite values are not supported.
      - Number of classes must be at least 2.
    * - :obj:`sklearn.neighbors.KNeighborsClassifier`
      - All parameters are supported except:
@@ -676,7 +676,7 @@ Regression
        - ``sample_weight`` != `None`
        - ``n_estimators`` > ``6024``
        - Non-integer ``max_samples`` larger than 1 with ``bootstrap=True``
-     - Multi-output and sparse data are not supported
+     - Multi-output and sparse data are not supported. Missing values and infinite values are not supported.
    * - :obj:`sklearn.ensemble.ExtraTreesRegressor`
      - All parameters are supported except:
 
@@ -687,7 +687,7 @@ Regression
        - ``sample_weight`` != `None`
        - ``n_estimators`` > ``6024``
        - Non-integer ``max_samples`` larger than 1 with ``bootstrap=True``
-     - Multi-output and sparse data are not supported
+     - Multi-output and sparse data are not supported. Missing values and infinite values are not supported.
    * - :obj:`sklearn.neighbors.KNeighborsRegressor`
      - All parameters are supported except:
 

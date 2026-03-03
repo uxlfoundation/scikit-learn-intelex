@@ -152,10 +152,48 @@ def validate_data(
     return out
 
 
-def _check_sample_weight(
-    sample_weight, X, dtype=None, copy=False, ensure_non_negative=False
-):
+if sklearn_check_version("1.9"):
 
+    def _check_sample_weight(
+        sample_weight,
+        X,
+        dtype=None,
+        copy=False,
+        ensure_non_negative=False,
+        allow_all_zero_weights=False,
+    ):
+        return _check_sample_weight_internal(
+            sample_weight,
+            X,
+            dtype=dtype,
+            copy=copy,
+            ensure_non_negative=ensure_non_negative,
+            allow_all_zero_weights=allow_all_zero_weights,
+        )
+
+else:
+
+    def _check_sample_weight(
+        sample_weight, X, dtype=None, copy=False, ensure_non_negative=False
+    ):
+        return _check_sample_weight_internal(
+            sample_weight,
+            X,
+            dtype=dtype,
+            copy=copy,
+            ensure_non_negative=ensure_non_negative,
+            allow_all_zero_weights=True,
+        )
+
+
+def _check_sample_weight_internal(
+    sample_weight,
+    X,
+    dtype=None,
+    copy=False,
+    ensure_non_negative=False,
+    allow_all_zero_weights=False,
+):
     n_samples = _num_samples(X)
     xp, _ = get_namespace(X)
 
@@ -201,6 +239,10 @@ def _check_sample_weight(
                     sample_weight.shape, (n_samples,)
                 )
             )
+
+    if not allow_all_zero_weights:
+        if xp.all(sample_weight == 0):
+            raise ValueError("Sample weights must contain at least one non-zero number.")
 
     if ensure_non_negative:
         check_non_negative(sample_weight, "`sample_weight`")
