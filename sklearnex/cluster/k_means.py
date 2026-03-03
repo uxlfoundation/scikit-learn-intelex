@@ -226,6 +226,25 @@ if daal_check_version((2023, "P", 200)):
                     ensure_all_finite=False,
                 )
 
+            # Validate critical parameters to match sklearn's _check_params
+            # behavior, which we bypass in the oneDAL path. This is needed
+            # regardless of sklearn version since _validate_params constraints
+            # may not cover all cases (e.g. sklearn main may move validation
+            # from _parameter_constraints to _check_params).
+            if not isinstance(self.n_init, str) and self.n_init <= 0:
+                raise ValueError(f"n_init should be > 0, got {self.n_init} instead.")
+            if self.max_iter <= 0:
+                raise ValueError(f"max_iter should be > 0, got {self.max_iter} instead.")
+            if not (
+                _is_arraylike_not_scalar(self.init)
+                or callable(self.init)
+                or (isinstance(self.init, str) and self.init in ["k-means++", "random"])
+            ):
+                raise ValueError(
+                    "init should be either 'k-means++', 'random', a ndarray "
+                    f"or a callable, got '{self.init}' instead."
+                )
+
             # Validate input vs parameters
             if X.shape[0] < self.n_clusters:
                 raise ValueError(
@@ -240,7 +259,8 @@ if daal_check_version((2023, "P", 200)):
                 )
 
             # Skip sklearn's _check_params / _check_params_vs_input entirely:
-            # - We already validate algorithm, n_clusters, and n_init above
+            # - We already validate algorithm, n_clusters, n_init, max_iter,
+            #   and init above
             # - The onedal backend computes tolerance internally via _compute_tolerance
             # - sklearn's _check_params rejects algorithm='lloyd' on sklearn < 1.1
             # - sklearn's _check_params_vs_input calls np.var() which fails on GPU arrays
@@ -388,10 +408,6 @@ if daal_check_version((2023, "P", 200)):
                     dtype=[xp.float64, xp.float32],
                 )
 
-            if not hasattr(self, "_onedal_estimator"):
-                self._initialize_onedal_estimator()
-                self._onedal_estimator.cluster_centers_ = self.cluster_centers_
-
             return self._onedal_estimator.predict(X, queue=queue)
 
         def _onedal_supported(self, method_name, *data):
@@ -511,10 +527,6 @@ if daal_check_version((2023, "P", 200)):
                         "will be removed in 1.5.",
                         FutureWarning,
                     )
-
-            if not hasattr(self, "_onedal_estimator"):
-                self._initialize_onedal_estimator()
-                self._onedal_estimator.cluster_centers_ = self.cluster_centers_
 
             return self._onedal_estimator.score(X, queue=queue)
 

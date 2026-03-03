@@ -143,7 +143,10 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
                 init = init.toarray()
             return to_table(init, queue=QM.get_global_queue())
         else:
-            raise TypeError("Unsupported type of the `init` value")
+            raise ValueError(
+                "init should be either 'k-means++', 'random', a ndarray "
+                f"or a callable, got '{init}' instead."
+            )
 
         alg = self._get_kmeans_init(
             cluster_count=n_clusters,
@@ -323,10 +326,11 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         self._cluster_centers_ = cluster_centers
         self.n_iter_ = 0
         self.inertia_ = 0
-        # keep backend model in sync
-        self.model_.centroids = to_table(self._cluster_centers_)
-        self.n_features_in_ = self.model_.centroids.column_count
-        self.labels_ = np.arange(self.model_.centroids.row_count)
+        # keep backend model in sync when model exists
+        if self.model_ is not None:
+            self.model_.centroids = to_table(self._cluster_centers_)
+            self.n_features_in_ = self.model_.centroids.column_count
+            self.labels_ = np.arange(self.model_.centroids.row_count)
 
     @cluster_centers_.deleter
     def cluster_centers_(self):
