@@ -344,6 +344,7 @@ _FITTED_ATTR_NUMPY_OK = {
     # classes_ is always stored as numpy by sklearn internals
     ("KNeighborsClassifier", "classes_"),
     ("LogisticRegression", "classes_"),
+    ("LogisticRegression", "n_iter_"),
     # Clusterer attrs are numpy
     ("KMeans", "cluster_centers_"),
 }
