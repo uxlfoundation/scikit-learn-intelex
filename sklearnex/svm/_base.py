@@ -54,6 +54,23 @@ if sklearn_check_version("1.6"):
         # here: https://github.com/uxlfoundation/scikit-learn-intelex/pull/1879
         # This is distilled from the sklearn CalibratedClassifierCV for sklearn <1.8 for
         # use in sklearn > 1.8 to maintain performance.
+
+        # Comment 2026-02-16: scikit-learn doesn't have support for array API with the
+        # arguments used for 'CalibratedClassifierCV' inside of '_fit_calibrator', despite
+        # the apparent usage of 'xp' here. As a result, this works when using 'target_offload'
+        # even though some things end up running on CPU (not sure how much of the
+        # workload is CPU vs. GPU in that case), but doesn't work when using array API
+        # classes, and cannot be made to work by simply moving data to host here,
+        # because the metaestimator from scikit-learn will then make calls to
+        # 'SVC.predict' which sklearnex is overriding and which won't work with
+        # NumPy arrays if fitted to array API.
+        # Some discussions throughout scikit-learn GitHub issues indicate that there
+        # is some desire to remove the option for 'probability=True' from SVC, so perhaps
+        # this problem could be ignored as it will disappear in the future.
+        # TODO: find some way to make this work with array API classes. Maybe it
+        # could work by temporarily removing the '_onedal' estimator from the sklearnex
+        # class, casting both the input data and the support vectors to NumPy, and then
+        # reverting all of this.
         xp, _ = get_namespace(X, y)
         check_classification_targets(y)
         X, y = indexable(X, y)
@@ -246,6 +263,26 @@ class BaseSVC(BaseSVM):
 
     def _onedal_cpu_supported(self, method_name, *data):
         patching_status = super()._onedal_cpu_supported(method_name, *data)
+        # TODO: remove this condition once scikit-learn gets array API
+        # support for CalibratedClassifierCV with the arguments used here.
+        if method_name == "fit":
+            X = data[0]
+            skip = patching_status.and_conditions(
+                [
+                    (
+                        not (
+                            hasattr(self, "probability")
+                            and self.probability
+                            and self.probability != "deprecated"
+                            and hasattr(X, "__dlpack__")
+                            and not isinstance(X, np.ndarray)
+                        ),
+                        "'probability=True' not supported with array API classes.",
+                    ),
+                ]
+            )
+            if skip:
+                return patching_status
         if method_name == "fit" and patching_status.get_status() and data[2] is not None:
             xp, _ = get_namespace(*data)
             _, y, sample_weight = data
@@ -257,7 +294,7 @@ class BaseSVC(BaseSVM):
                     (
                         (xp.any(y_nonzero != y_nonzero[0])),
                         "Invalid input - all samples with positive weights belong to the same class.",
-                    )
+                    ),
                 ]
             )
         return patching_status
@@ -304,6 +341,19 @@ class BaseSVC(BaseSVM):
 
         y = self._onedal_validate_targets(X, y)
 
+        if (
+            hasattr(self, "probability")
+            and self.probability != "deprecated"
+            and sklearn_check_version("1.9")
+        ):
+            warnings.warn(
+                f"The `probability` parameter was deprecated in 1.9 and "
+                f"will be removed in version 1.11. "
+                f"Use `CalibratedClassifierCV({self.__class__.__name__}(), ensemble=False)` "
+                f"instead of `{self.__class__.__name__}(probability=True)`",
+                FutureWarning,
+            )
+
         if (sw_flag := sample_weight is not None) or self.class_weight is not None:
             sample_weight = _check_sample_weight(sample_weight, X)
             # oneDAL only accepts sample_weights, apply class_weight directly
@@ -342,7 +392,11 @@ class BaseSVC(BaseSVM):
             X, y, sample_weight, class_count=self.classes_.shape[0], queue=queue
         )
 
-        if self.probability:
+        if (
+            hasattr(self, "probability")
+            and self.probability
+            and self.probability != "deprecated"
+        ):
             self._fit_proba(
                 X,
                 y,
@@ -365,7 +419,10 @@ class BaseSVC(BaseSVM):
             )
 
         params = self.get_params()
-        params["probability"] = False
+        if sklearn_check_version("1.9"):
+            params["probability"] = "deprecated"
+        else:
+            params["probability"] = False
         params["decision_function_shape"] = "ovr"
         clf_base = self.__class__(**params)
 
@@ -374,6 +431,9 @@ class BaseSVC(BaseSVM):
         cfg = get_config()
         cfg["target_offload"] = queue
         with config_context(**cfg):
+            # Comment 2026-02-24: this causes it to fit the model twice.
+            # It looks redundant, but is required when using GPU offloading due to
+            # needing functionalities from sklearn that are not provided by oneDAL.
             clf_base.fit(X, y)
 
             # Forced use of FrozenEstimator starting in sklearn 1.6
@@ -412,14 +472,15 @@ class BaseSVC(BaseSVM):
         self._gamma = self._onedal_estimator.gamma
         length = (self.classes_.shape[0] ** 2 - self.classes_.shape[0]) // 2
 
-        if self.probability:
-            # Parameter learned in Platt scaling, exposed as probA_ and probB_
-            # via the sklearn SVM estimator
-            self._probA = xp.zeros(length)
-            self._probB = xp.zeros(length)
-        else:
-            self._probA = xp.empty(0)
-            self._probB = xp.empty(0)
+        if hasattr(self, "probability"):
+            if self.probability:
+                # Parameter learned in Platt scaling, exposed as probA_ and probB_
+                # via the sklearn SVM estimator
+                self._probA = xp.zeros(length)
+                self._probB = xp.zeros(length)
+            else:
+                self._probA = xp.empty(0)
+                self._probB = xp.empty(0)
 
         self._dualcoef_ = self.dual_coef_
 
@@ -440,7 +501,11 @@ class BaseSVC(BaseSVM):
 
         # sklearn conformance >1.0, with array API conversion
         # https://github.com/scikit-learn/scikit-learn/pull/21336
-        if not self._sparse and sv.size > 0 and xp.sum(self._n_support) != sv.shape[0]:
+        if (
+            not self._sparse
+            and sv.shape[0] > 0
+            and xp.sum(self._n_support) != sv.shape[0]
+        ):
             raise ValueError(
                 "The internal representation " f"of {self.__class__.__name__} was altered"
             )
@@ -510,7 +575,11 @@ class BaseSVC(BaseSVM):
         )
 
         sv = self.support_vectors_
-        if not self._sparse and sv.size > 0 and xp.sum(self._n_support) != sv.shape[0]:
+        if (
+            not self._sparse
+            and sv.shape[0] > 0
+            and xp.sum(self._n_support) != sv.shape[0]
+        ):
             raise ValueError(
                 "The internal representation " f"of {self.__class__.__name__} was altered"
             )
@@ -675,8 +744,9 @@ class BaseSVR(BaseSVM):
 
         self._sparse = False
         self._gamma = self._onedal_estimator.gamma
-        self._probA = None
-        self._probB = None
+        if hasattr(self, "probability"):
+            self._probA = None
+            self._probB = None
 
         if sklearn_check_version("1.1"):
             self.n_iter_ = self._onedal_estimator.n_iter_

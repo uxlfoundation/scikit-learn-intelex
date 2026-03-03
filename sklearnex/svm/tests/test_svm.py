@@ -150,8 +150,8 @@ def test_iris(kernel):
 
     dataset = sparse_iris_data, iris.target, sparse_iris_data
 
-    clf0 = SVC(kernel=kernel)
-    clf1 = SVC(kernel=kernel)
+    clf0 = SVC(kernel=kernel, C=0.01)
+    clf1 = SVC(kernel=kernel, C=0.01)
     check_svm_model_equal(None, clf0, clf1, *dataset, decimal=2)
 
 

@@ -49,6 +49,7 @@ from sklearnex.tests.utils import (
     PATCHED_MODELS,
     SPECIAL_INSTANCES,
     call_method,
+    check_is_dynamic_method,
     gen_dataset,
     gen_models_info,
     sklearn_clone_dict,
@@ -79,6 +80,8 @@ def eval_method(X, y, est, method):
     est.fit(X, y)
 
     if method:
+        if not hasattr(est, method) and check_is_dynamic_method(est, method):
+            pytest.skip(f"sklearn available_if prevents testing {est}.{method}")
         res = call_method(est, method, X, y)
 
     if not isinstance(res, Iterable):
@@ -183,6 +186,13 @@ def test_standard_estimator_stability(estimator, method, dataframe, queue):
         pytest.skip("allowed fallback to sklearn occurs")
     if estimator == "DummyRegressor":
         pytest.skip("default parameters fall back to sklearn")
+    if "LocalOutlierFactor" in estimator and method in [
+        "score_samples",
+        "decision_function",
+        "predict",
+        "fit_predict",
+    ]:
+        pytest.skip(f"LOF {method} non-deterministic due to kd_tree tie-breaking")
     _skip_neighbors(estimator, method)
 
     if "NearestNeighbors" in estimator and "radius" in method:
@@ -190,8 +200,8 @@ def test_standard_estimator_stability(estimator, method, dataframe, queue):
 
     est = PATCHED_MODELS[estimator]()
 
-    if method and not hasattr(est, method):
-        pytest.skip(f"sklearn available_if prevents testing {estimator}.{method}")
+    if method and not hasattr(est, method) and not check_is_dynamic_method(est, method):
+        pytest.skip(f"sklearn available_if prevents testing {est}.{method}")
 
     # TODO: remove this once scikit-learn implements array API support
     # for LogisticRegressionCV
@@ -223,6 +233,13 @@ def test_special_estimator_stability(estimator, method, dataframe, queue):
         pytest.skip(f"BasicStatistics not deterministic")
     if "NearestNeighbors" in estimator and "radius" in method:
         pytest.skip(f"RadiusNeighbors estimator not implemented in sklearnex")
+    if "LocalOutlierFactor" in estimator and method in [
+        "score_samples",
+        "decision_function",
+        "predict",
+        "fit_predict",
+    ]:
+        pytest.skip(f"LOF {method} non-deterministic due to kd_tree tie-breaking")
     _skip_neighbors(estimator, method)
 
     est = SPECIAL_INSTANCES[estimator]

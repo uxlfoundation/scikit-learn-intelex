@@ -63,6 +63,12 @@ deselected_tests:
   - linear_model/tests/test_ridge.py::test_array_api_error_and_warnings_for_solver_parameter[array_api_strict]
   - linear_model/tests/test_ridge.py::test_array_api_error_and_warnings_for_solver_parameter[torch]
 
+  # RidgeClassifier passes Array to xp.full() fill_value instead of Python scalar (sklearn bug with array_api_strict)
+  - linear_model/tests/test_ridge.py::test_ridge_array_api_compliance[RidgeClassifier(solver='svd')-check_array_api_attributes-array_api_strict-CPU_DEVICE-float64] >=1.8,<1.9
+  - linear_model/tests/test_ridge.py::test_ridge_array_api_compliance[RidgeClassifier(solver='svd')-check_array_api_attributes-array_api_strict-device1-float32] >=1.8,<1.9
+  - linear_model/tests/test_ridge.py::test_ridge_classifier_multilabel_array_api[array_api_strict-CPU_DEVICE-float64-estimator0] >=1.8,<1.9
+  - linear_model/tests/test_ridge.py::test_ridge_classifier_multilabel_array_api[array_api_strict-device1-float32-estimator0] >=1.8,<1.9
+
   # 'kulsinski' distance was deprecated in scipy 1.11 but still marked as supported in scikit-learn < 1.3
   - neighbors/tests/test_neighbors.py::test_kneighbors_brute_backend[float64-kulsinski] <1.3
   - neighbors/tests/test_neighbors.py::test_radius_neighbors_brute_backend[kulsinski] <1.3

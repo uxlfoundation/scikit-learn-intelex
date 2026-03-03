@@ -63,11 +63,6 @@ struct TNVT<daal::algorithms::decision_forest::classification::Model>
     typedef daal::algorithms::tree_utils::classification::SplitNodeDescriptor split_desc_type;
 };
 
-// Decision tree classification uses classification visitors
-template <>
-struct TNVT<daal::algorithms::decision_tree::classification::Model> : public TNVT<daal::algorithms::decision_forest::classification::Model>
-{};
-
 // our tree visitor for counting nodes
 // TODO: Needs to store leaf-node response, and split-node impurity/sample_counts values
 template <typename M>
@@ -137,22 +132,6 @@ TreeState _getTreeState(M * model, size_t iTree, size_t n_classes)
     // then do the final tree traversal
     toSKLearnTreeObjectVisitor<typename M::ElementType> tsv(ncv.depth, ncv.n_nodes, ncv.n_leaf_nodes, n_classes);
     (*model)->traverseDFS(iTree, tsv);
-
-    return TreeState(tsv);
-}
-
-// This is the function for getting the tree state from a tree which we use in cython
-// we will have different model types, so it's a template
-// Note: the caller will own the memory of the 2 returned arrays!
-template <typename M>
-TreeState _getTreeState(M * model, size_t n_classes)
-{
-    // First count nodes
-    NodeDepthCountNodeVisitor<typename M::ElementType> ncv;
-    (*model)->traverseDFS(ncv);
-    // then do the final tree traversal
-    toSKLearnTreeObjectVisitor<typename M::ElementType> tsv(ncv.depth, ncv.n_nodes, ncv.n_leaf_nodes, n_classes);
-    (*model)->traverseDFS(tsv);
 
     return TreeState(tsv);
 }

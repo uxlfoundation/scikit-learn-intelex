@@ -34,7 +34,7 @@ unpatch_sklearn()
 from sklearnex.neighbors import NearestNeighbors
 
 # Patching can be enabled for selected algorithms/estimators only
-patch_sklearn(["DBSCAN"])
+patch_sklearn(["sklearn.cluster.DBSCAN"])
 
 # Remaining non modified scikit-learn codes
 from sklearn.datasets import make_blobs
