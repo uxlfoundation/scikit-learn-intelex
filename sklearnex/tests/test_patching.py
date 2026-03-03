@@ -305,7 +305,6 @@ def _check_output_type(
 # skip dtype-vs-X matching for these.
 _INTEGER_FITTED_ATTRS = {
     "labels_",
-    "n_iter_",
     "support_",
     "core_sample_indices_",
     "classes_",
