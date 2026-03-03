@@ -5,7 +5,7 @@ Babel==2.18.0
 backcall==0.2.0
 beautifulsoup4==4.14.3
 bleach==6.3.0
-certifi==2026.1.4
+certifi==2026.2.25
 charset-normalizer==3.4.4
 click==8.3.1
 decorator==5.2.1
@@ -13,7 +13,7 @@ defusedxml==0.7.1
 docutils~=0.21.2
 entrypoints==0.4
 idna==3.11
-imagesize==1.4.1
+imagesize==2.0.0
 importlib-metadata==8.7.1
 importlib-resources==6.5.2
 ipython==9.10.0
@@ -34,7 +34,7 @@ nest-asyncio==1.6.0
 packaging==26.0
 pandoc==2.4
 pandocfilters==1.5.1
-parso==0.8.5
+parso==0.8.6
 pexpect==4.9.0
 pickleshare==0.7.5
 prompt-toolkit==3.0.52
@@ -43,7 +43,7 @@ Pygments==2.19.2
 pyparsing==3.3.2
 pyrsistent==0.20.0
 python-dateutil==2.9.0.post0
-pytz==2025.2
+pytz==2026.1
 PyYAML==6.0.3
 pyzmq==27.1.0
 requests==2.32.5
@@ -69,7 +69,7 @@ tornado==6.5.4
 traitlets==5.14.3
 typing-extensions==4.15.0
 urllib3==2.6.3
-wcwidth==0.5.3
+wcwidth==0.6.0
 webencodings==0.5.1
 zipp==3.23.0
 setuptools>=65.5.1 # not directly required, pinned by Snyk to avoid a vulnerability
