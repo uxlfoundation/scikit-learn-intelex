@@ -342,8 +342,9 @@ _FITTED_ATTR_NUMPY_OK = {
     ("DummyRegressor", "constant_"),
     # TSNE — embedding_ not converted
     ("TSNE", "embedding_"),
-    # PCA — singular_values_ not converted to input array type
+    # PCA — fitted attrs not converted to input array type
     ("PCA", "singular_values_"),
+    ("PCA", "explained_variance_ratio_"),
     # Linear models without array API support for fitted attrs
     ("ElasticNet", "coef_"),
     ("ElasticNet", "intercept_"),
