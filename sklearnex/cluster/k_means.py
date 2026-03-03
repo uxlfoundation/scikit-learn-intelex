@@ -56,13 +56,17 @@ if daal_check_version((2023, "P", 200)):
             n_clusters=8,
             *,
             init="k-means++",
-            n_init="auto",
+            n_init=(
+                "auto"
+                if sklearn_check_version("1.4")
+                else "warn" if sklearn_check_version("1.2") else 10
+            ),
             max_iter=300,
             tol=1e-4,
             verbose=0,
             random_state=None,
             copy_x=True,
-            algorithm="lloyd",
+            algorithm="lloyd" if sklearn_check_version("1.1") else "auto",
         ):
             super().__init__(
                 n_clusters=n_clusters,
@@ -150,9 +154,9 @@ if daal_check_version((2023, "P", 200)):
             return self
 
         def _resolve_n_init(self, default_n_init=10):
-            """Resolve n_init parameter from 'auto' to integer value."""
+            """Resolve n_init parameter from 'auto'/'warn' to integer value."""
             n_init = self.n_init
-            if n_init == "auto":
+            if isinstance(n_init, str) and n_init in ("auto", "warn"):
                 if isinstance(self.init, str) and self.init == "k-means++":
                     n_init = 1
                 elif isinstance(self.init, str) and self.init == "random":
