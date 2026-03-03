@@ -56,7 +56,7 @@ else:
 
         if scipy.__version__.startswith("1."):
             version_minor = scipy.__version__.split(".")[1][:2]
-            if int(version_minor) < 15:
+            if int(version_minor) >= 15:
                 return {}
         return {k: v}
 
