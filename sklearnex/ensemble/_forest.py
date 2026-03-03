@@ -18,7 +18,6 @@ import math
 import numbers
 import warnings
 from abc import ABC
-from collections.abc import Iterable
 from functools import partial
 
 import numpy as np
@@ -134,7 +133,15 @@ class BaseForest(oneDALEstimator, ABC):
         self.n_features_in_ = X.shape[1]
 
         if not use_raw_input:
-            y, expanded_class_weight = self._validate_y_class_weight(y)
+            if is_classifier(self):
+                if sklearn_check_version("1.9"):
+                    y, expanded_class_weight = self._validate_y_class_weight(
+                        y, sample_weight
+                    )
+                else:
+                    y, expanded_class_weight = self._validate_y_class_weight(y)
+            else:
+                expanded_class_weight = None
 
             if expanded_class_weight is not None:
                 if sample_weight is not None:
@@ -162,9 +169,16 @@ class BaseForest(oneDALEstimator, ABC):
 
         # conform to scikit-learn internal calculations
         if self.bootstrap:
-            self._n_samples_bootstrap = _get_n_samples_bootstrap(
-                n_samples=X.shape[0], max_samples=self.max_samples
-            )
+            if sklearn_check_version("1.9"):
+                self._n_samples_bootstrap = _get_n_samples_bootstrap(
+                    n_samples=X.shape[0],
+                    max_samples=self.max_samples,
+                    sample_weight=sample_weight,
+                )
+            else:
+                self._n_samples_bootstrap = _get_n_samples_bootstrap(
+                    n_samples=X.shape[0], max_samples=self.max_samples
+                )
         else:
             self._n_samples_bootstrap = None
 
@@ -256,6 +270,16 @@ class BaseForest(oneDALEstimator, ABC):
                 (
                     self.n_estimators <= 6024,
                     "More than 6024 estimators is not supported.",
+                ),
+                # Note: multi-valued 'class_weight' is only applicable to multi-output 'y',
+                # which is not supported by oneDAL either way.
+                (
+                    not (
+                        hasattr(self, "class_weight")
+                        and self.class_weight is not None
+                        and not isinstance(self.class_weight, (str, dict))
+                    ),
+                    "Multi-valued class_weight is not supported",
                 ),
                 (
                     not self.bootstrap or self.class_weight != "balanced_subsample",
@@ -655,12 +679,25 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         for est in self._cached_estimators_:
             est.classes_ = self.classes_
 
-    def _validate_y_class_weight(self, y):
+    if sklearn_check_version("1.9"):
 
-        xp, is_array_api_compliant = get_namespace(y)
+        def _validate_y_class_weight(self, y, sample_weight):
+            return self._validate_y_class_weight_internal(y, sample_weight)
+
+    else:
+
+        def _validate_y_class_weight(self, y):
+            return self._validate_y_class_weight_internal(y, None)
+
+    def _validate_y_class_weight_internal(self, y, sample_weight=None):
+
+        xp, is_array_api_compliant = get_namespace(y, sample_weight)
 
         if not is_array_api_compliant:
-            return super()._validate_y_class_weight(y)
+            if sklearn_check_version("1.9"):
+                return super()._validate_y_class_weight(y, sample_weight)
+            else:
+                return super()._validate_y_class_weight(y)
 
         # array API-only branch. This is meant only for the sklearnex
         # forest estimators which assume n_outputs = 1, will not interact
