@@ -262,7 +262,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
 
         self.effective_metric_ = self.metric
 
-        # Only set "p" for minkowski metric, matching sklearn behavior (see PR #2945)
+        # Only set "p" for minkowski metric
         if self.metric == "minkowski":
             self.effective_metric_params_["p"] = effective_p
 
@@ -308,9 +308,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         Note: Feature validation (count, names, etc.) happens in validate_data
         called by _onedal_kneighbors, so we don't duplicate it here.
         """
-        # Validate n_neighbors bounds if provided
         if n_neighbors is not None:
-            # Determine if query is the training set
             query_is_train = X is None or (hasattr(self, "_fit_X") and X is self._fit_X)
             self._validate_kneighbors_bounds(
                 n_neighbors, query_is_train, X if X is not None else self._fit_X
@@ -395,16 +393,9 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         # Use zeros_like instead of Python scalar False to avoid 0-d array
         # iteration errors with dpnp/dpctl when used as xp.where argument.
         first_col = xp.where(dup_gr_nbrs, xp.zeros_like(first_col), first_col)
-        # Array API standard uses 'concat'; dpctl.tensor only has 'concat' (not
-        # 'concatenate'). Numpy has only 'concatenate'. Use accordingly.
-        if _is_numpy_namespace(xp):
-            sample_mask = xp.concatenate(
-                [xp.reshape(first_col, (-1, 1)), sample_mask[:, 1:]], axis=1
-            )
-        else:
-            sample_mask = xp.concat(
-                [xp.reshape(first_col, (-1, 1)), sample_mask[:, 1:]], axis=1
-            )
+        sample_mask = xp.concat(
+            [xp.reshape(first_col, (-1, 1)), sample_mask[:, 1:]], axis=1
+        )
 
         indices = xp.reshape(indices[sample_mask], (n_queries, n_neighbors))
         distances = xp.reshape(distances[sample_mask], (n_queries, n_neighbors))
@@ -416,17 +407,10 @@ class KNeighborsDispatchingBase(oneDALEstimator):
     def _fit_validation(self, X, y=None):
         if sklearn_check_version("1.2"):
             self._validate_params()
-        # check_feature_names(self, X, reset=True)
-        # Validate n_neighbors parameter
         self._validate_n_neighbors(self.n_neighbors)
-
-        # Set effective metric and parameters
         self._set_effective_metric()
 
         if not isinstance(X, (KDTree, BallTree, _sklearn_NeighborsBase)):
-            # Use _check_array like main branch, but with array API dtype support
-            # Get array namespace for array API support
-            # Don't check for NaN - let oneDAL handle it (will fallback to sklearn if needed)
             xp, _ = get_namespace(X)
             self._fit_X = _check_array(
                 X,

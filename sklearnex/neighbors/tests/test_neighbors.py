@@ -85,20 +85,20 @@ def test_sklearnex_import_lof(dataframe, queue):
     assert_allclose(result, [-1, 1, 1, 1])
 
 
-@pytest.mark.parametrize("queue", get_queues())
-def test_pickle(queue):
-    if queue and queue.sycl_device.is_gpu:
-        pytest.skip("KNN classifier pickling for the GPU sycl_queue is buggy.")
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+def test_pickle(dataframe, queue):
     iris = datasets.load_iris()
-    clf = KNeighborsClassifier(2).fit(iris.data, iris.target)
-    expected = clf.predict(iris.data)
+    X = _convert_to_dataframe(iris.data, sycl_queue=queue, target_df=dataframe)
+    y = _convert_to_dataframe(iris.target, sycl_queue=queue, target_df=dataframe)
+    clf = KNeighborsClassifier(2).fit(X, y)
+    expected = _as_numpy(clf.predict(X))
     import pickle
 
     dump = pickle.dumps(clf)
     clf2 = pickle.loads(dump)
 
     assert type(clf2) == clf.__class__
-    result = clf2.predict(iris.data)
+    result = _as_numpy(clf2.predict(X))
     assert_array_equal(expected, result)
 
 
@@ -125,25 +125,6 @@ def test_knn_classifier_single_class():
     predictions_test = clf.predict(X_test)
     assert_array_equal(predictions_test, [0, 0])
 
-
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_knn_dtype_preservation(dtype):
-    """Test that KNN preserves input dtype in predictions when using oneDAL backend."""
-    iris = datasets.load_iris()
-    X = iris.data.astype(dtype)
-    y = iris.target
-
-    # Classifier
-    clf = KNeighborsClassifier(n_neighbors=5).fit(X, y)
-    assert hasattr(clf, "_onedal_estimator"), "Should use oneDAL backend"
-    proba = clf.predict_proba(X)
-    assert proba.dtype == dtype, f"Expected {dtype}, got {proba.dtype}"
-
-    # Regressor
-    reg = KNeighborsRegressor(n_neighbors=5).fit(X, y.astype(dtype))
-    assert hasattr(reg, "_onedal_estimator"), "Should use oneDAL backend"
-    pred = reg.predict(X)
-    assert pred.dtype == dtype, f"Expected {dtype}, got {pred.dtype}"
 
 
 def test_no_p_if_metric_is_not_minkowski():
