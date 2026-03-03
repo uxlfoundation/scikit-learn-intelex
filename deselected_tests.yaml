@@ -403,6 +403,49 @@ deselected_tests:
   # Tests for exact equality, but results have differences in the order of machine epsilon
   - neighbors/tests/test_neighbors.py::test_KNeighborsClassifier_multioutput
 
+  # Linear regression with non-PSD systems doesn't have a unique solution.
+  # OneDAL prefers minimum-norm solution, but sklearn doesn't.
+  # Note that all the cases here have 'wide' or 'square' shape (i.e. covariance is not full-rank)
+  # and 'zero_alpha' (result should match against unregularized) together.
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge[asarray-wide-True-svd-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge[asarray-wide-True-cholesky-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge[asarray-wide-True-lsqr-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge[asarray-wide-True-sparse_cg-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge[csr_matrix-wide-True-lsqr-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge[csr_matrix-wide-True-sparse_cg-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge[csr_array-wide-True-lsqr-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge[csr_array-wide-True-sparse_cg-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_classifier_gcv[asarray-float32-wide-True-ignored-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_classifier_gcv[asarray-float64-wide-True-ignored-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_classifier_gcv[csr_matrix-float32-wide-True-ignored-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_classifier_gcv[csr_matrix-float64-wide-True-ignored-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_classifier_gcv[csr_array-float32-wide-True-ignored-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_classifier_gcv[csr_array-float64-wide-True-ignored-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[asarray-float32-square-True-svd-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[asarray-float32-square-True-eigen-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[asarray-float32-wide-True-svd-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[asarray-float32-wide-True-eigen-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[asarray-float64-square-True-svd-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[asarray-float64-square-True-eigen-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[asarray-float64-wide-True-svd-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[asarray-float64-wide-True-eigen-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_matrix-float32-square-True-svd-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_matrix-float32-square-True-eigen-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_matrix-float32-wide-True-svd-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_matrix-float32-wide-True-eigen-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_matrix-float64-square-True-svd-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_matrix-float64-square-True-eigen-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_matrix-float64-wide-True-svd-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_matrix-float64-wide-True-eigen-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_array-float32-square-True-svd-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_array-float32-square-True-eigen-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_array-float32-wide-True-svd-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_array-float32-wide-True-eigen-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_array-float64-square-True-svd-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_array-float64-square-True-eigen-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_array-float64-wide-True-svd-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_array-float64-wide-True-eigen-zero_alpha]
+
   # --------------------------------------------------------
   # No need to test daal4py patching
 reduced_tests:
