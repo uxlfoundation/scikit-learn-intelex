@@ -26,8 +26,19 @@ import numpy as np
 import numpy.random as nprnd
 import pytest
 from scipy import sparse as sp
-from sklearn.base import BaseEstimator, is_clusterer, is_regressor
+from sklearn.base import BaseEstimator, ClusterMixin, RegressorMixin
 from sklearn.svm._base import BaseLibSVM
+
+try:
+    from sklearn.base import is_clusterer, is_regressor
+except ImportError:
+    # sklearn < 1.6
+    def is_regressor(est):
+        return isinstance(est, RegressorMixin)
+
+    def is_clusterer(est):
+        return isinstance(est, ClusterMixin)
+
 
 from daal4py.sklearn._utils import (
     _package_check_version,
