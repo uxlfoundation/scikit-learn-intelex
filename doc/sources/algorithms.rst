@@ -324,7 +324,7 @@ Other Tasks
      - All parameters are supported
      - Only dense data is supported
      - 
-   * - :obj:`sklearn.metrics.pairwise_distance`
+   * - :obj:`sklearn.metrics.pairwise_distances`
      - All parameters are supported except:
 
        - ``metric`` not in [`'cosine'`, `'correlation'`]
