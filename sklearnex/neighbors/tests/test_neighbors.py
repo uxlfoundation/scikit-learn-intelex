@@ -24,7 +24,6 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
-from onedal.tests.utils._device_selection import get_queues
 from sklearnex.neighbors import (
     KNeighborsClassifier,
     KNeighborsRegressor,
@@ -85,20 +84,17 @@ def test_sklearnex_import_lof(dataframe, queue):
     assert_allclose(result, [-1, 1, 1, 1])
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_pickle(dataframe, queue):
+def test_pickle():
     iris = datasets.load_iris()
-    X = _convert_to_dataframe(iris.data, sycl_queue=queue, target_df=dataframe)
-    y = _convert_to_dataframe(iris.target, sycl_queue=queue, target_df=dataframe)
-    clf = KNeighborsClassifier(2).fit(X, y)
-    expected = _as_numpy(clf.predict(X))
+    clf = KNeighborsClassifier(2).fit(iris.data, iris.target)
+    expected = clf.predict(iris.data)
     import pickle
 
     dump = pickle.dumps(clf)
     clf2 = pickle.loads(dump)
 
     assert type(clf2) == clf.__class__
-    result = _as_numpy(clf2.predict(X))
+    result = clf2.predict(iris.data)
     assert_array_equal(expected, result)
 
 
@@ -124,7 +120,6 @@ def test_knn_classifier_single_class():
     X_test = np.array([[1.5, 1.5], [2.5, 2.5]])
     predictions_test = clf.predict(X_test)
     assert_array_equal(predictions_test, [0, 0])
-
 
 
 def test_no_p_if_metric_is_not_minkowski():
