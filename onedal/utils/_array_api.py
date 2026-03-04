@@ -38,9 +38,6 @@ def _supports_buffer_protocol(obj):
 
 def _asarray(data, xp, *args, **kwargs):
     """Converted input object to array format of xp namespace provided."""
-    # __dlpack__ is mandated by the array API standard and is supported by all
-    # array types we handle (numpy, dpnp, torch cpu/xpu), so a single check
-    # is sufficient.
     if hasattr(data, "__dlpack__") or _supports_buffer_protocol(data):
         return xp.asarray(data, *args, **kwargs)
     elif isinstance(data, Iterable):
