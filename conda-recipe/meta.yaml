@@ -59,7 +59,7 @@ requirements:
     - cython
     - jinja2
     - pybind11
-    - numpy
+    - numpy >=2,<3
     # dal-devel pinning depends on the recipe location (repo or feedstock)
     - dal-devel
     # - dal-devel =={{ version }}
@@ -89,7 +89,7 @@ test:
     - xgboost
     - lightgbm
     - shap
-    - catboost
+    - catboost  # [py<314]
     - treelite
     - array-api-compat
     - array-api-strict

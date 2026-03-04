@@ -34,7 +34,6 @@ __all__ = [
     "sklearn_patch_map",
     "sklearn_patch_names",
     "svm",
-    "tree",
     "unpatch_sklearn",
     "utils",
 ]
