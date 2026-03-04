@@ -288,7 +288,8 @@ class BaseForest(oneDALEstimator, ABC):
                 ),
                 (
                     not (
-                        isinstance(self.max_samples, Real)
+                        sklearn_check_version("1.9")
+                        and isinstance(self.max_samples, Real)
                         and not isinstance(self.max_samples, Integral)
                         and self.max_samples > 1.0
                     ),
