@@ -392,6 +392,12 @@ class KMeans(_BaseKMeans):
     def score(self, X, queue=None):
         return super().score(X, queue=queue)
 
+    def fit_predict(self, X, y=None, queue=None):
+        return self.fit(X, queue=queue).labels_
+
+    def fit_transform(self, X, y=None, queue=None):
+        return self.fit(X, queue=queue).transform(X)
+
 
 def k_means(
     X,
