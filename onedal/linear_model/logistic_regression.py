@@ -83,7 +83,6 @@ class BaseLogisticRegression(metaclass=ABCMeta):
 
         self._onedal_model = result.model
         
-        # TODO: we might need to add array api support here later
         self.n_iter_ = np.array([result.iterations_count])
 
         # _n_inner_iter is the total number of cg-solver iterations
@@ -95,46 +94,6 @@ class BaseLogisticRegression(metaclass=ABCMeta):
 
         return self
 
-    # TODO Change logic of _create_model to support behaviour when model
-    # was fitted in sklearn and then predict is called with torch.tensor on gpu
-    # Same method exists in LinReg
-    def _create_model(self):
-
-        m = self.model()
-
-        coefficients = self.coef_
-        dtype = get_dtype(coefficients)
-        coefficients = np.asarray(coefficients, dtype=dtype)
-
-        if coefficients.ndim == 2:
-            n_features_in = coefficients.shape[1]
-            assert coefficients.shape[0] == 1
-        else:
-            n_features_in = coefficients.size
-
-        intercept = self.intercept_
-        if not isinstance(intercept, Number):
-            intercept = np.asarray(intercept, dtype=dtype)
-            assert intercept.size == 1
-
-        coefficients, intercept = make2d(coefficients), make2d(intercept)
-
-        assert coefficients.shape == (1, n_features_in)
-        assert intercept.shape == (1, 1)
-
-        desired_shape = (1, n_features_in + 1)
-        packed_coefficients = np.zeros(desired_shape, dtype=dtype)
-
-        packed_coefficients[:, 1:] = coefficients
-        if self.fit_intercept:
-            packed_coefficients[:, 0][:, np.newaxis] = intercept
-
-        m.packed_coefficients = to_table(packed_coefficients, queue=QM.get_global_queue())
-
-        self._onedal_model = m
-
-        return m
-
     def _infer(self, X, queue=None):
         _check_is_fitted(self)
 
@@ -142,8 +101,7 @@ class BaseLogisticRegression(metaclass=ABCMeta):
 
         _check_n_features(self, X, False)
 
-        if not hasattr(self, "_onedal_model"):
-            self._onedal_model = self._create_model()
+        assert hasattr(self, "_onedal_model")
 
         X_table = to_table(X, queue=queue)
         params = self._get_onedal_params(is_csr, X_table.dtype)
@@ -154,7 +112,7 @@ class BaseLogisticRegression(metaclass=ABCMeta):
     @supports_queue
     def predict(self, X, queue=None):
         result = self._infer(X, queue)
-        y = from_table(result.responses, like=X)
+        y = from_table(result.responses, like=self.classes_)
         return y
 
     @supports_queue
