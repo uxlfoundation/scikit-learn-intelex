@@ -39,7 +39,7 @@ from ..utils.validation import validate_data
 
 class KNeighborsDispatchingBase(oneDALEstimator):
     def _get_weights(self, dist, weights):
-        # Adapted from sklearn.neighbors._base._get_weights
+
         if weights in (None, "uniform"):
             return None
         if weights == "distance":
@@ -81,8 +81,6 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         array-like
             Predicted values.
         """
-        # Array API support: get namespace from training targets (user's array type)
-        # neigh_dist/neigh_ind may be numpy from from_table(); convert to match y_train
         xp, _ = get_namespace(y_train)
         if not _is_numpy_namespace(xp):
             device = getattr(y_train, "device", None)
@@ -163,8 +161,6 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         array-like
             Class probabilities.
         """
-        # Array API support: get namespace from training labels (user's array type)
-        # neigh_dist/neigh_ind may be numpy from from_table(); convert to match y_train
         xp, _ = get_namespace(y_train)
         if not _is_numpy_namespace(xp):
             device = getattr(y_train, "device", None)
@@ -262,11 +258,9 @@ class KNeighborsDispatchingBase(oneDALEstimator):
 
         self.effective_metric_ = self.metric
 
-        # Only set "p" for minkowski metric
         if self.metric == "minkowski":
             self.effective_metric_params_["p"] = effective_p
 
-        # Convert sklearn metric aliases to canonical names for oneDAL compatibility
         metric_aliases = {
             "cityblock": "manhattan",
             "l1": "manhattan",
@@ -275,7 +269,6 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         if self.metric in metric_aliases:
             self.effective_metric_ = metric_aliases[self.metric]
 
-        # For minkowski distance, use more efficient methods where available
         if self.metric == "minkowski":
             self.effective_metric_params_["p"] = effective_p
             if effective_p == 1:
@@ -364,11 +357,6 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         # the sample itself.
         n_queries = indices.shape[0]
         if not _is_numpy_namespace(xp):
-            # Use sycl_queue for SYCL arrays (dpnp/dpctl) to ensure sample_range is on
-            # the exact same queue as indices. For dpctl usm_ndarray, .device returns only
-            # SyclDevice (hardware), not the queue/context. A new default queue from .device
-            # would differ from the SPMD per-rank queue, causing ExecutionPlacementError.
-            # For non-SYCL arrays (e.g., torch XPU), sycl_queue is None, fall back to .device.
             sycl_queue = getattr(indices, "sycl_queue", None)
             if sycl_queue is not None:
                 sample_range = xp.reshape(
@@ -390,8 +378,6 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         # In that case mask the first duplicate.
         dup_gr_nbrs = xp.all(sample_mask, axis=1)
         first_col = sample_mask[:, 0]
-        # Use zeros_like instead of Python scalar False to avoid 0-d array
-        # iteration errors with dpnp/dpctl when used as xp.where argument.
         first_col = xp.where(dup_gr_nbrs, xp.zeros_like(first_col), first_col)
         sample_mask = xp.concat(
             [xp.reshape(first_col, (-1, 1)), sample_mask[:, 1:]], axis=1
@@ -443,8 +429,6 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             else:
                 self._fit_method = self.algorithm
 
-        # Only delete _onedal_estimator if it's an instance attribute, not a class attribute
-        # (SPMD classes define _onedal_estimator as a staticmethod at class level)
         if "_onedal_estimator" in self.__dict__:
             delattr(self, "_onedal_estimator")
         # To cover test case when we pass patched
@@ -649,17 +633,12 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         if n_neighbors is None:
             n_neighbors = self.n_neighbors
 
-        # If the model was fitted on a device (GPU) but X is a host array,
-        # move X to the same device so dispatch uses the correct queue.
-        # This prevents a segfault from running CPU inference on a GPU model.
         xp_fit, _ = get_namespace(self._fit_X)
         if X is not None and not _is_numpy_namespace(xp_fit):
             xp_X, _ = get_namespace(X)
             if _is_numpy_namespace(xp_X):
                 X = xp_fit.asarray(X)
 
-        # construct CSR matrix representation of the k-NN graph
-        # requires moving data to host to construct the csr_matrix
         if mode == "connectivity":
             A_ind = self.kneighbors(X, n_neighbors, return_distance=False)
             _, (A_ind,) = _transfer_to_host(A_ind)
