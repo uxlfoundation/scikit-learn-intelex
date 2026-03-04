@@ -53,9 +53,16 @@ from .logistic_loss import (
 if sklearn_check_version("1.7.1"):
     from sklearn.utils.fixes import _get_additional_lbfgs_options_dict
 else:
+    import scipy
+
+    from .._utils import _package_check_version
+
     # From https://github.com/scikit-learn/scikit-learn/blob/760edca5fb5cc3538b98ebc55171806e2a6e3e84/sklearn/utils/fixes.py#L408
-    # This should be removed if SciPy>=1.15 becomes the minimum required at some point
+    # This should be removed if SciPy>=1.15 becomes the minimum required at some point,
+    # or if scikit-learn>=1.7.1 becomes the minimum supported version.
     def _get_additional_lbfgs_options_dict(k, v):
+        if _package_check_version("1.15", scipy.__version__):
+            return {}
         return {k: v}
 
 
