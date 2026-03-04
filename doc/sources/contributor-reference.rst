@@ -44,7 +44,6 @@ The following files might also require changes after adding a new estimator - lo
 
     - `sklearnex/tests/utils/base.py <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/sklearnex/tests/utils/base.py>`__.
     - `sklearnex/tests/test_common.py <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/sklearnex/tests/test_common.py>`__.
-    - `sklearnex/tests/test_memory_usage.py <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/sklearnex/tests/test_memory_usage.py>`__.
     - `sklearnex/tests/test_n_jobs_support.py <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/sklearnex/tests/test_n_jobs_support.py>`__.
     - `sklearnex/tests/test_patching.py <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/sklearnex/tests/test_patching.py>`__.
     - `sklearnex/tests/test_run_to_run_stability.py <https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/sklearnex/tests/test_run_to_run_stability.py>`__.

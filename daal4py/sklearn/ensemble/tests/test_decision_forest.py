@@ -14,8 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 
-import random
-
 import numpy as np
 import pytest
 from sklearn.datasets import load_iris
@@ -24,7 +22,7 @@ from sklearn.ensemble import RandomForestRegressor as ScikitRandomForestRegresso
 from sklearn.metrics import accuracy_score, log_loss, mean_squared_error, roc_auc_score
 from sklearn.model_selection import train_test_split
 
-from daal4py.sklearn._utils import daal_check_version
+from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from daal4py.sklearn.ensemble import RandomForestClassifier as DaalRandomForestClassifier
 from daal4py.sklearn.ensemble import RandomForestRegressor as DaalRandomForestRegressor
 
@@ -189,6 +187,9 @@ def _compare_with_sklearn_mse_regressor_iris(
     assert ratio <= MSE_RATIO, reason
 
 
+@pytest.mark.skipif(
+    sklearn_check_version("1.9"), reason="Changes in RF methodology in sklearn1.9"
+)
 @pytest.mark.parametrize("weight", SAMPLE_WEIGHTS_IRIS)
 def test_mse_regressor_sample_weight_iris(weight):
     sample_weight, description = weight

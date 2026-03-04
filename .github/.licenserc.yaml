@@ -67,8 +67,10 @@ header:
     - '.github/CODEOWNERS'
     - '.github/Pull_Request_template.md'
     - '.github/renovate.json'
+    - '.github/instructions/*.md'
     # Specific files
     - 'LICENSE'
+    - 'AGENTS.md'
     # External copies of copyrighted work
     - 'onedal/datatypes/dlpack/dlpack.h'
   comment: never

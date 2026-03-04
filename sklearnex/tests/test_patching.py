@@ -44,6 +44,7 @@ from sklearnex.tests.utils import (
     UNPATCHED_FUNCTIONS,
     UNPATCHED_MODELS,
     call_method,
+    check_is_dynamic_method,
     gen_dataset,
     gen_models_info,
 )
@@ -129,6 +130,8 @@ def _check_estimator_patching(caplog, dataframe, queue, dtype, est, method):
         est.fit(X, y)
 
         if method:
+            if not hasattr(est, method) and check_is_dynamic_method(est, method):
+                pytest.skip(f"sklearn available_if prevents testing {est}.{method}")
             call_method(est, method, X, y)
 
     assert all(
@@ -137,7 +140,7 @@ def _check_estimator_patching(caplog, dataframe, queue, dtype, est, method):
             or "fallback to original Scikit-learn" in i.message
             for i in caplog.records
         ]
-    ), f"sklearnex patching issue in {estimator}.{method} with log: \n{caplog.text}"
+    ), f"sklearnex patching issue in {est}.{method} with log: \n{caplog.text}"
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
@@ -166,8 +169,15 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
         pytest.skip(
             "IncrementalLinearRegression fails on oneDAL side with int types because dataset is filled by zeroes"
         )
-    elif method and not hasattr(est, method):
-        pytest.skip(f"sklearn available_if prevents testing {estimator}.{method}")
+    elif method and not hasattr(est, method) and not check_is_dynamic_method(est, method):
+        pytest.skip(f"sklearn available_if prevents testing {est}.{method}")
+
+    if (
+        (dataframe == "array_api" or queue)
+        and estimator == "LogisticRegressionCV"
+        and (not sklearn_check_version("1.6") or not get_tags(est).array_api_support)
+    ):
+        pytest.skip("Array API and/or GPU inputs not supported in estimator")
 
     if dataframe == "array_api":
         # as array_api dispatching is experimental, sklearn support isn't guaranteed.
@@ -190,13 +200,6 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
             pytest.skip(
                 f"array checking in sklearn <1.3 does not fully support array_api inputs, causes sklearnex-only estimator failure"
             )
-
-    if (
-        (dataframe == "array_api" or queue)
-        and estimator == "LogisticRegressionCV"
-        and (not sklearn_check_version("1.6") or not get_tags(est).array_api_support)
-    ):
-        pytest.skip("Array API and/or GPU inputs not supported in estimator")
 
         with config_context(array_api_dispatch=True):
             try:
@@ -305,10 +308,6 @@ def test_standard_estimator_init_signatures(estimator):
     ],
 )
 def test_patched_function_signatures(function):
-    # certain functions are dropped from the test
-    # as they add functionality to the underlying sklearn function
-    if not sklearn_check_version("1.1") and function == "_assert_all_finite":
-        pytest.skip("Sklearn versioning not added to _assert_all_finite")
     func = PATCHED_FUNCTIONS[function]
     unpatched_func = UNPATCHED_FUNCTIONS[function]
 
@@ -346,11 +345,6 @@ def test_patch_map_match():
     sklearn__all__ = list_all_attr("sklearn")
 
     module_map = {i: i for i in sklearnex__all__.intersection(sklearn__all__)}
-
-    # _assert_all_finite patches an internal sklearn function which isn't
-    # exposed via __all__ in sklearn. It is a special case where this rule
-    # is not applied (e.g. it is grandfathered in).
-    del patched["_assert_all_finite"]
 
     # remove all scikit-learn-intelex-only estimators
     for i in patched.copy():

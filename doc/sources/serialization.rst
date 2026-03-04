@@ -51,7 +51,7 @@ Just like other objects in Python, estimator objects from the |sklearnex| can be
 Serialization requirements
 --------------------------
 
-All estimator classes in the |sklearnex| that have a counterpart in |sklearn| (and thus participate in :ref:`patching <patching>`) inherit from that respective class from |sklearn|, and expose the same public attributes. Hence, in order to successfully serialize and deserialize a model from the |sklearnex|, it is necessary to satisfy all the requirements for serialization of |sklearn| objects, such as using the same |sklearn| version for serializing and deserializing the object - see :ref:`sklearn:pickle_persistence` for more details.
+All estimator classes in the |sklearnex| that have a counterpart in |sklearn| (and thus participate in :doc:`patching <patching>`) inherit from that respective class from |sklearn|, and expose the same public attributes. Hence, in order to successfully serialize and deserialize a model from the |sklearnex|, it is necessary to satisfy all the requirements for serialization of |sklearn| objects, such as using the same |sklearn| version for serializing and deserializing the object - see :ref:`sklearn:pickle_persistence` for more details.
 
 In addition to those requirements, additional conditions need to be met in order to ensure that serialization and deserialization of objects belonging to classes from the |sklearnex| will work correctly:
 

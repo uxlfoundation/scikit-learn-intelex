@@ -14,6 +14,7 @@
 # limitations under the License.
 # ===============================================================================
 
+import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 
@@ -80,3 +81,25 @@ def test_sklearnex_import_lof(dataframe, queue):
     assert hasattr(lof, "_onedal_estimator")
     assert "sklearnex" in lof.__module__
     assert_allclose(result, [-1, 1, 1, 1])
+
+
+def test_no_p_if_metric_is_not_minkowski():
+    rng = np.random.default_rng(seed=123)
+    X = rng.standard_normal(size=(25, 3))
+    y = rng.standard_normal(size=X.shape[0])
+    knn = KNeighborsRegressor(metric="euclidean", p=2).fit(X, y)
+    _ = knn.predict(X)
+    assert knn.effective_metric_ == "euclidean"
+    assert "p" not in knn.effective_metric_params_
+
+
+@pytest.mark.allow_sklearn_fallback
+def test_p_present_if_metric_is_minkowski():
+    rng = np.random.default_rng(seed=123)
+    X = rng.standard_normal(size=(25, 3))
+    y = rng.standard_normal(size=X.shape[0])
+    knn = KNeighborsRegressor(metric="minkowski", p=3).fit(X, y)
+    _ = knn.predict(X)
+    assert knn.effective_metric_ == "minkowski"
+    assert "p" in knn.effective_metric_params_
+    assert knn.effective_metric_params_["p"] == 3

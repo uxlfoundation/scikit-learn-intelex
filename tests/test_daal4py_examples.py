@@ -245,11 +245,6 @@ def low_order_moms_getter(result):
 
 
 examples = [
-    Config("adaboost", required_version=(2020, "P", 0)),
-    Config("adagrad_mse", "adagrad_mse.csv", "minimum"),
-    Config("association_rules", "association_rules.csv", "confidence"),
-    Config("bacon_outlier", "multivariate_outlier.csv", lambda r: r[1].weights),
-    Config("brownboost", required_version=(2020, "P", 0)),
     Config("cholesky", "cholesky.csv", "choleskyFactor"),
     Config(
         "correlation_distance", "correlation_distance.csv", correlation_distance_getter
@@ -280,16 +275,6 @@ examples = [
         result_attribute=lambda r: r[1].prediction,
         required_version=(2023, "P", 101),
     ),
-    Config(
-        "decision_tree_classification",
-        "decision_tree_classification.csv",
-        result_attribute=lambda r: r[1].prediction,
-    ),
-    Config(
-        "decision_tree_regression",
-        "decision_tree_regression.csv",
-        result_attribute=lambda r: r[1].prediction,
-    ),
     Config("elastic_net", required_version=((2020, "P", 1), (2021, "B", 105))),
     Config("em_gmm", "em_gmm.csv", lambda r: r.covariances[0]),
     Config("gradient_boosted_classification", timeout_cpu_seconds=700),
@@ -304,29 +289,18 @@ examples = [
     ),
     Config("linear_regression", "linear_regression.csv", lambda r: r[1].prediction),
     Config("log_reg_binary_dense", "log_reg_binary_dense.csv", lambda r: r[1].prediction),
-    Config("logitboost", required_version=(2020, "P", 0)),
     Config("low_order_moms_dense", "low_order_moms_dense.csv", low_order_moms_getter),
     Config("low_order_moms_streaming", "low_order_moms_dense.csv", low_order_moms_getter),
-    Config("multivariate_outlier", "multivariate_outlier.csv", lambda r: r[1].weights),
-    Config("naive_bayes_streaming", "naive_bayes.csv", lambda r: r[0].prediction),
-    Config("naive_bayes", "naive_bayes.csv", lambda r: r[0].prediction),
     Config("normalization_minmax", "normalization_minmax.csv", "normalizedData"),
     Config("normalization_zscore", "normalization_zscore.csv", "normalizedData"),
     Config("pca_transform", "pca_transform.csv", lambda r: r[1].transformedData),
     Config("pca", "pca.csv", "eigenvectors"),
     Config("pivoted_qr", "pivoted_qr.csv", "matrixR"),
-    Config("quantiles", "quantiles.csv", "quantiles"),
     Config(
         "ridge_regression_streaming", "ridge_regression.csv", lambda r: r[0].prediction
     ),
     Config("ridge_regression", "ridge_regression.csv", lambda r: r[0].prediction),
-    Config("saga", required_version=(2019, "P", 3)),
-    Config("sgd_logistic_loss", "sgd_logistic_loss.csv", "minimum"),
-    Config("sgd_mse", "sgd_mse.csv", "minimum"),
-    Config("stump_classification", required_version=(2020, "P", 0)),
-    Config("stump_regression", required_version=(2020, "P", 0)),
     Config("svm_multiclass", "svm_multiclass.csv", lambda r: r[0].prediction),
-    Config("univariate_outlier", "univariate_outlier.csv", lambda r: r[1].weights),
 ]
 
 module_names_with_configs = [cfg.module_name for cfg in examples]
@@ -386,25 +360,13 @@ class TestExCSRMatrix(Daal4pyBase, unittest.TestCase):
     """
 
     def call_main(self, module: ModuleType):
-        if any(
-            module.__name__.startswith(x)
-            for x in [
-                "adaboost",
-                "brownboost",
-                "decision_forest",
-                "sorting",
-                "stump_classification",
-            ]
-        ):
+        if "decision_forest" in module.__name__:
             self.skipTest("Missing CSR support")
 
         signature = inspect.signature(module.main)
         parameters = list(signature.parameters)
         if "readcsv" not in parameters:
             self.skipTest("Missing readcsv kwarg support")
-
-        if "naive_bayes" in module.__name__:
-            self.skipTest("CSR support in Naive Bayes is buggy")
 
         if "method" in parameters:
             method = "fastCSR"
