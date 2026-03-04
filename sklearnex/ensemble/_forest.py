@@ -19,6 +19,7 @@ import numbers
 import warnings
 from abc import ABC
 from functools import partial
+from numbers import Integral, Real
 
 import numpy as np
 from sklearn.base import clone, is_classifier
@@ -295,6 +296,14 @@ class BaseForest(oneDALEstimator, ABC):
                         and (self.bootstrap or self.max_samples is not None)
                     ),
                     "Bootstrapping and/or sub-sampling with sample weights is not supported.",
+                ),
+                (
+                    not (
+                        isinstance(self.max_samples, Real)
+                        and not isinstance(self.max_samples, Integral)
+                        and self.max_samples > 1.0
+                    ),
+                    "Fractional 'max_samples' beyond 1.0 are not supported",
                 ),
             ]
         )
