@@ -446,6 +446,9 @@ deselected_tests:
   - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_array-float64-wide-True-svd-zero_alpha]
   - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_array-float64-wide-True-eigen-zero_alpha]
 
+  # CI jobs in sklearnex compile scikit-learn from source, not necessarily with the same toolkits as sklearn's CIs
+  - preprocessing/tests/test_polynomial.py::test_sizeof_LARGEST_INT_t
+
   # --------------------------------------------------------
   # No need to test daal4py patching
 reduced_tests:
