@@ -995,6 +995,24 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
     decision_path = support_input_format(_sklearn_ForestRegressor.decision_path)
     apply = support_input_format(_sklearn_ForestRegressor.apply)
 
+    @staticmethod
+    def _check_criterion(criterion):
+        if (
+            sklearn_check_version("1.9")
+            and not sklearn_check_version("1.11")
+            and isinstance(criterion, str)
+            and criterion == "friedman_mse"
+        ):
+            criterion = "squared_error"
+            warnings.warn(
+                'Value `"friedman_mse"` for `criterion` is deprecated and will be '
+                'removed in 1.11. It maps to `"squared_error"` as both '
+                'were always equivalent. Use `criterion="squared_error"` '
+                "to remove this warning.",
+                FutureWarning,
+            )
+        return criterion
+
     def _save_attributes(self, xp):
         # This assumes that the error_metric_mode variable is set to ._err
         # class attribute
@@ -1304,6 +1322,7 @@ class RandomForestRegressor(ForestRegressor):
             max_bins=256,
             min_bin_size=1,
         ):
+            criterion = self._check_criterion(criterion)
             super().__init__(
                 DecisionTreeRegressor(),
                 n_estimators=n_estimators,
@@ -1586,6 +1605,7 @@ class ExtraTreesRegressor(ForestRegressor):
             max_bins=256,
             min_bin_size=1,
         ):
+            criterion = self._check_criterion(criterion)
             super().__init__(
                 ExtraTreeRegressor(),
                 n_estimators=n_estimators,
