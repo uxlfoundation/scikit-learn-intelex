@@ -404,7 +404,7 @@ deselected_tests:
   - neighbors/tests/test_neighbors.py::test_KNeighborsClassifier_multioutput
 
   # To be removed upon resolution of https://github.com/uxlfoundation/scikit-learn-intelex/issues/1046
-  - test_estimators[SVC()-check_classifiers_one_label_sample_weights]
+  - tests/test_common.py::test_estimators[SVC()-check_classifiers_one_label_sample_weights]
 
   # CI jobs in sklearnex compile scikit-learn from source, not necessarily with the same toolkits as sklearn's CIs
   - preprocessing/tests/test_polynomial.py::test_sizeof_LARGEST_INT_t
