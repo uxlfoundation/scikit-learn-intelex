@@ -68,12 +68,21 @@ else:
     _array_api_offload = lambda: False
 
 
+def _is_cpu_device(device):
+    """Check if a device represents CPU (handles different array API representations)."""
+    s = str(device).lower()
+    return "cpu" in s
+
+
 def _validate_array_api_devices(obj, method_name, *args):
     """Validate device consistency for array API inputs.
 
     Raises ValueError when:
     - Multiple input arrays are on different devices (e.g. X on GPU, y on CPU)
     - Inference input is on a different device than the fitted model
+
+    Does not error when both sides are CPU even if device representations
+    differ across array libraries (e.g. numpy 'cpu' vs array_api_strict 'CPU_DEVICE').
     """
     devices = []
     for a in args:
@@ -82,7 +91,8 @@ def _validate_array_api_devices(obj, method_name, *args):
 
     # Check mixed devices across input arguments (e.g. fit(X_gpu, y_cpu))
     if len(devices) > 1:
-        if len(set(str(d) for d in devices)) > 1:
+        all_cpu = all(_is_cpu_device(d) for d in devices)
+        if not all_cpu and len(set(str(d) for d in devices)) > 1:
             raise ValueError(
                 f"Input arrays use different devices: "
                 f"{', '.join(str(d) for d in devices)}. "
@@ -93,7 +103,8 @@ def _validate_array_api_devices(obj, method_name, *args):
     if method_name not in ("fit",) and devices:
         fit_X = getattr(obj, "_fit_X", None)
         if fit_X is not None and hasattr(fit_X, "device"):
-            if str(fit_X.device) != str(devices[0]):
+            both_cpu = _is_cpu_device(fit_X.device) and _is_cpu_device(devices[0])
+            if not both_cpu and str(fit_X.device) != str(devices[0]):
                 raise ValueError(
                     f"Input data is on {devices[0]} but the model was fitted "
                     f"on {fit_X.device}. All data must be on the same device."
