@@ -119,7 +119,8 @@ class BackendFunction:
             from onedal import _dpc_load_error
             if _dpc_load_error:
                 raise RuntimeError(
-                    "oneDAL GPU/DPC++ support is not available in the current installation.\n"
+                    "oneDAL GPU/DPC++ support is not available "
+                    "in the current installation.\n"
                     f"  Reason: {_dpc_load_error}\n"
                     "  To enable SYCL/GPU acceleration, install the GPU extras:\n"
                     "    pip install scikit-learn-intelex[gpu]\n"
