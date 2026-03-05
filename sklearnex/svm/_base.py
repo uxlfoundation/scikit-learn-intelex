@@ -320,7 +320,7 @@ class BaseSVC(BaseSVM):
 
         if sample_weight is not None:
             sample_weight = xp.reshape(xp.asarray(sample_weight), (-1,))
-            for yval in cls:
+            for yval in xp.arange(cls.shape[0]):
                 if xp.sum(sample_weight[y == yval]) <= 0:
                     # Note this error message is copy-pasted from liblinear
                     raise ValueError(
