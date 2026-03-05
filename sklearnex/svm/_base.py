@@ -301,7 +301,7 @@ class BaseSVC(BaseSVM):
 
     # overwrite _validate_targets for array API support
     def _onedal_validate_targets(self, X, y, sample_weight=None):
-        xp, is_array_api_compliant = get_namespace(X, y)
+        xp, is_array_api_compliant = get_namespace(X, y, sample_weight)
 
         # _validate_targets equivalent:
         y_ = column_or_1d(y, warn=True)
@@ -321,10 +321,16 @@ class BaseSVC(BaseSVM):
         if sample_weight is not None:
             sample_weight = xp.reshape(xp.asarray(sample_weight), (-1,))
             for yval in xp.arange(cls.shape[0]):
-                if xp.sum(sample_weight[y == yval]) <= 0:
-                    # Note this error message is copy-pasted from liblinear
+                try:
+                    if xp.sum(sample_weight[y == yval]) <= 0:
+                        # Note this error message is copy-pasted from liblinear
+                        raise ValueError(
+                            "Invalid input - all samples with positive weights belong to the same class."
+                        )
+                except IndexError:
+                    # Note: scikit-learn here expects 'ValueError' and tests for it
                     raise ValueError(
-                        "Invalid input - all samples with positive weights belong to the same class."
+                        f"sample_weight and X have incompatible shapes: {X.shape} vs {sample_weight.shape}"
                     )
 
         self.classes_ = cls
