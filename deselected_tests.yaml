@@ -406,6 +406,9 @@ deselected_tests:
   # To be removed upon resoution of https://github.com/uxlfoundation/scikit-learn-intelex/issues/1046
   - test_estimators[SVC()-check_classifiers_one_label_sample_weights]
 
+  # CI jobs in sklearnex compile scikit-learn from source, not necessarily with the same toolkits as sklearn's CIs
+  - preprocessing/tests/test_polynomial.py::test_sizeof_LARGEST_INT_t
+
   # --------------------------------------------------------
   # No need to test daal4py patching
 reduced_tests:
