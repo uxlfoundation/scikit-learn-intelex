@@ -50,7 +50,7 @@ elif sklearn_check_version("1.1"):
         print("scipy==1.8.*")
 elif sklearn_check_version("1.0"):
     if python_version[1] > 9:
-        print("scipy==1.10.*")
+        print("scipy==1.12")
     else:
         print("scipy==1.7.*")
 else:
