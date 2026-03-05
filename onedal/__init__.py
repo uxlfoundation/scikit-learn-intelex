@@ -83,6 +83,10 @@ if "Windows" in platform.system():
     os.environ["PATH"] = path_to_libs + os.pathsep + os.environ["PATH"]
 
 
+# Preserved ImportError message when DPC++ backend fails to load.
+# Used downstream to generate actionable error messages for users.
+_dpc_load_error: str = ""
+
 try:
     # use dpc backend if available
     import onedal._onedal_py_dpc
@@ -90,9 +94,10 @@ try:
     _dpc_backend = Backend(onedal._onedal_py_dpc, is_dpc=True, is_spmd=False)
 
     _host_backend = None
-except ImportError:
-    # fall back to host backend
+except ImportError as _dpc_import_err:
+    # fall back to host backend; preserve reason for user-facing diagnostics
     _dpc_backend = None
+    _dpc_load_error = str(_dpc_import_err)
 
     import onedal._onedal_py_host
 
@@ -116,6 +121,7 @@ else:
 
 # Core modules to export
 __all__ = [
+    "_dpc_load_error",
     "_host_backend",
     "_default_backend",
     "_dpc_backend",
