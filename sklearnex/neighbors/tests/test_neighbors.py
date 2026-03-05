@@ -98,6 +98,37 @@ def test_pickle():
     assert_array_equal(expected, result)
 
 
+def test_pickle_torch_xpu():
+    try:
+        import torch
+    except ImportError:
+        pytest.skip("torch is not available")
+    if not torch.xpu.is_available():
+        pytest.skip("torch XPU device is not available")
+
+    import pickle
+
+    iris = datasets.load_iris()
+    X_train = torch.tensor(iris.data, dtype=torch.float32, device="xpu")
+    y_train = torch.tensor(iris.target, dtype=torch.float32, device="xpu")
+
+    clf = KNeighborsClassifier(2).fit(X_train, y_train)
+    predicted = clf.predict(X_train)
+    expected = (
+        predicted.cpu().numpy() if hasattr(predicted, "cpu") else np.asarray(predicted)
+    )
+
+    dump = pickle.dumps(clf)
+    clf2 = pickle.loads(dump)
+
+    assert type(clf2) == clf.__class__
+    predicted2 = clf2.predict(X_train)
+    result = (
+        predicted2.cpu().numpy() if hasattr(predicted2, "cpu") else np.asarray(predicted2)
+    )
+    assert_array_equal(expected, result)
+
+
 @pytest.mark.allow_sklearn_fallback
 def test_knn_classifier_single_class():
     """Test KNeighborsClassifier with single-class data (fallback to sklearn).

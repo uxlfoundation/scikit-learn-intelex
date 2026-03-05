@@ -379,7 +379,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         dup_gr_nbrs = xp.all(sample_mask, axis=1)
         first_col = sample_mask[:, 0]
         first_col = xp.where(dup_gr_nbrs, xp.zeros_like(first_col), first_col)
-        _concat = getattr(xp, "concat", xp.concatenate)
+        _concat = xp.concat if hasattr(xp, "concat") else xp.concatenate
         sample_mask = _concat(
             [xp.reshape(first_col, (-1, 1)), sample_mask[:, 1:]], axis=1
         )
