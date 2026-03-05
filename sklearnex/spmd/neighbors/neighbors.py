@@ -33,12 +33,20 @@ class KNeighborsClassifier(base_KNeighborsClassifier):
         return self._onedal_estimator.predict(X, queue=queue)
 
     def predict_proba(self, X):
-        """Not supported in SPMD mode.
+        """Compute class probabilities for X.
 
-        The oneDAL classification backend only returns class labels, not
-        probability distributions. Computing probabilities would require
-        Python-side access to all training labels across ranks, but each
-        rank only holds a local subset.
+        Not supported in distributed (SPMD) mode because the oneDAL
+        backend only returns class labels, not probability distributions.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+            Input data.
+
+        Raises
+        ------
+        NotImplementedError
+            Always raised. Use ``predict`` instead.
         """
         raise NotImplementedError(
             "predict_proba is not supported in distributed (SPMD) mode."

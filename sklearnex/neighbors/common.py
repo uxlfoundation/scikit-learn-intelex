@@ -269,6 +269,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         if self.metric in metric_aliases:
             self.effective_metric_ = metric_aliases[self.metric]
 
+        # For minkowski distance, use more efficient methods where available
         if self.metric == "minkowski":
             self.effective_metric_params_["p"] = effective_p
             if effective_p == 1:
@@ -636,12 +637,15 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         if n_neighbors is None:
             n_neighbors = self.n_neighbors
 
+        # check the input only in self.kneighbors
         xp_fit, _ = get_namespace(self._fit_X)
         if X is not None and not _is_numpy_namespace(xp_fit):
             xp_X, _ = get_namespace(X)
             if _is_numpy_namespace(xp_X):
                 X = xp_fit.asarray(X)
 
+        # construct CSR matrix representation of the k-NN graph
+        # requires moving data to host to construct the csr_matrix
         if mode == "connectivity":
             A_ind = self.kneighbors(X, n_neighbors, return_distance=False)
             _, (A_ind,) = _transfer_to_host(A_ind)
