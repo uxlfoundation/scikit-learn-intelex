@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===============================================================================
-from sys import argv, exit, stderr
+from sys import argv, stderr
 from sys import version_info as python_version
 
 if len(argv) == 1:
@@ -44,9 +44,15 @@ elif sklearn_check_version("1.2") or python_version[1] > 10:
     else:
         print("scipy==1.9.*")
 elif sklearn_check_version("1.1"):
-    print("scipy==1.8.*")
+    if python_version[1] > 9:
+        print("scipy==1.10.*")
+    else:
+        print("scipy==1.8.*")
 elif sklearn_check_version("1.0"):
-    print("scipy==1.7.*")
+    if python_version[1] > 9:
+        print("scipy==1.10.*")
+    else:
+        print("scipy==1.7.*")
 else:
     print(
         "Scipy version defaults to not specified "
