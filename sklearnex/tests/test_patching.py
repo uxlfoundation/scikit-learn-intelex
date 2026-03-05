@@ -200,6 +200,14 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
             pytest.skip(
                 f"array checking in sklearn <1.3 does not fully support array_api inputs, causes sklearnex-only estimator failure"
             )
+        tags = get_tags(est)
+        array_api_check = (
+            hasattr(tags, "array_api_support") and tags.array_api_support
+        ) or (hasattr(tags, "onedal_array_api") and tags.onedal_array_api)
+        if not array_api_check:
+            pytest.skip(
+                "Array API support not implemented in either scikit-learn or scikit-learn-intelex"
+            )
 
         with config_context(array_api_dispatch=True):
             try:
@@ -209,16 +217,9 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
                 # failing on sklearn-side. It is only allowed to fail if the underlying sklearn
                 # function doesn't support array_api with the set parameters and array_api
                 # support isn't promised by oneDAL
-                tags = get_tags(est)
-                array_api_check = (
-                    hasattr(tags, "array_api_support") and tags.array_api_support
-                ) or (hasattr(tags, "onedal_array_api") and tags.onedal_array_api)
-                if (
-                    array_api_check
-                    or estimator not in UNPATCHED_MODELS
-                    or getattr(PATCHED_MODELS[estimator], method)
-                    != getattr(UNPATCHED_MODELS[estimator], method, None)
-                ):
+                if estimator not in UNPATCHED_MODELS or getattr(
+                    PATCHED_MODELS[estimator], method
+                ) != getattr(UNPATCHED_MODELS[estimator], method, None):
                     raise e
 
     else:
