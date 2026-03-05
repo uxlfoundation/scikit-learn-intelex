@@ -39,7 +39,7 @@ from ..utils.validation import validate_data
 
 class KNeighborsDispatchingBase(oneDALEstimator):
     def _get_weights(self, dist, weights):
-
+        # Adapted from sklearn.neighbors._base._get_weights
         if weights in (None, "uniform"):
             return None
         if weights == "distance":
@@ -430,6 +430,8 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             else:
                 self._fit_method = self.algorithm
 
+        # Only delete _onedal_estimator if it's an instance attribute, not a class attribute
+        # (SPMD classes define _onedal_estimator as a staticmethod at class level)
         if "_onedal_estimator" in self.__dict__:
             delattr(self, "_onedal_estimator")
         # To cover test case when we pass patched
