@@ -126,7 +126,7 @@ class BackendFunction:
                     "    pip install scikit-learn-intelex[gpu]\n"
                     "  or via conda:\n"
                     "    conda install -c https://software.repos.intel.com/python/conda "
-                    "scikit-learn-intelex"
+                    "scikit-learn-intelex-gpu"
                 )
             raise RuntimeError("Operations using queues require the DPC/SPMD backend")
 
