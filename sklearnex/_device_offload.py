@@ -68,6 +68,38 @@ else:
     _array_api_offload = lambda: False
 
 
+def _validate_array_api_devices(obj, method_name, *args):
+    """Validate device consistency for array API inputs.
+
+    Raises ValueError when:
+    - Multiple input arrays are on different devices (e.g. X on GPU, y on CPU)
+    - Inference input is on a different device than the fitted model
+    """
+    devices = []
+    for a in args:
+        if a is not None and hasattr(a, "device"):
+            devices.append(a.device)
+
+    # Check mixed devices across input arguments (e.g. fit(X_gpu, y_cpu))
+    if len(devices) > 1:
+        if len(set(str(d) for d in devices)) > 1:
+            raise ValueError(
+                f"Input arrays use different devices: "
+                f"{', '.join(str(d) for d in devices)}. "
+                f"All inputs must be on the same device."
+            )
+
+    # Check device mismatch between fitted model and inference input
+    if method_name not in ("fit",) and devices:
+        fit_X = getattr(obj, "_fit_X", None)
+        if fit_X is not None and hasattr(fit_X, "device"):
+            if str(fit_X.device) != str(devices[0]):
+                raise ValueError(
+                    f"Input data is on {devices[0]} but the model was fitted "
+                    f"on {fit_X.device}. All data must be on the same device."
+                )
+
+
 def dispatch(
     obj: type[oneDALEstimator],
     method_name: str,
@@ -114,9 +146,21 @@ def dispatch(
     if get_config()["use_raw_input"]:
         return branches["onedal"](obj, *args, **kwargs)
 
+    if _array_api_offload() and args:
+        # Check for mixed device inputs (e.g. X on GPU, y on CPU)
+        # and for device mismatch between fitted model and inference input.
+        _validate_array_api_devices(obj, method_name, *args)
+
     # Determine if array_api dispatching is enabled, and if estimator is capable
     onedal_array_api = _array_api_offload() and get_tags(obj).onedal_array_api
     sklearn_array_api = _array_api_offload() and get_tags(obj).array_api_support
+
+    # If sklearn supports array API for this estimator but oneDAL doesn't,
+    # fall back to sklearn without transferring to host. This avoids a
+    # CPU roundtrip for operations that sklearn can already run on GPU
+    # natively (e.g. pairwise_distances).
+    if sklearn_array_api and not onedal_array_api:
+        return branches["sklearn"](obj, *args, **kwargs)
 
     # backend can only be a boolean or None, None signifies an unverified backend
     backend: "bool | None" = None
