@@ -51,18 +51,13 @@ from sklearnex.tests.utils import (
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
-@pytest.mark.parametrize("dataframe, queue", get_dataframes_and_queues())
+@pytest.mark.parametrize(
+    "dataframe, queue", get_dataframes_and_queues("numpy,pandas", "cpu")
+)
 @pytest.mark.parametrize("metric", ["cosine", "correlation"])
 def test_pairwise_distances_patching(caplog, dataframe, queue, dtype, metric):
     with caplog.at_level(logging.WARNING, logger="sklearnex"):
-        if dtype == np.float16 and queue and not queue.sycl_device.has_aspect_fp16:
-            pytest.skip("Hardware does not support fp16 SYCL testing")
-        elif dtype == np.float64 and queue and not queue.sycl_device.has_aspect_fp64:
-            pytest.skip("Hardware does not support fp64 SYCL testing")
-        elif queue and queue.sycl_device.is_gpu:
-            pytest.skip("pairwise_distances does not support GPU queues")
-
-        rng = nprnd.default_rng()
+        rng = nprnd.default_rng(seed=123)
         if dataframe == "pandas":
             X = _convert_to_dataframe(
                 rng.random(size=1000).astype(dtype).reshape(1, -1),
@@ -86,15 +81,15 @@ def test_pairwise_distances_patching(caplog, dataframe, queue, dtype, metric):
 @pytest.mark.parametrize(
     "dtype", [i for i in DTYPES if "32" in i.__name__ or "64" in i.__name__]
 )
-@pytest.mark.parametrize("dataframe, queue", get_dataframes_and_queues())
+@pytest.mark.parametrize(
+    "dataframe, queue", get_dataframes_and_queues("numpy,pandas", "cpu")
+)
 def test_roc_auc_score_patching(caplog, dataframe, queue, dtype):
     if dtype in [np.uint32, np.uint64] and sys.platform == "win32":
         pytest.skip("Windows issue with unsigned ints")
-    elif dtype == np.float64 and queue and not queue.sycl_device.has_aspect_fp64:
-        pytest.skip("Hardware does not support fp64 SYCL testing")
 
     with caplog.at_level(logging.WARNING, logger="sklearnex"):
-        rng = nprnd.default_rng()
+        rng = nprnd.default_rng(seed=123)
         X = rng.integers(2, size=1000)
         y = rng.integers(2, size=1000)
 
@@ -223,6 +218,13 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
                     raise e
 
     else:
+        if dataframe in ["dpctl", "dpnp"]:
+            # Note: this tries to check for GPU support by checking for array API
+            # support. If some class can run on GPU but doesn't support array API,
+            # an exception should be made here.
+            tags = get_tags(est)
+            if not (hasattr(tags, "onedal_array_api") and tags.onedal_array_api):
+                pytest.skip("No GPU support for estimator")
         _check_estimator_patching(caplog, dataframe, queue, dtype, est, method)
 
 
