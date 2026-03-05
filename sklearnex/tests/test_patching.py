@@ -29,10 +29,16 @@ from scipy import sparse as sp
 from sklearn.base import BaseEstimator, ClusterMixin, RegressorMixin
 from sklearn.svm._base import BaseLibSVM
 
-try:
+from daal4py.sklearn._utils import (
+    _package_check_version,
+    is_sparse,
+    sklearn_check_version,
+)
+
+if sklearn_check_version("1.6"):
     from sklearn.base import is_clusterer, is_regressor
-except ImportError:
-    # sklearn < 1.6
+else:
+
     def is_regressor(est):
         return isinstance(est, RegressorMixin)
 
@@ -40,11 +46,6 @@ except ImportError:
         return isinstance(est, ClusterMixin)
 
 
-from daal4py.sklearn._utils import (
-    _package_check_version,
-    is_sparse,
-    sklearn_check_version,
-)
 from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
@@ -189,7 +190,13 @@ _DTYPE_CHECK_SKIP = {
     ("ElasticNet", "path"),  # Path computes alphas in float64
     ("Lasso", "path"),  # Path computes alphas in float64
     ("LogisticRegression", "decision_function"),  # Returns float64 for float32
+    ("LogisticRegression", "predict_proba"),  # Returns float64 for float32 on GPU
     ("KNeighborsClassifier", "predict_proba"),  # Returns float64 for float32
+    # kneighbors returns float64 distances for float32 input on GPU
+    ("KNeighborsClassifier", "kneighbors"),
+    ("KNeighborsRegressor", "kneighbors"),
+    ("NearestNeighbors", "kneighbors"),
+    ("LocalOutlierFactor", "kneighbors"),
 }
 
 
@@ -275,6 +282,17 @@ def _check_output_type(
         else:
             # Accelerated version: output must match input type
             assert isinstance(res, input_type)
+
+            # Check device alignment: if input was on GPU, output
+            # should also be on GPU (and vice-versa).  Both dpnp and
+            # dpctl arrays expose a `.sycl_queue` attribute.
+            if hasattr(X, "sycl_queue") and hasattr(res, "sycl_queue"):
+                assert X.sycl_queue.sycl_device == res.sycl_queue.sycl_device, (
+                    f"{estimator_name}.{method} output device "
+                    f"{res.sycl_queue.sycl_device} != input device "
+                    f"{X.sycl_queue.sycl_device}"
+                )
+
             # Check dtype preservation (skip float16 — oneDAL doesn't
             # support it natively and upcasts to float64)
             x_is_fp16 = (
@@ -328,38 +346,45 @@ _INTEGER_FITTED_ATTRS = {
 }
 
 # (estimator, attribute) pairs where numpy fitted attributes are acceptable
-# even when input is array API / dpnp / dpctl.  These estimators haven't yet
-# been updated to preserve array types for the listed attributes.
+# for ALL input types (array API / dpnp / dpctl).  These estimators produce
+# numpy fitted attrs regardless of input type.
 # Note: clusterer and SVM (BaseLibSVM) attributes are handled via automated
 # checks in _check_fitted_attributes.
 _FITTED_ATTR_NUMPY_OK = {
-    # Tree/forest estimators — internal tree structure attributes
-    ("RandomForestClassifier", "classes_"),
-    ("RandomForestRegressor", "classes_"),
-    ("ExtraTreesClassifier", "classes_"),
-    ("ExtraTreesRegressor", "classes_"),
     # DummyRegressor — not wrapped for array API
     ("DummyRegressor", "constant_"),
     # TSNE — embedding_ not converted
     ("TSNE", "embedding_"),
-    # PCA — fitted attrs not converted to input array type
-    ("PCA", "singular_values_"),
-    ("PCA", "explained_variance_ratio_"),
-    # Linear models without array API support for fitted attrs
+    # Linear models — daal4py path always produces numpy fitted attrs
     ("ElasticNet", "coef_"),
     ("ElasticNet", "intercept_"),
     ("Lasso", "coef_"),
     ("Lasso", "intercept_"),
     ("LogisticRegression", "coef_"),
     ("LogisticRegression", "intercept_"),
-    # Neighbor estimators without array API support for fitted attrs
-    ("LocalOutlierFactor", "negative_outlier_factor_"),
-    # classes_ is always stored as numpy by sklearn internals
-    ("KNeighborsClassifier", "classes_"),
     ("LogisticRegression", "classes_"),
     ("LogisticRegression", "n_iter_"),
+    # Neighbor estimators without array API support for fitted attrs
+    ("LocalOutlierFactor", "negative_outlier_factor_"),
+    ("KNeighborsClassifier", "classes_"),
     # Clusterer attrs are numpy
     ("KMeans", "cluster_centers_"),
+}
+
+# (estimator, attribute) pairs where numpy fitted attributes are acceptable
+# only for SYCL (dpnp / dpctl) inputs.  These estimators correctly produce
+# array API types with array_api_dispatch but return numpy via the dpnp/dpctl
+# code path (support_input_format converts to numpy before oneDAL).
+_FITTED_ATTR_NUMPY_OK_SYCL = {
+    # PCA — from_table(like=X) works for array_api, but dpnp/dpctl path
+    # converts X to numpy first so fitted attrs are numpy
+    ("PCA", "singular_values_"),
+    ("PCA", "explained_variance_ratio_"),
+    # Tree/forest — classes_ correct for array_api, numpy for dpnp/dpctl
+    ("RandomForestClassifier", "classes_"),
+    ("RandomForestRegressor", "classes_"),
+    ("ExtraTreesClassifier", "classes_"),
+    ("ExtraTreesRegressor", "classes_"),
 }
 
 # (estimator, attribute) pairs where dtype preservation is not expected
@@ -383,6 +408,7 @@ def _check_fitted_attributes(est, X, estimator_name, caplog):
     ``test_ridge.py``).
     """
     input_type = type(X)
+    is_sycl_input = hasattr(X, "__sycl_usm_array_interface__")
 
     fell_back = any(
         "fallback to original Scikit-learn" in r.message for r in caplog.records
@@ -410,7 +436,16 @@ def _check_fitted_attributes(est, X, estimator_name, caplog):
         elif is_clusterer(est):
             pass  # Cluster attributes not yet converted to array API
         elif (estimator_name, attr_name) in _FITTED_ATTR_NUMPY_OK:
-            pass  # numpy is acceptable for this attribute
+            pass  # numpy is acceptable for all input types
+        elif (
+            is_sycl_input
+            and (
+                estimator_name,
+                attr_name,
+            )
+            in _FITTED_ATTR_NUMPY_OK_SYCL
+        ):
+            pass  # numpy is acceptable for dpnp/dpctl input
         elif fell_back:
             assert isinstance(attr_val, (np.ndarray, input_type)), (
                 f"{estimator_name}.{attr_name} has type {type(attr_val).__name__}, "
@@ -420,6 +455,16 @@ def _check_fitted_attributes(est, X, estimator_name, caplog):
             assert isinstance(attr_val, input_type), (
                 f"{estimator_name}.{attr_name} has type {type(attr_val).__name__}, "
                 f"expected {input_type.__name__}"
+            )
+
+        # --- Device check (SYCL arrays) ---
+        # If input was on GPU, fitted attributes should also be on the
+        # same device (not silently moved to CPU or another device).
+        if hasattr(X, "sycl_queue") and hasattr(attr_val, "sycl_queue"):
+            assert X.sycl_queue.sycl_device == attr_val.sycl_queue.sycl_device, (
+                f"{estimator_name}.{attr_name} device "
+                f"{attr_val.sycl_queue.sycl_device} != input device "
+                f"{X.sycl_queue.sycl_device}"
             )
 
         # --- Dtype check ---
@@ -433,6 +478,15 @@ def _check_fitted_attributes(est, X, estimator_name, caplog):
             estimator_name,
             attr_name,
         ) in _FITTED_ATTR_NUMPY_OK:
+            continue
+        if (
+            is_sycl_input
+            and (
+                estimator_name,
+                attr_name,
+            )
+            in _FITTED_ATTR_NUMPY_OK_SYCL
+        ):
             continue
         if fell_back:
             continue  # sklearn fallback may change dtypes
