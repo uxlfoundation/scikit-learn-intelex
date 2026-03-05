@@ -311,8 +311,6 @@ class BaseSVC(BaseSVM):
             if is_array_api_compliant
             else xp.unique(y_, return_inverse=True)
         )
-        # Note: this 'self.class_weight_' later on multiplies 'sample_weights' when
-        # passed, so it doesn't need to pass 'sample_weights' to '_compute_class_weight'.
         self.class_weight_ = _compute_class_weight(self.class_weight, classes=cls, y=y_)
         if cls.shape[0] < 2:
             raise ValueError(
@@ -321,6 +319,7 @@ class BaseSVC(BaseSVM):
             )
 
         if sample_weight is not None:
+            sample_weight = xp.reshape(xp.asarray(sample_weight), (-1,))
             for yval in cls:
                 if xp.sum(sample_weight[y == yval]) <= 0:
                     # Note this error message is copy-pasted from liblinear
