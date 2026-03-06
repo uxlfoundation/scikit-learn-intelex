@@ -47,7 +47,7 @@ attributes_to_compare = [
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl,torch", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("whiten", [True, False])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])

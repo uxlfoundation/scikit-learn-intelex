@@ -39,7 +39,7 @@ from sklearnex.tests.utils.spmd import (
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl,torch", device_filter_="gpu"),
 )
 @pytest.mark.mpi
 def test_knncls_spmd_gold(dataframe, queue):
@@ -175,7 +175,7 @@ def test_knncls_spmd_synthetic(
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl,torch", device_filter_="gpu"),
 )
 @pytest.mark.mpi
 def test_knnreg_spmd_gold(dataframe, queue):

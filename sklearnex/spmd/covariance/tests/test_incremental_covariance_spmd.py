@@ -37,7 +37,7 @@ from sklearnex.tests.utils.spmd import (
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl,torch", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("assume_centered", [True, False])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
