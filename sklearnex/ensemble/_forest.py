@@ -317,7 +317,7 @@ class BaseForest(oneDALEstimator, ABC):
                         (
                             not (
                                 isinstance(self.max_samples, Integral)
-                                and self.max_samples > X.shape[0]
+                                and self.max_samples > X_test.shape[0]
                             ),
                             "'max_samples' larger than number of rows is not supported.",
                         ),
