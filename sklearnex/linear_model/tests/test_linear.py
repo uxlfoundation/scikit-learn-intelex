@@ -112,7 +112,12 @@ def test_sklearnex_import_linear(
         assert_allclose(linreg_list.intercept_, linreg.intercept_)
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+# Note: Lasso and ElasticNet do not have GPU implementations.
+# If that changes, then the filters for 'get_dataframes_and_queues'
+# should be removed from these tests.
+@pytest.mark.parametrize(
+    "dataframe,queue", get_dataframes_and_queues("numpy,pandas", "cpu")
+)
 def test_sklearnex_import_lasso(dataframe, queue):
     from sklearnex.linear_model import Lasso
 
@@ -126,7 +131,9 @@ def test_sklearnex_import_lasso(dataframe, queue):
     assert_allclose(lasso.coef_, [0.85, 0.0])
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize(
+    "dataframe,queue", get_dataframes_and_queues("numpy,pandas", "cpu")
+)
 def test_sklearnex_import_elastic(dataframe, queue):
     from sklearnex.linear_model import ElasticNet
 
