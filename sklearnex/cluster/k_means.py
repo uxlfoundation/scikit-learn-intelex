@@ -34,16 +34,16 @@ if daal_check_version((2023, "P", 200)):
 
     from daal4py.sklearn._n_jobs_support import control_n_jobs
     from daal4py.sklearn._utils import is_sparse, sklearn_check_version
-    from onedal._device_offload import support_input_format
     from onedal.cluster import KMeans as onedal_KMeans
-    from onedal.utils.validation import _is_csr
+    from onedal.utils.validation import _is_arraylike_not_scalar, _is_csr
 
     from .._device_offload import dispatch, wrap_output_data
     from .._utils import PatchingConditionsChain
     from ..base import oneDALEstimator
-    from ..utils._array_api import get_namespace
+    from ..utils._array_api import enable_array_api, get_namespace
     from ..utils.validation import validate_data
 
+    @enable_array_api
     @control_n_jobs(decorated_methods=["fit", "fit_transform", "predict", "score"])
     class KMeans(oneDALEstimator, _sklearn_KMeans):
         __doc__ = _sklearn_KMeans.__doc__
@@ -86,7 +86,7 @@ if daal_check_version((2023, "P", 200)):
                 "init": self.init,
                 "max_iter": self.max_iter,
                 "tol": self.tol,
-                "n_init": self.n_init,
+                "n_init": getattr(self, "_n_init", self._resolve_n_init()),
                 "verbose": self.verbose,
                 "random_state": self.random_state,
             }
@@ -153,21 +153,117 @@ if daal_check_version((2023, "P", 200)):
 
             return self
 
-        def _onedal_fit(self, X, _, sample_weight, queue=None):
-            X = validate_data(
-                self,
-                X,
-                accept_sparse="csr",
-                dtype=[np.float64, np.float32],
-                order="C",
-                copy=self.copy_x,
-                accept_large_sparse=False,
-            )
+        def _resolve_n_init(self, default_n_init=10):
+            """Resolve n_init parameter from 'auto'/'warn' to integer value."""
+            n_init = self.n_init
+            if isinstance(n_init, str) and n_init in ("auto", "warn"):
+                if isinstance(self.init, str) and self.init == "k-means++":
+                    n_init = 1
+                elif isinstance(self.init, str) and self.init == "random":
+                    n_init = default_n_init
+                elif callable(self.init):
+                    n_init = default_n_init
+                else:  # array-like
+                    n_init = 1
 
-            if sklearn_check_version("1.2"):
-                self._check_params_vs_input(X)
-            else:
-                self._check_params(X)
+            if _is_arraylike_not_scalar(self.init) and n_init != 1:
+                warnings.warn(
+                    (
+                        "Explicit initial center position passed: performing only "
+                        f"one init in {self.__class__.__name__} instead of "
+                        f"n_init={n_init}."
+                    ),
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
+                n_init = 1
+
+            return n_init
+
+        def _validate_center_shape(self, X, centers):
+            """Validate that init centers have correct shape."""
+            if centers.shape[0] != self.n_clusters:
+                raise ValueError(
+                    f"The shape of the initial centers {centers.shape} does not "
+                    f"match the number of clusters {self.n_clusters}."
+                )
+            if centers.shape[1] != X.shape[1]:
+                raise ValueError(
+                    f"The shape of the initial centers {centers.shape} does not "
+                    f"match the number of features of the data {X.shape[1]}."
+                )
+
+        def _onedal_fit(self, X, _, sample_weight, queue=None):
+            from .._config import get_config
+
+            xp, _ = get_namespace(X)
+
+            # Validate init parameter if array-like (before X validation so n_features_in_ not set yet)
+            if _is_arraylike_not_scalar(self.init):
+                init = validate_data(
+                    self,
+                    self.init,
+                    dtype=[xp.float64, xp.float32],
+                    accept_sparse="csr",
+                    copy=True,
+                    order="C",
+                    reset=False,
+                )
+                # Validate shape against X (before X is validated/copied)
+                self._validate_center_shape(X, init)
+                # Update the init parameter with validated version
+                self.init = init
+
+            if not get_config()["use_raw_input"]:
+                X = validate_data(
+                    self,
+                    X,
+                    accept_sparse="csr",
+                    dtype=[xp.float64, xp.float32],
+                    order="C",
+                    copy=self.copy_x,
+                    accept_large_sparse=False,
+                )
+
+            # Validate critical parameters to match sklearn's _check_params
+            # behavior, which we bypass in the oneDAL path. This is needed
+            # regardless of sklearn version since _validate_params constraints
+            # may not cover all cases (e.g. sklearn main may move validation
+            # from _parameter_constraints to _check_params).
+            if not isinstance(self.n_init, str) and self.n_init <= 0:
+                raise ValueError(f"n_init should be > 0, got {self.n_init} instead.")
+            if self.max_iter <= 0:
+                raise ValueError(f"max_iter should be > 0, got {self.max_iter} instead.")
+            if not (
+                _is_arraylike_not_scalar(self.init)
+                or callable(self.init)
+                or (isinstance(self.init, str) and self.init in ["k-means++", "random"])
+            ):
+                raise ValueError(
+                    "init should be either 'k-means++', 'random', a ndarray "
+                    f"or a callable, got '{self.init}' instead."
+                )
+
+            # Validate input vs parameters
+            if X.shape[0] < self.n_clusters:
+                raise ValueError(
+                    f"n_samples={X.shape[0]} should be >= n_clusters={self.n_clusters}."
+                )
+
+            # Validate algorithm (only lloyd supported in oneDAL)
+            if self.algorithm not in ["auto", "full", "lloyd", "elkan"]:
+                raise ValueError(
+                    f"Algorithm {self.algorithm} is not supported. "
+                    "Supported algorithms are 'lloyd', 'elkan' (computed as lloyd), 'auto', 'full'."
+                )
+
+            # Skip sklearn's _check_params / _check_params_vs_input entirely:
+            # - We already validate algorithm, n_clusters, n_init, max_iter,
+            #   and init above
+            # - The onedal backend computes tolerance internally via _compute_tolerance
+            # - sklearn's _check_params rejects algorithm='lloyd' on sklearn < 1.1
+            # - sklearn's _check_params_vs_input calls np.var() which fails on GPU arrays
+            self._n_init = self._resolve_n_init()
 
             self._n_features_out = self.n_clusters
 
@@ -185,14 +281,19 @@ if daal_check_version((2023, "P", 200)):
             ):
                 return True
             else:
-                sample_weight = _check_sample_weight(
-                    sample_weight,
-                    X,
-                    dtype=X.dtype if hasattr(X, "dtype") else None,
-                )
-                if np.all(sample_weight == sample_weight[0]):
-                    return True
-                else:
+                try:
+                    sample_weight = _check_sample_weight(
+                        sample_weight,
+                        X,
+                        dtype=X.dtype if hasattr(X, "dtype") else None,
+                    )
+                    if np.all(sample_weight == sample_weight[0]):
+                        return True
+                    else:
+                        return False
+                except TypeError:
+                    # GPU arrays (dpctl/dpnp) cannot be implicitly converted
+                    # to numpy; reject non-uniform weights for safety.
                     return False
 
         def _onedal_predict_supported(self, method_name, *data):
@@ -293,31 +394,49 @@ if daal_check_version((2023, "P", 200)):
                 )
 
         def _onedal_predict(self, X, sample_weight=None, queue=None):
-            X = validate_data(
-                self,
-                X,
-                accept_sparse="csr",
-                reset=False,
-                dtype=[np.float64, np.float32],
-            )
+            from .._config import get_config
 
-            if not hasattr(self, "_onedal_estimator"):
-                self._initialize_onedal_estimator()
-                self._onedal_estimator.cluster_centers_ = self.cluster_centers_
+            xp, _ = get_namespace(X)
+
+            if not get_config()["use_raw_input"]:
+                X = validate_data(
+                    self,
+                    X,
+                    accept_sparse="csr",
+                    reset=False,
+                    dtype=[xp.float64, xp.float32],
+                )
 
             return self._onedal_estimator.predict(X, queue=queue)
 
         def _onedal_supported(self, method_name, *data):
             if method_name == "fit":
                 return self._onedal_fit_supported(method_name, *data)
-            if method_name in ["predict", "score"]:
+            if method_name in ["predict", "score", "transform"]:
                 return self._onedal_predict_supported(method_name, *data)
             raise RuntimeError(
                 f"Unknown method {method_name} in {self.__class__.__name__}"
             )
 
-        _onedal_gpu_supported = _onedal_supported
         _onedal_cpu_supported = _onedal_supported
+
+        def _onedal_gpu_supported(self, method_name, *data):
+            # callable init uses numpy ops in _init_centroids_sklearn
+            # which don't work on GPU arrays; fall back to sklearn
+            if method_name == "fit" and callable(self.init):
+                patching_status = PatchingConditionsChain(
+                    f"sklearn.cluster.{self.__class__.__name__}.fit"
+                )
+                patching_status.and_conditions(
+                    [
+                        (
+                            False,
+                            "Callable 'init' is not supported on GPU.",
+                        ),
+                    ]
+                )
+                return patching_status
+            return self._onedal_supported(method_name, *data)
 
         def _check_test_data(self, X):
             xp, _ = get_namespace(X)
@@ -332,8 +451,41 @@ if daal_check_version((2023, "P", 200)):
             )
             return X
 
-        _transform = support_input_format(_sklearn_KMeans._transform)
-        transform = support_input_format(_sklearn_KMeans.transform)
+        @wrap_output_data
+        def transform(self, X):
+            check_is_fitted(self)
+            return dispatch(
+                self,
+                "transform",
+                {
+                    "onedal": self.__class__._onedal_transform,
+                    "sklearn": _sklearn_KMeans.transform,
+                },
+                X,
+            )
+
+        def _onedal_transform(self, X, queue=None):
+            from sklearn.metrics.pairwise import euclidean_distances
+
+            from .._config import get_config
+
+            xp, _ = get_namespace(X)
+
+            if not get_config()["use_raw_input"]:
+                X = validate_data(
+                    self,
+                    X,
+                    accept_sparse="csr",
+                    reset=False,
+                    dtype=[xp.float64, xp.float32],
+                    order="C",
+                    accept_large_sparse=False,
+                )
+
+            return euclidean_distances(X, self.cluster_centers_)
+
+        def fit_transform(self, X, y=None, sample_weight=None):
+            return self.fit(X, y=y, sample_weight=sample_weight).transform(X)
 
         @wrap_output_data
         def score(self, X, y=None, sample_weight=None):
@@ -351,13 +503,18 @@ if daal_check_version((2023, "P", 200)):
             )
 
         def _onedal_score(self, X, y=None, sample_weight=None, queue=None):
-            X = validate_data(
-                self,
-                X,
-                accept_sparse="csr",
-                reset=False,
-                dtype=[np.float64, np.float32],
-            )
+            from .._config import get_config
+
+            xp, _ = get_namespace(X)
+
+            if not get_config()["use_raw_input"]:
+                X = validate_data(
+                    self,
+                    X,
+                    accept_sparse="csr",
+                    reset=False,
+                    dtype=[xp.float64, xp.float32],
+                )
 
             if not sklearn_check_version("1.5") and sklearn_check_version("1.3"):
                 if isinstance(sample_weight, str) and sample_weight == "deprecated":
@@ -370,10 +527,6 @@ if daal_check_version((2023, "P", 200)):
                         FutureWarning,
                     )
 
-            if not hasattr(self, "_onedal_estimator"):
-                self._initialize_onedal_estimator()
-                self._onedal_estimator.cluster_centers_ = self.cluster_centers_
-
             return self._onedal_estimator.score(X, queue=queue)
 
         def _save_attributes(self):
@@ -384,10 +537,10 @@ if daal_check_version((2023, "P", 200)):
             self.n_iter_ = self._onedal_estimator.n_iter_
             self.n_features_in_ = self._onedal_estimator.n_features_in_
 
-            self._n_init = self._onedal_estimator._n_init
-
         fit.__doc__ = _sklearn_KMeans.fit.__doc__
         predict.__doc__ = _sklearn_KMeans.predict.__doc__
+        transform.__doc__ = _sklearn_KMeans.transform.__doc__
+        fit_transform.__doc__ = _sklearn_KMeans.fit_transform.__doc__
         score.__doc__ = _sklearn_KMeans.score.__doc__
 
 else:
