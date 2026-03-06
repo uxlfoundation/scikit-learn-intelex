@@ -343,6 +343,7 @@ if sklearn_check_version("1.3"):
         prefer_skip_nested_validation=True,
     )(pairwise_distances)
 else:
+    _sklearn_pairwise_distances = pairwise_distances_original
     pairwise_distances = _pairwise_distances
 
 pairwise_distances.__doc__ = pairwise_distances_original.__doc__
