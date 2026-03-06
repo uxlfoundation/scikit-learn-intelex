@@ -133,13 +133,19 @@ def test_no_sparse_support_falls_back_to_sklearn(estimator, sparse_X, mocker):
             {},
             "daal4py.sklearn.linear_model.logistic_path.logistic_regression_path_d4p",
         ),
-        (
-            Lasso,
-            {},
-            "daal4py.sklearn.linear_model._coordinate_descent._daal4py_fit_lasso",
-        ),
     ]
     + (
+        [
+            (
+                Lasso,
+                {},
+                "daal4py.sklearn.linear_model._coordinate_descent._daal4py_fit_lasso",
+            ),
+        ]
+        if sklearn_check_version("1.1")
+        else []
+    ),
+    +(
         [
             (
                 TSNE,
