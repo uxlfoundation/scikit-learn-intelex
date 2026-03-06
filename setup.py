@@ -80,11 +80,10 @@ ONEDAL_MAJOR_BINARY_VERSION, ONEDAL_MINOR_BINARY_VERSION = get_onedal_version(
     dal_root, "binary"
 )
 ONEDAL_VERSION = get_onedal_version(dal_root)
-ONEDAL_2021_3 = 2021 * 10000 + 3 * 100
-ONEDAL_2023_0_1 = 2023 * 10000 + 0 * 100 + 1
-is_onedal_iface = (
-    os.environ.get("OFF_ONEDAL_IFACE", "0") == "0" and ONEDAL_VERSION >= ONEDAL_2021_3
-)
+if ONEDAL_VERSION < 20210300:
+    raise ValueError(
+        "OneDAL version is too old. Please use a more recent version (>= 2021.4)."
+    )
 
 sklearnex_version = (
     os.environ["SKLEARNEX_VERSION"]
@@ -479,12 +478,11 @@ class onedal_build:
             debug_build=DEBUG_BUILD,
             using_lld=USING_LLD,
         )
-        if is_onedal_iface:
-            build_onedal("host")
-            if dpcpp:
-                build_onedal("dpc")
-                if build_distributed:
-                    build_onedal("spmd_dpc")
+        build_onedal("host")
+        if dpcpp:
+            build_onedal("dpc")
+            if build_distributed:
+                build_onedal("spmd_dpc")
 
     def onedal_post_build(self):
         if IS_MAC:
@@ -495,18 +493,6 @@ class onedal_build:
             major_is_available = (
                 find_library(f"libonedal_core.{major_version}.dylib") is not None
             )
-            if major_is_available and ONEDAL_VERSION == ONEDAL_2023_0_1:
-                extension_libs = list(pathlib.Path(".").glob("**/*darwin.so"))
-                onedal_libs = ["onedal", "onedal_dpc", "onedal_core", "onedal_thread"]
-                for ext_lib in extension_libs:
-                    for onedal_lib in onedal_libs:
-                        subprocess.call(
-                            "/usr/bin/install_name_tool -change "
-                            f"lib{onedal_lib}.dylib "
-                            f"lib{onedal_lib}.{major_version}.dylib "
-                            f"{ext_lib}".split(" "),
-                            shell=False,
-                        )
 
 
 class develop(onedal_build, orig_develop.develop):
