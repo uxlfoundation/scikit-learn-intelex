@@ -19,6 +19,7 @@ import pytest
 from numpy.testing import assert_allclose
 from sklearn.datasets import load_breast_cancer
 
+from daal4py.sklearn._utils import sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
@@ -46,6 +47,10 @@ def test_sklearnex_import_pairwise_distances():
 
 
 @pytest.mark.allow_sklearn_fallback
+@pytest.mark.skipif(
+    not sklearn_check_version("1.8"),
+    reason="Functionality introduced in later versions of scikit-learn.",
+)
 @pytest.mark.parametrize("dataframe, queue", get_dataframes_and_queues())
 def test_pairwise_distances_fallback_on_array_api(dataframe, queue):
     from sklearnex import config_context
