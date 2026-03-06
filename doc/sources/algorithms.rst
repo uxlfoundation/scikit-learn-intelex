@@ -341,7 +341,7 @@ Other Tasks
        - ``sample_weight`` != `None`
        - ``max_fpr`` != `None`
        - ``multi_class`` != `None`
-     - No limitations
+     - Only binary ``y_true`` is supported
      - 
 
 on GPU
