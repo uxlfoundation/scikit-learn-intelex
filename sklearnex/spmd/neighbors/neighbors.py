@@ -35,8 +35,7 @@ class KNeighborsClassifier(base_KNeighborsClassifier):
     def predict_proba(self, X):
         """Compute class probabilities for X.
 
-        Not supported in distributed (SPMD) mode because the oneDAL
-        backend only returns class labels, not probability distributions.
+        Not supported in distributed (SPMD) mode.
 
         Parameters
         ----------
