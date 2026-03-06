@@ -28,6 +28,7 @@ and work with different classes of input data, including:
   (see :ref:`array_api` for details).
 - SciPy :external+scipy:doc:`sparse arrays and sparse matrices <tutorial/sparse>` (depending on the estimator).
 - Pandas :external+pandas:doc:`DataFrame and Series <user_guide/dsintro>` classes.
+- `Polars <https://pola.rs>`__ DataFrame (supported out of the box via scikit-learn's Array API or automatic conversion path).
 
 In addition, |sklearnex| also supports |dpnp_array| arrays, which are particularly useful for GPU computations.
 
