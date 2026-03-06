@@ -1,5 +1,5 @@
 # ==============================================================================
-# Copyright 2023 Intel Corporation
+# Copyright contributors to the oneDAL project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,8 +14,22 @@
 # limitations under the License.
 # ==============================================================================
 
-from onedal.spmd.cluster import KMeans
+from onedal.spmd.cluster import KMeans as onedal_KMeans_SPMD
 
-# TODO:
-# Currently it uses `onedal` module interface.
-# Add sklearnex dispatching.
+from ...cluster import KMeans as base_KMeans
+
+
+class KMeans(base_KMeans):
+    def _initialize_onedal_estimator(self):
+        """Override to use SPMD backend instead of batch backend."""
+        onedal_params = {
+            "n_clusters": self.n_clusters,
+            "init": self.init,
+            "max_iter": self.max_iter,
+            "tol": self.tol,
+            "n_init": getattr(self, "_n_init", self._resolve_n_init()),
+            "verbose": self.verbose,
+            "random_state": self.random_state,
+        }
+
+        self._onedal_estimator = onedal_KMeans_SPMD(**onedal_params)
