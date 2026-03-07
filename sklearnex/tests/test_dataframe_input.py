@@ -145,16 +145,16 @@ def test_polars_dataframe_classifier(estimator_name):
 
 
 @pytest.mark.parametrize(
-    "X_cols, y_col",
+    "X_cols",
     [
         # fewer features — regression still works
-        (slice(0, 2), None),
+        slice(0, 2),
         # all features
-        (slice(None), None),
+        slice(None),
     ],
     ids=["2-features", "all-features"],
 )
-def test_polars_dataframe_column_subsets(X_cols, y_col):
+def test_polars_dataframe_column_subsets(X_cols):
     """Polars DataFrames with various column subsets pass through without error."""
     X_np, y_np = _iris_arrays()
     X_sub = X_np[:, X_cols]
