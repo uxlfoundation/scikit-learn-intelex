@@ -123,14 +123,18 @@ else:
 
 
 def throw_if_no_dpc_available(require_spmd: bool = False) -> None:
-    """Raise a user-actionable RuntimeError if the required DPC++ backend is unavailable.
+    """Raise a user-actionable RuntimeError if the required DPC++/SPMD backend is unavailable.
 
-    Args:
-        require_spmd: If True, also verify that the SPMD backend loaded successfully.
+    Parameters
+    ----------
+    require_spmd : bool, default=False
+        If True, check the SPMD backend load status; otherwise check the DPC++ backend.
 
-    Raises:
-        RuntimeError: with the original import failure reason and install instructions
-            when the DPC++ (or SPMD) backend is not available.
+    Raises
+    ------
+    RuntimeError
+        Includes the original ImportError reason and install instructions when the
+        requested backend is unavailable.
     """
     error_msg = _spmd_load_error if require_spmd else _dpc_load_error
     backend_label = "SPMD" if require_spmd else "DPC++"
