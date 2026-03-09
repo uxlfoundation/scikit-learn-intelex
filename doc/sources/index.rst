@@ -171,6 +171,7 @@ See :ref:`oneapi_gpu` for other ways of executing on GPU.
    oneapi-gpu.rst
    config-contexts.rst
    array_api.rst
+   serialization.rst
    distributed-mode.rst
    distributed_daal4py.rst
    non-scikit-algorithms.rst
