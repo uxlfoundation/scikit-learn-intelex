@@ -108,6 +108,30 @@ Example:
         pred_deserialized.cpu().numpy(),
     )
 
+Serialization of SPMD models
+----------------------------
+
+:doc:`SPMD <distributed-mode>` estimator classes work similarly as their single-node GPU analogs. When fitting these models, their attributes are usually the same across all ranks/nodes, so one might want to serialize the resulting object from only one rank - for example:
+
+.. code-block:: python
+
+    from mpi4py import MPI
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+
+    # SPMD estimator creation and fitting
+    estimator_spmd = ...
+
+    # Serialize the object from rank 0
+    # The actual rank doesn't matter as all ranks
+    # will have the same fitted model.
+    if rank == 0:
+        import pickle
+        with open("spmd_object.pkl", "wb") as f:
+            pickle.dump(estimator_spmd, f)
+
+Note however that not all SPMD estimator classes can be serialized like this - for example, all nearest neighbors estimators (:obj:`sklearn.neighbors.NearestNeighbors`, :obj:`sklearn.neighbors.KNeighborsRegressor`, :obj:`sklearn.neighbors.KNeighborsClassifier`) require the input data ``X`` to make predictions, and the data in SPMD mode will be distributed across ranks, so a fitted estimator object from this family will not be usable outside of the ``mpirun`` call.
+
 Configurations are not serializable
 -----------------------------------
 
