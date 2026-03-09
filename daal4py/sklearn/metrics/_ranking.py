@@ -30,7 +30,12 @@ from sklearn.utils.multiclass import is_multilabel
 
 import daal4py as d4p
 
-from .._utils import PatchingConditionsChain, get_patch_message, sklearn_check_version
+from .._utils import (
+    PatchingConditionsChain,
+    check_is_array_api,
+    get_patch_message,
+    sklearn_check_version,
+)
 from ..utils.validation import _assert_all_finite
 
 if sklearn_check_version("1.3"):
@@ -119,10 +124,6 @@ def _daal_type_of_target(y):
     return result
 
 
-def _check_is_array_api(x: object) -> bool:
-    return not isinstance(x, np.ndarray) and hasattr(x, "__dlpack__")
-
-
 def roc_auc_score(
     y_true,
     y_score,
@@ -140,10 +141,10 @@ def roc_auc_score(
             (max_fpr is None, "'max_fpr' is not supported"),
             (
                 not (
-                    _check_is_array_api(y_true)
-                    or _check_is_array_api(y_score)
-                    or _check_is_array_api(sample_weight)
-                    or _check_is_array_api(labels)
+                    check_is_array_api(y_true)
+                    or check_is_array_api(y_score)
+                    or check_is_array_api(sample_weight)
+                    or check_is_array_api(labels)
                 ),
                 "Array API inputs other than NumPy are not supported.",
             ),
