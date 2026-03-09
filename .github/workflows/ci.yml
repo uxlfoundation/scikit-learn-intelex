@@ -36,6 +36,7 @@ env:
   UXL_PYTHONVERSION: "3.13"
   UXL_SKLEARNVERSION: "1.6"
   ONEDAL_REPO: "uxlfoundation/oneDAL"
+  DPC_SUITABLE_VERSION: ">=2025,<2026"
 
 jobs:
 
@@ -130,7 +131,7 @@ jobs:
           # if pulling its files without being tied to a package, will
           # need to install them externally. Versions need to be compatible
           # with DPC components that oneDAL was compiled against.
-          pip install "dpcpp-cpp-rt>=2025,<2026" "intel-sycl-rt>=2025,<2026" "mkl-dpcpp>=2025,<2026"
+          pip install "dpcpp-cpp-rt${DPC_SUITABLE_VERSION}" "intel-sycl-rt${DPC_SUITABLE_VERSION}" "mkl-dpcpp${DPC_SUITABLE_VERSION}"
           pip list
           echo "NUMPY_BUILD=$(python -m pip freeze | grep numpy)" >> "$GITHUB_ENV"
       - name: Build daal4py/sklearnex
@@ -259,6 +260,7 @@ jobs:
           pip install --upgrade setuptools
           pip install cpufeature pyyaml
           pip install -r dependencies-dev
+          pip install "dpcpp-cpp-rt%DPC_SUITABLE_VERSION%" "intel-sycl-rt%DPC_SUITABLE_VERSION%" "mkl-dpcpp%DPC_SUITABLE_VERSION%"
           for /f "delims=" %%c in ('python -m pip freeze ^| grep numpy') do echo NUMPY_BUILD=%%c>> %GITHUB_ENV%
       - name: System info 
         shell: cmd
@@ -378,6 +380,7 @@ jobs:
         id: install-reqs
         run: |
           pip install -r dependencies-dev
+          pip install "dpcpp-cpp-rt${DPC_SUITABLE_VERSION}" "intel-sycl-rt${DPC_SUITABLE_VERSION}" "mkl-dpcpp${DPC_SUITABLE_VERSION}"
           echo "numpy-version=$(python -m pip freeze | grep numpy)" >> "$GITHUB_OUTPUT"
           pip list
       - name: Build daal4py/sklearnex
