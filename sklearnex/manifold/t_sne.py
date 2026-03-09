@@ -16,12 +16,8 @@
 
 from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.manifold import TSNE
-from onedal._device_offload import support_input_format
 
 from ..base import oneDALEstimator
-
-TSNE.fit = support_input_format(TSNE.fit)
-TSNE.fit_transform = support_input_format(TSNE.fit_transform)
 
 if sklearn_check_version("1.4"):
     TSNE._doc_link_module = "daal4py"

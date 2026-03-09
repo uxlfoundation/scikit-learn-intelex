@@ -15,8 +15,15 @@
 # ===============================================================================
 
 import numpy as np
+import pytest
 from numpy.testing import assert_allclose
 from sklearn.datasets import load_breast_cancer
+
+from daal4py.sklearn._utils import sklearn_check_version
+from onedal.tests.utils._dataframes_support import (
+    _convert_to_dataframe,
+    get_dataframes_and_queues,
+)
 
 
 def test_sklearnex_import_roc_auc():
@@ -37,3 +44,20 @@ def test_sklearnex_import_pairwise_distances():
     x = np.vstack([x, x])
     res = pairwise_distances(x, metric="cosine")
     assert_allclose(res, [[0.0, 0.0], [0.0, 0.0]], atol=1e-2)
+
+
+@pytest.mark.allow_sklearn_fallback
+@pytest.mark.skipif(
+    not sklearn_check_version("1.8"),
+    reason="Functionality introduced in later versions of scikit-learn.",
+)
+@pytest.mark.parametrize("dataframe, queue", get_dataframes_and_queues())
+def test_pairwise_distances_fallback_on_array_api(dataframe, queue):
+    from sklearnex import config_context
+    from sklearnex.metrics import pairwise_distances
+
+    rng = np.random.default_rng(seed=123)
+    X = rng.random(size=(25, 10))
+    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+    with config_context(array_api_dispatch=True):
+        _ = pairwise_distances(X)

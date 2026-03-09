@@ -300,8 +300,8 @@ class BaseSVC(BaseSVM):
         return patching_status
 
     # overwrite _validate_targets for array API support
-    def _onedal_validate_targets(self, X, y):
-        xp, is_array_api_compliant = get_namespace(X, y)
+    def _onedal_validate_targets(self, X, y, sample_weight=None):
+        xp, is_array_api_compliant = get_namespace(X, y, sample_weight)
 
         # _validate_targets equivalent:
         y_ = column_or_1d(y, warn=True)
@@ -317,6 +317,21 @@ class BaseSVC(BaseSVM):
                 "The number of classes has to be greater than one; got %d class"
                 % len(cls)
             )
+
+        if sample_weight is not None:
+            sample_weight = xp.reshape(xp.asarray(sample_weight), (-1,))
+            for yval in xp.arange(cls.shape[0]):
+                try:
+                    if xp.sum(sample_weight[y == yval]) <= 0:
+                        # Note this error message is copy-pasted from liblinear
+                        raise ValueError(
+                            "Invalid input - all samples with positive weights belong to the same class."
+                        )
+                except IndexError:
+                    # Note: scikit-learn here expects 'ValueError' and tests for it
+                    raise ValueError(
+                        f"sample_weight and X have incompatible shapes: {X.shape} vs {sample_weight.shape}"
+                    )
 
         self.classes_ = cls
         return xp.asarray(y, dtype=X.dtype)
@@ -339,7 +354,7 @@ class BaseSVC(BaseSVM):
             accept_sparse="csr",
         )
 
-        y = self._onedal_validate_targets(X, y)
+        y = self._onedal_validate_targets(X, y, sample_weight=sample_weight)
 
         if (
             hasattr(self, "probability")
