@@ -73,7 +73,7 @@ If persistence of GPU-only models is desired, one can instead use :ref:`array AP
 
 Currently, the only array API library with SYCL support known to provide serializable GPU arrays is `PyTorch <https://docs.pytorch.org/docs/stable/notes/get_start_xpu.html>`__.
 
-.. warning:: If serialization of models is desired, avoid usage of |dpnp| GPU arrays as they are not serilizable.
+.. warning:: If serialization of models is desired, avoid usage of |dpnp| GPU arrays as they are not serializable.
 
 Example:
 
