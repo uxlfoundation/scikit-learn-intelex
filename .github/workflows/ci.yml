@@ -133,6 +133,8 @@ jobs:
           source venv/bin/activate
           source .github/scripts/activate_components.sh ${{ steps.set-env.outputs.DPCFLAG }}
           python setup.py install --single-version-externally-managed --record=record.txt
+          ls -lha ${DALROOT}/lib/intel64
+          echo "$(ls ${DALROOT}/lib/intel64)"
       - name: Install testing requirements
         run: |
           source venv/bin/activate
@@ -269,6 +271,7 @@ jobs:
           set PREFIX=.
           set PYTHON=python
           call .\conda-recipe\bld.bat
+          dir %DALROOT%\lib\intel64
       - name: Install testing requirements
         shell: cmd
         run: |
@@ -379,6 +382,8 @@ jobs:
         run: |
           source .github/scripts/activate_components.sh ${{ steps.set-env.outputs.DPCFLAG }}
           python setup.py bdist_wheel
+          ls -lha ${DALROOT}/lib/intel64
+          echo "$(ls ${DALROOT}/lib/intel64)"
       - name: Archive sklearnex build
         uses: actions/upload-artifact@v7
         with:
