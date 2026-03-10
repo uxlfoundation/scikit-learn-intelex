@@ -16,7 +16,7 @@
 
 repos:
   - repo: https://github.com/psf/black
-    rev: 26.1.0
+    rev: 26.3.0
     hooks:
       - id: black
   - repo: https://github.com/PyCQA/isort
@@ -41,7 +41,7 @@ repos:
                 tests/
             )
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.4.1
+    rev: v2.4.2
     hooks:
       - id: codespell
         args: ["--config", ".github/.codespellrc" ]
