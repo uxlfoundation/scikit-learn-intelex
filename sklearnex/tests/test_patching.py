@@ -372,10 +372,10 @@ _FITTED_ATTR_NUMPY_OK = {
 }
 
 # (estimator, attribute) pairs where numpy fitted attributes are acceptable
-# only for SYCL (dpnp / dpctl) inputs.  These estimators correctly produce
+# only for non-numpy inputs (dpnp, dpctl, torch, etc).  These estimators correctly produce
 # array API types with array_api_dispatch but return numpy via the dpnp/dpctl
 # code path (support_input_format converts to numpy before oneDAL).
-_FITTED_ATTR_NUMPY_OK_SYCL = {
+_FITTED_ATTR_NUMPY_OK_NON_NUMPY = {
     # PCA — from_table(like=X) works for array_api, but dpnp/dpctl path
     # converts X to numpy first so fitted attrs are numpy
     ("PCA", "singular_values_"),
@@ -408,7 +408,10 @@ def _check_fitted_attributes(est, X, estimator_name, caplog):
     ``test_ridge.py``).
     """
     input_type = type(X)
-    is_sycl_input = hasattr(X, "__sycl_usm_array_interface__")
+    from sklearnex.utils._array_api import get_namespace
+
+    xp, _ = get_namespace(X)
+    is_non_numpy_input = not isinstance(X, np.ndarray) and xp is not None
 
     fell_back = any(
         "fallback to original Scikit-learn" in r.message for r in caplog.records
@@ -438,14 +441,14 @@ def _check_fitted_attributes(est, X, estimator_name, caplog):
         elif (estimator_name, attr_name) in _FITTED_ATTR_NUMPY_OK:
             pass  # numpy is acceptable for all input types
         elif (
-            is_sycl_input
+            is_non_numpy_input
             and (
                 estimator_name,
                 attr_name,
             )
-            in _FITTED_ATTR_NUMPY_OK_SYCL
+            in _FITTED_ATTR_NUMPY_OK_NON_NUMPY
         ):
-            pass  # numpy is acceptable for dpnp/dpctl input
+            pass  # numpy is acceptable for non-numpy array API input
         elif fell_back:
             assert isinstance(attr_val, (np.ndarray, input_type)), (
                 f"{estimator_name}.{attr_name} has type {type(attr_val).__name__}, "
@@ -480,12 +483,12 @@ def _check_fitted_attributes(est, X, estimator_name, caplog):
         ) in _FITTED_ATTR_NUMPY_OK:
             continue
         if (
-            is_sycl_input
+            is_non_numpy_input
             and (
                 estimator_name,
                 attr_name,
             )
-            in _FITTED_ATTR_NUMPY_OK_SYCL
+            in _FITTED_ATTR_NUMPY_OK_NON_NUMPY
         ):
             continue
         if fell_back:
