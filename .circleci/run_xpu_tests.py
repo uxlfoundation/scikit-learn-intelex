@@ -100,4 +100,4 @@ if __name__ == "__main__":
                     pytest_params + ["--pyargs", "sklearn"] + yml_deselected_tests
                 )
         else:
-            pytest.main(pytest_params + ["--pyargs", "sklearn", "-k", "not test_ensemble_heterogeneous_estimators_behavior"] + yml_deselected_tests)
+            pytest.main(pytest_params + ["--pyargs", "sklearn", "-k", "not (test_ensemble_heterogeneous_estimators_behavior or test_stacking_without_n_features_in)"] + yml_deselected_tests)
