@@ -281,8 +281,12 @@ def _check_output_type(
             # Check device alignment: if input was on GPU, output
             # should also be on the same device. Uses standard array API
             # `.device` attribute for compatibility with torch, dpnp, dpctl, etc.
-            if hasattr(X, "device") and hasattr(res, "device"):
-                assert str(X.device) == str(res.device), (
+            if hasattr(X, "device"):
+                assert hasattr(res, "device"), (
+                    f"{estimator_name}.{method} output missing .device "
+                    f"attribute, input has device {X.device}"
+                )
+                assert X.device == res.device, (
                     f"{estimator_name}.{method} output device "
                     f"{res.device} != input device "
                     f"{X.device}"
@@ -315,13 +319,8 @@ def _check_output_type(
                 ):
                     # predict output dtype should match y dtype
                     assert res.dtype == data_input.dtype
-                elif (
-                    "float" in str(res.dtype)
-                    and X is not None
-                    and hasattr(X, "dtype")
-                    and "float" in str(X.dtype)
-                ):
-                    # Float output from float input: dtypes should match
+                elif X is not None and hasattr(X, "dtype") and "float" in str(X.dtype):
+                    # Output dtype should match X dtype for float inputs
                     assert res.dtype == X.dtype
 
 
@@ -448,12 +447,13 @@ def _check_fitted_attributes(est, X, estimator_name, caplog):
         # If input was on GPU, fitted attributes should also be on the
         # same device (not silently moved to CPU or another device).
         # Uses standard array API `.device` for compatibility with torch, dpnp, dpctl, etc.
-        if hasattr(X, "device") and hasattr(attr_val, "device"):
-            assert str(X.device) == str(attr_val.device), (
-                f"{estimator_name}.{attr_name} device "
-                f"{attr_val.device} != input device "
-                f"{X.device}"
-            )
+        if hasattr(X, "device"):
+            if hasattr(attr_val, "device"):
+                assert X.device == attr_val.device, (
+                    f"{estimator_name}.{attr_name} device "
+                    f"{attr_val.device} != input device "
+                    f"{X.device}"
+                )
 
         # --- Dtype check ---
         if x_is_fp16:
