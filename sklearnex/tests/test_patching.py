@@ -279,13 +279,13 @@ def _check_output_type(
             assert isinstance(res, input_type)
 
             # Check device alignment: if input was on GPU, output
-            # should also be on GPU (and vice-versa).  Both dpnp and
-            # dpctl arrays expose a `.sycl_queue` attribute.
-            if hasattr(X, "sycl_queue") and hasattr(res, "sycl_queue"):
-                assert X.sycl_queue.sycl_device == res.sycl_queue.sycl_device, (
+            # should also be on the same device. Uses standard array API
+            # `.device` attribute for compatibility with torch, dpnp, dpctl, etc.
+            if hasattr(X, "device") and hasattr(res, "device"):
+                assert str(X.device) == str(res.device), (
                     f"{estimator_name}.{method} output device "
-                    f"{res.sycl_queue.sycl_device} != input device "
-                    f"{X.sycl_queue.sycl_device}"
+                    f"{res.device} != input device "
+                    f"{X.device}"
                 )
 
             # Check dtype preservation (skip float16 — oneDAL doesn't
