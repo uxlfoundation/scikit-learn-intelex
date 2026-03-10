@@ -308,6 +308,7 @@ def _check_output_type(
             )
             if (
                 hasattr(res, "dtype")
+                and not is_sparse(res)
                 and not x_is_fp16
                 and not _skip_dtype
                 and (estimator_name, method) not in _DTYPE_CHECK_SKIP
