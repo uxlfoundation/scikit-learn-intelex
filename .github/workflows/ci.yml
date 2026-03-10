@@ -133,7 +133,7 @@ jobs:
           source venv/bin/activate
           source .github/scripts/activate_components.sh ${{ steps.set-env.outputs.DPCFLAG }}
           python setup.py install --single-version-externally-managed --record=record.txt
-          printf "DPCFLAG: ${DPCFLAG} NO_DPC:${NO_DPC}\n"
+          printf "DPCFLAG: ${{ steps.set-env.outputs.DPCFLAG }} NO_DPC:${NO_DPC}\n"
           ls -lha ${DALROOT}/lib/intel64
           echo "$(ls ${DALROOT}/lib/intel64)"
       - name: Install testing requirements
@@ -272,7 +272,7 @@ jobs:
           set PREFIX=.
           set PYTHON=python
           call .\conda-recipe\bld.bat
-          echo "DPCFLAG: %DPCFLAG% NO_DPC: %NO_DPC%"
+          echo "DPCFLAG: ${{ steps.set-env.outputs.DPCFLAG }} NO_DPC: %NO_DPC%"
           dir %DALROOT%\lib\intel64
       - name: Install testing requirements
         shell: cmd
@@ -384,7 +384,7 @@ jobs:
         run: |
           source .github/scripts/activate_components.sh ${{ steps.set-env.outputs.DPCFLAG }}
           python setup.py bdist_wheel
-          printf "DPCFLAG: ${DPCFLAG} NO_DPC:${NO_DPC}\n"
+          printf "DPCFLAG: ${{ steps.set-env.outputs.DPCFLAG }} NO_DPC:${NO_DPC}\n"
           ls -lha ${DALROOT}/lib/intel64
           echo "$(ls ${DALROOT}/lib/intel64)"
       - name: Archive sklearnex build
