@@ -24,12 +24,6 @@ from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from daal4py.sklearn.monkeypatch.dispatcher import PatchMap
 
 
-def _is_new_patching_available():
-    return os.environ.get("OFF_ONEDAL_IFACE", "0") == "0" and daal_check_version(
-        (2021, "P", 300)
-    )
-
-
 def _is_preview_enabled() -> bool:
     return "SKLEARNEX_PREVIEW" in os.environ
 
@@ -58,68 +52,54 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
     if preview:
         mapping = get_patch_map_core(preview=False)
 
-        if _is_new_patching_available():
-            import sklearn.covariance as covariance_module
-            import sklearn.decomposition as decomposition_module
-            from sklearn.covariance import (
-                EmpiricalCovariance as EmpiricalCovariance_sklearn,
+        import sklearn.covariance as covariance_module
+        import sklearn.decomposition as decomposition_module
+        from sklearn.covariance import EmpiricalCovariance as EmpiricalCovariance_sklearn
+        from sklearn.decomposition import IncrementalPCA as IncrementalPCA_sklearn
+
+        # Preview classes for patching
+        from .preview.covariance import (
+            EmpiricalCovariance as EmpiricalCovariance_sklearnex,
+        )
+        from .preview.decomposition import IncrementalPCA as IncrementalPCA_sklearnex
+
+        # Since the state of the lru_cache without preview cannot be
+        # guaranteed to not have already enabled sklearnex algorithms
+        # when preview is used, setting the mapping element[1] to None
+        # should NOT be done. This may lose track of the unpatched
+        # sklearn estimator or function.
+        # Covariance
+        preview_mapping = {
+            "sklearn.covariance.EmpiricalCovariance": (
+                covariance_module,
+                "EmpiricalCovariance",
+                EmpiricalCovariance_sklearnex,
+                EmpiricalCovariance_sklearn,
+            ),
+            "sklearn.decomposition.IncrementalPCA": (
+                decomposition_module,
+                "IncrementalPCA",
+                IncrementalPCA_sklearnex,
+                IncrementalPCA_sklearn,
+            ),
+        }
+        if daal_check_version((2024, "P", 1)):
+            import sklearn.linear_model as linear_model_module
+            from sklearn.linear_model import (
+                LogisticRegressionCV as LogisticRegressionCV_sklearn,
             )
-            from sklearn.decomposition import IncrementalPCA as IncrementalPCA_sklearn
 
-            # Preview classes for patching
-            from .preview.covariance import (
-                EmpiricalCovariance as EmpiricalCovariance_sklearnex,
+            from .preview.linear_model import (
+                LogisticRegressionCV as LogisticRegressionCV_sklearnex,
             )
-            from .preview.decomposition import IncrementalPCA as IncrementalPCA_sklearnex
 
-            # Since the state of the lru_cache without preview cannot be
-            # guaranteed to not have already enabled sklearnex algorithms
-            # when preview is used, setting the mapping element[1] to None
-            # should NOT be done. This may lose track of the unpatched
-            # sklearn estimator or function.
-            # Covariance
-            preview_mapping = {
-                "sklearn.covariance.EmpiricalCovariance": (
-                    covariance_module,
-                    "EmpiricalCovariance",
-                    EmpiricalCovariance_sklearnex,
-                    EmpiricalCovariance_sklearn,
-                ),
-                "sklearn.decomposition.IncrementalPCA": (
-                    decomposition_module,
-                    "IncrementalPCA",
-                    IncrementalPCA_sklearnex,
-                    IncrementalPCA_sklearn,
-                ),
-            }
-            if daal_check_version((2024, "P", 1)):
-                import sklearn.linear_model as linear_model_module
-                from sklearn.linear_model import (
-                    LogisticRegressionCV as LogisticRegressionCV_sklearn,
-                )
-
-                from .preview.linear_model import (
-                    LogisticRegressionCV as LogisticRegressionCV_sklearnex,
-                )
-
-                preview_mapping["sklearn.linear_model.LogisticRegressionCV"] = (
-                    linear_model_module,
-                    "LogisticRegressionCV",
-                    LogisticRegressionCV_sklearnex,
-                    LogisticRegressionCV_sklearn,
-                )
-            return mapping | preview_mapping
-
-        return mapping
-
-    # Comment 2026-01-20: This route is untested. It was meant to support
-    # a situation in which the 'onedal' module is not compiled, and instead
-    # the patching takes classes from daal4py, while still importing from
-    # the sklearnex module. This is not tested in any kind of configurations.
-    if not _is_new_patching_available():
-        from daal4py.sklearn.monkeypatch.dispatcher import _get_map_of_algorithms
-
-        return _get_map_of_algorithms()
+            preview_mapping["sklearn.linear_model.LogisticRegressionCV"] = (
+                linear_model_module,
+                "LogisticRegressionCV",
+                LogisticRegressionCV_sklearnex,
+                LogisticRegressionCV_sklearn,
+            )
+        return mapping | preview_mapping
 
     # Scikit-learn* modules
     import sklearn as base_module
@@ -515,7 +495,7 @@ def patch_sklearn(
 
     patch_map: PatchMap = get_patch_map()
 
-    if name is not None and _is_new_patching_available():
+    if name is not None:
         names_mandatory = [
             "sklearn.set_config",
             "sklearn.get_config",
