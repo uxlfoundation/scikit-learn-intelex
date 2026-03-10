@@ -444,14 +444,15 @@ def _check_fitted_attributes(est, X, estimator_name, caplog):
                 f"expected {input_type.__name__}"
             )
 
-        # --- Device check (SYCL arrays) ---
+        # --- Device check ---
         # If input was on GPU, fitted attributes should also be on the
         # same device (not silently moved to CPU or another device).
-        if hasattr(X, "sycl_queue") and hasattr(attr_val, "sycl_queue"):
-            assert X.sycl_queue.sycl_device == attr_val.sycl_queue.sycl_device, (
+        # Uses standard array API `.device` for compatibility with torch, dpnp, dpctl, etc.
+        if hasattr(X, "device") and hasattr(attr_val, "device"):
+            assert str(X.device) == str(attr_val.device), (
                 f"{estimator_name}.{attr_name} device "
-                f"{attr_val.sycl_queue.sycl_device} != input device "
-                f"{X.sycl_queue.sycl_device}"
+                f"{attr_val.device} != input device "
+                f"{X.device}"
             )
 
         # --- Dtype check ---
