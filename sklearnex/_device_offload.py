@@ -167,11 +167,16 @@ def dispatch(
     sklearn_array_api = _array_api_offload() and get_tags(obj).array_api_support
 
     # If sklearn supports array API for this estimator but oneDAL doesn't,
+    # and the input is a non-numpy array API type (e.g. torch, array_api_strict),
     # fall back to sklearn without transferring to host. This avoids a
     # CPU roundtrip for operations that sklearn can already run on GPU
-    # natively (e.g. pairwise_distances).
-    if sklearn_array_api and not onedal_array_api:
-        return branches["sklearn"](obj, *args, **kwargs)
+    # natively. For numpy/pandas/dpnp/dpctl inputs, continue to oneDAL path.
+    if sklearn_array_api and not onedal_array_api and args:
+        input_array_api = getattr(args[0], "__array_namespace__", lambda: None)()
+        if input_array_api and not _is_numpy_namespace(input_array_api):
+            # Check it's not a dpnp/dpctl input (those use support_input_format path)
+            if not hasattr(args[0], "__sycl_usm_array_interface__"):
+                return branches["sklearn"](obj, *args, **kwargs)
 
     # backend can only be a boolean or None, None signifies an unverified backend
     backend: "bool | None" = None
