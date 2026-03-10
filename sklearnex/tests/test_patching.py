@@ -367,9 +367,8 @@ _FITTED_ATTR_NUMPY_OK = {
 }
 
 # (estimator, attribute) pairs where numpy fitted attributes are acceptable
-# only for non-numpy inputs (dpnp, dpctl, torch, etc).  These estimators correctly produce
-# array API types with array_api_dispatch but return numpy via the dpnp/dpctl
-# code path (support_input_format converts to numpy before oneDAL).
+# only for non-numpy inputs (dpnp, dpctl, torch, etc).  These attributes
+# are set internally as numpy by oneDAL regardless of input type.
 _FITTED_ATTR_NUMPY_OK_NON_NUMPY = {
     # Tree/forest — classes_ correct for array_api, numpy for dpnp/dpctl
     ("RandomForestClassifier", "classes_"),
