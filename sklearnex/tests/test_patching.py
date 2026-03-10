@@ -371,10 +371,6 @@ _FITTED_ATTR_NUMPY_OK = {
 # array API types with array_api_dispatch but return numpy via the dpnp/dpctl
 # code path (support_input_format converts to numpy before oneDAL).
 _FITTED_ATTR_NUMPY_OK_NON_NUMPY = {
-    # PCA — from_table(like=X) works for array_api, but dpnp/dpctl path
-    # converts X to numpy first so fitted attrs are numpy
-    ("PCA", "singular_values_"),
-    ("PCA", "explained_variance_ratio_"),
     # Tree/forest — classes_ correct for array_api, numpy for dpnp/dpctl
     ("RandomForestClassifier", "classes_"),
     ("RandomForestRegressor", "classes_"),
