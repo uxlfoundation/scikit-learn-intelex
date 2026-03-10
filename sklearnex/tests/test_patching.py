@@ -348,13 +348,7 @@ _INTEGER_FITTED_ATTRS = {
 _FITTED_ATTR_NUMPY_OK = {
     # DummyRegressor — not wrapped for array API
     ("DummyRegressor", "constant_"),
-    # TSNE — embedding_ not converted
-    ("TSNE", "embedding_"),
-    # Linear models — daal4py path always produces numpy fitted attrs
-    ("ElasticNet", "coef_"),
-    ("ElasticNet", "intercept_"),
-    ("Lasso", "coef_"),
-    ("Lasso", "intercept_"),
+    # LogisticRegression — GPU array API in progress (#2941), fitted attrs still numpy
     ("LogisticRegression", "coef_"),
     ("LogisticRegression", "intercept_"),
     ("LogisticRegression", "classes_"),
