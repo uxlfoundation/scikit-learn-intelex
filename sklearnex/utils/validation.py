@@ -27,7 +27,9 @@ from sklearn.utils.validation import (
 )
 
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
-from daal4py.sklearn.utils.validation import add_dispatcher_docstring
+
+# Note: 'check_feature_names' is reimported from this file elsewhere
+from daal4py.sklearn.utils.validation import add_dispatcher_docstring, check_feature_names
 from onedal.utils.validation import is_contiguous
 
 if sklearn_check_version("1.9"):
