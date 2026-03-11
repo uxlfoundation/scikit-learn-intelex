@@ -21,15 +21,17 @@ from collections.abc import Sequence
 import scipy.sparse as sp
 from sklearn.utils.validation import _assert_all_finite as _sklearn_assert_all_finite
 from sklearn.utils.validation import (
-    _check_estimator_name,
     _num_samples,
     check_array,
     check_non_negative,
 )
 
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
-from daal4py.sklearn.utils.validation import add_dispatcher_docstring, check_feature_names
+from daal4py.sklearn.utils.validation import add_dispatcher_docstring
 from onedal.utils.validation import is_contiguous
+
+if sklearn_check_version("1.9"):
+    from sklearn.utils.validation import _check_estimator_name
 
 from ._array_api import get_namespace
 
