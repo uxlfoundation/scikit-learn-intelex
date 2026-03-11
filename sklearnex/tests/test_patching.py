@@ -362,6 +362,12 @@ _FITTED_ATTR_NUMPY_OK = {
 # only for non-numpy inputs (dpnp, dpctl, torch, etc).  These attributes
 # are set internally as numpy by oneDAL regardless of input type.
 _FITTED_ATTR_NUMPY_OK_NON_NUMPY = {
+    # PCA — fitted attrs are dpnp on GPU but numpy on dpnp/dpctl CPU path
+    ("PCA", "singular_values_"),
+    ("PCA", "explained_variance_ratio_"),
+    ("PCA", "explained_variance_"),
+    ("PCA", "components_"),
+    ("PCA", "mean_"),
     # Tree/forest — classes_ correct for array_api, numpy for dpnp/dpctl
     ("RandomForestClassifier", "classes_"),
     ("RandomForestRegressor", "classes_"),
