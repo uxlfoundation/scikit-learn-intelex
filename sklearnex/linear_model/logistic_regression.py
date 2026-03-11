@@ -25,16 +25,16 @@ from onedal._device_offload import support_input_format
 from ..base import oneDALEstimator
 
 if daal_check_version((2024, "P", 1)):
+    import numpy as np
     from sklearn.linear_model import LogisticRegression as _sklearn_LogisticRegression
     from sklearn.metrics import accuracy_score
     from sklearn.utils.multiclass import type_of_target
-    from sklearn.utils.validation import check_is_fitted
+    from sklearn.utils.validation import _num_samples, check_is_fitted
 
     from daal4py.sklearn._n_jobs_support import control_n_jobs
     from daal4py.sklearn._utils import is_sparse
     from daal4py.sklearn.linear_model.logistic_path import daal4py_fit, daal4py_predict
     from onedal.linear_model import LogisticRegression as onedal_LogisticRegression
-    from sklearn.utils.validation import _num_samples
 
     from .._config import get_config
     from .._device_offload import dispatch, wrap_output_data
@@ -153,14 +153,18 @@ if daal_check_version((2024, "P", 1)):
             xp, _ = get_namespace(self.coef_)
 
             # Note that here additional transfer from CPU to GPU happens, however it is required for conformance with sklearn API
-            self.n_iter_ = xp.asarray(self._onedal_estimator.n_iter_, device=getattr(self.coef_, "device", None), dtype=xp.int32)
-
+            self.n_iter_ = xp.asarray(
+                self._onedal_estimator.n_iter_,
+                device=getattr(self.coef_, "device", None),
+                dtype=xp.int32,
+            )
 
         def fit(self, X, y, sample_weight=None):
-            if hasattr(self, "_onedal_estimator"):
-                del self._onedal_estimator
             if sklearn_check_version("1.2"):
                 self._validate_params()
+
+            if hasattr(self, "_onedal_estimator"):
+                del self._onedal_estimator
             dispatch(
                 self,
                 "fit",
@@ -242,6 +246,10 @@ if daal_check_version((2024, "P", 1)):
             )
 
         def _onedal_score(self, X, y, sample_weight=None, queue=None):
+            if "spmd" in self._onedal_LogisticRegression.__module__:
+                raise RuntimeError(
+                    "score method is not supported for LogisticRegression SPMD estimartor."
+                )
             return accuracy_score(
                 y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
             )
@@ -355,8 +363,20 @@ if daal_check_version((2024, "P", 1)):
 
         def _onedal_cpu_supported(self, method_name, *data):
             class_name = self.__class__.__name__
+
             patching_status = PatchingConditionsChain(
-                f"sklearn.linear_model.{class_name}.{method_name}"
+                f"sklearn.linear_model.{class_name}.{method_name}",
+            )
+            dal_ready = patching_status.and_conditions(
+                [
+                    (
+                        not (
+                            (not isinstance(data[0], np.ndarray))
+                            and hasattr(data[0], "__dlpack__")
+                        ),
+                        "Array API inputs not supported.",
+                    )
+                ]
             )
 
             return patching_status
@@ -374,10 +394,12 @@ if daal_check_version((2024, "P", 1)):
 
         def _onedal_fit(self, X, y, sample_weight=None, queue=None):
             if queue is None or queue.sycl_device.is_cpu:
-                # We don't use onedal backend for CPU, so we need an additonal check here
-                if ("spmd" in self._onedal_LogisticRegression.__module__):
-                    raise RuntimeError("Executing functions from SPMD backend requires a queue")
-            
+                # We don't use onedal backend for CPU, so we need an additional check here
+                if "spmd" in self._onedal_LogisticRegression.__module__:
+                    raise RuntimeError(
+                        "Executing functions from SPMD backend requires a queue"
+                    )
+
                 # TODO add array-api support for CPU
                 return self._onedal_cpu_fit(X, y, sample_weight)
             assert sample_weight is None
@@ -398,7 +420,9 @@ if daal_check_version((2024, "P", 1)):
             self.classes_ = xp_y.unique_values(y)
 
             # Only binary labels are supported, we don't need to use LabelEncoder
-            y_bin = xp.asarray(y == self.classes_[1], dtype=xp.int32, device=getattr(X, "device", None))
+            y_bin = xp.asarray(
+                y == self.classes_[1], dtype=xp.int32, device=getattr(X, "device", None)
+            )
 
             self._onedal_gpu_initialize_estimator()
             try:
@@ -420,9 +444,11 @@ if daal_check_version((2024, "P", 1)):
 
         def _onedal_predict(self, X, queue=None):
             if queue is None or queue.sycl_device.is_cpu:
-                # We don't use onedal backend for CPU, so we need an additonal check here
-                if ("spmd" in self._onedal_LogisticRegression.__module__):
-                    raise RuntimeError("Executing functions from SPMD backend requires a queue")
+                # We don't use onedal backend for CPU, so we need an additional check here
+                if "spmd" in self._onedal_LogisticRegression.__module__:
+                    raise RuntimeError(
+                        "Executing functions from SPMD backend requires a queue"
+                    )
 
                 # TODO add array-api support for CPU
                 return daal4py_predict(self, X, "computeClassLabels")
@@ -444,16 +470,17 @@ if daal_check_version((2024, "P", 1)):
 
             res = self._onedal_estimator.predict(X, queue=queue)
 
-
             y = xp_y.take(self.classes_, xp_y.reshape(res, (-1,)), axis=0)
 
             return y
 
         def _onedal_predict_proba(self, X, queue=None):
             if queue is None or queue.sycl_device.is_cpu:
-                # We don't use onedal backend for CPU, so we need an additonal check here
-                if ("spmd" in self._onedal_LogisticRegression.__module__):
-                    raise RuntimeError("Executing functions from SPMD backend requires a queue")
+                # We don't use onedal backend for CPU, so we need an additional check here
+                if "spmd" in self._onedal_LogisticRegression.__module__:
+                    raise RuntimeError(
+                        "Executing functions from SPMD backend requires a queue"
+                    )
 
                 # TODO add array-api support for CPU
                 return daal4py_predict(self, X, "computeClassProbabilities")
@@ -477,9 +504,11 @@ if daal_check_version((2024, "P", 1)):
 
         def _onedal_predict_log_proba(self, X, queue=None):
             if queue is None or queue.sycl_device.is_cpu:
-                # We don't use onedal backend for CPU, so we need an additonal check here
-                if ("spmd" in self._onedal_LogisticRegression.__module__):
-                    raise RuntimeError("Executing functions from SPMD backend requires a queue")
+                # We don't use onedal backend for CPU, so we need an additional check here
+                if "spmd" in self._onedal_LogisticRegression.__module__:
+                    raise RuntimeError(
+                        "Executing functions from SPMD backend requires a queue"
+                    )
 
                 # TODO add array-api support for CPU
                 return daal4py_predict(self, X, "computeClassLogProbabilities")
@@ -498,11 +527,11 @@ if daal_check_version((2024, "P", 1)):
             return xp.log(y_proba)
 
         def _onedal_decision_function(self, X, queue=None):
+            if "spmd" in self._onedal_LogisticRegression.__module__:
+                raise RuntimeError(
+                    "decision_function method is not supported for LogisticRegression SPMD estimartor."
+                )
             if queue is None or queue.sycl_device.is_cpu:
-                # We don't use onedal backend for CPU, so we need an additonal check here
-                if ("spmd" in self._onedal_LogisticRegression.__module__):
-                    raise RuntimeError("Executing functions from SPMD backend requires a queue")
-
                 # TODO add array-api support for CPU
                 return super().decision_function(X)
 
