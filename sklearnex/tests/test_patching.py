@@ -192,6 +192,11 @@ _DTYPE_CHECK_SKIP = {
     ("KNeighborsRegressor", "kneighbors"),
     ("NearestNeighbors", "kneighbors"),
     ("LocalOutlierFactor", "kneighbors"),
+    # decision_path returns (sparse_matrix, n_nodes_ptr) — structural int output
+    ("RandomForestClassifier", "decision_path"),
+    ("RandomForestRegressor", "decision_path"),
+    ("ExtraTreesClassifier", "decision_path"),
+    ("ExtraTreesRegressor", "decision_path"),
 }
 
 
@@ -320,13 +325,8 @@ def _check_output_type(
                 ):
                     # predict output dtype should match y dtype
                     assert res.dtype == data_input.dtype
-                elif (
-                    X is not None
-                    and hasattr(X, "dtype")
-                    and "float" in str(X.dtype)
-                    and "float" in str(res.dtype)
-                ):
-                    # Float output from float input: dtypes should match
+                elif X is not None and hasattr(X, "dtype") and "float" in str(X.dtype):
+                    # Output dtype should match X dtype for float inputs
                     assert res.dtype == X.dtype
 
 
