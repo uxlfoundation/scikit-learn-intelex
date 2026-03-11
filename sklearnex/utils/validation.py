@@ -90,9 +90,15 @@ def _sklearnex_assert_all_finite(
         else:
             _sklearn_assert_all_finite(X, allow_nan=allow_nan)
     else:
-        _onedal_assert_all_finite(
-            X, allow_nan=allow_nan, input_name=input_name, estimator_name=estimator_name
-        )
+        if sklearn_check_version("1.9"):
+            _onedal_assert_all_finite(
+                X,
+                allow_nan=allow_nan,
+                input_name=input_name,
+                estimator_name=estimator_name,
+            )
+        else:
+            _onedal_assert_all_finite(X, allow_nan=allow_nan, input_name=input_name)
 
 
 if sklearn_check_version("1.9"):
