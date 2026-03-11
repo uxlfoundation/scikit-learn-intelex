@@ -166,6 +166,8 @@ if daal_check_version((2023, "P", 200)):
                 else:  # array-like
                     n_init = 1
 
+            # Reachable when user explicitly sets n_init > 1 with array-like init.
+            # Array-like init is supported by oneDAL via _init_centroids_onedal.
             if _is_arraylike_not_scalar(self.init) and n_init != 1:
                 warnings.warn(
                     (

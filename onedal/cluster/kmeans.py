@@ -52,7 +52,6 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         n_local_trials=None,
         algorithm="lloyd",
     ):
-        # __init__ only stores user-visible params
         self.n_clusters = n_clusters
         self.init = init
         self.n_init = n_init
@@ -61,16 +60,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         self.verbose = verbose
         self.random_state = random_state
         self.n_local_trials = n_local_trials
-        self.algorithm = algorithm  # kept for parity; we support "lloyd" only
-
-        # runtime/learned attrs (set during fit)
-        self._tol = None
-        self.model_ = None
-        self.n_iter_ = None
-        self.inertia_ = None
-        self.labels_ = None
-        self.n_features_in_ = None
-        self._cluster_centers_ = None
+        self.algorithm = algorithm
 
     # --- pybind11 backends (thin proxies) ---
 
@@ -102,7 +92,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         self._tol = self._tolerance(X_table, self.tol, is_csr, dtype)
 
     def _get_onedal_params(self, is_csr=False, dtype=np.float32, result_options=None):
-        thr = self._tol if self._tol is not None else self.tol
+        thr = self._tol if hasattr(self, "_tol") else self.tol
         return {
             # fptype chosen from input table dtype (pattern)
             "fptype": dtype,
@@ -312,8 +302,8 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
 
     @property
     def cluster_centers_(self):
-        if self._cluster_centers_ is None:
-            if not hasattr(self, "model_") or self.model_ is None:
+        if not hasattr(self, "_cluster_centers_") or self._cluster_centers_ is None:
+            if not hasattr(self, "model_"):
                 raise NameError("This model has not been trained")
             self._cluster_centers_ = from_table(
                 self.model_.centroids,
