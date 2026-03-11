@@ -492,12 +492,8 @@ def _assert_all_finite(
                 and input_name == "X"
                 and not allow_nan
             ):
-                if sp.issparse(X):
-                    X_comp = X.data
-                else:
-                    X_comp = X
                 # This checks if the input contains any NaN value
-                if True in (X_comp != X_comp):
+                if True in (X != X):
                     # Message is taken from scikit-learn. Note that scikit-learn
                     # tests for this exact message in its estimators
                     msg_err += (
