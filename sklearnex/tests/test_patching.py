@@ -416,12 +416,13 @@ def _check_fitted_attributes(est, X, estimator_name, caplog):
 
         # --- Type check (array namespace) ---
         # Automated numpy-OK checks based on estimator type
+        _skip_device = False
         if isinstance(est, BaseLibSVM):
-            pass  # oneDAL SVM always returns numpy attributes
+            _skip_device = True  # oneDAL SVM always returns numpy attributes
         elif is_clusterer(est):
-            pass  # Cluster attributes not yet converted to array API
+            _skip_device = True  # Cluster attributes not yet converted to array API
         elif (estimator_name, attr_name) in _FITTED_ATTR_NUMPY_OK:
-            pass  # numpy is acceptable for all input types
+            _skip_device = True  # numpy is acceptable for all input types
         elif (
             is_non_numpy_input
             and (
@@ -430,17 +431,15 @@ def _check_fitted_attributes(est, X, estimator_name, caplog):
             )
             in _FITTED_ATTR_NUMPY_OK_NON_NUMPY
         ):
-            pass  # numpy is acceptable for non-numpy array API input
+            _skip_device = True  # numpy is acceptable for non-numpy array API input
         elif fell_back:
             assert isinstance(attr_val, (np.ndarray, input_type))
         else:
             assert isinstance(attr_val, input_type)
 
         # --- Device check ---
-        # If input was on GPU, fitted attributes should also be on the
-        # same device (not silently moved to CPU or another device).
-        # Uses standard array API `.device` for compatibility with torch, dpnp, dpctl, etc.
-        if hasattr(X, "device"):
+        # Skip if attr is accepted as numpy (different device representation)
+        if not _skip_device and hasattr(X, "device"):
             if hasattr(attr_val, "device"):
                 assert X.device == attr_val.device
 
