@@ -160,9 +160,11 @@ def validate_data(
         # run local finite check
         allow_nan = ensure_all_finite == "allow-nan"
         if sklearn_check_version("1.9"):
-            kwargs = {"estimator_name": _check_estimator_name(_estimator)}
+            kwargs_assert_all_finite = {
+                "estimator_name": _check_estimator_name(_estimator)
+            }
         else:
-            kwargs = {}
+            kwargs_assert_all_finite = {}
         # the return object from validate_data can be a single
         # element (either x or y) or both (as a tuple). An iterator along with
         # check_x and check_y can go through the output properly without
@@ -170,9 +172,13 @@ def validate_data(
         # is used
         arg = iter(out if isinstance(out, tuple) else (out,))
         if check_x:
-            assert_all_finite(next(arg), allow_nan=allow_nan, input_name="X", **kwargs)
+            assert_all_finite(
+                next(arg), allow_nan=allow_nan, input_name="X", **kwargs_assert_all_finite
+            )
         if check_y:
-            assert_all_finite(next(arg), allow_nan=allow_nan, input_name="y", **kwargs)
+            assert_all_finite(
+                next(arg), allow_nan=allow_nan, input_name="y", **kwargs_assert_all_finite
+            )
 
     if check_y and kwargs.get("y_numeric", False):
         # validate_data does not do full dtype conversions, as it uses check_X_y
