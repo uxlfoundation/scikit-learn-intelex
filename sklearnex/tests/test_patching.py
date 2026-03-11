@@ -287,15 +287,8 @@ def _check_output_type(
             # should also be on the same device. Uses standard array API
             # `.device` attribute for compatibility with torch, dpnp, dpctl, etc.
             if hasattr(X, "device"):
-                assert hasattr(res, "device"), (
-                    f"{estimator_name}.{method} output missing .device "
-                    f"attribute, input has device {X.device}"
-                )
-                assert X.device == res.device, (
-                    f"{estimator_name}.{method} output device "
-                    f"{res.device} != input device "
-                    f"{X.device}"
-                )
+                assert hasattr(res, "device")
+                assert X.device == res.device
 
             # Check dtype preservation (skip float16 — oneDAL doesn't
             # support it natively and upcasts to float64)
@@ -439,15 +432,9 @@ def _check_fitted_attributes(est, X, estimator_name, caplog):
         ):
             pass  # numpy is acceptable for non-numpy array API input
         elif fell_back:
-            assert isinstance(attr_val, (np.ndarray, input_type)), (
-                f"{estimator_name}.{attr_name} has type {type(attr_val).__name__}, "
-                f"expected {input_type.__name__} or numpy (sklearn fallback)"
-            )
+            assert isinstance(attr_val, (np.ndarray, input_type))
         else:
-            assert isinstance(attr_val, input_type), (
-                f"{estimator_name}.{attr_name} has type {type(attr_val).__name__}, "
-                f"expected {input_type.__name__}"
-            )
+            assert isinstance(attr_val, input_type)
 
         # --- Device check ---
         # If input was on GPU, fitted attributes should also be on the
@@ -455,11 +442,7 @@ def _check_fitted_attributes(est, X, estimator_name, caplog):
         # Uses standard array API `.device` for compatibility with torch, dpnp, dpctl, etc.
         if hasattr(X, "device"):
             if hasattr(attr_val, "device"):
-                assert X.device == attr_val.device, (
-                    f"{estimator_name}.{attr_name} device "
-                    f"{attr_val.device} != input device "
-                    f"{X.device}"
-                )
+                assert X.device == attr_val.device
 
         # --- Dtype check ---
         if x_is_fp16:
