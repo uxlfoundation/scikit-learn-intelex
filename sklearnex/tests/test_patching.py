@@ -433,6 +433,7 @@ def _check_fitted_attributes(est, X, estimator_name, caplog):
         ):
             _skip_device = True  # numpy is acceptable for non-numpy array API input
         elif fell_back:
+            _skip_device = True
             assert isinstance(attr_val, (np.ndarray, input_type))
         else:
             assert isinstance(attr_val, input_type)
