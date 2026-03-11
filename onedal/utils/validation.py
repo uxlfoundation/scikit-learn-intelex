@@ -35,7 +35,6 @@ else:
 from sklearn.preprocessing import LabelEncoder
 from sklearn.utils.validation import check_array
 
-from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.utils.validation import (
     _assert_all_finite as _daal4py_assert_all_finite,
 )
@@ -487,8 +486,7 @@ def _assert_all_finite(
             padded_input_name = input_name + " " if input_name else ""
             msg_err = f"Input {padded_input_name}contains {type_err}."
             if (
-                sklearn_check_version("1.9")
-                and estimator_name
+                estimator_name is not None  # proxy for sklearn>=1.9
                 and input_name == "X"
                 and not allow_nan
             ):
