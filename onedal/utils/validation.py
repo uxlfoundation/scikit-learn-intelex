@@ -513,35 +513,19 @@ def _assert_all_finite(
             raise ValueError(msg_err)
 
 
-if sklearn_check_version("1.9"):
-
-    def assert_all_finite(
-        X,
-        *,
-        allow_nan=False,
-        estimator_name=None,
-        input_name="",
-    ):
-        _assert_all_finite(
-            X.data if sp.issparse(X) else X,
-            allow_nan=allow_nan,
-            input_name=input_name,
-            estimator_name=estimator_name,
-        )
-
-else:
-
-    def assert_all_finite(
-        X,
-        *,
-        allow_nan=False,
-        input_name="",
-    ):
-        _assert_all_finite(
-            X.data if sp.issparse(X) else X,
-            allow_nan=allow_nan,
-            input_name=input_name,
-        )
+def assert_all_finite(
+    X,
+    *,
+    allow_nan=False,
+    estimator_name=None,
+    input_name="",
+):
+    _assert_all_finite(
+        X.data if sp.issparse(X) else X,
+        allow_nan=allow_nan,
+        input_name=input_name,
+        estimator_name=estimator_name,
+    )
 
 
 def is_contiguous(X):
