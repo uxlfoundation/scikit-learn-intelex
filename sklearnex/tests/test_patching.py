@@ -415,14 +415,12 @@ def _check_fitted_attributes(est, X, estimator_name, caplog):
             continue
 
         # --- Type check (array namespace) ---
-        # Automated numpy-OK checks based on estimator type
-        _skip_device = False
         if isinstance(est, BaseLibSVM):
-            _skip_device = True  # oneDAL SVM always returns numpy attributes
+            continue
         elif is_clusterer(est):
-            _skip_device = True  # Cluster attributes not yet converted to array API
+            continue
         elif (estimator_name, attr_name) in _FITTED_ATTR_NUMPY_OK:
-            _skip_device = True  # numpy is acceptable for all input types
+            continue
         elif (
             is_non_numpy_input
             and (
@@ -431,42 +429,25 @@ def _check_fitted_attributes(est, X, estimator_name, caplog):
             )
             in _FITTED_ATTR_NUMPY_OK_NON_NUMPY
         ):
-            _skip_device = True  # numpy is acceptable for non-numpy array API input
+            continue
         elif fell_back:
-            _skip_device = True
             assert isinstance(attr_val, (np.ndarray, input_type))
+            continue
         else:
             assert isinstance(attr_val, input_type)
 
         # --- Device check ---
-        # Skip if attr is accepted as numpy (different device representation)
-        if not _skip_device and hasattr(X, "device"):
+        if hasattr(X, "device"):
             if hasattr(attr_val, "device"):
                 assert X.device == attr_val.device
 
         # --- Dtype check ---
         if x_is_fp16:
-            continue  # oneDAL upcasts float16; skip dtype matching
+            continue
         if attr_name in _INTEGER_FITTED_ATTRS:
-            continue  # integer attributes don't need to match X.dtype
-        if isinstance(est, BaseLibSVM):
-            continue  # SVM always computes in float64
-        if (estimator_name, attr_name) in _FITTED_ATTR_DTYPE_SKIP or (
-            estimator_name,
-            attr_name,
-        ) in _FITTED_ATTR_NUMPY_OK:
             continue
-        if (
-            is_non_numpy_input
-            and (
-                estimator_name,
-                attr_name,
-            )
-            in _FITTED_ATTR_NUMPY_OK_NON_NUMPY
-        ):
+        if (estimator_name, attr_name) in _FITTED_ATTR_DTYPE_SKIP:
             continue
-        if fell_back:
-            continue  # sklearn fallback may change dtypes
 
         if (
             hasattr(attr_val, "dtype")
