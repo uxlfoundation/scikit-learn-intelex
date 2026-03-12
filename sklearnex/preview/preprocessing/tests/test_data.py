@@ -46,7 +46,7 @@ def test_max_abs_scaler_dense_fit_transform(dataframe, queue):
     # Test parity with scikit-learn for basic fit_transform behavior
     rng = np.random.default_rng(seed=42)
     X = rng.standard_normal((50, 5))
-    
+
     # Randomly scale some columns to have varying absolute max values
     X[:, 0] *= 10
     X[:, 1] *= 0.1
@@ -73,7 +73,7 @@ def test_max_abs_scaler_dense_partial_fit(dataframe, queue):
     # Test batch processing parity with native scikit-learn
     rng = np.random.default_rng(seed=42)
     X = rng.standard_normal((100, 3))
-    
+
     # create batches
     X1, X2, X3 = X[:30], X[30:70], X[70:]
 
@@ -99,9 +99,6 @@ def test_max_abs_scaler_dense_partial_fit(dataframe, queue):
     assert_allclose(X_trans_ex_np, X_trans_sk)
 
 
-
-
-
 @pytest.mark.skipif(
     not sklearn_check_version("1.3"), reason="lacks sklearn array API support"
 )
@@ -110,7 +107,7 @@ def test_max_abs_scaler_array_api_dispatch(dataframe, queue):
     # Ensure properties are properly constructed as the dispatched arrays using Array API
     rng = np.random.default_rng(seed=42)
     X = rng.standard_normal((10, 4))
-    
+
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
 
     with config_context(array_api_dispatch=True):
@@ -122,13 +119,13 @@ def test_max_abs_scaler_array_api_dispatch(dataframe, queue):
     # via the context namespace, but let's just make sure it behaves normally.
     assert hasattr(est, "scale_")
     assert hasattr(est, "max_abs_")
-    
+
     est.scale_ = np.ones(est.scale_.shape)
     X_trans_modified = est.transform(X_df)
-    
+
     X_np = _as_numpy(X_df)
     X_trans_modified_np = _as_numpy(X_trans_modified)
-    
-    # Testing that after artificially modifying the scaler properties, the transform 
+
+    # Testing that after artificially modifying the scaler properties, the transform
     # executes normally (just returns the raw variables over 1.0 logic).
     assert_allclose(X_np, X_trans_modified_np)

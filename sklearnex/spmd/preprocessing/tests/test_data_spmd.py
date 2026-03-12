@@ -23,10 +23,7 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
-from sklearnex.tests.utils.spmd import (
-    _get_local_tensor,
-    _mpi_libs_and_gpu_available,
-)
+from sklearnex.tests.utils.spmd import _get_local_tensor, _mpi_libs_and_gpu_available
 
 
 @pytest.mark.skipif(
@@ -41,9 +38,7 @@ from sklearnex.tests.utils.spmd import (
 @pytest.mark.mpi
 def test_max_abs_scaler_fit_spmd_gold(dataframe, queue, dtype):
     from sklearnex.preview.preprocessing import MaxAbsScaler
-    from sklearnex.spmd.preprocessing import (
-        MaxAbsScaler as MaxAbsScaler_SPMD,
-    )
+    from sklearnex.spmd.preprocessing import MaxAbsScaler as MaxAbsScaler_SPMD
 
     data = np.array(
         [
@@ -84,13 +79,9 @@ def test_max_abs_scaler_fit_spmd_gold(dataframe, queue, dtype):
 @pytest.mark.parametrize("num_blocks", [1, 2])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.mpi
-def test_max_abs_scaler_partial_fit_spmd_gold(
-    dataframe, queue, num_blocks, dtype
-):
+def test_max_abs_scaler_partial_fit_spmd_gold(dataframe, queue, num_blocks, dtype):
     from sklearnex.preview.preprocessing import MaxAbsScaler
-    from sklearnex.spmd.preprocessing import (
-        MaxAbsScaler as MaxAbsScaler_SPMD,
-    )
+    from sklearnex.spmd.preprocessing import MaxAbsScaler as MaxAbsScaler_SPMD
 
     data = np.array(
         [

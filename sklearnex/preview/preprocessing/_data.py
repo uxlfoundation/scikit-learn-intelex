@@ -46,9 +46,7 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
         self.copy = copy
         self._need_to_finalize = False
 
-    _onedal_incremental_basic_statistics = staticmethod(
-        onedal_IncrementalBasicStatistics
-    )
+    _onedal_incremental_basic_statistics = staticmethod(onedal_IncrementalBasicStatistics)
 
     def _onedal_supported(self, method_name, *data):
         # The patching condition here checks whether the data is fit for oneDAL.
@@ -94,7 +92,7 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
         # partial_fit updates the internal _onedal_estimator with the present batch of X.
         first_pass = not hasattr(self, "n_samples_seen_") or self.n_samples_seen_ == 0
 
-        # In sklearn, check_input is used to enforce validation. In combination with use_raw_input config 
+        # In sklearn, check_input is used to enforce validation. In combination with use_raw_input config
         # it controls validation of inputs.
         if check_input and not get_config()["use_raw_input"]:
             xp, _ = get_namespace(X)
@@ -154,7 +152,7 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
         # acts identically to sklearn's checking strategy, hence passed through.
         if sklearn_check_version("1.2"):
             self._validate_params()
-        
+
         # Scikit-Learn implements a check within partial fit natively, so we pass check_input=True implicitly.
         dispatch(
             self,
@@ -182,7 +180,7 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
         )
         return self
 
-    # Transform relies completely on standard scikit-learn functionality and does not need to 
+    # Transform relies completely on standard scikit-learn functionality and does not need to
     # be overridden using oneDAL capabilities as the scale vectors are appropriately populated.
 
     # Ensure access to the derived properties without manually calling _onedal_finalize_fit
