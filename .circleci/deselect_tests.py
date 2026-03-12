@@ -84,9 +84,7 @@ def create_pytest_switches(
         sklearn_dir = os.path.dirname(sklearn.__file__)
 
         if absolute:
-            base_dir = (
-                os.path.relpath(sklearn_dir, os.path.expanduser("~")) + "/"
-            )
+            base_dir = os.path.relpath(sklearn_dir, os.path.expanduser("~")) + "/"
         elif base_dir is None:
             base_dir = ""
         elif not base_dir.endswith("/"):
