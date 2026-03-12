@@ -123,7 +123,7 @@ public:
         /* Internal data to be stored on the local nodes */
         daal::data_management::DataCollectionPtr localNodeData;
         /* Numeric table to collect the results */
-        daal::data_management::RowMergedNumericTablePtr pCentroids(new daal::data_management::RowMergedNumericTable());
+        daal::data_management::RowMergedNumericTablePtr pCentroids(daal::data_management::RowMergedNumericTable::create());
         // First step on each rank (output var will be used for output of step4 as well)
         auto step14Out = algo.run_step1Local(input, tot_rows, start_row)->get(daal::algorithms::kmeans::init::partialCentroids);
         // Only one rank actually computes centroids, we need to identify rank and bcast centroids to all others
@@ -301,7 +301,7 @@ public:
 
             // we need to gather all exist results on root, merge them into one table and then share it with all non-roots
             auto step14OutMaster = tcvr->gather(step14Out);
-            daal::data_management::RowMergedNumericTablePtr step4OutMerged(new daal::data_management::RowMergedNumericTable());
+            daal::data_management::RowMergedNumericTablePtr step4OutMerged(daal::data_management::RowMergedNumericTable::create());
             if (rank == 0)
             {
                 for (int i = 0; i < step14OutMaster.size(); i++)
