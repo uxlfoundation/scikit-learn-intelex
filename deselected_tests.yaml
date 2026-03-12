@@ -557,4 +557,4 @@ gpu:
   # The following tests fail at collection time, so they cannot be deselected with --deselect and must be ignored with --ignore.
 ignored_tests:
   # scipy.misc.face was removed; test_image.py calls it at module level
-  - feature_extraction/tests/test_image.py <=1.1
+  - feature_extraction/tests/test_image.py <1.2
