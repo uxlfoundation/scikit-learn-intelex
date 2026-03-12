@@ -85,19 +85,6 @@ if __name__ == "__main__":
     if args.json_report_file is not None:
         pytest_params += ["--json-report", f"--json-report-file={args.json_report_file}"]
 
-    # Ignore test files that fail at collection time (module-level errors).
-    # --deselect cannot handle these since pytest fails before collecting tests.
-    import sklearn
-
-    sklearn_dir = os.path.dirname(sklearn.__file__)
-    collection_ignore = [
-        # scipy.misc.face was removed; test_image.py calls it at module level
-        os.path.join(sklearn_dir, "feature_extraction", "tests", "test_image.py"),
-    ]
-    ignore_switches = [
-        f"--ignore={path}" for path in collection_ignore if os.path.exists(path)
-    ]
-
     if not args.no_intel_optimized:
         from sklearnex import patch_sklearn
 
@@ -110,16 +97,7 @@ if __name__ == "__main__":
         if args.device == "gpu":
             with config_context(target_offload=args.device, allow_fallback_to_host=False):
                 pytest.main(
-                    pytest_params
-                    + ["--pyargs", "sklearn"]
-                    + ignore_switches
-                    + yml_deselected_tests
+                    pytest_params + ["--pyargs", "sklearn"] + yml_deselected_tests
                 )
         else:
-            windows_violation_string = "not (test_ensemble_heterogeneous_estimators_behavior or test_stacking_without_n_features_in or test_linear_regression_multiple_outcome or test_ridge_ground_truth_positive_test or test_positive_ridge_loss or test_cross_validate or test_base_chain_fit_and_predict or test_base_chain_random_order or test_base_chain_crossval_fit_and_predict)"
-            pytest.main(
-                pytest_params
-                + ["--pyargs", "sklearn"]
-                + ignore_switches
-                + yml_deselected_tests
-            )
+            pytest.main(pytest_params + ["--pyargs", "sklearn"] + yml_deselected_tests)

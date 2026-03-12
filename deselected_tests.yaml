@@ -406,9 +406,6 @@ deselected_tests:
   # CI jobs in sklearnex compile scikit-learn from source, not necessarily with the same toolkits as sklearn's CIs
   - preprocessing/tests/test_polynomial.py::test_sizeof_LARGEST_INT_t
 
-  # scipy / scikit mismatch
-  - feature_extraction/tests/test_image.py
-
   # --------------------------------------------------------
   # No need to test daal4py patching
 reduced_tests:
@@ -555,3 +552,9 @@ gpu:
   - tests/test_common.py::test_estimators[RandomForestRegressor(n_estimators=5)-check_regressor_data_not_an_array]
   - tests/test_common.py::test_estimators[RandomForestClassifier(n_estimators=5)-check_class_weight_classifiers]
   - tests/test_common.py::test_estimators[ExtraTreesClassifier(n_estimators=5)-check_class_weight_classifiers]
+
+  # --------------------------------------------------------
+  # The following tests fail at collection time, so they cannot be deselected with --deselect and must be ignored with --ignore.
+ignored_tests:
+  # scipy.misc.face was removed; test_image.py calls it at module level
+  - feature_extraction/tests/test_image.py <=1.1
