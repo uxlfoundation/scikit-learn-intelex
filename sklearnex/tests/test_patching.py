@@ -46,6 +46,8 @@ else:
         return isinstance(est, ClusterMixin)
 
 
+from sklearn import get_config as sklearn_get_config
+
 from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
@@ -272,6 +274,7 @@ def _check_output_type(
             continue
         # Sparse outputs — verify sparse class
         if is_sparse(res):
+            # TODO: remove fell_back case once sklearnex implements sparse_interface config
             if sklearn_check_version("1.9") and fell_back:
                 from sklearn import get_config
 
@@ -442,6 +445,7 @@ def _check_fitted_attributes(est, X, estimator_name, caplog):
             continue
         elif (
             is_non_numpy_input
+            and not sklearn_get_config().get("array_api_dispatch", False)
             and (
                 estimator_name,
                 attr_name,
