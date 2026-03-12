@@ -62,14 +62,6 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         self.n_local_trials = n_local_trials
         self.algorithm = algorithm
 
-        # runtime/learned attrs (set during fit)
-        self.model_ = None
-        self.n_iter_ = None
-        self.inertia_ = None
-        self.labels_ = None
-        self.n_features_in_ = None
-        self._cluster_centers_ = None
-
     # --- pybind11 backends (thin proxies) ---
 
     @bind_default_backend("kmeans_common", no_policy=True)
@@ -97,18 +89,19 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
 
     def _compute_tolerance(self, X_table, is_csr, dtype):
         """Compute absolute tolerance from relative tolerance using data variance."""
-        return self._tolerance(X_table, self.tol, is_csr, dtype)
+        self._tol = self._tolerance(X_table, self.tol, is_csr, dtype)
 
-    def _get_onedal_params(
-        self, is_csr=False, dtype=np.float32, result_options=None, tol=None
-    ):
+    def _get_onedal_params(self, is_csr=False, dtype=np.float32, result_options=None):
+        thr = self._tol if hasattr(self, "_tol") else self.tol
         return {
+            # fptype chosen from input table dtype (pattern)
             "fptype": dtype,
+            # map method names to backend dispatch (CSR vs dense)
             "method": "lloyd_csr" if is_csr else "by_default",
             "seed": -1,
             "max_iteration_count": self.max_iter,
             "cluster_count": self.n_clusters,
-            "accuracy_threshold": tol if tol is not None else self.tol,
+            "accuracy_threshold": thr,
             "result_options": "" if result_options is None else result_options,
         }
 
@@ -191,10 +184,8 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
 
     # --- core train/infer wrappers in the estimator pattern ---
 
-    def _fit_backend(
-        self, X_table, centroids_table, dtype=np.float32, is_csr=False, tol=None
-    ):
-        params = self._get_onedal_params(is_csr, dtype, tol=tol)
+    def _fit_backend(self, X_table, centroids_table, dtype=np.float32, is_csr=False):
+        params = self._get_onedal_params(is_csr, dtype)
         result = self.train(params, X_table, centroids_table)
         return (
             result.responses,
@@ -218,7 +209,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         dtype = X_table.dtype
         self._input_type = return_type_constructor(X)  # lightweight callable
 
-        tol = self._compute_tolerance(X_table, is_csr, dtype)
+        self._compute_tolerance(X_table, is_csr, dtype)
         self.n_features_in_ = X_table.column_count
 
         best_model = best_labels = None
@@ -279,7 +270,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
                 print("Initialization complete")
 
             labels_t, inertia, model, n_iter = self._fit_backend(
-                X_table, centroids_table, dtype, is_csr, tol=tol
+                X_table, centroids_table, dtype, is_csr
             )
 
             if self.verbose:
