@@ -587,7 +587,11 @@ if build_distributed:
             "sklearnex.spmd.neighbors",
         ]
     if ONEDAL_VERSION >= 20230200:
-        packages_with_tests += ["onedal.spmd.cluster", "sklearnex.spmd.cluster"]
+        packages_with_tests += [
+            "onedal.spmd.cluster",
+            "sklearnex.spmd.cluster",
+            "sklearnex.spmd.preprocessing",
+        ]
 
 setup(
     name="scikit-learn-intelex",
