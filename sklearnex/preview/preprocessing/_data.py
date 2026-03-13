@@ -132,11 +132,12 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
         else:
             self.n_features_in_ = X.shape[1]
 
+        self.n_samples_seen_ = 0
         if hasattr(self, "_onedal_estimator"):
             self._onedal_estimator._reset()
 
         # Execute partial fit just once on the entire dataset.
-        self._onedal_partial_fit(X, queue=queue, check_input=False, first_pass=True)
+        self._onedal_partial_fit(X, queue=queue, check_input=False)
 
         # Must compute the actual class attributes from the oneDAL values.
         self._onedal_finalize_fit()
