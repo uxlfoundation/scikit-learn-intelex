@@ -100,7 +100,6 @@ def wrap_algo(algo, ver):
 # Note: even though listed under 'Batch', they are currently also used for 'Distributed'
 #  unless explicitly provided in a step spec.
 required = {
-    "algorithms::distributions::bernoulli": [("p", "double")],
     "algorithms::em_gmm": [("nComponents", "size_t")],
     "algorithms::em_gmm::init": [("nComponents", "size_t")],
     "algorithms::kmeans": [("nClusters", "size_t"), ("maxIterations", "size_t")],
