@@ -725,3 +725,14 @@ philox4x32x10
    :members: compute
 .. autoclass:: daal4py.engines_philox4x32x10_result
    :members:
+
+.. Note: oneDAL's doc do not have any named object referencing these specific sections,
+.. hence the need for this workaround.
+.. |onedal-dg-k-means-computation| replace:: |onedal| K-Means Computation
+.. _onedal-dg-k-means-computation: https://uxlfoundation.github.io/oneDAL/daal/algorithms/kmeans/k-means-clustering.html#computation
+
+.. |onedal-dg-expectation-maximization-initialization| replace:: |onedal| Expectation-Maximization Initialization
+.. _onedal-dg-expectation-maximization-initialization: https://uxlfoundation.github.io/oneDAL/daal/algorithms/em/expectation-maximization.html#initialization
+
+.. |onedal-dg-expectation-maximization-for-the-gaussian-mixture-model| replace:: |onedal| Expectation-Maximization for the Gaussian Mixture Model
+.. _onedal-dg-expectation-maximization-for-the-gaussian-mixture-model: https://uxlfoundation.github.io/oneDAL/daal/algorithms/em/expectation-maximization.html#em-algorithm-for-the-gaussian-mixture-model
