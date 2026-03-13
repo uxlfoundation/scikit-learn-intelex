@@ -126,7 +126,6 @@ jobs:
           python -m venv venv
           source venv/bin/activate
           pip install -r dependencies-dev
-          pip list
           echo "NUMPY_BUILD=$(python -m pip freeze | grep numpy)" >> "$GITHUB_ENV"
       - name: Build daal4py/sklearnex
         run: |
@@ -255,6 +254,23 @@ jobs:
           pip install cpufeature pyyaml
           pip install -r dependencies-dev
           for /f "delims=" %%c in ('python -m pip freeze ^| grep numpy') do echo NUMPY_BUILD=%%c>> %GITHUB_ENV%
+      - name: Download basekit
+        if: ${{ steps.set-env.outputs.DPCFLAG == '' }}
+        uses: actions/download-artifact@v8
+        with:
+          name: intel_oneapi_basekit
+          github-token: ${{ github.token }}
+          repository: ${{ env.ONEDAL_REPO }}
+          run-id: ${{ needs.onedal_nightly.outputs.run-id }}
+          path: .
+      - name: Install basekit
+        if: ${{ steps.set-env.outputs.DPCFLAG == '' }}
+        run: |
+          set MSYSTEM=winsymlinks:lnk
+          tar -xzvf oneapi.tar.gz
+          dir oneapi
+          call oneapi\setvars.bat
+          echo "Done with step"
       - name: System info 
         shell: cmd
         run: |

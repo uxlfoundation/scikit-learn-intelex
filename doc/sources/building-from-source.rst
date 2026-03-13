@@ -24,6 +24,8 @@ The |sklearnex| predominantly functions as a frontend to the |onedal| by leverag
 
 .. note:: Python packages ``dal`` (conda) and ``daal`` (PyPI) provide the same components, but due to naming availability in these repositories, they are distributed under different names.
 
+.. note:: Building the DPC (GPU) components of the |sklearnex| requires also the DPC components of the |onedal|, as provided by packages ``dal-gpu`` / ``daal-gpu``.
+
 As a library, the |sklearnex| consists of a Python codebase with Python extension modules written in C++ and Cython, with some of those modules being optional. These extension modules require compilation before being used, for which a C++ compiler along with other dependencies is required. In the case of GPU-related modules, a SYCL compiler (such as `Intel's DPC++ <https://www.intel.com/content/www/us/en/developer/tools/oneapi/dpc-compiler.html>`__) is required, and in the case of distributed mode, whether on CPU or on GPU, an MPI backend is required, such as `Intel MPI <https://www.intel.com/content/www/us/en/developer/tools/oneapi/mpi-library.html>`__.
 
 The extension modules are as follows:
@@ -97,6 +99,17 @@ Some of these dependencies can also be installed from PyPI:
     pip install clang-format impi-devel impi_rt
 
 Note however that, if installing Intel's MPI from PyPI instead of from conda, it will be necessary to manually set the environment variable ``$MPIROOT``, while the conda distribution of Intel's MPI comes with an activation script that sets up this variable.
+
+Transitive oneDAL dependencies
+------------------------------
+
+Note that the DPC components of the |onedal| have additional runtime dependencies. If the |onedal| is installed with its DPC components from a package manager (e.g. ``pip``, ``conda``, ``apt``), those dependencies will be installed automatically by the same package manager, but if built from sources, it's necessary to manually install those dependencies in order to load the shared objects:
+
+.. code-block:: bash
+
+    pip install dpcpp-cpp-rt intel-sycl-rt mkl-dpcpp
+
+The versions of these dependencies need to be compatible with what was used to build the |onedal| - typically, this means that major version should be the same (e.g. if the |onedal| is built with DPC compiler 2025.3, then the required versions of the packages above should be 2025.x).
 
 Instructions
 ------------
