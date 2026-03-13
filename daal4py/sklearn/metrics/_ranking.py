@@ -20,6 +20,7 @@ from functools import partial
 
 import numpy as np
 from scipy import sparse as sp
+from sklearn.metrics import roc_auc_score as _sklearn_roc_auc_score
 from sklearn.metrics._base import _average_binary_score
 from sklearn.metrics._ranking import _binary_roc_auc_score
 from sklearn.metrics._ranking import _multiclass_roc_auc_score as multiclass_roc_auc_score
@@ -29,7 +30,12 @@ from sklearn.utils.multiclass import is_multilabel
 
 import daal4py as d4p
 
-from .._utils import PatchingConditionsChain, get_patch_message, sklearn_check_version
+from .._utils import (
+    PatchingConditionsChain,
+    check_is_array_api,
+    get_patch_message,
+    sklearn_check_version,
+)
 from ..utils.validation import _assert_all_finite
 
 if sklearn_check_version("1.3"):
@@ -128,11 +134,38 @@ def roc_auc_score(
     multi_class="raise",
     labels=None,
 ):
+    _patching_status = PatchingConditionsChain("sklearn.metrics.roc_auc_score")
+    _dal_ready = _patching_status.and_conditions(
+        [
+            (sample_weight is None, "Sample weights are not supported"),
+            (max_fpr is None, "'max_fpr' is not supported"),
+            (
+                not (
+                    check_is_array_api(y_true)
+                    or check_is_array_api(y_score)
+                    or check_is_array_api(sample_weight)
+                    or check_is_array_api(labels)
+                ),
+                "Array API inputs other than NumPy are not supported.",
+            ),
+        ]
+    )
+    if not _dal_ready:
+        _patching_status.write_log()
+        return _sklearn_roc_auc_score(
+            y_true,
+            y_score,
+            average=average,
+            sample_weight=sample_weight,
+            max_fpr=max_fpr,
+            multi_class=multi_class,
+            labels=labels,
+        )
+
     y_type = _daal_type_of_target(y_true)
     y_true = check_array(y_true, ensure_2d=False, dtype=None)
     y_score = check_array(y_score, ensure_2d=False)
 
-    _patching_status = PatchingConditionsChain("sklearn.metrics.roc_auc_score")
     _dal_ready = _patching_status.and_conditions(
         [
             (
@@ -142,8 +175,26 @@ def roc_auc_score(
             )
         ]
     )
-
     _patching_status.write_log()
+    if not _dal_ready:
+        return _sklearn_roc_auc_score(
+            y_true,
+            y_score,
+            average=average,
+            sample_weight=sample_weight,
+            max_fpr=max_fpr,
+            multi_class=multi_class,
+            labels=labels,
+        )
+
+    # Comment 2026-03-03: the original code here was a copy-paste from an older scikit-learn
+    # version with some parts replaced with calls to oneDAL. The logic was then modified to
+    # fall back to scikit-learn's 'roc_auc_score' directly and as early as possible, so some
+    # code branches below this comment might be unreachable. Note that the logic of not falling
+    # back has the advantage of avoiding two calls to 'check_array', but after some input
+    # has already been processed by it, passing it again to that function shouldn't do any
+    # data conversions.
+
     if y_type[0] == "multiclass" or (
         y_type[0] == "binary" and y_score.ndim == 2 and y_score.shape[1] > 2
     ):
