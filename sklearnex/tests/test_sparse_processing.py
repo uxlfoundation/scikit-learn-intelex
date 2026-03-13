@@ -23,7 +23,7 @@ import scipy.sparse as sp
 
 import daal4py  # Note: this is used  through 'eval'
 import onedal
-from daal4py.sklearn._utils import sklearn_check_version
+from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
 from sklearnex.basic_statistics import BasicStatistics
 from sklearnex.decomposition import PCA
 from sklearnex.linear_model import Lasso, LinearRegression, LogisticRegression
@@ -86,15 +86,7 @@ def make_sparse_array():
 # Note: sparse pandas data frames have version requirements on scipy.
 # This skips the tests if they are incompatible.
 def check_sparse_df_is_supported():
-    scipy_version = scipy.__version__.split(".")
-    if int(scipy_version[0]) > 1:
-        return True
-    if int(scipy_version[0]) == 1:
-        if int(scipy_version[1]) > 8:
-            return True
-        if int(scipy_version[1]) == 8 and int(scipy_version[2]) > 1:
-            return True
-    return False
+    return _package_check_version("1.8.1", scipy.__version__)
 
 
 SPARSE_DF_SUPPORTED = check_sparse_df_is_supported()

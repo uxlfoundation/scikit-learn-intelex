@@ -45,7 +45,13 @@ from scipy.spatial import distance
 import daal4py
 from daal4py.sklearn.utils.validation import _daal_check_array
 
-from .._utils import PatchingConditionsChain, getFPType, sklearn_check_version
+from .._utils import (
+    PatchingConditionsChain,
+    check_is_array_api,
+    getFPType,
+    is_sparse,
+    sklearn_check_version,
+)
 
 if sklearn_check_version("1.3"):
     from sklearn.utils._param_validation import (
@@ -70,19 +76,13 @@ def _daal4py_correlation_distance_dense(X):
     return res.correlationDistance
 
 
+# Comment 2026-03-05: this function originally was a copy-paste from an older
+# version of scikit-learn with some parts replaced with oneDAL calls. Later
+# on, it was changed to offload directly to scikit-learn in cases where there
+# would be no oneDAL involvement, so many code branches here might be unreachable.
 def _pairwise_distances(
     X, Y=None, metric="euclidean", *, n_jobs=None, force_all_finite=True, **kwds
 ):
-    if metric not in _VALID_METRICS and not callable(metric) and metric != "precomputed":
-        raise ValueError(
-            "Unknown metric %s. Valid metrics are %s, or 'precomputed', "
-            "or a callable" % (metric, _VALID_METRICS)
-        )
-
-    X = _daal_check_array(
-        X, accept_sparse=["csr", "csc", "coo"], force_all_finite=force_all_finite
-    )
-
     _patching_status = PatchingConditionsChain("sklearn.metrics.pairwise_distances")
     _dal_ready = _patching_status.and_conditions(
         [
@@ -92,7 +92,32 @@ def _pairwise_distances(
                 "Only 'cosine' and 'correlation' metrics are supported.",
             ),
             (Y is None, "Second feature array is not supported."),
-            (not issparse(X), "X is sparse. Sparse input is not supported."),
+            (not is_sparse(X), "X is sparse. Sparse input is not supported."),
+            (not check_is_array_api(X), "Array API inputs are not supported."),
+        ]
+    )
+    if not _dal_ready:
+        _patching_status.write_log()
+        return _sklearn_pairwise_distances(
+            X,
+            Y=Y,
+            metric=metric,
+            n_jobs=n_jobs,
+            force_all_finite=force_all_finite,
+            **kwds,
+        )
+
+    if metric not in _VALID_METRICS and not callable(metric) and metric != "precomputed":
+        raise ValueError(
+            "Unknown metric %s. Valid metrics are %s, or 'precomputed', "
+            "or a callable" % (metric, _VALID_METRICS)
+        )
+
+    X = _daal_check_array(
+        X, accept_sparse=["csr", "csc", "coo"], force_all_finite=force_all_finite
+    )
+    _dal_ready = _patching_status.and_conditions(
+        [
             (
                 X.dtype == np.float64,
                 f"{X.dtype} X data type is not supported. Only np.float64 is supported.",
@@ -100,6 +125,15 @@ def _pairwise_distances(
         ]
     )
     _patching_status.write_log()
+    if not _dal_ready:
+        return _sklearn_pairwise_distances(
+            X,
+            Y=Y,
+            metric=metric,
+            n_jobs=n_jobs,
+            force_all_finite=force_all_finite,
+            **kwds,
+        )
     if _dal_ready:
         if metric == "cosine":
             return _daal4py_cosine_distance_dense(X)
@@ -191,6 +225,29 @@ if sklearn_check_version("1.3"):
         if sklearn_check_version("1.8"):
             del pairwise_distances_parameters["force_all_finite"]
 
+            # Note: these functions '_sklearn_pairwise_distances' are designed
+            # to have the same signature as the internal '_pairwise_distances'
+            # defined here, so that it could be called from that function when
+            # falling back to scikit-learn with the same arguments regardless
+            # of version.
+            def _sklearn_pairwise_distances(
+                X,
+                Y=None,
+                metric="euclidean",
+                *,
+                n_jobs=None,
+                force_all_finite=True,
+                **kwds,
+            ):
+                return pairwise_distances_original(
+                    X,
+                    Y=Y,
+                    metric=metric,
+                    n_jobs=n_jobs,
+                    ensure_all_finite=force_all_finite,
+                    **kwds,
+                )
+
             def pairwise_distances(
                 X,
                 Y=None,
@@ -212,6 +269,25 @@ if sklearn_check_version("1.3"):
         else:
             from sklearn.utils.deprecation import _deprecate_force_all_finite
 
+            def _sklearn_pairwise_distances(
+                X,
+                Y=None,
+                metric="euclidean",
+                *,
+                n_jobs=None,
+                force_all_finite=True,
+                **kwds,
+            ):
+                return pairwise_distances_original(
+                    X,
+                    Y=Y,
+                    metric=metric,
+                    n_jobs=n_jobs,
+                    force_all_finite="deprecated",
+                    ensure_all_finite=force_all_finite,
+                    **kwds,
+                )
+
             def pairwise_distances(
                 X,
                 Y=None,
@@ -231,6 +307,18 @@ if sklearn_check_version("1.3"):
 
     else:
         del pairwise_distances_parameters["ensure_all_finite"]
+
+        def _sklearn_pairwise_distances(
+            X, Y=None, metric="euclidean", *, n_jobs=None, force_all_finite=True, **kwds
+        ):
+            return pairwise_distances_original(
+                X,
+                Y=Y,
+                metric=metric,
+                n_jobs=n_jobs,
+                force_all_finite=force_all_finite,
+                **kwds,
+            )
 
         def pairwise_distances(
             X,
@@ -255,5 +343,7 @@ if sklearn_check_version("1.3"):
         prefer_skip_nested_validation=True,
     )(pairwise_distances)
 else:
+    _sklearn_pairwise_distances = pairwise_distances_original
     pairwise_distances = _pairwise_distances
+
 pairwise_distances.__doc__ = pairwise_distances_original.__doc__

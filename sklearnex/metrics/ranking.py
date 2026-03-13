@@ -15,6 +15,3 @@
 # ===============================================================================
 
 from daal4py.sklearn.metrics import roc_auc_score
-from onedal._device_offload import support_input_format
-
-roc_auc_score = support_input_format(roc_auc_score)

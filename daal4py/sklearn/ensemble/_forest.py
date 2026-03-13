@@ -684,7 +684,10 @@ class RandomForestClassifier(RandomForestClassifier_original, RandomForestBase):
 
     def _daal_fit_classifier(self, X, y, sample_weight=None):
         y = check_array(y, ensure_2d=False, dtype=None)
-        y, expanded_class_weight = self._validate_y_class_weight(y)
+        if sklearn_check_version("1.9"):
+            y, expanded_class_weight = self._validate_y_class_weight(y, sample_weight)
+        else:
+            y, expanded_class_weight = self._validate_y_class_weight(y)
         n_classes = self.n_classes_[0]
         self.n_features_in_ = X.shape[1]
 

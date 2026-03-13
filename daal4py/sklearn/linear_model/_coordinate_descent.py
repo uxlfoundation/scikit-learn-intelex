@@ -25,6 +25,7 @@ from sklearn.utils import check_array, check_X_y
 import daal4py
 from daal4py.sklearn._utils import (
     PatchingConditionsChain,
+    check_is_array_api,
     get_patch_message,
     getFPType,
     make2d,
@@ -506,6 +507,10 @@ def _fit(self, _X, _y, sample_weight=None, check_input=True):
                 "Only np.float32 and np.float64 are supported.",
             ),
             (sample_weight is None, "Sample weights are not supported."),
+            (
+                not check_is_array_api(X) and not check_is_array_api(y),
+                "Array API inputs are not supported.",
+            ),
         ]
     )
     _patching_status.write_log()
