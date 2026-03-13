@@ -14,6 +14,8 @@
 # limitations under the License.
 # ==============================================================================
 
+from functools import partial
+
 from sklearn.preprocessing import MaxAbsScaler as _sklearn_MaxAbsScaler
 from sklearn.utils.validation import check_is_fitted
 
