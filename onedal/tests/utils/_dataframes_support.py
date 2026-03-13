@@ -33,6 +33,13 @@ except ImportError:
     dpnp_available = False
 
 try:
+    import torch
+
+    torch_available = True
+except ImportError:
+    torch_available = False
+
+try:
     # This should be lazy imported in the
     # future along with other popular
     # array_api libraries when testing
@@ -55,7 +62,7 @@ import pandas as pd
 from onedal.tests.utils._device_selection import get_queues
 
 test_frameworks = os.environ.get(
-    "ONEDAL_PYTEST_FRAMEWORKS", "numpy,pandas,dpnp,dpctl,array_api"
+    "ONEDAL_PYTEST_FRAMEWORKS", "numpy,pandas,dpnp,dpctl,array_api,torch"
 )
 
 
@@ -123,6 +130,8 @@ def get_dataframes_and_queues(dataframe_filter_=None, device_filter_="cpu,gpu"):
         or array_api_enabled()
     ):
         dataframes_and_queues.append(pytest.param("array_api", None, id="array_api"))
+    if torch_available and "torch" in dataframe_filter_:
+        dataframes_and_queues.extend(get_df_and_q("torch"))
 
     return dataframes_and_queues
 
@@ -133,6 +142,8 @@ def _as_numpy(obj, *args, **kwargs):
         return obj.asnumpy(*args, **kwargs)
     if dpctl_available and isinstance(obj, dpt.usm_ndarray):
         return dpt.to_numpy(obj, *args, **kwargs)
+    if torch_available and isinstance(obj, torch.Tensor):
+        return obj.cpu().detach().numpy(*args, **kwargs)
     if isinstance(obj, pd.DataFrame) or isinstance(obj, pd.Series):
         return obj.to_numpy(*args, **kwargs)
     if sp.issparse(obj):
@@ -175,5 +186,10 @@ def _convert_to_dataframe(obj, sycl_queue=None, target_df=None, *args, **kwargs)
 
         xp = array_api_modules[target_df]
         return xp.asarray(obj)
+    elif target_df == "torch":
+        if hasattr(torch, "xpu") and torch.xpu.is_available():
+            return torch.as_tensor(obj, device="xpu", *args, **kwargs)
+        else:
+            return torch.as_tensor(obj, device="cpu", *args, **kwargs)
 
     raise RuntimeError("Unsupported dataframe conversion")
