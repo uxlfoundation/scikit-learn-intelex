@@ -14,12 +14,12 @@
 # limitations under the License.
 # ==============================================================================
 
-import numpy as np
 from sklearn.preprocessing import MaxAbsScaler as _sklearn_MaxAbsScaler
 from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import is_sparse, sklearn_check_version
+from onedal._device_offload import support_sycl_format
 from onedal.basic_statistics import (
     IncrementalBasicStatistics as onedal_IncrementalBasicStatistics,
 )
@@ -29,7 +29,22 @@ from ..._device_offload import dispatch, wrap_output_data
 from ..._utils import PatchingConditionsChain
 from ...base import oneDALEstimator
 from ...utils._array_api import enable_array_api, get_namespace
-from ...utils.validation import validate_data
+from ..utils.validation import (
+    _finite_keyword,
+    assert_all_finite,
+    validate_data,
+)
+
+__check_kwargs = {
+    "dtype": None,
+    "ensure_2d": False,
+    "ensure_min_samples": 0,
+    "ensure_min_features": 0,
+    "accept_sparse": True,
+    _finite_keyword: False,
+}
+
+_check_array = partial(check_array, **__check_kwargs)
 
 
 @enable_array_api
@@ -59,9 +74,16 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
         )
         if method_name in ["fit", "partial_fit"]:
             (X,) = data
+            try:
+                X_test = _check_array(X)
+                assert_all_finite(X_test)  # minimally verify the data
+                input_is_finite = True
+            except ValueError:
+                input_is_finite = False
             patching_status.and_conditions(
                 [
                     (not is_sparse(X), "Sparse input is not supported"),
+                    (input_is_finite, "Non-finite input is not supported."),
                 ]
             )
 
@@ -99,6 +121,7 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
                 X,
                 dtype=[xp.float64, xp.float32],
                 reset=first_pass,
+                ensure_all_finite=False,
             )
 
         # We keep track of the samples internally as well to mirror scikit-learn.
@@ -128,6 +151,7 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
                 self,
                 X,
                 dtype=[xp.float64, xp.float32],
+                ensure_all_finite=False,
             )
         else:
             self.n_features_in_ = X.shape[1]
@@ -179,7 +203,8 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
 
     # Transform relies completely on standard scikit-learn functionality and does not need to
     # be overridden using oneDAL capabilities as the scale vectors are appropriately populated.
-
+    transform = support_sycl_format(_sklearn_MaxAbsScaler.transform)
+    
     # Ensure access to the derived properties without manually calling _onedal_finalize_fit
     # explicitly from the user. We wrap properties that require a finalized state.
     @property
