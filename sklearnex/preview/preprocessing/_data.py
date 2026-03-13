@@ -29,7 +29,7 @@ from ..._device_offload import dispatch, wrap_output_data
 from ..._utils import PatchingConditionsChain
 from ...base import oneDALEstimator
 from ...utils._array_api import enable_array_api, get_namespace
-from ..utils.validation import (
+from ...utils.validation import (
     _finite_keyword,
     assert_all_finite,
     validate_data,
