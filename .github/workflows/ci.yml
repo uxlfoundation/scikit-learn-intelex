@@ -127,12 +127,10 @@ jobs:
           python -m venv venv
           source venv/bin/activate
           pip install -r dependencies-dev
-          # Note: oneDAL packages should have dependencies on these, but
-          # if pulling its files without being tied to a package, will
-          # need to install them externally. Versions need to be compatible
-          # with DPC components that oneDAL was compiled against.
-          pip install "dpcpp-cpp-rt${DPC_SUITABLE_VERSION}" "intel-sycl-rt${DPC_SUITABLE_VERSION}" "mkl-dpcpp${DPC_SUITABLE_VERSION}"
-          pip list
+          printf "DPCFLAG: ${DPCFLAG}\n"
+          if [[ -z $DPCFLAG ]]; then
+            bash .ci/env/apt.sh dpcpp
+          fi
           echo "NUMPY_BUILD=$(python -m pip freeze | grep numpy)" >> "$GITHUB_ENV"
       - name: Build daal4py/sklearnex
         run: |
