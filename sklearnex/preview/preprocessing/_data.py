@@ -76,7 +76,7 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
         assert hasattr(self, "_onedal_estimator")
         self._onedal_estimator.finalize_fit()
 
-        xp, _ = get_namespace(self._onedal_estimator.min)
+        xp, _ = get_namespace(self._onedal_estimator.min_)
 
         # Calculate the max absolute scaler
         min_abs = xp.abs(self._onedal_estimator.min_)
