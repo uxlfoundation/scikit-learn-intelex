@@ -187,13 +187,30 @@ def support_sycl_format(func):
             not get_config().get("array_api_dispatch", False)
             and _get_sycl_namespace(*args)[2]
         ):
-            with QM.manage_global_queue(kwargs.get("queue"), *args):
+            if inspect.isfunction(func) and "." in func.__qualname__:
+                data = args[1] if len(args) > 1 else None
+            else:
+                data = args[0] if len(args) > 0 else None
+
+            with QM.manage_global_queue(kwargs.get("queue"), *args) as queue:
                 if inspect.isfunction(func) and "." in func.__qualname__:
                     self, (args, kwargs) = args[0], _get_host_inputs(*args[1:], **kwargs)
-                    return func(self, *args, **kwargs)
+                    result = func(self, *args, **kwargs)
                 else:
                     args, kwargs = _get_host_inputs(*args, **kwargs)
-                    return func(*args, **kwargs)
+                    result = func(*args, **kwargs)
+
+                if (
+                    queue
+                    and data is not None
+                    and hasattr(data, "__sycl_usm_array_interface__")
+                ):
+                    return (
+                        copy_to_dpnp(queue, result)
+                        if is_dpnp_ndarray(data)
+                        else copy_to_usm(queue, result)
+                    )
+            return result
         return func(*args, **kwargs)
 
     return wrapper
