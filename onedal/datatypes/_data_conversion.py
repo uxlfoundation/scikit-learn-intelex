@@ -65,9 +65,25 @@ def to_table(*args, queue=None):
     return _apply_and_pass(_convert_one_to_table, *args, queue=queue)
 
 
+# Note: pytorch is not fully array API compatible, and will be handled
+# by this converter. The 'from_dlpack' function from this 'compat'
+# module does not work with all possible types that oneDAL produces as
+# tables if it gets passed the 'device' argument, so this does a second
+# conversion round to ensure same device, but this may involve data
+# movements - for example, the first 'from_dlpack' might return a CPU
+# array that the second conversion might move to device.
+# Perhaps a better solution could be created on the C++ convertor's
+# side, but at the moment not every conversion works.
 @lazy_import("array_api_compat")
 def _compat_convert(array_api_compat, array):
-    return array_api_compat.get_namespace(array).from_dlpack
+    def converter_func(x):
+        xp = array_api_compat.get_namespace(array)
+        out = xp.from_dlpack(x)
+        if out.device != array.device:
+            out = xp.from_dlpack(out, device=array.device)
+        return out
+
+    return converter_func
 
 
 def return_type_constructor(array):
