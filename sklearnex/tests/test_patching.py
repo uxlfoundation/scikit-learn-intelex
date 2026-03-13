@@ -204,6 +204,7 @@ _DTYPE_CHECK_SKIP = {
     ("RandomForestRegressor", "decision_path"),
     ("ExtraTreesClassifier", "decision_path"),
     ("ExtraTreesRegressor", "decision_path"),
+    ("IncrementalEmpiricalCovariance", "mahalanobis"),  # Computes in float64
 }
 
 
