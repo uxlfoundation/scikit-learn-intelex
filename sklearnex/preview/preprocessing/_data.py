@@ -76,9 +76,7 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
         assert hasattr(self, "_onedal_estimator")
         self._onedal_estimator.finalize_fit()
 
-        xp, _ = get_namespace(self._onedal_estimator.min_)
-
-        self.n_samples_seen_ = self._onedal_estimator.n_samples_seen_
+        xp, _ = get_namespace(self._onedal_estimator.min)
 
         # Calculate the max absolute scaler
         min_abs = xp.abs(self._onedal_estimator.min_)
@@ -105,7 +103,6 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
 
         # We keep track of the samples internally as well to mirror scikit-learn.
         if first_pass:
-            self.n_features_in_ = X.shape[1]
             self.n_samples_seen_ = X.shape[0]
         else:
             self.n_samples_seen_ += X.shape[0]
@@ -135,7 +132,7 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
         else:
             self.n_features_in_ = X.shape[1]
 
-        self.n_samples_seen_ = 0
+        self.n_samples_seen_ = X.shape[0]
         if hasattr(self, "_onedal_estimator"):
             self._onedal_estimator._reset()
 
