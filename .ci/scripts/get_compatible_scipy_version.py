@@ -33,20 +33,8 @@ else:
 if sklearn_check_version("1.4"):
     print("Scipy version is not specified for this sklearn/python version.", file=stderr)
     print("scipy")
-elif sklearn_check_version("1.3") or python_version[1] > 11:
-    if python_version[1] > 8:
-        print("scipy==1.12.*")
-    else:
-        print("scipy==1.11.*")
-elif sklearn_check_version("1.2") or python_version[1] > 10:
-    if python_version[1] > 9:
-        print("scipy==1.12.*")
-    else:
-        print("scipy==1.9.*")
-elif sklearn_check_version("1.1"):
-    print("scipy==1.8.*")
 elif sklearn_check_version("1.0"):
-    print("scipy==1.7.*")
+    print("scipy==1.10.*")
 else:
     print(
         "Scipy version defaults to not specified "

@@ -73,6 +73,9 @@ deselected_tests:
   - neighbors/tests/test_neighbors.py::test_kneighbors_brute_backend[float64-kulsinski] <1.3
   - neighbors/tests/test_neighbors.py::test_radius_neighbors_brute_backend[kulsinski] <1.3
 
+  # wminkowski removed in scipy 1.8 but sklearn <=1.1 NearestNeighbors._fit() lacks kd_tree + weighted minkowski check
+  - neighbors/tests/test_neighbors.py::test_neighbors_metrics <=1.1
+
   # sklearnex PCA always chooses "covariance_eigh" solver instead of "full" when solver="auto"
   # resulting in solver assignment check failure for sklearn version >= 1.5
   - decomposition/tests/test_pca.py::test_pca_svd_solver_auto[1000-500-400-full] >=1.5
@@ -552,3 +555,9 @@ gpu:
   - tests/test_common.py::test_estimators[RandomForestRegressor(n_estimators=5)-check_regressor_data_not_an_array]
   - tests/test_common.py::test_estimators[RandomForestClassifier(n_estimators=5)-check_class_weight_classifiers]
   - tests/test_common.py::test_estimators[ExtraTreesClassifier(n_estimators=5)-check_class_weight_classifiers]
+
+  # --------------------------------------------------------
+  # The following tests fail at collection time, so they cannot be deselected with --deselect and must be ignored with --ignore.
+ignored_tests:
+  # scipy.misc.face was removed; test_image.py calls it at module level
+  - feature_extraction/tests/test_image.py <1.2
