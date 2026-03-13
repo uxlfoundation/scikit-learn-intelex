@@ -82,7 +82,7 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
         min_abs = xp.abs(self._onedal_estimator.min_)
         max_abs = xp.abs(self._onedal_estimator.max_)
         self.max_abs_ = xp.maximum(min_abs, max_abs)
-        self.scale_ = xp.where(self.max_abs_ == 0, 1.0, self.max_abs_)
+        self.scale_ = xp.where(self._max_abs_ == 0, 1.0, self._max_abs_)
 
         self._need_to_finalize = False
 
