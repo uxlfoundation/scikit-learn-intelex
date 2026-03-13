@@ -36,7 +36,6 @@ env:
   UXL_PYTHONVERSION: "3.13"
   UXL_SKLEARNVERSION: "1.6"
   ONEDAL_REPO: "uxlfoundation/oneDAL"
-  DPC_SUITABLE_VERSION: ">=2025,<2026"
 
 jobs:
 
@@ -258,8 +257,22 @@ jobs:
           pip install --upgrade setuptools
           pip install cpufeature pyyaml
           pip install -r dependencies-dev
-          pip install "dpcpp-cpp-rt%DPC_SUITABLE_VERSION%" "intel-sycl-rt%DPC_SUITABLE_VERSION%" "mkl-dpcpp%DPC_SUITABLE_VERSION%"
           for /f "delims=" %%c in ('python -m pip freeze ^| grep numpy') do echo NUMPY_BUILD=%%c>> %GITHUB_ENV%
+      - name: Download basekit
+        if: ${{ steps.set-env.outputs.DPCFLAG == '' }}
+        uses: actions/download-artifact@v8
+        with:
+          name: intel_oneapi_basekit
+          github-token: ${{ github.token }}
+          repository: ${{ env.ONEDAL_REPO }}
+          run-id: ${{ needs.onedal_nightly.outputs.run-id }}
+          path: .
+      - name: Install basekit
+        if: ${{ steps.set-env.outputs.DPCFLAG == '' }}
+        run: |
+          tar -xzvf oneapi.tar.gz
+          dir oneapi
+          echo "Done with step"
       - name: System info 
         shell: cmd
         run: |
@@ -378,7 +391,9 @@ jobs:
         id: install-reqs
         run: |
           pip install -r dependencies-dev
-          pip install "dpcpp-cpp-rt${DPC_SUITABLE_VERSION}" "intel-sycl-rt${DPC_SUITABLE_VERSION}" "mkl-dpcpp${DPC_SUITABLE_VERSION}"
+          if [[ -z $DPCFLAG ]]; then
+            bash .ci/env/apt.sh dpcpp
+          fi
           echo "numpy-version=$(python -m pip freeze | grep numpy)" >> "$GITHUB_OUTPUT"
           pip list
       - name: Build daal4py/sklearnex
