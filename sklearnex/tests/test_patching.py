@@ -172,9 +172,7 @@ _SCALAR_METHODS = {"score", "error_norm"}
 # in _check_output_type (is_clusterer, method == "apply").
 _NUMPY_OUTPUT_OK = {
     ("DummyRegressor", "predict"),  # Not wrapped with wrap_output_data
-    ("PCA", "score_samples"),  # Missing wrap_output_data on GPU path
     ("NearestNeighbors", "radius_neighbors"),  # Returns ragged numpy arrays
-    ("IncrementalEmpiricalCovariance", "mahalanobis"),  # Missing wrap_output_data
 }
 
 # (estimator, method) pairs where dtype preservation is not expected.
