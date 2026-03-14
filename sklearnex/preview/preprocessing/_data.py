@@ -59,8 +59,9 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
             **_sklearn_MaxAbsScaler._parameter_constraints,
         }
 
-    def __init__(self, *, copy=True):
+    def __init__(self, *, copy=True, clip=False):
         self.copy = copy
+        self.clip = clip
         self._need_to_finalize = False
 
     _onedal_incremental_basic_statistics = staticmethod(onedal_IncrementalBasicStatistics)
