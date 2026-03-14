@@ -17,7 +17,7 @@
 from functools import partial
 
 from sklearn.preprocessing import MaxAbsScaler as _sklearn_MaxAbsScaler
-from sklearn.utils.validation import check_is_fitted
+from sklearn.utils.validation import check_array, check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import is_sparse, sklearn_check_version
