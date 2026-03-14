@@ -17,6 +17,7 @@
 from functools import partial
 
 from sklearn.preprocessing import MaxAbsScaler as _sklearn_MaxAbsScaler
+from sklearn.preprocessing._data import _handle_zeros_in_scale
 from sklearn.utils.validation import check_array, check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
@@ -107,7 +108,7 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
         min_abs = xp.abs(self._onedal_estimator.min_)
         max_abs = xp.abs(self._onedal_estimator.max_)
         self.max_abs_ = xp.maximum(min_abs, max_abs)
-        self.scale_ = xp.where(self._max_abs_ == 0, 1.0, self._max_abs_)
+        self.scale_ = _handle_zeros_in_scale(self._max_abs_, copy=True)
 
         self._need_to_finalize = False
 
