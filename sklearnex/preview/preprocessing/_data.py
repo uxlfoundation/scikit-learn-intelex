@@ -206,7 +206,7 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
     # Transform relies completely on standard scikit-learn functionality and does not need to
     # be overridden using oneDAL capabilities as the scale vectors are appropriately populated.
     transform = support_sycl_format(_sklearn_MaxAbsScaler.transform)
-    
+
     # Ensure access to the derived properties without manually calling _onedal_finalize_fit
     # explicitly from the user. We wrap properties that require a finalized state.
     @property
