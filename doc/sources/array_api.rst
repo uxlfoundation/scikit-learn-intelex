@@ -129,7 +129,7 @@ The following patched classes have support for array API inputs:
 Coverage of array API support
 -----------------------------
 
-All of the classes (except :obj:`sklearn.ensemble.RandomForestClassifier`) with array API support in the |sklearnex| have full support for core
+All of the classes (except :obj:`sklearn.linear_model.LogisticRegression`) with array API support in the |sklearnex| have full support for core
 methods common to base classes for regression and classification:
 
 - ``.fit()``
@@ -154,8 +154,9 @@ Note that some cases of estimator-specific methods are still fully array API com
 for example, :meth:`sklearn.neighbors.NearestNeighbors.kneighbors` will produce outputs
 of array API classes when fitted to them.
 
-For :obj:`sklearn.linear_model.LogisticRegression`, array API support was only implemented for GPU inputs, so 
-passing array API inputs that are not NumPy arrays for CPU execution will result in a fallback to |sklearn|.
+For :obj:`sklearn.linear_model.LogisticRegression`, array API coverage is limited to cases where the input array
+is allocated on a GPU device, so passing array API inputs on CPU other than NumPy arrays will not result
+in calling accelerated routines from the |sklearnex|.
 
 Example usage
 =============
