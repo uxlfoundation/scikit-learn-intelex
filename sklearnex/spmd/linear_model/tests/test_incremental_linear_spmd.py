@@ -112,7 +112,7 @@ def test_incremental_linear_regression_fit_spmd_gold(
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl,torch", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("fit_intercept", [True, False])
 @pytest.mark.parametrize("num_blocks", [1, 2])
