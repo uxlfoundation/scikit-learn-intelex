@@ -56,11 +56,6 @@ def flat(typ):
         "daal::services::SharedPtr<kernel_function::KernelIface>",
     )
     typ = re.sub(
-        r"(daal::)?(algorithms::)?(engines::)?EnginePtr",
-        r"daal::services::SharedPtr<engines::BatchBase>",
-        typ,
-    )
-    typ = re.sub(
         r"(?:daal::)?(?:algorithms::)?([^:]+::)BatchPtr",
         r"daal::services::SharedPtr<\1Batch>",
         typ,

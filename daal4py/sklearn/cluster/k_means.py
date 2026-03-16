@@ -78,32 +78,22 @@ def _daal4py_compute_starting_centroids(
 
     deterministic = False
     if is_string(cluster_centers_0, "k-means++"):
-        _seed = random_state.randint(np.iinfo("i").max)
         plus_plus_method = "plusPlusCSR" if is_sparse else "plusPlusDense"
-        daal_engine = daal4py.engines_mt19937(
-            fptype=X_fptype, method="defaultDense", seed=_seed
-        )
         _n_local_trials = 2 + int(np.log(nClusters))
         kmeans_init = daal4py.kmeans_init(
             nClusters,
             fptype=X_fptype,
             nTrials=_n_local_trials,
             method=plus_plus_method,
-            engine=daal_engine,
         )
         kmeans_init_res = kmeans_init.compute(X)
         centroids_ = kmeans_init_res.centroids
     elif is_string(cluster_centers_0, "random"):
-        _seed = random_state.randint(np.iinfo("i").max)
         random_method = "randomCSR" if is_sparse else "randomDense"
-        daal_engine = daal4py.engines_mt19937(
-            seed=_seed, fptype=X_fptype, method="defaultDense"
-        )
         kmeans_init = daal4py.kmeans_init(
             nClusters,
             fptype=X_fptype,
             method=random_method,
-            engine=daal_engine,
         )
         kmeans_init_res = kmeans_init.compute(X)
         centroids_ = kmeans_init_res.centroids

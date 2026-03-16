@@ -1387,11 +1387,6 @@ def flat(t, cpp=True):
             "daal::services::SharedPtr<kernel_function::KernelIface>",
         )
         ty = re.sub(
-            r"(daal::)?(algorithms::)?(engines::)?EnginePtr",
-            r"daal::services::SharedPtr<engines::BatchBase>",
-            ty,
-        )
-        ty = re.sub(
             r"(?:daal::)?(?:algorithms::)?([^:]+::)BatchPtr",
             r"daal::services::SharedPtr<\1Batch>",
             ty,
