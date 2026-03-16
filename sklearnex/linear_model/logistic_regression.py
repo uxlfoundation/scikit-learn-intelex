@@ -218,20 +218,28 @@ if daal_check_version((2024, "P", 1)):
                 X,
             )
 
-        @wrap_output_data
-        def score(self, X, y, sample_weight=None):
-            check_is_fitted(self)
-            return dispatch(
-                self,
-                "score",
-                {
-                    "onedal": self.__class__._onedal_score,
-                    "sklearn": _sklearn_LogisticRegression.score,
-                },
-                X,
-                y,
-                sample_weight=sample_weight,
-            )
+        # Note: scikit-learn changed the default score metric in version 1.9.
+        # The oneDAL implementation here uses 'accuracy', but the new default
+        # is 'log_loss', for which the implementation here would be Python-only.
+        if not sklearn_check_version("1.9"):
+
+            @wrap_output_data
+            def score(self, X, y, sample_weight=None):
+                check_is_fitted(self)
+                return dispatch(
+                    self,
+                    "score",
+                    {
+                        "onedal": self.__class__._onedal_score,
+                        "sklearn": _sklearn_LogisticRegression.score,
+                    },
+                    X,
+                    y,
+                    sample_weight=sample_weight,
+                )
+
+        else:
+            score = _sklearn_LogisticRegression.score
 
         def _onedal_score(self, X, y, sample_weight=None, queue=None):
             return accuracy_score(
