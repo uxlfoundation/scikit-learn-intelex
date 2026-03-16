@@ -26,11 +26,7 @@ from onedal.utils import _sycl_queue_manager as QM
 
 from ..common._estimator_checks import _check_is_fitted
 from ..datatypes import from_table, to_table
-from ..utils.validation import (
-    _check_n_features,
-    _is_csr,
-    _num_features
-)
+from ..utils.validation import _check_n_features, _is_csr, _num_features
 
 
 class BaseLogisticRegression(metaclass=ABCMeta):
@@ -75,14 +71,14 @@ class BaseLogisticRegression(metaclass=ABCMeta):
         is_csr = _is_csr(X)
 
         self.n_features_in_ = _num_features(X, fallback_1d=True)
-        
+
         X_table, y_table = to_table(X, y, queue=queue)
         params = self._get_onedal_params(is_csr, X_table.dtype)
 
         result = self.train(params, X_table, y_table)
 
         self._onedal_model = result.model
-        
+
         self.n_iter_ = np.array([result.iterations_count])
 
         # _n_inner_iter is the total number of cg-solver iterations
