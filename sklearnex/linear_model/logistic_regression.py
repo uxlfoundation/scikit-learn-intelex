@@ -32,7 +32,7 @@ if daal_check_version((2024, "P", 1)):
     from sklearn.utils.validation import _num_samples, check_is_fitted
 
     from daal4py.sklearn._n_jobs_support import control_n_jobs
-    from daal4py.sklearn._utils import is_sparse
+    from daal4py.sklearn._utils import check_is_array_api, is_sparse
     from daal4py.sklearn.linear_model.logistic_path import daal4py_fit, daal4py_predict
     from onedal.linear_model import LogisticRegression as onedal_LogisticRegression
 
@@ -370,15 +370,11 @@ if daal_check_version((2024, "P", 1)):
             dal_ready = patching_status.and_conditions(
                 [
                     (
-                        not (
-                            (not isinstance(data[0], np.ndarray))
-                            and hasattr(data[0], "__dlpack__")
-                        ),
+                        not check_is_array_api(data[0]),
                         "Array API inputs not supported.",
                     )
                 ]
             )
-
             return patching_status
 
         def _onedal_gpu_initialize_estimator(self):

@@ -39,7 +39,13 @@ from sklearn.utils.validation import check_is_fitted
 import daal4py as d4p
 
 from .._n_jobs_support import control_n_jobs
-from .._utils import PatchingConditionsChain, getFPType, is_sparse, sklearn_check_version
+from .._utils import (
+    PatchingConditionsChain,
+    check_is_array_api,
+    getFPType,
+    is_sparse,
+    sklearn_check_version,
+)
 from ..utils.validation import check_feature_names
 from .logistic_loss import (
     _daal4py_cross_entropy_loss_extra_args,
@@ -444,7 +450,7 @@ def daal4py_predict(self, X, resultsToEvaluate):
     _dal_ready = _patching_status.and_conditions(
         [
             (
-                not ((not isinstance(X, np.ndarray)) and hasattr(X, "__dlpack__")),
+                not check_is_array_api(X),
                 "Array API inputs not supported.",
             )
         ]
@@ -772,7 +778,7 @@ def logistic_regression_path_dispatcher(
             ),
             (not is_sparse(X), "X is sparse. Sparse input is not supported."),
             (
-                not ((not isinstance(X, np.ndarray)) and hasattr(X, "__dlpack__")),
+                not check_is_array_api(X),
                 "Array API inputs not supported.",
             ),
             (sample_weight is None, "Sample weights are not supported."),
