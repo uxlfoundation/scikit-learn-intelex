@@ -355,11 +355,9 @@ _FITTED_ATTR_NUMPY_OK = {
     # LogisticRegression — GPU array API in progress (#2941), fitted attrs still numpy
     ("LogisticRegression", "coef_"),
     ("LogisticRegression", "intercept_"),
-    ("LogisticRegression", "classes_"),
     ("LogisticRegression", "n_iter_"),
     # Neighbor estimators without array API support for fitted attrs
     ("LocalOutlierFactor", "negative_outlier_factor_"),
-    ("KNeighborsClassifier", "classes_"),
     # Clusterer attrs are numpy
     ("KMeans", "cluster_centers_"),
 }
