@@ -21,7 +21,11 @@ from numbers import Integral
 
 import numpy as np
 from scipy import sparse as sp
-from sklearn.utils._array_api import get_namespace as _sklearn_get_namespace
+
+# Note: this is in order to avoid failures due to design rules
+# that prevent calling 'sklearn_check_version' from this module.
+if hasattr("sklearn.utils._array_api", "get_namespace"):
+    from sklearn.utils._array_api import get_namespace as _sklearn_get_namespace
 
 from onedal.common._backend import BackendFunction
 from onedal.utils import _sycl_queue_manager as QM
