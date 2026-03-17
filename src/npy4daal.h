@@ -371,32 +371,32 @@ public:
     /** \private */
     ~NpyNumericTable() { Py_XDECREF(_ary); }
 
-    virtual daal::services::Status resize(size_t nrows) DAAL_C11_OVERRIDE { throw std::invalid_argument("Resizing numpy array through daal not supported."); }
+    virtual daal::services::Status resize(size_t nrows) override { throw std::invalid_argument("Resizing numpy array through daal not supported."); }
 
-    virtual int getSerializationTag() const DAAL_C11_OVERRIDE
+    virtual int getSerializationTag() const override
     {
         return 3333; // independent of template arg Hndlr!
     }
 
-    daal::services::Status getBlockOfRows(size_t vector_idx, size_t vector_num, daal::data_management::ReadWriteMode rwflag, daal::data_management::BlockDescriptor<double> & block) DAAL_C11_OVERRIDE { return getTBlock<double>(vector_idx, vector_num, rwflag, block); }
-    daal::services::Status getBlockOfRows(size_t vector_idx, size_t vector_num, daal::data_management::ReadWriteMode rwflag, daal::data_management::BlockDescriptor<float> & block) DAAL_C11_OVERRIDE { return getTBlock<float>(vector_idx, vector_num, rwflag, block); }
-    daal::services::Status getBlockOfRows(size_t vector_idx, size_t vector_num, daal::data_management::ReadWriteMode rwflag, daal::data_management::BlockDescriptor<int> & block) DAAL_C11_OVERRIDE { return getTBlock<int>(vector_idx, vector_num, rwflag, block); }
+    daal::services::Status getBlockOfRows(size_t vector_idx, size_t vector_num, daal::data_management::ReadWriteMode rwflag, daal::data_management::BlockDescriptor<double> & block) override { return getTBlock<double>(vector_idx, vector_num, rwflag, block); }
+    daal::services::Status getBlockOfRows(size_t vector_idx, size_t vector_num, daal::data_management::ReadWriteMode rwflag, daal::data_management::BlockDescriptor<float> & block) override { return getTBlock<float>(vector_idx, vector_num, rwflag, block); }
+    daal::services::Status getBlockOfRows(size_t vector_idx, size_t vector_num, daal::data_management::ReadWriteMode rwflag, daal::data_management::BlockDescriptor<int> & block) override { return getTBlock<int>(vector_idx, vector_num, rwflag, block); }
 
-    daal::services::Status releaseBlockOfRows(daal::data_management::BlockDescriptor<double> & block) DAAL_C11_OVERRIDE { return releaseTBlock<double>(block); }
-    daal::services::Status releaseBlockOfRows(daal::data_management::BlockDescriptor<float> & block) DAAL_C11_OVERRIDE { return releaseTBlock<float>(block); }
-    daal::services::Status releaseBlockOfRows(daal::data_management::BlockDescriptor<int> & block) DAAL_C11_OVERRIDE { return releaseTBlock<int>(block); }
+    daal::services::Status releaseBlockOfRows(daal::data_management::BlockDescriptor<double> & block) override { return releaseTBlock<double>(block); }
+    daal::services::Status releaseBlockOfRows(daal::data_management::BlockDescriptor<float> & block) override { return releaseTBlock<float>(block); }
+    daal::services::Status releaseBlockOfRows(daal::data_management::BlockDescriptor<int> & block) override { return releaseTBlock<int>(block); }
 
-    daal::services::Status getBlockOfColumnValues(size_t feature_idx, size_t vector_idx, size_t value_num, daal::data_management::ReadWriteMode rwflag, daal::data_management::BlockDescriptor<double> & block) DAAL_C11_OVERRIDE { return getTBlock<double>(vector_idx, value_num, rwflag, block, feature_idx, 1); }
-    daal::services::Status getBlockOfColumnValues(size_t feature_idx, size_t vector_idx, size_t value_num, daal::data_management::ReadWriteMode rwflag, daal::data_management::BlockDescriptor<float> & block) DAAL_C11_OVERRIDE { return getTBlock<float>(vector_idx, value_num, rwflag, block, feature_idx, 1); }
-    daal::services::Status getBlockOfColumnValues(size_t feature_idx, size_t vector_idx, size_t value_num, daal::data_management::ReadWriteMode rwflag, daal::data_management::BlockDescriptor<int> & block) DAAL_C11_OVERRIDE { return getTBlock<int>(vector_idx, value_num, rwflag, block, feature_idx, 1); }
+    daal::services::Status getBlockOfColumnValues(size_t feature_idx, size_t vector_idx, size_t value_num, daal::data_management::ReadWriteMode rwflag, daal::data_management::BlockDescriptor<double> & block) override { return getTBlock<double>(vector_idx, value_num, rwflag, block, feature_idx, 1); }
+    daal::services::Status getBlockOfColumnValues(size_t feature_idx, size_t vector_idx, size_t value_num, daal::data_management::ReadWriteMode rwflag, daal::data_management::BlockDescriptor<float> & block) override { return getTBlock<float>(vector_idx, value_num, rwflag, block, feature_idx, 1); }
+    daal::services::Status getBlockOfColumnValues(size_t feature_idx, size_t vector_idx, size_t value_num, daal::data_management::ReadWriteMode rwflag, daal::data_management::BlockDescriptor<int> & block) override { return getTBlock<int>(vector_idx, value_num, rwflag, block, feature_idx, 1); }
 
-    daal::services::Status releaseBlockOfColumnValues(daal::data_management::BlockDescriptor<double> & block) DAAL_C11_OVERRIDE { return releaseTBlock<double>(block); }
-    daal::services::Status releaseBlockOfColumnValues(daal::data_management::BlockDescriptor<float> & block) DAAL_C11_OVERRIDE { return releaseTBlock<float>(block); }
-    daal::services::Status releaseBlockOfColumnValues(daal::data_management::BlockDescriptor<int> & block) DAAL_C11_OVERRIDE { return releaseTBlock<int>(block); }
+    daal::services::Status releaseBlockOfColumnValues(daal::data_management::BlockDescriptor<double> & block) override { return releaseTBlock<double>(block); }
+    daal::services::Status releaseBlockOfColumnValues(daal::data_management::BlockDescriptor<float> & block) override { return releaseTBlock<float>(block); }
+    daal::services::Status releaseBlockOfColumnValues(daal::data_management::BlockDescriptor<int> & block) override { return releaseTBlock<int>(block); }
 
-    daal::services::Status allocateDataMemory(daal::MemType type = daal::dram) DAAL_C11_OVERRIDE { return daal::services::Status(daal::services::ErrorMethodNotSupported); }
+    daal::services::Status allocateDataMemory(daal::MemType type = daal::dram) override { return daal::services::Status(daal::services::ErrorMethodNotSupported); }
 
-    void freeDataMemory() DAAL_C11_OVERRIDE { daal::services::Status ec(daal::services::ErrorMethodNotSupported); }
+    void freeDataMemory() override { daal::services::Status ec(daal::services::ErrorMethodNotSupported); }
 
     /** \private */
     daal::services::Status serializeImpl(daal::data_management::InputDataArchive * archive)

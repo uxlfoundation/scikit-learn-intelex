@@ -32,6 +32,9 @@ from sklearn.utils.validation import check_is_fitted, column_or_1d
 
 from daal4py.sklearn._utils import sklearn_check_version
 
+if sklearn_check_version("1.9"):
+    from sklearn.utils._sparse import _align_api_if_sparse
+
 from .._config import config_context, get_config
 from .._device_offload import dispatch, wrap_output_data
 from .._utils import PatchingConditionsChain
@@ -300,8 +303,8 @@ class BaseSVC(BaseSVM):
         return patching_status
 
     # overwrite _validate_targets for array API support
-    def _onedal_validate_targets(self, X, y):
-        xp, is_array_api_compliant = get_namespace(X, y)
+    def _onedal_validate_targets(self, X, y, sample_weight=None):
+        xp, is_array_api_compliant = get_namespace(X, y, sample_weight)
 
         # _validate_targets equivalent:
         y_ = column_or_1d(y, warn=True)
@@ -317,6 +320,21 @@ class BaseSVC(BaseSVM):
                 "The number of classes has to be greater than one; got %d class"
                 % len(cls)
             )
+
+        if sample_weight is not None:
+            sample_weight = xp.reshape(xp.asarray(sample_weight), (-1,))
+            for yval in xp.arange(cls.shape[0]):
+                try:
+                    if xp.sum(sample_weight[y == yval]) <= 0:
+                        # Note this error message is copy-pasted from liblinear
+                        raise ValueError(
+                            "Invalid input - all samples with positive weights belong to the same class."
+                        )
+                except IndexError:
+                    # Note: scikit-learn here expects 'ValueError' and tests for it
+                    raise ValueError(
+                        f"sample_weight and X have incompatible shapes: {X.shape} vs {sample_weight.shape}"
+                    )
 
         self.classes_ = cls
         return xp.asarray(y, dtype=X.dtype)
@@ -339,7 +357,7 @@ class BaseSVC(BaseSVM):
             accept_sparse="csr",
         )
 
-        y = self._onedal_validate_targets(X, y)
+        y = self._onedal_validate_targets(X, y, sample_weight=sample_weight)
 
         if (
             hasattr(self, "probability")
@@ -463,6 +481,10 @@ class BaseSVC(BaseSVM):
 
         self.dual_coef_ = self._onedal_estimator.dual_coef_
         self.support_ = xp.asarray(self._onedal_estimator.support_, dtype=xp.int64)
+
+        if sklearn_check_version("1.9"):
+            self.support_vectors_ = _align_api_if_sparse(self.support_vectors_)
+            self.dual_coef_ = _align_api_if_sparse(self.dual_coef_)
 
         self._icept_ = self._onedal_estimator.intercept_
         self._sparse = False

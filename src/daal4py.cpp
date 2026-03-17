@@ -53,7 +53,7 @@ public:
     // DeleterIface must be copy-constructible
     NumpyDeleter(const NumpyDeleter & o) : _ndarray(o._ndarray) {}
     // ref-count reached 0 -> decref reference to python object
-    void operator()(const void * ptr) DAAL_C11_OVERRIDE
+    void operator()(const void * ptr) override
     {
         // We need to protect calls to python API
         // Note: at termination time, even when no threads are running, this breaks without the protection

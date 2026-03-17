@@ -53,22 +53,21 @@ Alternatively, functions and classes from the |sklearnex| can be imported direct
   from sklearnex.linear_model import LinearRegression
 
 Installation
---------------------
+------------
 
-.. contents:: :local:
+The |sklearnex| can be easily installed as a Python package under name ``scikit-learn-intelex`` from the most
+common distribution channels for Python.
 
-.. tip:: To prevent version conflicts, we recommend creating and activating a new environment for |sklearnex|.
+Installing from PyPI
+********************
 
-Install from PyPI
-**********************
-
-Recommended by default.
-
-To install |sklearnex|, run:
-
-::
+To install with ``pip`` from the public Python Package Index (PyPI), execute the following command on a terminal: ::
 
   pip install scikit-learn-intelex
+
+.. tip:: Running on GPU involves additional dependencies, see :doc:`oneapi-gpu`. SPMD mode has additional requirements on top of GPU ones, see :doc:`distributed-mode` for details.
+
+.. tip:: To prevent version conflicts, we recommend creating and activating a new virtual environment for |sklearnex|.
 
 .. tip:: Wheels are also available through Intel's index: ``https://software.repos.intel.com/python/pypi``
 
@@ -86,91 +85,61 @@ To install |sklearnex|, run:
    * - Modes
      - Single, SPMD (Linux* only)
 
-.. tip:: Running on GPU involves additional dependencies, see :doc:`oneapi-gpu`. SPMD mode has additional requirements on top of GPU ones, see :doc:`distributed-mode` for details.
-
 .. note:: Wheels are only available for x86-64 architecture.
 
-Install through Conda
-*********************
+Installing from conda-forge
+***************************
 
-To prevent version conflicts, we recommend installing ``scikit-learn-intelex`` into a new conda environment.
+To install the |sklearnex| in a fresh environment, execute the following command in a terminal: ::
 
-.. note::
-  The main Anaconda channel also provides distributions of ``scikit-learn-intelex``, but it does not provide the latest versions, nor does
-  it provide GPU-enabled builds. It is highly recommended to install ``scikit-learn-intelex`` from either Intel's channel or from conda-forge instead.
+  conda create -n sklex -c conda-forge --override-channels scikit-learn-intelex
+  conda activate sklex
 
-.. tabs::
+To install in an existing environment: ::
 
-   .. tab:: Intel channel
-
-      Recommended for the Intel® Distribution for Python users.
-
-      To install in a fresh environment: ::
-
-        conda create -n sklex -c https://software.repos.intel.com/python/conda/ -c conda-forge --override-channels scikit-learn-intelex
-        conda activate sklex
-
-      To install in an existing environment: ::
-
-        conda install -c https://software.repos.intel.com/python/conda/ -c conda-forge --override-channels scikit-learn-intelex
-
-      .. warning::
-        Packages from the Intel channel are meant to be used together with dependencies from the **conda-forge** channel, and might not
-        work correctly when used in an environment where packages from the ``anaconda`` default channel have been installed. It is
-        advisable to use the `miniforge <https://github.com/conda-forge/miniforge>`__ installer for ``conda``/``mamba``, as it comes with
-        ``conda-forge`` as the only default channel.
-
-      .. list-table:: **Supported Configurations**
-         :align: left
-
-         * - Operating systems
-           - Windows*, Linux*
-         * - Python versions
-           - 3.10, 3.11, 3.12, 3.13, 3.14
-         * - Devices
-           - CPU, GPU
-         * - Modes
-           - Single, SPMD (Linux* only)
-
-
-   .. tab:: Conda-Forge channel
-
-      To install in a fresh environment: ::
-
-        conda create -n sklex -c conda-forge --override-channels scikit-learn-intelex
-        conda activate sklex
-
-      To install in an existing environment: ::
-
-        conda install -c conda-forge --override-channels scikit-learn-intelex
-
-      .. list-table:: **Supported Configurations**
-         :align: left
-
-         * - Operating systems
-           - Windows*, Linux*
-         * - Python versions
-           - 3.10, 3.11, 3.12, 3.13, 3.14
-         * - Devices
-           - CPU, GPU
-         * - Modes
-           - Single, SPMD (Linux* only)
+  conda install -c conda-forge --override-channels scikit-learn-intelex
 
 .. tip:: Running on GPU involves additional dependencies, see :doc:`oneapi-gpu`.  SPMD mode has additional requirements on top of GPU ones, see :doc:`distributed-mode` for details.
 
+.. hint::
+  It is advisable to use the `miniforge <https://github.com/conda-forge/miniforge>`__ installer for ``conda``/``mamba``, as it comes with
+  ``conda-forge`` as the default channel.
+
+.. warning::
+  The main Anaconda channel also provides distributions of ``scikit-learn-intelex``, but it does not provide the latest versions, nor does
+  it provide GPU-enabled builds. It is highly recommended to install ``scikit-learn-intelex`` from either conda-forge or from Intel's channel instead.
+
+.. list-table:: **Supported Configurations**
+   :align: left
+
+   * - Operating systems
+     - Windows*, Linux*
+   * - Python versions
+     - 3.10, 3.11, 3.12, 3.13, 3.14
+   * - Devices
+     - CPU, GPU
+   * - Modes
+     - Single, SPMD (Linux* only)
+
 .. note:: Packages are only available for x86-64 architecture.
+
+.. tip::
+
+  The |sklearnex| is also available at Intel's conda channel: ``https://software.repos.intel.com/python/conda``
+
+  Packages from the Intel channel, which include also optimized versions of NumPy and SciPy, are meant to be used together with
+  dependencies from the **conda-forge** channel, and might not work correctly when used in an environment where packages from the
+  ``anaconda`` default channel have been installed.
 
 .. _build-from-sources:
 
-Build from Sources
-**********************
+Building from Sources
+*********************
+
+The |sklearnex| is a fully open-source package (`link to source code <https://github.com/uxlfoundation/scikit-learn-intelex>`_) which
+can be compiled from source with standard compiler toolkits.
 
 See :doc:`building-from-source` for details.
-
-Install Intel*(R) AI Tools
-****************************
-
-Download the Intel AI Tools `here <https://www.intel.com/content/www/us/en/developer/tools/oneapi/ai-tools-selector.html>`_. The extension is already included.
 
 Release Notes
 -------------------

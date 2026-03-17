@@ -40,6 +40,8 @@ from ...utils.validation import assert_all_finite, validate_data
 
 # This is a temporary workaround for issues with sklearnex._device_offload._get_host_inputs
 # passing kwargs with sycl queues with other host data will cause failures
+# Note: this wrapper could potentially be removed later if sklearn implements
+# array API support for this metric in their pairwise_distances class.
 _mahalanobis = support_input_format(partial(pairwise_distances, metric="mahalanobis"))
 
 

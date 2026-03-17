@@ -20,11 +20,20 @@ from collections.abc import Sequence
 
 import scipy.sparse as sp
 from sklearn.utils.validation import _assert_all_finite as _sklearn_assert_all_finite
-from sklearn.utils.validation import _num_samples, check_array, check_non_negative
+from sklearn.utils.validation import (
+    _num_samples,
+    check_array,
+    check_non_negative,
+)
 
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+
+# Note: 'check_feature_names' is reimported from this file elsewhere
 from daal4py.sklearn.utils.validation import add_dispatcher_docstring, check_feature_names
 from onedal.utils.validation import is_contiguous
+
+if sklearn_check_version("1.9"):
+    from sklearn.utils.validation import _check_estimator_name
 
 from ._array_api import get_namespace
 
@@ -63,6 +72,7 @@ def _sklearnex_assert_all_finite(
     X,
     *,
     allow_nan=False,
+    estimator_name=None,
     input_name="",
 ):
     # size check is an initial match to daal4py for performance reasons, can be
@@ -72,25 +82,55 @@ def _sklearnex_assert_all_finite(
     too_small = math.prod(X.shape) < 32768
 
     if too_small or not _onedal_supported_format(X, xp):
-        if sklearn_check_version("1.1"):
+        if sklearn_check_version("1.9"):
+            _sklearn_assert_all_finite(
+                X,
+                allow_nan=allow_nan,
+                input_name=input_name,
+                estimator_name=estimator_name,
+            )
+        elif sklearn_check_version("1.1"):
             _sklearn_assert_all_finite(X, allow_nan=allow_nan, input_name=input_name)
         else:
             _sklearn_assert_all_finite(X, allow_nan=allow_nan)
     else:
-        _onedal_assert_all_finite(X, allow_nan=allow_nan, input_name=input_name)
+        _onedal_assert_all_finite(
+            X,
+            allow_nan=allow_nan,
+            input_name=input_name,
+            estimator_name=estimator_name,
+        )
 
 
-def assert_all_finite(
-    X,
-    *,
-    allow_nan=False,
-    input_name="",
-):
-    _sklearnex_assert_all_finite(
-        X.data if sp.issparse(X) else X,
-        allow_nan=allow_nan,
-        input_name=input_name,
-    )
+if sklearn_check_version("1.9"):
+
+    def assert_all_finite(
+        X,
+        *,
+        allow_nan=False,
+        estimator_name=None,
+        input_name="",
+    ):
+        _sklearnex_assert_all_finite(
+            X.data if sp.issparse(X) else X,
+            allow_nan=allow_nan,
+            input_name=input_name,
+            estimator_name=estimator_name,
+        )
+
+else:
+
+    def assert_all_finite(
+        X,
+        *,
+        allow_nan=False,
+        input_name="",
+    ):
+        _sklearnex_assert_all_finite(
+            X.data if sp.issparse(X) else X,
+            allow_nan=allow_nan,
+            input_name=input_name,
+        )
 
 
 @add_dispatcher_docstring(_sklearn_validate_data)
@@ -120,6 +160,12 @@ def validate_data(
     if ensure_all_finite:
         # run local finite check
         allow_nan = ensure_all_finite == "allow-nan"
+        if sklearn_check_version("1.9"):
+            kwargs_assert_all_finite = {
+                "estimator_name": _check_estimator_name(_estimator)
+            }
+        else:
+            kwargs_assert_all_finite = {}
         # the return object from validate_data can be a single
         # element (either x or y) or both (as a tuple). An iterator along with
         # check_x and check_y can go through the output properly without
@@ -127,9 +173,13 @@ def validate_data(
         # is used
         arg = iter(out if isinstance(out, tuple) else (out,))
         if check_x:
-            assert_all_finite(next(arg), allow_nan=allow_nan, input_name="X")
+            assert_all_finite(
+                next(arg), allow_nan=allow_nan, input_name="X", **kwargs_assert_all_finite
+            )
         if check_y:
-            assert_all_finite(next(arg), allow_nan=allow_nan, input_name="y")
+            assert_all_finite(
+                next(arg), allow_nan=allow_nan, input_name="y", **kwargs_assert_all_finite
+            )
 
     if check_y and kwargs.get("y_numeric", False):
         # validate_data does not do full dtype conversions, as it uses check_X_y
@@ -152,10 +202,48 @@ def validate_data(
     return out
 
 
-def _check_sample_weight(
-    sample_weight, X, dtype=None, copy=False, ensure_non_negative=False
-):
+if sklearn_check_version("1.9"):
 
+    def _check_sample_weight(
+        sample_weight,
+        X,
+        dtype=None,
+        copy=False,
+        ensure_non_negative=False,
+        allow_all_zero_weights=False,
+    ):
+        return _check_sample_weight_internal(
+            sample_weight,
+            X,
+            dtype=dtype,
+            copy=copy,
+            ensure_non_negative=ensure_non_negative,
+            allow_all_zero_weights=allow_all_zero_weights,
+        )
+
+else:
+
+    def _check_sample_weight(
+        sample_weight, X, dtype=None, copy=False, ensure_non_negative=False
+    ):
+        return _check_sample_weight_internal(
+            sample_weight,
+            X,
+            dtype=dtype,
+            copy=copy,
+            ensure_non_negative=ensure_non_negative,
+            allow_all_zero_weights=True,
+        )
+
+
+def _check_sample_weight_internal(
+    sample_weight,
+    X,
+    dtype=None,
+    copy=False,
+    ensure_non_negative=False,
+    allow_all_zero_weights=False,
+):
     n_samples = _num_samples(X)
     xp, _ = get_namespace(X)
 
@@ -201,6 +289,10 @@ def _check_sample_weight(
                     sample_weight.shape, (n_samples,)
                 )
             )
+
+    if not allow_all_zero_weights:
+        if xp.all(sample_weight == 0):
+            raise ValueError("Sample weights must contain at least one non-zero number.")
 
     if ensure_non_negative:
         check_non_negative(sample_weight, "`sample_weight`")

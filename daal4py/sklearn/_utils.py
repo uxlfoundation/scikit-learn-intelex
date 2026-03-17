@@ -200,6 +200,10 @@ def is_sparse(x):
     return sp.issparse(x) or (is_DataFrame(x) and hasattr(x, "sparse"))
 
 
+def check_is_array_api(x: object) -> bool:
+    return not isinstance(x, np.ndarray) and hasattr(x, "__dlpack__")
+
+
 class PatchingConditionsChain:
     def __init__(self, scope_name):
         self.scope_name = scope_name

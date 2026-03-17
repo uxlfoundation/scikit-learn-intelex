@@ -86,7 +86,7 @@ intersphinx_mapping = {
     "numpy": ("https://numpy.org/doc/stable", None),
     "scipy": ("https://docs.scipy.org/doc/scipy/", None),
     "matplotlib": ("https://matplotlib.org/stable/", None),
-    "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
+    "pandas": ("https://pandas.pydata.org/docs/", None),
     "joblib": ("https://joblib.readthedocs.io/en/latest/", None),
     "seaborn": ("https://seaborn.pydata.org/", None),
     "skops": ("https://skops.readthedocs.io/en/stable/", None),
@@ -274,6 +274,7 @@ linkcheck_ignore = [
     re.compile(r"https://.*intel\.com/.+"),  # Avoid permission error
     re.compile(r"https://medium\.com/.*"),  # Avoid Medium paywall/rate limit
     re.compile(r"https://wiki\.archlinux\.org/.*"),  # Avoid Arch Wiki limit
+    re.compile(r"https://w*\.contributor-covenant.org"),  # Times out very frequently
 ]
 
 # Speed up link-check and fail faster
