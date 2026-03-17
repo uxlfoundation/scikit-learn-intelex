@@ -271,20 +271,14 @@ def _check_output_type(
             continue
         if hasattr(res, "ndim") and res.ndim == 0:
             continue
-        # Sparse outputs — verify sparse class
+        # Sparse outputs — verify sparse class matches sklearn config
         if is_sparse(res):
-            # TODO: remove fell_back case once sklearnex implements sparse_interface config
-            if sklearn_check_version("1.9") and fell_back:
-                from sklearn import get_config
-
-                sparse_iface = get_config().get("sparse_interface", "spmatrix")
+            if sklearn_check_version("1.9"):
+                sparse_iface = sklearn_get_config().get("sparse_interface", "spmatrix")
                 if sparse_iface == "sparray":
                     assert isinstance(res, sp.sparray)
                 else:
                     assert isinstance(res, sp.spmatrix)
-            else:
-                # oneDAL path always produces sp.spmatrix
-                assert isinstance(res, sp.spmatrix)
             continue
 
         if fell_back:
@@ -367,6 +361,11 @@ _FITTED_ATTR_NUMPY_OK = {
     ("KNeighborsClassifier", "classes_"),
     # Clusterer attrs are numpy
     ("KMeans", "cluster_centers_"),
+    # Classifier classes_ — numpy for dpnp/dpctl path
+    ("RandomForestClassifier", "classes_"),
+    ("RandomForestRegressor", "classes_"),
+    ("ExtraTreesClassifier", "classes_"),
+    ("ExtraTreesRegressor", "classes_"),
 }
 
 # (estimator, attribute) pairs where numpy fitted attributes are acceptable
@@ -379,11 +378,6 @@ _FITTED_ATTR_NUMPY_OK_NON_NUMPY = {
     ("PCA", "explained_variance_"),
     ("PCA", "components_"),
     ("PCA", "mean_"),
-    # Tree/forest — classes_ correct for array_api, numpy for dpnp/dpctl
-    ("RandomForestClassifier", "classes_"),
-    ("RandomForestRegressor", "classes_"),
-    ("ExtraTreesClassifier", "classes_"),
-    ("ExtraTreesRegressor", "classes_"),
 }
 
 # (estimator, attribute) pairs where dtype preservation is not expected
@@ -423,9 +417,14 @@ def _check_fitted_attributes(est, X, estimator_name, caplog):
         # Must be array-like (has dtype)
         if not hasattr(attr_val, "dtype"):
             continue
-        # Sparse fitted attrs — oneDAL always produces sp.spmatrix
+        # Sparse fitted attrs — verify sparse class matches sklearn config
         if is_sparse(attr_val):
-            assert isinstance(attr_val, sp.spmatrix)
+            if sklearn_check_version("1.9"):
+                sparse_iface = sklearn_get_config().get("sparse_interface", "spmatrix")
+                if sparse_iface == "sparray":
+                    assert isinstance(attr_val, sp.sparray)
+                else:
+                    assert isinstance(attr_val, sp.spmatrix)
             continue
         # Skip 0-d / scalar attributes
         if hasattr(attr_val, "ndim") and attr_val.ndim == 0:
