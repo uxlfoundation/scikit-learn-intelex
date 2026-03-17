@@ -68,6 +68,7 @@ from sklearnex.tests.utils import (
     gen_dataset,
     gen_models_info,
 )
+from sklearnex.utils._array_api import get_namespace
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
