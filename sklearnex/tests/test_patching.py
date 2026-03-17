@@ -407,7 +407,7 @@ def _check_fitted_attributes(est, X, estimator_name, caplog):
     x_is_fp16 = hasattr(X, "dtype") and "float16" in str(X.dtype)
 
     for attr_name, attr_val in vars(est).items():
-        # Only check public fitted attributes (trailing _, not dunder)
+        # Only check public fitted attributes (start with a letter, end with _)
         if not attr_name.endswith("_") or attr_name.startswith("_"):
             continue
         # Must be array-like (has dtype)
