@@ -347,8 +347,8 @@ _INTEGER_FITTED_ATTRS = {
 # (estimator, attribute) pairs where numpy fitted attributes are acceptable
 # for ALL input types (array API / dpnp / dpctl).  These estimators produce
 # numpy fitted attrs regardless of input type.
-# Note: clusterer and SVM (BaseLibSVM) attributes are automatically
-# detected and skipped in _check_fitted_attributes (not hardcoded per estimator).
+# Note: clusterer and SVM (BaseLibSVM) attributes are automatically skipped
+# in _check_fitted_attributes — they always return numpy regardless of input type.
 _FITTED_ATTR_NUMPY_OK = {
     # DummyRegressor — not wrapped for array API
     ("DummyRegressor", "constant_"),
@@ -376,8 +376,8 @@ _FITTED_ATTR_NUMPY_OK_NON_NUMPY = {
 
 # (estimator, attribute) pairs where dtype preservation is not expected
 # for fitted attributes.  oneDAL may use a different internal precision.
-# Note: SVM (BaseLibSVM) fitted attribute dtype is handled via automated check
-# in _check_fitted_attributes — all SVM attributes skip dtype matching.
+# Note: SVM (BaseLibSVM) fitted attribute dtype is automatically skipped
+# in _check_fitted_attributes — all SVM attributes are skipped before reaching dtype check.
 _FITTED_ATTR_DTYPE_SKIP = set()
 
 
