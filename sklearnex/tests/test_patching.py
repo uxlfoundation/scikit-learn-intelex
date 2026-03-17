@@ -408,7 +408,7 @@ def _check_fitted_attributes(est, X, estimator_name, caplog):
 
     for attr_name, attr_val in vars(est).items():
         # Only check public fitted attributes (start with a letter, end with _)
-        if not attr_name.endswith("_") or attr_name.startswith("_"):
+        if not (attr_name[0].isalpha() and attr_name.endswith("_")):
             continue
         # Must be array-like (has dtype)
         if not hasattr(attr_val, "dtype"):
