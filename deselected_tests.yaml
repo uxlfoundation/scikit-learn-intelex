@@ -73,6 +73,9 @@ deselected_tests:
   - neighbors/tests/test_neighbors.py::test_kneighbors_brute_backend[float64-kulsinski] <1.3
   - neighbors/tests/test_neighbors.py::test_radius_neighbors_brute_backend[kulsinski] <1.3
 
+  # wminkowski removed in scipy 1.8 but sklearn <=1.1 NearestNeighbors._fit() lacks kd_tree + weighted minkowski check
+  - neighbors/tests/test_neighbors.py::test_neighbors_metrics <=1.1
+
   # sklearnex PCA always chooses "covariance_eigh" solver instead of "full" when solver="auto"
   # resulting in solver assignment check failure for sklearn version >= 1.5
   - decomposition/tests/test_pca.py::test_pca_svd_solver_auto[1000-500-400-full] >=1.5
@@ -403,6 +406,49 @@ deselected_tests:
   # Tests for exact equality, but results have differences in the order of machine epsilon
   - neighbors/tests/test_neighbors.py::test_KNeighborsClassifier_multioutput
 
+  # Linear regression with non-PSD systems doesn't have a unique solution.
+  # OneDAL prefers minimum-norm solution, but sklearn doesn't.
+  # Note that all the cases here have 'wide' or 'square' shape (i.e. covariance is not full-rank)
+  # and 'zero_alpha' (result should match against unregularized) together.
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge[asarray-wide-True-svd-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge[asarray-wide-True-cholesky-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge[asarray-wide-True-lsqr-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge[asarray-wide-True-sparse_cg-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge[csr_matrix-wide-True-lsqr-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge[csr_matrix-wide-True-sparse_cg-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge[csr_array-wide-True-lsqr-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge[csr_array-wide-True-sparse_cg-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_classifier_gcv[asarray-float32-wide-True-ignored-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_classifier_gcv[asarray-float64-wide-True-ignored-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_classifier_gcv[csr_matrix-float32-wide-True-ignored-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_classifier_gcv[csr_matrix-float64-wide-True-ignored-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_classifier_gcv[csr_array-float32-wide-True-ignored-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_classifier_gcv[csr_array-float64-wide-True-ignored-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[asarray-float32-square-True-svd-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[asarray-float32-square-True-eigen-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[asarray-float32-wide-True-svd-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[asarray-float32-wide-True-eigen-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[asarray-float64-square-True-svd-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[asarray-float64-square-True-eigen-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[asarray-float64-wide-True-svd-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[asarray-float64-wide-True-eigen-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_matrix-float32-square-True-svd-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_matrix-float32-square-True-eigen-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_matrix-float32-wide-True-svd-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_matrix-float32-wide-True-eigen-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_matrix-float64-square-True-svd-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_matrix-float64-square-True-eigen-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_matrix-float64-wide-True-svd-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_matrix-float64-wide-True-eigen-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_array-float32-square-True-svd-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_array-float32-square-True-eigen-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_array-float32-wide-True-svd-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_array-float32-wide-True-eigen-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_array-float64-square-True-svd-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_array-float64-square-True-eigen-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_array-float64-wide-True-svd-zero_alpha]
+  - linear_model/tests/test_ridge.py::test_regularization_limits_ridge_gcv[csr_array-float64-wide-True-eigen-zero_alpha]
+
   # CI jobs in sklearnex compile scikit-learn from source, not necessarily with the same toolkits as sklearn's CIs
   - preprocessing/tests/test_polynomial.py::test_sizeof_LARGEST_INT_t
 
@@ -555,3 +601,9 @@ gpu:
   - tests/test_common.py::test_estimators[RandomForestRegressor(n_estimators=5)-check_regressor_data_not_an_array]
   - tests/test_common.py::test_estimators[RandomForestClassifier(n_estimators=5)-check_class_weight_classifiers]
   - tests/test_common.py::test_estimators[ExtraTreesClassifier(n_estimators=5)-check_class_weight_classifiers]
+
+  # --------------------------------------------------------
+  # The following tests fail at collection time, so they cannot be deselected with --deselect and must be ignored with --ignore.
+ignored_tests:
+  # scipy.misc.face was removed; test_image.py calls it at module level
+  - feature_extraction/tests/test_image.py <1.2
