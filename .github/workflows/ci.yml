@@ -48,11 +48,7 @@ jobs:
       - name: Get run ID of "Nightly-build" workflow
         id: get-run-id
         run: |
-          WF_NAME="Nightly-build"
-          JQ_QUERY='map(select(.event == "workflow_dispatch" or .event == "schedule")) | .[0].databaseId'
-          RUN_ID=`gh run --repo ${{ env.ONEDAL_REPO }} list --workflow "${WF_NAME}" --json databaseId,event --status success --jq "${JQ_QUERY}"`
-          echo "Detected latest run id of ${RUN_ID} for workflow ${WF_NAME}"
-          echo "run-id=${RUN_ID}" >> "$GITHUB_OUTPUT"
+          echo "run-id=22689596764" >> "$GITHUB_OUTPUT"
         env:
           GH_TOKEN: ${{ github.token }}
     outputs:
