@@ -175,13 +175,6 @@ _NUMPY_OUTPUT_OK = {
     ("NearestNeighbors", "radius_neighbors"),  # Returns ragged numpy arrays
 }
 
-# support_sycl_format converts input to numpy but doesn't convert output back.
-# Only skip when array_api_dispatch is off — with dispatch on, sklearn handles it.
-_NUMPY_OUTPUT_OK_NO_DISPATCH = {
-    ("PCA", "score_samples"),
-    ("IncrementalEmpiricalCovariance", "mahalanobis"),
-}
-
 # (estimator, method) pairs where dtype preservation is not expected.
 # oneDAL may use a different internal precision for these.
 # Note: several categories are handled automatically in _check_output_type:
@@ -250,11 +243,6 @@ def _check_output_type(
         return
     # Remaining known exceptions where numpy output is acceptable
     if (estimator_name, method) in _NUMPY_OUTPUT_OK:
-        return
-    if (
-        not sklearn_get_config().get("array_api_dispatch", False)
-        and (estimator_name, method) in _NUMPY_OUTPUT_OK_NO_DISPATCH
-    ):
         return
 
     # Methods that return self (e.g. partial_fit) are not array outputs
@@ -636,10 +624,18 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
         result, y, X = _check_estimator_patching(
             caplog, dataframe, queue, dtype, est, method
         )
-        # Check output type for non-numpy/pandas inputs (dpnp, dpctl)
+        # Check output type for dpnp/dpctl: re-fit and re-call with
+        # array_api_dispatch on so all outputs are consistent types
         if dataframe not in ("numpy", "pandas"):
-            _check_output_type(result, y, method, estimator, caplog, X=X, est=est)
-            _check_fitted_attributes(est, X, estimator, caplog)
+            if dataframe == "dpctl" and not hasattr(__import__("dpctl").tensor, "linalg"):
+                pytest.skip("dpctl.tensor missing linalg module")
+            with config_context(array_api_dispatch=True):
+                caplog.clear()
+                result2, y2, X2 = _check_estimator_patching(
+                    caplog, dataframe, queue, dtype, est, method
+                )
+                _check_output_type(result2, y2, method, estimator, caplog, X=X2, est=est)
+                _check_fitted_attributes(est, X2, estimator, caplog)
         _check_set_output_transform(est, method, X, estimator)
 
 
