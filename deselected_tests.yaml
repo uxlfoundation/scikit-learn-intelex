@@ -403,6 +403,9 @@ deselected_tests:
   # Tests for exact equality, but results have differences in the order of machine epsilon
   - neighbors/tests/test_neighbors.py::test_KNeighborsClassifier_multioutput
 
+  # CI jobs in sklearnex compile scikit-learn from source, not necessarily with the same toolkits as sklearn's CIs
+  - preprocessing/tests/test_polynomial.py::test_sizeof_LARGEST_INT_t
+
   # --------------------------------------------------------
   # No need to test daal4py patching
 reduced_tests:

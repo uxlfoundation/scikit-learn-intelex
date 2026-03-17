@@ -13,7 +13,7 @@ defusedxml==0.7.1
 docutils~=0.21.2
 entrypoints==0.4
 idna==3.11
-imagesize==1.4.1
+imagesize==2.0.0
 importlib-metadata==8.7.1
 importlib-resources==6.5.2
 ipython==9.10.0
@@ -43,7 +43,7 @@ Pygments==2.19.2
 pyparsing==3.3.2
 pyrsistent==0.20.0
 python-dateutil==2.9.0.post0
-pytz==2025.2
+pytz==2026.1
 PyYAML==6.0.3
 pyzmq==27.1.0
 requests==2.32.5
