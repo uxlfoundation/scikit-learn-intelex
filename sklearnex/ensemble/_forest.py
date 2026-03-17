@@ -312,7 +312,19 @@ class BaseForest(oneDALEstimator, ABC):
         if patching_status.get_status() and sklearn_check_version("1.4"):
             try:
                 X_test = _check_array(X)
-                assert_all_finite(X_test)  # minimally verify the data
+                patching_status.and_conditions(
+                    [
+                        (
+                            not (
+                                isinstance(self.max_samples, Integral)
+                                and self.max_samples > X_test.shape[0]
+                            ),
+                            "'max_samples' larger than number of rows is not supported.",
+                        ),
+                    ]
+                )
+                if patching_status.get_status():
+                    assert_all_finite(X_test)  # minimally verify the data
                 input_is_finite = True
             except ValueError:
                 input_is_finite = False

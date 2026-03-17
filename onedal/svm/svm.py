@@ -27,6 +27,8 @@ from ..common._estimator_checks import _check_is_fitted
 from ..datatypes import from_table, to_table
 from ..utils.validation import _is_csr
 
+_csr_array = sp.csr_array if hasattr(sp, "csr_array") else sp.csr_matrix
+
 
 class BaseSVM(ABC):
 
@@ -110,8 +112,8 @@ class BaseSVM(ABC):
         result = self.train(params, *data_t)
 
         if self._sparse:
-            self.dual_coef_ = sp.csr_matrix(from_table(result.coeffs).T)
-            self.support_vectors_ = sp.csr_matrix(from_table(result.support_vectors))
+            self.dual_coef_ = _csr_array(from_table(result.coeffs).T)
+            self.support_vectors_ = _csr_array(from_table(result.support_vectors))
         else:
             self.dual_coef_ = from_table(result.coeffs, like=X).T
             self.support_vectors_ = from_table(result.support_vectors, like=X)
@@ -143,7 +145,7 @@ class BaseSVM(ABC):
 
         if self._sparse:
             if not _is_csr(X):
-                X = sp.csr_array(X) if hasattr(sp, "csr_array") else sp.csr_matrix(X)
+                X = _csr_array(X)
             else:
                 X.sort_indices()
 
