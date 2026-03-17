@@ -26,6 +26,10 @@ from sklearn.neighbors._kd_tree import KDTree
 from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._utils import is_sparse, sklearn_check_version
+
+if sklearn_check_version("1.9"):
+    from sklearn.utils._sparse import _align_api_if_sparse
+
 from onedal._device_offload import _transfer_to_host
 from onedal.utils._array_api import _is_numpy_namespace
 from onedal.utils.validation import _check_array, _num_features, _num_samples
@@ -645,7 +649,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                 X = xp_fit.asarray(X)
 
         # construct CSR matrix representation of the k-NN graph
-        # requires moving data to host to construct the csr_matrix
+        # requires moving data to host to construct the csr_array
         if mode == "connectivity":
             A_ind = self.kneighbors(X, n_neighbors, return_distance=False)
             _, (A_ind,) = _transfer_to_host(A_ind)
@@ -670,9 +674,12 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         n_nonzero = n_queries * n_neighbors
         A_indptr = xp.arange(0, n_nonzero + 1, n_neighbors)
 
-        kneighbors_graph = sp.csr_matrix(
+        kneighbors_graph = sp.csr_array(
             (A_data, xp.reshape(A_ind, (-1,)), A_indptr), shape=(n_queries, n_samples_fit)
         )
+
+        if sklearn_check_version("1.9"):
+            kneighbors_graph = _align_api_if_sparse(kneighbors_graph)
 
         return kneighbors_graph
 
