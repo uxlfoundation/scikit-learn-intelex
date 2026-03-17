@@ -362,11 +362,6 @@ _FITTED_ATTR_NUMPY_OK = {
     ("KNeighborsClassifier", "classes_"),
     # Clusterer attrs are numpy
     ("KMeans", "cluster_centers_"),
-    # Classifier classes_ — numpy for dpnp/dpctl path
-    ("RandomForestClassifier", "classes_"),
-    ("RandomForestRegressor", "classes_"),
-    ("ExtraTreesClassifier", "classes_"),
-    ("ExtraTreesRegressor", "classes_"),
 }
 
 # (estimator, attribute) pairs where numpy fitted attributes are acceptable
@@ -434,6 +429,9 @@ def _check_fitted_attributes(est, X, estimator_name, caplog):
             continue
 
         # --- Type check (array namespace) ---
+        # classes_ is set as numpy internally by oneDAL for all classifiers
+        if attr_name == "classes_":
+            continue
         if isinstance(est, BaseLibSVM):
             continue
         elif is_clusterer(est):
