@@ -352,8 +352,8 @@ _INTEGER_FITTED_ATTRS = {
 # (estimator, attribute) pairs where numpy fitted attributes are acceptable
 # for ALL input types (array API / dpnp / dpctl).  These estimators produce
 # numpy fitted attrs regardless of input type.
-# Note: clusterer and SVM (BaseLibSVM) attributes are handled via automated
-# checks in _check_fitted_attributes.
+# Note: clusterer and SVM (BaseLibSVM) attributes are automatically
+# detected and skipped in _check_fitted_attributes (not hardcoded per estimator).
 _FITTED_ATTR_NUMPY_OK = {
     # DummyRegressor — not wrapped for array API
     ("DummyRegressor", "constant_"),
@@ -407,8 +407,6 @@ def _check_fitted_attributes(est, X, estimator_name, caplog):
     ``test_ridge.py``).
     """
     input_type = type(X)
-    from sklearnex.utils._array_api import get_namespace
-
     xp, _ = get_namespace(X)
     is_non_numpy_input = not isinstance(X, np.ndarray) and xp is not None
 
@@ -624,13 +622,18 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
         result, y, X = _check_estimator_patching(
             caplog, dataframe, queue, dtype, est, method
         )
-        # Check output type for dpnp/dpctl: re-fit and re-call with
-        # array_api_dispatch on so all outputs are consistent types
+        # Without array_api_dispatch, dpnp/dpctl inputs go through
+        # support_input_format (converts to numpy and back) for fit and
+        # support_sycl_format (converts to numpy but NOT back) for some
+        # methods like score_samples/mahalanobis. This creates a type
+        # mismatch: fitted attrs may be numpy while method outputs are
+        # dpnp or vice versa. With array_api_dispatch enabled, all paths
+        # use array API consistently, so we re-fit and re-call with
+        # dispatch on to verify output types correctly.
         if dataframe not in ("numpy", "pandas"):
             if dataframe == "dpctl" and not hasattr(__import__("dpctl").tensor, "linalg"):
                 pytest.skip("dpctl.tensor missing linalg module")
             with config_context(array_api_dispatch=True):
-                caplog.clear()
                 result2, y2, X2 = _check_estimator_patching(
                     caplog, dataframe, queue, dtype, est, method
                 )
