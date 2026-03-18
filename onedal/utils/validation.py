@@ -462,9 +462,7 @@ def _is_csr(x):
     )
 
 
-def _assert_all_finite(
-    X, allow_nan=False, estimator_name=None, input_name=""
-):
+def _assert_all_finite(X, allow_nan=False, input_name=""):
     backend_method = BackendFunction(
         backend.finiteness_checker.compute.compute, backend, "compute", no_policy=False
     )
