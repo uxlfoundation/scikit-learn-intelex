@@ -32,6 +32,9 @@ from sklearn.utils.validation import check_is_fitted, column_or_1d
 
 from daal4py.sklearn._utils import sklearn_check_version
 
+if sklearn_check_version("1.9"):
+    from sklearn.utils._sparse import _align_api_if_sparse
+
 from .._config import config_context, get_config
 from .._device_offload import dispatch, wrap_output_data
 from .._utils import PatchingConditionsChain
@@ -478,6 +481,10 @@ class BaseSVC(BaseSVM):
 
         self.dual_coef_ = self._onedal_estimator.dual_coef_
         self.support_ = xp.asarray(self._onedal_estimator.support_, dtype=xp.int64)
+
+        if sklearn_check_version("1.9"):
+            self.support_vectors_ = _align_api_if_sparse(self.support_vectors_)
+            self.dual_coef_ = _align_api_if_sparse(self.dual_coef_)
 
         self._icept_ = self._onedal_estimator.intercept_
         self._sparse = False

@@ -21,7 +21,6 @@ if daal_check_version((2024, "P", 1)):
     from daal4py.sklearn.linear_model.logistic_path import (
         LogisticRegressionCV as _daal4py_LogisticRegressionCV,
     )
-    from onedal._device_offload import support_input_format
 
     from ...linear_model.logistic_regression import (
         LogisticRegression as _sklearnex_LogisticRegression,
@@ -34,7 +33,7 @@ if daal_check_version((2024, "P", 1)):
     class LogisticRegressionCV(
         _daal4py_LogisticRegressionCV, _sklearnex_LogisticRegression
     ):
-        fit = support_input_format(_daal4py_LogisticRegressionCV.fit)
+        fit = _daal4py_LogisticRegressionCV.fit
         predict_proba = _sklearnex_LogisticRegression.predict_proba
         predict_log_proba = _sklearnex_LogisticRegression.predict_log_proba
         decision_function = _sklearnex_LogisticRegression.decision_function
