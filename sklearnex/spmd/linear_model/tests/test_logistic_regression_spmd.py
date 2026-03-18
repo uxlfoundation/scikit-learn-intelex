@@ -157,8 +157,15 @@ def test_logistic_spmd_synthetic(
 
     # TODO: Logistic Regression coefficients do not align
     tol = 1e-2
-    assert_allclose(spmd_model.coef_, batch_model.coef_, rtol=tol, atol=tol)
-    assert_allclose(spmd_model.intercept_, batch_model.intercept_, rtol=tol, atol=tol)
+    assert_allclose(
+        _as_numpy(spmd_model.coef_), _as_numpy(batch_model.coef_), rtol=tol, atol=tol
+    )
+    assert_allclose(
+        _as_numpy(spmd_model.intercept_),
+        _as_numpy(batch_model.intercept_),
+        rtol=tol,
+        atol=tol,
+    )
 
     # Ensure predictions of batch algo match spmd
     # Configure raw input status for spmd estimator
@@ -166,4 +173,4 @@ def test_logistic_spmd_synthetic(
         spmd_result = spmd_model.predict(local_dpt_X_test)
     batch_result = batch_model.predict(dpt_X_test)
 
-    _spmd_assert_allclose(spmd_result, _as_numpy(batch_result))
+    _spmd_assert_allclose(_as_numpy(spmd_result), _as_numpy(batch_result))

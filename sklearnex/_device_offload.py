@@ -112,7 +112,8 @@ def dispatch(
     """
 
     if get_config()["use_raw_input"]:
-        return branches["onedal"](obj, *args, **kwargs)
+        with QM.manage_global_queue(None, *args) as queue:
+            return branches["onedal"](obj, *args, **kwargs, queue=queue)
 
     # Determine if array_api dispatching is enabled, and if estimator is capable
     onedal_array_api = _array_api_offload() and get_tags(obj).onedal_array_api
