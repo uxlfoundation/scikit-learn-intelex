@@ -1,4 +1,5 @@
 import os
+import pathlib
 
 
 def test_import_onedal_py_dpc():
