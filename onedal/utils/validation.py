@@ -462,13 +462,8 @@ def _is_csr(x):
     )
 
 
-# Note: the arguments here are made to match scikit-learn's, but 'msg_dtype'
-# is not used. If at some point this function were to be called directly
-# with types other than fp32/64, it would need to incorporate additional
-# text in the message:
-# https://github.com/scikit-learn/scikit-learn/blob/08f9b20d69a787a5a1e06e0ba6dd8693aeb5d223/sklearn/utils/validation.py#L162
 def _assert_all_finite(
-    X, allow_nan=False, msg_dtype=None, estimator_name=None, input_name=""
+    X, allow_nan=False, estimator_name=None, input_name=""
 ):
     backend_method = BackendFunction(
         backend.finiteness_checker.compute.compute, backend, "compute", no_policy=False
@@ -492,14 +487,12 @@ def assert_all_finite(
     X,
     *,
     allow_nan=False,
-    estimator_name=None,
     input_name="",
 ):
     _assert_all_finite(
         X.data if sp.issparse(X) else X,
         allow_nan=allow_nan,
         input_name=input_name,
-        estimator_name=estimator_name,
     )
 
 
