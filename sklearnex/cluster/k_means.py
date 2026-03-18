@@ -467,11 +467,9 @@ if daal_check_version((2023, "P", 200)):
             )
 
         def _onedal_transform(self, X, queue=None):
-            from sklearn.metrics.pairwise import euclidean_distances
-
             from .._config import get_config
 
-            xp, _ = get_namespace(X)
+            xp, is_array_api = get_namespace(X)
 
             if not get_config()["use_raw_input"]:
                 X = validate_data(
@@ -483,6 +481,19 @@ if daal_check_version((2023, "P", 200)):
                     order="C",
                     accept_large_sparse=False,
                 )
+
+            if is_array_api:
+                centers = xp.asarray(self.cluster_centers_)
+                XX = xp.sum(X * X, axis=1)[:, None]
+                CC = xp.sum(centers * centers, axis=1)[None, :]
+                XC = X @ centers.T
+                distances_sq = XX + CC - 2 * XC
+                distances_sq = xp.where(
+                    distances_sq < 0, xp.zeros_like(distances_sq), distances_sq
+                )
+                return xp.sqrt(distances_sq)
+
+            from sklearn.metrics.pairwise import euclidean_distances
 
             return euclidean_distances(X, self.cluster_centers_)
 
