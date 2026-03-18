@@ -39,7 +39,7 @@
 <div align="left">
 
 ## Overview
-
+ 
 Extension for Scikit-learn is a **free software AI accelerator** designed to deliver over **10-100X** acceleration to your existing scikit-learn code.
 The software acceleration is achieved with vector instructions, AI hardware-specific memory optimizations, threading, and optimizations.
 
