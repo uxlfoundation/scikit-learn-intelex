@@ -402,7 +402,7 @@ _FITTED_ATTR_DTYPE_SKIP = {
 }
 
 
-def _check_fitted_attributes(est, X, estimator_name, caplog):
+def _check_fitted_attributes(est, X, estimator_name, caplog, queue=None):
     """Check that fitted attributes preserve input array type and dtype.
 
     After fitting with array API / dpnp / dpctl inputs, array-valued
@@ -454,8 +454,8 @@ def _check_fitted_attributes(est, X, estimator_name, caplog):
         # SVM multiclass on GPU returns all numpy attrs (oneDAL issue)
         if (
             isinstance(est, BaseLibSVM)
-            and hasattr(X, "device")
-            and "gpu" in str(X.device).lower()
+            and queue is not None
+            and getattr(queue.sycl_device, "is_gpu", False)
         ):
             continue
         elif is_clusterer(est):
@@ -632,7 +632,7 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
                 # Check return type conformance when no exception
                 # occurred. Output arrays should match the input array type.
                 _check_output_type(result, y, method, estimator, caplog, X=X, est=est)
-                _check_fitted_attributes(est, X, estimator, caplog)
+                _check_fitted_attributes(est, X, estimator, caplog, queue=queue)
                 _check_set_output_transform(est, method, X, estimator)
 
     else:
@@ -662,7 +662,7 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
                     caplog, dataframe, queue, dtype, est, method
                 )
                 _check_output_type(result2, y2, method, estimator, caplog, X=X2, est=est)
-                _check_fitted_attributes(est, X2, estimator, caplog)
+                _check_fitted_attributes(est, X2, estimator, caplog, queue=queue)
         _check_set_output_transform(est, method, X, estimator)
 
 
