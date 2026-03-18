@@ -108,7 +108,7 @@ class BaseLogisticRegression(metaclass=ABCMeta):
     @supports_queue
     def predict(self, X, queue=None):
         result = self._infer(X, queue)
-        y = from_table(result.responses, like=self.classes_)
+        y = from_table(result.responses, like=X)
         return y
 
     @supports_queue
