@@ -136,6 +136,7 @@ jobs:
           printf "DPCFLAG: ${{ steps.set-env.outputs.DPCFLAG }} NO_DPC:${NO_DPC}\n"
           ls -lha ${DALROOT}/lib/intel64
           echo "$(ls ${DALROOT}/lib/intel64)"
+          printf "MKLROOT: ${MKLROOT}\n"
       - name: Install testing requirements
         run: |
           source venv/bin/activate
@@ -274,6 +275,7 @@ jobs:
           call .\conda-recipe\bld.bat
           echo "DPCFLAG: ${{ steps.set-env.outputs.DPCFLAG }} NO_DPC: %NO_DPC%"
           dir %DALROOT%\lib\intel64
+          echo "MKLROOT: %MKLROOT%"
       - name: Install testing requirements
         shell: cmd
         run: |
