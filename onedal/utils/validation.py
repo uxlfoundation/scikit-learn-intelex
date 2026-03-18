@@ -485,29 +485,6 @@ def _assert_all_finite(
             type_err = "infinity" if allow_nan else "NaN, infinity"
             padded_input_name = input_name + " " if input_name else ""
             msg_err = f"Input {padded_input_name}contains {type_err}."
-            if (
-                estimator_name is not None  # proxy for sklearn>=1.9
-                and input_name == "X"
-                and not allow_nan
-            ):
-                # This checks if the input contains any NaN value
-                if True in (X != X):
-                    # Message is taken from scikit-learn. Note that scikit-learn
-                    # tests for this exact message in its estimators
-                    msg_err += (
-                        f"\n{estimator_name} does not accept missing values"
-                        " encoded as NaN natively. For supervised learning, you might want"
-                        " to consider sklearn.ensemble.HistGradientBoostingClassifier and"
-                        " Regressor which accept missing values encoded as NaNs natively."
-                        " Alternatively, it is possible to preprocess the data, for"
-                        " instance by using an imputer transformer in a pipeline or drop"
-                        " samples with missing values. See"
-                        " https://scikit-learn.org/stable/modules/impute.html"
-                        " You can find a list of all estimators that handle NaN values"
-                        " at the following page:"
-                        " https://scikit-learn.org/stable/modules/impute.html"
-                        "#estimators-that-handle-nan-values"
-                    )
             raise ValueError(msg_err)
 
 
