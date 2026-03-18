@@ -464,7 +464,14 @@ if daal_check_version((2024, "P", 1)):
 
             assert hasattr(self, "_onedal_estimator")
 
+            # res will be the same datatype is X
             res = self._onedal_estimator.predict(X, queue=queue)
+
+            # We need to convert it to the same type as classes_
+            # Note that we might need to change the device here, e.g. if classes_ are on CPU
+            res = xp_y.asarray(
+                xp.asarray(res, device=getattr(self.classes_, "device", None))
+            )
 
             y = xp_y.take(self.classes_, xp_y.reshape(res, (-1,)), axis=0)
 
