@@ -76,6 +76,13 @@ if "Windows" in platform.system():
             dal_root_redist = os.path.join(os.environ["DALROOT"], "redist", arch_dir)
             if os.path.exists(dal_root_redist):
                 os.add_dll_directory(dal_root_redist)
+
+        for dep_root in ["CMPLR_ROOT", "MKLROOT"]:
+            if dep_root in os.environ:
+                dep_root_dir = os.path.join(os.environ[dep_root], "bin")
+                if os.path.exists(dep_root_dir):
+                    os.add_dll_directory(dep_root_dir)
+
         try:
             os.add_dll_directory(path_to_libs)
         except FileNotFoundError:
