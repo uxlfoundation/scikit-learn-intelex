@@ -347,8 +347,9 @@ _INTEGER_FITTED_ATTRS = {
 # (estimator, attribute) pairs where numpy fitted attributes are acceptable
 # for ALL input types (array API / dpnp / dpctl).  These estimators produce
 # numpy fitted attrs regardless of input type.
-# Note: clusterer and SVM (BaseLibSVM) attributes are automatically skipped
-# in _check_fitted_attributes — they always return numpy regardless of input type.
+# Note: clusterer attrs and classes_ are automatically skipped by type in
+# _check_fitted_attributes. SVM is partially skipped: probA_/probB_ here,
+# GPU multiclass by device check, specific attrs by device/dtype skip lists.
 _FITTED_ATTR_NUMPY_OK = {
     # DummyRegressor — not wrapped for array API
     ("DummyRegressor", "constant_"),
@@ -368,8 +369,8 @@ _FITTED_ATTR_NUMPY_OK = {
 }
 
 # (estimator, attribute) pairs where numpy fitted attributes are acceptable
-# only for non-numpy inputs (dpnp, dpctl, torch, etc).  These attributes
-# are set internally as numpy by oneDAL regardless of input type.
+# only when array_api_dispatch is off with non-numpy inputs (dpnp, dpctl).
+# With dispatch on, these attrs return the correct type.
 _FITTED_ATTR_NUMPY_OK_NON_NUMPY = {
     # PCA — fitted attrs are dpnp on GPU but numpy on dpnp/dpctl CPU path
     ("PCA", "singular_values_"),
@@ -379,11 +380,8 @@ _FITTED_ATTR_NUMPY_OK_NON_NUMPY = {
     ("PCA", "mean_"),
 }
 
-# (estimator, attribute) pairs where dtype preservation is not expected
-# for fitted attributes.  oneDAL may use a different internal precision.
-# Note: SVM (BaseLibSVM) fitted attribute dtype is automatically skipped
-# in _check_fitted_attributes — all SVM attributes are skipped before reaching dtype check.
-# SVM attrs that end up on wrong device
+# SVM attrs that end up on wrong device (oneDAL places them on GPU
+# even when input is CPU).
 _FITTED_ATTR_DEVICE_SKIP = {
     ("SVC", "n_iter_"),
     ("NuSVC", "n_iter_"),
@@ -393,6 +391,7 @@ _FITTED_ATTR_DEVICE_SKIP = {
     ("NuSVC", "probB_"),
 }
 
+# SVM attrs with wrong dtype (oneDAL computes in float64 internally).
 _FITTED_ATTR_DTYPE_SKIP = {
     ("SVC", "class_weight_"),
     ("NuSVC", "class_weight_"),
@@ -452,6 +451,7 @@ def _check_fitted_attributes(est, X, estimator_name, caplog):
         # classes_ is set as numpy internally by oneDAL for all classifiers
         if attr_name == "classes_":
             continue
+        # SVM multiclass on GPU returns all numpy attrs (oneDAL issue)
         if (
             isinstance(est, BaseLibSVM)
             and hasattr(X, "device")
