@@ -360,6 +360,11 @@ _FITTED_ATTR_NUMPY_OK = {
     ("LocalOutlierFactor", "negative_outlier_factor_"),
     # Clusterer attrs are numpy
     ("KMeans", "cluster_centers_"),
+    # SVM probA_/probB_ — libsvm internal, always numpy
+    ("SVC", "probA_"),
+    ("SVC", "probB_"),
+    ("NuSVC", "probA_"),
+    ("NuSVC", "probB_"),
 }
 
 # (estimator, attribute) pairs where numpy fitted attributes are acceptable
@@ -378,7 +383,24 @@ _FITTED_ATTR_NUMPY_OK_NON_NUMPY = {
 # for fitted attributes.  oneDAL may use a different internal precision.
 # Note: SVM (BaseLibSVM) fitted attribute dtype is automatically skipped
 # in _check_fitted_attributes — all SVM attributes are skipped before reaching dtype check.
-_FITTED_ATTR_DTYPE_SKIP = set()
+# SVM attrs that end up on wrong device
+_FITTED_ATTR_DEVICE_SKIP = {
+    ("SVC", "n_iter_"),
+    ("NuSVC", "n_iter_"),
+    ("SVC", "probA_"),
+    ("SVC", "probB_"),
+    ("NuSVC", "probA_"),
+    ("NuSVC", "probB_"),
+}
+
+_FITTED_ATTR_DTYPE_SKIP = {
+    ("SVC", "class_weight_"),
+    ("NuSVC", "class_weight_"),
+    ("SVC", "probA_"),
+    ("SVC", "probB_"),
+    ("NuSVC", "probA_"),
+    ("NuSVC", "probB_"),
+}
 
 
 def _check_fitted_attributes(est, X, estimator_name, caplog):
@@ -430,7 +452,11 @@ def _check_fitted_attributes(est, X, estimator_name, caplog):
         # classes_ is set as numpy internally by oneDAL for all classifiers
         if attr_name == "classes_":
             continue
-        if isinstance(est, BaseLibSVM):
+        if (
+            isinstance(est, BaseLibSVM)
+            and hasattr(X, "device")
+            and "gpu" in str(X.device).lower()
+        ):
             continue
         elif is_clusterer(est):
             continue
@@ -453,7 +479,9 @@ def _check_fitted_attributes(est, X, estimator_name, caplog):
             assert isinstance(attr_val, input_type)
 
         # --- Device check ---
-        if hasattr(X, "device"):
+        if (estimator_name, attr_name) in _FITTED_ATTR_DEVICE_SKIP:
+            pass
+        elif hasattr(X, "device"):
             if hasattr(attr_val, "device"):
                 assert X.device == attr_val.device
 
