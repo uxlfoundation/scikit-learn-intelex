@@ -327,7 +327,7 @@ def _check_output_type(result, data_input, method, estimator_name, caplog, X, es
                     assert res.dtype == X.dtype
 
 
-# Attr names that are inherently integer-typed — skip dtype matching.
+# Integer attrs — skip dtype check.
 _INTEGER_FITTED_ATTRS = {
     "labels_",
     "support_",
@@ -341,7 +341,7 @@ _INTEGER_FITTED_ATTRS = {
     "n_estimators_",
 }
 
-# (estimator, attr) — skip ALL checks (type/device/dtype). Always numpy.
+# Skip all checks — always numpy.
 _ATTR_SKIP_ALL = {
     ("DummyRegressor", "constant_"),
     ("LogisticRegression", "coef_"),
@@ -351,8 +351,7 @@ _ATTR_SKIP_ALL = {
     ("KMeans", "cluster_centers_"),
 }
 
-# (estimator, attr) — skip ALL checks only when array_api_dispatch is off.
-# With dispatch on, these return the correct type.
+# Skip all checks when array_api_dispatch is off.
 _ATTR_SKIP_ALL_NO_DISPATCH = {
     ("PCA", "singular_values_"),
     ("PCA", "explained_variance_ratio_"),
@@ -361,7 +360,7 @@ _ATTR_SKIP_ALL_NO_DISPATCH = {
     ("PCA", "mean_"),
 }
 
-# (estimator, attr) — skip device check only. Attr on wrong device.
+# Skip device check — attr on wrong device.
 _ATTR_SKIP_DEVICE = {
     ("SVC", "n_iter_"),
     ("NuSVC", "n_iter_"),
@@ -371,7 +370,7 @@ _ATTR_SKIP_DEVICE = {
     ("NuSVC", "probB_"),
 }
 
-# (estimator, attr) — skip dtype check only. Wrong internal precision.
+# Skip dtype check — wrong internal precision.
 _ATTR_SKIP_DTYPE = {
     ("SVC", "class_weight_"),
     ("NuSVC", "class_weight_"),
@@ -438,21 +437,11 @@ def _should_skip_dtype(key, attr_name, est, x_is_fp16):
 
 
 def _check_fitted_attributes(est, X, estimator_name, caplog, queue=None):
-    """Check that fitted attributes preserve input array type, device, and dtype.
+    """Check fitted attributes preserve input type, device, and dtype.
 
-    For each public fitted attribute (e.g. coef_, intercept_):
-      1. Filter: skip non-public, non-array, scalar, sparse attrs
-      2. Sparse: verify sparse class matches sklearn config, then skip
-      3. Skip all: known exceptions (classes_, clusterers, fallback, skip lists)
-      4. Type: assert attr is same type as input (e.g. dpnp in -> dpnp out)
-      5. Device: assert attr is on same device as input
-      6. Dtype: assert attr dtype matches input dtype (float only)
-
-    Skip lists control which (estimator, attr) pairs skip specific checks:
-      - _ATTR_SKIP_ALL: skip all checks (always numpy)
-      - _ATTR_SKIP_ALL_NO_DISPATCH: skip all when array_api_dispatch is off
-      - _ATTR_SKIP_DEVICE: skip device check only
-      - _ATTR_SKIP_DTYPE: skip dtype check only
+    Checks: type -> device -> dtype. Early exit for sparse, known
+    exceptions, and sklearn fallback. See _ATTR_SKIP_* lists for
+    per-estimator skip rules.
     """
     input_type = type(X)
     xp, _ = get_namespace(X)
