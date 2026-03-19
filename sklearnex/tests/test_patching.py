@@ -112,6 +112,7 @@ def test_pairwise_distances_patching(caplog, dataframe, queue, dtype, metric):
             "running accelerated version" in i.message
             or "fallback to original Scikit-learn" in i.message
             for i in caplog.records
+            if i.name == "sklearnex"
         ]
     ), f"sklearnex patching issue in pairwise_distances with log: \n{caplog.text}"
     if dataframe not in ("numpy", "pandas"):
@@ -152,6 +153,7 @@ def test_roc_auc_score_patching(caplog, dataframe, queue, dtype):
             "running accelerated version" in i.message
             or "fallback to original Scikit-learn" in i.message
             for i in caplog.records
+            if i.name == "sklearnex"
         ]
     ), f"sklearnex patching issue in roc_auc_score with log: \n{caplog.text}"
 
@@ -175,6 +177,7 @@ def _check_estimator_patching(caplog, dataframe, queue, dtype, est, method):
             "running accelerated version" in i.message
             or "fallback to original Scikit-learn" in i.message
             for i in caplog.records
+            if i.name == "sklearnex"
         ]
     ), f"sklearnex patching issue in {est}.{method} with log: \n{caplog.text}"
 
