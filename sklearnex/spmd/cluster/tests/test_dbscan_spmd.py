@@ -70,7 +70,14 @@ def test_dbscan_spmd_gold(dataframe, queue):
     get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-@pytest.mark.parametrize("use_raw_input", [True, False])
+@pytest.mark.parametrize(
+    "use_raw_input,array_api_dispatch",
+    [
+        (True, False),
+        (False, True),
+        (False, False),
+    ],
+)
 @pytest.mark.mpi
 def test_dbscan_spmd_synthetic(
     n_samples,
@@ -81,6 +88,7 @@ def test_dbscan_spmd_synthetic(
     queue,
     dtype,
     use_raw_input,
+    array_api_dispatch,
 ):
     n_features, eps = n_features_and_eps
     # Import spmd and batch algo
@@ -96,8 +104,10 @@ def test_dbscan_spmd_synthetic(
     )
 
     # Ensure labels from fit of batch algo matches spmd
-    # Configure raw input status for spmd estimator
-    with config_context(use_raw_input=use_raw_input):
+    # Configure raw input status and array_api_dispatch for spmd estimator
+    with config_context(
+        use_raw_input=use_raw_input, array_api_dispatch=array_api_dispatch
+    ):
         spmd_model = DBSCAN_SPMD(eps=eps, min_samples=min_samples).fit(local_dpt_data)
     batch_model = DBSCAN_Batch(eps=eps, min_samples=min_samples).fit(data)
 
