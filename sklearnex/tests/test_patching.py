@@ -202,9 +202,7 @@ _DTYPE_CHECK_SKIP = {
 }
 
 
-def _check_output_type(
-    result, data_input, method, estimator_name, caplog, X=None, est=None
-):
+def _check_output_type(result, data_input, method, estimator_name, caplog, X, est):
     """Check output type conformance: output arrays should match input type.
 
     When non-numpy inputs are provided (array_api_strict, dpnp, dpctl, etc.),
@@ -229,14 +227,14 @@ def _check_output_type(
     types (e.g. to pandas). That is tested separately in
     _check_set_output_transform, not here.
     """
-    if method is None or method in _SCALAR_METHODS:
+    if method in _SCALAR_METHODS:
         return
 
     if result is None:
         return
 
     # Automated numpy-OK checks based on estimator type / method
-    if est is not None and is_clusterer(est) and method == "fit_predict":
+    if is_clusterer(est) and method == "fit_predict":
         # ClusterMixin.fit_predict returns self.labels_ (numpy)
         return
     if method == "apply":
@@ -305,7 +303,7 @@ def _check_output_type(
             # - Regressors always return float predictions
             # - Clusterers always return int cluster labels
             # - SVM decision_function computes in float64 internally
-            _skip_dtype = est is not None and (
+            _skip_dtype = (
                 (method == "predict" and is_regressor(est))
                 or (method == "predict" and is_clusterer(est))
                 or (method == "decision_function" and isinstance(est, BaseLibSVM))
