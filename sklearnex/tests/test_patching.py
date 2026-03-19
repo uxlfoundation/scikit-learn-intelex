@@ -165,23 +165,13 @@ def _check_estimator_patching(caplog, dataframe, queue, dtype, est, method):
 # Methods that return scalars — skip output type checking
 _SCALAR_METHODS = {"score", "error_norm"}
 
-# (estimator, method) pairs where numpy output is acceptable regardless of
-# input type because the method returns fitted attributes directly without
-# output conversion (e.g., inherited from sklearn mixins returning
-# self.labels_ which is a numpy attribute set during fit).
-# Note: clusterer fit_predict and tree apply are handled via automated checks
-# in _check_output_type (is_clusterer, method == "apply").
+# Skip output type check — always returns numpy.
 _NUMPY_OUTPUT_OK = {
     ("DummyRegressor", "predict"),  # Not wrapped with wrap_output_data
     ("NearestNeighbors", "radius_neighbors"),  # Returns ragged numpy arrays
 }
 
-# (estimator, method) pairs where dtype preservation is not expected.
-# oneDAL may use a different internal precision for these.
-# Note: several categories are handled automatically in _check_output_type:
-#   - Regressor predict: via is_regressor() — always returns float
-#   - Clusterer predict: via is_clusterer() — always returns int labels
-#   - SVM decision_function: via isinstance(est, BaseLibSVM) — oneDAL computes float64
+# Skip output dtype check — wrong internal precision.
 _DTYPE_CHECK_SKIP = {
     ("ElasticNet", "path"),  # Path computes alphas in float64
     ("Lasso", "path"),  # Path computes alphas in float64
@@ -454,76 +444,43 @@ def _check_fitted_attributes(est, X, estimator_name, caplog, queue=None):
     x_is_fp16 = hasattr(X, "dtype") and "float16" in str(X.dtype)
 
     for attr_name, attr_val in vars(est).items():
-        # Only check public fitted attributes (start with a letter, end with _)
-        if not (attr_name[0].isalpha() and attr_name.endswith("_")):
+        # Filter
+        if not _is_public_fitted_attr(attr_name, attr_val):
             continue
-        # Must be array-like (has dtype)
-        if not hasattr(attr_val, "dtype"):
-            continue
-        # Sparse fitted attrs — verify sparse class matches sklearn config
+
+        # Sparse — check class then skip
         if is_sparse(attr_val):
-            if sklearn_check_version("1.9"):
-                sparse_iface = sklearn_get_config().get("sparse_interface", "spmatrix")
-                if sparse_iface == "sparray":
-                    assert isinstance(attr_val, sp.sparray)
-                else:
-                    assert isinstance(attr_val, sp.spmatrix)
-            continue
-        # Skip 0-d / scalar attributes
-        if hasattr(attr_val, "ndim") and attr_val.ndim == 0:
-            continue
-        if np.isscalar(attr_val):
+            _check_sparse_class(attr_val)
             continue
 
-        # --- Type check (array namespace) ---
-        # classes_ is set as numpy internally by oneDAL for all classifiers
-        if attr_name == "classes_":
-            continue
-        elif is_clusterer(est):
-            continue
-        elif (estimator_name, attr_name) in _ATTR_SKIP_ALL:
-            continue
-        elif (
-            is_non_numpy_input
-            and not sklearn_get_config().get("array_api_dispatch", False)
-            and (
-                estimator_name,
-                attr_name,
-            )
-            in _ATTR_SKIP_ALL_NON_NUMPY
-        ):
-            continue
-        elif fell_back:
-            assert isinstance(attr_val, (np.ndarray, input_type))
-            continue
-        else:
-            assert isinstance(attr_val, input_type)
+        key = (estimator_name, attr_name)
 
-        # --- Device check ---
-        if (estimator_name, attr_name) in _ATTR_SKIP_DEVICE:
-            pass
-        elif hasattr(X, "device"):
-            if hasattr(attr_val, "device"):
-                assert X.device == attr_val.device
-
-        # --- Dtype check ---
-        if x_is_fp16:
-            continue
-        if attr_name in _INTEGER_FITTED_ATTRS:
-            continue
-        if (estimator_name, attr_name) in _ATTR_SKIP_DTYPE:
+        # Known exceptions — skip all
+        if _should_skip_all(key, attr_name, est, is_non_numpy_input, fell_back):
+            if fell_back:
+                assert isinstance(attr_val, (np.ndarray, input_type))
             continue
 
+        # Type check
+        assert isinstance(attr_val, input_type)
+
+        # Device check
         if (
-            hasattr(attr_val, "dtype")
-            and "float" in str(attr_val.dtype)
-            and hasattr(X, "dtype")
-            and "float" in str(X.dtype)
+            key not in _ATTR_SKIP_DEVICE
+            and hasattr(X, "device")
+            and hasattr(attr_val, "device")
         ):
-            assert attr_val.dtype == X.dtype, (
-                f"{estimator_name}.{attr_name} has dtype {attr_val.dtype}, "
-                f"expected {X.dtype}"
-            )
+            assert X.device == attr_val.device
+
+        # Dtype check
+        if not _should_skip_dtype(key, attr_name, est, x_is_fp16):
+            if (
+                hasattr(attr_val, "dtype")
+                and "float" in str(attr_val.dtype)
+                and hasattr(X, "dtype")
+                and "float" in str(X.dtype)
+            ):
+                assert attr_val.dtype == X.dtype
 
 
 def _check_set_output_transform(est, method, X, estimator_name):
