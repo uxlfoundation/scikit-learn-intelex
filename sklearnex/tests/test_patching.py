@@ -90,7 +90,7 @@ except ImportError:
 
 @pytest.mark.parametrize("dtype", DTYPES)
 @pytest.mark.parametrize(
-    "dataframe, queue", get_dataframes_and_queues("numpy,pandas", "cpu")
+    "dataframe, queue", get_dataframes_and_queues("numpy,pandas,array_api", "cpu")
 )
 @pytest.mark.parametrize("metric", ["cosine", "correlation"])
 def test_pairwise_distances_patching(caplog, dataframe, queue, dtype, metric):
@@ -106,7 +106,7 @@ def test_pairwise_distances_patching(caplog, dataframe, queue, dtype, metric):
                 rng.random(size=1000), sycl_queue=queue, target_df=dataframe, dtype=dtype
             )[None, :]
 
-        _ = pairwise_distances(X, metric=metric)
+        result = pairwise_distances(X, metric=metric)
     assert all(
         [
             "running accelerated version" in i.message
@@ -114,6 +114,8 @@ def test_pairwise_distances_patching(caplog, dataframe, queue, dtype, metric):
             for i in caplog.records
         ]
     ), f"sklearnex patching issue in pairwise_distances with log: \n{caplog.text}"
+    if dataframe not in ("numpy", "pandas"):
+        _check_output_type(result, X, None, "pairwise_distances", caplog, X=X)
 
 
 @pytest.mark.parametrize(
@@ -209,7 +211,7 @@ _DTYPE_CHECK_SKIP = {
 }
 
 
-def _check_output_type(result, y, method, estimator_name, caplog, X, est):
+def _check_output_type(result, y, method, estimator_name, caplog, X, est=None):
     """Check output type conformance: output arrays should match input type.
 
     When non-numpy inputs are provided (array_api_strict, dpnp, dpctl, etc.),
@@ -234,11 +236,11 @@ def _check_output_type(result, y, method, estimator_name, caplog, X, est):
     types (e.g. to pandas). That is tested separately in
     _check_set_output_transform, not here.
     """
-    if method in _SCALAR_METHODS:
+    if method is not None and method in _SCALAR_METHODS:
         return
 
     # Automated numpy-OK checks based on estimator type / method
-    if is_clusterer(est) and method == "fit_predict":
+    if est is not None and is_clusterer(est) and method == "fit_predict":
         # ClusterMixin.fit_predict returns self.labels_ (numpy)
         return
     if method == "apply":
@@ -308,9 +310,13 @@ def _check_output_type(result, y, method, estimator_name, caplog, X, est):
             # - Clusterers always return int cluster labels
             # - SVM decision_function computes in float64 internally
             _skip_dtype = (
-                (method == "predict" and is_regressor(est))
-                or (method == "predict" and is_clusterer(est))
-                or (method == "decision_function" and isinstance(est, BaseLibSVM))
+                (method == "predict" and est is not None and is_regressor(est))
+                or (method == "predict" and est is not None and is_clusterer(est))
+                or (
+                    method == "decision_function"
+                    and est is not None
+                    and isinstance(est, BaseLibSVM)
+                )
             )
             if (
                 hasattr(res, "dtype")
