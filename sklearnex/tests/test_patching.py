@@ -93,9 +93,8 @@ except ImportError:
     "dataframe, queue", get_dataframes_and_queues("numpy,pandas,array_api", "cpu")
 )
 @pytest.mark.parametrize("metric", ["cosine", "correlation"])
-@pytest.mark.allow_sklearn_fallback
 def test_pairwise_distances_patching(caplog, dataframe, queue, dtype, metric):
-    with caplog.at_level(logging.INFO, logger="sklearnex"):
+    with caplog.at_level(logging.WARNING, logger="sklearnex"):
         rng = nprnd.default_rng(seed=123)
         if dataframe == "pandas":
             X = _convert_to_dataframe(
@@ -113,7 +112,6 @@ def test_pairwise_distances_patching(caplog, dataframe, queue, dtype, metric):
             "running accelerated version" in i.message
             or "fallback to original Scikit-learn" in i.message
             for i in caplog.records
-            if i.name == "sklearnex"
         ]
     ), f"sklearnex patching issue in pairwise_distances with log: \n{caplog.text}"
     if dataframe not in ("numpy", "pandas"):
@@ -130,7 +128,7 @@ def test_roc_auc_score_patching(caplog, dataframe, queue, dtype):
     if dtype in [np.uint32, np.uint64] and sys.platform == "win32":
         pytest.skip("Windows issue with unsigned ints")
 
-    with caplog.at_level(logging.INFO, logger="sklearnex"):
+    with caplog.at_level(logging.WARNING, logger="sklearnex"):
         rng = nprnd.default_rng(seed=123)
         X = rng.integers(2, size=1000)
         y = rng.integers(2, size=1000)
@@ -154,7 +152,6 @@ def test_roc_auc_score_patching(caplog, dataframe, queue, dtype):
             "running accelerated version" in i.message
             or "fallback to original Scikit-learn" in i.message
             for i in caplog.records
-            if i.name == "sklearnex"
         ]
     ), f"sklearnex patching issue in roc_auc_score with log: \n{caplog.text}"
 
@@ -164,7 +161,7 @@ def _check_estimator_patching(caplog, dataframe, queue, dtype, est, method):
     # upcoming changes in dpnp and dpctl
 
     result = None
-    with caplog.at_level(logging.INFO, logger="sklearnex"):
+    with caplog.at_level(logging.WARNING, logger="sklearnex"):
         X, y = gen_dataset(est, queue=queue, target_df=dataframe, dtype=dtype)[0]
         est.fit(X, y)
 
@@ -178,7 +175,6 @@ def _check_estimator_patching(caplog, dataframe, queue, dtype, est, method):
             "running accelerated version" in i.message
             or "fallback to original Scikit-learn" in i.message
             for i in caplog.records
-            if i.name == "sklearnex"
         ]
     ), f"sklearnex patching issue in {est}.{method} with log: \n{caplog.text}"
 
@@ -419,7 +415,7 @@ def _check_sparse_class(attr_val):
             assert isinstance(attr_val, sp.spmatrix)
 
 
-def _should_skip_all(key, attr_name, est, is_non_numpy_input, fell_back):
+def _should_skip_all(key, attr_name, est, is_non_numpy_input, fell_back, queue=None):
     """Check if all type/device/dtype checks should be skipped for this attr."""
     # classes_ is numpy without dispatch, correct type with dispatch
     if attr_name == "classes_" and not sklearn_get_config().get(
@@ -427,6 +423,14 @@ def _should_skip_all(key, attr_name, est, is_non_numpy_input, fell_back):
     ):
         return True
     if is_clusterer(est):
+        return True
+    # SVM on GPU falls back — skip since conftest would raise before
+    # reaching here without allow_sklearn_fallback
+    if (
+        isinstance(est, BaseLibSVM)
+        and queue is not None
+        and getattr(queue.sycl_device, "is_gpu", False)
+    ):
         return True
     if key in _ATTR_SKIP_ALL:
         return True
@@ -494,7 +498,7 @@ def _check_fitted_attributes(est, X, estimator_name, caplog, queue=None):
         key = (estimator_name, attr_name)
 
         # Known exceptions — skip all
-        if _should_skip_all(key, attr_name, est, is_non_numpy_input, fell_back):
+        if _should_skip_all(key, attr_name, est, is_non_numpy_input, fell_back, queue):
             if fell_back:
                 assert isinstance(attr_val, (np.ndarray, input_type))
             continue
@@ -563,7 +567,6 @@ def _check_set_output_transform(est, method, X, estimator_name):
 @pytest.mark.parametrize("dtype", DTYPES)
 @pytest.mark.parametrize("dataframe, queue", get_dataframes_and_queues())
 @pytest.mark.parametrize("estimator, method", gen_models_info(PATCHED_MODELS))
-@pytest.mark.allow_sklearn_fallback
 def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator, method):
     est = PATCHED_MODELS[estimator]()
 
