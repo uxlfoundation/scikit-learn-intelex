@@ -93,6 +93,8 @@ Easiest way to benefit from accelerations from the extension is by patching scik
         clustering = DBSCAN(eps=3, min_samples=2).fit(X)
     ```
 
+:eyes: Read about [other ways to patch scikit-learn](https://uxlfoundation.github.io/scikit-learn-intelex/latest/quick-start.html#patching).
+
 :eyes: Check out available [notebooks](https://github.com/uxlfoundation/scikit-learn-intelex/tree/master/examples/notebooks) for more examples.
 
 ### Usage without patching
@@ -132,37 +134,6 @@ pip install scikit-learn-intelex
 ```
 
 Package is also offered through other channels such as conda-forge. See all installation instructions in the [Installation Guide](https://uxlfoundation.github.io/scikit-learn-intelex/latest/quick-start.html#installation).
-
-## Integration
-
-The easiest way of accelerating scikit-learn workflows with the extension is through through [patching](https://uxlfoundation.github.io/scikit-learn-intelex/latest/quick-start.html#patching), which replaces the stock scikit-learn algorithms with their optimized versions provided by the extension using the same namespaces in the same modules as scikit-learn.
-
-The patching only affects [supported algorithms and their parameters](https://uxlfoundation.github.io/scikit-learn-intelex/latest/algorithms.html).
-You can still use not supported ones in your code, the package simply fallbacks into the stock version of scikit-learn.
-
-> **_TIP:_** Enable [verbose mode](https://uxlfoundation.github.io/scikit-learn-intelex/latest/verbose.html) to see which implementation of the algorithm is currently used.
-
-To patch scikit-learn, you can:
-* Use the following command-line flag:
-  ```shell
-  python -m sklearnex my_application.py
-  ```
-* Add the following lines to the script:
-  ```python
-  from sklearnex import patch_sklearn
-  patch_sklearn()
-  ```
-
-:eyes: Read about [other ways to patch scikit-learn](https://uxlfoundation.github.io/scikit-learn-intelex/latest/quick-start.html#patching).
-
-As an alternative, accelerated classes from the extension can also be imported directly without patching, thereby allowing to keep them separate from stock scikit-learn ones - for example:
-
-```python
-from sklearnex.cluster import DBSCAN as exDBSCAN
-from sklearn.cluster import DBSCAN as stockDBSCAN
-
-# ...
-```
 
 ## Documentation
 
