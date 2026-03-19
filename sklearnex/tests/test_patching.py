@@ -324,6 +324,23 @@ def _check_output_type(result, y, method, estimator_name, caplog, X, est=None):
                     assert res.dtype == X.dtype
 
 
+# Attrs that must be arrays — assert not scalar.
+_MUST_BE_ARRAY_ATTRS = {
+    "n_iter_",
+    "coef_",
+    "intercept_",
+    "dual_coef_",
+    "support_vectors_",
+    "cluster_centers_",
+    "components_",
+    "singular_values_",
+    "explained_variance_",
+    "explained_variance_ratio_",
+    "mean_",
+    "labels_",
+    "class_weight_",
+}
+
 # Integer attrs — skip dtype check.
 _INTEGER_FITTED_ATTRS = {
     "labels_",
@@ -460,6 +477,10 @@ def _check_fitted_attributes(est, X, estimator_name, caplog, queue=None):
         # Filter
         if not _is_public_fitted_attr(attr_name, attr_val):
             continue
+
+        # Assert attrs that must be arrays are not scalar
+        if attr_name in _MUST_BE_ARRAY_ATTRS:
+            assert hasattr(attr_val, "ndim") and attr_val.ndim > 0
 
         # Sparse — check class then skip
         if is_sparse(attr_val):
