@@ -212,29 +212,17 @@ _DTYPE_CHECK_SKIP = {
 
 
 def _check_output_type(result, y, method, estimator_name, caplog, X, est=None):
-    """Check output type conformance: output arrays should match input type.
+    """Check output type, device, and dtype conformance.
 
-    When non-numpy inputs are provided (array_api_strict, dpnp, dpctl, etc.),
-    non-scalar outputs should be in the same array namespace as the input.
-    numpy output is acceptable when:
-    - The estimator falls back to sklearn (indicated by caplog)
-    - The (estimator, method) is a known exception
+    Checks for each result element:
+      1. Sparse: check class -> skip
+      2. Type: assert isinstance(res, input_type)
+      3. Device: assert res.device == X.device
+      4. Dtype: assert res.dtype == y.dtype (predict) or X.dtype (other)
 
-    Parameters
-    ----------
-    y : array-like
-        The y array from the dataset, used to determine the expected output
-        type. Both X and y share the same type since gen_dataset applies
-        _convert_to_dataframe to both.
-    X : array-like, optional
-        The feature array, used for dtype preservation checks. If provided,
-        float dtype outputs are compared against X's dtype.
-    est : estimator instance, optional
-        The fitted estimator, used to detect regressors via is_regressor().
-
-    Note: sklearn's set_output(transform=...) can override transform output
-    types (e.g. to pandas). That is tested separately in
-    _check_set_output_transform, not here.
+    Skipped when: fell_back, _NUMPY_OUTPUT_OK, _DTYPE_CHECK_SKIP,
+    regressor/clusterer predict, SVM decision_function, sparse, scalar.
+    est=None for standalone functions (e.g. pairwise_distances).
     """
     if method is not None and method in _SCALAR_METHODS:
         return
