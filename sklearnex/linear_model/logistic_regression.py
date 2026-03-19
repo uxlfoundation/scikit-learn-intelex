@@ -307,7 +307,7 @@ if daal_check_version((2024, "P", 1)):
                             if is_array_api_compliant_y
                             else xp_y.unique(xp_y.asarray(y))
                         ).shape[0]
-                        != 2,
+                        == 2,
                         "Number of classes must be equal to 2.",
                     ),
                 ]
