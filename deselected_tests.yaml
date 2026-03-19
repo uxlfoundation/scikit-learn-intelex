@@ -525,10 +525,9 @@ public:
   - svm/tests/test_sparse.py::test_unsorted_indices[csr_matrix] <1.7 win32
   - svm/tests/test_sparse.py::test_unsorted_indices[csr_array] <1.7 win32
 
-  # csr_array does not support 1D slicing which these tests use.
-  # NotImplementedError: 1D sparse slices not implemented.
-  - svm/tests/test_sparse.py::test_unsorted_indices[csr_array]
-  - svm/tests/test_sparse.py::test_sparse_decision_function[csr_array]
+  # scipy 1.10 and sklearn 1.0 incompatibilities lead to 1D sparse slices NotImplementedError
+  - svm/tests/test_sparse.py::test_unsorted_indices <1.2
+  - svm/tests/test_sparse.py::test_sparse_decision_function <1.2
 
   # sklearn 1.4 has different absolute and relative tolerances for this test,
   # set of available solvers and corresponding sklearnex rules to choose one
