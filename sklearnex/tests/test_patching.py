@@ -361,11 +361,6 @@ _FITTED_ATTR_NUMPY_OK = {
     ("LocalOutlierFactor", "negative_outlier_factor_"),
     # Clusterer attrs are numpy
     ("KMeans", "cluster_centers_"),
-    # SVM probA_/probB_ — libsvm internal, always numpy
-    ("SVC", "probA_"),
-    ("SVC", "probB_"),
-    ("NuSVC", "probA_"),
-    ("NuSVC", "probB_"),
 }
 
 # (estimator, attribute) pairs where numpy fitted attributes are acceptable
