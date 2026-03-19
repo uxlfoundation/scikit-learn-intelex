@@ -68,6 +68,49 @@ else:
     _array_api_offload = lambda: False
 
 
+def _is_cpu_device(device):
+    """Check if a device represents CPU (handles different array API representations)."""
+    s = str(device).lower()
+    return "cpu" in s
+
+
+def _validate_array_api_devices(obj, method_name, *args):
+    """Validate device consistency for array API inputs.
+
+    Raises ValueError when:
+    - Multiple input arrays are on different devices (e.g. X on GPU, y on CPU)
+    - Inference input is on a different device than the fitted model
+
+    Does not error when both sides are CPU even if device representations
+    differ across array libraries (e.g. numpy 'cpu' vs array_api_strict 'CPU_DEVICE').
+    """
+    devices = []
+    for a in args:
+        if a is not None and hasattr(a, "device"):
+            devices.append(a.device)
+
+    # Check mixed devices across input arguments (e.g. fit(X_gpu, y_cpu))
+    if len(devices) > 1:
+        all_cpu = all(_is_cpu_device(d) for d in devices)
+        if not all_cpu and len(set(str(d) for d in devices)) > 1:
+            raise ValueError(
+                f"Input arrays use different devices: "
+                f"{', '.join(str(d) for d in devices)}. "
+                f"All inputs must be on the same device."
+            )
+
+    # Check device mismatch between fitted model and inference input
+    if method_name not in ("fit",) and devices:
+        fit_X = getattr(obj, "_fit_X", None)
+        if fit_X is not None and hasattr(fit_X, "device"):
+            both_cpu = _is_cpu_device(fit_X.device) and _is_cpu_device(devices[0])
+            if not both_cpu and str(fit_X.device) != str(devices[0]):
+                raise ValueError(
+                    f"Input data is on {devices[0]} but the model was fitted "
+                    f"on {fit_X.device}. All data must be on the same device."
+                )
+
+
 def dispatch(
     obj: type[oneDALEstimator],
     method_name: str,
@@ -114,9 +157,26 @@ def dispatch(
     if get_config()["use_raw_input"]:
         return branches["onedal"](obj, *args, **kwargs)
 
+    if _array_api_offload() and args:
+        # Check for mixed device inputs (e.g. X on GPU, y on CPU)
+        # and for device mismatch between fitted model and inference input.
+        _validate_array_api_devices(obj, method_name, *args)
+
     # Determine if array_api dispatching is enabled, and if estimator is capable
     onedal_array_api = _array_api_offload() and get_tags(obj).onedal_array_api
     sklearn_array_api = _array_api_offload() and get_tags(obj).array_api_support
+
+    # If sklearn supports array API for this estimator but oneDAL doesn't,
+    # and the input is a non-numpy array API type (e.g. torch, array_api_strict),
+    # fall back to sklearn without transferring to host. This avoids a
+    # CPU roundtrip for operations that sklearn can already run on GPU
+    # natively. For numpy/pandas/dpnp/dpctl inputs, continue to oneDAL path.
+    if sklearn_array_api and not onedal_array_api and args:
+        input_array_api = getattr(args[0], "__array_namespace__", lambda: None)()
+        if input_array_api and not _is_numpy_namespace(input_array_api):
+            # Check it's not a dpnp/dpctl input (those use support_input_format path)
+            if not hasattr(args[0], "__sycl_usm_array_interface__"):
+                return branches["sklearn"](obj, *args, **kwargs)
 
     # backend can only be a boolean or None, None signifies an unverified backend
     backend: "bool | None" = None
