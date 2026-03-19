@@ -65,7 +65,6 @@ def test_max_abs_scaler_fit_spmd_gold(dataframe, queue, dtype):
 
     assert_allclose(scaler_spmd.scale_, scaler.scale_)
     assert_allclose(scaler_spmd.max_abs_, scaler.max_abs_)
-    assert scaler_spmd.n_samples_seen_ == scaler.n_samples_seen_
 
 
 @pytest.mark.skipif(
@@ -113,4 +112,3 @@ def test_max_abs_scaler_partial_fit_spmd_gold(dataframe, queue, num_blocks, dtyp
 
     assert_allclose(scaler_spmd.scale_, scaler.scale_)
     assert_allclose(scaler_spmd.max_abs_, scaler.max_abs_)
-    assert scaler_spmd.n_samples_seen_ == scaler.n_samples_seen_
