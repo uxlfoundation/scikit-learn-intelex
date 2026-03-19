@@ -307,8 +307,8 @@ if daal_check_version((2024, "P", 1)):
                             if is_array_api_compliant_y
                             else xp_y.unique(xp_y.asarray(y))
                         ).shape[0]
-                        > 1,
-                        "Number of classes must be at least 2.",
+                        != 2,
+                        "Number of classes must be equal to 2.",
                     ),
                 ]
             )
@@ -530,11 +530,12 @@ if daal_check_version((2024, "P", 1)):
             return xp.log(y_proba)
 
         def _onedal_decision_function(self, X, queue=None):
-            if "spmd" in self._onedal_LogisticRegression.__module__:
-                raise RuntimeError(
-                    "decision_function method is not supported for LogisticRegression SPMD estimartor."
-                )
             if queue is None or queue.sycl_device.is_cpu:
+                # We don't use onedal backend for CPU, so we need an additional check here
+                if "spmd" in self._onedal_LogisticRegression.__module__:
+                    raise RuntimeError(
+                        "Executing functions from SPMD backend requires a queue"
+                    )
                 # TODO add array-api support for CPU
                 return super().decision_function(X)
 
