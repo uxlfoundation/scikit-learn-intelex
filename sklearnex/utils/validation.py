@@ -130,7 +130,7 @@ def _sklearnex_assert_all_finite(
                     # swap the error message
                 except ValueError:
                     pass
-   
+
             raise e from None
 
 
