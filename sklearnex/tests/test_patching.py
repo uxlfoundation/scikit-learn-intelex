@@ -70,6 +70,23 @@ from sklearnex.tests.utils import (
 )
 from sklearnex.utils._array_api import get_namespace
 
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
+
+try:
+    import polars as pl
+except ImportError:
+    pl = None
+
+try:
+    import dpctl.tensor as _dpctl_tensor
+
+    _dpctl_has_linalg = hasattr(_dpctl_tensor, "linalg")
+except ImportError:
+    _dpctl_has_linalg = True
+
 
 @pytest.mark.parametrize("dtype", DTYPES)
 @pytest.mark.parametrize(
@@ -429,9 +446,15 @@ def _should_skip_dtype(key, attr_name, est, x_is_fp16):
 def _check_fitted_attributes(est, X, estimator_name, caplog, queue=None):
     """Check fitted attributes preserve input type, device, and dtype.
 
-    Checks: type -> device -> dtype. Early exit for sparse, known
-    exceptions, and sklearn fallback. See _ATTR_SKIP_* lists for
-    per-estimator skip rules.
+    Call sequence for each attr:
+      1. Filter: skip non-public, non-array, scalar
+      2. Sparse: check class -> skip
+      3. Skip all: _ATTR_SKIP_ALL, _ATTR_SKIP_ALL_NO_DISPATCH, classes_,
+         clusterers, fell_back -> skip
+      4. Type: assert isinstance(attr, input_type)
+      5. Device: assert attr.device == X.device (skip _ATTR_SKIP_DEVICE)
+      6. Dtype: assert attr.dtype == X.dtype (skip _ATTR_SKIP_DTYPE,
+         _INTEGER_FITTED_ATTRS, BaseLibSVM, fp16)
     """
     input_type = type(X)
     xp, _ = get_namespace(X)
@@ -509,12 +532,8 @@ def _check_set_output_transform(est, method, X, estimator_name):
             continue
 
         if transform_output == "pandas":
-            import pandas as pd
-
             expected_type = pd.DataFrame
         elif transform_output == "polars":
-            import polars as pl
-
             expected_type = pl.DataFrame
         else:
             expected_type = None
@@ -633,7 +652,7 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
         # use array API consistently, so we re-fit and re-call with
         # dispatch on to verify output types correctly.
         if dataframe not in ("numpy", "pandas"):
-            if dataframe == "dpctl" and not hasattr(__import__("dpctl").tensor, "linalg"):
+            if dataframe == "dpctl" and not _dpctl_has_linalg:
                 pytest.skip("dpctl.tensor missing linalg module")
             with config_context(array_api_dispatch=True):
                 result2, y2, X2 = _check_estimator_patching(
