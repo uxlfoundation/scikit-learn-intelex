@@ -327,8 +327,7 @@ def _check_output_type(result, data_input, method, estimator_name, caplog, X, es
                     assert res.dtype == X.dtype
 
 
-# Fitted attribute names that are inherently integer-typed or scalar —
-# skip dtype-vs-X matching for these.
+# Attr names that are inherently integer-typed — skip dtype matching.
 _INTEGER_FITTED_ATTRS = {
     "labels_",
     "support_",
@@ -342,30 +341,19 @@ _INTEGER_FITTED_ATTRS = {
     "n_estimators_",
 }
 
-# (estimator, attribute) pairs where numpy fitted attributes are acceptable
-# for ALL input types (array API / dpnp / dpctl).  These estimators produce
-# numpy fitted attrs regardless of input type.
-# Note: clusterer attrs and classes_ are automatically skipped by type in
-# _check_fitted_attributes. SVM is partially skipped: probA_/probB_ here,
-# GPU multiclass by device check, specific attrs by device/dtype skip lists.
-_FITTED_ATTR_NUMPY_OK = {
-    # DummyRegressor — not wrapped for array API
+# (estimator, attr) — skip ALL checks (type/device/dtype). Always numpy.
+_ATTR_SKIP_ALL = {
     ("DummyRegressor", "constant_"),
-    # LogisticRegression — GPU array API in progress (#2941), fitted attrs still numpy
     ("LogisticRegression", "coef_"),
     ("LogisticRegression", "intercept_"),
     ("LogisticRegression", "n_iter_"),
-    # Neighbor estimators without array API support for fitted attrs
     ("LocalOutlierFactor", "negative_outlier_factor_"),
-    # Clusterer attrs are numpy
     ("KMeans", "cluster_centers_"),
 }
 
-# (estimator, attribute) pairs where numpy fitted attributes are acceptable
-# only when array_api_dispatch is off with non-numpy inputs (dpnp, dpctl).
-# With dispatch on, these attrs return the correct type.
-_FITTED_ATTR_NUMPY_OK_NON_NUMPY = {
-    # PCA — fitted attrs are dpnp on GPU but numpy on dpnp/dpctl CPU path
+# (estimator, attr) — skip ALL checks only when array_api_dispatch is off.
+# With dispatch on, these return the correct type.
+_ATTR_SKIP_ALL_NO_DISPATCH = {
     ("PCA", "singular_values_"),
     ("PCA", "explained_variance_ratio_"),
     ("PCA", "explained_variance_"),
@@ -373,9 +361,8 @@ _FITTED_ATTR_NUMPY_OK_NON_NUMPY = {
     ("PCA", "mean_"),
 }
 
-# SVM attrs that end up on wrong device (oneDAL places them on GPU
-# even when input is CPU).
-_FITTED_ATTR_DEVICE_SKIP = {
+# (estimator, attr) — skip device check only. Attr on wrong device.
+_ATTR_SKIP_DEVICE = {
     ("SVC", "n_iter_"),
     ("NuSVC", "n_iter_"),
     ("SVC", "probA_"),
@@ -384,8 +371,8 @@ _FITTED_ATTR_DEVICE_SKIP = {
     ("NuSVC", "probB_"),
 }
 
-# SVM attrs with wrong dtype (oneDAL computes in float64 internally).
-_FITTED_ATTR_DTYPE_SKIP = {
+# (estimator, attr) — skip dtype check only. Wrong internal precision.
+_ATTR_SKIP_DTYPE = {
     ("SVC", "class_weight_"),
     ("NuSVC", "class_weight_"),
     ("SVC", "probA_"),
@@ -395,18 +382,77 @@ _FITTED_ATTR_DTYPE_SKIP = {
 }
 
 
+def _is_public_fitted_attr(attr_name, attr_val):
+    """Check if attribute is a public fitted array attribute."""
+    if not (attr_name[0].isalpha() and attr_name.endswith("_")):
+        return False
+    if not hasattr(attr_val, "dtype"):
+        return False
+    if hasattr(attr_val, "ndim") and attr_val.ndim == 0:
+        return False
+    if np.isscalar(attr_val):
+        return False
+    return True
+
+
+def _check_sparse_class(attr_val):
+    """Verify sparse attr matches sklearn sparse_interface config."""
+    if sklearn_check_version("1.9"):
+        sparse_iface = sklearn_get_config().get("sparse_interface", "spmatrix")
+        if sparse_iface == "sparray":
+            assert isinstance(attr_val, sp.sparray)
+        else:
+            assert isinstance(attr_val, sp.spmatrix)
+
+
+def _should_skip_all(key, attr_name, est, is_non_numpy_input, fell_back):
+    """Check if all type/device/dtype checks should be skipped for this attr."""
+    if attr_name == "classes_":
+        return True
+    if is_clusterer(est):
+        return True
+    if key in _ATTR_SKIP_ALL:
+        return True
+    if (
+        is_non_numpy_input
+        and not sklearn_get_config().get("array_api_dispatch", False)
+        and key in _ATTR_SKIP_ALL_NO_DISPATCH
+    ):
+        return True
+    if fell_back:
+        return True
+    return False
+
+
+def _should_skip_dtype(key, attr_name, est, x_is_fp16):
+    """Check if dtype check should be skipped for this attr."""
+    if isinstance(est, BaseLibSVM):
+        return True
+    if x_is_fp16:
+        return True
+    if attr_name in _INTEGER_FITTED_ATTRS:
+        return True
+    if key in _ATTR_SKIP_DTYPE:
+        return True
+    return False
+
+
 def _check_fitted_attributes(est, X, estimator_name, caplog, queue=None):
-    """Check that fitted attributes preserve input array type and dtype.
+    """Check that fitted attributes preserve input array type, device, and dtype.
 
-    After fitting with array API / dpnp / dpctl inputs, array-valued
-    fitted attributes (``coef_``, ``intercept_``, etc.) should be in the
-    same array namespace as the input.  Float-typed attributes should
-    also preserve the input dtype (e.g. float32 in → float32 out).
+    For each public fitted attribute (e.g. coef_, intercept_):
+      1. Filter: skip non-public, non-array, scalar, sparse attrs
+      2. Sparse: verify sparse class matches sklearn config, then skip
+      3. Skip all: known exceptions (classes_, clusterers, fallback, skip lists)
+      4. Type: assert attr is same type as input (e.g. dpnp in -> dpnp out)
+      5. Device: assert attr is on same device as input
+      6. Dtype: assert attr dtype matches input dtype (float only)
 
-    This mirrors checks that scikit-learn has added for estimators with
-    ``array_api_support`` tags (see sklearn's ``check_array_api_input``
-    and per-estimator tests like ``test_logistic.py`` and
-    ``test_ridge.py``).
+    Skip lists control which (estimator, attr) pairs skip specific checks:
+      - _ATTR_SKIP_ALL: skip all checks (always numpy)
+      - _ATTR_SKIP_ALL_NO_DISPATCH: skip all when array_api_dispatch is off
+      - _ATTR_SKIP_DEVICE: skip device check only
+      - _ATTR_SKIP_DTYPE: skip dtype check only
     """
     input_type = type(X)
     xp, _ = get_namespace(X)
@@ -446,7 +492,7 @@ def _check_fitted_attributes(est, X, estimator_name, caplog, queue=None):
             continue
         elif is_clusterer(est):
             continue
-        elif (estimator_name, attr_name) in _FITTED_ATTR_NUMPY_OK:
+        elif (estimator_name, attr_name) in _ATTR_SKIP_ALL:
             continue
         elif (
             is_non_numpy_input
@@ -455,7 +501,7 @@ def _check_fitted_attributes(est, X, estimator_name, caplog, queue=None):
                 estimator_name,
                 attr_name,
             )
-            in _FITTED_ATTR_NUMPY_OK_NON_NUMPY
+            in _ATTR_SKIP_ALL_NON_NUMPY
         ):
             continue
         elif fell_back:
@@ -465,7 +511,7 @@ def _check_fitted_attributes(est, X, estimator_name, caplog, queue=None):
             assert isinstance(attr_val, input_type)
 
         # --- Device check ---
-        if (estimator_name, attr_name) in _FITTED_ATTR_DEVICE_SKIP:
+        if (estimator_name, attr_name) in _ATTR_SKIP_DEVICE:
             pass
         elif hasattr(X, "device"):
             if hasattr(attr_val, "device"):
@@ -476,7 +522,7 @@ def _check_fitted_attributes(est, X, estimator_name, caplog, queue=None):
             continue
         if attr_name in _INTEGER_FITTED_ATTRS:
             continue
-        if (estimator_name, attr_name) in _FITTED_ATTR_DTYPE_SKIP:
+        if (estimator_name, attr_name) in _ATTR_SKIP_DTYPE:
             continue
 
         if (
