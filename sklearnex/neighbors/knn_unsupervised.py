@@ -162,6 +162,8 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
                 accept_sparse="csr",
             )
 
+        self._set_effective_metric()
+
         onedal_params = {
             "n_neighbors": self.n_neighbors,
             "algorithm": self.algorithm,
