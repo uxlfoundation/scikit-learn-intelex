@@ -420,7 +420,10 @@ def _check_sparse_class(attr_val):
 
 def _should_skip_all(key, attr_name, est, is_non_numpy_input, fell_back):
     """Check if all type/device/dtype checks should be skipped for this attr."""
-    if attr_name == "classes_":
+    # classes_ is numpy without dispatch, correct type with dispatch
+    if attr_name == "classes_" and not sklearn_get_config().get(
+        "array_api_dispatch", False
+    ):
         return True
     if is_clusterer(est):
         return True
