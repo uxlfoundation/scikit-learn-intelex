@@ -237,9 +237,6 @@ def _check_output_type(result, y, method, estimator_name, caplog, X, est):
     if method in _SCALAR_METHODS:
         return
 
-    if result is None:
-        return
-
     # Automated numpy-OK checks based on estimator type / method
     if is_clusterer(est) and method == "fit_predict":
         # ClusterMixin.fit_predict returns self.labels_ (numpy)
