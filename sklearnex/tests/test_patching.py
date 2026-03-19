@@ -209,7 +209,7 @@ _DTYPE_CHECK_SKIP = {
 }
 
 
-def _check_output_type(result, data_input, method, estimator_name, caplog, X, est):
+def _check_output_type(result, y, method, estimator_name, caplog, X, est):
     """Check output type conformance: output arrays should match input type.
 
     When non-numpy inputs are provided (array_api_strict, dpnp, dpctl, etc.),
@@ -220,7 +220,7 @@ def _check_output_type(result, data_input, method, estimator_name, caplog, X, es
 
     Parameters
     ----------
-    data_input : array-like
+    y : array-like
         The y array from the dataset, used to determine the expected output
         type. Both X and y share the same type since gen_dataset applies
         _convert_to_dataframe to both.
@@ -255,7 +255,7 @@ def _check_output_type(result, data_input, method, estimator_name, caplog, X, es
     if isinstance(result, BaseEstimator):
         return
 
-    input_type = type(data_input)
+    input_type = type(y)
 
     # Check if sklearn fallback occurred (any record in caplog)
     fell_back = any(
@@ -322,13 +322,9 @@ def _check_output_type(result, data_input, method, estimator_name, caplog, X, es
                 and not _skip_dtype
                 and (estimator_name, method) not in _DTYPE_CHECK_SKIP
             ):
-                if (
-                    method == "predict"
-                    and data_input is not None
-                    and hasattr(data_input, "dtype")
-                ):
+                if method == "predict" and y is not None and hasattr(y, "dtype"):
                     # predict output dtype should match y dtype
-                    assert res.dtype == data_input.dtype
+                    assert res.dtype == y.dtype
                 elif X is not None and hasattr(X, "dtype") and "float" in str(X.dtype):
                     # Output dtype should match X dtype for float inputs
                     assert res.dtype == X.dtype
