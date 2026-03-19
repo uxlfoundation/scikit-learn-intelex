@@ -662,8 +662,6 @@ Classification
        Methods not supported:
 
        - ``score``
-       - ``decision_function``
-     - CPU inputs are not supported
      - Only binary classification is supported
 
 Regression
