@@ -48,7 +48,7 @@ jobs:
       - name: Get run ID of "Nightly-build" workflow
         id: get-run-id
         run: |
-          echo "run-id=23283956299" >> "$GITHUB_OUTPUT"
+          echo "run-id=23304934541" >> "$GITHUB_OUTPUT"
         env:
           GH_TOKEN: ${{ github.token }}
     outputs:
