@@ -464,8 +464,8 @@ def _check_fitted_attributes(est, X, estimator_name, caplog, queue=None):
     Call sequence for each attr:
       1. Filter: skip non-public, non-array, scalar
       2. Sparse: check class -> skip
-      3. Skip all: _ATTR_SKIP_ALL, _ATTR_SKIP_ALL_NO_DISPATCH, classes_,
-         clusterers, fell_back -> skip
+      3. Skip all: _ATTR_SKIP_ALL, _ATTR_SKIP_ALL_NO_DISPATCH,
+         classes_ (no dispatch), clusterers, SVM GPU, fell_back -> skip
       4. Type: assert isinstance(attr, input_type)
       5. Device: assert attr.device == X.device (skip _ATTR_SKIP_DEVICE)
       6. Dtype: assert attr.dtype == X.dtype (skip _ATTR_SKIP_DTYPE,
