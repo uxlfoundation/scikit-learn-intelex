@@ -77,7 +77,7 @@ from sklearnex.utils._array_api import get_namespace
 )
 @pytest.mark.parametrize("metric", ["cosine", "correlation"])
 def test_pairwise_distances_patching(caplog, dataframe, queue, dtype, metric):
-    with caplog.at_level(logging.WARNING, logger="sklearnex"):
+    with caplog.at_level(logging.INFO, logger="sklearnex"):
         rng = nprnd.default_rng(seed=123)
         if dataframe == "pandas":
             X = _convert_to_dataframe(
@@ -109,7 +109,7 @@ def test_roc_auc_score_patching(caplog, dataframe, queue, dtype):
     if dtype in [np.uint32, np.uint64] and sys.platform == "win32":
         pytest.skip("Windows issue with unsigned ints")
 
-    with caplog.at_level(logging.WARNING, logger="sklearnex"):
+    with caplog.at_level(logging.INFO, logger="sklearnex"):
         rng = nprnd.default_rng(seed=123)
         X = rng.integers(2, size=1000)
         y = rng.integers(2, size=1000)
@@ -142,7 +142,7 @@ def _check_estimator_patching(caplog, dataframe, queue, dtype, est, method):
     # upcoming changes in dpnp and dpctl
 
     result = None
-    with caplog.at_level(logging.WARNING, logger="sklearnex"):
+    with caplog.at_level(logging.INFO, logger="sklearnex"):
         X, y = gen_dataset(est, queue=queue, target_df=dataframe, dtype=dtype)[0]
         est.fit(X, y)
 
@@ -450,13 +450,6 @@ def _check_fitted_attributes(est, X, estimator_name, caplog, queue=None):
         # --- Type check (array namespace) ---
         # classes_ is set as numpy internally by oneDAL for all classifiers
         if attr_name == "classes_":
-            continue
-        # SVM multiclass on GPU returns all numpy attrs (oneDAL issue)
-        if (
-            isinstance(est, BaseLibSVM)
-            and queue is not None
-            and getattr(queue.sycl_device, "is_gpu", False)
-        ):
             continue
         elif is_clusterer(est):
             continue
