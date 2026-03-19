@@ -93,6 +93,7 @@ except ImportError:
     "dataframe, queue", get_dataframes_and_queues("numpy,pandas,array_api", "cpu")
 )
 @pytest.mark.parametrize("metric", ["cosine", "correlation"])
+@pytest.mark.allow_sklearn_fallback
 def test_pairwise_distances_patching(caplog, dataframe, queue, dtype, metric):
     with caplog.at_level(logging.INFO, logger="sklearnex"):
         rng = nprnd.default_rng(seed=123)
@@ -562,6 +563,7 @@ def _check_set_output_transform(est, method, X, estimator_name):
 @pytest.mark.parametrize("dtype", DTYPES)
 @pytest.mark.parametrize("dataframe, queue", get_dataframes_and_queues())
 @pytest.mark.parametrize("estimator, method", gen_models_info(PATCHED_MODELS))
+@pytest.mark.allow_sklearn_fallback
 def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator, method):
     est = PATCHED_MODELS[estimator]()
 
