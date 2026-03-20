@@ -49,6 +49,7 @@ else:
 from sklearn import get_config as sklearn_get_config
 
 from onedal.tests.utils._dataframes_support import (
+    _as_numpy,
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
@@ -422,14 +423,6 @@ def _should_skip_all(key, attr_name, est, is_non_numpy_input, fell_back, queue=N
         return True
     if is_clusterer(est):
         return True
-    # SVM on GPU falls back — skip since conftest would raise before
-    # reaching here without allow_sklearn_fallback
-    if (
-        isinstance(est, BaseLibSVM)
-        and queue is not None
-        and getattr(queue.sycl_device, "is_gpu", False)
-    ):
-        return True
     if key in _ATTR_SKIP_ALL:
         return True
     if (
@@ -671,6 +664,12 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
         if dataframe not in ("numpy", "pandas"):
             if dataframe == "dpctl" and not _dpctl_has_linalg:
                 pytest.skip("dpctl.tensor missing linalg module")
+            # Skip second pass if estimator doesn't support GPU for this data
+            if queue is not None and getattr(queue.sycl_device, "is_gpu", False):
+                X_np, y_np = _as_numpy(X), _as_numpy(y)
+                if not est._onedal_gpu_supported("fit", X_np, y_np, None).get_status():
+                    _check_set_output_transform(est, method, X, estimator)
+                    return
             with config_context(array_api_dispatch=True):
                 result2, y2, X2 = _check_estimator_patching(
                     caplog, dataframe, queue, dtype, est, method
