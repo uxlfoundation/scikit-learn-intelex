@@ -18,6 +18,7 @@
 import importlib
 import logging
 import os
+import pathlib
 import re
 import sys
 from inspect import signature
@@ -48,6 +49,16 @@ from sklearnex.tests.utils import (
     gen_dataset,
     gen_models_info,
 )
+
+
+def test_import_onedal_py_dpc():
+    import onedal
+
+    print(os.listdir(pathlib.Path(onedal.__file__).parent.resolve()))
+    print("MKLROOT:", os.environ.get("MKLROOT", None))
+    print("PATH:", os.environ.get("PATH", None))
+    print("DPCFLAG:", os.environ.get("DPCFLAG", None))
+    import onedal._onedal_py_dpc
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
