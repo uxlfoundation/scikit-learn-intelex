@@ -63,6 +63,7 @@ class Backend:
 
 if "Windows" in platform.system():
     import os
+    import pathlib
     import site
     import sys
 
@@ -76,6 +77,19 @@ if "Windows" in platform.system():
             dal_root_redist = os.path.join(os.environ["DALROOT"], "redist", arch_dir)
             if os.path.exists(dal_root_redist):
                 os.add_dll_directory(dal_root_redist)
+
+        has_dpc_file = False
+        for file_name in os.listdir(pathlib.Path(__file__).parent):
+            if file_name.startswith("_onedal_py_dpc"):
+                has_dpc_file = True
+                break
+        if has_dpc_file:
+            for dep_root in ["CMPLR_ROOT", "MKLROOT"]:
+                if dep_root in os.environ:
+                    dep_root_dir = os.path.join(os.environ[dep_root], "bin")
+                    if os.path.exists(dep_root_dir):
+                        os.add_dll_directory(dep_root_dir)
+
         try:
             os.add_dll_directory(path_to_libs)
         except FileNotFoundError:
