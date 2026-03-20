@@ -15,10 +15,11 @@
 # limitations under the License.
 #===============================================================================
 
-# if any parameter is given then only source TBB from the oneAPI install
+# if any parameter is given then source TBB + MKL from the oneAPI install
 if [ $# -eq 0 ]; then
   source /opt/intel/oneapi/setvars.sh
 else
   source /opt/intel/oneapi/tbb/latest/env/vars.sh # prepare tbb
+  source /opt/intel/oneapi/mkl/latest/env/vars.sh # prepare mkl
 fi
 source ./__release_lnx/daal/latest/env/vars.sh # prepare oneDAL
