@@ -86,7 +86,7 @@ try:
 
     _dpctl_has_linalg = hasattr(_dpctl_tensor, "linalg")
 except ImportError:
-    _dpctl_has_linalg = True
+    _dpctl_has_linalg = False
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
