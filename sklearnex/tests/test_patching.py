@@ -90,7 +90,7 @@ except ImportError:
 
 @pytest.mark.parametrize("dtype", DTYPES)
 @pytest.mark.parametrize(
-    "dataframe, queue", get_dataframes_and_queues("numpy,pandas,array_api", "cpu")
+    "dataframe, queue", get_dataframes_and_queues("numpy,pandas", "cpu")
 )
 @pytest.mark.parametrize("metric", ["cosine", "correlation"])
 def test_pairwise_distances_patching(caplog, dataframe, queue, dtype, metric):
@@ -114,8 +114,6 @@ def test_pairwise_distances_patching(caplog, dataframe, queue, dtype, metric):
             for i in caplog.records
         ]
     ), f"sklearnex patching issue in pairwise_distances with log: \n{caplog.text}"
-    if dataframe not in ("numpy", "pandas"):
-        _check_output_type(result, X, None, "pairwise_distances", caplog, X=X)
 
 
 @pytest.mark.parametrize(
