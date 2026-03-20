@@ -325,8 +325,6 @@ def get_build_options():
         ela.append(
             f"-Wl,-rpath,{(daal_lib_dir + ':') if USE_ABS_RPATH else ''}$ORIGIN/../../../"
         )
-        if USE_ABS_RPATH and os.environ.get("MKLROOT", None):
-            ela.append(f"-Wl,-rpath,{os.environ.get('MKLROOT')}/lib")
         if (
             not any(
                 x in os.environ and "-g" in os.environ[x]
