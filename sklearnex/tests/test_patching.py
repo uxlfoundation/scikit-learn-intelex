@@ -281,20 +281,17 @@ def _check_output_type(result, y, method, estimator_name, caplog, X, est=None):
                 X is not None and hasattr(X, "dtype") and "float16" in str(X.dtype)
             )
             # Automated dtype-skip checks based on estimator type:
-            # - Regressors always return float predictions
             # - Clusterers always return int cluster labels
             # - SVM decision_function computes in float64 internally
             # decision_path returns structural int output — skip dtype
             if method == "decision_path":
                 continue
             _skip_dtype = (
-                (method == "predict" and est is not None and is_regressor(est))
-                or (method == "predict" and est is not None and is_clusterer(est))
-                or (
-                    method == "decision_function"
-                    and est is not None
-                    and isinstance(est, BaseLibSVM)
-                )
+                method == "predict" and est is not None and is_clusterer(est)
+            ) or (
+                method == "decision_function"
+                and est is not None
+                and isinstance(est, BaseLibSVM)
             )
             if (
                 hasattr(res, "dtype")
