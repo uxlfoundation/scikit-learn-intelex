@@ -82,7 +82,6 @@ except ImportError:
     pl = None
 
 
-
 @pytest.mark.parametrize("dtype", DTYPES)
 @pytest.mark.parametrize(
     "dataframe, queue", get_dataframes_and_queues("numpy,pandas", "cpu")
@@ -195,11 +194,6 @@ _DTYPE_CHECK_SKIP = {
     ("KNeighborsRegressor", "kneighbors"),
     ("NearestNeighbors", "kneighbors"),
     ("LocalOutlierFactor", "kneighbors"),
-    # decision_path returns (sparse_matrix, n_nodes_ptr) — structural int output
-    ("RandomForestClassifier", "decision_path"),
-    ("RandomForestRegressor", "decision_path"),
-    ("ExtraTreesClassifier", "decision_path"),
-    ("ExtraTreesRegressor", "decision_path"),
     ("IncrementalEmpiricalCovariance", "mahalanobis"),  # Computes in float64
 }
 
@@ -290,6 +284,9 @@ def _check_output_type(result, y, method, estimator_name, caplog, X, est=None):
             # - Regressors always return float predictions
             # - Clusterers always return int cluster labels
             # - SVM decision_function computes in float64 internally
+            # decision_path returns structural int output — skip dtype
+            if method == "decision_path":
+                continue
             _skip_dtype = (
                 (method == "predict" and est is not None and is_regressor(est))
                 or (method == "predict" and est is not None and is_clusterer(est))
