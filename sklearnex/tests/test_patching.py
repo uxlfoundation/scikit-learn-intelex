@@ -414,7 +414,9 @@ def _check_sparse_class(attr_val):
             assert isinstance(attr_val, sp.spmatrix)
 
 
-def _should_skip_all(key, attr_name, est, is_non_numpy_input, fell_back, queue=None):
+def _should_skip_all_for_attr(
+    key, attr_name, est, is_non_numpy_input, fell_back, queue=None
+):
     """Check if all type/device/dtype checks should be skipped for this attr."""
     # classes_ is numpy without dispatch, correct type with dispatch
     if attr_name == "classes_" and not sklearn_get_config().get(
@@ -436,7 +438,7 @@ def _should_skip_all(key, attr_name, est, is_non_numpy_input, fell_back, queue=N
     return False
 
 
-def _should_skip_dtype(key, attr_name, est, x_is_fp16):
+def _should_skip_dtype_for_attr(key, attr_name, est, x_is_fp16):
     """Check if dtype check should be skipped for this attr."""
     if isinstance(est, BaseLibSVM):
         return True
@@ -489,7 +491,9 @@ def _check_fitted_attributes(est, X, estimator_name, caplog, queue=None):
         key = (estimator_name, attr_name)
 
         # Known exceptions — skip all
-        if _should_skip_all(key, attr_name, est, is_non_numpy_input, fell_back, queue):
+        if _should_skip_all_for_attr(
+            key, attr_name, est, is_non_numpy_input, fell_back, queue
+        ):
             if fell_back:
                 assert isinstance(attr_val, (np.ndarray, input_type))
             continue
@@ -506,7 +510,7 @@ def _check_fitted_attributes(est, X, estimator_name, caplog, queue=None):
             assert X.device == attr_val.device
 
         # Dtype check
-        if not _should_skip_dtype(key, attr_name, est, x_is_fp16):
+        if not _should_skip_dtype_for_attr(key, attr_name, est, x_is_fp16):
             if (
                 hasattr(attr_val, "dtype")
                 and "float" in str(attr_val.dtype)
