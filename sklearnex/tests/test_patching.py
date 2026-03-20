@@ -285,11 +285,12 @@ def _check_output_type(result, y, method, estimator_name, caplog, X, est=None):
             if method == "decision_path":
                 continue
             _skip_dtype = (
-                method == "predict" and est is not None and is_clusterer(est)
-            ) or (
-                method == "decision_function"
+                method == "predict"
                 and est is not None
-                and isinstance(est, BaseLibSVM)
+                and (
+                    is_clusterer(est)
+                    or (is_regressor(est) and "int" in str(getattr(y, "dtype", "")))
+                )
             )
             if (
                 hasattr(res, "dtype")
