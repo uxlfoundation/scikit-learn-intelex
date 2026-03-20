@@ -138,7 +138,9 @@ class SVC(BaseSVC, _sklearn_SVC):
             # support for CalibratedClassifierCV with the arguments used here.
             (
                 not (
-                    self.probability
+                    hasattr(self, "probability")
+                    and self.probability
+                    and self.probability != "deprecated"
                     and hasattr(X, "__dlpack__")
                     and not isinstance(X, np.ndarray)
                 ),
