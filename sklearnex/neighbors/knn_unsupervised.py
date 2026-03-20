@@ -133,7 +133,7 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
             "n_neighbors": self.n_neighbors,
             "algorithm": self.algorithm,
             "metric": self.effective_metric_,
-            "p": self.effective_metric_params_["p"],
+            "p": self.effective_metric_params_.get("p", 2),
         }
 
         self._onedal_estimator = onedal_NearestNeighbors(**onedal_params)

@@ -81,6 +81,50 @@ Be aware that datacenter-grade devices, such as 'Flex' and 'Max', require differ
 
 For more details, see the `DPC++ requirements page <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/oneapi-dpcpp/2025.html>`__.
 
+.. hint::
+
+    If installing all the GPU dependencies on baremetal is not feasible, one might want to use Docker containers with these dependencies instead.
+
+Verifying GPU setup
+-------------------
+
+After installing all the necessary dependencies for GPU support, one might want to check that the device is correctly recognized by the SYCL framework, or one might want to check what are the names assigned to each device if multiple ones are available (e.g. ``"gpu:0"`` or ``"gpu:1"``) .
+
+If using the |dpctl| package, the list of available devices can be obtained as follows:
+
+.. code-block:: bash
+
+    python -m dpctl --full-list
+
+If all the required dependencies are installed and a GPU device is correctly identified, this command should show some output like the following: ::
+
+    Platform  0 ::
+        Name        Intel(R) oneAPI Unified Runtime over Level-Zero
+        Version     1.6
+        Vendor      Intel(R) Corporation
+        Backend     ext_oneapi_level_zero
+        Num Devices 1
+          # 0
+            Name                Intel(R) Data Center GPU Max 1100
+            Version             1.6.33416
+            Filter string       level_zero:gpu:0
+
+Alternatively, if using oneAPI toolkits, the list of recognized devices can be obtained by executing the command ``sycl-ls``:
+
+.. code-block:: bash
+
+    sycl-ls
+
+If a GPU device is correctly identified, it should show an output like the following: ::
+
+    [level_zero:gpu][level_zero:0] Intel(R) oneAPI Unified Runtime over Level-Zero, Intel(R) Data Center GPU Max 1100 12.60.7 [1.6.33416]
+
+If either of these commands shows only ``opencl:cpu`` devices when a GPU is available in the machine, it means that the software dependencies for SYCL are not available in the environment, or the GPU is not set up correctly.
+
+.. hint::
+
+    If installing all the GPU dependencies on baremetal is not feasible, one might want to use Docker containers with these dependencies instead.
+
 Running on GPU
 --------------
 
@@ -131,6 +175,9 @@ Example:
 
 .. warning::
     When using ``target_offload``, operations on a fitted model must be executed under a context or global option with the same device or queue where the model was fitted - meaning: a model fitted on GPU cannot make predictions on CPU, and vice-versa. Note that upon serialization and subsequent deserialization of models, data is moved to the CPU.
+
+.. hint::
+    Serialization of model objects that used target offload will move data to CPU upon deserialization. See :doc:`serialization` for detail about serializing GPU models.
 
 GPU arrays through array API
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -193,6 +240,10 @@ See :doc:`array_api` for details, instructions, and limitations. Example:
            model = LinearRegression()
            with config_context(array_api_dispatch=True):
                model.fit(X, y)
+
+       .. hint::
+           If serialization of a GPU model is desired, use Torch tensors instead of DPNP arrays.
+           See :doc:`serialization` for more information.
 
 .. note::
     Not all estimator classes in the |sklearnex| support array API objects - see the list of :ref:`estimators with array API support <array_api_estimators>` for details.

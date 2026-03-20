@@ -30,6 +30,7 @@ from sklearn.utils.validation import check_non_negative
 import daal4py
 from daal4py.sklearn._utils import (
     PatchingConditionsChain,
+    check_is_array_api,
     daal_check_version,
     is_sparse,
     sklearn_check_version,
@@ -180,6 +181,7 @@ class TSNE(BaseTSNE):
                     or isinstance(self.init, np.ndarray),
                     "'init' must be 'exact', 'pca', or a numpy array.",
                 ),
+                (not check_is_array_api(X), "Array API inputs are not supported."),
             ]
         )
         _dal_ready = _patching_status.get_status(logs=True)

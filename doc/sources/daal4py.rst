@@ -172,8 +172,6 @@ Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/
 
 - `Single-Process Binary Class Logistic Regression
   <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/log_reg_binary_dense.py>`__
-- `Single-Process Logistic Regression
-  <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/log_reg_dense.py>`__
 
 .. autoclass:: daal4py.logistic_regression_training
    :members: compute
@@ -726,49 +724,6 @@ philox4x32x10
 .. autoclass:: daal4py.engines_philox4x32x10
    :members: compute
 .. autoclass:: daal4py.engines_philox4x32x10_result
-   :members:
-
-Distributions
-*************
-Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/distributions/index`.
-
-Bernoulli
-"""""""""
-Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/distributions/bernoulli`.
-
-.. rubric:: Examples:
-
-- `Single-Process Bernoulli Distribution <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/distributions_bernoulli.py>`__
-
-.. autoclass:: daal4py.distributions_bernoulli
-   :members: compute
-.. autoclass:: daal4py.distributions_bernoulli_result
-   :members:
-
-Normal
-""""""
-Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/distributions/normal`.
-
-.. rubric:: Examples:
-
-- `Single-Process Normal Distribution <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/distributions_normal.py>`__
-
-.. autoclass:: daal4py.distributions_normal
-   :members: compute
-.. autoclass:: daal4py.distributions_normal_result
-   :members:
-
-Uniform
-"""""""
-Parameters and semantics are described in :external+onedal:doc:`daal/algorithms/distributions/uniform`.
-
-.. rubric:: Examples:
-
-- `Single-Process Uniform Distribution <https://github.com/uxlfoundation/scikit-learn-intelex/tree/main/examples/daal4py/distributions_uniform.py>`__
-
-.. autoclass:: daal4py.distributions_uniform
-   :members: compute
-.. autoclass:: daal4py.distributions_uniform_result
    :members:
 
 .. Note: oneDAL's doc do not have any named object referencing these specific sections,

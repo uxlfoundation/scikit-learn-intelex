@@ -15,6 +15,3 @@
 # ===============================================================================
 
 from daal4py.sklearn.metrics import pairwise_distances
-from onedal._device_offload import support_input_format
-
-pairwise_distances = support_input_format(pairwise_distances)

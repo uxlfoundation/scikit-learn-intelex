@@ -16,11 +16,11 @@
 
 repos:
   - repo: https://github.com/psf/black
-    rev: 26.1.0
+    rev: 26.3.1
     hooks:
       - id: black
   - repo: https://github.com/PyCQA/isort
-    rev: 5.13.2
+    rev: 8.0.1
     hooks:
       - id: isort
   - repo: https://github.com/pre-commit/mirrors-clang-format
@@ -41,7 +41,7 @@ repos:
                 tests/
             )
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.4.1
+    rev: v2.4.2
     hooks:
       - id: codespell
         args: ["--config", ".github/.codespellrc" ]

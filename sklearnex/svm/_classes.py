@@ -60,7 +60,7 @@ class SVC(BaseSVC, _sklearn_SVC):
         gamma="scale",
         coef0=0.0,
         shrinking=True,
-        probability=False,
+        probability="deprecated" if sklearn_check_version("1.9") else False,
         tol=1e-3,
         cache_size=200,
         class_weight=None,
@@ -138,7 +138,9 @@ class SVC(BaseSVC, _sklearn_SVC):
             # support for CalibratedClassifierCV with the arguments used here.
             (
                 not (
-                    self.probability
+                    hasattr(self, "probability")
+                    and self.probability
+                    and self.probability != "deprecated"
                     and hasattr(X, "__dlpack__")
                     and not isinstance(X, np.ndarray)
                 ),
@@ -192,7 +194,7 @@ class NuSVC(BaseSVC, _sklearn_NuSVC):
         gamma="scale",
         coef0=0.0,
         shrinking=True,
-        probability=False,
+        probability="deprecated" if sklearn_check_version("1.9") else False,
         tol=1e-3,
         cache_size=200,
         class_weight=None,

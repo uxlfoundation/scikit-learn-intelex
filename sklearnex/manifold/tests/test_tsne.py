@@ -29,7 +29,9 @@ from onedal.tests.utils._dataframes_support import (
 )
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize(
+    "dataframe,queue", get_dataframes_and_queues("numpy,pandas", "cpu")
+)
 def test_sklearnex_import(dataframe, queue):
     """Test TSNE compatibility with different backends and queues, and validate sklearnex module."""
     from sklearnex.manifold import TSNE
@@ -130,7 +132,9 @@ def test_sklearnex_import(dataframe, queue):
         ),
     ],
 )
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize(
+    "dataframe,queue", get_dataframes_and_queues("numpy,pandas", "cpu")
+)
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_tsne_functionality_and_edge_cases(
     X_generator,
@@ -165,7 +169,9 @@ def test_tsne_functionality_and_edge_cases(
 
 # Note: since sklearn1.2, the PCA initialization divides by standard deviations of components.
 # Since those will be zeros for constant data, it will end up producing NaNs, hence it's not tested.
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize(
+    "dataframe,queue", get_dataframes_and_queues("numpy,pandas", "cpu")
+)
 @pytest.mark.parametrize(
     "init", ["random"] + (["pca"] if not sklearn_check_version("1.2") else [])
 )
@@ -186,7 +192,9 @@ def test_tsne_constant_data(init, dataframe, queue, dtype):
         assert np.all(np.isfinite(embedding))
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize(
+    "dataframe,queue", get_dataframes_and_queues("numpy,pandas", "cpu")
+)
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_tsne_reproducibility(dataframe, queue, dtype):
     from sklearnex.manifold import TSNE
@@ -202,7 +210,9 @@ def test_tsne_reproducibility(dataframe, queue, dtype):
     assert_allclose(tsne_1, tsne_2, rtol=1e-5)
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize(
+    "dataframe,queue", get_dataframes_and_queues("numpy,pandas", "cpu")
+)
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_tsne_complex_and_gpu_validation(dataframe, queue, dtype):
     from sklearnex.manifold import TSNE

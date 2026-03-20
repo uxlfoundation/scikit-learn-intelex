@@ -18,8 +18,8 @@ import math
 import numbers
 import warnings
 from abc import ABC
-from collections.abc import Iterable
 from functools import partial
+from numbers import Integral, Real
 
 import numpy as np
 from sklearn.base import clone, is_classifier
@@ -134,7 +134,15 @@ class BaseForest(oneDALEstimator, ABC):
         self.n_features_in_ = X.shape[1]
 
         if not use_raw_input:
-            y, expanded_class_weight = self._validate_y_class_weight(y)
+            if is_classifier(self):
+                if sklearn_check_version("1.9"):
+                    y, expanded_class_weight = self._validate_y_class_weight(
+                        y, sample_weight
+                    )
+                else:
+                    y, expanded_class_weight = self._validate_y_class_weight(y)
+            else:
+                expanded_class_weight = None
 
             if expanded_class_weight is not None:
                 if sample_weight is not None:
@@ -162,9 +170,16 @@ class BaseForest(oneDALEstimator, ABC):
 
         # conform to scikit-learn internal calculations
         if self.bootstrap:
-            self._n_samples_bootstrap = _get_n_samples_bootstrap(
-                n_samples=X.shape[0], max_samples=self.max_samples
-            )
+            if sklearn_check_version("1.9"):
+                self._n_samples_bootstrap = _get_n_samples_bootstrap(
+                    n_samples=X.shape[0],
+                    max_samples=self.max_samples,
+                    sample_weight=sample_weight,
+                )
+            else:
+                self._n_samples_bootstrap = _get_n_samples_bootstrap(
+                    n_samples=X.shape[0], max_samples=self.max_samples
+                )
         else:
             self._n_samples_bootstrap = None
 
@@ -257,9 +272,39 @@ class BaseForest(oneDALEstimator, ABC):
                     self.n_estimators <= 6024,
                     "More than 6024 estimators is not supported.",
                 ),
+                # Note: multi-valued 'class_weight' is only applicable to multi-output 'y',
+                # which is not supported by oneDAL either way.
+                (
+                    not (
+                        hasattr(self, "class_weight")
+                        and self.class_weight is not None
+                        and not isinstance(self.class_weight, (str, dict))
+                    ),
+                    "Multi-valued class_weight is not supported",
+                ),
                 (
                     not self.bootstrap or self.class_weight != "balanced_subsample",
                     "'balanced_subsample' for class_weight is not supported",
+                ),
+                # Note: scikit-learn changed how they sample observations when
+                # there are sample weights in version 1.9:
+                # https://github.com/scikit-learn/scikit-learn/pull/31529
+                (
+                    not (
+                        sklearn_check_version("1.9")
+                        and sample_weight is not None
+                        and (self.bootstrap or self.max_samples is not None)
+                    ),
+                    "Bootstrapping and/or sub-sampling with sample weights is not supported.",
+                ),
+                (
+                    not (
+                        sklearn_check_version("1.9")
+                        and isinstance(self.max_samples, Real)
+                        and not isinstance(self.max_samples, Integral)
+                        and self.max_samples > 1.0
+                    ),
+                    "Fractional 'max_samples' beyond 1.0 are not supported",
                 ),
             ]
         )
@@ -267,7 +312,19 @@ class BaseForest(oneDALEstimator, ABC):
         if patching_status.get_status() and sklearn_check_version("1.4"):
             try:
                 X_test = _check_array(X)
-                assert_all_finite(X_test)  # minimally verify the data
+                patching_status.and_conditions(
+                    [
+                        (
+                            not (
+                                isinstance(self.max_samples, Integral)
+                                and self.max_samples > X_test.shape[0]
+                            ),
+                            "'max_samples' larger than number of rows is not supported.",
+                        ),
+                    ]
+                )
+                if patching_status.get_status():
+                    assert_all_finite(X_test)  # minimally verify the data
                 input_is_finite = True
             except ValueError:
                 input_is_finite = False
@@ -655,12 +712,25 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         for est in self._cached_estimators_:
             est.classes_ = self.classes_
 
-    def _validate_y_class_weight(self, y):
+    if sklearn_check_version("1.9"):
 
-        xp, is_array_api_compliant = get_namespace(y)
+        def _validate_y_class_weight(self, y, sample_weight):
+            return self._validate_y_class_weight_internal(y, sample_weight)
+
+    else:
+
+        def _validate_y_class_weight(self, y):
+            return self._validate_y_class_weight_internal(y, None)
+
+    def _validate_y_class_weight_internal(self, y, sample_weight=None):
+
+        xp, is_array_api_compliant = get_namespace(y, sample_weight)
 
         if not is_array_api_compliant:
-            return super()._validate_y_class_weight(y)
+            if sklearn_check_version("1.9"):
+                return super()._validate_y_class_weight(y, sample_weight)
+            else:
+                return super()._validate_y_class_weight(y)
 
         # array API-only branch. This is meant only for the sklearnex
         # forest estimators which assume n_outputs = 1, will not interact
@@ -874,7 +944,9 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
                 reset=False,
             )
 
-        return self._onedal_estimator.predict_proba(X, queue=queue)
+        # TODO: fix probabilities out of [0, 1] interval on oneDAL side
+        out = self._onedal_estimator.predict_proba(X, queue=queue)
+        return xp.clip(out, 0.0, 1.0)
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
         return accuracy_score(
@@ -935,6 +1007,24 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
 
     decision_path = support_input_format(_sklearn_ForestRegressor.decision_path)
     apply = support_input_format(_sklearn_ForestRegressor.apply)
+
+    @staticmethod
+    def _check_criterion(criterion):
+        if (
+            sklearn_check_version("1.9")
+            and not sklearn_check_version("1.11")
+            and isinstance(criterion, str)
+            and criterion == "friedman_mse"
+        ):
+            criterion = "squared_error"
+            warnings.warn(
+                'Value `"friedman_mse"` for `criterion` is deprecated and will be '
+                'removed in 1.11. It maps to `"squared_error"` as both '
+                'were always equivalent. Use `criterion="squared_error"` '
+                "to remove this warning.",
+                FutureWarning,
+            )
+        return criterion
 
     def _save_attributes(self, xp):
         # This assumes that the error_metric_mode variable is set to ._err
@@ -1245,6 +1335,7 @@ class RandomForestRegressor(ForestRegressor):
             max_bins=256,
             min_bin_size=1,
         ):
+            criterion = self._check_criterion(criterion)
             super().__init__(
                 DecisionTreeRegressor(),
                 n_estimators=n_estimators,
@@ -1527,6 +1618,7 @@ class ExtraTreesRegressor(ForestRegressor):
             max_bins=256,
             min_bin_size=1,
         ):
+            criterion = self._check_criterion(criterion)
             super().__init__(
                 ExtraTreeRegressor(),
                 n_estimators=n_estimators,

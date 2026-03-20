@@ -32,6 +32,9 @@ from sklearn.utils.validation import check_is_fitted, column_or_1d
 
 from daal4py.sklearn._utils import sklearn_check_version
 
+if sklearn_check_version("1.9"):
+    from sklearn.utils._sparse import _align_api_if_sparse
+
 from .._config import config_context, get_config
 from .._device_offload import dispatch, wrap_output_data
 from .._utils import PatchingConditionsChain
@@ -152,6 +155,29 @@ class BaseSVM(oneDALEstimator):
     def intercept_(self):
         del self._icept_
 
+    # Note: this is a copy-paste from scikit-learn, with the difference
+    # that it might not always return a non-writable array when having
+    # array API attributes, due to array API not having mechanisms for
+    # allowing creation of immutable arrays.
+    @property
+    def coef_(self):
+        if self.kernel != "linear":
+            raise AttributeError("coef_ is only available when using a linear kernel")
+
+        coef = self._get_coef()
+
+        # coef_ being a read-only property, it's better to mark the value as
+        # immutable to avoid hiding potential bugs for the unsuspecting user.
+        if sp.issparse(coef):
+            # sparse matrix do not have global flags
+            coef.data.flags.writeable = False
+        elif isinstance(coef, np.ndarray):
+            # regular dense array
+            coef.flags.writeable = False
+        return coef
+
+    coef_.__doc__ = _sklearn_BaseLibSVM.coef_.__doc__
+
     def _onedal_gpu_supported(self, method_name, *data):
         class_name = self.__class__.__name__
         patching_status = PatchingConditionsChain(
@@ -271,7 +297,9 @@ class BaseSVC(BaseSVM):
                 [
                     (
                         not (
-                            self.probability
+                            hasattr(self, "probability")
+                            and self.probability
+                            and self.probability != "deprecated"
                             and hasattr(X, "__dlpack__")
                             and not isinstance(X, np.ndarray)
                         ),
@@ -298,8 +326,8 @@ class BaseSVC(BaseSVM):
         return patching_status
 
     # overwrite _validate_targets for array API support
-    def _onedal_validate_targets(self, X, y):
-        xp, is_array_api_compliant = get_namespace(X, y)
+    def _onedal_validate_targets(self, X, y, sample_weight=None):
+        xp, is_array_api_compliant = get_namespace(X, y, sample_weight)
 
         # _validate_targets equivalent:
         y_ = column_or_1d(y, warn=True)
@@ -315,6 +343,21 @@ class BaseSVC(BaseSVM):
                 "The number of classes has to be greater than one; got %d class"
                 % len(cls)
             )
+
+        if sample_weight is not None:
+            sample_weight = xp.reshape(xp.asarray(sample_weight), (-1,))
+            for yval in xp.arange(cls.shape[0]):
+                try:
+                    if xp.sum(sample_weight[y == yval]) <= 0:
+                        # Note this error message is copy-pasted from liblinear
+                        raise ValueError(
+                            "Invalid input - all samples with positive weights belong to the same class."
+                        )
+                except IndexError:
+                    # Note: scikit-learn here expects 'ValueError' and tests for it
+                    raise ValueError(
+                        f"sample_weight and X have incompatible shapes: {X.shape} vs {sample_weight.shape}"
+                    )
 
         self.classes_ = cls
         return xp.asarray(y, dtype=X.dtype)
@@ -337,7 +380,20 @@ class BaseSVC(BaseSVM):
             accept_sparse="csr",
         )
 
-        y = self._onedal_validate_targets(X, y)
+        y = self._onedal_validate_targets(X, y, sample_weight=sample_weight)
+
+        if (
+            hasattr(self, "probability")
+            and self.probability != "deprecated"
+            and sklearn_check_version("1.9")
+        ):
+            warnings.warn(
+                f"The `probability` parameter was deprecated in 1.9 and "
+                f"will be removed in version 1.11. "
+                f"Use `CalibratedClassifierCV({self.__class__.__name__}(), ensemble=False)` "
+                f"instead of `{self.__class__.__name__}(probability=True)`",
+                FutureWarning,
+            )
 
         if (sw_flag := sample_weight is not None) or self.class_weight is not None:
             sample_weight = _check_sample_weight(sample_weight, X)
@@ -377,7 +433,11 @@ class BaseSVC(BaseSVM):
             X, y, sample_weight, class_count=self.classes_.shape[0], queue=queue
         )
 
-        if self.probability:
+        if (
+            hasattr(self, "probability")
+            and self.probability
+            and self.probability != "deprecated"
+        ):
             self._fit_proba(
                 X,
                 y,
@@ -400,7 +460,10 @@ class BaseSVC(BaseSVM):
             )
 
         params = self.get_params()
-        params["probability"] = False
+        if sklearn_check_version("1.9"):
+            params["probability"] = "deprecated"
+        else:
+            params["probability"] = False
         params["decision_function_shape"] = "ovr"
         clf_base = self.__class__(**params)
 
@@ -409,6 +472,9 @@ class BaseSVC(BaseSVM):
         cfg = get_config()
         cfg["target_offload"] = queue
         with config_context(**cfg):
+            # Comment 2026-02-24: this causes it to fit the model twice.
+            # It looks redundant, but is required when using GPU offloading due to
+            # needing functionalities from sklearn that are not provided by oneDAL.
             clf_base.fit(X, y)
 
             # Forced use of FrozenEstimator starting in sklearn 1.6
@@ -439,6 +505,10 @@ class BaseSVC(BaseSVM):
         self.dual_coef_ = self._onedal_estimator.dual_coef_
         self.support_ = xp.asarray(self._onedal_estimator.support_, dtype=xp.int64)
 
+        if sklearn_check_version("1.9"):
+            self.support_vectors_ = _align_api_if_sparse(self.support_vectors_)
+            self.dual_coef_ = _align_api_if_sparse(self.dual_coef_)
+
         self._icept_ = self._onedal_estimator.intercept_
         self._sparse = False
         self.fit_status_ = 0
@@ -447,14 +517,15 @@ class BaseSVC(BaseSVM):
         self._gamma = self._onedal_estimator.gamma
         length = (self.classes_.shape[0] ** 2 - self.classes_.shape[0]) // 2
 
-        if self.probability:
-            # Parameter learned in Platt scaling, exposed as probA_ and probB_
-            # via the sklearn SVM estimator
-            self._probA = xp.zeros(length)
-            self._probB = xp.zeros(length)
-        else:
-            self._probA = xp.empty(0)
-            self._probB = xp.empty(0)
+        if hasattr(self, "probability"):
+            if self.probability:
+                # Parameter learned in Platt scaling, exposed as probA_ and probB_
+                # via the sklearn SVM estimator
+                self._probA = xp.zeros(length)
+                self._probB = xp.zeros(length)
+            else:
+                self._probA = xp.empty(0)
+                self._probB = xp.empty(0)
 
         self._dualcoef_ = self.dual_coef_
 
@@ -718,8 +789,9 @@ class BaseSVR(BaseSVM):
 
         self._sparse = False
         self._gamma = self._onedal_estimator.gamma
-        self._probA = None
-        self._probB = None
+        if hasattr(self, "probability"):
+            self._probA = None
+            self._probB = None
 
         if sklearn_check_version("1.1"):
             self.n_iter_ = self._onedal_estimator.n_iter_

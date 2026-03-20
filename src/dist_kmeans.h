@@ -73,7 +73,7 @@ public:
                 // when we get here we either reached maxIter or desired accuracy
                 done = true;
                 // we have to provide the number of iterations in result
-                daal::data_management::NumericTablePtr nittab(new daal::data_management::HomogenNumericTable<int>(1, 1, daal::data_management::NumericTable::doAllocate, static_cast<int>(iter)));
+                daal::data_management::NumericTablePtr nittab(daal::data_management::HomogenNumericTable<int>::create(1, 1, daal::data_management::NumericTable::doAllocate, static_cast<int>(iter)));
                 fres->set(daal::algorithms::kmeans::nIterations, nittab);
             }
             // root gets here if done, other ranks always
