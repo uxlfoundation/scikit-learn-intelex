@@ -14,7 +14,7 @@ docutils~=0.21.2
 entrypoints==0.4
 idna==3.11
 imagesize==2.0.0
-importlib-metadata==8.7.1
+importlib-metadata==9.0.0
 importlib-resources==6.5.2
 ipython==9.10.0
 ipython-genutils==0.2.0
