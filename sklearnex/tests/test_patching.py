@@ -280,9 +280,7 @@ def _check_output_type(result, y, method, estimator_name, caplog, X, est=None):
             x_is_fp16 = (
                 X is not None and hasattr(X, "dtype") and "float16" in str(X.dtype)
             )
-            # Automated dtype-skip checks based on estimator type:
-            # - Clusterers always return int cluster labels
-            # - SVM decision_function computes in float64 internally
+            # Clusterers always return int cluster labels
             # decision_path returns structural int output — skip dtype
             if method == "decision_path":
                 continue
