@@ -81,12 +81,6 @@ try:
 except ImportError:
     pl = None
 
-try:
-    import dpctl.tensor as _dpctl_tensor
-
-    _dpctl_has_linalg = hasattr(_dpctl_tensor, "linalg")
-except ImportError:
-    _dpctl_has_linalg = False
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
@@ -666,7 +660,7 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
         # use array API consistently, so we re-fit and re-call with
         # dispatch on to verify output types correctly.
         if dataframe not in ("numpy", "pandas"):
-            if dataframe == "dpctl" and not _dpctl_has_linalg:
+            if dataframe == "dpctl":
                 pytest.skip("dpctl.tensor missing linalg module")
             # Skip second pass if estimator doesn't support GPU for this data
             if queue is not None and getattr(queue.sycl_device, "is_gpu", False):
