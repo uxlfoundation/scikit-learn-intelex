@@ -173,9 +173,6 @@ def _check_estimator_patching(caplog, dataframe, queue, dtype, est, method):
     return result, y, X
 
 
-# Methods that return scalars — skip output type checking
-_SCALAR_METHODS = {"score", "error_norm"}
-
 # Skip output type check — always returns numpy.
 _NUMPY_OUTPUT_OK = {
     ("DummyRegressor", "predict"),  # Not wrapped with wrap_output_data
@@ -211,9 +208,6 @@ def _check_output_type(result, y, method, estimator_name, caplog, X, est=None):
     regressor/clusterer predict, SVM decision_function, sparse, scalar.
     est=None for standalone functions (e.g. pairwise_distances).
     """
-    if method is not None and method in _SCALAR_METHODS:
-        return
-
     # Automated numpy-OK checks based on estimator type / method
     if est is not None and is_clusterer(est) and method == "fit_predict":
         # ClusterMixin.fit_predict returns self.labels_ (numpy)
