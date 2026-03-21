@@ -240,10 +240,8 @@ def _check_output_type(result, y, method, estimator_name, caplog, X, est=None):
     for res in results_to_check:
         if res is None:
             continue
-        # Skip scalar/0-d results
+        # Skip scalar results
         if np.isscalar(res):
-            continue
-        if hasattr(res, "ndim") and res.ndim == 0:
             continue
         # Sparse outputs — verify sparse class matches sklearn config
         if is_sparse(res):
