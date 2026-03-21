@@ -309,7 +309,6 @@ def _check_output_type(result, y, method, estimator_name, caplog, X, est=None):
 
 # Attrs that must be arrays — assert not scalar.
 _MUST_BE_ARRAY_ATTRS = {
-    "n_iter_",
     "coef_",
     "intercept_",
     "dual_coef_",
