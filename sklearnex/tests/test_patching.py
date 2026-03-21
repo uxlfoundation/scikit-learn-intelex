@@ -315,8 +315,8 @@ _MUST_BE_ARRAY_ATTRS = {
     "class_weight_",
 }
 
-# Integer attrs — skip dtype check.
-_INTEGER_FITTED_ATTRS = {
+# Attrs where dtype naturally differs from input — skip dtype check.
+_DTYPE_SKIP_ATTRS = {
     "labels_",
     "support_",
     "core_sample_indices_",
@@ -422,7 +422,7 @@ def _should_skip_dtype_for_attr(key, attr_name, est, x_is_fp16):
         return True
     if x_is_fp16:
         return True
-    if attr_name in _INTEGER_FITTED_ATTRS:
+    if attr_name in _DTYPE_SKIP_ATTRS:
         return True
     if key in _ATTR_SKIP_DTYPE:
         return True
@@ -440,7 +440,7 @@ def _check_fitted_attributes(est, X, estimator_name, caplog, queue=None):
       4. Type: assert isinstance(attr, input_type)
       5. Device: assert attr.device == X.device (skip _ATTR_SKIP_DEVICE)
       6. Dtype: assert attr.dtype == X.dtype (skip _ATTR_SKIP_DTYPE,
-         _INTEGER_FITTED_ATTRS, BaseLibSVM, fp16)
+         _DTYPE_SKIP_ATTRS, BaseLibSVM, fp16)
     """
     input_type = type(X)
     xp, _ = get_namespace(X)
