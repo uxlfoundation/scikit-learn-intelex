@@ -203,7 +203,7 @@ def _check_output_type(result, y, method, estimator_name, caplog, X, est=None):
 
     Checks for each result element:
       1. Sparse: check class -> skip
-      2. Type: assert isinstance(res, input_type)
+      2. Type: assert isinstance(res, input_type_y)
       3. Device: assert res.device == X.device
       4. Dtype: assert res.dtype == y.dtype (predict) or X.dtype (other)
 
@@ -229,7 +229,7 @@ def _check_output_type(result, y, method, estimator_name, caplog, X, est=None):
     if isinstance(result, BaseEstimator):
         return
 
-    input_type = type(y)
+    input_type_y = type(y)
 
     # Check if sklearn fallback occurred (any record in caplog)
     fell_back = any(
@@ -263,10 +263,10 @@ def _check_output_type(result, y, method, estimator_name, caplog, X, est=None):
 
         if fell_back:
             # Fallback to sklearn: numpy output is acceptable
-            assert isinstance(res, (np.ndarray, input_type))
+            assert isinstance(res, (np.ndarray, input_type_y))
         else:
             # Accelerated version: output must match input type
-            assert isinstance(res, input_type)
+            assert isinstance(res, input_type_y)
 
             # Check device alignment: if input was on GPU, output
             # should also be on the same device. Uses standard array API
