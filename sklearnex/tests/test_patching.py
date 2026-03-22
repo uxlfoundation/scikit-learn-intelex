@@ -174,13 +174,13 @@ def _check_estimator_patching(caplog, dataframe, queue, dtype, est, method):
 
 
 # Skip output type check — always returns numpy.
-_NUMPY_OUTPUT_OK = {
+_OUTPUT_SKIP_TYPE = {
     ("DummyRegressor", "predict"),  # Not wrapped with wrap_output_data
     ("NearestNeighbors", "radius_neighbors"),  # Returns ragged numpy arrays
 }
 
 # Skip output dtype check — wrong internal precision.
-_DTYPE_CHECK_SKIP = {
+_OUTPUT_SKIP_DTYPE = {
     ("ElasticNet", "path"),  # Path computes alphas in float64
     ("Lasso", "path"),  # Path computes alphas in float64
     ("LogisticRegression", "decision_function"),  # Returns float64 for float32
@@ -204,7 +204,7 @@ def _check_output_type(result, y, method, estimator_name, caplog, X, est=None):
       3. Device: assert res.device == X.device
       4. Dtype: assert res.dtype == y.dtype (predict) or X.dtype (other)
 
-    Skipped when: fell_back, _NUMPY_OUTPUT_OK, _DTYPE_CHECK_SKIP,
+    Skipped when: fell_back, _OUTPUT_SKIP_TYPE, _OUTPUT_SKIP_DTYPE,
     regressor/clusterer predict, SVM decision_function, sparse, scalar.
     est=None for standalone functions (e.g. pairwise_distances).
     """
@@ -216,7 +216,7 @@ def _check_output_type(result, y, method, estimator_name, caplog, X, est=None):
         # Tree apply returns integer leaf indices (numpy)
         return
     # Remaining known exceptions where numpy output is acceptable
-    if (estimator_name, method) in _NUMPY_OUTPUT_OK:
+    if (estimator_name, method) in _OUTPUT_SKIP_TYPE:
         return
 
     # Methods that return self (e.g. partial_fit) are not array outputs
@@ -289,7 +289,7 @@ def _check_output_type(result, y, method, estimator_name, caplog, X, est=None):
                 and not is_sparse(res)
                 and not x_is_fp16
                 and not _skip_dtype
-                and (estimator_name, method) not in _DTYPE_CHECK_SKIP
+                and (estimator_name, method) not in _OUTPUT_SKIP_DTYPE
             ):
                 if method == "predict" and y is not None and hasattr(y, "dtype"):
                     # predict output dtype should match y dtype
@@ -300,7 +300,7 @@ def _check_output_type(result, y, method, estimator_name, caplog, X, est=None):
 
 
 # Attrs that must be arrays — assert not scalar.
-_MUST_BE_ARRAY_ATTRS = {
+_ATTR_CHECK_MUST_BE_ARRAY = {
     "coef_",
     "intercept_",
     "dual_coef_",
@@ -313,20 +313,6 @@ _MUST_BE_ARRAY_ATTRS = {
     "mean_",
     "labels_",
     "class_weight_",
-}
-
-# Attrs where dtype naturally differs from input — skip dtype check.
-_DTYPE_SKIP_ATTRS = {
-    "labels_",
-    "support_",
-    "core_sample_indices_",
-    "classes_",
-    "n_features_in_",
-    "n_samples_seen_",
-    "n_classes_",
-    "n_outputs_",
-    "n_leaves_",
-    "n_estimators_",
 }
 
 # Skip all checks — always numpy.
@@ -422,8 +408,6 @@ def _should_skip_dtype_for_attr(key, attr_name, est, x_is_fp16):
         return True
     if x_is_fp16:
         return True
-    if attr_name in _DTYPE_SKIP_ATTRS:
-        return True
     if key in _ATTR_SKIP_DTYPE:
         return True
     return False
@@ -440,7 +424,7 @@ def _check_fitted_attributes(est, X, estimator_name, caplog, queue=None):
       4. Type: assert isinstance(attr, input_type)
       5. Device: assert attr.device == X.device (skip _ATTR_SKIP_DEVICE)
       6. Dtype: assert attr.dtype == X.dtype (skip _ATTR_SKIP_DTYPE,
-         _DTYPE_SKIP_ATTRS, BaseLibSVM, fp16)
+         BaseLibSVM, fp16)
     """
     input_type = type(X)
     xp, _ = get_namespace(X)
@@ -458,7 +442,7 @@ def _check_fitted_attributes(est, X, estimator_name, caplog, queue=None):
             continue
 
         # Assert attrs that must be arrays are not scalar
-        if attr_name in _MUST_BE_ARRAY_ATTRS:
+        if attr_name in _ATTR_CHECK_MUST_BE_ARRAY:
             assert hasattr(attr_val, "ndim") and attr_val.ndim > 0
 
         # Sparse — check class then skip
