@@ -631,6 +631,15 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
         result, X, y = _check_estimator_patching(
             caplog, dataframe, queue, dtype, est, method
         )
+        # Without dispatch, dpnp/dpctl should produce all-numpy attrs
+        if dataframe in ["dpnp", "dpctl"] and estimator not in [
+            "KNeighborsClassifier",
+            "KNeighborsRegressor",
+            "NearestNeighbors",
+        ]:
+            import pickle
+
+            pickle.loads(pickle.dumps(est))
         # Without array_api_dispatch, dpnp/dpctl inputs go through
         # support_input_format (converts to numpy and back) for fit and
         # support_sycl_format (converts to numpy but NOT back) for some
