@@ -377,10 +377,6 @@ def _is_public_fitted_attr(attr_name, attr_val):
         return False
     if not hasattr(attr_val, "dtype"):
         return False
-    if hasattr(attr_val, "ndim") and attr_val.ndim == 0:
-        return False
-    if np.isscalar(attr_val):
-        return False
     return True
 
 
