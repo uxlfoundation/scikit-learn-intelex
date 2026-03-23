@@ -641,7 +641,7 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
         # dispatch on to verify output types correctly.
         if dataframe not in ("numpy", "pandas"):
             if dataframe == "dpctl":
-                pytest.skip("dpctl.tensor missing linalg module")
+                pytest.skip("dpctl.tensor is deprecated and incomplete for array API")
             # Skip second pass if estimator doesn't support GPU for this data
             if queue is not None and getattr(queue.sycl_device, "is_gpu", False):
                 X_np, y_np = _as_numpy(X), _as_numpy(y)
