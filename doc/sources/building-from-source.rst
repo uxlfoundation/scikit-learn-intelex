@@ -242,6 +242,7 @@ The following environment variables can be used to control setup aspects:
 
 - ``SKLEARNEX_VERSION``: sets the package version.
 - ``DALROOT``: sets the |onedal| path.
+- ``MKLROOT``: path to the oneMKL runtime libraries, which are used for the DPC module. This variable is optional and only has an effect when using the option ``abs-rpath`` on Linux* (see the rest of this page for details).
 - ``MPIROOT``: sets the path to the MPI library. If this variable is not set but ``I_MPI_ROOT`` is found, will use ``I_MPI_ROOT`` instead. Not used when using ``NO_DIST=1``.
 - ``NO_DIST``: set to '1', 'yes' or alike to build without support for distributed mode.
 - ``NO_STREAM``: set to '1', 'yes' or alike to build without support for streaming mode.
@@ -255,7 +256,7 @@ Command line arguments
 
 The following additional arguments are accepted in calls to the ``setup.py`` script:
 
-- ``--abs-rpath`` (Linux*-only): will make it add the absolute path to the |onedal| shared objects (``.so`` files) to the rpath of the |sklearnex| shared object files in order to load them automatically. This is not necessary when installing through ``pip`` or ``conda``, but can be helpful for development purposes when using a from-source build of the |onedal| that resides in a custom folder, as it won't assume that its files will be found under default system paths.
+- ``--abs-rpath`` (Linux*-only): will make it add the absolute path to the |onedal| shared objects (``.so`` files) to the rpath of the |sklearnex| shared object files in order to load them automatically, as well as the absolute path to the oneMKL shared objects (required for the DPC and SPMD modules only) if defined by environment variable ``$MKLROOT``. This is not necessary when installing through ``pip`` or ``conda``, but can be helpful for development purposes when using a from-source build of the |onedal| that resides in a custom folder, as it won't assume that its files will be found under default system paths.
 - ``--debug``: builds modules with debugging symbols and assertions enabled. Note that on Windows*, this will only add debugging symbols for the ``_onedal_py`` extension modules, but not for the ``daal4py`` extension module.
 - ``--using-lld`` (Linux*-only): makes the setup script avoid passing arguments that are not supported by LLVM's LLD linker, such as strong stack protection. This flag is required when building with the LLD linker (which can be achieved by setting environment variable ``$LDFLAGS="-fuse-ld=lld"``), but note that it **does not make the build script use LLD**, only avoids adding arguments that it doesn't support.
 
