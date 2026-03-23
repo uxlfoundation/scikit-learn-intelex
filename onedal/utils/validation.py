@@ -22,6 +22,13 @@ from numbers import Integral
 import numpy as np
 from scipy import sparse as sp
 
+# Note: this is in order to avoid failures due to design rules
+# that prevent calling 'sklearn_check_version' from this module.
+try:
+    from sklearn.utils._array_api import get_namespace as _sklearn_get_namespace
+except ImportError:
+    pass
+
 from onedal.common._backend import BackendFunction
 from onedal.utils import _sycl_queue_manager as QM
 
@@ -490,8 +497,8 @@ def _assert_all_finite(
                 and input_name == "X"
                 and not allow_nan
             ):
-                # This checks if the input contains any NaN value
-                if True in (X != X):
+                xp, _ = _sklearn_get_namespace(X)
+                if xp.any(xp.isnan(X)):
                     # Message is taken from scikit-learn. Note that scikit-learn
                     # tests for this exact message in its estimators
                     msg_err += (
