@@ -105,6 +105,10 @@ The following patched classes have support for array API inputs:
 - :obj:`sklearn.linear_model.Ridge`
 - :obj:`sklearnex.linear_model.IncrementalLinearRegression`
 - :obj:`sklearnex.linear_model.IncrementalRidge`
+- :obj:`sklearn.neighbors.KNeighborsClassifier`
+- :obj:`sklearn.neighbors.KNeighborsRegressor`
+- :obj:`sklearn.neighbors.NearestNeighbors`
+- :obj:`sklearn.neighbors.LocalOutlierFactor`
 - :obj:`sklearn.svm.NuSVC`
 - :obj:`sklearn.svm.NuSVR`
 - :obj:`sklearn.svm.SVC`
@@ -148,6 +152,14 @@ Calling methods such as ``.apply()`` from a ``RandomForestClassifier`` from the 
 that was fitted to array API inputs will work, but it will do so by transferring the data
 to host if not already there, passing the intermediate object to |sklearn|, and outputting
 a host NumPy array, with some exceptions where |dpnp_array| classes might be returned.
+
+Similarly, :obj:`sklearn.neighbors.KNeighborsClassifier` also offers methods such as
+:meth:`~sklearn.neighbors.KNeighborsClassifier.radius_neighbors` and
+:meth:`~sklearn.neighbors.KNeighborsClassifier.kneighbors_graph`, which do not have
+accelerated analogs in the |sklearnex| and thus rely on |sklearn| for the computations.
+Calling such methods from a KNN estimator from the |sklearnex| that was fitted to array
+API inputs will work, but it will do so by transferring the data to host if not already
+there, passing the intermediate object to |sklearn|, and outputting a host NumPy array.
 
 Note that some cases of estimator-specific methods are still fully array API compatible -
 for example, :meth:`sklearn.neighbors.NearestNeighbors.kneighbors` will produce outputs
