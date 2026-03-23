@@ -452,6 +452,9 @@ deselected_tests:
   # CI jobs in sklearnex compile scikit-learn from source, not necessarily with the same toolkits as sklearn's CIs
   - preprocessing/tests/test_polynomial.py::test_sizeof_LARGEST_INT_t
 
+  # sklearn does not support n_jobs in preprocessing estimators
+  - preprocessing/tests/test_common.py::test_missing_value_handling[est0-maxabs_scale-True-False-omit_kwargs0]
+
   # --------------------------------------------------------
   # No need to test daal4py patching
 reduced_tests:

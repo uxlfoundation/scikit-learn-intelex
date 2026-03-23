@@ -131,7 +131,7 @@ class IncrementalBasicStatistics(BasicStatistics):
         X_table, sample_weight_table = to_table(X, sample_weight, queue=queue)
 
         if not hasattr(self, "_onedal_params"):
-            self._onedal_params = self._get_onedal_params(False, dtype=X.dtype)
+            self._onedal_params = self._get_onedal_params(False, dtype=X_table.dtype)
 
         self._partial_result = self.partial_compute(
             self._onedal_params, self._partial_result, X_table, sample_weight_table
