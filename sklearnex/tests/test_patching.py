@@ -173,28 +173,6 @@ def _check_estimator_patching(caplog, dataframe, queue, dtype, est, method):
     return result, y, X
 
 
-# Skip output type check — always returns numpy.
-_OUTPUT_SKIP_TYPE = {
-    ("DummyRegressor", "predict"),  # Not wrapped with wrap_output_data
-    ("NearestNeighbors", "radius_neighbors"),  # Returns ragged numpy arrays
-}
-
-# Skip output dtype check — wrong internal precision.
-_OUTPUT_SKIP_DTYPE = {
-    ("ElasticNet", "path"),  # Path computes alphas in float64
-    ("Lasso", "path"),  # Path computes alphas in float64
-    ("LogisticRegression", "decision_function"),  # Returns float64 for float32
-    ("LogisticRegression", "predict_proba"),  # Returns float64 for float32 on GPU
-    ("KNeighborsClassifier", "predict_proba"),  # Returns float64 for float32
-    # kneighbors returns float64 distances for float32 input on GPU
-    ("KNeighborsClassifier", "kneighbors"),
-    ("KNeighborsRegressor", "kneighbors"),
-    ("NearestNeighbors", "kneighbors"),
-    ("LocalOutlierFactor", "kneighbors"),
-    ("IncrementalEmpiricalCovariance", "mahalanobis"),  # Computes in float64
-}
-
-
 def _check_output_type(result, y, method, estimator_name, caplog, X, est=None):
     """Check output type, device, and dtype conformance.
 
@@ -204,7 +182,7 @@ def _check_output_type(result, y, method, estimator_name, caplog, X, est=None):
       3. Device: assert res.device == X.device
       4. Dtype: assert res.dtype == y.dtype (predict) or X.dtype (other)
 
-    Skipped when: fell_back, _OUTPUT_SKIP_TYPE, _OUTPUT_SKIP_DTYPE,
+    Skipped when: fell_back, _SKIP(output_type), _SKIP(output_dtype),
     regressor/clusterer predict, SVM decision_function, sparse, scalar.
     est=None for standalone functions (e.g. pairwise_distances).
     """
@@ -216,7 +194,7 @@ def _check_output_type(result, y, method, estimator_name, caplog, X, est=None):
         # Tree apply returns integer leaf indices (numpy)
         return
     # Remaining known exceptions where numpy output is acceptable
-    if (estimator_name, method) in _OUTPUT_SKIP_TYPE:
+    if _should_skip(estimator_name, method, "output_type"):
         return
 
     # Methods that return self (e.g. partial_fit) are not array outputs
@@ -289,7 +267,7 @@ def _check_output_type(result, y, method, estimator_name, caplog, X, est=None):
                 and not is_sparse(res)
                 and not x_is_fp16
                 and not _skip_dtype
-                and (estimator_name, method) not in _OUTPUT_SKIP_DTYPE
+                and not _should_skip(estimator_name, method, "output_dtype")
             ):
                 if method == "predict" and y is not None and hasattr(y, "dtype"):
                     # predict output dtype should match y dtype
@@ -297,6 +275,81 @@ def _check_output_type(result, y, method, estimator_name, caplog, X, est=None):
                 elif X is not None and hasattr(X, "dtype") and "float" in str(X.dtype):
                     # Output dtype should match X dtype for float inputs
                     assert res.dtype == X.dtype
+
+
+# Unified skip rules: (estimator, name) -> set of checks to skip.
+# Checks: output_type, output_dtype, attr_type, attr_device, attr_dtype.
+# Suffix _no_dispatch: only skip when array_api_dispatch is off.
+_SKIP = {
+    # Output
+    ("DummyRegressor", "predict"): {"output_type"},
+    ("NearestNeighbors", "radius_neighbors"): {"output_type"},
+    ("ElasticNet", "path"): {"output_dtype"},
+    ("Lasso", "path"): {"output_dtype"},
+    ("LogisticRegression", "decision_function"): {"output_dtype"},
+    ("LogisticRegression", "predict_proba"): {"output_dtype"},
+    ("KNeighborsClassifier", "predict_proba"): {"output_dtype"},
+    ("KNeighborsClassifier", "kneighbors"): {"output_dtype"},
+    ("KNeighborsRegressor", "kneighbors"): {"output_dtype"},
+    ("NearestNeighbors", "kneighbors"): {"output_dtype"},
+    ("LocalOutlierFactor", "kneighbors"): {"output_dtype"},
+    ("IncrementalEmpiricalCovariance", "mahalanobis"): {"output_dtype"},
+    # Attr — always
+    ("DummyRegressor", "constant_"): {"attr_type", "attr_device", "attr_dtype"},
+    ("LogisticRegression", "coef_"): {"attr_type", "attr_device", "attr_dtype"},
+    ("LogisticRegression", "intercept_"): {"attr_type", "attr_device", "attr_dtype"},
+    ("LogisticRegression", "n_iter_"): {"attr_type", "attr_device", "attr_dtype"},
+    ("LocalOutlierFactor", "negative_outlier_factor_"): {
+        "attr_type",
+        "attr_device",
+        "attr_dtype",
+    },
+    ("KMeans", "cluster_centers_"): {"attr_type", "attr_device", "attr_dtype"},
+    # Attr — dispatch off only
+    ("PCA", "singular_values_"): {
+        "attr_type_no_dispatch",
+        "attr_device_no_dispatch",
+        "attr_dtype_no_dispatch",
+    },
+    ("PCA", "explained_variance_ratio_"): {
+        "attr_type_no_dispatch",
+        "attr_device_no_dispatch",
+        "attr_dtype_no_dispatch",
+    },
+    ("PCA", "explained_variance_"): {
+        "attr_type_no_dispatch",
+        "attr_device_no_dispatch",
+        "attr_dtype_no_dispatch",
+    },
+    ("PCA", "components_"): {
+        "attr_type_no_dispatch",
+        "attr_device_no_dispatch",
+        "attr_dtype_no_dispatch",
+    },
+    ("PCA", "mean_"): {
+        "attr_type_no_dispatch",
+        "attr_device_no_dispatch",
+        "attr_dtype_no_dispatch",
+    },
+    # Attr — specific
+    ("SVC", "n_iter_"): {"attr_device"},
+    ("NuSVC", "n_iter_"): {"attr_device"},
+    ("SVC", "probA_"): {"attr_device", "attr_dtype"},
+    ("SVC", "probB_"): {"attr_device", "attr_dtype"},
+    ("NuSVC", "probA_"): {"attr_device", "attr_dtype"},
+    ("NuSVC", "probB_"): {"attr_device", "attr_dtype"},
+    ("SVC", "class_weight_"): {"attr_dtype"},
+    ("NuSVC", "class_weight_"): {"attr_dtype"},
+}
+
+
+def _should_skip(estimator_name, name, check, dispatch_on=True):
+    skips = _SKIP.get((estimator_name, name), set())
+    if check in skips:
+        return True
+    if not dispatch_on and f"{check}_no_dispatch" in skips:
+        return True
+    return False
 
 
 # Attrs that must be arrays — assert not scalar.
@@ -313,45 +366,6 @@ _ATTR_CHECK_MUST_BE_ARRAY = {
     "mean_",
     "labels_",
     "class_weight_",
-}
-
-# Skip all checks — always numpy.
-_ATTR_SKIP_ALL = {
-    ("DummyRegressor", "constant_"),
-    ("LogisticRegression", "coef_"),
-    ("LogisticRegression", "intercept_"),
-    ("LogisticRegression", "n_iter_"),
-    ("LocalOutlierFactor", "negative_outlier_factor_"),
-    ("KMeans", "cluster_centers_"),
-}
-
-# Skip all checks when array_api_dispatch is off.
-_ATTR_SKIP_ALL_NO_DISPATCH = {
-    ("PCA", "singular_values_"),
-    ("PCA", "explained_variance_ratio_"),
-    ("PCA", "explained_variance_"),
-    ("PCA", "components_"),
-    ("PCA", "mean_"),
-}
-
-# Skip device check — attr on wrong device.
-_ATTR_SKIP_DEVICE = {
-    ("SVC", "n_iter_"),
-    ("NuSVC", "n_iter_"),
-    ("SVC", "probA_"),
-    ("SVC", "probB_"),
-    ("NuSVC", "probA_"),
-    ("NuSVC", "probB_"),
-}
-
-# Skip dtype check — wrong internal precision.
-_ATTR_SKIP_DTYPE = {
-    ("SVC", "class_weight_"),
-    ("NuSVC", "class_weight_"),
-    ("SVC", "probA_"),
-    ("SVC", "probB_"),
-    ("NuSVC", "probA_"),
-    ("NuSVC", "probB_"),
 }
 
 
@@ -389,13 +403,8 @@ def _should_skip_all_for_attr(
         return True
     if is_clusterer(est):
         return True
-    if key in _ATTR_SKIP_ALL:
-        return True
-    if (
-        is_non_numpy_input
-        and not sklearn_get_config().get("array_api_dispatch", False)
-        and key in _ATTR_SKIP_ALL_NO_DISPATCH
-    ):
+    dispatch_on = sklearn_get_config().get("array_api_dispatch", False)
+    if _should_skip(key[0], key[1], "attr_type", dispatch_on):
         return True
     if fell_back:
         return True
@@ -408,7 +417,8 @@ def _should_skip_dtype_for_attr(key, attr_name, est, x_is_fp16):
         return True
     if x_is_fp16:
         return True
-    if key in _ATTR_SKIP_DTYPE:
+    dispatch_on = sklearn_get_config().get("array_api_dispatch", False)
+    if _should_skip(key[0], key[1], "attr_dtype", dispatch_on):
         return True
     return False
 
@@ -419,11 +429,11 @@ def _check_fitted_attributes(est, X, estimator_name, caplog, queue=None):
     Call sequence for each attr:
       1. Filter: skip non-public, non-array, scalar
       2. Sparse: check class -> skip
-      3. Skip all: _ATTR_SKIP_ALL, _ATTR_SKIP_ALL_NO_DISPATCH,
+      3. Skip: _SKIP dict (attr_type, attr_device, attr_dtype),
          classes_ (no dispatch), clusterers, fell_back -> skip
       4. Type: assert isinstance(attr, input_type)
-      5. Device: assert attr.device == X.device (skip _ATTR_SKIP_DEVICE)
-      6. Dtype: assert attr.dtype == X.dtype (skip _ATTR_SKIP_DTYPE,
+      5. Device: assert attr.device == X.device (skip via _SKIP)
+      6. Dtype: assert attr.dtype == X.dtype (skip via _SKIP,
          BaseLibSVM, fp16)
     """
     input_type = type(X)
@@ -465,7 +475,7 @@ def _check_fitted_attributes(est, X, estimator_name, caplog, queue=None):
 
         # Device check
         if (
-            key not in _ATTR_SKIP_DEVICE
+            not _should_skip(estimator_name, attr_name, "attr_device")
             and hasattr(X, "device")
             and hasattr(attr_val, "device")
         ):
