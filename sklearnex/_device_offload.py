@@ -112,7 +112,8 @@ def dispatch(
     """
 
     if get_config()["use_raw_input"]:
-        return branches["onedal"](obj, *args, **kwargs)
+        with QM.manage_global_queue(None, *args) as queue:
+            return branches["onedal"](obj, *args, **kwargs, queue=queue)
 
     # Determine if array_api dispatching is enabled, and if estimator is capable
     onedal_array_api = _array_api_offload() and get_tags(obj).onedal_array_api
@@ -194,6 +195,15 @@ def wrap_output_data(func: Callable) -> Callable:
                 )
 
             if get_config().get("transform_output") in ("default", None):
+                # If the result is a string array, we should not convert it.
+                # This can happen if we predict classification labels that are strings.
+                if (
+                    hasattr(result, "dtype")
+                    and hasattr(result.dtype, "kind")
+                    and result.dtype.kind in {"U", "S"}
+                ):
+                    return result
+                # In other cases output data should be the same format as X
                 input_array_api = getattr(data, "__array_namespace__", lambda: None)()
                 if input_array_api and not _is_numpy_namespace(input_array_api):
                     input_array_api_device = data.device

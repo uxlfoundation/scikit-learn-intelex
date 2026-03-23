@@ -658,7 +658,10 @@ Classification
        - ``intercept_scaling`` != `1`
        - ``warm_start`` = ``True``
        - ``l1_ratio`` != ``0``
-     - No limitations
+
+       Methods not supported:
+
+       - ``score``
      - Only binary classification is supported
 
 Regression
