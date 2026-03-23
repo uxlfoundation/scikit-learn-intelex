@@ -97,6 +97,11 @@ if "Windows" in platform.system():
     os.environ["PATH"] = path_to_libs + os.pathsep + os.environ["PATH"]
 
 
+# Preserved ImportError message when DPC++/SPMD backends fail to load.
+# Used by throw_if_no_dpc_available() to surface actionable error messages.
+_dpc_load_error: str = ""
+_spmd_load_error: str = ""
+
 try:
     # use dpc backend if available
     import onedal._onedal_py_dpc
@@ -104,9 +109,10 @@ try:
     _dpc_backend = Backend(onedal._onedal_py_dpc, is_dpc=True, is_spmd=False)
 
     _host_backend = None
-except ImportError:
-    # fall back to host backend
+except ImportError as _dpc_import_err:
+    # fall back to host backend; preserve reason for user-facing diagnostics
     _dpc_backend = None
+    _dpc_load_error = str(_dpc_import_err)
 
     import onedal._onedal_py_host
 
@@ -117,8 +123,9 @@ try:
     import onedal._onedal_py_spmd_dpc
 
     _spmd_backend = Backend(onedal._onedal_py_spmd_dpc, is_dpc=True, is_spmd=True)
-except ImportError:
+except ImportError as _spmd_import_err:
     _spmd_backend = None
+    _spmd_load_error = str(_spmd_import_err)
 
 # if/elif/else layout required for pylint to realize _default_backend cannot be None
 if _dpc_backend is not None:
@@ -128,8 +135,41 @@ elif _host_backend is not None:
 else:
     raise ImportError("No oneDAL backend available")
 
+
+def throw_if_no_dpc_available(require_spmd: bool = False) -> None:
+    """Raise a user-actionable RuntimeError if the required DPC++/SPMD backend is unavailable.
+
+    Parameters
+    ----------
+    require_spmd : bool, default=False
+        If True, check the SPMD backend load status; otherwise check the DPC++ backend.
+
+    Raises
+    ------
+    RuntimeError
+        Includes the original ImportError reason and install instructions when the
+        requested backend is unavailable.
+    """
+    error_msg = _spmd_load_error if require_spmd else _dpc_load_error
+    backend_label = "SPMD" if require_spmd else "DPC++"
+    if error_msg:
+        raise RuntimeError(
+            f"oneDAL GPU/{backend_label} support is not available "
+            "in the current installation.\n"
+            f"  Reason: {error_msg}\n"
+            "  To enable SYCL/GPU acceleration, install the GPU extras:\n"
+            "    pip install scikit-learn-intelex[gpu]\n"
+            "  or via conda:\n"
+            "    conda install -c https://software.repos.intel.com/python/conda "
+            "scikit-learn-intelex-gpu"
+        )
+
+
 # Core modules to export
 __all__ = [
+    "_dpc_load_error",
+    "_spmd_load_error",
+    "throw_if_no_dpc_available",
     "_host_backend",
     "_default_backend",
     "_dpc_backend",
