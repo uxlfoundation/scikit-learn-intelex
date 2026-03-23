@@ -310,32 +310,6 @@ _SKIP = {
         "attr_dtype",
     },
     ("KMeans", "cluster_centers_"): {"attr_type", "attr_device", "attr_dtype"},
-    # Attr — dispatch off only
-    ("PCA", "singular_values_"): {
-        "attr_type_no_dispatch",
-        "attr_device_no_dispatch",
-        "attr_dtype_no_dispatch",
-    },
-    ("PCA", "explained_variance_ratio_"): {
-        "attr_type_no_dispatch",
-        "attr_device_no_dispatch",
-        "attr_dtype_no_dispatch",
-    },
-    ("PCA", "explained_variance_"): {
-        "attr_type_no_dispatch",
-        "attr_device_no_dispatch",
-        "attr_dtype_no_dispatch",
-    },
-    ("PCA", "components_"): {
-        "attr_type_no_dispatch",
-        "attr_device_no_dispatch",
-        "attr_dtype_no_dispatch",
-    },
-    ("PCA", "mean_"): {
-        "attr_type_no_dispatch",
-        "attr_device_no_dispatch",
-        "attr_dtype_no_dispatch",
-    },
     # Attr — specific
     ("SVC", "n_iter_"): {"attr_device"},
     ("NuSVC", "n_iter_"): {"attr_device"},
