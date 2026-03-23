@@ -94,12 +94,44 @@ def _sklearnex_assert_all_finite(
         else:
             _sklearn_assert_all_finite(X, allow_nan=allow_nan)
     else:
-        _onedal_assert_all_finite(
-            X,
-            allow_nan=allow_nan,
-            input_name=input_name,
-            estimator_name=estimator_name,
-        )
+        try:
+            _onedal_assert_all_finite(
+                X,
+                allow_nan=allow_nan,
+                input_name=input_name,
+            )
+        except ValueError as e:
+            if (
+                estimator_name is not None  # proxy for sklearn>=1.9
+                and input_name == "X"
+                and not allow_nan
+            ):
+                try:
+                    # This checks if the input contains a Inf Value
+                    _onedal_assert_all_finite(X, allow_nan=True)
+                    # it passes therefore failure is due to a NaN
+                    # Message is taken from scikit-learn. Note that scikit-learn
+                    # tests for this exact message in its estimators
+                    msg_err = e.args[0] + (
+                        f"\n{estimator_name} does not accept missing values"
+                        " encoded as NaN natively. For supervised learning, you might want"
+                        " to consider sklearn.ensemble.HistGradientBoostingClassifier and"
+                        " Regressor which accept missing values encoded as NaNs natively."
+                        " Alternatively, it is possible to preprocess the data, for"
+                        " instance by using an imputer transformer in a pipeline or drop"
+                        " samples with missing values. See"
+                        " https://scikit-learn.org/stable/modules/impute.html"
+                        " You can find a list of all estimators that handle NaN values"
+                        " at the following page:"
+                        " https://scikit-learn.org/stable/modules/impute.html"
+                        "#estimators-that-handle-nan-values"
+                    )
+                    e.args = msg_err + e.args[1:]
+                    # swap the error message
+                except ValueError:
+                    pass
+
+            raise e from None
 
 
 if sklearn_check_version("1.9"):

@@ -462,14 +462,7 @@ def _is_csr(x):
     )
 
 
-# Note: the arguments here are made to match scikit-learn's, but 'msg_dtype'
-# is not used. If at some point this function were to be called directly
-# with types other than fp32/64, it would need to incorporate additional
-# text in the message:
-# https://github.com/scikit-learn/scikit-learn/blob/08f9b20d69a787a5a1e06e0ba6dd8693aeb5d223/sklearn/utils/validation.py#L162
-def _assert_all_finite(
-    X, allow_nan=False, msg_dtype=None, estimator_name=None, input_name=""
-):
+def _assert_all_finite(X, allow_nan=False, input_name=""):
     backend_method = BackendFunction(
         backend.finiteness_checker.compute.compute, backend, "compute", no_policy=False
     )
@@ -485,29 +478,6 @@ def _assert_all_finite(
             type_err = "infinity" if allow_nan else "NaN, infinity"
             padded_input_name = input_name + " " if input_name else ""
             msg_err = f"Input {padded_input_name}contains {type_err}."
-            if (
-                estimator_name is not None  # proxy for sklearn>=1.9
-                and input_name == "X"
-                and not allow_nan
-            ):
-                # This checks if the input contains any NaN value
-                if True in (X != X):
-                    # Message is taken from scikit-learn. Note that scikit-learn
-                    # tests for this exact message in its estimators
-                    msg_err += (
-                        f"\n{estimator_name} does not accept missing values"
-                        " encoded as NaN natively. For supervised learning, you might want"
-                        " to consider sklearn.ensemble.HistGradientBoostingClassifier and"
-                        " Regressor which accept missing values encoded as NaNs natively."
-                        " Alternatively, it is possible to preprocess the data, for"
-                        " instance by using an imputer transformer in a pipeline or drop"
-                        " samples with missing values. See"
-                        " https://scikit-learn.org/stable/modules/impute.html"
-                        " You can find a list of all estimators that handle NaN values"
-                        " at the following page:"
-                        " https://scikit-learn.org/stable/modules/impute.html"
-                        "#estimators-that-handle-nan-values"
-                    )
             raise ValueError(msg_err)
 
 
@@ -515,14 +485,12 @@ def assert_all_finite(
     X,
     *,
     allow_nan=False,
-    estimator_name=None,
     input_name="",
 ):
     _assert_all_finite(
         X.data if sp.issparse(X) else X,
         allow_nan=allow_nan,
         input_name=input_name,
-        estimator_name=estimator_name,
     )
 
 
