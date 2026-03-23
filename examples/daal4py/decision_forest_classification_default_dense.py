@@ -37,7 +37,6 @@ def main(readcsv=pd_read_csv, method="defaultDense"):
         nTrees=10,
         minObservationsInLeafNode=8,
         featuresPerNode=3,
-        engine=d4p.engines_mt19937(seed=777),
         varImportance="MDI",
         bootstrap=True,
         resultsToCompute="computeOutOfBagError",

@@ -192,7 +192,6 @@ class GBTDAALClassifier(ClassifierMixin, GBTDAALBase):
             memorySavingMode=self.memory_saving_mode,
             maxBins=self.max_bins,
             minBinSize=self.min_bin_size,
-            engine=d4p.engines_mcg59(seed=seed_),
         )
         train_result = train_algo.compute(X, y_)
 
@@ -298,7 +297,6 @@ class GBTDAALRegressor(RegressorMixin, GBTDAALBase):
             memorySavingMode=self.memory_saving_mode,
             maxBins=self.max_bins,
             minBinSize=self.min_bin_size,
-            engine=d4p.engines_mcg59(seed=seed_),
         )
         train_result = train_algo.compute(X, y_)
 

@@ -35,7 +35,6 @@ def main(readcsv=pd_read_csv, method="defaultDense"):
         nTrees=100,
         varImportance="MDA_Raw",
         bootstrap=True,
-        engine=d4p.engines_mt2203(seed=777),
         resultsToCompute="computeOutOfBagError|computeOutOfBagErrorPerObservation",
     )
 
