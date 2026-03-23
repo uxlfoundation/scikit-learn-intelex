@@ -100,7 +100,7 @@ def test_pairwise_distances_patching(caplog, dataframe, queue, dtype, metric):
                 rng.random(size=1000), sycl_queue=queue, target_df=dataframe, dtype=dtype
             )[None, :]
 
-        result = pairwise_distances(X, metric=metric)
+        _ = pairwise_distances(X, metric=metric)
     assert all(
         [
             "running accelerated version" in i.message
