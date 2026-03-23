@@ -18,6 +18,7 @@
 import importlib
 import logging
 import os
+import pickle
 import re
 import sys
 from inspect import signature
@@ -637,7 +638,6 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
             "KNeighborsRegressor",
             "NearestNeighbors",
         ]:
-            import pickle
 
             pickle.loads(pickle.dumps(est))
         # Without array_api_dispatch, dpnp/dpctl inputs go through
