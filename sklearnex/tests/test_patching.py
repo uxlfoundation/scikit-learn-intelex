@@ -170,7 +170,7 @@ def _check_estimator_patching(caplog, dataframe, queue, dtype, est, method):
         ]
     ), f"sklearnex patching issue in {est}.{method} with log: \n{caplog.text}"
 
-    return result, y, X
+    return result, X, y
 
 
 def _check_output_type(result, y, method, estimator_name, caplog, X, est=None):
@@ -599,7 +599,7 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
 
         with config_context(array_api_dispatch=True):
             try:
-                result, y, X = _check_estimator_patching(
+                result, X, y = _check_estimator_patching(
                     caplog, dataframe, queue, dtype, est, method
                 )
             except Exception as e:
@@ -626,7 +626,7 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
             tags = get_tags(est)
             if not (hasattr(tags, "onedal_array_api") and tags.onedal_array_api):
                 pytest.skip("No GPU support for estimator")
-        result, y, X = _check_estimator_patching(
+        result, X, y = _check_estimator_patching(
             caplog, dataframe, queue, dtype, est, method
         )
         # Without array_api_dispatch, dpnp/dpctl inputs go through
@@ -647,7 +647,7 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
                     _check_set_output_transform(est, method, X, estimator)
                     return
             with config_context(array_api_dispatch=True):
-                result2, y2, X2 = _check_estimator_patching(
+                result2, X2, y2 = _check_estimator_patching(
                     caplog, dataframe, queue, dtype, est, method
                 )
                 _check_output_type(result2, y2, method, estimator, caplog, X=X2, est=est)
