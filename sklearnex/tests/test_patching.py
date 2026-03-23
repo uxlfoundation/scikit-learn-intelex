@@ -280,7 +280,6 @@ def _check_output_type(result, y, method, estimator_name, caplog, X, est=None):
 
 # Unified skip rules: (estimator, name) -> set of checks to skip.
 # Checks: output_type, output_dtype, attr_type, attr_device, attr_dtype.
-# Suffix _no_dispatch: only skip when array_api_dispatch is off.
 _SKIP = {
     # Output
     ("DummyRegressor", "predict"): {"output_type"},
@@ -322,13 +321,8 @@ _SKIP = {
 }
 
 
-def _should_skip(estimator_name, name, check, dispatch_on=True):
-    skips = _SKIP.get((estimator_name, name), set())
-    if check in skips:
-        return True
-    if not dispatch_on and f"{check}_no_dispatch" in skips:
-        return True
-    return False
+def _should_skip(estimator_name, name, check):
+    return check in _SKIP.get((estimator_name, name), set())
 
 
 # Attrs that must be arrays — assert not scalar.
@@ -380,8 +374,7 @@ def _should_skip_all_for_attr(
         return True
     if is_clusterer(est):
         return True
-    dispatch_on = sklearn_get_config().get("array_api_dispatch", False)
-    if _should_skip(key[0], key[1], "attr_type", dispatch_on):
+    if _should_skip(key[0], key[1], "attr_type"):
         return True
     if fell_back:
         return True
@@ -394,8 +387,7 @@ def _should_skip_dtype_for_attr(key, attr_name, est, x_is_fp16):
         return True
     if x_is_fp16:
         return True
-    dispatch_on = sklearn_get_config().get("array_api_dispatch", False)
-    if _should_skip(key[0], key[1], "attr_dtype", dispatch_on):
+    if _should_skip(key[0], key[1], "attr_dtype"):
         return True
     return False
 
