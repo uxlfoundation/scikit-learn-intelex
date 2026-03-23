@@ -72,16 +72,6 @@ from sklearnex.tests.utils import (
 )
 from sklearnex.utils._array_api import get_namespace
 
-try:
-    import pandas as pd
-except ImportError:
-    pd = None
-
-try:
-    import polars as pl
-except ImportError:
-    pl = None
-
 
 @pytest.mark.parametrize("dtype", DTYPES)
 @pytest.mark.parametrize(
@@ -487,8 +477,12 @@ def _check_set_output_transform(est, method, X, estimator_name):
             continue
 
         if transform_output == "pandas":
+            import pandas as pd
+
             expected_type = pd.DataFrame
         elif transform_output == "polars":
+            import polars as pl
+
             expected_type = pl.DataFrame
         else:
             expected_type = None
