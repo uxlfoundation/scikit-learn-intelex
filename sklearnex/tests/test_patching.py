@@ -597,6 +597,7 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
             "KNeighborsClassifier",
             "KNeighborsRegressor",
             "NearestNeighbors",
+            "LocalOutlierFactor",
         ]:
 
             pickle.loads(pickle.dumps(est))
