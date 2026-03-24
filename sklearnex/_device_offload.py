@@ -195,10 +195,14 @@ def wrap_output_data(func: Callable) -> Callable:
                 )
 
             if get_config().get("transform_output") in ("default", None):
-                # get_namespace detects torch (which lacks __array_namespace__)
-                xp, is_array_api = get_namespace(data)
-                if is_array_api and not _is_numpy_namespace(xp):
-                    result = _asarray(result, xp, device=data.device)
+                # Guard against non-array data (e.g. integer n_neighbors from
+                # sklearn LOF internally calling kneighbors(n_neighbors=int))
+                if hasattr(data, "dtype"):
+                    xp, is_array_api = get_namespace(data)
+                    if is_array_api and not _is_numpy_namespace(xp):
+                        result = _asarray(result, xp, device=data.device)
+            else:
+                _, (result,) = _transfer_to_host(result)
         return result
 
     return wrapper
