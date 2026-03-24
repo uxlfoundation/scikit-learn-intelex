@@ -488,9 +488,7 @@ if daal_check_version((2023, "P", 200)):
                 CC = xp.sum(centers * centers, axis=1)[None, :]
                 XC = X @ centers.T
                 distances_sq = XX + CC - 2 * XC
-                distances_sq = xp.where(
-                    distances_sq < 0, xp.zeros_like(distances_sq), distances_sq
-                )
+                distances_sq = xp.clip(distances_sq, 0, None)
                 return xp.sqrt(distances_sq)
 
             from sklearn.metrics.pairwise import (
