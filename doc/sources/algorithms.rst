@@ -320,10 +320,6 @@ Other Tasks
        - Data with more than 3 dimensions is not supported
        - Only ``np.ndarray``, ``pd.DataFrame`` and ``pd.Series`` inputs are supported.
      - 
-   * - :obj:`sklearn.utils.assert_all_finite`
-     - All parameters are supported
-     - Only dense data is supported
-     - 
    * - :obj:`sklearn.metrics.pairwise_distances`
      - All parameters are supported except:
 

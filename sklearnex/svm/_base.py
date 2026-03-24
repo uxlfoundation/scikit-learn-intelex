@@ -155,6 +155,29 @@ class BaseSVM(oneDALEstimator):
     def intercept_(self):
         del self._icept_
 
+    # Note: this is a copy-paste from scikit-learn, with the difference
+    # that it might not always return a non-writable array when having
+    # array API attributes, due to array API not having mechanisms for
+    # allowing creation of immutable arrays.
+    @property
+    def coef_(self):
+        if self.kernel != "linear":
+            raise AttributeError("coef_ is only available when using a linear kernel")
+
+        coef = self._get_coef()
+
+        # coef_ being a read-only property, it's better to mark the value as
+        # immutable to avoid hiding potential bugs for the unsuspecting user.
+        if sp.issparse(coef):
+            # sparse matrix do not have global flags
+            coef.data.flags.writeable = False
+        elif isinstance(coef, np.ndarray):
+            # regular dense array
+            coef.flags.writeable = False
+        return coef
+
+    coef_.__doc__ = _sklearn_BaseLibSVM.coef_.__doc__
+
     def _onedal_gpu_supported(self, method_name, *data):
         class_name = self.__class__.__name__
         patching_status = PatchingConditionsChain(

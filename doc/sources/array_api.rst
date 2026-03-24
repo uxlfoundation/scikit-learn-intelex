@@ -30,7 +30,7 @@ on GPU without moving the data from host to device.
 .. important::
     Array API is disabled by default in |sklearn|. In order to get array API support in the |sklearnex|, it must
     be :external+sklearn:doc:`enabled in scikit-learn <modules/array_api>`, which requires either changing
-    global settings or using a :doc:`config_context <config-contexts>`, plus installing additional dependencies such as ``array-api-compat``.
+    global settings or using a :doc:`config_context <config-contexts>`.
 
 When passing array API inputs whose data is on a SYCL-enabled device (e.g. an Intel GPU), as
 supported for example by `PyTorch <https://docs.pytorch.org/docs/stable/notes/get_start_xpu.html>`__
