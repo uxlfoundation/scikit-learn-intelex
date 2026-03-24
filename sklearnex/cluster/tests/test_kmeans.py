@@ -155,3 +155,40 @@ def test_dense_vs_sparse(queue, init, algorithm, dims):
         kmeans_dense.cluster_centers_,
         kmeans_sparse.cluster_centers_,
     )
+
+
+torch = pytest.importorskip("torch")
+
+
+@pytest.mark.parametrize("output_format", ["set_output", "config_context"])
+@pytest.mark.parametrize("transform_output", ["polars", "pandas"])
+def test_transform_output_torch(output_format, transform_output):
+    try:
+        __import__(transform_output)
+    except ImportError:
+        pytest.skip(f"{transform_output} not installed")
+
+    from sklearnex.cluster import KMeans
+
+    X_np = generate_dense_dataset(200, 10, 0.5, 3)
+    X_torch = torch.tensor(X_np, device="cpu")
+
+    with config_context(array_api_dispatch=True):
+        km = KMeans(n_clusters=3, random_state=0, n_init=1)
+        if output_format == "set_output":
+            km.set_output(transform=transform_output)
+            km.fit(X_torch)
+            result = km.transform(X_torch)
+        else:
+            with config_context(transform_output=transform_output):
+                km.fit(X_torch)
+                result = km.transform(X_torch)
+
+    if transform_output == "polars":
+        import polars as pl
+
+        assert isinstance(result, pl.DataFrame)
+    elif transform_output == "pandas":
+        import pandas as pd
+
+        assert isinstance(result, pd.DataFrame)
