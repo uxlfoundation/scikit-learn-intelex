@@ -493,9 +493,11 @@ if daal_check_version((2023, "P", 200)):
                 )
                 return xp.sqrt(distances_sq)
 
-            from sklearn.metrics.pairwise import euclidean_distances
+            from sklearn.metrics.pairwise import (
+                euclidean_distances as _sklearn_euclidean_distances,
+            )
 
-            return euclidean_distances(X, self.cluster_centers_)
+            return _sklearn_euclidean_distances(X, self.cluster_centers_)
 
         def fit_transform(self, X, y=None, sample_weight=None):
             return self.fit(X, y=y, sample_weight=sample_weight).transform(X)
