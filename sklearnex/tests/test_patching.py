@@ -282,6 +282,7 @@ _SKIP = {
     ("KNeighborsRegressor", "kneighbors"): {"output_dtype"},
     ("NearestNeighbors", "kneighbors"): {"output_dtype"},
     ("LocalOutlierFactor", "kneighbors"): {"output_dtype"},
+    ("LocalOutlierFactor", "fit_predict"): {"output_dtype"},
     ("IncrementalEmpiricalCovariance", "mahalanobis"): {"output_dtype"},
     # Attr — always
     ("DummyRegressor", "constant_"): {"attr_type", "attr_device", "attr_dtype"},
