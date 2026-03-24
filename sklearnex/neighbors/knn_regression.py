@@ -152,8 +152,6 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
                 y_numeric=True,
             )
 
-        self._set_effective_metric()
-
         self._process_regression_targets(y)
         onedal_params = {
             "n_neighbors": self.n_neighbors,

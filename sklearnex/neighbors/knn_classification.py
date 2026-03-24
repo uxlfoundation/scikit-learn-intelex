@@ -170,9 +170,6 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
                 multi_output=True,
             )
 
-        # SPMD mode: skip validation but still set effective metric
-        self._set_effective_metric()
-
         # Process classification targets before passing to onedal
         self._process_classification_targets(
             y, skip_validation=get_config()["use_raw_input"]
