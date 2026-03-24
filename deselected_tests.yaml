@@ -73,8 +73,14 @@ deselected_tests:
   - neighbors/tests/test_neighbors.py::test_kneighbors_brute_backend[float64-kulsinski] <1.3
   - neighbors/tests/test_neighbors.py::test_radius_neighbors_brute_backend[kulsinski] <1.3
 
-  # wminkowski removed in scipy 1.8 but sklearn <=1.1 NearestNeighbors._fit() lacks kd_tree + weighted minkowski check
-  - neighbors/tests/test_neighbors.py::test_neighbors_metrics <=1.1
+  # wminkowski removed in scipy 1.8 but sklearn <1.2 NearestNeighbors._fit() lacks kd_tree + weighted minkowski check
+  - neighbors/tests/test_neighbors.py::test_neighbors_metrics <1.2
+
+  # scipy 1.10 and sklearn 1.0 incompatibilities lead to 1D sparse slices NotImplementedError
+  - svm/tests/test_sparse.py::test_unsorted_indices <1.2
+  - svm/tests/test_sparse.py::test_sparse_decision_function <1.2
+  - feature_selection/tests/test_rfe.py::test_rfe <1.2
+  - feature_selection/tests/test_rfe.py::test_rfecv <1.2
 
   # sklearnex PCA always chooses "covariance_eigh" solver instead of "full" when solver="auto"
   # resulting in solver assignment check failure for sklearn version >= 1.5

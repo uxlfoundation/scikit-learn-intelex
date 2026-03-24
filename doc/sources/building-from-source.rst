@@ -125,7 +125,9 @@ An environment variable ``$DALROOT`` must be set to the path containing the |one
 
             export DALROOT="$CONDA_PREFIX"
 
-.. important:: If the |onedal| is not under a default system path, in order to be able to load it after compiling the |sklearnex|, its path must be added to an environment variable such as ``$LD_LIBRARY_PATH``, or the |sklearnex| must be built with argument ``--abs-rpath`` (see rest of this document for details).
+.. important:: On Linux*, if the |onedal| is not under a default system path, in order to be able to load it after compiling the |sklearnex|, its path must be added to an environment variable such as ``$LD_LIBRARY_PATH``, or the |sklearnex| must be built with argument ``--abs-rpath`` (see rest of this document for details).
+
+.. important:: On Windows*, if the |onedal| is installed at the system level (as opposed to being installed from ``pip`` or ``conda``) or is otherwise not under a default Python path (e.g. if building it from source), the environment variable ``%DALROOT%`` also needs to be set at runtime in order to import the Python modules that link against it.
 
 MPI
 ***
@@ -315,6 +317,23 @@ When building with the ``--abs-rpath`` option, it will use the |onedal| library 
 By default, a conda environment will first try to load oneTBB from its own packages if it is installed in the environment, which might cause issues if the |onedal| was compiled with a system oneTBB instead of a conda one.
 
 In such cases, it is advised to either uninstall oneTBB from ``pip``/``conda`` (it will be loaded from the |onedal| library which links to it), or modify the order of search paths in environment variables like ``$LD_LIBRARY_PATH`` to prefer the one with which the |onedal| was compiled instead of the one from ``conda``.
+
+On Windows*, environment variable ``%TBBROOT%`` will also be inspected at runtime to search for DLL files, but note again that if there are oneTBB installations from ``pip`` or ``conda``, those will be preferred by the Python interpreter instead.
+
+Loading dependencies on Windows*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+On Windows*, when dependencies such as oneTBB and oneMKL are installed through package managers like ``pip`` or ``conda``, their DLL files will be placed under paths that the Python interpreter searches by default.
+
+However, when the dependencies are installed at the system level, their DLL files will not be findable under Python paths, and the Python interpreter will not look for paths set under environment variable ``%PATH%`` that activation scripts modify.
+
+As such, when running on Windows*, the |sklearnex| will also try to load DLL files from folders specified in the ``*ROOT`` environment variables set by the activation scripts of its dependencies. This is done at runtime (meaning that the variables may differ from what was set at compile time), so if using system installs of dependencies, the activation scripts (``.bat`` files) defining these variables need to be invoked before launching the Python process.
+
+The following environment variables are used to search for DLL files on Windows*:
+
+- ``%DALROOT%``
+- ``%TBBROOT%``
+- ``%MKLROOT%`` (only for DPC module)
 
 Building with sanitizers
 ------------------------
