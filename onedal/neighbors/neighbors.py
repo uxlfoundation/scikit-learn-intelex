@@ -158,8 +158,8 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
 
         params = super()._get_onedal_params(X, n_neighbors=n_neighbors)
         prediction_results = self._onedal_predict(self._onedal_model, X, params)
-        distances = from_table(prediction_results.distances)
-        indices = from_table(prediction_results.indices)
+        distances = from_table(prediction_results.distances, like=X)
+        indices = from_table(prediction_results.indices, like=X)
 
         if return_distance:
             return distances, indices
@@ -307,7 +307,7 @@ class KNeighborsRegressor(NeighborsBase, RegressorMixin):
         params = self._get_onedal_params(X)
 
         prediction_result = self._onedal_predict(onedal_model, X, params)
-        responses = from_table(prediction_result.responses)
+        responses = from_table(prediction_result.responses, like=X)
         result = responses.ravel()
 
         return result

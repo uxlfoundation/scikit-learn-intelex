@@ -27,7 +27,6 @@ from onedal.utils._third_party import is_dpnp_ndarray
 from ._config import get_config
 from ._utils import PatchingConditionsChain, get_tags
 from .base import oneDALEstimator
-from .utils._array_api import get_namespace
 
 
 def _get_backend(
@@ -184,28 +183,29 @@ def wrap_output_data(func: Callable) -> Callable:
         if not (len(args) == 0 and len(kwargs) == 0):
             data = (*args, *kwargs.values())[0]
             # Remove check for result __sycl_usm_array_interface__ on deprecation of use_raw_inputs
-            # When array_api_dispatch is off, return numpy for SYCL inputs
-            # instead of converting back to dpnp/dpctl.
             if (
                 usm_iface := getattr(data, "__sycl_usm_array_interface__", None)
             ) and not hasattr(result, "__sycl_usm_array_interface__"):
-                if _array_api_offload():
-                    queue = usm_iface["syclobj"]
-                    return (
-                        copy_to_dpnp(queue, result)
-                        if is_dpnp_ndarray(data)
-                        else copy_to_usm(queue, result)
-                    )
+                # Skip if result elements are already SYCL arrays
+                # (e.g. kneighbors tuple from from_table(like=X))
+                if isinstance(result, (tuple, list)) and all(
+                    hasattr(r, "__sycl_usm_array_interface__") for r in result
+                ):
+                    return result
+                queue = usm_iface["syclobj"]
+                return (
+                    copy_to_dpnp(queue, result)
+                    if is_dpnp_ndarray(data)
+                    else copy_to_usm(queue, result)
+                )
 
             if get_config().get("transform_output") in ("default", None):
-                # Guard against non-array data (e.g. integer n_neighbors from
-                # sklearn LOF internally calling kneighbors(n_neighbors=int))
-                if hasattr(data, "dtype") and _array_api_offload():
-                    xp, is_array_api = get_namespace(data)
-                    if is_array_api and not _is_numpy_namespace(xp):
-                        result = _asarray(result, xp, device=data.device)
-            else:
-                _, (result,) = _transfer_to_host(result)
+                input_array_api = getattr(data, "__array_namespace__", lambda: None)()
+                if input_array_api and not _is_numpy_namespace(input_array_api):
+                    input_array_api_device = data.device
+                    result = _asarray(
+                        result, input_array_api, device=input_array_api_device
+                    )
         return result
 
     return wrapper

@@ -90,15 +90,7 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
             _neighbors_indices_fit_X_,
         ) = self._onedal_kneighbors(n_neighbors=self.n_neighbors_, queue=queue)
 
-        # _onedal_kneighbors returns raw numpy from oneDAL; convert to
-        # input namespace so fitted attrs stay in the same namespace as X
-        xp, _ = get_namespace(self._fit_X)
-        if not _is_numpy_namespace(xp):
-            device = getattr(self._fit_X, "device", None)
-            self._distances_fit_X_ = xp.asarray(self._distances_fit_X_, device=device)
-            _neighbors_indices_fit_X_ = xp.asarray(
-                _neighbors_indices_fit_X_, device=device
-            )
+        xp, _ = get_namespace(self._distances_fit_X_)
 
         self._lrd = self._local_reachability_density(
             self._distances_fit_X_, _neighbors_indices_fit_X_
@@ -153,15 +145,14 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
         check_is_fitted(self)
 
         if X is not None:
+            xp, is_array_api = get_namespace(X)
             output = self.decision_function(X) < 0
-            # Get namespace from result, not input, because wrap_output_data
-            # may change the result type (e.g. dpnp→numpy when dispatch is off)
-            xp, is_array_api = get_namespace(output)
             dtype = X.dtype if is_array_api else xp.int64
             ones = xp.ones_like(output, dtype=dtype)
             is_inlier = xp.where(output, -ones, ones)
         else:
-            is_inlier = np.ones(self.n_samples_fit_, dtype=np.int64)
+            xp, _ = get_namespace(self.negative_outlier_factor_)
+            is_inlier = xp.ones(self.n_samples_fit_, dtype=xp.int64)
             is_inlier[self.negative_outlier_factor_ < self.offset_] = -1
         return is_inlier
 

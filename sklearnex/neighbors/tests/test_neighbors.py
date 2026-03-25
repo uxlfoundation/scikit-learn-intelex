@@ -112,7 +112,7 @@ def test_pickle_torch_xpu():
     X_train = torch.tensor(iris.data, dtype=torch.float32, device="xpu")
     y_train = torch.tensor(iris.target, dtype=torch.float32, device="xpu")
 
-    clf = KNeighborsClassifier(2).fit(X_train, y_train)
+    clf = KNeighborsClassifier(2, algorithm="brute").fit(X_train, y_train)
     predicted = clf.predict(X_train)
     expected = (
         predicted.cpu().numpy() if hasattr(predicted, "cpu") else np.asarray(predicted)
