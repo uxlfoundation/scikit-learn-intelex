@@ -97,10 +97,22 @@ if "Windows" in platform.system():
     os.environ["PATH"] = path_to_libs + os.pathsep + os.environ["PATH"]
 
 
-# Preserved ImportError message when DPC++/SPMD backends fail to load.
-# Used by throw_if_no_dpc_available() to surface actionable error messages.
+# Preserved ImportError messages when DPC++/SPMD backends fail to load.
+# Used by _ensure_dpc_available() to surface actionable error messages.
+# Only populated when the backend .so file exists but fails to import
+# (e.g. missing SYCL runtime). Stays empty when the package is simply
+# not installed — in that case "No module named X" is not informative.
+import importlib.util as _iutil
+import pathlib as _pathlib
+
 _dpc_load_error: str = ""
 _spmd_load_error: str = ""
+
+# Check whether the .so files are present in the package directory.
+# Using find_spec() with submodule_search_locations to avoid a full import.
+_onedal_pkg_path = _pathlib.Path(__file__).parent
+_dpc_file_present = any(_onedal_pkg_path.glob("_onedal_py_dpc*"))
+_spmd_file_present = any(_onedal_pkg_path.glob("_onedal_py_spmd_dpc*"))
 
 try:
     # use dpc backend if available
@@ -110,9 +122,11 @@ try:
 
     _host_backend = None
 except ImportError as _dpc_import_err:
-    # fall back to host backend; preserve reason for user-facing diagnostics
+    # fall back to host backend; preserve reason only when the .so exists
+    # (file-not-found ImportError is not actionable for end users)
     _dpc_backend = None
-    _dpc_load_error = str(_dpc_import_err)
+    if _dpc_file_present:
+        _dpc_load_error = str(_dpc_import_err)
 
     import onedal._onedal_py_host
 
@@ -125,7 +139,8 @@ try:
     _spmd_backend = Backend(onedal._onedal_py_spmd_dpc, is_dpc=True, is_spmd=True)
 except ImportError as _spmd_import_err:
     _spmd_backend = None
-    _spmd_load_error = str(_spmd_import_err)
+    if _spmd_file_present:
+        _spmd_load_error = str(_spmd_import_err)
 
 # if/elif/else layout required for pylint to realize _default_backend cannot be None
 if _dpc_backend is not None:
