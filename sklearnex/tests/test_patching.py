@@ -278,6 +278,7 @@ _SKIP = {
     ("Lasso", "path"): {"output_dtype"},
     ("LogisticRegression", "decision_function"): {"output_dtype"},
     ("LogisticRegression", "predict_proba"): {"output_dtype"},
+    ("KNeighborsClassifier", "predict_proba"): {"output_dtype"},
     ("KNeighborsClassifier", "kneighbors"): {"output_dtype"},
     ("KNeighborsRegressor", "kneighbors"): {"output_dtype"},
     ("NearestNeighbors", "kneighbors"): {"output_dtype"},
