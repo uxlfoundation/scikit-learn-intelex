@@ -145,10 +145,10 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
         check_is_fitted(self)
 
         if X is not None:
-            xp, is_array_api = get_namespace(X)
             output = self.decision_function(X) < 0
-            # Array API: follow X's dtype ("everything follows X").
-            # NumPy: return int64 (sklearn convention for float64/pandas).
+            # Get namespace from result, not input, because wrap_output_data
+            # may change the result type (e.g. dpnp→numpy when dispatch is off)
+            xp, is_array_api = get_namespace(output)
             dtype = X.dtype if is_array_api else xp.int64
             ones = xp.ones_like(output, dtype=dtype)
             is_inlier = xp.where(output, -ones, ones)
