@@ -278,9 +278,8 @@ _SKIP = {
     ("Lasso", "path"): {"output_dtype"},
     ("LogisticRegression", "decision_function"): {"output_dtype"},
     ("LogisticRegression", "predict_proba"): {"output_dtype"},
-    # KNN/LOF output_dtype: float32 input is upcast to float64 by sklearn's
-    # check_array; kneighbors also returns int64 indices in the tuple.
-    ("KNeighborsClassifier", "predict_proba"): {"output_dtype"},
+    # KNN/LOF kneighbors returns int64 indices in the tuple which
+    # don't match float input dtype.
     ("KNeighborsClassifier", "kneighbors"): {"output_dtype"},
     ("KNeighborsRegressor", "kneighbors"): {"output_dtype"},
     ("NearestNeighbors", "kneighbors"): {"output_dtype"},
