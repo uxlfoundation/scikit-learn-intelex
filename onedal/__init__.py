@@ -172,7 +172,7 @@ def _ensure_dpc_available(require_spmd: bool = False) -> None:
         f"oneDAL GPU/{backend_label} support is not available "
         f"in the current installation.{reason}\n"
         "  To enable SYCL/GPU acceleration, install the GPU extras:\n"
-        "    pip install scikit-learn-intelex[gpu]\n"
+        "    pip install scikit-learn-intelex-gpu\n"
         "  or via conda:\n"
         "    conda install scikit-learn-intelex-gpu -c "
         "https://software.repos.intel.com/python/conda"
