@@ -90,7 +90,15 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
             _neighbors_indices_fit_X_,
         ) = self._onedal_kneighbors(n_neighbors=self.n_neighbors_, queue=queue)
 
-        xp, _ = get_namespace(self._distances_fit_X_)
+        # _onedal_kneighbors returns raw numpy from oneDAL; convert to
+        # input namespace so fitted attrs stay in the same namespace as X
+        xp, _ = get_namespace(self._fit_X)
+        if not _is_numpy_namespace(xp):
+            device = getattr(self._fit_X, "device", None)
+            self._distances_fit_X_ = xp.asarray(self._distances_fit_X_, device=device)
+            _neighbors_indices_fit_X_ = xp.asarray(
+                _neighbors_indices_fit_X_, device=device
+            )
 
         self._lrd = self._local_reachability_density(
             self._distances_fit_X_, _neighbors_indices_fit_X_
