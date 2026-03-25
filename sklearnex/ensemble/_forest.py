@@ -884,8 +884,8 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         )
 
     def predict_log_proba(self, X):
-        xp, _ = get_namespace(X)
         proba = self.predict_proba(X)
+        xp, _ = get_namespace(proba)
 
         if self.n_outputs_ == 1:
             return xp.log(proba)

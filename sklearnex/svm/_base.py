@@ -709,9 +709,10 @@ class BaseSVC(BaseSVM):
     @available_if(_sklearn_BaseSVC._check_proba)
     @wraps(_sklearn_BaseSVC.predict_log_proba, assigned=["__doc__"])
     def predict_log_proba(self, X):
-        xp, _ = get_namespace(X)
+        proba = self.predict_proba(X)
+        xp, _ = get_namespace(proba)
 
-        return xp.log(self.predict_proba(X))
+        return xp.log(proba)
 
     @wrap_output_data
     def _predict_proba(self, X):
