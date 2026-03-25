@@ -136,40 +136,52 @@ else:
     raise ImportError("No oneDAL backend available")
 
 
-def throw_if_no_dpc_available(require_spmd: bool = False) -> None:
+def _ensure_dpc_available(require_spmd: bool = False) -> None:
     """Raise a user-actionable RuntimeError if the required DPC++/SPMD backend is unavailable.
+
+    This function should be called when a SYCL queue is present but the
+    corresponding backend was not loaded. It always raises when the backend
+    is ``None`` (whether due to a load error or because the package was never
+    installed), and includes the original ``ImportError`` reason when available.
 
     Parameters
     ----------
     require_spmd : bool, default=False
-        If True, check the SPMD backend load status; otherwise check the DPC++ backend.
+        If True, check the SPMD backend; otherwise check the DPC++ backend.
 
     Raises
     ------
     RuntimeError
-        Includes the original ImportError reason and install instructions when the
-        requested backend is unavailable.
+        Always raised when the requested backend is unavailable.
+        Includes the original ImportError reason (if captured) and
+        install instructions.
+
+    Notes
+    -----
+    Backend availability is determined at module import time. If the GPU
+    package is installed after the interpreter has started, Python must be
+    restarted for the change to take effect.
     """
+    backend = _spmd_backend if require_spmd else _dpc_backend
+    if backend is not None:
+        return  # backend is available, nothing to do
     error_msg = _spmd_load_error if require_spmd else _dpc_load_error
     backend_label = "SPMD" if require_spmd else "DPC++"
-    if error_msg:
-        raise RuntimeError(
-            f"oneDAL GPU/{backend_label} support is not available "
-            "in the current installation.\n"
-            f"  Reason: {error_msg}\n"
-            "  To enable SYCL/GPU acceleration, install the GPU extras:\n"
-            "    pip install scikit-learn-intelex[gpu]\n"
-            "  or via conda:\n"
-            "    conda install -c https://software.repos.intel.com/python/conda "
-            "scikit-learn-intelex-gpu"
-        )
+    reason = f"\n  Reason: {error_msg}" if error_msg else ""
+    raise RuntimeError(
+        f"oneDAL GPU/{backend_label} support is not available "
+        f"in the current installation.{reason}\n"
+        "  To enable SYCL/GPU acceleration, install the GPU extras:\n"
+        "    pip install scikit-learn-intelex[gpu]\n"
+        "  or via conda:\n"
+        "    conda install scikit-learn-intelex-gpu -c "
+        "https://software.repos.intel.com/python/conda"
+    )
 
 
 # Core modules to export
 __all__ = [
-    "_dpc_load_error",
-    "_spmd_load_error",
-    "throw_if_no_dpc_available",
+    "_ensure_dpc_available",
     "_host_backend",
     "_default_backend",
     "_dpc_backend",

@@ -116,12 +116,12 @@ class BackendFunction:
         queue = QM.get_global_queue()
 
         if queue is not None and not (self.backend.is_dpc or self.backend.is_spmd):
-            from onedal import throw_if_no_dpc_available
+            from onedal import _ensure_dpc_available
 
-            # Raises with install instructions if DPC++ failed to load;
-            # require_spmd=True when this backend is SPMD-only.
-            throw_if_no_dpc_available(require_spmd=self.backend.is_spmd)
-            raise RuntimeError("Operations using queues require the DPC/SPMD backend")
+            # Always raises with install instructions (and ImportError reason if
+            # available). The old generic raise is removed — _ensure_dpc_available
+            # unconditionally raises when the backend is None.
+            _ensure_dpc_available(require_spmd=self.backend.is_spmd)
 
         if self.backend.is_spmd and queue is None:
             raise RuntimeError("Executing functions from SPMD backend requires a queue")
