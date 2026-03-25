@@ -157,16 +157,12 @@ def test_dense_vs_sparse(queue, init, algorithm, dims):
     )
 
 
-torch = pytest.importorskip("torch")
-
-
 @pytest.mark.parametrize("output_format", ["set_output", "config_context"])
 @pytest.mark.parametrize("transform_output", ["polars", "pandas"])
 def test_transform_output_torch(output_format, transform_output):
-    try:
-        __import__(transform_output)
-    except ImportError:
-        pytest.skip(f"{transform_output} not installed")
+    torch = pytest.importorskip("torch")
+    import pandas as pd
+    import polars as pl
 
     from sklearnex.cluster import KMeans
 
@@ -184,11 +180,5 @@ def test_transform_output_torch(output_format, transform_output):
                 km.fit(X_torch)
                 result = km.transform(X_torch)
 
-    if transform_output == "polars":
-        import polars as pl
-
-        assert isinstance(result, pl.DataFrame)
-    elif transform_output == "pandas":
-        import pandas as pd
-
-        assert isinstance(result, pd.DataFrame)
+    expected_type = pl.DataFrame if transform_output == "polars" else pd.DataFrame
+    assert isinstance(result, expected_type)

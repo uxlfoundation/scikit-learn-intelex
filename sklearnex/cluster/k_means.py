@@ -25,6 +25,9 @@ if daal_check_version((2023, "P", 200)):
 
     import numpy as np
     from sklearn.cluster import KMeans as _sklearn_KMeans
+    from sklearn.metrics.pairwise import (
+        euclidean_distances as _sklearn_euclidean_distances,
+    )
     from sklearn.utils._openmp_helpers import _openmp_effective_n_threads
     from sklearn.utils.validation import (
         _check_sample_weight,
@@ -490,10 +493,6 @@ if daal_check_version((2023, "P", 200)):
                 distances_sq = XX + CC - 2 * XC
                 distances_sq = xp.clip(distances_sq, 0, None)
                 return xp.sqrt(distances_sq)
-
-            from sklearn.metrics.pairwise import (
-                euclidean_distances as _sklearn_euclidean_distances,
-            )
 
             return _sklearn_euclidean_distances(X, self.cluster_centers_)
 
