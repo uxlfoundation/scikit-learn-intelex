@@ -264,8 +264,11 @@ def _check_output_type(result, y, method, estimator_name, caplog, X, est=None):
                     # predict output dtype should match y dtype
                     assert res.dtype == y.dtype
                 elif X is not None and hasattr(X, "dtype") and "float" in str(X.dtype):
-                    # Output dtype should match X dtype for float inputs
-                    assert res.dtype == X.dtype
+                    # Only check float results against float X dtype;
+                    # int results (e.g. indices from kneighbors, labels
+                    # from fit_predict) are expected to differ.
+                    if "int" not in str(res.dtype):
+                        assert res.dtype == X.dtype
 
 
 # Unified skip rules: (estimator, name) -> set of checks to skip.
@@ -278,13 +281,6 @@ _SKIP = {
     ("Lasso", "path"): {"output_dtype"},
     ("LogisticRegression", "decision_function"): {"output_dtype"},
     ("LogisticRegression", "predict_proba"): {"output_dtype"},
-    # KNN/LOF kneighbors returns int64 indices in the tuple which
-    # don't match float input dtype.
-    ("KNeighborsClassifier", "kneighbors"): {"output_dtype"},
-    ("KNeighborsRegressor", "kneighbors"): {"output_dtype"},
-    ("NearestNeighbors", "kneighbors"): {"output_dtype"},
-    ("LocalOutlierFactor", "kneighbors"): {"output_dtype"},
-    ("LocalOutlierFactor", "fit_predict"): {"output_dtype"},
     ("IncrementalEmpiricalCovariance", "mahalanobis"): {"output_dtype"},
     # Attr — always
     ("DummyRegressor", "constant_"): {"attr_type", "attr_device", "attr_dtype"},
