@@ -278,6 +278,8 @@ _SKIP = {
     ("Lasso", "path"): {"output_dtype"},
     ("LogisticRegression", "decision_function"): {"output_dtype"},
     ("LogisticRegression", "predict_proba"): {"output_dtype"},
+    # KNN/LOF output_dtype: float32 input is upcast to float64 by sklearn's
+    # check_array; kneighbors also returns int64 indices in the tuple.
     ("KNeighborsClassifier", "predict_proba"): {"output_dtype"},
     ("KNeighborsClassifier", "kneighbors"): {"output_dtype"},
     ("KNeighborsRegressor", "kneighbors"): {"output_dtype"},
@@ -586,7 +588,8 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
         result, X, y = _check_estimator_patching(
             caplog, dataframe, queue, dtype, est, method
         )
-        # Without dispatch, dpnp/dpctl should produce all-numpy attrs
+        # KNN/LOF store _fit_X as dpnp even without dispatch, so pickle
+        # fails (dpnp SYCL queues are not serializable)
         if dataframe in ["dpnp", "dpctl"] and estimator not in [
             "KNeighborsClassifier",
             "KNeighborsRegressor",
