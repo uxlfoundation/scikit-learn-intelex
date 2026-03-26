@@ -218,12 +218,8 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         # Array API support: get namespace from y
         xp, _ = get_namespace(y)
 
-        # y should already be numpy array from validate_data
         y = xp.asarray(y)
-
-        # Handle shape processing
-        shape = getattr(y, "shape", None)
-        self._shape = shape if shape is not None else y.shape
+        self._shape = y.shape
 
         if y.ndim == 1 or y.ndim == 2 and y.shape[1] == 1:
             self.outputs_2d_ = False
