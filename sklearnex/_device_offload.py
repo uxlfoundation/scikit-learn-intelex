@@ -122,6 +122,7 @@ def dispatch(
     # backend can only be a boolean or None, None signifies an unverified backend
     backend: "bool | None" = None
 
+    # TODO validate if this comment is valid (e.g. X on GPU, y on CPU)
     # The _sycl_queue_manager verifies all arguments are on a single SYCL device or
     # cpu and will otherwise throw an error. If located on a non-SYCL, non-CPU
     # device, a special queue is set which will cause a failure in ``_get_backend``
@@ -181,6 +182,9 @@ def wrap_output_data(func: Callable) -> Callable:
     @wraps(func)
     def wrapper(self, *args, **kwargs) -> Any:
         result = func(self, *args, **kwargs)
+        # In case ARRAY API is enabled the result is already converted to the required type
+        if _array_api_offload() and get_tags(self).onedal_array_api:
+            return result
         if not (len(args) == 0 and len(kwargs) == 0):
             data = (*args, *kwargs.values())[0]
             # Remove check for result __sycl_usm_array_interface__ on deprecation of use_raw_inputs

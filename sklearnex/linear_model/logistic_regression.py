@@ -386,7 +386,6 @@ if daal_check_version((2024, "P", 1)):
                 "max_iter": self.max_iter,
             }
             self._onedal_estimator = self._onedal_LogisticRegression(**onedal_params)
-            self._onedal_estimator.classes_ = self.classes_
 
         def _onedal_fit(self, X, y, sample_weight=None, queue=None):
             if queue is None or queue.sycl_device.is_cpu:
@@ -464,15 +463,10 @@ if daal_check_version((2024, "P", 1)):
 
             assert hasattr(self, "_onedal_estimator")
 
-            # res will be the same datatype is X
-            res = self._onedal_estimator.predict(X, queue=queue)
+            # res will be the same datatype as self.classes_
+            res = self._onedal_estimator.predict(X, queue=queue, classes=self.classes_)
 
-            # We need to convert it to the same type as classes_
-            # Note that we might need to change the device here, e.g. if classes_ are on CPU
-            res = xp_y.asarray(
-                xp.asarray(res, device=getattr(self.classes_, "device", None))
-            )
-
+            # We need this step for case where custom labels were used, e.g. np.array(['a', 'b'])
             y = xp_y.take(self.classes_, xp_y.reshape(res, (-1,)), axis=0)
 
             return y
