@@ -203,7 +203,8 @@ def wrap_output_data(func: Callable) -> Callable:
             ):
                 xp, is_array_api = get_namespace(data)
                 if is_array_api and not _is_numpy_namespace(xp):
-                    result = xp.asarray(result, device=data.device)
+                    if not isinstance(result, (int, float)):
+                        result = xp.asarray(result, device=data.device)
             else:
                 _, (result,) = _transfer_to_host(result)
         return result
