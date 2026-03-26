@@ -153,6 +153,7 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
 
     def _onedal_fit(self, X, y=None, queue=None):
         xp, _ = get_namespace(X)
+        self._set_effective_metric()
 
         if not get_config()["use_raw_input"]:
             X = validate_data(

@@ -158,6 +158,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
 
     def _onedal_fit(self, X, y, queue=None):
         xp, _ = get_namespace(X)
+        self._set_effective_metric()
 
         if not get_config()["use_raw_input"]:
             X, y = validate_data(

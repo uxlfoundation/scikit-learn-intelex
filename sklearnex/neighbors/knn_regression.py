@@ -140,6 +140,7 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
 
     def _onedal_fit(self, X, y, queue=None):
         xp, _ = get_namespace(X, y)
+        self._set_effective_metric()
 
         if not get_config()["use_raw_input"]:
             X, y = validate_data(
