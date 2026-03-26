@@ -15,6 +15,7 @@
 # limitations under the License.
 # ==============================================================================
 
+import pathlib as _pathlib
 import platform
 
 from daal4py.sklearn._utils import daal_check_version
@@ -61,9 +62,13 @@ class Backend:
         return f"Backend({self.backend}, is_dpc={self.is_dpc}, is_spmd={self.is_spmd})"
 
 
+def _backend_binary_present(prefix: str) -> bool:
+    """Return True if a backend extension binary with the given prefix exists."""
+    return any(_pathlib.Path(__file__).parent.glob(f"{prefix}*"))
+
+
 if "Windows" in platform.system():
     import os
-    import pathlib
     import site
     import sys
 
@@ -78,12 +83,7 @@ if "Windows" in platform.system():
             if os.path.exists(dal_root_redist):
                 os.add_dll_directory(dal_root_redist)
 
-        has_dpc_file = False
-        for file_name in os.listdir(pathlib.Path(__file__).parent):
-            if file_name.startswith("_onedal_py_dpc"):
-                has_dpc_file = True
-                break
-        if has_dpc_file:
+        if _backend_binary_present("_onedal_py_dpc"):
             for dep_root in ["CMPLR_ROOT", "MKLROOT"]:
                 if dep_root in os.environ:
                     dep_root_dir = os.path.join(os.environ[dep_root], "bin")
@@ -102,17 +102,11 @@ if "Windows" in platform.system():
 # Only populated when the backend .so file exists but fails to import
 # (e.g. missing SYCL runtime). Stays empty when the package is simply
 # not installed — in that case "No module named X" is not informative.
-import importlib.util as _iutil
-import pathlib as _pathlib
-
 _dpc_load_error: str = ""
 _spmd_load_error: str = ""
 
-# Check whether the .so files are present in the package directory.
-# Using find_spec() with submodule_search_locations to avoid a full import.
-_onedal_pkg_path = _pathlib.Path(__file__).parent
-_dpc_file_present = any(_onedal_pkg_path.glob("_onedal_py_dpc*"))
-_spmd_file_present = any(_onedal_pkg_path.glob("_onedal_py_spmd_dpc*"))
+_dpc_file_present = _backend_binary_present("_onedal_py_dpc")
+_spmd_file_present = _backend_binary_present("_onedal_py_spmd_dpc")
 
 try:
     # use dpc backend if available
