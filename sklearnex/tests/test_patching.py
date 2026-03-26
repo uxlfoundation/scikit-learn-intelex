@@ -298,7 +298,6 @@ _SKIP = {
         "attr_device",
         "attr_dtype",
     },
-    ("KMeans", "cluster_centers_"): {"attr_type", "attr_device", "attr_dtype"},
     # Attr — specific
     ("SVC", "n_iter_"): {"attr_device"},
     ("NuSVC", "n_iter_"): {"attr_device"},

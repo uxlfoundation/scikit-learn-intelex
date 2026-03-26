@@ -491,7 +491,7 @@ if daal_check_version((2023, "P", 200)):
                 CC = xp.sum(centers * centers, axis=1)[None, :]
                 XC = X @ centers.T
                 distances_sq = XX + CC - 2 * XC
-                distances_sq = xp.clip(distances_sq, 0, None)
+                distances_sq = xp.clip(distances_sq, 0.0, None)
                 return xp.sqrt(distances_sq)
 
             return _sklearn_euclidean_distances(X, self.cluster_centers_)
