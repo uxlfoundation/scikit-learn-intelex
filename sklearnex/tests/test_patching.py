@@ -199,8 +199,7 @@ def _check_output_type(result, y, method, estimator_name, caplog, X, est=None):
         "fallback to original Scikit-learn" in r.message for r in caplog.records
     )
 
-    # Collect all array results (handle tuples like kneighbors and
-    # lists like multi-output predict_proba)
+    # Collect all array results (handle tuples like kneighbors)
     if isinstance(result, (tuple, list)):
         results_to_check = result
     else:
