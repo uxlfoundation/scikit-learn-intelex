@@ -346,11 +346,12 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         xp, _ = get_namespace(distances)
 
         # kd_tree sorting: oneDAL kd_tree returns unsorted results
+        # Use take_along_axis to avoid in-place __setitem__ which fails
+        # on read-only arrays (e.g. array-api-strict).
         if self._fit_method == "kd_tree":
-            for i in range(distances.shape[0]):
-                seq = xp.argsort(distances[i, :])
-                indices[i, :] = indices[i, :][seq]
-                distances[i, :] = distances[i, :][seq]
+            seq = xp.argsort(distances, axis=1)
+            indices = xp.take_along_axis(indices, seq, axis=1)
+            distances = xp.take_along_axis(distances, seq, axis=1)
 
         if not query_is_train:
             if return_distance:

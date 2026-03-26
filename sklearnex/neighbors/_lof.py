@@ -159,7 +159,8 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
                 )
             else:
                 is_inlier = xp.ones(self.n_samples_fit_, dtype=xp.int64)
-            is_inlier[self.negative_outlier_factor_ < self.offset_] = -1
+            mask = self.negative_outlier_factor_ < self.offset_
+            is_inlier = xp.where(mask, -is_inlier, is_inlier)
         return is_inlier
 
     # This had to be done because predict loses the queue when no
