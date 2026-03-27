@@ -464,7 +464,7 @@ if daal_check_version((2024, "P", 1)):
             assert hasattr(self, "_onedal_estimator")
 
             # res will be the same datatype as self.classes_
-            res = self._onedal_estimator.predict(X, queue=queue, classes=self.classes_)
+            res = self._onedal_estimator.predict(X, queue=queue)
 
             # We need this step for case where custom labels were used, e.g. np.array(['a', 'b'])
             y = xp_y.take(self.classes_, xp_y.reshape(res, (-1,)), axis=0)
