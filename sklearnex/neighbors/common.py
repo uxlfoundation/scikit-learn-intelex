@@ -358,12 +358,16 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                 # with api_version='2023.12' has the function but raises)
                 indices = xp.from_dlpack(
                     np.take_along_axis(
-                        np.from_dlpack(indices), np.from_dlpack(seq), axis=1
+                        np.from_dlpack(indices, device="cpu"),
+                        np.from_dlpack(seq, device="cpu"),
+                        axis=1,
                     )
                 )
                 distances = xp.from_dlpack(
                     np.take_along_axis(
-                        np.from_dlpack(distances), np.from_dlpack(seq), axis=1
+                        np.from_dlpack(distances, device="cpu"),
+                        np.from_dlpack(seq, device="cpu"),
+                        axis=1,
                     )
                 )
 
