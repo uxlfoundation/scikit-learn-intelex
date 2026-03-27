@@ -21,6 +21,7 @@ import os
 import pickle
 import re
 import sys
+from functools import partial
 from inspect import signature
 
 import numpy as np
@@ -145,9 +146,26 @@ def _check_estimator_patching(caplog, dataframe, queue, dtype, est, method):
 
     result = None
     with caplog.at_level(logging.WARNING, logger="sklearnex"):
-        X, y = gen_dataset(est, queue=queue, target_df=dataframe, dtype=dtype)[0]
-        est.fit(X, y)
+        from sklearn.datasets import load_breast_cancer
 
+        if est.__class__.__name__ in ["LogisticRegression", "LogisticRegressionCV"]:
+            # For LogisticRegression only binary classification is supported
+            binary_dataset_dict = {
+                "classification": [partial(load_breast_cancer, return_X_y=True)]
+            }
+            X, y = gen_dataset(
+                est,
+                queue=queue,
+                target_df=dataframe,
+                dtype=dtype,
+                datasets=binary_dataset_dict,
+            )[0]
+        else:
+            X, y = gen_dataset(est, queue=queue, target_df=dataframe, dtype=dtype)[0]
+
+        os.environ["SKLEARNEX_VERBOSE"] = "INFO"
+
+        est.fit(X, y)
         if method:
             if not hasattr(est, method) and check_is_dynamic_method(est, method):
                 pytest.skip(f"sklearn available_if prevents testing {est}.{method}")
@@ -276,8 +294,6 @@ _SKIP = {
     ("NearestNeighbors", "radius_neighbors"): {"output_type"},
     ("ElasticNet", "path"): {"output_dtype"},
     ("Lasso", "path"): {"output_dtype"},
-    ("LogisticRegression", "decision_function"): {"output_dtype"},
-    ("LogisticRegression", "predict_proba"): {"output_dtype"},
     ("KNeighborsClassifier", "predict_proba"): {"output_dtype"},
     ("KNeighborsClassifier", "kneighbors"): {"output_dtype"},
     ("KNeighborsRegressor", "kneighbors"): {"output_dtype"},
@@ -286,12 +302,7 @@ _SKIP = {
     ("IncrementalEmpiricalCovariance", "mahalanobis"): {"output_dtype"},
     # Attr — always
     ("DummyRegressor", "constant_"): {"attr_type", "attr_device", "attr_dtype"},
-    ("LogisticRegression", "coef_"): {"attr_type", "attr_device", "attr_dtype"},
-    ("LogisticRegression", "intercept_"): {"attr_type", "attr_device", "attr_dtype"},
-    ("LogisticRegression", "n_iter_"): {"attr_type", "attr_device", "attr_dtype"},
-    ("LogisticRegression", "classes_"): {"attr_type", "attr_device", "attr_dtype"},
     ("KNeighborsClassifier", "classes_"): {"attr_type", "attr_device", "attr_dtype"},
-    ("LogisticRegression", "classes_"): {"attr_type", "attr_device", "attr_dtype"},
     ("KNeighborsClassifier", "classes_"): {"attr_type", "attr_device", "attr_dtype"},
     ("LocalOutlierFactor", "negative_outlier_factor_"): {
         "attr_type",
@@ -498,7 +509,15 @@ def _check_set_output_transform(est, method, X, estimator_name):
 @pytest.mark.parametrize("dataframe, queue", get_dataframes_and_queues())
 @pytest.mark.parametrize("estimator, method", gen_models_info(PATCHED_MODELS))
 def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator, method):
-    est = PATCHED_MODELS[estimator]()
+    kwargs = {}
+    if (
+        estimator == "LogisticRegression"
+        and queue
+        and getattr(queue.sycl_device, "is_gpu", False)
+    ):
+        # sklearnex.LogisticRegression only has support for newton-cg solver on GPU
+        kwargs = {"solver": "newton-cg"}
+    est = PATCHED_MODELS[estimator](**kwargs)
 
     if queue:
         if dtype == np.float16 and not queue.sycl_device.has_aspect_fp16:
@@ -529,6 +548,22 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
         and (not sklearn_check_version("1.6") or not get_tags(est).array_api_support)
     ):
         pytest.skip("Array API and/or GPU inputs not supported in estimator")
+    if (
+        (
+            dataframe == "array_api"
+            or (
+                dataframe in ["dpctl", "dpnp"]
+                and (not queue or not getattr(queue.sycl_device, "is_gpu", False))
+            )
+        )
+        and estimator == "LogisticRegression"
+        and not sklearn_check_version("1.9")
+    ):
+        # In case array api inpuits on CPU are provided on CPU for LogisticRegression sklearnex will fallback to sklearn
+        # Array API support for LogisticRegression in sklearn is only available starting from 1.9
+        pytest.skip(
+            "Array API inputs on CPU are not supported for LogisticRegression in sklearn <1.9"
+        )
 
     if dataframe == "array_api":
         # as array_api dispatching is experimental, sklearn support isn't guaranteed.
