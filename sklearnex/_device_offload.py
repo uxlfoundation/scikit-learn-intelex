@@ -200,20 +200,12 @@ def wrap_output_data(func: Callable) -> Callable:
                     else copy_to_usm(queue, result)
                 )
 
-            if (
-                get_config().get("transform_output") in ("default", None)
-                and getattr(self, "_sklearn_output_config", {}).get(
-                    "transform", "default"
-                )
-                == "default"
-            ):
+            if get_config().get("transform_output") in ("default", None):
                 if hasattr(data, "dtype"):
                     xp, is_array_api = get_namespace(data)
                     if is_array_api and not _is_numpy_namespace(xp):
                         if not isinstance(result, (int, float)):
                             result = xp.asarray(result, device=data.device)
-            else:
-                _, (result,) = _transfer_to_host(result)
         return result
 
     return wrapper
