@@ -15,6 +15,7 @@
 # limitations under the License.
 # ==============================================================================
 
+import pathlib as _pathlib
 import platform
 
 from daal4py.sklearn._utils import daal_check_version
@@ -61,9 +62,13 @@ class Backend:
         return f"Backend({self.backend}, is_dpc={self.is_dpc}, is_spmd={self.is_spmd})"
 
 
+def _backend_binary_present(prefix: str) -> bool:
+    """Return True if a backend extension binary with the given prefix exists."""
+    return any(_pathlib.Path(__file__).parent.glob(f"{prefix}*"))
+
+
 if "Windows" in platform.system():
     import os
-    import pathlib
     import site
     import sys
 
@@ -78,12 +83,7 @@ if "Windows" in platform.system():
             if os.path.exists(dal_root_redist):
                 os.add_dll_directory(dal_root_redist)
 
-        has_dpc_file = False
-        for file_name in os.listdir(pathlib.Path(__file__).parent):
-            if file_name.startswith("_onedal_py_dpc"):
-                has_dpc_file = True
-                break
-        if has_dpc_file:
+        if _backend_binary_present("_onedal_py_dpc"):
             for dep_root in ["CMPLR_ROOT", "MKLROOT"]:
                 if dep_root in os.environ:
                     dep_root_dir = os.path.join(os.environ[dep_root], "bin")
@@ -97,6 +97,17 @@ if "Windows" in platform.system():
     os.environ["PATH"] = path_to_libs + os.pathsep + os.environ["PATH"]
 
 
+# Preserved ImportError messages when DPC++/SPMD backends fail to load.
+# Used by _ensure_dpc_available() to surface actionable error messages.
+# Only populated when the backend .so file exists but fails to import
+# (e.g. missing SYCL runtime). Stays empty when the package is simply
+# not installed — in that case "No module named X" is not informative.
+_dpc_load_error: str = ""
+_spmd_load_error: str = ""
+
+_dpc_file_present = _backend_binary_present("_onedal_py_dpc")
+_spmd_file_present = _backend_binary_present("_onedal_py_spmd_dpc")
+
 try:
     # use dpc backend if available
     import onedal._onedal_py_dpc
@@ -104,9 +115,12 @@ try:
     _dpc_backend = Backend(onedal._onedal_py_dpc, is_dpc=True, is_spmd=False)
 
     _host_backend = None
-except ImportError:
-    # fall back to host backend
+except ImportError as _dpc_import_err:
+    # fall back to host backend; preserve reason only when the .so exists
+    # (file-not-found ImportError is not actionable for end users)
     _dpc_backend = None
+    if _dpc_file_present:
+        _dpc_load_error = str(_dpc_import_err)
 
     import onedal._onedal_py_host
 
@@ -117,8 +131,10 @@ try:
     import onedal._onedal_py_spmd_dpc
 
     _spmd_backend = Backend(onedal._onedal_py_spmd_dpc, is_dpc=True, is_spmd=True)
-except ImportError:
+except ImportError as _spmd_import_err:
     _spmd_backend = None
+    if _spmd_file_present:
+        _spmd_load_error = str(_spmd_import_err)
 
 # if/elif/else layout required for pylint to realize _default_backend cannot be None
 if _dpc_backend is not None:
@@ -128,8 +144,53 @@ elif _host_backend is not None:
 else:
     raise ImportError("No oneDAL backend available")
 
+
+def _ensure_dpc_available(require_spmd: bool = False) -> None:
+    """Raise a user-actionable RuntimeError if the required DPC++/SPMD backend is unavailable.
+
+    This function should be called when a SYCL queue is present but the
+    corresponding backend was not loaded. It always raises when the backend
+    is ``None`` (whether due to a load error or because the package was never
+    installed), and includes the original ``ImportError`` reason when available.
+
+    Parameters
+    ----------
+    require_spmd : bool, default=False
+        If True, check the SPMD backend; otherwise check the DPC++ backend.
+
+    Raises
+    ------
+    RuntimeError
+        Always raised when the requested backend is unavailable.
+        Includes the original ImportError reason (if captured) and
+        install instructions.
+
+    Notes
+    -----
+    Backend availability is determined at module import time. If the GPU
+    package is installed after the interpreter has started, Python must be
+    restarted for the change to take effect.
+    """
+    backend = _spmd_backend if require_spmd else _dpc_backend
+    if backend is not None:
+        return  # backend is available, nothing to do
+    error_msg = _spmd_load_error if require_spmd else _dpc_load_error
+    backend_label = "SPMD" if require_spmd else "DPC++"
+    reason = f"\n  Reason: {error_msg}" if error_msg else ""
+    raise RuntimeError(
+        f"oneDAL GPU/{backend_label} support is not available "
+        f"in the current installation.{reason}\n"
+        "  To enable SYCL/GPU acceleration, install the GPU extras:\n"
+        "    pip install scikit-learn-intelex-gpu\n"
+        "  or via conda:\n"
+        "    conda install scikit-learn-intelex-gpu -c "
+        "https://software.repos.intel.com/python/conda"
+    )
+
+
 # Core modules to export
 __all__ = [
+    "_ensure_dpc_available",
     "_host_backend",
     "_default_backend",
     "_dpc_backend",
