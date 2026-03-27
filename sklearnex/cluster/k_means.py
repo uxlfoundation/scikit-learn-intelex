@@ -40,6 +40,7 @@ if daal_check_version((2023, "P", 200)):
     from onedal.cluster import KMeans as onedal_KMeans
     from onedal.utils.validation import _is_arraylike_not_scalar, _is_csr
 
+    from .._config import get_config
     from .._device_offload import dispatch, wrap_output_data
     from .._utils import PatchingConditionsChain
     from ..base import oneDALEstimator
@@ -199,27 +200,23 @@ if daal_check_version((2023, "P", 200)):
                 )
 
         def _onedal_fit(self, X, _, sample_weight, queue=None):
-            from .._config import get_config
 
             xp, _ = get_namespace(X)
 
-            # Validate init parameter if array-like (before X validation so n_features_in_ not set yet)
-            if _is_arraylike_not_scalar(self.init):
-                init = validate_data(
-                    self,
-                    self.init,
-                    dtype=[xp.float64, xp.float32],
-                    accept_sparse="csr",
-                    copy=True,
-                    order="C",
-                    reset=False,
-                )
-                # Validate shape against X (before X is validated/copied)
-                self._validate_center_shape(X, init)
-                # Update the init parameter with validated version
-                self.init = init
-
             if not get_config()["use_raw_input"]:
+                if _is_arraylike_not_scalar(self.init):
+                    init = validate_data(
+                        self,
+                        self.init,
+                        dtype=[xp.float64, xp.float32],
+                        accept_sparse="csr",
+                        copy=True,
+                        order="C",
+                        reset=False,
+                    )
+                    self._validate_center_shape(X, init)
+                    self.init = init
+
                 X = validate_data(
                     self,
                     X,
@@ -399,7 +396,6 @@ if daal_check_version((2023, "P", 200)):
                 )
 
         def _onedal_predict(self, X, sample_weight=None, queue=None):
-            from .._config import get_config
 
             xp, _ = get_namespace(X)
 
@@ -470,7 +466,6 @@ if daal_check_version((2023, "P", 200)):
             )
 
         def _onedal_transform(self, X, queue=None):
-            from .._config import get_config
 
             xp, is_array_api = get_namespace(X)
 
@@ -515,7 +510,6 @@ if daal_check_version((2023, "P", 200)):
             )
 
         def _onedal_score(self, X, y=None, sample_weight=None, queue=None):
-            from .._config import get_config
 
             xp, _ = get_namespace(X)
 
