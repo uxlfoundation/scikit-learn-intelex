@@ -284,12 +284,13 @@ if daal_check_version((2023, "P", 200)):
                 return True
             else:
                 try:
+                    xp, _ = get_namespace(sample_weight)
                     sample_weight = _check_sample_weight(
                         sample_weight,
                         X,
                         dtype=X.dtype if hasattr(X, "dtype") else None,
                     )
-                    if np.all(sample_weight == sample_weight[0]):
+                    if xp.all(sample_weight == sample_weight[0]):
                         return True
                     else:
                         return False
