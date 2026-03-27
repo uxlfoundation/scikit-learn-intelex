@@ -288,12 +288,6 @@ _SKIP = {
     ("LogisticRegression", "n_iter_"): {"attr_type", "attr_device", "attr_dtype"},
     ("LogisticRegression", "classes_"): {"attr_type", "attr_device", "attr_dtype"},
     ("LogisticRegression", "classes_"): {"attr_type", "attr_device", "attr_dtype"},
-    ("KNeighborsClassifier", "classes_"): {"attr_type", "attr_device", "attr_dtype"},
-    ("LocalOutlierFactor", "negative_outlier_factor_"): {
-        "attr_type",
-        "attr_device",
-        "attr_dtype",
-    },
     # Attr — specific
     ("SVC", "n_iter_"): {"attr_device"},
     ("NuSVC", "n_iter_"): {"attr_device"},
