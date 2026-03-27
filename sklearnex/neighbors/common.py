@@ -356,10 +356,14 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             else:
                 # Fallback for array API < 2024.12
                 indices = xp.asarray(
-                    np.take_along_axis(np.asarray(indices), np.asarray(seq), axis=1)
+                    np.take_along_axis(
+                        np.from_dlpack(indices), np.from_dlpack(seq), axis=1
+                    )
                 )
                 distances = xp.asarray(
-                    np.take_along_axis(np.asarray(distances), np.asarray(seq), axis=1)
+                    np.take_along_axis(
+                        np.from_dlpack(distances), np.from_dlpack(seq), axis=1
+                    )
                 )
 
         if not query_is_train:
