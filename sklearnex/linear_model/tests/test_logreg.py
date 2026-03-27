@@ -578,3 +578,158 @@ def test_log_proba_doesnt_return_inf(dataframe, queue):
     pred_log_proba = _as_numpy(pred_log_proba)
 
     assert not np.any(np.isinf(pred_log_proba))
+
+
+@pytest.mark.skipif(
+    not sklearn_check_version("1.5"), reason="Array API requires sklearn>=1.5"
+)
+@pytest.mark.parametrize("queue", get_queues())
+@pytest.mark.parametrize("array_type", ["dpnp", "array_api_strict"])
+@pytest.mark.parametrize("y_type", ["numeric", "string"])
+@pytest.mark.allow_sklearn_fallback
+def test_array_api_logreg(queue, array_type, y_type):
+    """Test LogisticRegression with Array API dispatch enabled.
+
+    Tests cover:
+    - GPU: dpnp arrays with newton-cg solver
+    - CPU: dpnp and array_api_strict arrays with lbfgs solver
+    - Both numeric and string label targets
+
+    Validates that:
+    1. No fallback to sklearn on GPU
+    2. Model attributes (coef_, intercept_, n_iter_) have correct types
+    3. All prediction methods return correct types and shapes
+    4. score returns a scalar value
+    """
+    from sklearnex import set_config
+    from sklearnex.linear_model import LogisticRegression
+
+    os.environ["SCIPY_ARRAY_API"] = "1"
+
+    is_gpu = queue is not None and queue.sycl_device.is_gpu
+
+    # Skip conditions based on device and array type
+    if is_gpu:
+        if array_type == "array_api_strict":
+            pytest.skip("array_api_strict not supported on GPU")
+        solver = "newton-cg"
+    else:
+        # if array_type == "dpnp" and not check_preview_is_enabled():
+        #     pytest.skip("Array API with dpnp on CPU requires preview mode")
+        if not sklearn_check_version("1.9"):
+            pytest.skip("Array API with lbfgs on CPU requires sklearn>=1.9")
+        solver = "lbfgs"
+
+    # Generate test data
+    X, y = make_classification(n_samples=100, n_features=20, n_classes=2, random_state=42)
+
+    # Convert to appropriate array type
+    if array_type == "dpnp":
+        X_arr = _convert_to_dataframe(X, sycl_queue=queue, target_df="dpnp")
+        if y_type == "numeric":
+            y_arr = _convert_to_dataframe(y, sycl_queue=queue, target_df="dpnp")
+        else:
+            y_arr = np.take(["class_a", "class_b"], y)
+    elif array_type == "array_api_strict":
+        xp = pytest.importorskip("array_api_strict")
+        X_arr = xp.asarray(X, dtype=xp.float32)
+        if y_type == "numeric":
+            y_arr = xp.asarray(y, dtype=xp.int32)
+        else:
+            y_arr = np.take(["class_a", "class_b"], y)
+
+    # Fit model with array API dispatch enabled
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        set_config(array_api_dispatch=True)
+        model = LogisticRegression(solver=solver).fit(X_arr, y_arr)
+
+    # 1. Check no fallback to sklearn on GPU
+    if is_gpu:
+        assert hasattr(
+            model, "_onedal_estimator"
+        ), "Model should not fall back to sklearn on GPU with array API"
+
+    # 2. Check attributes have correct types (same as X)
+    assert (
+        type(model.coef_).__name__ == type(X_arr).__name__
+    ), f"coef_ type {type(model.coef_)} should match X type {type(X_arr)}"
+    assert (
+        type(model.intercept_).__name__ == type(X_arr).__name__
+    ), f"intercept_ type {type(model.intercept_)} should match X type {type(X_arr)}"
+    assert hasattr(model, "n_iter_"), "n_iter_ attribute should be available"
+
+    # Check device for dpnp arrays
+    if array_type == "dpnp":
+        assert getattr(model.coef_, "device", None) == getattr(
+            X_arr, "device", None
+        ), "coef_ should be on same device as X_arr"
+        assert getattr(model.intercept_, "device", None) == getattr(
+            X_arr, "device", None
+        ), "intercept_ should be on same device as X_arr"
+
+    # 3. Check predict returns correct type and shape
+    pred = model.predict(X_arr)
+    if y_type == "numeric":
+        assert (
+            type(pred).__name__ == type(y_arr).__name__
+        ), f"predict type {type(pred)} should match y type {type(y_arr)}"
+        if array_type == "dpnp":
+            assert getattr(pred, "device", None) == getattr(
+                y_arr, "device", None
+            ), "predict should be on same device as y_arr"
+    else:
+        # For string labels, result should be numpy array
+        assert isinstance(
+            pred, np.ndarray
+        ), "predict should return numpy array for string labels"
+    assert pred.shape == (
+        X.shape[0],
+    ), f"predict shape {pred.shape} should be ({X.shape[0]},)"
+
+    # 4. Check predict_proba returns correct type (same as X) and shape
+    pred_proba = model.predict_proba(X_arr)
+    assert (
+        type(pred_proba).__name__ == type(X_arr).__name__
+    ), f"predict_proba type {type(pred_proba)} should match X type {type(X_arr)}"
+    assert pred_proba.shape == (
+        X.shape[0],
+        2,
+    ), f"predict_proba shape {pred_proba.shape} should be ({X.shape[0]}, 2)"
+    if array_type == "dpnp":
+        assert getattr(pred_proba, "device", None) == getattr(
+            X_arr, "device", None
+        ), "predict_proba should be on same device as X_arr"
+
+    # 5. Check predict_log_proba returns correct type (same as X) and shape
+    pred_log_proba = model.predict_log_proba(X_arr)
+    assert (
+        type(pred_log_proba).__name__ == type(X_arr).__name__
+    ), f"predict_log_proba type {type(pred_log_proba)} should match X type {type(X_arr)}"
+    assert pred_log_proba.shape == (
+        X.shape[0],
+        2,
+    ), f"predict_log_proba shape {pred_log_proba.shape} should be ({X.shape[0]}, 2)"
+    if array_type == "dpnp":
+        assert getattr(pred_log_proba, "device", None) == getattr(
+            X_arr, "device", None
+        ), "predict_log_proba should be on same device as X_arr"
+
+    # 6. Check decision_function returns correct type (same as X) and shape
+    dec_func = model.decision_function(X_arr)
+    assert (
+        type(dec_func).__name__ == type(X_arr).__name__
+    ), f"decision_function type {type(dec_func)} should match X type {type(X_arr)}"
+    assert dec_func.shape == (
+        X.shape[0],
+    ), f"decision_function shape {dec_func.shape} should be ({X.shape[0]},)"
+    if array_type == "dpnp":
+        assert getattr(dec_func, "device", None) == getattr(
+            X_arr, "device", None
+        ), "decision_function should be on same device as X_arr"
+
+    # 7. Check score returns a scalar
+    score = model.score(X_arr, y_arr)
+    assert isinstance(
+        score, (float, np.floating, np.number)
+    ), f"score should return a scalar, got type {type(score)}"
