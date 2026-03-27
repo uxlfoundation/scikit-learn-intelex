@@ -350,17 +350,18 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         # on read-only arrays (e.g. array-api-strict).
         if self._fit_method == "kd_tree":
             seq = xp.argsort(distances, axis=1)
-            if hasattr(xp, "take_along_axis"):
+            try:
                 indices = xp.take_along_axis(indices, seq, axis=1)
                 distances = xp.take_along_axis(distances, seq, axis=1)
-            else:
-                # Fallback for array API < 2024.12
-                indices = xp.asarray(
+            except RuntimeError:
+                # Fallback for array API < 2024.12 (e.g. array-api-strict
+                # with api_version='2023.12' has the function but raises)
+                indices = xp.from_dlpack(
                     np.take_along_axis(
                         np.from_dlpack(indices), np.from_dlpack(seq), axis=1
                     )
                 )
-                distances = xp.asarray(
+                distances = xp.from_dlpack(
                     np.take_along_axis(
                         np.from_dlpack(distances), np.from_dlpack(seq), axis=1
                     )
