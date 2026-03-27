@@ -16,7 +16,8 @@
 
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_array_equal
+from sklearn import datasets
 
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
@@ -81,6 +82,75 @@ def test_sklearnex_import_lof(dataframe, queue):
     assert hasattr(lof, "_onedal_estimator")
     assert "sklearnex" in lof.__module__
     assert_allclose(result, [-1, 1, 1, 1])
+
+
+def test_pickle():
+    iris = datasets.load_iris()
+    clf = KNeighborsClassifier(2).fit(iris.data, iris.target)
+    expected = clf.predict(iris.data)
+    import pickle
+
+    dump = pickle.dumps(clf)
+    clf2 = pickle.loads(dump)
+
+    assert type(clf2) == clf.__class__
+    result = clf2.predict(iris.data)
+    assert_array_equal(expected, result)
+
+
+def test_pickle_torch_xpu():
+    try:
+        import torch
+    except ImportError:
+        pytest.skip("torch is not available")
+    if not torch.xpu.is_available():
+        pytest.skip("torch XPU device is not available")
+
+    import pickle
+
+    iris = datasets.load_iris()
+    X_train = torch.tensor(iris.data, dtype=torch.float32, device="xpu")
+    y_train = torch.tensor(iris.target, dtype=torch.float32, device="xpu")
+
+    clf = KNeighborsClassifier(2, algorithm="brute").fit(X_train, y_train)
+    predicted = clf.predict(X_train)
+    expected = (
+        predicted.cpu().numpy() if hasattr(predicted, "cpu") else np.asarray(predicted)
+    )
+
+    dump = pickle.dumps(clf)
+    clf2 = pickle.loads(dump)
+
+    assert type(clf2) == clf.__class__
+    predicted2 = clf2.predict(X_train)
+    result = (
+        predicted2.cpu().numpy() if hasattr(predicted2, "cpu") else np.asarray(predicted2)
+    )
+    assert_array_equal(expected, result)
+
+
+@pytest.mark.allow_sklearn_fallback
+def test_knn_classifier_single_class():
+    """Test KNeighborsClassifier with single-class data (fallback to sklearn).
+    oneDAL does not support single-class classification, so this should
+    fallback to sklearn's implementation.
+    """
+    # Create single-class dataset
+    X = np.array([[0, 0], [1, 1], [2, 2], [3, 3]])
+    y = np.array([0, 0, 0, 0])  # All same class
+
+    clf = KNeighborsClassifier(n_neighbors=2)
+    clf.fit(X, y)
+
+    # Should predict the only class
+    predictions = clf.predict(X)
+    assert_array_equal(predictions, y)
+    assert_array_equal(clf.classes_, [0])
+
+    # Test with new data
+    X_test = np.array([[1.5, 1.5], [2.5, 2.5]])
+    predictions_test = clf.predict(X_test)
+    assert_array_equal(predictions_test, [0, 0])
 
 
 def test_no_p_if_metric_is_not_minkowski():

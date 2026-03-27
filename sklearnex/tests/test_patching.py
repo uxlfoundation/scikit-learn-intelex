@@ -217,8 +217,7 @@ def _check_output_type(result, y, method, estimator_name, caplog, X, est=None):
         "fallback to original Scikit-learn" in r.message for r in caplog.records
     )
 
-    # Collect all array results (handle tuples like kneighbors and
-    # lists like multi-output predict_proba)
+    # Collect all array results (handle tuples like kneighbors)
     if isinstance(result, (tuple, list)):
         results_to_check = result
     else:
@@ -282,8 +281,11 @@ def _check_output_type(result, y, method, estimator_name, caplog, X, est=None):
                     # predict output dtype should match y dtype
                     assert res.dtype == y.dtype
                 elif X is not None and hasattr(X, "dtype") and "float" in str(X.dtype):
-                    # Output dtype should match X dtype for float inputs
-                    assert res.dtype == X.dtype
+                    # Only check float results against float X dtype;
+                    # int results (e.g. indices from kneighbors, labels
+                    # from fit_predict) are expected to differ.
+                    if "int" not in str(res.dtype):
+                        assert res.dtype == X.dtype
 
 
 # Unified skip rules: (estimator, name) -> set of checks to skip.
@@ -294,21 +296,9 @@ _SKIP = {
     ("NearestNeighbors", "radius_neighbors"): {"output_type"},
     ("ElasticNet", "path"): {"output_dtype"},
     ("Lasso", "path"): {"output_dtype"},
-    ("KNeighborsClassifier", "predict_proba"): {"output_dtype"},
-    ("KNeighborsClassifier", "kneighbors"): {"output_dtype"},
-    ("KNeighborsRegressor", "kneighbors"): {"output_dtype"},
-    ("NearestNeighbors", "kneighbors"): {"output_dtype"},
-    ("LocalOutlierFactor", "kneighbors"): {"output_dtype"},
     ("IncrementalEmpiricalCovariance", "mahalanobis"): {"output_dtype"},
     # Attr — always
     ("DummyRegressor", "constant_"): {"attr_type", "attr_device", "attr_dtype"},
-    ("KNeighborsClassifier", "classes_"): {"attr_type", "attr_device", "attr_dtype"},
-    ("KNeighborsClassifier", "classes_"): {"attr_type", "attr_device", "attr_dtype"},
-    ("LocalOutlierFactor", "negative_outlier_factor_"): {
-        "attr_type",
-        "attr_device",
-        "attr_dtype",
-    },
     ("KMeans", "cluster_centers_"): {"attr_type", "attr_device", "attr_dtype"},
     # Attr — specific
     ("SVC", "n_iter_"): {"attr_device"},
@@ -627,11 +617,13 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
         result, X, y = _check_estimator_patching(
             caplog, dataframe, queue, dtype, est, method
         )
-        # Without dispatch, dpnp/dpctl should produce all-numpy attrs
+        # KNN/LOF store _fit_X as dpnp even without dispatch, so pickle
+        # fails (dpnp SYCL queues are not serializable)
         if dataframe in ["dpnp", "dpctl"] and estimator not in [
             "KNeighborsClassifier",
             "KNeighborsRegressor",
             "NearestNeighbors",
+            "LocalOutlierFactor",
         ]:
 
             pickle.loads(pickle.dumps(est))
