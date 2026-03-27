@@ -187,6 +187,12 @@ def wrap_output_data(func: Callable) -> Callable:
             if (
                 usm_iface := getattr(data, "__sycl_usm_array_interface__", None)
             ) and not hasattr(result, "__sycl_usm_array_interface__"):
+                # Skip if result elements are already SYCL arrays
+                # (e.g. kneighbors tuple from from_table(like=X))
+                if isinstance(result, (tuple, list)) and all(
+                    hasattr(r, "__sycl_usm_array_interface__") for r in result
+                ):
+                    return result
                 queue = usm_iface["syclobj"]
                 return (
                     copy_to_dpnp(queue, result)
@@ -201,10 +207,11 @@ def wrap_output_data(func: Callable) -> Callable:
                 )
                 == "default"
             ):
-                xp, is_array_api = get_namespace(data)
-                if is_array_api and not _is_numpy_namespace(xp):
-                    if not isinstance(result, (int, float)):
-                        result = xp.asarray(result, device=data.device)
+                if hasattr(data, "dtype"):
+                    xp, is_array_api = get_namespace(data)
+                    if is_array_api and not _is_numpy_namespace(xp):
+                        if not isinstance(result, (int, float)):
+                            result = xp.asarray(result, device=data.device)
             else:
                 _, (result,) = _transfer_to_host(result)
         return result
