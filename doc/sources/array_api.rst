@@ -133,7 +133,7 @@ The following patched classes have support for array API inputs:
 Coverage of array API support
 -----------------------------
 
-All of the classes (except :obj:`sklearn.linear_model.LogisticRegression`) with array API support in the |sklearnex| have full support for core
+All of the classes with array API support in the |sklearnex| have full support for core
 methods common to base classes for regression and classification:
 
 - ``.fit()``

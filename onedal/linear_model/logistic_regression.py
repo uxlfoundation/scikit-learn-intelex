@@ -109,7 +109,7 @@ class BaseLogisticRegression(metaclass=ABCMeta):
     def predict(self, X, queue=None, classes=None):
         result = self._infer(X, queue)
 
-        # Starting from skelarn 1.9 type of predicted labels should match the type of self.classes_
+        # Starting from sklearn 1.9 type of predicted labels should match the type of self.classes_
         # In general case, classes attribute is provided from sklearnex estimator
         # In case it's not provided, result would be of the same type as X
         y = from_table(result.responses, like=classes if classes is not None else X)
