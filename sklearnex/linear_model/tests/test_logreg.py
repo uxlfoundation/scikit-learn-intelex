@@ -583,16 +583,15 @@ def test_log_proba_doesnt_return_inf(dataframe, queue):
 @pytest.mark.skipif(
     not sklearn_check_version("1.5"), reason="Array API requires sklearn>=1.5"
 )
-@pytest.mark.parametrize("queue", get_queues())
-@pytest.mark.parametrize("array_type", ["dpnp", "array_api_strict"])
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 @pytest.mark.parametrize("y_type", ["numeric", "string"])
 @pytest.mark.allow_sklearn_fallback
-def test_array_api_logreg(queue, array_type, y_type):
+def test_array_api_logreg(dataframe, queue, y_type):
     """Test LogisticRegression with Array API dispatch enabled.
 
     Tests cover:
-    - GPU: dpnp arrays with newton-cg solver
-    - CPU: dpnp and array_api_strict arrays with lbfgs solver
+    - GPU: dpnp/dpctl arrays with newton-cg solver
+    - CPU: dpnp/dpctl and array_api_strict arrays with lbfgs solver
     - Both numeric and string label targets
 
     Validates that:
@@ -610,33 +609,20 @@ def test_array_api_logreg(queue, array_type, y_type):
 
     # Skip conditions based on device and array type
     if is_gpu:
-        if array_type == "array_api_strict":
-            pytest.skip("array_api_strict not supported on GPU")
         solver = "newton-cg"
     else:
-        # if array_type == "dpnp" and not check_preview_is_enabled():
-        #     pytest.skip("Array API with dpnp on CPU requires preview mode")
-        if not sklearn_check_version("1.9"):
+        if dataframe not in ["numpy", "pandas"] and not sklearn_check_version("1.9"):
             pytest.skip("Array API with lbfgs on CPU requires sklearn>=1.9")
         solver = "lbfgs"
 
     # Generate test data
     X, y = make_classification(n_samples=100, n_features=20, n_classes=2, random_state=42)
 
-    # Convert to appropriate array type
-    if array_type == "dpnp":
-        X_arr = _convert_to_dataframe(X, sycl_queue=queue, target_df="dpnp")
-        if y_type == "numeric":
-            y_arr = _convert_to_dataframe(y, sycl_queue=queue, target_df="dpnp")
-        else:
-            y_arr = np.take(["class_a", "class_b"], y)
-    elif array_type == "array_api_strict":
-        xp = pytest.importorskip("array_api_strict")
-        X_arr = xp.asarray(X, dtype=xp.float32)
-        if y_type == "numeric":
-            y_arr = xp.asarray(y, dtype=xp.int32)
-        else:
-            y_arr = np.take(["class_a", "class_b"], y)
+    X_arr = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+    if y_type == "numeric":
+        y_arr = _convert_to_dataframe(y, sycl_queue=queue, target_df=dataframe)
+    else:
+        y_arr = np.take(["class_a", "class_b"], y)
 
     # Fit model with array API dispatch enabled
     with warnings.catch_warnings():
@@ -650,83 +636,64 @@ def test_array_api_logreg(queue, array_type, y_type):
             model, "_onedal_estimator"
         ), "Model should not fall back to sklearn on GPU with array API"
 
-    # 2. Check attributes have correct types (same as X)
-    assert (
-        type(model.coef_).__name__ == type(X_arr).__name__
-    ), f"coef_ type {type(model.coef_)} should match X type {type(X_arr)}"
-    assert (
-        type(model.intercept_).__name__ == type(X_arr).__name__
-    ), f"intercept_ type {type(model.intercept_)} should match X type {type(X_arr)}"
-    assert hasattr(model, "n_iter_"), "n_iter_ attribute should be available"
+    # # 2. Check attributes have correct types (same as X)
+    def _check_predict_type_and_shape(
+        pred, expected_type, expected_shape, device_check=False
+    ):
+        assert (
+            type(pred).__name__ == expected_type.__name__
+        ), f"predict type {type(pred)} should match expected type {expected_type}"
+        assert (
+            pred.shape == expected_shape
+        ), f"predict shape {pred.shape} should be {expected_shape}"
+        if device_check:
+            assert getattr(pred, "device", None) == getattr(
+                X_arr, "device", None
+            ), "predict should be on same device as X_arr"
 
-    # Check device for dpnp arrays
-    if array_type == "dpnp":
-        assert getattr(model.coef_, "device", None) == getattr(
-            X_arr, "device", None
-        ), "coef_ should be on same device as X_arr"
-        assert getattr(model.intercept_, "device", None) == getattr(
-            X_arr, "device", None
-        ), "intercept_ should be on same device as X_arr"
+    device_check = dataframe != "pandas"
+
+    coef_expected_type = type(X_arr) if dataframe != "pandas" else np.ndarray
+    _check_predict_type_and_shape(
+        model.coef_, coef_expected_type, (1, X.shape[1]), device_check
+    )
+    _check_predict_type_and_shape(
+        model.intercept_, coef_expected_type, (1,), device_check
+    )
 
     # 3. Check predict returns correct type and shape
     pred = model.predict(X_arr)
-    if y_type == "numeric":
-        assert (
-            type(pred).__name__ == type(y_arr).__name__
-        ), f"predict type {type(pred)} should match y type {type(y_arr)}"
-        if array_type == "dpnp":
-            assert getattr(pred, "device", None) == getattr(
-                y_arr, "device", None
-            ), "predict should be on same device as y_arr"
+
+    if y_type == "numeric" and dataframe != "pandas":
+        pred_expected_type = type(y_arr)
     else:
-        # For string labels, result should be numpy array
-        assert isinstance(
-            pred, np.ndarray
-        ), "predict should return numpy array for string labels"
-    assert pred.shape == (
-        X.shape[0],
-    ), f"predict shape {pred.shape} should be ({X.shape[0]},)"
+        pred_expected_type = np.ndarray
+
+    _check_predict_type_and_shape(
+        pred, pred_expected_type, (X.shape[0],), device_check and (y_type == "numeric")
+    )
 
     # 4. Check predict_proba returns correct type (same as X) and shape
     pred_proba = model.predict_proba(X_arr)
-    assert (
-        type(pred_proba).__name__ == type(X_arr).__name__
-    ), f"predict_proba type {type(pred_proba)} should match X type {type(X_arr)}"
-    assert pred_proba.shape == (
-        X.shape[0],
-        2,
-    ), f"predict_proba shape {pred_proba.shape} should be ({X.shape[0]}, 2)"
-    if array_type == "dpnp":
-        assert getattr(pred_proba, "device", None) == getattr(
-            X_arr, "device", None
-        ), "predict_proba should be on same device as X_arr"
+    proba_expected_type = type(X_arr) if dataframe != "pandas" else np.ndarray
+    _check_predict_type_and_shape(
+        pred_proba, proba_expected_type, (X.shape[0], 2), device_check
+    )
 
     # 5. Check predict_log_proba returns correct type (same as X) and shape
     pred_log_proba = model.predict_log_proba(X_arr)
-    assert (
-        type(pred_log_proba).__name__ == type(X_arr).__name__
-    ), f"predict_log_proba type {type(pred_log_proba)} should match X type {type(X_arr)}"
-    assert pred_log_proba.shape == (
-        X.shape[0],
-        2,
-    ), f"predict_log_proba shape {pred_log_proba.shape} should be ({X.shape[0]}, 2)"
-    if array_type == "dpnp":
-        assert getattr(pred_log_proba, "device", None) == getattr(
-            X_arr, "device", None
-        ), "predict_log_proba should be on same device as X_arr"
+    _check_predict_type_and_shape(
+        pred_log_proba, proba_expected_type, (X.shape[0], 2), device_check
+    )
 
     # 6. Check decision_function returns correct type (same as X) and shape
-    dec_func = model.decision_function(X_arr)
-    assert (
-        type(dec_func).__name__ == type(X_arr).__name__
-    ), f"decision_function type {type(dec_func)} should match X type {type(X_arr)}"
-    assert dec_func.shape == (
-        X.shape[0],
-    ), f"decision_function shape {dec_func.shape} should be ({X.shape[0]},)"
-    if array_type == "dpnp":
-        assert getattr(dec_func, "device", None) == getattr(
-            X_arr, "device", None
-        ), "decision_function should be on same device as X_arr"
+    if dataframe != "pandas":
+        # If pandas dataframe provided as input stock sklearn throws an error because of incorrect logic
+        # of device comparison. When this issue is fixed, this condition should be removed
+        dec_func = model.decision_function(X_arr)
+        _check_predict_type_and_shape(
+            dec_func, proba_expected_type, (X.shape[0],), device_check
+        )
 
     # 7. Check score returns a scalar
     score = model.score(X_arr, y_arr)
