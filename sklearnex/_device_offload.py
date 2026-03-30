@@ -183,8 +183,6 @@ def wrap_output_data(func: Callable) -> Callable:
         result = func(self, *args, **kwargs)
         if not (len(args) == 0 and len(kwargs) == 0):
             data = (*args, *kwargs.values())[0]
-            if get_config().get("transform_output") not in ("default", None):
-                return result
             if (
                 usm_iface := getattr(data, "__sycl_usm_array_interface__", None)
             ) and not hasattr(result, "__sycl_usm_array_interface__"):
@@ -205,7 +203,11 @@ def wrap_output_data(func: Callable) -> Callable:
                 if hasattr(data, "dtype"):
                     xp, is_array_api = get_namespace(data)
                     if is_array_api and not _is_numpy_namespace(xp):
-                        if not isinstance(result, (int, float)):
+                        if isinstance(result, tuple):
+                            result = tuple(
+                                xp.asarray(r, device=data.device) for r in result
+                            )
+                        elif not isinstance(result, (int, float)):
                             result = xp.asarray(result, device=data.device)
         return result
 
