@@ -350,8 +350,26 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         # on read-only arrays (e.g. array-api-strict).
         if self._fit_method == "kd_tree":
             seq = xp.argsort(distances, axis=1)
-            indices = xp.take_along_axis(indices, seq, axis=1)
-            distances = xp.take_along_axis(distances, seq, axis=1)
+            try:
+                indices = xp.take_along_axis(indices, seq, axis=1)
+                distances = xp.take_along_axis(distances, seq, axis=1)
+            except RuntimeError:
+                # Fallback for array API < 2024.12 (e.g. array-api-strict
+                # with api_version='2023.12' has the function but raises)
+                indices = xp.from_dlpack(
+                    np.take_along_axis(
+                        np.from_dlpack(indices, device="cpu"),
+                        np.from_dlpack(seq, device="cpu"),
+                        axis=1,
+                    )
+                )
+                distances = xp.from_dlpack(
+                    np.take_along_axis(
+                        np.from_dlpack(distances, device="cpu"),
+                        np.from_dlpack(seq, device="cpu"),
+                        axis=1,
+                    )
+                )
 
         if not query_is_train:
             if return_distance:
@@ -675,7 +693,10 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         n_nonzero = n_queries * n_neighbors
         A_indptr = xp.arange(0, n_nonzero + 1, n_neighbors)
 
-        _csr_container = sp.csr_array if hasattr(sp, "csr_array") else sp.csr_matrix
+        if sklearn_check_version("1.9"):
+            _csr_container = sp.csr_array if hasattr(sp, "csr_array") else sp.csr_matrix
+        else:
+            _csr_container = sp.csr_matrix
         kneighbors_graph = _csr_container(
             (A_data, xp.reshape(A_ind, (-1,)), A_indptr), shape=(n_queries, n_samples_fit)
         )
