@@ -126,6 +126,7 @@ jobs:
           python -m venv venv
           source venv/bin/activate
           pip install -r dependencies-dev
+          pip install git+https://github.com/pybind/pybind11.git@master
           pip list
           echo "NUMPY_BUILD=$(python -m pip freeze | grep numpy)" >> "$GITHUB_ENV"
       - name: Build daal4py/sklearnex
@@ -254,6 +255,7 @@ jobs:
           pip install --upgrade setuptools
           pip install cpufeature pyyaml
           pip install -r dependencies-dev
+          pip install git+https://github.com/pybind/pybind11.git@master
           for /f "delims=" %%c in ('python -m pip freeze ^| grep numpy') do echo NUMPY_BUILD=%%c>> %GITHUB_ENV%
       - name: System info 
         shell: cmd
@@ -373,6 +375,7 @@ jobs:
         id: install-reqs
         run: |
           pip install -r dependencies-dev
+          pip install git+https://github.com/pybind/pybind11.git@master
           echo "numpy-version=$(python -m pip freeze | grep numpy)" >> "$GITHUB_OUTPUT"
           pip list
       - name: Build daal4py/sklearnex
