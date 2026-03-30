@@ -27,6 +27,7 @@ from onedal.utils._third_party import is_dpnp_ndarray
 from ._config import get_config
 from ._utils import PatchingConditionsChain, get_tags
 from .base import oneDALEstimator
+from .utils._array_api import get_namespace
 
 
 def _get_backend(
@@ -186,6 +187,12 @@ def wrap_output_data(func: Callable) -> Callable:
             if (
                 usm_iface := getattr(data, "__sycl_usm_array_interface__", None)
             ) and not hasattr(result, "__sycl_usm_array_interface__"):
+                # Skip if result elements are already SYCL arrays
+                # (e.g. kneighbors tuple from from_table(like=X))
+                if isinstance(result, (tuple, list)) and all(
+                    hasattr(r, "__sycl_usm_array_interface__") for r in result
+                ):
+                    return result
                 queue = usm_iface["syclobj"]
                 return (
                     copy_to_dpnp(queue, result)
@@ -194,12 +201,10 @@ def wrap_output_data(func: Callable) -> Callable:
                 )
 
             if get_config().get("transform_output") in ("default", None):
-                input_array_api = getattr(data, "__array_namespace__", lambda: None)()
-                if input_array_api and not _is_numpy_namespace(input_array_api):
-                    input_array_api_device = data.device
-                    result = _asarray(
-                        result, input_array_api, device=input_array_api_device
-                    )
+                if hasattr(data, "dtype"):
+                    xp, is_array_api = get_namespace(data)
+                    if is_array_api and not _is_numpy_namespace(xp):
+                        result = _asarray(result, xp, device=data.device)
         return result
 
     return wrapper

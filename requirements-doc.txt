@@ -46,7 +46,7 @@ python-dateutil==2.9.0.post0
 pytz==2026.1
 PyYAML==6.0.3
 pyzmq==27.1.0
-requests==2.32.5
+requests==2.33.0
 six==1.17.0
 scikit-learn==1.8.0
 snowballstemmer==3.0.1
