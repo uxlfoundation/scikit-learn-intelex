@@ -163,8 +163,6 @@ def _check_estimator_patching(caplog, dataframe, queue, dtype, est, method):
         else:
             X, y = gen_dataset(est, queue=queue, target_df=dataframe, dtype=dtype)[0]
 
-        os.environ["SKLEARNEX_VERBOSE"] = "INFO"
-
         est.fit(X, y)
         if method:
             if not hasattr(est, method) and check_is_dynamic_method(est, method):
@@ -549,7 +547,7 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
         and estimator == "LogisticRegression"
         and not sklearn_check_version("1.9")
     ):
-        # In case array api inpuits on CPU are provided on CPU for LogisticRegression sklearnex will fallback to sklearn
+        # In case array api inputs on CPU are provided on CPU for LogisticRegression sklearnex will fallback to sklearn
         # Array API support for LogisticRegression in sklearn is only available starting from 1.9
         pytest.skip(
             "Array API inputs on CPU are not supported for LogisticRegression in sklearn <1.9"

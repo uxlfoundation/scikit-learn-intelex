@@ -600,10 +600,7 @@ def test_array_api_logreg(dataframe, queue, y_type):
     3. All prediction methods return correct types and shapes
     4. score returns a scalar value
     """
-    from sklearnex import set_config
     from sklearnex.linear_model import LogisticRegression
-
-    os.environ["SCIPY_ARRAY_API"] = "1"
 
     is_gpu = queue is not None and queue.sycl_device.is_gpu
 
@@ -611,7 +608,7 @@ def test_array_api_logreg(dataframe, queue, y_type):
     if is_gpu:
         solver = "newton-cg"
     else:
-        if dataframe not in ["numpy", "pandas"] and not sklearn_check_version("1.9"):
+        if not sklearn_check_version("1.9"):
             pytest.skip("Array API with lbfgs on CPU requires sklearn>=1.9")
         solver = "lbfgs"
 
@@ -625,9 +622,7 @@ def test_array_api_logreg(dataframe, queue, y_type):
         y_arr = np.take(["class_a", "class_b"], y)
 
     # Fit model with array API dispatch enabled
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        set_config(array_api_dispatch=True)
+    with config_context(array_api_dispatch=True):
         model = LogisticRegression(solver=solver).fit(X_arr, y_arr)
 
     # 1. Check no fallback to sklearn on GPU
@@ -662,7 +657,8 @@ def test_array_api_logreg(dataframe, queue, y_type):
     )
 
     # 3. Check predict returns correct type and shape
-    pred = model.predict(X_arr)
+    with config_context(array_api_dispatch=True):
+        pred = model.predict(X_arr)
 
     if y_type == "numeric" and dataframe != "pandas":
         pred_expected_type = type(y_arr)
@@ -674,14 +670,16 @@ def test_array_api_logreg(dataframe, queue, y_type):
     )
 
     # 4. Check predict_proba returns correct type (same as X) and shape
-    pred_proba = model.predict_proba(X_arr)
+    with config_context(array_api_dispatch=True):
+        pred_proba = model.predict_proba(X_arr)
     proba_expected_type = type(X_arr) if dataframe != "pandas" else np.ndarray
     _check_predict_type_and_shape(
         pred_proba, proba_expected_type, (X.shape[0], 2), device_check
     )
 
     # 5. Check predict_log_proba returns correct type (same as X) and shape
-    pred_log_proba = model.predict_log_proba(X_arr)
+    with config_context(array_api_dispatch=True):
+        pred_log_proba = model.predict_log_proba(X_arr)
     _check_predict_type_and_shape(
         pred_log_proba, proba_expected_type, (X.shape[0], 2), device_check
     )
@@ -690,13 +688,15 @@ def test_array_api_logreg(dataframe, queue, y_type):
     if dataframe != "pandas":
         # If pandas dataframe provided as input stock sklearn throws an error because of incorrect logic
         # of device comparison. When this issue is fixed, this condition should be removed
-        dec_func = model.decision_function(X_arr)
+        with config_context(array_api_dispatch=True):
+            dec_func = model.decision_function(X_arr)
         _check_predict_type_and_shape(
             dec_func, proba_expected_type, (X.shape[0],), device_check
         )
 
     # 7. Check score returns a scalar
-    score = model.score(X_arr, y_arr)
+    with config_context(array_api_dispatch=True):
+        score = model.score(X_arr, y_arr)
     assert isinstance(
         score, (float, np.floating, np.number)
     ), f"score should return a scalar, got type {type(score)}"

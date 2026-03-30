@@ -248,7 +248,7 @@ if daal_check_version((2024, "P", 1)):
         def _onedal_score(self, X, y, sample_weight=None, queue=None):
             if "spmd" in self._onedal_LogisticRegression.__module__:
                 raise RuntimeError(
-                    "score method is not supported for LogisticRegression SPMD estimartor."
+                    "score method is not supported for LogisticRegression SPMD estimator."
                 )
             return accuracy_score(
                 y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
