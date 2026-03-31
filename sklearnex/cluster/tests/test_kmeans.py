@@ -184,6 +184,9 @@ def test_transform_output_torch(output_format, transform_output):
 
 
 # Only numpy and dpnp: array_api_strict + polars/pandas fails in sklearn itself.
+@pytest.mark.skipif(
+    not sklearn_check_version("1.2"), reason="array_api_dispatch requires sklearn >= 1.2"
+)
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("numpy,dpnp"))
 @pytest.mark.parametrize("transform_output", ["polars", "pandas"])
 def test_transform_output_gpu(dataframe, queue, transform_output):
@@ -200,6 +203,9 @@ def test_transform_output_gpu(dataframe, queue, transform_output):
 
 
 # Excludes pandas (converted to numpy by validate_data, output type won't match).
+@pytest.mark.skipif(
+    not sklearn_check_version("1.2"), reason="array_api_dispatch requires sklearn >= 1.2"
+)
 @pytest.mark.parametrize(
     "dataframe,queue", get_dataframes_and_queues("numpy,dpnp,array_api")
 )
