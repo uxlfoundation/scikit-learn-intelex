@@ -183,7 +183,7 @@ def wrap_output_data(func: Callable) -> Callable:
         result = func(self, *args, **kwargs)
         if not (len(args) == 0 and len(kwargs) == 0):
             data = (*args, *kwargs.values())[0]
-            if (
+            if func.__name__ in ("transform", "fit_transform") and (
                 get_config().get("transform_output")
                 not in (
                     "default",
