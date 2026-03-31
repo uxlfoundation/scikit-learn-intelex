@@ -183,6 +183,9 @@ def wrap_output_data(func: Callable) -> Callable:
         result = func(self, *args, **kwargs)
         if not (len(args) == 0 and len(kwargs) == 0):
             data = (*args, *kwargs.values())[0]
+            if get_config().get("transform_output") not in ("default", None):
+                _, (result,) = _transfer_to_host(result)
+                return result
             if (
                 usm_iface := getattr(data, "__sycl_usm_array_interface__", None)
             ) and not hasattr(result, "__sycl_usm_array_interface__"):
