@@ -328,13 +328,13 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
 
     @supports_queue
     def predict(self, X, queue=None):
-        X_table = to_table(X, queue=QM.get_global_queue())
+        X_table = to_table(X, queue=queue)
         result = self._predict_backend(X_table)
         return from_table(result.responses, like=X)[:, 0]
 
     @supports_queue
     def score(self, X, queue=None):
-        X_table = to_table(X, queue=QM.get_global_queue())
+        X_table = to_table(X, queue=queue)
         result = self._predict_backend(
             X_table, result_options="compute_exact_objective_function"
         )
