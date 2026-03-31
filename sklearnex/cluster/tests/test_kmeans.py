@@ -182,3 +182,42 @@ def test_transform_output_torch(output_format, transform_output):
 
     expected_type = pl.DataFrame if transform_output == "polars" else pd.DataFrame
     assert isinstance(result, expected_type)
+
+
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize("transform_output", ["polars", "pandas"])
+def test_transform_output_gpu(dataframe, queue, transform_output):
+    import pandas as pd
+    import polars as pl
+
+    from sklearnex.cluster import KMeans
+
+    X_np = generate_dense_dataset(200, 10, 0.5, 3)
+    X = _convert_to_dataframe(X_np, sycl_queue=queue, target_df=dataframe)
+
+    with config_context(array_api_dispatch=True, transform_output=transform_output):
+        km = KMeans(n_clusters=3, random_state=0, n_init=1)
+        km.fit(X)
+        result = km.transform(X)
+
+    expected_type = pl.DataFrame if transform_output == "polars" else pd.DataFrame
+    assert isinstance(result, expected_type)
+
+
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+def test_dpnp_array_api_dispatch(dataframe, queue):
+    from sklearnex.cluster import KMeans
+
+    X_np = generate_dense_dataset(200, 10, 0.5, 3)
+    X = _convert_to_dataframe(X_np, sycl_queue=queue, target_df=dataframe)
+
+    with config_context(array_api_dispatch=True):
+        km = KMeans(n_clusters=3, random_state=0, n_init=1)
+        km.fit(X)
+        pred = km.predict(X)
+        trans = km.transform(X)
+        sc = km.score(X)
+
+        assert type(pred) == type(X) or isinstance(pred, np.ndarray)
+        assert type(trans) == type(X) or isinstance(trans, np.ndarray)
+        assert isinstance(sc, float)
