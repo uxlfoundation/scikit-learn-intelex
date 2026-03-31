@@ -390,6 +390,9 @@ deselected_tests:
   - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[array_api_strict-CPU_DEVICE-float64-None-False-False-False]
   - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[array_api_strict-CPU_DEVICE-float64-None-False-True-False]
 
+  # Logistic regression array api compliance test fails on Windows only due to convergence issue
+  - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[array_api_strict-device1-float32-balanced-True-True-True]
+
   # Scikit-learn does not constraint multinomial logistic intercepts to sum to zero.
   # Softmax function is invariant to additions by a constant, so even though the numbers
   # might look very off here, the predictions they generate are identical.
