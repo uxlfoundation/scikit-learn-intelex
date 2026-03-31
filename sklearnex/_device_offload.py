@@ -185,6 +185,16 @@ def wrap_output_data(func: Callable) -> Callable:
         result = func(self, *args, **kwargs)
         # In case ARRAY API is enabled the result is already converted to the required type
         if _array_api_offload() and get_tags(self).onedal_array_api:
+            if func.__name__ in ("transform", "fit_transform") and (
+                get_config().get("transform_output")
+                not in (
+                    "default",
+                    None,
+                )
+                or getattr(self, "_sklearn_output_config", {}).get("transform", "default")
+                != "default"
+            ):
+                _, (result,) = _transfer_to_host(result)
             return result
         if not (len(args) == 0 and len(kwargs) == 0):
             data = (*args, *kwargs.values())[0]
