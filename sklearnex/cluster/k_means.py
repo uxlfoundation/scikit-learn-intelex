@@ -31,7 +31,6 @@ if daal_check_version((2023, "P", 200)):
     )
     from sklearn.utils._openmp_helpers import _openmp_effective_n_threads
     from sklearn.utils.validation import (
-        _check_sample_weight,
         _num_samples,
         check_is_fitted,
     )
@@ -279,26 +278,12 @@ if daal_check_version((2023, "P", 200)):
         def _validate_sample_weight(self, sample_weight, X):
             if sample_weight is None:
                 return True
-            elif isinstance(sample_weight, numbers.Number) or isinstance(
+            if isinstance(sample_weight, numbers.Number) or isinstance(
                 sample_weight, str
             ):
                 return True
-            else:
-                try:
-                    xp, _ = get_namespace(sample_weight)
-                    sample_weight = _check_sample_weight(
-                        sample_weight,
-                        X,
-                        dtype=X.dtype if hasattr(X, "dtype") else None,
-                    )
-                    if xp.all(sample_weight == sample_weight[0]):
-                        return True
-                    else:
-                        return False
-                except TypeError:
-                    # GPU arrays (dpctl/dpnp) cannot be implicitly converted
-                    # to numpy; reject non-uniform weights for safety.
-                    return False
+            xp, _ = get_namespace(sample_weight)
+            return bool(xp.all(sample_weight == sample_weight[0]))
 
         def _onedal_predict_supported(self, method_name, *data):
             class_name = self.__class__.__name__
