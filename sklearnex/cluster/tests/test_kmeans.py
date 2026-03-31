@@ -15,6 +15,8 @@
 # ===============================================================================
 
 import numpy as np
+import pandas as pd
+import polars as pl
 import pytest
 from numpy.testing import assert_allclose
 from scipy.sparse import csr_matrix
@@ -28,6 +30,7 @@ from onedal.tests.utils._dataframes_support import (
     get_queues,
 )
 from sklearnex import config_context
+from sklearnex.cluster import KMeans
 from sklearnex.tests.utils import _IS_INTEL
 
 
@@ -161,10 +164,6 @@ def test_dense_vs_sparse(queue, init, algorithm, dims):
 @pytest.mark.parametrize("transform_output", ["polars", "pandas"])
 def test_transform_output_torch(output_format, transform_output):
     torch = pytest.importorskip("torch")
-    import pandas as pd
-    import polars as pl
-
-    from sklearnex.cluster import KMeans
 
     X_np = generate_dense_dataset(200, 10, 0.5, 3)
     X_torch = torch.tensor(X_np, device="cpu")
@@ -187,11 +186,6 @@ def test_transform_output_torch(output_format, transform_output):
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 @pytest.mark.parametrize("transform_output", ["polars", "pandas"])
 def test_transform_output_gpu(dataframe, queue, transform_output):
-    import pandas as pd
-    import polars as pl
-
-    from sklearnex.cluster import KMeans
-
     X_np = generate_dense_dataset(200, 10, 0.5, 3)
     X = _convert_to_dataframe(X_np, sycl_queue=queue, target_df=dataframe)
 
@@ -204,10 +198,15 @@ def test_transform_output_gpu(dataframe, queue, transform_output):
     assert isinstance(result, expected_type)
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-def test_dpnp_array_api_dispatch(dataframe, queue):
-    from sklearnex.cluster import KMeans
-
+@pytest.mark.parametrize(
+    "dataframe,queue",
+    [
+        item
+        for item in get_dataframes_and_queues()
+        if item.values[0] in ("dpnp", "dpctl", "array_api")
+    ],
+)
+def test_array_api_dispatch_output_type(dataframe, queue):
     X_np = generate_dense_dataset(200, 10, 0.5, 3)
     X = _convert_to_dataframe(X_np, sycl_queue=queue, target_df=dataframe)
 
@@ -218,6 +217,7 @@ def test_dpnp_array_api_dispatch(dataframe, queue):
         trans = km.transform(X)
         sc = km.score(X)
 
-        assert type(pred) == type(X) or isinstance(pred, np.ndarray)
-        assert type(trans) == type(X) or isinstance(trans, np.ndarray)
+        assert type(pred) == type(X)
+        assert type(trans) == type(X)
+        assert type(km.cluster_centers_) == type(X)
         assert isinstance(sc, float)

@@ -546,7 +546,7 @@ if daal_check_version((2023, "P", 200)):
             self.n_features_in_ = self._onedal_estimator.n_features_in_
 
             xp, _ = get_namespace(self.labels_)
-            distinct_clusters = len(xp.unique_values(self.labels_))
+            distinct_clusters = xp.unique_values(self.labels_).shape[0]
             if distinct_clusters < self.n_clusters:
                 warnings.warn(
                     "Number of distinct clusters ({}) found smaller than "
