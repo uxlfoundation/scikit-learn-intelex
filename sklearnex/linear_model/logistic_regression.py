@@ -25,7 +25,6 @@ from onedal._device_offload import support_input_format
 from ..base import oneDALEstimator
 
 if daal_check_version((2024, "P", 1)):
-    import numpy as np
     from sklearn.linear_model import LogisticRegression as _sklearn_LogisticRegression
     from sklearn.metrics import accuracy_score
     from sklearn.utils.multiclass import type_of_target
@@ -399,7 +398,7 @@ if daal_check_version((2024, "P", 1)):
                 return self._onedal_cpu_fit(X, y, sample_weight)
             assert sample_weight is None
             xp, _ = get_namespace(X)
-            xp_y, _ = get_namespace(y)
+            xp_y, is_array_api_compliant_y = get_namespace(y)
 
             use_raw_input = get_config().get("use_raw_input", False) is True
             if not use_raw_input:
@@ -412,7 +411,11 @@ if daal_check_version((2024, "P", 1)):
                     dtype=[xp.float64, xp.float32],
                 )
 
-            self.classes_ = xp_y.unique_values(y)
+            self.classes_ = (
+                xp_y.unique_values(y)
+                if is_array_api_compliant_y
+                else xp_y.unique(xp_y.asarray(y))
+            )
 
             # Only binary labels are supported, we don't need to use LabelEncoder
             y_bin = xp.asarray(
