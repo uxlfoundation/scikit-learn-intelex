@@ -236,12 +236,11 @@ def wrap_output_data(func: Callable) -> Callable:
                 if hasattr(data, "dtype"):
                     xp, is_array_api = get_namespace(data)
                     if is_array_api and not _is_numpy_namespace(xp):
+                        device = getattr(data, "device", None)
                         if isinstance(result, tuple):
-                            result = tuple(
-                                xp.asarray(r, device=data.device) for r in result
-                            )
+                            result = tuple(xp.asarray(r, device=device) for r in result)
                         elif not isinstance(result, (int, float)):
-                            result = xp.asarray(result, device=data.device)
+                            result = xp.asarray(result, device=device)
         return result
 
     return wrapper
