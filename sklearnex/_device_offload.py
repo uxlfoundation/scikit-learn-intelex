@@ -185,6 +185,9 @@ def wrap_output_data(func: Callable) -> Callable:
         result = func(self, *args, **kwargs)
         # In case ARRAY API is enabled the result is already converted to the required type
         if _array_api_offload() and get_tags(self).onedal_array_api:
+            # When transform_output is polars/pandas, sklearn's _set_output
+            # wrapper calls pl.DataFrame(result) which can't handle GPU arrays.
+            # Transfer to host so sklearn can wrap into the requested format.
             if func.__name__ in ("transform", "fit_transform") and (
                 get_config().get("transform_output")
                 not in (
@@ -198,6 +201,9 @@ def wrap_output_data(func: Callable) -> Callable:
             return result
         if not (len(args) == 0 and len(kwargs) == 0):
             data = (*args, *kwargs.values())[0]
+            # When transform_output is polars/pandas, sklearn's _set_output
+            # wrapper calls pl.DataFrame(result) which can't handle GPU arrays.
+            # Transfer to host so sklearn can wrap into the requested format.
             if func.__name__ in ("transform", "fit_transform") and (
                 get_config().get("transform_output")
                 not in (
