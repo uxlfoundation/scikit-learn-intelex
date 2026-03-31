@@ -183,10 +183,7 @@ def test_transform_output_torch(output_format, transform_output):
     assert isinstance(result, expected_type)
 
 
-@pytest.mark.parametrize(
-    "dataframe,queue",
-    [item for item in get_dataframes_and_queues() if item.values[0] in ("numpy", "dpnp")],
-)
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("numpy,dpnp"))
 @pytest.mark.parametrize("transform_output", ["polars", "pandas"])
 def test_transform_output_gpu(dataframe, queue, transform_output):
     X_np = generate_dense_dataset(200, 10, 0.5, 3)
@@ -202,12 +199,7 @@ def test_transform_output_gpu(dataframe, queue, transform_output):
 
 
 @pytest.mark.parametrize(
-    "dataframe,queue",
-    [
-        item
-        for item in get_dataframes_and_queues()
-        if item.values[0] in ("dpnp", "dpctl", "array_api")
-    ],
+    "dataframe,queue", get_dataframes_and_queues("dpnp,dpctl,array_api")
 )
 def test_array_api_dispatch_output_type(dataframe, queue):
     X_np = generate_dense_dataset(200, 10, 0.5, 3)
