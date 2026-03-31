@@ -578,3 +578,125 @@ def test_log_proba_doesnt_return_inf(dataframe, queue):
     pred_log_proba = _as_numpy(pred_log_proba)
 
     assert not np.any(np.isinf(pred_log_proba))
+
+
+@pytest.mark.skipif(
+    not sklearn_check_version("1.5"), reason="Array API requires sklearn>=1.5"
+)
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize("y_type", ["numeric", "string"])
+@pytest.mark.allow_sklearn_fallback
+def test_array_api_logreg(dataframe, queue, y_type):
+    """Test LogisticRegression with Array API dispatch enabled.
+
+    Tests cover:
+    - GPU: dpnp/dpctl arrays with newton-cg solver
+    - CPU: dpnp/dpctl and array_api_strict arrays with lbfgs solver
+    - Both numeric and string label targets
+
+    Validates that:
+    1. No fallback to sklearn on GPU
+    2. Model attributes (coef_, intercept_, n_iter_) have correct types
+    3. All prediction methods return correct types and shapes
+    4. score returns a scalar value
+    """
+    from sklearnex.linear_model import LogisticRegression
+
+    is_gpu = queue is not None and queue.sycl_device.is_gpu
+
+    # Skip conditions based on device and array type
+    if is_gpu:
+        solver = "newton-cg"
+    else:
+        if not sklearn_check_version("1.9"):
+            pytest.skip("Array API with lbfgs on CPU requires sklearn>=1.9")
+        solver = "lbfgs"
+
+    # Generate test data
+    X, y = make_classification(n_samples=100, n_features=20, n_classes=2, random_state=42)
+
+    X_arr = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+    if y_type == "numeric":
+        y_arr = _convert_to_dataframe(y, sycl_queue=queue, target_df=dataframe)
+    else:
+        y_arr = np.take(["class_a", "class_b"], y)
+
+    # Fit model with array API dispatch enabled
+    with config_context(array_api_dispatch=True):
+        model = LogisticRegression(solver=solver).fit(X_arr, y_arr)
+
+    # 1. Check no fallback to sklearn on GPU
+    if is_gpu:
+        assert hasattr(
+            model, "_onedal_estimator"
+        ), "Model should not fall back to sklearn on GPU with array API"
+
+    # # 2. Check attributes have correct types (same as X)
+    def _check_predict_type_and_shape(
+        pred, expected_type, expected_shape, device_check=False
+    ):
+        assert (
+            type(pred).__name__ == expected_type.__name__
+        ), f"predict type {type(pred)} should match expected type {expected_type}"
+        assert (
+            pred.shape == expected_shape
+        ), f"predict shape {pred.shape} should be {expected_shape}"
+        if device_check:
+            assert getattr(pred, "device", None) == getattr(
+                X_arr, "device", None
+            ), "predict should be on same device as X_arr"
+
+    device_check = dataframe != "pandas"
+
+    coef_expected_type = type(X_arr) if dataframe != "pandas" else np.ndarray
+    _check_predict_type_and_shape(
+        model.coef_, coef_expected_type, (1, X.shape[1]), device_check
+    )
+    _check_predict_type_and_shape(
+        model.intercept_, coef_expected_type, (1,), device_check
+    )
+
+    # 3. Check predict returns correct type and shape
+    with config_context(array_api_dispatch=True):
+        pred = model.predict(X_arr)
+
+    if y_type == "numeric" and dataframe != "pandas":
+        pred_expected_type = type(y_arr)
+    else:
+        pred_expected_type = np.ndarray
+
+    _check_predict_type_and_shape(
+        pred, pred_expected_type, (X.shape[0],), device_check and (y_type == "numeric")
+    )
+
+    # 4. Check predict_proba returns correct type (same as X) and shape
+    with config_context(array_api_dispatch=True):
+        pred_proba = model.predict_proba(X_arr)
+    proba_expected_type = type(X_arr) if dataframe != "pandas" else np.ndarray
+    _check_predict_type_and_shape(
+        pred_proba, proba_expected_type, (X.shape[0], 2), device_check
+    )
+
+    # 5. Check predict_log_proba returns correct type (same as X) and shape
+    with config_context(array_api_dispatch=True):
+        pred_log_proba = model.predict_log_proba(X_arr)
+    _check_predict_type_and_shape(
+        pred_log_proba, proba_expected_type, (X.shape[0], 2), device_check
+    )
+
+    # 6. Check decision_function returns correct type (same as X) and shape
+    if dataframe != "pandas":
+        # If pandas dataframe provided as input stock sklearn throws an error because of incorrect logic
+        # of device comparison. When this issue is fixed, this condition should be removed
+        with config_context(array_api_dispatch=True):
+            dec_func = model.decision_function(X_arr)
+        _check_predict_type_and_shape(
+            dec_func, proba_expected_type, (X.shape[0],), device_check
+        )
+
+    # 7. Check score returns a scalar
+    with config_context(array_api_dispatch=True):
+        score = model.score(X_arr, y_arr)
+    assert isinstance(
+        score, (float, np.floating, np.number)
+    ), f"score should return a scalar, got type {type(score)}"

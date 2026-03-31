@@ -25,25 +25,25 @@ from onedal._device_offload import support_input_format
 from ..base import oneDALEstimator
 
 if daal_check_version((2024, "P", 1)):
-    import numpy as np
     from sklearn.linear_model import LogisticRegression as _sklearn_LogisticRegression
     from sklearn.metrics import accuracy_score
     from sklearn.utils.multiclass import type_of_target
-    from sklearn.utils.validation import check_is_fitted
+    from sklearn.utils.validation import _num_samples, check_is_fitted
 
     from daal4py.sklearn._n_jobs_support import control_n_jobs
-    from daal4py.sklearn._utils import is_sparse
+    from daal4py.sklearn._utils import check_is_array_api, is_sparse
     from daal4py.sklearn.linear_model.logistic_path import daal4py_fit, daal4py_predict
     from onedal.linear_model import LogisticRegression as onedal_LogisticRegression
-    from onedal.utils.validation import _num_samples
 
     from .._config import get_config
     from .._device_offload import dispatch, wrap_output_data
     from .._utils import PatchingConditionsChain, get_patch_message
+    from ..utils._array_api import enable_array_api, get_namespace
     from ..utils.validation import validate_data
 
     _sparsity_enabled = daal_check_version((2024, "P", 700))
 
+    @enable_array_api("1.5")  # validate_data y_numeric requires sklearn >=1.5
     @control_n_jobs(
         decorated_methods=[
             "fit",
@@ -137,22 +137,33 @@ if daal_check_version((2024, "P", 1)):
                     l1_ratio=l1_ratio,
                 )
 
+        _onedal_LogisticRegression = staticmethod(onedal_LogisticRegression)
         _onedal_cpu_fit = daal4py_fit
+
         decision_function = support_input_format(
             _sklearn_LogisticRegression.decision_function
         )
 
         def _onedal_gpu_save_attributes(self):
             assert hasattr(self, "_onedal_estimator")
-            self.classes_ = self._onedal_estimator.classes_
             self.coef_ = self._onedal_estimator.coef_
             self.intercept_ = self._onedal_estimator.intercept_
             self.n_features_in_ = self._onedal_estimator.n_features_in_
-            self.n_iter_ = self._onedal_estimator.n_iter_
+            xp, _ = get_namespace(self.coef_)
+
+            # Note that here additional transfer from CPU to GPU happens, however it is required for conformance with sklearn API
+            self.n_iter_ = xp.asarray(
+                self._onedal_estimator.n_iter_,
+                device=getattr(self.coef_, "device", None),
+                dtype=xp.int32,
+            )
 
         def fit(self, X, y, sample_weight=None):
             if sklearn_check_version("1.2"):
                 self._validate_params()
+
+            if hasattr(self, "_onedal_estimator"):
+                del self._onedal_estimator
             dispatch(
                 self,
                 "fit",
@@ -234,6 +245,10 @@ if daal_check_version((2024, "P", 1)):
             )
 
         def _onedal_score(self, X, y, sample_weight=None, queue=None):
+            if "spmd" in self._onedal_LogisticRegression.__module__:
+                raise RuntimeError(
+                    "score method is not supported for LogisticRegression SPMD estimator."
+                )
             return accuracy_score(
                 y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
             )
@@ -242,7 +257,7 @@ if daal_check_version((2024, "P", 1)):
             assert method_name == "fit"
             assert len(data) == 3
             X, y, sample_weight = data
-
+            xp_y, is_array_api_compliant_y = get_namespace(y)
             class_name = self.__class__.__name__
             patching_status = PatchingConditionsChain(
                 f"sklearn.linear_model.{class_name}.fit"
@@ -285,6 +300,15 @@ if daal_check_version((2024, "P", 1)):
                         target_type == "binary",
                         "Only binary classification is supported",
                     ),
+                    (
+                        (
+                            xp_y.unique_values(y)
+                            if is_array_api_compliant_y
+                            else xp_y.unique(xp_y.asarray(y))
+                        ).shape[0]
+                        == 2,
+                        "Number of classes must be equal to 2.",
+                    ),
                 ]
             )
 
@@ -303,7 +327,6 @@ if daal_check_version((2024, "P", 1)):
             patching_status = PatchingConditionsChain(
                 f"sklearn.linear_model.{class_name}.{method_name}"
             )
-
             n_samples = _num_samples(data[0])
             dal_ready = patching_status.and_conditions(
                 [
@@ -339,10 +362,18 @@ if daal_check_version((2024, "P", 1)):
 
         def _onedal_cpu_supported(self, method_name, *data):
             class_name = self.__class__.__name__
-            patching_status = PatchingConditionsChain(
-                f"sklearn.linear_model.{class_name}.{method_name}"
-            )
 
+            patching_status = PatchingConditionsChain(
+                f"sklearn.linear_model.{class_name}.{method_name}",
+            )
+            dal_ready = patching_status.and_conditions(
+                [
+                    (
+                        not check_is_array_api(data[0]),
+                        "Array API inputs not supported.",
+                    )
+                ]
+            )
             return patching_status
 
         def _onedal_gpu_initialize_estimator(self):
@@ -353,26 +384,47 @@ if daal_check_version((2024, "P", 1)):
                 "solver": self.solver,
                 "max_iter": self.max_iter,
             }
-            self._onedal_estimator = onedal_LogisticRegression(**onedal_params)
+            self._onedal_estimator = self._onedal_LogisticRegression(**onedal_params)
 
         def _onedal_fit(self, X, y, sample_weight=None, queue=None):
             if queue is None or queue.sycl_device.is_cpu:
+                # We don't use onedal backend for CPU, so we need an additional check here
+                if "spmd" in self._onedal_LogisticRegression.__module__:
+                    raise RuntimeError(
+                        "Executing functions from SPMD backend requires a queue"
+                    )
+
+                # TODO add array-api support for CPU
                 return self._onedal_cpu_fit(X, y, sample_weight)
-
             assert sample_weight is None
+            xp, _ = get_namespace(X)
+            xp_y, is_array_api_compliant_y = get_namespace(y)
 
-            X, y = validate_data(
-                self,
-                X,
-                y,
-                accept_sparse=_sparsity_enabled,
-                accept_large_sparse=_sparsity_enabled,
-                dtype=[np.float64, np.float32],
+            use_raw_input = get_config().get("use_raw_input", False) is True
+            if not use_raw_input:
+                X, y = validate_data(
+                    self,
+                    X,
+                    y,
+                    accept_sparse=_sparsity_enabled,
+                    accept_large_sparse=_sparsity_enabled,
+                    dtype=[xp.float64, xp.float32],
+                )
+
+            self.classes_ = (
+                xp_y.unique_values(y)
+                if is_array_api_compliant_y
+                else xp_y.unique(xp_y.asarray(y))
+            )
+
+            # Only binary labels are supported, we don't need to use LabelEncoder
+            y_bin = xp.asarray(
+                y == self.classes_[1], dtype=xp.int32, device=getattr(X, "device", None)
             )
 
             self._onedal_gpu_initialize_estimator()
             try:
-                self._onedal_estimator.fit(X, y, queue=queue)
+                self._onedal_estimator.fit(X, y_bin, queue=queue)
                 self._onedal_gpu_save_attributes()
             except RuntimeError as err:
                 if get_config()["allow_sklearn_after_onedal"]:
@@ -381,7 +433,8 @@ if daal_check_version((2024, "P", 1)):
                         f"{self.__class__.__name__}.fit "
                         + get_patch_message("sklearn_after_onedal")
                     )
-
+                    msg = f"Sklearnex LogisticRegression estimator failed with error: {err}, falling back to sklearn implementation."
+                    logging.warning(msg)
                     del self._onedal_estimator
                     super().fit(X, y)
                 else:
@@ -389,66 +442,118 @@ if daal_check_version((2024, "P", 1)):
 
         def _onedal_predict(self, X, queue=None):
             if queue is None or queue.sycl_device.is_cpu:
+                # We don't use onedal backend for CPU, so we need an additional check here
+                if "spmd" in self._onedal_LogisticRegression.__module__:
+                    raise RuntimeError(
+                        "Executing functions from SPMD backend requires a queue"
+                    )
+
+                # TODO add array-api support for CPU
                 return daal4py_predict(self, X, "computeClassLabels")
 
-            X = validate_data(
-                self,
-                X,
-                reset=False,
-                accept_sparse=_sparsity_enabled,
-                accept_large_sparse=_sparsity_enabled,
-                dtype=[np.float64, np.float32],
-            )
+            xp, _ = get_namespace(X)
+            xp_y, _ = get_namespace(self.classes_)
+            use_raw_input = get_config().get("use_raw_input", False) is True
+            if not use_raw_input:
+                X = validate_data(
+                    self,
+                    X,
+                    reset=False,
+                    accept_sparse=_sparsity_enabled,
+                    accept_large_sparse=_sparsity_enabled,
+                    dtype=[xp.float64, xp.float32],
+                )
 
             assert hasattr(self, "_onedal_estimator")
-            return self._onedal_estimator.predict(X, queue=queue)
+
+            # res will be the same datatype as self.classes_
+            res = self._onedal_estimator.predict(X, queue=queue, classes=self.classes_)
+
+            # We need this step for case where custom labels were used, e.g. np.array(['a', 'b'])
+            y = xp_y.take(self.classes_, xp_y.reshape(res, (-1,)), axis=0)
+
+            return y
 
         def _onedal_predict_proba(self, X, queue=None):
             if queue is None or queue.sycl_device.is_cpu:
+                # We don't use onedal backend for CPU, so we need an additional check here
+                if "spmd" in self._onedal_LogisticRegression.__module__:
+                    raise RuntimeError(
+                        "Executing functions from SPMD backend requires a queue"
+                    )
+
+                # TODO add array-api support for CPU
                 return daal4py_predict(self, X, "computeClassProbabilities")
 
-            X = validate_data(
-                self,
-                X,
-                reset=False,
-                accept_sparse=_sparsity_enabled,
-                accept_large_sparse=_sparsity_enabled,
-                dtype=[np.float64, np.float32],
-            )
+            xp, _ = get_namespace(X)
+            use_raw_input = get_config().get("use_raw_input", False) is True
+            if not use_raw_input:
+                X = validate_data(
+                    self,
+                    X,
+                    reset=False,
+                    accept_sparse=_sparsity_enabled,
+                    accept_large_sparse=_sparsity_enabled,
+                    dtype=[xp.float64, xp.float32],
+                )
 
             assert hasattr(self, "_onedal_estimator")
-            return self._onedal_estimator.predict_proba(X, queue=queue)
+            res = self._onedal_estimator.predict_proba(X, queue=queue)
+            y = xp.reshape(res, (-1,))
+            return xp.stack([1 - y, y], axis=1)
 
         def _onedal_predict_log_proba(self, X, queue=None):
             if queue is None or queue.sycl_device.is_cpu:
+                # We don't use onedal backend for CPU, so we need an additional check here
+                if "spmd" in self._onedal_LogisticRegression.__module__:
+                    raise RuntimeError(
+                        "Executing functions from SPMD backend requires a queue"
+                    )
+
+                # TODO add array-api support for CPU
                 return daal4py_predict(self, X, "computeClassLogProbabilities")
 
-            X = validate_data(
-                self,
-                X,
-                reset=False,
-                accept_sparse=_sparsity_enabled,
-                accept_large_sparse=_sparsity_enabled,
-                dtype=[np.float64, np.float32],
-            )
+            y_proba = self._onedal_predict_proba(X, queue)
+            xp, _ = get_namespace(X)
 
-            assert hasattr(self, "_onedal_estimator")
-            return self._onedal_estimator.predict_log_proba(X, queue=queue)
+            if y_proba.dtype == xp.float32:
+                min_prob = 1e-7
+                max_prob = 1.0 - 1e-7
+            else:
+                min_prob = 1e-15
+                max_prob = 1.0 - 1e-15
+
+            y_proba = xp.clip(y_proba, min_prob, max_prob)
+            return xp.log(y_proba)
 
         def _onedal_decision_function(self, X, queue=None):
             if queue is None or queue.sycl_device.is_cpu:
+                # We don't use onedal backend for CPU, so we need an additional check here
+                if "spmd" in self._onedal_LogisticRegression.__module__:
+                    raise RuntimeError(
+                        "Executing functions from SPMD backend requires a queue"
+                    )
+                # TODO add array-api support for CPU
                 return super().decision_function(X)
-            X = validate_data(
-                self,
-                X,
-                reset=False,
-                accept_sparse=_sparsity_enabled,
-                accept_large_sparse=_sparsity_enabled,
-                dtype=[np.float64, np.float32],
-            )
+
+            xp, _ = get_namespace(X)
+            use_raw_input = get_config().get("use_raw_input", False) is True
+            if not use_raw_input:
+                X = validate_data(
+                    self,
+                    X,
+                    reset=False,
+                    accept_sparse=_sparsity_enabled,
+                    accept_large_sparse=_sparsity_enabled,
+                    dtype=[xp.float64, xp.float32],
+                )
 
             assert hasattr(self, "_onedal_estimator")
-            return self._onedal_estimator.decision_function(X, queue=queue)
+
+            raw = xp.matmul(X, xp.reshape(self.coef_, (-1,)))
+            if self.fit_intercept:
+                raw += self.intercept_
+            return raw
 
         fit.__doc__ = _sklearn_LogisticRegression.fit.__doc__
         predict.__doc__ = _sklearn_LogisticRegression.predict.__doc__
