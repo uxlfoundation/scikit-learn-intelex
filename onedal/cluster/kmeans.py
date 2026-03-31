@@ -284,20 +284,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         self.model_ = best_model
         self.n_iter_ = best_n_iter
         self.inertia_ = best_inertia
-        # from_table without like= returns numpy (needed for np.unique check below)
-        _labels_np = from_table(best_labels).ravel()
         self.labels_ = from_table(best_labels, like=X)[:, 0]
-
-        distinct_clusters = len(np.unique(_labels_np))
-        if distinct_clusters < self.n_clusters:
-            warnings.warn(
-                "Number of distinct clusters ({}) found smaller than n_clusters ({}). "
-                "Possibly due to duplicate points in X.".format(
-                    distinct_clusters, self.n_clusters
-                ),
-                ConvergenceWarning,
-                stacklevel=2,
-            )
         return self
 
     @property

@@ -25,6 +25,7 @@ if daal_check_version((2023, "P", 200)):
 
     import numpy as np
     from sklearn.cluster import KMeans as _sklearn_KMeans
+    from sklearn.exceptions import ConvergenceWarning
     from sklearn.metrics.pairwise import (
         euclidean_distances as _sklearn_euclidean_distances,
     )
@@ -543,6 +544,17 @@ if daal_check_version((2023, "P", 200)):
             self.inertia_ = self._onedal_estimator.inertia_
             self.n_iter_ = self._onedal_estimator.n_iter_
             self.n_features_in_ = self._onedal_estimator.n_features_in_
+
+            xp, _ = get_namespace(self.labels_)
+            distinct_clusters = len(xp.unique_values(self.labels_))
+            if distinct_clusters < self.n_clusters:
+                warnings.warn(
+                    "Number of distinct clusters ({}) found smaller than "
+                    "n_clusters ({}). Possibly due to duplicate points "
+                    "in X.".format(distinct_clusters, self.n_clusters),
+                    ConvergenceWarning,
+                    stacklevel=2,
+                )
 
         fit.__doc__ = _sklearn_KMeans.fit.__doc__
         predict.__doc__ = _sklearn_KMeans.predict.__doc__
