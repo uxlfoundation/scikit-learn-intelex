@@ -158,7 +158,10 @@ if daal_check_version((2023, "P", 200)):
             return self
 
         def _resolve_n_init(self, default_n_init=10):
-            """Resolve n_init parameter from 'auto'/'warn' to integer value."""
+            """Resolve n_init from 'auto'/'warn' to integer.
+
+            Adapted from sklearn.cluster._kmeans._BaseKMeans._check_params.
+            """
             n_init = self.n_init
             if isinstance(n_init, str) and n_init in ("auto", "warn"):
                 if isinstance(self.init, str) and self.init == "k-means++":
