@@ -71,7 +71,6 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
     @bind_default_backend("kmeans.clustering")
     def infer(self, params, model, X_table): ...
 
-
     def _get_basic_statistics_backend(self, result_options):
         return BasicStatistics(result_options)
 
@@ -176,7 +175,6 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
 
         return to_table(centers, queue=getattr(QM.get_global_queue(), "_queue", None))
 
-
     def _fit_backend(self, X_table, centroids_table, dtype=np.float32, is_csr=False):
         params = self._get_onedal_params(is_csr, dtype)
         result = self.train(params, X_table, centroids_table)
@@ -192,7 +190,6 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
             is_csr=False, dtype=X_table.dtype, result_options=result_options
         )
         return self.infer(params, self.model_, X_table)
-
 
     @supports_queue
     def fit(self, X, y=None, queue=None):
