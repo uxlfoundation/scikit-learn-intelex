@@ -266,6 +266,10 @@ if daal_check_version((2023, "P", 200)):
             self._save_attributes()
 
         def _validate_sample_weight(self, sample_weight, X):
+            # Uses xp ops instead of sklearn's _check_sample_weight which
+            # doesn't support array API inputs (fails for dpnp/GPU arrays).
+            # Only checks if weights are uniform since oneDAL requires
+            # None or uniform weights.
             if sample_weight is None:
                 return True
             if isinstance(sample_weight, numbers.Number) or isinstance(
