@@ -62,8 +62,6 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         self.n_local_trials = n_local_trials
         self.algorithm = algorithm
 
-    # --- pybind11 backends (thin proxies) ---
-
     @bind_default_backend("kmeans_common", no_policy=True)
     def _is_same_clustering(self, labels, best_labels, n_clusters): ...
 
@@ -73,7 +71,6 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
     @bind_default_backend("kmeans.clustering")
     def infer(self, params, model, X_table): ...
 
-    # --- helpers matching the pattern ---
 
     def _get_basic_statistics_backend(self, result_options):
         return BasicStatistics(result_options)
@@ -182,7 +179,6 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
 
         return to_table(centers, queue=getattr(QM.get_global_queue(), "_queue", None))
 
-    # --- core train/infer wrappers in the estimator pattern ---
 
     def _fit_backend(self, X_table, centroids_table, dtype=np.float32, is_csr=False):
         params = self._get_onedal_params(is_csr, dtype)
@@ -200,7 +196,6 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         )
         return self.infer(params, self.model_, X_table)
 
-    # --- public API matched to the pattern ---
 
     @supports_queue
     def fit(self, X, y=None, queue=None):
