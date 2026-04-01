@@ -189,19 +189,6 @@ if daal_check_version((2023, "P", 200)):
 
             return n_init
 
-        def _validate_center_shape(self, X, centers):
-            """Validate that init centers have correct shape."""
-            if centers.shape[0] != self.n_clusters:
-                raise ValueError(
-                    f"The shape of the initial centers {centers.shape} does not "
-                    f"match the number of clusters {self.n_clusters}."
-                )
-            if centers.shape[1] != X.shape[1]:
-                raise ValueError(
-                    f"The shape of the initial centers {centers.shape} does not "
-                    f"match the number of features of the data {X.shape[1]}."
-                )
-
         def _onedal_fit(self, X, _, sample_weight, queue=None):
 
             xp, _ = get_namespace(X)
