@@ -144,10 +144,7 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         centers = alg.compute_raw(X_table, dtype, queue=QM.get_global_queue())
         return centers
 
-    def _init_centroids_sklearn(self, X, init, random_state, dtype=None):
-        if dtype is None:
-            dtype = np.float32
-
+    def _init_centroids_sklearn(self, X, init, random_state, dtype=np.float32):
         n_samples = X.shape[0]
         if isinstance(init, str) and init == "k-means++":
             centers, _ = _kmeans_plusplus(X, self.n_clusters, random_state=random_state)
