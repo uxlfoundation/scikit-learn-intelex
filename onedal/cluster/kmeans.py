@@ -204,17 +204,17 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
         self._compute_tolerance(X_table, is_csr, dtype)
         self.n_features_in_ = X_table.column_count
 
-        best_model = best_labels = None
-        best_inertia = None
-        best_n_iter = None
+        best_model, best_n_iter = None, None
+        best_inertia, best_labels = None, None
 
-        def is_better(inertia, labels):
+        def is_better_iteration(inertia, labels):
             if best_inertia is None:
                 return True
-            better = inertia < best_inertia
-            return better and not self._is_same_clustering(
-                labels, best_labels, self.n_clusters
-            )
+            else:
+                better_inertia = inertia < best_inertia
+                return better_inertia and not self._is_same_clustering(
+                    labels, best_labels, self.n_clusters
+                )
 
         random_state = check_random_state(self.random_state)
 
@@ -261,16 +261,16 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
             if self.verbose:
                 print("Initialization complete")
 
-            labels_t, inertia, model, n_iter = self._fit_backend(
+            labels, inertia, model, n_iter = self._fit_backend(
                 X_table, centroids_table, dtype, is_csr
             )
 
             if self.verbose:
-                print(f"Iteration {n_iter}, inertia {inertia}.")
+                print("Iteration {}, inertia {}.".format(n_iter, inertia))
 
-            if is_better(inertia, labels_t):
+            if is_better_iteration(inertia, labels):
                 best_model, best_n_iter = model, n_iter
-                best_inertia, best_labels = inertia, labels_t
+                best_inertia, best_labels = inertia, labels
 
         # assign learned attributes (pattern)
         self.model_ = best_model
