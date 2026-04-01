@@ -185,9 +185,9 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
             result.iteration_count,
         )
 
-    def _predict_backend(self, X_table, result_options=None):
+    def _predict_backend(self, X, X_table, result_options=None):
         params = self._get_onedal_params(
-            is_csr=False, dtype=X_table.dtype, result_options=result_options
+            is_csr=_is_csr(X), dtype=X_table.dtype, result_options=result_options
         )
         return self.infer(params, self.model_, X_table)
 
@@ -305,14 +305,14 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
     @supports_queue
     def predict(self, X, queue=None):
         X_table = to_table(X, queue=queue)
-        result = self._predict_backend(X_table)
+        result = self._predict_backend(X, X_table)
         return from_table(result.responses, like=X)[:, 0]
 
     @supports_queue
     def score(self, X, queue=None):
         X_table = to_table(X, queue=queue)
         result = self._predict_backend(
-            X_table, result_options="compute_exact_objective_function"
+            X, X_table, result_options="compute_exact_objective_function"
         )
         return -1 * result.objective_function_value
 
