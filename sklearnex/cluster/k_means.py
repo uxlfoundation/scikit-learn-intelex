@@ -31,7 +31,6 @@ if daal_check_version((2023, "P", 200)):
     )
     from sklearn.utils._openmp_helpers import _openmp_effective_n_threads
     from sklearn.utils.validation import (
-        _check_sample_weight,
         _num_samples,
         check_is_fitted,
     )
@@ -267,6 +266,11 @@ if daal_check_version((2023, "P", 200)):
             self._save_attributes()
 
         def _validate_sample_weight(self, sample_weight, X):
+            """Check if sample_weight is acceptable for oneDAL.
+
+            oneDAL only supports None or uniform weights. Validates shape
+            and uniformity using xp ops for array API compatibility.
+            """
             if sample_weight is None:
                 return True
             if isinstance(sample_weight, numbers.Number) or isinstance(
@@ -274,23 +278,13 @@ if daal_check_version((2023, "P", 200)):
             ):
                 return True
             try:
-                # Use sklearn's _check_sample_weight for shape/type validation,
-                # then check if weights are uniform (oneDAL only supports
-                # None or uniform weights).
-                sample_weight = _check_sample_weight(
-                    sample_weight,
-                    X,
-                    dtype=X.dtype if hasattr(X, "dtype") else None,
-                )
-                return bool(np.all(sample_weight == sample_weight[0]))
-            except TypeError:
-                # GPU arrays (dpnp/dpctl) can't be converted by
-                # _check_sample_weight. Use xp ops directly.
-                try:
-                    xp, _ = get_namespace(sample_weight)
-                    return bool(xp.all(sample_weight == sample_weight[0]))
-                except (TypeError, IndexError):
+                xp, _ = get_namespace(sample_weight)
+                sw = xp.asarray(sample_weight)
+                if sw.ndim != 1 or sw.shape[0] != X.shape[0]:
                     return False
+                return bool(xp.all(sw == sw[0]))
+            except (TypeError, IndexError, AttributeError, ValueError):
+                return False
 
         def _onedal_predict_supported(self, method_name, *data):
             class_name = self.__class__.__name__
