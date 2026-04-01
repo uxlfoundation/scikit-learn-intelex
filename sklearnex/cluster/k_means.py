@@ -282,7 +282,7 @@ if daal_check_version((2023, "P", 200)):
                 sw = xp.asarray(sample_weight)
                 if sw.ndim != 1 or sw.shape[0] != X.shape[0]:
                     return False
-                return bool(xp.all(sw == sw[0]))
+                return bool(xp.all(sw == sw[0])) and (sw[0] != 0)
             except (TypeError, IndexError, AttributeError, ValueError):
                 return False
 
