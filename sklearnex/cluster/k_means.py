@@ -278,8 +278,10 @@ if daal_check_version((2023, "P", 200)):
                 return True
             try:
                 xp, _ = get_namespace(sample_weight)
+                if sample_weight.shape[0] != X.shape[0]:
+                    return False
                 return bool(xp.all(sample_weight == sample_weight[0]))
-            except (TypeError, IndexError):
+            except (TypeError, IndexError, AttributeError):
                 return False
 
         def _onedal_predict_supported(self, method_name, *data):
