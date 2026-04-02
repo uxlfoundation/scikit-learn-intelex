@@ -22,45 +22,40 @@ GPU support
 Overview
 --------
 
-|sklearnex| can execute computations on different devices (CPUs and GPUs, including integrated GPUs from laptops and desktops) supported by the SYCL framework.
+|sklearnex| can execute computations on different devices (CPUs and GPUs, including integrated GPUs from laptops and desktops) supported by the SYCL framework. To execute computations on GPUs, an additional package ``scikit-learn-intelex-gpu`` is required. This package is distributed through the same channels as the regular ``scikit-learn-intelex`` - to install:
 
-The device used for computations can be easily controlled through the ``target_offload`` option in config contexts, which moves data to GPU if it's not already there - see :doc:`config-contexts` and the rest of this page for more details).
+.. tabs::
+
+    .. tab:: From PyPI
+
+        .. code-block::
+
+            pip install scikit-learn-intelex-gpu
+
+    .. tab:: From conda-forge
+
+        .. code-block::
+
+            conda install -c conda-forge scikit-learn-intelex-gpu
+
+Note that ``scikit-learn-intelex-gpu`` does not bring additional modules - it is meant to be used through the same functions and classes from the ``sklearnex`` module that run on CPU by default.
+
+After installing said package, the device used for computations can be easily controlled through the ``target_offload`` option in config contexts, which moves data to GPU if it's not already there - see :doc:`config-contexts` and the rest of this page for more details).
 
 For finer-grained control (e.g. operating on arrays that are already in a given device's memory), it can also interact with on-device :ref:`array API classes <array_api>` like |dpnp_array|, and with SYCL-related objects from package |dpctl| such as :obj:`dpctl.SyclQueue`.
 
 .. Note:: Note that not every operation from every estimator is supported on GPU - see the :ref:`GPU support table <sklearn_algorithms_gpu>` for more information. See also :doc:`verbose` to verify where computations are performed.
 
-.. important:: Be aware that GPU usage requires non-Python dependencies on your system, such as the `Intel(R) Compute Runtime <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`_ (see below).
+.. important:: Be aware that GPU usage requires the `Intel(R) Compute Runtime <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`_, which is a non-Python dependency (see below).
 
 Software Requirements
 ---------------------
 
-For execution on GPUs, DPC++ runtime and Intel Compute Runtime (also referred to elsewhere as 'GPGPU drivers') are required.
-
-DPC++ Runtime
-~~~~~~~~~~~~~
-
-DPC++ compiler runtime can be installed either from PyPI or Conda:
-
-- Install from PyPI::
-
-     pip install dpcpp-cpp-rt
-
-- Install using Conda from Intel's repository::
-
-     conda install -c https://software.repos.intel.com/python/conda/ dpcpp_cpp_rt
-
-- Install using Conda from the conda-forge channel::
-
-     conda install -c conda-forge dpcpp_cpp_rt
-
-Intel Compute Runtime
-~~~~~~~~~~~~~~~~~~~~~
+In addition to the package ``scikit-learn-intelex-gpu`` and its transitive dependencies (such as the DPC++ runtime), the Intel Compute Runtime (also referred to elsewhere as 'GPGPU drivers') is also required, but note that this is system-level software that is not installable through Python-specific package managers.
 
 On Windows, GPU drivers for iGPUs and dGPUs include the required Intel Compute Runtime. Drivers for windows can be downloaded from `this link <https://www.intel.com/content/www/us/en/download/785597/intel-arc-iris-xe-graphics-windows.html>`__.
 
 For datacenters, see further instructions `here <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/oneapi-dpcpp/2025.html#inpage-nav-2-1-1>`__.
-
 
 On Linux, some distributions - namely Ubuntu Desktop 25.04 and higher, and Fedora Workstation 42 and higher - come with the compute runtime for iGPUs and dGPUs preinstalled, while others require installing them separately.
 

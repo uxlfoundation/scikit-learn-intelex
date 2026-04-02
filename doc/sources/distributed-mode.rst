@@ -38,13 +38,6 @@ via the ``impi_rt``  / ``impi-rt`` python/conda package) and the |mpi4py| python
 
                 conda install -c conda-forge mpi4py mpi=*=impi
 
-        .. tab:: From Intel's conda channel
-            ::
-
-                conda install -c https://software.repos.intel.com/python/conda/ -c conda-forge --override-channels mpi4py mpi=*=impi
-
-            .. warning:: Packages from the Intel channel are meant to be compatible with dependencies from ``conda-forge``, and might not work correctly in environments that have packages installed from the ``anaconda`` channel.
-
         .. tab:: From PyPI
             ::
 
@@ -64,21 +57,10 @@ via the ``impi_rt``  / ``impi-rt`` python/conda package) and the |mpi4py| python
 
                 conda install -c conda-forge impi_rt mpi=*=impi
 
-        .. tab:: From Intel's conda channel
-            ::
-
-                conda install -c https://software.repos.intel.com/python/conda/ -c conda-forge --override-channels impi_rt mpi=*=impi
-
         .. tab:: From PyPI
             ::
 
                 pip install impi-rt
-
-        .. tab:: From Intel's pip Index
-            ::
-
-                pip install --index-url https://software.repos.intel.com/python/pypi impi-rt
-
 
   Using other MPI backends that are not MPICH-compatible (e.g. OpenMPI) requires building |sklearnex| from source with that backend, and using an |mpi4py| built with that same backend.
 
