@@ -122,22 +122,25 @@ def support_input_format(func):
         else:
             self = None
 
-        if len(args) == 0 and len(kwargs) == 0:
-            # no arguments, there's nothing we can deduce from them -> just call the function
-            return invoke_func(self, *args, **kwargs)
+        if "queue" not in kwargs and "queue" in inspect.signature(func).parameters:
+            if usm_iface := getattr(args[0], "__sycl_usm_array_interface__", None):
+                kwargs["queue"] = usm_iface["syclobj"]
+
+        if kwargs.get("queue") is not None:
+            # Device path — function accepts queue, pass device data directly
+            result = invoke_func(self, *args, **kwargs)
+        else:
+            # Host path — sklearn function or host data, transfer to host
+            if len(args) == 0 and len(kwargs) == 0:
+                return invoke_func(self, *args, **kwargs)
+
+            with QM.manage_global_queue(None, *args) as queue:
+                hostargs, hostkwargs = _get_host_inputs(*args, **kwargs)
+                result = invoke_func(self, *hostargs, **hostkwargs)
+                if queue and hasattr(args[0], "__sycl_usm_array_interface__"):
+                    return copy_to_dpnp(queue, result)
 
         data = (*args, *kwargs.values())[0]
-        # get and set the global queue from the kwarg or data
-        with QM.manage_global_queue(kwargs.get("queue"), *args) as queue:
-            hostargs, hostkwargs = _get_host_inputs(*args, **kwargs)
-            if "queue" in inspect.signature(func).parameters:
-                # set the queue if it's expected by func
-                hostkwargs["queue"] = queue
-            result = invoke_func(self, *hostargs, **hostkwargs)
-
-            if queue and hasattr(data, "__sycl_usm_array_interface__"):
-                return copy_to_dpnp(queue, result)
-
         if get_config().get("transform_output") in ("default", None):
             input_array_api = getattr(data, "__array_namespace__", lambda: None)()
             if input_array_api and not _is_numpy_namespace(input_array_api):

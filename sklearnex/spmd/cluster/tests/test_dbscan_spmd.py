@@ -21,6 +21,7 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
+from sklearnex import config_context
 from sklearnex.tests.utils.spmd import (
     _generate_clustering_data,
     _get_local_tensor,
@@ -69,6 +70,7 @@ def test_dbscan_spmd_gold(dataframe, queue):
     get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("array_api_dispatch", [True, False])
 @pytest.mark.mpi
 def test_dbscan_spmd_synthetic(
     n_samples,
@@ -78,6 +80,7 @@ def test_dbscan_spmd_synthetic(
     dataframe,
     queue,
     dtype,
+    array_api_dispatch,
 ):
     n_features, eps = n_features_and_eps
     # Import spmd and batch algo
@@ -93,7 +96,9 @@ def test_dbscan_spmd_synthetic(
     )
 
     # Ensure labels from fit of batch algo matches spmd
-    spmd_model = DBSCAN_SPMD(eps=eps, min_samples=min_samples).fit(local_dpt_data)
+    # Configure array API dispatch for spmd estimator
+    with config_context(array_api_dispatch=array_api_dispatch):
+        spmd_model = DBSCAN_SPMD(eps=eps, min_samples=min_samples).fit(local_dpt_data)
     batch_model = DBSCAN_Batch(eps=eps, min_samples=min_samples).fit(data)
 
     _spmd_assert_allclose(spmd_model.labels_, batch_model.labels_)

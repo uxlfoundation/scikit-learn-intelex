@@ -22,7 +22,9 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
+from sklearnex import config_context
 from sklearnex.tests.utils.spmd import (
+    _as_numpy,
     _assert_kmeans_labels_allclose,
     _assert_unordered_allclose,
     _generate_clustering_data,
@@ -108,9 +110,10 @@ def test_kmeans_spmd_gold(dataframe, queue):
     get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("array_api_dispatch", [True, False])
 @pytest.mark.mpi
 def test_kmeans_spmd_synthetic(
-    n_samples, n_features, n_clusters, dataframe, queue, dtype
+    n_samples, n_features, n_clusters, dataframe, queue, dtype, array_api_dispatch
 ):
     # Import spmd and batch algo
     from sklearnex.cluster import KMeans as KMeans_Batch
@@ -129,9 +132,11 @@ def test_kmeans_spmd_synthetic(
     )
 
     # Validate KMeans init
-    spmd_model_init = KMeans_SPMD(n_clusters=n_clusters, max_iter=1, random_state=0).fit(
-        local_dpt_X_train
-    )
+    # Configure array_api_dispatch for spmd estimator
+    with config_context(array_api_dispatch=array_api_dispatch):
+        spmd_model_init = KMeans_SPMD(
+            n_clusters=n_clusters, max_iter=1, random_state=0
+        ).fit(local_dpt_X_train)
     batch_model_init = KMeans_Batch(
         n_clusters=n_clusters, max_iter=1, random_state=0
     ).fit(X_train)
@@ -142,9 +147,13 @@ def test_kmeans_spmd_synthetic(
     spmd_model = KMeans_SPMD(
         n_clusters=n_clusters, init=spmd_model_init.cluster_centers_, random_state=0
     )
-    spmd_model.fit(local_dpt_X_train)
+    # Configure array_api_dispatch for spmd estimator
+    with config_context(array_api_dispatch=array_api_dispatch):
+        spmd_model.fit(local_dpt_X_train)
     batch_model = KMeans_Batch(
-        n_clusters=n_clusters, init=spmd_model_init.cluster_centers_, random_state=0
+        n_clusters=n_clusters,
+        init=_as_numpy(spmd_model_init.cluster_centers_),
+        random_state=0,
     ).fit(X_train)
 
     atol = 1e-5 if dtype == np.float32 else 1e-7
@@ -162,7 +171,9 @@ def test_kmeans_spmd_synthetic(
     # assert_allclose(spmd_model.n_iter_, batch_model.n_iter_, atol=1)
 
     # Ensure predictions of batch algo match spmd
-    spmd_result = spmd_model.predict(local_dpt_X_test)
+    # Configure array_api_dispatch for spmd estimator
+    with config_context(array_api_dispatch=array_api_dispatch):
+        spmd_result = spmd_model.predict(local_dpt_X_test)
     batch_result = batch_model.predict(X_test)
 
     _assert_kmeans_labels_allclose(
