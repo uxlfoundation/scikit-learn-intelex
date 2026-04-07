@@ -24,6 +24,8 @@ The |sklearnex| predominantly functions as a frontend to the |onedal| by leverag
 
 .. note:: Python packages ``dal`` (conda) and ``daal`` (PyPI) provide the same components, but due to naming availability in these repositories, they are distributed under different names.
 
+.. note:: When installing the |onedal| through ``pip`` or ``conda``, the files required for running on GPU are contained in a different package ``dal-gpu`` / ``daal-gpu``, while the standalone intallers, APT/YUM packages and others have the required files for GPU in the same package.
+
 As a library, the |sklearnex| consists of a Python codebase with Python extension modules written in C++ and Cython, with some of those modules being optional. These extension modules require compilation before being used, for which a C++ compiler along with other dependencies is required. In the case of GPU-related modules, a SYCL compiler (such as `Intel's DPC++ <https://www.intel.com/content/www/us/en/developer/tools/oneapi/dpc-compiler.html>`__) is required, and in the case of distributed mode, whether on CPU or on GPU, an MPI backend is required, such as `Intel MPI <https://www.intel.com/content/www/us/en/developer/tools/oneapi/mpi-library.html>`__.
 
 The extension modules are as follows:
@@ -246,9 +248,9 @@ The following environment variables can be used to control setup aspects:
 - ``DALROOT``: sets the |onedal| path.
 - ``MKLROOT``: path to the oneMKL runtime libraries, which are used for the DPC module. This variable is optional and only has an effect when using the option ``abs-rpath`` on Linux* (see the rest of this page for details).
 - ``MPIROOT``: sets the path to the MPI library. If this variable is not set but ``I_MPI_ROOT`` is found, will use ``I_MPI_ROOT`` instead. Not used when using ``NO_DIST=1``.
-- ``NO_DIST``: set to '1', 'yes' or alike to build without support for distributed mode.
+- ``NO_DIST``: set to '1', 'yes' or alike to build without support for distributed mode. Note that distributed mode in the ``sklearnex`` module requires building with DPC++ support.
 - ``NO_STREAM``: set to '1', 'yes' or alike to build without support for streaming mode.
-- ``NO_DPC``: set to '1', 'yes' or alike to build without support of oneDAL DPC++ interfaces.
+- ``NO_DPC``: set to '1', 'yes' or alike to build without support of the |onedal| DPC++ interfaces (GPU). Note that building the DPC++ component (default) of this library requires also the DPC++ components of the |onedal| (packages ``dal-gpu`` / ``daal-gpu`` if installing it from ``conda`` or ``pip``).
 - ``MAKEFLAGS``: the last `-j` flag determines the number of threads for building the onedal extension. It will default to the number of CPU threads when not set.
 
 .. note:: The ``-j`` flag in the ``MAKEFLAGS`` environment variable is superseded in ``setup.py`` modes which support the ``--parallel`` and ``-j`` command line flags.
