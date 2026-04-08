@@ -46,6 +46,7 @@ def is_dpctl_available(version=None):
     """
     try:
         import dpctl
+        from dpctl import SyclQueue
 
         dpctl_available = True
     except ImportError:
