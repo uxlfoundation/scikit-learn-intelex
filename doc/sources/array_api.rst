@@ -32,12 +32,18 @@ on GPU without moving the data from host to device.
     be :external+sklearn:doc:`enabled in scikit-learn <modules/array_api>`, which requires either changing
     global settings or using a :doc:`config_context <config-contexts>`.
 
+.. hint::
+    Executing computations on GPUs has additional dependencies, particularly on package ``scikit-learn-intelex-gpu`` - see
+    :doc:`oneapi-gpu` for details.
+
 When passing array API inputs whose data is on a SYCL-enabled device (e.g. an Intel GPU), as
 supported for example by `PyTorch <https://docs.pytorch.org/docs/stable/notes/get_start_xpu.html>`__
-and |dpnp|, if array API support is enabled and the requested operation (e.g. call to ``.fit()`` / ``.predict()``
+and |dpnp|, if array API support is enabled, :doc:`GPU dependencies <oneapi-gpu>` are available, and the
+requested operation (e.g. call to ``.fit()`` / ``.predict()``
 on the estimator class being used) is :ref:`supported on device/GPU <sklearn_algorithms_gpu>`, computations
-will be performed on the device where the data lives, without involving any data transfers. Note that all of
-the inputs (e.g. ``X`` and ``y`` passed to ``.fit()`` methods) must be allocated on the same device for this to
+will be performed on the device where the data lives, without involving any data transfers.
+
+Note that all of the inputs (e.g. ``X`` and ``y`` passed to ``.fit()`` methods) must be allocated on the same device for this to
 work. If the requested operation is not supported on the device where the data lives, then it will either fall
 back to |sklearn|, or to an accelerated CPU version from the |sklearnex| when supported - these are controllable
 through options ``allow_sklearn_after_onedal`` (default is ``True``) and ``allow_fallback_to_host`` (default is
