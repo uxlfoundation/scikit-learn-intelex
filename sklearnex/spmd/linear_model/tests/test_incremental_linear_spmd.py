@@ -23,6 +23,7 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
+from sklearnex import config_context
 from sklearnex.tests.utils.spmd import (
     _generate_regression_data,
     _get_local_tensor,
@@ -268,6 +269,7 @@ def test_incremental_linear_regression_fit_spmd_random(
 @pytest.mark.parametrize("num_features", [5, 10])
 @pytest.mark.parametrize("macro_block", [None, 1024])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("array_api_dispatch", [True, False])
 @pytest.mark.mpi
 def test_incremental_linear_regression_partial_fit_spmd_random(
     dataframe,
@@ -278,6 +280,7 @@ def test_incremental_linear_regression_partial_fit_spmd_random(
     num_features,
     macro_block,
     dtype,
+    array_api_dispatch,
 ):
     # Import spmd and non-SPMD algo
     from sklearnex.linear_model import IncrementalLinearRegression
@@ -324,7 +327,9 @@ def test_incremental_linear_regression_partial_fit_spmd_random(
         dpt_X = _convert_to_dataframe(X_split[i], sycl_queue=queue, target_df=dataframe)
         dpt_y = _convert_to_dataframe(y_split[i], sycl_queue=queue, target_df=dataframe)
 
-        inclin_spmd.partial_fit(local_dpt_X, local_dpt_y)
+        # Configure array API dispatch status for spmd estimator
+        with config_context(array_api_dispatch=array_api_dispatch):
+            inclin_spmd.partial_fit(local_dpt_X, local_dpt_y)
         inclin.partial_fit(dpt_X, dpt_y)
 
     assert_allclose(_as_numpy(inclin.coef_), _as_numpy(inclin_spmd.coef_), atol=tol)
@@ -333,7 +338,8 @@ def test_incremental_linear_regression_partial_fit_spmd_random(
             _as_numpy(inclin.intercept_), _as_numpy(inclin_spmd.intercept_), atol=tol
         )
 
-    y_pred_spmd = inclin_spmd.predict(dpt_X_test)
+    with config_context(array_api_dispatch=array_api_dispatch):
+        y_pred_spmd = inclin_spmd.predict(dpt_X_test)
     y_pred = inclin.predict(dpt_X_test)
 
     assert_allclose(_as_numpy(y_pred_spmd), _as_numpy(y_pred), atol=tol)

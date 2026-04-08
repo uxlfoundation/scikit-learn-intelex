@@ -352,12 +352,14 @@ def test_knnsearch_spmd_gold(dataframe, queue):
     get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("array_api_dispatch", [True, False])
 @pytest.mark.mpi
 def test_knnsearch_spmd_synthetic(
     dimensions,
     dataframe,
     queue,
     dtype,
+    array_api_dispatch,
 ):
     if dimensions["n"] > 10000 and dtype == np.float32:
         pytest.skip("Skipping large float32 test due to expected precision issues")
@@ -374,9 +376,11 @@ def test_knnsearch_spmd_synthetic(
     )
 
     # Ensure search results of batch algo match spmd
-    spmd_model = NearestNeighbors_SPMD(
-        n_neighbors=dimensions["k"], algorithm="brute"
-    ).fit(local_dpt_X_train)
+    # Configure array_api_dispatch for spmd estimator
+    with config_context(array_api_dispatch=array_api_dispatch):
+        spmd_model = NearestNeighbors_SPMD(
+            n_neighbors=dimensions["k"], algorithm="brute"
+        ).fit(local_dpt_X_train)
     batch_model = NearestNeighbors_Batch(
         n_neighbors=dimensions["k"], algorithm="brute"
     ).fit(X_train)
