@@ -19,4 +19,4 @@ treelite==4.7.0
 array-api-compat==1.14.0
 array-api-strict==2.5
 polars==1.39.3
-packaging==26.0
+packaging==26.1
