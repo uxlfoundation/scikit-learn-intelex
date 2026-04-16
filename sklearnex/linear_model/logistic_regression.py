@@ -140,10 +140,6 @@ if daal_check_version((2024, "P", 1)):
         _onedal_LogisticRegression = staticmethod(onedal_LogisticRegression)
         _onedal_cpu_fit = daal4py_fit
 
-        decision_function = support_input_format(
-            _sklearn_LogisticRegression.decision_function
-        )
-
         def _onedal_gpu_save_attributes(self):
             assert hasattr(self, "_onedal_estimator")
             self.coef_ = self._onedal_estimator.coef_
@@ -203,55 +199,62 @@ if daal_check_version((2024, "P", 1)):
                 X,
             )
 
-        @wrap_output_data
-        def predict_log_proba(self, X):
-            check_is_fitted(self)
-            return dispatch(
-                self,
-                "predict_log_proba",
-                {
-                    "onedal": self.__class__._onedal_predict_log_proba,
-                    "sklearn": _sklearn_LogisticRegression.predict_log_proba,
-                },
-                X,
-            )
+        # Note: some of these methods are implemented in pure-Python using
+        # array API. They were introduced in order to provide GPU support
+        # for methods that oneDAL didn't offer, but since the time they were
+        # introduced, scikit-learn has added array API support and these
+        # replacements are not needed anymore.
+        if not sklearn_check_version("1.9"):
 
-        @wrap_output_data
-        def decision_function(self, X):
-            check_is_fitted(self)
-            return dispatch(
-                self,
-                "decision_function",
-                {
-                    "onedal": self.__class__._onedal_decision_function,
-                    "sklearn": _sklearn_LogisticRegression.decision_function,
-                },
-                X,
-            )
-
-        @wrap_output_data
-        def score(self, X, y, sample_weight=None):
-            check_is_fitted(self)
-            return dispatch(
-                self,
-                "score",
-                {
-                    "onedal": self.__class__._onedal_score,
-                    "sklearn": _sklearn_LogisticRegression.score,
-                },
-                X,
-                y,
-                sample_weight=sample_weight,
-            )
-
-        def _onedal_score(self, X, y, sample_weight=None, queue=None):
-            if "spmd" in self._onedal_LogisticRegression.__module__:
-                raise RuntimeError(
-                    "score method is not supported for LogisticRegression SPMD estimator."
+            @wrap_output_data
+            def predict_log_proba(self, X):
+                check_is_fitted(self)
+                return dispatch(
+                    self,
+                    "predict_log_proba",
+                    {
+                        "onedal": self.__class__._onedal_predict_log_proba,
+                        "sklearn": _sklearn_LogisticRegression.predict_log_proba,
+                    },
+                    X,
                 )
-            return accuracy_score(
-                y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
-            )
+
+            @wrap_output_data
+            def decision_function(self, X):
+                check_is_fitted(self)
+                return dispatch(
+                    self,
+                    "decision_function",
+                    {
+                        "onedal": self.__class__._onedal_decision_function,
+                        "sklearn": _sklearn_LogisticRegression.decision_function,
+                    },
+                    X,
+                )
+
+            @wrap_output_data
+            def score(self, X, y, sample_weight=None):
+                check_is_fitted(self)
+                return dispatch(
+                    self,
+                    "score",
+                    {
+                        "onedal": self.__class__._onedal_score,
+                        "sklearn": _sklearn_LogisticRegression.score,
+                    },
+                    X,
+                    y,
+                    sample_weight=sample_weight,
+                )
+
+            def _onedal_score(self, X, y, sample_weight=None, queue=None):
+                if "spmd" in self._onedal_LogisticRegression.__module__:
+                    raise RuntimeError(
+                        "score method is not supported for LogisticRegression SPMD estimator."
+                    )
+                return accuracy_score(
+                    y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
+                )
 
         def _onedal_gpu_fit_supported(self, method_name, *data):
             assert method_name == "fit"
@@ -496,63 +499,70 @@ if daal_check_version((2024, "P", 1)):
             y = xp.reshape(res, (-1,))
             return xp.stack([1 - y, y], axis=1)
 
-        def _onedal_predict_log_proba(self, X, queue=None):
-            if queue is None or queue.sycl_device.is_cpu:
-                # We don't use onedal backend for CPU, so we need an additional check here
-                if "spmd" in self._onedal_LogisticRegression.__module__:
-                    raise RuntimeError(
-                        "Executing functions from SPMD backend requires a queue"
-                    )
+        if not sklearn_check_version("1.9"):
 
-                # TODO add array-api support for CPU
-                return daal4py_predict(self, X, "computeClassLogProbabilities")
+            def _onedal_predict_log_proba(self, X, queue=None):
+                if queue is None or queue.sycl_device.is_cpu:
+                    # We don't use onedal backend for CPU, so we need an additional check here
+                    if "spmd" in self._onedal_LogisticRegression.__module__:
+                        raise RuntimeError(
+                            "Executing functions from SPMD backend requires a queue"
+                        )
 
-            y_proba = self._onedal_predict_proba(X, queue)
-            xp, _ = get_namespace(X)
+                    # TODO add array-api support for CPU
+                    return daal4py_predict(self, X, "computeClassLogProbabilities")
 
-            if y_proba.dtype == xp.float32:
-                min_prob = 1e-7
-                max_prob = 1.0 - 1e-7
-            else:
-                min_prob = 1e-15
-                max_prob = 1.0 - 1e-15
+                y_proba = self._onedal_predict_proba(X, queue)
+                xp, _ = get_namespace(X)
 
-            y_proba = xp.clip(y_proba, min_prob, max_prob)
-            return xp.log(y_proba)
+                if y_proba.dtype == xp.float32:
+                    min_prob = 1e-7
+                    max_prob = 1.0 - 1e-7
+                else:
+                    min_prob = 1e-15
+                    max_prob = 1.0 - 1e-15
 
-        def _onedal_decision_function(self, X, queue=None):
-            if queue is None or queue.sycl_device.is_cpu:
-                # We don't use onedal backend for CPU, so we need an additional check here
-                if "spmd" in self._onedal_LogisticRegression.__module__:
-                    raise RuntimeError(
-                        "Executing functions from SPMD backend requires a queue"
-                    )
-                # TODO add array-api support for CPU
-                return super().decision_function(X)
+                y_proba = xp.clip(y_proba, min_prob, max_prob)
+                return xp.log(y_proba)
 
-            xp, _ = get_namespace(X)
-            X = validate_data(
-                self,
-                X,
-                reset=False,
-                accept_sparse=_sparsity_enabled,
-                accept_large_sparse=_sparsity_enabled,
-                dtype=[xp.float64, xp.float32],
-            )
+            def _onedal_decision_function(self, X, queue=None):
+                if queue is None or queue.sycl_device.is_cpu:
+                    # We don't use onedal backend for CPU, so we need an additional check here
+                    if "spmd" in self._onedal_LogisticRegression.__module__:
+                        raise RuntimeError(
+                            "Executing functions from SPMD backend requires a queue"
+                        )
+                    # TODO add array-api support for CPU
+                    return super().decision_function(X)
 
-            assert hasattr(self, "_onedal_estimator")
+                xp, _ = get_namespace(X)
+                X = validate_data(
+                    self,
+                    X,
+                    reset=False,
+                    accept_sparse=_sparsity_enabled,
+                    accept_large_sparse=_sparsity_enabled,
+                    dtype=[xp.float64, xp.float32],
+                )
 
-            raw = xp.matmul(X, xp.reshape(self.coef_, (-1,)))
-            if self.fit_intercept:
-                raw += self.intercept_
-            return raw
+                assert hasattr(self, "_onedal_estimator")
+
+                raw = xp.matmul(X, xp.reshape(self.coef_, (-1,)))
+                if self.fit_intercept:
+                    raw += self.intercept_
+                return raw
 
         fit.__doc__ = _sklearn_LogisticRegression.fit.__doc__
         predict.__doc__ = _sklearn_LogisticRegression.predict.__doc__
         predict_proba.__doc__ = _sklearn_LogisticRegression.predict_proba.__doc__
-        predict_log_proba.__doc__ = _sklearn_LogisticRegression.predict_log_proba.__doc__
-        decision_function.__doc__ = _sklearn_LogisticRegression.decision_function.__doc__
-        score.__doc__ = _sklearn_LogisticRegression.score.__doc__
+        if not sklearn_check_version("1.9"):
+            predict_log_proba.__doc__ = (
+                _sklearn_LogisticRegression.predict_log_proba.__doc__
+            )
+            decision_function.__doc__ = (
+                _sklearn_LogisticRegression.decision_function.__doc__
+            )
+            score.__doc__ = _sklearn_LogisticRegression.score.__doc__
 
 else:
     LogisticRegression = _daal4py_LogisticRegression
