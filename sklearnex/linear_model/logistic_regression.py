@@ -199,11 +199,6 @@ if daal_check_version((2024, "P", 1)):
                 X,
             )
 
-        # Note: some of these methods are implemented in pure-Python using
-        # array API. They were introduced in order to provide GPU support
-        # for methods that oneDAL didn't offer, but since the time they were
-        # introduced, scikit-learn has added array API support and these
-        # replacements are not needed anymore.
         @wrap_output_data
         def predict_log_proba(self, X):
             check_is_fitted(self)
@@ -315,6 +310,11 @@ if daal_check_version((2024, "P", 1)):
 
             return patching_status
 
+        # Note: some of these methods are implemented in pure-Python using
+        # array API. They were introduced in order to provide GPU support
+        # for methods that oneDAL didn't offer, but since the time they were
+        # introduced, scikit-learn has added array API support and these
+        # replacements are not needed anymore.
         def _onedal_gpu_predict_supported(self, method_name, *data):
             assert method_name in [
                 "predict",
