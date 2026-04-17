@@ -21,6 +21,7 @@ import numpy as np
 from daal4py.sklearn._utils import daal_check_version
 from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
+from onedal.utils import _sycl_queue_manager as QM
 
 from ..common._estimator_checks import _check_is_fitted
 from ..datatypes import from_table, to_table
@@ -87,6 +88,24 @@ class BaseLogisticRegression(metaclass=ABCMeta):
         self.coef_, self.intercept_ = coeff[:, 1:], coeff[:, 0]
 
         return self
+
+    def _create_model(self, coef_, intercept_, xp):
+        model = self.model()
+        if self.fit_intercept:
+            intercept_ = xp.reshape(intercept_, (-1, 1))
+            packed_coefficients = xp.concat([intercept_, coef_], axis=1)
+        else:
+            packed_coefficients = xp.zeros(
+                (coef_.shape[0], coef_.shape[1] + 1), device=coef_.device
+            )
+            packed_coefficients[:, 1:] = coef_
+
+        model.packed_coefficients = to_table(
+            packed_coefficients, queue=QM.get_global_queue()
+        )
+        self.coef_ = coef_
+        self.intercept_ = intercept_
+        self._onedal_model = model
 
     def _infer(self, X, queue=None):
         _check_is_fitted(self)

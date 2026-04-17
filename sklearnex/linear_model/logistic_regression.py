@@ -349,8 +349,8 @@ if daal_check_version((2024, "P", 1)):
                         "Sparse input is not supported.",
                     ),
                     (
-                        hasattr(self, "_onedal_estimator"),
-                        "oneDAL model was not trained.",
+                        self.classes_.shape[0] == 2,
+                        "Predictions supported only for binary models",
                     ),
                 ]
             )
@@ -388,15 +388,20 @@ if daal_check_version((2024, "P", 1)):
             )
             return patching_status
 
-        def _onedal_gpu_initialize_estimator(self):
+        def _onedal_gpu_initialize_estimator(self, override_solver: bool = False):
             onedal_params = {
                 "tol": self.tol,
                 "C": self.C,
                 "fit_intercept": self.fit_intercept,
-                "solver": self.solver,
+                "solver": self.solver if not override_solver else "newton-cg",
                 "max_iter": self.max_iter,
             }
             self._onedal_estimator = self._onedal_LogisticRegression(**onedal_params)
+
+        def _onedal_gpu_initialize_from_coefs(self) -> None:
+            xp, _ = get_namespace(self.coef_)
+            self._onedal_gpu_initialize_estimator(override_solver=True)
+            self._onedal_estimator._create_model(self.coef_, self.intercept_, xp)
 
         def _onedal_fit(self, X, y, sample_weight=None, queue=None):
             if queue is None or queue.sycl_device.is_cpu:
@@ -472,7 +477,8 @@ if daal_check_version((2024, "P", 1)):
                 dtype=[xp.float64, xp.float32],
             )
 
-            assert hasattr(self, "_onedal_estimator")
+            if not hasattr(self, "_onedal_estimator"):
+                self._onedal_gpu_initialize_from_coefs()
 
             # res will be the same datatype as self.classes_
             res = self._onedal_estimator.predict(X, queue=queue, classes=self.classes_)
@@ -503,7 +509,8 @@ if daal_check_version((2024, "P", 1)):
                 dtype=[xp.float64, xp.float32],
             )
 
-            assert hasattr(self, "_onedal_estimator")
+            if not hasattr(self, "_onedal_estimator"):
+                self._onedal_gpu_initialize_from_coefs()
             res = self._onedal_estimator.predict_proba(X, queue=queue)
             y = xp.reshape(res, (-1,))
             return xp.stack([1 - y, y], axis=1)
