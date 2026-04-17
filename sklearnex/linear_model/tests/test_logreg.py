@@ -711,6 +711,8 @@ def test_array_api_logreg(dataframe, queue, y_type):
 def test_onedal_model_from_sklearn_coefs(dataframe, queue, fit_intercept, array_api):
     if not queue or not queue.sycl_device.is_gpu:
         pytest.skip("Test for GPU-only code branch")
+    if array_api and not sklearn_check_version("1.9"):
+        pytest.skip("Functionality introduced in later sklearn versions.")
     from sklearn.linear_model import LogisticRegression as _sklearn_LogisticRegression
 
     from sklearnex.linear_model import LogisticRegression
