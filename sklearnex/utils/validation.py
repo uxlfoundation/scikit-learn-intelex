@@ -49,7 +49,7 @@ else:
 
 
 if daal_check_version((2024, "P", 700)):
-    from onedal.utils.validation import _assert_all_finite as _onedal_assert_all_finite
+    from onedal.utils.validation import check_all_finite
 
     def _onedal_supported_format(X, xp):
         # data should be checked if contiguous, as oneDAL will only use contiguous
@@ -59,13 +59,20 @@ if daal_check_version((2024, "P", 700)):
         return X.dtype in [xp.float32, xp.float64] and is_contiguous(X)
 
 else:
-    from daal4py.utils.validation import _assert_all_finite as _onedal_assert_all_finite
+    from daal4py.utils.validation import _assert_all_finite as _d4p_assert_all_finite
     from onedal.utils._array_api import _is_numpy_namespace
 
     def _onedal_supported_format(X, xp):
         # daal4py _assert_all_finite only supports numpy namespaces, use internally-
         # defined check to validate inputs, otherwise offload to sklearn
         return X.dtype in [xp.float32, xp.float64] and _is_numpy_namespace(xp)
+
+    def check_all_finite(X, allow_nan: bool = False) -> bool:
+        try:
+            _d4p_assert_all_finite(X, allow_nan=allow_nan)
+            return True
+        except ValueError:
+            return False
 
 
 def _sklearnex_assert_all_finite(
@@ -94,12 +101,36 @@ def _sklearnex_assert_all_finite(
         else:
             _sklearn_assert_all_finite(X, allow_nan=allow_nan)
     else:
-        _onedal_assert_all_finite(
+        all_finite = check_all_finite(
             X,
             allow_nan=allow_nan,
-            input_name=input_name,
-            estimator_name=estimator_name,
         )
+        if not all_finite:
+            type_err = "infinity" if allow_nan else "NaN, infinity"
+            padded_input_name = input_name + " " if input_name else ""
+            msg_err = f"Input {padded_input_name}contains {type_err}."
+            if (
+                estimator_name is not None
+                and input_name == "X"
+                and not allow_nan
+                and sklearn_check_version("1.9")
+            ):
+                if xp.any(xp.isnan(X)):
+                    msg_err += (
+                        f"\n{estimator_name} does not accept missing values"
+                        " encoded as NaN natively. For supervised learning, you might want"
+                        " to consider sklearn.ensemble.HistGradientBoostingClassifier and"
+                        " Regressor which accept missing values encoded as NaNs natively."
+                        " Alternatively, it is possible to preprocess the data, for"
+                        " instance by using an imputer transformer in a pipeline or drop"
+                        " samples with missing values. See"
+                        " https://scikit-learn.org/stable/modules/impute.html"
+                        " You can find a list of all estimators that handle NaN values"
+                        " at the following page:"
+                        " https://scikit-learn.org/stable/modules/impute.html"
+                        "#estimators-that-handle-nan-values"
+                    )
+            raise ValueError(msg_err)
 
 
 if sklearn_check_version("1.9"):

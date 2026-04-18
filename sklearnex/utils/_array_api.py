@@ -88,7 +88,7 @@ def get_namespace(*arrays):
     # are of the same sycl namespace, not of the same array namespace.
     # When array_api_dispatch is enabled, then sklearn's version is required
     # for the additional array namespace check. This is now possible with
-    # dpnp and dpctl as they both support `__array_namespace__`.
+    # dpnp as it supports `__array_namespace__`.
     if not get_config().get("array_api_dispatch", False):
         sycl_type, xp, is_array_api_compliant = _get_sycl_namespace(*arrays)
         if sycl_type:
@@ -125,7 +125,7 @@ def _enable_array_api(original_class: type[oneDALEstimator]) -> type[oneDALEstim
 def enable_array_api(
     class_or_str: Union[type[oneDALEstimator], str],
 ) -> Union[type[oneDALEstimator], Callable]:
-    """Enable sklearnex to use dpctl, dpnp or array API inputs in oneDAL offloading.
+    """Enable sklearnex to use dpnp or array API inputs in oneDAL offloading.
 
     This wrapper sets the proper flags/tags for the sklearnex infrastructure
     to maintain the data framework, as the estimator can use it natively.
@@ -213,7 +213,7 @@ def log_likelihood(emp_cov, precision):
     # even though it exists for ``fast_logdet``
     xp, _ = get_namespace(emp_cov, precision)
     p = precision.shape[0]
-    # extract sklearn.utils.extmath.fast_logdet for dpnp/dpctl support
+    # extract sklearn.utils.extmath.fast_logdet for dpnp support
     sign, ld = xp.linalg.slogdet(precision)
     if not sign > 0:
         ld = -xp.inf

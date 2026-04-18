@@ -26,7 +26,6 @@ except ImportError:
 
 if dpctl_available:
     import dpctl
-    from dpctl.tensor import usm_ndarray
 
     def _get_sycl_queue(syclobj):
         if hasattr(syclobj, "_get_capsule"):
@@ -35,22 +34,12 @@ if dpctl_available:
             return dpctl.SyclQueue(syclobj)
 
     def _assert_tensor_attr(actual, desired, order):
-        """Check attributes of two given USM tensors."""
-        is_usm_tensor = (
-            lambda x: dpnp_available
-            and isinstance(x, dpnp.ndarray)
-            or isinstance(x, usm_ndarray)
-        )
-        assert is_usm_tensor(actual)
-        assert is_usm_tensor(desired)
-        # dpctl.tensor is the dpnp.ndarrays's core tensor structure along
-        # with advanced device management. Convert dpnp to dpctl.tensor with zero copy.
-        get_tensor = lambda x: (
-            x.get_array() if dpnp_available and isinstance(x, dpnp.ndarray) else x
-        )
-        # Now DPCtl tensors
-        actual = get_tensor(actual)
-        desired = get_tensor(desired)
+        """Check attributes of two given USM arrays."""
+        assert dpnp_available and isinstance(actual, dpnp.ndarray)
+        assert dpnp_available and isinstance(desired, dpnp.ndarray)
+        # Convert dpnp to underlying usm_ndarray with zero copy.
+        actual = actual.get_array()
+        desired = desired.get_array()
 
         assert actual.shape == desired.shape
         assert actual.strides == desired.strides

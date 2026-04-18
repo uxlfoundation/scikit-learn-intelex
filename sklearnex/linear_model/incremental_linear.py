@@ -28,7 +28,6 @@ from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal.linear_model import (
     IncrementalLinearRegression as onedal_IncrementalLinearRegression,
 )
-from sklearnex._config import get_config
 
 from .._device_offload import dispatch, wrap_output_data
 from .._utils import (
@@ -164,17 +163,16 @@ class IncrementalLinearRegression(
     def _onedal_predict(self, X, queue=None):
         xp, _ = get_namespace(X)
 
-        if not get_config()["use_raw_input"]:
-            if sklearn_check_version("1.2"):
-                self._validate_params()
+        if sklearn_check_version("1.2"):
+            self._validate_params()
 
-            X = validate_data(
-                self,
-                X,
-                dtype=[xp.float64, xp.float32],
-                copy=self.copy_X,
-                reset=False,
-            )
+        X = validate_data(
+            self,
+            X,
+            dtype=[xp.float64, xp.float32],
+            copy=self.copy_X,
+            reset=False,
+        )
 
         assert hasattr(self, "_onedal_estimator")
         if self._need_to_finalize:
@@ -193,7 +191,7 @@ class IncrementalLinearRegression(
     def _onedal_partial_fit(self, X, y, check_input=True, queue=None):
         first_pass = not hasattr(self, "n_samples_seen_") or self.n_samples_seen_ == 0
 
-        if check_input and not get_config()["use_raw_input"]:
+        if check_input:
             xp, _ = get_namespace(X, y)
             X, y = validate_data(
                 self,
@@ -245,18 +243,17 @@ class IncrementalLinearRegression(
         self._need_to_finalize = False
 
     def _onedal_fit(self, X, y, queue=None):
-        if not get_config()["use_raw_input"]:
-            xp, _ = get_namespace(X, y)
+        xp, _ = get_namespace(X, y)
 
-            X, y = validate_data(
-                self,
-                X,
-                y,
-                dtype=[xp.float64, xp.float32],
-                copy=self.copy_X,
-                multi_output=True,
-                y_numeric=True,
-            )
+        X, y = validate_data(
+            self,
+            X,
+            y,
+            dtype=[xp.float64, xp.float32],
+            copy=self.copy_X,
+            multi_output=True,
+            y_numeric=True,
+        )
 
         n_samples, n_features = X.shape
 

@@ -38,7 +38,7 @@ from sklearnex.tests.utils.spmd import (
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
 )
 @pytest.mark.mpi
 def test_rfcls_spmd_gold(dataframe, queue):
@@ -107,10 +107,10 @@ def test_rfcls_spmd_gold(dataframe, queue):
 @pytest.mark.parametrize("local_trees_mode", [False, True])
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-@pytest.mark.parametrize("use_raw_input", [True, False])
+@pytest.mark.parametrize("array_api_dispatch", [True, False])
 @pytest.mark.mpi
 def test_rfcls_spmd_synthetic(
     n_samples,
@@ -121,7 +121,7 @@ def test_rfcls_spmd_synthetic(
     dataframe,
     queue,
     dtype,
-    use_raw_input,
+    array_api_dispatch,
 ):
     n_features, n_classes = n_features_and_classes
     # Import spmd and batch algo
@@ -152,14 +152,14 @@ def test_rfcls_spmd_synthetic(
         local_trees_mode=local_trees_mode,
         random_state=0,
     )
-    # Configure raw input status for spmd estimator
-    with config_context(use_raw_input=use_raw_input):
+    # Configure array API dispatch status for spmd estimator
+    with config_context(array_api_dispatch=array_api_dispatch):
         spmd_model.fit(local_dpt_X_train, local_dpt_y_train)
     batch_model = RandomForestClassifier_Batch(
         n_estimators=n_estimators, max_depth=max_depth, random_state=0
     ).fit(X_train, y_train)
-    # Configure raw input status for spmd estimator
-    with config_context(use_raw_input=use_raw_input):
+    # Configure array API dispatch status for spmd estimator
+    with config_context(array_api_dispatch=array_api_dispatch):
         spmd_result = spmd_model.predict(local_dpt_X_test)
     batch_result = batch_model.predict(X_test)
 
@@ -173,7 +173,7 @@ def test_rfcls_spmd_synthetic(
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
 )
 @pytest.mark.mpi
 def test_rfreg_spmd_gold(dataframe, queue):
@@ -242,10 +242,10 @@ def test_rfreg_spmd_gold(dataframe, queue):
 @pytest.mark.parametrize("local_trees_mode", [False, True])
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-@pytest.mark.parametrize("use_raw_input", [True, False])
+@pytest.mark.parametrize("array_api_dispatch", [True, False])
 @pytest.mark.mpi
 def test_rfreg_spmd_synthetic(
     n_samples,
@@ -256,7 +256,7 @@ def test_rfreg_spmd_synthetic(
     dataframe,
     queue,
     dtype,
-    use_raw_input,
+    array_api_dispatch,
 ):
     # Import spmd and batch algo
     from sklearnex.ensemble import RandomForestRegressor as RandomForestRegressor_Batch
@@ -280,7 +280,7 @@ def test_rfreg_spmd_synthetic(
     )
 
     # Ensure predictions of batch algo match spmd
-    with config_context(use_raw_input=use_raw_input):
+    with config_context(array_api_dispatch=array_api_dispatch):
         spmd_model = RandomForestRegressor_SPMD(
             n_estimators=n_estimators,
             max_depth=max_depth,
@@ -290,7 +290,7 @@ def test_rfreg_spmd_synthetic(
     batch_model = RandomForestRegressor_Batch(
         n_estimators=n_estimators, max_depth=max_depth, random_state=0
     ).fit(X_train, y_train)
-    with config_context(use_raw_input=use_raw_input):
+    with config_context(array_api_dispatch=array_api_dispatch):
         spmd_result = spmd_model.predict(local_dpt_X_test)
     batch_result = batch_model.predict(X_test)
 

@@ -31,7 +31,6 @@ if daal_check_version((2024, "P", 100)):
     from daal4py.sklearn._utils import sklearn_check_version
     from onedal._device_offload import _transfer_to_host
 
-    from .._config import get_config
     from .._device_offload import dispatch, wrap_output_data
     from .._utils import PatchingConditionsChain, register_hyperparameters
     from ..base import oneDALEstimator
@@ -116,7 +115,7 @@ if daal_check_version((2024, "P", 100)):
                 self.random_state = random_state
 
         _onedal_PCA = staticmethod(onedal_PCA)
-        # guarantee operability with dpnp/dpctl, runs on CPU unless
+        # guarantee operability with dpnp, runs on CPU unless
         # array_api_dispatch is enabled.
         score_samples = support_sycl_format(_sklearn_PCA.score_samples)
 
@@ -325,30 +324,26 @@ if daal_check_version((2024, "P", 100)):
 
         def _onedal_fit(self, X, queue=None):
             xp, _ = get_namespace(X)
-            if not get_config()["use_raw_input"]:
-                X = validate_data(
-                    self,
-                    X,
-                    dtype=[xp.float64, xp.float32],
-                    ensure_2d=True,
-                    copy=self.copy,
-                )
+            X = validate_data(
+                self,
+                X,
+                dtype=[xp.float64, xp.float32],
+                ensure_2d=True,
+                copy=self.copy,
+            )
 
-                # `use_raw_input` disabled by hasattr check
-                if (
-                    sklearn_check_version("1.5")
-                    and self._fit_svd_solver == "full"
-                    and self.svd_solver == "auto"
-                ):
-                    self._fit_svd_solver = "covariance_eigh"
-                    # warning should only be emitted if to be offloaded to oneDAL
-                    warn(
-                        "Sklearnex always uses `covariance_eigh` solver instead of `full` "
-                        "when `svd_solver` parameter is set to `auto` "
-                        "for performance purposes."
-                    )
-            else:
+            if (
+                sklearn_check_version("1.5")
+                and self._fit_svd_solver == "full"
+                and self.svd_solver == "auto"
+            ):
                 self._fit_svd_solver = "covariance_eigh"
+                # warning should only be emitted if to be offloaded to oneDAL
+                warn(
+                    "Sklearnex always uses `covariance_eigh` solver instead of `full` "
+                    "when `svd_solver` parameter is set to `auto` "
+                    "for performance purposes."
+                )
 
             if self.n_components is not None:
                 self._validate_n_components(X)
@@ -437,14 +432,13 @@ if daal_check_version((2024, "P", 100)):
             )
 
         def _onedal_transform(self, X, queue=None):
-            if not get_config()["use_raw_input"]:
-                xp, _ = get_namespace(X)
-                X = validate_data(
-                    self,
-                    X,
-                    dtype=[xp.float64, xp.float32],
-                    reset=False,
-                )
+            xp, _ = get_namespace(X)
+            X = validate_data(
+                self,
+                X,
+                dtype=[xp.float64, xp.float32],
+                reset=False,
+            )
 
             return self._onedal_estimator.predict(X, queue=queue)
 

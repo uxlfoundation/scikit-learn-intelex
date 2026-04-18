@@ -47,7 +47,7 @@ attributes_to_compare = [
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("whiten", [True, False])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
@@ -57,7 +57,7 @@ def test_incremental_pca_fit_spmd_gold(dataframe, queue, whiten, dtype):
     from sklearnex.preview.decomposition import IncrementalPCA
     from sklearnex.spmd.decomposition import IncrementalPCA as IncrementalPCA_SPMD
 
-    # Create gold data and process into dpt
+    # Create gold data and process into dpnp
     X = np.array(
         [
             [0.0, 0.0],
@@ -95,7 +95,7 @@ def test_incremental_pca_fit_spmd_gold(dataframe, queue, whiten, dtype):
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("whiten", [True, False])
 @pytest.mark.parametrize("num_blocks", [1, 2])
@@ -108,7 +108,7 @@ def test_incremental_pca_partial_fit_spmd_gold(
     from sklearnex.preview.decomposition import IncrementalPCA
     from sklearnex.spmd.decomposition import IncrementalPCA as IncrementalPCA_SPMD
 
-    # Create gold data and process into dpt
+    # Create gold data and process into dpnp
     X = np.array(
         [
             [0.0, 0.0],
@@ -159,7 +159,7 @@ def test_incremental_pca_partial_fit_spmd_gold(
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("whiten", [True, False])
 @pytest.mark.parametrize("n_components", [None, 2, 5])
@@ -177,7 +177,7 @@ def test_incremental_pca_fit_spmd_random(
     # Increased test dataset size requires a higher tol setting in comparison to other tests
     tol = 5e-4 if dtype == np.float32 else 1e-7
 
-    # Create data and process into dpt
+    # Create data and process into dpnp
     X = _generate_statistic_data(num_samples, num_features, dtype)
     dpt_X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     X_test = _generate_statistic_data(num_samples // 5, num_features, dtype)
@@ -211,7 +211,7 @@ def test_incremental_pca_fit_spmd_random(
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("whiten", [True, False])
 @pytest.mark.parametrize("n_components", [None, 2, 5])
@@ -219,7 +219,7 @@ def test_incremental_pca_fit_spmd_random(
 @pytest.mark.parametrize("num_samples", [200, 400])
 @pytest.mark.parametrize("num_features", [10, 20])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-@pytest.mark.parametrize("use_raw_input", [True, False])
+@pytest.mark.parametrize("array_api_dispatch", [True, False])
 @pytest.mark.mpi
 def test_incremental_pca_partial_fit_spmd_random(
     dataframe,
@@ -230,7 +230,7 @@ def test_incremental_pca_partial_fit_spmd_random(
     num_samples,
     num_features,
     dtype,
-    use_raw_input,
+    array_api_dispatch,
 ):
     # Import spmd and non-SPMD algo
     from sklearnex.preview.decomposition import IncrementalPCA
@@ -238,7 +238,7 @@ def test_incremental_pca_partial_fit_spmd_random(
 
     tol = 3e-4 if dtype == np.float32 else 1e-7
 
-    # Create data and process into dpt
+    # Create data and process into dpnp
     X = _generate_statistic_data(num_samples, num_features, dtype)
     dpt_X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     X_test = _generate_statistic_data(num_samples // 5, num_features, dtype)
@@ -255,8 +255,8 @@ def test_incremental_pca_partial_fit_spmd_random(
             split_local_X[i], sycl_queue=queue, target_df=dataframe
         )
         dpt_X = _convert_to_dataframe(X_split[i], sycl_queue=queue, target_df=dataframe)
-        # Configure raw input status for spmd estimator
-        with config_context(use_raw_input=use_raw_input):
+        # Configure array API dispatch status for spmd estimator
+        with config_context(array_api_dispatch=array_api_dispatch):
             incpca_spmd.partial_fit(local_dpt_X)
         incpca.partial_fit(dpt_X)
 
@@ -268,8 +268,8 @@ def test_incremental_pca_partial_fit_spmd_random(
             err_msg=f"{attribute} is incorrect",
         )
 
-    # Configure raw input status for spmd estimator
-    with config_context(use_raw_input=use_raw_input):
+    # Configure array API dispatch status for spmd estimator
+    with config_context(array_api_dispatch=array_api_dispatch):
         y_trans_spmd = incpca_spmd.transform(dpt_X_test)
     y_trans = incpca.transform(dpt_X_test)
 

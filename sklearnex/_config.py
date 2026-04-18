@@ -15,7 +15,6 @@
 # ==============================================================================
 
 import sys
-import warnings
 from contextlib import contextmanager
 
 from sklearn import get_config as skl_get_config
@@ -54,25 +53,9 @@ _options_docstring = f"""Parameters
 {tab}
 {tab}    Global default: ``True``.
 {tab}
-{tab}use_raw_input : bool or None
-{tab}    If ``True``, uses the raw input data in some SPMD onedal backend computations
-{tab}    without any checks on data consistency or validity. Note that this can be
-{tab}    better achieved through usage of :ref:`array API classes <array_api>` without
-{tab}    ``target_offload``. Not recommended for general use.
-{tab}
-{tab}    Global default: ``False``.
-{tab}
-{tab}    .. deprecated:: 2026.0
-{tab}
 {tab}sklearn_configs : kwargs
 {tab}    Other settings accepted by scikit-learn. See :obj:`sklearn.set_config` for
 {tab}    details.
-{tab}
-{tab}Warnings
-{tab}--------
-{tab}Using ``use_raw_input=True`` is not recommended for general use as it
-{tab}bypasses data consistency checks, which may lead to unexpected behavior. It is
-{tab}recommended to use the newer :ref:`array API <array_api>` instead.
 {tab}
 {tab}Note
 {tab}----
@@ -102,7 +85,6 @@ def set_config(
     target_offload=None,
     allow_fallback_to_host=None,
     allow_sklearn_after_onedal=None,
-    use_raw_input=None,
     **sklearn_configs,
 ):  # numpydoc ignore=PR01,PR07
     """Set global configuration.
@@ -125,15 +107,6 @@ def set_config(
         local_config["allow_fallback_to_host"] = allow_fallback_to_host
     if allow_sklearn_after_onedal is not None:
         local_config["allow_sklearn_after_onedal"] = allow_sklearn_after_onedal
-    if use_raw_input is not None:
-        if use_raw_input:
-            warnings.warn(
-                "The 'use_raw_input' parameter is deprecated and will be removed in version 2026.0. "
-                "On-device input validation can now be achieved by setting 'array_api_dispatch' to True.",
-                FutureWarning,
-                stacklevel=2,
-            )
-        local_config["use_raw_input"] = use_raw_input
 
 
 set_config.__doc__ = set_config.__doc__.replace(

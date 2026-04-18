@@ -38,7 +38,7 @@ from sklearnex.tests.utils.spmd import (
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("weighted", [True, False])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
@@ -50,7 +50,7 @@ def test_incremental_basic_statistics_fit_spmd_gold(dataframe, queue, weighted, 
         IncrementalBasicStatistics as IncrementalBasicStatistics_SPMD,
     )
 
-    # Create gold data and process into dpt
+    # Create gold data and process into dpnp
     data = np.array(
         [
             [0.0, 0.0, 0.0],
@@ -104,7 +104,7 @@ def test_incremental_basic_statistics_fit_spmd_gold(dataframe, queue, weighted, 
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("num_blocks", [1, 2])
 @pytest.mark.parametrize("weighted", [True, False])
@@ -119,7 +119,7 @@ def test_incremental_basic_statistics_partial_fit_spmd_gold(
         IncrementalBasicStatistics as IncrementalBasicStatistics_SPMD,
     )
 
-    # Create gold data and process into dpt
+    # Create gold data and process into dpnp
     data = np.array(
         [
             [0.0, 0.0, 0.0],
@@ -178,7 +178,7 @@ def test_incremental_basic_statistics_partial_fit_spmd_gold(
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("num_blocks", [1, 2])
 @pytest.mark.parametrize("weighted", [True, False])
@@ -194,7 +194,7 @@ def test_incremental_basic_statistics_single_option_partial_fit_spmd_gold(
         IncrementalBasicStatistics as IncrementalBasicStatistics_SPMD,
     )
 
-    # Create gold data and process into dpt
+    # Create gold data and process into dpnp
     data = np.array(
         [
             [0.0, 0.0, 0.0],
@@ -247,17 +247,24 @@ def test_incremental_basic_statistics_single_option_partial_fit_spmd_gold(
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp,dpctl", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("num_blocks", [1, 2])
 @pytest.mark.parametrize("weighted", [True, False])
 @pytest.mark.parametrize("n_samples", [100, 10000])
 @pytest.mark.parametrize("n_features", [10, 100])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-@pytest.mark.parametrize("use_raw_input", [True, False])
+@pytest.mark.parametrize("array_api_dispatch", [True, False])
 @pytest.mark.mpi
 def test_incremental_basic_statistics_partial_fit_spmd_synthetic(
-    dataframe, queue, num_blocks, weighted, n_samples, n_features, dtype, use_raw_input
+    dataframe,
+    queue,
+    num_blocks,
+    weighted,
+    n_samples,
+    n_features,
+    dtype,
+    array_api_dispatch,
 ):
     # Import spmd and batch algo
     from sklearnex.basic_statistics import IncrementalBasicStatistics
@@ -267,7 +274,7 @@ def test_incremental_basic_statistics_partial_fit_spmd_synthetic(
 
     tol = 2e-3 if dtype == np.float32 else 1e-7
 
-    # Create gold data and process into dpt
+    # Create gold data and process into dpnp
     data = _generate_statistic_data(n_samples, n_features, dtype=dtype)
     local_data = _get_local_tensor(data)
     split_local_data = np.array_split(local_data, num_blocks)
@@ -297,8 +304,8 @@ def test_incremental_basic_statistics_partial_fit_spmd_synthetic(
             dpt_weights = _convert_to_dataframe(
                 split_weights[i], sycl_queue=queue, target_df=dataframe
             )
-        # Configure raw input status for spmd estimator
-        with config_context(use_raw_input=use_raw_input):
+        # Configure array API dispatch for spmd estimator
+        with config_context(array_api_dispatch=array_api_dispatch):
             incbs_spmd.partial_fit(
                 local_dpt_data, sample_weight=local_dpt_weights if weighted else None
             )

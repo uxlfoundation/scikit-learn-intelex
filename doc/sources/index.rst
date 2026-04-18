@@ -14,43 +14,131 @@
 
 .. include:: substitutions.rst
 
+.. toctree::
+   :caption: Getting Started
+   :hidden:
+   :maxdepth: 3
+
+   Quick Start <self>
+   installation.rst
+   about.rst
+
+.. toctree::
+   :caption: Documentation topics
+   :hidden:
+   :maxdepth: 4
+
+   patching.rst
+   algorithms.rst
+   oneapi-gpu.rst
+   config-contexts.rst
+   array_api.rst
+   serialization.rst
+   distributed-mode.rst
+   distributed_daal4py.rst
+   non-scikit-algorithms.rst
+   non_sklearn_d4p.rst
+   model_builders.rst
+   logistic_model_builder.rst
+   input-types.rst
+   verbose.rst
+   parallelism.rst
+   preview.rst
+   deprecation.rst
+
+.. toctree::
+   :caption: daal4py
+   :hidden:
+
+   about_daal4py.rst
+   daal4py.rst
+
+.. toctree::
+   :caption: Development guides
+   :hidden:
+
+   building-from-source.rst
+   tests.rst
+   contribute.rst
+   contributor-reference.rst
+   ideas.rst
+
+.. toctree::
+   :caption: Performance
+   :hidden:
+   :maxdepth: 2
+
+   guide/acceleration.rst
+
+.. toctree::
+   :caption: Learn
+   :hidden:
+   :maxdepth: 2
+
+   Tutorials & Case Studies <tutorials.rst>
+   Medium Blogs <blogs.rst>
+
+.. toctree::
+   :caption: More
+   :hidden:
+   :maxdepth: 2
+
+   support.rst
+   code-of-conduct.rst
+   license.rst
+
+.. toctree::
+   :caption: Examples
+   :hidden:
+   :maxdepth: 3
+
+   samples.rst
+   kaggle.rst
+
 .. _index:
 
-###########
-|sklearnex|
-###########
+Introduction
+============
 
 |sklearnex| is a **free software AI accelerator** designed to deliver up to **100X** faster performance for your existing |sklearn| code.
 The software acceleration is achieved with vector instructions, AI hardware-specific memory optimizations, threading, and optimizations.
 
-.. rubric:: Designed for Data Scientists and Framework Designers
+Benefits:
 
-
-Use |sklearnex|, to:
-
-* Speed up training and inference by up to 100x with equivalent mathematical accuracy
-* Benefit from performance improvements across different x86-64 CPUs and Intel(R) GPUs (including iGPUs)
-* Integrate the extension into your existing |sklearn| applications without code modifications
-* Enable and disable the extension with a couple of lines of code or at the command line
+* Speed up training and inference by up to 100x with equivalent mathematical accuracy.
+* Benefit from performance improvements across different hardware configurations, including :doc:`GPUs <oneapi-gpu>` and :doc:`multi-GPU <distributed-mode>` configurations.
+* Integrate the extension into your existing |sklearn| applications without code modifications.
+* Continue to use the open-source |sklearn| API.
+* Enable and disable the extension with a couple of lines of code or at the command line.
 
 .. image:: _static/scikit-learn-acceleration.PNG
   :width: 800
 
+(`Benchmarks code <https://github.com/IntelPython/scikit-learn_bench>`__)
 
-These performance charts use benchmarks that you can find in the `scikit-learn bench repository <https://github.com/IntelPython/scikit-learn_bench>`_.
+See :doc:`about` for more information.
 
+Quick Install
+=============
 
-Supported Algorithms
---------------------
+.. tabs::
 
-See all of the :ref:`sklearn_algorithms`.
+    .. tab:: From PyPI
 
+        .. code-block::
 
-Optimizations
--------------
+            pip install scikit-learn-intelex
 
-Enable CPU Optimizations
-************************
+    .. tab:: From conda-forge
+
+        .. code-block::
+
+            conda install -c conda-forge scikit-learn-intelex --override-channels
+
+See the full :doc:`installation` for more details.
+
+Example Usage
+=============
 
 .. tabs::
    .. tab:: By patching
@@ -66,6 +154,8 @@ Enable CPU Optimizations
                        [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
          clustering = DBSCAN(eps=3, min_samples=2).fit(X)
 
+      See :doc:`patching` for more details.
+
    .. tab:: Without patching
       .. code-block:: python
 
@@ -77,8 +167,8 @@ Enable CPU Optimizations
          clustering = DBSCAN(eps=3, min_samples=2).fit(X)
 
 
-Enable GPU optimizations
-************************
+Running on GPUs
+===============
 
 Note: executing on GPU has `additional system software requirements <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`__ - see :doc:`oneapi-gpu`.
 
@@ -150,77 +240,3 @@ Note: executing on GPU has `additional system software requirements <https://www
 
 
 See :ref:`oneapi_gpu` for other ways of executing on GPU.
-
-
-.. toctree::
-   :caption: Getting Started
-   :hidden:
-   :maxdepth: 3
-
-   quick-start.rst
-   samples.rst
-   kaggle.rst
-
-.. toctree::
-   :caption: Documentation topics
-   :hidden:
-   :maxdepth: 4
-
-   patching.rst
-   algorithms.rst
-   oneapi-gpu.rst
-   config-contexts.rst
-   array_api.rst
-   serialization.rst
-   distributed-mode.rst
-   distributed_daal4py.rst
-   non-scikit-algorithms.rst
-   non_sklearn_d4p.rst
-   model_builders.rst
-   logistic_model_builder.rst
-   input-types.rst
-   verbose.rst
-   parallelism.rst
-   preview.rst
-   deprecation.rst
-
-.. toctree::
-   :caption: daal4py
-   :hidden:
-
-   about_daal4py.rst
-   daal4py.rst
-
-.. toctree::
-   :caption: Development guides
-   :hidden:
-
-   building-from-source.rst
-   tests.rst
-   contribute.rst
-   contributor-reference.rst
-   ideas.rst
-
-.. toctree::
-   :caption: Performance
-   :hidden:
-   :maxdepth: 2
-
-   guide/acceleration.rst
-
-.. toctree::
-   :caption: Learn
-   :hidden:
-   :maxdepth: 2
-
-   Tutorials & Case Studies <tutorials.rst>
-   Medium Blogs <blogs.rst>
-
-.. toctree::
-   :caption: More
-   :hidden:
-   :maxdepth: 2
-
-   support.rst
-   code-of-conduct.rst
-   license.rst

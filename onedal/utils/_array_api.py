@@ -16,7 +16,6 @@
 
 """Tools to support array_api."""
 
-import warnings
 from collections.abc import Iterable
 from functools import lru_cache
 
@@ -38,7 +37,7 @@ def _supports_buffer_protocol(obj):
 
 def _asarray(data, xp, *args, **kwargs):
     """Converted input object to array format of xp namespace provided."""
-    if hasattr(data, "__array_namespace__") or _supports_buffer_protocol(data):
+    if hasattr(data, "__dlpack__") or _supports_buffer_protocol(data):
         return xp.asarray(data, *args, **kwargs)
     elif isinstance(data, Iterable):
         if isinstance(data, tuple):
@@ -66,19 +65,7 @@ def _is_numpy_namespace(xp):
 
 @lru_cache(100)
 def _cls_to_sycl_namespace(cls):
-    # use caching to minimize imports, derived from array_api_compat
-    if _is_subclass_fast(cls, "dpctl.tensor", "usm_ndarray"):
-        import dpctl.tensor as dpt
-
-        warnings.warn(
-            "dpctl tensors are deprecated and support for them in "
-            "scikit-learn-intelex will be removed in 2026.0.0. "
-            "Consider using dpnp arrays instead.",
-            FutureWarning,
-        )
-
-        return dpt
-    elif _is_subclass_fast(cls, "dpnp", "ndarray"):
+    if _is_subclass_fast(cls, "dpnp", "ndarray"):
         import dpnp
 
         return dpnp

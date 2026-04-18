@@ -19,7 +19,7 @@ from functools import wraps
 from typing import Any, Union
 
 from onedal._device_offload import _transfer_to_host
-from onedal.datatypes import copy_to_dpnp, copy_to_usm
+from onedal.datatypes import copy_to_dpnp
 from onedal.utils import _sycl_queue_manager as QM
 from onedal.utils._array_api import _asarray, _is_numpy_namespace
 from onedal.utils._third_party import is_dpnp_ndarray
@@ -27,6 +27,7 @@ from onedal.utils._third_party import is_dpnp_ndarray
 from ._config import get_config
 from ._utils import PatchingConditionsChain, get_tags
 from .base import oneDALEstimator
+from .utils._array_api import get_namespace
 
 
 def _get_backend(
@@ -79,7 +80,7 @@ def dispatch(
 
     Depending on support conditions, oneDAL will be called, otherwise it will
     fall back to calling scikit-learn.  Dispatching to oneDAL can be influenced
-    by the 'use_raw_input' or 'allow_fallback_to_host' config parameters.
+    by the 'allow_fallback_to_host' config parameter.
 
     Parameters
     ----------
@@ -111,9 +112,6 @@ def dispatch(
         object types should match for the sklearn and onedal object methods.
     """
 
-    if get_config()["use_raw_input"]:
-        return branches["onedal"](obj, *args, **kwargs)
-
     # Determine if array_api dispatching is enabled, and if estimator is capable
     onedal_array_api = _array_api_offload() and get_tags(obj).onedal_array_api
     sklearn_array_api = _array_api_offload() and get_tags(obj).array_api_support
@@ -121,6 +119,7 @@ def dispatch(
     # backend can only be a boolean or None, None signifies an unverified backend
     backend: "bool | None" = None
 
+    # TODO validate if this comment is valid (e.g. X on GPU, y on CPU)
     # The _sycl_queue_manager verifies all arguments are on a single SYCL device or
     # cpu and will otherwise throw an error. If located on a non-SYCL, non-CPU
     # device, a special queue is set which will cause a failure in ``_get_backend``
@@ -180,26 +179,52 @@ def wrap_output_data(func: Callable) -> Callable:
     @wraps(func)
     def wrapper(self, *args, **kwargs) -> Any:
         result = func(self, *args, **kwargs)
+        # In case ARRAY API is enabled the result is already converted to the required type
+        if _array_api_offload() and get_tags(self).onedal_array_api:
+            # When transform_output is polars/pandas, sklearn's _set_output
+            # wrapper calls pl.DataFrame(result) which can't handle GPU arrays.
+            # Transfer to host so sklearn can wrap into the requested format.
+            if func.__name__ in ("transform", "fit_transform") and (
+                get_config().get("transform_output")
+                not in (
+                    "default",
+                    None,
+                )
+                or getattr(self, "_sklearn_output_config", {}).get("transform", "default")
+                != "default"
+            ):
+                _, (result,) = _transfer_to_host(result)
+            return result
         if not (len(args) == 0 and len(kwargs) == 0):
             data = (*args, *kwargs.values())[0]
-            # Remove check for result __sycl_usm_array_interface__ on deprecation of use_raw_inputs
-            if (
-                usm_iface := getattr(data, "__sycl_usm_array_interface__", None)
-            ) and not hasattr(result, "__sycl_usm_array_interface__"):
-                queue = usm_iface["syclobj"]
-                return (
-                    copy_to_dpnp(queue, result)
-                    if is_dpnp_ndarray(data)
-                    else copy_to_usm(queue, result)
+            # When transform_output is polars/pandas, sklearn's _set_output
+            # wrapper calls pl.DataFrame(result) which can't handle GPU arrays.
+            # Transfer to host so sklearn can wrap into the requested format.
+            if func.__name__ in ("transform", "fit_transform") and (
+                get_config().get("transform_output")
+                not in (
+                    "default",
+                    None,
                 )
+                or getattr(self, "_sklearn_output_config", {}).get("transform", "default")
+                != "default"
+            ):
+                _, (result,) = _transfer_to_host(result)
+                return result
+
+            if usm_iface := getattr(data, "__sycl_usm_array_interface__", None):
+                queue = usm_iface["syclobj"]
+                return copy_to_dpnp(queue, result)
 
             if get_config().get("transform_output") in ("default", None):
-                input_array_api = getattr(data, "__array_namespace__", lambda: None)()
-                if input_array_api and not _is_numpy_namespace(input_array_api):
-                    input_array_api_device = data.device
-                    result = _asarray(
-                        result, input_array_api, device=input_array_api_device
-                    )
+                if hasattr(data, "dtype"):
+                    xp, is_array_api = get_namespace(data)
+                    if is_array_api and not _is_numpy_namespace(xp):
+                        device = getattr(data, "device", None)
+                        if isinstance(result, tuple):
+                            result = tuple(xp.asarray(r, device=device) for r in result)
+                        elif not isinstance(result, (int, float)):
+                            result = xp.asarray(result, device=device)
         return result
 
     return wrapper

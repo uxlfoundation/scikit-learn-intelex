@@ -15,6 +15,8 @@
 # ===============================================================================
 
 import numpy as np
+import pandas as pd
+import polars as pl
 import pytest
 from numpy.testing import assert_allclose
 from scipy.sparse import csr_matrix
@@ -28,6 +30,7 @@ from onedal.tests.utils._dataframes_support import (
     get_queues,
 )
 from sklearnex import config_context
+from sklearnex.cluster import KMeans
 from sklearnex.tests.utils import _IS_INTEL
 
 
@@ -155,3 +158,69 @@ def test_dense_vs_sparse(queue, init, algorithm, dims):
         kmeans_dense.cluster_centers_,
         kmeans_sparse.cluster_centers_,
     )
+
+
+@pytest.mark.parametrize("output_format", ["set_output", "config_context"])
+@pytest.mark.parametrize("transform_output", ["polars", "pandas"])
+def test_transform_output_torch(output_format, transform_output):
+    torch = pytest.importorskip("torch")
+
+    X_np = generate_dense_dataset(200, 10, 0.5, 3)
+    X_torch = torch.tensor(X_np, device="cpu")
+
+    with config_context(array_api_dispatch=True):
+        km = KMeans(n_clusters=3, random_state=0, n_init=1)
+        if output_format == "set_output":
+            km.set_output(transform=transform_output)
+            km.fit(X_torch)
+            result = km.transform(X_torch)
+        else:
+            with config_context(transform_output=transform_output):
+                km.fit(X_torch)
+                result = km.transform(X_torch)
+
+    expected_type = pl.DataFrame if transform_output == "polars" else pd.DataFrame
+    assert isinstance(result, expected_type)
+
+
+# Only numpy and dpnp: array_api_strict + polars/pandas fails in sklearn itself.
+@pytest.mark.skipif(
+    not sklearn_check_version("1.2"), reason="array_api_dispatch requires sklearn >= 1.2"
+)
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("numpy,dpnp"))
+@pytest.mark.parametrize("transform_output", ["polars", "pandas"])
+def test_transform_output_gpu(dataframe, queue, transform_output):
+    X_np = generate_dense_dataset(200, 10, 0.5, 3)
+    X = _convert_to_dataframe(X_np, sycl_queue=queue, target_df=dataframe)
+
+    with config_context(array_api_dispatch=True, transform_output=transform_output):
+        km = KMeans(n_clusters=3, random_state=0, n_init=1)
+        km.fit(X)
+        result = km.transform(X)
+
+    expected_type = pl.DataFrame if transform_output == "polars" else pd.DataFrame
+    assert isinstance(result, expected_type)
+
+
+# Excludes pandas (converted to numpy by validate_data, output type won't match).
+@pytest.mark.skipif(
+    not sklearn_check_version("1.2"), reason="array_api_dispatch requires sklearn >= 1.2"
+)
+@pytest.mark.parametrize(
+    "dataframe,queue", get_dataframes_and_queues("numpy,dpnp,array_api")
+)
+def test_array_api_dispatch_output_type(dataframe, queue):
+    X_np = generate_dense_dataset(200, 10, 0.5, 3)
+    X = _convert_to_dataframe(X_np, sycl_queue=queue, target_df=dataframe)
+
+    with config_context(array_api_dispatch=True):
+        km = KMeans(n_clusters=3, random_state=0, n_init=1)
+        km.fit(X)
+        pred = km.predict(X)
+        trans = km.transform(X)
+        sc = km.score(X)
+
+        assert type(pred) == type(X)
+        assert type(trans) == type(X)
+        assert type(km.cluster_centers_) == type(X)
+        assert isinstance(sc, float)

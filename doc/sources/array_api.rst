@@ -32,12 +32,18 @@ on GPU without moving the data from host to device.
     be :external+sklearn:doc:`enabled in scikit-learn <modules/array_api>`, which requires either changing
     global settings or using a :doc:`config_context <config-contexts>`.
 
+.. hint::
+    Executing computations on GPUs has additional dependencies, particularly on package ``scikit-learn-intelex-gpu`` - see
+    :doc:`oneapi-gpu` for details.
+
 When passing array API inputs whose data is on a SYCL-enabled device (e.g. an Intel GPU), as
 supported for example by `PyTorch <https://docs.pytorch.org/docs/stable/notes/get_start_xpu.html>`__
-and |dpnp|, if array API support is enabled and the requested operation (e.g. call to ``.fit()`` / ``.predict()``
+and |dpnp|, if array API support is enabled, :doc:`GPU dependencies <oneapi-gpu>` are available, and the
+requested operation (e.g. call to ``.fit()`` / ``.predict()``
 on the estimator class being used) is :ref:`supported on device/GPU <sklearn_algorithms_gpu>`, computations
-will be performed on the device where the data lives, without involving any data transfers. Note that all of
-the inputs (e.g. ``X`` and ``y`` passed to ``.fit()`` methods) must be allocated on the same device for this to
+will be performed on the device where the data lives, without involving any data transfers.
+
+Note that all of the inputs (e.g. ``X`` and ``y`` passed to ``.fit()`` methods) must be allocated on the same device for this to
 work. If the requested operation is not supported on the device where the data lives, then it will either fall
 back to |sklearn|, or to an accelerated CPU version from the |sklearnex| when supported - these are controllable
 through options ``allow_sklearn_after_onedal`` (default is ``True``) and ``allow_fallback_to_host`` (default is
@@ -94,6 +100,7 @@ The following patched classes have support for array API inputs:
 - :obj:`sklearnex.basic_statistics.BasicStatistics`
 - :obj:`sklearnex.basic_statistics.IncrementalBasicStatistics`
 - :obj:`sklearn.cluster.DBSCAN`
+- :obj:`sklearn.cluster.KMeans`
 - :obj:`sklearn.covariance.EmpiricalCovariance`
 - :obj:`sklearnex.covariance.IncrementalEmpiricalCovariance`
 - :obj:`sklearn.decomposition.PCA`
@@ -102,9 +109,14 @@ The following patched classes have support for array API inputs:
 - :obj:`sklearn.ensemble.RandomForestClassifier`
 - :obj:`sklearn.ensemble.RandomForestRegressor`
 - :obj:`sklearn.linear_model.LinearRegression`
+- :obj:`sklearn.linear_model.LogisticRegression`
 - :obj:`sklearn.linear_model.Ridge`
 - :obj:`sklearnex.linear_model.IncrementalLinearRegression`
 - :obj:`sklearnex.linear_model.IncrementalRidge`
+- :obj:`sklearn.neighbors.KNeighborsClassifier`
+- :obj:`sklearn.neighbors.KNeighborsRegressor`
+- :obj:`sklearn.neighbors.NearestNeighbors`
+- :obj:`sklearn.neighbors.LocalOutlierFactor`
 - :obj:`sklearn.svm.NuSVC`
 - :obj:`sklearn.svm.NuSVR`
 - :obj:`sklearn.svm.SVC`
@@ -149,9 +161,21 @@ that was fitted to array API inputs will work, but it will do so by transferring
 to host if not already there, passing the intermediate object to |sklearn|, and outputting
 a host NumPy array, with some exceptions where |dpnp_array| classes might be returned.
 
+Similarly, :obj:`sklearn.neighbors.KNeighborsClassifier` also offers methods such as
+:meth:`~sklearn.neighbors.KNeighborsClassifier.radius_neighbors` and
+:meth:`~sklearn.neighbors.KNeighborsClassifier.kneighbors_graph`, which do not have
+accelerated analogs in the |sklearnex| and thus rely on |sklearn| for the computations.
+Calling such methods from a KNN estimator from the |sklearnex| that was fitted to array
+API inputs will work, but it will do so by transferring the data to host if not already
+there, passing the intermediate object to |sklearn|, and outputting a host NumPy array.
+
 Note that some cases of estimator-specific methods are still fully array API compatible -
 for example, :meth:`sklearn.neighbors.NearestNeighbors.kneighbors` will produce outputs
 of array API classes when fitted to them.
+
+For :obj:`sklearn.linear_model.LogisticRegression`, array API coverage is limited to cases where the input array
+is allocated on a GPU device, so passing array API inputs on CPU other than NumPy arrays will not result
+in calling accelerated routines from the |sklearnex|.
 
 Example usage
 =============

@@ -32,13 +32,9 @@ class LogisticRegression(LogisticRegression_Batch):
         return super().fit(X, y, queue=queue)
 
     @support_input_format
-    def predict(self, X, queue=None):
-        return super().predict(X, queue=queue)
+    def predict(self, X, queue=None, classes=None):
+        return super().predict(X, queue=queue, classes=classes)
 
     @support_input_format
     def predict_proba(self, X, queue=None):
         return super().predict_proba(X, queue=queue)
-
-    @support_input_format
-    def predict_log_proba(self, X, queue=None):
-        return super().predict_log_proba(X, queue=queue)

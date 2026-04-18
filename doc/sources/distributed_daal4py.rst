@@ -73,10 +73,12 @@ same algorithms to much larger problem sizes.
 
             .. warning:: Packages from the Intel channel are meant to be compatible with dependencies from ``conda-forge``, and might not work correctly in environments that have packages installed from the ``anaconda`` channel.
 
-        .. tab:: From Intel's pip Index
+        .. tab:: PyPI
             ::
 
-                pip install --index-url https://software.repos.intel.com/python/pypi mpi4py impi-rt
+                pip install mpi4py impi-rt
+
+            .. warning:: The command above might not necessarily result in an ``mpi4py`` environment that uses the ``impi-rt`` package from PyPI if there are multiple MPI installations. See :ref:`SPMD mode <distributed>` for more details.
 
 
 Using distributed mode

@@ -78,7 +78,7 @@ from ..utils.validation import validate_data
 # namespace associated with the given array for use in data conversion
 # necessary for to and from oneDAL. An internal version is preferred due to
 # limitations in sklearn versions and specific DPEX data framework support
-# (see dpctl tensors and dpnp).
+# (see dpnp).
 #
 # 9) ``validate_data`` checks data quality and estimator status before
 # evaluating the function. This replicates a sklearn functionality with key
@@ -110,7 +110,7 @@ from ..utils.validation import validate_data
 # Tier 3: Methods which directly use sklearn functionality. Typically these
 # can be directly inherited, but can be problematic with respect to other
 # framework support. These can be wrapped with the sklearnex function
-# ``wrap_output_data`` to guarantee array API, dpctl tensor, and dpnp
+# ``wrap_output_data`` to guarantee array API and dpnp
 # support but should be addressed with care/guidance in a case-by-case
 # basis.
 #
@@ -132,7 +132,7 @@ from ..utils.validation import validate_data
 
 
 # enable_array_api enables the sklearnex code to work with and directly pass
-# array_api and dpep frameworks data (dpnp, dpctl tensors, and pytorch for
+# array_api and dpep frameworks data (dpnp and pytorch for
 # example) to the oneDAL backend
 @enable_array_api
 @control_n_jobs(decorated_methods=["fit", "predict"])

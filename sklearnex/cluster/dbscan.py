@@ -21,7 +21,6 @@ from daal4py.sklearn._utils import is_sparse, sklearn_check_version
 from onedal.cluster import DBSCAN as onedal_DBSCAN
 from onedal.utils._array_api import _is_numpy_namespace
 
-from .._config import get_config
 from .._device_offload import dispatch
 from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
@@ -77,14 +76,11 @@ class DBSCAN(oneDALEstimator, _sklearn_DBSCAN):
 
     def _onedal_fit(self, X, y, sample_weight=None, queue=None):
         xp, _ = get_namespace(X, y, sample_weight)
-        if not get_config()["use_raw_input"]:
-            X = validate_data(
-                self, X, accept_sparse="csr", dtype=[xp.float64, xp.float32]
+        X = validate_data(self, X, accept_sparse="csr", dtype=[xp.float64, xp.float32])
+        if sample_weight is not None:
+            sample_weight = _check_sample_weight(
+                sample_weight, X, dtype=[xp.float64, xp.float32]
             )
-            if sample_weight is not None:
-                sample_weight = _check_sample_weight(
-                    sample_weight, X, dtype=[xp.float64, xp.float32]
-                )
 
         onedal_params = {
             "eps": self.eps,

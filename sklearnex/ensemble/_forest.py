@@ -58,7 +58,6 @@ from onedal.ensemble import RandomForestRegressor as onedal_RandomForestRegresso
 from onedal.primitives import get_tree_state_cls, get_tree_state_reg
 from onedal.utils.validation import _num_features
 
-from .._config import get_config
 from .._device_offload import dispatch, wrap_output_data
 from .._utils import PatchingConditionsChain, register_hyperparameters
 from ..base import oneDALEstimator
@@ -91,24 +90,22 @@ class BaseForest(oneDALEstimator, ABC):
     _onedal_factory = None
 
     def _onedal_fit(self, X, y, sample_weight=None, queue=None):
-        use_raw_input = get_config().get("use_raw_input", False) is True
         xp, _ = get_namespace(X, y, sample_weight)
-        if not use_raw_input:
-            X, y = validate_data(
-                self,
-                X,
-                y,
-                multi_output=True,
-                accept_sparse=False,
-                dtype=[xp.float64, xp.float32],
-                ensure_all_finite=not sklearn_check_version(
-                    "1.4"
-                ),  # completed in offload check
-                y_numeric=not is_classifier(self),  # trigger for Regressors
-            )
+        X, y = validate_data(
+            self,
+            X,
+            y,
+            multi_output=True,
+            accept_sparse=False,
+            dtype=[xp.float64, xp.float32],
+            ensure_all_finite=not sklearn_check_version(
+                "1.4"
+            ),  # completed in offload check
+            y_numeric=not is_classifier(self),  # trigger for Regressors
+        )
 
-            if sample_weight is not None:
-                sample_weight = _check_sample_weight(sample_weight, X)
+        if sample_weight is not None:
+            sample_weight = _check_sample_weight(sample_weight, X)
 
         if y.ndim == 2 and y.shape[1] == 1:
             warnings.warn(
@@ -133,40 +130,26 @@ class BaseForest(oneDALEstimator, ABC):
         self._n_samples, self.n_outputs_ = y.shape
         self.n_features_in_ = X.shape[1]
 
-        if not use_raw_input:
-            if is_classifier(self):
-                if sklearn_check_version("1.9"):
-                    y, expanded_class_weight = self._validate_y_class_weight(
-                        y, sample_weight
-                    )
-                else:
-                    y, expanded_class_weight = self._validate_y_class_weight(y)
+        if is_classifier(self):
+            if sklearn_check_version("1.9"):
+                y, expanded_class_weight = self._validate_y_class_weight(y, sample_weight)
             else:
-                expanded_class_weight = None
-
-            if expanded_class_weight is not None:
-                if sample_weight is not None:
-                    sample_weight = sample_weight * expanded_class_weight
-                else:
-                    sample_weight = expanded_class_weight
-
-            # Decapsulate classes_ attributes following scikit-learn's
-            # BaseForest.fit. oneDAL does not support multi-output, therefore
-            # the logic can be hardcoded in comparison to scikit-learn's logic
-            if hasattr(self, "classes_"):
-                self.n_classes_ = self.n_classes_[0]
-                self.classes_ = self.classes_[0]
-
+                y, expanded_class_weight = self._validate_y_class_weight(y)
         else:
-            # try catch needed for raw_inputs + array_api data where unlike
-            # numpy the way to yield unique values is via `unique_values`
-            # This should be removed when refactored for gpu zero-copy
-            if is_classifier(self):
-                try:
-                    self.classes_ = xp.unique(y)
-                except AttributeError:
-                    self.classes_ = xp.unique_values(y)
-                self.n_classes_ = self.classes_.shape[0]
+            expanded_class_weight = None
+
+        if expanded_class_weight is not None:
+            if sample_weight is not None:
+                sample_weight = sample_weight * expanded_class_weight
+            else:
+                sample_weight = expanded_class_weight
+
+        # Decapsulate classes_ attributes following scikit-learn's
+        # BaseForest.fit. oneDAL does not support multi-output, therefore
+        # the logic can be hardcoded in comparison to scikit-learn's logic
+        if hasattr(self, "classes_"):
+            self.n_classes_ = self.n_classes_[0]
+            self.classes_ = self.classes_[0]
 
         # conform to scikit-learn internal calculations
         if self.bootstrap:
@@ -914,13 +897,12 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
     def _onedal_predict(self, X, queue=None):
         xp, is_array_api_compliant = get_namespace(X, self.classes_)
 
-        if not get_config()["use_raw_input"]:
-            X = validate_data(
-                self,
-                X,
-                dtype=[xp.float64, xp.float32],
-                reset=False,
-            )
+        X = validate_data(
+            self,
+            X,
+            dtype=[xp.float64, xp.float32],
+            reset=False,
+        )
 
         res = self._onedal_estimator.predict(X, queue=queue)
 
@@ -935,14 +917,12 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
     def _onedal_predict_proba(self, X, queue=None):
         xp, _ = get_namespace(X)
 
-        use_raw_input = get_config().get("use_raw_input", False) is True
-        if not use_raw_input:
-            X = validate_data(
-                self,
-                X,
-                dtype=[xp.float64, xp.float32],
-                reset=False,
-            )
+        X = validate_data(
+            self,
+            X,
+            dtype=[xp.float64, xp.float32],
+            reset=False,
+        )
 
         # TODO: fix probabilities out of [0, 1] interval on oneDAL side
         out = self._onedal_estimator.predict_proba(X, queue=queue)
@@ -1130,15 +1110,13 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
     def _onedal_predict(self, X, queue=None):
         check_is_fitted(self, "_onedal_estimator")
         xp, _ = get_namespace(X)
-        use_raw_input = get_config().get("use_raw_input", False) is True
 
-        if not use_raw_input:
-            X = validate_data(
-                self,
-                X,
-                dtype=[xp.float64, xp.float32],
-                reset=False,
-            )  # Warning, order of dtype matters
+        X = validate_data(
+            self,
+            X,
+            dtype=[xp.float64, xp.float32],
+            reset=False,
+        )  # Warning, order of dtype matters
 
         return self._onedal_estimator.predict(X, queue=queue)
 

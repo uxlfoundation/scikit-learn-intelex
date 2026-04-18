@@ -30,7 +30,7 @@ via the ``impi_rt``  / ``impi-rt`` python/conda package) and the |mpi4py| python
 :doc:`installed from sources <building-from-source>`, ensure that the SPMD backend is built.
 
 .. important::
-  SMPD mode requires the |mpi4py| package used at runtime to be compiled with the same MPI backend as the |sklearnex|, or with an ABI-compatible MPI backend. The PyPI and Conda distributions of |sklearnex| are both built with Intel's MPI as backend, which follows the MPICH ABI and hence require an |mpi4py| also built with either Intel's MPI, or with another MPICH-compatible MPI backend (such as MPICH itself) - versions of |mpi4py| built with Intel's MPI can be installed as follows:
+  SMPD mode requires the |mpi4py| package used at runtime to be compiled with the same MPI backend as the |sklearnex|, or with an ABI-compatible MPI backend. The PyPI and Conda distributions of |sklearnex| are both built with Intel's MPI as backend, which follows the MPICH ABI and hence require an |mpi4py| also built with either Intel's MPI, or with another MPICH-compatible MPI backend (such as MPICH itself) - versions of |mpi4py| compatible with Intel's MPI can be installed as follows:
 
     .. tabs::
         .. tab:: From conda-forge
@@ -38,17 +38,16 @@ via the ``impi_rt``  / ``impi-rt`` python/conda package) and the |mpi4py| python
 
                 conda install -c conda-forge mpi4py mpi=*=impi
 
-        .. tab:: From Intel's conda channel
+        .. tab:: From PyPI
             ::
 
-                conda install -c https://software.repos.intel.com/python/conda/ -c conda-forge --override-channels mpi4py mpi=*=impi
+                pip install mpi4py impi-rt
 
-            .. warning:: Packages from the Intel channel are meant to be compatible with dependencies from ``conda-forge``, and might not work correctly in environments that have packages installed from the ``anaconda`` channel.
+            .. tip:: If the system has another MPI installation, one might want to set environment variable ``$MPI4PY_LIBMPI`` to point to the desired Intel MPI path to avoid clashes - for example, on Linux*, if using an offline installer with an activation script under ``/opt/intel/oneapi/setvars.sh``, one can set that variable as follows to use the system MPI:
 
-        .. tab:: From Intel's pip Index
-            ::
+                .. code-block:: bash
 
-                pip install --index-url https://software.repos.intel.com/python/pypi mpi4py impi-rt
+                    export MPI4PY_LIBMPI="${I_MPI_ROOT}/lib/libmpi.so"
 
   It also requires the MPI runtime executable (``mpiexec`` / ``mpirun``) to be from the same library that was used to compile |sklearnex| or from a compatible library. Intel's MPI runtime library is offered as a Python package ``impi_rt`` (conda) / ``impi-rt`` (PyPI) and will be installed together with the ``mpi4py`` package if executing the commands above, but otherwise, it can be installed separately from different distribution channels:
 
@@ -58,21 +57,10 @@ via the ``impi_rt``  / ``impi-rt`` python/conda package) and the |mpi4py| python
 
                 conda install -c conda-forge impi_rt mpi=*=impi
 
-        .. tab:: From Intel's conda channel
-            ::
-
-                conda install -c https://software.repos.intel.com/python/conda/ -c conda-forge --override-channels impi_rt mpi=*=impi
-
         .. tab:: From PyPI
             ::
 
                 pip install impi-rt
-
-        .. tab:: From Intel's pip Index
-            ::
-
-                pip install --index-url https://software.repos.intel.com/python/pypi impi-rt
-
 
   Using other MPI backends that are not MPICH-compatible (e.g. OpenMPI) requires building |sklearnex| from source with that backend, and using an |mpi4py| built with that same backend.
 

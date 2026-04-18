@@ -23,18 +23,26 @@ from sklearn.utils.validation import check_is_fitted
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.utils.validation import get_requires_y_tag
+from onedal.datatypes import from_table
 from onedal.neighbors import KNeighborsClassifier as onedal_KNeighborsClassifier
+from onedal.utils._array_api import _is_numpy_namespace
+from onedal.utils.validation import _check_classification_targets
 
 from .._device_offload import dispatch, wrap_output_data
-from ..utils.validation import check_feature_names
+from ..utils._array_api import enable_array_api, get_namespace
+from ..utils.validation import validate_data
 from .common import KNeighborsDispatchingBase
 
 
+@enable_array_api
 @control_n_jobs(
     decorated_methods=["fit", "predict", "predict_proba", "kneighbors", "score"]
 )
 class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassifier):
     __doc__ = _sklearn_KNeighborsClassifier.__doc__
+    # Default onedal estimator class - SPMD subclasses can override this
+    _onedal_estimator = onedal_KNeighborsClassifier
+
     if sklearn_check_version("1.2"):
         _parameter_constraints: dict = {
             **_sklearn_KNeighborsClassifier._parameter_constraints
@@ -64,6 +72,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         )
 
     def fit(self, X, y):
+        xp, is_array_api = get_namespace(X)
         dispatch(
             self,
             "fit",
@@ -74,13 +83,16 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             X,
             y,
         )
+        # Ensure _fit_X matches the input namespace so that
+        # kneighbors(X=None) can use get_namespace(self._fit_X).
+        if is_array_api and not _is_numpy_namespace(xp):
+            device = getattr(X, "device", None)
+            self._fit_X = xp.asarray(self._fit_X, device=device)
         return self
 
     @wrap_output_data
     def predict(self, X):
         check_is_fitted(self)
-        if X is not None:
-            check_feature_names(self, X, reset=False)
         return dispatch(
             self,
             "predict",
@@ -94,8 +106,6 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     @wrap_output_data
     def predict_proba(self, X):
         check_is_fitted(self)
-        if X is not None:
-            check_feature_names(self, X, reset=False)
         return dispatch(
             self,
             "predict_proba",
@@ -109,8 +119,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     @wrap_output_data
     def score(self, X, y, sample_weight=None):
         check_is_fitted(self)
-        if X is not None:
-            check_feature_names(self, X, reset=False)
+
         return dispatch(
             self,
             "score",
@@ -125,9 +134,15 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
 
     @wrap_output_data
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
+        # Validate n_neighbors parameter first
+        if n_neighbors is not None:
+            self._validate_n_neighbors(n_neighbors)
+
         check_is_fitted(self)
-        if X is not None:
-            check_feature_names(self, X, reset=False)
+
+        # Validate kneighbors parameters (inherited from KNeighborsDispatchingBase)
+        self._kneighbors_validation(X, n_neighbors)
+
         return dispatch(
             self,
             "kneighbors",
@@ -141,6 +156,22 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         )
 
     def _onedal_fit(self, X, y, queue=None):
+        xp, _ = get_namespace(X)
+        self._set_effective_metric()
+
+        X, y = validate_data(
+            self,
+            X,
+            y,
+            dtype=[xp.float64, xp.float32],
+            accept_sparse="csr",
+            multi_output=True,
+        )
+
+        # Process classification targets before passing to onedal
+        self._process_classification_targets(y, skip_validation=False)
+
+        # Call onedal backend
         onedal_params = {
             "n_neighbors": self.n_neighbors,
             "weights": self.weights,
@@ -149,30 +180,159 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             "p": self.effective_metric_params_.get("p", 2),
         }
 
-        self._onedal_estimator = onedal_KNeighborsClassifier(**onedal_params)
+        # Use class-level _onedal_estimator if available (for SPMD), else use module-level
+        if hasattr(self.__class__, "_onedal_estimator"):
+            self._onedal_estimator = self.__class__._onedal_estimator(**onedal_params)
+        else:
+            self._onedal_estimator = onedal_KNeighborsClassifier(**onedal_params)
         self._onedal_estimator.requires_y = get_requires_y_tag(self)
         self._onedal_estimator.effective_metric_ = self.effective_metric_
         self._onedal_estimator.effective_metric_params_ = self.effective_metric_params_
-        self._onedal_estimator.fit(X, y, queue=queue)
+        self._onedal_estimator.classes_ = self.classes_
+        self._onedal_estimator._y = self._y
+        self._onedal_estimator.outputs_2d_ = self.outputs_2d_
+        self._onedal_estimator._shape = self._shape
 
+        # Reshape encoded labels for C++ backend (always needs (-1, 1) shape)
+        fit_y = xp.reshape(self._y, (-1, 1))
+        self._onedal_estimator.fit(X, fit_y, queue=queue)
+
+        # Post-processing
         self._save_attributes()
 
+    def _process_classification_targets(self, y, skip_validation=False):
+        """Process classification targets and set class-related attributes.
+
+        Parameters
+        ----------
+        y : array-like
+            Target values
+        skip_validation : bool, default=False
+            If True, skip check_classification_targets validation.
+        """
+        # Array API support: get namespace from y
+        xp, _ = get_namespace(y)
+
+        y = xp.asarray(y)
+        self._shape = y.shape
+
+        if y.ndim == 1 or y.ndim == 2 and y.shape[1] == 1:
+            self.outputs_2d_ = False
+            y = xp.reshape(y, (-1, 1))
+        else:
+            self.outputs_2d_ = True
+
+        # Validate classification targets.
+        # Only validate numpy arrays since _check_classification_targets
+        # uses np.asarray internally, which fails for device arrays
+        # (dpnp, torch XPU, etc.).
+        if not skip_validation and _is_numpy_namespace(xp):
+            _check_classification_targets(y)
+
+        # Process classes using unique_inverse (numpy 2.0+ and Array API)
+        # or unique with return_inverse (older numpy)
+        n_outputs = y.shape[1]
+        self.classes_ = [None] * n_outputs
+        self._y = xp.empty_like(y, dtype=xp.int64)
+        for k in range(n_outputs):
+            if hasattr(xp, "unique_inverse"):
+                classes_k, inverse_k = xp.unique_inverse(y[:, k])
+            else:
+                classes_k, inverse_k = xp.unique(y[:, k], return_inverse=True)
+            self.classes_[k] = classes_k
+            self._y[:, k] = xp.asarray(inverse_k, dtype=xp.int64)
+
+        if not self.outputs_2d_:
+            self.classes_ = self.classes_[0]
+            self._y = xp.reshape(self._y, (-1,))
+
     def _onedal_predict(self, X, queue=None):
-        return self._onedal_estimator.predict(X, queue=queue)
+        if X is not None:
+            xp, _ = get_namespace(X)
+            X = validate_data(
+                self,
+                X,
+                dtype=[xp.float64, xp.float32],
+                accept_sparse="csr",
+                reset=False,
+            )
+
+        params = self._onedal_estimator._get_onedal_params(X)
+        params["result_option"] = "responses"
+        result = self._onedal_estimator._onedal_predict(
+            self._onedal_estimator._onedal_model, X, params
+        )
+        xp, _ = get_namespace(X)
+        responses = from_table(result.responses, like=X)
+        return xp.take(
+            self.classes_, xp.asarray(xp.reshape(responses, (-1,)), dtype=xp.int64)
+        )
 
     def _onedal_predict_proba(self, X, queue=None):
-        return self._onedal_estimator.predict_proba(X, queue=queue)
+        if X is not None:
+            xp, _ = get_namespace(X)
+            X = validate_data(
+                self,
+                X,
+                dtype=[xp.float64, xp.float32],
+                accept_sparse="csr",
+                reset=False,
+            )
+
+        neigh_dist, neigh_ind = self._onedal_estimator.kneighbors(X)
+
+        return self._compute_class_probabilities(
+            neigh_dist, neigh_ind, self.weights, self._y, self.classes_, self.outputs_2d_
+        )
 
     def _onedal_kneighbors(
         self, X=None, n_neighbors=None, return_distance=True, queue=None
     ):
-        return self._onedal_estimator.kneighbors(
-            X, n_neighbors, return_distance, queue=queue
+        # Determine if query is the training data
+        if X is not None:
+            query_is_train = False
+            xp, _ = get_namespace(X)
+            X = validate_data(
+                self,
+                X,
+                dtype=[xp.float64, xp.float32],
+                accept_sparse="csr",
+                reset=False,
+            )
+        else:
+            query_is_train = True
+            X = self._fit_X
+
+        # Resolve effective n_neighbors (adjust for self-exclusion)
+        effective_n_neighbors = (
+            n_neighbors if n_neighbors is not None else self.n_neighbors
+        )
+        if query_is_train:
+            effective_n_neighbors += 1
+
+        # Validate bounds with adjusted n_neighbors
+        self._validate_kneighbors_bounds(effective_n_neighbors, query_is_train, X)
+
+        # Always get both distances and indices for post-processing
+        # Pass n_neighbors as keyword to avoid _transfer_to_host mixing
+        # USM array X with int n_neighbors in the same positional args tuple
+        distances, indices = self._onedal_estimator.kneighbors(
+            X, n_neighbors=effective_n_neighbors, return_distance=True, queue=queue
+        )
+
+        return self._kneighbors_postprocess(
+            distances,
+            indices,
+            n_neighbors if n_neighbors is not None else self.n_neighbors,
+            return_distance,
+            query_is_train,
         )
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
         return accuracy_score(
-            y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
+            y,
+            self._onedal_predict(X, queue=queue),
+            sample_weight=sample_weight,
         )
 
     def _save_attributes(self):

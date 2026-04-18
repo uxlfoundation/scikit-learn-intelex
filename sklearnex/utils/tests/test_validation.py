@@ -30,7 +30,7 @@ from sklearnex.utils.validation import _check_sample_weight, validate_data
 # array_api support starts in sklearn 1.2, and array_api_strict conformance starts in sklearn 1.3
 _dataframes_supported = (
     "numpy,pandas"
-    + (",dpctl" if sklearn_check_version("1.2") else "")
+    + (",dpnp" if sklearn_check_version("1.2") else "")
     + (",array_api" if sklearn_check_version("1.3") else "")
 )
 
@@ -160,7 +160,7 @@ def test__check_sample_weight_random_shape_and_location(
     # This testing assumes that array api inputs to validate_data will only occur
     # with sklearn array_api support which began in sklearn 1.2. This would assume
     # that somewhere upstream of the validate_data call, a data conversion of dpnp,
-    # dpctl, or array_api inputs to numpy inputs would have occurred.
+    # dpnp or array_api inputs to numpy inputs would have occurred.
 
     lb, ub = 32768, 1048576  # lb is a patching condition, ub 2^20
     rand.seed(seed)
@@ -210,7 +210,7 @@ def test_validate_data_output(dtype, dataframe, queue):
     # This testing assumes that array api inputs to validate_data will only occur
     # with sklearn array_api support which began in sklearn 1.2. This would assume
     # that somewhere upstream of the validate_data call, a data conversion of dpnp,
-    # dpctl, or array_api inputs to numpy inputs would have occurred.
+    # dpnp or array_api inputs to numpy inputs would have occurred.
     est = DummyEstimator()
     X, y = gen_dataset(est, queue=queue, target_df=dataframe, dtype=dtype)[0]
 

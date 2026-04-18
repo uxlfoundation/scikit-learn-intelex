@@ -45,7 +45,7 @@ def dlpack_to_numpy(obj):
     # convert to numpy
     try:
         # Some frameworks implement an __array__ method just to
-        # throw a RuntimeError when used (array_api_strict, dpctl),
+        # throw a RuntimeError when used (array_api_strict),
         # or a TypeError (array_api-strict) rather than an AttributeError
         # therefore a try catch is necessary (logic is essentially a
         # getattr call + some)

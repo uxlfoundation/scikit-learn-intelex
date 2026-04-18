@@ -44,7 +44,7 @@ def test_sklearnex_import_DummyRegressor(dataframe, queue):
 @pytest.mark.skipif(
     not sklearn_check_version("1.3"), reason="lacks sklearn array API support"
 )
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("dpctl,dpnp"))
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("dpnp"))
 def test_fitted_attribute_conversion_DummyRegressor(dataframe, queue):
     rng = np.random.default_rng(seed=42)
 

@@ -256,17 +256,16 @@ class LinearRegression(oneDALEstimator, _sklearn_LinearRegression):
 
         xp, _ = get_namespace(X, y)
 
-        if not get_config()["use_raw_input"]:
-            supports_multi_output = daal_check_version((2025, "P", 1))
-            X, y = validate_data(
-                self,
-                X=X,
-                y=y,
-                dtype=[xp.float64, xp.float32],
-                accept_sparse=["csr", "csc", "coo"],
-                y_numeric=True,
-                multi_output=supports_multi_output,
-            )
+        supports_multi_output = daal_check_version((2025, "P", 1))
+        X, y = validate_data(
+            self,
+            X=X,
+            y=y,
+            dtype=[xp.float64, xp.float32],
+            accept_sparse=["csr", "csc", "coo"],
+            y_numeric=True,
+            multi_output=supports_multi_output,
+        )
 
         if not sklearn_check_version("1.2"):
             self._normalize = _deprecate_normalize(
@@ -305,10 +304,9 @@ class LinearRegression(oneDALEstimator, _sklearn_LinearRegression):
     def _onedal_predict(self, X, queue=None):
         xp, _ = get_namespace(X)
 
-        if not get_config()["use_raw_input"]:
-            X = validate_data(
-                self, X, accept_sparse=False, dtype=[xp.float64, xp.float32], reset=False
-            )
+        X = validate_data(
+            self, X, accept_sparse=False, dtype=[xp.float64, xp.float32], reset=False
+        )
 
         if not hasattr(self, "_onedal_estimator"):
             self._initialize_onedal_estimator()

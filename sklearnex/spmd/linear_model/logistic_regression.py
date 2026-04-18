@@ -14,8 +14,11 @@
 # limitations under the License.
 # ==============================================================================
 
-from onedal.spmd.linear_model import LogisticRegression
+from onedal.spmd.linear_model import LogisticRegression as onedal_LogisticRegression
 
-# TODO:
-# Currently it uses `onedal` module interface.
-# Add sklearnex dispatching.
+from ...linear_model import LogisticRegression as LogisticRegression_Batch
+
+
+class LogisticRegression(LogisticRegression_Batch):
+    __doc__ = LogisticRegression_Batch.__doc__
+    _onedal_LogisticRegression = staticmethod(onedal_LogisticRegression)

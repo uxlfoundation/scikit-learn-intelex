@@ -23,7 +23,6 @@ from onedal.basic_statistics import (
     IncrementalBasicStatistics as onedal_IncrementalBasicStatistics,
 )
 
-from .._config import get_config
 from .._device_offload import dispatch
 from .._utils import PatchingConditionsChain, _add_inc_serialization_note
 from ..base import oneDALEstimator
@@ -174,8 +173,7 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
     def _onedal_partial_fit(self, X, sample_weight=None, queue=None, check_input=True):
         first_pass = not hasattr(self, "n_samples_seen_") or self.n_samples_seen_ == 0
 
-        # never check input when using raw input
-        if check_input and not get_config()["use_raw_input"]:
+        if check_input:
             xp, _ = get_namespace(X)
             X = validate_data(
                 self,
@@ -204,14 +202,13 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
         self._need_to_finalize = True
 
     def _onedal_fit(self, X, sample_weight=None, queue=None):
-        if not get_config()["use_raw_input"]:
-            xp, _ = get_namespace(X, sample_weight)
-            X = validate_data(self, X, dtype=[xp.float64, xp.float32])
+        xp, _ = get_namespace(X, sample_weight)
+        X = validate_data(self, X, dtype=[xp.float64, xp.float32])
 
-            if sample_weight is not None:
-                sample_weight = _check_sample_weight(
-                    sample_weight, X, dtype=[xp.float64, xp.float32]
-                )
+        if sample_weight is not None:
+            sample_weight = _check_sample_weight(
+                sample_weight, X, dtype=[xp.float64, xp.float32]
+            )
 
         _, n_features = X.shape
         if self.batch_size is None:

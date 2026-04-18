@@ -22,7 +22,6 @@ from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import is_sparse, sklearn_check_version
 from onedal.decomposition import IncrementalPCA as onedal_IncrementalPCA
 
-from ..._config import get_config
 from ..._device_offload import dispatch, wrap_output_data
 from ..._utils import PatchingConditionsChain, _add_inc_serialization_note
 from ...base import oneDALEstimator
@@ -130,9 +129,8 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         # does not batch out data like sklearn's ``IncrementalPCA.transform``
         if self._need_to_finalize:
             self._onedal_finalize_fit()
-        if not get_config()["use_raw_input"]:
-            xp, _ = get_namespace(X)
-            X = validate_data(self, X, dtype=[xp.float64, xp.float32], reset=False)
+        xp, _ = get_namespace(X)
+        X = validate_data(self, X, dtype=[xp.float64, xp.float32], reset=False)
         return self._onedal_estimator.predict(X, queue=queue)
 
     def _onedal_fit_transform(self, X, queue=None):
@@ -145,13 +143,8 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
             self._components_ = None
 
         if check_input:
-            if not get_config()["use_raw_input"]:
-                xp, _ = get_namespace(X)
-                X = validate_data(
-                    self, X, dtype=[xp.float64, xp.float32], reset=first_pass
-                )
-            else:
-                self.n_features_in_ = X.shape[1]
+            xp, _ = get_namespace(X)
+            X = validate_data(self, X, dtype=[xp.float64, xp.float32], reset=first_pass)
 
         n_samples, n_features = X.shape
 
@@ -211,13 +204,10 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         # Taken from sklearn for conformance purposes
         self.components_ = None
 
-        if not get_config()["use_raw_input"]:
-            if sklearn_check_version("1.2"):
-                self._validate_params()
-            xp, _ = get_namespace(X)
-            X = validate_data(self, X, dtype=[xp.float64, xp.float32], copy=self.copy)
-        else:
-            self.n_features_in_ = X.shape[1]
+        if sklearn_check_version("1.2"):
+            self._validate_params()
+        xp, _ = get_namespace(X)
+        X = validate_data(self, X, dtype=[xp.float64, xp.float32], copy=self.copy)
 
         n_samples, n_features = X.shape
 
