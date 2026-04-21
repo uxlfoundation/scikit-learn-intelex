@@ -113,7 +113,7 @@ class BaseForest(oneDALEstimator, ABC):
             # out of it will error out with some packages like 'array-api-strict',
             # with an error like this:
             # "Cannot export readonly array since signalling readonly is unsupported
-            # by DLPack (supported by newer DLPack version).""
+            # by DLPack (supported by newer DLPack version)."
             # The DLPack version in this case is not in our control since each
             # library bundles its own copy and updates it on their own schedule.
             if isinstance(y, np.ndarray) and xp is not np:
