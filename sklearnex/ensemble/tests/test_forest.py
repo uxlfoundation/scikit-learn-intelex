@@ -14,13 +14,14 @@
 # limitations under the License.
 # ===============================================================================
 
+import array_api_strict
 import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_allclose
 from sklearn.datasets import make_classification, make_regression
 
-from daal4py.sklearn._utils import daal_check_version
+from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
@@ -194,3 +195,57 @@ def test_classifiers_work_on_single_class_non_numeric():
         ExtraTreesClassifier(n_estimators=1).fit(X, y).predict(X),
         y,
     )
+
+
+# TODO: add 'sample_weights' to this test once oneDAL supports the
+# new scikit-learn methodology and sklearnex doesn't fall back.
+@pytest.mark.skipif(
+    not sklearn_check_version("1.9"),
+    reason="Functionality introduced in later scikit-learn versions.",
+)
+@pytest.mark.parametrize("X_xp", [np, pd, array_api_strict])
+@pytest.mark.parametrize("y_xp", [np, pd, array_api_strict])
+@pytest.mark.parametrize("class_weights", [None, "balanced"])
+@pytest.mark.parametrize("n_classes", [0, 2, 3])  # 0 == regression
+def test_mixed_array_namespaces(X_xp, y_xp, class_weights, n_classes):
+    if class_weights is not None and n_classes == 0:
+        pytest.skip()
+    rng = np.random.default_rng(seed=123)
+    X = rng.standard_normal(size=(50, 4))
+    if n_classes == 0:  # regressor
+        y = rng.standard_normal(size=X.shape[0])
+    else:
+        y = rng.integers(n_classes, size=X.shape[0])
+
+    if X_xp is pd:
+        X = pd.DataFrame(X)
+    else:
+        X = X_xp.asarray(X)
+    if y_xp is pd:
+        if n_classes != 0:
+            y = np.array(["a", "b", "c"])[y]
+        y = pd.Series(y)
+    else:
+        y = y_xp.asarray(y)
+
+    from sklearnex import config_context
+    from sklearnex.ensemble import RandomForestClassifier, RandomForestRegressor
+
+    with config_context(array_api_dispatch=True):
+        model = (RandomForestClassifier if n_classes != 0 else RandomForestRegressor)(
+            n_estimators=2
+        ).fit(X, y)
+        pred = model.predict(X)
+        _ = model.score(X, y)
+
+    if n_classes == 0:
+        assert pred.__class__ == (X.__class__ if X_xp is not pd else np.ndarray)
+
+    # Note: this is a quick check to ensure that the result has the same
+    # kind of values as the input. There's no particular justification
+    # behind requiring 25% classification accuracy.
+    if n_classes != 0:
+        if y_xp is pd:
+            y_xp = np
+        pred_is_correct = y_xp.astype(y_xp.asarray(pred == y), y_xp.float32)
+        assert y_xp.sum(pred_is_correct) >= (0.25 * int(X.shape[0]))

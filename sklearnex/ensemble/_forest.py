@@ -72,7 +72,8 @@ from ..utils.validation import (
 
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import Interval
-
+if sklearn_check_version("1.9"):
+    from sklearn.utils._array_api import get_namespace_and_device, move_to
 
 __check_kwargs = {
     "dtype": None,
@@ -90,7 +91,10 @@ class BaseForest(oneDALEstimator, ABC):
     _onedal_factory = None
 
     def _onedal_fit(self, X, y, sample_weight=None, queue=None):
-        xp, _ = get_namespace(X, y, sample_weight)
+        if sklearn_check_version("1.9"):
+            xp, _, device = get_namespace_and_device(X)
+        else:
+            xp, _ = get_namespace(X, y, sample_weight)
         X, y = validate_data(
             self,
             X,
@@ -103,6 +107,9 @@ class BaseForest(oneDALEstimator, ABC):
             ),  # completed in offload check
             y_numeric=not is_classifier(self),  # trigger for Regressors
         )
+
+        if not is_classifier(self) and sklearn_check_version("1.9"):
+            y = move_to(y, xp=xp, device=device)
 
         if sample_weight is not None:
             sample_weight = _check_sample_weight(sample_weight, X)
@@ -125,16 +132,19 @@ class BaseForest(oneDALEstimator, ABC):
             )
 
         if y.ndim == 1:
-            y = xp.reshape(y, (-1, 1))
+            xp_y, _ = get_namespace(y)
+            y = xp_y.reshape(y, (-1, 1))
 
         self._n_samples, self.n_outputs_ = y.shape
         self.n_features_in_ = X.shape[1]
 
         if is_classifier(self):
             if sklearn_check_version("1.9"):
-                y, expanded_class_weight = self._validate_y_class_weight(y, sample_weight)
+                y, expanded_class_weight = self._validate_y_class_weight_internal(
+                    y, sample_weight, xp, device, dtype=X.dtype
+                )
             else:
-                y, expanded_class_weight = self._validate_y_class_weight(y)
+                y, expanded_class_weight = self._validate_y_class_weight_internal(y)
         else:
             expanded_class_weight = None
 
@@ -695,25 +705,17 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         for est in self._cached_estimators_:
             est.classes_ = self.classes_
 
-    if sklearn_check_version("1.9"):
-
-        def _validate_y_class_weight(self, y, sample_weight):
-            return self._validate_y_class_weight_internal(y, sample_weight)
-
-    else:
-
-        def _validate_y_class_weight(self, y):
-            return self._validate_y_class_weight_internal(y, None)
-
-    def _validate_y_class_weight_internal(self, y, sample_weight=None):
-
-        xp, is_array_api_compliant = get_namespace(y, sample_weight)
-
+    # Note: this mimics a similar internal method from scikit-learn, but does
+    # not override it in order to avoid conflicts when there are fallbacks.
+    def _validate_y_class_weight_internal(
+        self, y, sample_weight=None, xp=None, device=None, dtype=None
+    ):
+        xp_y, is_array_api_compliant = get_namespace(y)
         if not is_array_api_compliant:
             if sklearn_check_version("1.9"):
-                return super()._validate_y_class_weight(y, sample_weight)
+                return self._validate_y_class_weight(y, sample_weight)
             else:
-                return super()._validate_y_class_weight(y)
+                return self._validate_y_class_weight(y)
 
         # array API-only branch. This is meant only for the sklearnex
         # forest estimators which assume n_outputs = 1, will not interact
@@ -722,12 +724,23 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         # array API support began in sklearn).
 
         # only works with 1d array API inputs due to indexing issues
-        y = xp.reshape(y, (-1,))
+        y = xp_y.reshape(y, (-1,))
         check_classification_targets(y)
 
         expanded_class_weight = None
 
-        classes, y_store_unique_indices = xp.unique_inverse(y)
+        classes, y_store_unique_indices = xp_y.unique_inverse(y)
+
+        if xp is None:  # sklearn<1.9
+            xp, _ = get_namespace(y, sample_weight)
+        else:
+            y_store_unique_indices = move_to(y_store_unique_indices, xp=xp, device=device)
+
+        if dtype is None:
+            if sample_weight is not None:
+                dtype = sample_weight.dtype
+            else:
+                dtype = xp.float64
 
         # force 2d to match sklearn return
         self.classes_ = [classes]
@@ -735,9 +748,11 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
 
         if self.class_weight is not None:
             class_weights = _compute_class_weight(
-                self.class_weight, classes=classes, y=y_store_unique_indices
+                self.class_weight, classes=classes, y=y, y_encoded=y_store_unique_indices
             )
-            expanded_class_weight = xp.ones_like(y)
+            expanded_class_weight = xp.ones_like(
+                y_store_unique_indices, dtype=dtype, device=device
+            )
             # This for loop is O(n*m) where n is # of classes and m # of samples
             # sklearn's compute_sample_weight (roughly equivalent function) uses
             # np.searchsorted which is roughly O((log(n)*m) but unavailable in
@@ -776,7 +791,7 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         patching_status = super()._onedal_fit_ready(patching_status, X, y, sample_weight)
 
         if patching_status.get_status():
-            xp, is_array_api_compliant = get_namespace(X, y, sample_weight)
+            xp, is_array_api_compliant = get_namespace(y)
 
             try:
                 # properly verifies all non array API inputs without conversion
@@ -895,7 +910,10 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         )
 
     def _onedal_predict(self, X, queue=None):
-        xp, is_array_api_compliant = get_namespace(X, self.classes_)
+        if sklearn_check_version("1.9"):
+            xp, is_array_api_compliant = get_namespace(X)
+        else:
+            xp, is_array_api_compliant = get_namespace(X, self.classes_)
 
         X = validate_data(
             self,
@@ -905,6 +923,10 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
         )
 
         res = self._onedal_estimator.predict(X, queue=queue)
+
+        if sklearn_check_version("1.9"):
+            xp, is_array_api_compliant, device = get_namespace_and_device(self.classes_)
+            res = move_to(res, xp=xp, device=device)
 
         if is_array_api_compliant:
             return xp.take(
@@ -1121,6 +1143,10 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
         return self._onedal_estimator.predict(X, queue=queue)
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
+        if sklearn_check_version("1.9"):
+            xp, _, device = get_namespace_and_device(X)
+            y = check_array(y, ensure_2d=False)
+            y = move_to(y, xp=xp, device=device)
         return r2_score(
             y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
         )
