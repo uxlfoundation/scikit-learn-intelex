@@ -205,11 +205,13 @@ def test_classifiers_work_on_single_class_non_numeric():
 )
 @pytest.mark.parametrize("X_xp", [np, pd, array_api_strict])
 @pytest.mark.parametrize("y_xp", [np, pd, array_api_strict])
-@pytest.mark.parametrize("class_weights", [None, "balanced"])
+@pytest.mark.parametrize("class_weight", [None, "balanced"])
 @pytest.mark.parametrize("n_classes", [0, 2, 3])  # 0 == regression
-def test_mixed_array_namespaces(X_xp, y_xp, class_weights, n_classes):
-    if class_weights is not None and n_classes == 0:
+def test_mixed_array_namespaces(X_xp, y_xp, class_weight, n_classes):
+    if class_weight is not None and n_classes == 0:
         pytest.skip()
+    if y_xp is pd and n_classes == 0:
+        pytest.skip("Bugs in scikit-learn prevent test from passing")
     rng = np.random.default_rng(seed=123)
     X = rng.standard_normal(size=(50, 4))
     if n_classes == 0:  # regressor
@@ -234,7 +236,10 @@ def test_mixed_array_namespaces(X_xp, y_xp, class_weights, n_classes):
     with config_context(array_api_dispatch=True):
         model = (RandomForestClassifier if n_classes != 0 else RandomForestRegressor)(
             n_estimators=2
-        ).fit(X, y)
+        )
+        if class_weight is not None:
+            model.set_params(class_weight=class_weight)
+        model.fit(X, y)
         pred = model.predict(X)
         _ = model.score(X, y)
 
