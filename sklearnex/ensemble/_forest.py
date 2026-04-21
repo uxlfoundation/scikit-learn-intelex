@@ -109,6 +109,15 @@ class BaseForest(oneDALEstimator, ABC):
         )
 
         if not is_classifier(self) and sklearn_check_version("1.9"):
+            # Note: if 'y' is read-only, trying to get a dlpack object
+            # out of it will error out with some packages like 'array-api-strict',
+            # with an error like this:
+            # "Cannot export readonly array since signalling readonly is unsupported
+            # by DLPack (supported by newer DLPack version).""
+            # The DLPack version in this case is not in our control since each
+            # library bundles its own copy and updates it on their own schedule.
+            if isinstance(y, np.ndarray) and xp is not np:
+                y = np.require(y, requirements=["WRITEABLE"])
             y = move_to(y, xp=xp, device=device)
 
         if sample_weight is not None:

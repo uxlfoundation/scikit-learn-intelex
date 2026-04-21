@@ -210,8 +210,6 @@ def test_classifiers_work_on_single_class_non_numeric():
 def test_mixed_array_namespaces(X_xp, y_xp, class_weight, n_classes):
     if class_weight is not None and n_classes == 0:
         pytest.skip()
-    if y_xp is pd and n_classes == 0:
-        pytest.skip("Bugs in scikit-learn prevent test from passing")
     rng = np.random.default_rng(seed=123)
     X = rng.standard_normal(size=(50, 4))
     if n_classes == 0:  # regressor
