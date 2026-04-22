@@ -141,12 +141,8 @@ def _compute_class_weight(
         )
         unweighted_classes = []
         for i, c in enumerate(classes):
-            if not sklearn_check_version("1.9"):
-                # array API has only numeric datatypes, convert to float for generality
-                # complex values should never be observed by this function
-                c = float(c)
-            if c in class_weight:
-                weight[i] = class_weight[c]
+            if (fc := float(c)) in class_weight:
+                weight[i] = class_weight[fc]
             else:
                 unweighted_classes.append(c)
 
