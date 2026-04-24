@@ -19,6 +19,7 @@ from collections.abc import Iterable
 
 import pytest
 
+from onedal import _dpc_backend
 from onedal.utils._third_party import SyclQueue, dpctl_available
 
 if dpctl_available:
@@ -54,6 +55,8 @@ def get_queues(filter_: str = "cpu,gpu") -> list[SyclQueue]:
         or `pytest.xfail` instead.
     """
     queues = [None] if "cpu" in filter_ else []
+    if _dpc_backend is None:
+        return queues
 
     for i in filter_.split(","):
         try:
