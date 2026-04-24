@@ -131,7 +131,7 @@ def test_config_context_works():
 
 
 @pytest.mark.skipif(
-    onedal._default_backend.is_dpc, reason="requires host default backend"
+    not onedal._default_backend.is_dpc, reason="requires host default backend"
 )
 @pytest.mark.parametrize("target", ["auto", "cpu", "cpu:0", "gpu", 3])
 def test_host_backend_target_offload(target):
