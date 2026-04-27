@@ -648,6 +648,7 @@ def test_table_convert_to_host_dlpack(dataframe, queue, order, data_shape, dtype
     assert X_out.flags.writeable
 
 
+@pytest.mark.skipif(_dpc_backend is None, reason="Functionality requires DPC module")
 @pytest.mark.parametrize("queue", get_queues())
 def test_table_writable_dlpack(queue):
     """Test if __dlpack__ attribute can be properly consumed by moving data

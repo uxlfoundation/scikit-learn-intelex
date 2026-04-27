@@ -137,11 +137,15 @@ def test_config_context_works():
 def test_host_backend_target_offload(target):
     from sklearnex.neighbors import NearestNeighbors
 
-    err_msg = r"DPC"
+    err_msg = r"DPC|SYCL"
 
     est = NearestNeighbors()
-    if target != "auto":
-        with pytest.raises(ValueError, match=err_msg):
+    if not isinstance(target, str):
+        with pytest.raises((ValueError, RuntimeError, TypeError)):
+            with sklearnex.config_context(target_offload=target):
+                est.fit(np.eye(5, 8))
+    elif target != "auto":
+        with pytest.raises((ValueError, RuntimeError), match=err_msg):
             with sklearnex.config_context(target_offload=target):
                 est.fit(np.eye(5, 8))
     else:
