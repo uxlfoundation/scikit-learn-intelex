@@ -30,24 +30,6 @@ def _apply_and_pass(func, *args, **kwargs):
 
 def _convert_one_to_table(arg, queue=None):
     # All inputs for table conversion must be array-like or sparse, not scalars
-    if hasattr(arg, "__dlpack__"):
-        # Note: In NumPy arrays and in other libraries that have a CPU array originally
-        # created from a NumPy array, if the array is read-only (as specified through
-        # flag 'writeable'), calling the '__dlpack__' capsule will raise a BufferError
-        # with a message saying that the DLPack version does not support read-only arrays.
-        # Note that the array API standard allows '__dlpack__' to throw BufferError under
-        # situations like this, and in theory it should allow other libraries to throw this
-        # error under more circumstances beyond this specific case, but 'to_table' assumes
-        # that it will not raise.
-        # This workaround copies the input array to a fresh, writeable NumPy array and
-        # then converts it back to the type and device of the original input.
-        try:
-            arg.__dlpack__()
-        except BufferError:
-            np_arg = np.from_dlpack(arg)
-            np_arg = np.require(np_arg, requirements=["WRITEABLE"])
-            xp = arg.__array_namespace__()
-            arg = xp.from_dlpack(np_arg, device=arg.device)
     return backend.to_table(np.atleast_2d(arg) if np.isscalar(arg) else arg, queue)
 
 
