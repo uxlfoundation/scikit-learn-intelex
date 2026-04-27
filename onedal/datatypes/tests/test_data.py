@@ -16,6 +16,7 @@
 
 import gc
 
+import array_api_strict
 import numpy as np
 import pytest
 import scipy.sparse as sp
@@ -673,3 +674,15 @@ def test_table_writable_dlpack(queue):
         X_out = xp.from_dlpack(X_table, copy=copy_bool)
         # verify that table immutability is gone and copy behavior has been followed
         assert X_out.flags["W"] is copy_bool
+
+
+def test_nonwriteable_arrays():
+    x = np.arange(10)
+    x.flags.writeable = False
+    x = array_api_strict.asarray(x)
+
+    x_tbl = to_table(x)
+    x_converted = from_table(x_tbl)
+    x_converted = np.asarray(x_converted).reshape(-1)
+
+    np.testing.assert_array_equal(x_converted, x)
