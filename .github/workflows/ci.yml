@@ -35,7 +35,7 @@ env:
   DPCTL_PY_VERSIONS: '3.10\|3.14'
   UXL_PYTHONVERSION: "3.13"
   UXL_SKLEARNVERSION: "1.6"
-  ONEDAL_REPO: "uxlfoundation/oneDAL"
+  ONEDAL_REPO: "Alexandr-Solovev/oneDAL"
 
 jobs:
 
