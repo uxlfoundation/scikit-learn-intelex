@@ -140,11 +140,7 @@ def test_host_backend_target_offload(target):
     err_msg = r"DPC"
 
     est = NearestNeighbors()
-    if target != "auto":
-        with pytest.raises(ValueError, match=err_msg):
-            with sklearnex.config_context(target_offload=target):
-                est.fit(np.eye(5, 8))
-    else:
+    with pytest.raises(ValueError, match=err_msg):
         with sklearnex.config_context(target_offload=target):
             est.fit(np.eye(5, 8))
 
