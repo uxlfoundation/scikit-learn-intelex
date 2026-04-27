@@ -15,6 +15,7 @@
 # ==============================================================================
 
 import functools
+import warnings
 from collections.abc import Iterable
 
 import pytest
@@ -56,6 +57,10 @@ def get_queues(filter_: str = "cpu,gpu") -> list[SyclQueue]:
     """
     queues = [None] if "cpu" in filter_ else []
     if _dpc_backend is None:
+        if "gpu" in filter_:
+            warnings.warn(
+                "Attempting to get a GPU queue, but DPC backend is not available."
+            )
         return queues
 
     for i in filter_.split(","):
