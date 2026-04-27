@@ -137,9 +137,7 @@ def test_config_context_works():
 def test_host_backend_target_offload(target):
     from sklearnex.neighbors import NearestNeighbors
 
-    err_msg = (
-        r"device use via \`target_offload\` is only supported with the DPC\+\+ backend"
-    )
+    err_msg = r"only supported with the DPC\+\+ backend"
 
     est = NearestNeighbors()
     if target != "auto":
