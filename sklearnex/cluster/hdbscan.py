@@ -16,6 +16,7 @@
 
 import numpy as np
 from sklearn.cluster import HDBSCAN as _sklearn_HDBSCAN
+from sklearn.metrics import pairwise_distances
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import is_sparse, sklearn_check_version
@@ -68,6 +69,34 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
         # to match sklearn's interface
         self.probabilities_ = np.zeros(len(self.labels_), dtype=np.float64)
 
+        # Compute cluster centers when requested, since oneDAL does not
+        # provide them directly
+        if self.store_centers in ("centroid", "both"):
+            self.centroids_ = self._compute_centroids(X)
+        if self.store_centers in ("medoid", "both"):
+            self.medoids_ = self._compute_medoids(X)
+
+    def _compute_centroids(self, X):
+        n_clusters = len(set(self.labels_) - {-1})
+        centroids = np.empty((n_clusters, X.shape[1]), dtype=np.float64)
+        for idx in range(n_clusters):
+            mask = self.labels_ == idx
+            centroids[idx] = np.average(X[mask], weights=self.probabilities_[mask], axis=0)
+        return centroids
+
+    def _compute_medoids(self, X):
+        metric_params = self.metric_params or {}
+        n_clusters = len(set(self.labels_) - {-1})
+        medoids = np.empty((n_clusters, X.shape[1]), dtype=np.float64)
+        for idx in range(n_clusters):
+            mask = self.labels_ == idx
+            data = X[mask]
+            dist_mat = pairwise_distances(data, metric=self.metric, **metric_params)
+            dist_mat = dist_mat * self.probabilities_[mask]
+            medoid_index = np.argmin(dist_mat.sum(axis=1))
+            medoids[idx] = data[medoid_index]
+        return medoids
+
     _onedal_supported_metrics = {
         "euclidean",
         "manhattan",
@@ -106,10 +135,6 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
                     (
                         not self.allow_single_cluster,
                         "allow_single_cluster=True is not supported.",
-                    ),
-                    (
-                        self.store_centers is None,
-                        "store_centers is not supported.",
                     ),
                     (not is_sparse(X), "X is sparse. Sparse input is not supported."),
                 ]

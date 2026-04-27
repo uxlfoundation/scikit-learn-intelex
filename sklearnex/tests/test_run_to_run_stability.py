@@ -34,7 +34,7 @@ import daal4py as d4p
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import _as_numpy, get_dataframes_and_queues
 from sklearnex.basic_statistics import BasicStatistics
-from sklearnex.cluster import DBSCAN, KMeans
+from sklearnex.cluster import DBSCAN, HDBSCAN, KMeans
 from sklearnex.decomposition import PCA
 from sklearnex.metrics import pairwise_distances, roc_auc_score
 from sklearnex.model_selection import train_test_split
@@ -158,6 +158,7 @@ STABILITY_INSTANCES = sklearn_clone_dict(
             KNeighborsRegressor(algorithm="kd_tree"),
             NearestNeighbors(algorithm="kd_tree"),
             DBSCAN(algorithm="brute"),
+            HDBSCAN(),
             PCA(n_components=0.5, svd_solver="covariance_eigh"),
             KMeans(init="random"),
         ]
