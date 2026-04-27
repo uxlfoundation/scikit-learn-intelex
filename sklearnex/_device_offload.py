@@ -18,6 +18,7 @@ from collections.abc import Callable
 from functools import wraps
 from typing import Any, Union
 
+from daal4py.sklearn._utils import sklearn_check_version
 from onedal._device_offload import _transfer_to_host
 from onedal.datatypes import copy_to_dpnp
 from onedal.utils import _sycl_queue_manager as QM
@@ -123,7 +124,19 @@ def dispatch(
     # The _sycl_queue_manager verifies all arguments are on a single SYCL device or
     # cpu and will otherwise throw an error. If located on a non-SYCL, non-CPU
     # device, a special queue is set which will cause a failure in ``_get_backend``
-    with QM.manage_global_queue(None, *args):
+    # Comment 2026-04-27: as of scikit-learn1.9, the behavior described above should
+    # no longer apply - instead, data should be moved to the namespace and device
+    # of either 'X' (in estimators) or 'y' (in metrics) if it wasn't originally there.
+    # But note that this requires doing the movements manually in every estimator.
+    # It should not move things right here, because up to this point, 'y' is whatever
+    # the user supplied, which can be strings for classifiers for example, which cannot
+    # be moved to a GPU device.
+    context = (
+        QM.manage_global_queue(None, *args)
+        if not _array_api_offload() or not sklearn_check_version("1.9")
+        else QM.manage_global_queue(None, *(args[:1]))
+    )
+    with context:
         if onedal_array_api:
             backend, patching_status = _get_backend(obj, method_name, *args)
             if backend:

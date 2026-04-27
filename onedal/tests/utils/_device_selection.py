@@ -84,6 +84,8 @@ def is_sycl_device_available(targets: Iterable[str]) -> bool:
     """
     if not isinstance(targets, Iterable):
         raise TypeError("`targets` should be an iterable of strings.")
+    if isinstance(targets, str):
+        targets = [targets]
     for device in targets:
         try:
             SyclQueue(device)
