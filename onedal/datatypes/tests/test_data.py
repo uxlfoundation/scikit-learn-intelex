@@ -22,6 +22,7 @@ import pytest
 import scipy.sparse as sp
 from numpy.testing import assert_allclose, assert_array_equal
 
+from daal4py.sklearn._utils import _package_check_version
 from onedal import _default_backend, _dpc_backend
 from onedal._device_offload import supports_queue
 from onedal.datatypes import from_table, to_table
@@ -676,6 +677,10 @@ def test_table_writable_dlpack(queue):
         assert X_out.flags["W"] is copy_bool
 
 
+@pytest.mark.skipif(
+    not _package_check_version("2.0", np.__version__),
+    reason="Array API functionality requires more recent version of NumPy.",
+)
 def test_nonwriteable_arrays():
     x = np.arange(10)
     x.flags.writeable = False
