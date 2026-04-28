@@ -137,7 +137,14 @@ def test_config_context_works():
 def test_host_backend_target_offload(target):
     from sklearnex.neighbors import NearestNeighbors
 
-    err_msg = r"DPC|SYCL"
+    err_msg = "|".join(
+        [
+            r"SYCL Device '.+' could not be created",
+            r"Positional argument .+ is not a filter string or a SyclDevice",
+            r"oneDAL GPU/DPC\+\+ support is not available in the current installation",
+            r"device use via `target_offload` is only supported with the DPC\+\+ backend",
+        ]
+    )
 
     est = NearestNeighbors()
     if not isinstance(target, str):
