@@ -26,27 +26,16 @@ from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
+    dpnp_available,
     get_dataframes_and_queues,
+    torch_available,
 )
 from onedal.tests.utils._device_selection import is_sycl_device_available
 
-torch_available = False
-dpnp_available = False
-gpu_available = False
-if is_sycl_device_available("gpu"):
-    gpu_available = True
-    try:
-        import torch
-
-        torch_available = True
-    except ImportError:
-        pass
-    try:
-        import dpnp
-
-        dpnp_available = True
-    except ImportError:
-        pass
+if dpnp_available:
+    import dpnp
+if torch_available:
+    import torch
 
 hparam_values = [
     (None, None, None, None),
@@ -227,7 +216,7 @@ def test_classifiers_work_on_single_class_non_numeric():
 @pytest.mark.parametrize("y_xp", [np, pd, array_api_strict])
 @pytest.mark.parametrize("class_weight", [None, "balanced"])
 @pytest.mark.parametrize("n_classes", [0, 2, 3])  # 0 == regression
-def test_mixed_array_namespaces(X_xp, y_xp, class_weight, n_classes):
+def test_mixed_array_namespaces(X_xp, y_xp, class_weight, n_classes, with_array_api):
     if class_weight is not None and n_classes == 0:
         pytest.skip()
     rng = np.random.default_rng(seed=123)
@@ -248,18 +237,16 @@ def test_mixed_array_namespaces(X_xp, y_xp, class_weight, n_classes):
     else:
         y = y_xp.asarray(y)
 
-    from sklearnex import config_context
     from sklearnex.ensemble import RandomForestClassifier, RandomForestRegressor
 
-    with config_context(array_api_dispatch=True):
-        model = (RandomForestClassifier if n_classes != 0 else RandomForestRegressor)(
-            n_estimators=2
-        )
-        if class_weight is not None:
-            model.set_params(class_weight=class_weight)
-        model.fit(X, y)
-        pred = model.predict(X)
-        _ = model.score(X, y)
+    model = (RandomForestClassifier if n_classes != 0 else RandomForestRegressor)(
+        n_estimators=2
+    )
+    if class_weight is not None:
+        model.set_params(class_weight=class_weight)
+    model.fit(X, y)
+    pred = model.predict(X)
+    _ = model.score(X, y)
 
     if n_classes == 0:
         assert pred.__class__ == (X.__class__ if X_xp is not pd else np.ndarray)
@@ -274,7 +261,9 @@ def test_mixed_array_namespaces(X_xp, y_xp, class_weight, n_classes):
         assert y_xp.sum(pred_is_correct) >= (0.25 * int(X.shape[0]))
 
 
-@pytest.mark.skipif(not gpu_available, reason="Test checks GPU-specific functionality")
+@pytest.mark.skipif(
+    not is_sycl_device_available("gpu"), reason="Test checks GPU-specific functionality."
+)
 @pytest.mark.parametrize(
     "X_xp, X_device",
     ([(torch, "xpu"), (torch, "cpu")] if torch_available else [])
@@ -289,8 +278,8 @@ def test_mixed_array_namespaces(X_xp, y_xp, class_weight, n_classes):
 @pytest.mark.parametrize(
     "estimator_class", ["RandomForestRegressor", "RandomForestClassifier"]
 )
-def test_mixed_devices(X_xp, y_xp, X_device, y_device, estimator_class):
-    from sklearnex import config_context, ensemble
+def test_mixed_devices(X_xp, y_xp, X_device, y_device, estimator_class, with_array_api):
+    from sklearnex import ensemble
 
     model = getattr(ensemble, estimator_class)(n_estimators=2)
 
@@ -310,15 +299,14 @@ def test_mixed_devices(X_xp, y_xp, X_device, y_device, estimator_class):
     else:
         y = y_xp.asarray(y, device=y_device)
 
-    with config_context(array_api_dispatch=True):
-        model.fit(X, y)
-        pred = model.predict(X)
-        if is_regressor(model):
-            assert pred.__class__ == X.__class__
+    model.fit(X, y)
+    pred = model.predict(X)
+    if is_regressor(model):
+        assert pred.__class__ == X.__class__
+    else:
+        if y_xp is pd:
+            assert isinstance(pred, np.ndarray)
         else:
-            if y_xp is pd:
-                assert isinstance(pred, np.ndarray)
-            else:
-                assert pred.__class__ == y.__class__
-        _ = model.score(X, y)
-        _ = model.score(X, y)
+            assert pred.__class__ == y.__class__
+    _ = model.score(X, y)
+    _ = model.score(X, y)
