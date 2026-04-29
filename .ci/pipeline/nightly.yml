@@ -75,7 +75,7 @@ jobs:
       pip install -r dependencies-dev
       pip install -r requirements-doc.txt
       pip install -r requirements-test.txt
-      pip install jupyter matplotlib requests
+      pip install jupyter matplotlib requests openml
     displayName: 'Install requirements'
   - script: |
       . /usr/share/miniconda/etc/profile.d/conda.sh
