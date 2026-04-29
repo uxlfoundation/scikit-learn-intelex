@@ -937,7 +937,10 @@ class ForestClassifier(BaseForest, _sklearn_ForestClassifier):
             return xp.take(self.classes_, res.ravel().astype(xp.int64, casting="unsafe"))
 
     def _onedal_predict_proba(self, X, queue=None):
-        xp, _ = get_namespace(X)
+        if sklearn_check_version("1.9"):
+            xp, _, device = get_namespace_and_device(X)
+        else:
+            xp, _ = get_namespace(X)
 
         X = validate_data(
             self,

@@ -255,6 +255,11 @@ def test_rf_mixed_array_namespaces(X_xp, y_xp, class_weight, n_classes, with_arr
             assert isinstance(model.classes_, np.ndarray)
         else:
             assert model.classes_.__class__ == y.__class__
+        proba = model.predict_proba(X)
+        if X_xp is pd:
+            assert isinstance(proba, np.ndarray)
+        else:
+            assert proba.__class__ == X.__class__
 
     # Note: this is a quick check to ensure that the result has the same
     # kind of values as the input. Note that roughly 1/2 or 1/3 of the inputs
@@ -323,5 +328,6 @@ def test_rf_mixed_devices(
             assert isinstance(pred, np.ndarray)
         else:
             assert pred.__class__ == y.__class__
-    _ = model.score(X, y)
+        proba = model.predict_proba(X)
+        assert proba.__class__ == X.__class__
     _ = model.score(X, y)
