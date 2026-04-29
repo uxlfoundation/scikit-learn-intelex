@@ -79,6 +79,8 @@ class HDBSCAN(ClusterMixin):
             "min_samples": int(min_samples),
             "metric": self.metric,
             "result_options": "responses",
+            "cluster_selection": self.cluster_selection_method,
+            "allow_single_cluster": bool(self.allow_single_cluster),
         }
 
         # Set degree for Minkowski metric

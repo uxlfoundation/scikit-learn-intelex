@@ -126,7 +126,6 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
         import sklearn.utils.fixes as parallel_module
 
     from sklearn.cluster import DBSCAN as DBSCAN_sklearn
-    from sklearn.cluster import HDBSCAN as HDBSCAN_sklearn
     from sklearn.cluster import KMeans as KMeans_sklearn
     from sklearn.decomposition import PCA as PCA_sklearn
     from sklearn.dummy import DummyRegressor as DummyRegressor_sklearn
@@ -174,7 +173,6 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
     from ._config import get_config as get_config_sklearnex
     from ._config import set_config as set_config_sklearnex
     from .cluster import DBSCAN as DBSCAN_sklearnex
-    from .cluster import HDBSCAN as HDBSCAN_sklearnex
     from .cluster import KMeans as KMeans_sklearnex
     from .covariance import (
         IncrementalEmpiricalCovariance as IncrementalEmpiricalCovariance_sklearnex,
@@ -214,12 +212,6 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
             "DBSCAN",
             DBSCAN_sklearnex,
             DBSCAN_sklearn,
-        ),
-        "sklearn.cluster.HDBSCAN": (
-            cluster_module,
-            "HDBSCAN",
-            HDBSCAN_sklearnex,
-            HDBSCAN_sklearn,
         ),
         "sklearn.cluster.KMeans": (
             cluster_module,
@@ -401,6 +393,19 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
             "IncrementalRidge",
             IncrementalRidge_sklearnex,
             None,
+        )
+
+    # HDBSCAN was added to sklearn in 1.3
+    if sklearn_check_version("1.3"):
+        from sklearn.cluster import HDBSCAN as HDBSCAN_sklearn
+
+        from .cluster import HDBSCAN as HDBSCAN_sklearnex
+
+        mapping["sklearn.cluster.HDBSCAN"] = (
+            cluster_module,
+            "HDBSCAN",
+            HDBSCAN_sklearnex,
+            HDBSCAN_sklearn,
         )
 
     return mapping

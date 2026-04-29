@@ -115,6 +115,16 @@ struct hdbscan_params2desc {
         if (params.contains("degree")) {
             desc.set_degree(params["degree"].cast<double>());
         }
+        if (params.contains("cluster_selection")) {
+            const auto cs = params["cluster_selection"].cast<std::string>();
+            if (cs == "leaf")
+                desc.set_cluster_selection(cluster_selection_method::leaf);
+            else
+                desc.set_cluster_selection(cluster_selection_method::eom);
+        }
+        if (params.contains("allow_single_cluster")) {
+            desc.set_allow_single_cluster(params["allow_single_cluster"].cast<bool>());
+        }
 
         return desc;
     }

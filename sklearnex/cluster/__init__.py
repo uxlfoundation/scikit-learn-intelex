@@ -14,8 +14,15 @@
 # limitations under the License.
 # ===============================================================================
 
+from daal4py.sklearn._utils import sklearn_check_version
+
 from .dbscan import DBSCAN
-from .hdbscan import HDBSCAN
 from .k_means import KMeans
 
-__all__ = ["DBSCAN", "HDBSCAN", "KMeans"]
+__all__ = ["DBSCAN", "KMeans"]
+
+# HDBSCAN was added to sklearn in 1.3
+if sklearn_check_version("1.3"):
+    from .hdbscan import HDBSCAN
+
+    __all__ += ["HDBSCAN"]
