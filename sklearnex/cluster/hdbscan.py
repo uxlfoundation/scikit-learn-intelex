@@ -15,7 +15,6 @@
 # ===============================================================================
 
 from sklearn.cluster import HDBSCAN as _sklearn_HDBSCAN
-from sklearn.metrics import pairwise_distances
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import is_sparse, sklearn_check_version
@@ -55,7 +54,6 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
             "n_jobs": self.n_jobs,
             "cluster_selection_method": self.cluster_selection_method,
             "allow_single_cluster": self.allow_single_cluster,
-            "store_centers": self.store_centers,
             "copy": self.copy,
         }
         self._onedal_estimator = self._onedal_hdbscan(**onedal_params)
@@ -71,38 +69,6 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
         self.probabilities_ = xp.zeros(
             len(self.labels_), dtype=xp.float64, **device_kwarg
         )
-
-        # Compute cluster centers when requested, since oneDAL does not
-        # provide them directly
-        if self.store_centers in ("centroid", "both"):
-            self.centroids_ = self._compute_centroids(X, xp, device_kwarg)
-        if self.store_centers in ("medoid", "both"):
-            self.medoids_ = self._compute_medoids(X, xp, device_kwarg)
-
-    def _compute_centroids(self, X, xp, device_kwarg):
-        n_clusters = len(set(self.labels_) - {-1})
-        centroids = xp.empty(
-            (n_clusters, X.shape[1]), dtype=xp.float64, **device_kwarg
-        )
-        for idx in range(n_clusters):
-            mask = self.labels_ == idx
-            centroids[idx] = xp.average(X[mask], weights=self.probabilities_[mask], axis=0)
-        return centroids
-
-    def _compute_medoids(self, X, xp, device_kwarg):
-        metric_params = self.metric_params or {}
-        n_clusters = len(set(self.labels_) - {-1})
-        medoids = xp.empty(
-            (n_clusters, X.shape[1]), dtype=xp.float64, **device_kwarg
-        )
-        for idx in range(n_clusters):
-            mask = self.labels_ == idx
-            data = X[mask]
-            dist_mat = pairwise_distances(data, metric=self.metric, **metric_params)
-            dist_mat = dist_mat * self.probabilities_[mask]
-            medoid_index = xp.argmin(dist_mat.sum(axis=1))
-            medoids[idx] = data[medoid_index]
-        return medoids
 
     _onedal_supported_metrics = {
         "euclidean",
@@ -127,9 +93,9 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
                         f"Only {self._onedal_supported_metrics} are supported.",
                     ),
                     (
-                        self.cluster_selection_method == "eom",
+                        self.cluster_selection_method in ("eom", "leaf"),
                         f"'{self.cluster_selection_method}' cluster selection "
-                        "method is not supported. Only 'eom' is supported.",
+                        "method is not supported. Only 'eom' and 'leaf' are supported.",
                     ),
                     (
                         self.cluster_selection_epsilon == 0.0,
@@ -140,8 +106,9 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
                         "max_cluster_size is not supported.",
                     ),
                     (
-                        not self.allow_single_cluster,
-                        "allow_single_cluster=True is not supported.",
+                        self.store_centers is None,
+                        "store_centers is not supported. "
+                        "Requires probabilities which oneDAL does not compute.",
                     ),
                     (not is_sparse(X), "X is sparse. Sparse input is not supported."),
                 ]
