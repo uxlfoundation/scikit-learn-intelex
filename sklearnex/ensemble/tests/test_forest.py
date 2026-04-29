@@ -216,7 +216,7 @@ def test_classifiers_work_on_single_class_non_numeric():
 @pytest.mark.parametrize("y_xp", [np, pd, array_api_strict])
 @pytest.mark.parametrize("class_weight", [None, "balanced"])
 @pytest.mark.parametrize("n_classes", [0, 2, 3])  # 0 == regression
-def test_mixed_array_namespaces(X_xp, y_xp, class_weight, n_classes, with_array_api):
+def test_rf_mixed_array_namespaces(X_xp, y_xp, class_weight, n_classes, with_array_api):
     if class_weight is not None and n_classes == 0:
         pytest.skip()
     rng = np.random.default_rng(seed=123)
@@ -240,7 +240,7 @@ def test_mixed_array_namespaces(X_xp, y_xp, class_weight, n_classes, with_array_
     from sklearnex.ensemble import RandomForestClassifier, RandomForestRegressor
 
     model = (RandomForestClassifier if n_classes != 0 else RandomForestRegressor)(
-        n_estimators=2
+        n_estimators=10
     )
     if class_weight is not None:
         model.set_params(class_weight=class_weight)
@@ -250,15 +250,22 @@ def test_mixed_array_namespaces(X_xp, y_xp, class_weight, n_classes, with_array_
 
     if n_classes == 0:
         assert pred.__class__ == (X.__class__ if X_xp is not pd else np.ndarray)
+    else:
+        if y_xp is pd:
+            assert isinstance(model.classes_, np.ndarray)
+        else:
+            assert model.classes_.__class__ == y.__class__
 
     # Note: this is a quick check to ensure that the result has the same
-    # kind of values as the input. There's no particular justification
-    # behind requiring 25% classification accuracy.
+    # kind of values as the input. Note that roughly 1/2 or 1/3 of the inputs
+    # will be of the same class, so this ensures that different values are
+    # predicted. There's no particular justification behind requiring 60%
+    # classification accuracy.
     if n_classes != 0:
         if y_xp is pd:
             y_xp = np
         pred_is_correct = y_xp.astype(y_xp.asarray(pred == y), y_xp.float32)
-        assert y_xp.sum(pred_is_correct) >= (0.25 * int(X.shape[0]))
+        assert y_xp.sum(pred_is_correct) >= (0.60 * int(X.shape[0]))
 
 
 @pytest.mark.skipif(
@@ -276,9 +283,17 @@ def test_mixed_array_namespaces(X_xp, y_xp, class_weight, n_classes, with_array_
     + [(pd, None)],
 )
 @pytest.mark.parametrize(
-    "estimator_class", ["RandomForestRegressor", "RandomForestClassifier"]
+    "estimator_class",
+    [
+        "RandomForestRegressor",
+        "RandomForestClassifier",
+        "ExtraTreesRegressor",
+        "ExtraTreesClassifier",
+    ],
 )
-def test_mixed_devices(X_xp, y_xp, X_device, y_device, estimator_class, with_array_api):
+def test_rf_mixed_devices(
+    X_xp, y_xp, X_device, y_device, estimator_class, with_array_api
+):
     from sklearnex import ensemble
 
     model = getattr(ensemble, estimator_class)(n_estimators=2)
