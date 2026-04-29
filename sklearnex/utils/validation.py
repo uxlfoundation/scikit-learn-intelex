@@ -285,10 +285,7 @@ def _check_sample_weight_internal(
         xp, _, device = get_namespace_and_device(X)
     else:
         xp, _ = get_namespace(X)
-        if hasattr(X, "device"):
-            device = X.device
-        else:
-            device = None
+        device = getattr(X, "device", None)
 
     if dtype is not None and dtype not in [xp.float32, xp.float64]:
         dtype = xp.float64
