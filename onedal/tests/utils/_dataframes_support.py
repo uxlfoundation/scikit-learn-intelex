@@ -27,10 +27,13 @@ try:
 except ImportError:
     dpnp_available = False
 
+torch_xpu_available = False
 try:
     import torch
 
     torch_available = True
+
+    torch_xpu_available = torch.xpu.is_available()
 except ImportError:
     torch_available = False
 

@@ -29,6 +29,7 @@ from onedal.tests.utils._dataframes_support import (
     dpnp_available,
     get_dataframes_and_queues,
     torch_available,
+    torch_xpu_available,
 )
 from onedal.tests.utils._device_selection import is_sycl_device_available
 
@@ -278,12 +279,12 @@ def test_rf_mixed_array_namespaces(X_xp, y_xp, class_weight, n_classes, with_arr
 )
 @pytest.mark.parametrize(
     "X_xp, X_device",
-    ([(torch, "xpu"), (torch, "cpu")] if torch_available else [])
+    ([(torch, "xpu"), (torch, "cpu")] if torch_xpu_available else [])
     + ([(dpnp, "gpu"), (dpnp, "cpu")] if dpnp_available else []),
 )
 @pytest.mark.parametrize(
     "y_xp, y_device",
-    ([(torch, "xpu"), (torch, "cpu")] if torch_available else [])
+    ([(torch, "xpu"), (torch, "cpu")] if torch_xpu_available else [])
     + ([(dpnp, "gpu"), (dpnp, "cpu")] if dpnp_available else [])
     + [(pd, None)],
 )
