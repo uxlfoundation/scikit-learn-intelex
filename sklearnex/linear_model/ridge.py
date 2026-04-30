@@ -43,6 +43,9 @@ if daal_check_version((2024, "P", 600)):
     from ..utils._array_api import enable_array_api, get_namespace
     from ..utils.validation import validate_data
 
+    if sklearn_check_version("1.9"):
+        from sklearn.utils._array_api import get_namespace_and_device, move_to
+
     @enable_array_api("1.5")  # validate_data y_numeric requires sklearn >=1.5
     @control_n_jobs(decorated_methods=["fit", "predict", "score"])
     class Ridge(oneDALEstimator, _sklearn_Ridge):
@@ -287,7 +290,11 @@ if daal_check_version((2024, "P", 600)):
             # `Sample weight` is not supported. Expected to be None value.
             assert sample_weight is None
 
-            xp, _ = get_namespace(X)
+            if sklearn_check_version("1.9"):
+                xp, _, device_ = get_namespace_and_device(X)
+                y = move_to(y, xp=xp, device=device_)
+            else:
+                xp, _ = get_namespace(X)
 
             if sklearn_check_version("1.2"):
                 self._validate_params()
@@ -358,6 +365,9 @@ if daal_check_version((2024, "P", 600)):
                 return res
 
         def _onedal_score(self, X, y, sample_weight=None, queue=None):
+            if sklearn_check_version("1.9"):
+                xp, _, device_ = get_namespace_and_device(X)
+                y = move_to(y, xp=xp, device=device_)
             return r2_score(
                 y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
             )

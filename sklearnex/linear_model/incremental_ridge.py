@@ -36,6 +36,9 @@ from ..utils.validation import validate_data
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import Interval
 
+if sklearn_check_version("1.9"):
+    from sklearn.utils._array_api import get_namespace_and_device, move_to
+
 
 @enable_array_api("1.5")  # validate_data y_numeric requires sklearn >=1.5
 @control_n_jobs(
@@ -154,6 +157,9 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
         return res
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
+        if sklearn_check_version("1.9"):
+            xp, _, device_ = get_namespace_and_device(X)
+            y = move_to(y, xp=xp, device=device_)
         return r2_score(
             y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
         )
@@ -162,7 +168,11 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
         first_pass = not hasattr(self, "n_samples_seen_") or self.n_samples_seen_ == 0
 
         if check_input:
-            xp, _ = get_namespace(X, y)
+            if sklearn_check_version("1.9"):
+                xp, _, device_ = get_namespace_and_device(X)
+                y = move_to(y, xp=xp, device=device_)
+            else:
+                xp, _ = get_namespace(X, y)
             X, y = validate_data(
                 self,
                 X,
@@ -217,7 +227,11 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
         self._need_to_finalize = False
 
     def _onedal_fit(self, X, y, queue=None):
-        xp, _ = get_namespace(X, y)
+        if sklearn_check_version("1.9"):
+            xp, _, device_ = get_namespace_and_device(X)
+            y = move_to(y, xp=xp, device=device_)
+        else:
+            xp, _ = get_namespace(X, y)
 
         X, y = validate_data(
             self,
