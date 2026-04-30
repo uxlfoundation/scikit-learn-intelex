@@ -31,7 +31,9 @@ from sklearnex.neighbors.common import KNeighborsDispatchingBase
 from sklearnex.neighbors.knn_unsupervised import NearestNeighbors
 
 from ..utils._array_api import enable_array_api, get_namespace
-from ..utils.validation import validate_data
+
+if sklearn_check_version("1.9"):
+    from sklearn.utils._array_api import check_same_namespace
 
 
 @enable_array_api
@@ -141,6 +143,10 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
             self._fit_X = xp.asarray(self._fit_X, device=device)
         return self
 
+    # Note: this is overriding an internal method from scikit-learn with
+    # the same signature. In this case, 'validate_data' is called during
+    # 'decision_function', which calls '.kneighbors()'. Hence, it doesn't
+    # need to validate the namespace of 'X' with '_fit_X' here.
     def _predict(self, X=None):
         check_is_fitted(self)
 
