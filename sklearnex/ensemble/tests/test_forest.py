@@ -275,6 +275,10 @@ def test_rf_mixed_array_namespaces(X_xp, y_xp, class_weight, n_classes, with_arr
 
 
 @pytest.mark.skipif(
+    not sklearn_check_version("1.9"),
+    reason="Functionality introduced in later scikit-learn versions.",
+)
+@pytest.mark.skipif(
     not is_sycl_device_available("gpu"), reason="Test checks GPU-specific functionality."
 )
 @pytest.mark.parametrize(
