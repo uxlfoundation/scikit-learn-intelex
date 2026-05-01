@@ -5,18 +5,18 @@ Babel==2.18.0
 backcall==0.2.0
 beautifulsoup4==4.14.3
 bleach==6.3.0
-certifi==2026.2.25
-charset-normalizer==3.4.6
-click==8.3.1
+certifi==2026.4.22
+charset-normalizer==3.4.7
+click==8.3.3
 decorator==5.2.1
 defusedxml==0.7.1
-docutils~=0.21.2
+docutils~=0.22.4
 entrypoints==0.4
-idna==3.11
+idna==3.13
 imagesize==2.0.0
 importlib-metadata==9.0.0
 importlib-resources==7.1.0
-ipython==9.12.0
+ipython==9.13.0
 ipython-genutils==0.2.0
 jedi==0.19.2
 Jinja2==3.1.6
@@ -31,7 +31,7 @@ nbconvert==7.17.1
 nbformat==5.10.4
 nbsphinx==0.9.8
 nest-asyncio==1.6.0
-packaging==26.0
+packaging==26.2
 pandoc==2.4
 pandocfilters==1.5.1
 parso==0.8.6
@@ -71,5 +71,5 @@ typing-extensions==4.15.0
 urllib3==2.6.3
 wcwidth==0.6.0
 webencodings==0.5.1
-zipp==3.23.0
+zipp==3.23.1
 setuptools>=65.5.1 # not directly required, pinned by Snyk to avoid a vulnerability
