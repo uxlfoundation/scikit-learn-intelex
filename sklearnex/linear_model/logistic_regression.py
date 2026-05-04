@@ -559,8 +559,6 @@ if daal_check_version((2024, "P", 1)):
                 dtype=[xp.float64, xp.float32],
             )
 
-            assert hasattr(self, "_onedal_estimator")
-
             raw = xp.matmul(X, xp.reshape(self.coef_, (-1,)))
             if self.fit_intercept:
                 raw += self.intercept_
