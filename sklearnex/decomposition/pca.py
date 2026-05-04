@@ -50,6 +50,9 @@ if daal_check_version((2024, "P", 100)):
     from onedal.utils._array_api import _is_numpy_namespace
     from onedal.utils.validation import _num_features, _num_samples
 
+    if sklearn_check_version("1.9"):
+        from sklearn.utils._array_api import check_same_namespace
+
     @enable_array_api
     @register_hyperparameters({"fit": ("pca", "train")})
     @control_n_jobs(decorated_methods=["fit", "transform", "fit_transform"])
@@ -432,6 +435,8 @@ if daal_check_version((2024, "P", 100)):
             )
 
         def _onedal_transform(self, X, queue=None):
+            if sklearn_check_version("1.9"):
+                check_same_namespace(X, self, attribute="components_", method="transform")
             xp, _ = get_namespace(X)
             X = validate_data(
                 self,
@@ -461,6 +466,10 @@ if daal_check_version((2024, "P", 100)):
             )
 
         def inverse_transform(self, X):
+            if sklearn_check_version("1.9"):
+                check_same_namespace(
+                    X, self, attribute="components_", method="inverse_transform"
+                )
             # sklearn does not properly input check inverse_transform using
             # ``validate_data`` (as of sklearn 1.7). Yielding the namespace
             # in this way will conform to sklearn and various inputs without
