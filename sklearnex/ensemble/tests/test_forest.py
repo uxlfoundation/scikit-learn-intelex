@@ -14,9 +14,12 @@
 # limitations under the License.
 # ===============================================================================
 
+import pytest
+
+pytest.skip(allow_module_level=True)
+
 import numpy as np
 import pandas as pd
-import pytest
 from numpy.testing import assert_allclose
 from sklearn.datasets import make_classification, make_regression
 

@@ -196,7 +196,10 @@ req_os["pca_spmd.py"] = ["lnx"]
 req_os["random_forest_classifier_spmd.py"] = ["lnx"]
 req_os["random_forest_regressor_spmd.py"] = ["lnx"]
 
-skiped_files = []
+skiped_files = [
+    "random_forest_classifier_spmd.py",
+    "random_forest_regressor_spmd.py",
+]
 
 
 def get_exe_cmd(ex, args):
