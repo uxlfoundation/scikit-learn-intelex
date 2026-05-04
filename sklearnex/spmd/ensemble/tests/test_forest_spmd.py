@@ -14,11 +14,8 @@
 # limitations under the License.
 # ==============================================================================
 
-import pytest
-
-pytest.skip(allow_module_level=True)
-
 import numpy as np
+import pytest
 from sklearn.datasets import make_regression
 
 from onedal.tests.utils._dataframes_support import (
