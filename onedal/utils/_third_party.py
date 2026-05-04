@@ -23,10 +23,16 @@ See `Data Parallel Extensions for Python <https://github.com/IntelPython/DPEP>`_
 
 import functools
 import importlib
+import os
 import sys
 from typing import Callable
 
 from daal4py.sklearn._utils import _package_check_version
+
+if sys.platform == "win32":
+    _dpcpproot = os.environ.get("DPCPPROOT")
+    if _dpcpproot:
+        os.add_dll_directory(os.path.join(_dpcpproot, "bin"))
 
 # Note: The dpctl package provides SYCL infrastructure (e.g. SyclQueue)
 # which is loaded as normal as it is preferred over included backend
