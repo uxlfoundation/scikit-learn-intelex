@@ -37,6 +37,7 @@ struct hdbscan_method2t {
 
         ONEDAL_PARAM_DISPATCH_VALUE(method, "brute_force", ops, Float, method::brute_force);
         ONEDAL_PARAM_DISPATCH_VALUE(method, "kd_tree", ops, Float, method::kd_tree);
+        ONEDAL_PARAM_DISPATCH_VALUE(method, "ball_tree", ops, Float, method::ball_tree);
         ONEDAL_PARAM_DISPATCH_VALUE(method, "by_default", ops, Float, method::by_default);
         ONEDAL_PARAM_DISPATCH_THROW_INVALID_VALUE(method);
     }
@@ -71,6 +72,12 @@ static auto get_hdbscan_result_options(const py::dict& params) {
             }
             else if (match.str() == "core_flags") {
                 onedal_options = onedal_options | result_options::core_flags;
+            }
+            else if (match.str() == "cluster_centers") {
+                onedal_options = onedal_options | result_options::cluster_centers;
+            }
+            else if (match.str() == "medoid_centers") {
+                onedal_options = onedal_options | result_options::medoid_centers;
             }
             else
                 ONEDAL_PARAM_DISPATCH_THROW_INVALID_VALUE(result_options);
@@ -125,6 +132,30 @@ struct hdbscan_params2desc {
         if (params.contains("allow_single_cluster")) {
             desc.set_allow_single_cluster(params["allow_single_cluster"].cast<bool>());
         }
+        if (params.contains("cluster_selection_epsilon")) {
+            desc.set_cluster_selection_epsilon(
+                params["cluster_selection_epsilon"].cast<double>());
+        }
+        if (params.contains("max_cluster_size")) {
+            desc.set_max_cluster_size(params["max_cluster_size"].cast<std::int64_t>());
+        }
+        if (params.contains("alpha")) {
+            desc.set_alpha(params["alpha"].cast<double>());
+        }
+        if (params.contains("leaf_size")) {
+            desc.set_leaf_size(params["leaf_size"].cast<std::int64_t>());
+        }
+        if (params.contains("store_centers")) {
+            const auto sc = params["store_centers"].cast<std::string>();
+            if (sc == "centroid")
+                desc.set_store_centers(store_centers_method::centroid);
+            else if (sc == "medoid")
+                desc.set_store_centers(store_centers_method::medoid);
+            else if (sc == "both")
+                desc.set_store_centers(store_centers_method::both);
+            else
+                desc.set_store_centers(store_centers_method::none);
+        }
 
         return desc;
     }
@@ -155,7 +186,9 @@ void init_hdbscan_compute_result(py::module_& m) {
         .DEF_ONEDAL_PY_PROPERTY(core_observation_indices, result_t)
         .DEF_ONEDAL_PY_PROPERTY(core_observations, result_t)
         .DEF_ONEDAL_PY_PROPERTY(result_options, result_t)
-        .DEF_ONEDAL_PY_PROPERTY(cluster_count, result_t);
+        .DEF_ONEDAL_PY_PROPERTY(cluster_count, result_t)
+        .DEF_ONEDAL_PY_PROPERTY(cluster_centers, result_t)
+        .DEF_ONEDAL_PY_PROPERTY(medoid_centers, result_t);
 }
 
 ONEDAL_PY_TYPE2STR(hdbscan::task::clustering, "clustering");

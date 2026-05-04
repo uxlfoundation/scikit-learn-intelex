@@ -37,6 +37,8 @@ class HDBSCAN(ClusterMixin):
         n_jobs=None,
         cluster_selection_method="eom",
         allow_single_cluster=False,
+        cluster_selection_epsilon=0.0,
+        max_cluster_size=None,
         store_centers=None,
         copy=False,
     ):
@@ -50,6 +52,8 @@ class HDBSCAN(ClusterMixin):
         self.n_jobs = n_jobs
         self.cluster_selection_method = cluster_selection_method
         self.allow_single_cluster = allow_single_cluster
+        self.cluster_selection_epsilon = cluster_selection_epsilon
+        self.max_cluster_size = max_cluster_size
         self.store_centers = store_centers
         self.copy = copy
 
@@ -65,8 +69,11 @@ class HDBSCAN(ClusterMixin):
         method = "brute_force"
         if self.algorithm in ("kd_tree", "kdtree"):
             method = "kd_tree"
+        elif self.algorithm in ("ball_tree", "balltree"):
+            method = "ball_tree"
+        elif self.algorithm in ("brute", "brute_force"):
+            method = "brute_force"
         elif self.algorithm == "auto":
-            # auto: use kd_tree for low-dim euclidean-family, brute_force otherwise
             if self.metric in ("euclidean", "manhattan", "minkowski", "chebyshev"):
                 method = "kd_tree"
             else:
@@ -81,6 +88,11 @@ class HDBSCAN(ClusterMixin):
             "result_options": "responses",
             "cluster_selection": self.cluster_selection_method,
             "allow_single_cluster": bool(self.allow_single_cluster),
+            "cluster_selection_epsilon": float(self.cluster_selection_epsilon),
+            "max_cluster_size": int(self.max_cluster_size) if self.max_cluster_size is not None else 0,
+            "alpha": float(self.alpha),
+            "leaf_size": int(self.leaf_size),
+            "store_centers": self.store_centers if self.store_centers is not None else "none",
         }
 
         # Set degree for Minkowski metric
@@ -97,9 +109,22 @@ class HDBSCAN(ClusterMixin):
         X_table = to_table(X, queue=queue)
 
         params = self._get_onedal_params(X_table.dtype)
+
+        store_centers = self.store_centers
+        if store_centers is not None:
+            if store_centers in ("centroid", "both"):
+                params["result_options"] += "|cluster_centers"
+            if store_centers in ("medoid", "both"):
+                params["result_options"] += "|medoid_centers"
+
         result = self.compute(params, X_table)
 
-        # 2d table but only 1d of information
         self.labels_ = from_table(result.responses, like=X)[:, 0].astype(np.intp)
         self.n_clusters_ = int(result.cluster_count)
+
+        if store_centers in ("centroid", "both"):
+            self.centroids_ = from_table(result.cluster_centers, like=X)
+        if store_centers in ("medoid", "both"):
+            self.medoids_ = from_table(result.medoid_centers, like=X)
+
         return self

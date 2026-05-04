@@ -54,6 +54,9 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
             "n_jobs": self.n_jobs,
             "cluster_selection_method": self.cluster_selection_method,
             "allow_single_cluster": self.allow_single_cluster,
+            "cluster_selection_epsilon": self.cluster_selection_epsilon,
+            "max_cluster_size": self.max_cluster_size,
+            "store_centers": self.store_centers,
             "copy": self.copy,
         }
         self._onedal_estimator = self._onedal_hdbscan(**onedal_params)
@@ -61,6 +64,11 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
         self._onedal_estimator.fit(X, queue=queue)
         self.labels_ = self._onedal_estimator.labels_
         self.n_features_in_ = X.shape[1]
+
+        if hasattr(self._onedal_estimator, "centroids_"):
+            self.centroids_ = self._onedal_estimator.centroids_
+        if hasattr(self._onedal_estimator, "medoids_"):
+            self.medoids_ = self._onedal_estimator.medoids_
 
         device_kwarg = {"device": X.device} if hasattr(X, "device") else {}
 
@@ -98,17 +106,10 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
                         "method is not supported. Only 'eom' and 'leaf' are supported.",
                     ),
                     (
-                        self.cluster_selection_epsilon == 0.0,
-                        "Non-zero cluster_selection_epsilon is not supported.",
-                    ),
-                    (
-                        self.max_cluster_size is None,
-                        "max_cluster_size is not supported.",
-                    ),
-                    (
-                        self.store_centers is None,
-                        "store_centers is not supported. "
-                        "Requires probabilities which oneDAL does not compute.",
+                        self.algorithm
+                        in ("auto", "brute", "brute_force", "kd_tree", "kdtree", "ball_tree", "balltree"),
+                        f"'{self.algorithm}' algorithm is not supported. "
+                        "Only 'auto', 'brute', 'kd_tree', and 'ball_tree' are supported.",
                     ),
                     (not is_sparse(X), "X is sparse. Sparse input is not supported."),
                 ]
@@ -140,3 +141,9 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
         return self
 
     fit.__doc__ = _sklearn_HDBSCAN.fit.__doc__
+
+    def fit_predict(self, X, y=None):
+        self.fit(X, y)
+        return self.labels_
+
+    fit_predict.__doc__ = _sklearn_HDBSCAN.fit_predict.__doc__
