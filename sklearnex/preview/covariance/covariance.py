@@ -37,6 +37,9 @@ from ...base import oneDALEstimator
 from ...utils._array_api import _pinvh, enable_array_api, get_namespace, log_likelihood
 from ...utils.validation import assert_all_finite, validate_data
 
+if sklearn_check_version("1.9"):
+    from sklearn.utils._array_api import check_same_namespace
+
 # This is a temporary workaround for issues with sklearnex._device_offload._get_host_inputs
 # passing kwargs with sycl queues with other host data will cause failures
 # Note: this wrapper could potentially be removed later if sklearn implements
@@ -144,6 +147,8 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
     def score(self, X_test, y=None):
 
         check_is_fitted(self)
+        if sklearn_check_version("1.9"):
+            check_same_namespace(X_test, self, attribute="covariance_", method="score")
         # Only covariance evaluated for get_namespace due to dpnp
         # support without array_api_dispatch
         xp, _ = get_namespace(X_test, self.covariance_)
@@ -178,6 +183,10 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
         # This includes a validate_data call and an unusual call to get_namespace in
         # order to also support dpnp without array_api_dispatch.
         check_is_fitted(self)
+        if sklearn_check_version("1.9"):
+            check_same_namespace(
+                comp_cov, self, attribute="covariance_", method="error_norm"
+            )
         # Only covariance evaluated for get_namespace due to dpnp
         # support without array_api_dispatch
         xp, _ = get_namespace(comp_cov, self.covariance_)
@@ -220,6 +229,8 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
         # This must be done as ```support_input_format``` is insufficient for array API
         # support when attributes are non-numpy.
         check_is_fitted(self)
+        if sklearn_check_version("1.9"):
+            check_same_namespace(X, self, attribute="covariance_", method="mahalanobis")
         precision = self.get_precision()
         loc = self.location_[None, :]
         xp, _ = get_namespace(X, precision, loc)
