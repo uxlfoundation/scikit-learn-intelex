@@ -22,7 +22,6 @@ from ..common._backend import bind_default_backend
 from ..common._mixin import ClusterMixin
 from ..datatypes import from_table, to_table
 
-
 class HDBSCAN(ClusterMixin):
     def __init__(
         self,
