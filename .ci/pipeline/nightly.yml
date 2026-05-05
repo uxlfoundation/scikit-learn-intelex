@@ -45,7 +45,16 @@ jobs:
     displayName: 'Install Coverity tool'
   - script: |
       cd $(Build.Repository.LocalPath)
+      conda config --append channels conda-forge
+      conda config --set channel_priority strict
+      conda update -y -q conda
+      conda create -y -q -n CB -c conda-forge python=$(python.version) dal-devel impi-devel
+      . /usr/share/miniconda/etc/profile.d/conda.sh
+      conda activate CB
+      pip install -r dependencies-dev
+      export DALROOT=$CONDA_PREFIX
       $(COVERITY_TOOL_HOME)/bin/cov-build --dir cov-int --no-command --fs-capture-search .
+      $(COVERITY_TOOL_HOME)/bin/cov-build --dir cov-int -- python setup.py build_ext --inplace
       zip -r daal4py.zip cov-int
     displayName: 'Perform Coverity scan'
   - script: |
@@ -75,7 +84,7 @@ jobs:
       pip install -r dependencies-dev
       pip install -r requirements-doc.txt
       pip install -r requirements-test.txt
-      pip install jupyter matplotlib requests
+      pip install jupyter matplotlib requests openml
     displayName: 'Install requirements'
   - script: |
       . /usr/share/miniconda/etc/profile.d/conda.sh

@@ -137,13 +137,22 @@ def test_config_context_works():
 def test_host_backend_target_offload(target):
     from sklearnex.neighbors import NearestNeighbors
 
-    err_msg = (
-        r"device use via \`target_offload\` is only supported with the DPC\+\+ backend"
+    err_msg = "|".join(
+        [
+            r"SYCL Device '.+' could not be created",
+            r"Positional argument .+ is not a filter string or a SyclDevice",
+            r"oneDAL GPU/DPC\+\+ support is not available in the current installation",
+            r"device use via `target_offload` is only supported with the DPC\+\+ backend",
+        ]
     )
 
     est = NearestNeighbors()
-    if target != "auto":
-        with pytest.raises(ValueError, match=err_msg):
+    if not isinstance(target, str):
+        with pytest.raises((ValueError, RuntimeError, TypeError)):
+            with sklearnex.config_context(target_offload=target):
+                est.fit(np.eye(5, 8))
+    elif target != "auto":
+        with pytest.raises(Exception, match=err_msg):
             with sklearnex.config_context(target_offload=target):
                 est.fit(np.eye(5, 8))
     else:

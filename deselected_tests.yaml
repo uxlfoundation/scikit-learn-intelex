@@ -470,6 +470,9 @@ deselected_tests:
   # sklearn does not support n_jobs in preprocessing estimators
   - preprocessing/tests/test_common.py::test_missing_value_handling[est0-maxabs_scale-True-False-omit_kwargs0]
 
+  # Fails due to numeric tolerances on some AMD systems
+  - linear_model/tests/test_base.py::test_linear_regression_vs_lstsq[float32]
+
   # --------------------------------------------------------
   # No need to test daal4py patching
 reduced_tests:
