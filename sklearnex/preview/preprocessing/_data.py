@@ -27,7 +27,6 @@ from onedal.basic_statistics import (
     IncrementalBasicStatistics as onedal_IncrementalBasicStatistics,
 )
 
-from ..._config import get_config
 from ..._device_offload import dispatch, wrap_output_data
 from ..._utils import PatchingConditionsChain
 from ...base import oneDALEstimator
@@ -116,9 +115,8 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
         # partial_fit updates the internal _onedal_estimator with the present batch of X.
         first_pass = not hasattr(self, "n_samples_seen_") or self.n_samples_seen_ == 0
 
-        # In sklearn, check_input is used to enforce validation. In combination with use_raw_input config
-        # it controls validation of inputs.
-        if check_input and not get_config()["use_raw_input"]:
+        # In sklearn, check_input is used to enforce validation.
+        if check_input:
             xp, _ = get_namespace(X)
             X = validate_data(
                 self,
@@ -147,18 +145,15 @@ class MaxAbsScaler(oneDALEstimator, _sklearn_MaxAbsScaler):
     def _onedal_fit(self, X, queue=None):
         # For a full fit, we must reset the estimator and internal sample count to 0,
         # mimicking a fresh calculation.
-        if not get_config()["use_raw_input"]:
-            xp, _ = get_namespace(X)
-            if sklearn_check_version("1.2"):
-                self._validate_params()
-            X = validate_data(
-                self,
-                X,
-                dtype=[xp.float64, xp.float32],
-                ensure_all_finite=False,
-            )
-        else:
-            self.n_features_in_ = X.shape[1]
+        xp, _ = get_namespace(X)
+        if sklearn_check_version("1.2"):
+            self._validate_params()
+        X = validate_data(
+            self,
+            X,
+            dtype=[xp.float64, xp.float32],
+            ensure_all_finite=False,
+        )
 
         self.n_samples_seen_ = 0
         if hasattr(self, "_onedal_estimator"):
