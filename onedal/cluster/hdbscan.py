@@ -118,7 +118,7 @@ class HDBSCAN(ClusterMixin):
 
         result = self.compute(params, X_table)
 
-        self.labels_ = from_table(result.responses, like=X)[:, 0].astype(np.intp)
+        self.labels_ = from_table(result.responses, like=X)[:, 0]
         self.n_clusters_ = int(result.cluster_count)
 
         if store_centers in ("centroid", "both"):
