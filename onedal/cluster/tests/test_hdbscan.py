@@ -31,9 +31,7 @@ from onedal.tests.utils._dataframes_support import (
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("numpy"))
 def test_onedal_hdbscan_basic(dataframe, queue):
     """Basic HDBSCAN fit and label output."""
-    X, y_true = make_blobs(
-        n_samples=200, centers=3, cluster_std=0.5, random_state=42
-    )
+    X, y_true = make_blobs(n_samples=200, centers=3, cluster_std=0.5, random_state=42)
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
 
     h = HDBSCAN(min_cluster_size=15, min_samples=5)
@@ -48,9 +46,7 @@ def test_onedal_hdbscan_basic(dataframe, queue):
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("numpy"))
 def test_onedal_hdbscan_correctness(dataframe, queue):
     """HDBSCAN should achieve high ARI on well-separated blobs."""
-    X, y_true = make_blobs(
-        n_samples=300, centers=3, cluster_std=0.5, random_state=42
-    )
+    X, y_true = make_blobs(n_samples=300, centers=3, cluster_std=0.5, random_state=42)
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
 
     h = HDBSCAN(min_cluster_size=15, min_samples=5)
@@ -64,9 +60,7 @@ def test_onedal_hdbscan_correctness(dataframe, queue):
 @pytest.mark.parametrize("metric", ["euclidean", "manhattan", "chebyshev"])
 def test_onedal_hdbscan_metrics(dataframe, queue, metric):
     """HDBSCAN with different distance metrics."""
-    X, y_true = make_blobs(
-        n_samples=200, centers=3, cluster_std=0.5, random_state=42
-    )
+    X, y_true = make_blobs(n_samples=200, centers=3, cluster_std=0.5, random_state=42)
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
 
     h = HDBSCAN(min_cluster_size=15, min_samples=5, metric=metric)

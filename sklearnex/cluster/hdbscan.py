@@ -88,9 +88,7 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
 
     def _onedal_fit(self, X, y=None, queue=None):
         xp, _ = get_namespace(X)
-        X = validate_data(
-            self, X, accept_sparse=False, dtype=[xp.float64, xp.float32]
-        )
+        X = validate_data(self, X, accept_sparse=False, dtype=[xp.float64, xp.float32])
 
         onedal_params = {
             "min_cluster_size": self.min_cluster_size,
@@ -156,7 +154,15 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
                     ),
                     (
                         self.algorithm
-                        in ("auto", "brute", "brute_force", "kd_tree", "kdtree", "ball_tree", "balltree"),
+                        in (
+                            "auto",
+                            "brute",
+                            "brute_force",
+                            "kd_tree",
+                            "kdtree",
+                            "ball_tree",
+                            "balltree",
+                        ),
                         f"'{self.algorithm}' algorithm is not supported. "
                         "Only 'auto', 'brute', 'kd_tree', and 'ball_tree' are supported.",
                     ),

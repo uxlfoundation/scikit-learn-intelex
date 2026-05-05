@@ -22,6 +22,7 @@ from ..common._backend import bind_default_backend
 from ..common._mixin import ClusterMixin
 from ..datatypes import from_table, to_table
 
+
 class HDBSCAN(ClusterMixin):
     def __init__(
         self,
@@ -88,10 +89,14 @@ class HDBSCAN(ClusterMixin):
             "cluster_selection": self.cluster_selection_method,
             "allow_single_cluster": bool(self.allow_single_cluster),
             "cluster_selection_epsilon": float(self.cluster_selection_epsilon),
-            "max_cluster_size": int(self.max_cluster_size) if self.max_cluster_size is not None else 0,
+            "max_cluster_size": (
+                int(self.max_cluster_size) if self.max_cluster_size is not None else 0
+            ),
             "alpha": float(self.alpha),
             "leaf_size": int(self.leaf_size),
-            "store_centers": self.store_centers if self.store_centers is not None else "none",
+            "store_centers": (
+                self.store_centers if self.store_centers is not None else "none"
+            ),
         }
 
         # Set degree for Minkowski metric

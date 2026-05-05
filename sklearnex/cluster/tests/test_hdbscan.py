@@ -52,9 +52,7 @@ def test_hdbscan_three_clusters(dataframe, queue):
     """Well-separated clusters should have ARI > 0.9 against ground truth."""
     from sklearnex.cluster import HDBSCAN
 
-    X, y_true = make_blobs(
-        n_samples=300, centers=3, cluster_std=0.5, random_state=42
-    )
+    X, y_true = make_blobs(n_samples=300, centers=3, cluster_std=0.5, random_state=42)
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     hdbscan = HDBSCAN(min_cluster_size=15, min_samples=5).fit(X)
 
@@ -119,15 +117,13 @@ def test_hdbscan_vs_sklearn(dataframe, queue):
 
     from sklearnex.cluster import HDBSCAN
 
-    X, y_true = make_blobs(
-        n_samples=300, centers=3, cluster_std=0.5, random_state=42
-    )
+    X, y_true = make_blobs(n_samples=300, centers=3, cluster_std=0.5, random_state=42)
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
 
     sklearnex_hdbscan = HDBSCAN(min_cluster_size=15, min_samples=5).fit(X_df)
-    sklearn_hdbscan = sklearn_HDBSCAN(
-        min_cluster_size=15, min_samples=5, copy=True
-    ).fit(X)
+    sklearn_hdbscan = sklearn_HDBSCAN(min_cluster_size=15, min_samples=5, copy=True).fit(
+        X
+    )
 
     ari = adjusted_rand_score(sklearnex_hdbscan.labels_, sklearn_hdbscan.labels_)
     assert ari > 0.9, f"ARI vs sklearn: {ari}"
@@ -148,14 +144,12 @@ def test_hdbscan_vs_sklearn_various_sizes(dataframe, queue, n_samples, n_centers
 
     mcs = max(15, n_samples // 50)
     sklearnex_hdbscan = HDBSCAN(min_cluster_size=mcs, min_samples=5).fit(X_df)
-    sklearn_hdbscan = sklearn_HDBSCAN(
-        min_cluster_size=mcs, min_samples=5, copy=True
-    ).fit(X)
+    sklearn_hdbscan = sklearn_HDBSCAN(min_cluster_size=mcs, min_samples=5, copy=True).fit(
+        X
+    )
 
     ari = adjusted_rand_score(sklearnex_hdbscan.labels_, sklearn_hdbscan.labels_)
-    assert ari > 0.85, (
-        f"ARI vs sklearn too low for n={n_samples}, k={n_centers}: {ari}"
-    )
+    assert ari > 0.85, f"ARI vs sklearn too low for n={n_samples}, k={n_centers}: {ari}"
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -171,9 +165,9 @@ def test_hdbscan_vs_sklearn_high_dim(dataframe, queue):
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
 
     sklearnex_hdbscan = HDBSCAN(min_cluster_size=15, min_samples=5).fit(X_df)
-    sklearn_hdbscan = sklearn_HDBSCAN(
-        min_cluster_size=15, min_samples=5, copy=True
-    ).fit(X)
+    sklearn_hdbscan = sklearn_HDBSCAN(min_cluster_size=15, min_samples=5, copy=True).fit(
+        X
+    )
 
     ari = adjusted_rand_score(sklearnex_hdbscan.labels_, sklearn_hdbscan.labels_)
     assert ari > 0.85, f"ARI vs sklearn on 10d data: {ari}"
@@ -193,9 +187,7 @@ def test_hdbscan_metrics(dataframe, queue, metric):
     """Verify that each supported metric finds reasonable clusters."""
     from sklearnex.cluster import HDBSCAN
 
-    X, y_true = make_blobs(
-        n_samples=200, centers=3, cluster_std=0.5, random_state=42
-    )
+    X, y_true = make_blobs(n_samples=200, centers=3, cluster_std=0.5, random_state=42)
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     hdbscan = HDBSCAN(min_cluster_size=15, min_samples=5, metric=metric).fit(X)
 
@@ -209,9 +201,7 @@ def test_hdbscan_minkowski(dataframe, queue):
     """Verify Minkowski metric with custom p."""
     from sklearnex.cluster import HDBSCAN
 
-    X, y_true = make_blobs(
-        n_samples=200, centers=3, cluster_std=0.5, random_state=42
-    )
+    X, y_true = make_blobs(n_samples=200, centers=3, cluster_std=0.5, random_state=42)
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     hdbscan = HDBSCAN(
         min_cluster_size=15, min_samples=5, metric="minkowski", metric_params={"p": 3}
@@ -230,14 +220,10 @@ def test_hdbscan_metric_vs_sklearn(dataframe, queue, metric):
 
     from sklearnex.cluster import HDBSCAN
 
-    X, y_true = make_blobs(
-        n_samples=200, centers=3, cluster_std=0.5, random_state=42
-    )
+    X, y_true = make_blobs(n_samples=200, centers=3, cluster_std=0.5, random_state=42)
     X_df = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
 
-    sklearnex_h = HDBSCAN(
-        min_cluster_size=15, min_samples=5, metric=metric
-    ).fit(X_df)
+    sklearnex_h = HDBSCAN(min_cluster_size=15, min_samples=5, metric=metric).fit(X_df)
     sklearn_h = sklearn_HDBSCAN(
         min_cluster_size=15, min_samples=5, metric=metric, copy=True
     ).fit(X)
@@ -350,7 +336,9 @@ def test_patch_sklearn_hdbscan():
 
         X, _ = make_blobs(n_samples=100, centers=2, cluster_std=0.5, random_state=42)
         h = HDBSCAN(min_cluster_size=10, min_samples=5).fit(X)
-        assert "sklearnex" in h.__module__, f"Expected sklearnex module, got {h.__module__}"
+        assert (
+            "sklearnex" in h.__module__
+        ), f"Expected sklearnex module, got {h.__module__}"
     finally:
         unpatch_sklearn("sklearn.cluster.HDBSCAN")
 
@@ -395,9 +383,7 @@ def test_hdbscan_noise_labels(dataframe, queue):
     """Verify that noise points get label -1."""
     from sklearnex.cluster import HDBSCAN
 
-    X, _ = make_blobs(
-        n_samples=200, centers=2, cluster_std=0.5, random_state=42
-    )
+    X, _ = make_blobs(n_samples=200, centers=2, cluster_std=0.5, random_state=42)
     # Add outliers far from clusters
     rng = np.random.RandomState(42)
     outliers = rng.uniform(-20, 30, size=(10, 2))
@@ -435,10 +421,12 @@ def test_hdbscan_cluster_selection_epsilon(dataframe, queue):
     X, _ = make_blobs(n_samples=300, centers=3, cluster_std=0.5, random_state=42)
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
 
-    h_no_eps = HDBSCAN(min_cluster_size=15, min_samples=5,
-                        cluster_selection_epsilon=0.0).fit(X)
-    h_eps = HDBSCAN(min_cluster_size=15, min_samples=5,
-                     cluster_selection_epsilon=100.0).fit(X)
+    h_no_eps = HDBSCAN(
+        min_cluster_size=15, min_samples=5, cluster_selection_epsilon=0.0
+    ).fit(X)
+    h_eps = HDBSCAN(
+        min_cluster_size=15, min_samples=5, cluster_selection_epsilon=100.0
+    ).fit(X)
 
     labels_no_eps = np.asarray(h_no_eps.labels_)
     labels_eps = np.asarray(h_eps.labels_)
@@ -454,8 +442,7 @@ def test_hdbscan_max_cluster_size(dataframe, queue):
 
     X, _ = make_blobs(n_samples=200, centers=2, cluster_std=0.5, random_state=42)
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    hdbscan = HDBSCAN(min_cluster_size=15, min_samples=5,
-                       max_cluster_size=50).fit(X)
+    hdbscan = HDBSCAN(min_cluster_size=15, min_samples=5, max_cluster_size=50).fit(X)
     assert hasattr(hdbscan, "labels_")
 
 
