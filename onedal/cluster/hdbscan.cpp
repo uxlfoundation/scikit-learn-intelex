@@ -133,8 +133,7 @@ struct hdbscan_params2desc {
             desc.set_allow_single_cluster(params["allow_single_cluster"].cast<bool>());
         }
         if (params.contains("cluster_selection_epsilon")) {
-            desc.set_cluster_selection_epsilon(
-                params["cluster_selection_epsilon"].cast<double>());
+            desc.set_cluster_selection_epsilon(params["cluster_selection_epsilon"].cast<double>());
         }
         if (params.contains("max_cluster_size")) {
             desc.set_max_cluster_size(params["max_cluster_size"].cast<std::int64_t>());
@@ -163,15 +162,13 @@ struct hdbscan_params2desc {
 
 template <typename Policy, typename Task>
 void init_hdbscan_compute_ops(py::module_& m) {
-    m.def(
-        "compute",
-        [](const Policy& policy, const py::dict& params, const table& data) {
-            using namespace hdbscan;
-            using input_t = compute_input<Task>;
+    m.def("compute", [](const Policy& policy, const py::dict& params, const table& data) {
+        using namespace hdbscan;
+        using input_t = compute_input<Task>;
 
-            compute_ops ops(policy, input_t{ data }, hdbscan_params2desc{});
-            return fptype2t{ hdbscan_method2t{ Task{}, ops } }(params);
-        });
+        compute_ops ops(policy, input_t{ data }, hdbscan_params2desc{});
+        return fptype2t{ hdbscan_method2t{ Task{}, ops } }(params);
+    });
 }
 
 template <typename Task>
