@@ -421,7 +421,7 @@ if daal_check_version((2024, "P", 1)):
                 self,
                 X,
                 y,
-                accept_sparse=_sparsity_enabled,
+                accept_sparse="csr" if _sparsity_enabled else False,
                 accept_large_sparse=_sparsity_enabled,
                 dtype=[xp.float64, xp.float32],
             )
@@ -472,7 +472,7 @@ if daal_check_version((2024, "P", 1)):
                 self,
                 X,
                 reset=False,
-                accept_sparse=_sparsity_enabled,
+                accept_sparse="csr" if _sparsity_enabled else False,
                 accept_large_sparse=_sparsity_enabled,
                 dtype=[xp.float64, xp.float32],
             )
@@ -504,7 +504,7 @@ if daal_check_version((2024, "P", 1)):
                 self,
                 X,
                 reset=False,
-                accept_sparse=_sparsity_enabled,
+                accept_sparse="csr" if _sparsity_enabled else False,
                 accept_large_sparse=_sparsity_enabled,
                 dtype=[xp.float64, xp.float32],
             )
@@ -554,7 +554,7 @@ if daal_check_version((2024, "P", 1)):
                 self,
                 X,
                 reset=False,
-                accept_sparse=_sparsity_enabled,
+                accept_sparse="csr" if _sparsity_enabled else False,
                 accept_large_sparse=_sparsity_enabled,
                 dtype=[xp.float64, xp.float32],
             )
