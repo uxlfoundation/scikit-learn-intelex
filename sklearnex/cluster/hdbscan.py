@@ -124,7 +124,7 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
         # oneDAL does not compute probabilities; set uniform zeros
         # to match sklearn's interface
         self.probabilities_ = xp.zeros(
-            len(self.labels_), dtype=xp.float64, **device_kwarg
+            self.labels_.shape[0], dtype=xp.float64, **device_kwarg
         )
 
     _onedal_supported_metrics = {
