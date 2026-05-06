@@ -29,7 +29,9 @@ ONEDAL_PY_INIT_MODULE(covariance);
 ONEDAL_PY_INIT_MODULE(dbscan);
 ONEDAL_PY_INIT_MODULE(ensemble);
 ONEDAL_PY_INIT_MODULE(decomposition);
+#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20260000
 ONEDAL_PY_INIT_MODULE(hdbscan);
+#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20260000
 #if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230100
 ONEDAL_PY_INIT_MODULE(basic_statistics);
 ONEDAL_PY_INIT_MODULE(linear_model);
@@ -62,7 +64,9 @@ ONEDAL_PY_INIT_MODULE(covariance);
 ONEDAL_PY_INIT_MODULE(dbscan);
 ONEDAL_PY_INIT_MODULE(ensemble);
 ONEDAL_PY_INIT_MODULE(decomposition);
+#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20260000
 ONEDAL_PY_INIT_MODULE(hdbscan);
+#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20260000
 #if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230100
 ONEDAL_PY_INIT_MODULE(basic_statistics);
 ONEDAL_PY_INIT_MODULE(linear_model);
@@ -90,7 +94,9 @@ PYBIND11_MODULE(_onedal_py_spmd_dpc, m) {
     init_dbscan(m);
     init_decomposition(m);
     init_ensemble(m);
+#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20260000
     init_hdbscan(m);
+#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20260000
 #if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230100
     init_basic_statistics(m);
     init_linear_model(m);
@@ -125,7 +131,9 @@ PYBIND11_MODULE(_onedal_py_host, m) {
     init_dbscan(m);
     init_decomposition(m);
     init_ensemble(m);
+#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20260000
     init_hdbscan(m);
+#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20260000
 #if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20230100
     init_basic_statistics(m);
     init_linear_model(m);

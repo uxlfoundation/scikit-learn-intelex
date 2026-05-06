@@ -19,15 +19,15 @@ import pytest
 from sklearn.datasets import make_blobs
 from sklearn.metrics import adjusted_rand_score
 
-from daal4py.sklearn._utils import sklearn_check_version
+from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
 
 pytestmark = pytest.mark.skipif(
-    not sklearn_check_version("1.3"),
-    reason="HDBSCAN requires sklearn >= 1.3",
+    not (sklearn_check_version("1.3") and daal_check_version((2026, "P", 0))),
+    reason="HDBSCAN requires sklearn >= 1.3 and oneDAL >= 2026.0",
 )
 
 

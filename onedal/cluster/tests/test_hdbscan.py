@@ -21,11 +21,19 @@ import pytest
 from sklearn.datasets import make_blobs
 from sklearn.metrics import adjusted_rand_score
 
-from onedal.cluster import HDBSCAN
+from daal4py.sklearn._utils import daal_check_version
 from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
+
+pytestmark = pytest.mark.skipif(
+    not daal_check_version((2026, "P", 0)),
+    reason="HDBSCAN requires oneDAL >= 2026.0",
+)
+
+if daal_check_version((2026, "P", 0)):
+    from onedal.cluster import HDBSCAN
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("numpy"))

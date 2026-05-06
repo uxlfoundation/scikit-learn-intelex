@@ -51,7 +51,7 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
         cluster_selection_method="eom",
         allow_single_cluster=False,
         store_centers=None,
-        copy=False,
+        copy="warn" if sklearn_check_version("1.8") else False,
     ):
         super().__init__(
             min_cluster_size=min_cluster_size,
@@ -69,20 +69,6 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
             store_centers=store_centers,
             copy=copy,
         )
-        self.min_cluster_size = min_cluster_size
-        self.min_samples = min_samples
-        self.cluster_selection_epsilon = cluster_selection_epsilon
-        self.max_cluster_size = max_cluster_size
-        self.metric = metric
-        self.metric_params = metric_params
-        self.alpha = alpha
-        self.algorithm = algorithm
-        self.leaf_size = leaf_size
-        self.n_jobs = n_jobs
-        self.cluster_selection_method = cluster_selection_method
-        self.allow_single_cluster = allow_single_cluster
-        self.store_centers = store_centers
-        self.copy = copy
 
     _onedal_hdbscan = staticmethod(onedal_HDBSCAN)
 

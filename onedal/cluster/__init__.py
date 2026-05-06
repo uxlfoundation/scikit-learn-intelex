@@ -17,10 +17,14 @@
 from daal4py.sklearn._utils import daal_check_version
 
 from .dbscan import DBSCAN
-from .hdbscan import HDBSCAN
 from .kmeans import KMeans, k_means
 
-__all__ = ["DBSCAN", "HDBSCAN", "KMeans", "k_means"]
+__all__ = ["DBSCAN", "KMeans", "k_means"]
+
+if daal_check_version((2026, "P", 0)):
+    from .hdbscan import HDBSCAN
+
+    __all__ += ["HDBSCAN"]
 
 if daal_check_version((2023, "P", 200)):
     from .kmeans_init import KMeansInit, kmeans_plusplus
