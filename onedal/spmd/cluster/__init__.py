@@ -20,7 +20,7 @@ from .dbscan import DBSCAN
 
 __all__ = ["DBSCAN"]
 
-if daal_check_version((2026, "P", 0)):
+if daal_check_version((2026, "P", 100)):
     from .hdbscan import HDBSCAN
 
     __all__ += ["HDBSCAN"]

@@ -158,7 +158,7 @@ _stability_instances = [
     PCA(n_components=0.5, svd_solver="covariance_eigh"),
     KMeans(init="random"),
 ]
-if sklearn_check_version("1.3") and daal_check_version((2026, "P", 0)):
+if sklearn_check_version("1.3") and daal_check_version((2026, "P", 100)):
     from sklearnex.cluster import HDBSCAN
 
     _stability_instances.append(HDBSCAN())
