@@ -14,33 +14,23 @@
 # limitations under the License.
 # ===============================================================================
 
+import array_api_strict
 import numpy as np
 import pandas as pd
 import pytest
 
 from daal4py.sklearn._utils import sklearn_check_version
+from onedal.tests.utils._dataframes_support import (
+    dpnp_available,
+    torch_available,
+    torch_xpu_available,
+)
 from onedal.tests.utils._device_selection import is_sycl_device_available
 
-try:
-    import array_api_strict
-except ImportError:
-    array_api_strict = None
-
-try:
-    import torch
-
-    torch_xpu_available = torch.xpu.is_available()
-except (ImportError, RuntimeError, AttributeError):
-    torch = None
-    torch_xpu_available = False
-
-try:
+if dpnp_available:
     import dpnp
-
-    dpnp_available = True
-except ImportError:
-    dpnp = None
-    dpnp_available = False
+if torch_available:
+    import torch
 
 from sklearnex.linear_model import (
     IncrementalLinearRegression,
