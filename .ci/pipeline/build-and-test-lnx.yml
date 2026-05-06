@@ -65,7 +65,7 @@ steps:
       conda list
     env:
       NO_DPC: ${{ variables.NO_DPC }}
-      DPCTL_VERSION: 0.21.1
+      DPCTL_VERSION: 0.22.1
       DPNP_VERSION: 0.19.1
       DPCPP_RT_VERSION: 2025.3.3
     displayName: "Install testing requirements"
