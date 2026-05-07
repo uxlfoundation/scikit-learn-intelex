@@ -140,10 +140,6 @@ if daal_check_version((2024, "P", 1)):
         _onedal_LogisticRegression = staticmethod(onedal_LogisticRegression)
         _onedal_cpu_fit = daal4py_fit
 
-        decision_function = support_input_format(
-            _sklearn_LogisticRegression.decision_function
-        )
-
         def _onedal_gpu_save_attributes(self):
             assert hasattr(self, "_onedal_estimator")
             self.coef_ = self._onedal_estimator.coef_
@@ -314,6 +310,11 @@ if daal_check_version((2024, "P", 1)):
 
             return patching_status
 
+        # Note: some of these methods are implemented in pure-Python using
+        # array API. They were introduced in order to provide GPU support
+        # for methods that oneDAL didn't offer, but since the time they were
+        # introduced, scikit-learn has added array API support and these
+        # replacements are not needed anymore.
         def _onedal_gpu_predict_supported(self, method_name, *data):
             assert method_name in [
                 "predict",
@@ -327,6 +328,17 @@ if daal_check_version((2024, "P", 1)):
             patching_status = PatchingConditionsChain(
                 f"sklearn.linear_model.{class_name}.{method_name}"
             )
+            dal_ready = patching_status.and_conditions(
+                [
+                    (
+                        method_name in ["predict_proba", "predict"]
+                        or not sklearn_check_version("1.9"),
+                        f"No oneDAL accelerated version of method {method_name}.",
+                    ),
+                ]
+            )
+            if not dal_ready:
+                return patching_status
             n_samples = _num_samples(data[0])
             dal_ready = patching_status.and_conditions(
                 [

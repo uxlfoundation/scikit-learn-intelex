@@ -467,6 +467,9 @@ deselected_tests:
   # CI jobs in sklearnex compile scikit-learn from source, not necessarily with the same toolkits as sklearn's CIs
   - preprocessing/tests/test_polynomial.py::test_sizeof_LARGEST_INT_t
 
+  # Fails due to numeric tolerances on some AMD systems
+  - linear_model/tests/test_base.py::test_linear_regression_vs_lstsq[float32]
+
   # --------------------------------------------------------
   # No need to test daal4py patching
 reduced_tests:

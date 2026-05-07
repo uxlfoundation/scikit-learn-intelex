@@ -34,6 +34,7 @@ from onedal.utils.validation import is_contiguous
 
 if sklearn_check_version("1.9"):
     from sklearn.utils.validation import _check_estimator_name
+    from sklearn.utils._array_api import get_namespace_and_device, move_to
 
 from ._array_api import get_namespace
 
@@ -218,7 +219,11 @@ def validate_data(
         # a dtype check and conversion. This will query the array_namespace and
         # convert y as necessary. This is important especially for regressors.
         outx, outy = out if check_x else (None, out)
-        yp, _ = get_namespace(outy)
+        if outx is not None and sklearn_check_version("1.9"):
+            yp, _, device = get_namespace_and_device(outx)
+            outy = move_to(outy, xp=yp, device=device)
+        else:
+            yp, _ = get_namespace(outy)
 
         # avoid using ``kwargs.get("dtype")`` as it will always set up the default
         dtype = kwargs.get("dtype", (yp.float64, yp.float32, yp.int32))
@@ -276,26 +281,30 @@ def _check_sample_weight_internal(
     allow_all_zero_weights=False,
 ):
     n_samples = _num_samples(X)
-    xp, _ = get_namespace(X)
+    if sklearn_check_version("1.9"):
+        xp, _, device = get_namespace_and_device(X)
+    else:
+        xp, _ = get_namespace(X)
+        device = getattr(X, "device", None)
 
     if dtype is not None and dtype not in [xp.float32, xp.float64]:
         dtype = xp.float64
 
     if sample_weight is None:
-        if hasattr(X, "device"):
-            sample_weight = xp.ones(n_samples, dtype=dtype, device=X.device)
+        if device is not None:
+            sample_weight = xp.ones(n_samples, dtype=dtype, device=device)
         else:
             sample_weight = xp.ones(n_samples, dtype=dtype)
     elif isinstance(sample_weight, numbers.Number):
-        if hasattr(X, "device"):
-            sample_weight = xp.full(
-                n_samples, sample_weight, dtype=dtype, device=X.device
-            )
+        if device is not None:
+            sample_weight = xp.full(n_samples, sample_weight, dtype=dtype, device=device)
         else:
             sample_weight = xp.full(n_samples, sample_weight, dtype=dtype)
     else:
         if dtype is None:
             dtype = [xp.float64, xp.float32]
+        if sklearn_check_version("1.9"):
+            sample_weight = move_to(sample_weight, xp=xp, device=device)
 
         params = {
             "accept_sparse": False,

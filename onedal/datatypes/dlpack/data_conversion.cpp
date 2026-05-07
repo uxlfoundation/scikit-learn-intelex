@@ -24,6 +24,8 @@
 #include "onedal/common/sycl_interfaces.hpp"
 #endif // ONEDAL_DATA_PARALLEL
 
+using namespace pybind11::literals;
+
 namespace oneapi::dal::python::dlpack {
 
 template <typename T, typename managed_t>
@@ -103,7 +105,34 @@ dal::table convert_to_table(py::object obj, py::object q_obj, bool recursed) {
 
     // extract __dlpack__ attribute from the input obj. This function should
     // only be called if the attribute has been checked.
-    py::capsule caps = obj.attr("__dlpack__")();
+    py::capsule caps;
+    try {
+        caps = obj.attr("__dlpack__")();
+    }
+    catch (py::error_already_set& e) {
+        // Note: In NumPy arrays and in other libraries that have a CPU array originally
+        // created from a NumPy array, if the array is read-only (as specified through
+        // flag 'writeable'), calling the '__dlpack__' capsule will raise a BufferError
+        // with a message saying that the DLPack version does not support read-only arrays.
+        // Note that the array API standard allows '__dlpack__' to throw BufferError under
+        // situations like this, and in theory it should allow other libraries to throw this
+        // error under more circumstances beyond this specific case, but 'to_table' assumes
+        // that it will not raise.
+        // This workaround copies the input array to a fresh, writeable NumPy array and
+        // then converts it back to the type and device of the original input.
+        if (e.matches(PyExc_BufferError)) {
+            auto np = py::module::import("numpy");
+            auto np_obj = np.attr("from_dlpack")(obj);
+            py::tuple tuple_writeable = py::make_tuple("WRITEABLE");
+            np_obj = np.attr("require")(np_obj, "requirements"_a = tuple_writeable);
+            auto xp = obj.attr("__array_namespace__")();
+            obj = xp.attr("from_dlpack")(np_obj, "device"_a = obj.attr("device"));
+            caps = obj.attr("__dlpack__")();
+        }
+        else {
+            throw;
+        }
+    }
 
     tensor = get_dlpack_tensor(caps, dlm, dlmv, versioned);
 

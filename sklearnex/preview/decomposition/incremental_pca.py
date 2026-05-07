@@ -31,6 +31,9 @@ from ...utils.validation import validate_data
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import StrOptions
 
+if sklearn_check_version("1.9"):
+    from sklearn.utils._array_api import check_same_namespace
+
 
 @enable_array_api
 @control_n_jobs(
@@ -129,6 +132,8 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         # does not batch out data like sklearn's ``IncrementalPCA.transform``
         if self._need_to_finalize:
             self._onedal_finalize_fit()
+        if sklearn_check_version("1.9"):
+            check_same_namespace(X, self, attribute="components_", method="transform")
         xp, _ = get_namespace(X)
         X = validate_data(self, X, dtype=[xp.float64, xp.float32], reset=False)
         return self._onedal_estimator.predict(X, queue=queue)
@@ -143,6 +148,10 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
             self._components_ = None
 
         if check_input:
+            if not first_pass and sklearn_check_version("1.9"):
+                check_same_namespace(
+                    X, self, attribute="components_", method="partial_fit"
+                )
             xp, _ = get_namespace(X)
             X = validate_data(self, X, dtype=[xp.float64, xp.float32], reset=first_pass)
 
