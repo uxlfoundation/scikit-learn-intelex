@@ -210,11 +210,7 @@ Clustering
      - All parameters are supported except:
 
        - ``metric`` not in [``'euclidean'``, ``'manhattan'``, ``'minkowski'``, ``'chebyshev'``, ``'cosine'``]
-       - ``cluster_selection_method`` != ``'eom'``
-       - ``cluster_selection_epsilon`` != ``0.0``
-       - ``max_cluster_size`` is specified
-       - ``allow_single_cluster`` = ``True``
-       - ``store_centers`` is specified
+       - ``cluster_selection_method`` not in [``'eom'``, ``'leaf'``]
      - Only dense data is supported
 
 Dimensionality Reduction
@@ -528,11 +524,7 @@ Clustering
      - All parameters are supported except:
 
        - ``metric`` not in [``'euclidean'``, ``'manhattan'``, ``'minkowski'``, ``'chebyshev'``, ``'cosine'``]
-       - ``cluster_selection_method`` != ``'eom'``
-       - ``cluster_selection_epsilon`` != ``0.0``
-       - ``max_cluster_size`` is specified
-       - ``allow_single_cluster`` = ``True``
-       - ``store_centers`` is specified
+       - ``cluster_selection_method`` not in [``'eom'``, ``'leaf'``]
      - Only dense data is supported
 
 Dimensionality Reduction
@@ -782,11 +774,7 @@ Clustering
      - All parameters are supported except:
 
        - ``metric`` not in [``'euclidean'``, ``'manhattan'``, ``'minkowski'``, ``'chebyshev'``, ``'cosine'``]
-       - ``cluster_selection_method`` != ``'eom'``
-       - ``cluster_selection_epsilon`` != ``0.0``
-       - ``max_cluster_size`` is specified
-       - ``allow_single_cluster`` = ``True``
-       - ``store_centers`` is specified
+       - ``cluster_selection_method`` not in [``'eom'``, ``'leaf'``]
      - Only dense data is supported
 
 Dimensionality Reduction

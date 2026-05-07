@@ -14,11 +14,15 @@
 # limitations under the License.
 # ===============================================================================
 
+from daal4py.sklearn._n_jobs_support import control_n_jobs
+from daal4py.sklearn._utils import daal_check_version, is_sparse, sklearn_check_version
+
+if not daal_check_version((2026, "P", 100)):
+    raise ImportError("HDBSCAN requires oneDAL >= 2026.1")
+
 from sklearn.cluster import HDBSCAN as _sklearn_HDBSCAN
 
-from daal4py.sklearn._n_jobs_support import control_n_jobs
-from daal4py.sklearn._utils import is_sparse, sklearn_check_version
-from onedal.cluster import HDBSCAN as onedal_HDBSCAN
+from onedal.cluster.hdbscan import HDBSCAN as onedal_HDBSCAN
 
 from .._device_offload import dispatch
 from .._utils import PatchingConditionsChain

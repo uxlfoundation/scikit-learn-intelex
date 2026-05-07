@@ -14,6 +14,11 @@
 # limitations under the License.
 # ==============================================================================
 
+from daal4py.sklearn._utils import daal_check_version
+
+if not daal_check_version((2026, "P", 100)):
+    raise ImportError("HDBSCAN requires oneDAL >= 2026.1")
+
 import numpy as np
 
 from onedal._device_offload import supports_queue
