@@ -17,7 +17,7 @@
 #include "onedal/common.hpp"
 #include "onedal/version.hpp"
 
-#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20260000
+#if defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20260100
 
 #include "oneapi/dal/algo/hdbscan.hpp"
 
@@ -213,4 +213,4 @@ ONEDAL_PY_INIT_MODULE(hdbscan) {
 
 } // namespace oneapi::dal::python
 
-#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20260000
+#endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20260100
