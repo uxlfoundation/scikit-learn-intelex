@@ -32,9 +32,6 @@ from sklearnex.neighbors.knn_unsupervised import NearestNeighbors
 
 from ..utils._array_api import enable_array_api, get_namespace
 
-if sklearn_check_version("1.9"):
-    from sklearn.utils._array_api import check_same_namespace
-
 
 @enable_array_api
 @control_n_jobs(decorated_methods=["fit", "kneighbors", "_kneighbors"])
