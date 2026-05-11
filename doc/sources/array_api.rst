@@ -33,7 +33,7 @@ on GPU without moving the data from host to device.
     global settings or using a :doc:`config_context <config-contexts>`.
 
 .. hint::
-    Executing computations on GPUs has additional dependencies, particularly on package ``scikit-learn-intelex-gpu`` - see
+    Executing computations on array API inputs (whether on CPUs or GPUs) requires additional dependencies, particularly on package ``scikit-learn-intelex-gpu`` - see
     :doc:`oneapi-gpu` for details.
 
 When passing array API inputs whose data is on a SYCL-enabled device (e.g. an Intel GPU), as
