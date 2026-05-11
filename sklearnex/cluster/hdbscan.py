@@ -15,11 +15,7 @@
 # ===============================================================================
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
-from daal4py.sklearn._utils import daal_check_version, is_sparse, sklearn_check_version
-
-if not daal_check_version((2026, "P", 100)):
-    raise ImportError("HDBSCAN requires oneDAL >= 2026.1")
-
+from daal4py.sklearn._utils import is_sparse, sklearn_check_version
 from sklearn.cluster import HDBSCAN as _sklearn_HDBSCAN
 
 from onedal.cluster.hdbscan import HDBSCAN as onedal_HDBSCAN
@@ -36,8 +32,7 @@ from ..utils.validation import validate_data
 class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
     __doc__ = _sklearn_HDBSCAN.__doc__
 
-    if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {**_sklearn_HDBSCAN._parameter_constraints}
+    _parameter_constraints: dict = {**_sklearn_HDBSCAN._parameter_constraints}
 
     def __init__(
         self,
@@ -169,8 +164,7 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
         return self._onedal_supported(method_name, *data)
 
     def fit(self, X, y=None):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
+        self._validate_params()
 
         dispatch(
             self,
@@ -186,9 +180,3 @@ class HDBSCAN(oneDALEstimator, _sklearn_HDBSCAN):
         return self
 
     fit.__doc__ = _sklearn_HDBSCAN.fit.__doc__
-
-    def fit_predict(self, X, y=None):
-        self.fit(X, y)
-        return self.labels_
-
-    fit_predict.__doc__ = _sklearn_HDBSCAN.fit_predict.__doc__
