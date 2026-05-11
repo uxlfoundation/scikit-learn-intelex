@@ -112,7 +112,7 @@ class IncrementalBasicStatistics(BasicStatistics):
             in the batch, and `n_features` is the number of features.
 
         dtype : np.dtype
-            DType of 'X', as as a NumPy dtype or as otherwise a class that
+            DType of 'X', as a NumPy dtype or as otherwise a class that
             would be recognize by the pybind11 module.
 
         sample_weight : array-like of shape (n_samples,), default=None
