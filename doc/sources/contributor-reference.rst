@@ -104,6 +104,8 @@ Note that not all estimators offer the same functionalities, and thus tests shou
 - ``@pytest.mark.allow_sklearn_fallback``: will avoid having tests fail when they end up calling procedures from |sklearn| instead of from the |onedal|. This can be helpful for example when testing that some corner case falls back correctly when it should.
 - ``onedal.tests.utils._dataframes_support._as_numpy``: this function can be used to convert an input array or data frame to NumPy, regardless of whether it lives on host or on device, and regardless of array API support.
 - ``onedal.tests.utils._dataframes_support.dpnp_available``: a boolean variable that checks for whether the DPNP library is importable at the moment of running the tests. Note that, even if available, it will not be imported automatically in the file where the test happens, so ``import dpnp`` needs to be placed inside the test, or a conditional import needs to be done outside of it.
+- ``onedal.tests.utils._dataframes_support.torch_available``: a boolean variable akin to ``dpnp_available``, but for PyTorch.
+- ``onedal.tests.utils._dataframes_support.torch_xpu_available``: a boolean variable telling whether an XPU device (what PyTorch calls Intel GPUs) is available. This can only be ``True`` if ``torch_available`` is also ``True``.
 - ``pass_if_not_implemented_for_gpu``: skips tests not implemented for GPU when GPU support is enabled. Requires a skip reason argument that matches the backend's error message.
 - ``with_array_api``: fixture that makes the test run under array API dispatching, equivalent to putting the test under ``with confix_context(array_api_dispatch=True)``. Note that this is a fixture rather than a mark, so it should be specified as a function argument in the test definition.
 
