@@ -14,10 +14,10 @@
 # limitations under the License.
 # ===============================================================================
 
-from daal4py.sklearn._n_jobs_support import control_n_jobs
-from daal4py.sklearn._utils import is_sparse, sklearn_check_version
 from sklearn.cluster import HDBSCAN as _sklearn_HDBSCAN
 
+from daal4py.sklearn._n_jobs_support import control_n_jobs
+from daal4py.sklearn._utils import is_sparse, sklearn_check_version
 from onedal.cluster.hdbscan import HDBSCAN as onedal_HDBSCAN
 
 from .._device_offload import dispatch
