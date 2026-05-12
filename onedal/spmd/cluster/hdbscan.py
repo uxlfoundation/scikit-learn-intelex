@@ -16,13 +16,11 @@
 
 from daal4py.sklearn._utils import daal_check_version
 
-if not daal_check_version((2026, "P", 100)):
-    raise ImportError("HDBSCAN requires oneDAL >= 2026.1")
+if daal_check_version((2026, "P", 100)):
 
-from ...cluster import HDBSCAN as HDBSCAN_Batch
-from ...common._backend import bind_spmd_backend
+    from ...cluster import HDBSCAN as HDBSCAN_Batch
+    from ...common._backend import bind_spmd_backend
 
-
-class HDBSCAN(HDBSCAN_Batch):
-    @bind_spmd_backend("hdbscan.clustering")
-    def compute(self, params, data_table): ...
+    class HDBSCAN(HDBSCAN_Batch):
+        @bind_spmd_backend("hdbscan.clustering")
+        def compute(self, params, data_table): ...
