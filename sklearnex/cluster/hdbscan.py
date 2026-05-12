@@ -76,7 +76,9 @@ if sklearn_check_version("1.3") and daal_check_version((2026, "P", 100)):
 
         def _onedal_fit(self, X, y=None, queue=None):
             xp, _ = get_namespace(X)
-            X = validate_data(self, X, accept_sparse=False, dtype=[xp.float64, xp.float32])
+            X = validate_data(
+                self, X, accept_sparse=False, dtype=[xp.float64, xp.float32]
+            )
 
             onedal_params = {
                 "min_cluster_size": self.min_cluster_size,

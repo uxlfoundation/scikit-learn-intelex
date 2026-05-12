@@ -95,9 +95,7 @@ if daal_check_version((2026, "P", 100)):
                 "allow_single_cluster": bool(self.allow_single_cluster),
                 "cluster_selection_epsilon": float(self.cluster_selection_epsilon),
                 "max_cluster_size": (
-                    int(self.max_cluster_size)
-                    if self.max_cluster_size is not None
-                    else 0
+                    int(self.max_cluster_size) if self.max_cluster_size is not None else 0
                 ),
                 "alpha": float(self.alpha),
                 "leaf_size": int(self.leaf_size),
