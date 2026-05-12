@@ -15,10 +15,12 @@
 # ==============================================================================
 
 import functools
+import warnings
 from collections.abc import Iterable
 
 import pytest
 
+from onedal import _dpc_backend
 from onedal.utils._third_party import SyclQueue, dpctl_available
 
 if dpctl_available:
@@ -54,6 +56,12 @@ def get_queues(filter_: str = "cpu,gpu") -> list[SyclQueue]:
         or `pytest.xfail` instead.
     """
     queues = [None] if "cpu" in filter_ else []
+    if _dpc_backend is None:
+        if "gpu" in filter_:
+            warnings.warn(
+                "Attempting to get a GPU queue, but DPC backend is not available."
+            )
+        return queues
 
     for i in filter_.split(","):
         try:
@@ -84,6 +92,8 @@ def is_sycl_device_available(targets: Iterable[str]) -> bool:
     """
     if not isinstance(targets, Iterable):
         raise TypeError("`targets` should be an iterable of strings.")
+    if isinstance(targets, str):
+        targets = [targets]
     for device in targets:
         try:
             SyclQueue(device)
