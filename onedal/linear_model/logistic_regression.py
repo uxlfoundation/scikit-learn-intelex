@@ -95,9 +95,14 @@ class BaseLogisticRegression(metaclass=ABCMeta):
             intercept_ = xp.reshape(intercept_, (-1, 1))
             packed_coefficients = xp.concat([intercept_, coef_], axis=1)
         else:
-            packed_coefficients = xp.zeros(
-                (coef_.shape[0], coef_.shape[1] + 1), device=coef_.device
-            )
+            if hasattr(coef_, "device"):
+                packed_coefficients = xp.zeros(
+                    (coef_.shape[0], coef_.shape[1] + 1), device=coef_.device
+                )
+            else:
+                # Note: on numpy<2, these objects and functions do not have
+                # the 'device' attribute/argument.
+                packed_coefficients = xp.zeros((coef_.shape[0], coef_.shape[1] + 1))
             packed_coefficients[:, 1:] = coef_
 
         model.packed_coefficients = to_table(
