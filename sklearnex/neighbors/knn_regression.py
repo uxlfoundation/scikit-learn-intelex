@@ -31,6 +31,13 @@ from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.validation import validate_data
 from .common import KNeighborsDispatchingBase
 
+if sklearn_check_version("1.9"):
+    from sklearn.utils._array_api import (
+        check_same_namespace,
+        get_namespace_and_device,
+        move_to,
+    )
+
 
 @enable_array_api("1.5")  # validate_data y_numeric requires sklearn >=1.5
 @control_n_jobs(decorated_methods=["fit", "predict", "kneighbors", "score"])
@@ -68,7 +75,11 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         )
 
     def fit(self, X, y):
-        xp, is_array_api = get_namespace(X)
+        if sklearn_check_version("1.9"):
+            xp, is_array_api, device = get_namespace_and_device(X)
+        else:
+            xp, is_array_api = get_namespace(X)
+            device = getattr(X, "device", None)
         dispatch(
             self,
             "fit",
@@ -82,7 +93,6 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         # Ensure _fit_X matches the input namespace so that
         # kneighbors(X=None) can use get_namespace(self._fit_X).
         if is_array_api and not _is_numpy_namespace(xp):
-            device = getattr(X, "device", None)
             self._fit_X = xp.asarray(self._fit_X, device=device)
         return self
 
@@ -138,7 +148,10 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
         )
 
     def _onedal_fit(self, X, y, queue=None):
-        xp, _ = get_namespace(X, y)
+        if sklearn_check_version("1.9"):
+            xp, _, device = get_namespace_and_device(X)
+        else:
+            xp, _ = get_namespace(X, y)
         self._set_effective_metric()
 
         X, y = validate_data(
@@ -150,6 +163,9 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
             multi_output=True,
             y_numeric=True,
         )
+
+        if sklearn_check_version("1.9"):
+            y = move_to(y, xp=xp, device=device)
 
         self._process_regression_targets(y)
         onedal_params = {
@@ -215,6 +231,13 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
                 accept_sparse="csr",
                 reset=False,
             )
+            # Note: if called before 'validate_data', this check would fail if 'X' is
+            # a 'DataFrame', since '_fit_X' would have already been converted to NumPy.
+            # Hence, it must come after the call to 'validate_data'. If the behavior
+            # of this validator changes in scikit-learn, these checks could be done
+            # earlier in the code for quicker errors.
+            if sklearn_check_version("1.9"):
+                check_same_namespace(X, self, attribute="_fit_X", method="predict")
         result = self._onedal_estimator._predict_gpu(X)
         return result
 
@@ -246,6 +269,8 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
             X = validate_data(
                 self, X, dtype=[xp.float64, xp.float32], accept_sparse="csr", reset=False
             )
+            if sklearn_check_version("1.9"):
+                check_same_namespace(X, self, attribute="_fit_X", method="predict")
         return self._predict_skl_regression(X)
 
     def _onedal_kneighbors(
@@ -262,6 +287,8 @@ class KNeighborsRegressor(KNeighborsDispatchingBase, _sklearn_KNeighborsRegresso
                 accept_sparse="csr",
                 reset=False,
             )
+            if sklearn_check_version("1.9"):
+                check_same_namespace(X, self, attribute="_fit_X", method="kenighbors")
         else:
             query_is_train = True
             X = self._fit_X

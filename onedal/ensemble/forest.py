@@ -145,7 +145,7 @@ class BaseForest(ABC):
     @supports_queue
     def fit(self, X, y, sample_weight=None, class_count=0, queue=None):
         self.class_count_ = class_count
-        if sample_weight is not None and len(sample_weight) > 0:
+        if sample_weight is not None and sample_weight.shape[0] > 0:
             data = (X, y, sample_weight)
         else:
             data = (X, y)
