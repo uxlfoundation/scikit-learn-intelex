@@ -43,6 +43,9 @@ from ..utils.validation import validate_data
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import Interval
 
+if sklearn_check_version("1.9"):
+    from sklearn.utils._array_api import check_same_namespace
+
 # This is a temporary workaround for issues with sklearnex._device_offload._get_host_inputs
 # passing kwargs with sycl queues with other host data will cause failures
 _mahalanobis = support_input_format(partial(pairwise_distances, metric="mahalanobis"))
@@ -192,6 +195,10 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         first_pass = not hasattr(self, "n_samples_seen_") or self.n_samples_seen_ == 0
 
         if check_input:
+            if not first_pass and sklearn_check_version("1.9"):
+                check_same_namespace(
+                    X, self, attribute="covariance_", method="partial_fit"
+                )
             xp, _ = get_namespace(X)
             X = validate_data(
                 self,
@@ -322,6 +329,8 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         check_is_fitted(self)
         # Only covariance evaluated for get_namespace due to dpnp
         # support without array_api_dispatch
+        if sklearn_check_version("1.9"):
+            check_same_namespace(X_test, self, attribute="covariance_", method="score")
         xp, _ = get_namespace(X_test, self.covariance_)
 
         X = validate_data(
@@ -356,6 +365,10 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         check_is_fitted(self)
         # Only covariance evaluated for get_namespace due to dpnp
         # support without array_api_dispatch
+        if sklearn_check_version("1.9"):
+            check_same_namespace(
+                comp_cov, self, attribute="covariance_", method="error_norm"
+            )
         xp, _ = get_namespace(self.covariance_)
         c_cov = validate_data(
             self,
@@ -398,6 +411,8 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         # This must be done as ```support_input_format``` is insufficient for array API
         # support when attributes are non-numpy.
         check_is_fitted(self)
+        if sklearn_check_version("1.9"):
+            check_same_namespace(X, self, attribute="covariance_", method="mahalanobis")
         precision = self.get_precision()
         loc = self.location_[None, :]
         xp, _ = get_namespace(X, precision, loc)

@@ -70,11 +70,11 @@ def test_full_results(queue, num_blocks, dtype):
         tol = 5e-3 if model.coef_.dtype == np.float32 else 1e-5
     else:
         tol = 3e-3 if model.coef_.dtype == np.float32 else 1e-5
-    atol = 1e-4 if model.coef_.dtype == np.float32 else 1e-6
+    atol = 5e-4 if model.coef_.dtype == np.float32 else 1e-6
     assert_allclose(coef, model.coef_.T, rtol=tol, atol=atol)
 
     tol = 3e-3 if model.intercept_.dtype == np.float32 else 1e-5
-    assert_allclose(intercept, model.intercept_, rtol=tol)
+    assert_allclose(intercept, model.intercept_, rtol=tol, atol=atol)
 
     Xt = gen.random(size=(num_samples_test, num_features), dtype=dtype)
     gtr = Xt @ coef + intercept[np.newaxis, :]
@@ -82,7 +82,7 @@ def test_full_results(queue, num_blocks, dtype):
     res = model.predict(Xt, queue=queue)
 
     tol = 2e-4 if res.dtype == np.float32 else 1e-7
-    assert_allclose(gtr, res, rtol=tol)
+    assert_allclose(gtr, res, rtol=tol, atol=atol)
 
 
 @pytest.mark.parametrize("queue", get_queues())

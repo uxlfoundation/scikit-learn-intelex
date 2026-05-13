@@ -33,6 +33,13 @@ from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.validation import validate_data
 from .common import KNeighborsDispatchingBase
 
+if sklearn_check_version("1.9"):
+    from sklearn.utils._array_api import (
+        check_same_namespace,
+        get_namespace_and_device,
+        move_to,
+    )
+
 
 @enable_array_api
 @control_n_jobs(
@@ -72,7 +79,12 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         )
 
     def fit(self, X, y):
-        xp, is_array_api = get_namespace(X)
+        if sklearn_check_version("1.9"):
+            xp, is_array_api, device = get_namespace_and_device(X)
+        else:
+            xp, is_array_api = get_namespace(X)
+            device = getattr(X, "device", None)
+
         dispatch(
             self,
             "fit",
@@ -86,7 +98,6 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         # Ensure _fit_X matches the input namespace so that
         # kneighbors(X=None) can use get_namespace(self._fit_X).
         if is_array_api and not _is_numpy_namespace(xp):
-            device = getattr(X, "device", None)
             self._fit_X = xp.asarray(self._fit_X, device=device)
         return self
 
@@ -169,7 +180,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         )
 
         # Process classification targets before passing to onedal
-        self._process_classification_targets(y, skip_validation=False)
+        self._process_classification_targets(X, y, skip_validation=False)
 
         # Call onedal backend
         onedal_params = {
@@ -200,7 +211,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
         # Post-processing
         self._save_attributes()
 
-    def _process_classification_targets(self, y, skip_validation=False):
+    def _process_classification_targets(self, X, y, skip_validation=False):
         """Process classification targets and set class-related attributes.
 
         Parameters
@@ -246,6 +257,10 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             self.classes_ = self.classes_[0]
             self._y = xp.reshape(self._y, (-1,))
 
+        if sklearn_check_version("1.9"):
+            xp_X, _, device = get_namespace_and_device(X)
+            self._y = move_to(self._y, xp=xp_X, device=device)
+
     def _onedal_predict(self, X, queue=None):
         if X is not None:
             xp, _ = get_namespace(X)
@@ -256,14 +271,20 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
                 accept_sparse="csr",
                 reset=False,
             )
+            if sklearn_check_version("1.9"):
+                check_same_namespace(X, self, attribute="_fit_X", method="predict")
 
         params = self._onedal_estimator._get_onedal_params(X)
         params["result_option"] = "responses"
         result = self._onedal_estimator._onedal_predict(
             self._onedal_estimator._onedal_model, X, params
         )
-        xp, _ = get_namespace(X)
         responses = from_table(result.responses, like=X)
+        if sklearn_check_version("1.9"):
+            xp, _, device = get_namespace_and_device(self.classes_)
+            responses = move_to(responses, xp=xp, device=device)
+        else:
+            xp, _ = get_namespace(X)
         return xp.take(
             self.classes_, xp.asarray(xp.reshape(responses, (-1,)), dtype=xp.int64)
         )
@@ -278,6 +299,8 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
                 accept_sparse="csr",
                 reset=False,
             )
+            if sklearn_check_version("1.9"):
+                check_same_namespace(X, self, attribute="_fit_X", method="predict_proba")
 
         neigh_dist, neigh_ind = self._onedal_estimator.kneighbors(X)
 
@@ -299,6 +322,8 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
                 accept_sparse="csr",
                 reset=False,
             )
+            if sklearn_check_version("1.9"):
+                check_same_namespace(X, self, attribute="_fit_X", method="kneighbors")
         else:
             query_is_train = True
             X = self._fit_X

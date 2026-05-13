@@ -25,8 +25,10 @@ from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
+    dpnp_available,
     get_dataframes_and_queues,
 )
+from onedal.tests.utils._device_selection import is_sycl_device_available
 from sklearnex.preview.decomposition import IncrementalPCA
 
 
@@ -388,3 +390,38 @@ def test_create_model_behavior():
     # use allclose as data was fit with sklearn and onedal on the same data
     # but using different backends
     assert_allclose(X_trans, X_trans_sparse)
+
+
+@pytest.mark.skipif(not dpnp_available, reason="Functionality to test requires DPNP.")
+@pytest.mark.skipif(
+    not sklearn_check_version("1.9"),
+    reason="Relies on functionality introduced in later scikit-learn versions.",
+)
+@pytest.mark.skipif(
+    not is_sycl_device_available("gpu"), reason="Test for GPU-specific functionality."
+)
+def test_incpca_error_on_incompatible_devices(with_array_api):
+    import dpnp
+
+    rng = np.random.default_rng(seed=123)
+    X = rng.random(size=(20, 3), dtype=np.float32)
+    X_cpu = dpnp.array(X, device="cpu")
+    X_gpu = dpnp.array(X, device="gpu")
+
+    err_match = "device|queue"
+
+    model = IncrementalPCA(svd_solver="covariance_eigh").fit(X_gpu)
+    with pytest.raises(ValueError, match=err_match):
+        _ = model.partial_fit(X_cpu)
+    with pytest.raises(ValueError, match=err_match):
+        _ = model.transform(X_cpu)
+    with pytest.raises(ValueError, match=err_match):
+        _ = model.inverse_transform(X_cpu)
+
+    model.fit(X_cpu)
+    with pytest.raises(ValueError, match=err_match):
+        _ = model.partial_fit(X_gpu)
+    with pytest.raises(ValueError, match=err_match):
+        _ = model.transform(X_gpu)
+    with pytest.raises(ValueError, match=err_match):
+        _ = model.inverse_transform(X_gpu)
