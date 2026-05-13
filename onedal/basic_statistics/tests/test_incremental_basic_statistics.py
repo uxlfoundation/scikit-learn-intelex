@@ -39,9 +39,9 @@ def test_multiple_options_on_gold_data(queue, weighted, dtype):
     incbs = IncrementalBasicStatistics()
     for i in range(2):
         if weighted:
-            incbs.partial_fit(X_split[i], weights_split[i], queue=queue)
+            incbs.partial_fit(X_split[i], np.dtype(dtype), weights_split[i], queue=queue)
         else:
-            incbs.partial_fit(X_split[i], queue=queue)
+            incbs.partial_fit(X_split[i], np.dtype(dtype), queue=queue)
 
     result = incbs.finalize_fit()
 
@@ -86,9 +86,11 @@ def test_single_option_on_random_data(
 
     for i in range(num_batches):
         if weighted:
-            incbs.partial_fit(data_split[i], weights_split[i], queue=queue)
+            incbs.partial_fit(
+                data_split[i], np.dtype(dtype), weights_split[i], queue=queue
+            )
         else:
-            incbs.partial_fit(data_split[i], queue=queue)
+            incbs.partial_fit(data_split[i], np.dtype(dtype), queue=queue)
     result = incbs.finalize_fit()
 
     res = getattr(result, result_option + "_")
@@ -124,9 +126,11 @@ def test_multiple_options_on_random_data(
 
     for i in range(num_batches):
         if weighted:
-            incbs.partial_fit(data_split[i], weights_split[i], queue=queue)
+            incbs.partial_fit(
+                data_split[i], np.dtype(dtype), weights_split[i], queue=queue
+            )
         else:
-            incbs.partial_fit(data_split[i], queue=queue)
+            incbs.partial_fit(data_split[i], np.dtype(dtype), queue=queue)
     result = incbs.finalize_fit()
 
     res_mean, res_max, res_sum = result.mean_, result.max_, result.sum_
@@ -172,9 +176,11 @@ def test_all_option_on_random_data(
 
     for i in range(num_batches):
         if weighted:
-            incbs.partial_fit(data_split[i], weights_split[i], queue=queue)
+            incbs.partial_fit(
+                data_split[i], np.dtype(dtype), weights_split[i], queue=queue
+            )
         else:
-            incbs.partial_fit(data_split[i], queue=queue)
+            incbs.partial_fit(data_split[i], np.dtype(dtype), queue=queue)
     result = incbs.finalize_fit()
 
     if weighted:
@@ -209,8 +215,8 @@ def test_incremental_estimator_pickle(queue, dtype):
     X = gen.uniform(low=-0.3, high=+0.7, size=(10, 10))
     X = X.astype(dtype)
     X_split = np.array_split(X, 2)
-    incbs.partial_fit(X_split[0], queue=queue)
-    incbs_loaded.partial_fit(X_split[0], queue=queue)
+    incbs.partial_fit(X_split[0], np.dtype(dtype), queue=queue)
+    incbs_loaded.partial_fit(X_split[0], np.dtype(dtype), queue=queue)
 
     assert incbs._need_to_finalize == True
     assert incbs_loaded._need_to_finalize == True
@@ -252,8 +258,8 @@ def test_incremental_estimator_pickle(queue, dtype):
     )
     assert_allclose(partial_sum_squares_centered, partial_sum_squares_centered_loaded)
 
-    incbs.partial_fit(X_split[1], queue=queue)
-    incbs_loaded.partial_fit(X_split[1], queue=queue)
+    incbs.partial_fit(X_split[1], np.dtype(dtype), queue=queue)
+    incbs_loaded.partial_fit(X_split[1], np.dtype(dtype), queue=queue)
     assert incbs._need_to_finalize == True
     assert incbs_loaded._need_to_finalize == True
 
