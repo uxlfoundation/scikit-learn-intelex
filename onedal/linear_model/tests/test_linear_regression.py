@@ -143,6 +143,7 @@ def test_reconstruct_model(queue, dtype):
     model = LinearRegression(fit_intercept=True)
     model.coef_ = coef.T
     model.intercept_ = intp
+    model._onedal_model = model._create_model(model.coef_, model.intercept_, np)
 
     res = model.predict(X, queue=queue)
 
