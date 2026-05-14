@@ -48,6 +48,7 @@
 
 import numbers
 import os
+from functools import partial
 
 import numpy as np
 import scipy.optimize as optimize
@@ -445,12 +446,26 @@ def logistic_regression_path_d4p(
 
 def daal4py_fit(self, X, y, sample_weight=None):
     which, what = logistic_module, "_logistic_regression_path"
-    replacer = logistic_regression_path
+    # Note: as of scikit-learn1.8, 'n_jobs' is deprecated for logistic regression
+    # and throws a warning. Their functions still have 'n_threads' as a parameter,
+    # but since 1.8, they hard-code it to 1 in the calls from logistic regression.
+    # This is a workaround to avoid getting a warning. If scikit-learn removes
+    # the 'n_jobs' parameter (scheduled for version 1.10), then this workaround
+    # can be safely removed.
+    if sklearn_check_version("1.8"):
+        n_jobs = self.n_jobs
+        replacer = partial(logistic_regression_path, n_threads=n_jobs)
+        if self.n_jobs is not None:
+            self.n_jobs = None
+    else:
+        replacer = logistic_regression_path
     try:
         setattr(which, what, replacer)
         clf = LogisticRegression_original.fit(self, X, y, sample_weight)
     finally:
         setattr(which, what, lr_path_original)
+        if sklearn_check_version("1.8"):
+            self.n_jobs = n_jobs
     return clf
 
 

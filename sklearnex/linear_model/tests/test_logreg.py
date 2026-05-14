@@ -700,3 +700,26 @@ def test_array_api_logreg(dataframe, queue, y_type):
     assert isinstance(
         score, (float, np.floating, np.number)
     ), f"score should return a scalar, got type {type(score)}"
+
+
+@pytest.mark.skipif(
+    not sklearn_check_version("1.8"),
+    reason="Workaround for warning issued in newer scikit-learn versions",
+)
+@pytest.mark.allow_sklearn_fallback
+def test_no_warning_for_n_jobs():
+    from sklearnex.linear_model import LogisticRegression
+
+    model = LogisticRegression(n_jobs=2, solver="newton-cholesky")
+
+    rng = np.random.default_rng(seed=123)
+    X = rng.random(size=(10, 3))
+    y = rng.integers(2, size=X.shape[0])
+    w = rng.standard_gamma(1, size=X.shape[0])
+
+    # Note: this is meant to trigger a fallback by passing weights and a
+    # solver which is not supported by oneDAL. If oneDAL starts supporting
+    # this setting, it should find some other way of triggering a fallback.
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", category=FutureWarning)
+        model.fit(X, y, w)
