@@ -22,7 +22,8 @@
 # {% set version = "1.1.1" %}
 
 package:
-  name: {{ name|lower }}
+  # Top-level package name is a placeholder; real artifacts come from outputs.
+  name: {{ name|lower }}-split
   version: {{ environ.get('GIT_DESCRIBE_TAG') }}
   # version: {{ version }}
 
@@ -41,9 +42,10 @@ build:
     - DPCPPROOT
     - DALROOT
     - NO_DIST=1  # [win]
-  ignore_run_exports_from:
-    - {{ compiler('dpcpp') }}  # [linux64]
 
+# Top-level requirements apply to the shared build.sh/bld.bat that compiles
+# and stages host + dpc artifacts once. Each output's pack.sh then copies
+# the subset of files that belong to that output.
 requirements:
   build:
     - make  # [linux]
@@ -65,40 +67,102 @@ requirements:
     # - dal-devel =={{ version }}
     - impi-devel  # [not win]
     - mpi * impi  # [not win]
-  run:
-    - python
-    - numpy
-    - scikit-learn
-    # dal-devel has run_exports on conda-forge, so no need to add it.
-    - mpi * impi  # [not win]
-    - packaging
 
-test:
-  requires:
-    - pyyaml
-    - mpi * impi  # [not win]
-    # DPC part of sklearnex is optional
-    - dpcpp-cpp-rt  # [linux64]
-    # TODO: enable data parallel frameworks when they are available on conda-forge
-    # - dpctl
-    # - dpnp
-    # next deps are synced with requirements-test.txt
-    - pytest
-    - pytest-mock
-    - pandas
-    - xgboost
-    - lightgbm
-    - shap
-    - catboost  # [py<314]
-    - treelite
-    - array-api-compat
-    - array-api-strict
-    - polars
-  source_files:
-    - .ci
-    - setup.cfg
-    - examples
-    - tests
+outputs:
+  - name: scikit-learn-intelex
+    build:
+      # CPU-only package must not pull GPU/SYCL runtime. Suppress
+      # run_exports from the dpcpp compiler so its intel-sycl-rt pin
+      # is not inherited by this output.
+      ignore_run_exports_from:
+        - {{ compiler('dpcpp') }}  # [linux64]
+    script: pack.sh  # [linux]
+    requirements:
+      build:
+        - make  # [linux]
+        - {{ compiler('dpcpp') }}  # [linux64]
+        - {{ compiler('cxx') }}  # [linux64 or win]
+      host:
+        - python
+        - setuptools
+        - numpy >=2,<3
+        - dal-devel
+        - impi-devel  # [not win]
+        - mpi * impi  # [not win]
+      run:
+        - python
+        - numpy
+        - scikit-learn
+        # dal-devel has run_exports on conda-forge, so no need to add it.
+        - mpi * impi  # [not win]
+        - packaging
+    test:
+      requires:
+        - pyyaml
+        - mpi * impi  # [not win]
+        # next deps are synced with requirements-test.txt
+        - pytest
+        - pytest-mock
+        - pandas
+        - xgboost
+        - lightgbm
+        - shap
+        - catboost  # [py<314]
+        - treelite
+        - array-api-compat
+        - array-api-strict
+        - polars
+      source_files:
+        - .ci
+        - setup.cfg
+        - examples
+        - tests
+      commands:
+        - python -c "from sklearnex import patch_sklearn; patch_sklearn()"
+        # CPU host backend must be present.
+        - python -c "import onedal._onedal_py_host"
+        # DPC backend must NOT be in the CPU package.
+        - python -c "import onedal, os, glob; assert not glob.glob(os.path.join(os.path.dirname(onedal.__file__), '_onedal_py_dpc*')), 'DPC backend leaked into CPU package'"  # [linux]
+    about:
+      summary: Extension for Scikit-learn* (CPU runtime) is a seamless way to speed up your Scikit-learn application.
+
+  - name: scikit-learn-intelex-gpu
+    build:
+      # GPU split is Linux x86_64 only (matches dal-gpu availability).
+      skip: true  # [not linux64]
+      # Do NOT set ignore_run_exports_from here: the dpcpp compiler declares
+      # run_exports with a compatible intel-sycl-rt pin.  scikit-learn-intelex-gpu
+      # inherits it automatically — no manual pin needed.
+    script: pack.sh  # [linux]
+    requirements:
+      build:
+        - make  # [linux]
+        - {{ compiler('dpcpp') }}  # [linux64]
+      host:
+        - python
+        - setuptools
+        - numpy >=2,<3
+        - dal-devel
+        - dal-gpu  # [linux64]
+        - impi-devel
+        - mpi * impi
+      run:
+        - python
+        - {{ pin_subpackage('scikit-learn-intelex', exact=True) }}
+        - dal-gpu  # [linux64]
+        # intel-sycl-rt / dpcpp-cpp-rt is injected automatically via run_exports
+        # from the dpcpp compiler, ensuring the SYCL runtime version matches
+        # the compiler used to build.
+    test:
+      requires:
+        - dpcpp-cpp-rt  # [linux64]
+      commands:
+        # GPU backend .so must be installed by this package.
+        - python -c "import onedal, os, glob; assert glob.glob(os.path.join(os.path.dirname(onedal.__file__), '_onedal_py_dpc*')), 'DPC backend missing'"  # [linux]
+        # Importing the DPC extension module exercises the SYCL runtime dependency.
+        - python -c "import onedal._onedal_py_dpc"  # [linux]
+    about:
+      summary: Extension for Scikit-learn* (GPU/DPC++ runtime) — enables oneAPI SYCL-based acceleration.
 
 about:
   home: https://uxlfoundation.github.io/scikit-learn-intelex
