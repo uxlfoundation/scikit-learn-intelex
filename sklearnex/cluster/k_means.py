@@ -40,12 +40,14 @@ if daal_check_version((2023, "P", 200)):
     from onedal.cluster import KMeans as onedal_KMeans
     from onedal.utils.validation import _is_arraylike_not_scalar, _is_csr
 
-    from .._config import get_config
     from .._device_offload import dispatch, wrap_output_data
     from .._utils import PatchingConditionsChain
     from ..base import oneDALEstimator
     from ..utils._array_api import enable_array_api, get_namespace
     from ..utils.validation import validate_data
+
+    if sklearn_check_version("1.9"):
+        from sklearn.utils._array_api import check_same_namespace
 
     @enable_array_api
     @control_n_jobs(decorated_methods=["fit", "fit_transform", "predict", "score"])
@@ -383,7 +385,10 @@ if daal_check_version((2023, "P", 200)):
                 )
 
         def _onedal_predict(self, X, sample_weight=None, queue=None):
-
+            if sklearn_check_version("1.9"):
+                check_same_namespace(
+                    X, self, attribute="cluster_centers_", method="predict"
+                )
             xp, _ = get_namespace(X)
             X = validate_data(
                 self,
@@ -450,7 +455,10 @@ if daal_check_version((2023, "P", 200)):
             )
 
         def _onedal_transform(self, X, queue=None):
-
+            if sklearn_check_version("1.9"):
+                check_same_namespace(
+                    X, self, attribute="cluster_centers_", method="transform"
+                )
             xp, is_array_api = get_namespace(X)
             X = validate_data(
                 self,
@@ -492,7 +500,10 @@ if daal_check_version((2023, "P", 200)):
             )
 
         def _onedal_score(self, X, y=None, sample_weight=None, queue=None):
-
+            if sklearn_check_version("1.9"):
+                check_same_namespace(
+                    X, self, attribute="cluster_centers_", method="score"
+                )
             xp, _ = get_namespace(X)
             X = validate_data(
                 self,
