@@ -42,10 +42,11 @@ if daal_check_version((2024, "P", 600)):
     from ..base import oneDALEstimator
     from ..utils._array_api import enable_array_api, get_namespace
     from ..utils.validation import validate_data
+    from ._base_linear_model import _BaseLinearModel
 
     @enable_array_api("1.5")  # validate_data y_numeric requires sklearn >=1.5
     @control_n_jobs(decorated_methods=["fit", "predict", "score"])
-    class Ridge(oneDALEstimator, _sklearn_Ridge):
+    class Ridge(oneDALEstimator, _sklearn_Ridge, _BaseLinearModel):
         __doc__ = _sklearn_Ridge.__doc__
 
         if sklearn_check_version("1.2"):
@@ -275,9 +276,11 @@ if daal_check_version((2024, "P", 600)):
                 f"Unknown method {method_name} in {self.__class__.__name__}"
             )
 
-        def _initialize_onedal_estimator(self):
+        def _initialize_onedal_estimator(
+            self, override_fit_intercept: bool = False
+        ) -> None:
             onedal_params = {
-                "fit_intercept": self.fit_intercept,
+                "fit_intercept": self._get_fit_intercept(override_fit_intercept),
                 "alpha": self.alpha,
                 "copy_X": self.copy_X,
             }
@@ -347,9 +350,7 @@ if daal_check_version((2024, "P", 600)):
             )
 
             if not hasattr(self, "_onedal_estimator"):
-                self._initialize_onedal_estimator()
-                self._onedal_estimator.coef_ = self.coef_
-                self._onedal_estimator.intercept_ = self.intercept_
+                self._initialize_onedal_estimator_from_coefs()
 
             res = self._onedal_estimator.predict(X, queue=queue)
             if res.shape[1] == 1 and self.coef_.ndim == 1:
