@@ -31,10 +31,18 @@ from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
+    dpnp_available,
     get_dataframes_and_queues,
     get_queues,
+    torch_available,
 )
+from onedal.tests.utils._device_selection import is_sycl_device_available
 from sklearnex import config_context
+
+if dpnp_available:
+    import dpnp
+if torch_available:
+    import torch
 
 
 def prepare_input(X, y, dataframe, queue):
@@ -700,3 +708,54 @@ def test_array_api_logreg(dataframe, queue, y_type):
     assert isinstance(
         score, (float, np.floating, np.number)
     ), f"score should return a scalar, got type {type(score)}"
+
+
+@pytest.mark.skipif(
+    not sklearn_check_version("1.9"), reason="Functionality introduced in later versions"
+)
+@pytest.mark.skipif(
+    not is_sycl_device_available("gpu"), reason="Test for GPU-specific functionality."
+)
+@pytest.mark.parametrize(
+    "X_xp, X_device",
+    ([(dpnp, "gpu")] if dpnp_available else [])
+    + ([(torch, "xpu")] if torch_available else []),
+)
+def test_error_on_incompatible_devices_gpufirst(with_array_api, X_xp, X_device):
+    from sklearnex.linear_model import LogisticRegression
+
+    rng = np.random.default_rng(seed=123)
+    X = rng.random(size=(10, 3), dtype=np.float32)
+    y = rng.integers(2, size=X.shape[0])
+
+    Xa = X_xp.asarray(X, device=X_device)
+
+    model_gpu = LogisticRegression(solver="newton-cg").fit(Xa, y)
+    with pytest.raises(ValueError, match="device"):
+        model_gpu.predict(X)
+
+
+@pytest.mark.skipif(
+    not sklearn_check_version("1.9"), reason="Functionality introduced in later versions"
+)
+@pytest.mark.skipif(
+    not is_sycl_device_available("gpu"), reason="Test for GPU-specific functionality."
+)
+@pytest.mark.parametrize(
+    "X_xp, X_device",
+    ([(dpnp, "gpu")] if dpnp_available else [])
+    + ([(torch, "xpu")] if torch_available else []),
+)
+@pytest.mark.allow_sklearn_fallback
+def test_error_on_incompatible_devices_cpufirst(with_array_api, X_xp, X_device):
+    from sklearnex.linear_model import LogisticRegression
+
+    rng = np.random.default_rng(seed=123)
+    X = rng.random(size=(10, 3), dtype=np.float32)
+    y = rng.integers(2, size=X.shape[0])
+
+    Xa = X_xp.asarray(X, device=X_device)
+
+    model_cpu = LogisticRegression(solver="lbfgs").fit(X, y)
+    with pytest.raises(ValueError, match="device"):
+        model_cpu.predict(Xa)
