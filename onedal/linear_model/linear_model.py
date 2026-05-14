@@ -70,7 +70,11 @@ class BaseLinearRegression(metaclass=ABCMeta):
             coef_ = xp.reshape(coef_, (1, -1))
         if self.fit_intercept:
             intercept_ = xp.reshape(intercept_, (dim0, -1))
-            packed_coefficients = xp.concat([intercept_, coef_], axis=1)
+            if xp is np:
+                # workaround for numpy<2
+                packed_coefficients = xp.concatenate([intercept_, coef_], axis=1)
+            else:
+                packed_coefficients = xp.concat([intercept_, coef_], axis=1)
         else:
             if hasattr(coef_, "device"):
                 packed_coefficients = xp.zeros(
