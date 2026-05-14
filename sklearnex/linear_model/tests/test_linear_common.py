@@ -61,7 +61,8 @@ def test_predict_after_fallback(fit_intercept, dim_y, estimator):
     reason="Functionality introduced in later scikit-learn versions.",
 )
 @pytest.mark.parametrize("fit_intercept", [True, False])
-@pytest.mark.parametrize("dim_y", [1, 3])
+# Note: this is due to a bug that was fixed in later sklearn versions
+@pytest.mark.parametrize("dim_y", [1] + ([3] if sklearn_check_version("1.9") else []))
 @pytest.mark.parametrize("estimator", ["Ridge"])
 @pytest.mark.allow_sklearn_fallback
 def test_predict_after_fallback_array_api(
