@@ -18,7 +18,7 @@ steps:
     displayName: Add conda to PATH
   - script: |
       (echo default_channels: & echo   - https://conda.anaconda.org/conda-forge) >> C:\Users\VssAdministrator\.condarc
-      conda create -q -y -n CB -c conda-forge python=$(PYTHON_VERSION) impi-devel pyyaml
+      conda create -q -y -n CB -c conda-forge python=$(PYTHON_VERSION) impi-devel pyyaml pip setuptools wheel
     displayName: 'Create Anaconda environment'
   - script: |
       call activate CB
