@@ -232,30 +232,27 @@ endif()
 
 pybind11_add_module(${TARGET} ${sources})
 
-# sklearnex's own source tree — warnings here are our responsibility.
-set(SKLEARNEX_INCLUDE_DIRECTORIES
-    ${PYTHON_ONEDAL}../
-)
-
-# Third-party deps (oneDAL, SYCL via oneDAL, Python, NumPy, optionally MPI).
-# These are consumed as SYSTEM includes below so their warnings are not
-# promoted to errors by CMAKE_COMPILE_WARNING_AS_ERROR.  In particular, the
-# Intel SYCL runtime (intel-sycl-rt 2026.0.0) ships sycl/access/access.hpp
-# which self-references deprecated identifiers (target::constant_buffer,
-# host_buffer, etc.) and produces -Wdeprecated-declarations warnings just
-# from being included.  Treating the oneDAL include path as system silences
-# those warnings without relaxing the policy for sklearnex's own code.
 set(EXTERNAL_INCLUDE_DIRECTORIES
-    ${oneDAL_INCLUDE_DIRS}
+    ${PYTHON_ONEDAL}../
     ${PYTHON_INCLUDE_DIR}
     ${NUMPY_INCLUDE_DIRS}
 )
 
+# oneDAL include paths are consumed as SYSTEM so -Wdeprecated-declarations
+# warnings emitted from oneDAL's vendored SYCL headers (sycl/access/access.hpp
+# in intel-sycl-rt 2026.0.0 self-references deprecated identifiers like
+# target::constant_buffer just from being included) are not promoted to errors
+# by CMAKE_COMPILE_WARNING_AS_ERROR.  Other third-party headers (Python, NumPy,
+# MPI) stay on the regular include path so warnings from them remain visible.
+set(ONEDAL_SYSTEM_INCLUDE_DIRECTORIES
+    ${oneDAL_INCLUDE_DIRS}
+)
+
 # TODO: remove this workaround when oneDAL CMake config is fixed
 if(WIN32)
-list(APPEND EXTERNAL_INCLUDE_DIRECTORIES $ENV{DALROOT}/Library/include/dal $ENV{DALROOT}/include/dal)
+list(APPEND ONEDAL_SYSTEM_INCLUDE_DIRECTORIES $ENV{DALROOT}/Library/include/dal $ENV{DALROOT}/include/dal)
 else()
-list(APPEND EXTERNAL_INCLUDE_DIRECTORIES ${oneDAL_INCLUDE_DIRS}/dal)
+list(APPEND ONEDAL_SYSTEM_INCLUDE_DIRECTORIES ${oneDAL_INCLUDE_DIRS}/dal)
 endif()
 
 set(EXTERNAL_LINK_DIRECTORIES ${PYTHON_LIBRARY_DIR} ${oneDAL_LIBRARY_DIR})
@@ -271,8 +268,8 @@ target_link_options(${TARGET} PRIVATE ${ONEDAL_PY_LINK_OPTIONS})
 target_link_libraries(${TARGET} PUBLIC ${EXTERNAL_LINK_LIBRARIES})
 target_compile_definitions(${TARGET} PUBLIC ${COMPILE_DEFINITIONS})
 target_link_directories(${TARGET} PRIVATE ${EXTERNAL_LINK_DIRECTORIES})
-target_include_directories(${TARGET} PRIVATE ${SKLEARNEX_INCLUDE_DIRECTORIES})
-target_include_directories(${TARGET} SYSTEM PRIVATE ${EXTERNAL_INCLUDE_DIRECTORIES})
+target_include_directories(${TARGET} PRIVATE ${EXTERNAL_INCLUDE_DIRECTORIES})
+target_include_directories(${TARGET} SYSTEM PRIVATE ${ONEDAL_SYSTEM_INCLUDE_DIRECTORIES})
 
 message(STATUS "NUMPY_INCLUDE_DIRS:" ${NUMPY_INCLUDE_DIRS})
 
