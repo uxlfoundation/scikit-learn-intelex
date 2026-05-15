@@ -452,6 +452,11 @@ def daal4py_fit(self, X, y, sample_weight=None):
     # This is a workaround to avoid getting a warning. If scikit-learn removes
     # the 'n_jobs' parameter (scheduled for version 1.10), then this workaround
     # can be safely removed.
+    # Note2: the function 'logistic_regression_path' takes an argument 'n_threads',
+    # but does not use it. The number of threads for oneDAL is set through wrapper
+    # 'control_n_jobs', which acts on the sklearnex side before calling these
+    # daal4py functions for logistic regression, so setting 'n_jobs' in the estimator
+    # objects at this point will have no effect on the value passed to oneDAL.
     if sklearn_check_version("1.8"):
         n_jobs = self.n_jobs
         replacer = partial(logistic_regression_path, n_threads=n_jobs)
