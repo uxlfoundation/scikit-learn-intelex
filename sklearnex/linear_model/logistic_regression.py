@@ -461,7 +461,7 @@ if daal_check_version((2024, "P", 1)):
                 )
 
             # This can happen when fitting on GPU and then passing a CPU array to predict
-            if not isinstance(self.coef_, np.ndarray):
+            if not isinstance(self.coef_, np.ndarray) and not issparse(self.coef_):
                 if sklearn_check_version("1.9"):
                     check_same_namespace(X, self, attribute="coef_", method=method_name)
                 else:
