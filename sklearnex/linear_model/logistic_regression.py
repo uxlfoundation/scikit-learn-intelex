@@ -26,6 +26,7 @@ from ..base import oneDALEstimator
 
 if daal_check_version((2024, "P", 1)):
     import numpy as np
+    from scipy.sparse import issparse
     from sklearn.linear_model import LogisticRegression as _sklearn_LogisticRegression
     from sklearn.metrics import accuracy_score
     from sklearn.utils.multiclass import type_of_target
@@ -349,6 +350,10 @@ if daal_check_version((2024, "P", 1)):
                         hasattr(self, "_onedal_estimator"),
                         "oneDAL model was not trained.",
                     ),
+                    (
+                        not issparse(self.coef_),
+                        "Predicting on sparse coefficients is not supported.",
+                    ),
                 ]
             )
 
@@ -375,7 +380,7 @@ if daal_check_version((2024, "P", 1)):
             patching_status = PatchingConditionsChain(
                 f"sklearn.linear_model.{class_name}.{method_name}",
             )
-            dal_ready = patching_status.and_conditions(
+            patching_status.and_conditions(
                 [
                     (
                         not check_is_array_api(data[0]),
