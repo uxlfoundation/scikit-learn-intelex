@@ -38,6 +38,8 @@ Overview
 
             conda install -c conda-forge scikit-learn-intelex-gpu
 
+.. hint:: When installing ``scikit-learn-intelex-gpu``, it is not advised to mix packages from ``pip`` and ``conda`` in the same environment - see the :ref:`installation notes <mkl_symbols_note>` for more details.
+
 Note that ``scikit-learn-intelex-gpu`` does not bring additional modules - it is meant to be used through the same functions and classes from the ``sklearnex`` module that run on CPU by default.
 
 After installing said package, the device used for computations can be easily controlled through the ``target_offload`` option in config contexts, which moves data to GPU if it's not already there - see :doc:`config-contexts` and the rest of this page for more details).

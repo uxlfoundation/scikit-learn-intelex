@@ -170,7 +170,7 @@ Example Usage
 Running on GPUs
 ===============
 
-Note: executing on GPU has `additional system software requirements <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`__ - see :doc:`oneapi-gpu`.
+Note: executing on GPU requires installing package ``scikit-learn-intelex-gpu``, and comes with `additional system software requirements <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`__ - see :doc:`oneapi-gpu` for details.
 
 .. tabs::
    .. tab:: By patching
