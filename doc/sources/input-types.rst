@@ -18,22 +18,20 @@
 Supported input types
 =====================
 
-Just like |sklearn| estimators, estimators from the |sklearnex| are able to accept
-and work with different classes of input data, including:
+Just like |sklearn| estimators, estimators from the |sklearnex| are able to work with different classes of input data, including:
 
 - :external+numpy:doc:`Numpy arrays <user/whatisnumpy>`.
 
-  - Note: :external+numpy:doc:`masked arrays <reference/maskedarray>` are also supported, but just like in stock |sklearn|, the underlying array values are used without the mask.
+  - Note: :external+numpy:doc:`masked arrays <reference/maskedarray>` are also supported, but just like in stock |sklearn|, the
+    underlying array values are used without the mask.
 - Other array classes implementing the `Array API <https://data-apis.org/array-api/latest/>`__ protocol
   (see :ref:`array_api` for details).
-- SciPy :external+scipy:doc:`sparse arrays and sparse matrices <tutorial/sparse>` (depending on the estimator).
+- SciPy :external+scipy:doc:`sparse arrays and sparse matrices <tutorial/sparse>` (depending on the estimator - see :doc:`algorithms`).
 - Pandas :external+pandas:doc:`DataFrame and Series <user_guide/dsintro>` classes.
+- Other DataFrame classes recognize by data validators from |sklearn|, such as the ones from `Polars <https://pola.rs>`__.
 
-In addition, |sklearnex| also supports |dpnp_array| arrays, which are particularly useful for GPU computations.
-
-Stock Scikit-Learn estimators, depending on the version, might offer support for additional
-input types beyond this list, such as ``DataFrame`` and ``Series`` classes from other libraries
-like `Polars <https://pola.rs>`__.
+In addition, |sklearnex| also supports |dpnp_array| arrays (with and without array API mode) in estimators with
+:ref:`GPU support <sklearn_algorithms_gpu>` (see also :doc:`array_api`).
 
 |sklearnex| currently does not offer accelerated routines for input types not listed here - when
 receiving an unsupported class, estimators will either convert to a supported class under some
@@ -46,10 +44,14 @@ enabled but the input is unsupported).
   In some cases, data passed to estimators might be copied/duplicated during calls to methods such as fit/predict.
   The affected cases are listed below:
 
-  - Non-contiguous NumPy array - i.e. where strides are wider than one element across both rows and columns
+  - Non-contiguous NumPy array - i.e. where strides are wider than one element across both rows and columns.
   - For SciPy CSR matrix / array, index arrays are always copied. Note that sparse matrices in formats other than CSR
     will be converted to CSR, which implies more than just data copying.
-  - Heterogeneous NumPy array
-  - If a SYCL queue is provided for device without ``float64`` support but data are ``float64``, data is copied with reduced precision.
-  - If :doc:`array_api` is not enabled then data from GPU devices are always copied to the host device and then result table
-    (for applicable methods) is copied to the source device.
+  - Heterogeneous NumPy array.
+  - If a SYCL queue is used for :ref:`target_offload` for a device without ``float64`` support but data is ``float64``,
+    data will be converted to ``float32``.
+  - If a |dpnp_array| array on GPU is used as input without :doc:`array_api` being enabled, then data will be transferred
+    to CPU for validations and then back to GPU for computations (see :doc:`oneapi_gpu` for details).
+  - If a |dpnp_array| array on GPU is passed to an estimator with :ref:`GPU support <sklearn_algorithms_gpu>` but the
+    requested operation is not supported on GPU, and if array API is not enabled or |sklearn| does not support array API
+    for the requested operation, then data might be transferred to CPU and the operation done there (see :doc:`config-contexts`).
