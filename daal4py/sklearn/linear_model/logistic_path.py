@@ -48,7 +48,6 @@
 
 import numbers
 import os
-from functools import partial
 
 import numpy as np
 import scipy.optimize as optimize
@@ -459,11 +458,9 @@ def daal4py_fit(self, X, y, sample_weight=None):
     # objects at this point will have no effect on the value passed to oneDAL.
     if sklearn_check_version("1.8"):
         n_jobs = self.n_jobs
-        replacer = partial(logistic_regression_path, n_threads=n_jobs)
         if self.n_jobs is not None:
             self.n_jobs = None
-    else:
-        replacer = logistic_regression_path
+    replacer = logistic_regression_path
     try:
         setattr(which, what, replacer)
         clf = LogisticRegression_original.fit(self, X, y, sample_weight)
