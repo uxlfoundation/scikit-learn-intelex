@@ -389,6 +389,8 @@ deselected_tests:
   - tests/test_common.py::test_estimators[LogisticRegressionCV(cv=3,max_iter=5,use_legacy_attributes=False)-check_sample_weight_equivalence_on_dense_data]
   - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[array_api_strict-CPU_DEVICE-float64-None-False-False-False]
   - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[array_api_strict-CPU_DEVICE-float64-None-False-True-False]
+  - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[dpnp-cpu-float64-None-False-False-False]
+  - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[dpnp-cpu-float64-None-False-True-False]
 
   # Logistic regression array api compliance test fails on Windows only due to convergence issue
   - linear_model/tests/test_logistic.py::test_logistic_regression_array_api_compliance[array_api_strict-device1-float32-balanced-True-True-True]
@@ -469,6 +471,10 @@ deselected_tests:
 
   # Fails due to numeric tolerances on some AMD systems
   - linear_model/tests/test_base.py::test_linear_regression_vs_lstsq[float32]
+
+  # Warns about solver 'auto' resolving to a different solver when array API is used in scikit-learn,
+  # but sklearnex has support for different solvers when passing array API, so it doesn't change the default.
+  - linear_model/tests/test_ridge.py::test_array_api_error_and_warnings_for_solver_parameter[dpnp]
 
   # --------------------------------------------------------
   # No need to test daal4py patching
