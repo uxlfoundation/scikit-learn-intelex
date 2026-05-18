@@ -44,12 +44,11 @@ Some tests will only execute depending on the availability of optional dependenc
         dpctl `# for GPU functionalities` \
         dpnp `# for array API and GPU functionalities`
 
-    pip install --index-url https://software.repos.intel.com/python/pypi \
+    pip install --index-url https://download.pytorch.org/whl/xpu \
         torch `# for array API`
 
-    pip install --index-url https://software.repos.intel.com/python/pypi \
-        mpi4py impi_rt `# for distributed mode, be sure to install from Intel's index` \
-        && pip install pytest-mpi `# also required, but not from Intel's index`
+    pip install \
+        mpi4py impi_rt pytest-mpi `# for distributed mode`
 
 .. warning:: It might not be possible to install all of the test dependencies simultaneously in the same Python environment. In particular, dependencies of ``torch`` and ``dpctl`` / ``dpnp`` are potentially incompatible if using pre-built distributions. Try using different Python environments for each set of dependencies to test.
 
