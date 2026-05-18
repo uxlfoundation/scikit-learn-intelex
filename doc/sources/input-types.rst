@@ -51,7 +51,7 @@ enabled but the input is unsupported).
   - If a SYCL queue is used for :ref:`target_offload` for a device without ``float64`` support but data is ``float64``,
     data will be converted to ``float32``.
   - If a |dpnp_array| array on GPU is used as input without :doc:`array_api` being enabled, then data will be transferred
-    to CPU for validations and then back to GPU for computations (see :doc:`oneapi_gpu` for details).
+    to CPU for validations and then back to GPU for computations (see :doc:`oneapi-gpu` for details).
   - If a |dpnp_array| array on GPU is passed to an estimator with :ref:`GPU support <sklearn_algorithms_gpu>` but the
     requested operation is not supported on GPU, and if array API is not enabled or |sklearn| does not support array API
     for the requested operation, then data might be transferred to CPU and the operation done there (see :doc:`config-contexts`).
