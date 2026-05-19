@@ -43,8 +43,7 @@ requested operation (e.g. call to ``.fit()`` / ``.predict()``
 on the estimator class being used) is :ref:`supported on device/GPU <sklearn_algorithms_gpu>`, computations
 will be performed on the device where the data lives, without involving any data transfers.
 
-Note that all of the inputs (e.g. ``X`` and ``y`` passed to ``.fit()`` methods) must be allocated on the same device for this to
-work. If the requested operation is not supported on the device where the data lives, then it will either fall
+If the requested operation is not supported on the device where the data lives, then it will either fall
 back to |sklearn|, or to an accelerated CPU version from the |sklearnex| when supported - these are controllable
 through options ``allow_sklearn_after_onedal`` (default is ``True``) and ``allow_fallback_to_host`` (default is
 ``False``), respectively, which are accepted by ``config_context`` and ``set_config`` after
@@ -66,11 +65,6 @@ be transferred to host if it isn't already, and the computations will happen on 
 .. hint::
     Enable :ref:`verbose` to see information about whether data transfers happen during an operation or not,
     whether an accelerated version from the extension is used, and where (CPU/device) the operation is executed.
-
-When passing array API inputs to methods such as ``.predict()`` of estimators with array API support, the output
-will always be of the same class as the inputs, but be aware that array attributes of fitted models (e.g. ``coef_``
-in a linear model) will not necessarily be of the same class as array API inputs passed to ``.fit()``, even though
-in many cases they are.
 
 .. warning::
     If array API inputs are passed to an estimator's ``.fit()``, subsequent data passed to methods such as
@@ -128,11 +122,6 @@ The following patched classes have support for array API inputs:
     next subsection.
 
 .. note::
-    While full array API support is currently not implemented for all classes, |dpnp_array| inputs are supported
-    by all the classes that have :ref:`GPU support <oneapi_gpu>`. Note however that if array API support is not
-    enabled in |sklearn|, when passing these classes as inputs, data will be transferred to host and then back to
-    device instead of being used directly.
-
     Result attributes of |sklearnex| classes which contain |sklearn| or |sklearnex| classes may not themselves be
     array API compliant. For example, ensemble algorithms contain decision tree estimators result objects which
     do not comply with the array API standard.
