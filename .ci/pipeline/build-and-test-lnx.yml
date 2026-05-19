@@ -95,6 +95,7 @@ steps:
       if [ -n "${TBBROOT}" ] && [ "${TBBROOT}" != "${CONDA_PREFIX}" ]; then source ${TBBROOT}/env/vars.sh; fi
       if [ -n "${COVERAGE_RCFILE}" ]; then export COVERAGE_FILE=$(pwd)/.coverage.sklearn; fi
       if [ -z "${NO_DPC}" ]; then export CPU="cpu"; fi
+      python -c "import onedal; print('DPC backend:', onedal._dpc_backend); print('default backend:', onedal._default_backend); print('DPC load error:', repr(onedal._dpc_load_error))"
       bash .ci/scripts/run_sklearn_tests.sh $CPU
     env:
       TBBROOT: ${{ variables.TBBROOT }}
