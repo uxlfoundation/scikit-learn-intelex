@@ -62,7 +62,7 @@ class BaseLinearRegression(metaclass=ABCMeta):
 
         return params
 
-    def _create_model(self, coef_, intercept_, xp):
+    def _create_model(self, coef_, intercept_, xp) -> None:
         model = self.model()
 
         dim0 = coef_.shape[0] if len(coef_.shape) > 1 else 1
@@ -93,8 +93,6 @@ class BaseLinearRegression(metaclass=ABCMeta):
         self.coef_ = coef_
         self.intercept_ = intercept_
         self._onedal_model = model
-
-        return model
 
     @supports_queue
     def fit(self, X, y, queue=None):
