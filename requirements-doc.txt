@@ -71,5 +71,5 @@ typing-extensions==4.15.0
 urllib3==2.7.0
 wcwidth==0.6.0
 webencodings==0.5.1
-zipp==3.23.1
+zipp==4.1.0
 setuptools>=65.5.1 # not directly required, pinned by Snyk to avoid a vulnerability
