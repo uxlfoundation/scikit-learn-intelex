@@ -238,12 +238,7 @@ set(EXTERNAL_INCLUDE_DIRECTORIES
     ${NUMPY_INCLUDE_DIRS}
 )
 
-# oneDAL include paths are consumed as SYSTEM so -Wdeprecated-declarations
-# warnings emitted from oneDAL's vendored SYCL headers (sycl/access/access.hpp
-# in intel-sycl-rt 2026.0.0 self-references deprecated identifiers like
-# target::constant_buffer just from being included) are not promoted to errors
-# by CMAKE_COMPILE_WARNING_AS_ERROR.  Other third-party headers (Python, NumPy,
-# MPI) stay on the regular include path so warnings from them remain visible.
+# SYSTEM include suppresses deprecation warnings from oneDAL's vendored SYCL headers being promoted to errors.
 set(ONEDAL_SYSTEM_INCLUDE_DIRECTORIES
     ${oneDAL_INCLUDE_DIRS}
 )

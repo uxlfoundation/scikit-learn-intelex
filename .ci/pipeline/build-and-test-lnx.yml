@@ -36,8 +36,8 @@ steps:
       . /usr/share/miniconda/etc/profile.d/conda.sh
       conda activate CB
       if [ -z "${DALROOT}" ]; then
-        conda install -q -y -c https://software.repos.intel.com/python/conda/ "dal-devel>=2025.6.1"
-        if [ -z "${NO_DPC}" ]; then conda install -q -y -c conda-forge -c https://software.repos.intel.com/python/conda/ "dal-gpu>=2026.0.0"; fi
+        conda install -q -y -c https://software.repos.intel.com/python/conda/ "dal-devel>=2026.0.0"
+        if [ -z "${NO_DPC}" ]; then conda install -q -y -c conda-forge "dal-gpu>=2026.0.0"; fi
       fi
       pip install -r dependencies-dev
       conda list
