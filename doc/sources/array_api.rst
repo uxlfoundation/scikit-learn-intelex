@@ -46,8 +46,8 @@ will be performed on the device where the data lives, without involving any data
 If the requested operation is not supported on the device where the data lives, then it will either fall
 back to |sklearn|, or to an accelerated CPU version from the |sklearnex| when supported - these are controllable
 through options ``allow_sklearn_after_onedal`` (default is ``True``) and ``allow_fallback_to_host`` (default is
-``False``), respectively, which are accepted by ``config_context`` and ``set_config`` after
-:doc:`patching scikit-learn <patching>` or when importing those directly from ``sklearnex``.
+``False``), respectively, which are accepted by :obj:`config_context <sklearnex.config_context>` and :obj:`set_config <sklearnex.set_config>` after
+:doc:`patching scikit-learn <patching>` or when importing those directly from ``sklearnex`` (see :doc:`config-contexts`).
 
 .. note::
     Under default settings for :obj:`sklearnex.set_config` / :obj:`sklearnex.config_context`, operations that are not supported on GPU will
