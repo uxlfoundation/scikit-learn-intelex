@@ -76,6 +76,8 @@ steps:
   - script: |
       . /usr/share/miniconda/etc/profile.d/conda.sh
       conda activate CB
+      # Source oneAPI so libintelocl.so's deps resolve when SyclQueue("cpu") is used
+      if [ -z "${NO_DPC}" ]; then source /opt/intel/oneapi/setvars.sh; fi
       if [ -n "${COVERAGE_RCFILE}" ]; then export COVERAGE_FILE=$(pwd)/.coverage.sklearnex; fi
       cd ..
       if [ -n "${TBBROOT}" ] && [ "${TBBROOT}" != "${CONDA_PREFIX}" ]; then source ${TBBROOT}/env/vars.sh; fi
@@ -83,11 +85,13 @@ steps:
     env:
       TBBROOT: ${{ variables.TBBROOT }}
       COVERAGE_RCFILE: ${{ variables.COVERAGE_RCFILE }}
+      NO_DPC: ${{ variables.NO_DPC }}
       NO_DIST: 1
     displayName: "Sklearnex testing"
   - script: |
       . /usr/share/miniconda/etc/profile.d/conda.sh
       conda activate CB
+      if [ -z "${NO_DPC}" ]; then source /opt/intel/oneapi/setvars.sh; fi
       if [ -n "${TBBROOT}" ] && [ "${TBBROOT}" != "${CONDA_PREFIX}" ]; then source ${TBBROOT}/env/vars.sh; fi
       if [ -n "${COVERAGE_RCFILE}" ]; then export COVERAGE_FILE=$(pwd)/.coverage.sklearn; fi
       if [ -z "${NO_DPC}" ]; then export CPU="cpu"; fi
@@ -101,6 +105,7 @@ steps:
   - script: |
       . /usr/share/miniconda/etc/profile.d/conda.sh
       conda activate CB
+      if [ -z "${NO_DPC}" ]; then source /opt/intel/oneapi/setvars.sh; fi
       if [ -n "${TBBROOT}" ] && [ "${TBBROOT}" != "${CONDA_PREFIX}" ]; then source ${TBBROOT}/env/vars.sh; fi
       if [ -z "${NO_DPC}" ]; then export CPU="cpu"; fi
       bash .ci/scripts/run_sklearn_tests.sh $CPU
