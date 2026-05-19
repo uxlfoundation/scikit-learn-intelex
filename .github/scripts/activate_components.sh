@@ -18,6 +18,9 @@
 # if any parameter is given then only source TBB from the oneAPI install
 if [ $# -eq 0 ]; then
   source /opt/intel/oneapi/setvars.sh
+  # Pin dpctl to the Intel CPU OpenCL runtime so it doesn't fall back to a host ICD
+  INTEL_OCL=$(find /opt/intel/oneapi -name libintelocl.so 2>/dev/null | head -1)
+  if [ -n "$INTEL_OCL" ]; then export OCL_ICD_FILENAMES=$INTEL_OCL; fi
 else
   source /opt/intel/oneapi/tbb/latest/env/vars.sh # prepare tbb
 fi
