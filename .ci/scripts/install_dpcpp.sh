@@ -22,4 +22,5 @@ echo "deb https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sourc
 sudo add-apt-repository -y "deb https://apt.repos.intel.com/oneapi all main"
 sudo apt-get update
 sudo apt-get install -y intel-oneapi-compiler-dpcpp-cpp=2026.0.0-947
-sudo bash -c 'echo libintelocl.so > /etc/OpenCL/vendors/intel-cpu.icd'
+# Write the absolute path so the ICD loader resolves it without setvars.sh
+sudo bash -c "echo $(find /opt/intel/oneapi -name libintelocl.so | head -1) > /etc/OpenCL/vendors/intel-cpu.icd"
