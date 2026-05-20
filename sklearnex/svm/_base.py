@@ -393,7 +393,8 @@ class BaseSVM(oneDALEstimator):
             patching_status.and_conditions(
                 [
                     (
-                        self.kernel in ["linear", "rbf", "poly", "sigmoid"],
+                        isinstance(self.kernel, str)
+                        and self.kernel in ["linear", "rbf", "poly", "sigmoid"],
                         "Predictions on pre-computed and callable kernels are not supported.",
                     ),
                     (
