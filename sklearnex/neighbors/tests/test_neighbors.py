@@ -14,22 +14,35 @@
 # limitations under the License.
 # ===============================================================================
 
+import array_api_strict
 import numpy as np
+import pandas as pd
 import pytest
 from numpy.testing import assert_allclose, assert_array_equal
 from sklearn import datasets
+from sklearn.base import is_regressor
 
+from daal4py.sklearn._utils import sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
+    dpnp_available,
     get_dataframes_and_queues,
+    torch_available,
+    torch_xpu_available,
 )
+from onedal.tests.utils._device_selection import is_sycl_device_available
 from sklearnex.neighbors import (
     KNeighborsClassifier,
     KNeighborsRegressor,
     LocalOutlierFactor,
     NearestNeighbors,
 )
+
+if dpnp_available:
+    import dpnp
+if torch_available:
+    import torch
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -173,3 +186,146 @@ def test_p_present_if_metric_is_minkowski():
     assert knn.effective_metric_ == "minkowski"
     assert "p" in knn.effective_metric_params_
     assert knn.effective_metric_params_["p"] == 3
+
+
+# Note: this doesn't check 'kneighbors_graph', because that function
+# transfers the data to NumPy internally, so it will not necessarily
+# end up erroring out.
+@pytest.mark.skipif(
+    not sklearn_check_version("1.9"), reason="Functionality introduced in alter versions."
+)
+@pytest.mark.parametrize("weights", ["uniform", "distance"])
+def test_error_on_incompatible_namespaces(weights, with_array_api):
+    rng = np.random.default_rng(seed=123)
+    X = rng.standard_normal(size=(25, 3))
+    y = rng.standard_normal(size=X.shape[0])
+    Xa = array_api_strict.from_dlpack(X)
+    ya = array_api_strict.from_dlpack(y)
+
+    knn = KNeighborsRegressor(weights=weights).fit(X, y)
+
+    with pytest.raises(ValueError, match="same namespace"):
+        knn.predict(Xa)
+    with pytest.raises(ValueError, match="same namespace"):
+        knn.kneighbors(Xa)
+
+    knn = KNeighborsRegressor().fit(Xa, ya)
+    with pytest.raises(ValueError, match="same namespace"):
+        knn.predict(X)
+    with pytest.raises(ValueError, match="same namespace"):
+        knn.kneighbors(X)
+
+
+@pytest.mark.skipif(
+    not sklearn_check_version("1.9"),
+    reason="Functionality introduced in later scikit-learn versions.",
+)
+@pytest.mark.parametrize("X_xp", [np, pd, array_api_strict])
+@pytest.mark.parametrize("y_xp", [np, pd, array_api_strict])
+@pytest.mark.parametrize("weights", ["uniform", "distance"])
+@pytest.mark.parametrize("n_classes", [0, 2, 3])  # 0 == regression
+def test_mixed_array_namespaces(X_xp, y_xp, weights, n_classes, with_array_api):
+    rng = np.random.default_rng(seed=123)
+    X = rng.standard_normal(size=(50, 4))
+    if n_classes == 0:  # regressor
+        y = rng.standard_normal(size=X.shape[0])
+    else:
+        y = rng.integers(n_classes, size=X.shape[0])
+
+    if X_xp is pd:
+        X = pd.DataFrame(X)
+    else:
+        X = X_xp.asarray(X)
+    if y_xp is pd:
+        if n_classes != 0:
+            y = np.array(["a", "b", "c"])[y]
+        y = pd.Series(y)
+    else:
+        y = y_xp.asarray(y)
+
+    model = (KNeighborsClassifier if n_classes != 0 else KNeighborsRegressor)(
+        weights=weights
+    )
+    model.fit(X, y)
+    pred = model.predict(X)
+    _ = model.score(X, y)
+
+    _ = model.kneighbors(X)
+    _ = model.kneighbors_graph(X)
+
+    if n_classes != 0:
+        proba = model.predict_proba(X)
+        if X_xp == pd:
+            assert isinstance(proba, np.ndarray)
+        else:
+            assert proba.__class__ == X.__class__
+
+    if n_classes == 0:
+        assert pred.__class__ == (X.__class__ if X_xp is not pd else np.ndarray)
+    else:
+        assert pred.__class__ == (y.__class__ if y_xp is not pd else np.ndarray)
+
+    # Note: this is a quick check to ensure that the result has the same
+    # kind of values as the input. There's no particular justification
+    # behind requiring 25% classification accuracy.
+    if n_classes != 0:
+        if y_xp is pd:
+            y_xp = np
+        pred_is_correct = y_xp.astype(y_xp.asarray(pred == y), y_xp.float32)
+        assert y_xp.sum(pred_is_correct) >= (0.25 * int(X.shape[0]))
+
+
+@pytest.mark.skipif(
+    not sklearn_check_version("1.9"),
+    reason="Functionality introduced in later scikit-learn versions.",
+)
+@pytest.mark.skipif(
+    not is_sycl_device_available("gpu"), reason="Test checks GPU-specific functionality."
+)
+@pytest.mark.parametrize(
+    "X_xp, X_device",
+    ([(torch, "xpu"), (torch, "cpu")] if torch_xpu_available else [])
+    + ([(dpnp, "gpu"), (dpnp, "cpu")] if dpnp_available else []),
+)
+@pytest.mark.parametrize(
+    "y_xp, y_device",
+    ([(torch, "xpu"), (torch, "cpu")] if torch_xpu_available else [])
+    + ([(dpnp, "gpu"), (dpnp, "cpu")] if dpnp_available else [])
+    + [(pd, None)],
+)
+@pytest.mark.parametrize(
+    "estimator",
+    [
+        KNeighborsRegressor(algorithm="brute"),
+        KNeighborsClassifier(algorithm="brute"),
+    ],
+)
+def test_knn_mixed_devices(X_xp, y_xp, X_device, y_device, estimator, with_array_api):
+    rng = np.random.default_rng(seed=123)
+    X = rng.standard_normal(size=(50, 4))
+    if is_regressor(estimator):
+        y = rng.standard_normal(size=X.shape[0])
+    else:
+        y = rng.integers(2, size=X.shape[0])
+
+    X = X_xp.asarray(X, device=X_device)
+    if y_xp is pd:
+        if is_regressor(estimator):
+            y = pd.Series(y)
+        else:
+            y = pd.Series(np.array(["a", "b"])[y])
+    else:
+        y = y_xp.asarray(y, device=y_device)
+
+    estimator.fit(X, y)
+    pred = estimator.predict(X)
+    if is_regressor(estimator):
+        assert pred.__class__ == X.__class__
+    else:
+        if y_xp is pd:
+            assert isinstance(pred, np.ndarray)
+        else:
+            assert pred.__class__ == y.__class__
+        proba = estimator.predict_proba(X)
+        assert proba.__class__ == X.__class__
+    _ = estimator.score(X, y)
