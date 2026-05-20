@@ -139,7 +139,7 @@ class BaseSVM(oneDALEstimator):
     #   internal and public-facing attributes will have opposite signs:
     #   https://github.com/scikit-learn/scikit-learn/blob/fe2edb3cdbd75ae4e662fda67dcb19277258792b/sklearn/svm/_base.py#L271
     #   These versions with flipped signs are used by scikit-learn when making
-    #   predictions.
+    #   predictions, and are also checked and used within their test suite.
     # - Besides these two, there are a few other public and private attributes.
     #   for example, 'n_support_' (with its analog '_n_support_'). But these
     #   are not identical: scikit-learn will produce 32-bit integers (and requires
@@ -187,8 +187,13 @@ class BaseSVM(oneDALEstimator):
     #   propagate to the oneDAL estimator, and upon deserialization, there
     #   will be more than one copy in memory.
 
+    def _is_binary_classifier(self) -> bool:
+        if is_classifier(self) and hasattr(self, "classes_"):
+            return self.classes_.shape[0] == 2
+        return False
+
     def _is_multi_class_classifier(self) -> bool:
-        if hasattr(self, "classes_"):
+        if is_classifier(self) and hasattr(self, "classes_"):
             return self.classes_.shape[0] > 2
         return False
 
@@ -203,8 +208,25 @@ class BaseSVM(oneDALEstimator):
     def dual_coef_(self):
         return self._dualcoef_
 
+    @property
+    def _dual_coef_(self):
+        if self._is_binary_classifier():
+            return -self._dualcoef_
+        return self._dualcoef_
+
     @dual_coef_.setter
     def dual_coef_(self, value):
+        if hasattr(self, "_onedal_estimator"):
+            if self._is_multi_class_classifier():
+                self._raise_immutable_error()
+            self._onedal_estimator.dual_coef_ = value
+            self._onedal_estimator._onedal_model = None
+        self._dualcoef_ = value
+
+    @dual_coef_.setter
+    def _dual_coef_(self, value):
+        if self._is_binary_classifier():
+            value = -value
         if hasattr(self, "_onedal_estimator"):
             if self._is_multi_class_classifier():
                 self._raise_immutable_error()
@@ -219,12 +241,36 @@ class BaseSVM(oneDALEstimator):
         if hasattr(self, "_dualcoef_"):
             del self._dualcoef_
 
+    @dual_coef_.deleter
+    def _dual_coef_(self):
+        if hasattr(self, "_onedal_estimator") and self._is_multi_class_classifier():
+            self._raise_immutable_error()
+        if hasattr(self, "_dualcoef_"):
+            del self._dualcoef_
+
     @property
     def intercept_(self):
         return self._icept_
 
+    @property
+    def _intercept_(self):
+        if self._is_binary_classifier():
+            return -self._icept_
+        return self._icept_
+
     @intercept_.setter
     def intercept_(self, value):
+        if hasattr(self, "_onedal_estimator"):
+            if self._is_multi_class_classifier():
+                self._raise_immutable_error()
+            self._onedal_estimator.intercept_ = value
+            self._onedal_estimator._onedal_model = None
+        self._icept_ = value
+
+    @intercept_.setter
+    def _intercept_(self, value):
+        if self._is_binary_classifier():
+            value = -value
         if hasattr(self, "_onedal_estimator"):
             if self._is_multi_class_classifier():
                 self._raise_immutable_error()
@@ -239,6 +285,14 @@ class BaseSVM(oneDALEstimator):
         if hasattr(self, "_icept_"):
             del self._icept_
 
+    @intercept_.deleter
+    def _intercept_(self):
+        if hasattr(self, "_onedal_estimator") and self._is_multi_class_classifier():
+            self._raise_immutable_error()
+        if hasattr(self, "_icept_"):
+            del self._icept_
+
+    # This one don't have versions with flipped signs
     @property
     def support_vectors_(self):
         return self._sv_
@@ -339,6 +393,10 @@ class BaseSVM(oneDALEstimator):
             patching_status.and_conditions(
                 [
                     (
+                        self.kernel in ["linear", "rbf", "poly", "sigmoid"],
+                        "Predictions on pre-computed and callable kernels are not supported.",
+                    ),
+                    (
                         hasattr(self, "_onedal_estimator")
                         or (
                             not self._is_multi_class_classifier()
@@ -349,7 +407,7 @@ class BaseSVM(oneDALEstimator):
                         ),
                         "Single-row prediction from a scikit-learn model has"
                         "substantial overhead due to data conversions",
-                    )
+                    ),
                 ]
             )
             return patching_status
