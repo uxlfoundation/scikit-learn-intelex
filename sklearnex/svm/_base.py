@@ -141,14 +141,11 @@ class BaseSVM(oneDALEstimator):
     #   These versions with flipped signs are used by scikit-learn when making
     #   predictions, and are also checked and used within their test suite.
     # - There is one caveat in that, when scikit-learn sets these attributes,
-    #   it does the assignment to '_dual_coef_' and 'dual_coef_' with the
-    #   signs as they use them:
-    #   https://github.com/scikit-learn/scikit-learn/blob/c9af676c13bce3c6b9178d95dcf4e2305ff9407c/sklearn/svm/_base.py#L305
-    #   but it does the assignment to '_intercept_' and 'intercept_' with both
-    #   signs which are then flipped in the attributes:
+    #   it does the flip signs after assigning to initial attributes:
     #   https://github.com/scikit-learn/scikit-learn/blob/c9af676c13bce3c6b9178d95dcf4e2305ff9407c/sklearn/svm/_base.py#L304
-    #   .. which means: this code shouldn't assign that assignment of the
-    #   intercepts will always come with the intended sign.
+    #   .. which means: this code shouldn't assume that assignment of the
+    #   intercepts will always come with the intended sign, and shouldn't
+    #   try to do sign flips in the setters.
     # - Besides these two, there are a few other public and private attributes.
     #   for example, 'n_support_' (with its analog '_n_support_'). But these
     #   are not identical: scikit-learn will produce 32-bit integers (and requires
@@ -232,10 +229,8 @@ class BaseSVM(oneDALEstimator):
             self._onedal_estimator._onedal_model = None
         self._dualcoef_ = value
 
-    @dual_coef_.setter
+    @_dual_coef_.setter
     def _dual_coef_(self, value):
-        if self._is_binary_classifier():
-            value = -value
         if hasattr(self, "_onedal_estimator"):
             if self._is_multi_class_classifier():
                 self._raise_immutable_error()
@@ -250,7 +245,8 @@ class BaseSVM(oneDALEstimator):
         if hasattr(self, "_dualcoef_"):
             del self._dualcoef_
 
-    @dual_coef_.deleter
+    # Do NOT flip signs here, see earlier comments
+    @_dual_coef_.deleter
     def _dual_coef_(self):
         if hasattr(self, "_onedal_estimator") and self._is_multi_class_classifier():
             self._raise_immutable_error()
@@ -276,7 +272,6 @@ class BaseSVM(oneDALEstimator):
             self._onedal_estimator._onedal_model = None
         self._icept_ = value
 
-    # Do NOT flip signs here, see earlier comments
     @_intercept_.setter
     def _intercept_(self, value):
         if hasattr(self, "_onedal_estimator"):
