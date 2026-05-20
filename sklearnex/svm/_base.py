@@ -267,7 +267,7 @@ class BaseSVM(oneDALEstimator):
             self._onedal_estimator._onedal_model = None
         self._icept_ = value
 
-    @intercept_.setter
+    @_intercept_.setter
     def _intercept_(self, value):
         if self._is_binary_classifier():
             value = -value
@@ -285,7 +285,7 @@ class BaseSVM(oneDALEstimator):
         if hasattr(self, "_icept_"):
             del self._icept_
 
-    @intercept_.deleter
+    @_intercept_.deleter
     def _intercept_(self):
         if hasattr(self, "_onedal_estimator") and self._is_multi_class_classifier():
             self._raise_immutable_error()
