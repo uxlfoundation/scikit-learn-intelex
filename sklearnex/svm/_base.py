@@ -938,7 +938,7 @@ class BaseSVR(BaseSVM):
             xp, is_array_api_compliant, device = get_namespace_and_device(X)
             y = move_to(y, xp=xp, device=device)
         else:
-            # this replicates sklearn's `_valdiate_targets` but with X
+            # this replicates sklearn's `_validate_targets` but with X
             # to prevent unnecessary dtype conversions
             xp, is_array_api_compliant = get_namespace(X, y)
 
