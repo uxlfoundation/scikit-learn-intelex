@@ -20,6 +20,7 @@ import array_api_strict
 import numpy as np
 import pandas as pd
 import pytest
+import scipy
 import scipy.sparse as sp
 from numpy.testing import assert_allclose, assert_array_almost_equal
 from sklearn.datasets import load_diabetes, load_iris, make_classification
@@ -32,7 +33,7 @@ try:
 except ImportError:
     from scipy.sparse import csr_matrix as csr_class
 
-from daal4py.sklearn._utils import sklearn_check_version
+from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
@@ -256,7 +257,10 @@ def test_predict_after_fallback(kernel, gamma, n_classes, nu_class, sparse):
 
     rng = np.random.default_rng(seed=123)
     if sparse:
-        X = sp.random(100, 4, 0.1, rng=rng, format="csr")
+        if _package_check_version("1.15", scipy.__version__):
+            X = sp.random(100, 4, 0.1, rng=rng, format="csr")
+        else:
+            X = sp.random(100, 4, 0.1, random_state=456, format="csr")
     else:
         X = rng.standard_normal(size=(100, 4))
     if n_classes == 0:  # regressor
