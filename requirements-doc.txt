@@ -12,7 +12,7 @@ decorator==5.2.1
 defusedxml==0.7.1
 docutils~=0.21.2
 entrypoints==0.4
-idna==3.13
+idna==3.15
 imagesize==2.0.0
 importlib-metadata==9.0.0
 importlib-resources==7.1.0
