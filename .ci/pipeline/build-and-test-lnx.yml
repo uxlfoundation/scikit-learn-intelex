@@ -30,7 +30,7 @@ steps:
       # DPC builds need dal-devel (pulls dal, dal-include, dal-gpu, mkl-dpcpp) plus the dpcpp compiler; CPU-only builds need just dal + dal-include.
       if [ -z "${DALROOT}" ]; then
         if [ -z "${NO_DPC}" ]; then
-          conda install -q -y -c conda-forge "dal-devel=2026.0.0=*_1017" dpcpp_linux-64=$DPCPP_VERSION
+          conda install -q -y -c conda-forge dal-devel dpcpp_linux-64=$DPCPP_VERSION
         else
           conda install -q -y -c conda-forge dal dal-include
         fi
