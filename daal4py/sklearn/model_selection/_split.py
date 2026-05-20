@@ -62,16 +62,18 @@ def get_dtypes(data):
     return None
 
 
-def train_test_split(*arrays, **options):
+def train_test_split(
+    *arrays,
+    test_size=None,
+    train_size=None,
+    random_state=None,
+    shuffle=True,
+    stratify=None,
+    rng: str = "OPTIMIZED_MT19937",
+):
     n_arrays = len(arrays)
     if n_arrays == 0:
         raise ValueError("At least one array required as input")
-    test_size = options.pop("test_size", None)
-    train_size = options.pop("train_size", None)
-    random_state = options.pop("random_state", None)
-    stratify = options.pop("stratify", None)
-    shuffle = options.pop("shuffle", True)
-    rng = options.pop("rng", "OPTIMIZED_MT19937")
 
     available_rngs = [
         "default",
@@ -92,9 +94,6 @@ def train_test_split(*arrays, **options):
             "Wrong random numbers generator is chosen. "
             "Available generators: %s" % str(available_rngs)[1:-1]
         )
-
-    if options:
-        raise TypeError("Invalid parameters passed: %s" % str(options))
 
     arrays = indexable(*arrays)
 
