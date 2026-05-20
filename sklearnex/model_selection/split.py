@@ -14,4 +14,14 @@
 # limitations under the License.
 # ===============================================================================
 
+from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.model_selection import train_test_split
+from onedal._device_offload import support_input_format
+
+# Needed due to some issues with array API support on the scikit-learn side
+# for the internal safe indexer tool which daal4py uses. Note that this will
+# end up being inefficient if the inputs are of some array API class, but
+# this function allows multiple data arguments so it's not easy to make checks
+# on them for whether to move the data beforehand.
+if not sklearn_check_version("1.8") and sklearn_check_version("1.5"):
+    train_test_split = support_input_format(train_test_split)
