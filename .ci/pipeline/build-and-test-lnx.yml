@@ -29,14 +29,13 @@ steps:
       conda activate CB
       if [ -z "${DALROOT}" ]; then
         conda install -q -y -c conda-forge dal-devel
-        if [ -z "${NO_DPC}" ]; then conda install -q -y -c conda-forge dal-gpu mkl-dpcpp=$MKL_DPCPP_VERSION dpcpp_linux-64=$DPCPP_VERSION; fi
+        if [ -z "${NO_DPC}" ]; then conda install -q -y -c conda-forge dal-gpu dpcpp_linux-64=$DPCPP_VERSION; fi
       fi
       pip install -r dependencies-dev
       conda list
     env:
       NO_DPC: ${{ variables.NO_DPC }}
       DALROOT: ${{ variables.DALROOT }}
-      MKL_DPCPP_VERSION: 2026.0.0
       DPCPP_VERSION: 2026.0.0
     displayName: "Install develop requirements"
   - script: |

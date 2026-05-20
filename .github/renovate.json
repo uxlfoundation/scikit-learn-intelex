@@ -50,16 +50,6 @@
       "customType": "regex",
       "managerFilePatterns": ["/^\\.ci/pipeline/build-and-test-lnx\\.yml$/"],
       "matchStrings": [
-        "\\s*MKL_DPCPP_VERSION: (?<currentValue>\\d+\\.\\d+\\.\\d+)"
-      ],
-      "depNameTemplate": "mkl-dpcpp",
-      "datasourceTemplate": "conda",
-      "registryUrlTemplate": "https://conda.anaconda.org/conda-forge"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^\\.ci/pipeline/build-and-test-lnx\\.yml$/"],
-      "matchStrings": [
         "\\s*DPCPP_VERSION: (?<currentValue>\\d+\\.\\d+\\.\\d+)"
       ],
       "depNameTemplate": "dpcpp_linux-64",
