@@ -30,6 +30,7 @@
 
    patching.rst
    algorithms.rst
+   unsupported.rst
    oneapi-gpu.rst
    config-contexts.rst
    array_api.rst
