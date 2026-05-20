@@ -428,11 +428,6 @@ class BaseSVM(oneDALEstimator):
 
 class BaseSVC(BaseSVM):
 
-    def _is_binary_classifier(self):
-        if hasattr(self, "support_vectors_"):
-            return self.classes_.shape[0] == 2
-        return False
-
     def _onedal_cpu_supported(self, method_name, *data):
         patching_status = super()._onedal_cpu_supported(method_name, *data)
         if not patching_status.get_status():
