@@ -17,14 +17,6 @@ steps:
   - script: sudo apt-get update
     displayName: "apt-get"
   - script: |
-      bash .ci/scripts/install_dpcpp.sh
-    condition: and(eq(variables.NO_DPC, ''), eq(variables.DPCPPROOT, ''))
-    displayName: "dpcpp installation"
-  - script: |
-      source /opt/intel/oneapi/compiler/latest/env/vars.sh
-      bash .ci/scripts/describe_system.sh
-    displayName: "System info"
-  - script: |
       # set defaults to guarantee use of conda-forge
       echo -e "default_channels:\n  - https://conda.anaconda.org/conda-forge" >> ~/.condarc
       conda config --add channels conda-forge
@@ -36,17 +28,23 @@ steps:
       . /usr/share/miniconda/etc/profile.d/conda.sh
       conda activate CB
       if [ -z "${DALROOT}" ]; then
-        conda install -q -y -c conda-forge "dal-devel>=2026.0.0"
-        if [ -z "${NO_DPC}" ]; then conda install -q -y -c conda-forge "dal-gpu>=2026.0.0"; fi
+        conda install -q -y -c conda-forge dal-devel
+        if [ -z "${NO_DPC}" ]; then conda install -q -y -c conda-forge dal-gpu mkl-dpcpp=$MKL_DPCPP_VERSION dpcpp_linux-64=$DPCPP_VERSION; fi
       fi
       pip install -r dependencies-dev
       conda list
     env:
       NO_DPC: ${{ variables.NO_DPC }}
       DALROOT: ${{ variables.DALROOT }}
+      MKL_DPCPP_VERSION: 2026.0.0
+      DPCPP_VERSION: 2026.0.0
     displayName: "Install develop requirements"
   - script: |
-      if [ -z "${DPCPPROOT}" ]; then export DPCPPROOT=/opt/intel/oneapi/compiler/latest; fi
+      . /usr/share/miniconda/etc/profile.d/conda.sh
+      conda activate CB
+      bash .ci/scripts/describe_system.sh
+    displayName: "System info"
+  - script: |
       . /usr/share/miniconda/etc/profile.d/conda.sh
       conda activate CB
       if [ -z "${DALROOT}" ]; then export DALROOT=$CONDA_PREFIX; fi
@@ -65,19 +63,15 @@ steps:
       pip install $(python .ci/scripts/get_compatible_scipy_version.py)
       # dpep installation is set to pypi to avoid conflict of numpy versions from pip and conda
       if [ $(echo $(PYTHON_VERSION) | grep '3.10\|3.11\|3.12\|3.13') ] && [ $(SKLEARN_VERSION) != "1.0" ] && [ -z ${NO_DPC} ]; then pip install dpctl==$DPCTL_VERSION dpnp==$DPNP_VERSION; fi
-      if [ -z "${NO_DPC}" ]; then pip install dpcpp-cpp-rt==$DPCPP_RT_VERSION; fi
       conda list
     env:
       NO_DPC: ${{ variables.NO_DPC }}
       DPCTL_VERSION: 0.22.1
       DPNP_VERSION: 0.20.0
-      DPCPP_RT_VERSION: 2026.0.0
     displayName: "Install testing requirements"
   - script: |
       . /usr/share/miniconda/etc/profile.d/conda.sh
       conda activate CB
-      # Source oneAPI so libintelocl.so's deps resolve when SyclQueue("cpu") is used
-      if [ -z "${NO_DPC}" ]; then source /opt/intel/oneapi/setvars.sh; fi
       if [ -n "${COVERAGE_RCFILE}" ]; then export COVERAGE_FILE=$(pwd)/.coverage.sklearnex; fi
       cd ..
       if [ -n "${TBBROOT}" ] && [ "${TBBROOT}" != "${CONDA_PREFIX}" ]; then source ${TBBROOT}/env/vars.sh; fi
@@ -91,11 +85,9 @@ steps:
   - script: |
       . /usr/share/miniconda/etc/profile.d/conda.sh
       conda activate CB
-      if [ -z "${NO_DPC}" ]; then source /opt/intel/oneapi/setvars.sh; fi
       if [ -n "${TBBROOT}" ] && [ "${TBBROOT}" != "${CONDA_PREFIX}" ]; then source ${TBBROOT}/env/vars.sh; fi
       if [ -n "${COVERAGE_RCFILE}" ]; then export COVERAGE_FILE=$(pwd)/.coverage.sklearn; fi
       if [ -z "${NO_DPC}" ]; then export CPU="cpu"; fi
-      (cd /tmp && python -c "import onedal; print('DPC backend:', onedal._dpc_backend); print('default backend:', onedal._default_backend); print('DPC load error:', repr(onedal._dpc_load_error))")
       bash .ci/scripts/run_sklearn_tests.sh $CPU
     env:
       TBBROOT: ${{ variables.TBBROOT }}
@@ -106,7 +98,6 @@ steps:
   - script: |
       . /usr/share/miniconda/etc/profile.d/conda.sh
       conda activate CB
-      if [ -z "${NO_DPC}" ]; then source /opt/intel/oneapi/setvars.sh; fi
       if [ -n "${TBBROOT}" ] && [ "${TBBROOT}" != "${CONDA_PREFIX}" ]; then source ${TBBROOT}/env/vars.sh; fi
       if [ -z "${NO_DPC}" ]; then export CPU="cpu"; fi
       bash .ci/scripts/run_sklearn_tests.sh $CPU

@@ -50,10 +50,21 @@
       "customType": "regex",
       "managerFilePatterns": ["/^\\.ci/pipeline/build-and-test-lnx\\.yml$/"],
       "matchStrings": [
-        "\\s*DPCPP_RT_VERSION: (?<currentValue>\\d+\\.\\d+\\.\\d+)"
+        "\\s*MKL_DPCPP_VERSION: (?<currentValue>\\d+\\.\\d+\\.\\d+)"
       ],
-      "depNameTemplate": "dpcpp-cpp-rt",
-      "datasourceTemplate": "pypi"
+      "depNameTemplate": "mkl-dpcpp",
+      "datasourceTemplate": "conda",
+      "registryUrlTemplate": "https://conda.anaconda.org/conda-forge"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^\\.ci/pipeline/build-and-test-lnx\\.yml$/"],
+      "matchStrings": [
+        "\\s*DPCPP_VERSION: (?<currentValue>\\d+\\.\\d+\\.\\d+)"
+      ],
+      "depNameTemplate": "dpcpp_linux-64",
+      "datasourceTemplate": "conda",
+      "registryUrlTemplate": "https://conda.anaconda.org/conda-forge"
     },
     {
       "customType": "regex",
@@ -61,15 +72,6 @@
       "matchStrings": ["pre-commit==(?<currentValue>\\d+\\.\\d+\\.\\d+)"],
       "depNameTemplate": "pre-commit",
       "datasourceTemplate": "pypi"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^\\.ci\\/scripts\\/install_dpcpp\\.sh$/"],
-      "matchStrings": [
-        ".*\\b(?<depName>intel-oneapi-compiler-dpcpp-cpp)=(?<currentValue>\\d{4}\\.\\d+\\.\\d+-\\d+).*"
-      ],
-      "datasourceTemplate": "deb",
-      "registryUrlTemplate": "https://apt.repos.intel.com/oneapi?suite=all&components=main&binaryArch=amd64"
     }
   ]
 }
