@@ -246,7 +246,7 @@ See :doc:`array_api` for details, instructions, and limitations. Example:
 DPNP Arrays
 ~~~~~~~~~~~
 
-As a special case, GPU arrays from |dpnp| can be used without enabling array API, even for estimators in the |sklearnex| that do not currently support array API, but note that using this alternative without array API enabled involves data movement to host and back, thus not being the most efficient route in computational terms.
+As a special case, GPU arrays from |dpnp| can be used without enabling array API in estimators with :ref:`array API support <array_api_estimators>`, but note that using this alternative without array API enabled always involves data movement to host and back, thus not being the most efficient route in computational terms and **not recommended**.
 
 Example:
 
@@ -271,4 +271,6 @@ Example:
 Note that, if array API had been enabled, the snippet above would use the data as-is on the device where it resides, but without array API, it implies data movements using the SYCL queue contained by those objects.
 
 .. note::
-    All the input data for an algorithm must reside on the same device.
+    All the input data for an algorithm must reside on the same device when not using array API.
+
+When a |dpnp_array| on GPU is passed as input but the operation is not supported on GPU, the operation may be executed on CPU instead - see :doc:`config-contexts` for more details.
