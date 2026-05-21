@@ -41,12 +41,12 @@ Random Forest models (including their "Extremely Randomized" variants) accelerat
      - Default value
      - Description
    * - ``max_bins``
-     - ``[2, inf)``
-     - ``256``
+     - :math:`[2, \infty)`
+     - :math:`256`
      - Number of bins in the histogram with the discretized training data.
    * - ``min_bin_size``
-     - ``[1, inf)``
-     - ``5``
+     - :math:`[1, \infty)`
+     - :math:`5`
      - Minimum number of training data points in each bin after discretization.
 
 Note that using discretized training data can greatly accelerate model training times, especially for larger data sets. However, due to the reduced fidelity of the data, the resulting model can present worse performance metrics compared to a model trained on the original data. In such cases, the number of bins can be increased with the ``max_bins`` parameter.
