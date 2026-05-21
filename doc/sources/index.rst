@@ -30,7 +30,6 @@
 
    patching.rst
    algorithms.rst
-   additional-parameters.rst
    unsupported.rst
    oneapi-gpu.rst
    config-contexts.rst
@@ -40,6 +39,7 @@
    distributed_daal4py.rst
    non-scikit-algorithms.rst
    non_sklearn_d4p.rst
+   additional_parameters.rst
    model_builders.rst
    logistic_model_builder.rst
    input-types.rst

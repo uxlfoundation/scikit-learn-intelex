@@ -60,6 +60,6 @@ Function :obj:`sklearn.model_selection.train_test_split` offers an additional ke
 
 This parameter is only used when passing ``shuffle=True`` and ``stratify=None``.
 
-If the `mkl_random <https://github.com/IntelPython/mkl_random>`__ package is installed, under the above conditions, it will be used to generate random numbers for the splits, and the ``rng`` keyword will be forwarded to ``mkl_random`` as ``brng`` argument. See the `mkl_random documentation <https://intelpython.github.io/mkl_random/reference/index.html>`__ for details about which values are allowed.
+If the `mkl_random <https://github.com/IntelPython/mkl_random>`__ package is installed and ``rng`` passed is something other than ``"OPTIMIZED_MT19937"`` or ``"default"``, under the above conditions, it will be used to generate random numbers for the splits, and the ``rng`` keyword will be forwarded to ``mkl_random`` as ``brng`` argument. See the `mkl_random documentation <https://intelpython.github.io/mkl_random/reference/index.html>`__ for details about which values are allowed.
 
-Otherwise, if passing ``rng="OPTIMIZED_MT19937"`` (the default), random numbers will be generated using an optimized version of the MT19937 algorithm (as offered by NumPy, for example) from the |onedal|.
+Otherwise, if passing ``rng="OPTIMIZED_MT19937"`` (the default), random numbers will be generated using an optimized version of the MT19937 algorithm (as offered by NumPy, for example) from the |onedal|, and if ``rng="default"``, then splitters from |sklearn| will be used to generate random indices.
