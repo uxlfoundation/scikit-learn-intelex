@@ -41,11 +41,11 @@ Random Forest models (including their "Extremely Randomized" variants) accelerat
      - Default value
      - Description
    * - ``max_bins``
-     - `[2, inf)`
+     - ``[2, inf)``
      - ``256``
      - Number of bins in the histogram with the discretized training data.
    * - ``min_bin_size``
-     - `[1, inf)`
+     - ``[1, inf)``
      - ``5``
      - Minimum number of training data points in each bin after discretization.
 
