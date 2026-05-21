@@ -109,9 +109,7 @@ class BaseLogisticRegression(metaclass=ABCMeta):
                 packed_coefficients = xp.zeros((coef_.shape[0], coef_.shape[1] + 1))
             packed_coefficients[:, 1:] = coef_
 
-        model.packed_coefficients = to_table(
-            packed_coefficients, queue=QM.get_global_queue()
-        )
+        model.packed_coefficients = to_table(packed_coefficients)
         self.coef_ = coef_
         self.intercept_ = intercept_
         self._onedal_model = model
