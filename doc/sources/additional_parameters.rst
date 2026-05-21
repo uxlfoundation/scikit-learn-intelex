@@ -21,6 +21,11 @@ For the most part, estimators and functions in the |sklearnex| that have an anal
 
 The cases with additional parameters are listed below:
 
+Parameter ``n_jobs``
+====================
+
+All estimators from the |sklearnex| accept an ``n_jobs`` parameter to control parallelism, even if their analog in the |sklearn| doesn't. See :doc:`parallelism` for more details.
+
 Random Forests
 ==============
 
