@@ -22,17 +22,16 @@ steps:
       conda config --add channels conda-forge
       conda config --set channel_priority strict
       conda update -y -q conda
-      conda install -y -q -n base conda-libmamba-solver
-      conda config --set solver libmamba
       conda create -q -y -n CB -c conda-forge python=$(PYTHON_VERSION) mpich pyyaml pip setuptools wheel
     displayName: "Conda create"
   - script: |
       . /usr/share/miniconda/etc/profile.d/conda.sh
       conda activate CB
       # DPC builds need dal-devel (pulls dal, dal-include, dal-gpu, mkl-dpcpp) plus the dpcpp compiler; CPU-only builds need just dal + dal-include.
+      # TODO: mkl-dpcpp is requested explicitly to nudge the solver toward the dal-gpu build that lists it as a runtime dep; remove once conda-forge no longer ships older builds without that dep.
       if [ -z "${DALROOT}" ]; then
         if [ -z "${NO_DPC}" ]; then
-          conda install -q -y -c conda-forge dal-devel dpcpp_linux-64=$DPCPP_VERSION
+          conda install -q -y -c conda-forge dal-devel mkl-dpcpp dpcpp_linux-64=$DPCPP_VERSION
         else
           conda install -q -y -c conda-forge dal dal-include
         fi
