@@ -702,9 +702,10 @@ def test_array_api_logreg(dataframe, queue, y_type):
     ), f"score should return a scalar, got type {type(score)}"
 
 
+# TODO: remove this once scikit-learn1.8 and 1.9 are no longer supported.
 @pytest.mark.skipif(
     not sklearn_check_version("1.8"),
-    reason="Workaround for warning issued in newer scikit-learn versions",
+    reason="Workaround for warning issued in specific scikit-learn versions",
 )
 @pytest.mark.allow_sklearn_fallback
 def test_no_warning_for_n_jobs():

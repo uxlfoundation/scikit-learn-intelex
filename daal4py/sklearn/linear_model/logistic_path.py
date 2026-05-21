@@ -456,7 +456,8 @@ def daal4py_fit(self, X, y, sample_weight=None):
     # 'control_n_jobs', which acts on the sklearnex side before calling these
     # daal4py functions for logistic regression, so setting 'n_jobs' in the estimator
     # objects at this point will have no effect on the value passed to oneDAL.
-    if sklearn_check_version("1.8"):
+    # TODO: remove this once scikit-learn1.8 and 1.9 are no longer supported.
+    if (not sklearn_check_version("1.10")) and sklearn_check_version("1.8"):
         n_jobs = self.n_jobs
         if self.n_jobs is not None:
             self.n_jobs = None
@@ -466,7 +467,7 @@ def daal4py_fit(self, X, y, sample_weight=None):
         clf = LogisticRegression_original.fit(self, X, y, sample_weight)
     finally:
         setattr(which, what, lr_path_original)
-        if sklearn_check_version("1.8"):
+        if (not sklearn_check_version("1.10")) and sklearn_check_version("1.8"):
             self.n_jobs = n_jobs
     return clf
 
