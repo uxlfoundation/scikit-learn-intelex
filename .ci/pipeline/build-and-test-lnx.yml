@@ -65,7 +65,7 @@ steps:
       pip install --upgrade -r requirements-test.txt
       pip install $(python .ci/scripts/get_compatible_scipy_version.py)
       # dpnp is not on conda-forge; install dpctl/dpnp from the intel python channel to avoid mixing pip and conda SYCL runtimes
-      if [ $(SKLEARN_VERSION) != "1.0" ] && [ -z ${NO_DPC} ]; then conda install -q -y -c https://software.repos.intel.com/python/conda/ -c conda-forge --strict-channel-priority dpctl=$DPCTL_VERSION dpnp=$DPNP_VERSION; fi
+      if [ $(SKLEARN_VERSION) != "1.0" ] && [ -z ${NO_DPC} ]; then conda install -q -y -c https://software.repos.intel.com/python/conda/ -c conda-forge --strict-channel-priority dpctl=$DPCTL_VERSION dpnp=$DPNP_VERSION numpy; fi
       conda list
     env:
       NO_DPC: ${{ variables.NO_DPC }}
