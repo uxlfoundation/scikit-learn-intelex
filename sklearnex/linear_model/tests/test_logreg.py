@@ -747,3 +747,27 @@ def test_onedal_model_from_sklearn_coefs(dataframe, queue, fit_intercept, array_
     pred_sklearn = model_sklearn.predict(X_np)
     np.testing.assert_allclose(proba, proba_sklearn)
     np.testing.assert_array_equal(pred, pred_sklearn)
+
+
+# TODO: remove this once scikit-learn1.8 and 1.9 are no longer supported.
+@pytest.mark.skipif(
+    not sklearn_check_version("1.8"),
+    reason="Workaround for warning issued in specific scikit-learn versions",
+)
+@pytest.mark.allow_sklearn_fallback
+def test_no_warning_for_n_jobs():
+    from sklearnex.linear_model import LogisticRegression
+
+    model = LogisticRegression(n_jobs=2, solver="newton-cholesky")
+
+    rng = np.random.default_rng(seed=123)
+    X = rng.random(size=(10, 3))
+    y = rng.integers(2, size=X.shape[0])
+    w = rng.standard_gamma(1, size=X.shape[0])
+
+    # Note: this is meant to trigger a fallback by passing weights and a
+    # solver which is not supported by oneDAL. If oneDAL starts supporting
+    # this setting, it should find some other way of triggering a fallback.
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", category=FutureWarning)
+        model.fit(X, y, w)

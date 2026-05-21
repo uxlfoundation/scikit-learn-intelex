@@ -20,7 +20,6 @@ from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from daal4py.sklearn.linear_model.logistic_path import (
     LogisticRegression as _daal4py_LogisticRegression,
 )
-from onedal._device_offload import support_input_format
 
 from ..base import oneDALEstimator
 
