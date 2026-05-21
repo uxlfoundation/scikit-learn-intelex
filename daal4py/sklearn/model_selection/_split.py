@@ -303,6 +303,7 @@ if sklearn_check_version("1.3"):
             "random_state": ["random_state"],
             "shuffle": ["boolean"],
             "stratify": ["array-like", None],
+            "rng": str,
         },
         prefer_skip_nested_validation=True,
     )(train_test_split)
