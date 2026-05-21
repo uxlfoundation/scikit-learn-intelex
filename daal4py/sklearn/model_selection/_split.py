@@ -49,7 +49,12 @@ except (ImportError, ModuleNotFoundError):
 if sklearn_check_version("1.3"):
     import numbers
 
-    from sklearn.utils._param_validation import Interval, RealNotInt, validate_params
+    from sklearn.utils._param_validation import (
+        Interval,
+        RealNotInt,
+        StrOptions,
+        validate_params,
+    )
 
 
 def get_dtypes(data):
@@ -74,26 +79,6 @@ def train_test_split(
     n_arrays = len(arrays)
     if n_arrays == 0:
         raise ValueError("At least one array required as input")
-
-    available_rngs = [
-        "default",
-        "MT19937",
-        "SFMT19937",
-        "MT2203",
-        "R250",
-        "WH",
-        "MCG31",
-        "MCG59",
-        "MRG32K3A",
-        "PHILOX4X32X10",
-        "NONDETERM",
-        "OPTIMIZED_MT19937",
-    ]
-    if rng not in available_rngs:
-        raise ValueError(
-            "Wrong random numbers generator is chosen. "
-            "Available generators: %s" % str(available_rngs)[1:-1]
-        )
 
     arrays = indexable(*arrays)
 
@@ -303,7 +288,24 @@ if sklearn_check_version("1.3"):
             "random_state": ["random_state"],
             "shuffle": ["boolean"],
             "stratify": ["array-like", None],
-            "rng": str,
+            "rng": [
+                StrOptions(
+                    {
+                        "default",
+                        "MT19937",
+                        "SFMT19937",
+                        "MT2203",
+                        "R250",
+                        "WH",
+                        "MCG31",
+                        "MCG59",
+                        "MRG32K3A",
+                        "PHILOX4X32X10",
+                        "NONDETERM",
+                        "OPTIMIZED_MT19937",
+                    }
+                )
+            ],
         },
         prefer_skip_nested_validation=True,
     )(train_test_split)
