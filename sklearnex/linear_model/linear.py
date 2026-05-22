@@ -261,7 +261,6 @@ class LinearRegression(oneDALEstimator, _sklearn_LinearRegression):
     def _onedal_fit(self, X, y, sample_weight, queue=None):
         assert sample_weight is None
 
-        # TODO get namespaces separately here
         if sklearn_check_version("1.9"):
             xp, _, device_ = get_namespace_and_device(X)
             y = move_to(y, xp=xp, device=device_)
