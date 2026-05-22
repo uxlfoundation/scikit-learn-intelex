@@ -21,7 +21,6 @@ import numpy as np
 from daal4py.sklearn._utils import daal_check_version
 from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
-from onedal.utils import _sycl_queue_manager as QM
 
 from ..common._estimator_checks import _check_is_fitted
 from ..datatypes import from_table, to_table
