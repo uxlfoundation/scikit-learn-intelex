@@ -445,12 +445,30 @@ def logistic_regression_path_d4p(
 
 def daal4py_fit(self, X, y, sample_weight=None):
     which, what = logistic_module, "_logistic_regression_path"
+    # Note: as of scikit-learn1.8, 'n_jobs' is deprecated for logistic regression
+    # and throws a warning. Their functions still have 'n_threads' as a parameter,
+    # but since 1.8, they hard-code it to 1 in the calls from logistic regression.
+    # This is a workaround to avoid getting a warning. If scikit-learn removes
+    # the 'n_jobs' parameter (scheduled for version 1.10), then this workaround
+    # can be safely removed.
+    # Note2: the function 'logistic_regression_path' takes an argument 'n_threads',
+    # but does not use it. The number of threads for oneDAL is set through wrapper
+    # 'control_n_jobs', which acts on the sklearnex side before calling these
+    # daal4py functions for logistic regression, so setting 'n_jobs' in the estimator
+    # objects at this point will have no effect on the value passed to oneDAL.
+    # TODO: remove this once scikit-learn1.8 and 1.9 are no longer supported.
+    if (not sklearn_check_version("1.10")) and sklearn_check_version("1.8"):
+        n_jobs = self.n_jobs
+        if self.n_jobs is not None:
+            self.n_jobs = None
     replacer = logistic_regression_path
     try:
         setattr(which, what, replacer)
         clf = LogisticRegression_original.fit(self, X, y, sample_weight)
     finally:
         setattr(which, what, lr_path_original)
+        if (not sklearn_check_version("1.10")) and sklearn_check_version("1.8"):
+            self.n_jobs = n_jobs
     return clf
 
 

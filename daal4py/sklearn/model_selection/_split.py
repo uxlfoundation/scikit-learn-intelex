@@ -49,7 +49,12 @@ except (ImportError, ModuleNotFoundError):
 if sklearn_check_version("1.3"):
     import numbers
 
-    from sklearn.utils._param_validation import Interval, RealNotInt, validate_params
+    from sklearn.utils._param_validation import (
+        Interval,
+        RealNotInt,
+        StrOptions,
+        validate_params,
+    )
 
 
 def get_dtypes(data):
@@ -62,39 +67,18 @@ def get_dtypes(data):
     return None
 
 
-def train_test_split(*arrays, **options):
+def train_test_split(
+    *arrays,
+    test_size=None,
+    train_size=None,
+    random_state=None,
+    shuffle=True,
+    stratify=None,
+    rng: str = "OPTIMIZED_MT19937",
+):
     n_arrays = len(arrays)
     if n_arrays == 0:
         raise ValueError("At least one array required as input")
-    test_size = options.pop("test_size", None)
-    train_size = options.pop("train_size", None)
-    random_state = options.pop("random_state", None)
-    stratify = options.pop("stratify", None)
-    shuffle = options.pop("shuffle", True)
-    rng = options.pop("rng", "OPTIMIZED_MT19937")
-
-    available_rngs = [
-        "default",
-        "MT19937",
-        "SFMT19937",
-        "MT2203",
-        "R250",
-        "WH",
-        "MCG31",
-        "MCG59",
-        "MRG32K3A",
-        "PHILOX4X32X10",
-        "NONDETERM",
-        "OPTIMIZED_MT19937",
-    ]
-    if rng not in available_rngs:
-        raise ValueError(
-            "Wrong random numbers generator is chosen. "
-            "Available generators: %s" % str(available_rngs)[1:-1]
-        )
-
-    if options:
-        raise TypeError("Invalid parameters passed: %s" % str(options))
 
     arrays = indexable(*arrays)
 
@@ -304,6 +288,24 @@ if sklearn_check_version("1.3"):
             "random_state": ["random_state"],
             "shuffle": ["boolean"],
             "stratify": ["array-like", None],
+            "rng": [
+                StrOptions(
+                    {
+                        "default",
+                        "MT19937",
+                        "SFMT19937",
+                        "MT2203",
+                        "R250",
+                        "WH",
+                        "MCG31",
+                        "MCG59",
+                        "MRG32K3A",
+                        "PHILOX4X32X10",
+                        "NONDETERM",
+                        "OPTIMIZED_MT19937",
+                    }
+                )
+            ],
         },
         prefer_skip_nested_validation=True,
     )(train_test_split)

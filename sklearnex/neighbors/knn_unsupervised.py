@@ -29,6 +29,9 @@ from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.validation import validate_data
 from .common import KNeighborsDispatchingBase
 
+if sklearn_check_version("1.9"):
+    from sklearn.utils._array_api import check_same_namespace, get_namespace_and_device
+
 
 @enable_array_api
 @control_n_jobs(decorated_methods=["fit", "kneighbors", "radius_neighbors"])
@@ -66,7 +69,12 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         )
 
     def fit(self, X, y=None):
-        xp, is_array_api = get_namespace(X)
+        if sklearn_check_version("1.9"):
+            xp, is_array_api, device = get_namespace_and_device(X)
+        else:
+            xp, is_array_api = get_namespace(X)
+            device = getattr(X, "device", None)
+
         dispatch(
             self,
             "fit",
@@ -80,7 +88,6 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
         # Ensure _fit_X matches the input namespace so that
         # kneighbors(X=None) can use get_namespace(self._fit_X).
         if is_array_api and not _is_numpy_namespace(xp):
-            device = getattr(X, "device", None)
             self._fit_X = xp.asarray(self._fit_X, device=device)
         return self
 
@@ -189,6 +196,8 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
                 reset=False,
                 force_all_finite=False,
             )
+            if sklearn_check_version("1.9"):
+                check_same_namespace(X, self, attribute="_fit_X", method="predict")
         return self._onedal_estimator.predict(X, queue=queue)
 
     def _onedal_kneighbors(
@@ -205,6 +214,8 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
                 accept_sparse="csr",
                 reset=False,
             )
+            if sklearn_check_version("1.9"):
+                check_same_namespace(X, self, attribute="_fit_X", method="kneighbors")
         else:
             query_is_train = True
             X = self._fit_X

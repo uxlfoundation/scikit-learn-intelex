@@ -63,6 +63,35 @@ To install in an existing environment: ::
   dependencies from the **conda-forge** channel, and might not work correctly when used in an environment where packages from the
   ``anaconda`` default channel have been installed.
 
+GPU package
+-----------
+
+In addition to ``scikit-learn-intelex``, related package ``scikit-learn-intelex-gpu`` is available through the same channels (PyPI, conda-forge, Intel's channels), containing additional features needed to execute operations on GPU through the |sklearnex|.
+
+See :doc:`oneapi-gpu` for details.
+
+Note that ``scikit-learn-intelex-gpu`` is not a standalone package and does not provide additional modules - instead, it extends the same ``sklearnex`` module provided by ``scikit-learn-intelex`` on which it depends, and brings additional dependencies such as the analog GPU package from the |onedal|.
+
+.. _mkl_symbols_note:
+
+Considerations for Python environments
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``scikit-learn-intelex-gpu`` package has a transitive runtime dependency on `oneMKL <https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl.html>`__, which includes `BLAS <https://en.wikipedia.org/wiki/Basic_Linear_Algebra_Subprograms>`__ and `LAPACK <https://en.wikipedia.org/wiki/LAPACK>`__ backends that are commonly used by other libraries such as NumPy and SciPy. On Linux*, when ``scikit-learn-intelex-gpu`` is installed, importing the ``sklearnex`` module will trigger loading of oneMKL shared objects into the process together with their symbols (functions) for BLAS and LAPACK.
+
+On PyPI, wheels from major Python packages such as NumPy, SciPy, and PyTorch all bundle their own static-linked versions of BLAS and LAPACK (usually backed by OpenBLAS instead of oneMKL) which avoid possible conflicts with other libraries loading the same symbols on Linux*, while on Anaconda and conda-forge, Python libraries use metapackages for BLAS and LAPACK which ensure only one backend for them is loaded at runtime.
+
+Hence, when it comes to Linux* environments, if all core packages are installed from the same source (either PyPI or conda-forge), there should be no symbol conflicts between different BLAS / LAPACK providers, but if e.g. some packages are installed from PyPI and others are installed from conda-forge, conflicts in symbol resolution might occur, which could manifest for example in thread control for BLAS (e.g. matrix multiplications in NumPy) not working correctly due to calling functions from the wrong vendor, or running times of operations varying depending on which libraries get imported first.
+
+As an alternative, pip-compatible versions of NumPy and SciPy that would use oneMKL as BLAS / LAPACK provider instead of OpenBLAS can be installed as follows:
+
+.. code-block:: bash
+
+    pip install --index-url https://software.repos.intel.com/python/pypi numpy scipy
+
+On Windows*, DLL loading does not bring global symbols into a process in the same way as Linux*, so there should be no potential symbol resolution conflicts from different BLAS / LAPACK providers when using Python libraries.
+
+Typically, other higher-level Python packages such as |sklearn| that make usage of BLAS and LAPACK do so through SciPy's bindings, but if another Python library were to dynamic-link to BLAS and/or LAPACK directly instead, similar considerations should apply.
 
 Building from Sources
 ---------------------
