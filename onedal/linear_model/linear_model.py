@@ -25,7 +25,6 @@ from ..common._backend import bind_default_backend
 from ..common._estimator_checks import _check_is_fitted
 from ..common.hyperparameters import get_hyperparameters
 from ..datatypes import from_table, to_table
-from ..utils import _sycl_queue_manager as QM
 from ..utils.validation import _check_n_features, _num_features
 
 
