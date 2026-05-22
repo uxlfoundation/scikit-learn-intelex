@@ -53,7 +53,7 @@ Or it can be set within a Python process:
     import os
     os.environ["SKLEARNEX_PREVIEW"] = "1"
 
-Then, patched estimators in preview mode can be imported from the ``slearn`` module
+Then, patched estimators in preview mode can be imported from the ``sklearn`` module
 when they participate in patching:
 
 .. code-block:: python

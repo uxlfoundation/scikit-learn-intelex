@@ -166,6 +166,18 @@ For :obj:`sklearn.linear_model.LogisticRegression`, array API coverage is limite
 is allocated on a GPU device, so passing array API inputs on CPU other than NumPy arrays will not result
 in calling accelerated routines from the |sklearnex|.
 
+Function ``move_estimator_to``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Starting with version 1.9, |sklearn| provides an experimental utility ``sklearn.utils._array_api.move_estimator_to``,
+which can be used to move an estimator that was fitted with one array API library namespace and device to
+another.
+
+This function is not supported with estimators from the |sklearnex| at the moment. This lack of support
+also extends to cases where :doc:`patching <patching>` is applied, but the ``.fit()`` routine is handled
+through |sklearn| as a fallback (see :doc:`algorithms` for details) - meaning: ``move_estimator_to`` cannot
+be used with classes from the |sklearnex| regardless of which backend was used to fit the estimator.
+
 Example usage
 =============
 

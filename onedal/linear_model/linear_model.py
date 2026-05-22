@@ -25,7 +25,6 @@ from ..common._backend import bind_default_backend
 from ..common._estimator_checks import _check_is_fitted
 from ..common.hyperparameters import get_hyperparameters
 from ..datatypes import from_table, to_table
-from ..utils import _sycl_queue_manager as QM
 from ..utils.validation import _check_n_features, _num_features
 
 
@@ -62,34 +61,35 @@ class BaseLinearRegression(metaclass=ABCMeta):
 
         return params
 
-    def _create_model(self):
+    def _create_model(self, coef_, intercept_, xp) -> None:
         model = self.model()
 
-        # force dtype and shape for all supported estimators to numpy
-
-        if np.isscalar(self.coef_):
-            coef = np.asarray(self.coef_).reshape(1, 1)
+        dim0 = coef_.shape[0] if len(coef_.shape) > 1 else 1
+        if dim0 == 1:
+            coef_ = xp.reshape(coef_, (1, -1))
+        if self.fit_intercept:
+            intercept_ = xp.reshape(intercept_, (dim0, -1))
+            if xp is np:
+                # workaround for numpy<2
+                packed_coefficients = xp.concatenate([intercept_, coef_], axis=1)
+            else:
+                packed_coefficients = xp.concat([intercept_, coef_], axis=1)
         else:
-            # generalized atleast_2d for numpy and array_api inputs
-            # if an empty array, will fail for a multitude of reasons
-            coef = from_table(
-                to_table(self.coef_[None] if self.coef_.ndim == 1 else self.coef_)
-            )
-        if np.isscalar(self.intercept_):
-            intercept = np.asarray(self.intercept_).reshape(1, 1)
-        else:
-            intercept = from_table(to_table(self.intercept_))
+            if hasattr(coef_, "device"):
+                packed_coefficients = xp.zeros(
+                    (dim0, coef_.shape[1] + 1), device=coef_.device
+                )
+            else:
+                # Note: on numpy<2, these objects and functions do not have
+                # the 'device' attribute/argument.
+                packed_coefficients = xp.zeros((dim0, coef_.shape[1] + 1))
+            packed_coefficients[:, 1:] = coef_
 
-        # will do automatic dtype promotion based on the two datatypes
-        packed_coefficients = np.concatenate((intercept, coef), axis=1)
-
-        model.packed_coefficients = to_table(
-            packed_coefficients, queue=QM.get_global_queue()
-        )
-
+        # packed_coefficients = xp.reshape(packed_coefficients, (1, -1))
+        model.packed_coefficients = to_table(packed_coefficients)
+        self.coef_ = coef_
+        self.intercept_ = intercept_
         self._onedal_model = model
-
-        return model
 
     @supports_queue
     def fit(self, X, y, queue=None):
@@ -156,9 +156,6 @@ class BaseLinearRegression(metaclass=ABCMeta):
         _check_is_fitted(self)
 
         _check_n_features(self, X, False)
-
-        if self._onedal_model is None:
-            self._onedal_model = self._create_model()
 
         X_table = to_table(X, queue=queue)
         params = self._get_onedal_params(X_table.dtype)

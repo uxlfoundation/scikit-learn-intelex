@@ -275,6 +275,7 @@ linkcheck_ignore = [
     re.compile(r"https://medium\.com/.*"),  # Avoid Medium paywall/rate limit
     re.compile(r"https://wiki\.archlinux\.org/.*"),  # Avoid Arch Wiki limit
     re.compile(r"https://w*\.contributor-covenant.org"),  # Times out very frequently
+    re.compile(r"https://en\.wikipedia\.org.+"),  # Avoid rate error
 ]
 
 # Speed up link-check and fail faster
