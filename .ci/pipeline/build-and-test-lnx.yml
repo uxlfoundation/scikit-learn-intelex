@@ -28,7 +28,7 @@ steps:
       . /usr/share/miniconda/etc/profile.d/conda.sh
       conda activate CB
       # DPC builds need dal-devel (pulls dal, dal-include, dal-gpu, mkl-dpcpp) plus the dpcpp compiler; CPU-only builds need just dal + dal-include.
-      # TODO: mkl-dpcpp is requested explicitly to nudge the solver toward the dal-gpu build that lists it as a runtime dep; remove once conda-forge no longer ships older builds without that dep.
+      # TODO: mkl-dpcpp is requested explicitly to nudge the solver toward the dal-gpu build that lists it as a runtime dep; remove once dal-gpu2026.1 is released in conda-forge
       if [ -z "${DALROOT}" ]; then
         if [ -z "${NO_DPC}" ]; then
           conda install -q -y -c conda-forge dal-devel mkl-dpcpp dpcpp_linux-64=$DPCPP_VERSION
