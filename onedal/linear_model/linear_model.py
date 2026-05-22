@@ -87,9 +87,7 @@ class BaseLinearRegression(metaclass=ABCMeta):
             packed_coefficients[:, 1:] = coef_
 
         # packed_coefficients = xp.reshape(packed_coefficients, (1, -1))
-        model.packed_coefficients = to_table(
-            packed_coefficients, queue=QM.get_global_queue()
-        )
+        model.packed_coefficients = to_table(packed_coefficients)
         self.coef_ = coef_
         self.intercept_ = intercept_
         self._onedal_model = model
