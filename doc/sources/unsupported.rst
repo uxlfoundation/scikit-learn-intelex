@@ -42,3 +42,8 @@ Callbacks
 ---------
 
 Callback functions (an experimental feature introduced in version 1.9 of |sklearn|) are not supported in estimators from the |sklearnex|. If supplied, they will not be used.
+
+Moving estimators
+-----------------
+
+Function ``sklearn.utils._array_api.move_estimator_to`` is currently not supported for estimator objects from the |sklearnex|. See :doc:`array_api` for more details.
