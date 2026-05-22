@@ -140,6 +140,7 @@ def test_reconstruct_model(queue, dtype):
     model = IncrementalLinearRegression(fit_intercept=True)
     model.coef_ = coef.T
     model.intercept_ = intercept
+    model._create_model(model.coef_, model.intercept_, np)
 
     res = model.predict(X, queue=queue)
 
