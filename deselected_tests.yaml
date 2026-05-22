@@ -476,6 +476,10 @@ deselected_tests:
   # but sklearnex has support for different solvers when passing array API, so it doesn't change the default.
   - linear_model/tests/test_ridge.py::test_array_api_error_and_warnings_for_solver_parameter[dpnp]
 
+  # Scikit-learn expects warning about passing n_jobs which has no effect,
+  # but sklearnex does use the parameter regardless.
+  - linear_model/tests/test_logistic.py::test_logisticregression_warns_with_n_jobs
+
   # --------------------------------------------------------
   # No need to test daal4py patching
 reduced_tests:
