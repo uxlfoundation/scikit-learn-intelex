@@ -43,7 +43,11 @@ if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import Interval
 
 if sklearn_check_version("1.9"):
-    from sklearn.utils._array_api import get_namespace_and_device, move_to
+    from sklearn.utils._array_api import (
+        check_same_namespace,
+        get_namespace_and_device,
+        move_to,
+    )
 
 
 @enable_array_api("1.5")  # validate_data y_numeric requires sklearn >=1.5
@@ -176,6 +180,9 @@ class IncrementalLinearRegression(
             copy=self.copy_X,
             reset=False,
         )
+
+        if sklearn_check_version("1.9"):
+            check_same_namespace(X, self, attribute="coef_", method="predict")
 
         assert hasattr(self, "_onedal_estimator")
         if self._need_to_finalize:

@@ -44,7 +44,11 @@ if daal_check_version((2024, "P", 600)):
     from ..utils.validation import validate_data
 
     if sklearn_check_version("1.9"):
-        from sklearn.utils._array_api import get_namespace_and_device, move_to
+        from sklearn.utils._array_api import (
+            check_same_namespace,
+            get_namespace_and_device,
+            move_to,
+        )
 
     @enable_array_api("1.5")  # validate_data y_numeric requires sklearn >=1.5
     @control_n_jobs(decorated_methods=["fit", "predict", "score"])
@@ -352,6 +356,9 @@ if daal_check_version((2024, "P", 600)):
             X = validate_data(
                 self, X, accept_sparse=False, dtype=[xp.float64, xp.float32], reset=False
             )
+
+            if sklearn_check_version("1.9"):
+                check_same_namespace(X, self, attribute="coef_", method="predict")
 
             if not hasattr(self, "_onedal_estimator"):
                 self._initialize_onedal_estimator()

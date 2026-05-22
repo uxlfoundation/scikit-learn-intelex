@@ -81,11 +81,17 @@ def _convert(arr, xp, device=None):
 
 def _check_attributes_and_output(model, X, y, X_xp):
     expected = _expected_type(X, X_xp)
+    expected_device = getattr(X, "device", None)
     assert isinstance(model.coef_, expected)
     assert isinstance(model.intercept_, (expected, float, np.floating))
+    if X_xp is not pd:
+        assert getattr(model.coef_, "device", None) == expected_device
+        assert getattr(model.intercept_, "device", None) == expected_device
 
     pred = model.predict(X)
     assert pred.__class__ == expected
+    if X_xp is not pd:
+        assert getattr(pred, "device", None) == expected_device
 
     score = model.score(X, y)
     assert isinstance(score, (float, np.floating))
@@ -114,6 +120,39 @@ def test_linreg_mixed_array_namespaces(
     model = estimator_class()
     _fit_model(model, X, y, use_partial_fit)
     _check_attributes_and_output(model, X, y, X_xp)
+
+
+@pytest.mark.skipif(
+    not sklearn_check_version("1.9"),
+    reason="Functionality introduced in later scikit-learn versions.",
+)
+@pytest.mark.parametrize("estimator_class", all_estimators)
+@pytest.mark.parametrize("use_partial_fit", [False, True])
+def test_error_on_incompatible_namespaces(
+    estimator_class, use_partial_fit, with_array_api
+):
+    if use_partial_fit and estimator_class in non_incremental_estimators:
+        pytest.skip("partial_fit only for incremental estimators")
+
+    X, y = _generate_data()
+    Xa = array_api_strict.from_dlpack(X)
+    ya = array_api_strict.from_dlpack(y)
+
+    model = estimator_class()
+    _fit_model(model, X, y, use_partial_fit)
+
+    with pytest.raises(ValueError, match="same namespace"):
+        model.predict(Xa)
+    with pytest.raises(ValueError, match="same namespace"):
+        model.score(Xa, ya)
+
+    model = estimator_class()
+    _fit_model(model, Xa, ya, use_partial_fit)
+
+    with pytest.raises(ValueError, match="same namespace"):
+        model.predict(X)
+    with pytest.raises(ValueError, match="same namespace"):
+        model.score(X, y)
 
 
 @pytest.mark.skipif(
