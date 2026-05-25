@@ -72,9 +72,6 @@ class BaseSVM(ABC):
 
     def _get_onedal_params(self, X):
         max_iter = 10000 if self.max_iter == -1 else self.max_iter
-        # TODO: remove this workaround
-        # when oneDAL SVM starts support of 'n_iterations' result
-        self.n_iter_ = max(1, max_iter)
         # if gamma is not given as a value, use sklearn's "auto"
         gamma = 1 / X.shape[1] if self.gamma is None else self.gamma
         return {
@@ -127,6 +124,12 @@ class BaseSVM(ABC):
 
         if len(self.support_.shape) > 1:
             self.support_ = self.support_[:, 0]
+
+        if hasattr(result, "iteration_counts"):
+            self.n_iter_ = from_table(result.iteration_counts)
+        else:
+            max_iter = 10000 if self.max_iter == -1 else self.max_iter
+            self.n_iter_ = max(1, max_iter)
 
         self._onedal_model = result.model
         return self
