@@ -176,8 +176,7 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
 
         if check_input:
             if sklearn_check_version("1.9"):
-                xp, _, device_ = get_namespace_and_device(X)
-                y = move_to(y, xp=xp, device=device_)
+                xp, _ = get_namespace(X)
             else:
                 xp, _ = get_namespace(X, y)
             X, y = validate_data(
@@ -235,8 +234,7 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
 
     def _onedal_fit(self, X, y, queue=None):
         if sklearn_check_version("1.9"):
-            xp, _, device_ = get_namespace_and_device(X)
-            y = move_to(y, xp=xp, device=device_)
+            xp, _ = get_namespace(X)
         else:
             xp, _ = get_namespace(X, y)
 

@@ -295,10 +295,9 @@ if daal_check_version((2024, "P", 600)):
             assert sample_weight is None
 
             if sklearn_check_version("1.9"):
-                xp, _, device_ = get_namespace_and_device(X)
-                y = move_to(y, xp=xp, device=device_)
-            else:
                 xp, _ = get_namespace(X)
+            else:
+                xp, _ = get_namespace(X, y)
 
             if sklearn_check_version("1.2"):
                 self._validate_params()
