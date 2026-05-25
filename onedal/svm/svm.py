@@ -126,7 +126,7 @@ class BaseSVM(ABC):
             self.support_ = self.support_[:, 0]
 
         if hasattr(result, "iteration_counts"):
-            self.n_iter_ = from_table(result.iteration_counts)
+            self.n_iter_ = from_table(result.iteration_counts, like=X)
         else:
             max_iter = 10000 if self.max_iter == -1 else self.max_iter
             self.n_iter_ = max(1, max_iter)

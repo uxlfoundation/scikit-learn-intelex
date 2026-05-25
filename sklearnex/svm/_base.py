@@ -30,7 +30,7 @@ from sklearn.utils.metaestimators import available_if
 from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import check_is_fitted, column_or_1d
 
-from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from daal4py.sklearn._utils import sklearn_check_version
 
 if sklearn_check_version("1.9"):
     from sklearn.utils._sparse import _align_api_if_sparse
@@ -538,16 +538,7 @@ class BaseSVC(BaseSVM):
 
         if sklearn_check_version("1.1"):
             if hasattr(self._onedal_estimator.n_iter_, "shape"):
-                self.n_iter_ = self._onedal_estimator.n_iter_
-                if not isinstance(self.n_iter_, np.ndarray):
-                    if hasattr(np, "from_dlpack"):
-                        self.n_iter_ = np.from_dlpack(self.n_iter_)
-                    else:
-                        n_iter_ = np.empty(self.n_iter_.shape[1], dtype=np.int64)
-                        for i in range(self.n_iter_.shape[1]):
-                            n_iter_[i] = int(self.n_iter_[0, i])
-                        self.n_iter_ = n_iter_
-                self.n_iter_ = self.n_iter_.reshape(-1)
+                self.n_iter_ = xp.reshape(self._onedal_estimator.n_iter_, (-1,))
             else:
                 self.n_iter_ = xp.full((length,), self._onedal_estimator.n_iter_)
 
