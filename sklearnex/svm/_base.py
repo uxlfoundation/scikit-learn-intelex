@@ -798,7 +798,7 @@ class BaseSVR(BaseSVM):
 
         if sklearn_check_version("1.1"):
             if hasattr(self._onedal_estimator.n_iter_, "shape"):
-                self.n_iter_ = int(self._onedal_estimator.n_iter_[0, 0])
+                self.n_iter_ = int(xp.reshape(self._onedal_estimator.n_iter_, (-1,))[0])
             else:
                 self.n_iter_ = self._onedal_estimator.n_iter_
 
