@@ -474,7 +474,6 @@ if daal_check_version((2024, "P", 1)):
                 return daal4py_predict(self, X, "computeClassLabels")
 
             if sklearn_check_version("1.9"):
-                check_same_namespace(X, self, attribute="coef_", method="predict")
                 xp_y, _, device_y = get_namespace_and_device(self.classes_)
             else:
                 xp_y, _ = get_namespace(self.classes_)
@@ -488,6 +487,9 @@ if daal_check_version((2024, "P", 1)):
                 accept_large_sparse=_sparsity_enabled,
                 dtype=[xp.float64, xp.float32],
             )
+
+            if sklearn_check_version("1.9"):
+                check_same_namespace(X, self, attribute="coef_", method="predict")
 
             assert hasattr(self, "_onedal_estimator")
 
@@ -506,9 +508,6 @@ if daal_check_version((2024, "P", 1)):
                 self._error_out_on_incompatible_devices(X, "predict_proba")
                 return daal4py_predict(self, X, "computeClassProbabilities")
 
-            if sklearn_check_version("1.9"):
-                check_same_namespace(X, self, attribute="coef_", method="predict_proba")
-
             xp, _ = get_namespace(X)
             X = validate_data(
                 self,
@@ -518,6 +517,9 @@ if daal_check_version((2024, "P", 1)):
                 accept_large_sparse=_sparsity_enabled,
                 dtype=[xp.float64, xp.float32],
             )
+
+            if sklearn_check_version("1.9"):
+                check_same_namespace(X, self, attribute="coef_", method="predict_proba")
 
             assert hasattr(self, "_onedal_estimator")
             res = self._onedal_estimator.predict_proba(X, queue=queue)
@@ -540,11 +542,6 @@ if daal_check_version((2024, "P", 1)):
                 self._error_out_on_incompatible_devices(X, "predict_log_proba")
                 return daal4py_predict(self, X, "computeClassLogProbabilities")
 
-            if sklearn_check_version("1.9"):
-                check_same_namespace(
-                    X, self, attribute="coef_", method="predict_log_proba"
-                )
-
             y_proba = self._onedal_predict_proba(X, queue)
             xp, _ = get_namespace(X)
 
@@ -564,11 +561,6 @@ if daal_check_version((2024, "P", 1)):
                 # TODO add array-api support for CPU
                 return super().decision_function(X)
 
-            if sklearn_check_version("1.9"):
-                check_same_namespace(
-                    X, self, attribute="coef_", method="decision_function"
-                )
-
             xp, _ = get_namespace(X)
             X = validate_data(
                 self,
@@ -578,6 +570,11 @@ if daal_check_version((2024, "P", 1)):
                 accept_large_sparse=_sparsity_enabled,
                 dtype=[xp.float64, xp.float32],
             )
+
+            if sklearn_check_version("1.9"):
+                check_same_namespace(
+                    X, self, attribute="coef_", method="decision_function"
+                )
 
             assert hasattr(self, "_onedal_estimator")
 
