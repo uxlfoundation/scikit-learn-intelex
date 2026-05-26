@@ -141,7 +141,7 @@ class BaseSVM(oneDALEstimator):
     #   These versions with flipped signs are used by scikit-learn when making
     #   predictions, and are also checked and used within their test suite.
     # - There is one caveat in that, when scikit-learn sets these attributes,
-    #   it does the flip signs after assigning to initial attributes:
+    #   it does the sign flips after assigning to initial attributes:
     #   https://github.com/scikit-learn/scikit-learn/blob/c9af676c13bce3c6b9178d95dcf4e2305ff9407c/sklearn/svm/_base.py#L304
     #   .. which means: this code shouldn't assume that assignment of the
     #   intercepts will always come with the intended sign, and shouldn't
@@ -168,10 +168,11 @@ class BaseSVM(oneDALEstimator):
     # - Thus, it should try to avoid re-creation of the oneDAL objects as much as
     #   possible.
     # - This code provides getters and setter for the public attributes that are
-    #   used when predicting through oneDAL, intended to keep them in synch with
-    #   the oneDAL object.
-    # - To do this, it keeps internal versions of these with names that are not
-    #   used by scikit-learn, and makes updates to both the internal attributes
+    #   used when predicting through oneDAL and when running scikit-learn tests,
+    #   intended to keep them in synch with the oneDAL object.
+    # - To do this, it keeps internal private versions of these with names ending
+    #   with 'internal' that are not used by scikit-learn (e.g.
+    #   '_dual_coef_internal'), and makes updates to both the internal attributes
     #   and to the oneDAL object. But doing so invalidates the oneDAL object, so
     #   it should not assign to these public attributes internally.
     # - Currently, it appears to not be possible to create a oneDAL object from
@@ -212,13 +213,13 @@ class BaseSVM(oneDALEstimator):
 
     @property
     def dual_coef_(self):
-        return self._dualcoef_
+        return self._dual_coef_internal
 
     @property
     def _dual_coef_(self):
         if self._is_binary_classifier():
-            return -self._dualcoef_
-        return self._dualcoef_
+            return -self._dual_coef_internal
+        return self._dual_coef_internal
 
     @dual_coef_.setter
     def dual_coef_(self, value):
@@ -227,7 +228,7 @@ class BaseSVM(oneDALEstimator):
                 self._raise_immutable_error()
             self._onedal_estimator.dual_coef_ = value
             self._onedal_estimator._onedal_model = None
-        self._dualcoef_ = value
+        self._dual_coef_internal = value
 
     @_dual_coef_.setter
     def _dual_coef_(self, value):
@@ -236,14 +237,14 @@ class BaseSVM(oneDALEstimator):
                 self._raise_immutable_error()
             self._onedal_estimator.dual_coef_ = value
             self._onedal_estimator._onedal_model = None
-        self._dualcoef_ = value
+        self._dual_coef_internal = value
 
     @dual_coef_.deleter
     def dual_coef_(self):
         if hasattr(self, "_onedal_estimator") and self._is_multi_class_classifier():
             self._raise_immutable_error()
-        if hasattr(self, "_dualcoef_"):
-            del self._dualcoef_
+        if hasattr(self, "_dual_coef_internal"):
+            del self._dual_coef_internal
         if hasattr(self, "_onedal_estimator"):
             self._onedal_estimator.dual_coef_ = None
             self._onedal_estimator._onedal_model = None
@@ -253,18 +254,18 @@ class BaseSVM(oneDALEstimator):
     def _dual_coef_(self):
         if hasattr(self, "_onedal_estimator") and self._is_multi_class_classifier():
             self._raise_immutable_error()
-        if hasattr(self, "_dualcoef_"):
-            del self._dualcoef_
+        if hasattr(self, "_dual_coef_internal"):
+            del self._dual_coef_internal
 
     @property
     def intercept_(self):
-        return self._icept_
+        return self._intercept_internal
 
     @property
     def _intercept_(self):
         if self._is_binary_classifier():
-            return -self._icept_
-        return self._icept_
+            return -self._intercept_internal
+        return self._intercept_internal
 
     @intercept_.setter
     def intercept_(self, value):
@@ -273,7 +274,7 @@ class BaseSVM(oneDALEstimator):
                 self._raise_immutable_error()
             self._onedal_estimator.intercept_ = value
             self._onedal_estimator._onedal_model = None
-        self._icept_ = value
+        self._intercept_internal = value
 
     @_intercept_.setter
     def _intercept_(self, value):
@@ -282,14 +283,14 @@ class BaseSVM(oneDALEstimator):
                 self._raise_immutable_error()
             self._onedal_estimator.intercept_ = value
             self._onedal_estimator._onedal_model = None
-        self._icept_ = value
+        self._intercept_internal = value
 
     @intercept_.deleter
     def intercept_(self):
         if hasattr(self, "_onedal_estimator") and self._is_multi_class_classifier():
             self._raise_immutable_error()
-        if hasattr(self, "_icept_"):
-            del self._icept_
+        if hasattr(self, "_intercept_internal"):
+            del self._intercept_internal
         if hasattr(self, "_onedal_estimator"):
             self._onedal_estimator.dual_coef_ = None
             self._onedal_estimator._onedal_model = None
@@ -298,13 +299,13 @@ class BaseSVM(oneDALEstimator):
     def _intercept_(self):
         if hasattr(self, "_onedal_estimator") and self._is_multi_class_classifier():
             self._raise_immutable_error()
-        if hasattr(self, "_icept_"):
-            del self._icept_
+        if hasattr(self, "_intercept_internal"):
+            del self._intercept_internal
 
     # This one don't have versions with flipped signs
     @property
     def support_vectors_(self):
-        return self._sv_
+        return self._support_vectors_internal
 
     @support_vectors_.setter
     def support_vectors_(self, value):
@@ -313,14 +314,14 @@ class BaseSVM(oneDALEstimator):
                 self._raise_immutable_error()
             self._onedal_estimator.support_vectors_ = value
             self._onedal_estimator._onedal_model = None
-        self._sv_ = value
+        self._support_vectors_internal = value
 
     @support_vectors_.deleter
     def support_vectors_(self):
         if hasattr(self, "_onedal_estimator") and self._is_multi_class_classifier():
             self._raise_immutable_error()
-        if hasattr(self, "_sv_"):
-            del self._sv_
+        if hasattr(self, "_support_vectors_internal"):
+            del self._support_vectors_internal
         if hasattr(self, "_onedal_estimator"):
             self._onedal_estimator.dual_coef_ = None
             self._onedal_estimator._onedal_model = None
@@ -757,16 +758,18 @@ class BaseSVC(BaseSVM):
                 ).fit(X, y, sample_weight=sample_weight)
 
     def _save_attributes(self, X, y, xp=np):
-        self._sv_ = self._onedal_estimator.support_vectors_
+        self._support_vectors_internal = self._onedal_estimator.support_vectors_
 
-        self._dualcoef_ = self._onedal_estimator.dual_coef_
+        self._dual_coef_internal = self._onedal_estimator.dual_coef_
         self.support_ = xp.asarray(self._onedal_estimator.support_, dtype=xp.int64)
 
         if sklearn_check_version("1.9"):
-            self._sv_ = _align_api_if_sparse(self._sv_)
-            self._dualcoef_ = _align_api_if_sparse(self._dualcoef_)
+            self._support_vectors_internal = _align_api_if_sparse(
+                self._support_vectors_internal
+            )
+            self._dual_coef_internal = _align_api_if_sparse(self._dual_coef_internal)
 
-        self._icept_ = self._onedal_estimator.intercept_
+        self._intercept_internal = self._onedal_estimator.intercept_
         self._sparse = False
         self.fit_status_ = 0
         self.shape_fit_ = X.shape
@@ -1062,13 +1065,13 @@ class BaseSVR(BaseSVM):
         self._save_attributes(X, xp=xp)
 
     def _save_attributes(self, X, xp=None):
-        self._sv_ = self._onedal_estimator.support_vectors_
+        self._support_vectors_internal = self._onedal_estimator.support_vectors_
         self.fit_status_ = 0
-        self._dualcoef_ = self._onedal_estimator.dual_coef_
+        self._dual_coef_internal = self._onedal_estimator.dual_coef_
         self.shape_fit_ = X.shape
         self.support_ = xp.asarray(self._onedal_estimator.support_, dtype=xp.int64)
 
-        self._icept_ = self._onedal_estimator.intercept_
+        self._intercept_internal = self._onedal_estimator.intercept_
         self._n_support = xp.asarray([self.support_vectors_.shape[0]], dtype=xp.int64)
 
         self._sparse = False
