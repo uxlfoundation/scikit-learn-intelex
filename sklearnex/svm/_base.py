@@ -482,17 +482,15 @@ class BaseSVM(oneDALEstimator):
             )
         # Note: checking a numpy array against a scipy sparse matrix would fail,
         # but this combination would be supported by both oneDAL and sklearn.
-        _, is_array_api = get_namespace(X)
-        if sp.issparse(self.support_vectors_) and not is_array_api:
+        if sp.issparse(self.support_vectors_) and isinstance(X, np.ndarray):
             return
         if sklearn_check_version("1.9"):
             check_same_namespace(
                 X, self, attribute="support_vectors_", method=method_name
             )
 
-    def _onedal_predict(self, X, queue=None, xp=None, method_name="predict"):
-        if xp is None:
-            xp, _ = get_namespace(X)
+    def _onedal_predict(self, X, queue=None, method_name="predict"):
+        xp, _ = get_namespace(X)
 
         X = validate_data(
             self,
@@ -806,11 +804,9 @@ class BaseSVC(BaseSVM):
             self.n_iter_ = xp.full((length,), self._onedal_estimator.n_iter_)
 
     def _onedal_predict(self, X, queue=None, method_name="predict"):
-        self._error_out_on_mismatched_data(X, "predict")
 
         sv = self.support_vectors_
-
-        xp, _ = get_namespace(X)
+        xp, _ = get_namespace(self._n_support)
 
         # sklearn conformance >1.0, with array API conversion
         # https://github.com/scikit-learn/scikit-learn/pull/21336
@@ -835,7 +831,7 @@ class BaseSVC(BaseSVM):
         ):
             res = xp.argmax(self._onedal_decision_function(X, queue=queue), axis=1)
         else:
-            res = super()._onedal_predict(X, queue=queue, xp=xp, method_name=method_name)
+            res = super()._onedal_predict(X, queue=queue, method_name=method_name)
 
         if sklearn_check_version("1.9"):
             xp, _, device = get_namespace_and_device(self.classes_)
