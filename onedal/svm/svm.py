@@ -125,7 +125,7 @@ class BaseSVM(ABC):
         if len(self.support_.shape) > 1:
             self.support_ = self.support_[:, 0]
 
-        if hasattr(result, "iteration_counts"):
+        if hasattr(result, "iteration_counts") and result.iteration_counts.shape[0]:
             self.n_iter_ = from_table(result.iteration_counts, like=X)
         else:
             max_iter = 10000 if self.max_iter == -1 else self.max_iter
