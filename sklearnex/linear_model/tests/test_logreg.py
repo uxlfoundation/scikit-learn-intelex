@@ -761,6 +761,53 @@ def test_error_on_incompatible_devices_cpufirst(with_array_api, X_xp, X_device):
         model_cpu.predict(Xa)
 
 
+@pytest.mark.parametrize(
+    "dataframe,queue", get_dataframes_and_queues(device_filter_="gpu")
+)
+@pytest.mark.parametrize("fit_intercept", [True, False])
+@pytest.mark.parametrize("array_api", [False, True])
+@pytest.mark.allow_sklearn_fallback
+def test_onedal_model_from_sklearn_coefs(dataframe, queue, fit_intercept, array_api):
+    if not queue or not queue.sycl_device.is_gpu:
+        pytest.skip("Test for GPU-only code branch")
+    if array_api and not sklearn_check_version("1.9"):
+        pytest.skip("Functionality introduced in later sklearn versions.")
+    from sklearn.linear_model import LogisticRegression as _sklearn_LogisticRegression
+
+    from sklearnex.linear_model import LogisticRegression
+
+    X, y = make_classification(
+        n_samples=100, n_features=20, n_classes=2, random_state=123
+    )
+    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+    y = _convert_to_dataframe(y, sycl_queue=queue, target_df=dataframe)
+
+    # This should fall back to sklearn for model fitting
+    with config_context(array_api_dispatch=array_api):
+        model = LogisticRegression(solver="lbfgs", fit_intercept=fit_intercept).fit(X, y)
+    assert not hasattr(model, "_onedal_estimator")
+
+    # Then this should trigger creation of a oneDAL object on the fly,
+    # which should get used to make predictions
+    with config_context(array_api_dispatch=array_api):
+        proba = model.predict_proba(X)
+        pred = model.predict(X)
+    proba = _as_numpy(proba)
+    pred = _as_numpy(pred)
+
+    assert hasattr(model, "_onedal_estimator")
+
+    X_np = _as_numpy(X)
+    y_np = _as_numpy(y)
+    model_sklearn = _sklearn_LogisticRegression(
+        solver="lbfgs", fit_intercept=fit_intercept
+    ).fit(X_np, y_np)
+    proba_sklearn = model_sklearn.predict_proba(X_np)
+    pred_sklearn = model_sklearn.predict(X_np)
+    np.testing.assert_allclose(proba, proba_sklearn)
+    np.testing.assert_array_equal(pred, pred_sklearn)
+
+
 # TODO: remove this once scikit-learn1.8 and 1.9 are no longer supported.
 @pytest.mark.skipif(
     not sklearn_check_version("1.8"),

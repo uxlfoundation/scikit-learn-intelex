@@ -222,6 +222,7 @@ def validate_data(
         if outx is not None and sklearn_check_version("1.9"):
             yp, _, device = get_namespace_and_device(outx)
             outy = move_to(outy, xp=yp, device=device)
+            out = outx, outy
         else:
             yp, _ = get_namespace(outy)
 
