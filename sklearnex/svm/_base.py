@@ -244,6 +244,9 @@ class BaseSVM(oneDALEstimator):
             self._raise_immutable_error()
         if hasattr(self, "_dualcoef_"):
             del self._dualcoef_
+        if hasattr(self, "_onedal_estimator"):
+            self._onedal_estimator.dual_coef_ = None
+            self._onedal_estimator._onedal_model = None
 
     # Do NOT flip signs here, see earlier comments
     @_dual_coef_.deleter
@@ -287,6 +290,9 @@ class BaseSVM(oneDALEstimator):
             self._raise_immutable_error()
         if hasattr(self, "_icept_"):
             del self._icept_
+        if hasattr(self, "_onedal_estimator"):
+            self._onedal_estimator.dual_coef_ = None
+            self._onedal_estimator._onedal_model = None
 
     @_intercept_.deleter
     def _intercept_(self):
@@ -315,6 +321,9 @@ class BaseSVM(oneDALEstimator):
             self._raise_immutable_error()
         if hasattr(self, "_sv_"):
             del self._sv_
+        if hasattr(self, "_onedal_estimator"):
+            self._onedal_estimator.dual_coef_ = None
+            self._onedal_estimator._onedal_model = None
 
     def _create_onedal_estimator_from_fitted_attrs(self):
         assert not self._is_multi_class_classifier()
