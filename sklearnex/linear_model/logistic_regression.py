@@ -410,7 +410,7 @@ if daal_check_version((2024, "P", 1)):
                 # TODO add array-api support for CPU
                 return self._onedal_cpu_fit(X, y, sample_weight)
             assert sample_weight is None
-            xp, _ = get_namespace(X)
+            xp, is_array_api = get_namespace(X)
             xp_y, is_array_api_compliant_y = get_namespace(y)
 
             X, y = validate_data(
@@ -429,9 +429,14 @@ if daal_check_version((2024, "P", 1)):
             )
 
             # Only binary labels are supported, we don't need to use LabelEncoder
-            y_bin = xp.asarray(
-                y == self.classes_[1], dtype=xp.int32, device=getattr(X, "device", None)
-            )
+            if is_array_api:
+                y_bin = xp.asarray(
+                    y == self.classes_[1],
+                    dtype=xp.int32,
+                    device=getattr(X, "device", None),
+                )
+            else:
+                y_bin = xp.asarray(y == self.classes_[1], dtype=xp.int32)
 
             self._onedal_gpu_initialize_estimator()
             try:
