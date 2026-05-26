@@ -388,6 +388,8 @@ if daal_check_version((2024, "P", 1)):
             return patching_status
 
         def _onedal_gpu_initialize_estimator(self, override_solver: bool = False):
+            # We need to override solver in case the model is only used for inference, since newton-cg is the only supported solver for GPU
+            # For example, if we trained model with lbfgs solver (with fall back to stock sklearn) and we want to run the inference on GPU using sklearnex code
             onedal_params = {
                 "tol": self.tol,
                 "C": self.C,
