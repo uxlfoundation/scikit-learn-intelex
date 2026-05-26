@@ -90,6 +90,8 @@ class BaseLogisticRegression(metaclass=ABCMeta):
 
     def _create_model(self, coef_, intercept_, xp):
         model = self.model()
+        # Packed coefficients have shape (1, n_features_ + 1), the first element is a placeholder for bias. 
+        # If fit_intercept is set to False the first element is set to 0.
         if self.fit_intercept:
             intercept_ = xp.reshape(intercept_, (-1, 1))
             if xp is np:
