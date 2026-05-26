@@ -99,7 +99,6 @@ outputs:
     test:
       requires:
         - pyyaml
-        - mpi * impi  # [not win]
         # next deps are synced with requirements-test.txt
         - pytest
         - pytest-mock
@@ -107,7 +106,7 @@ outputs:
         - xgboost
         - lightgbm
         - shap
-        - catboost  # [py<314]
+        - catboost
         - treelite
         - array-api-compat
         - array-api-strict
@@ -157,8 +156,6 @@ outputs:
       requires:
         - dpcpp-cpp-rt  # [linux64]
       commands:
-        # GPU backend .so must be installed by this package.
-        - python -c "import onedal, os, glob; assert glob.glob(os.path.join(os.path.dirname(onedal.__file__), '_onedal_py_dpc*')), 'DPC backend missing'"  # [linux]
         # Importing the DPC extension module exercises the SYCL runtime dependency.
         - python -c "import onedal._onedal_py_dpc"  # [linux]
     about:

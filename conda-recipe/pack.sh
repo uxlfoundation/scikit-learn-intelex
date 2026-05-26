@@ -51,7 +51,7 @@ fi
 
 # Derive the staged sys.prefix: .../<sys.prefix>/lib/pythonX.Y/site-packages/onedal
 # -> strip the trailing "/lib/python*/site-packages/onedal".
-STAGED_PREFIX=$(echo "${STAGED_ONEDAL}" | sed -E 's#/lib/python[^/]+/site-packages/onedal$##')
+STAGED_PREFIX=$(echo "${STAGED_ONEDAL}" | sed -E 's#/lib/python[0-9.]+/site-packages/onedal$##')
 
 # Path under $PREFIX where the onedal package should land.
 RELATIVE_ONEDAL="${STAGED_ONEDAL#${STAGED_PREFIX}/}"
@@ -72,15 +72,21 @@ case "${PKG_NAME}" in
         # package (Python sources, host backend, metadata) is already provided
         # by the scikit-learn-intelex run dependency (exact pin).
         mkdir -p "${TARGET_ONEDAL}"
-        found_any=0
-        for so in "${STAGED_ONEDAL}"/_onedal_py_dpc* "${STAGED_ONEDAL}"/_onedal_py_spmd_dpc*; do
+        found_dpc=0
+        found_spmd=0
+        for so in "${STAGED_ONEDAL}"/_onedal_py_dpc*; do
             [ -e "${so}" ] || continue
             cp -P "${so}" "${TARGET_ONEDAL}/"
-            found_any=1
+            found_dpc=1
         done
-        if [ "${found_any}" = "0" ]; then
-            echo "pack.sh: no DPC backend .so files found in ${STAGED_ONEDAL}" >&2
-            echo "pack.sh: the top-level build did not produce a DPC backend — check DPCPPROOT and compiler detection in setup.py" >&2
+        for so in "${STAGED_ONEDAL}"/_onedal_py_spmd_dpc*; do
+            [ -e "${so}" ] || continue
+            cp -P "${so}" "${TARGET_ONEDAL}/"
+            found_spmd=1
+        done
+        if [ "${found_dpc}" = "0" ] || [ "${found_spmd}" = "0" ]; then
+            echo "pack.sh: missing DPC backend .so files in ${STAGED_ONEDAL} (dpc=${found_dpc}, spmd=${found_spmd})" >&2
+            echo "pack.sh: the top-level build did not produce a full DPC backend — check DPCPPROOT and compiler detection in setup.py" >&2
             exit 1
         fi
         ;;
