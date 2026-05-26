@@ -465,6 +465,13 @@ class BaseSVM(oneDALEstimator):
                 _gamma = self.gamma
         return _gamma
 
+    # This mimics the error message and type that would be thrown by sklearn
+    def _error_out_on_sp_dense_unsupported_combination(self, X) -> None:
+        if sp.issparse(X) and not sp.issparse(self.support_vectors_):
+            raise ValueError(
+                f"cannot use sparse input in '{self.__class__.__name__}' trained on dense data"
+            )
+
     def _onedal_predict(self, X, queue=None, xp=None, method_name="predict"):
         if xp is None:
             xp, _ = get_namespace(X)
@@ -477,6 +484,7 @@ class BaseSVM(oneDALEstimator):
             reset=False,
         )
 
+        self._error_out_on_sp_dense_unsupported_combination(X)
         if sklearn_check_version("1.9"):
             check_same_namespace(
                 X, self, attribute="support_vectors_", method=method_name
@@ -784,6 +792,10 @@ class BaseSVC(BaseSVM):
             self.n_iter_ = xp.full((length,), self._onedal_estimator.n_iter_)
 
     def _onedal_predict(self, X, queue=None, method_name="predict"):
+        self._error_out_on_sp_dense_unsupported_combination(X)
+        if sklearn_check_version("1.9"):
+            check_same_namespace(X, self, attribute="support_vectors_", method="predict")
+
         sv = self.support_vectors_
 
         xp, _ = get_namespace(X)
@@ -866,6 +878,7 @@ class BaseSVC(BaseSVM):
             reset=False,
         )
 
+        self._error_out_on_sp_dense_unsupported_combination(X)
         if sklearn_check_version("1.9"):
             check_same_namespace(
                 X, self, attribute="support_vectors_", method="decision_function"

@@ -138,8 +138,11 @@ class SVC(BaseSVC, _sklearn_SVC):
         if not dal_ready:
             return patching_status
         if method_name == "fit":
-            xp, _ = get_namespace(*data)
             _, _, sample_weight = data
+            if sklearn_check_version("1.9"):
+                xp, _ = get_namespace(sample_weight)
+            else:
+                xp, _ = get_namespace(*data)
             patching_status.and_conditions(
                 [
                     (self.class_weight is None, "Class weight is not supported on GPU."),
@@ -172,10 +175,16 @@ class SVC(BaseSVC, _sklearn_SVC):
         elif method_name in self._n_jobs_supported_onedal_methods:
             patching_status.and_conditions(
                 [
+                    # Note: this is to ensure that oneDAL branch is always used,
+                    # which will do namespace and device checks with a more
+                    # informative error.
                     (
-                        not issparse(self.support_vectors_),
+                        not issparse(self.support_vectors_)
+                        or hasattr(self, "_onedal_estimator"),
                         "Predictions on sparse support vectors are not supported",
                     ),
+                    # This can be remove once oneDAL model creation from multi-class
+                    # arrays is fixed.
                     (
                         hasattr(self, "_onedal_estimator")
                         or (hasattr(self, "classes_") and (self.classes_.shape[0] == 2)),
