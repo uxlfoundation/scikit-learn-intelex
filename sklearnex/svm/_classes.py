@@ -187,7 +187,7 @@ class SVC(BaseSVC, _sklearn_SVC):
                     # arrays is fixed.
                     (
                         hasattr(self, "_onedal_estimator")
-                        or (hasattr(self, "classes_") and (self.classes_.shape[0] == 2)),
+                        or self._is_binary_classifier(),
                         "oneDAL model was not trained and cannot be re-created",
                     ),
                 ]
