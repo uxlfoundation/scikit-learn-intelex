@@ -480,6 +480,12 @@ deselected_tests:
   # but sklearnex does use the parameter regardless.
   - linear_model/tests/test_logistic.py::test_logisticregression_warns_with_n_jobs
 
+  # Creates a LinearRegression on-the-fly, but from a private module so patching doesn't affect it
+  - utils/_repr_html/tests/test_estimator.py::test_get_visual_block_transformed_target_regressor
+
+  # Unsupported features in sklearnex
+  - linear_model/tests/test_logistic.py::test_logistic_regression_callback_support
+
   # --------------------------------------------------------
   # No need to test daal4py patching
 reduced_tests:
