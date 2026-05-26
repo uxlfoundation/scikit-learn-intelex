@@ -482,7 +482,8 @@ class BaseSVM(oneDALEstimator):
             )
         # Note: checking a numpy array against a scipy sparse matrix would fail,
         # but this combination would be supported by both oneDAL and sklearn.
-        if sp.issparse(self.support_vectors_) and isinstance(X, np.ndarray):
+        _, is_array_api = get_namespace(X)
+        if sp.issparse(self.support_vectors_) and not is_array_api:
             return
         if sklearn_check_version("1.9"):
             check_same_namespace(
