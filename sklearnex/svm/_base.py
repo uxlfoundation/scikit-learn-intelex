@@ -256,6 +256,9 @@ class BaseSVM(oneDALEstimator):
             self._raise_immutable_error()
         if hasattr(self, "_dual_coef_internal"):
             del self._dual_coef_internal
+        if hasattr(self, "_onedal_estimator"):
+            self._onedal_estimator.dual_coef_ = None
+            self._onedal_estimator._onedal_model = None
 
     @property
     def intercept_(self):
@@ -292,7 +295,7 @@ class BaseSVM(oneDALEstimator):
         if hasattr(self, "_intercept_internal"):
             del self._intercept_internal
         if hasattr(self, "_onedal_estimator"):
-            self._onedal_estimator.dual_coef_ = None
+            self._onedal_estimator.intercept_ = None
             self._onedal_estimator._onedal_model = None
 
     @_intercept_.deleter
@@ -301,6 +304,9 @@ class BaseSVM(oneDALEstimator):
             self._raise_immutable_error()
         if hasattr(self, "_intercept_internal"):
             del self._intercept_internal
+        if hasattr(self, "_onedal_estimator"):
+            self._onedal_estimator.intercept_ = None
+            self._onedal_estimator._onedal_model = None
 
     # This one don't have versions with flipped signs
     @property
