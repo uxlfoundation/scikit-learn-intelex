@@ -348,8 +348,8 @@ if daal_check_version((2024, "P", 1)):
                         "Sparse input is not supported.",
                     ),
                     (
-                        hasattr(self, "_onedal_estimator"),
-                        "oneDAL model was not trained.",
+                        self.classes_.shape[0] == 2,
+                        "Predictions supported only for binary models",
                     ),
                 ]
             )
@@ -387,15 +387,22 @@ if daal_check_version((2024, "P", 1)):
             )
             return patching_status
 
-        def _onedal_gpu_initialize_estimator(self):
+        def _onedal_gpu_initialize_estimator(self, override_solver: bool = False):
+            # We need to override solver in case the model is only used for inference, since newton-cg is the only supported solver for GPU
+            # For example, if we trained model with lbfgs solver (with fall back to stock sklearn) and we want to run the inference on GPU using sklearnex code
             onedal_params = {
                 "tol": self.tol,
                 "C": self.C,
                 "fit_intercept": self.fit_intercept,
-                "solver": self.solver,
+                "solver": self.solver if not override_solver else "newton-cg",
                 "max_iter": self.max_iter,
             }
             self._onedal_estimator = self._onedal_LogisticRegression(**onedal_params)
+
+        def _onedal_gpu_initialize_from_coefs(self) -> None:
+            xp, _ = get_namespace(self.coef_)
+            self._onedal_gpu_initialize_estimator(override_solver=True)
+            self._onedal_estimator._create_model(self.coef_, self.intercept_, xp)
 
         def _onedal_fit(self, X, y, sample_weight=None, queue=None):
             if queue is None or queue.sycl_device.is_cpu:
@@ -415,7 +422,7 @@ if daal_check_version((2024, "P", 1)):
                 self,
                 X,
                 y,
-                accept_sparse=_sparsity_enabled,
+                accept_sparse="csr" if _sparsity_enabled else False,
                 accept_large_sparse=_sparsity_enabled,
                 dtype=[xp.float64, xp.float32],
             )
@@ -466,12 +473,13 @@ if daal_check_version((2024, "P", 1)):
                 self,
                 X,
                 reset=False,
-                accept_sparse=_sparsity_enabled,
+                accept_sparse="csr" if _sparsity_enabled else False,
                 accept_large_sparse=_sparsity_enabled,
                 dtype=[xp.float64, xp.float32],
             )
 
-            assert hasattr(self, "_onedal_estimator")
+            if not hasattr(self, "_onedal_estimator"):
+                self._onedal_gpu_initialize_from_coefs()
 
             # res will be the same datatype as self.classes_
             res = self._onedal_estimator.predict(X, queue=queue, classes=self.classes_)
@@ -497,12 +505,13 @@ if daal_check_version((2024, "P", 1)):
                 self,
                 X,
                 reset=False,
-                accept_sparse=_sparsity_enabled,
+                accept_sparse="csr" if _sparsity_enabled else False,
                 accept_large_sparse=_sparsity_enabled,
                 dtype=[xp.float64, xp.float32],
             )
 
-            assert hasattr(self, "_onedal_estimator")
+            if not hasattr(self, "_onedal_estimator"):
+                self._onedal_gpu_initialize_from_coefs()
             res = self._onedal_estimator.predict_proba(X, queue=queue)
             y = xp.reshape(res, (-1,))
             return xp.stack([1 - y, y], axis=1)
@@ -546,12 +555,10 @@ if daal_check_version((2024, "P", 1)):
                 self,
                 X,
                 reset=False,
-                accept_sparse=_sparsity_enabled,
+                accept_sparse="csr" if _sparsity_enabled else False,
                 accept_large_sparse=_sparsity_enabled,
                 dtype=[xp.float64, xp.float32],
             )
-
-            assert hasattr(self, "_onedal_estimator")
 
             raw = xp.matmul(X, xp.reshape(self.coef_, (-1,)))
             if self.fit_intercept:
