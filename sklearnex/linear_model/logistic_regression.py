@@ -153,14 +153,20 @@ if daal_check_version((2024, "P", 1)):
             self.coef_ = self._onedal_estimator.coef_
             self.intercept_ = self._onedal_estimator.intercept_
             self.n_features_in_ = self._onedal_estimator.n_features_in_
-            xp, _ = get_namespace(self.coef_)
+            xp, is_array_api = get_namespace(self.coef_)
 
             # Note that here additional transfer from CPU to GPU happens, however it is required for conformance with sklearn API
-            self.n_iter_ = xp.asarray(
-                self._onedal_estimator.n_iter_,
-                device=getattr(self.coef_, "device", None),
-                dtype=xp.int32,
-            )
+            if is_array_api:
+                self.n_iter_ = xp.asarray(
+                    self._onedal_estimator.n_iter_,
+                    device=getattr(self.coef_, "device", None),
+                    dtype=xp.int32,
+                )
+            else:
+                self.n_iter_ = xp.asarray(
+                    self._onedal_estimator.n_iter_,
+                    dtype=xp.int32,
+                )
 
         def fit(self, X, y, sample_weight=None):
             if sklearn_check_version("1.2"):
