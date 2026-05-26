@@ -466,10 +466,18 @@ class BaseSVM(oneDALEstimator):
         return _gamma
 
     # This mimics the error message and type that would be thrown by sklearn
-    def _error_out_on_sp_dense_unsupported_combination(self, X) -> None:
+    def _error_out_on_mismatched_data(self, X, method_name: str) -> None:
         if sp.issparse(X) and not sp.issparse(self.support_vectors_):
             raise ValueError(
                 f"cannot use sparse input in '{self.__class__.__name__}' trained on dense data"
+            )
+        # Note: checking a numpy array against a scipy sparse matrix would fail,
+        # but this combination would be supported by both oneDAL and sklearn.
+        if sp.issparse(self.support_vectors_) and isinstance(X, np.ndarray):
+            return
+        if sklearn_check_version("1.9"):
+            check_same_namespace(
+                X, self, attribute="support_vectors_", method=method_name
             )
 
     def _onedal_predict(self, X, queue=None, xp=None, method_name="predict"):
@@ -484,11 +492,7 @@ class BaseSVM(oneDALEstimator):
             reset=False,
         )
 
-        self._error_out_on_sp_dense_unsupported_combination(X)
-        if sklearn_check_version("1.9"):
-            check_same_namespace(
-                X, self, attribute="support_vectors_", method=method_name
-            )
+        self._error_out_on_mismatched_data(X, "predict")
 
         if not hasattr(self, "_onedal_estimator"):
             self._create_onedal_estimator_from_fitted_attrs()
@@ -792,9 +796,7 @@ class BaseSVC(BaseSVM):
             self.n_iter_ = xp.full((length,), self._onedal_estimator.n_iter_)
 
     def _onedal_predict(self, X, queue=None, method_name="predict"):
-        self._error_out_on_sp_dense_unsupported_combination(X)
-        if sklearn_check_version("1.9"):
-            check_same_namespace(X, self, attribute="support_vectors_", method="predict")
+        self._error_out_on_mismatched_data(X, "predict")
 
         sv = self.support_vectors_
 
@@ -878,11 +880,7 @@ class BaseSVC(BaseSVM):
             reset=False,
         )
 
-        self._error_out_on_sp_dense_unsupported_combination(X)
-        if sklearn_check_version("1.9"):
-            check_same_namespace(
-                X, self, attribute="support_vectors_", method="decision_function"
-            )
+        self._error_out_on_mismatched_data(X, "decision_function")
 
         sv = self.support_vectors_
         if (

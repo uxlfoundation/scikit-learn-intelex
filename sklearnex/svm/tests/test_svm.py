@@ -23,6 +23,7 @@ import pytest
 import scipy
 import scipy.sparse as sp
 from numpy.testing import assert_allclose, assert_array_almost_equal
+from sklearn.base import is_classifier
 from sklearn.datasets import load_diabetes, load_iris, make_classification
 
 from onedal.svm.tests.test_csr_svm import check_svm_model_equal
@@ -357,6 +358,52 @@ def test_multiple_calls_to_fit():
     expected_decision_fn = X @ model.coef_.reshape(-1) + model.intercept_.reshape(-1)
 
     np.testing.assert_almost_equal(decision_fn, expected_decision_fn)
+
+
+# These mimic the behavior of sklearn. If their behavior changes,
+# these tests will been to be modified too
+@pytest.mark.parametrize("estimator", ["SVC", "SVR", "NuSVC", "NuSVR"])
+@pytest.mark.parametrize(
+    "X_xp",
+    [np] + ([torch] if torch_available else []) + ([dpnp] if dpnp_available else []),
+)
+def test_error_on_sparse_predict_with_dense_fit(estimator, X_xp, with_array_api):
+    from sklearnex import svm
+
+    rng = np.random.default_rng(seed=123)
+    if _package_check_version("1.15", scipy.__version__):
+        X_sp = sp.random(100, 10, 0.3, rng=rng, format="csr")
+    else:
+        X_sp = sp.random(100, 10, 0.3, random_state=rng, format="csr")
+    X = X_sp.toarray()
+    y = rng.integers(2, size=X.shape[0])
+
+    X = X_xp.from_dlpack(X)
+
+    model = getattr(svm, estimator)().fit(X, y)
+    with pytest.raises(ValueError):
+        model.predict(X_sp)
+    if is_classifier(model):
+        with pytest.raises(ValueError):
+            model.decision_function(X_sp)
+
+
+@pytest.mark.parametrize("estimator", ["SVC", "SVR", "NuSVC", "NuSVR"])
+def test_dense_predict_on_sparse_fit_works(estimator):
+    from sklearnex import svm
+
+    rng = np.random.default_rng(seed=123)
+    if _package_check_version("1.15", scipy.__version__):
+        X_sp = sp.random(100, 10, 0.3, rng=rng, format="csr")
+    else:
+        X_sp = sp.random(100, 10, 0.3, random_state=rng, format="csr")
+    X = X_sp.toarray()
+    y = rng.integers(2, size=X.shape[0])
+
+    model = getattr(svm, estimator)().fit(X_sp, y)
+    _ = model.predict(X)
+    if is_classifier(model):
+        _ = model.decision_function(X)
 
 
 @pytest.mark.skipif(
