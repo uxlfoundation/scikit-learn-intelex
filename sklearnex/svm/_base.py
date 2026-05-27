@@ -230,6 +230,7 @@ class BaseSVM(oneDALEstimator):
             self._onedal_estimator._onedal_model = None
         self._dual_coef_internal = value
 
+    # Do NOT flip signs here, see earlier comments
     @_dual_coef_.setter
     def _dual_coef_(self, value):
         if hasattr(self, "_onedal_estimator"):
@@ -249,7 +250,6 @@ class BaseSVM(oneDALEstimator):
             self._onedal_estimator.dual_coef_ = None
             self._onedal_estimator._onedal_model = None
 
-    # Do NOT flip signs here, see earlier comments
     @_dual_coef_.deleter
     def _dual_coef_(self):
         if hasattr(self, "_onedal_estimator") and self._is_multi_class_classifier():
