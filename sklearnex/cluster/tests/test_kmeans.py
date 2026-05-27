@@ -14,6 +14,8 @@
 # limitations under the License.
 # ===============================================================================
 
+from contextlib import nullcontext
+
 import numpy as np
 import pandas as pd
 import polars as pl
@@ -167,6 +169,10 @@ def test_dense_vs_sparse(queue, init, algorithm, dims):
     )
 
 
+@pytest.mark.skipif(
+    not sklearn_check_version("1.5"),
+    reason="Functionality introduced in later sklearn versions.",
+)
 @pytest.mark.parametrize("output_format", ["set_output", "config_context"])
 @pytest.mark.parametrize("transform_output", ["polars", "pandas"])
 def test_transform_output_torch(output_format, transform_output):
@@ -268,13 +274,20 @@ def test_cov_error_on_incompatible_devices(with_array_api):
         _ = model.score(X_gpu)
 
 
-@pytest.mark.parametrize("array_api", [False, True])
+@pytest.mark.parametrize(
+    "array_api", [False] + ([True] if sklearn_check_version("1.5") else [])
+)
 def test_sp_predict_on_dense_fit(array_api):
     rng = np.random.default_rng(seed=123)
     X = rng.random(size=(50, 3), dtype=np.float32)
     X_sp = CSR_CTOR(X)
 
-    with config_context(array_api_dispatch=array_api):
+    ctx = (
+        config_context(array_api_dispatch=array_api)
+        if sklearn_check_version("1.5")
+        else nullcontext()
+    )
+    with ctx:
         model = KMeans().fit(X)
         sp_pred = model.predict(X_sp)
         sp_transf = model.transform(X_sp)
