@@ -18,9 +18,14 @@ import numpy as np
 import pandas as pd
 import polars as pl
 import pytest
+import scipy.sparse as sp
 from numpy.testing import assert_allclose
-from scipy.sparse import csr_matrix
 from sklearn.datasets import make_blobs
+
+if hasattr(sp, "csr_array"):
+    CSR_CTOR = sp.csr_array
+else:
+    CSR_CTOR = sp.csr_matrix
 
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
@@ -84,7 +89,7 @@ def test_sklearnex_import_for_sparse_data(queue, algorithm, init):
     from sklearnex.cluster import KMeans
 
     X_dense = generate_dense_dataset(1000, 10, 0.5, 3)
-    X_sparse = csr_matrix(X_dense)
+    X_sparse = CSR_CTOR(X_dense)
 
     kmeans_sparse = KMeans(
         n_clusters=3, random_state=0, algorithm=algorithm, init=init
@@ -143,7 +148,7 @@ def test_dense_vs_sparse(queue, init, algorithm, dims):
     # For higher level of sparsity (smaller density) the test may fail
     n_samples, n_features, density, n_clusters = dims
     X_dense = generate_dense_dataset(n_samples, n_features, density, n_clusters)
-    X_sparse = csr_matrix(X_dense)
+    X_sparse = CSR_CTOR(X_dense)
 
     if init == "arraylike":
         np.random.seed(2024 + n_samples + n_features + n_clusters)
@@ -261,3 +266,24 @@ def test_cov_error_on_incompatible_devices(with_array_api):
         _ = model.transform(X_gpu)
     with pytest.raises(ValueError, match=err_match):
         _ = model.score(X_gpu)
+
+
+@pytest.mark.parametrize("array_api", [False, True])
+def test_sp_predict_on_dense_fit(array_api):
+    rng = np.random.default_rng(seed=123)
+    X = rng.random(size=(50, 3), dtype=np.float32)
+    X_sp = CSR_CTOR(X)
+
+    with config_context(array_api_dispatch=array_api):
+        model = KMeans().fit(X)
+        sp_pred = model.predict(X_sp)
+        sp_transf = model.transform(X_sp)
+        sp_score = model.score(X_sp)
+
+        dense_pred = model.predict(X)
+        dense_transf = model.transform(X)
+        dense_score = model.score(X)
+
+        np.testing.assert_allclose(sp_pred, dense_pred)
+        np.testing.assert_allclose(sp_transf, dense_transf, rtol=1e-4, atol=1e-4)
+        np.testing.assert_allclose(sp_score, dense_score, rtol=1e-6, atol=1e-6)
