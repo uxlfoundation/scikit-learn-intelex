@@ -38,6 +38,8 @@ if sklearn_check_version("1.2"):
 # to avoid overheads by its initialization per each function call
 threadpool_controller = threadpoolctl.ThreadpoolController()
 
+import logging
+
 
 def get_suggested_n_threads(n_cpus):
     """
@@ -46,6 +48,8 @@ def get_suggested_n_threads(n_cpus):
     Usually, limit is equal to `n_logical_cpus` // `n_jobs`.
     Returns None if limit is not set.
     """
+    logger = logging.getLogger("sklearnex")
+    logger.info(f"call to 'get_suggested_n_threads' (n_cpus:{n_cpus})")
 
     # Comment 2025-11-18: as of joblib>=1.5.2, by the point that this section
     # is reached under a joblib job (e.g. as triggered by sklearn metaestimators)
@@ -110,6 +114,10 @@ def _run_with_n_jobs(method):
         if n_jobs is None or n_jobs == 0:
             if n_threads is None:
                 # default branch with no setting for n_jobs
+                logger = logging.getLogger("sklearnex")
+                logger.info(
+                    f"call to 'n_jobs_wrapper' with early return (n_cpus:{n_cpus}) (n_jobs:{n_jobs}) (n_threads:{n_threads})"
+                )
                 return method(self, *args, **kwargs)
             else:
                 n_jobs = n_threads
@@ -120,6 +128,10 @@ def _run_with_n_jobs(method):
                 n_jobs = max(1, n_threads + n_jobs + 1)
         # branch with set n_jobs
         old_n_threads = get_n_threads()
+        logger = logging.getLogger("sklearnex")
+        logger.info(
+            f"call to 'n_jobs_wrapper' (n_cpus:{n_cpus}) (n_jobs:{n_jobs}) (n_threads:{n_threads}) (old_n_threads:{old_n_threads})"
+        )
         if n_jobs == old_n_threads:
             return method(self, *args, **kwargs)
 

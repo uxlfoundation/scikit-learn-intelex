@@ -115,4 +115,12 @@ def test_n_jobs_support(estimator, n_jobs, caplog):
             continue
 
         messages = [msg.message for msg in caplog.records]
+        try:
+            assert _check_n_jobs_entry_in_logs(messages, method_name, n_jobs)
+        except AssertionError:
+            raise ValueError(
+                f"method: {method_name}\n",
+                f"n_jobs: {n_jobs}\n",
+                f"messages: {messages}\n",
+            )
         assert _check_n_jobs_entry_in_logs(messages, method_name, n_jobs)

@@ -444,6 +444,15 @@ def logistic_regression_path_d4p(
 
 
 def daal4py_fit(self, X, y, sample_weight=None):
+    import logging
+
+    from ... import num_threads
+
+    logger = logging.getLogger("sklearnex")
+    logger.info(
+        f"Call to daal4py_fit - current threads: {num_threads()}\n"
+        f"Assigned n_jobs: {self.n_jobs}"
+    )
     which, what = logistic_module, "_logistic_regression_path"
     # Note: as of scikit-learn1.8, 'n_jobs' is deprecated for logistic regression
     # and throws a warning. Their functions still have 'n_threads' as a parameter,
