@@ -385,6 +385,7 @@ def test_error_on_sparse_predict_with_dense_fit(estimator, X_xp, array_api):
     y = rng.integers(2, size=X.shape[0])
 
     X = X_xp.from_dlpack(X)
+    y = X_xp.from_dlpack(y)
 
     with config_context(array_api_dispatch=array_api):
         model = getattr(svm, estimator)().fit(X, y)
