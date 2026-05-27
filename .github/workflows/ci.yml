@@ -133,6 +133,13 @@ jobs:
           source venv/bin/activate
           source .github/scripts/activate_components.sh ${{ steps.set-env.outputs.DPCFLAG }}
           python setup.py install --single-version-externally-managed --record=record.txt
+          ls /home/runner/work/scikit-learn-intelex/scikit-learn-intelex/build/
+          ls /home/runner/work/scikit-learn-intelex/scikit-learn-intelex/build/backend_dpc/
+          ls /home/runner/work/scikit-learn-intelex/scikit-learn-intelex/build/backend_dpc/CMakeFiles/_onedal_py_dpc.dir/
+          ls /home/runner/work/scikit-learn-intelex/scikit-learn-intelex/build/backend_dpc/CMakeFiles/_onedal_py_dpc.dir/home/runner/work/scikit-learn-intelex/scikit-learn-intelex/
+          ls /home/runner/work/scikit-learn-intelex/scikit-learn-intelex/build/backend_dpc/CMakeFiles/_onedal_py_dpc.dir/home/runner/work/scikit-learn-intelex/scikit-learn-intelex/onedal
+          ls /home/runner/work/scikit-learn-intelex/scikit-learn-intelex/build/backend_dpc/CMakeFiles/_onedal_py_dpc.dir/home/runner/work/scikit-learn-intelex/scikit-learn-intelex/onedal/dummy
+          exit 1
       - name: Install testing requirements
         run: |
           source venv/bin/activate
