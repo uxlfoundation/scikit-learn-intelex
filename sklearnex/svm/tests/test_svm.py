@@ -364,10 +364,12 @@ def test_multiple_calls_to_fit():
 # these tests will been to be modified too
 @pytest.mark.parametrize("estimator", ["SVC", "SVR", "NuSVC", "NuSVR"])
 @pytest.mark.parametrize(
-    "X_xp",
-    [np] + ([torch] if torch_available else []) + ([dpnp] if dpnp_available else []),
+    "X_xp, array_api",
+    [(np, False), (np, True), (array_api_strict, False), (array_api_strict, True)]
+    + ([(torch, True)] if torch_available else [])
+    + ([(dpnp, True), (dpnp, False)] if dpnp_available else []),
 )
-def test_error_on_sparse_predict_with_dense_fit(estimator, X_xp, with_array_api):
+def test_error_on_sparse_predict_with_dense_fit(estimator, X_xp, array_api):
     from sklearnex import svm
 
     rng = np.random.default_rng(seed=123)
@@ -380,16 +382,18 @@ def test_error_on_sparse_predict_with_dense_fit(estimator, X_xp, with_array_api)
 
     X = X_xp.from_dlpack(X)
 
-    model = getattr(svm, estimator)().fit(X, y)
-    with pytest.raises(ValueError):
-        model.predict(X_sp)
-    if is_classifier(model):
+    with config_context(array_api_dispatch=array_api):
+        model = getattr(svm, estimator)().fit(X, y)
         with pytest.raises(ValueError):
-            model.decision_function(X_sp)
+            model.predict(X_sp)
+        if is_classifier(model):
+            with pytest.raises(ValueError):
+                model.decision_function(X_sp)
 
 
 @pytest.mark.parametrize("estimator", ["SVC", "SVR", "NuSVC", "NuSVR"])
-def test_dense_predict_on_sparse_fit_works(estimator):
+@pytest.mark.parametrize("array_api", [False, True])
+def test_dense_predict_on_sparse_fit_works(estimator, array_api):
     from sklearnex import svm
 
     rng = np.random.default_rng(seed=123)
@@ -400,10 +404,15 @@ def test_dense_predict_on_sparse_fit_works(estimator):
     X = X_sp.toarray()
     y = rng.integers(2, size=X.shape[0])
 
-    model = getattr(svm, estimator)().fit(X_sp, y)
-    _ = model.predict(X)
-    if is_classifier(model):
-        _ = model.decision_function(X)
+    with config_context(array_api_dispatch=array_api):
+        model = getattr(svm, estimator)().fit(X_sp, y)
+        pred_dense = model.predict(X)
+        pred_sp = model.predict(X_sp)
+        np.testing.assert_allclose(pred_dense, pred_sp)
+        if is_classifier(model):
+            df_dense = model.decision_function(X)
+            df_sp = model.decision_function(X_sp)
+            np.testing.assert_allclose(df_dense, df_sp)
 
 
 @pytest.mark.skipif(
