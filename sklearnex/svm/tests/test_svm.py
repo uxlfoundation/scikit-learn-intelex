@@ -335,10 +335,14 @@ def test_multi_class_prediction_after_fallback(decision_function_shape):
     w[0] = -1.0
 
     model = SVC(decision_function_shape=decision_function_shape).fit(X, y, w)
+    assert not hasattr(model, "_onedal_estimator")
+
     pred = model.predict(X)
+    assert not hasattr(model, "_onedal_estimator")
     assert np.unique(pred).shape[0] == 3
 
     decision_fn = model.decision_function(X)
+    assert not hasattr(model, "_onedal_estimator")
     assert decision_fn.shape[0] == X.shape[0]
     assert decision_fn.shape[1] == 3
 
