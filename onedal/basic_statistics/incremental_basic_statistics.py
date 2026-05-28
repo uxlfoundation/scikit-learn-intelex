@@ -113,7 +113,7 @@ class IncrementalBasicStatistics(BasicStatistics):
 
         dtype : np.dtype
             DType of 'X', as a NumPy dtype or as otherwise a class that
-            would be recognize by the pybind11 module.
+            would be recognized by the pybind11 module.
 
         sample_weight : array-like of shape (n_samples,), default=None
             Individual weights for each sample.
