@@ -370,7 +370,12 @@ def test_multiple_calls_to_fit():
 @pytest.mark.parametrize("estimator", ["SVC", "SVR", "NuSVC", "NuSVR"])
 @pytest.mark.parametrize(
     "X_xp, array_api",
-    [(np, False), (np, True), (array_api_strict, False), (array_api_strict, True)]
+    [(np, False), (np, True)]
+    + (
+        [(array_api_strict, False), (array_api_strict, True)]
+        if _package_check_version("2.0", np.__version__)
+        else []
+    )
     + ([(torch, True)] if torch_available else [])
     + ([(dpnp, True), (dpnp, False)] if dpnp_available else []),
 )
