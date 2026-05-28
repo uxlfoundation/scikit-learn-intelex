@@ -277,7 +277,7 @@ def test_cov_error_on_incompatible_devices(with_array_api):
 @pytest.mark.parametrize(
     "array_api", [False] + ([True] if sklearn_check_version("1.5") else [])
 )
-def test_sp_predict_on_dense_fit(array_api):
+def test_sparse_predict_on_dense_fit(array_api):
     rng = np.random.default_rng(seed=123)
     X = rng.random(size=(50, 3), dtype=np.float32)
     X_sp = CSR_CTOR(X)
