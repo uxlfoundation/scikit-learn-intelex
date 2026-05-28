@@ -28,9 +28,12 @@ if [ "$sklearn_version" == "main" ]; then
     sed -i.bak -E "s/scikit-learn==[0-9a-zA-Z.]*/scikit-learn/" requirements-test.txt
     # install sklearn build dependencies
     pip install threadpoolctl joblib scipy
-    # install sklearn from main branch of git repo
-    unset CC CXX CFLAGS CXXFLAGS LDFLAGS MAKEFLAGS 
-    pip install git+https://github.com/scikit-learn/scikit-learn.git@main
+    # Install latest scikit-learn nightly wheel
+    pip install --pre --extra-index https://pypi.anaconda.org/scientific-python-nightly-wheels/simple scikit-learn
+    # Alternatively, to build it from source from their latest main branch, or
+    # when testing with builds against forks, replace the above with these lines:
+    # unset CC CXX CFLAGS CXXFLAGS LDFLAGS MAKEFLAGS 
+    # pip install git+https://github.com/scikit-learn/scikit-learn.git@main
 else
     sed -i.bak -E "s/scikit-learn==[0-9a-zA-Z.]*/scikit-learn==${sklearn_version}.*/" requirements-test.txt
 fi
