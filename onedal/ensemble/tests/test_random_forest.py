@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import itertools
 
 import numpy as np
 import pytest
@@ -20,7 +21,12 @@ from numpy.testing import assert_allclose
 from sklearn.datasets import make_classification, make_regression
 
 from daal4py.sklearn._utils import daal_check_version
-from onedal.ensemble import RandomForestClassifier, RandomForestRegressor
+from onedal.ensemble import (
+    ExtraTreesRegressor,
+    ExtraTreesClassifier,
+    RandomForestClassifier,
+    RandomForestRegressor,
+)
 from onedal.tests.utils._device_selection import get_queues
 
 PREDICT_DATA = np.array([[0, 0, 0, 0]], dtype=np.float64)
@@ -63,6 +69,34 @@ def test_rf_regression(queue):
             assert_allclose([-6.97], rf.predict(PREDICT_DATA, queue=queue), atol=1e-2)
         else:
             assert_allclose([-6.83], rf.predict(PREDICT_DATA, queue=queue), atol=1e-2)
+
+
+@pytest.mark.skipif(
+    not daal_check_version((2023, "P", 200)),
+    reason="ExtraTrees requires OneDAL 2023.2",
+)
+@pytest.mark.parametrize("queue", get_queues())
+@pytest.mark.parametrize("Tree, data", [
+    *itertools.product([
+        [RandomForestRegressor, ExtraTreesRegressor],
+        [make_regression(n_samples=500, n_features=10, random_state=0)]
+    ]),
+    *itertools.product([
+        [RandomForestClassifier, ExtraTreesClassifier],
+        [make_classification(n_samples=500, n_features=10, random_state=0)]
+    ]),
+])
+def test_single_tree_fits_training_data(queue, Tree, data):
+    X, y = data
+    regressor = Tree(
+        n_estimators=1,
+        bootstrap=False,
+        max_bins=X.shape[0],
+        random_state=0,
+    ).fit(X, y, queue=queue)
+
+    prediction = regressor.predict(X, queue=queue)
+    assert_allclose(prediction, y, atol=1e-12)
 
 
 @pytest.mark.skipif(
