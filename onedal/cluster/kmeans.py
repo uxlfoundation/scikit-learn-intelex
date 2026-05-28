@@ -33,12 +33,11 @@ from sklearn.exceptions import ConvergenceWarning
 from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.utils import check_random_state
 
-from ..common._mixin import ClusterMixin, TransformerMixin
 from ..datatypes import from_table, return_type_constructor, to_table
 from ..utils.validation import _is_arraylike_not_scalar, _is_csr
 
 
-class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
+class _BaseKMeans(ABC):
     def __init__(
         self,
         n_clusters,

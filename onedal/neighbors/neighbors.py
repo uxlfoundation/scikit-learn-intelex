@@ -21,7 +21,6 @@ from onedal.common._backend import bind_default_backend
 from onedal.utils import _sycl_queue_manager as QM
 
 from ..common._estimator_checks import _check_is_fitted, _is_classifier
-from ..common._mixin import ClassifierMixin, RegressorMixin
 from ..datatypes import from_table, to_table
 
 
@@ -166,7 +165,7 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         return indices
 
 
-class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
+class KNeighborsClassifier(NeighborsBase):
     def __init__(
         self,
         n_neighbors=5,
@@ -224,7 +223,7 @@ class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
         return self._kneighbors(X, n_neighbors, return_distance)
 
 
-class KNeighborsRegressor(NeighborsBase, RegressorMixin):
+class KNeighborsRegressor(NeighborsBase):
     def __init__(
         self,
         n_neighbors=5,
