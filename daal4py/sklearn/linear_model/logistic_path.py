@@ -469,7 +469,7 @@ def daal4py_fit(self, X, y, sample_weight=None):
         clf = LogisticRegression_original.fit(self, X, y, sample_weight)
     finally:
         setattr(which, what, lr_path_original)
-        if (not sklearn_check_version("1.10")) and sklearn_check_version("1.8"):
+        if sklearn_check_version("1.8"):
             self.n_jobs = n_jobs
     return clf
 
