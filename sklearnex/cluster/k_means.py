@@ -24,6 +24,7 @@ if daal_check_version((2023, "P", 200)):
     import warnings
 
     import numpy as np
+    from scipy.sparse import issparse
     from sklearn.cluster import KMeans as _sklearn_KMeans
     from sklearn.exceptions import ConvergenceWarning
     from sklearn.metrics.pairwise import (
@@ -385,10 +386,6 @@ if daal_check_version((2023, "P", 200)):
                 )
 
         def _onedal_predict(self, X, sample_weight=None, queue=None):
-            if sklearn_check_version("1.9"):
-                check_same_namespace(
-                    X, self, attribute="cluster_centers_", method="predict"
-                )
             xp, _ = get_namespace(X)
             X = validate_data(
                 self,
@@ -397,6 +394,15 @@ if daal_check_version((2023, "P", 200)):
                 reset=False,
                 dtype=[xp.float64, xp.float32],
             )
+            if sklearn_check_version("1.9"):
+                # Note: this errors out in scikit-learn, but is supported by oneDAL.
+                # The 'if' part can be removed once issue is fixed in sklearn side:
+                # https://github.com/scikit-learn/scikit-learn/issues/34132
+                # But note that this won't work for array API classes on CPU
+                if not (isinstance(self.cluster_centers_, np.ndarray) and issparse(X)):
+                    check_same_namespace(
+                        X, self, attribute="cluster_centers_", method="predict"
+                    )
             return self._onedal_estimator.predict(X, queue=queue)
 
         def _onedal_supported(self, method_name, *data):
@@ -455,10 +461,6 @@ if daal_check_version((2023, "P", 200)):
             )
 
         def _onedal_transform(self, X, queue=None):
-            if sklearn_check_version("1.9"):
-                check_same_namespace(
-                    X, self, attribute="cluster_centers_", method="transform"
-                )
             xp, is_array_api = get_namespace(X)
             X = validate_data(
                 self,
@@ -469,6 +471,11 @@ if daal_check_version((2023, "P", 200)):
                 order="C",
                 accept_large_sparse=False,
             )
+            if sklearn_check_version("1.9"):
+                if not (isinstance(self.cluster_centers_, np.ndarray) and issparse(X)):
+                    check_same_namespace(
+                        X, self, attribute="cluster_centers_", method="transform"
+                    )
 
             if is_array_api:
                 centers = xp.asarray(self.cluster_centers_)
@@ -500,10 +507,6 @@ if daal_check_version((2023, "P", 200)):
             )
 
         def _onedal_score(self, X, y=None, sample_weight=None, queue=None):
-            if sklearn_check_version("1.9"):
-                check_same_namespace(
-                    X, self, attribute="cluster_centers_", method="score"
-                )
             xp, _ = get_namespace(X)
             X = validate_data(
                 self,
@@ -512,6 +515,11 @@ if daal_check_version((2023, "P", 200)):
                 reset=False,
                 dtype=[xp.float64, xp.float32],
             )
+            if sklearn_check_version("1.9"):
+                if not (isinstance(self.cluster_centers_, np.ndarray) and issparse(X)):
+                    check_same_namespace(
+                        X, self, attribute="cluster_centers_", method="score"
+                    )
             return self._onedal_estimator.score(X, queue=queue)
 
         def _save_attributes(self):
