@@ -19,7 +19,6 @@ import pytest
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 from scipy import sparse as sp
 
-from onedal.common._mixin import ClassifierMixin
 from onedal.svm import SVC
 from onedal.tests.utils._device_selection import (
     get_queues,
@@ -59,14 +58,11 @@ def check_svm_model_equal(
             dense_svm.predict(X_test_dense), sparse_svm.predict(X_test)
         )
 
-        if isinstance(dense_svm, ClassifierMixin) and isinstance(
-            sparse_svm, ClassifierMixin
-        ):
-            assert_array_almost_equal(
-                dense_svm.decision_function(X_test_dense),
-                sparse_svm.decision_function(X_test),
-                decimal,
-            )
+        assert_array_almost_equal(
+            dense_svm.decision_function(X_test_dense),
+            sparse_svm.decision_function(X_test),
+            decimal,
+        )
 
 
 def _test_simple_dataset(queue, kernel):
