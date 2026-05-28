@@ -37,5 +37,3 @@ def _check_is_fitted(estimator, attributes=None, *, msg=None):
 
     if not attrs:
         raise AttributeError(msg % {"name": type(estimator).__name__})
-
-
