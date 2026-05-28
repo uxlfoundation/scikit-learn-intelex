@@ -56,7 +56,6 @@ Classification
      - ``probability=True`` is not supported with array API classes other than NumPy.
        It's not possible to get accelerated predictions out of a multi-class classifier
        that was fitted by falling back to scikit-learn.
-   * - :obj:`sklearn.svm.NuSVC`
    * - :obj:`sklearn.ensemble.RandomForestClassifier`
      - All parameters are supported except:
 
