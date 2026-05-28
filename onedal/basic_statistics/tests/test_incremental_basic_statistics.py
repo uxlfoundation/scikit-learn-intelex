@@ -86,9 +86,7 @@ def test_single_option_on_random_data(
 
     for i in range(num_batches):
         if weighted:
-            incbs.partial_fit(
-                data_split[i], weights_split[i], queue=queue
-            )
+            incbs.partial_fit(data_split[i], weights_split[i], queue=queue)
         else:
             incbs.partial_fit(data_split[i], queue=queue)
     result = incbs.finalize_fit()
@@ -126,9 +124,7 @@ def test_multiple_options_on_random_data(
 
     for i in range(num_batches):
         if weighted:
-            incbs.partial_fit(
-                data_split[i], weights_split[i], queue=queue
-            )
+            incbs.partial_fit(data_split[i], weights_split[i], queue=queue)
         else:
             incbs.partial_fit(data_split[i], queue=queue)
     result = incbs.finalize_fit()
@@ -176,9 +172,7 @@ def test_all_option_on_random_data(
 
     for i in range(num_batches):
         if weighted:
-            incbs.partial_fit(
-                data_split[i], weights_split[i], queue=queue
-            )
+            incbs.partial_fit(data_split[i], weights_split[i], queue=queue)
         else:
             incbs.partial_fit(data_split[i], queue=queue)
     result = incbs.finalize_fit()
