@@ -36,5 +36,6 @@ def _check_is_fitted(estimator, attributes=None, *, msg=None):
         attrs = [v for v in vars(estimator) if v.endswith("_") and not v.startswith("__")]
 
     if not attrs:
-        raise AttributeError(msg % {"name": type(estimator).__name__}
+        raise AttributeError(msg % {"name": type(estimator).__name__})
+
 
