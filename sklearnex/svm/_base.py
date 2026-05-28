@@ -810,7 +810,10 @@ class BaseSVC(BaseSVM):
             )
 
         if sklearn_check_version("1.1"):
-            self.n_iter_ = xp.full((length,), self._onedal_estimator.n_iter_)
+            if hasattr(self._onedal_estimator.n_iter_, "shape"):
+                self.n_iter_ = xp.reshape(self._onedal_estimator.n_iter_, (-1,))
+            else:
+                self.n_iter_ = xp.full((length,), self._onedal_estimator.n_iter_)
 
     def _onedal_predict(self, X, queue=None, method_name="predict"):
 
@@ -1087,7 +1090,10 @@ class BaseSVR(BaseSVM):
             self._probB = None
 
         if sklearn_check_version("1.1"):
-            self.n_iter_ = self._onedal_estimator.n_iter_
+            if hasattr(self._onedal_estimator.n_iter_, "shape"):
+                self.n_iter_ = int(xp.reshape(self._onedal_estimator.n_iter_, (-1,))[0])
+            else:
+                self.n_iter_ = self._onedal_estimator.n_iter_
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
         return r2_score(
