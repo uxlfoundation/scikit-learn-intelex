@@ -77,25 +77,29 @@ def test_rf_regression(queue):
 )
 @pytest.mark.parametrize("queue", get_queues())
 @pytest.mark.parametrize("Tree, data", [
-    *itertools.product([
+    *itertools.product(
         [RandomForestRegressor, ExtraTreesRegressor],
         [make_regression(n_samples=500, n_features=10, random_state=0)]
-    ]),
-    *itertools.product([
+    ),
+    *itertools.product(
         [RandomForestClassifier, ExtraTreesClassifier],
         [make_classification(n_samples=500, n_features=10, random_state=0)]
-    ]),
+    ),
 ])
 def test_single_tree_fits_training_data(queue, Tree, data):
     X, y = data
-    regressor = Tree(
+    model = Tree(
         n_estimators=1,
         bootstrap=False,
         max_bins=X.shape[0],
         random_state=0,
-    ).fit(X, y, queue=queue)
+    )
+    if isinstance(model, (RandomForestClassifier, ExtraTreesClassifier)):
+        model.fit(X, y, queue=queue, class_count=2)
+    else:
+        model.fit(X, y, queue=queue)
 
-    prediction = regressor.predict(X, queue=queue)
+    prediction = model.predict(X, queue=queue)
     assert_allclose(prediction, y, atol=1e-12)
 
 
