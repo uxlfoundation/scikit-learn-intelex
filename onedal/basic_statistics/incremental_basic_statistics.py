@@ -102,7 +102,7 @@ class IncrementalBasicStatistics(BasicStatistics):
         return data
 
     @supports_queue
-    def partial_fit(self, X, dtype, sample_weight=None, queue=None):
+    def partial_fit(self, X, sample_weight=None, queue=None):
         """Generate partial statistics from batch data in `_partial_result`.
 
         Parameters
@@ -110,10 +110,6 @@ class IncrementalBasicStatistics(BasicStatistics):
         X : array-like of shape (n_samples, n_features)
             Training data batch, where `n_samples` is the number of samples
             in the batch, and `n_features` is the number of features.
-
-        dtype : np.dtype
-            DType of 'X', as a NumPy dtype or as otherwise a class that
-            would be recognized by the pybind11 module.
 
         sample_weight : array-like of shape (n_samples,), default=None
             Individual weights for each sample.
@@ -135,7 +131,7 @@ class IncrementalBasicStatistics(BasicStatistics):
         X_table, sample_weight_table = to_table(X, sample_weight, queue=queue)
 
         if not hasattr(self, "_onedal_params"):
-            self._onedal_params = self._get_onedal_params(False, dtype=dtype)
+            self._onedal_params = self._get_onedal_params(False, dtype=X_table.dtype)
 
         self._partial_result = self.partial_compute(
             self._onedal_params, self._partial_result, X_table, sample_weight_table
