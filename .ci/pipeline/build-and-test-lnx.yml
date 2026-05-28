@@ -17,32 +17,38 @@ steps:
   - script: sudo apt-get update
     displayName: "apt-get"
   - script: |
-      bash .ci/scripts/install_dpcpp.sh
-    condition: and(eq(variables.NO_DPC, ''), eq(variables.DPCPPROOT, ''))
-    displayName: "dpcpp installation"
-  - script: |
-      source /opt/intel/oneapi/compiler/latest/env/vars.sh
-      bash .ci/scripts/describe_system.sh
-    displayName: "System info"
-  - script: |
       # set defaults to guarantee use of conda-forge
       echo -e "default_channels:\n  - https://conda.anaconda.org/conda-forge" >> ~/.condarc
       conda config --add channels conda-forge
       conda config --set channel_priority strict
       conda update -y -q conda
-      conda create -q -y -n CB -c conda-forge python=$(PYTHON_VERSION) mpich pyyaml
+      conda create -q -y -n CB -c conda-forge python=$(PYTHON_VERSION) mpich pyyaml pip setuptools wheel
     displayName: "Conda create"
   - script: |
       . /usr/share/miniconda/etc/profile.d/conda.sh
       conda activate CB
-      if [ -z "${DALROOT}" ]; then conda install -q -y -c conda-forge "dal-devel>=2025.6.1"; fi
+      # DPC builds need dal-devel (pulls dal, dal-include, dal-gpu, mkl-dpcpp) plus the dpcpp compiler; CPU-only builds need just dal + dal-include.
+      # TODO: mkl-dpcpp is requested explicitly to nudge the solver toward the dal-gpu build that lists it as a runtime dep; remove once dal-gpu2026.1 is released in conda-forge
+      if [ -z "${DALROOT}" ]; then
+        if [ -z "${NO_DPC}" ]; then
+          conda install -q -y -c conda-forge dal-devel mkl-dpcpp dpcpp_linux-64=$DPCPP_VERSION
+        else
+          conda install -q -y -c conda-forge dal dal-include
+        fi
+      fi
       pip install -r dependencies-dev
       conda list
     env:
+      NO_DPC: ${{ variables.NO_DPC }}
       DALROOT: ${{ variables.DALROOT }}
+      DPCPP_VERSION: 2026.0.0
     displayName: "Install develop requirements"
   - script: |
-      if [ -z "${DPCPPROOT}" ]; then export DPCPPROOT=/opt/intel/oneapi/compiler/latest; fi
+      . /usr/share/miniconda/etc/profile.d/conda.sh
+      conda activate CB
+      bash .ci/scripts/describe_system.sh
+    displayName: "System info"
+  - script: |
       . /usr/share/miniconda/etc/profile.d/conda.sh
       conda activate CB
       if [ -z "${DALROOT}" ]; then export DALROOT=$CONDA_PREFIX; fi
@@ -59,15 +65,13 @@ steps:
       bash .ci/scripts/setup_sklearn.sh $(SKLEARN_VERSION)
       pip install --upgrade -r requirements-test.txt
       pip install $(python .ci/scripts/get_compatible_scipy_version.py)
-      # dpep installation is set to pypi to avoid conflict of numpy versions from pip and conda
-      if [ $(echo $(PYTHON_VERSION) | grep '3.10\|3.11\|3.12\|3.13') ] && [ $(SKLEARN_VERSION) != "1.0" ] && [ -z ${NO_DPC} ]; then pip install dpctl==$DPCTL_VERSION dpnp==$DPNP_VERSION; fi
-      if [ -z "${NO_DPC}" ]; then pip install dpcpp-cpp-rt==$DPCPP_RT_VERSION; fi
+      # TODO: drop the intel python channel once dpnp is published on conda-forge, and drop the PYTHON_VERSION guard once dpctl ships a py3.14 build.
+      if [ $(echo $(PYTHON_VERSION) | grep '3.10\|3.11\|3.12\|3.13') ] && [ $(SKLEARN_VERSION) != "1.0" ] && [ -z ${NO_DPC} ]; then conda install -q -y -c conda-forge -c https://software.repos.intel.com/python/conda/ dpctl=$DPCTL_VERSION dpnp=$DPNP_VERSION; fi
       conda list
     env:
       NO_DPC: ${{ variables.NO_DPC }}
-      DPCTL_VERSION: 0.21.1
-      DPNP_VERSION: 0.19.1
-      DPCPP_RT_VERSION: 2025.3.3
+      DPCTL_VERSION: 0.22.1
+      DPNP_VERSION: 0.20.0
     displayName: "Install testing requirements"
   - script: |
       . /usr/share/miniconda/etc/profile.d/conda.sh
@@ -79,6 +83,7 @@ steps:
     env:
       TBBROOT: ${{ variables.TBBROOT }}
       COVERAGE_RCFILE: ${{ variables.COVERAGE_RCFILE }}
+      NO_DPC: ${{ variables.NO_DPC }}
       NO_DIST: 1
     displayName: "Sklearnex testing"
   - script: |
