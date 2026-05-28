@@ -56,80 +56,6 @@ def _is_arraylike_not_scalar(array):
     return _is_arraylike(array) and not np.isscalar(array)
 
 
-def _column_or_1d(y, warn=False):
-    y = np.asarray(y)
-
-    # TODO: Convert this kind of arrays to a table like in daal4py
-    if not y.flags.aligned and not y.flags.writeable:
-        y = np.array(y.tolist())
-
-    shape = np.shape(y)
-    if len(shape) == 1:
-        return np.ravel(y)
-    if len(shape) == 2 and shape[1] == 1:
-        if warn:
-            warnings.warn(
-                "A column-vector y was passed when a 1d array was"
-                " expected. Please change the shape of y to "
-                "(n_samples, ), for example using ravel().",
-                DataConversionWarning,
-                stacklevel=2,
-            )
-        return np.ravel(y)
-
-    raise ValueError(
-        "y should be a 1d array, " "got an array of shape {} instead.".format(shape)
-    )
-
-
-def _compute_class_weight(class_weight, classes, y):
-    if set(y) - set(classes):
-        raise ValueError("classes should include all valid labels that can " "be in y")
-    if class_weight is None or len(class_weight) == 0:
-        weight = np.ones(classes.shape[0], dtype=np.float64, order="C")
-    elif class_weight == "balanced":
-        y_ = _column_or_1d(y)
-        classes, _ = np.unique(y_, return_inverse=True)
-
-        le = LabelEncoder()
-        y_ind = le.fit_transform(y_)
-        if not np.isin(classes, le.classes_).all():
-            raise ValueError("classes should have valid labels that are in y")
-
-        y_bin = np.bincount(y_ind).astype(np.float64)
-        weight = len(y_) / (len(le.classes_) * y_bin)
-    else:
-        # user-defined dictionary
-        weight = np.ones(classes.shape[0], dtype=np.float64, order="C")
-        if not isinstance(class_weight, dict):
-            raise ValueError(
-                "class_weight must be dict, 'balanced', or None,"
-                " got: %r" % class_weight
-            )
-        for c in class_weight:
-            i = np.searchsorted(classes, c)
-            if i >= len(classes) or classes[i] != c:
-                raise ValueError("Class label {} not present.".format(c))
-            weight[i] = class_weight[c]
-
-    return weight
-
-
-def _validate_targets(y, class_weight, dtype):
-    y_ = _column_or_1d(y, warn=True)
-    _check_classification_targets(y)
-    classes, y = np.unique(y_, return_inverse=True)
-    class_weight_res = _compute_class_weight(class_weight, classes=classes, y=y_)
-
-    if len(classes) < 2:
-        raise ValueError(
-            "The number of classes has to be greater than one; got %d"
-            " class" % len(classes)
-        )
-
-    return np.asarray(y, dtype=dtype, order="C"), class_weight_res, classes
-
-
 def get_finite_keyword():
     """Return scikit-learn-matching finite check enabling keyword.
 
@@ -185,54 +111,6 @@ def _check_array(
     if sp.issparse(array):
         return array
     return array
-
-
-def _check_X_y(
-    X,
-    y,
-    dtype="numeric",
-    accept_sparse=False,
-    order=None,
-    copy=False,
-    force_all_finite=True,
-    ensure_2d=True,
-    accept_large_sparse=True,
-    y_numeric=False,
-    accept_2d_y=False,
-):
-    if y is None:
-        raise ValueError("y cannot be None")
-
-    X = _check_array(
-        X,
-        accept_sparse=accept_sparse,
-        dtype=dtype,
-        order=order,
-        copy=copy,
-        force_all_finite=force_all_finite,
-        ensure_2d=ensure_2d,
-        accept_large_sparse=accept_large_sparse,
-    )
-
-    if not accept_2d_y:
-        y = _column_or_1d(y, warn=True)
-    else:
-        y = np.ascontiguousarray(y)
-
-    if y_numeric and y.dtype.kind == "O":
-        y = y.astype(np.float64)
-    if force_all_finite:
-        _daal4py_assert_all_finite(y)
-
-    lengths = [X.shape[0], y.shape[0]]
-    uniques = np.unique(lengths)
-    if len(uniques) > 1:
-        raise ValueError(
-            "Found input variables with inconsistent numbers of"
-            " samples: %r" % [int(length) for length in lengths]
-        )
-
-    return X, y
 
 
 def _check_classification_targets(y):
