@@ -37,4 +37,13 @@ IF DEFINED DPCPPROOT (
     call "%DPCPPROOT%\env\vars.bat"
 )
 
-%PYTHON% setup.py install --single-version-externally-managed --record record.txt
+rem Inside conda-build %SRC_DIR% is set: stage files for pack.bat to claim
+rem per output. Direct invocation (build-and-test-win.yml): install in-place.
+IF NOT "%SRC_DIR%"=="" (
+    set "SKLEARNEX_STAGE=%SRC_DIR%\__sklearnex_stage"
+    if exist "%SRC_DIR%\__sklearnex_stage" rmdir /s /q "%SRC_DIR%\__sklearnex_stage"
+    mkdir "%SRC_DIR%\__sklearnex_stage"
+    %PYTHON% setup.py install --single-version-externally-managed --record "%SRC_DIR%\__sklearnex_stage\record.txt" --root "%SRC_DIR%\__sklearnex_stage"
+) ELSE (
+    %PYTHON% setup.py install --single-version-externally-managed --record record.txt
+)

@@ -77,6 +77,7 @@ outputs:
       ignore_run_exports_from:
         - {{ compiler('dpcpp') }}  # [linux64]
     script: pack.sh  # [linux]
+    script: pack.bat  # [win]
     requirements:
       build:
         - make  # [linux]
@@ -121,7 +122,7 @@ outputs:
         # CPU host backend must be present.
         - python -c "import onedal._onedal_py_host"
         # DPC backend must NOT be in the CPU package.
-        - python -c "import onedal, os, glob; assert not glob.glob(os.path.join(os.path.dirname(onedal.__file__), '_onedal_py_dpc*')), 'DPC backend leaked into CPU package'"  # [linux]
+        - python -c "import onedal, os, glob; d = os.path.dirname(onedal.__file__); assert not glob.glob(os.path.join(d, '_onedal_py_dpc*')) and not glob.glob(os.path.join(d, '_onedal_py_spmd_dpc*')), 'DPC backend leaked into CPU package'"  # [linux]
     about:
       summary: Extension for Scikit-learn* (CPU runtime) is a seamless way to speed up your Scikit-learn application.
 

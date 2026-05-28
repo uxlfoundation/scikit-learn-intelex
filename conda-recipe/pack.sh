@@ -84,8 +84,10 @@ case "${PKG_NAME}" in
             cp -P "${so}" "${TARGET_ONEDAL}/"
             found_spmd=1
         done
-        if [ "${found_dpc}" = "0" ] || [ "${found_spmd}" = "0" ]; then
-            echo "pack.sh: missing DPC backend .so files in ${STAGED_ONEDAL} (dpc=${found_dpc}, spmd=${found_spmd})" >&2
+        # SPMD backend is only built when NO_DIST is unset (setup.py gates
+        # _onedal_py_spmd_dpc on build_distributed).
+        if [ "${found_dpc}" = "0" ] || { [ -z "${NO_DIST}" ] && [ "${found_spmd}" = "0" ]; }; then
+            echo "pack.sh: missing DPC backend .so files in ${STAGED_ONEDAL} (dpc=${found_dpc}, spmd=${found_spmd}, NO_DIST=${NO_DIST})" >&2
             echo "pack.sh: the top-level build did not produce a full DPC backend — check DPCPPROOT and compiler detection in setup.py" >&2
             exit 1
         fi
