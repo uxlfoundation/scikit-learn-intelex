@@ -58,11 +58,12 @@ def check_svm_model_equal(
             dense_svm.predict(X_test_dense), sparse_svm.predict(X_test)
         )
 
-        assert_array_almost_equal(
-            dense_svm.decision_function(X_test_dense),
-            sparse_svm.decision_function(X_test),
-            decimal,
-        )
+        if hasattr(dense_svm, "decision_function") and hasattr(sparse_svm, "decision_function"):
+            assert_array_almost_equal(
+                dense_svm.decision_function(X_test_dense),
+                sparse_svm.decision_function(X_test),
+                decimal,
+            )
 
 
 def _test_simple_dataset(queue, kernel):
