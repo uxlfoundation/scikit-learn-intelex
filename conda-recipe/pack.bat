@@ -1,6 +1,6 @@
 @echo off
-rem ============================================================================
-rem Copyright 2026 Intel Corporation
+rem ==============================================================================
+rem Copyright Contributors to the oneDAL Project
 rem
 rem Licensed under the Apache License, Version 2.0 (the "License");
 rem you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@ rem distributed under the License is distributed on an "AS IS" BASIS,
 rem WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 rem See the License for the specific language governing permissions and
 rem limitations under the License.
-rem ============================================================================
+rem ==============================================================================
 
 rem Per-output packager for the scikit-learn-intelex conda split (Windows).
 rem Mirrors pack.sh: top-level bld.bat staged the install under
@@ -75,3 +75,4 @@ IF /I "%PKG_NAME%"=="scikit-learn-intelex-gpu" (
 
 echo pack.bat: unknown PKG_NAME='%PKG_NAME%' 1>&2
 exit /b 1
+\r
