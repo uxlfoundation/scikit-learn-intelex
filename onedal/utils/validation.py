@@ -33,7 +33,6 @@ else:
     from numpy import VisibleDeprecationWarning
 
 from sklearn.preprocessing import LabelEncoder
-from sklearn.utils.validation import check_array
 
 from daal4py.sklearn.utils.validation import (
     _assert_all_finite as _daal4py_assert_all_finite,
@@ -146,45 +145,6 @@ def get_finite_keyword():
     if "ensure_all_finite" in inspect.signature(check_array).parameters:
         return "ensure_all_finite"
     return "force_all_finite"
-
-
-def _check_array(
-    array,
-    dtype="numeric",
-    accept_sparse=False,
-    order=None,
-    copy=False,
-    force_all_finite=True,
-    ensure_2d=True,
-    accept_large_sparse=True,
-    _finite_keyword=get_finite_keyword(),
-):
-    if force_all_finite:
-        if sp.issparse(array):
-            if hasattr(array, "data"):
-                _daal4py_assert_all_finite(array.data)
-                force_all_finite = False
-        else:
-            _daal4py_assert_all_finite(array)
-            force_all_finite = False
-    check_kwargs = {
-        "array": array,
-        "dtype": dtype,
-        "accept_sparse": accept_sparse,
-        "order": order,
-        "copy": copy,
-        "ensure_2d": ensure_2d,
-        "accept_large_sparse": accept_large_sparse,
-    }
-    check_kwargs[_finite_keyword] = force_all_finite
-
-    array = check_array(
-        **check_kwargs,
-    )
-
-    if sp.issparse(array):
-        return array
-    return array
 
 
 def _check_X_y(
