@@ -443,9 +443,12 @@ class KNeighborsDispatchingBase(oneDALEstimator):
 
         if not isinstance(X, (KDTree, BallTree, _sklearn_NeighborsBase)):
             xp, _ = get_namespace(X)
-            params = {"dtype" : [xp.float64, xp.float32],
-                      "accept_sparse" : True,
-                      _finite_keyword : False}
+            params = {
+                "dtype": [xp.float64, xp.float32],
+                "accept_sparse": True,
+                _finite_keyword: False,
+            }
+            
             self._fit_X = check_array(X, **params)
             self.n_samples_fit_ = _num_samples(self._fit_X)
             self.n_features_in_ = _num_features(self._fit_X)
