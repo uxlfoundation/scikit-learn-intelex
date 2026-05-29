@@ -505,7 +505,9 @@ class build(onedal_build, orig_build.build):
 
 project_urls = {
     "Bug Tracker": "https://github.com/uxlfoundation/scikit-learn-intelex/issues",
+    "Changelog": "https://github.com/uxlfoundation/scikit-learn-intelex/releases",
     "Documentation": "https://uxlfoundation.github.io/scikit-learn-intelex/",
+    "Examples": "https://uxlfoundation.github.io/scikit-learn-intelex/latest/samples.html",
     "Source Code": "https://github.com/uxlfoundation/scikit-learn-intelex",
 }
 
