@@ -448,7 +448,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                 "accept_sparse": True,
                 _finite_keyword: False,
             }
-            
+
             self._fit_X = check_array(X, **params)
             self.n_samples_fit_ = _num_samples(self._fit_X)
             self.n_features_in_ = _num_features(self._fit_X)
