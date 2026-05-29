@@ -30,7 +30,6 @@ if daal_check_version((2023, "P", 200)):
 
 from sklearn.cluster._kmeans import _kmeans_plusplus
 from sklearn.exceptions import ConvergenceWarning
-from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.utils import check_random_state
 
 from ..datatypes import from_table, return_type_constructor, to_table
