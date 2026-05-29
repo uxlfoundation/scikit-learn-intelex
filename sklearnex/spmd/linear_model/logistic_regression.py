@@ -32,7 +32,7 @@ class LogisticRegression(LogisticRegression_Batch):
     def _error_out_on_incompatible_devices(self, X, method_name: str) -> None:
         # custom function in LogisticRegression which will trigger for cpu data
         raise RuntimeError("Executing functions from SPMD backend requires a queue")
-    
+
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
         raise RuntimeError(
             "score method is not supported for LogisticRegression SPMD estimator."
