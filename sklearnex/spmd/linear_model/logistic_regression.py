@@ -31,12 +31,11 @@ class LogisticRegression(LogisticRegression_Batch):
             )
         return super()._onedal_fit(X, y, sample_weight=sample_weight, queue=queue)
 
-    def _onedal_predict(self, X, queue=None):
-        if queue is None or queue.sycl_device.is_cpu:
-            raise RuntimeError(
-                "Executing functions from SPMD backend requires a queue"
-            )
-        return super()._onedal_predict(X, queue=queue)
+    def _error_out_on_incompatible_devices(self, X, method_name: str) -> None:
+        # custom function in LogisticRegression which will trigger for cpu data
+        raise RuntimeError(
+            "Executing functions from SPMD backend requires a queue"
+        )
     
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
         raise RuntimeError(
