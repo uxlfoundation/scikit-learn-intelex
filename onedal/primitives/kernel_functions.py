@@ -25,25 +25,16 @@ from ..datatypes import from_table, to_table
 from ..utils.validation import _check_array
 
 
-def _check_inputs(X, Y):
-    def check_input(data):
-        return _check_array(data, dtype=[np.float64, np.float32], force_all_finite=False)
-
-    X = check_input(X)
-    Y = X if Y is None else check_input(Y)
-    return X, Y
-
-
 def _compute_kernel(params, submodule, X, Y):
     # get policy for direct backend calls
 
     queue = QM.get_global_queue()
-    X, Y = to_table(X, Y, queue=queue)
-    params["fptype"] = X.dtype
+    X_table, Y_table = to_table(X, X if Y is None else Y, queue=queue)
+    params["fptype"] = X_table.dtype
     compute_method = BackendFunction(
         submodule.compute, backend, "compute", no_policy=False
     )
-    result = compute_method(params, X, Y)
+    result = compute_method(params, X_table, Y_table)
     return from_table(result.values)
 
 
@@ -77,7 +68,7 @@ def linear_kernel(X, Y=None, scale=1.0, shift=0.0, queue=None):
     kernel_matrix : ndarray of shape (n_samples_X, n_samples_Y)
         Scaled and shifted Gram matrix output.
     """
-    X, Y = _check_inputs(X, Y)
+
     return _compute_kernel(
         {"method": "dense", "scale": scale, "shift": shift},
         backend.linear_kernel,
@@ -113,8 +104,6 @@ def rbf_kernel(X, Y=None, gamma=None, queue=None):
     kernel_matrix : ndarray of shape (n_samples_X, n_samples_Y)
         The RBF kernel.
     """
-
-    X, Y = _check_inputs(X, Y)
 
     gamma = 1.0 / X.shape[1] if gamma is None else gamma
     sigma = np.sqrt(0.5 / gamma)
@@ -156,7 +145,6 @@ def poly_kernel(X, Y=None, gamma=1.0, coef0=0.0, degree=3, queue=None):
         The polynomial kernel.
     """
 
-    X, Y = _check_inputs(X, Y)
     return _compute_kernel(
         {"method": "dense", "scale": gamma, "shift": coef0, "degree": degree},
         backend.polynomial_kernel,
@@ -196,7 +184,6 @@ def sigmoid_kernel(X, Y=None, gamma=1.0, coef0=0.0, queue=None):
         Sigmoid kernel between two arrays.
     """
 
-    X, Y = _check_inputs(X, Y)
     return _compute_kernel(
         {"method": "dense", "scale": gamma, "shift": coef0}, backend.sigmoid_kernel, X, Y
     )
