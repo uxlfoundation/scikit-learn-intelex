@@ -126,34 +126,33 @@ outputs:
 
   - name: scikit-learn-intelex-gpu
     build:
-      # GPU split is Linux x86_64 only (matches dal-gpu availability).
-      skip: true  # [not linux64]
       # No ignore_run_exports_from — GPU package inherits intel-sycl-rt via dpcpp.
     script: pack.sh  # [linux]
+    script: pack.bat  # [win]
     requirements:
       build:
         - make  # [linux]
-        - {{ compiler('dpcpp') }}  # [linux64]
+        - {{ compiler('dpcpp') }}
       host:
         - python
         - setuptools
         - numpy >=2,<3
         - dal-devel
-        - dal-gpu  # [linux64]
-        - impi-devel
-        - mpi * impi
+        - dal-gpu
+        - impi-devel  # [not win]
+        - mpi * impi  # [not win]
       run:
         - python
         - {{ pin_subpackage('scikit-learn-intelex', exact=True) }}
-        - dal-gpu  # [linux64]
+        - dal-gpu
         # intel-sycl-rt injected automatically via dpcpp compiler run_exports.
     test:
       requires:
-        - dpcpp-cpp-rt  # [linux64]
+        - dpcpp-cpp-rt
       commands:
-        # Ensure dpc and spmd modules can be imported.
-        - python -c "import onedal._onedal_py_dpc"  # [linux]
-        - python -c "import onedal._onedal_py_spmd_dpc"  # [linux]
+        # Ensure dpc module can be imported.
+        - python -c "import onedal._onedal_py_dpc"
+        - python -c "import onedal._onedal_py_spmd_dpc"  # [not win]
     about:
       summary: Extension for Scikit-learn* (GPU/DPC++ runtime) — enables oneAPI SYCL-based acceleration.
 
