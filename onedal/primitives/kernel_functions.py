@@ -22,7 +22,6 @@ from onedal.common._backend import BackendFunction
 from onedal.utils import _sycl_queue_manager as QM
 
 from ..datatypes import from_table, to_table
-from ..utils.validation import _check_array
 
 
 def _compute_kernel(params, submodule, X, Y):
