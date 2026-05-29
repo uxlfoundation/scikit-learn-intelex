@@ -476,6 +476,19 @@ deselected_tests:
   # but sklearnex has support for different solvers when passing array API, so it doesn't change the default.
   - linear_model/tests/test_ridge.py::test_array_api_error_and_warnings_for_solver_parameter[dpnp]
 
+  # Scikit-learn expects warning about passing n_jobs which has no effect,
+  # but sklearnex does use the parameter regardless.
+  - linear_model/tests/test_logistic.py::test_logisticregression_warns_with_n_jobs
+
+  # Creates a LinearRegression on-the-fly, but from a private module so patching doesn't affect it
+  - utils/_repr_html/tests/test_estimator.py::test_get_visual_block_transformed_target_regressor
+
+  # Unsupported features in sklearnex
+  - linear_model/tests/test_logistic.py::test_logistic_regression_callback_support
+
+  # Has a rule to not use xp.reshape on SVMs, but sklearnex supports array API for them
+  - utils/tests/test_estimator_checks.py::test_estimator_checks_generator_skipping_tests
+
   # --------------------------------------------------------
   # No need to test daal4py patching
 reduced_tests:

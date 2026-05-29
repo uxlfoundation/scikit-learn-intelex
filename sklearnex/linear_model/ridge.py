@@ -42,10 +42,18 @@ if daal_check_version((2024, "P", 600)):
     from ..base import oneDALEstimator
     from ..utils._array_api import enable_array_api, get_namespace
     from ..utils.validation import validate_data
+    from ._base_linear_model import _BaseLinearModel
+
+    if sklearn_check_version("1.9"):
+        from sklearn.utils._array_api import (
+            check_same_namespace,
+            get_namespace_and_device,
+            move_to,
+        )
 
     @enable_array_api("1.5")  # validate_data y_numeric requires sklearn >=1.5
     @control_n_jobs(decorated_methods=["fit", "predict", "score"])
-    class Ridge(oneDALEstimator, _sklearn_Ridge):
+    class Ridge(oneDALEstimator, _sklearn_Ridge, _BaseLinearModel):
         __doc__ = _sklearn_Ridge.__doc__
 
         if sklearn_check_version("1.2"):
@@ -275,9 +283,11 @@ if daal_check_version((2024, "P", 600)):
                 f"Unknown method {method_name} in {self.__class__.__name__}"
             )
 
-        def _initialize_onedal_estimator(self):
+        def _initialize_onedal_estimator(
+            self, override_fit_intercept: bool = False
+        ) -> None:
             onedal_params = {
-                "fit_intercept": self.fit_intercept,
+                "fit_intercept": self._get_fit_intercept(override_fit_intercept),
                 "alpha": self.alpha,
                 "copy_X": self.copy_X,
             }
@@ -287,7 +297,10 @@ if daal_check_version((2024, "P", 600)):
             # `Sample weight` is not supported. Expected to be None value.
             assert sample_weight is None
 
-            xp, _ = get_namespace(X)
+            if sklearn_check_version("1.9"):
+                xp, _ = get_namespace(X)
+            else:
+                xp, _ = get_namespace(X, y)
 
             if sklearn_check_version("1.2"):
                 self._validate_params()
@@ -346,10 +359,11 @@ if daal_check_version((2024, "P", 600)):
                 self, X, accept_sparse=False, dtype=[xp.float64, xp.float32], reset=False
             )
 
+            if sklearn_check_version("1.9"):
+                check_same_namespace(X, self, attribute="coef_", method="predict")
+
             if not hasattr(self, "_onedal_estimator"):
-                self._initialize_onedal_estimator()
-                self._onedal_estimator.coef_ = self.coef_
-                self._onedal_estimator.intercept_ = self.intercept_
+                self._initialize_onedal_estimator_from_coefs()
 
             res = self._onedal_estimator.predict(X, queue=queue)
             if res.shape[1] == 1 and self.coef_.ndim == 1:
@@ -358,6 +372,9 @@ if daal_check_version((2024, "P", 600)):
                 return res
 
         def _onedal_score(self, X, y, sample_weight=None, queue=None):
+            if sklearn_check_version("1.9"):
+                xp, _, device_ = get_namespace_and_device(X)
+                y = move_to(y, xp=xp, device=device_)
             return r2_score(
                 y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
             )

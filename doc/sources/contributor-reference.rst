@@ -96,6 +96,25 @@ The |sklearnex| is intended to be compatible with multiple versions of |sklearn|
     else:
         # code branch for sklearn<1.7
 
+Other libraries
+~~~~~~~~~~~~~~~
+
+Beyond the |onedal| and |sklearn|, it is also necessary to be compatible with different versions of their transitive dependencies, such as SciPy. There are no dedicated functions to check the versions of these libraries, but a common helper ``daal4py.sklearn._utils._package_check_version`` can be used together with a version string.
+
+For example:
+
+.. code-block:: python
+
+    import scipy
+    from daal4py.sklearn._utils import _package_check_version
+
+    if _package_check_version("1.14", scipy.__version__):
+        # branch for scipy>=1.14
+        ...
+    else:
+        # branch for scipy<1.14
+        ...
+
 Test helpers
 ------------
 

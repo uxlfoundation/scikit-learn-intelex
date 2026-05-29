@@ -88,6 +88,33 @@ class BaseLogisticRegression(metaclass=ABCMeta):
 
         return self
 
+    def _create_model(self, coef_, intercept_, xp):
+        model = self.model()
+        # Packed coefficients have shape (1, n_features_ + 1), the first element is a placeholder for bias.
+        # If fit_intercept is set to False the first element is set to 0.
+        if self.fit_intercept:
+            intercept_ = xp.reshape(intercept_, (-1, 1))
+            if xp is np:
+                # workaround for numpy<2
+                packed_coefficients = xp.concatenate([intercept_, coef_], axis=1)
+            else:
+                packed_coefficients = xp.concat([intercept_, coef_], axis=1)
+        else:
+            if hasattr(coef_, "device"):
+                packed_coefficients = xp.zeros(
+                    (coef_.shape[0], coef_.shape[1] + 1), device=coef_.device
+                )
+            else:
+                # Note: on numpy<2, these objects and functions do not have
+                # the 'device' attribute/argument.
+                packed_coefficients = xp.zeros((coef_.shape[0], coef_.shape[1] + 1))
+            packed_coefficients[:, 1:] = coef_
+
+        model.packed_coefficients = to_table(packed_coefficients)
+        self.coef_ = coef_
+        self.intercept_ = intercept_
+        self._onedal_model = model
+
     def _infer(self, X, queue=None):
         _check_is_fitted(self)
 

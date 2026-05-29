@@ -445,12 +445,32 @@ def logistic_regression_path_d4p(
 
 def daal4py_fit(self, X, y, sample_weight=None):
     which, what = logistic_module, "_logistic_regression_path"
+    # Note: as of scikit-learn1.8, 'n_jobs' is deprecated for logistic regression
+    # and throws a warning. Their functions still have 'n_threads' as a parameter,
+    # but since 1.8, they hard-code it to 1 in the calls from logistic regression.
+    # This is a workaround to avoid getting a warning. If scikit-learn removes
+    # the 'n_jobs' parameter (scheduled for version 1.10), then this workaround
+    # can be safely removed.
+    # Note2: the function 'logistic_regression_path' takes an argument 'n_threads',
+    # but does not use it. The number of threads for oneDAL is set through wrapper
+    # 'control_n_jobs', which acts on the sklearnex side before calling these
+    # daal4py functions for logistic regression, so setting 'n_jobs' in the estimator
+    # objects at this point will have no effect on the value passed to oneDAL.
+    # Note: as of 2026-05-25, the 'version' attribute in sklearn is already set
+    # as '1.10.dev0', but this argument hasn't been removed.
+    # TODO: remove this once scikit-learn1.8 and 1.9 are no longer supported.
+    if sklearn_check_version("1.8"):
+        n_jobs = self.n_jobs
+        if self.n_jobs is not None:
+            self.n_jobs = None
     replacer = logistic_regression_path
     try:
         setattr(which, what, replacer)
         clf = LogisticRegression_original.fit(self, X, y, sample_weight)
     finally:
         setattr(which, what, lr_path_original)
+        if sklearn_check_version("1.8"):
+            self.n_jobs = n_jobs
     return clf
 
 
@@ -573,7 +593,109 @@ def daal4py_predict(self, X, resultsToEvaluate):
         return LogisticRegression_original.predict_log_proba(self, X)
 
 
-if sklearn_check_version("1.8"):
+if sklearn_check_version("1.9"):
+
+    def logistic_regression_path(
+        X,
+        y,
+        *,
+        classes,
+        Cs=10,
+        fit_intercept=True,
+        max_iter=100,
+        tol=1e-4,
+        verbose=0,
+        solver="lbfgs",
+        coef=None,
+        class_weight=None,
+        dual=False,
+        penalty="l2",
+        intercept_scaling=1.0,
+        random_state=None,
+        check_input=True,
+        max_squared_sum=None,
+        sample_weight=None,
+        l1_ratio=None,
+        n_threads=1,
+        callback_ctx=None,  # Not supported
+        estimator=None,  # Only used by 'callback_ctx'
+    ):
+        return logistic_regression_path_dispatcher(
+            "sklearn.linear_model.LogisticRegression.fit",
+            X,
+            y,
+            classes=classes,
+            pos_class=None,
+            Cs=Cs,
+            fit_intercept=fit_intercept,
+            max_iter=max_iter,
+            tol=tol,
+            verbose=verbose,
+            solver=solver,
+            coef=coef,
+            class_weight=class_weight,
+            dual=dual,
+            penalty=penalty,
+            intercept_scaling=intercept_scaling,
+            random_state=random_state,
+            check_input=check_input,
+            max_squared_sum=max_squared_sum,
+            sample_weight=sample_weight,
+            l1_ratio=l1_ratio,
+            n_threads=n_threads,
+        )
+
+    def logistic_regression_path_cv(
+        X,
+        y,
+        *,
+        classes,
+        Cs=10,
+        fit_intercept=True,
+        max_iter=100,
+        tol=1e-4,
+        verbose=0,
+        solver="lbfgs",
+        coef=None,
+        class_weight=None,
+        dual=False,
+        penalty="l2",
+        intercept_scaling=1.0,
+        random_state=None,
+        check_input=True,
+        max_squared_sum=None,
+        sample_weight=None,
+        l1_ratio=None,
+        n_threads=1,
+        callback_ctx=None,
+        estimator=None,
+    ):
+        return logistic_regression_path_dispatcher(
+            "sklearn.linear_model.LogisticRegressionCV.fit",
+            X,
+            y,
+            classes=classes,
+            pos_class=None,
+            Cs=Cs,
+            fit_intercept=fit_intercept,
+            max_iter=max_iter,
+            tol=tol,
+            verbose=verbose,
+            solver=solver,
+            coef=coef,
+            class_weight=class_weight,
+            dual=dual,
+            penalty=penalty,
+            intercept_scaling=intercept_scaling,
+            random_state=random_state,
+            check_input=check_input,
+            max_squared_sum=max_squared_sum,
+            sample_weight=sample_weight,
+            l1_ratio=l1_ratio,
+            n_threads=n_threads,
+        )
+
+elif sklearn_check_version("1.8"):
 
     def logistic_regression_path(
         X,

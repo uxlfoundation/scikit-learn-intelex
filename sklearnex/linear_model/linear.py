@@ -31,15 +31,23 @@ from .._utils import PatchingConditionsChain, get_patch_message, register_hyperp
 from ..base import oneDALEstimator
 from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.validation import validate_data
+from ._base_linear_model import _BaseLinearModel
 
 if not sklearn_check_version("1.2"):
     from sklearn.linear_model._base import _deprecate_normalize
+
+if sklearn_check_version("1.9"):
+    from sklearn.utils._array_api import (
+        check_same_namespace,
+        get_namespace_and_device,
+        move_to,
+    )
 
 
 @enable_array_api("1.5")  # validate_data y_numeric requires sklearn >=1.5
 @register_hyperparameters({"fit": ("linear_regression", "train")})
 @control_n_jobs(decorated_methods=["fit", "predict", "score"])
-class LinearRegression(oneDALEstimator, _sklearn_LinearRegression):
+class LinearRegression(oneDALEstimator, _sklearn_LinearRegression, _BaseLinearModel):
     __doc__ = _sklearn_LinearRegression.__doc__
 
     if sklearn_check_version("1.2"):
@@ -247,14 +255,20 @@ class LinearRegression(oneDALEstimator, _sklearn_LinearRegression):
 
         return patching_status
 
-    def _initialize_onedal_estimator(self):
-        onedal_params = {"fit_intercept": self.fit_intercept, "copy_X": self.copy_X}
+    def _initialize_onedal_estimator(self, override_fit_intercept: bool = False) -> None:
+        onedal_params = {
+            "fit_intercept": self._get_fit_intercept(override_fit_intercept),
+            "copy_X": self.copy_X,
+        }
         self._onedal_estimator = self._onedal_LinearRegression(**onedal_params)
 
     def _onedal_fit(self, X, y, sample_weight, queue=None):
         assert sample_weight is None
 
-        xp, _ = get_namespace(X, y)
+        if sklearn_check_version("1.9"):
+            xp, _ = get_namespace(X)
+        else:
+            xp, _ = get_namespace(X, y)
 
         supports_multi_output = daal_check_version((2025, "P", 1))
         X, y = validate_data(
@@ -308,10 +322,11 @@ class LinearRegression(oneDALEstimator, _sklearn_LinearRegression):
             self, X, accept_sparse=False, dtype=[xp.float64, xp.float32], reset=False
         )
 
+        if sklearn_check_version("1.9"):
+            check_same_namespace(X, self, attribute="coef_", method="predict")
+
         if not hasattr(self, "_onedal_estimator"):
-            self._initialize_onedal_estimator()
-            self._onedal_estimator.coef_ = self.coef_
-            self._onedal_estimator.intercept_ = self.intercept_
+            self._initialize_onedal_estimator_from_coefs()
 
         res = self._onedal_estimator.predict(X, queue=queue)
         if res.shape[1] == 1 and self.coef_.ndim == 1:
@@ -320,6 +335,9 @@ class LinearRegression(oneDALEstimator, _sklearn_LinearRegression):
         return res
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
+        if sklearn_check_version("1.9"):
+            xp, _, device_ = get_namespace_and_device(X)
+            y = move_to(y, xp=xp, device=device_)
         return r2_score(
             y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
         )
