@@ -39,15 +39,14 @@ from ..utils.validation import _is_arraylike_not_scalar, _is_csr
 class KMeans(ABC):
     def __init__(
         self,
-        n_clusters,
+        n_clusters=8,
         *,
-        init,
-        n_init,
-        max_iter,
-        tol,
-        verbose,
-        random_state,
-        n_local_trials=None,
+        init="k-means++",
+        n_init="auto",
+        max_iter=300,
+        tol=1e-4,
+        verbose=0,
+        random_state=None,
         algorithm="lloyd",
     ):
         self.n_clusters = n_clusters
@@ -57,7 +56,6 @@ class KMeans(ABC):
         self.tol = tol
         self.verbose = verbose
         self.random_state = random_state
-        self.n_local_trials = n_local_trials
         self.algorithm = algorithm
 
     @bind_default_backend("kmeans_common", no_policy=True)
