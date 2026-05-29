@@ -23,7 +23,7 @@ from sklearn.neighbors._ball_tree import BallTree
 from sklearn.neighbors._base import VALID_METRICS, KNeighborsMixin
 from sklearn.neighbors._base import NeighborsBase as _sklearn_NeighborsBase
 from sklearn.neighbors._kd_tree import KDTree
-from sklearn.utils.validation import check_is_fitted
+from sklearn.utils.validation import check_array, check_is_fitted
 
 from daal4py.sklearn._utils import is_sparse, sklearn_check_version
 
@@ -33,7 +33,7 @@ if sklearn_check_version("1.9"):
 
 from onedal._device_offload import _transfer_to_host
 from onedal.utils._array_api import _is_numpy_namespace
-from onedal.utils.validation import _check_array, _num_features, _num_samples
+from onedal.utils.validation import _num_features, _num_samples
 
 from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
@@ -442,7 +442,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
 
         if not isinstance(X, (KDTree, BallTree, _sklearn_NeighborsBase)):
             xp, _ = get_namespace(X)
-            self._fit_X = _check_array(
+            self._fit_X = check_array(
                 X,
                 dtype=[xp.float64, xp.float32],
                 accept_sparse=True,
