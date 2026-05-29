@@ -33,12 +33,11 @@ from sklearn.exceptions import ConvergenceWarning
 from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.utils import check_random_state
 
-from ..common._mixin import ClusterMixin, TransformerMixin
 from ..datatypes import from_table, return_type_constructor, to_table
 from ..utils.validation import _is_arraylike_not_scalar, _is_csr
 
 
-class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
+class KMeans(ABC):
     def __init__(
         self,
         n_clusters,
@@ -315,54 +314,6 @@ class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
             X, X_table, result_options="compute_exact_objective_function"
         )
         return -1 * result.objective_function_value
-
-    def transform(self, X):
-        return euclidean_distances(X, self.cluster_centers_)
-
-
-class KMeans(_BaseKMeans):
-    def __init__(
-        self,
-        n_clusters=8,
-        *,
-        init="k-means++",
-        n_init="auto",
-        max_iter=300,
-        tol=1e-4,
-        verbose=0,
-        random_state=None,
-        copy_x=True,
-        algorithm="lloyd",
-    ):
-        super().__init__(
-            n_clusters=n_clusters,
-            init=init,
-            n_init=n_init,
-            max_iter=max_iter,
-            tol=tol,
-            verbose=verbose,
-            random_state=random_state,
-            algorithm=algorithm,
-        )
-        self.copy_x = copy_x  # stored, but not used by oneDAL path
-
-    @supports_queue
-    def fit(self, X, y=None, queue=None):
-        return super().fit(X, y=y, queue=queue)
-
-    @supports_queue
-    def predict(self, X, queue=None):
-        return super().predict(X, queue=queue)
-
-    @supports_queue
-    def score(self, X, queue=None):
-        return super().score(X, queue=queue)
-
-    def fit_predict(self, X, y=None, queue=None):
-        return self.fit(X, queue=queue).labels_
-
-    def fit_transform(self, X, y=None, queue=None):
-        return self.fit(X, queue=queue).transform(X)
 
 
 def k_means(
