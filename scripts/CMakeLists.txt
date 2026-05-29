@@ -204,6 +204,8 @@ elseif(IFACE_IS_DPC OR IFACE_IS_SPMD_DPC)
     endif()
 
     if(SKLEARNEX_GCOV)
+        # Disable precompile headers as this causes issues in header coverage generation
+        set(CMAKE_DISABLE_PRECOMPILE_HEADERS ON)
         if(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM" AND WIN32)
             set(CMAKE_CXX_FLAGS "/clang:-Xarch_host /clang:--coverage ${CMAKE_CXX_FLAGS}")
             list(APPEND ONEDAL_LIBRARIES "clang_rt.profile-x86_64.lib")
