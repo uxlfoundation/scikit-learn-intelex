@@ -49,8 +49,8 @@ build:
 requirements:
   build:
     - make  # [linux]
-    - {{ compiler('dpcpp') }}  # [linux64]
-    - {{ compiler('cxx') }}  # [linux64 or win]
+    - {{ compiler('dpcpp') }}
+    - {{ compiler('cxx') }}
     # conda-forge feedstock specific
     # - {{ stdlib("c") }}  # [linux64 or win]
   host:
@@ -73,14 +73,14 @@ outputs:
     build:
       # Suppress dpcpp run_exports so CPU package doesn't pull intel-sycl-rt.
       ignore_run_exports_from:
-        - {{ compiler('dpcpp') }}  # [linux64]
+        - {{ compiler('dpcpp') }}
     script: pack.sh  # [linux]
     script: pack.bat  # [win]
     requirements:
       build:
         - make  # [linux]
-        - {{ compiler('dpcpp') }}  # [linux64]
-        - {{ compiler('cxx') }}  # [linux64 or win]
+        - {{ compiler('dpcpp') }}
+        - {{ compiler('cxx') }}
       host:
         - python
         - setuptools
