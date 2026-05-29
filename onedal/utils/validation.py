@@ -32,7 +32,6 @@ else:
     # numpy_version < 2.0
     from numpy import VisibleDeprecationWarning
 
-from sklearn.preprocessing import LabelEncoder
 from sklearn.utils.validation import check_array
 
 from daal4py.sklearn.utils.validation import (
