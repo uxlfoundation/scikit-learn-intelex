@@ -22,3 +22,24 @@ from ...linear_model import LogisticRegression as LogisticRegression_Batch
 class LogisticRegression(LogisticRegression_Batch):
     __doc__ = LogisticRegression_Batch.__doc__
     _onedal_LogisticRegression = staticmethod(onedal_LogisticRegression)
+
+    def _onedal_fit(self, X, y, sample_weight=None, queue=None):
+        if queue is None or queue.sycl_device.is_cpu:
+            # We don't use onedal backend for CPU, so we need an additional check here
+            raise RuntimeError(
+                "Executing functions from SPMD backend requires a queue"
+            )
+        return super()._onedal_fit(X, y, sample_weight=sample_weight, queue=queue)
+
+    def _onedal_predict(self, X, queue=None):
+        if queue is None or queue.sycl_device.is_cpu:
+            raise RuntimeError(
+                "Executing functions from SPMD backend requires a queue"
+            )
+        return super()._onedal_predict(X, queue=queue)
+    
+    def _onedal_score(self, X, y, sample_weight=None, queue=None):
+        raise RuntimeError(
+            "score method is not supported for LogisticRegression SPMD estimator."
+        )
+
