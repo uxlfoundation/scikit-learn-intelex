@@ -22,7 +22,7 @@
 # {% set version = "1.1.1" %}
 
 package:
-  # Top-level package name is a placeholder; real artifacts come from outputs.
+  # Top-level package name is a placeholder - name not used directly.
   name: {{ name|lower }}-split
   version: {{ environ.get('GIT_DESCRIBE_TAG') }}
   # version: {{ version }}
@@ -71,9 +71,7 @@ requirements:
 outputs:
   - name: scikit-learn-intelex
     build:
-      # CPU-only package must not pull GPU/SYCL runtime. Suppress
-      # run_exports from the dpcpp compiler so its intel-sycl-rt pin
-      # is not inherited by this output.
+      # Suppress dpcpp run_exports so CPU package doesn't pull intel-sycl-rt.
       ignore_run_exports_from:
         - {{ compiler('dpcpp') }}  # [linux64]
     script: pack.sh  # [linux]
@@ -130,9 +128,7 @@ outputs:
     build:
       # GPU split is Linux x86_64 only (matches dal-gpu availability).
       skip: true  # [not linux64]
-      # Do NOT set ignore_run_exports_from here: the dpcpp compiler declares
-      # run_exports with a compatible intel-sycl-rt pin.  scikit-learn-intelex-gpu
-      # inherits it automatically — no manual pin needed.
+      # No ignore_run_exports_from — GPU package inherits intel-sycl-rt via dpcpp.
     script: pack.sh  # [linux]
     requirements:
       build:
@@ -150,15 +146,14 @@ outputs:
         - python
         - {{ pin_subpackage('scikit-learn-intelex', exact=True) }}
         - dal-gpu  # [linux64]
-        # intel-sycl-rt / dpcpp-cpp-rt is injected automatically via run_exports
-        # from the dpcpp compiler, ensuring the SYCL runtime version matches
-        # the compiler used to build.
+        # intel-sycl-rt injected automatically via dpcpp compiler run_exports.
     test:
       requires:
         - dpcpp-cpp-rt  # [linux64]
       commands:
-        # Importing the DPC extension module exercises the SYCL runtime dependency.
+        # Ensure dpc and spmd modules can be imported.
         - python -c "import onedal._onedal_py_dpc"  # [linux]
+        - python -c "import onedal._onedal_py_spmd_dpc"  # [linux]
     about:
       summary: Extension for Scikit-learn* (GPU/DPC++ runtime) — enables oneAPI SYCL-based acceleration.
 
