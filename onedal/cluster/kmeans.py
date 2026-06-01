@@ -311,36 +311,3 @@ class KMeans(ABC):
             X, X_table, result_options="compute_exact_objective_function"
         )
         return -1 * result.objective_function_value
-
-
-def k_means(
-    X,
-    n_clusters,
-    *,
-    init="k-means++",
-    n_init="auto",
-    max_iter=300,
-    verbose=False,
-    tol=1e-4,
-    random_state=None,
-    copy_x=True,
-    algorithm="lloyd",
-    return_n_iter=False,
-    queue=None,
-):
-    est = KMeans(
-        n_clusters=n_clusters,
-        init=init,
-        n_init=n_init,
-        max_iter=max_iter,
-        verbose=verbose,
-        tol=tol,
-        random_state=random_state,
-        copy_x=copy_x,
-        algorithm=algorithm,
-    ).fit(X, queue=queue)
-
-    if return_n_iter:
-        return est.cluster_centers_, est.labels_, est.inertia_, est.n_iter_
-    else:
-        return est.cluster_centers_, est.labels_, est.inertia_
