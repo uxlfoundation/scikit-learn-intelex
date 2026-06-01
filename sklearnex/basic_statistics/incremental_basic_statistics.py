@@ -37,7 +37,6 @@ if sklearn_check_version("1.9"):
         check_same_namespace,
         get_namespace_and_device,
         move_to,
-        _matching_numpy_dtype,
     )
 
 import numbers
@@ -208,14 +207,7 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
                 result_options=self.result_options
             )
 
-        if sklearn_check_version("1.9"):
-            dtype = _matching_numpy_dtype(X, xp=xp)
-        else:
-            dtype = X.dtype
-
-        self._onedal_estimator.partial_fit(
-            X, dtype, sample_weight=sample_weight, queue=queue
-        )
+        self._onedal_estimator.partial_fit(X, sample_weight=sample_weight, queue=queue)
         self._need_to_finalize = True
 
     def _onedal_fit(self, X, sample_weight=None, queue=None):
