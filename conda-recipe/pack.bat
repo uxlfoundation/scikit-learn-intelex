@@ -75,4 +75,3 @@ IF /I "%PKG_NAME%"=="scikit-learn-intelex-gpu" (
 
 echo pack.bat: unknown PKG_NAME='%PKG_NAME%' 1>&2
 exit /b 1
-\r

@@ -37,7 +37,7 @@ IF DEFINED DPCPPROOT (
     call "%DPCPPROOT%\env\vars.bat"
 ) ELSE IF EXIST "%BUILD_PREFIX%\Library\bin\icx.exe" (
     set "DPCPPROOT=%BUILD_PREFIX%\Library"
-    set "LIB=%BUILD_PREFIX%\Library\lib;%BUILD_PREFIX%\Library\lib\clang\20\lib\windows;%LIB%"
+    set "LIB=%BUILD_PREFIX%\Library\lib;%BUILD_PREFIX%\compiler\lib;%LIB%"
     set "PATH=%BUILD_PREFIX%\Library\bin;%PATH%"
 )
 

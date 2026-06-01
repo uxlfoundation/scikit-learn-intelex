@@ -22,8 +22,7 @@
 # {% set version = "1.1.1" %}
 
 package:
-  # Top-level package name is a placeholder - name not used directly.
-  name: {{ name|lower }}-split
+  name: {{ name|lower }}
   version: {{ environ.get('GIT_DESCRIBE_TAG') }}
   # version: {{ version }}
 
@@ -142,7 +141,6 @@ outputs:
         - impi-devel  # [not win]
         - mpi * impi  # [not win]
       run:
-        - python
         - {{ pin_subpackage('scikit-learn-intelex', exact=True) }}
         - dal-gpu
         # intel-sycl-rt injected automatically via dpcpp compiler run_exports.
