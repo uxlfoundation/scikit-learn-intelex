@@ -10,7 +10,7 @@ charset-normalizer==3.4.7
 click==8.4.1
 decorator==5.3.1
 defusedxml==0.7.1
-docutils~=0.23.0
+docutils~=0.21.2
 entrypoints==0.4
 idna==3.17
 imagesize==2.0.0
