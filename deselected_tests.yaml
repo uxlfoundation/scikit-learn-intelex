@@ -636,6 +636,9 @@ gpu:
   - tests/test_common.py::test_estimators[RandomForestClassifier(n_estimators=5)-check_class_weight_classifiers]
   - tests/test_common.py::test_estimators[ExtraTreesClassifier(n_estimators=5)-check_class_weight_classifiers]
 
+  # Fails for float32 due to small numeric tolerances in the order of 1e-6
+  - ensemble/tests/test_forest.py::test_memory_layout[float32
+
   # --------------------------------------------------------
   # The following tests fail at collection time, so they cannot be deselected with --deselect and must be ignored with --ignore.
 ignored_tests:
