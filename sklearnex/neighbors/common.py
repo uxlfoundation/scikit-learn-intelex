@@ -295,13 +295,21 @@ class KNeighborsDispatchingBase(oneDALEstimator):
 
         # For minkowski distance, use more efficient methods where available
         if self.metric == "minkowski":
-            self.effective_metric_params_["p"] = effective_p
+            can_remove_p = False
             if effective_p == 1:
                 self.effective_metric_ = "manhattan"
+                can_remove_p = True
             elif effective_p == 2:
                 self.effective_metric_ = "euclidean"
+                can_remove_p = True
             elif effective_p == np.inf:
                 self.effective_metric_ = "chebyshev"
+                can_remove_p = True
+            if can_remove_p:
+                if "p" in self.effective_metric_params_:
+                    self.effective_metric_params_.pop("p")
+            else:
+                self.effective_metric_params_["p"] = effective_p
 
     def _validate_kneighbors_bounds(self, n_neighbors, query_is_train, X):
         n_samples_fit = self.n_samples_fit_
@@ -489,7 +497,8 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             self.n_features_in_ = X.n_features_in_
             # Check if X has _onedal_estimator as an instance attribute (not class attribute)
             if "_onedal_estimator" in X.__dict__:
-                self.effective_metric_params_.pop("p")
+                if "p" in self.effective_metric_params_:
+                    self.effective_metric_params_.pop("p")
                 if self._fit_method == "ball_tree":
                     X._tree = BallTree(
                         X._fit_X,
@@ -574,7 +583,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             result_method = self._fit_method
 
         p_less_than_one = (
-            "p" in self.effective_metric_params_.keys()
+            "p" in self.effective_metric_params_
             and self.effective_metric_params_["p"] < 1
         )
         if not patching_status.and_condition(
