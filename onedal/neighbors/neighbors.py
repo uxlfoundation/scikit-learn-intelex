@@ -117,7 +117,7 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         self._fit_method = super()._parse_auto_method(
             self.algorithm, self.n_samples_fit_, self.n_features_in_
         )
-        
+
         return self
 
     def _kneighbors(self, X=None, n_neighbors=None, return_distance=True):
@@ -189,7 +189,7 @@ class KNeighborsClassifier(NeighborsBase):
         self._onedal_model = self.train(params, X_table, y_table).model
         # model contains no attributes which need to be converted
         return self
-    
+
     def _onedal_predict(self, model, X, params):
         X = to_table(X, queue=QM.get_global_queue())
         if "responses" not in params["result_option"]:
@@ -250,7 +250,7 @@ class KNeighborsRegressor(NeighborsBase):
         else:
             self._onedal_model = self.train_search(params, X_table).model
         return self
-    
+
     def _onedal_predict(self, model, X, params):
         assert self._onedal_model is not None, "Model is not trained"
 
