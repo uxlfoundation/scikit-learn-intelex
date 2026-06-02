@@ -186,9 +186,15 @@ def _convert_to_dataframe(obj, sycl_queue=None, target_df=None, *args, **kwargs)
     elif target_df == "torch":
         if "dtype" in kwargs:
             kwargs["dtype"] = torch.from_numpy(np.empty(0, dtype=kwargs["dtype"])).dtype
-        if hasattr(torch, "xpu") and torch.xpu.is_available():
-            return torch.as_tensor(obj, device="xpu", *args, **kwargs)
+        # Mirror the requested sycl_queue's device so torch tensors don't land on
+        # xpu for CPU-queue cases (dpnp honors sycl_queue; torch must too).
+        is_gpu = sycl_queue is not None and getattr(
+            sycl_queue.sycl_device, "is_gpu", False
+        )
+        if is_gpu and hasattr(torch, "xpu") and torch.xpu.is_available():
+            device = "xpu"
         else:
-            return torch.as_tensor(obj, device="cpu", *args, **kwargs)
+            device = "cpu"
+        return torch.as_tensor(obj, device=device, *args, **kwargs)
 
     raise RuntimeError("Unsupported dataframe conversion")
