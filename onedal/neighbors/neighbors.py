@@ -196,7 +196,7 @@ class KNeighborsClassifier(NeighborsBase):
         return self.train(params, X_table, y_table).model
 
     @supports_queue
-    def predict(self, X, params, queue=None):
+    def predict(self, X, queue=None):
         X_table = to_table(X, queue=queue)
         # pass Y as non-None to trigger 'responses'
         params = self._get_onedal_params(X_table, 0)
