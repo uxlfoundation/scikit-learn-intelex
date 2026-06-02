@@ -489,6 +489,9 @@ deselected_tests:
   # Unsupported features in sklearnex
   - linear_model/tests/test_logistic.py::test_logistic_regression_callback_support
 
+  # Has a rule to not use xp.reshape on SVMs, but sklearnex supports array API for them
+  - utils/tests/test_estimator_checks.py::test_estimator_checks_generator_skipping_tests
+
   # --------------------------------------------------------
   # No need to test daal4py patching
 reduced_tests:
@@ -635,6 +638,9 @@ gpu:
   - tests/test_common.py::test_estimators[RandomForestRegressor(n_estimators=5)-check_regressor_data_not_an_array]
   - tests/test_common.py::test_estimators[RandomForestClassifier(n_estimators=5)-check_class_weight_classifiers]
   - tests/test_common.py::test_estimators[ExtraTreesClassifier(n_estimators=5)-check_class_weight_classifiers]
+
+  # Fails for float32 due to small numeric tolerances in the order of 1e-6
+  - ensemble/tests/test_forest.py::test_memory_layout[float32
 
   # --------------------------------------------------------
   # The following tests fail at collection time, so they cannot be deselected with --deselect and must be ignored with --ignore.

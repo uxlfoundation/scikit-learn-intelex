@@ -72,9 +72,6 @@ class BaseSVM(ABC):
 
     def _get_onedal_params(self, X):
         max_iter = 10000 if self.max_iter == -1 else self.max_iter
-        # TODO: remove this workaround
-        # when oneDAL SVM starts support of 'n_iterations' result
-        self.n_iter_ = max(1, max_iter)
         # if gamma is not given as a value, use sklearn's "auto"
         gamma = 1 / X.shape[1] if self.gamma is None else self.gamma
         return {
@@ -128,16 +125,32 @@ class BaseSVM(ABC):
         if len(self.support_.shape) > 1:
             self.support_ = self.support_[:, 0]
 
+        if hasattr(result, "iteration_counts") and result.iteration_counts.shape[0]:
+            self.n_iter_ = from_table(result.iteration_counts, like=X)
+        else:
+            max_iter = 10000 if self.max_iter == -1 else self.max_iter
+            self.n_iter_ = max(1, max_iter)
+
         self._onedal_model = result.model
         return self
 
-    def _create_model(self):
+    def _create_model(self, support_vectors_, dual_coef_, intercept_):
         m = self.model()
 
-        m.support_vectors = to_table(self.support_vectors_)
-        m.coeffs = to_table(self.dual_coef_.T)
-        m.biases = to_table(self.intercept_)
-        return m
+        self.support_vectors_ = support_vectors_
+        self.dual_coef_ = dual_coef_
+        self.intercept_ = intercept_
+        self._sparse = is_sparse(support_vectors_)
+        self.class_count_ = dual_coef_.shape[0] + 1
+
+        m.support_vectors = to_table(support_vectors_)
+        m.biases = to_table(intercept_)
+        if sp.issparse(dual_coef_):
+            m.coeffs = to_table(dual_coef_.T.tocsr())
+        else:
+            m.coeffs = to_table(dual_coef_.T)
+
+        self._onedal_model = m
 
     @supports_queue
     def _infer(self, X, queue=None):
@@ -150,10 +163,11 @@ class BaseSVM(ABC):
                 X.sort_indices()
 
         X = to_table(X, queue=queue)
-        params = self._get_onedal_params(X)
 
         if self._onedal_model is None:
-            self._onedal_model = self._create_model()
+            self._create_model(self.support_vectors_, self.dual_coef_, self.intercept_)
+
+        params = self._get_onedal_params(X)
 
         return self.infer(params, self._onedal_model, X)
 
@@ -248,10 +262,10 @@ class SVC(BaseSVM):
             algorithm=algorithm,
         )
 
-    def _create_model(self):
-        m = super()._create_model()
-        m.first_class_response, m.second_class_response = 0, 1
-        return m
+    def _create_model(self, support_vectors_, dual_coef_, intercept_) -> None:
+        super()._create_model(support_vectors_, dual_coef_, intercept_)
+        self._onedal_model.first_class_response = 0
+        self._onedal_model.second_class_response = 1
 
     def _get_onedal_params(self, X):
         params = super()._get_onedal_params(X)
@@ -359,10 +373,10 @@ class NuSVC(BaseSVM):
             algorithm=algorithm,
         )
 
-    def _create_model(self):
-        m = super()._create_model()
-        m.first_class_response, m.second_class_response = 0, 1
-        return m
+    def _create_model(self, support_vectors_, dual_coef_, intercept_) -> None:
+        super()._create_model(support_vectors_, dual_coef_, intercept_)
+        self._onedal_model.first_class_response = 0
+        self._onedal_model.second_class_response = 1
 
     def _get_onedal_params(self, X):
         params = super()._get_onedal_params(X)

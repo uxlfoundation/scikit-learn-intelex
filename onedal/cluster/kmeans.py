@@ -33,12 +33,11 @@ from sklearn.exceptions import ConvergenceWarning
 from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.utils import check_random_state
 
-from ..common._mixin import ClusterMixin, TransformerMixin
 from ..datatypes import from_table, return_type_constructor, to_table
 from ..utils.validation import _is_arraylike_not_scalar, _is_csr
 
 
-class _BaseKMeans(TransformerMixin, ClusterMixin, ABC):
+class _BaseKMeans(ABC):
     def __init__(
         self,
         n_clusters,
@@ -363,36 +362,3 @@ class KMeans(_BaseKMeans):
 
     def fit_transform(self, X, y=None, queue=None):
         return self.fit(X, queue=queue).transform(X)
-
-
-def k_means(
-    X,
-    n_clusters,
-    *,
-    init="k-means++",
-    n_init="auto",
-    max_iter=300,
-    verbose=False,
-    tol=1e-4,
-    random_state=None,
-    copy_x=True,
-    algorithm="lloyd",
-    return_n_iter=False,
-    queue=None,
-):
-    est = KMeans(
-        n_clusters=n_clusters,
-        init=init,
-        n_init=n_init,
-        max_iter=max_iter,
-        verbose=verbose,
-        tol=tol,
-        random_state=random_state,
-        copy_x=copy_x,
-        algorithm=algorithm,
-    ).fit(X, queue=queue)
-
-    if return_n_iter:
-        return est.cluster_centers_, est.labels_, est.inertia_, est.n_iter_
-    else:
-        return est.cluster_centers_, est.labels_, est.inertia_

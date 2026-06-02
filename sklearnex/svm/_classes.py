@@ -15,6 +15,7 @@
 # ==============================================================================
 
 import numpy as np
+from scipy.sparse import issparse
 from sklearn.svm import SVC as _sklearn_SVC
 from sklearn.svm import SVR as _sklearn_SVR
 from sklearn.svm import NuSVC as _sklearn_NuSVC
@@ -102,6 +103,8 @@ class SVC(BaseSVC, _sklearn_SVC):
             # Windows fatal exception: access violation
             # occurs
             raise ValueError("'C' must be strictly positive.")
+        if hasattr(self, "_onedal_estimator"):
+            del self._onedal_estimator
         dispatch(
             self,
             "fit",
@@ -122,52 +125,76 @@ class SVC(BaseSVC, _sklearn_SVC):
             f"sklearn.svm.{class_name}.{method_name}"
         )
         X = data[0]
-        conditions = [
-            (
-                self.kernel in ["linear", "rbf"],
-                f'Kernel is "{self.kernel}" while '
-                'only "linear" and "rbf" are supported on GPU.',
-            ),
-            (not is_sparse(X), "Sparse input is not supported on GPU."),
-            (self.class_weight is None, "Class weight is not supported on GPU."),
-            (
-                len(data) < 2 or type_of_target(data[1]) == "binary",
-                "Multiclassification is not supported on GPU.",
-            ),
-            # TODO: remove this condition once scikit-learn gets array API
-            # support for CalibratedClassifierCV with the arguments used here.
-            (
-                not (
-                    hasattr(self, "probability")
-                    and self.probability
-                    and self.probability != "deprecated"
-                    and hasattr(X, "__dlpack__")
-                    and not isinstance(X, np.ndarray)
-                ),
-                "'probability=True' not supported with array API classes.",
-            ),
-        ]
-        if method_name == "fit":
-            xp, _ = get_namespace(*data)
-            _, _, sample_weight = data
-            conditions.append(
+        dal_ready = patching_status.and_conditions(
+            [
                 (
-                    sample_weight is None
-                    or (
-                        xp.all((sw := xp.asarray(sample_weight)) >= 0)
-                        and not xp.all(sw == 0)
+                    self.kernel in ["linear", "rbf"],
+                    f'Kernel is "{self.kernel}" while '
+                    'only "linear" and "rbf" are supported on GPU.',
+                ),
+                (not is_sparse(X), "Sparse input is not supported on GPU."),
+            ]
+        )
+        if not dal_ready:
+            return patching_status
+        if method_name == "fit":
+            _, _, sample_weight = data
+            if sklearn_check_version("1.9"):
+                xp, _ = get_namespace(sample_weight)
+            else:
+                xp, _ = get_namespace(*data)
+            patching_status.and_conditions(
+                [
+                    (self.class_weight is None, "Class weight is not supported on GPU."),
+                    (
+                        len(data) < 2 or type_of_target(data[1]) == "binary",
+                        "Multiclassification is not supported on GPU.",
                     ),
-                    "negative or all zero weights are not supported",
-                )
+                    (
+                        sample_weight is None
+                        or (
+                            xp.all((sw := xp.asarray(sample_weight)) >= 0)
+                            and not xp.all(sw == 0)
+                        ),
+                        "negative or all zero weights are not supported",
+                    ),
+                    # TODO: remove this condition once scikit-learn gets array API
+                    # support for CalibratedClassifierCV with the arguments used here.
+                    (
+                        not (
+                            hasattr(self, "probability")
+                            and self.probability
+                            and self.probability != "deprecated"
+                            and hasattr(X, "__dlpack__")
+                            and not isinstance(X, np.ndarray)
+                        ),
+                        "'probability=True' not supported with array API classes.",
+                    ),
+                ]
             )
         elif method_name in self._n_jobs_supported_onedal_methods:
-            conditions.append(
-                (hasattr(self, "_onedal_estimator"), "oneDAL model was not trained")
+            patching_status.and_conditions(
+                [
+                    # Note: this is to ensure that oneDAL branch is always used,
+                    # which will do namespace and device checks with a more
+                    # informative error.
+                    (
+                        not issparse(self.support_vectors_)
+                        or hasattr(self, "_onedal_estimator"),
+                        "Predictions on sparse support vectors are not supported",
+                    ),
+                    # This can be remove once oneDAL model creation from multi-class
+                    # arrays is fixed.
+                    (
+                        hasattr(self, "_onedal_estimator")
+                        or self._is_binary_classifier(),
+                        "oneDAL model was not trained and cannot be re-created",
+                    ),
+                ]
             )
         else:
             raise RuntimeError(f"Unknown method {method_name} in {class_name}")
 
-        patching_status.and_conditions(conditions)
         return patching_status
 
     fit.__doc__ = _sklearn_SVC.fit.__doc__
@@ -236,6 +263,8 @@ class NuSVC(BaseSVC, _sklearn_NuSVC):
             # Windows fatal exception: access violation
             # occurs
             raise ValueError("'nu' must be in the range (0, 1].")
+        if hasattr(self, "_onedal_estimator"):
+            del self._onedal_estimator
         dispatch(
             self,
             "fit",
@@ -331,6 +360,8 @@ class SVR(BaseSVR, _sklearn_SVR):
             # Windows fatal exception: access violation
             # occurs
             raise ValueError("'C' must be strictly positive.")
+        if hasattr(self, "_onedal_estimator"):
+            del self._onedal_estimator
         dispatch(
             self,
             "fit",
@@ -401,6 +432,8 @@ class NuSVR(BaseSVR, _sklearn_NuSVR):
             # Windows fatal exception: access violation
             # occurs
             raise ValueError("'nu' must be in the range (0, 1].")
+        if hasattr(self, "_onedal_estimator"):
+            del self._onedal_estimator
         dispatch(
             self,
             "fit",
