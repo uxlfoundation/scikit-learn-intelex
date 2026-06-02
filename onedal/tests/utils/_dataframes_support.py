@@ -184,6 +184,8 @@ def _convert_to_dataframe(obj, sycl_queue=None, target_df=None, *args, **kwargs)
         xp = array_api_modules[target_df]
         return xp.asarray(obj)
     elif target_df == "torch":
+        if "dtype" in kwargs:
+            kwargs["dtype"] = torch.from_numpy(np.empty(0, dtype=kwargs["dtype"])).dtype
         if hasattr(torch, "xpu") and torch.xpu.is_available():
             return torch.as_tensor(obj, device="xpu", *args, **kwargs)
         else:
