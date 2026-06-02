@@ -30,11 +30,11 @@ _options_docstring = f"""Parameters
 {tab}----------
 {tab}target_offload : str or dpctl.SyclQueue or None
 {tab}    The device used to perform computations, either as a string indicating a name
-{tab}    recognized by the SyCL runtime, such as ``"gpu"``, ``"gpu:0"``, or as a
+{tab}    recognized by the SYCL runtime, such as ``"gpu"``, ``"gpu:0"``, or as a
 {tab}    :obj:`dpctl.SyclQueue` object indicating where to move the data.
 {tab}
-{tab}    Assuming SyCL-related dependencies are installed, the list of devices recognized
-{tab}    by SyCL can be retrieved through the CLI tool ``sycl-ls`` in a shell, or through
+{tab}    Assuming SYCL-related dependencies are installed, the list of devices recognized
+{tab}    by SYCL can be retrieved through the CLI tool ``sycl-ls`` in a shell, or through
 {tab}    :obj:`dpctl.get_devices` in a Python process.
 {tab}
 {tab}    String ``"auto"`` is also accepted.

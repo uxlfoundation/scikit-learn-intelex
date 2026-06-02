@@ -20,8 +20,7 @@ from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
 from onedal.utils import _sycl_queue_manager as QM
 
-from ..common._estimator_checks import _check_is_fitted, _is_classifier
-from ..common._mixin import ClassifierMixin, RegressorMixin
+from ..common._estimator_checks import _check_is_fitted
 from ..datatypes import from_table, to_table
 
 
@@ -115,16 +114,6 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
             self, "effective_metric_params_", self.metric_params
         )
 
-        if y is not None or self.requires_y:
-            if _is_classifier(self):
-                if not hasattr(self, "_y") or self._y is None:
-                    raise ValueError(
-                        "Internal error: Classification target processing must be done in sklearnex layer before calling onedal fit. "
-                        "_y attribute is not set."
-                    )
-            elif y is not None:
-                # For regressors, store y only if provided
-                self._y = y
         self.n_samples_fit_ = X.shape[0]
         self.n_features_in_ = X.shape[1]
         self._fit_X = X
@@ -166,7 +155,7 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         return indices
 
 
-class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
+class KNeighborsClassifier(NeighborsBase):
     def __init__(
         self,
         n_neighbors=5,
@@ -224,7 +213,7 @@ class KNeighborsClassifier(NeighborsBase, ClassifierMixin):
         return self._kneighbors(X, n_neighbors, return_distance)
 
 
-class KNeighborsRegressor(NeighborsBase, RegressorMixin):
+class KNeighborsRegressor(NeighborsBase):
     def __init__(
         self,
         n_neighbors=5,
