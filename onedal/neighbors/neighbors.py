@@ -202,7 +202,7 @@ class KNeighborsClassifier(NeighborsBase):
         params["fptype"] = X.dtype
         result = self.infer(params, model, X)
 
-        return result
+        return from_table(result.responses, like=X)
 
     @supports_queue
     def fit(self, X, y, queue=None):
