@@ -183,7 +183,7 @@ class KNeighborsClassifier(NeighborsBase):
     @supports_queue
     def fit(self, X, y, queue=None):
         # prepare for fitting using common fit routines
-        super.fit(X, y)
+        super().fit(X, y)
         X_table, y_table = to_table(X, y, queue=queue)
         params = self._get_onedal_params(X_table, y)
         self._onedal_model = self.train(params, X_table, y_table).model
