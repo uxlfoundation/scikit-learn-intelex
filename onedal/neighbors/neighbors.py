@@ -200,10 +200,6 @@ class KNeighborsClassifier(NeighborsBase):
         return result
 
     @supports_queue
-    def fit(self, X, y, queue=None):
-        return self._fit(X, y)
-
-    @supports_queue
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True, queue=None):
         return self._kneighbors(X, n_neighbors, return_distance)
 
