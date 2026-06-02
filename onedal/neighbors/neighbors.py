@@ -195,12 +195,12 @@ class KNeighborsClassifier(NeighborsBase):
         params = self._get_onedal_params(X_table, y)
         return self.train(params, X_table, y_table).model
 
-    def _onedal_predict(self, model, X, params):
-        X = to_table(X, queue=QM.get_global_queue())
-        if "responses" not in params["result_option"]:
-            params["result_option"] += "|responses"
-        params["fptype"] = X.dtype
-        result = self.infer(params, model, X)
+    @supports_queue
+    def predict(self, X, params, queue=None):
+        X_table = to_table(X, queue=queue)
+        # pass Y as non-None to trigger 'responses'
+        params = self._get_onedal_params(X_table, 0)
+        result = self.infer(params, self._onedal_model, X)
 
         return from_table(result.responses, like=X)
 
