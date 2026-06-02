@@ -110,7 +110,7 @@ class NeighborsBase(metaclass=ABCMeta):
         self.n_samples_fit_ = X.shape[0]
         self.n_features_in_ = X.shape[1]
         self._fit_X = X
-        self._fit_method = super()._parse_auto_method(
+        self._fit_method = self._parse_auto_method(
             self.algorithm, self.n_samples_fit_, self.n_features_in_
         )
 
@@ -138,7 +138,7 @@ class NeighborsBase(metaclass=ABCMeta):
         if X is None:
             X = self._fit_X
 
-        params = super()._get_onedal_params(X, n_neighbors=n_neighbors)
+        params = self._get_onedal_params(X, n_neighbors=n_neighbors)
         prediction_results = self._onedal_predict(self._onedal_model, X, params)
         distances = from_table(prediction_results.distances, like=X)
         indices = from_table(prediction_results.indices, like=X)
