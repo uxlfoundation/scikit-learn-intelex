@@ -23,7 +23,6 @@ from sklearn.utils.validation import check_is_fitted
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.utils.validation import get_requires_y_tag
-from onedal.datatypes import from_table
 from onedal.neighbors import KNeighborsClassifier as onedal_KNeighborsClassifier
 from onedal.utils._array_api import _is_numpy_namespace
 from onedal.utils.validation import _check_classification_targets
@@ -274,12 +273,10 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             if sklearn_check_version("1.9"):
                 check_same_namespace(X, self, attribute="_fit_X", method="predict")
 
-        params = self._onedal_estimator._get_onedal_params(X)
-        params["result_option"] = "responses"
         result = self._onedal_estimator._onedal_predict(
             self._onedal_estimator._onedal_model, X, params
         )
-        responses = from_table(result.responses, like=X)
+        responses = self._onedal_estimator.responses
         if sklearn_check_version("1.9"):
             xp, _, device = get_namespace_and_device(self.classes_)
             responses = move_to(responses, xp=xp, device=device)
