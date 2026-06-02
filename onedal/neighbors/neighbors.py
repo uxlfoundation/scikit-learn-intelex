@@ -24,7 +24,7 @@ from ..common._estimator_checks import _check_is_fitted
 from ..datatypes import from_table, to_table
 
 
-class NeighborsBase(metaclass=ABCMeta):
+class NeighborsCommonBase(metaclass=ABCMeta):
     def __init__(self):
         self.requires_y = False
         self.n_neighbors = None
