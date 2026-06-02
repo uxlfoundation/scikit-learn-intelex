@@ -24,7 +24,7 @@ from ..common._estimator_checks import _check_is_fitted
 from ..datatypes import from_table, to_table
 
 
-class NeighborsCommonBase(metaclass=ABCMeta):
+class NeighborsBase(metaclass=ABCMeta):
     def __init__(self):
         self.requires_y = False
         self.n_neighbors = None
@@ -58,9 +58,6 @@ class NeighborsCommonBase(metaclass=ABCMeta):
 
     @abstractmethod
     def infer(self, *args, **kwargs): ...
-
-    @abstractmethod
-    def _onedal_fit(self, X, y): ...
 
     def _get_onedal_params(self, X, y=None, n_neighbors=None):
         class_count = 0 if self.classes_ is None else self.classes_.shape[0]
@@ -102,7 +99,7 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         self.p = p
         self.metric_params = metric_params
 
-    def _fit(self, X, y):
+    def fit(self, X, y):
         self._onedal_model = None
         self._tree = None
         if not hasattr(self, "_shape"):
@@ -120,13 +117,8 @@ class NeighborsBase(NeighborsCommonBase, metaclass=ABCMeta):
         self._fit_method = super()._parse_auto_method(
             self.algorithm, self.n_samples_fit_, self.n_features_in_
         )
-
-        result = self._onedal_fit(X, y)
-
-        self._onedal_model = result
-        result = self
-
-        return result
+        
+        return self
 
     def _kneighbors(self, X=None, n_neighbors=None, return_distance=True):
         """Raw kneighbors: calls C++ backend and returns from_table results.
@@ -188,13 +180,16 @@ class KNeighborsClassifier(NeighborsBase):
     @bind_default_backend("neighbors.classification")
     def infer(self, *args, **kwargs): ...
 
-    def _onedal_fit(self, X, y):
-        # global queue is set as per user configuration (`target_offload`) or from data prior to calling this internal function
-        queue = QM.get_global_queue()
+    @supports_queue
+    def fit(self, X, y, queue=None):
+        # prepare for fitting using common fit routines
+        super.fit(X, y)
         X_table, y_table = to_table(X, y, queue=queue)
         params = self._get_onedal_params(X_table, y)
-        return self.train(params, X_table, y_table).model
-
+        self._onedal_model = self.train(params, X_table, y_table).model
+        # model contains no attributes which need to be converted
+        return self
+    
     def _onedal_predict(self, model, X, params):
         X = to_table(X, queue=QM.get_global_queue())
         if "responses" not in params["result_option"]:
@@ -247,17 +242,19 @@ class KNeighborsRegressor(NeighborsBase):
     @bind_default_backend("neighbors.regression")
     def infer(self, *args, **kwargs): ...
 
-    def _onedal_fit(self, X, y):
-        queue = QM.get_global_queue()
+    @supports_queue
+    def fit(self, X, y, queue=None):
+        super().fit(X, y)
         gpu_device = queue is not None and getattr(queue.sycl_device, "is_gpu", False)
         X_table, y_table = to_table(X, y, queue=queue)
         params = self._get_onedal_params(X_table, y)
 
         if gpu_device:
-            return self.train(params, X_table, y_table).model
+            self._onedal_model = self.train(params, X_table, y_table).model
         else:
-            return self.train_search(params, X_table).model
-
+            self._onedal_model = self.train_search(params, X_table).model
+        return self
+    
     def _onedal_predict(self, model, X, params):
         assert self._onedal_model is not None, "Model is not trained"
 
@@ -273,10 +270,6 @@ class KNeighborsRegressor(NeighborsBase):
             return self.infer(params, self._onedal_model, X)
         else:
             return self.infer_search(params, self._onedal_model, X)
-
-    @supports_queue
-    def fit(self, X, y, queue=None):
-        return self._fit(X, y)
 
     @supports_queue
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True, queue=None):
@@ -329,21 +322,19 @@ class NearestNeighbors(NeighborsBase):
     @bind_default_backend("neighbors.search")
     def infer(self, *arg, **kwargs): ...
 
-    def _onedal_fit(self, X, y):
-        queue = QM.get_global_queue()
+    @supports_queue
+    def fit(self, X, y=None, queue=None):
+        super().fit(X, y)
         X_table, _ = to_table(X, y, queue=queue)
         params = self._get_onedal_params(X_table, y)
-        return self.train(params, X_table).model
+        self._onedal_model = self.train(params, X_table).model
+        return self
 
     def _onedal_predict(self, model, X, params):
         X = to_table(X, queue=QM.get_global_queue())
 
         params["fptype"] = X.dtype
         return self.infer(params, model, X)
-
-    @supports_queue
-    def fit(self, X, y=None, queue=None):
-        return self._fit(X, y)
 
     @supports_queue
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True, queue=None):
