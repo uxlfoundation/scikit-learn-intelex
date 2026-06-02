@@ -629,17 +629,7 @@ setup(
         "numpy>=1.23.5 ; python_version >= '3.11'",
         "packaging",
     ],
-    keywords=[
-        "machine learning",
-        "scikit-learn",
-        "data science",
-        "data analytics",
-        "intel",
-        "oneapi",
-        "onedal",
-        "gpu acceleration",
-        "cpu optimization",
-    ],
+    keywords=["machine learning", "scikit-learn", "data science", "data analytics"],
     packages=get_packages_with_tests(packages_with_tests),
     package_data={
         "onedal": get_onedal_py_libs(),
