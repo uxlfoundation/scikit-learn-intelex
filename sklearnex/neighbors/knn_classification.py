@@ -273,7 +273,7 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
             if sklearn_check_version("1.9"):
                 check_same_namespace(X, self, attribute="_fit_X", method="predict")
 
-        responses = self._onedal_estimator.predict(X, params)
+        responses = self._onedal_estimator.predict(X)
 
         if sklearn_check_version("1.9"):
             xp, _, device = get_namespace_and_device(self.classes_)
