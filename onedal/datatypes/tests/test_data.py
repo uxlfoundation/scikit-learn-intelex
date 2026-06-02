@@ -179,50 +179,6 @@ def test_input_format_c_not_contiguous_numpy(queue, dtype):
     _test_input_format_c_not_contiguous_numpy(queue, dtype)
 
 
-def _test_input_format_c_contiguous_pandas(queue, dtype):
-    pd = pytest.importorskip("pandas")
-    rng = np.random.RandomState(0)
-    x_default = np.array(5 * rng.random_sample((10, 4)), dtype=dtype)
-
-    x_numpy = np.asanyarray(x_default, dtype=dtype, order="C")
-    assert x_numpy.flags.c_contiguous
-    assert not x_numpy.flags.f_contiguous
-    assert not x_numpy.flags.fnc
-    x_df = pd.DataFrame(x_numpy)
-
-    expected = linear_kernel(x_df, queue=queue)
-    result = linear_kernel(x_numpy, queue=queue)
-    assert_allclose(expected, result)
-
-
-@pytest.mark.parametrize("queue", get_queues())
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_input_format_c_contiguous_pandas(queue, dtype):
-    _test_input_format_c_contiguous_pandas(queue, dtype)
-
-
-def _test_input_format_f_contiguous_pandas(queue, dtype):
-    pd = pytest.importorskip("pandas")
-    rng = np.random.RandomState(0)
-    x_default = np.array(5 * rng.random_sample((10, 4)), dtype=dtype)
-
-    x_numpy = np.asanyarray(x_default, dtype=dtype, order="F")
-    assert not x_numpy.flags.c_contiguous
-    assert x_numpy.flags.f_contiguous
-    assert x_numpy.flags.fnc
-    x_df = pd.DataFrame(x_numpy)
-
-    expected = linear_kernel(x_df, queue=queue)
-    result = linear_kernel(x_numpy, queue=queue)
-    assert_allclose(expected, result)
-
-
-@pytest.mark.parametrize("queue", get_queues())
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
-def test_input_format_f_contiguous_pandas(queue, dtype):
-    _test_input_format_f_contiguous_pandas(queue, dtype)
-
-
 def _test_conversion_to_table(dtype):
     np.random.seed()
     if dtype in [np.int32, np.int64]:

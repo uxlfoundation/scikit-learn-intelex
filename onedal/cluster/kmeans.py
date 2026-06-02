@@ -30,25 +30,23 @@ if daal_check_version((2023, "P", 200)):
 
 from sklearn.cluster._kmeans import _kmeans_plusplus
 from sklearn.exceptions import ConvergenceWarning
-from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.utils import check_random_state
 
 from ..datatypes import from_table, return_type_constructor, to_table
 from ..utils.validation import _is_arraylike_not_scalar, _is_csr
 
 
-class _BaseKMeans(ABC):
+class KMeans(ABC):
     def __init__(
         self,
-        n_clusters,
+        n_clusters=8,
         *,
-        init,
-        n_init,
-        max_iter,
-        tol,
-        verbose,
-        random_state,
-        n_local_trials=None,
+        init="k-means++",
+        n_init="auto",
+        max_iter=300,
+        tol=1e-4,
+        verbose=0,
+        random_state=None,
         algorithm="lloyd",
     ):
         self.n_clusters = n_clusters
@@ -58,7 +56,6 @@ class _BaseKMeans(ABC):
         self.tol = tol
         self.verbose = verbose
         self.random_state = random_state
-        self.n_local_trials = n_local_trials
         self.algorithm = algorithm
 
     @bind_default_backend("kmeans_common", no_policy=True)
@@ -314,51 +311,3 @@ class _BaseKMeans(ABC):
             X, X_table, result_options="compute_exact_objective_function"
         )
         return -1 * result.objective_function_value
-
-    def transform(self, X):
-        return euclidean_distances(X, self.cluster_centers_)
-
-
-class KMeans(_BaseKMeans):
-    def __init__(
-        self,
-        n_clusters=8,
-        *,
-        init="k-means++",
-        n_init="auto",
-        max_iter=300,
-        tol=1e-4,
-        verbose=0,
-        random_state=None,
-        copy_x=True,
-        algorithm="lloyd",
-    ):
-        super().__init__(
-            n_clusters=n_clusters,
-            init=init,
-            n_init=n_init,
-            max_iter=max_iter,
-            tol=tol,
-            verbose=verbose,
-            random_state=random_state,
-            algorithm=algorithm,
-        )
-        self.copy_x = copy_x  # stored, but not used by oneDAL path
-
-    @supports_queue
-    def fit(self, X, y=None, queue=None):
-        return super().fit(X, y=y, queue=queue)
-
-    @supports_queue
-    def predict(self, X, queue=None):
-        return super().predict(X, queue=queue)
-
-    @supports_queue
-    def score(self, X, queue=None):
-        return super().score(X, queue=queue)
-
-    def fit_predict(self, X, y=None, queue=None):
-        return self.fit(X, queue=queue).labels_
-
-    def fit_transform(self, X, y=None, queue=None):
-        return self.fit(X, queue=queue).transform(X)

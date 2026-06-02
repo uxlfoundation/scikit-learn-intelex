@@ -32,7 +32,7 @@ else:
     # numpy_version < 2.0
     from numpy import VisibleDeprecationWarning
 
-from sklearn.utils.validation import check_array
+from sklearn.preprocessing import LabelEncoder
 
 from daal4py.sklearn.utils.validation import (
     _assert_all_finite as _daal4py_assert_all_finite,
@@ -53,63 +53,6 @@ def _is_arraylike(x):
 def _is_arraylike_not_scalar(array):
     """Return True if array is array-like and not a scalar"""
     return _is_arraylike(array) and not np.isscalar(array)
-
-
-def get_finite_keyword():
-    """Return scikit-learn-matching finite check enabling keyword.
-
-    Gets the argument name for scikit-learn's validation functions compatible with
-    the current version of scikit-learn and using function inspection instead of
-    version check due to `onedal` design rule: sklearn versioning should occur
-    in ``sklearnex`` module.
-
-    Returns
-    -------
-    finite_keyword : str
-        Keyword string used to enable finiteness checking.
-    """
-    if "ensure_all_finite" in inspect.signature(check_array).parameters:
-        return "ensure_all_finite"
-    return "force_all_finite"
-
-
-def _check_array(
-    array,
-    dtype="numeric",
-    accept_sparse=False,
-    order=None,
-    copy=False,
-    force_all_finite=True,
-    ensure_2d=True,
-    accept_large_sparse=True,
-    _finite_keyword=get_finite_keyword(),
-):
-    if force_all_finite:
-        if sp.issparse(array):
-            if hasattr(array, "data"):
-                _daal4py_assert_all_finite(array.data)
-                force_all_finite = False
-        else:
-            _daal4py_assert_all_finite(array)
-            force_all_finite = False
-    check_kwargs = {
-        "array": array,
-        "dtype": dtype,
-        "accept_sparse": accept_sparse,
-        "order": order,
-        "copy": copy,
-        "ensure_2d": ensure_2d,
-        "accept_large_sparse": accept_large_sparse,
-    }
-    check_kwargs[_finite_keyword] = force_all_finite
-
-    array = check_array(
-        **check_kwargs,
-    )
-
-    if sp.issparse(array):
-        return array
-    return array
 
 
 def _check_classification_targets(y):
