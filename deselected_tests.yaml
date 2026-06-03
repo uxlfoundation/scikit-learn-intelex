@@ -244,7 +244,6 @@ deselected_tests:
 
   # OOB scores in scikit-learn and oneDAL are different because of different random number generators
   - ensemble/tests/test_forest.py::test_forest_regressor_oob[True-X0-y0-0.7-array-ExtraTreesRegressor] >=1.3
-  - ensemble/tests/test_forest.py::test_importances[ExtraTreesRegressor-squared_error-float64] >=0.23 darwin
   - ensemble/tests/test_forest.py::test_forest_regressor_oob[X0-y0-0.7-array-ExtraTreesRegressor]
   - ensemble/tests/test_forest.py::test_warm_start_oob
   - ensemble/tests/test_forest.py::test_distribution
