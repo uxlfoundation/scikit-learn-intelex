@@ -73,14 +73,13 @@ def filter_by_version_and_platform(entry, sk_ver):
     return None
 
 
-def create_pytest_switches(
-    filename, absolute, reduced, public, gpu, preview, base_dir=None
-):
+def create_pytest_switches(filename, absolute, **kwargs):
     pytest_switches = []
     if os.path.exists(filename):
         with open(filename, "r") as fh:
             dt = yaml_load(fh, Loader=FullLoader)
 
+        base_dir = kwargs.pop("base_dir")
         sklearn_dir = os.path.dirname(sklearn.__file__)
 
         if absolute:
@@ -94,34 +93,14 @@ def create_pytest_switches(
             filter_by_version_and_platform(test_name, sklearn_version)
             for test_name in dt.get("deselected_tests", [])
         ]
-        if reduced:
-            filtered_deselection.extend(
-                [
-                    filter_by_version_and_platform(test_name, sklearn_version)
-                    for test_name in dt.get("reduced_tests", [])
-                ]
-            )
-        if public:
-            filtered_deselection.extend(
-                [
-                    filter_by_version_and_platform(test_name, sklearn_version)
-                    for test_name in dt.get("public", [])
-                ]
-            )
-        if gpu:
-            filtered_deselection.extend(
-                [
-                    filter_by_version_and_platform(test_name, sklearn_version)
-                    for test_name in dt.get("gpu", [])
-                ]
-            )
-        if preview:
-            filtered_deselection.extend(
-                [
-                    filter_by_version_and_platform(test_name, sklearn_version)
-                    for test_name in dt.get("preview", [])
-                ]
-            )
+        for group, flagged in kwargs.items():
+            if flagged:
+                filtered_deselection.extend(
+                    [
+                        filter_by_version_and_platform(test_name, sklearn_version)
+                        for test_name in dt.get(group, [])
+                    ]
+                )
         pytest_switches = []
         for test_name in filtered_deselection:
             if test_name:
@@ -159,11 +138,11 @@ if __name__ == "__main__":
                 create_pytest_switches(
                     fn,
                     args.absolute,
-                    args.reduced,
-                    args.public,
-                    args.gpu,
-                    args.preview,
-                    args.base_dir,
+                    reduced_tests = args.reduced,
+                    public = args.public,
+                    gpu = args.gpu,
+                    preview = args.preview,
+                    base_dir = args.base_dir,
                 )
             )
         )
