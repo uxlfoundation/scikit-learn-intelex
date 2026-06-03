@@ -69,7 +69,7 @@ requirements:
     - python
     - numpy
     # renovate: datasource=conda depName=conda-forge/scikit-learn
-    - "scikit-learn <= 1.8.0"
+    - "scikit-learn <=1.8.0"
     # dal-devel has run_exports on conda-forge, so no need to add it.
     - mpi * impi  # [not win]
     - packaging
