@@ -46,7 +46,6 @@
    verbose.rst
    parallelism.rst
    preview.rst
-   deprecation.rst
 
 .. toctree::
    :caption: daal4py
