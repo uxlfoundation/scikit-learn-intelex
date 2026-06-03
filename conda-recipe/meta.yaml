@@ -22,7 +22,8 @@
 # {% set version = "1.1.1" %}
 
 package:
-  name: {{ name|lower }}
+  # Top-level package name is a placeholder - name not used directly.
+  name: {{ name|lower }}-feedstock
   version: {{ environ.get('GIT_DESCRIBE_TAG') }}
   # version: {{ version }}
 
