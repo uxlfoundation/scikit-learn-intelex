@@ -67,9 +67,8 @@
       "customType": "regex",
       "fileMatch": ["(^|/)meta\\.ya?ml$"],
       "matchStrings": [
-        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s*\\n\\s*-\\s*[\"']\\S+\\s+(?<currentValue><=?.*?)[\"']"
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s*\\n\\s*-\\s*[\"']\\S+\\s+<=(?<currentValue>[^\"']+)[\"']"
       ],
-      "rangeStrategy": "bump"
     }
   ]
 }
