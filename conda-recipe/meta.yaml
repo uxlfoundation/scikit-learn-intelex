@@ -123,6 +123,5 @@ extra:
   recipe-maintainers:
     # GitHub IDs for maintainers of the recipe.
     - napetrov
-    - Alexsandruss
     - maria-Petrova
     - ethanglaser
