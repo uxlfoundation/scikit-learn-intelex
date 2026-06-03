@@ -15,7 +15,7 @@
 # limitations under the License.
 # ==============================================================================
 
-import pathlib as _pathlib
+import importlib
 import platform
 
 from daal4py.sklearn._utils import daal_check_version
@@ -64,7 +64,8 @@ class Backend:
 
 def _backend_binary_present(prefix: str) -> bool:
     """Return True if a backend extension binary with the given prefix exists."""
-    return any(_pathlib.Path(__file__).parent.glob(f"{prefix}*"))
+    spec = importlib.util.find_spec(f"{__package__}.{prefix}")
+    return spec is not None and spec.origin is not None
 
 
 if "Windows" in platform.system():
