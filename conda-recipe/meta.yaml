@@ -115,18 +115,12 @@ outputs:
         - setup.cfg
         - examples
         - tests
-      commands:
-        - python -c "from sklearnex import patch_sklearn; patch_sklearn()"
-        # CPU host backend must be present.
-        - python -c "import onedal._onedal_py_host"
-        # DPC backend must NOT be in the CPU package.
-        - python -c "import onedal, os, glob; d = os.path.dirname(onedal.__file__); assert not glob.glob(os.path.join(d, '_onedal_py_dpc*')) and not glob.glob(os.path.join(d, '_onedal_py_spmd_dpc*')), 'DPC backend leaked into CPU package'"  # [linux]
+      script: run_test.sh  # [linux]
+      script: run_test.bat  # [win]
     about:
       summary: Extension for Scikit-learn* (CPU runtime) is a seamless way to speed up your Scikit-learn application.
 
   - name: scikit-learn-intelex-gpu
-    build:
-      # No ignore_run_exports_from — GPU package inherits intel-sycl-rt via dpcpp.
     script: pack.sh  # [linux]
     script: pack.bat  # [win]
     requirements:
