@@ -66,13 +66,6 @@
    ideas.rst
 
 .. toctree::
-   :caption: Performance
-   :hidden:
-   :maxdepth: 2
-
-   guide/acceleration.rst
-
-.. toctree::
    :caption: Learn
    :hidden:
    :maxdepth: 2
