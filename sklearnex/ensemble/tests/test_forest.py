@@ -210,7 +210,7 @@ def test_classifiers_work_on_single_class_non_numeric():
 # TODO: add 'sample_weights' to this test once oneDAL supports the
 # new scikit-learn methodology and sklearnex doesn't fall back.
 @pytest.mark.skipif(
-    not (sklearn_check_version("1.9")  and _package_check_version("2.0", np.__version__),
+    not (sklearn_check_version("1.9") and _package_check_version("2.0", np.__version__),
     reason="Functionality introduced in later scikit-learn versions.",
 )
 @pytest.mark.parametrize("X_xp", [np, pd, array_api_strict])
