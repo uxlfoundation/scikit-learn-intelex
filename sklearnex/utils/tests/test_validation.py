@@ -236,3 +236,12 @@ def test_validate_data_output(dtype, dataframe, queue):
             # array_api_strict from sklearn < 1.2 and pandas will convert to numpy arrays
             assert isinstance(first, np.ndarray)
             assert second is None or isinstance(second, np.ndarray)
+
+
+def test_assert_all_finite_assume_finite_config():
+    with config_context(assume_finite=True):
+        # force onedal track via 32769 datapoints
+        data = np.emtpy(2**15+1)
+        data.fill(np.inf)
+        # if it still triggers a failure, test will fail
+        assert_all_finite(data)
