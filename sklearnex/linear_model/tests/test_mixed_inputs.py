@@ -19,7 +19,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from daal4py.sklearn._utils import sklearn_check_version
+from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     dpnp_available,
     torch_available,
@@ -117,8 +117,8 @@ def _check_attributes_and_output(model, X, y, X_xp):
 
 
 @pytest.mark.skipif(
-    not sklearn_check_version("1.9"),
-    reason="Functionality introduced in later scikit-learn versions.",
+    not (sklearn_check_version("1.9") and _package_check_version("2.0", np.__version__),
+    reason="Functionality introduced in later scikit-learn versions with numpy array API support.",
 )
 @pytest.mark.parametrize("X_xp", [np, pd, array_api_strict])
 @pytest.mark.parametrize("y_xp", [np, pd, array_api_strict])
@@ -179,8 +179,8 @@ def test_error_on_incompatible_namespaces(
     reason="Test checks GPU-specific functionality.",
 )
 @pytest.mark.skipif(
-    not sklearn_check_version("1.9"),
-    reason="Functionality introduced in later scikit-learn versions.",
+    not (sklearn_check_version("1.9") and _package_check_version("2.0", np.__version__),
+    reason="Functionality introduced in later scikit-learn versions with numpy array API support.
 )
 @pytest.mark.parametrize(
     "X_xp, X_device",
