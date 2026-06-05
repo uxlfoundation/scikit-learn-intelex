@@ -37,6 +37,7 @@ if sklearn_check_version("1.9"):
     from sklearn.utils._array_api import get_namespace_and_device, move_to
 
 from ._array_api import get_namespace
+from ._config import get_config as _get_config
 
 if sklearn_check_version("1.6"):
     from sklearn.utils.validation import validate_data as _sklearn_validate_data
@@ -102,6 +103,10 @@ def _sklearnex_assert_all_finite(
         else:
             _sklearn_assert_all_finite(X, allow_nan=allow_nan)
     else:
+        # only set on onedal branch as it is already exists in sklearn's
+        if _get_config()["assume_finite"]:
+            return
+        
         all_finite = check_all_finite(
             X,
             allow_nan=allow_nan,
