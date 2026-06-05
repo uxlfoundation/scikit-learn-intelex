@@ -30,7 +30,7 @@ if hasattr(sp, "csr_array"):
 else:
     CSR_CTOR = sp.csr_matrix
 
-from daal4py.sklearn._utils import sklearn_check_version
+from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
