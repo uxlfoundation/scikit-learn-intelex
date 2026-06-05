@@ -22,7 +22,7 @@ from numpy.testing import assert_allclose
 from sklearn.base import is_regressor
 from sklearn.datasets import make_classification, make_regression
 
-from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from daal4py.sklearn._utils import _package_check_version, daal_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
@@ -210,7 +210,7 @@ def test_classifiers_work_on_single_class_non_numeric():
 # TODO: add 'sample_weights' to this test once oneDAL supports the
 # new scikit-learn methodology and sklearnex doesn't fall back.
 @pytest.mark.skipif(
-    not sklearn_check_version("1.9"),
+    not (sklearn_check_version("1.9")  and _package_check_version("2.0", np.__version__),
     reason="Functionality introduced in later scikit-learn versions.",
 )
 @pytest.mark.parametrize("X_xp", [np, pd, array_api_strict])
@@ -275,8 +275,8 @@ def test_rf_mixed_array_namespaces(X_xp, y_xp, class_weight, n_classes, with_arr
 
 
 @pytest.mark.skipif(
-    not sklearn_check_version("1.9"),
-    reason="Functionality introduced in later scikit-learn versions.",
+    not (sklearn_check_version("1.9") and _package_check_version("2.0", np.__version__),
+    reason="Functionality introduced in later scikit-learn versions with numpy array API support.",
 )
 @pytest.mark.skipif(
     not is_sycl_device_available("gpu"), reason="Test checks GPU-specific functionality."
