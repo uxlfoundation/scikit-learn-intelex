@@ -242,8 +242,8 @@ def test_error_on_incompatible_namespaces(weights, with_array_api):
 
 
 @pytest.mark.skipif(
-    not sklearn_check_version("1.9"),
-    reason="Functionality introduced in later scikit-learn versions.",
+    not (sklearn_check_version("1.9") and _package_check_version("2.0", np.__version__),
+    reason="Functionality introduced in later scikit-learn versions with numpy array API support.",
 )
 @pytest.mark.parametrize("X_xp", [np, pd, array_api_strict])
 @pytest.mark.parametrize("y_xp", [np, pd, array_api_strict])
@@ -301,8 +301,8 @@ def test_mixed_array_namespaces(X_xp, y_xp, weights, n_classes, with_array_api):
 
 
 @pytest.mark.skipif(
-    not sklearn_check_version("1.9"),
-    reason="Functionality introduced in later scikit-learn versions.",
+    not (sklearn_check_version("1.9") and _package_check_version("2.0", np.__version__),
+    reason="Functionality introduced in later scikit-learn versions with numpy array API support.",
 )
 @pytest.mark.skipif(
     not is_sycl_device_available("gpu"), reason="Test checks GPU-specific functionality."
