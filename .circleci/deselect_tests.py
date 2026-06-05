@@ -138,11 +138,11 @@ if __name__ == "__main__":
                 create_pytest_switches(
                     fn,
                     args.absolute,
-                    reduced_tests = args.reduced,
-                    public = args.public,
-                    gpu = args.gpu,
-                    preview = args.preview,
-                    base_dir = args.base_dir,
+                    reduced_tests=args.reduced,
+                    public=args.public,
+                    gpu=args.gpu,
+                    preview=args.preview,
+                    base_dir=args.base_dir,
                 )
             )
         )
