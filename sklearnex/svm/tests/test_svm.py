@@ -552,7 +552,7 @@ def test_svr_mixed_devices(
 ):
     # Re-enable this once bug in scikit-learn is solved:
     # https://github.com/scikit-learn/scikit-learn/issues/34046
-    if X_xp is torch and (y_xp is pd or w_xp is pd):
+    if (torch_available and X_xp is torch) and (y_xp is pd or w_xp is pd):
         pytest.skip("Bug in scikit-learn")
     from sklearnex import svm
 
