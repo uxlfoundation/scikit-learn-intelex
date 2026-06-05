@@ -19,7 +19,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 
-from daal4py.sklearn._utils import sklearn_check_version
+from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
 from onedal.basic_statistics.tests.utils import options_and_tests
 from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
@@ -455,7 +455,7 @@ def test_results_have_underscores(underscore_first):
 
 
 @pytest.mark.skipif(
-    not sklearn_check_version("1.9"),
+    not (sklearn_check_version("1.9") and _package_check_version("2.0", np.__version__),
     reason="Test for functionality introduced in later scikit-learn versions.",
 )
 @pytest.mark.parametrize(
