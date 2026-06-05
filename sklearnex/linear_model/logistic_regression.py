@@ -255,10 +255,6 @@ if daal_check_version((2024, "P", 1)):
             )
 
         def _onedal_score(self, X, y, sample_weight=None, queue=None):
-            if "spmd" in self._onedal_LogisticRegression.__module__:
-                raise RuntimeError(
-                    "score method is not supported for LogisticRegression SPMD estimator."
-                )
             return accuracy_score(
                 y, self._onedal_predict(X, queue=queue), sample_weight=sample_weight
             )
@@ -414,12 +410,6 @@ if daal_check_version((2024, "P", 1)):
 
         def _onedal_fit(self, X, y, sample_weight=None, queue=None):
             if queue is None or queue.sycl_device.is_cpu:
-                # We don't use onedal backend for CPU, so we need an additional check here
-                if "spmd" in self._onedal_LogisticRegression.__module__:
-                    raise RuntimeError(
-                        "Executing functions from SPMD backend requires a queue"
-                    )
-
                 # TODO add array-api support for CPU
                 return self._onedal_cpu_fit(X, y, sample_weight)
             assert sample_weight is None
@@ -471,12 +461,6 @@ if daal_check_version((2024, "P", 1)):
 
         # This should only be called when 'X' is on CPU
         def _error_out_on_incompatible_devices(self, X, method_name: str) -> None:
-            # We don't use onedal backend for CPU, so we need an additional check here
-            if "spmd" in self._onedal_LogisticRegression.__module__:
-                raise RuntimeError(
-                    "Executing functions from SPMD backend requires a queue"
-                )
-
             # This can happen when fitting on GPU and then passing a CPU array to predict
             if not isinstance(self.coef_, np.ndarray) and not issparse(self.coef_):
                 if sklearn_check_version("1.9"):
