@@ -106,7 +106,7 @@ def _sklearnex_assert_all_finite(
         # only check on onedal branch as it is already exists in sklearn's
         if _get_config()["assume_finite"]:
             return
-        
+
         all_finite = check_all_finite(
             X,
             allow_nan=allow_nan,
