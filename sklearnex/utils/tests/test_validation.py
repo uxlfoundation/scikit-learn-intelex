@@ -243,6 +243,6 @@ def test_sklearnex_assume_finite_config():
         est = DummyEstimator()
         # force onedal track via 32769 datapoints
         data = np.empty(2**15 + 1)
-        data.fill(np.inf)
+        data.fill(np.inf).reshape((-1, 1))
         # if it still triggers an exception, test will fail
         validate_data(est, data)
