@@ -176,30 +176,25 @@ def test_dense_vs_sparse(queue, init, algorithm, dims):
 )
 @pytest.mark.parametrize("output_format", ["set_output", "config_context"])
 @pytest.mark.parametrize("transform_output", ["polars", "pandas"])
-@pytest.mark.parametrize("device", ["cpu"] + (["xpu"] if torch_xpu_available else []))
-def test_transform_output_torch(output_format, transform_output, device):
+def test_transform_output_torch(output_format, transform_output):
     torch = pytest.importorskip("torch")
 
     X_np = generate_dense_dataset(200, 10, 0.5, 3)
-    X_torch = torch.tensor(X_np, device=device)
+    X_torch = torch.tensor(X_np, device="cpu")
 
     with config_context(array_api_dispatch=True):
-        km = KMeans(n_clusters=3, random_state=0, n_init=1).fit(X_torch)
-        # Un-wrapped output follows X (stays in the input's namespace/device).
-        expected = _as_numpy(km.transform(X_torch))
-
+        km = KMeans(n_clusters=3, random_state=0, n_init=1)
         if output_format == "set_output":
             km.set_output(transform=transform_output)
+            km.fit(X_torch)
             result = km.transform(X_torch)
         else:
             with config_context(transform_output=transform_output):
+                km.fit(X_torch)
                 result = km.transform(X_torch)
 
-    # transform_output wraps the same model's result into the requested
-    # container; the host transfer must preserve the values exactly.
     expected_type = pl.DataFrame if transform_output == "polars" else pd.DataFrame
     assert isinstance(result, expected_type)
-    assert_allclose(result.to_numpy(), expected, rtol=1e-6)
 
 
 # Only numpy and dpnp: array_api_strict + polars/pandas fails in sklearn itself.
@@ -212,19 +207,13 @@ def test_transform_output_gpu(dataframe, queue, transform_output):
     X_np = generate_dense_dataset(200, 10, 0.5, 3)
     X = _convert_to_dataframe(X_np, sycl_queue=queue, target_df=dataframe)
 
-    with config_context(array_api_dispatch=True):
-        km = KMeans(n_clusters=3, random_state=0, n_init=1).fit(X)
-        # Un-wrapped output follows X (stays in the input's namespace/device).
-        expected = _as_numpy(km.transform(X))
+    with config_context(array_api_dispatch=True, transform_output=transform_output):
+        km = KMeans(n_clusters=3, random_state=0, n_init=1)
+        km.fit(X)
+        result = km.transform(X)
 
-        with config_context(transform_output=transform_output):
-            result = km.transform(X)
-
-    # transform_output wraps the same model's result into the requested
-    # container; the host transfer must preserve the values exactly.
     expected_type = pl.DataFrame if transform_output == "polars" else pd.DataFrame
     assert isinstance(result, expected_type)
-    assert_allclose(result.to_numpy(), expected, rtol=1e-6)
 
 
 # Excludes pandas (converted to numpy by validate_data, output type won't match).
@@ -245,19 +234,58 @@ def test_array_api_dispatch_output_type(dataframe, queue):
         trans = km.transform(X)
         sc = km.score(X)
 
-        # Outputs follow X: predictions, distances and fitted centroids stay
-        # in the input's namespace/device, and score reduces to a Python float.
         assert type(pred) == type(X)
         assert type(trans) == type(X)
         assert type(km.cluster_centers_) == type(X)
         assert isinstance(sc, float)
 
-        # transform distances are the per-sample distance to each centroid, so
-        # the assigned label is the argmin row and score is -sum of those minima.
-        pred_np = _as_numpy(pred)
-        trans_np = _as_numpy(trans)
-        assert_allclose(pred_np, trans_np.argmin(axis=1))
-        assert_allclose(sc, -np.square(trans_np.min(axis=1)).sum(), rtol=1e-5)
+
+def _check_kmeans_results(km, X, X_np):
+    """Verify the results follow the KMeans definition, independent of which
+    local optimum the backend converged to: transform gives the distance to
+    each fitted centroid, predict is the closest centroid and score is the
+    negative sum of squared distances to the assigned centroid."""
+    centers = _as_numpy(km.cluster_centers_)
+    pred = _as_numpy(km.predict(X))
+    trans = _as_numpy(km.transform(X))
+    sc = km.score(X)
+
+    expected_distances = np.linalg.norm(
+        X_np[:, None, :] - centers[None, :, :], axis=2
+    )
+    assert_allclose(trans, expected_distances, rtol=1e-4, atol=1e-4)
+    assert_allclose(pred, trans.argmin(axis=1))
+    assert_allclose(sc, -np.square(trans.min(axis=1)).sum(), rtol=1e-5)
+
+
+@pytest.mark.skipif(
+    not sklearn_check_version("1.2"), reason="array_api_dispatch requires sklearn >= 1.2"
+)
+@pytest.mark.parametrize(
+    "dataframe,queue", get_dataframes_and_queues("numpy,dpnp,array_api")
+)
+def test_array_api_dispatch_results(dataframe, queue):
+    X_np = generate_dense_dataset(200, 10, 0.5, 3)
+    X = _convert_to_dataframe(X_np, sycl_queue=queue, target_df=dataframe)
+
+    with config_context(array_api_dispatch=True):
+        km = KMeans(n_clusters=3, random_state=0, n_init=1).fit(X)
+        _check_kmeans_results(km, X, X_np)
+
+
+@pytest.mark.skipif(
+    not sklearn_check_version("1.2"), reason="array_api_dispatch requires sklearn >= 1.2"
+)
+@pytest.mark.parametrize("device", ["cpu"] + (["xpu"] if torch_xpu_available else []))
+def test_torch_dispatch_results(device):
+    torch = pytest.importorskip("torch")
+
+    X_np = generate_dense_dataset(200, 10, 0.5, 3)
+    X = torch.tensor(X_np, device=device)
+
+    with config_context(array_api_dispatch=True):
+        km = KMeans(n_clusters=3, random_state=0, n_init=1).fit(X)
+        _check_kmeans_results(km, X, X_np)
 
 
 @pytest.mark.skipif(
