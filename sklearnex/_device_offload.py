@@ -194,9 +194,11 @@ def wrap_output_data(func: Callable) -> Callable:
         result = func(self, *args, **kwargs)
 
         # When transform_output is polars/pandas, sklearn's _set_output wrapper
-        # builds a DataFrame from the result. That conversion fails for arrays
-        # whose data lives on a non-CPU device (e.g. XPU tensors). Transfer to
-        # host first so sklearn can wrap into the requested format.
+        # builds a DataFrame from the result. For array-api results whose data
+        # lives on a non-CPU device the DataFrame constructor raises: pandas with
+        # "Implicit conversion to a NumPy array is not allowed" and polars with
+        # "DataFrame constructor called with unsupported type". Transfer to host
+        # first so sklearn can wrap into the requested format.
         if func.__name__ in ("transform", "fit_transform") and (
             get_config().get("transform_output") not in ("default", None)
             or getattr(self, "_sklearn_output_config", {}).get("transform", "default")

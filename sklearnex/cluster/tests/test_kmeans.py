@@ -183,22 +183,23 @@ def test_transform_output_torch(output_format, transform_output, device):
     X_np = generate_dense_dataset(200, 10, 0.5, 3)
     X_torch = torch.tensor(X_np, device=device)
 
-    ref = KMeans(n_clusters=3, random_state=0, n_init=1).fit(X_np).transform(X_np)
-
     with config_context(array_api_dispatch=True):
-        km = KMeans(n_clusters=3, random_state=0, n_init=1)
+        km = KMeans(n_clusters=3, random_state=0, n_init=1).fit(X_torch)
+        # Un-wrapped output follows X (stays in the input's namespace/device).
+        expected = _as_numpy(km.transform(X_torch))
+
         if output_format == "set_output":
             km.set_output(transform=transform_output)
-            km.fit(X_torch)
             result = km.transform(X_torch)
         else:
             with config_context(transform_output=transform_output):
-                km.fit(X_torch)
                 result = km.transform(X_torch)
 
+    # transform_output wraps the same model's result into the requested
+    # container; the host transfer must preserve the values exactly.
     expected_type = pl.DataFrame if transform_output == "polars" else pd.DataFrame
     assert isinstance(result, expected_type)
-    assert_allclose(result.to_numpy(), ref, rtol=1e-5)
+    assert_allclose(result.to_numpy(), expected, rtol=1e-6)
 
 
 # Only numpy and dpnp: array_api_strict + polars/pandas fails in sklearn itself.
@@ -211,16 +212,19 @@ def test_transform_output_gpu(dataframe, queue, transform_output):
     X_np = generate_dense_dataset(200, 10, 0.5, 3)
     X = _convert_to_dataframe(X_np, sycl_queue=queue, target_df=dataframe)
 
-    ref = KMeans(n_clusters=3, random_state=0, n_init=1).fit(X_np).transform(X_np)
+    with config_context(array_api_dispatch=True):
+        km = KMeans(n_clusters=3, random_state=0, n_init=1).fit(X)
+        # Un-wrapped output follows X (stays in the input's namespace/device).
+        expected = _as_numpy(km.transform(X))
 
-    with config_context(array_api_dispatch=True, transform_output=transform_output):
-        km = KMeans(n_clusters=3, random_state=0, n_init=1)
-        km.fit(X)
-        result = km.transform(X)
+        with config_context(transform_output=transform_output):
+            result = km.transform(X)
 
+    # transform_output wraps the same model's result into the requested
+    # container; the host transfer must preserve the values exactly.
     expected_type = pl.DataFrame if transform_output == "polars" else pd.DataFrame
     assert isinstance(result, expected_type)
-    assert_allclose(result.to_numpy(), ref, rtol=1e-5)
+    assert_allclose(result.to_numpy(), expected, rtol=1e-6)
 
 
 # Excludes pandas (converted to numpy by validate_data, output type won't match).
@@ -234,11 +238,6 @@ def test_array_api_dispatch_output_type(dataframe, queue):
     X_np = generate_dense_dataset(200, 10, 0.5, 3)
     X = _convert_to_dataframe(X_np, sycl_queue=queue, target_df=dataframe)
 
-    ref = KMeans(n_clusters=3, random_state=0, n_init=1).fit(X_np)
-    ref_pred = ref.predict(X_np)
-    ref_trans = ref.transform(X_np)
-    ref_score = ref.score(X_np)
-
     with config_context(array_api_dispatch=True):
         km = KMeans(n_clusters=3, random_state=0, n_init=1)
         km.fit(X)
@@ -246,15 +245,19 @@ def test_array_api_dispatch_output_type(dataframe, queue):
         trans = km.transform(X)
         sc = km.score(X)
 
+        # Outputs follow X: predictions, distances and fitted centroids stay
+        # in the input's namespace/device, and score reduces to a Python float.
         assert type(pred) == type(X)
         assert type(trans) == type(X)
         assert type(km.cluster_centers_) == type(X)
         assert isinstance(sc, float)
 
-        assert_allclose(_as_numpy(pred), ref_pred)
-        assert_allclose(_as_numpy(trans), ref_trans, rtol=1e-5)
-        assert_allclose(_as_numpy(km.cluster_centers_), ref.cluster_centers_, rtol=1e-5)
-        assert_allclose(sc, ref_score, rtol=1e-5)
+        # transform distances are the per-sample distance to each centroid, so
+        # the assigned label is the argmin row and score is -sum of those minima.
+        pred_np = _as_numpy(pred)
+        trans_np = _as_numpy(trans)
+        assert_allclose(pred_np, trans_np.argmin(axis=1))
+        assert_allclose(sc, -np.square(trans_np.min(axis=1)).sum(), rtol=1e-5)
 
 
 @pytest.mark.skipif(
