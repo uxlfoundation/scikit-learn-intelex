@@ -250,7 +250,6 @@ Dimensionality Reduction
        - ``n_components`` can only be `2`
        - ``method`` != ``"barnes_hut"``
        
-       Refer to :ref:`TSNE acceleration details <acceleration_tsne>` to learn more.
      - Sparse data is not supported for the initialization and distance calculation stages.
      - 
 
