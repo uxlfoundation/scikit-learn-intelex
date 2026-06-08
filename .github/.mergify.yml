@@ -40,6 +40,3 @@ pull_request_rules:
     actions:
       label:
         add: [infra]
-      request_reviews:
-        users:
-          - aepanchi
