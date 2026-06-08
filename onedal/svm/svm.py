@@ -134,13 +134,23 @@ class BaseSVM(ABC):
         self._onedal_model = result.model
         return self
 
-    def _create_model(self):
+    def _create_model(self, support_vectors_, dual_coef_, intercept_):
         m = self.model()
 
-        m.support_vectors = to_table(self.support_vectors_)
-        m.coeffs = to_table(self.dual_coef_.T)
-        m.biases = to_table(self.intercept_)
-        return m
+        self.support_vectors_ = support_vectors_
+        self.dual_coef_ = dual_coef_
+        self.intercept_ = intercept_
+        self._sparse = is_sparse(support_vectors_)
+        self.class_count_ = dual_coef_.shape[0] + 1
+
+        m.support_vectors = to_table(support_vectors_)
+        m.biases = to_table(intercept_)
+        if sp.issparse(dual_coef_):
+            m.coeffs = to_table(dual_coef_.T.tocsr())
+        else:
+            m.coeffs = to_table(dual_coef_.T)
+
+        self._onedal_model = m
 
     @supports_queue
     def _infer(self, X, queue=None):
@@ -153,10 +163,11 @@ class BaseSVM(ABC):
                 X.sort_indices()
 
         X = to_table(X, queue=queue)
-        params = self._get_onedal_params(X)
 
         if self._onedal_model is None:
-            self._onedal_model = self._create_model()
+            self._create_model(self.support_vectors_, self.dual_coef_, self.intercept_)
+
+        params = self._get_onedal_params(X)
 
         return self.infer(params, self._onedal_model, X)
 
@@ -251,10 +262,10 @@ class SVC(BaseSVM):
             algorithm=algorithm,
         )
 
-    def _create_model(self):
-        m = super()._create_model()
-        m.first_class_response, m.second_class_response = 0, 1
-        return m
+    def _create_model(self, support_vectors_, dual_coef_, intercept_) -> None:
+        super()._create_model(support_vectors_, dual_coef_, intercept_)
+        self._onedal_model.first_class_response = 0
+        self._onedal_model.second_class_response = 1
 
     def _get_onedal_params(self, X):
         params = super()._get_onedal_params(X)
@@ -362,10 +373,10 @@ class NuSVC(BaseSVM):
             algorithm=algorithm,
         )
 
-    def _create_model(self):
-        m = super()._create_model()
-        m.first_class_response, m.second_class_response = 0, 1
-        return m
+    def _create_model(self, support_vectors_, dual_coef_, intercept_) -> None:
+        super()._create_model(support_vectors_, dual_coef_, intercept_)
+        self._onedal_model.first_class_response = 0
+        self._onedal_model.second_class_response = 1
 
     def _get_onedal_params(self, X):
         params = super()._get_onedal_params(X)

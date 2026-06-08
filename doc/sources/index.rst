@@ -46,7 +46,6 @@
    verbose.rst
    parallelism.rst
    preview.rst
-   deprecation.rst
 
 .. toctree::
    :caption: daal4py
@@ -64,13 +63,6 @@
    contribute.rst
    contributor-reference.rst
    ideas.rst
-
-.. toctree::
-   :caption: Performance
-   :hidden:
-   :maxdepth: 2
-
-   guide/acceleration.rst
 
 .. toctree::
    :caption: Learn

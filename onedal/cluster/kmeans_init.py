@@ -24,7 +24,6 @@ from onedal.utils import _sycl_queue_manager as QM
 from sklearnex._config import config_context, get_config
 
 from ..datatypes import from_table, to_table
-from ..utils.validation import _check_array
 
 if daal_check_version((2023, "P", 200)):
 
@@ -97,12 +96,6 @@ if daal_check_version((2023, "P", 200)):
             }
 
         def _get_params_and_input(self, X, queue):
-            X = _check_array(
-                X,
-                dtype=[np.float64, np.float32],
-                accept_sparse="csr",
-                force_all_finite=False,
-            )
             X = to_table(X, queue=queue)
             params = self._get_onedal_params(X.dtype)
             return (params, X, X.dtype)

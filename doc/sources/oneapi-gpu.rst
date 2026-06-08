@@ -82,6 +82,14 @@ For more details, see the `DPC++ requirements page <https://www.intel.com/conten
 
     If installing all the GPU dependencies on baremetal is not feasible, one might want to use Docker containers with these dependencies instead.
 
+User Permissions
+----------------
+
+On Linux*, non-root users might not have access to GPU devices by default. To give access to GPUs as computational resources, users must be added to either the ``render`` (compute-only) or the ``video`` (more general) user group, which can be done by executing the following commands on a terminal: ::
+
+    sudo usermod -a -G render "$(whoami)"
+    sudo usermod -a -G video "$(whoami)"
+
 Verifying GPU setup
 -------------------
 

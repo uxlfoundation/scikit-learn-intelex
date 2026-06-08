@@ -48,10 +48,14 @@ Classification
      - ``kernel`` must be one of [``"linear"``, ``"rbf"``, ``"poly"``, ``"sigmoid"``]
      - Negative weights are not supported.
      - ``probability=True`` is not supported with array API classes other than NumPy.
+       It's not possible to get accelerated predictions out of a multi-class classifier
+       that was fitted by falling back to scikit-learn.
    * - :obj:`sklearn.svm.NuSVC`
      - ``kernel`` must be one of [``"linear"``, ``"rbf"``, ``"poly"``, ``"sigmoid"``]
      - Negative weights are not supported.
-     - 
+     - ``probability=True`` is not supported with array API classes other than NumPy.
+       It's not possible to get accelerated predictions out of a multi-class classifier
+       that was fitted by falling back to scikit-learn.
    * - :obj:`sklearn.ensemble.RandomForestClassifier`
      - All parameters are supported except:
 
@@ -246,7 +250,6 @@ Dimensionality Reduction
        - ``n_components`` can only be `2`
        - ``method`` != ``"barnes_hut"``
        
-       Refer to :ref:`TSNE acceleration details <acceleration_tsne>` to learn more.
      - Sparse data is not supported for the initialization and distance calculation stages.
      - 
 

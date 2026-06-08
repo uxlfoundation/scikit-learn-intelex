@@ -97,6 +97,12 @@ outputs:
         - packaging
     test:
       requires:
+        # for QA we control the test version ceiling, which follows repository
+        # guidelines where sklearn support may exist but is not verified
+        # outside certain versions. Renovate is used to lockstep with
+        # requirements-test.txt
+        # renovate: datasource=conda depName=conda-forge/scikit-learn
+        - "scikit-learn <=1.8.0"
         - pyyaml
         # next deps are synced with requirements-test.txt
         - pytest
