@@ -194,8 +194,9 @@ def wrap_output_data(func: Callable) -> Callable:
         result = func(self, *args, **kwargs)
 
         # When transform_output is polars/pandas, sklearn's _set_output wrapper
-        # calls pl.DataFrame(result) which can't handle GPU arrays. Transfer to
-        # host so sklearn can wrap into the requested format.
+        # builds a DataFrame from the result. That conversion fails for arrays
+        # whose data lives on a non-CPU device (e.g. XPU tensors). Transfer to
+        # host first so sklearn can wrap into the requested format.
         if func.__name__ in ("transform", "fit_transform") and (
             get_config().get("transform_output") not in ("default", None)
             or getattr(self, "_sklearn_output_config", {}).get("transform", "default")

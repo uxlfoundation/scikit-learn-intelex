@@ -36,6 +36,7 @@ from onedal.tests.utils._dataframes_support import (
     dpnp_available,
     get_dataframes_and_queues,
     get_queues,
+    torch_xpu_available,
 )
 from onedal.tests.utils._device_selection import is_sycl_device_available
 from sklearnex import config_context
@@ -175,11 +176,14 @@ def test_dense_vs_sparse(queue, init, algorithm, dims):
 )
 @pytest.mark.parametrize("output_format", ["set_output", "config_context"])
 @pytest.mark.parametrize("transform_output", ["polars", "pandas"])
-def test_transform_output_torch(output_format, transform_output):
+@pytest.mark.parametrize("device", ["cpu"] + (["xpu"] if torch_xpu_available else []))
+def test_transform_output_torch(output_format, transform_output, device):
     torch = pytest.importorskip("torch")
 
     X_np = generate_dense_dataset(200, 10, 0.5, 3)
-    X_torch = torch.tensor(X_np, device="cpu")
+    X_torch = torch.tensor(X_np, device=device)
+
+    ref = KMeans(n_clusters=3, random_state=0, n_init=1).fit(X_np).transform(X_np)
 
     with config_context(array_api_dispatch=True):
         km = KMeans(n_clusters=3, random_state=0, n_init=1)
@@ -194,6 +198,7 @@ def test_transform_output_torch(output_format, transform_output):
 
     expected_type = pl.DataFrame if transform_output == "polars" else pd.DataFrame
     assert isinstance(result, expected_type)
+    assert_allclose(result.to_numpy(), ref, rtol=1e-5)
 
 
 # Only numpy and dpnp: array_api_strict + polars/pandas fails in sklearn itself.
@@ -206,6 +211,8 @@ def test_transform_output_gpu(dataframe, queue, transform_output):
     X_np = generate_dense_dataset(200, 10, 0.5, 3)
     X = _convert_to_dataframe(X_np, sycl_queue=queue, target_df=dataframe)
 
+    ref = KMeans(n_clusters=3, random_state=0, n_init=1).fit(X_np).transform(X_np)
+
     with config_context(array_api_dispatch=True, transform_output=transform_output):
         km = KMeans(n_clusters=3, random_state=0, n_init=1)
         km.fit(X)
@@ -213,6 +220,7 @@ def test_transform_output_gpu(dataframe, queue, transform_output):
 
     expected_type = pl.DataFrame if transform_output == "polars" else pd.DataFrame
     assert isinstance(result, expected_type)
+    assert_allclose(result.to_numpy(), ref, rtol=1e-5)
 
 
 # Excludes pandas (converted to numpy by validate_data, output type won't match).
@@ -226,6 +234,11 @@ def test_array_api_dispatch_output_type(dataframe, queue):
     X_np = generate_dense_dataset(200, 10, 0.5, 3)
     X = _convert_to_dataframe(X_np, sycl_queue=queue, target_df=dataframe)
 
+    ref = KMeans(n_clusters=3, random_state=0, n_init=1).fit(X_np)
+    ref_pred = ref.predict(X_np)
+    ref_trans = ref.transform(X_np)
+    ref_score = ref.score(X_np)
+
     with config_context(array_api_dispatch=True):
         km = KMeans(n_clusters=3, random_state=0, n_init=1)
         km.fit(X)
@@ -237,6 +250,11 @@ def test_array_api_dispatch_output_type(dataframe, queue):
         assert type(trans) == type(X)
         assert type(km.cluster_centers_) == type(X)
         assert isinstance(sc, float)
+
+        assert_allclose(_as_numpy(pred), ref_pred)
+        assert_allclose(_as_numpy(trans), ref_trans, rtol=1e-5)
+        assert_allclose(_as_numpy(km.cluster_centers_), ref.cluster_centers_, rtol=1e-5)
+        assert_allclose(sc, ref_score, rtol=1e-5)
 
 
 @pytest.mark.skipif(
