@@ -266,7 +266,12 @@ if sklearn_check_version("1.9"):
 else:
 
     def _check_sample_weight(
-        sample_weight, X, dtype=None, copy=False, ensure_non_negative=False
+        sample_weight,
+        X,
+        dtype=None,
+        copy=False,
+        ensure_non_negative=False,
+        allow_all_zero_weights=True,
     ):
         return _check_sample_weight_internal(
             sample_weight,
@@ -274,7 +279,7 @@ else:
             dtype=dtype,
             copy=copy,
             ensure_non_negative=ensure_non_negative,
-            allow_all_zero_weights=True,
+            allow_all_zero_weights=allow_all_zero_weights,
         )
 
 
