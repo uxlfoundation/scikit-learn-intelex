@@ -40,7 +40,7 @@ Parallelism Specifics
         estimator.fit(...)
         estimator.set_params(n_jobs=1)
 
-    See also the Intel guide for `optimization of scikit-learn workflows <https://github.com/intel/optimization-zone/blob/main/software/scikit-learn/README.md>`__
+    See also the Intel guide for `optimization of scikit-learn workflows <https://github.com/intel/optimization-zone/blob/main/software/scikit-learn/README.md>`__.
 
 |sklearnex| follows the same rules as |sklearn| for
 the calculation of the :term:`n_jobs` parameter value.
