@@ -250,9 +250,7 @@ def _check_kmeans_results(km, X, X_np):
     trans = _as_numpy(km.transform(X))
     sc = km.score(X)
 
-    expected_distances = np.linalg.norm(
-        X_np[:, None, :] - centers[None, :, :], axis=2
-    )
+    expected_distances = np.linalg.norm(X_np[:, None, :] - centers[None, :, :], axis=2)
     assert_allclose(trans, expected_distances, rtol=1e-4, atol=1e-4)
     assert_allclose(pred, trans.argmin(axis=1))
     assert_allclose(sc, -np.square(trans.min(axis=1)).sum(), rtol=1e-5)
