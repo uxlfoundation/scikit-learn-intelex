@@ -19,7 +19,11 @@ from math import sqrt
 
 import numpy as np
 from scipy.sparse import issparse
+from sklearn.base import _fit_context
+from sklearn.decomposition._pca import PCA as PCA_original
+from sklearn.decomposition._pca import _infer_dimension
 from sklearn.utils import check_array
+from sklearn.utils._array_api import get_namespace
 from sklearn.utils.extmath import stable_cumsum
 from sklearn.utils.validation import check_is_fitted
 
@@ -28,11 +32,6 @@ import daal4py
 from .._n_jobs_support import control_n_jobs
 from .._utils import PatchingConditionsChain, getFPType
 from ..utils.validation import check_feature_names, validate_data
-from sklearn.utils._array_api import get_namespace
-from sklearn.base import _fit_context
-
-from sklearn.decomposition._pca import PCA as PCA_original
-from sklearn.decomposition._pca import _infer_dimension
 
 
 @control_n_jobs(decorated_methods=["fit", "transform"])

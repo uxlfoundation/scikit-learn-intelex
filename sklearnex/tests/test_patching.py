@@ -28,6 +28,7 @@ import numpy as np
 import numpy.random as nprnd
 import pytest
 from scipy import sparse as sp
+from sklearn import get_config as sklearn_get_config
 from sklearn.base import BaseEstimator, is_clusterer, is_regressor
 from sklearn.svm._base import BaseLibSVM
 
@@ -36,8 +37,6 @@ from daal4py.sklearn._utils import (
     is_sparse,
     sklearn_check_version,
 )
-from sklearn import get_config as sklearn_get_config
-
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
@@ -545,13 +544,10 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
         # the infrastructure from sklearn that sklearnex depends on is also susceptible
         # to failure. In this case compare to sklearn for the same failure. By design
         # the patching of sklearn should act similarly. Technically this is conformance.
-        if (
-            (estimator == "PCA" and "transform" in method)
-            or (estimator == "IncrementalEmpiricalCovariance" and method == "mahalanobis")
-        ) and not _package_check_version("2.0", np.__version__):
-            # issue not to be observed with normal numpy usage
+        if not _package_check_version("2.0", np.__version__):
+            # numpy < 2.0 does not support keyword arguments in from_dlpack()
             pytest.skip(
-                f"numpy backend does not properly handle the __dlpack__ attribute."
+                "numpy < 2.0 does not fully support the array API dlpack protocol."
             )
         tags = get_tags(est)
         array_api_check = (

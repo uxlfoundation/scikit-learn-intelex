@@ -32,6 +32,8 @@ from sklearn import get_config as _get_config
 from sklearn.utils.extmath import _safe_accumulator_op
 from sklearn.utils.fixes import _object_dtype_isnan
 from sklearn.utils.validation import _assert_all_finite as _sklearn_assert_all_finite
+from sklearn.utils.validation import _check_feature_names as _sklearn_check_feature_names
+from sklearn.utils.validation import _check_n_features as _sklearn_check_n_features
 from sklearn.utils.validation import (
     _ensure_no_complex_data,
     _ensure_sparse_format,
@@ -39,6 +41,7 @@ from sklearn.utils.validation import (
     check_consistent_length,
     column_or_1d,
 )
+from sklearn.utils.validation import validate_data as _sklearn_validate_data
 
 import daal4py as d4p
 
@@ -48,12 +51,6 @@ from .._utils import (
     get_number_of_types,
     is_DataFrame,
 )
-
-from sklearn.utils.validation import (
-    _check_feature_names as _sklearn_check_feature_names,
-)
-from sklearn.utils.validation import _check_n_features as _sklearn_check_n_features
-from sklearn.utils.validation import validate_data as _sklearn_validate_data
 
 
 def _assert_all_finite(

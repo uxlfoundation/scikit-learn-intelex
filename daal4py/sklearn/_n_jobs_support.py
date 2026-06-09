@@ -24,12 +24,10 @@ from warnings import warn
 
 import threadpoolctl
 from joblib import cpu_count
+from sklearn.utils._param_validation import validate_parameter_constraints
 
 from daal4py import daalinit as set_n_threads
 from daal4py import num_threads as get_n_threads
-
-from sklearn.utils._param_validation import validate_parameter_constraints
-
 
 # Note: getting controller in global scope of this module is required
 # to avoid overheads by its initialization per each function call

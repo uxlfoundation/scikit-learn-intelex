@@ -41,6 +41,12 @@ except ImportError:
 
 from scipy.sparse import issparse
 from scipy.spatial import distance
+from sklearn.utils._param_validation import (
+    Hidden,
+    Integral,
+    StrOptions,
+    validate_params,
+)
 
 import daal4py
 from daal4py.sklearn.utils.validation import _daal_check_array
@@ -51,12 +57,6 @@ from .._utils import (
     getFPType,
     is_sparse,
     sklearn_check_version,
-)
-from sklearn.utils._param_validation import (
-    Hidden,
-    Integral,
-    StrOptions,
-    validate_params,
 )
 
 

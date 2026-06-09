@@ -46,12 +46,18 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # ==============================================================================
 
+import logging
 import numbers
+
+# only for compliance with Sklearn
+import warnings
 
 import numpy as np
 from scipy import sparse as sp
+from sklearn.exceptions import ConvergenceWarning
 from sklearn.linear_model._coordinate_descent import ElasticNet as ElasticNet_original
 from sklearn.linear_model._coordinate_descent import Lasso as Lasso_original
+from sklearn.preprocessing import normalize
 from sklearn.utils import check_array, check_X_y
 
 import daal4py
@@ -65,14 +71,6 @@ from daal4py.sklearn._utils import (
 
 from .._n_jobs_support import control_n_jobs
 from ..utils.validation import check_feature_names
-
-import logging
-
-# only for compliance with Sklearn
-import warnings
-
-from sklearn.exceptions import ConvergenceWarning
-from sklearn.preprocessing import normalize
 
 
 def _daal4py_check(self, X, y, check_input):

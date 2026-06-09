@@ -22,13 +22,11 @@ from sklearn.base import ClassifierMixin as BaseClassifierMixin
 from sklearn.neighbors._classification import (
     KNeighborsClassifier as BaseKNeighborsClassifier,
 )
-from sklearn.utils.validation import check_array
+from sklearn.utils.validation import _deprecate_positional_args, check_array
 
 from .._utils import PatchingConditionsChain, getFPType
 from ..utils.validation import check_feature_names
 from ._base import KNeighborsMixin, NeighborsBase, parse_auto_method, prediction_algorithm
-
-from sklearn.utils.validation import _deprecate_positional_args
 
 
 def daal4py_classifier_predict(estimator, X, base_predict):

@@ -21,6 +21,7 @@ from sklearn.base import BaseEstimator, MultiOutputMixin, RegressorMixin
 from sklearn.linear_model import Ridge as _sklearn_Ridge
 from sklearn.metrics import r2_score
 from sklearn.utils import gen_batches
+from sklearn.utils._param_validation import Interval
 from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
@@ -32,8 +33,6 @@ from .._utils import PatchingConditionsChain, _add_inc_serialization_note
 from ..base import oneDALEstimator
 from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.validation import validate_data
-
-from sklearn.utils._param_validation import Interval
 
 if sklearn_check_version("1.9"):
     from sklearn.utils._array_api import (

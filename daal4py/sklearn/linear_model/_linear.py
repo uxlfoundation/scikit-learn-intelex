@@ -14,14 +14,12 @@
 # limitations under the License.
 # ==============================================================================
 
+import logging
+
 import numpy as np
 from scipy import sparse as sp
 from sklearn.linear_model import LinearRegression as LinearRegression_original
 from sklearn.utils import check_array
-
-from ..utils.validation import _daal_check_array, check_feature_names, validate_data
-
-import logging
 
 import daal4py
 
@@ -33,6 +31,7 @@ from .._utils import (
     is_DataFrame,
     make2d,
 )
+from ..utils.validation import _daal_check_array, check_feature_names, validate_data
 
 
 def _daal4py_fit(self, X, y_):
@@ -194,9 +193,7 @@ def _predict_linear(self, X):
 class LinearRegression(LinearRegression_original):
     __doc__ = LinearRegression_original.__doc__
 
-    _parameter_constraints: dict = {
-        **LinearRegression_original._parameter_constraints
-    }
+    _parameter_constraints: dict = {**LinearRegression_original._parameter_constraints}
 
     def __init__(
         self,

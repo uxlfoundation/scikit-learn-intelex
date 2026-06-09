@@ -16,6 +16,7 @@
 
 from sklearn.decomposition import IncrementalPCA as _sklearn_IncrementalPCA
 from sklearn.utils import check_array, gen_batches
+from sklearn.utils._param_validation import StrOptions
 from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
@@ -27,8 +28,6 @@ from ..._utils import PatchingConditionsChain, _add_inc_serialization_note
 from ...base import oneDALEstimator
 from ...utils._array_api import enable_array_api, get_namespace
 from ...utils.validation import validate_data
-
-from sklearn.utils._param_validation import StrOptions
 
 if sklearn_check_version("1.9"):
     from sklearn.utils._array_api import check_same_namespace

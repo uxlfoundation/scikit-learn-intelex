@@ -28,7 +28,6 @@ if daal_check_version((2024, "P", 600)):
 
     from daal4py.sklearn._n_jobs_support import control_n_jobs
     from daal4py.sklearn._utils import is_sparse
-
     from onedal.linear_model import Ridge as onedal_Ridge
     from onedal.utils.validation import _num_features, _num_samples
 

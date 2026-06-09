@@ -22,6 +22,7 @@ from numbers import Number
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
+from sklearn.base import get_tags
 from sklearn.datasets import (
     load_breast_cancer,
     load_diabetes,
@@ -54,8 +55,6 @@ from sklearnex.tests.utils import (
     gen_models_info,
     sklearn_clone_dict,
 )
-
-from sklearn.base import get_tags
 
 # to reproduce errors even in CI
 d4p.daalinit(nthreads=100)

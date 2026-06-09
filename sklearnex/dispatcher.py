@@ -108,7 +108,6 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
     import sklearn.decomposition as decomposition_module
     import sklearn.dummy as dummy_module
     import sklearn.ensemble as ensemble_module
-
     import sklearn.ensemble._gb as _gb_module
     import sklearn.linear_model as linear_model_module
     import sklearn.manifold as manifold_module
@@ -116,8 +115,10 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
     import sklearn.model_selection as model_selection_module
     import sklearn.neighbors as neighbors_module
     import sklearn.svm as svm_module
-
     import sklearn.utils.parallel as parallel_module
+    from sklearn import config_context as config_context_sklearn
+    from sklearn import get_config as get_config_sklearn
+    from sklearn import set_config as set_config_sklearn
     from sklearn.cluster import DBSCAN as DBSCAN_sklearn
     from sklearn.cluster import KMeans as KMeans_sklearn
     from sklearn.decomposition import PCA as PCA_sklearn
@@ -126,12 +127,16 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
     from sklearn.ensemble import ExtraTreesRegressor as ExtraTreesRegressor_sklearn
     from sklearn.ensemble import RandomForestClassifier as RandomForestClassifier_sklearn
     from sklearn.ensemble import RandomForestRegressor as RandomForestRegressor_sklearn
+    from sklearn.ensemble._gb import DummyRegressor as DummyRegressor_sklearn_gb
     from sklearn.linear_model import ElasticNet as ElasticNet_sklearn
     from sklearn.linear_model import Lasso as Lasso_sklearn
     from sklearn.linear_model import LinearRegression as LinearRegression_sklearn
     from sklearn.linear_model import LogisticRegression as LogisticRegression_sklearn
     from sklearn.linear_model import Ridge as Ridge_sklearn
     from sklearn.manifold import TSNE as TSNE_sklearn
+    from sklearn.metrics import pairwise_distances as pairwise_distances_sklearn
+    from sklearn.metrics import roc_auc_score as roc_auc_score_sklearn
+    from sklearn.model_selection import train_test_split as train_test_split_sklearn
     from sklearn.neighbors import KNeighborsClassifier as KNeighborsClassifier_sklearn
     from sklearn.neighbors import KNeighborsRegressor as KNeighborsRegressor_sklearn
     from sklearn.neighbors import LocalOutlierFactor as LocalOutlierFactor_sklearn
@@ -140,16 +145,6 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
     from sklearn.svm import SVR as SVR_sklearn
     from sklearn.svm import NuSVC as NuSVC_sklearn
     from sklearn.svm import NuSVR as NuSVR_sklearn
-
-    from sklearn.ensemble._gb import DummyRegressor as DummyRegressor_sklearn_gb
-
-    from sklearn import config_context as config_context_sklearn
-    from sklearn import get_config as get_config_sklearn
-    from sklearn import set_config as set_config_sklearn
-    from sklearn.metrics import pairwise_distances as pairwise_distances_sklearn
-    from sklearn.metrics import roc_auc_score as roc_auc_score_sklearn
-    from sklearn.model_selection import train_test_split as train_test_split_sklearn
-
     from sklearn.utils.parallel import _FuncWrapper as _FuncWrapper_sklearn
     from sklearn.utils.parallel import get_config as parallel_get_config_sklearn
 

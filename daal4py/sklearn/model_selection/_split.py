@@ -14,6 +14,7 @@
 # limitations under the License.
 # ===============================================================================
 
+import numbers
 import platform
 
 import numpy as np
@@ -21,8 +22,6 @@ from sklearn.model_selection import ShuffleSplit, StratifiedShuffleSplit
 from sklearn.model_selection._split import _validate_shuffle_split
 from sklearn.utils import indexable
 from sklearn.utils.validation import _num_samples
-
-import numbers
 
 import daal4py as d4p
 from daal4py.sklearn._utils import PatchingConditionsChain

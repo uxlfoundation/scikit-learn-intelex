@@ -40,6 +40,7 @@ from sklearn.tree import (
 )
 from sklearn.tree._tree import Tree
 from sklearn.utils import check_random_state
+from sklearn.utils._param_validation import Interval
 from sklearn.utils.multiclass import check_classification_targets, type_of_target
 from sklearn.utils.validation import check_array, check_is_fitted
 
@@ -69,8 +70,6 @@ from ..utils.validation import (
     assert_all_finite,
     validate_data,
 )
-
-from sklearn.utils._param_validation import Interval
 
 if sklearn_check_version("1.9"):
     from sklearn.utils._array_api import get_namespace_and_device, move_to

@@ -36,10 +36,10 @@ if sklearn_check_version("1.9"):
     from sklearn.utils.validation import _check_estimator_name
     from sklearn.utils._array_api import get_namespace_and_device, move_to
 
+from sklearn.utils.validation import validate_data as _sklearn_validate_data
+
 from .._config import get_config as _get_config
 from ._array_api import get_namespace
-
-from sklearn.utils.validation import validate_data as _sklearn_validate_data
 
 _finite_keyword = "ensure_all_finite"
 

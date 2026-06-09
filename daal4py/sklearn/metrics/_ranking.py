@@ -58,6 +58,12 @@ from sklearn.metrics._ranking import _binary_roc_auc_score
 from sklearn.metrics._ranking import _multiclass_roc_auc_score as multiclass_roc_auc_score
 from sklearn.preprocessing import label_binarize
 from sklearn.utils import check_array
+from sklearn.utils._param_validation import (
+    Interval,
+    Real,
+    StrOptions,
+    validate_params,
+)
 from sklearn.utils.multiclass import is_multilabel
 
 import daal4py as d4p
@@ -68,12 +74,6 @@ from .._utils import (
     get_patch_message,
 )
 from ..utils.validation import _assert_all_finite
-from sklearn.utils._param_validation import (
-    Interval,
-    Real,
-    StrOptions,
-    validate_params,
-)
 
 try:
     import pandas as pd

@@ -26,7 +26,9 @@ from sklearn.utils import check_array, check_random_state
 from sklearn.utils._openmp_helpers import _openmp_effective_n_threads
 from sklearn.utils.sparsefuncs import mean_variance_axis
 from sklearn.utils.validation import (
+    _check_sample_weight,
     _deprecate_positional_args,
+    _is_arraylike_not_scalar,
     _num_samples,
     check_is_fitted,
 )
@@ -36,7 +38,6 @@ import daal4py
 from .._n_jobs_support import control_n_jobs
 from .._utils import PatchingConditionsChain, getFPType
 from ..utils.validation import check_feature_names, validate_data
-from sklearn.utils.validation import _check_sample_weight, _is_arraylike_not_scalar
 
 
 def _validate_center_shape(X, n_centers, centers):

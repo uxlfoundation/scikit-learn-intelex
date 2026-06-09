@@ -22,11 +22,10 @@ from typing import Union
 
 import scipy.linalg as linalg
 from sklearn.covariance import log_likelihood as _sklearn_log_likelihood
+from sklearn.utils._array_api import get_namespace as sklearn_get_namespace
 
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal.utils._array_api import _get_sycl_namespace, _is_numpy_namespace
-
-from sklearn.utils._array_api import get_namespace as sklearn_get_namespace
 
 from .._config import get_config
 from ..base import Tags, oneDALEstimator

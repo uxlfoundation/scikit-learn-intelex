@@ -27,6 +27,7 @@ from sklearn.exceptions import DataConversionWarning
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn.tree._tree import Tree
 from sklearn.utils import check_array, check_random_state
+from sklearn.utils._param_validation import Interval, StrOptions
 from sklearn.utils.validation import (
     _num_samples,
     check_consistent_length,
@@ -41,12 +42,10 @@ from daal4py.sklearn._utils import (
     getFPType,
     sklearn_check_version,
 )
+from daal4py.sklearn.utils import _assert_all_finite
 
 from .._n_jobs_support import control_n_jobs
 from ..utils.validation import _daal_num_features, check_feature_names, check_n_features
-
-from sklearn.utils._param_validation import Interval, StrOptions
-from daal4py.sklearn.utils import _assert_all_finite
 
 
 def _to_absolute_max_features(max_features, n_features, is_classification=False):
