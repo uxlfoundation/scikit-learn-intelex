@@ -104,9 +104,12 @@ outputs:
         # renovate: datasource=conda depName=conda-forge/scikit-learn
         - "scikit-learn <=1.8.0"
         - pyyaml
+        - mpi * impi  # [not win]
+        - mpi4py  # [not win]
         # next deps are synced with requirements-test.txt
         - pytest
         - pytest-mock
+        - pytest-mpi  # [not win]
         - pandas
         - xgboost
         - lightgbm
