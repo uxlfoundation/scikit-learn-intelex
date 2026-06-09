@@ -56,9 +56,7 @@ def generate_dense_dataset(n_samples, n_features, density, n_clusters):
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-@pytest.mark.parametrize(
-    "algorithm", ["lloyd", "elkan"]
-)
+@pytest.mark.parametrize("algorithm", ["lloyd", "elkan"])
 @pytest.mark.parametrize("init", ["k-means++", "random"])
 def test_sklearnex_import_for_dense_data(dataframe, queue, algorithm, init):
     from sklearnex.cluster import KMeans
@@ -81,9 +79,7 @@ def test_sklearnex_import_for_dense_data(dataframe, queue, algorithm, init):
     reason="Sparse data requires oneDAL>=2024.7.0",
 )
 @pytest.mark.parametrize("queue", get_queues())
-@pytest.mark.parametrize(
-    "algorithm", ["lloyd", "elkan"]
-)
+@pytest.mark.parametrize("algorithm", ["lloyd", "elkan"])
 @pytest.mark.parametrize("init", ["k-means++", "random"])
 def test_sklearnex_import_for_sparse_data(queue, algorithm, init):
     from sklearnex.cluster import KMeans
@@ -99,9 +95,7 @@ def test_sklearnex_import_for_sparse_data(queue, algorithm, init):
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-@pytest.mark.parametrize(
-    "algorithm", ["lloyd", "elkan"]
-)
+@pytest.mark.parametrize("algorithm", ["lloyd", "elkan"])
 def test_results_on_dense_gold_data(dataframe, queue, algorithm):
     from sklearnex.cluster import KMeans
 
@@ -133,9 +127,7 @@ def test_results_on_dense_gold_data(dataframe, queue, algorithm):
 )
 @pytest.mark.parametrize("queue", get_queues())
 @pytest.mark.parametrize("init", ["k-means++", "random", "arraylike"])
-@pytest.mark.parametrize(
-    "algorithm", ["lloyd", "elkan"]
-)
+@pytest.mark.parametrize("algorithm", ["lloyd", "elkan"])
 @pytest.mark.parametrize(
     "dims", [(1000, 10, 0.95, 3), (50000, 100, 0.75, 10), (10000, 10, 0.8, 5)]
 )

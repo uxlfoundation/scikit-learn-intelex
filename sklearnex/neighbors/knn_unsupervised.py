@@ -40,9 +40,7 @@ class NearestNeighbors(KNeighborsDispatchingBase, _sklearn_NearestNeighbors):
     # Default onedal estimator class - SPMD subclasses can override this
     _onedal_estimator = onedal_NearestNeighbors
 
-    _parameter_constraints: dict = {
-        **_sklearn_NearestNeighbors._parameter_constraints
-    }
+    _parameter_constraints: dict = {**_sklearn_NearestNeighbors._parameter_constraints}
 
     @_deprecate_positional_args
     def __init__(

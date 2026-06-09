@@ -1036,9 +1036,7 @@ def logistic_regression_path_dispatcher(
 class LogisticRegression(LogisticRegression_original):
     __doc__ = LogisticRegression_original.__doc__
 
-    _parameter_constraints: dict = {
-        **LogisticRegression_original._parameter_constraints
-    }
+    _parameter_constraints: dict = {**LogisticRegression_original._parameter_constraints}
 
     def __init__(
         self,
