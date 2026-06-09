@@ -36,7 +36,6 @@ Configurable options
 
 In |sklearn|, several options can be managed through :obj:`sklearn.config_context` and :obj:`sklearn.set_config`. These are propagated to estimators and functions from the |sklearnex| under both the stock and the patched versions of these functions (see :doc:`config-contexts`), but when accelerated routines are used, the following options will not have any effect:
 
-- ``assume_finite``.
 - ``working_memory``.
 - ``pairwise_dist_chunk_size``.
 - ``enable_cython_pairwise_dist``.
