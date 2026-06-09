@@ -261,6 +261,9 @@ def test_transform_output_matches_default_torch(device, transform_output):
         _assert_transform_output_matches_default(km, X, transform_output)
 
 
+@pytest.mark.skipif(
+    not sklearn_check_version("1.2"), reason="transform_output requires sklearn >= 1.2"
+)
 @pytest.mark.skipif(not dpnp_available, reason="Functionality to test requires DPNP.")
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("dpnp"))
 @pytest.mark.parametrize("transform_output", ["polars", "pandas"])
@@ -272,6 +275,9 @@ def test_transform_output_dpnp_no_array_api(dataframe, queue, transform_output):
     _assert_transform_output_matches_default(km, X, transform_output)
 
 
+@pytest.mark.skipif(
+    not sklearn_check_version("1.2"), reason="transform_output requires sklearn >= 1.2"
+)
 @pytest.mark.parametrize("queue", get_queues("gpu"))
 @pytest.mark.parametrize("transform_output", ["polars", "pandas"])
 def test_transform_output_target_offload(queue, transform_output):
