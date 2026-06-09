@@ -43,6 +43,12 @@ requested operation (e.g. call to ``.fit()`` / ``.predict()``
 on the estimator class being used) is :ref:`supported on device/GPU <sklearn_algorithms_gpu>`, computations
 will be performed on the device where the data lives, without involving any data transfers.
 
+.. tip::
+    Internally, array API support in the |sklearnex| works by extracting memory pointers, devices and queues
+    from objects, without using the object's namespace for compute-heavy operations, which differs from how
+    |sklearn| implements array API. Thus, there should be no performance difference between different array API
+    libraries when using the same device.
+
 If the requested operation is not supported on the device where the data lives, then it will either fall
 back to |sklearn|, or to an accelerated CPU version from the |sklearnex| when supported - these are controllable
 through options ``allow_sklearn_after_onedal`` (default is ``True``) and ``allow_fallback_to_host`` (default is
