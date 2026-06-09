@@ -36,6 +36,7 @@ if sklearn_check_version("1.9"):
     from sklearn.utils.validation import _check_estimator_name
     from sklearn.utils._array_api import get_namespace_and_device, move_to
 
+from .._config import get_config as _get_config
 from ._array_api import get_namespace
 
 if sklearn_check_version("1.6"):
@@ -102,6 +103,10 @@ def _sklearnex_assert_all_finite(
         else:
             _sklearn_assert_all_finite(X, allow_nan=allow_nan)
     else:
+        # only check on onedal branch as it is already exists in sklearn's
+        if _get_config()["assume_finite"]:
+            return
+
         all_finite = check_all_finite(
             X,
             allow_nan=allow_nan,
@@ -261,7 +266,12 @@ if sklearn_check_version("1.9"):
 else:
 
     def _check_sample_weight(
-        sample_weight, X, dtype=None, copy=False, ensure_non_negative=False
+        sample_weight,
+        X,
+        dtype=None,
+        copy=False,
+        ensure_non_negative=False,
+        allow_all_zero_weights=True,
     ):
         return _check_sample_weight_internal(
             sample_weight,
@@ -269,7 +279,7 @@ else:
             dtype=dtype,
             copy=copy,
             ensure_non_negative=ensure_non_negative,
-            allow_all_zero_weights=True,
+            allow_all_zero_weights=allow_all_zero_weights,
         )
 
 

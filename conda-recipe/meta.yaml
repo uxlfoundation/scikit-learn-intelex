@@ -102,7 +102,7 @@ outputs:
         # outside certain versions. Renovate is used to lockstep with
         # requirements-test.txt
         # renovate: datasource=conda depName=conda-forge/scikit-learn
-        - "scikit-learn <=1.8.0"
+        - "scikit-learn <=1.9.0"
         - pyyaml
         - mpi * impi  # [not win]
         - mpi4py  # [not win]
@@ -181,6 +181,6 @@ extra:
   recipe-maintainers:
     # GitHub IDs for maintainers of the recipe.
     - napetrov
-    - Alexsandruss
+    - david-cortes-intel
     - maria-Petrova
     - ethanglaser

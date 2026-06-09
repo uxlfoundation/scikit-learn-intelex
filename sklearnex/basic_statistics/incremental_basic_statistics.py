@@ -190,8 +190,13 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
             )
 
             if sample_weight is not None:
+                # SPMD ranks may hold an all-zero local weight block while the
+                # global aggregate is non-zero, so don't reject all-zero weights.
                 sample_weight = _check_sample_weight(
-                    sample_weight, X, dtype=[xp.float64, xp.float32]
+                    sample_weight,
+                    X,
+                    dtype=[xp.float64, xp.float32],
+                    allow_all_zero_weights=True,
                 )
         else:
             xp = None
@@ -215,8 +220,13 @@ class IncrementalBasicStatistics(oneDALEstimator, BaseEstimator):
         X = validate_data(self, X, dtype=[xp.float64, xp.float32])
 
         if sample_weight is not None:
+            # SPMD ranks may hold an all-zero local weight block while the
+            # global aggregate is non-zero, so don't reject all-zero weights.
             sample_weight = _check_sample_weight(
-                sample_weight, X, dtype=[xp.float64, xp.float32]
+                sample_weight,
+                X,
+                dtype=[xp.float64, xp.float32],
+                allow_all_zero_weights=True,
             )
 
         _, n_features = X.shape
