@@ -36,6 +36,7 @@ from onedal.tests.utils._dataframes_support import (
     dpnp_available,
     get_dataframes_and_queues,
     get_queues,
+    torch_available,
     torch_xpu_available,
 )
 from onedal.tests.utils._device_selection import is_sycl_device_available
@@ -216,6 +217,71 @@ def test_transform_output_gpu(dataframe, queue, transform_output):
     assert isinstance(result, expected_type)
 
 
+def _assert_transform_output_matches_default(km, X, transform_output):
+    """The polars/pandas transform_output wrapping must preserve the values of
+    the default (un-wrapped) transform output, independent of input type/device."""
+    default = _as_numpy(km.transform(X))
+    with config_context(transform_output=transform_output):
+        out = km.transform(X)
+    expected_type = pl.DataFrame if transform_output == "polars" else pd.DataFrame
+    assert isinstance(out, expected_type)
+    assert_allclose(out.to_numpy(), default, rtol=1e-5, atol=1e-5)
+
+
+@pytest.mark.skipif(
+    not sklearn_check_version("1.2"), reason="array_api_dispatch requires sklearn >= 1.2"
+)
+@pytest.mark.parametrize(
+    "dataframe,queue", get_dataframes_and_queues("numpy,dpnp,array_api")
+)
+@pytest.mark.parametrize("transform_output", ["polars", "pandas"])
+def test_transform_output_matches_default(dataframe, queue, transform_output):
+    X_np = generate_dense_dataset(200, 10, 0.5, 3)
+    X = _convert_to_dataframe(X_np, sycl_queue=queue, target_df=dataframe)
+
+    with config_context(array_api_dispatch=True):
+        km = KMeans(n_clusters=3, random_state=0, n_init=1).fit(X)
+        _assert_transform_output_matches_default(km, X, transform_output)
+
+
+@pytest.mark.skipif(
+    not sklearn_check_version("1.2"), reason="array_api_dispatch requires sklearn >= 1.2"
+)
+@pytest.mark.skipif(not torch_available, reason="Functionality to test requires torch.")
+@pytest.mark.parametrize("device", ["cpu"] + (["xpu"] if torch_xpu_available else []))
+@pytest.mark.parametrize("transform_output", ["polars", "pandas"])
+def test_transform_output_matches_default_torch(device, transform_output):
+    import torch
+
+    X_np = generate_dense_dataset(200, 10, 0.5, 3)
+    X = torch.tensor(X_np, device=device)
+
+    with config_context(array_api_dispatch=True):
+        km = KMeans(n_clusters=3, random_state=0, n_init=1).fit(X)
+        _assert_transform_output_matches_default(km, X, transform_output)
+
+
+@pytest.mark.skipif(not dpnp_available, reason="Functionality to test requires DPNP.")
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("dpnp"))
+@pytest.mark.parametrize("transform_output", ["polars", "pandas"])
+def test_transform_output_dpnp_no_array_api(dataframe, queue, transform_output):
+    X_np = generate_dense_dataset(200, 10, 0.5, 3)
+    X = _convert_to_dataframe(X_np, sycl_queue=queue, target_df=dataframe)
+
+    km = KMeans(n_clusters=3, random_state=0, n_init=1).fit(X)
+    _assert_transform_output_matches_default(km, X, transform_output)
+
+
+@pytest.mark.parametrize("queue", get_queues("gpu"))
+@pytest.mark.parametrize("transform_output", ["polars", "pandas"])
+def test_transform_output_target_offload(queue, transform_output):
+    X_np = generate_dense_dataset(200, 10, 0.5, 3)
+
+    with config_context(target_offload=queue):
+        km = KMeans(n_clusters=3, random_state=0, n_init=1).fit(X_np)
+        _assert_transform_output_matches_default(km, X_np, transform_output)
+
+
 # Excludes pandas (converted to numpy by validate_data, output type won't match).
 @pytest.mark.skipif(
     not sklearn_check_version("1.2"), reason="array_api_dispatch requires sklearn >= 1.2"
@@ -274,9 +340,10 @@ def test_array_api_dispatch_results(dataframe, queue):
 @pytest.mark.skipif(
     not sklearn_check_version("1.2"), reason="array_api_dispatch requires sklearn >= 1.2"
 )
+@pytest.mark.skipif(not torch_available, reason="Functionality to test requires torch.")
 @pytest.mark.parametrize("device", ["cpu"] + (["xpu"] if torch_xpu_available else []))
 def test_torch_dispatch_results(device):
-    torch = pytest.importorskip("torch")
+    import torch
 
     X_np = generate_dense_dataset(200, 10, 0.5, 3)
     X = torch.tensor(X_np, device=device)
