@@ -39,15 +39,9 @@ if sklearn_check_version("1.9"):
 from .._config import get_config as _get_config
 from ._array_api import get_namespace
 
-if sklearn_check_version("1.6"):
-    from sklearn.utils.validation import validate_data as _sklearn_validate_data
+from sklearn.utils.validation import validate_data as _sklearn_validate_data
 
-    _finite_keyword = "ensure_all_finite"
-else:
-    from sklearn.base import BaseEstimator
-
-    _sklearn_validate_data = BaseEstimator._validate_data
-    _finite_keyword = "force_all_finite"
+_finite_keyword = "ensure_all_finite"
 
 
 if daal_check_version((2024, "P", 700)):
@@ -98,10 +92,8 @@ def _sklearnex_assert_all_finite(
                 input_name=input_name,
                 estimator_name=estimator_name,
             )
-        elif sklearn_check_version("1.1"):
-            _sklearn_assert_all_finite(X, allow_nan=allow_nan, input_name=input_name)
         else:
-            _sklearn_assert_all_finite(X, allow_nan=allow_nan)
+            _sklearn_assert_all_finite(X, allow_nan=allow_nan, input_name=input_name)
     else:
         # only check on onedal branch as it is already exists in sklearn's
         if _get_config()["assume_finite"]:
@@ -324,9 +316,8 @@ def _check_sample_weight_internal(
             "order": "C",
             "copy": copy,
             _finite_keyword: False,
+            "input_name": "sample_weight",
         }
-        if sklearn_check_version("1.1"):
-            params["input_name"] = "sample_weight"
 
         sample_weight = check_array(sample_weight, **params)
         assert_all_finite(sample_weight, input_name="sample_weight")

@@ -22,10 +22,10 @@ from sklearn.model_selection._split import _validate_shuffle_split
 from sklearn.utils import indexable
 from sklearn.utils.validation import _num_samples
 
+import numbers
+
 import daal4py as d4p
 from daal4py.sklearn._utils import PatchingConditionsChain
-
-from .._utils import sklearn_check_version
 
 try:
     from sklearn.utils import _safe_indexing as safe_indexing
@@ -46,15 +46,12 @@ try:
 except (ImportError, ModuleNotFoundError):
     pandas_is_imported = False
 
-if sklearn_check_version("1.3"):
-    import numbers
-
-    from sklearn.utils._param_validation import (
-        Interval,
-        RealNotInt,
-        StrOptions,
-        validate_params,
-    )
+from sklearn.utils._param_validation import (
+    Interval,
+    RealNotInt,
+    StrOptions,
+    validate_params,
+)
 
 
 def get_dtypes(data):
@@ -272,40 +269,39 @@ def train_test_split(
     return res
 
 
-if sklearn_check_version("1.3"):
-    train_test_split = validate_params(
-        {
-            "test_size": [
-                Interval(RealNotInt, 0, 1, closed="neither"),
-                Interval(numbers.Integral, 1, None, closed="left"),
-                None,
-            ],
-            "train_size": [
-                Interval(RealNotInt, 0, 1, closed="neither"),
-                Interval(numbers.Integral, 1, None, closed="left"),
-                None,
-            ],
-            "random_state": ["random_state"],
-            "shuffle": ["boolean"],
-            "stratify": ["array-like", None],
-            "rng": [
-                StrOptions(
-                    {
-                        "default",
-                        "MT19937",
-                        "SFMT19937",
-                        "MT2203",
-                        "R250",
-                        "WH",
-                        "MCG31",
-                        "MCG59",
-                        "MRG32K3A",
-                        "PHILOX4X32X10",
-                        "NONDETERM",
-                        "OPTIMIZED_MT19937",
-                    }
-                )
-            ],
-        },
-        prefer_skip_nested_validation=True,
-    )(train_test_split)
+train_test_split = validate_params(
+    {
+        "test_size": [
+            Interval(RealNotInt, 0, 1, closed="neither"),
+            Interval(numbers.Integral, 1, None, closed="left"),
+            None,
+        ],
+        "train_size": [
+            Interval(RealNotInt, 0, 1, closed="neither"),
+            Interval(numbers.Integral, 1, None, closed="left"),
+            None,
+        ],
+        "random_state": ["random_state"],
+        "shuffle": ["boolean"],
+        "stratify": ["array-like", None],
+        "rng": [
+            StrOptions(
+                {
+                    "default",
+                    "MT19937",
+                    "SFMT19937",
+                    "MT2203",
+                    "R250",
+                    "WH",
+                    "MCG31",
+                    "MCG59",
+                    "MRG32K3A",
+                    "PHILOX4X32X10",
+                    "NONDETERM",
+                    "OPTIMIZED_MT19937",
+                }
+            )
+        ],
+    },
+    prefer_skip_nested_validation=True,
+)(train_test_split)

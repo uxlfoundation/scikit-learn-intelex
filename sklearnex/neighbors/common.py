@@ -444,8 +444,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         return indices
 
     def _fit_validation(self, X, y=None):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
+        self._validate_params()
         self._validate_n_neighbors(self.n_neighbors)
         self._set_effective_metric()
 

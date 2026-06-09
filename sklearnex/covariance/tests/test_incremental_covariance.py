@@ -280,9 +280,6 @@ def test_IncrementalEmpiricalCovariance_against_sklearn(monkeypatch, sklearn_tes
     sklearn_test()
 
 
-@pytest.mark.skipif(
-    not sklearn_check_version("1.4"), reason="requires array_api_support sklearn config"
-)
 @pytest.mark.parametrize("dispatch", [True, False])
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("dpnp"))
 def test_score_verify_namespace(dispatch, dataframe, queue):

@@ -28,10 +28,7 @@ from joblib import cpu_count
 from daal4py import daalinit as set_n_threads
 from daal4py import num_threads as get_n_threads
 
-from ._utils import sklearn_check_version
-
-if sklearn_check_version("1.2"):
-    from sklearn.utils._param_validation import validate_parameter_constraints
+from sklearn.utils._param_validation import validate_parameter_constraints
 
 
 # Note: getting controller in global scope of this module is required
@@ -93,7 +90,7 @@ def _run_with_n_jobs(method):
         # preemptive validation of n_jobs parameter is required
         # because '_run_with_n_jobs' decorator is applied on top of method
         # where validation takes place
-        if sklearn_check_version("1.2") and hasattr(self, "_parameter_constraints"):
+        if hasattr(self, "_parameter_constraints"):
             validate_parameter_constraints(
                 parameter_constraints={"n_jobs": self._parameter_constraints["n_jobs"]},
                 params={"n_jobs": self.n_jobs},
@@ -182,9 +179,7 @@ def control_n_jobs(decorated_methods: list = []):
 
         original_init = original_class.__init__
 
-        if sklearn_check_version("1.2") and hasattr(
-            original_class, "_parameter_constraints"
-        ):
+        if hasattr(original_class, "_parameter_constraints"):
             parameter_constraints = original_class._parameter_constraints
             if "n_jobs" not in parameter_constraints:
                 parameter_constraints["n_jobs"] = [Integral, None]

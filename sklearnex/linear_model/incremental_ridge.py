@@ -33,8 +33,7 @@ from ..base import oneDALEstimator
 from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.validation import validate_data
 
-if sklearn_check_version("1.2"):
-    from sklearn.utils._param_validation import Interval
+from sklearn.utils._param_validation import Interval
 
 if sklearn_check_version("1.9"):
     from sklearn.utils._array_api import (
@@ -114,14 +113,13 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
 
     _onedal_incremental_ridge = staticmethod(onedal_IncrementalRidge)
 
-    if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {
-            "fit_intercept": ["boolean"],
-            "alpha": [Interval(numbers.Real, 0, None, closed="left")],
-            "copy_X": ["boolean"],
-            "n_jobs": [numbers.Integral, None],
-            "batch_size": [Interval(numbers.Integral, 1, None, closed="left"), None],
-        }
+    _parameter_constraints: dict = {
+        "fit_intercept": ["boolean"],
+        "alpha": [Interval(numbers.Real, 0, None, closed="left")],
+        "copy_X": ["boolean"],
+        "n_jobs": [numbers.Integral, None],
+        "batch_size": [Interval(numbers.Integral, 1, None, closed="left"), None],
+    }
 
     def __init__(
         self, fit_intercept=True, alpha=1.0, copy_X=True, n_jobs=None, batch_size=None
@@ -142,8 +140,7 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
     _onedal_gpu_supported = _onedal_supported
 
     def _onedal_predict(self, X, queue=None):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
+        self._validate_params()
 
         xp, _ = get_namespace(X)
 
@@ -299,7 +296,7 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
         self : IncrementalRidge
             Returns the instance itself.
         """
-        if sklearn_check_version("1.2") and check_input:
+        if check_input:
             self._validate_params()
 
         dispatch(
@@ -337,8 +334,7 @@ class IncrementalRidge(MultiOutputMixin, RegressorMixin, oneDALEstimator, BaseEs
         self : IncrementalRidge
             Returns the instance itself.
         """
-        if sklearn_check_version("1.2"):
-            self._validate_params()
+        self._validate_params()
 
         dispatch(
             self,

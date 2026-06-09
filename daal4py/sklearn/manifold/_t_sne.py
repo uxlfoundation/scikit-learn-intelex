@@ -77,8 +77,7 @@ from ..utils.validation import validate_data
 class TSNE(BaseTSNE):
     __doc__ = BaseTSNE.__doc__
 
-    if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {**BaseTSNE._parameter_constraints}
+    _parameter_constraints: dict = {**BaseTSNE._parameter_constraints}
 
     def fit_transform(self, X, y=None):
         return super().fit_transform(X, y)
@@ -99,26 +98,14 @@ class TSNE(BaseTSNE):
             [n_samples],
             [P.nnz],
             [self.n_iter_without_progress],
-            [
-                (
-                    self.max_iter
-                    if sklearn_check_version("1.7")
-                    else (self._max_iter if sklearn_check_version("1.5") else self.n_iter)
-                )
-            ],
+            [(self.max_iter if sklearn_check_version("1.7") else self._max_iter)],
         ]
 
         # Pass params to daal4py backend
         if daal_check_version((2023, "P", 1)):
             size_iter.extend(
                 [
-                    [
-                        (
-                            self._EXPLORATION_MAX_ITER
-                            if sklearn_check_version("1.5")
-                            else self._EXPLORATION_N_ITER
-                        )
-                    ],
+                    [self._EXPLORATION_MAX_ITER],
                     [self._N_ITER_CHECK],
                 ]
             )
@@ -199,17 +186,7 @@ class TSNE(BaseTSNE):
                 ),
                 (self.early_exaggeration >= 1.0, "early_exaggeration must be at least 1"),
                 (
-                    (
-                        isinstance(self.init, str)
-                        and self.init
-                        in ["random", "pca"]
-                        + (
-                            ["warn"]
-                            if sklearn_check_version("1.0")
-                            and not sklearn_check_version("1.2")
-                            else []
-                        )
-                    )
+                    (isinstance(self.init, str) and self.init in ["random", "pca"])
                     or isinstance(self.init, np.ndarray),
                     "'init' must be 'exact', 'pca', or a numpy array.",
                 ),
@@ -220,31 +197,9 @@ class TSNE(BaseTSNE):
         if not _dal_ready:
             return super()._fit(X, skip_num_points)
 
-        if sklearn_check_version("1.0") and not sklearn_check_version("1.2"):
-            if isinstance(self.init, str) and self.init == "warn":
-                warnings.warn(
-                    "The default initialization in TSNE will change "
-                    "from 'random' to 'pca' in 1.2.",
-                    FutureWarning,
-                )
-                self._init = "random"
-            else:
-                self._init = self.init
-        else:
-            self._init = self.init
+        self._init = self.init
 
-        if sklearn_check_version("1.0") and not sklearn_check_version("1.2"):
-            if self.learning_rate == "warn":
-                warnings.warn(
-                    "The default learning rate in TSNE will change "
-                    "from 200.0 to 'auto' in 1.2.",
-                    FutureWarning,
-                )
-                self._learning_rate = 200.0
-            else:
-                self._learning_rate = self.learning_rate
-        else:
-            self._learning_rate = self.learning_rate
+        self._learning_rate = self.learning_rate
         if self._learning_rate == "auto":
             self._learning_rate = X.shape[0] / self.early_exaggeration / 4
             self._learning_rate = np.maximum(self._learning_rate, 50)
@@ -254,31 +209,15 @@ class TSNE(BaseTSNE):
                     "'learning_rate' must be a positive number " "or 'auto'."
                 )
         # rename attribute for compatibility with sklearn>=1.2
-        if sklearn_check_version("1.2"):
-            self.learning_rate_ = self._learning_rate
+        self.learning_rate_ = self._learning_rate
 
         if hasattr(self, "square_distances"):
-            if sklearn_check_version("1.1"):
-                if self.square_distances != "deprecated":
-                    warnings.warn(
-                        "The parameter `square_distances` has not effect "
-                        "and will be removed in version 1.3.",
-                        FutureWarning,
-                    )
-            else:
-                if self.square_distances not in [True, "legacy"]:
-                    raise ValueError("'square_distances' must be True or 'legacy'.")
-                if self.metric != "euclidean" and self.square_distances is not True:
-                    warnings.warn(
-                        "'square_distances' has been introduced in 0.24 to help phase "
-                        "out legacy squaring behavior. The 'legacy' setting will be "
-                        "removed in 1.1 (renaming of 0.26), and the default setting "
-                        "will be changed to True. In 1.3, 'square_distances' will be "
-                        "removed altogether, and distances will be squared by "
-                        "default. Set 'square_distances'=True to silence this "
-                        "warning.",
-                        FutureWarning,
-                    )
+            if self.square_distances != "deprecated":
+                warnings.warn(
+                    "The parameter `square_distances` has not effect "
+                    "and will be removed in version 1.3.",
+                    FutureWarning,
+                )
 
         if self.method == "barnes_hut":
             X = validate_data(
@@ -320,10 +259,6 @@ class TSNE(BaseTSNE):
 
         random_state = check_random_state(self.random_state)
 
-        if not sklearn_check_version("1.2"):
-            if self.n_iter < 250:
-                raise ValueError("n_iter should be at least 250")
-
         n_samples = X.shape[0]
 
         # neighbors_nn = None # <- unused variable in stock sklearn, commented out due to coverity
@@ -344,9 +279,7 @@ class TSNE(BaseTSNE):
                     # Also, Euclidean is slower for n_jobs>1, so don't set here
                     distances = pairwise_distances(X, metric=self.metric, squared=True)
                 else:
-                    metric_params_ = {}
-                    if sklearn_check_version("1.1"):
-                        metric_params_ = self.metric_params or {}
+                    metric_params_ = self.metric_params or {}
                     distances = pairwise_distances(
                         X, metric=self.metric, n_jobs=self.n_jobs, **metric_params_
                     )
@@ -356,9 +289,7 @@ class TSNE(BaseTSNE):
                     "All distances should be positive, the " "metric given is not correct"
                 )
 
-            if self.metric != "euclidean" and (
-                sklearn_check_version("1.2") or self.square_distances is True
-            ):
+            if self.metric != "euclidean":
                 distances **= 2
 
             # compute the joint probability distribution for the input space
@@ -380,22 +311,13 @@ class TSNE(BaseTSNE):
                 print("[t-SNE] Computing {} nearest neighbors...".format(n_neighbors))
 
             # Find the nearest neighbors for every point
-            knn = None
-            if sklearn_check_version("1.1"):
-                knn = NearestNeighbors(
-                    algorithm="auto",
-                    n_jobs=self.n_jobs,
-                    n_neighbors=n_neighbors,
-                    metric=self.metric,
-                    metric_params=self.metric_params,
-                )
-            else:
-                knn = NearestNeighbors(
-                    algorithm="auto",
-                    n_jobs=self.n_jobs,
-                    n_neighbors=n_neighbors,
-                    metric=self.metric,
-                )
+            knn = NearestNeighbors(
+                algorithm="auto",
+                n_jobs=self.n_jobs,
+                n_neighbors=n_neighbors,
+                metric=self.metric,
+                metric_params=self.metric_params,
+            )
             t0 = time()
             knn.fit(X)
             duration = time() - t0
@@ -421,10 +343,7 @@ class TSNE(BaseTSNE):
             # the method was derived using the euclidean method as in the
             # input space. Not sure of the implication of using a different
             # metric.
-            if sklearn_check_version("1.2") or (
-                self.square_distances is True or self.metric == "euclidean"
-            ):
-                distances_nn.data **= 2
+            distances_nn.data **= 2
 
             # compute the joint probability distribution for the input space
             P = _joint_probabilities_nn(distances_nn, self.perplexity, self.verbose)
@@ -436,21 +355,12 @@ class TSNE(BaseTSNE):
                 n_components=self.n_components,
                 random_state=random_state,
             )
-            if sklearn_check_version("1.2"):
-                # Always output a numpy array, no matter what is configured globally
-                pca.set_output(transform="default")
+            # Always output a numpy array, no matter what is configured globally
+            pca.set_output(transform="default")
             X_embedded = pca.fit_transform(X).astype(np.float32, copy=False)
-            if sklearn_check_version("1.0") and not sklearn_check_version("1.2"):
-                warnings.warn(
-                    "The PCA initialization in TSNE will change to "
-                    "have the standard deviation of PC1 equal to 1e-4 "
-                    "in 1.2. This will ensure better convergence.",
-                    FutureWarning,
-                )
-            if sklearn_check_version("1.2"):
-                # PCA is rescaled so that PC1 has standard deviation 1e-4 which is
-                # the default value for random initialization. See issue #18018.
-                X_embedded = X_embedded / np.std(X_embedded[:, 0]) * 1e-4
+            # PCA is rescaled so that PC1 has standard deviation 1e-4 which is
+            # the default value for random initialization. See issue #18018.
+            X_embedded = X_embedded / np.std(X_embedded[:, 0]) * 1e-4
         elif self._init == "random":
             # The embedding is initialized with iid samples from Gaussians with
             # standard deviation 1e-4.

@@ -26,7 +26,6 @@ from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
 
 import daal4py as d4p
-from daal4py.sklearn._utils import sklearn_check_version
 
 from .._n_jobs_support import control_n_jobs
 from .._utils import getFPType
@@ -130,12 +129,10 @@ class GBTDAALBase(BaseEstimator, d4p.mb.GBTDAALBaseModel):
     def _more_tags(self):
         return {"allow_nan": self.allow_nan_}
 
-    if sklearn_check_version("1.6"):
-
-        def __sklearn_tags__(self):
-            tags = super().__sklearn_tags__()
-            tags.input_tags.allow_nan = self.allow_nan_
-            return tags
+    def __sklearn_tags__(self):
+        tags = super().__sklearn_tags__()
+        tags.input_tags.allow_nan = self.allow_nan_
+        return tags
 
 
 @control_n_jobs(decorated_methods=["fit", "predict"])

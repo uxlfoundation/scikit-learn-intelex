@@ -588,9 +588,6 @@ def test_log_proba_doesnt_return_inf(dataframe, queue):
     assert not np.any(np.isinf(pred_log_proba))
 
 
-@pytest.mark.skipif(
-    not sklearn_check_version("1.5"), reason="Array API requires sklearn>=1.5"
-)
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
 @pytest.mark.parametrize("y_type", ["numeric", "string"])
 @pytest.mark.allow_sklearn_fallback

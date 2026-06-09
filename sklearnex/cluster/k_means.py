@@ -55,25 +55,20 @@ if daal_check_version((2023, "P", 200)):
     class KMeans(oneDALEstimator, _sklearn_KMeans):
         __doc__ = _sklearn_KMeans.__doc__
 
-        if sklearn_check_version("1.2"):
-            _parameter_constraints: dict = {**_sklearn_KMeans._parameter_constraints}
+        _parameter_constraints: dict = {**_sklearn_KMeans._parameter_constraints}
 
         def __init__(
             self,
             n_clusters=8,
             *,
             init="k-means++",
-            n_init=(
-                "auto"
-                if sklearn_check_version("1.4")
-                else "warn" if sklearn_check_version("1.2") else 10
-            ),
+            n_init="auto",
             max_iter=300,
             tol=1e-4,
             verbose=0,
             random_state=None,
             copy_x=True,
-            algorithm="lloyd" if sklearn_check_version("1.1") else "auto",
+            algorithm="lloyd",
         ):
             super().__init__(
                 n_clusters=n_clusters,
@@ -143,8 +138,7 @@ if daal_check_version((2023, "P", 200)):
             return patching_status
 
         def fit(self, X, y=None, sample_weight=None):
-            if sklearn_check_version("1.2"):
-                self._validate_params()
+            self._validate_params()
 
             dispatch(
                 self,
@@ -311,10 +305,6 @@ if daal_check_version((2023, "P", 200)):
                 )
 
             _acceptable_sample_weights = True
-            if not sklearn_check_version("1.5"):
-                _acceptable_sample_weights = self._validate_sample_weight(
-                    sample_weight, X
-                )
 
             patching_status.and_conditions(
                 [
@@ -336,54 +326,19 @@ if daal_check_version((2023, "P", 200)):
 
             return patching_status
 
-        if sklearn_check_version("1.5"):
-
-            @wrap_output_data
-            def predict(self, X):
-                self._validate_params()
-                check_is_fitted(self)
-                return dispatch(
-                    self,
-                    "predict",
-                    {
-                        "onedal": self.__class__._onedal_predict,
-                        "sklearn": _sklearn_KMeans.predict,
-                    },
-                    X,
-                )
-
-        else:
-
-            @wrap_output_data
-            def predict(
+        @wrap_output_data
+        def predict(self, X):
+            self._validate_params()
+            check_is_fitted(self)
+            return dispatch(
                 self,
+                "predict",
+                {
+                    "onedal": self.__class__._onedal_predict,
+                    "sklearn": _sklearn_KMeans.predict,
+                },
                 X,
-                sample_weight="deprecated" if sklearn_check_version("1.3") else None,
-            ):
-                if sklearn_check_version("1.2"):
-                    self._validate_params()
-
-                if sklearn_check_version("1.3"):
-                    if isinstance(sample_weight, str) and sample_weight == "deprecated":
-                        sample_weight = None
-
-                    if sample_weight is not None:
-                        warnings.warn(
-                            "'sample_weight' was deprecated in version 1.3 and "
-                            "will be removed in 1.5.",
-                            FutureWarning,
-                        )
-                check_is_fitted(self)
-                return dispatch(
-                    self,
-                    "predict",
-                    {
-                        "onedal": self.__class__._onedal_predict,
-                        "sklearn": _sklearn_KMeans.predict,
-                    },
-                    X,
-                    sample_weight,
-                )
+            )
 
         def _onedal_predict(self, X, sample_weight=None, queue=None):
             xp, _ = get_namespace(X)

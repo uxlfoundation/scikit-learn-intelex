@@ -28,7 +28,7 @@ import numpy as np
 import numpy.random as nprnd
 import pytest
 from scipy import sparse as sp
-from sklearn.base import BaseEstimator, ClusterMixin, RegressorMixin
+from sklearn.base import BaseEstimator, is_clusterer, is_regressor
 from sklearn.svm._base import BaseLibSVM
 
 from daal4py.sklearn._utils import (
@@ -36,18 +36,6 @@ from daal4py.sklearn._utils import (
     is_sparse,
     sklearn_check_version,
 )
-
-if sklearn_check_version("1.6"):
-    from sklearn.base import is_clusterer, is_regressor
-else:
-
-    def is_regressor(est):
-        return isinstance(est, RegressorMixin)
-
-    def is_clusterer(est):
-        return isinstance(est, ClusterMixin)
-
-
 from sklearn import get_config as sklearn_get_config
 
 from onedal.tests.utils._dataframes_support import (
@@ -532,7 +520,7 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
     if (
         (dataframe == "array_api" or queue)
         and estimator == "LogisticRegressionCV"
-        and (not sklearn_check_version("1.6") or not get_tags(est).array_api_support)
+        and not get_tags(est).array_api_support
     ):
         pytest.skip("Array API and/or GPU inputs not supported in estimator")
     if (
@@ -564,14 +552,6 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
             # issue not to be observed with normal numpy usage
             pytest.skip(
                 f"numpy backend does not properly handle the __dlpack__ attribute."
-            )
-        elif (
-            not sklearn_check_version("1.3")
-            and estimator == "IncrementalEmpiricalCovariance"
-            and method == "score"
-        ):
-            pytest.skip(
-                f"array checking in sklearn <1.3 does not fully support array_api inputs, causes sklearnex-only estimator failure"
             )
         tags = get_tags(est)
         array_api_check = (

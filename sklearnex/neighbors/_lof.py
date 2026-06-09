@@ -23,7 +23,6 @@ from sklearn.utils.metaestimators import available_if
 from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
-from daal4py.sklearn._utils import sklearn_check_version
 from onedal._device_offload import _transfer_to_host
 from onedal.utils._array_api import _is_numpy_namespace
 from sklearnex._device_offload import dispatch, wrap_output_data
@@ -37,10 +36,9 @@ from ..utils._array_api import enable_array_api, get_namespace
 @control_n_jobs(decorated_methods=["fit", "kneighbors", "_kneighbors"])
 class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor):
     __doc__ = _sklearn_LocalOutlierFactor.__doc__
-    if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {
-            **_sklearn_LocalOutlierFactor._parameter_constraints
-        }
+    _parameter_constraints: dict = {
+        **_sklearn_LocalOutlierFactor._parameter_constraints
+    }
 
     # Only certain methods should be taken from knn to prevent code
     # duplication. Inheriting would yield a complicated inheritance
@@ -62,8 +60,7 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
         return 1.0 / (xp.mean(reach_dist_array, axis=1) + 1e-10)
 
     def _onedal_fit(self, X, y, queue=None):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
+        self._validate_params()
 
         # Let _onedal_knn_fit (NearestNeighbors._onedal_fit) handle validation
         self._onedal_knn_fit(X, y, queue=queue)
@@ -113,12 +110,11 @@ class LocalOutlierFactor(KNeighborsDispatchingBase, _sklearn_LocalOutlierFactor)
 
         # adoption of warning for data with duplicated samples from
         # https://github.com/scikit-learn/scikit-learn/pull/28773
-        if sklearn_check_version("1.6"):
-            if float(xp.min(self.negative_outlier_factor_)) < -1e7 and not self.novelty:
-                warnings.warn(
-                    "Duplicate values are leading to incorrect results. "
-                    "Increase the number of neighbors for more accurate results."
-                )
+        if float(xp.min(self.negative_outlier_factor_)) < -1e7 and not self.novelty:
+            warnings.warn(
+                "Duplicate values are leading to incorrect results. "
+                "Increase the number of neighbors for more accurate results."
+            )
         return self
 
     def fit(self, X, y=None):

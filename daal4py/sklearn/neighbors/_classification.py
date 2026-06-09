@@ -24,12 +24,9 @@ from sklearn.neighbors._classification import (
 )
 from sklearn.utils.validation import check_array
 
-from .._utils import PatchingConditionsChain, getFPType, sklearn_check_version
+from .._utils import PatchingConditionsChain, getFPType
 from ..utils.validation import check_feature_names
 from ._base import KNeighborsMixin, NeighborsBase, parse_auto_method, prediction_algorithm
-
-if not sklearn_check_version("1.2"):
-    from sklearn.neighbors._base import _check_weights
 
 from sklearn.utils.validation import _deprecate_positional_args
 

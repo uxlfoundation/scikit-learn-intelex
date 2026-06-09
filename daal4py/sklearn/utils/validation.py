@@ -47,21 +47,13 @@ from .._utils import (
     get_dtype,
     get_number_of_types,
     is_DataFrame,
-    sklearn_check_version,
 )
 
-if sklearn_check_version("1.6"):
-    from sklearn.utils.validation import (
-        _check_feature_names as _sklearn_check_feature_names,
-    )
-    from sklearn.utils.validation import _check_n_features as _sklearn_check_n_features
-    from sklearn.utils.validation import validate_data as _sklearn_validate_data
-else:
-    from sklearn.base import BaseEstimator
-
-    _sklearn_validate_data = BaseEstimator._validate_data
-    _sklearn_check_feature_names = BaseEstimator._check_feature_names
-    _sklearn_check_n_features = BaseEstimator._check_n_features
+from sklearn.utils.validation import (
+    _check_feature_names as _sklearn_check_feature_names,
+)
+from sklearn.utils.validation import _check_n_features as _sklearn_check_n_features
+from sklearn.utils.validation import validate_data as _sklearn_validate_data
 
 
 def _assert_all_finite(
@@ -74,16 +66,13 @@ def _assert_all_finite(
     # TODO: tune threshold size
     is_df = is_DataFrame(X)
     if not (is_df or isinstance(X, np.ndarray)) or X.size < 32768:
-        if sklearn_check_version("1.1"):
-            _sklearn_assert_all_finite(
-                X,
-                allow_nan=allow_nan,
-                msg_dtype=msg_dtype,
-                estimator_name=estimator_name,
-                input_name=input_name,
-            )
-        else:
-            _sklearn_assert_all_finite(X, allow_nan=allow_nan, msg_dtype=msg_dtype)
+        _sklearn_assert_all_finite(
+            X,
+            allow_nan=allow_nan,
+            msg_dtype=msg_dtype,
+            estimator_name=estimator_name,
+            input_name=input_name,
+        )
         return
 
     num_of_types = get_number_of_types(X)
@@ -413,10 +402,7 @@ def _daal_check_array(
             "copy": copy,
             "accept_large_sparse": accept_large_sparse,
         }
-        if sklearn_check_version("1.6"):
-            kwargs["ensure_all_finite"] = force_all_finite
-        else:
-            kwargs["force_all_finite"] = force_all_finite
+        kwargs["ensure_all_finite"] = force_all_finite
         array = _ensure_sparse_format(
             array,
             **kwargs,
@@ -716,16 +702,8 @@ def _daal_num_features(X):
 
 
 def get_requires_y_tag(estimator):
-    """Gets the value of the 'requires_y' tag from the estimator
-    using correct code path depending on the scikit-learn version."""
-    if sklearn_check_version("1.6"):
-        requires_y = estimator.__sklearn_tags__().target_tags.required
-    else:
-        try:
-            requires_y = estimator._get_tags()["requires_y"]
-        except KeyError:
-            requires_y = False
-    return requires_y
+    """Gets the value of the 'requires_y' tag from the estimator."""
+    return estimator.__sklearn_tags__().target_tags.required
 
 
 def add_dispatcher_docstring(original_function):
@@ -751,12 +729,8 @@ def add_dispatcher_docstring(original_function):
     return wrapper
 
 
-# simplified copy of similar function from sklearnex.utils.validation,
-# ensures that the correct finiteness check argument is used
 @add_dispatcher_docstring(_sklearn_validate_data)
 def validate_data(*args, **kwargs):
-    if not sklearn_check_version("1.6") and "ensure_all_finite" in kwargs:
-        kwargs["force_all_finite"] = kwargs.pop("ensure_all_finite")
     return _sklearn_validate_data(*args, **kwargs)
 
 

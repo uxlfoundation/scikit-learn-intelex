@@ -20,21 +20,16 @@ import math
 from collections.abc import Callable
 from typing import Union
 
-import numpy as np
 import scipy.linalg as linalg
 from sklearn.covariance import log_likelihood as _sklearn_log_likelihood
 
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal.utils._array_api import _get_sycl_namespace, _is_numpy_namespace
 
+from sklearn.utils._array_api import get_namespace as sklearn_get_namespace
+
 from .._config import get_config
-from ..base import oneDALEstimator
-
-if sklearn_check_version("1.6"):
-    from ..base import Tags
-
-if sklearn_check_version("1.2"):
-    from sklearn.utils._array_api import get_namespace as sklearn_get_namespace
+from ..base import Tags, oneDALEstimator
 
 
 def get_namespace(*arrays):
@@ -96,28 +91,16 @@ def get_namespace(*arrays):
 
     # sklearn contains a specially patched numpy wrapper that should be
     # reused which is yielded from sklearn's get_namespace.
-    if sklearn_check_version("1.2"):
-        return sklearn_get_namespace(*arrays)
-    else:
-        return np, False
+    return sklearn_get_namespace(*arrays)
 
 
 def _enable_array_api(original_class: type[oneDALEstimator]) -> type[oneDALEstimator]:
-    if sklearn_check_version("1.6"):
+    def __sklearn_tags__(self) -> Tags:
+        sktags = super(original_class, self).__sklearn_tags__()
+        sktags.onedal_array_api = True
+        return sktags
 
-        def __sklearn_tags__(self) -> Tags:
-            sktags = super(original_class, self).__sklearn_tags__()
-            sktags.onedal_array_api = True
-            return sktags
-
-        original_class.__sklearn_tags__ = __sklearn_tags__
-
-    elif sklearn_check_version("1.3"):
-
-        def _more_tags(self) -> dict[str, bool]:
-            return {"onedal_array_api": True}
-
-        original_class._more_tags = _more_tags
+    original_class.__sklearn_tags__ = __sklearn_tags__
 
     return original_class
 

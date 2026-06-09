@@ -26,7 +26,7 @@ from sklearn.ensemble import RandomForestRegressor as RandomForestRegressor_orig
 from sklearn.exceptions import DataConversionWarning
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn.tree._tree import Tree
-from sklearn.utils import check_array, check_random_state, deprecated
+from sklearn.utils import check_array, check_random_state
 from sklearn.utils.validation import (
     _num_samples,
     check_consistent_length,
@@ -45,39 +45,19 @@ from daal4py.sklearn._utils import (
 from .._n_jobs_support import control_n_jobs
 from ..utils.validation import _daal_num_features, check_feature_names, check_n_features
 
-if sklearn_check_version("1.2"):
-    from sklearn.utils._param_validation import Interval, StrOptions
-if sklearn_check_version("1.4"):
-    from daal4py.sklearn.utils import _assert_all_finite
+from sklearn.utils._param_validation import Interval, StrOptions
+from daal4py.sklearn.utils import _assert_all_finite
 
 
 def _to_absolute_max_features(max_features, n_features, is_classification=False):
     if max_features is None:
         return n_features
     if isinstance(max_features, str):
-        if max_features == "auto":
-            if not sklearn_check_version("1.3"):
-                if sklearn_check_version("1.1"):
-                    warnings.warn(
-                        "`max_features='auto'` has been deprecated in 1.1 "
-                        "and will be removed in 1.3. To keep the past behaviour, "
-                        "explicitly set `max_features=1.0` or remove this "
-                        "parameter as it is also the default value for "
-                        "RandomForestRegressors and ExtraTreesRegressors.",
-                        FutureWarning,
-                    )
-                return (
-                    max(1, int(np.sqrt(n_features))) if is_classification else n_features
-                )
         if max_features == "sqrt":
             return max(1, int(np.sqrt(n_features)))
         if max_features == "log2":
             return max(1, int(np.log2(n_features)))
-        allowed_string_values = (
-            '"sqrt" or "log2"'
-            if sklearn_check_version("1.3")
-            else '"auto", "sqrt" or "log2"'
-        )
+        allowed_string_values = '"sqrt" or "log2"'
         raise ValueError(
             "Invalid value for max_features. Allowed string "
             f"values are {allowed_string_values}."
@@ -94,23 +74,12 @@ def _get_n_samples_bootstrap(n_samples, max_samples):
         return 1.0
 
     if isinstance(max_samples, numbers.Integral):
-        if not sklearn_check_version("1.2"):
-            if not (1 <= max_samples <= n_samples):
-                msg = "`max_samples` must be in range 1 to {} but got value {}"
-                raise ValueError(msg.format(n_samples, max_samples))
-        else:
-            if max_samples > n_samples:
-                msg = "`max_samples` must be <= n_samples={} but got value {}"
-                raise ValueError(msg.format(n_samples, max_samples))
+        if max_samples > n_samples:
+            msg = "`max_samples` must be <= n_samples={} but got value {}"
+            raise ValueError(msg.format(n_samples, max_samples))
         return max(float(max_samples / n_samples), 1 / n_samples)
 
     if isinstance(max_samples, numbers.Real):
-        if sklearn_check_version("1.2"):
-            pass
-        else:
-            if not (0 < float(max_samples) <= 1):
-                msg = "`max_samples` must be in range (0.0, 1.0] but got value {}"
-                raise ValueError(msg.format(max_samples))
         return max(float(max_samples), 1 / n_samples)
 
     msg = "`max_samples` should be int or float, but got type '{}'"
@@ -229,118 +198,64 @@ class RandomForestBase:
 class RandomForestClassifier(RandomForestClassifier_original, RandomForestBase):
     __doc__ = RandomForestClassifier_original.__doc__
 
-    if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {
-            **RandomForestClassifier_original._parameter_constraints,
-            "maxBins": [Interval(numbers.Integral, 0, None, closed="left")],
-            "minBinSize": [Interval(numbers.Integral, 1, None, closed="left")],
-            "binningStrategy": [StrOptions({"quantiles", "averages"})],
-        }
+    _parameter_constraints: dict = {
+        **RandomForestClassifier_original._parameter_constraints,
+        "maxBins": [Interval(numbers.Integral, 0, None, closed="left")],
+        "minBinSize": [Interval(numbers.Integral, 1, None, closed="left")],
+        "binningStrategy": [StrOptions({"quantiles", "averages"})],
+    }
 
-    if sklearn_check_version("1.4"):
-
-        def __init__(
-            self,
-            n_estimators=100,
-            criterion="gini",
-            max_depth=None,
-            min_samples_split=2,
-            min_samples_leaf=1,
-            min_weight_fraction_leaf=0.0,
-            max_features="sqrt",
-            max_leaf_nodes=None,
-            min_impurity_decrease=0.0,
-            bootstrap=True,
-            oob_score=False,
-            n_jobs=None,
-            random_state=None,
-            verbose=0,
-            warm_start=False,
-            class_weight=None,
-            ccp_alpha=0.0,
-            max_samples=None,
-            monotonic_cst=None,
-            maxBins=256,
-            minBinSize=1,
-            binningStrategy="quantiles",
-        ):
-            super().__init__(
-                n_estimators=n_estimators,
-                criterion=criterion,
-                max_depth=max_depth,
-                min_samples_split=min_samples_split,
-                min_samples_leaf=min_samples_leaf,
-                min_weight_fraction_leaf=min_weight_fraction_leaf,
-                max_features=max_features,
-                max_leaf_nodes=max_leaf_nodes,
-                min_impurity_decrease=min_impurity_decrease,
-                bootstrap=bootstrap,
-                oob_score=oob_score,
-                n_jobs=n_jobs,
-                random_state=random_state,
-                verbose=verbose,
-                warm_start=warm_start,
-                class_weight=class_weight,
-                monotonic_cst=monotonic_cst,
-            )
-            self.ccp_alpha = ccp_alpha
-            self.max_samples = max_samples
-            self.monotonic_cst = monotonic_cst
-            self.maxBins = maxBins
-            self.minBinSize = minBinSize
-            self.min_impurity_split = None
-            self.binningStrategy = binningStrategy
-
-    else:
-
-        def __init__(
-            self,
-            n_estimators=100,
-            criterion="gini",
-            max_depth=None,
-            min_samples_split=2,
-            min_samples_leaf=1,
-            min_weight_fraction_leaf=0.0,
-            max_features="sqrt" if sklearn_check_version("1.1") else "auto",
-            max_leaf_nodes=None,
-            min_impurity_decrease=0.0,
-            bootstrap=True,
-            oob_score=False,
-            n_jobs=None,
-            random_state=None,
-            verbose=0,
-            warm_start=False,
-            class_weight=None,
-            ccp_alpha=0.0,
-            max_samples=None,
-            maxBins=256,
-            minBinSize=1,
-            binningStrategy="quantiles",
-        ):
-            super().__init__(
-                n_estimators=n_estimators,
-                criterion=criterion,
-                max_depth=max_depth,
-                min_samples_split=min_samples_split,
-                min_samples_leaf=min_samples_leaf,
-                min_weight_fraction_leaf=min_weight_fraction_leaf,
-                max_features=max_features,
-                max_leaf_nodes=max_leaf_nodes,
-                min_impurity_decrease=min_impurity_decrease,
-                bootstrap=bootstrap,
-                oob_score=oob_score,
-                n_jobs=n_jobs,
-                random_state=random_state,
-                verbose=verbose,
-                warm_start=warm_start,
-                class_weight=class_weight,
-            )
-            self.ccp_alpha = ccp_alpha
-            self.max_samples = max_samples
-            self.maxBins = maxBins
-            self.minBinSize = minBinSize
-            self.min_impurity_split = None
-            self.binningStrategy = binningStrategy
+    def __init__(
+        self,
+        n_estimators=100,
+        criterion="gini",
+        max_depth=None,
+        min_samples_split=2,
+        min_samples_leaf=1,
+        min_weight_fraction_leaf=0.0,
+        max_features="sqrt",
+        max_leaf_nodes=None,
+        min_impurity_decrease=0.0,
+        bootstrap=True,
+        oob_score=False,
+        n_jobs=None,
+        random_state=None,
+        verbose=0,
+        warm_start=False,
+        class_weight=None,
+        ccp_alpha=0.0,
+        max_samples=None,
+        monotonic_cst=None,
+        maxBins=256,
+        minBinSize=1,
+        binningStrategy="quantiles",
+    ):
+        super().__init__(
+            n_estimators=n_estimators,
+            criterion=criterion,
+            max_depth=max_depth,
+            min_samples_split=min_samples_split,
+            min_samples_leaf=min_samples_leaf,
+            min_weight_fraction_leaf=min_weight_fraction_leaf,
+            max_features=max_features,
+            max_leaf_nodes=max_leaf_nodes,
+            min_impurity_decrease=min_impurity_decrease,
+            bootstrap=bootstrap,
+            oob_score=oob_score,
+            n_jobs=n_jobs,
+            random_state=random_state,
+            verbose=verbose,
+            warm_start=warm_start,
+            class_weight=class_weight,
+            monotonic_cst=monotonic_cst,
+        )
+        self.ccp_alpha = ccp_alpha
+        self.max_samples = max_samples
+        self.monotonic_cst = monotonic_cst
+        self.maxBins = maxBins
+        self.minBinSize = minBinSize
+        self.min_impurity_split = None
+        self.binningStrategy = binningStrategy
 
     def fit(self, X, y, sample_weight=None):
         """
@@ -370,10 +285,7 @@ class RandomForestClassifier(RandomForestClassifier_original, RandomForestBase):
         """
         if sp.issparse(y):
             raise ValueError("sparse multilabel-indicator for y is not supported.")
-        if sklearn_check_version("1.2"):
-            self._validate_params()
-        else:
-            self._check_parameters()
+        self._validate_params()
         if sample_weight is not None:
             sample_weight = check_sample_weight(sample_weight, X)
 
@@ -401,7 +313,7 @@ class RandomForestClassifier(RandomForestClassifier_original, RandomForestBase):
                 (not sp.issparse(X), "X is sparse. Sparse input is not supported."),
             ]
         )
-        if _dal_ready and sklearn_check_version("1.4"):
+        if _dal_ready:
             try:
                 _assert_all_finite(X)
                 input_is_finite = True
@@ -422,18 +334,11 @@ class RandomForestClassifier(RandomForestClassifier_original, RandomForestBase):
 
         if _dal_ready:
             check_feature_names(self, X, reset=True)
-            if sklearn_check_version("1.6"):
-                X = check_array(
-                    X,
-                    dtype=[np.float32, np.float64],
-                    ensure_all_finite=False,
-                )
-            else:
-                X = check_array(
-                    X,
-                    dtype=[np.float32, np.float64],
-                    force_all_finite=not sklearn_check_version("1.4"),
-                )
+            X = check_array(
+                X,
+                dtype=[np.float32, np.float64],
+                ensure_all_finite=False,
+            )
             y = np.asarray(y)
             y = np.atleast_1d(y)
 
@@ -467,8 +372,7 @@ class RandomForestClassifier(RandomForestClassifier_original, RandomForestBase):
         if _dal_ready:
             self._daal_fit_classifier(X, y, sample_weight=sample_weight)
 
-            if sklearn_check_version("1.2"):
-                self._estimator = DecisionTreeClassifier()
+            self._estimator = DecisionTreeClassifier()
             self.estimators_ = self._estimators_
 
             # Decapsulate classes_ attributes
@@ -595,16 +499,6 @@ class RandomForestClassifier(RandomForestClassifier_original, RandomForestBase):
         check_is_fitted(self)
         check_n_features(self, X, reset=False)
         return self._daal_predict_proba(X)
-
-    if not sklearn_check_version("1.2"):
-
-        @deprecated(
-            "Attribute `n_features_` was deprecated in version 1.0 and will be "
-            "removed in 1.2. Use `n_features_in_` instead."
-        )
-        @property
-        def n_features_(self):
-            return self.n_features_in_
 
     @property
     def _estimators_(self):
@@ -814,116 +708,63 @@ class RandomForestClassifier(RandomForestClassifier_original, RandomForestBase):
 class RandomForestRegressor(RandomForestRegressor_original, RandomForestBase):
     __doc__ = RandomForestRegressor_original.__doc__
 
-    if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {
-            **RandomForestRegressor_original._parameter_constraints,
-            "maxBins": [Interval(numbers.Integral, 0, None, closed="left")],
-            "minBinSize": [Interval(numbers.Integral, 1, None, closed="left")],
-            "binningStrategy": [StrOptions({"quantiles", "averages"})],
-        }
+    _parameter_constraints: dict = {
+        **RandomForestRegressor_original._parameter_constraints,
+        "maxBins": [Interval(numbers.Integral, 0, None, closed="left")],
+        "minBinSize": [Interval(numbers.Integral, 1, None, closed="left")],
+        "binningStrategy": [StrOptions({"quantiles", "averages"})],
+    }
 
-    if sklearn_check_version("1.4"):
-
-        def __init__(
-            self,
-            n_estimators=100,
-            *,
-            criterion="squared_error",
-            max_depth=None,
-            min_samples_split=2,
-            min_samples_leaf=1,
-            min_weight_fraction_leaf=0.0,
-            max_features=1.0,
-            max_leaf_nodes=None,
-            min_impurity_decrease=0.0,
-            bootstrap=True,
-            oob_score=False,
-            n_jobs=None,
-            random_state=None,
-            verbose=0,
-            warm_start=False,
-            ccp_alpha=0.0,
-            max_samples=None,
-            monotonic_cst=None,
-            maxBins=256,
-            minBinSize=1,
-            binningStrategy="quantiles",
-        ):
-            super().__init__(
-                n_estimators=n_estimators,
-                criterion=criterion,
-                max_depth=max_depth,
-                min_samples_split=min_samples_split,
-                min_samples_leaf=min_samples_leaf,
-                min_weight_fraction_leaf=min_weight_fraction_leaf,
-                max_features=max_features,
-                max_leaf_nodes=max_leaf_nodes,
-                min_impurity_decrease=min_impurity_decrease,
-                bootstrap=bootstrap,
-                oob_score=oob_score,
-                n_jobs=n_jobs,
-                random_state=random_state,
-                verbose=verbose,
-                warm_start=warm_start,
-                monotonic_cst=monotonic_cst,
-            )
-            self.ccp_alpha = ccp_alpha
-            self.max_samples = max_samples
-            self.monotonic_cst = monotonic_cst
-            self.maxBins = maxBins
-            self.minBinSize = minBinSize
-            self.min_impurity_split = None
-            self.binningStrategy = binningStrategy
-
-    else:
-
-        def __init__(
-            self,
-            n_estimators=100,
-            *,
-            criterion="squared_error",
-            max_depth=None,
-            min_samples_split=2,
-            min_samples_leaf=1,
-            min_weight_fraction_leaf=0.0,
-            max_features=1.0 if sklearn_check_version("1.1") else "auto",
-            max_leaf_nodes=None,
-            min_impurity_decrease=0.0,
-            bootstrap=True,
-            oob_score=False,
-            n_jobs=None,
-            random_state=None,
-            verbose=0,
-            warm_start=False,
-            ccp_alpha=0.0,
-            max_samples=None,
-            maxBins=256,
-            minBinSize=1,
-            binningStrategy="quantiles",
-        ):
-            super().__init__(
-                n_estimators=n_estimators,
-                criterion=criterion,
-                max_depth=max_depth,
-                min_samples_split=min_samples_split,
-                min_samples_leaf=min_samples_leaf,
-                min_weight_fraction_leaf=min_weight_fraction_leaf,
-                max_features=max_features,
-                max_leaf_nodes=max_leaf_nodes,
-                min_impurity_decrease=min_impurity_decrease,
-                bootstrap=bootstrap,
-                oob_score=oob_score,
-                n_jobs=n_jobs,
-                random_state=random_state,
-                verbose=verbose,
-                warm_start=warm_start,
-            )
-            self.ccp_alpha = ccp_alpha
-            self.max_samples = max_samples
-            self.maxBins = maxBins
-            self.minBinSize = minBinSize
-            self.min_impurity_split = None
-            self.binningStrategy = binningStrategy
+    def __init__(
+        self,
+        n_estimators=100,
+        *,
+        criterion="squared_error",
+        max_depth=None,
+        min_samples_split=2,
+        min_samples_leaf=1,
+        min_weight_fraction_leaf=0.0,
+        max_features=1.0,
+        max_leaf_nodes=None,
+        min_impurity_decrease=0.0,
+        bootstrap=True,
+        oob_score=False,
+        n_jobs=None,
+        random_state=None,
+        verbose=0,
+        warm_start=False,
+        ccp_alpha=0.0,
+        max_samples=None,
+        monotonic_cst=None,
+        maxBins=256,
+        minBinSize=1,
+        binningStrategy="quantiles",
+    ):
+        super().__init__(
+            n_estimators=n_estimators,
+            criterion=criterion,
+            max_depth=max_depth,
+            min_samples_split=min_samples_split,
+            min_samples_leaf=min_samples_leaf,
+            min_weight_fraction_leaf=min_weight_fraction_leaf,
+            max_features=max_features,
+            max_leaf_nodes=max_leaf_nodes,
+            min_impurity_decrease=min_impurity_decrease,
+            bootstrap=bootstrap,
+            oob_score=oob_score,
+            n_jobs=n_jobs,
+            random_state=random_state,
+            verbose=verbose,
+            warm_start=warm_start,
+            monotonic_cst=monotonic_cst,
+        )
+        self.ccp_alpha = ccp_alpha
+        self.max_samples = max_samples
+        self.monotonic_cst = monotonic_cst
+        self.maxBins = maxBins
+        self.minBinSize = minBinSize
+        self.min_impurity_split = None
+        self.binningStrategy = binningStrategy
 
     def fit(self, X, y, sample_weight=None):
         """
@@ -953,20 +794,9 @@ class RandomForestRegressor(RandomForestRegressor_original, RandomForestBase):
         """
         if sp.issparse(y):
             raise ValueError("sparse multilabel-indicator for y is not supported.")
-        if sklearn_check_version("1.2"):
-            self._validate_params()
-        else:
-            self._check_parameters()
+        self._validate_params()
         if sample_weight is not None:
             sample_weight = check_sample_weight(sample_weight, X)
-
-        if not sklearn_check_version("1.2") and self.criterion == "mse":
-            warnings.warn(
-                "Criterion 'mse' was deprecated in v1.0 and will be "
-                "removed in version 1.2. Use `criterion='squared_error'` "
-                "which is equivalent.",
-                FutureWarning,
-            )
 
         _patching_status = PatchingConditionsChain(
             "sklearn.ensemble.RandomForestRegressor.fit"
@@ -992,7 +822,7 @@ class RandomForestRegressor(RandomForestRegressor_original, RandomForestBase):
                 (not sp.issparse(X), "X is sparse. Sparse input is not supported."),
             ]
         )
-        if _dal_ready and sklearn_check_version("1.4"):
+        if _dal_ready:
             try:
                 _assert_all_finite(X)
                 input_is_finite = True
@@ -1013,18 +843,11 @@ class RandomForestRegressor(RandomForestRegressor_original, RandomForestBase):
 
         if _dal_ready:
             check_feature_names(self, X, reset=True)
-            if sklearn_check_version("1.6"):
-                X = check_array(
-                    X,
-                    dtype=[np.float64, np.float32],
-                    ensure_all_finite=False,
-                )
-            else:
-                X = check_array(
-                    X,
-                    dtype=[np.float64, np.float32],
-                    force_all_finite=not sklearn_check_version("1.4"),
-                )
+            X = check_array(
+                X,
+                dtype=[np.float64, np.float32],
+                ensure_all_finite=False,
+            )
             y = np.asarray(y)
             y = np.atleast_1d(y)
 
@@ -1059,8 +882,7 @@ class RandomForestRegressor(RandomForestRegressor_original, RandomForestBase):
         if _dal_ready:
             self._daal_fit_regressor(X, y, sample_weight=sample_weight)
 
-            if sklearn_check_version("1.2"):
-                self._estimator = DecisionTreeRegressor()
+            self._estimator = DecisionTreeRegressor()
             self.estimators_ = self._estimators_
             return self
         return super().fit(X, y, sample_weight=sample_weight)
@@ -1114,16 +936,6 @@ class RandomForestRegressor(RandomForestRegressor_original, RandomForestBase):
             X, accept_sparse=["csr", "csc", "coo"], dtype=[np.float64, np.float32]
         )
         return self._daal_predict_regressor(X)
-
-    if not sklearn_check_version("1.2"):
-
-        @deprecated(
-            "Attribute `n_features_` was deprecated in version 1.0 and will be "
-            "removed in 1.2. Use `n_features_in_` instead."
-        )
-        @property
-        def n_features_(self):
-            return self.n_features_in_
 
     @property
     def _estimators_(self):
