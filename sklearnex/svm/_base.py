@@ -546,7 +546,7 @@ class BaseSVC(BaseSVM):
                 _, y, sample_weight = data
                 if sklearn_check_version("1.9"):
                     xp, _, device = get_namespace_and_device(y)
-                    sample_weight = move_to(sample_weight, xp=xp, device=device)
+                    sample_weight = move_to(xp.asarray(sample_weight), xp=xp, device=device)
                 else:
                     xp, _ = get_namespace(*data)
                     sample_weight = xp.asarray(sample_weight)
