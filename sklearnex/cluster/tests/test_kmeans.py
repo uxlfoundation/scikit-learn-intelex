@@ -44,6 +44,11 @@ from sklearnex import config_context
 from sklearnex.cluster import KMeans
 from sklearnex.tests.utils import _IS_INTEL
 
+if dpnp_available:
+    import dpnp
+if torch_available:
+    import torch
+
 
 def generate_dense_dataset(n_samples, n_features, density, n_clusters):
     np.random.seed(2024 + n_samples + n_features + n_clusters)
@@ -175,11 +180,10 @@ def test_dense_vs_sparse(queue, init, algorithm, dims):
     not sklearn_check_version("1.5"),
     reason="Functionality introduced in later sklearn versions.",
 )
+@pytest.mark.skipif(not torch_available, reason="Functionality to test requires torch.")
 @pytest.mark.parametrize("output_format", ["set_output", "config_context"])
 @pytest.mark.parametrize("transform_output", ["polars", "pandas"])
 def test_transform_output_torch(output_format, transform_output):
-    torch = pytest.importorskip("torch")
-
     X_np = generate_dense_dataset(200, 10, 0.5, 3)
     X_torch = torch.tensor(X_np, device="cpu")
 
@@ -251,8 +255,6 @@ def test_transform_output_matches_default(dataframe, queue, transform_output):
 @pytest.mark.parametrize("device", ["cpu"] + (["xpu"] if torch_xpu_available else []))
 @pytest.mark.parametrize("transform_output", ["polars", "pandas"])
 def test_transform_output_matches_default_torch(device, transform_output):
-    import torch
-
     X_np = generate_dense_dataset(200, 10, 0.5, 3)
     X = torch.tensor(X_np, device=device)
 
@@ -349,8 +351,6 @@ def test_array_api_dispatch_results(dataframe, queue):
 @pytest.mark.skipif(not torch_available, reason="Functionality to test requires torch.")
 @pytest.mark.parametrize("device", ["cpu"] + (["xpu"] if torch_xpu_available else []))
 def test_torch_dispatch_results(device):
-    import torch
-
     X_np = generate_dense_dataset(200, 10, 0.5, 3)
     X = torch.tensor(X_np, device=device)
 
