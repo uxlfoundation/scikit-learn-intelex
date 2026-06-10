@@ -488,10 +488,6 @@ deselected_tests:
   # Has a rule to not use xp.reshape on SVMs, but sklearnex supports array API for them
   - utils/tests/test_estimator_checks.py::test_estimator_checks_generator_skipping_tests
 
-  # Fails for float32 due to small numeric tolerances exposed by the random
-  # splitter update in oneDAL forest (#3649)
-  - ensemble/tests/test_forest.py::test_importances[ExtraTreesRegressor-squared_error-float32]
-
   # --------------------------------------------------------
   # No need to test daal4py patching
 reduced_tests:
