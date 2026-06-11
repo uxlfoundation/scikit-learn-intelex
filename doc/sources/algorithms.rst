@@ -19,15 +19,22 @@
 Supported Algorithms
 ####################
 
-.. note::
-  To verify that oneDAL is being used for these algorithms, you can enable verbose mode.
+.. hint::
+  While not every parameter or combination of parameters from estimators is supported in the
+  |sklearnex|, attempting to perform an unsupported operation will by default result in executing
+  code from stock |sklearn| when no accelerated routine is available (referred to as a "fallback"
+  throughout the documentation), thereby ensuring that any valid |sklearn| workflow will continue
+  working under patching.
+
+  To verify whether accelerated routines are used for some operation or not, enable verbose mode.
   See :doc:`verbose` for details.
 
 .. note::
   Beyond some parameter combinations from estimators not being supported, some features
   from |sklearn| are not supported as a whole - see :doc:`unsupported`.
 
-Applying |sklearnex| impacts the following |sklearn| estimators:
+The |sklearnex| offers accelerated versions of the following classes and functions from |sklearn|,
+with some limitations described below:
 
 on CPU
 ------
@@ -840,9 +847,3 @@ Other Tasks
        - Dense data
        - CSR sparse matrices
      - Sample weights **not** supported for CSR data format
-
-Scikit-learn Tests
-------------------
-
-Monkey-patched scikit-learn classes and functions passes scikit-learn's own test
-suite, with few exceptions - see :ref:`conformance_tests` for details.
