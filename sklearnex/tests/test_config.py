@@ -160,10 +160,12 @@ def test_host_backend_target_offload(target):
             est.fit(np.eye(5, 8))
 
 
+@pytest.mark.allow_sklearn_fallback
 @pytest.mark.skipif(
     not is_sycl_device_available(["gpu"]), reason="Requires a gpu for fallback testing"
 )
-def test_fallback_to_host(caplog):
+@pytest.mark.parmetrize("sklearn_fallback", [True, False])
+def test_fallback_to_host(caplog, sklearn_fallback):
     # force a fallback to cpu with direct use of dispatch and PatchingConditionsChain
     # it should complete with allow_fallback_to_host. The queue should be preserved
     # and properly used in the second round on gpu
@@ -184,7 +186,12 @@ def test_fallback_to_host(caplog):
 
         def _onedal_cpu_supported(self, method_name, *data):
             patching_status = PatchingConditionsChain("")
+            # use onedal if not using sklearn_fallback
+            patching_status.and_condition(not sklearn_fallback, "")
             return patching_status
+
+        def _sklearn_test(self, *args):
+            self._onedal_test(*args)
 
         def _onedal_test(self, *args, queue=None):
             if args[0] == "cpu":
@@ -202,11 +209,13 @@ def test_fallback_to_host(caplog):
     ):
         # True == with cpu (eventually), False == with gpu
         for fallback in [True, False]:
-            with sklearnex.config_context(allow_fallback_to_host=fallback):
+            err_msg = ""
+            sklearn_ctx = nullcontext() if sklearn_fallback else pytest.raises(RuntimeError, match=err_msg)
+            with sklearnex.config_context(allow_fallback_to_host=fallback), sklearn_ctx:
                 dispatch(
                     est,
                     "test",
-                    {"onedal": _Estimator._onedal_test, "sklearn": None},
+                    {"onedal": _Estimator._onedal_test, "sklearn": _Estimator._sklearn_test},
                     "cpu" if fallback else "gpu",
                 )
 
