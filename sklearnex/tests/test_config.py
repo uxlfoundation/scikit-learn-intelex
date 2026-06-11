@@ -209,7 +209,7 @@ def test_fallback_to_host(caplog, sklearn_fallback):
     ):
         # True == with cpu (eventually), False == with gpu
         for fallback in [True, False]:
-            err_msg = ""
+            err_msg = "Fallback to scikit-learn on host, device operation may be supported via the `array_api_dispatch` configuration option"
             sklearn_ctx = nullcontext() if sklearn_fallback else pytest.raises(RuntimeError, match=err_msg)
             with sklearnex.config_context(allow_fallback_to_host=fallback), sklearn_ctx:
                 dispatch(
