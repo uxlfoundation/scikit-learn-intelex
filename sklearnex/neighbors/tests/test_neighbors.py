@@ -30,7 +30,7 @@ if hasattr(sp, "csr_array"):
 else:
     CSR_CTOR = sp.csr_matrix
 
-from daal4py.sklearn._utils import sklearn_check_version
+from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
@@ -219,6 +219,10 @@ def test_no_metric_args_warning_on_fallback():
 @pytest.mark.skipif(
     not sklearn_check_version("1.9"), reason="Functionality introduced in alter versions."
 )
+@pytest.mark.skipif(
+    not _package_check_version("2.1", np.__version__),
+    reason="Array API functionality requires more recent version of NumPy.",
+)
 @pytest.mark.parametrize("weights", ["uniform", "distance"])
 def test_error_on_incompatible_namespaces(weights, with_array_api):
     rng = np.random.default_rng(seed=123)
@@ -244,6 +248,10 @@ def test_error_on_incompatible_namespaces(weights, with_array_api):
 @pytest.mark.skipif(
     not sklearn_check_version("1.9"),
     reason="Functionality introduced in later scikit-learn versions.",
+)
+@pytest.mark.skipif(
+    not _package_check_version("2.1", np.__version__),
+    reason="Array API functionality requires more recent version of NumPy.",
 )
 @pytest.mark.parametrize("X_xp", [np, pd, array_api_strict])
 @pytest.mark.parametrize("y_xp", [np, pd, array_api_strict])

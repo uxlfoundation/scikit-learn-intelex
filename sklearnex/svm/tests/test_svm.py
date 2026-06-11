@@ -444,6 +444,10 @@ def test_dense_predict_on_sparse_fit_works(estimator, array_api):
     not sklearn_check_version("1.9"),
     reason="Functionality introduced in later scikit-learn versions.",
 )
+@pytest.mark.skipif(
+    not _package_check_version("2.1", np.__version__),
+    reason="Array API functionality requires more recent version of NumPy.",
+)
 @pytest.mark.parametrize("X_xp", [np, pd, array_api_strict])
 @pytest.mark.parametrize("y_xp", [np, pd, array_api_strict])
 @pytest.mark.parametrize("w_xp", [None, np, pd, array_api_strict])
@@ -552,7 +556,7 @@ def test_svr_mixed_devices(
 ):
     # Re-enable this once bug in scikit-learn is solved:
     # https://github.com/scikit-learn/scikit-learn/issues/34046
-    if X_xp is torch and (y_xp is pd or w_xp is pd):
+    if (torch_available and X_xp is torch) and (y_xp is pd or w_xp is pd):
         pytest.skip("Bug in scikit-learn")
     from sklearnex import svm
 

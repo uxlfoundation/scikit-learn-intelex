@@ -244,7 +244,6 @@ deselected_tests:
 
   # OOB scores in scikit-learn and oneDAL are different because of different random number generators
   - ensemble/tests/test_forest.py::test_forest_regressor_oob[True-X0-y0-0.7-array-ExtraTreesRegressor] >=1.3
-  - ensemble/tests/test_forest.py::test_importances[ExtraTreesRegressor-squared_error-float64] >=0.23 darwin
   - ensemble/tests/test_forest.py::test_forest_regressor_oob[X0-y0-0.7-array-ExtraTreesRegressor]
   - ensemble/tests/test_forest.py::test_warm_start_oob
   - ensemble/tests/test_forest.py::test_distribution
@@ -489,6 +488,10 @@ deselected_tests:
   # Has a rule to not use xp.reshape on SVMs, but sklearnex supports array API for them
   - utils/tests/test_estimator_checks.py::test_estimator_checks_generator_skipping_tests
 
+  # Fails for float32 due to small numeric tolerances exposed by the random
+  # splitter update in oneDAL forest (#3649)
+  - ensemble/tests/test_forest.py::test_importances[ExtraTreesRegressor-squared_error-float32]
+
   # --------------------------------------------------------
   # No need to test daal4py patching
 reduced_tests:
@@ -636,7 +639,8 @@ gpu:
   - tests/test_common.py::test_estimators[RandomForestClassifier(n_estimators=5)-check_class_weight_classifiers]
   - tests/test_common.py::test_estimators[ExtraTreesClassifier(n_estimators=5)-check_class_weight_classifiers]
 
-  # Fails for float32 due to small numeric tolerances in the order of 1e-6
+  # Fails for float32 due to small numeric tolerances in the order of 1e-6,
+  # exposed by the random splitter update in oneDAL forest (#3649)
   - ensemble/tests/test_forest.py::test_memory_layout[float32
 
   # --------------------------------------------------------
