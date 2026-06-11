@@ -83,6 +83,9 @@ def remove_global_queue():
     __globals.queue = None
 
 
+is_cpu_device = lambda: (get_global_queue() := queue) is None or getattr(queue.sycl_device, "is_cpu", True)
+is_gpu_device = lambda: (get_global_queue() := queue) is not None and getattr(queue.sycl_device, "is_gpu", False)
+
 def update_global_queue(queue):
     """Update the global queue.
 
