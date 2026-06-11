@@ -22,7 +22,7 @@ Supported Algorithms
 .. hint::
   While not every parameter or combination of parameters from estimators is supported in the
   |sklearnex|, attempting to perform an unsupported operation will by default result in executing
-  code from stock |sklearn| when no accelerated routine is available (referred to as a "fallback"
+  code from stock |sklearn| when no accelerated routine is available (referred to as a *fallback*
   throughout the documentation), thereby ensuring that any valid |sklearn| workflow will continue
   working under patching.
 
