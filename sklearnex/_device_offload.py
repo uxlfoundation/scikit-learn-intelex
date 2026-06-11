@@ -167,6 +167,11 @@ def dispatch(
                 # dpnp fallback is not handled properly yet.
                 patching_status.write_log(transferred_to_host=False)
                 return branches["sklearn"](obj, *args, **kwargs)
+            elif QM.get_global_queue() is not None and not get_config()["allow_fallback_to_host"]:
+                # In spirit of the documentation, if there is a transfer to host which runs then
+                # scikit-learn without array API then it must be done on CPU. This is then controlled
+                # by the `allow_fallback_to_host` configuration option.
+                    raise RuntimeError("Fallback to scikit-learn on host, device operation may be supported via the `array_api_dispatch` configuration option")
             else:
                 patching_status.write_log()
                 return branches["sklearn"](obj, *hostargs, **hostkwargs)
