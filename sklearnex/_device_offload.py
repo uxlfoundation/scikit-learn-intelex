@@ -14,6 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
+import inspect
 from collections.abc import Callable
 from functools import wraps
 from typing import Any, Union
