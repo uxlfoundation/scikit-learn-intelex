@@ -86,27 +86,3 @@ def _get_host_inputs(*args, **kwargs):
     _, hostvalues = _transfer_to_host(*kwargs.values())
     hostkwargs = dict(zip(kwargs.keys(), hostvalues))
     return hostargs, hostkwargs
-
-
-def support_sycl_format(func):
-    # This wrapper enables scikit-learn functions and methods to work with
-    # all sycl data frameworks as they no longer support numpy implicit
-    # conversion and must be manually converted. This is only necessary
-    # when array API is supported but not active.
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        if (
-            not get_config().get("array_api_dispatch", False)
-            and _get_sycl_namespace(*args)[2]
-        ):
-            with QM.manage_global_queue(kwargs.get("queue"), *args):
-                if inspect.isfunction(func) and "." in func.__qualname__:
-                    self, (args, kwargs) = args[0], _get_host_inputs(*args[1:], **kwargs)
-                    return func(self, *args, **kwargs)
-                else:
-                    args, kwargs = _get_host_inputs(*args, **kwargs)
-                    return func(*args, **kwargs)
-        return func(*args, **kwargs)
-
-    return wrapper
