@@ -20,10 +20,8 @@ from operator import xor
 
 import numpy as np
 
-from .datatypes import copy_to_dpnp, dlpack_to_numpy
+from .datatypes import dlpack_to_numpy
 from .utils import _sycl_queue_manager as QM
-from .utils._array_api import _asarray, _get_sycl_namespace, _is_numpy_namespace
-from .utils._third_party import is_dpnp_ndarray
 
 
 def supports_queue(func):
