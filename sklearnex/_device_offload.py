@@ -147,13 +147,12 @@ def dispatch(
                 patching_status.write_log(transferred_to_host=False)
                 return branches["sklearn"](obj, *args, **kwargs)
 
-        # move data to host because of multiple reasons: array_api fallback to host,
-        # non array_api supporting oneDAL code, issues with usm support in sklearn.
-        has_usm_data_for_args, hostargs = _transfer_to_host(*args)
-        has_usm_data_for_kwargs, hostvalues = _transfer_to_host(*kwargs.values())
+        # move data to host because of multiple reasons: array_api fallback to host
+        # and non array_api supporting oneDAL code
+        _, hostargs = _transfer_to_host(*args)
+        _, hostvalues = _transfer_to_host(*kwargs.values())
 
         hostkwargs = dict(zip(kwargs.keys(), hostvalues))
-        has_usm_data = has_usm_data_for_args or has_usm_data_for_kwargs
 
         while backend is None:
             backend, patching_status = _get_backend(obj, method_name, *hostargs)
@@ -163,8 +162,7 @@ def dispatch(
             patching_status.write_log(queue=queue, transferred_to_host=False)
             return branches["onedal"](obj, *hostargs, **hostkwargs, queue=queue)
         else:
-            if sklearn_array_api and not has_usm_data:
-                # dpnp fallback is not handled properly yet.
+            if sklearn_array_api:
                 patching_status.write_log(transferred_to_host=False)
                 return branches["sklearn"](obj, *args, **kwargs)
             else:
