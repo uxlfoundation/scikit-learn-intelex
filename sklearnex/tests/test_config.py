@@ -225,7 +225,7 @@ def test_fallback_to_host(sklearn_fallback, caplog):
             assert (
                 f": running accelerated version on {'CPU' if fallback else 'GPU'}"
                 in caplog.messages[start:]
-                or sklearn_fallback
+                or (sklearn_fallback and not fallback)
             )
             start = len(caplog.messages)
 
