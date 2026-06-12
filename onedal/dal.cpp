@@ -140,6 +140,7 @@ PYBIND11_MODULE(_onedal_py_host, m) {
     init_finiteness_checker(m);
 #endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240700
     init_dummy(m);
+    m.attr("__version__") = std::to_string(MAJOR_VERSION) + "." + std::to_string(MINOR_VERSION) + "." + std::to_string(UPDATE_VERSION);
 }
 #endif // ONEDAL_DATA_PARALLEL_SPMD
 
