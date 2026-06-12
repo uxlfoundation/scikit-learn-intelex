@@ -19,7 +19,6 @@ from functools import wraps
 from operator import xor
 
 import numpy as np
-from sklearn import get_config
 
 from .datatypes import copy_to_dpnp, dlpack_to_numpy
 from .utils import _sycl_queue_manager as QM
