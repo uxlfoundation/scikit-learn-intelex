@@ -415,7 +415,8 @@ if daal_check_version((2024, "P", 600)):
 
 else:
     from daal4py.sklearn.linear_model import Ridge
-    from onedal._device_offload import support_input_format
+    
+    from .._device_offload import support_input_format
 
     Ridge.fit = support_input_format(Ridge.fit)
     Ridge.predict = support_input_format(Ridge.predict)
