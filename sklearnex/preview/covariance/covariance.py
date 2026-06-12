@@ -30,7 +30,12 @@ from onedal.utils._array_api import _is_numpy_namespace
 from onedal.utils.validation import _num_features
 from sklearnex import config_context
 
-from ..._device_offload import dispatch, support_input_format, support_sycl_format, wrap_output_data
+from ..._device_offload import (
+    dispatch,
+    support_input_format,
+    support_sycl_format,
+    wrap_output_data,
+)
 from ..._utils import PatchingConditionsChain, register_hyperparameters
 from ...base import oneDALEstimator
 from ...utils._array_api import _pinvh, enable_array_api, get_namespace, log_likelihood
