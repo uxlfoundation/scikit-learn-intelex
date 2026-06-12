@@ -20,7 +20,6 @@ from numbers import Integral
 
 import numpy as np
 from scipy import sparse as sp
-
 from sklearn.preprocessing import LabelEncoder
 
 from daal4py.sklearn.utils.validation import (
@@ -31,6 +30,7 @@ from .. import _default_backend as backend
 from ..common._backend import BackendFunction
 from ..datatypes import to_table
 from ..utils import _sycl_queue_manager as QM
+
 
 class DataConversionWarning(UserWarning):
     """Warning used to notify implicit data conversions happening in the code."""
