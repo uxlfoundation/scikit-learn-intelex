@@ -14,7 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 
-import inspect
 from functools import wraps
 from operator import xor
 
