@@ -168,7 +168,9 @@ def dispatch(
                 # In spirit of the documentation, if there is a transfer to host which runs then
                 # scikit-learn without array API then it must be done on CPU. This is then controlled
                 # by the `allow_fallback_to_host` configuration option.
-                raise RuntimeError("Fallback to scikit-learn on host, device operation may be supported via the `array_api_dispatch` configuration option")
+                raise RuntimeError(
+                    "Fallback to scikit-learn on host, device operation may be supported via the `array_api_dispatch` configuration option"
+                )
             else:
                 patching_status.write_log()
                 return branches["sklearn"](obj, *hostargs, **hostkwargs)
