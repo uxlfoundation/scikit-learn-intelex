@@ -29,7 +29,7 @@ from daal4py.sklearn.utils.validation import (
 from .. import _default_backend as backend
 from ..common._backend import BackendFunction
 from ..datatypes import to_table
-from ..onedal.utils import _sycl_queue_manager as QM
+from ..utils import _sycl_queue_manager as QM
 
 class DataConversionWarning(UserWarning):
     """Warning used to notify implicit data conversions happening in the code."""
