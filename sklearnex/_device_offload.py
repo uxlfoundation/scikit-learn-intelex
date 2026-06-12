@@ -22,7 +22,7 @@ from daal4py.sklearn._utils import sklearn_check_version
 from onedal._device_offload import _transfer_to_host
 from onedal.datatypes import copy_to_dpnp
 from onedal.utils import _sycl_queue_manager as QM
-from onedal.utils._array_api import _asarray, _is_numpy_namespace
+from onedal.utils._array_api import _asarray, _get_sycl_namespace, _is_numpy_namespace
 from onedal.utils._third_party import is_dpnp_ndarray
 
 from ._config import get_config
