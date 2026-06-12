@@ -16,21 +16,12 @@
 
 import inspect
 import warnings
-from collections.abc import Sequence
-from numbers import Integral
 
 import numpy as np
 from scipy import sparse as sp
 
 from onedal.common._backend import BackendFunction
 from onedal.utils import _sycl_queue_manager as QM
-
-if np.lib.NumpyVersion(np.__version__) >= np.lib.NumpyVersion("2.0.0a0"):
-    # numpy_version >= 2.0
-    from numpy.exceptions import VisibleDeprecationWarning
-else:
-    # numpy_version < 2.0
-    from numpy import VisibleDeprecationWarning
 
 from sklearn.preprocessing import LabelEncoder
 
