@@ -44,4 +44,20 @@ if [ ! -z "${DPCPPROOT}" ]; then
     source ${DPCPPROOT}/env/vars.sh
 fi
 
-${PYTHON} setup.py install --single-version-externally-managed --record record.txt ${DALRPATH}
+# Inside conda-build $SRC_DIR is set: stage files for pack.sh to split into
+# per-output packages. Direct invocation (build-and-test-*.yml): install in-place.
+if [ -n "${SRC_DIR}" ]; then
+    export SKLEARNEX_STAGE="${SRC_DIR}/__sklearnex_stage"
+    rm -rf "${SKLEARNEX_STAGE}"
+    mkdir -p "${SKLEARNEX_STAGE}"
+    ${PYTHON} setup.py install \
+        --single-version-externally-managed \
+        --record "${SKLEARNEX_STAGE}/record.txt" \
+        --root "${SKLEARNEX_STAGE}" \
+        ${DALRPATH}
+else
+    ${PYTHON} setup.py install \
+        --single-version-externally-managed \
+        --record record.txt \
+        ${DALRPATH}
+fi
