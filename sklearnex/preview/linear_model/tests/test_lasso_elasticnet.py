@@ -25,13 +25,10 @@ from onedal.tests.utils._dataframes_support import (
     get_dataframes_and_queues,
 )
 
-PREVIEW_IS_ENABLED = "SKLEARNEX_PREVIEW" in os.environ
-
 
 # Note: Lasso and ElasticNet do not have GPU implementations.
 # If that changes, then the filters for 'get_dataframes_and_queues'
 # should be removed from these tests.
-@pytest.mark.skipif(not PREVIEW_IS_ENABLED, reason="Functionality from preview mode")
 @pytest.mark.parametrize(
     "dataframe,queue", get_dataframes_and_queues("numpy,pandas", "cpu")
 )
@@ -48,7 +45,6 @@ def test_sklearnex_import_lasso(dataframe, queue):
     assert_allclose(lasso.coef_, [0.85, 0.0])
 
 
-@pytest.mark.skipif(not PREVIEW_IS_ENABLED, reason="Functionality from preview mode")
 @pytest.mark.parametrize(
     "dataframe,queue", get_dataframes_and_queues("numpy,pandas", "cpu")
 )
