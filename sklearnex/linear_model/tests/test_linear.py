@@ -18,7 +18,6 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 from scipy.linalg import lstsq
-from sklearn.datasets import make_regression
 
 from daal4py.sklearn._utils import daal_check_version
 from onedal.tests.utils._dataframes_support import (
@@ -26,7 +25,6 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
-from sklearnex.tests.utils import _IS_INTEL
 
 
 @pytest.fixture
@@ -110,40 +108,6 @@ def test_sklearnex_import_linear(
         linreg_list = LinearRegression().fit(X, y_list)
         assert_allclose(linreg_list.coef_, linreg.coef_)
         assert_allclose(linreg_list.intercept_, linreg.intercept_)
-
-
-# Note: Lasso and ElasticNet do not have GPU implementations.
-# If that changes, then the filters for 'get_dataframes_and_queues'
-# should be removed from these tests.
-@pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("numpy,pandas", "cpu")
-)
-def test_sklearnex_import_lasso(dataframe, queue):
-    from sklearnex.linear_model import Lasso
-
-    X = [[0, 0], [1, 1], [2, 2]]
-    y = [0, 1, 2]
-    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    y = _convert_to_dataframe(y, sycl_queue=queue, target_df=dataframe)
-    lasso = Lasso(alpha=0.1).fit(X, y)
-    assert "daal4py" in lasso.__module__
-    assert_allclose(lasso.intercept_, 0.15)
-    assert_allclose(lasso.coef_, [0.85, 0.0])
-
-
-@pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("numpy,pandas", "cpu")
-)
-def test_sklearnex_import_elastic(dataframe, queue):
-    from sklearnex.linear_model import ElasticNet
-
-    X, y = make_regression(n_features=2, random_state=0)
-    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
-    y = _convert_to_dataframe(y, sycl_queue=queue, target_df=dataframe)
-    elasticnet = ElasticNet(random_state=0).fit(X, y)
-    assert "daal4py" in elasticnet.__module__
-    assert_allclose(elasticnet.intercept_, 1.451, atol=1e-3)
-    assert_allclose(elasticnet.coef_, [18.838, 64.559], atol=1e-3)
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())

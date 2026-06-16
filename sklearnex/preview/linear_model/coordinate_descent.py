@@ -17,7 +17,7 @@
 from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.linear_model import ElasticNet, Lasso
 
-from ..base import oneDALEstimator
+from ...base import oneDALEstimator
 
 if sklearn_check_version("1.4"):
     ElasticNet._doc_link_module = "daal4py"
