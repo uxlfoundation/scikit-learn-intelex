@@ -76,7 +76,7 @@ patching and without setting environment variable ``SKLEARNEX_PREVIEW``:
 Current list of preview estimators:
 
 .. list-table::
-   :widths: 30 20 10
+   :widths: 30 20
    :header-rows: 1
    :align: left
 
