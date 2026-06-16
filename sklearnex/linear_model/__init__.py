@@ -14,7 +14,6 @@
 # limitations under the License.
 # ===============================================================================
 
-from .coordinate_descent import ElasticNet, Lasso
 from .incremental_linear import IncrementalLinearRegression
 from .incremental_ridge import IncrementalRidge
 from .linear import LinearRegression
