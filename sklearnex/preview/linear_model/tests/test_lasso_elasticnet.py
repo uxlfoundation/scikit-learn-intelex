@@ -14,23 +14,29 @@
 # limitations under the License.
 # ==============================================================================
 
+import os
+
 import pytest
 from numpy.testing import assert_allclose
+from sklearn.datasets import make_regression
 
 from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
 
+PREVIEW_IS_ENABLED = "SKLEARNEX_PREVIEW" in os.environ
+
 
 # Note: Lasso and ElasticNet do not have GPU implementations.
 # If that changes, then the filters for 'get_dataframes_and_queues'
 # should be removed from these tests.
+@pytest.mark.skipif(not PREVIEW_IS_ENABLED, reason="Functionality from preview mode")
 @pytest.mark.parametrize(
     "dataframe,queue", get_dataframes_and_queues("numpy,pandas", "cpu")
 )
 def test_sklearnex_import_lasso(dataframe, queue):
-    from sklearnex.linear_model import Lasso
+    from sklearnex.preview.linear_model import Lasso
 
     X = [[0, 0], [1, 1], [2, 2]]
     y = [0, 1, 2]
@@ -42,11 +48,12 @@ def test_sklearnex_import_lasso(dataframe, queue):
     assert_allclose(lasso.coef_, [0.85, 0.0])
 
 
+@pytest.mark.skipif(not PREVIEW_IS_ENABLED, reason="Functionality from preview mode")
 @pytest.mark.parametrize(
     "dataframe,queue", get_dataframes_and_queues("numpy,pandas", "cpu")
 )
 def test_sklearnex_import_elastic(dataframe, queue):
-    from sklearnex.linear_model import ElasticNet
+    from sklearnex.preview.linear_model import ElasticNet
 
     X, y = make_regression(n_features=2, random_state=0)
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
