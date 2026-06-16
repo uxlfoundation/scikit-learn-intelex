@@ -200,7 +200,7 @@ def wrap_output_data(func: Callable) -> Callable:
         # "DataFrame constructor called with unsupported type". Transfer to host
         # first so sklearn can wrap into the requested format.
         if func.__name__ in ("transform", "fit_transform") and (
-            get_config().get("transform_output") not in ("default", None)
+            get_config().get("transform_output", "default") not in ("default", None)
             or getattr(self, "_sklearn_output_config", {}).get("transform", "default")
             != "default"
         ):
@@ -225,7 +225,7 @@ def wrap_output_data(func: Callable) -> Callable:
                 device = getattr(data, "device", None)
                 if isinstance(result, tuple):
                     result = tuple(xp.asarray(r, device=device) for r in result)
-                elif not isinstance(result, (int, float)):
+                elif getattr(result, "ndim", 0) > 0:
                     result = xp.asarray(result, device=device)
         return result
 

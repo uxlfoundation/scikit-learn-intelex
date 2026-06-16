@@ -134,6 +134,10 @@ def _as_numpy(obj, *args, **kwargs):
     """Converted input object to numpy.ndarray format."""
     if dpnp_available and isinstance(obj, dpnp.ndarray):
         return obj.asnumpy(*args, **kwargs)
+    if torch_available and isinstance(obj, torch.Tensor):
+        # numpy conversion requires a host tensor; XPU/GPU tensors must be
+        # copied to the CPU first.
+        return obj.cpu().numpy(*args, **kwargs)
     if isinstance(obj, pd.DataFrame) or isinstance(obj, pd.Series):
         return obj.to_numpy(*args, **kwargs)
     if sp.issparse(obj):
