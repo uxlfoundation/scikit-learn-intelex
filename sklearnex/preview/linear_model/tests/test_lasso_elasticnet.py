@@ -19,8 +19,10 @@ import os
 import pytest
 from numpy.testing import assert_allclose
 from sklearn.datasets import make_regression
+from sklearn.linear_model import ElasticNet as _sklearn_ElasticNet
 
 from onedal.tests.utils._dataframes_support import (
+    _as_numpy,
     _convert_to_dataframe,
     get_dataframes_and_queues,
 )
@@ -54,7 +56,13 @@ def test_sklearnex_import_elastic(dataframe, queue):
     X, y = make_regression(n_features=2, random_state=0)
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
     y = _convert_to_dataframe(y, sycl_queue=queue, target_df=dataframe)
+
+    skl_elasticnet = _sklearn_ElasticNet(random_state=0).fit(
+        _as_numpy(X),
+        _as_numpy(y),
+    )
+
     elasticnet = ElasticNet(random_state=0).fit(X, y)
     assert "daal4py" in elasticnet.__module__
-    assert_allclose(elasticnet.intercept_, 1.451, atol=1e-3)
-    assert_allclose(elasticnet.coef_, [18.838, 64.559], atol=1e-3)
+    assert_allclose(elasticnet.intercept_, skl_elasticnet.intercept_, atol=1e-3)
+    assert_allclose(elasticnet.coef_, skl_elasticnet.coef_, atol=1e-3)
