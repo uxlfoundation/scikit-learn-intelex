@@ -46,7 +46,6 @@ from sklearnex.neighbors import (
     LocalOutlierFactor,
     NearestNeighbors,
 )
-from sklearnex.preview.linear_model import ElasticNet, Lasso, LogisticRegressionCV
 from sklearnex.svm import SVC, NuSVC
 
 
