@@ -198,13 +198,29 @@ _array_api_inputs = (
 
 def _assert_transform_output_matches_default(km, X, transform_output, method):
     """The polars/pandas transform_output wrapping must preserve the values of
-    the default (un-wrapped) output, independent of input type/device."""
+    the default (un-wrapped) output, independent of input type/device. Both ways
+    of requesting it -- the ``transform_output`` config and ``set_output`` on the
+    estimator -- are checked."""
     default = _as_numpy(getattr(km, method)(X))
+    expected_type = pl.DataFrame if transform_output == "polars" else pd.DataFrame
+
+    # 1) global config_context(transform_output=...)
     with config_context(transform_output=transform_output):
         out = getattr(km, method)(X)
-    expected_type = pl.DataFrame if transform_output == "polars" else pd.DataFrame
     assert isinstance(out, expected_type)
     assert_allclose(out.to_numpy(), default, rtol=1e-5, atol=1e-5)
+
+    # 2) per-estimator set_output(transform=...). Restore the original config
+    # afterwards -- set_output("default") would *pin* it and override (1) on a
+    # later call with the same estimator.
+    original_config = getattr(km, "_sklearn_output_config", {}).copy()
+    km.set_output(transform=transform_output)
+    try:
+        out = getattr(km, method)(X)
+        assert isinstance(out, expected_type)
+        assert_allclose(out.to_numpy(), default, rtol=1e-5, atol=1e-5)
+    finally:
+        km._sklearn_output_config = original_config
 
 
 @pytest.mark.skipif(
