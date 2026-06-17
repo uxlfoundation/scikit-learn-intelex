@@ -57,6 +57,7 @@ except (ImportError, KeyError):
 import numpy as np
 import pandas as pd
 
+from onedal.datatypes._dlpack import dlpack_to_numpy
 from onedal.tests.utils._device_selection import get_queues
 
 test_frameworks = os.environ.get(
@@ -134,14 +135,14 @@ def _as_numpy(obj, *args, **kwargs):
     """Converted input object to numpy.ndarray format."""
     if dpnp_available and isinstance(obj, dpnp.ndarray):
         return obj.asnumpy(*args, **kwargs)
-    if torch_available and isinstance(obj, torch.Tensor):
-        # numpy conversion requires a host tensor; XPU/GPU tensors must be
-        # copied to the CPU first.
-        return obj.cpu().numpy(*args, **kwargs)
     if isinstance(obj, pd.DataFrame) or isinstance(obj, pd.Series):
         return obj.to_numpy(*args, **kwargs)
     if sp.issparse(obj):
         return obj.toarray(*args, **kwargs)
+    if hasattr(obj, "__dlpack_device__"):
+        # Device tensors (e.g. torch on xpu) can't be read by np.asarray;
+        # route through the library's standard dlpack host converter.
+        return dlpack_to_numpy(obj)
     return np.asarray(obj, *args, **kwargs)
 
 
