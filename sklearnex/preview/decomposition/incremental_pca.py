@@ -203,10 +203,9 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
             and not self.singular_values_.flags.writeable
         ):
             self.singular_values_.flags.writeable = True
-        else:
-            self.singular_values_[...] = xp.where(
-                xp.isnan(self.singular_values_), 0, self.singular_values_
-            )
+        self.singular_values_[...] = xp.where(
+            xp.isnan(self.singular_values_), 0, self.singular_values_
+        )
         self.explained_variance_ratio_ = self._onedal_estimator.explained_variance_ratio_
         self.var_ = self._onedal_estimator.var_
 
