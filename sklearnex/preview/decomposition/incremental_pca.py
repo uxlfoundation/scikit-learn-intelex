@@ -198,14 +198,10 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         self.singular_values_ = self._onedal_estimator.singular_values_
         # NOTE: This covers up a numerical accuracy issue in oneDAL online PCA which
         # can yield NaN values for singular values. Replace in place using array API
-        if (
-            isinstance(self.singular_values_, np.ndarray)
-            and not self.singular_values_.flags.writeable
-        ):
-            self.singular_values_.flags.writeable = True
-        self.singular_values_[...] = xp.where(
+        self.singular_values_ = xp.where(
             xp.isnan(self.singular_values_), 0, self.singular_values_
         )
+        self._onedal_estimator.singular_values_ = self.singular_values_
         self.explained_variance_ratio_ = self._onedal_estimator.explained_variance_ratio_
         self.var_ = self._onedal_estimator.var_
 
