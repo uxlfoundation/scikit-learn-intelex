@@ -200,9 +200,9 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         # can yield NaN values for singular values. Replace in place using array API
         if (
             isinstance(self.singular_values_, np.ndarray)
-            and self.singular_values_.flags.readonly
+            and not self.singular_values_.flags.writeable
         ):
-            self.singular_values_.flags.readonly = False
+            self.singular_values_.flags.writeable = True
         else:
             self.singular_values_[...] = xp.where(
                 xp.isnan(self.singular_values_), 0, self.singular_values_
