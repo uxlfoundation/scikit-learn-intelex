@@ -46,6 +46,7 @@ from sklearnex.neighbors import (
     LocalOutlierFactor,
     NearestNeighbors,
 )
+from sklearnex.preview.linear_model import ElasticNet, Lasso, LogisticRegressionCV
 from sklearnex.svm import SVC, NuSVC
 
 
@@ -122,8 +123,8 @@ class sklearn_clone_dict(dict):
 
 # Special dictionary of sklearnex estimators which must be specifically tested, this
 # could be because of supported non-default parameters, blocked support via sklearn's
-# 'available_if' decorator, or not being a native sklearn estimator (i.e. those not in
-# the default PATCHED_MODELS dictionary)
+# 'available_if' decorator, not being a native sklearn estimator (i.e. those not in
+# the default PATCHED_MODELS dictionary), or being under preview mode.
 SPECIAL_INSTANCES = sklearn_clone_dict(
     {
         str(i): i
@@ -138,6 +139,9 @@ SPECIAL_INSTANCES = sklearn_clone_dict(
             BasicStatistics(),
             IncrementalBasicStatistics(),
             DummyRegressor(strategy="constant", constant=1.0),  # val set to 1 arbitrarily
+            Lasso(),
+            ElasticNet(),
+            LogisticRegressionCV(),
         ]
     }
 )
