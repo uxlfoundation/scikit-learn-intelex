@@ -442,22 +442,8 @@ if daal_check_version((2024, "P", 1)):
                 y_bin = xp.asarray(y == self.classes_[1], dtype=xp.int32)
 
             self._onedal_gpu_initialize_estimator()
-            try:
-                self._onedal_estimator.fit(X, y_bin, queue=queue)
-                self._onedal_gpu_save_attributes()
-            except RuntimeError as err:
-                if get_config()["allow_sklearn_after_onedal"]:
-
-                    logging.getLogger("sklearnex").info(
-                        f"{self.__class__.__name__}.fit "
-                        + get_patch_message("sklearn_after_onedal")
-                    )
-                    msg = f"Sklearnex LogisticRegression estimator failed with error: {err}, falling back to sklearn implementation."
-                    logging.warning(msg)
-                    del self._onedal_estimator
-                    super().fit(X, y)
-                else:
-                    raise err
+            self._onedal_estimator.fit(X, y_bin, queue=queue)
+            self._onedal_gpu_save_attributes()
 
         # This should only be called when 'X' is on CPU
         def _error_out_on_incompatible_devices(self, X, method_name: str) -> None:
