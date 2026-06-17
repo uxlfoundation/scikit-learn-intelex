@@ -182,7 +182,10 @@ def test_standard_estimator_stability(estimator, method, dataframe, queue):
         pytest.skip(f"stability not guaranteed for {estimator}")
     if estimator in ["KMeans", "PCA"] and "score" in method and queue == None:
         pytest.skip(f"variation observed in {estimator}.score")
-    if estimator in ["IncrementalEmpiricalCovariance"] and method == "mahalanobis":
+    if (
+        estimator in ["EmpiricalCovariance", "IncrementalEmpiricalCovariance"]
+        and method == "mahalanobis"
+    ):
         pytest.skip("allowed fallback to sklearn occurs")
     if estimator == "DummyRegressor":
         pytest.skip("default parameters fall back to sklearn")

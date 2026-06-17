@@ -496,6 +496,11 @@ def _check_set_output_transform(est, method, X, estimator_name):
 @pytest.mark.parametrize("dataframe, queue", get_dataframes_and_queues())
 @pytest.mark.parametrize("estimator, method", gen_models_info(PATCHED_MODELS))
 def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator, method):
+    if estimator == "EmpiricalCovariance" and method == "mahalanobis":
+        pytest.skip("Operation involves intentional fallback to scikit-learn.")
+    if estimator == "IncrementalPCA" and method == "inverse_transform":
+        pytest.skip("Operation involves intentional fallback to scikit-learn.")
+
     kwargs = {}
     if (
         estimator == "LogisticRegression"
@@ -504,6 +509,7 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
     ):
         # sklearnex.LogisticRegression only has support for newton-cg solver on GPU
         kwargs = {"solver": "newton-cg"}
+
     est = PATCHED_MODELS[estimator](**kwargs)
 
     if queue:
