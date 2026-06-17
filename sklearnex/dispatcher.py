@@ -54,6 +54,7 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
 
         import sklearn.covariance as covariance_module
         import sklearn.decomposition as decomposition_module
+        import sklearn.linear_model as linear_model_module
         from sklearn.covariance import EmpiricalCovariance as EmpiricalCovariance_sklearn
         from sklearn.decomposition import IncrementalPCA as IncrementalPCA_sklearn
         from sklearn.linear_model import ElasticNet as ElasticNet_sklearn

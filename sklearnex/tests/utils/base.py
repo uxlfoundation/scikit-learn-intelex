@@ -73,7 +73,7 @@ def _load_all_models(with_sklearnex=True, estimator=True):
     already_patched = any(already_patched_map.values())
     try:
         if with_sklearnex:
-            patch_sklearn()
+            patch_sklearn(preview=True)
         elif already_patched:
             unpatch_sklearn()
 
@@ -124,7 +124,7 @@ class sklearn_clone_dict(dict):
 # Special dictionary of sklearnex estimators which must be specifically tested, this
 # could be because of supported non-default parameters, blocked support via sklearn's
 # 'available_if' decorator, not being a native sklearn estimator (i.e. those not in
-# the default PATCHED_MODELS dictionary), or being under preview mode.
+# the default PATCHED_MODELS dictionary).
 SPECIAL_INSTANCES = sklearn_clone_dict(
     {
         str(i): i
@@ -139,9 +139,6 @@ SPECIAL_INSTANCES = sklearn_clone_dict(
             BasicStatistics(),
             IncrementalBasicStatistics(),
             DummyRegressor(strategy="constant", constant=1.0),  # val set to 1 arbitrarily
-            Lasso(),
-            ElasticNet(),
-            LogisticRegressionCV(),
         ]
     }
 )
