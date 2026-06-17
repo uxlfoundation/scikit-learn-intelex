@@ -14,6 +14,7 @@
 # limitations under the License.
 # ===============================================================================
 
+import numpy as np
 from sklearn.decomposition import IncrementalPCA as _sklearn_IncrementalPCA
 from sklearn.utils import gen_batches
 from sklearn.utils.validation import check_is_fitted
@@ -197,9 +198,15 @@ class IncrementalPCA(oneDALEstimator, _sklearn_IncrementalPCA):
         self.singular_values_ = self._onedal_estimator.singular_values_
         # NOTE: This covers up a numerical accuracy issue in oneDAL online PCA which
         # can yield NaN values for singular values. Replace in place using array API
-        self.singular_values_[...] = xp.where(
-            xp.isnan(self.singular_values_), 0, self.singular_values_
-        )
+        if (
+            isinstance(self.singular_values_, np.ndarray)
+            and self.singular_values_.flags.readonly
+        ):
+            self.singular_values_.flags.readonly = False
+        else:
+            self.singular_values_[...] = xp.where(
+                xp.isnan(self.singular_values_), 0, self.singular_values_
+            )
         self.explained_variance_ratio_ = self._onedal_estimator.explained_variance_ratio_
         self.var_ = self._onedal_estimator.var_
 
