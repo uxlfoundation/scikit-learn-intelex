@@ -500,6 +500,12 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
         pytest.skip("Operation involves intentional fallback to scikit-learn.")
     if estimator == "IncrementalPCA" and method == "inverse_transform":
         pytest.skip("Operation involves intentional fallback to scikit-learn.")
+    if (
+        estimator == "IncrementalPCA"
+        and dataframe == "array_api"
+        and not _package_check_version(np.__version__, "2.2")
+    ):
+        pytest.skip("Requires newer numpy version")
 
     kwargs = {}
     if (
