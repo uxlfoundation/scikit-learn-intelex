@@ -57,7 +57,6 @@ except (ImportError, KeyError):
 import numpy as np
 import pandas as pd
 
-from onedal.datatypes._dlpack import dlpack_to_numpy
 from onedal.tests.utils._device_selection import get_queues
 
 test_frameworks = os.environ.get(
@@ -139,10 +138,6 @@ def _as_numpy(obj, *args, **kwargs):
         return obj.to_numpy(*args, **kwargs)
     if sp.issparse(obj):
         return obj.toarray(*args, **kwargs)
-    if hasattr(obj, "__dlpack_device__"):
-        # Device tensors (e.g. torch on xpu) can't be read by np.asarray;
-        # route through the library's standard dlpack host converter.
-        return dlpack_to_numpy(obj)
     return np.asarray(obj, *args, **kwargs)
 
 
