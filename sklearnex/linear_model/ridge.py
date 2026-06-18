@@ -45,7 +45,7 @@ if daal_check_version((2024, "P", 600)):
             move_to,
         )
 
-    @enable_array_api("1.5")  # validate_data y_numeric requires sklearn >=1.5
+    @enable_array_api
     @control_n_jobs(decorated_methods=["fit", "predict", "score"])
     class Ridge(oneDALEstimator, _sklearn_Ridge, _BaseLinearModel):
         __doc__ = _sklearn_Ridge.__doc__

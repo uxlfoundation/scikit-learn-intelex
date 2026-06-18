@@ -1040,7 +1040,7 @@ class ForestRegressor(BaseForest, _sklearn_ForestRegressor):
     score.__doc__ = _sklearn_ForestRegressor.score.__doc__
 
 
-@enable_array_api("1.6")
+@enable_array_api
 @register_hyperparameters({"predict": ("decision_forest", "infer")})
 @control_n_jobs(decorated_methods=["fit", "predict", "predict_proba", "score"])
 class RandomForestClassifier(ForestClassifier):
@@ -1118,7 +1118,7 @@ class RandomForestClassifier(ForestClassifier):
         self.monotonic_cst = monotonic_cst
 
 
-@enable_array_api("1.5")
+@enable_array_api
 @control_n_jobs(decorated_methods=["fit", "predict", "score"])
 class RandomForestRegressor(ForestRegressor):
     __doc__ = _sklearn_RandomForestRegressor.__doc__
@@ -1194,7 +1194,7 @@ class RandomForestRegressor(ForestRegressor):
         self.monotonic_cst = monotonic_cst
 
 
-@enable_array_api("1.6")
+@enable_array_api
 @control_n_jobs(decorated_methods=["fit", "predict", "predict_proba", "score"])
 class ExtraTreesClassifier(ForestClassifier):
     __doc__ = _sklearn_ExtraTreesClassifier.__doc__
@@ -1271,7 +1271,7 @@ class ExtraTreesClassifier(ForestClassifier):
         self.monotonic_cst = monotonic_cst
 
 
-@enable_array_api("1.5")
+@enable_array_api
 @control_n_jobs(decorated_methods=["fit", "predict", "score"])
 class ExtraTreesRegressor(ForestRegressor):
     __doc__ = _sklearn_ExtraTreesRegressor.__doc__

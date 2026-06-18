@@ -51,7 +51,7 @@ if daal_check_version((2024, "P", 1)):
 
     _sparsity_enabled = daal_check_version((2024, "P", 700))
 
-    @enable_array_api("1.5")  # validate_data y_numeric requires sklearn >=1.5
+    @enable_array_api
     @control_n_jobs(
         decorated_methods=[
             "fit",
