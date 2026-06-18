@@ -183,14 +183,7 @@ def _daal4py_k_means_fit(
         return isinstance(s, str) and s == target_str
 
     default_n_init = 10
-    if n_init in ["auto", "warn"]:
-        if n_init == "warn":
-            warnings.warn(
-                "The default value of `n_init` will change from "
-                f"{default_n_init} to 'auto' in 1.4. Set the value of `n_init`"
-                " explicitly to suppress the warning",
-                FutureWarning,
-            )
+    if n_init == "auto":
         if is_string(cluster_centers_0, "k-means++"):
             n_init = 1
         else:
@@ -351,18 +344,14 @@ def _daal4py_check_test_data(self, X):
     return X
 
 
-def _predict(self, X, sample_weight=None):
+def _predict(self, X):
     check_is_fitted(self)
 
     X = _daal4py_check_test_data(self, X)
 
-    if isinstance(sample_weight, str) and sample_weight == "deprecated":
-        sample_weight = None
-
     _patching_status = PatchingConditionsChain("sklearn.cluster.KMeans.predict")
     _patching_status.and_conditions(
         [
-            (sample_weight is None, "Sample weights are not supported."),
             (hasattr(X, "__array__"), "X does not have '__array__' attribute."),
         ]
     )
@@ -385,13 +374,7 @@ def _predict(self, X, sample_weight=None):
     _patching_status.write_log()
     if _dal_ready:
         return _daal4py_k_means_predict(X, self.n_clusters, self.cluster_centers_)[0]
-    if sample_weight is not None:
-        warnings.warn(
-            "'sample_weight' was deprecated in version 1.3 and "
-            "will be removed in 1.5.",
-            FutureWarning,
-        )
-    return _labels_inertia(X, sample_weight, self.cluster_centers_)[0]
+    return _labels_inertia(X, None, self.cluster_centers_)[0]
 
 
 @control_n_jobs(decorated_methods=["fit", "predict"])

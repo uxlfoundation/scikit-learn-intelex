@@ -102,7 +102,7 @@ if daal_check_version((2023, "P", 200)):
             patching_status = PatchingConditionsChain(f"sklearn.cluster.{class_name}.fit")
 
             sample_count = _num_samples(X)
-            supported_algs = ["auto", "full", "lloyd", "elkan"]
+            supported_algs = ["lloyd", "elkan"]
 
             if self.algorithm == "elkan":
                 logging.getLogger("sklearnex").info(
@@ -155,12 +155,12 @@ if daal_check_version((2023, "P", 200)):
             return self
 
         def _resolve_n_init(self, default_n_init=10):
-            """Resolve n_init from 'auto'/'warn' to integer.
+            """Resolve n_init from 'auto' to integer.
 
             Adapted from sklearn.cluster._kmeans._BaseKMeans._check_params.
             """
             n_init = self.n_init
-            if isinstance(n_init, str) and n_init in ("auto", "warn"):
+            if isinstance(n_init, str) and n_init == "auto":
                 if isinstance(self.init, str) and self.init == "k-means++":
                     n_init = 1
                 elif isinstance(self.init, str) and self.init == "random":
@@ -239,17 +239,16 @@ if daal_check_version((2023, "P", 200)):
                 )
 
             # Validate algorithm (only lloyd supported in oneDAL)
-            if self.algorithm not in ["auto", "full", "lloyd", "elkan"]:
+            if self.algorithm not in ["lloyd", "elkan"]:
                 raise ValueError(
                     f"Algorithm {self.algorithm} is not supported. "
-                    "Supported algorithms are 'lloyd', 'elkan' (computed as lloyd), 'auto', 'full'."
+                    "Supported algorithms are 'lloyd' and 'elkan' (computed as lloyd)."
                 )
 
             # Skip sklearn's _check_params / _check_params_vs_input entirely:
             # - We already validate algorithm, n_clusters, n_init, max_iter,
             #   and init above
             # - The onedal backend computes tolerance internally via _compute_tolerance
-            # - sklearn's _check_params rejects algorithm='lloyd' on sklearn < 1.1
             # - sklearn's _check_params_vs_input calls np.var() which fails on GPU arrays
             self._n_init = self._resolve_n_init()
 
@@ -290,21 +289,16 @@ if daal_check_version((2023, "P", 200)):
             )
 
             X = data[0]
-            sample_weight = data[-1] if len(data) > 1 else None
 
             is_data_supported = (
                 _is_csr(X) and daal_check_version((2024, "P", 700))
             ) or not is_sparse(X)
 
-            # algorithm "auto" has been deprecated since 1.1,
-            # algorithm "full" has been replaced by "lloyd"
-            supported_algs = ["auto", "full", "lloyd", "elkan"]
+            supported_algs = ["lloyd", "elkan"]
             if self.algorithm == "elkan":
                 logging.getLogger("sklearnex").info(
                     "oneDAL does not support 'elkan', using 'lloyd' algorithm instead."
                 )
-
-            _acceptable_sample_weights = True
 
             patching_status.and_conditions(
                 [
@@ -316,10 +310,6 @@ if daal_check_version((2023, "P", 200)):
                     (
                         is_data_supported,
                         "Supported data formats: Dense, CSR (oneDAL version >= 2024.7.0).",
-                    ),
-                    (
-                        _acceptable_sample_weights,
-                        "oneDAL doesn't support sample_weight. Acceptable options are None, constant, or equal weights.",
                     ),
                 ]
             )
@@ -340,7 +330,7 @@ if daal_check_version((2023, "P", 200)):
                 X,
             )
 
-        def _onedal_predict(self, X, sample_weight=None, queue=None):
+        def _onedal_predict(self, X, queue=None):
             xp, _ = get_namespace(X)
             X = validate_data(
                 self,
