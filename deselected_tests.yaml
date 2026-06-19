@@ -109,6 +109,12 @@ deselected_tests:
   - inspection/tests/test_permutation_importance.py::test_permutation_importance_correlated_feature_regression_pandas[1.0-1]
   - inspection/tests/test_permutation_importance.py::test_permutation_importance_correlated_feature_regression_pandas[1.0-2]
 
+  # Since sklearn 1.9 the check passes a _NotAnArray sample_weight, and SVM's
+  # _onedal_cpu_supported calls xp.reshape on it, which _NotAnArray rejects via
+  # __array_function__ (TypeError: Don't want to call array_function reshape!)
+  - tests/test_common.py::test_estimators[SVC()-check_sample_weights_not_an_array] >=1.9
+  - tests/test_common.py::test_estimators[NuSVC()-check_sample_weights_not_an_array] >=1.9
+
   # TODO: add support of subset invariance to SVM
   - tests/test_common.py::test_estimators[SVC()-check_methods_subset_invariance]
   - tests/test_common.py::test_estimators[NuSVC()-check_methods_subset_invariance]
@@ -593,7 +599,6 @@ gpu:
   - svm/tests/test_svm.py::test_negative_weights_svc_leave_two_labels[partial-mask-label-2-SVC]
   # sparse input is not implemented for DBSCAN.
   - tests/test_common.py::test_estimators[RandomForestClassifier()-check_class_weight_classifiers]
-  - tests/test_common.py::test_estimators[SVC()-check_sample_weights_not_an_array]
   - tests/test_common.py::test_estimators[SVC()-check_classifier_data_not_an_array]
   - tests/test_common.py::test_search_cv[RandomizedSearchCV(estimator=LogisticRegression(),param_distributions={'C':[0.1,1.0]})-check_classifiers_classes]
   - tests/test_common.py::test_search_cv[RandomizedSearchCV(estimator=LogisticRegression(),param_distributions={'C':[0.1,1.0]})-check_decision_proba_consistency]
