@@ -48,7 +48,11 @@ from sklearn.model_selection import train_test_split
 
 import daal4py as d4p
 from daal4py.mb import gbt_convertors
-from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from daal4py.sklearn._utils import (
+    _package_check_version,
+    daal_check_version,
+    sklearn_check_version,
+)
 
 try:
     import catboost as cb
@@ -592,31 +596,34 @@ def test_xgb_unsupported(from_treelite):
     with pytest.raises(TypeError):
         d4p.mb.convert_model(xgb_model)
 
-    xgb_model = xgb.train(
-        dtrain=xgb.DMatrix(X, y),
-        num_boost_round=5,
-        params={
-            "objective": "reg:squarederror",
-            "booster": "dart",
-            "max_depth": 3,
-            "seed": 123,
-            "nthread": 1,
-        },
-    )
-    if not from_treelite:
-        with pytest.raises(TypeError):
-            d4p.mb.convert_model(xgb_model)
-    else:
-        # In this case, TreeLite handles the drop logic on their end in a
-        # format that is consumable by daal4py.
-        tl_model = treelite.frontend.from_xgboost(xgb_model)
-        d4p_model = d4p.mb.convert_model(tl_model)
-        np.testing.assert_allclose(
-            d4p_model.predict(X),
-            treelite.gtil.predict(tl_model, X, pred_margin=True).reshape(-1),
-            atol=1e-5,
-            rtol=1e-5,
+    # Note: dart booster in previous versions had a different
+    # structure than regular tree booster.
+    if not _package_check_version(xgb.__version__, "3.3.0"):
+        xgb_model = xgb.train(
+            dtrain=xgb.DMatrix(X, y),
+            num_boost_round=5,
+            params={
+                "objective": "reg:squarederror",
+                "booster": "dart",
+                "max_depth": 3,
+                "seed": 123,
+                "nthread": 1,
+            },
         )
+        if not from_treelite:
+            with pytest.raises(TypeError):
+                d4p.mb.convert_model(xgb_model)
+        else:
+            # In this case, TreeLite handles the drop logic on their end in a
+            # format that is consumable by daal4py.
+            tl_model = treelite.frontend.from_xgboost(xgb_model)
+            d4p_model = d4p.mb.convert_model(tl_model)
+            np.testing.assert_allclose(
+                d4p_model.predict(X),
+                treelite.gtil.predict(tl_model, X, pred_margin=True).reshape(-1),
+                atol=1e-5,
+                rtol=1e-5,
+            )
 
     xgb_model = xgb.train(
         dtrain=xgb.DMatrix(X, y),
