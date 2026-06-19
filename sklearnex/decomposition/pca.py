@@ -54,13 +54,9 @@ if daal_check_version((2024, "P", 100)):
         _parameter_constraints: dict = {**_sklearn_PCA._parameter_constraints}
         # "onedal_svd" solver uses oneDAL's PCA-SVD algorithm
         # and required for testing purposes to fully enable it in future.
-        # "covariance_eigh" solver is added for ability to explicitly request
-        # oneDAL's PCA-Covariance algorithm using any sklearn version < 1.5.
+        # ("covariance_eigh" is already a native sklearn solver.)
         _parameter_constraints["svd_solver"] = [
-            StrOptions(
-                _parameter_constraints["svd_solver"][0].options
-                | {"onedal_svd", "covariance_eigh"}
-            )
+            StrOptions(_parameter_constraints["svd_solver"][0].options | {"onedal_svd"})
         ]
 
         def __init__(
