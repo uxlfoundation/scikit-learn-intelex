@@ -14,18 +14,33 @@
 # limitations under the License.
 # ===============================================================================
 
+import array_api_strict
 import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_allclose
+from sklearn.base import is_regressor
 from sklearn.datasets import make_classification, make_regression
 
-from daal4py.sklearn._utils import daal_check_version
+from daal4py.sklearn._utils import (
+    _package_check_version,
+    daal_check_version,
+    sklearn_check_version,
+)
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
+    dpnp_available,
     get_dataframes_and_queues,
+    torch_available,
+    torch_xpu_available,
 )
+from onedal.tests.utils._device_selection import is_sycl_device_available
+
+if dpnp_available:
+    import dpnp
+if torch_available:
+    import torch
 
 hparam_values = [
     (None, None, None, None),
@@ -194,3 +209,138 @@ def test_classifiers_work_on_single_class_non_numeric():
         ExtraTreesClassifier(n_estimators=1).fit(X, y).predict(X),
         y,
     )
+
+
+# TODO: add 'sample_weights' to this test once oneDAL supports the
+# new scikit-learn methodology and sklearnex doesn't fall back.
+@pytest.mark.skipif(
+    not sklearn_check_version("1.9"),
+    reason="Functionality introduced in later scikit-learn versions.",
+)
+@pytest.mark.skipif(
+    not _package_check_version("2.1", np.__version__),
+    reason="Array API functionality requires more recent version of NumPy.",
+)
+@pytest.mark.parametrize("X_xp", [np, pd, array_api_strict])
+@pytest.mark.parametrize("y_xp", [np, pd, array_api_strict])
+@pytest.mark.parametrize("class_weight", [None, "balanced"])
+@pytest.mark.parametrize("n_classes", [0, 2, 3])  # 0 == regression
+def test_rf_mixed_array_namespaces(X_xp, y_xp, class_weight, n_classes, with_array_api):
+    if class_weight is not None and n_classes == 0:
+        pytest.skip()
+    rng = np.random.default_rng(seed=123)
+    X = rng.standard_normal(size=(50, 4))
+    if n_classes == 0:  # regressor
+        y = rng.standard_normal(size=X.shape[0])
+    else:
+        y = rng.integers(n_classes, size=X.shape[0])
+
+    if X_xp is pd:
+        X = pd.DataFrame(X)
+    else:
+        X = X_xp.asarray(X)
+    if y_xp is pd:
+        if n_classes != 0:
+            y = np.array(["a", "b", "c"])[y]
+        y = pd.Series(y)
+    else:
+        y = y_xp.asarray(y)
+
+    from sklearnex.ensemble import RandomForestClassifier, RandomForestRegressor
+
+    model = (RandomForestClassifier if n_classes != 0 else RandomForestRegressor)(
+        n_estimators=10
+    )
+    if class_weight is not None:
+        model.set_params(class_weight=class_weight)
+    model.fit(X, y)
+    pred = model.predict(X)
+    _ = model.score(X, y)
+
+    if n_classes == 0:
+        assert pred.__class__ == (X.__class__ if X_xp is not pd else np.ndarray)
+    else:
+        if y_xp is pd:
+            assert isinstance(model.classes_, np.ndarray)
+        else:
+            assert model.classes_.__class__ == y.__class__
+        proba = model.predict_proba(X)
+        if X_xp is pd:
+            assert isinstance(proba, np.ndarray)
+        else:
+            assert proba.__class__ == X.__class__
+
+    # Note: this is a quick check to ensure that the result has the same
+    # kind of values as the input. Note that roughly 1/2 or 1/3 of the inputs
+    # will be of the same class, so this ensures that different values are
+    # predicted. There's no particular justification behind requiring 60%
+    # classification accuracy.
+    if n_classes != 0:
+        if y_xp is pd:
+            y_xp = np
+        pred_is_correct = y_xp.astype(y_xp.asarray(pred == y), y_xp.float32)
+        assert y_xp.sum(pred_is_correct) >= (0.60 * int(X.shape[0]))
+
+
+@pytest.mark.skipif(
+    not sklearn_check_version("1.9"),
+    reason="Functionality introduced in later scikit-learn versions.",
+)
+@pytest.mark.skipif(
+    not is_sycl_device_available("gpu"), reason="Test checks GPU-specific functionality."
+)
+@pytest.mark.parametrize(
+    "X_xp, X_device",
+    ([(torch, "xpu"), (torch, "cpu")] if torch_xpu_available else [])
+    + ([(dpnp, "gpu"), (dpnp, "cpu")] if dpnp_available else []),
+)
+@pytest.mark.parametrize(
+    "y_xp, y_device",
+    ([(torch, "xpu"), (torch, "cpu")] if torch_xpu_available else [])
+    + ([(dpnp, "gpu"), (dpnp, "cpu")] if dpnp_available else [])
+    + [(pd, None)],
+)
+@pytest.mark.parametrize(
+    "estimator_class",
+    [
+        "RandomForestRegressor",
+        "RandomForestClassifier",
+        "ExtraTreesRegressor",
+        "ExtraTreesClassifier",
+    ],
+)
+def test_rf_mixed_devices(
+    X_xp, y_xp, X_device, y_device, estimator_class, with_array_api
+):
+    from sklearnex import ensemble
+
+    model = getattr(ensemble, estimator_class)(n_estimators=2)
+
+    rng = np.random.default_rng(seed=123)
+    X = rng.standard_normal(size=(50, 4))
+    if is_regressor(model):
+        y = rng.standard_normal(size=X.shape[0])
+    else:
+        y = rng.integers(2, size=X.shape[0])
+
+    X = X_xp.asarray(X, device=X_device)
+    if y_xp is pd:
+        if is_regressor(model):
+            y = pd.Series(y)
+        else:
+            y = pd.Series(np.array(["a", "b"])[y])
+    else:
+        y = y_xp.asarray(y, device=y_device)
+
+    model.fit(X, y)
+    pred = model.predict(X)
+    if is_regressor(model):
+        assert pred.__class__ == X.__class__
+    else:
+        if y_xp is pd:
+            assert isinstance(pred, np.ndarray)
+        else:
+            assert pred.__class__ == y.__class__
+        proba = model.predict_proba(X)
+        assert proba.__class__ == X.__class__
+    _ = model.score(X, y)

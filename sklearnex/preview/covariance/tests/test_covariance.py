@@ -18,11 +18,13 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 
-from daal4py.sklearn._utils import daal_check_version
+from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
+    dpnp_available,
     get_dataframes_and_queues,
 )
+from onedal.tests.utils._device_selection import is_sycl_device_available
 from sklearnex.preview.covariance import EmpiricalCovariance
 
 
@@ -110,3 +112,38 @@ def test_non_batched_covariance(hyperparameters, dataframe, queue, assume_center
     )
 
     np.testing.assert_allclose(res_non_batched, res_batched)
+
+
+@pytest.mark.skipif(
+    not sklearn_check_version("1.9"),
+    reason="Relies on functionality introduced in later scikit-learn versions.",
+)
+@pytest.mark.skipif(not dpnp_available, reason="Functionality to test requires DPNP.")
+@pytest.mark.skipif(
+    not is_sycl_device_available("gpu"), reason="Test for GPU-specific functionality."
+)
+def test_cov_error_on_incompatible_devices(with_array_api):
+    import dpnp
+
+    rng = np.random.default_rng(seed=123)
+    X = rng.random(size=(20, 3), dtype=np.float32)
+    X_cpu = dpnp.array(X, device="cpu")
+    X_gpu = dpnp.array(X, device="gpu")
+
+    err_match = "device|queue"
+
+    model = EmpiricalCovariance().fit(X_gpu)
+    with pytest.raises(ValueError, match=err_match):
+        _ = model.mahalanobis(X_cpu)
+    with pytest.raises(ValueError, match=err_match):
+        _ = model.error_norm(X_cpu)
+    with pytest.raises(ValueError, match=err_match):
+        _ = model.score(X_cpu)
+
+    model.fit(X_cpu)
+    with pytest.raises(ValueError, match=err_match):
+        _ = model.mahalanobis(X_gpu)
+    with pytest.raises(ValueError, match=err_match):
+        _ = model.error_norm(X_gpu)
+    with pytest.raises(ValueError, match=err_match):
+        _ = model.score(X_gpu)

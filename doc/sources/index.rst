@@ -30,6 +30,7 @@
 
    patching.rst
    algorithms.rst
+   unsupported.rst
    oneapi-gpu.rst
    config-contexts.rst
    array_api.rst
@@ -38,13 +39,13 @@
    distributed_daal4py.rst
    non-scikit-algorithms.rst
    non_sklearn_d4p.rst
+   additional_parameters.rst
    model_builders.rst
    logistic_model_builder.rst
    input-types.rst
    verbose.rst
    parallelism.rst
    preview.rst
-   deprecation.rst
 
 .. toctree::
    :caption: daal4py
@@ -62,13 +63,6 @@
    contribute.rst
    contributor-reference.rst
    ideas.rst
-
-.. toctree::
-   :caption: Performance
-   :hidden:
-   :maxdepth: 2
-
-   guide/acceleration.rst
 
 .. toctree::
    :caption: Learn
@@ -170,7 +164,7 @@ Example Usage
 Running on GPUs
 ===============
 
-Note: executing on GPU has `additional system software requirements <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`__ - see :doc:`oneapi-gpu`.
+Note: executing on GPU requires installing package ``scikit-learn-intelex-gpu``, and comes with `additional system software requirements <https://www.intel.com/content/www/us/en/developer/articles/system-requirements/intel-oneapi-dpcpp-system-requirements.html>`__ - see :doc:`oneapi-gpu` for details.
 
 .. tabs::
    .. tab:: By patching

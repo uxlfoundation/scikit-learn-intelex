@@ -24,6 +24,7 @@ if daal_check_version((2023, "P", 200)):
     import warnings
 
     import numpy as np
+    from scipy.sparse import issparse
     from sklearn.cluster import KMeans as _sklearn_KMeans
     from sklearn.exceptions import ConvergenceWarning
     from sklearn.metrics.pairwise import (
@@ -40,12 +41,14 @@ if daal_check_version((2023, "P", 200)):
     from onedal.cluster import KMeans as onedal_KMeans
     from onedal.utils.validation import _is_arraylike_not_scalar, _is_csr
 
-    from .._config import get_config
     from .._device_offload import dispatch, wrap_output_data
     from .._utils import PatchingConditionsChain
     from ..base import oneDALEstimator
     from ..utils._array_api import enable_array_api, get_namespace
     from ..utils.validation import validate_data
+
+    if sklearn_check_version("1.9"):
+        from sklearn.utils._array_api import check_same_namespace
 
     @enable_array_api
     @control_n_jobs(decorated_methods=["fit", "fit_transform", "predict", "score"])
@@ -383,7 +386,6 @@ if daal_check_version((2023, "P", 200)):
                 )
 
         def _onedal_predict(self, X, sample_weight=None, queue=None):
-
             xp, _ = get_namespace(X)
             X = validate_data(
                 self,
@@ -392,6 +394,15 @@ if daal_check_version((2023, "P", 200)):
                 reset=False,
                 dtype=[xp.float64, xp.float32],
             )
+            if sklearn_check_version("1.9"):
+                # Note: this errors out in scikit-learn, but is supported by oneDAL.
+                # The 'if' part can be removed once issue is fixed in sklearn side:
+                # https://github.com/scikit-learn/scikit-learn/issues/34132
+                # But note that this won't work for array API classes on CPU
+                if not (isinstance(self.cluster_centers_, np.ndarray) and issparse(X)):
+                    check_same_namespace(
+                        X, self, attribute="cluster_centers_", method="predict"
+                    )
             return self._onedal_estimator.predict(X, queue=queue)
 
         def _onedal_supported(self, method_name, *data):
@@ -450,7 +461,6 @@ if daal_check_version((2023, "P", 200)):
             )
 
         def _onedal_transform(self, X, queue=None):
-
             xp, is_array_api = get_namespace(X)
             X = validate_data(
                 self,
@@ -461,6 +471,11 @@ if daal_check_version((2023, "P", 200)):
                 order="C",
                 accept_large_sparse=False,
             )
+            if sklearn_check_version("1.9"):
+                if not (isinstance(self.cluster_centers_, np.ndarray) and issparse(X)):
+                    check_same_namespace(
+                        X, self, attribute="cluster_centers_", method="transform"
+                    )
 
             if is_array_api:
                 centers = xp.asarray(self.cluster_centers_)
@@ -492,7 +507,6 @@ if daal_check_version((2023, "P", 200)):
             )
 
         def _onedal_score(self, X, y=None, sample_weight=None, queue=None):
-
             xp, _ = get_namespace(X)
             X = validate_data(
                 self,
@@ -501,18 +515,11 @@ if daal_check_version((2023, "P", 200)):
                 reset=False,
                 dtype=[xp.float64, xp.float32],
             )
-
-            if not sklearn_check_version("1.5") and sklearn_check_version("1.3"):
-                if isinstance(sample_weight, str) and sample_weight == "deprecated":
-                    sample_weight = None
-
-                if sample_weight is not None:
-                    warnings.warn(
-                        "'sample_weight' was deprecated in version 1.3 and "
-                        "will be removed in 1.5.",
-                        FutureWarning,
+            if sklearn_check_version("1.9"):
+                if not (isinstance(self.cluster_centers_, np.ndarray) and issparse(X)):
+                    check_same_namespace(
+                        X, self, attribute="cluster_centers_", method="score"
                     )
-
             return self._onedal_estimator.score(X, queue=queue)
 
         def _save_attributes(self):

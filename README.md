@@ -21,7 +21,7 @@
 
 <h3> Speed up your scikit-learn applications for CPUs and GPUs across single- and multi-node configurations
 
-[Releases](https://github.com/uxlfoundation/scikit-learn-intelex/releases)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Documentation](https://uxlfoundation.github.io/scikit-learn-intelex/)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Examples](https://uxlfoundation.github.io/scikit-learn-intelex/latest/samples.html)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Support](https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/doc/sources/support.rst)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;[License](https://github.com/uxlfoundation/scikit-learn-intelex/blob/master/LICENSE)&nbsp;&nbsp;&nbsp;
+[Releases](https://github.com/uxlfoundation/scikit-learn-intelex/releases)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Documentation](https://uxlfoundation.github.io/scikit-learn-intelex/)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Examples](https://uxlfoundation.github.io/scikit-learn-intelex/latest/samples.html)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Support](https://uxlfoundation.github.io/scikit-learn-intelex/latest/support.html)&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;[License](https://github.com/uxlfoundation/scikit-learn-intelex/blob/master/LICENSE)&nbsp;&nbsp;&nbsp;
 
 
 [![Build Status](https://dev.azure.com/daal/daal4py/_apis/build/status/CI?branchName=main)](https://dev.azure.com/daal/daal4py/_build/latest?definitionId=9&branchName=main)
@@ -31,7 +31,7 @@
 [![PyPI Version](https://img.shields.io/pypi/v/scikit-learn-intelex)](https://pypi.org/project/scikit-learn-intelex/)
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/scikit-learn-intelex)](https://anaconda.org/conda-forge/scikit-learn-intelex)
 [![python version](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue)](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue)
-[![scikit-learn supported versions](https://img.shields.io/badge/sklearn-1.0%20%7C%201.5%20%7C%201.6%20%7C%201.7%20%7C%201.8-blue)](https://img.shields.io/badge/sklearn-1.0%20%7C%201.5%20%7C%201.6%20%7C%201.7%20%7C%201.8-blue)
+[![scikit-learn supported versions](https://img.shields.io/badge/sklearn-1.0%20%7C%201.6%20%7C%201.7%20%7C%201.8%20%7C%201.9-blue)](https://img.shields.io/badge/sklearn-1.0%20%7C%201.6%20%7C%201.7%20%7C%201.8%20%7C%201.9-blue)
 
 ---
 </h3>
@@ -93,7 +93,7 @@ Easiest way to benefit from accelerations from the extension is by patching scik
         clustering = DBSCAN(eps=3, min_samples=2).fit(X)
     ```
 
-:eyes: Read about [other ways to patch scikit-learn](https://uxlfoundation.github.io/scikit-learn-intelex/latest/quick-start.html#patching).
+:eyes: Read about [other ways to patch scikit-learn](https://uxlfoundation.github.io/scikit-learn-intelex/latest/patching.html).
 
 :eyes: Check out available [notebooks](https://github.com/uxlfoundation/scikit-learn-intelex/tree/master/examples/notebooks) for more examples.
 
@@ -133,15 +133,15 @@ To install Extension for Scikit-learn, run:
 pip install scikit-learn-intelex
 ```
 
-Package is also offered through other channels such as conda-forge. See all installation instructions in the [Installation Guide](https://uxlfoundation.github.io/scikit-learn-intelex/latest/quick-start.html#installation).
+Package is also offered through other channels such as conda-forge. See all installation instructions in the [Installation Guide](https://uxlfoundation.github.io/scikit-learn-intelex/latest/installation.html).
 
 ## Documentation
 
-* [Quick Start](https://uxlfoundation.github.io/scikit-learn-intelex/latest/quick-start.html)
-* [Documentation and Tutorials](https://uxlfoundation.github.io/scikit-learn-intelex/latest/index.html)
+* [Quick Start](https://uxlfoundation.github.io/scikit-learn-intelex/latest/index.html)
+* [Documentation and Tutorials](https://uxlfoundation.github.io/scikit-learn-intelex)
 * [Release Notes](https://github.com/uxlfoundation/scikit-learn-intelex/releases)
-* [Medium Blogs](https://uxlfoundation.github.io/scikit-learn-intelex/latest/blogs.html)
-* [Code of Conduct](https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/doc/sources/code-of-conduct.rst)
+* [Medium Blog Posts](https://uxlfoundation.github.io/scikit-learn-intelex/latest/blogs.html)
+* [Code of Conduct](https://uxlfoundation.github.io/scikit-learn-intelex/latest/code-of-conduct.html)
 
 ### Extension and oneDAL
 
@@ -157,7 +157,7 @@ Acceleration in patched scikit-learn classes is achieved by replacing calls to s
 
 ## How to Contribute
 
-We welcome community contributions, check our [Contributing Guidelines](https://github.com/uxlfoundation/scikit-learn-intelex/blob/main/doc/sources/contribute.rst) to learn more.
+We welcome community contributions, check our [Contributing Guidelines](https://uxlfoundation.github.io/scikit-learn-intelex/latest/contribute.html) to learn more.
 
 ------------------------------------------------------------------------
 \* The Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. Other names and brands may be claimed as the property of others.

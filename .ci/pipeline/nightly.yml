@@ -45,7 +45,16 @@ jobs:
     displayName: 'Install Coverity tool'
   - script: |
       cd $(Build.Repository.LocalPath)
+      conda config --append channels conda-forge
+      conda config --set channel_priority strict
+      conda update -y -q conda
+      conda create -y -q -n CB -c conda-forge python=$(python.version) dal-devel impi-devel pip setuptools wheel
+      . /usr/share/miniconda/etc/profile.d/conda.sh
+      conda activate CB
+      pip install -r dependencies-dev
+      export DALROOT=$CONDA_PREFIX
       $(COVERITY_TOOL_HOME)/bin/cov-build --dir cov-int --no-command --fs-capture-search .
+      $(COVERITY_TOOL_HOME)/bin/cov-build --dir cov-int -- python setup.py build_ext --inplace
       zip -r daal4py.zip cov-int
     displayName: 'Perform Coverity scan'
   - script: |
@@ -64,7 +73,7 @@ jobs:
       conda config --show channels
       conda config --append channels conda-forge
       conda update -y -q conda
-      conda create -y -q -n CB -c conda-forge python=$(python.version) dal-devel impi-devel
+      conda create -y -q -n CB -c conda-forge python=$(python.version) dal-devel impi-devel pip setuptools wheel
     displayName: 'Conda create'
   - script: |
       bash .ci/scripts/describe_system.sh
@@ -96,8 +105,8 @@ jobs:
   timeoutInMinutes: 120
   strategy:
     matrix:
-      Python3.13_SklearnMain:
-        PYTHON_VERSION: '3.13'
+      Python3.14_SklearnMain:
+        PYTHON_VERSION: '3.14'
         SKLEARN_VERSION: 'main'
   pool:
     vmImage: 'ubuntu-24.04'
@@ -107,8 +116,8 @@ jobs:
   timeoutInMinutes: 120
   strategy:
     matrix:
-      Python3.13_SklearnMain:
-        PYTHON_VERSION: '3.13'
+      Python3.14_SklearnMain:
+        PYTHON_VERSION: '3.14'
         SKLEARN_VERSION: 'main'
   pool:
     vmImage: 'windows-2022'

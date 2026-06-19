@@ -34,7 +34,9 @@ from onedal.utils.validation import is_contiguous
 
 if sklearn_check_version("1.9"):
     from sklearn.utils.validation import _check_estimator_name
+    from sklearn.utils._array_api import get_namespace_and_device, move_to
 
+from .._config import get_config as _get_config
 from ._array_api import get_namespace
 
 if sklearn_check_version("1.6"):
@@ -101,6 +103,10 @@ def _sklearnex_assert_all_finite(
         else:
             _sklearn_assert_all_finite(X, allow_nan=allow_nan)
     else:
+        # only check on onedal branch as it is already exists in sklearn's
+        if _get_config()["assume_finite"]:
+            return
+
         all_finite = check_all_finite(
             X,
             allow_nan=allow_nan,
@@ -246,7 +252,12 @@ def validate_data(
         # a dtype check and conversion. This will query the array_namespace and
         # convert y as necessary. This is important especially for regressors.
         outx, outy = out if check_x else (None, out)
-        yp, _ = get_namespace(outy)
+        if outx is not None and sklearn_check_version("1.9"):
+            yp, _, device = get_namespace_and_device(outx)
+            outy = move_to(outy, xp=yp, device=device)
+            out = outx, outy
+        else:
+            yp, _ = get_namespace(outy)
 
         # avoid using ``kwargs.get("dtype")`` as it will always set up the default
         dtype = kwargs.get(
@@ -286,7 +297,12 @@ if sklearn_check_version("1.9"):
 else:
 
     def _check_sample_weight(
-        sample_weight, X, dtype=None, copy=False, ensure_non_negative=False
+        sample_weight,
+        X,
+        dtype=None,
+        copy=False,
+        ensure_non_negative=False,
+        allow_all_zero_weights=True,
     ):
         return _check_sample_weight_internal(
             sample_weight,
@@ -294,7 +310,7 @@ else:
             dtype=dtype,
             copy=copy,
             ensure_non_negative=ensure_non_negative,
-            allow_all_zero_weights=True,
+            allow_all_zero_weights=allow_all_zero_weights,
         )
 
 
@@ -307,7 +323,11 @@ def _check_sample_weight_internal(
     allow_all_zero_weights=False,
 ):
     n_samples = _num_samples(X)
-    xp, _ = get_namespace(X)
+    if sklearn_check_version("1.9"):
+        xp, _, device = get_namespace_and_device(X)
+    else:
+        xp, _ = get_namespace(X)
+        device = getattr(X, "device", None)
 
     if dtype is not None:
         dtype = _filter_dtypes_for_device(dtype, X)
@@ -318,20 +338,20 @@ def _check_sample_weight_internal(
         scalar_dtype = None
 
     if sample_weight is None:
-        if hasattr(X, "device"):
-            sample_weight = xp.ones(n_samples, dtype=scalar_dtype, device=X.device)
+        if device is not None:
+            sample_weight = xp.ones(n_samples, dtype=scalar_dtype, device=device)
         else:
             sample_weight = xp.ones(n_samples, dtype=scalar_dtype)
     elif isinstance(sample_weight, numbers.Number):
-        if hasattr(X, "device"):
-            sample_weight = xp.full(
-                n_samples, sample_weight, dtype=scalar_dtype, device=X.device
-            )
+        if device is not None:
+            sample_weight = xp.full(n_samples, sample_weight, dtype=scalar_dtype, device=device)
         else:
             sample_weight = xp.full(n_samples, sample_weight, dtype=scalar_dtype)
     else:
         if dtype is None:
             dtype = _filter_dtypes_for_device([xp.float64, xp.float32], X)
+        if sklearn_check_version("1.9"):
+            sample_weight = move_to(sample_weight, xp=xp, device=device)
 
         params = {
             "accept_sparse": False,

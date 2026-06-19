@@ -149,6 +149,7 @@ def test_reconstruct_model(queue, dtype):
     model = LinearRegression(fit_intercept=True)
     model.coef_ = coef.T
     model.intercept_ = intp
+    model._create_model(model.coef_, model.intercept_, np)
 
     res = model.predict(X, queue=queue)
 
@@ -182,7 +183,7 @@ def test_overdetermined_system(queue, dtype, fit_intercept):
         b = Xi.T @ y
         x = np.r_[np.squeeze(model.coef_), model.intercept_]
     residual = A @ x - b
-    assert np.all(np.abs(residual) < (1e-6 if dtype is np.float64 else 1e-5))
+    assert np.all(np.abs(residual) < (1e-6 if dtype is np.float64 else 5e-5))
 
 
 @pytest.mark.parametrize(

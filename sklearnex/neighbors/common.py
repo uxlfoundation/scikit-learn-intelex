@@ -23,21 +23,22 @@ from sklearn.neighbors._ball_tree import BallTree
 from sklearn.neighbors._base import VALID_METRICS, KNeighborsMixin
 from sklearn.neighbors._base import NeighborsBase as _sklearn_NeighborsBase
 from sklearn.neighbors._kd_tree import KDTree
-from sklearn.utils.validation import check_is_fitted
+from sklearn.utils.validation import check_array, check_is_fitted
 
 from daal4py.sklearn._utils import is_sparse, sklearn_check_version
 
 if sklearn_check_version("1.9"):
     from sklearn.utils._sparse import _align_api_if_sparse
+    from sklearn.utils._array_api import get_namespace_and_device, move_to
 
 from onedal._device_offload import _transfer_to_host
 from onedal.utils._array_api import _is_numpy_namespace
-from onedal.utils.validation import _check_array, _num_features, _num_samples
+from onedal.utils.validation import _num_features, _num_samples
 
 from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
 from ..utils._array_api import get_namespace
-from ..utils.validation import validate_data
+from ..utils.validation import _finite_keyword
 
 
 class KNeighborsDispatchingBase(oneDALEstimator):
@@ -51,11 +52,20 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             # if user attempts to classify a point that was zero distance from one
             # or more training points, those training points are weighted as 1.0
             # and the other points as 0.0
-            with xp.errstate(divide="ignore"):
-                dist = 1.0 / dist
+            if _is_numpy_namespace(xp):
+                with xp.errstate(divide="ignore"):
+                    dist = 1.0 / dist
+            else:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    dist = 1.0 / dist
             inf_mask = xp.isinf(dist)
             inf_row = xp.any(inf_mask, axis=1)
-            dist[inf_row] = inf_mask[inf_row]
+            if _is_numpy_namespace(xp):
+                # Note: older numpy do not have 'np.astype'
+                dist[inf_row] = inf_mask[inf_row]
+            else:
+                dist[inf_row] = xp.astype(inf_mask[inf_row], dist.dtype)
             return dist
         elif callable(weights):
             return weights(dist)
@@ -84,11 +94,19 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         array-like
             Predicted values.
         """
-        xp, _ = get_namespace(y_train)
-        if not _is_numpy_namespace(xp):
+        # Note: in theory, the logic should be that 'y_train' should be converted
+        # to the namespace of 'neigh_dist', but by this point, 'y_train' should
+        # already have been moved to X's namespace, so it's fine to move 'neigh_dist'.
+        if sklearn_check_version("1.9"):
+            xp, _, device = get_namespace_and_device(y_train)
+            neigh_dist = move_to(neigh_dist, xp=xp, device=device)
+            neigh_ind = move_to(neigh_ind, xp=xp, device=device)
+        else:
+            xp, _ = get_namespace(y_train)
             device = getattr(y_train, "device", None)
-            neigh_dist = xp.asarray(neigh_dist, device=device)
-            neigh_ind = xp.asarray(neigh_ind, device=device)
+            if not _is_numpy_namespace(xp):
+                neigh_dist = xp.asarray(neigh_dist, device=device)
+                neigh_ind = xp.asarray(neigh_ind, device=device)
 
         weights = self._get_weights(neigh_dist, weights_param)
 
@@ -113,9 +131,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             y_pred_shape = (neigh_ind.shape[0], _y.shape[1])
             if not _is_numpy_namespace(xp):
                 # Array API: pass device to ensure same device as input
-                y_pred = xp.empty(
-                    y_pred_shape, dtype=neigh_dist.dtype, device=neigh_ind.device
-                )
+                y_pred = xp.empty(y_pred_shape, dtype=neigh_dist.dtype, device=device)
             else:
                 # Numpy: no device parameter
                 y_pred = xp.empty(y_pred_shape, dtype=neigh_dist.dtype)
@@ -164,11 +180,16 @@ class KNeighborsDispatchingBase(oneDALEstimator):
         array-like
             Class probabilities.
         """
-        xp, _ = get_namespace(y_train)
-        if not _is_numpy_namespace(xp):
+        if sklearn_check_version("1.9"):
+            xp, _, device = get_namespace_and_device(y_train)
+            neigh_dist = move_to(neigh_dist, xp=xp, device=device)
+            neigh_ind = move_to(neigh_ind, xp=xp, device=device)
+        else:
+            xp, _ = get_namespace(y_train)
             device = getattr(y_train, "device", None)
-            neigh_dist = xp.asarray(neigh_dist, device=device)
-            neigh_ind = xp.asarray(neigh_ind, device=device)
+            if not _is_numpy_namespace(xp):
+                neigh_dist = xp.asarray(neigh_dist, device=device)
+                neigh_ind = xp.asarray(neigh_ind, device=device)
 
         _y = y_train
         classes_ = classes
@@ -207,9 +228,9 @@ class KNeighborsDispatchingBase(oneDALEstimator):
                 proba_k = xp.zeros(
                     (n_classes, n_queries),
                     dtype=neigh_dist.dtype,
-                    device=neigh_dist.device,
+                    device=device,
                 )
-                zero = xp.zeros(1, dtype=neigh_dist.dtype, device=neigh_dist.device)
+                zero = xp.zeros(1, dtype=neigh_dist.dtype, device=device)
                 for c in range(n_classes):
                     mask = pred_labels == c
                     proba_k[c, :] = xp.sum(xp.where(mask, weights_k, zero), axis=1)
@@ -274,13 +295,21 @@ class KNeighborsDispatchingBase(oneDALEstimator):
 
         # For minkowski distance, use more efficient methods where available
         if self.metric == "minkowski":
-            self.effective_metric_params_["p"] = effective_p
+            can_remove_p = False
             if effective_p == 1:
                 self.effective_metric_ = "manhattan"
+                can_remove_p = True
             elif effective_p == 2:
                 self.effective_metric_ = "euclidean"
+                can_remove_p = True
             elif effective_p == np.inf:
                 self.effective_metric_ = "chebyshev"
+                can_remove_p = True
+            if can_remove_p:
+                if "p" in self.effective_metric_params_:
+                    self.effective_metric_params_.pop("p")
+            else:
+                self.effective_metric_params_["p"] = effective_p
 
     def _validate_kneighbors_bounds(self, n_neighbors, query_is_train, X):
         n_samples_fit = self.n_samples_fit_
@@ -422,12 +451,13 @@ class KNeighborsDispatchingBase(oneDALEstimator):
 
         if not isinstance(X, (KDTree, BallTree, _sklearn_NeighborsBase)):
             xp, _ = get_namespace(X)
-            self._fit_X = _check_array(
-                X,
-                dtype=[xp.float64, xp.float32],
-                accept_sparse=True,
-                force_all_finite=False,
-            )
+            params = {
+                "dtype": [xp.float64, xp.float32],
+                "accept_sparse": True,
+                _finite_keyword: False,
+            }
+
+            self._fit_X = check_array(X, **params)
             self.n_samples_fit_ = _num_samples(self._fit_X)
             self.n_features_in_ = _num_features(self._fit_X)
 
@@ -467,7 +497,8 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             self.n_features_in_ = X.n_features_in_
             # Check if X has _onedal_estimator as an instance attribute (not class attribute)
             if "_onedal_estimator" in X.__dict__:
-                self.effective_metric_params_.pop("p")
+                if "p" in self.effective_metric_params_:
+                    self.effective_metric_params_.pop("p")
                 if self._fit_method == "ball_tree":
                     X._tree = BallTree(
                         X._fit_X,
@@ -552,7 +583,7 @@ class KNeighborsDispatchingBase(oneDALEstimator):
             result_method = self._fit_method
 
         p_less_than_one = (
-            "p" in self.effective_metric_params_.keys()
+            "p" in self.effective_metric_params_
             and self.effective_metric_params_["p"] < 1
         )
         if not patching_status.and_condition(
@@ -654,6 +685,8 @@ class KNeighborsDispatchingBase(oneDALEstimator):
     def _onedal_cpu_supported(self, method_name, *data):
         return self._onedal_supported("cpu", method_name, *data)
 
+    # Note: since this transfers the data to host, it doesn't validate
+    # that the array namespaces and devices of 'X' and '_fit_X' match.
     def kneighbors_graph(self, X=None, n_neighbors=None, mode="connectivity"):
         check_is_fitted(self)
         if n_neighbors is None:

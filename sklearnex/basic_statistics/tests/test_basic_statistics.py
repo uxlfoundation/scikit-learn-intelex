@@ -14,12 +14,12 @@
 # limitations under the License.
 # ==============================================================================
 
+import array_api_strict
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
-from scipy import sparse as sp
 
-from daal4py.sklearn._utils import daal_check_version
+from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal.basic_statistics.tests.utils import options_and_tests
 from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
@@ -414,3 +414,26 @@ def test_results_have_underscores(underscore_first):
     else:
         assert not hasattr(bs, "mean")
         assert hasattr(bs, "mean_")
+
+
+@pytest.mark.skipif(
+    not sklearn_check_version("1.9"),
+    reason="Test for functionality introduced in later scikit-learn versions.",
+)
+@pytest.mark.parametrize(
+    "X_xp",
+    [np, array_api_strict],
+)
+@pytest.mark.parametrize(
+    "w_xp",
+    [np, array_api_strict],
+)
+def test_bs_weights_in_different_namespace(X_xp, w_xp, with_array_api):
+    rng = np.random.default_rng(seed=123)
+    X = rng.random(size=(10, 3))
+    w = rng.gamma(1, size=X.shape[0])
+
+    X = X_xp.asarray(X)
+    w = w_xp.asarray(w)
+
+    BasicStatistics().fit(X, w)

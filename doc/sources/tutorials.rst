@@ -20,7 +20,7 @@
 Explore the tutorials & case studies to help you to harness the full potential of |sklearnex|.
 
 Tutorials
-----------------------------------
+---------
 
 .. grid:: 3
 
@@ -54,8 +54,29 @@ Tutorials
 
       An overview of scikit-learn essentials.
 
+Blueprints
+----------
+
+.. grid:: 2
+
+   .. grid-item-card:: Loan Default Risk Prediction
+      :link: https://github.com/intel-samples/loan-default-risk-prediction
+      :padding: 1
+
+      AI Starter Kit to predict probability of a loan default from client using XGBoost and leveraging Intel® optimizations for model serving.
+
+   .. grid-item-card:: Network Intrusion Detection
+      :link: https://github.com/intel-samples/network-intrusion-detection
+      :padding: 1
+
+      AI Starter Kit for Network Intrusion Detection using Extension for Scikit-learn*
+
+See more blueprints for Intel solutions for machine learning at the Software Catalog:
+
+`https://swcatalog.intel.com/blueprints?tags=classic-ai <https://swcatalog.intel.com/blueprints?tags=classic-ai>`__
+
 Case Studies
-----------------------------------
+------------
 
 .. grid:: 3
 

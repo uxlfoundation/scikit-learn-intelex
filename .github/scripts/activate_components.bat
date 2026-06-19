@@ -18,7 +18,9 @@ rem ============================================================================
 rem %1 - dpcpp activate flag
 
 rem prepare vc
-call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall" x64
+rem The Visual Studio installation is dependent on the github-actions runner
+rem version changes can be found in "C:\Program Files\Microsoft Visual Studio"
+call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Auxiliary\Build\vcvarsall" x64
 rem prepare only TBB from oneAPI if a parameter is given.
 IF "%1"=="" (call .\oneapi\setvars.bat) ELSE (call .\oneapi\tbb\latest\env\vars.bat)
 rem prepare oneDAL

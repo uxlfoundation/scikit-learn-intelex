@@ -38,6 +38,8 @@ Overview
 
             conda install -c conda-forge scikit-learn-intelex-gpu
 
+.. hint:: When installing ``scikit-learn-intelex-gpu``, it is not advised to mix packages from ``pip`` and ``conda`` in the same environment - see the :ref:`installation notes <mkl_symbols_note>` for more details.
+
 Note that ``scikit-learn-intelex-gpu`` does not bring additional modules - it is meant to be used through the same functions and classes from the ``sklearnex`` module that run on CPU by default.
 
 After installing said package, the device used for computations can be easily controlled through the ``target_offload`` option in config contexts, which moves data to GPU if it's not already there - see :doc:`config-contexts` and the rest of this page for more details).
@@ -79,6 +81,14 @@ For more details, see the `DPC++ requirements page <https://www.intel.com/conten
 .. hint::
 
     If installing all the GPU dependencies on baremetal is not feasible, one might want to use Docker containers with these dependencies instead.
+
+User Permissions
+----------------
+
+On Linux*, non-root users might not have access to GPU devices by default. To give access to GPUs as computational resources, users must be added to either the ``render`` (compute-only) or the ``video`` (more general) user group, which can be done by executing the following commands on a terminal: ::
+
+    sudo usermod -a -G render "$(whoami)"
+    sudo usermod -a -G video "$(whoami)"
 
 Verifying GPU setup
 -------------------
@@ -179,6 +189,10 @@ GPU arrays through array API
 
 As another option, computations can also be performed on data that is already on a SYCL device without moving it there if it belongs to an array API-compatible class, such as |dpnp_array| or `torch.tensor <https://docs.pytorch.org/docs/stable/tensors.html>`__ (see also the `PyTorch Intel GPU docs <https://docs.pytorch.org/docs/stable/notes/get_start_xpu.html>`__).
 
+.. tip::
+    Internally, array API support in the |sklearnex| works by extracting memory pointers, devices and queues
+    from objects, without using the object's namespace for compute-heavy operations.
+
 This is particularly useful when multiple operations are performed on the same data (e.g. cross validators, stacked ensembles, etc.), or when the data is meant to interact with other libraries besides the |sklearnex|. Be aware that it requires enabling array API support in |sklearn|, which comes with additional dependencies.
 
 See :doc:`array_api` for details, instructions, and limitations. Example:
@@ -246,7 +260,7 @@ See :doc:`array_api` for details, instructions, and limitations. Example:
 DPNP Arrays
 ~~~~~~~~~~~
 
-As a special case, GPU arrays from |dpnp| can be used without enabling array API, even for estimators in the |sklearnex| that do not currently support array API, but note that using this alternative without array API enabled involves data movement to host and back, thus not being the most efficient route in computational terms.
+As a special case, GPU arrays from |dpnp| can be used without enabling array API in estimators with :ref:`array API support <array_api_estimators>`, but note that using this alternative without array API enabled always involves data movement to host and back, thus not being the most efficient route in computational terms and **not recommended**.
 
 Example:
 
@@ -271,4 +285,6 @@ Example:
 Note that, if array API had been enabled, the snippet above would use the data as-is on the device where it resides, but without array API, it implies data movements using the SYCL queue contained by those objects.
 
 .. note::
-    All the input data for an algorithm must reside on the same device.
+    All the input data for an algorithm must reside on the same device when not using array API.
+
+When a |dpnp_array| on GPU is passed as input but the operation is not supported on GPU, the operation may be executed on CPU instead - see :doc:`config-contexts` for more details.

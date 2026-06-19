@@ -30,6 +30,12 @@ from ..utils.validation import _check_sample_weight, validate_data
 if sklearn_check_version("1.2"):
     from sklearn.utils._param_validation import StrOptions
 
+if sklearn_check_version("1.9"):
+    from sklearn.utils._array_api import (
+        get_namespace_and_device,
+        move_to,
+    )
+
 
 @enable_array_api
 @control_n_jobs(decorated_methods=["fit"])
@@ -156,7 +162,10 @@ class BasicStatistics(oneDALEstimator, BaseEstimator):
         return patching_status
 
     def _onedal_fit(self, X, sample_weight=None, queue=None):
-        xp, _ = get_namespace(X, sample_weight)
+        if sklearn_check_version("1.9"):
+            xp, _, device = get_namespace_and_device(X)
+        else:
+            xp, _ = get_namespace(X, sample_weight)
         X = validate_data(
             self,
             X,
@@ -166,8 +175,13 @@ class BasicStatistics(oneDALEstimator, BaseEstimator):
         )
 
         if sample_weight is not None:
+            # SPMD ranks may hold an all-zero local weight block while the
+            # global aggregate is non-zero, so don't reject all-zero weights.
             sample_weight = _check_sample_weight(
-                sample_weight, X, dtype=[xp.float64, xp.float32]
+                sample_weight,
+                X,
+                dtype=[xp.float64, xp.float32],
+                allow_all_zero_weights=True,
             )
 
         onedal_params = {

@@ -31,10 +31,18 @@ from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
+    dpnp_available,
     get_dataframes_and_queues,
     get_queues,
+    torch_available,
 )
+from onedal.tests.utils._device_selection import is_sycl_device_available
 from sklearnex import config_context
+
+if dpnp_available:
+    import dpnp
+if torch_available:
+    import torch
 
 
 def prepare_input(X, y, dataframe, queue):
@@ -706,3 +714,125 @@ def test_array_api_logreg(dataframe, queue, y_type):
     assert isinstance(
         score, (float, np.floating, np.number)
     ), f"score should return a scalar, got type {type(score)}"
+
+
+@pytest.mark.skipif(
+    not sklearn_check_version("1.9"), reason="Functionality introduced in later versions"
+)
+@pytest.mark.skipif(
+    not is_sycl_device_available("gpu"), reason="Test for GPU-specific functionality."
+)
+@pytest.mark.parametrize(
+    "X_xp, X_device",
+    ([(dpnp, "gpu")] if dpnp_available else [])
+    + ([(torch, "xpu")] if torch_available else []),
+)
+def test_error_on_incompatible_devices_gpufirst(with_array_api, X_xp, X_device):
+    from sklearnex.linear_model import LogisticRegression
+
+    rng = np.random.default_rng(seed=123)
+    X = rng.random(size=(10, 3), dtype=np.float32)
+    y = rng.integers(2, size=X.shape[0])
+
+    Xa = X_xp.asarray(X, device=X_device)
+
+    model_gpu = LogisticRegression(solver="newton-cg").fit(Xa, y)
+    with pytest.raises(ValueError, match="device"):
+        model_gpu.predict(X)
+
+
+@pytest.mark.skipif(
+    not sklearn_check_version("1.9"), reason="Functionality introduced in later versions"
+)
+@pytest.mark.skipif(
+    not is_sycl_device_available("gpu"), reason="Test for GPU-specific functionality."
+)
+@pytest.mark.parametrize(
+    "X_xp, X_device",
+    ([(dpnp, "gpu")] if dpnp_available else [])
+    + ([(torch, "xpu")] if torch_available else []),
+)
+@pytest.mark.allow_sklearn_fallback
+def test_error_on_incompatible_devices_cpufirst(with_array_api, X_xp, X_device):
+    from sklearnex.linear_model import LogisticRegression
+
+    rng = np.random.default_rng(seed=123)
+    X = rng.random(size=(10, 3), dtype=np.float32)
+    y = rng.integers(2, size=X.shape[0])
+
+    Xa = X_xp.asarray(X, device=X_device)
+
+    model_cpu = LogisticRegression(solver="lbfgs").fit(X, y)
+    with pytest.raises(ValueError, match="device"):
+        model_cpu.predict(Xa)
+
+
+@pytest.mark.parametrize(
+    "dataframe,queue", get_dataframes_and_queues(device_filter_="gpu")
+)
+@pytest.mark.parametrize("fit_intercept", [True, False])
+@pytest.mark.parametrize("array_api", [False, True])
+@pytest.mark.allow_sklearn_fallback
+def test_onedal_model_from_sklearn_coefs(dataframe, queue, fit_intercept, array_api):
+    if not queue or not queue.sycl_device.is_gpu:
+        pytest.skip("Test for GPU-only code branch")
+    if array_api and not sklearn_check_version("1.9"):
+        pytest.skip("Functionality introduced in later sklearn versions.")
+    from sklearn.linear_model import LogisticRegression as _sklearn_LogisticRegression
+
+    from sklearnex.linear_model import LogisticRegression
+
+    X, y = make_classification(
+        n_samples=100, n_features=20, n_classes=2, random_state=123
+    )
+    X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
+    y = _convert_to_dataframe(y, sycl_queue=queue, target_df=dataframe)
+
+    # This should fall back to sklearn for model fitting
+    with config_context(array_api_dispatch=array_api):
+        model = LogisticRegression(solver="lbfgs", fit_intercept=fit_intercept).fit(X, y)
+    assert not hasattr(model, "_onedal_estimator")
+
+    # Then this should trigger creation of a oneDAL object on the fly,
+    # which should get used to make predictions
+    with config_context(array_api_dispatch=array_api):
+        proba = model.predict_proba(X)
+        pred = model.predict(X)
+    proba = _as_numpy(proba)
+    pred = _as_numpy(pred)
+
+    assert hasattr(model, "_onedal_estimator")
+
+    X_np = _as_numpy(X)
+    y_np = _as_numpy(y)
+    model_sklearn = _sklearn_LogisticRegression(
+        solver="lbfgs", fit_intercept=fit_intercept
+    ).fit(X_np, y_np)
+    proba_sklearn = model_sklearn.predict_proba(X_np)
+    pred_sklearn = model_sklearn.predict(X_np)
+    np.testing.assert_allclose(proba, proba_sklearn)
+    np.testing.assert_array_equal(pred, pred_sklearn)
+
+
+# TODO: remove this once scikit-learn1.8 and 1.9 are no longer supported.
+@pytest.mark.skipif(
+    not sklearn_check_version("1.8"),
+    reason="Workaround for warning issued in specific scikit-learn versions",
+)
+@pytest.mark.allow_sklearn_fallback
+def test_no_warning_for_n_jobs():
+    from sklearnex.linear_model import LogisticRegression
+
+    model = LogisticRegression(n_jobs=2, solver="newton-cholesky")
+
+    rng = np.random.default_rng(seed=123)
+    X = rng.random(size=(10, 3))
+    y = rng.integers(2, size=X.shape[0])
+    w = rng.standard_gamma(1, size=X.shape[0])
+
+    # Note: this is meant to trigger a fallback by passing weights and a
+    # solver which is not supported by oneDAL. If oneDAL starts supporting
+    # this setting, it should find some other way of triggering a fallback.
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", category=FutureWarning)
+        model.fit(X, y, w)
