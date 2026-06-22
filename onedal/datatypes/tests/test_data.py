@@ -590,7 +590,7 @@ def test_table_convert_to_host_dlpack(dataframe, queue, order, data_shape, dtype
     # extract to numpy (which should move to host)
     try:
         X_out = np.from_dlpack(X_table)
-    except RuntimeError as e:
+    except (RuntimeError, BufferError) as e:
         if "Unsupported device in DLTensor." in str(e):
             pytest.skip("Numpy version cannot request device conversion")
         else:
