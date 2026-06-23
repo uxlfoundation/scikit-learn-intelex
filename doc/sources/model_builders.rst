@@ -162,9 +162,8 @@ Limitations
 Performance tips
 ----------------
 
-Accelerations in ``daal4py`` are optimizing for latency of predictions rather than throughput - this makes them
-ideal for scenarios in which predictions are performed for one observation at a time, but less so for batched
-predictions on large amounts of data.
+Accelerations in ``daal4py`` are optimizing for latency of predictions more than for throughput - this makes
+the speedups more noticeable in scenarios where predictions are performed for one observation at a time.
 
 Optimizations are geared towards scenarios with relatively few trees. As the number of trees in the model
 to serve increases, speedups will become less substantial. For models with several thousand trees, there might
