@@ -149,7 +149,8 @@ Limitations
 - Models with categorical features are not supported.
 - Multi-class classification is only supported when the logic corresponds to multinomial logistic loss
   instead of one-vs-rest.
-- Multioutput models are not supported.
+- Multioutput models are not supported. Multi-class classification models are always converted as 'one tree per
+  class', even if the trees have vector-valued leafs.
 - SHAP values cannot be calculated for multi-class classification models, nor for CatBoost regression models
   from loss functions that involve link functions (e.g. can be calculated for 'RMSE', but not for 'Poisson').
 - Objectives that are not for regression nor classification (e.g. ranking) are not supported.
@@ -157,6 +158,22 @@ Limitations
   but not when they are for multi-class classification. In the case of binary classification, random forests
   are converted as regression models since they do not apply a link function to predictions the same way
   gradient boosting models do.
+
+Performance tips
+----------------
+
+Accelerations in ``daal4py`` are optimizing for latency of predictions rather than throughput - this makes them
+ideal for scenarios in which predictions are performed for one observation at a time, but less so for batched
+predictions on large amounts of data.
+
+Optimizations are geared towards scenarios with relatively few trees. As the number of trees in the model
+to serve increases, speedups will become less substantial. For models with several thousand trees, there might
+be no acceleration when using ``daal4py`` compared to the original library that created the model.
+
+In the case of multi-class classification objectives, speedups will be larger for models built as 'one tree per
+class' (XGBoost parameter ``multi_strategy=one_output_per_tree``) than for models with vector-valued leafs.
+Note that models with vector-valued leafs will be translated into 'one tree per class' internally, so for cases
+with many classes, there might be no speed up in the case of ``multi_strategy=multi_output_tree``.
 
 Documentation
 -------------
