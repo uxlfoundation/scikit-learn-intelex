@@ -42,9 +42,10 @@ def _test_libsvm_parameters(queue, array_constr, dtype):
     assert_array_equal(clf.predict(X).ravel(), y)
 
 
-@pytest.mark.parametrize("queue", get_queues())
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 @pytest.mark.parametrize("array_constr", [np.array])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_libsvm_parameters(queue, array_constr, dtype):
     if queue and queue.sycl_device.is_gpu:
         pytest.skip("Sporadic failures on GPU sycl_queue.")

@@ -42,8 +42,10 @@ def hyperparameters(request):
     return hparams
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize(
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(dtypes=[np.float32, np.float64]),
+)
 @pytest.mark.parametrize("macro_block", [None, 1024])
 @pytest.mark.parametrize("non_batched_route", [False, True])
 @pytest.mark.parametrize("overdetermined", [False, True])
@@ -146,8 +148,10 @@ def test_sklearnex_import_elastic(dataframe, queue):
     assert_allclose(elasticnet.coef_, [18.838, 64.559], atol=1e-3)
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize(
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(dtypes=[np.float32, np.float64]),
+)
 def test_sklearnex_reconstruct_model(dataframe, queue, dtype):
     from sklearnex.linear_model import LinearRegression
 

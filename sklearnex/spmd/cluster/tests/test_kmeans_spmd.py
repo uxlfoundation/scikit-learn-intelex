@@ -106,10 +106,13 @@ def test_kmeans_spmd_gold(dataframe, queue):
 @pytest.mark.parametrize("n_features", [5, 25])
 @pytest.mark.parametrize("n_clusters", [2, 5, 15])
 @pytest.mark.parametrize(
-    "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(
+        dataframe_filter_="dpnp",
+        device_filter_="gpu",
+        dtypes=[np.float32, np.float64],
+    ),
 )
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("array_api_dispatch", [True, False])
 @pytest.mark.mpi
 def test_kmeans_spmd_synthetic(
@@ -121,7 +124,7 @@ def test_kmeans_spmd_synthetic(
 
     # TODO: investigate issues when centers != n_clusters (spmd and batch results don't match for all values of K)
     X_train, X_test = _generate_clustering_data(
-        n_samples, n_features, centers=n_clusters, dtype=dtype
+        n_samples, n_features, centers=n_clusters, dtype=dtype, random_state=0
     )
 
     local_dpt_X_train = _convert_to_dataframe(
@@ -156,7 +159,10 @@ def test_kmeans_spmd_synthetic(
         random_state=0,
     ).fit(X_train)
 
-    atol = 1e-5 if dtype == np.float32 else 1e-7
+    if queue is not None and not queue.sycl_device.has_aspect_fp64:
+        atol = 1e-2
+    else:
+        atol = 1e-5 if dtype == np.float32 else 1e-7
     _assert_unordered_allclose(
         spmd_model.cluster_centers_, batch_model.cluster_centers_, atol=atol
     )

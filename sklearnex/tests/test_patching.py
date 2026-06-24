@@ -511,6 +511,14 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
             pytest.skip("Hardware does not support fp16 SYCL testing")
         elif dtype == np.float64 and not queue.sycl_device.has_aspect_fp64:
             pytest.skip("Hardware does not support fp64 SYCL testing")
+        elif (
+            (np.issubdtype(dtype, np.integer) or dtype == np.float16)
+            and not queue.sycl_device.has_aspect_fp64
+        ):
+            # sklearn's check_array upcasts integer and float16 inputs to
+            # float64 before passing them to the estimator, which fails on
+            # fp64-less GPUs.
+            pytest.skip("Hardware does not support fp64 SYCL testing")
         elif queue.sycl_device.is_gpu and estimator in [
             "ElasticNet",
             "Lasso",
@@ -659,6 +667,14 @@ def test_special_estimator_patching(caplog, dataframe, queue, dtype, estimator, 
         if dtype == np.float16 and not queue.sycl_device.has_aspect_fp16:
             pytest.skip("Hardware does not support fp16 SYCL testing")
         elif dtype == np.float64 and not queue.sycl_device.has_aspect_fp64:
+            pytest.skip("Hardware does not support fp64 SYCL testing")
+        elif (
+            (np.issubdtype(dtype, np.integer) or dtype == np.float16)
+            and not queue.sycl_device.has_aspect_fp64
+        ):
+            # sklearn's check_array upcasts integer and float16 inputs to
+            # float64 before passing them to the estimator, which fails on
+            # fp64-less GPUs.
             pytest.skip("Hardware does not support fp64 SYCL testing")
 
     if "NearestNeighbors" in estimator and "radius" in method:

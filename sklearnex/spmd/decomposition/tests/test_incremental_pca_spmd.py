@@ -46,11 +46,14 @@ attributes_to_compare = [
     reason="GPU device and MPI libs required for test",
 )
 @pytest.mark.parametrize(
-    "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(
+        dataframe_filter_="dpnp",
+        device_filter_="gpu",
+        dtypes=[np.float32, np.float64],
+    ),
 )
 @pytest.mark.parametrize("whiten", [True, False])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.mpi
 def test_incremental_pca_fit_spmd_gold(dataframe, queue, whiten, dtype):
     # Import spmd and non-SPMD algo
@@ -94,12 +97,15 @@ def test_incremental_pca_fit_spmd_gold(dataframe, queue, whiten, dtype):
     reason="GPU device and MPI libs required for test",
 )
 @pytest.mark.parametrize(
-    "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(
+        dataframe_filter_="dpnp",
+        device_filter_="gpu",
+        dtypes=[np.float32, np.float64],
+    ),
 )
 @pytest.mark.parametrize("whiten", [True, False])
 @pytest.mark.parametrize("num_blocks", [1, 2])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.mpi
 def test_incremental_pca_partial_fit_spmd_gold(
     dataframe, queue, whiten, num_blocks, dtype
@@ -158,14 +164,17 @@ def test_incremental_pca_partial_fit_spmd_gold(
     reason="GPU device and MPI libs required for test",
 )
 @pytest.mark.parametrize(
-    "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(
+        dataframe_filter_="dpnp",
+        device_filter_="gpu",
+        dtypes=[np.float32, np.float64],
+    ),
 )
 @pytest.mark.parametrize("whiten", [True, False])
 @pytest.mark.parametrize("n_components", [None, 2, 5])
 @pytest.mark.parametrize("num_samples", [100, 200])
 @pytest.mark.parametrize("num_features", [10, 20])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.mpi
 def test_incremental_pca_fit_spmd_random(
     dataframe, queue, whiten, n_components, num_samples, num_features, dtype
@@ -210,15 +219,18 @@ def test_incremental_pca_fit_spmd_random(
     reason="GPU device and MPI libs required for test",
 )
 @pytest.mark.parametrize(
-    "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(
+        dataframe_filter_="dpnp",
+        device_filter_="gpu",
+        dtypes=[np.float32, np.float64],
+    ),
 )
 @pytest.mark.parametrize("whiten", [True, False])
 @pytest.mark.parametrize("n_components", [None, 2, 5])
 @pytest.mark.parametrize("num_blocks", [1, 2])
 @pytest.mark.parametrize("num_samples", [200, 400])
 @pytest.mark.parametrize("num_features", [10, 20])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("array_api_dispatch", [True, False])
 @pytest.mark.mpi
 def test_incremental_pca_partial_fit_spmd_random(

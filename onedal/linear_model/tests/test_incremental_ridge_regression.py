@@ -28,8 +28,9 @@ if daal_check_version((2024, "P", 600)):
     from onedal.linear_model import IncrementalRidge
     from onedal.tests.utils._device_selection import get_queues
 
-    @pytest.mark.parametrize("queue", get_queues())
-    @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+    @pytest.mark.parametrize(
+        "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+    )
     def test_diabetes(queue, dtype):
         X, y = load_diabetes(return_X_y=True)
         X, y = X.astype(dtype), y.astype(dtype)
@@ -45,8 +46,9 @@ if daal_check_version((2024, "P", 600)):
         y_pred = model.predict(X_test, queue=queue)
         assert_allclose(mean_squared_error(y_test, y_pred), 2388.775, rtol=1e-5)
 
-    @pytest.mark.parametrize("queue", get_queues())
-    @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+    @pytest.mark.parametrize(
+        "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+    )
     @pytest.mark.skip(reason="pickling not implemented for oneDAL entities")
     def test_pickle(queue, dtype):
         # TODO Implement pickling for oneDAL entities
@@ -67,9 +69,10 @@ if daal_check_version((2024, "P", 600)):
 
         assert_array_equal(expected, result)
 
-    @pytest.mark.parametrize("queue", get_queues())
+    @pytest.mark.parametrize(
+        "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+    )
     @pytest.mark.parametrize("num_blocks", [1, 2, 10])
-    @pytest.mark.parametrize("dtype", [np.float32, np.float64])
     def test_no_intercept_results(queue, num_blocks, dtype):
         seed = 42
         n_features, n_targets = 19, 7
@@ -107,8 +110,9 @@ if daal_check_version((2024, "P", 600)):
         tol = 2e-4 if res.dtype == np.float32 else 1e-7
         assert_allclose(gtr, res, rtol=tol)
 
-    @pytest.mark.parametrize("queue", get_queues())
-    @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+    @pytest.mark.parametrize(
+        "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+    )
     def test_incremental_estimator_pickle(queue, dtype):
         import pickle
 

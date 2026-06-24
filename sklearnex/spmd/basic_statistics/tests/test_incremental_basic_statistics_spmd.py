@@ -37,11 +37,14 @@ from sklearnex.tests.utils.spmd import (
     reason="GPU device and MPI libs required for test",
 )
 @pytest.mark.parametrize(
-    "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(
+        dataframe_filter_="dpnp",
+        device_filter_="gpu",
+        dtypes=[np.float32, np.float64],
+    ),
 )
 @pytest.mark.parametrize("weighted", [True, False])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.mpi
 def test_incremental_basic_statistics_fit_spmd_gold(dataframe, queue, weighted, dtype):
     # Import spmd and batch algo
@@ -103,12 +106,15 @@ def test_incremental_basic_statistics_fit_spmd_gold(dataframe, queue, weighted, 
     reason="GPU device and MPI libs required for test",
 )
 @pytest.mark.parametrize(
-    "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(
+        dataframe_filter_="dpnp",
+        device_filter_="gpu",
+        dtypes=[np.float32, np.float64],
+    ),
 )
 @pytest.mark.parametrize("num_blocks", [1, 2])
 @pytest.mark.parametrize("weighted", [True, False])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.mpi
 def test_incremental_basic_statistics_partial_fit_spmd_gold(
     dataframe, queue, num_blocks, weighted, dtype
@@ -177,13 +183,16 @@ def test_incremental_basic_statistics_partial_fit_spmd_gold(
     reason="GPU device and MPI libs required for test",
 )
 @pytest.mark.parametrize(
-    "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(
+        dataframe_filter_="dpnp",
+        device_filter_="gpu",
+        dtypes=[np.float32, np.float64],
+    ),
 )
 @pytest.mark.parametrize("num_blocks", [1, 2])
 @pytest.mark.parametrize("weighted", [True, False])
 @pytest.mark.parametrize("option", options_and_tests.keys())
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.mpi
 def test_incremental_basic_statistics_single_option_partial_fit_spmd_gold(
     dataframe, queue, num_blocks, weighted, option, dtype
@@ -246,14 +255,17 @@ def test_incremental_basic_statistics_single_option_partial_fit_spmd_gold(
     reason="GPU device and MPI libs required for test",
 )
 @pytest.mark.parametrize(
-    "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(
+        dataframe_filter_="dpnp",
+        device_filter_="gpu",
+        dtypes=[np.float32, np.float64],
+    ),
 )
 @pytest.mark.parametrize("num_blocks", [1, 2])
 @pytest.mark.parametrize("weighted", [True, False])
 @pytest.mark.parametrize("n_samples", [100, 10000])
 @pytest.mark.parametrize("n_features", [10, 100])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("array_api_dispatch", [True, False])
 @pytest.mark.mpi
 def test_incremental_basic_statistics_partial_fit_spmd_synthetic(

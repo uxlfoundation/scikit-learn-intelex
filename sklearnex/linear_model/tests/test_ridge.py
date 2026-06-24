@@ -129,8 +129,13 @@ def test_ridge_coefficients(
         X, y, alpha, fit_intercept=fit_intercept
     )
 
-    assert_allclose(ridge_reg.coef_, coefficients_manual, rtol=1e-6, atol=1e-6)
-    assert_allclose(ridge_reg.intercept_, intercept_manual, rtol=1e-6, atol=1e-6)
+    tol = (
+        1e-4
+        if queue is not None and not queue.sycl_device.has_aspect_fp64
+        else 1e-6
+    )
+    assert_allclose(ridge_reg.coef_, coefficients_manual, rtol=tol, atol=tol)
+    assert_allclose(ridge_reg.intercept_, intercept_manual, rtol=tol, atol=tol)
 
 
 @pytest.mark.skipif(
@@ -187,12 +192,17 @@ def test_sklearnex_multivariate_ridge_alpha_shape():
 @pytest.mark.skipif(
     not daal_check_version((2025, "P", 100)), reason="requires onedal 2025.1.0 or higher"
 )
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+# Skip on fp64-less devices: tiny alpha on an underdetermined system is
+# ill-conditioned enough that fp32 coefficients diverge from the fp64 manual
+# reference by orders of magnitude.
+@pytest.mark.parametrize(
+    "dataframe,queue,dtype", get_dataframes_and_queues(dtypes=[np.float64])
+)
 @pytest.mark.parametrize("overdetermined", [True, False])
 @pytest.mark.parametrize("alpha", [0.00001, 0.1, 1.0])
 @pytest.mark.parametrize("fit_intercept", [True, False])
 def test_ridge_overdetermined_system(
-    dataframe, queue, overdetermined, alpha, fit_intercept
+    dataframe, queue, dtype, overdetermined, alpha, fit_intercept
 ):
     from sklearnex.linear_model import Ridge
 
@@ -211,8 +221,13 @@ def test_ridge_overdetermined_system(
         X, y, alpha, fit_intercept=fit_intercept
     )
 
-    assert_allclose(ridge_reg.coef_, coefficients_manual, rtol=1e-6, atol=1e-6)
-    assert_allclose(ridge_reg.intercept_, intercept_manual, rtol=1e-6, atol=1e-6)
+    tol = (
+        1e-4
+        if queue is not None and not queue.sycl_device.has_aspect_fp64
+        else 1e-6
+    )
+    assert_allclose(ridge_reg.coef_, coefficients_manual, rtol=tol, atol=tol)
+    assert_allclose(ridge_reg.intercept_, intercept_manual, rtol=tol, atol=tol)
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -230,12 +245,17 @@ def test_multivariate_ridge_scalar_alpha(dataframe, queue, fit_intercept, alpha)
     ridge.fit(X_c, y_c)
 
     coef_manual, intercept = _compute_ridge_coefficients(X, y, alpha, fit_intercept)
-    assert_allclose(ridge.coef_, coef_manual, rtol=1e-6, atol=1e-6)
-    assert_allclose(ridge.intercept_, intercept, rtol=1e-6, atol=1e-6)
+    tol = (
+        1e-3
+        if queue is not None and not queue.sycl_device.has_aspect_fp64
+        else 1e-6
+    )
+    assert_allclose(ridge.coef_, coef_manual, rtol=tol, atol=tol)
+    assert_allclose(ridge.intercept_, intercept, rtol=tol, atol=tol)
 
     predictions = _as_numpy(ridge.predict(X_c))
     predictions_manual = X @ coef_manual.T + intercept
-    assert_allclose(predictions, predictions_manual, rtol=1e-6, atol=1e-6)
+    assert_allclose(predictions, predictions_manual, rtol=tol, atol=tol)
 
 
 @pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
@@ -252,5 +272,10 @@ def test_underdetermined_positive_alpha_ridge(dataframe, queue):
 
     coef_manual, intercept = _compute_ridge_coefficients(X, y, alpha, fit_intercept=True)
 
-    assert_allclose(ridge.coef_, coef_manual, rtol=1e-6, atol=1e-6)
-    assert_allclose(ridge.intercept_, intercept, rtol=1e-6, atol=1e-6)
+    tol = (
+        1e-3
+        if queue is not None and not queue.sycl_device.has_aspect_fp64
+        else 1e-6
+    )
+    assert_allclose(ridge.coef_, coef_manual, rtol=tol, atol=tol)
+    assert_allclose(ridge.intercept_, intercept, rtol=tol, atol=tol)

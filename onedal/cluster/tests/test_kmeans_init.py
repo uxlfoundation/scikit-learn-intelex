@@ -27,8 +27,9 @@ if daal_check_version((2023, "P", 200)):
     from onedal.cluster import KMeans, kmeans_plusplus
     from onedal.tests.utils._device_selection import get_queues
 
-    @pytest.mark.parametrize("queue", get_queues())
-    @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+    @pytest.mark.parametrize(
+        "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+    )
     @pytest.mark.parametrize("n_cluster", [2, 5, 11, 128])
     def test_breast_cancer(queue, dtype, n_cluster):
         X, _ = load_breast_cancer(return_X_y=True)
@@ -69,8 +70,9 @@ if daal_check_version((2023, "P", 200)):
 
         return (cs, vs, data)
 
-    @pytest.mark.parametrize("queue", get_queues())
-    @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+    @pytest.mark.parametrize(
+        "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+    )
     @pytest.mark.parametrize("n_dim", [3, 12, 17])
     @pytest.mark.parametrize("n_cluster", [2, 15, 61])
     def test_generated_dataset(queue, dtype, n_dim, n_cluster):

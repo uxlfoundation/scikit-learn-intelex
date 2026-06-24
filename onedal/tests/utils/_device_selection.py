@@ -18,6 +18,7 @@ import functools
 import warnings
 from collections.abc import Iterable
 
+import numpy as np
 import pytest
 
 from onedal import _dpc_backend
@@ -31,9 +32,27 @@ else:
     queue_creation_err = (RuntimeError, ValueError)
 
 
+# SYCL device aspects gating non-universal floating-point dtypes. Anything not
+# listed here (fp32, integer types) is assumed supported on every device.
+_DTYPE_DEVICE_ASPECTS = {
+    "float16": "has_aspect_fp16",
+    "float64": "has_aspect_fp64",
+}
+
+
+def _queue_supports_dtype(queue, dtype) -> bool:
+    """Return True if ``queue`` (or host, if None) natively supports ``dtype``."""
+    if queue is None:
+        return True
+    aspect = _DTYPE_DEVICE_ASPECTS.get(np.dtype(dtype).name)
+    if aspect is None:
+        return True
+    return bool(getattr(queue.sycl_device, aspect))
+
+
 # lru_cache is used to limit the number of SyclQueues generated
 # @functools.lru_cache()
-def get_queues(filter_: str = "cpu,gpu") -> list[SyclQueue]:
+def get_queues(filter_: str = "cpu,gpu", dtypes=None):
     """Get available dpctl.SycQueues for testing.
 
     This is meant to be used for testing purposes only.
@@ -44,18 +63,32 @@ def get_queues(filter_: str = "cpu,gpu") -> list[SyclQueue]:
         Configure output list with available SyclQueues for testing.
         SyclQueues are generated from a comma-separated string with
         each element conforming to SYCL's ``filter_selector``.
+    dtypes : iterable of numpy dtypes, default=None
+        If provided, the returned params include a ``dtype`` dimension
+        alongside ``queue``. Each ``(queue, dtype)`` combo is filtered
+        by the device's SYCL aspects (``has_aspect_fp16`` /
+        ``has_aspect_fp64``) so fp32-only GPUs never receive fp64
+        parameters. Host entries (``queue is None``) yield every
+        requested dtype.
 
     Returns
     -------
-    list[SyclQueue]
-        The list of SyclQueues.
+    list
+        When ``dtypes is None`` — legacy behavior: a list of
+        ``pytest.param(queue)`` entries (plus a bare ``None`` for the
+        CPU host when requested).
+        When ``dtypes`` is provided — a list of
+        ``pytest.param(queue, dtype)`` entries, with combos unsupported
+        by the device filtered out.
 
     Notes
     -----
         Do not use filters for the test cases disabling. Use `pytest.skip`
         or `pytest.xfail` instead.
     """
-    queues = [None] if "cpu" in filter_ else []
+    raw_queues = []
+    if "cpu" in filter_:
+        raw_queues.append((None, None))
     if _dpc_backend is None:
         if "gpu" in filter_:
             warnings.warn(
@@ -65,11 +98,29 @@ def get_queues(filter_: str = "cpu,gpu") -> list[SyclQueue]:
 
     for i in filter_.split(","):
         try:
-            queues.append(pytest.param(SyclQueue(i), id=f"SyclQueue_{i.upper()}"))
+            raw_queues.append((SyclQueue(i), f"SyclQueue_{i.upper()}"))
         except queue_creation_err:
             pass
 
-    return queues
+    if dtypes is None:
+        out = []
+        for queue, qid in raw_queues:
+            if queue is None and qid is None:
+                # Preserve legacy bare-None entry for the CPU host.
+                out.append(None)
+            else:
+                out.append(pytest.param(queue, id=qid))
+        return out
+
+    out = []
+    for queue, qid in raw_queues:
+        base_id = qid if qid is not None else "host"
+        for dtype in dtypes:
+            if not _queue_supports_dtype(queue, dtype):
+                continue
+            dt_name = np.dtype(dtype).name
+            out.append(pytest.param(queue, dtype, id=f"{base_id}-{dt_name}"))
+    return out
 
 
 def is_sycl_device_available(targets: Iterable[str]) -> bool:

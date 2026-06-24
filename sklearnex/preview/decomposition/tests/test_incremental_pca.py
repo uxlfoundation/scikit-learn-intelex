@@ -186,10 +186,12 @@ def check_pca(incpca, dtype, whiten, data, transformed_data):
         assert_allclose(_as_numpy(transformed_data), expected_transformed_data, atol=tol)
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize(
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(dtypes=[np.float32, np.float64]),
+)
 @pytest.mark.parametrize("whiten", [True, False])
 @pytest.mark.parametrize("num_blocks", [1, 2, 3])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_sklearnex_partial_fit_on_gold_data(dataframe, queue, whiten, num_blocks, dtype):
 
     X = np.array([[-1, -1], [-2, -1], [-3, -2], [1, 1], [2, 1], [3, 2]])
@@ -208,10 +210,12 @@ def test_sklearnex_partial_fit_on_gold_data(dataframe, queue, whiten, num_blocks
     check_pca_on_gold_data(incpca, dtype, whiten, transformed_data)
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize(
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(dtypes=[np.float32, np.float64]),
+)
 @pytest.mark.parametrize("whiten", [True, False])
 @pytest.mark.parametrize("num_blocks", [1, 2, 3])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_sklearnex_fit_on_gold_data(dataframe, queue, whiten, num_blocks, dtype):
 
     X = np.array([[-1, -1], [-2, -1], [-3, -2], [1, 1], [2, 1], [3, 2]])
@@ -225,10 +229,12 @@ def test_sklearnex_fit_on_gold_data(dataframe, queue, whiten, num_blocks, dtype)
     check_pca_on_gold_data(incpca, dtype, whiten, transformed_data)
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize(
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(dtypes=[np.float32, np.float64]),
+)
 @pytest.mark.parametrize("whiten", [True, False])
 @pytest.mark.parametrize("num_blocks", [1, 2, 3])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_sklearnex_fit_transform_on_gold_data(
     dataframe, queue, whiten, num_blocks, dtype
 ):
@@ -243,13 +249,15 @@ def test_sklearnex_fit_transform_on_gold_data(
     check_pca_on_gold_data(incpca, dtype, whiten, transformed_data)
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize(
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(dtypes=[np.float32, np.float64]),
+)
 @pytest.mark.parametrize("n_components", [None, 1, 5])
 @pytest.mark.parametrize("whiten", [True, False])
 @pytest.mark.parametrize("num_blocks", [1, 10])
 @pytest.mark.parametrize("row_count", [100, 1000])
 @pytest.mark.parametrize("column_count", [10, 100])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_sklearnex_partial_fit_on_random_data(
     dataframe, queue, n_components, whiten, num_blocks, row_count, column_count, dtype
 ):
@@ -271,8 +279,10 @@ def test_sklearnex_partial_fit_on_random_data(
     check_pca(incpca, dtype, whiten, X, transformed_data)
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize(
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(dtypes=[np.float32, np.float64]),
+)
 def test_sklearnex_incremental_estimatior_pickle(dataframe, queue, dtype):
     import pickle
 

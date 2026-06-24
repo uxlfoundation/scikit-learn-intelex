@@ -211,14 +211,18 @@ def check_all_finite(
     backend_method = BackendFunction(
         backend.finiteness_checker.compute.compute, backend, "compute", no_policy=False
     )
-    X_t = to_table(X)
-    params = {
-        "fptype": X_t.dtype,
-        "method": "dense",
-        "allow_nan": allow_nan,
-    }
     with QM.manage_global_queue(None, X):
-        # Must use the queue provided by X
+        # Must use the queue provided by X. Plumb it through to ``to_table`` so
+        # that the C++ conversion layer can downcast fp64 inputs to fp32 when
+        # the target device lacks fp64 support (see ``convert_to_table`` in
+        # ``onedal/datatypes/numpy/data_conversion.cpp``).
+        queue = QM.get_global_queue()
+        X_t = to_table(X, queue=queue)
+        params = {
+            "fptype": X_t.dtype,
+            "method": "dense",
+            "allow_nan": allow_nan,
+        }
         return bool(backend_method(params, X_t).finite)
 
 

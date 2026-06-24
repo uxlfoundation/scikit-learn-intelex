@@ -31,12 +31,13 @@ options_and_tests_csr = [
 ]
 
 
-@pytest.mark.parametrize("queue", get_queues())
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 @pytest.mark.parametrize("result_option", options_and_tests.keys())
 @pytest.mark.parametrize("row_count", [100, 1000])
 @pytest.mark.parametrize("column_count", [10, 100])
 @pytest.mark.parametrize("weighted", [True, False])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_single_option_on_random_data(
     queue, result_option, row_count, column_count, weighted, dtype
 ):
@@ -67,11 +68,12 @@ def test_single_option_on_random_data(
     assert_allclose(gtr, res, atol=tol)
 
 
-@pytest.mark.parametrize("queue", get_queues())
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 @pytest.mark.parametrize("row_count", [100, 1000])
 @pytest.mark.parametrize("column_count", [10, 100])
 @pytest.mark.parametrize("weighted", [True, False])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_multiple_options_on_random_data(queue, row_count, column_count, weighted, dtype):
     seed = 42
     gen = np.random.default_rng(seed)
@@ -109,11 +111,12 @@ def test_multiple_options_on_random_data(queue, row_count, column_count, weighte
     assert_allclose(gtr_sum, res_sum, atol=tol)
 
 
-@pytest.mark.parametrize("queue", get_queues())
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 @pytest.mark.parametrize("row_count", [100, 1000])
 @pytest.mark.parametrize("column_count", [10, 100])
 @pytest.mark.parametrize("weighted", [True, False])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_all_option_on_random_data(queue, row_count, column_count, weighted, dtype):
     seed = 77
     gen = np.random.default_rng(seed)
@@ -144,11 +147,12 @@ def test_all_option_on_random_data(queue, row_count, column_count, weighted, dty
         assert_allclose(gtr, res, atol=tol)
 
 
-@pytest.mark.parametrize("queue", get_queues())
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 @pytest.mark.parametrize("result_option", options_and_tests.keys())
 @pytest.mark.parametrize("data_size", [100, 1000])
 @pytest.mark.parametrize("weighted", [True, False])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_1d_input_on_random_data(queue, result_option, data_size, weighted, dtype):
 
     function, tols = options_and_tests[result_option]
@@ -179,8 +183,9 @@ def test_1d_input_on_random_data(queue, result_option, data_size, weighted, dtyp
 
 
 @pytest.mark.skipif(not hasattr(sp, "random_array"), reason="requires scipy>=1.12.0")
-@pytest.mark.parametrize("queue", get_queues())
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 def test_basic_csr(queue, dtype):
     seed = 42
     row_count, column_count = 5000, 3008
@@ -205,9 +210,10 @@ def test_basic_csr(queue, dtype):
 
 
 @pytest.mark.skipif(not hasattr(sp, "random_array"), reason="requires scipy>=1.12.0")
-@pytest.mark.parametrize("queue", get_queues())
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 @pytest.mark.parametrize("option", options_and_tests_csr)
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_options_csr(queue, option, dtype):
     result_option, function, tols = option
     fp32tol, fp64tol = tols

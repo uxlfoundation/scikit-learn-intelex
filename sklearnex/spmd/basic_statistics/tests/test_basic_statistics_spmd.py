@@ -68,9 +68,16 @@ def test_basic_stats_spmd_gold(dataframe, queue):
     spmd_result = spmd.fit(local_dpt_data)
     batch_result = BasicStatistics_Batch().fit(data)
 
+    atol = (
+        1e-5
+        if (queue is not None and not queue.sycl_device.has_aspect_fp64)
+        else 1e-7
+    )
     for option in options_and_tests:
         attr = option + "_"
-        assert_allclose(getattr(spmd_result, attr), getattr(batch_result, attr))
+        assert_allclose(
+            getattr(spmd_result, attr), getattr(batch_result, attr), atol=atol
+        )
 
 
 @pytest.mark.skipif(
@@ -79,10 +86,13 @@ def test_basic_stats_spmd_gold(dataframe, queue):
 )
 @pytest.mark.parametrize("n_samples", [100, 10000])
 @pytest.mark.parametrize("n_features", [10, 100])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize(
-    "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(
+        dataframe_filter_="dpnp",
+        device_filter_="gpu",
+        dtypes=[np.float32, np.float64],
+    ),
 )
 @pytest.mark.parametrize("array_api_dispatch", [True, False])
 @pytest.mark.mpi

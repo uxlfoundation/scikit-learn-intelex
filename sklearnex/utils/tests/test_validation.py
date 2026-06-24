@@ -54,7 +54,6 @@ def test_sum_infinite_actually_finite(dtype, shape, ensure_all_finite):
     assert type(X_array) == type(X)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize(
     "shape",
     [
@@ -67,8 +66,8 @@ def test_sum_infinite_actually_finite(dtype, shape, ensure_all_finite):
 @pytest.mark.parametrize("check", ["inf", "NaN", None])
 @pytest.mark.parametrize("seed", [0, 123456])
 @pytest.mark.parametrize(
-    "dataframe, queue",
-    get_dataframes_and_queues(_dataframes_supported),
+    "dataframe, queue, dtype",
+    get_dataframes_and_queues(_dataframes_supported, dtypes=[np.float32, np.float64]),
 )
 def test_validate_data_random_location(
     dataframe, queue, dtype, shape, ensure_all_finite, check, seed
@@ -105,13 +104,12 @@ def test_validate_data_random_location(
                 validate_data(est, X, ensure_all_finite=ensure_all_finite)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("ensure_all_finite", ["allow-nan", True])
 @pytest.mark.parametrize("check", ["inf", "NaN", None])
 @pytest.mark.parametrize("seed", [0, 123456])
 @pytest.mark.parametrize(
-    "dataframe, queue",
-    get_dataframes_and_queues(_dataframes_supported),
+    "dataframe, queue, dtype",
+    get_dataframes_and_queues(_dataframes_supported, dtypes=[np.float32, np.float64]),
 )
 def test_validate_data_random_shape_and_location(
     dataframe, queue, dtype, ensure_all_finite, check, seed
@@ -147,12 +145,11 @@ def test_validate_data_random_shape_and_location(
                 validate_data(est, X, ensure_all_finite=ensure_all_finite)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("check", ["inf", "NaN", None])
 @pytest.mark.parametrize("seed", [0, 123456])
 @pytest.mark.parametrize(
-    "dataframe, queue",
-    get_dataframes_and_queues(_dataframes_supported),
+    "dataframe, queue, dtype",
+    get_dataframes_and_queues(_dataframes_supported, dtypes=[np.float32, np.float64]),
 )
 def test__check_sample_weight_random_shape_and_location(
     dataframe, queue, dtype, check, seed
@@ -201,10 +198,9 @@ def test__check_sample_weight_random_shape_and_location(
                 X_out = _check_sample_weight(sample_weight, X)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize(
-    "dataframe, queue",
-    get_dataframes_and_queues(_dataframes_supported),
+    "dataframe, queue, dtype",
+    get_dataframes_and_queues(_dataframes_supported, dtypes=[np.float32, np.float64]),
 )
 def test_validate_data_output(dtype, dataframe, queue):
     # This testing assumes that array api inputs to validate_data will only occur

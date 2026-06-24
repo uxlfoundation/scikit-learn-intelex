@@ -50,10 +50,11 @@ def _test_dense_small_linear_kernel(queue, scale, shift, dtype):
     assert_allclose(result, expected, rtol=tol)
 
 
-@pytest.mark.parametrize("queue", get_queues())
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 @pytest.mark.parametrize("scale", [1.0, 2.0])
 @pytest.mark.parametrize("shift", [0.0, 1.0])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_dense_small_linear_kernel(queue, scale, shift, dtype):
     if queue and queue.sycl_device.is_gpu:
         pytest.skip("Linear kernel for the GPU sycl_queue is buggy.")
@@ -85,8 +86,9 @@ def _test_dense_small_rbf_kernel(queue, gamma, dtype):
 
 
 @pytest.mark.parametrize("gamma", [0.1, None])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
-@pytest.mark.parametrize("queue", get_queues())
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 def test_dense_small_rbf_kernel(queue, gamma, dtype):
     _test_dense_small_rbf_kernel(queue, gamma, dtype)
 
@@ -117,11 +119,12 @@ def _test_dense_small_poly_kernel(queue, gamma, coef0, degree, dtype):
 
 
 @pass_if_not_implemented_for_gpu(reason="Polynomial kernel is not implemented for GPU")
-@pytest.mark.parametrize("queue", get_queues())
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 @pytest.mark.parametrize("gamma", [0.1, 1.0])
 @pytest.mark.parametrize("coef0", [0.0, 1.0])
 @pytest.mark.parametrize("degree", [2, 3])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_dense_small_poly_kernel(queue, gamma, coef0, degree, dtype):
     _test_dense_small_poly_kernel(queue, gamma, coef0, degree, dtype)
 
@@ -151,9 +154,10 @@ def _test_dense_small_sigmoid_kernel(queue, gamma, coef0, dtype):
 
 
 @pass_if_not_implemented_for_gpu(reason="Sigmoid kernel is not implemented for GPU")
-@pytest.mark.parametrize("queue", get_queues())
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 @pytest.mark.parametrize("gamma", [0.1, 1.0, 2.4])
 @pytest.mark.parametrize("coef0", [0.0, 1.0, 5.5])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_dense_small_sigmoid_kernel(queue, gamma, coef0, dtype):
     _test_dense_small_sigmoid_kernel(queue, gamma, coef0, dtype)

@@ -129,8 +129,9 @@ def _test_input_format_c_contiguous_numpy(queue, dtype):
     assert_allclose(expected, result)
 
 
-@pytest.mark.parametrize("queue", get_queues())
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 def test_input_format_c_contiguous_numpy(queue, dtype):
     _test_input_format_c_contiguous_numpy(queue, dtype)
 
@@ -149,8 +150,9 @@ def _test_input_format_f_contiguous_numpy(queue, dtype):
     assert_allclose(expected, result)
 
 
-@pytest.mark.parametrize("queue", get_queues())
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 def test_input_format_f_contiguous_numpy(queue, dtype):
     _test_input_format_f_contiguous_numpy(queue, dtype)
 
@@ -173,8 +175,9 @@ def _test_input_format_c_not_contiguous_numpy(queue, dtype):
     assert_allclose(expected, result)
 
 
-@pytest.mark.parametrize("queue", get_queues())
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 def test_input_format_c_not_contiguous_numpy(queue, dtype):
     _test_input_format_c_not_contiguous_numpy(queue, dtype)
 
@@ -204,9 +207,13 @@ def test_conversion_to_table(dtype):
     not backend.is_dpc,
     reason="__sycl_usm_array_interface__ support requires DPC backend.",
 )
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("dpnp", "cpu,gpu"))
+@pytest.mark.parametrize(
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(
+        "dpnp", "cpu,gpu", dtypes=[np.float32, np.float64, np.int32, np.int64]
+    ),
+)
 @pytest.mark.parametrize("order", ["C", "F"])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.int32, np.int64])
 def test_input_zero_copy_sycl_usm(dataframe, queue, order, dtype):
     """Checking that values ​​representing USM allocations `__sycl_usm_array_interface__`
     are preserved during conversion to onedal table.
@@ -236,10 +243,12 @@ def test_input_zero_copy_sycl_usm(dataframe, queue, order, dtype):
     not backend.is_dpc,
     reason="__sycl_usm_array_interface__ support requires DPC backend.",
 )
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("dpnp", "cpu,gpu"))
+@pytest.mark.parametrize(
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues("dpnp", "cpu,gpu", dtypes=[np.float32, np.float64]),
+)
 @pytest.mark.parametrize("order", ["F", "C"])
 @pytest.mark.parametrize("data_shape", data_shapes)
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_table_conversions_sycl_usm(dataframe, queue, order, data_shape, dtype):
     """Checking that values ​​representing USM allocations `__sycl_usm_array_interface__`
     are preserved during conversion to onedal table and from onedal table to
@@ -351,8 +360,10 @@ def test_to_table_non_contiguous_input(dataframe, queue):
     backend.is_dpc,
     reason="Required check should be done if no DPC backend.",
 )
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("dpnp", "cpu,gpu"))
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize(
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues("dpnp", "cpu,gpu", dtypes=[np.float32, np.float64]),
+)
 def test_interop_if_no_dpc_backend_sycl_usm(dataframe, queue, dtype):
     X = np.zeros((10, 20), dtype=dtype)
     X = _convert_to_dataframe(X, sycl_queue=queue, target_df=dataframe)
@@ -500,10 +511,12 @@ def test_to_table_non_contiguous_input_dlpack(dataframe, queue, can_copy):
             to_table(X_tens)
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("numpy", "cpu,gpu"))
+@pytest.mark.parametrize(
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues("numpy", "cpu,gpu", dtypes=[np.float32, np.float64]),
+)
 @pytest.mark.parametrize("order", ["F", "C"])
 @pytest.mark.parametrize("data_shape", data_shapes)
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_table_conversions_dlpack(dataframe, queue, order, data_shape, dtype):
     """Test if __dlpack__ data can be properly consumed when only __dlpack__ attribute is exposed.
     This tests kDLOneAPI devices as well as kDLCPU devices
@@ -568,10 +581,14 @@ def test_table___dlpack__(dataframe, queue, order, data_shape, dtype):
 @pytest.mark.skipif(
     not hasattr(np, "from_dlpack"), reason="no dlpack support in installed numpy"
 )
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("dpnp", "cpu,gpu"))
+@pytest.mark.parametrize(
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(
+        "dpnp", "cpu,gpu", dtypes=[np.float32, np.float64, np.int32, np.int64]
+    ),
+)
 @pytest.mark.parametrize("order", ["F", "C"])
 @pytest.mark.parametrize("data_shape", data_shapes)
-@pytest.mark.parametrize("dtype", [np.float32, np.float64, np.int32, np.int64])
 def test_table_convert_to_host_dlpack(dataframe, queue, order, data_shape, dtype):
     """Test if __dlpack__ attribute can be properly consumed by moving data
     to host from a SYCL device.

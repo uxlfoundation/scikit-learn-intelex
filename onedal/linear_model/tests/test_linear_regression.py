@@ -26,8 +26,9 @@ from onedal.linear_model import LinearRegression
 from onedal.tests.utils._device_selection import get_queues
 
 
-@pytest.mark.parametrize("queue", get_queues())
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 def test_diabetes(queue, dtype):
     X, y = load_diabetes(return_X_y=True)
     X, y = X.astype(dtype), y.astype(dtype)
@@ -40,8 +41,9 @@ def test_diabetes(queue, dtype):
     assert_allclose(mean_squared_error(y_test, y_pred), 2395.567, rtol=1e-5)
 
 
-@pytest.mark.parametrize("queue", get_queues())
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 def test_pickle(queue, dtype):
     X, y = load_diabetes(return_X_y=True)
     X, y = X.astype(dtype), y.astype(dtype)
@@ -60,8 +62,9 @@ def test_pickle(queue, dtype):
     assert_array_equal(expected, result)
 
 
-@pytest.mark.parametrize("queue", get_queues())
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 def test_full_results(queue, dtype):
     seed = 42
     f_count, r_count = 19, 7
@@ -78,10 +81,11 @@ def test_full_results(queue, dtype):
     model.fit(X, y, queue=queue)
 
     if queue and queue.sycl_device.is_gpu:
-        tol = 5e-3 if model.coef_.dtype == np.float32 else 1e-5
+        rtol = 5e-3 if model.coef_.dtype == np.float32 else 1e-5
     else:
-        tol = 2e-3 if model.coef_.dtype == np.float32 else 1e-5
-    assert_allclose(coef, model.coef_.T, rtol=tol, atol=tol)
+        rtol = 2e-3 if model.coef_.dtype == np.float32 else 1e-5
+    atol = 1e-4 if model.coef_.dtype == np.float32 else 0
+    assert_allclose(coef, model.coef_.T, rtol=rtol, atol=atol)
 
     tol = 2e-3 if model.intercept_.dtype == np.float32 else 1e-5
     assert_allclose(intp, model.intercept_, rtol=tol, atol=tol)
@@ -95,8 +99,9 @@ def test_full_results(queue, dtype):
     assert_allclose(gtr, res, rtol=tol, atol=tol)
 
 
-@pytest.mark.parametrize("queue", get_queues())
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 def test_no_intercept_results(queue, dtype):
     seed = 42
     f_count, r_count = 19, 7
@@ -126,8 +131,9 @@ def test_no_intercept_results(queue, dtype):
     assert_allclose(gtr, res, rtol=tol)
 
 
-@pytest.mark.parametrize("queue", get_queues())
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 def test_reconstruct_model(queue, dtype):
     seed = 42
     s_count = 3500
@@ -151,8 +157,9 @@ def test_reconstruct_model(queue, dtype):
     assert_allclose(gtr, res, rtol=tol)
 
 
-@pytest.mark.parametrize("queue", get_queues())
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 @pytest.mark.parametrize("fit_intercept", [False, True])
 @pytest.mark.skipif(
     not daal_check_version((2025, "P", 1)),
@@ -179,8 +186,9 @@ def test_overdetermined_system(queue, dtype, fit_intercept):
     assert np.all(np.abs(residual) < (1e-6 if dtype is np.float64 else 5e-4))
 
 
-@pytest.mark.parametrize("queue", get_queues())
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 @pytest.mark.parametrize("fit_intercept", [False, True])
 @pytest.mark.skipif(
     not daal_check_version((2025, "P", 1)),
@@ -208,8 +216,9 @@ def test_singular_matrix(queue, dtype, fit_intercept):
     assert np.all(np.abs(residual) < (1e-6 if dtype is np.float64 else 1e-5))
 
 
-@pytest.mark.parametrize("queue", get_queues())
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 @pytest.mark.parametrize("fit_intercept", [False, True])
 @pytest.mark.parametrize("problem_type", ["regular", "overdetermined", "singular"])
 @pytest.mark.skipif(

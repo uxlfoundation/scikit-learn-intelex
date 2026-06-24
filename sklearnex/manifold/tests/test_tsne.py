@@ -133,9 +133,9 @@ def test_sklearnex_import(dataframe, queue):
     ],
 )
 @pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("numpy,pandas", "cpu")
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues("numpy,pandas", "cpu", dtypes=[np.float32, np.float64]),
 )
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_tsne_functionality_and_edge_cases(
     X_generator,
     n_components,
@@ -170,12 +170,12 @@ def test_tsne_functionality_and_edge_cases(
 # Note: since sklearn1.2, the PCA initialization divides by standard deviations of components.
 # Since those will be zeros for constant data, it will end up producing NaNs, hence it's not tested.
 @pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("numpy,pandas", "cpu")
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues("numpy,pandas", "cpu", dtypes=[np.float32, np.float64]),
 )
 @pytest.mark.parametrize(
     "init", ["random"] + (["pca"] if not sklearn_check_version("1.2") else [])
 )
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_tsne_constant_data(init, dataframe, queue, dtype):
     from sklearnex.manifold import TSNE
 
@@ -193,9 +193,9 @@ def test_tsne_constant_data(init, dataframe, queue, dtype):
 
 
 @pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("numpy,pandas", "cpu")
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues("numpy,pandas", "cpu", dtypes=[np.float32, np.float64]),
 )
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_tsne_reproducibility(dataframe, queue, dtype):
     from sklearnex.manifold import TSNE
 
@@ -211,9 +211,9 @@ def test_tsne_reproducibility(dataframe, queue, dtype):
 
 
 @pytest.mark.parametrize(
-    "dataframe,queue", get_dataframes_and_queues("numpy,pandas", "cpu")
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues("numpy,pandas", "cpu", dtypes=[np.float32, np.float64]),
 )
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_tsne_complex_and_gpu_validation(dataframe, queue, dtype):
     from sklearnex.manifold import TSNE
 

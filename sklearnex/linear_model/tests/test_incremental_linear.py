@@ -27,10 +27,12 @@ from sklearnex.linear_model import IncrementalLinearRegression
 from sklearnex.tests.utils import _IS_INTEL
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize(
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(dtypes=[np.float32, np.float64]),
+)
 @pytest.mark.parametrize("fit_intercept", [True, False])
 @pytest.mark.parametrize("macro_block", [None, 1024])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_sklearnex_fit_on_gold_data(dataframe, queue, fit_intercept, macro_block, dtype):
     X = np.array([[1], [2]])
     X = X.astype(dtype=dtype)
@@ -56,10 +58,12 @@ def test_sklearnex_fit_on_gold_data(dataframe, queue, fit_intercept, macro_block
     assert_allclose(np_y_pred, y, atol=tol)
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize(
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(dtypes=[np.float32, np.float64]),
+)
 @pytest.mark.parametrize("fit_intercept", [True, False])
 @pytest.mark.parametrize("macro_block", [None, 1024])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_sklearnex_partial_fit_on_gold_data(
     dataframe, queue, fit_intercept, macro_block, dtype
 ):
@@ -97,10 +101,12 @@ def test_sklearnex_partial_fit_on_gold_data(
     assert_allclose(np_y_pred, y, atol=tol)
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize(
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(dtypes=[np.float32, np.float64]),
+)
 @pytest.mark.parametrize("fit_intercept", [True, False])
 @pytest.mark.parametrize("macro_block", [None, 1024])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_sklearnex_partial_fit_multitarget_on_gold_data(
     dataframe, queue, fit_intercept, macro_block, dtype
 ):
@@ -141,14 +147,16 @@ def test_sklearnex_partial_fit_multitarget_on_gold_data(
     assert_allclose(np_y_pred, y, atol=tol)
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize(
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(dtypes=[np.float32, np.float64]),
+)
 @pytest.mark.parametrize("fit_intercept", [True, False])
 @pytest.mark.parametrize("num_samples", [100, 1000])
 @pytest.mark.parametrize("num_features", [5, 10])
 @pytest.mark.parametrize("num_targets", [1, 2])
 @pytest.mark.parametrize("num_blocks", [1, 10])
 @pytest.mark.parametrize("macro_block", [None, 1024])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_sklearnex_partial_fit_on_random_data(
     dataframe,
     queue,
@@ -207,9 +215,11 @@ def test_sklearnex_partial_fit_on_random_data(
     assert_allclose(expected_y_pred, _as_numpy(y_pred), atol=tol)
 
 
-@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues())
+@pytest.mark.parametrize(
+    "dataframe,queue,dtype",
+    get_dataframes_and_queues(dtypes=[np.float32, np.float64]),
+)
 @pytest.mark.parametrize("fit_intercept", [True, False])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_sklearnex_incremental_estimatior_pickle(dataframe, queue, fit_intercept, dtype):
     import pickle
 

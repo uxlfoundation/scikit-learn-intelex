@@ -26,8 +26,9 @@ from onedal.linear_model import IncrementalLinearRegression
 from onedal.tests.utils._device_selection import get_queues
 
 
-@pytest.mark.parametrize("queue", get_queues())
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 def test_diabetes(queue, dtype):
     X, y = load_diabetes(return_X_y=True)
     X, y = X.astype(dtype), y.astype(dtype)
@@ -44,9 +45,10 @@ def test_diabetes(queue, dtype):
     assert mean_squared_error(y_test, y_pred) < 2396
 
 
-@pytest.mark.parametrize("queue", get_queues())
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 @pytest.mark.parametrize("num_blocks", [1, 2, 10])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_full_results(queue, num_blocks, dtype):
     seed = 42
     num_features, num_targets = 19, 7
@@ -85,9 +87,10 @@ def test_full_results(queue, num_blocks, dtype):
     assert_allclose(gtr, res, rtol=tol, atol=atol)
 
 
-@pytest.mark.parametrize("queue", get_queues())
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 @pytest.mark.parametrize("num_blocks", [1, 2, 10])
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_no_intercept_results(queue, num_blocks, dtype):
     seed = 42
     num_features, num_targets = 19, 7
@@ -123,8 +126,9 @@ def test_no_intercept_results(queue, num_blocks, dtype):
     assert_allclose(gtr, res, rtol=tol)
 
 
-@pytest.mark.parametrize("queue", get_queues())
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 def test_reconstruct_model(queue, dtype):
     seed = 42
     num_samples = 3500
@@ -148,8 +152,9 @@ def test_reconstruct_model(queue, dtype):
     assert_allclose(gtr, res, rtol=tol)
 
 
-@pytest.mark.parametrize("queue", get_queues())
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize(
+    "queue,dtype", get_queues(dtypes=[np.float32, np.float64])
+)
 def test_incremental_estimator_pickle(queue, dtype):
     import pickle
 
