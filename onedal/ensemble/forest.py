@@ -152,7 +152,10 @@ class BaseForest(ABC):
             # weighted-variance arithmetic is sensitive to absolute magnitude,
             # which otherwise breaks invariance of the fit under weight scaling.
             _, xp, _ = _get_sycl_namespace(sample_weight)
-            max_weight = xp.max(sample_weight)
+            # float() keeps the divisor a Python scalar so the division is valid
+            # across array namespaces (e.g. array_api_strict rejects a foreign
+            # numpy scalar) and preserves sample_weight's dtype.
+            max_weight = float(xp.max(sample_weight))
             if max_weight > 0:
                 sample_weight = sample_weight / max_weight
             data = (X, y, sample_weight)
