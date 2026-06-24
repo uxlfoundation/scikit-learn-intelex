@@ -17,7 +17,7 @@
 How to Contribute
 ##################
 
-As an open source project, we welcome community contributions to Extension for Scikit-learn.
+As an open source project, we welcome community contributions to |sklearnex|.
 This document explains how to participate in project conversations, log bugs and enhancement requests, and submit code patches.
 
 Licensing
