@@ -19,7 +19,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from daal4py.sklearn._utils import sklearn_check_version
+from daal4py.sklearn._utils import _package_check_version, sklearn_check_version
 from onedal.tests.utils._dataframes_support import (
     dpnp_available,
     torch_available,
@@ -120,6 +120,10 @@ def _check_attributes_and_output(model, X, y, X_xp):
     not sklearn_check_version("1.9"),
     reason="Functionality introduced in later scikit-learn versions.",
 )
+@pytest.mark.skipif(
+    not _package_check_version("2.1", np.__version__),
+    reason="Array API functionality requires more recent version of NumPy.",
+)
 @pytest.mark.parametrize("X_xp", [np, pd, array_api_strict])
 @pytest.mark.parametrize("y_xp", [np, pd, array_api_strict])
 @pytest.mark.parametrize("estimator_class", all_estimators)
@@ -144,6 +148,10 @@ def test_linreg_mixed_array_namespaces(
 @pytest.mark.skipif(
     not sklearn_check_version("1.9"),
     reason="Functionality introduced in later scikit-learn versions.",
+)
+@pytest.mark.skipif(
+    not _package_check_version("2.1", np.__version__),
+    reason="Array API functionality requires more recent version of NumPy.",
 )
 @pytest.mark.parametrize("estimator_class", all_estimators)
 @pytest.mark.parametrize("use_partial_fit", [False, True])
