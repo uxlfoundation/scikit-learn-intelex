@@ -320,7 +320,6 @@ deselected_tests:
   - model_selection/tests/test_classification_threshold.py::test_tuned_threshold_classifier_cv_zeros_sample_weights_equivalence >=1.5
 
   # Deselections for 2025.0
-  - ensemble/tests/test_forest.py::test_importances[ExtraTreesRegressor-squared_error-float64]
   - cluster/tests/test_k_means.py::test_kmeans_elkan_results[42-0.01-sparse
   - cluster/tests/test_k_means.py::test_kmeans_elkan_results[42-1e-08-sparse
   - cluster/tests/test_k_means.py::test_kmeans_elkan_results[42-1e-100-sparse

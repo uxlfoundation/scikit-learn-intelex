@@ -22,6 +22,7 @@ from daal4py.sklearn._utils import daal_check_version
 from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
 from onedal.utils import _sycl_queue_manager as QM
+from onedal.utils._array_api import _get_sycl_namespace
 
 from ..common.hyperparameters import get_hyperparameters
 from ..datatypes import from_table, to_table
@@ -146,6 +147,14 @@ class BaseForest(ABC):
     def fit(self, X, y, sample_weight=None, class_count=0, queue=None):
         self.class_count_ = class_count
         if sample_weight is not None and sample_weight.shape[0] > 0:
+            # Normalize weights to a canonical scale (max == 1) before training.
+            # Tree structure depends only on relative weights, but oneDAL's
+            # weighted-variance arithmetic is sensitive to absolute magnitude,
+            # which otherwise breaks invariance of the fit under weight scaling.
+            _, xp, _ = _get_sycl_namespace(sample_weight)
+            max_weight = xp.max(sample_weight)
+            if max_weight > 0:
+                sample_weight = sample_weight / max_weight
             data = (X, y, sample_weight)
         else:
             data = (X, y)
