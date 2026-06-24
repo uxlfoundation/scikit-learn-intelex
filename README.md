@@ -48,8 +48,13 @@ With Extension for scikit-learn, you can:
 
 * Speed up training and inference by up to 100x with equivalent mathematical accuracy
 * Benefit from performance improvements across different hardware configurations, including [GPUs](https://uxlfoundation.github.io/scikit-learn-intelex/latest/oneapi-gpu.html) and [multi-GPU](https://uxlfoundation.github.io/scikit-learn-intelex/latest/distributed-mode.html) configurations
+<<<<<<< HEAD
 * Integrate the extension into your existing [scikit-learn](https://scikit-learn.org) applications without code modifications
 * Continue to use the open-source [scikit-learn](https://scikit-learn.org) API
+=======
+* Integrate the extension into your existing scikit-learn applications without code modifications
+* Continue to use the open-source scikit-learn API
+>>>>>>> 54909c83 (more lowercasing)
 * Enable and disable the extension with a couple of lines of code or at the command line
 
 ## Acceleration

@@ -112,7 +112,7 @@ about:
   license_file:
     - LICENSE
     - doc/third-party-programs-sklearnex.txt
-  summary: Extension for Scikit-learn* is a seamless way to speed up your Scikit-learn application.
+  summary: Extension for scikit-learn* is a seamless way to speed up your scikit-learn application.
   description: |
     <strong>LEGAL NOTICE: Use of this software package is subject to the
     software license agreement (as set forth above, in the license section of
