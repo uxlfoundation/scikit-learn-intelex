@@ -15,6 +15,8 @@
 # ===============================================================================
 
 import numpy as np
+import pandas as pd
+import polars as pl
 import pytest
 import scipy.sparse as sp
 from numpy.testing import assert_allclose
@@ -27,9 +29,24 @@ from onedal.tests.utils._dataframes_support import (
     _convert_to_dataframe,
     dpnp_available,
     get_dataframes_and_queues,
+    torch_available,
+    torch_xpu_available,
 )
 from onedal.tests.utils._device_selection import is_sycl_device_available
+from sklearnex import config_context
 from sklearnex.decomposition import PCA
+
+try:
+    import array_api_strict
+
+    array_api_strict_available = True
+except ImportError:
+    array_api_strict_available = False
+
+if dpnp_available:
+    import dpnp
+if torch_available:
+    import torch
 
 
 @pytest.fixture
@@ -195,3 +212,92 @@ def test_pca_error_on_incompatible_devices(with_array_api):
         _ = model.transform(X_gpu)
     with pytest.raises(ValueError, match=err_match):
         _ = model.inverse_transform(X_gpu)
+
+
+def _convert(arr, xp, device):
+    """Convert a numpy array to the array-API backend ``xp`` on ``device``."""
+    if xp is np:
+        return arr
+    return xp.asarray(arr, device=device)
+
+
+# (xp, device) array-API input combinations, CPU and GPU; device-specific entries
+# are dropped at collection time when the hardware/library is unavailable.
+_array_api_inputs = (
+    [(np, None)]
+    + ([(array_api_strict, None)] if array_api_strict_available else [])
+    + ([(dpnp, "cpu")] if dpnp_available else [])
+    + ([(dpnp, "gpu")] if dpnp_available and is_sycl_device_available("gpu") else [])
+    + ([(torch, "cpu")] if torch_available else [])
+    + ([(torch, "xpu")] if torch_xpu_available else [])
+)
+
+
+def _assert_transform_output_matches_default(pca, X, transform_output, method):
+    """The polars/pandas transform_output wrapping must preserve the values of the
+    default (un-wrapped) output, independent of input type/device. Both ways of
+    requesting it -- the ``transform_output`` config and ``set_output`` on the
+    estimator -- are checked."""
+    default = _as_numpy(getattr(pca, method)(X))
+    expected_type = pl.DataFrame if transform_output == "polars" else pd.DataFrame
+
+    # 1) global config_context(transform_output=...)
+    with config_context(transform_output=transform_output):
+        out = getattr(pca, method)(X)
+    assert isinstance(out, expected_type)
+    assert_allclose(out.to_numpy(), default, rtol=1e-5, atol=1e-5)
+
+    # 2) per-estimator set_output(transform=...). Restore the original config
+    # afterwards -- set_output("default") would *pin* it and override (1).
+    original_config = getattr(pca, "_sklearn_output_config", {}).copy()
+    pca.set_output(transform=transform_output)
+    try:
+        out = getattr(pca, method)(X)
+        assert isinstance(out, expected_type)
+        assert_allclose(out.to_numpy(), default, rtol=1e-5, atol=1e-5)
+    finally:
+        pca._sklearn_output_config = original_config
+
+
+@pytest.mark.skipif(
+    not sklearn_check_version("1.2"), reason="array_api_dispatch requires sklearn >= 1.2"
+)
+@pytest.mark.parametrize("xp,device", _array_api_inputs)
+@pytest.mark.parametrize("transform_output", ["polars", "pandas"])
+@pytest.mark.parametrize("method", ["transform", "fit_transform"])
+def test_transform_output_matches_default(
+    xp, device, transform_output, method, with_array_api
+):
+    X = _convert(load_iris(return_X_y=True)[0], xp, device)
+    pca = PCA(n_components=3).fit(X)
+    _assert_transform_output_matches_default(pca, X, transform_output, method)
+
+
+@pytest.mark.skipif(
+    not sklearn_check_version("1.2"), reason="transform_output requires sklearn >= 1.2"
+)
+@pytest.mark.skipif(not dpnp_available, reason="Functionality to test requires DPNP.")
+@pytest.mark.parametrize("dataframe,queue", get_dataframes_and_queues("dpnp"))
+@pytest.mark.parametrize("transform_output", ["polars", "pandas"])
+@pytest.mark.parametrize("method", ["transform", "fit_transform"])
+def test_transform_output_dpnp_no_array_api(dataframe, queue, transform_output, method):
+    X = _convert_to_dataframe(
+        load_iris(return_X_y=True)[0], sycl_queue=queue, target_df=dataframe
+    )
+    pca = PCA(n_components=3).fit(X)
+    _assert_transform_output_matches_default(pca, X, transform_output, method)
+
+
+@pytest.mark.skipif(
+    not sklearn_check_version("1.2"), reason="transform_output requires sklearn >= 1.2"
+)
+@pytest.mark.skipif(
+    not is_sycl_device_available("gpu"), reason="Test for GPU-specific functionality."
+)
+@pytest.mark.parametrize("transform_output", ["polars", "pandas"])
+@pytest.mark.parametrize("method", ["transform", "fit_transform"])
+def test_transform_output_target_offload(transform_output, method):
+    X = load_iris(return_X_y=True)[0]
+    with config_context(target_offload="gpu"):
+        pca = PCA(n_components=3).fit(X)
+        _assert_transform_output_matches_default(pca, X, transform_output, method)
