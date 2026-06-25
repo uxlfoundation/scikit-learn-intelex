@@ -590,8 +590,8 @@ if build_distributed:
 
 setup(
     name="scikit-learn-intelex",
-    description="Extension for Scikit-learn is a "
-    "seamless way to speed up your Scikit-learn application.",
+    description="Extension for scikit-learn is a "
+    "seamless way to speed up your scikit-learn application.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="Apache-2.0",

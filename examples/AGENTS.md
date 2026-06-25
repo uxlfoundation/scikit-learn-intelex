@@ -1,7 +1,7 @@
 # AGENTS.md - Examples (examples/)
 
 ## Purpose
-Comprehensive Python scripts and Jupyter notebooks demonstrating Intel Extension for Scikit-learn usage patterns.
+Comprehensive Python scripts and Jupyter notebooks demonstrating Intel Extension for scikit-learn usage patterns.
 
 ## Directory Structure
 - `daal4py/`: Native oneDAL API examples

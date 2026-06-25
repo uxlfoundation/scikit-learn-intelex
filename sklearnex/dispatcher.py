@@ -490,7 +490,7 @@ def patch_sklearn(
 
     if verbose and sys.stderr is not None:
         sys.stderr.write(
-            "Extension for Scikit-learn* enabled "
+            "Extension for scikit-learn* enabled "
             "(https://github.com/uxlfoundation/scikit-learn-intelex)\n"
         )
 
