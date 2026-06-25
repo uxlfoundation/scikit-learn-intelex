@@ -68,6 +68,7 @@ steps:
       # TODO: drop the intel python channel once dpnp is published on conda-forge, and drop the PYTHON_VERSION guard once dpctl ships a py3.14 build.
       if [ $(echo $(PYTHON_VERSION) | grep '3.10\|3.11\|3.12\|3.13') ] && [ $(SKLEARN_VERSION) != "1.0" ] && [ -z ${NO_DPC} ]; then conda install -q -y -c conda-forge -c https://software.repos.intel.com/python/conda/ dpctl=$DPCTL_VERSION dpnp=$DPNP_VERSION; fi
       conda list
+      python .ci/scripts/print_skl_info.py
     env:
       NO_DPC: ${{ variables.NO_DPC }}
       DPCTL_VERSION: 0.22.1
