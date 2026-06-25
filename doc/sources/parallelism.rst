@@ -30,6 +30,18 @@ Parallelism Specifics
   Note that the deprecated :doc:`daal4py <daal4py>` module uses a global configuration instead of per-object ``n_jobs`` arguments, 
   with the default also being all available threads.
 
+.. hint::
+    If serving estimators from the |sklearnex| in online services - e.g. through a REST framework like
+    `Flask <https://flask.palletsprojects.com>`__ - where requests might be parallelized through a
+    different tool, one might want to set ``n_jobs=1`` in estimators objects after fitting - e.g.
+
+    .. code-block:: python
+
+        estimator.fit(...)
+        estimator.set_params(n_jobs=1)
+
+    See also the Intel guide for `optimization of scikit-learn workflows <https://github.com/intel/optimization-zone/blob/main/software/scikit-learn/README.md>`__.
+
 |sklearnex| follows the same rules as |sklearn| for
 the calculation of the :term:`n_jobs` parameter value.
 
