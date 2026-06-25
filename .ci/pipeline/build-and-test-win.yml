@@ -75,17 +75,7 @@ steps:
     displayName: 'Sklearn testing'
     condition: succeededOrFailed()
     env:
+      SKLEARNEX_PREVIEW: "YES"
       COVERAGE_RCFILE: ${{ variables.COVERAGE_RCFILE }}
       DALROOT: ${{ variables.DALROOT }}
       TBBROOT: ${{ variables.TBBROOT }}
-  - script: |
-      call activate CB
-      if defined DALROOT call "%DALROOT%\env\vars.bat"
-      if defined TBBROOT call "%TBBROOT%\env\vars.bat"
-      bash .ci/scripts/run_sklearn_tests.sh
-    env:
-      SKLEARNEX_PREVIEW: "YES"
-      DALROOT: ${{ variables.DALROOT }}
-      TBBROOT: ${{ variables.TBBROOT }}
-    displayName: 'Sklearn testing [preview]'
-    condition: succeededOrFailed()
