@@ -160,9 +160,6 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
             reset=False,
         )
 
-        location = self.location_
-        precision = self.get_precision()
-
         est = clone(self)
         est.set_params(assume_centered=True)
 
