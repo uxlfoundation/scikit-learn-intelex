@@ -127,7 +127,7 @@ outputs:
       script: run_test.sh  # [linux]
       script: run_test.bat  # [win]
     about:
-      summary: Extension for Scikit-learn* (CPU runtime) is a seamless way to speed up your Scikit-learn application.
+      summary: Extension for scikit-learn* (CPU runtime) is a seamless way to speed up your scikit-learn application.
 
   - name: scikit-learn-intelex-gpu
     script: pack.sh  # [linux]
@@ -156,7 +156,7 @@ outputs:
         - python -c "import onedal._onedal_py_dpc"
         - python -c "import onedal._onedal_py_spmd_dpc"  # [not win]
     about:
-      summary: Extension for Scikit-learn* (GPU/DPC++ runtime) — enables oneAPI SYCL-based acceleration.
+      summary: Extension for scikit-learn* (GPU/DPC++ runtime) — enables oneAPI SYCL-based acceleration.
 
 about:
   home: https://uxlfoundation.github.io/scikit-learn-intelex
@@ -164,7 +164,7 @@ about:
   license_file:
     - LICENSE
     - doc/third-party-programs-sklearnex.txt
-  summary: Extension for Scikit-learn* is a seamless way to speed up your Scikit-learn application.
+  summary: Extension for scikit-learn* is a seamless way to speed up your scikit-learn application.
   description: |
     <strong>LEGAL NOTICE: Use of this software package is subject to the
     software license agreement (as set forth above, in the license section of
