@@ -395,6 +395,19 @@ def get_patch_map_core(preview: bool = False) -> PatchMap:
             None,
         )
 
+    # HDBSCAN was added to sklearn in 1.3 and oneDAL in 2026.1
+    if sklearn_check_version("1.3") and daal_check_version((2026, "P", 100)):
+        from sklearn.cluster import HDBSCAN as HDBSCAN_sklearn
+
+        from .cluster import HDBSCAN as HDBSCAN_sklearnex
+
+        mapping["sklearn.cluster.HDBSCAN"] = (
+            cluster_module,
+            "HDBSCAN",
+            HDBSCAN_sklearnex,
+            HDBSCAN_sklearn,
+        )
+
     return mapping
 
 

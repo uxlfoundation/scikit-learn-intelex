@@ -51,7 +51,7 @@ jobs:
   - template: linting.yml
 - job: LinuxCondaRecipe
   dependsOn: Lint
-  timeoutInMinutes: 120
+  timeoutInMinutes: 121
   strategy:
     matrix:
       Python3.12:

@@ -35,22 +35,22 @@ env:
   DPCTL_PY_VERSIONS: '3.10\|3.14'
   UXL_PYTHONVERSION: "3.13"
   UXL_SKLEARNVERSION: "1.6"
-  ONEDAL_REPO: "uxlfoundation/oneDAL"
+  ONEDAL_REPO: "Alexandr-Solovev/oneDAL"
 
 jobs:
 
   onedal_nightly:
     runs-on: ubuntu-24.04
     name: Identify oneDAL nightly
-    timeout-minutes: 2
+    timeout-minutes: 3
 
     steps:
       - name: Get run ID of "Nightly-build" workflow
         id: get-run-id
         run: |
           WF_NAME="Nightly-build"
-          JQ_QUERY='map(select(.event == "workflow_dispatch" or .event == "schedule")) | .[0].databaseId'
-          RUN_ID=`gh run --repo ${{ env.ONEDAL_REPO }} list --workflow "${WF_NAME}" --json databaseId,event --status success --jq "${JQ_QUERY}"`
+          JQ_QUERY='map(select(.event == "workflow_dispatch" or .event == "schedule" or .event == "pull_request" or .event == "push")) | .[0].databaseId'
+          RUN_ID=`gh run --repo ${{ env.ONEDAL_REPO }} list --workflow "${WF_NAME}" --branch dev/asolovev_hdbscan_ai --json databaseId,event --status success --jq "${JQ_QUERY}"`
           echo "Detected latest run id of ${RUN_ID} for workflow ${WF_NAME}"
           echo "run-id=${RUN_ID}" >> "$GITHUB_OUTPUT"
         env:

@@ -21,6 +21,11 @@ from .kmeans import KMeans
 
 __all__ = ["DBSCAN", "KMeans"]
 
+if daal_check_version((2026, "P", 100)):
+    from .hdbscan import HDBSCAN
+
+    __all__ += ["HDBSCAN"]
+
 if daal_check_version((2023, "P", 200)):
     from .kmeans_init import KMeansInit, kmeans_plusplus
 
