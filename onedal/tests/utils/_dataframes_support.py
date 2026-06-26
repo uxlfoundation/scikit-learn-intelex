@@ -38,13 +38,6 @@ except ImportError:
     torch_available = False
 
 try:
-    import torch
-
-    torch_available = True
-except ImportError:
-    torch_available = False
-
-try:
     # This should be lazy imported in the
     # future along with other popular
     # array_api libraries when testing
