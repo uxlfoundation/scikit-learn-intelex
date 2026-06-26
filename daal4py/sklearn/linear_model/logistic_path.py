@@ -172,7 +172,7 @@ def logistic_regression_path_d4p(
         X = check_array(
             X,
             accept_sparse=False,
-            dtype=np.float64,
+            dtype=[np.float64, np.float32],
             accept_large_sparse=False,
         )
         y = check_array(y, ensure_2d=False, dtype=None)
@@ -195,22 +195,24 @@ def logistic_regression_path_d4p(
 
     le = LabelEncoder().fit(classes)
 
+    # Note: the LBFGS solver from SciPy will always cast the input to float64
+    w0_dtype = X.dtype if solver != "lbfgs" else np.float64
     if sklearn_check_version("1.8"):
         if is_binary:
             y_bin = (y == pos_class).astype(X.dtype)
-            w0 = np.zeros(n_features + 1, dtype=X.dtype)
+            w0 = np.zeros(n_features + 1, dtype=w0_dtype)
         else:
             Y_multi = le.transform(y).astype(X.dtype, copy=False)
-            w0 = np.zeros((classes.size, n_features + 1), order="C", dtype=X.dtype)
+            w0 = np.zeros((classes.size, n_features + 1), order="C", dtype=w0_dtype)
     else:
         # For doing a ovr, we need to mask the labels first. for the
         # multinomial case this is not necessary.
         if multi_class == "ovr":
             y_bin = (y == pos_class).astype(X.dtype)
-            w0 = np.zeros(n_features + 1, dtype=X.dtype)
+            w0 = np.zeros(n_features + 1, dtype=w0_dtype)
         else:
             Y_multi = le.fit_transform(y).astype(X.dtype, copy=False)
-            w0 = np.zeros((classes.size, n_features + 1), order="C", dtype=X.dtype)
+            w0 = np.zeros((classes.size, n_features + 1), order="C", dtype=w0_dtype)
 
     # Adoption of https://github.com/scikit-learn/scikit-learn/pull/26721
     sw_sum = len(X)
@@ -380,6 +382,8 @@ def logistic_regression_path_d4p(
             w0, loss = opt_res.x, opt_res.fun
             if C_daal_multiplier == 2:
                 w0 /= 2
+            if w0.dtype != X.dtype:
+                w0 = w0.astype(X.dtype)
         elif solver == "newton-cg":
 
             def make_ncg_funcs(f, value=False, gradient=False, hessian=False):

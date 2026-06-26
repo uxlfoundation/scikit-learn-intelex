@@ -830,3 +830,15 @@ def test_no_warning_for_n_jobs():
     with warnings.catch_warnings():
         warnings.simplefilter("error", category=FutureWarning)
         model.fit(X, y, w)
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+def test_dtype_is_preserved(dtype):
+    from sklearnex.linear_model import LogisticRegression
+
+    rng = np.random.default_rng(seed=123)
+    X = rng.random(size=(10, 3)).astype(dtype)
+    y = rng.integers(2, size=X.shape[0]).astype(np.int64)
+    model = LogisticRegression().fit(X, y)
+    assert model.coef_.dtype == X.dtype
+    assert model.intercept_.dtype == X.dtype
