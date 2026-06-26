@@ -70,7 +70,7 @@ def patch_sklearn_global(name=None, verbose=True):
         distributor_file.write(lines + "\n" + get_patch_str(name, verbose) + "\n")
         print(
             "Scikit-learn was successfully globally patched"
-            " by Extension for Scikit-learn"
+            " by Extension for scikit-learn"
         )
         return
 
@@ -92,7 +92,7 @@ def unpatch_sklearn_global():
     with open(distributor_file_path, "r", encoding="utf-8") as distributor_file:
         lines = distributor_file.read()
         if not re.search(get_patch_str_re(), lines):
-            print("Nothing to unpatch: Scikit-learn is not patched\n")
+            print("Nothing to unpatch: scikit-learn is not patched\n")
             return
         lines = re.sub(get_patch_str_re(), "", lines)
 

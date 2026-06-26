@@ -69,7 +69,7 @@ Blueprints
       :link: https://github.com/intel-samples/network-intrusion-detection
       :padding: 1
 
-      AI Starter Kit for Network Intrusion Detection using Extension for Scikit-learn*
+      AI Starter Kit for Network Intrusion Detection using Extension for scikit-learn*.
 
 See more blueprints for Intel solutions for machine learning at the Software Catalog:
 
