@@ -172,7 +172,9 @@ def logistic_regression_path_d4p(
         X = check_array(
             X,
             accept_sparse=False,
-            dtype=[np.float64, np.float32],
+            dtype=(
+                [np.float64, np.float32] if sklearn_check_version("1.9") else np.float64
+            ),
             accept_large_sparse=False,
         )
         y = check_array(y, ensure_2d=False, dtype=None)
@@ -382,7 +384,7 @@ def logistic_regression_path_d4p(
             w0, loss = opt_res.x, opt_res.fun
             if C_daal_multiplier == 2:
                 w0 /= 2
-            if w0.dtype != X.dtype:
+            if w0.dtype != X.dtype and sklearn_check_version("1.9"):
                 w0 = w0.astype(X.dtype)
         elif solver == "newton-cg":
 

@@ -832,6 +832,10 @@ def test_no_warning_for_n_jobs():
         model.fit(X, y, w)
 
 
+@pytest.mark.skipif(
+    not sklearn_check_version("1.9"),
+    reason="Functionality introduced in later sklearn versions",
+)
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_dtype_is_preserved(dtype):
     from sklearnex.linear_model import LogisticRegression
