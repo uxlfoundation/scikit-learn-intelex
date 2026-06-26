@@ -21,6 +21,7 @@ from scipy import sparse as sp
 from sklearn.linear_model._ridge import Ridge as Ridge_original
 from sklearn.linear_model._ridge import _BaseRidge
 from sklearn.utils import check_array, check_X_y
+from sklearn.utils.validation import validate_data
 
 import daal4py
 
@@ -31,7 +32,6 @@ from .._utils import (
     getFPType,
     make2d,
 )
-from ..utils.validation import validate_data
 
 
 def _daal4py_fit(self, X, y_):

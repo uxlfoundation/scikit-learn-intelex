@@ -25,13 +25,13 @@ from sklearn.decomposition._pca import _infer_dimension
 from sklearn.utils import check_array
 from sklearn.utils._array_api import get_namespace
 from sklearn.utils.extmath import stable_cumsum
-from sklearn.utils.validation import check_is_fitted
+from sklearn.utils.validation import check_is_fitted, validate_data
 
 import daal4py
 
 from .._n_jobs_support import control_n_jobs
 from .._utils import PatchingConditionsChain, getFPType
-from ..utils.validation import check_feature_names, validate_data
+from ..utils.validation import check_feature_names
 
 
 @control_n_jobs(decorated_methods=["fit", "transform"])

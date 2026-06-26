@@ -20,6 +20,7 @@ import numpy as np
 from scipy import sparse as sp
 from sklearn.linear_model import LinearRegression as LinearRegression_original
 from sklearn.utils import check_array
+from sklearn.utils.validation import validate_data
 
 import daal4py
 
@@ -31,7 +32,7 @@ from .._utils import (
     is_DataFrame,
     make2d,
 )
-from ..utils.validation import _daal_check_array, check_feature_names, validate_data
+from ..utils.validation import _daal_check_array, check_feature_names
 
 
 def _daal4py_fit(self, X, y_):

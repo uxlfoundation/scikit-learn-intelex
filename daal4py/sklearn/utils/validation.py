@@ -41,7 +41,6 @@ from sklearn.utils.validation import (
     check_consistent_length,
     column_or_1d,
 )
-from sklearn.utils.validation import validate_data as _sklearn_validate_data
 
 import daal4py as d4p
 
@@ -724,11 +723,6 @@ def add_dispatcher_docstring(original_function):
         return new_function
 
     return wrapper
-
-
-@add_dispatcher_docstring(_sklearn_validate_data)
-def validate_data(*args, **kwargs):
-    return _sklearn_validate_data(*args, **kwargs)
 
 
 # dispatcher functions which use correct `check_feature_names`/`check_n_features` import

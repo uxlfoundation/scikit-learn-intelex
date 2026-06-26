@@ -23,13 +23,17 @@ from sklearn import preprocessing
 from sklearn.base import BaseEstimator, ClassifierMixin, RegressorMixin
 from sklearn.utils import check_random_state
 from sklearn.utils.multiclass import check_classification_targets
-from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
+from sklearn.utils.validation import (
+    check_array,
+    check_is_fitted,
+    check_X_y,
+    validate_data,
+)
 
 import daal4py as d4p
 
 from .._n_jobs_support import control_n_jobs
 from .._utils import getFPType
-from ..utils.validation import validate_data
 
 
 class GBTDAALBase(BaseEstimator, d4p.mb.GBTDAALBaseModel):

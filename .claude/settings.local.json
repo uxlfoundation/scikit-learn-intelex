@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s --netrc \"https://dev.azure.com/daal/6cdd13b8-4b95-4183-ba39-1f075b5a897a/_apis/build/builds/60334/logs/101?api-version=7.1\")",
+      "Bash(gh pr *)",
+      "Bash(python3 -c ' *)",
+      "Bash(gh api *)"
+    ]
+  }
+}

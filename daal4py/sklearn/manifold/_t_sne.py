@@ -57,7 +57,7 @@ from sklearn.manifold import TSNE as BaseTSNE
 from sklearn.manifold._t_sne import _joint_probabilities, _joint_probabilities_nn
 from sklearn.metrics.pairwise import pairwise_distances
 from sklearn.utils import check_array, check_random_state
-from sklearn.utils.validation import check_non_negative
+from sklearn.utils.validation import check_non_negative, validate_data
 
 import daal4py
 from daal4py.sklearn._utils import (
@@ -70,7 +70,6 @@ from daal4py.sklearn._utils import (
 
 from .._n_jobs_support import control_n_jobs
 from ..neighbors import NearestNeighbors
-from ..utils.validation import validate_data
 
 
 @control_n_jobs(decorated_methods=["fit"])

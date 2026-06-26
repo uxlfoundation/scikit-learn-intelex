@@ -31,13 +31,14 @@ from sklearn.utils.validation import (
     _is_arraylike_not_scalar,
     _num_samples,
     check_is_fitted,
+    validate_data,
 )
 
 import daal4py
 
 from .._n_jobs_support import control_n_jobs
 from .._utils import PatchingConditionsChain, getFPType
-from ..utils.validation import check_feature_names, validate_data
+from ..utils.validation import check_feature_names
 
 
 def _validate_center_shape(X, n_centers, centers):
