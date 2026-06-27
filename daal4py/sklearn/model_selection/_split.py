@@ -14,11 +14,11 @@
 # limitations under the License.
 # ===============================================================================
 
-import numbers
 import platform
 
 import numpy as np
 from sklearn.model_selection import ShuffleSplit, StratifiedShuffleSplit
+from sklearn.model_selection import train_test_split as _sklearn_train_test_split
 from sklearn.model_selection._split import _validate_shuffle_split
 from sklearn.utils import indexable
 from sklearn.utils.validation import _num_samples
@@ -45,12 +45,7 @@ try:
 except (ImportError, ModuleNotFoundError):
     pandas_is_imported = False
 
-from sklearn.utils._param_validation import (
-    Interval,
-    RealNotInt,
-    StrOptions,
-    validate_params,
-)
+from sklearn.utils._param_validation import StrOptions, validate_params
 
 
 def get_dtypes(data):
@@ -270,19 +265,7 @@ def train_test_split(
 
 train_test_split = validate_params(
     {
-        "test_size": [
-            Interval(RealNotInt, 0, 1, closed="neither"),
-            Interval(numbers.Integral, 1, None, closed="left"),
-            None,
-        ],
-        "train_size": [
-            Interval(RealNotInt, 0, 1, closed="neither"),
-            Interval(numbers.Integral, 1, None, closed="left"),
-            None,
-        ],
-        "random_state": ["random_state"],
-        "shuffle": ["boolean"],
-        "stratify": ["array-like", None],
+        **_sklearn_train_test_split._skl_parameter_constraints,
         "rng": [
             StrOptions(
                 {
