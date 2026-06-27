@@ -46,7 +46,6 @@ from sklearn.utils.validation import check_array, check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import (
-    check_tree_nodes,
     daal_check_version,
     is_sparse,
     sklearn_check_version,
@@ -517,7 +516,7 @@ class BaseForest(oneDALEstimator, ABC):
             tree_i_state_dict = {
                 "max_depth": tree_i_state_class.max_depth,
                 "node_count": tree_i_state_class.node_count,
-                "nodes": check_tree_nodes(tree_i_state_class.node_ar),
+                "nodes": tree_i_state_class.node_ar,
                 "values": tree_i_state_class.value_ar,
             }
             # Note: only on host.

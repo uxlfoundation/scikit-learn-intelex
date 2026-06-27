@@ -37,7 +37,6 @@ from sklearn.utils.validation import (
 import daal4py
 from daal4py.sklearn._utils import (
     PatchingConditionsChain,
-    check_tree_nodes,
     daal_check_version,
     getFPType,
     sklearn_check_version,
@@ -548,7 +547,7 @@ class RandomForestClassifier(RandomForestClassifier_original, RandomForestBase):
             tree_i_state_dict = {
                 "max_depth": tree_i_state_class.max_depth,
                 "node_count": tree_i_state_class.node_count,
-                "nodes": check_tree_nodes(tree_i_state_class.node_ar),
+                "nodes": tree_i_state_class.node_ar,
                 "values": tree_i_state_class.value_ar,
             }
             est_i.tree_ = Tree(
@@ -972,7 +971,7 @@ class RandomForestRegressor(RandomForestRegressor_original, RandomForestBase):
             tree_i_state_dict = {
                 "max_depth": tree_i_state_class.max_depth,
                 "node_count": tree_i_state_class.node_count,
-                "nodes": check_tree_nodes(tree_i_state_class.node_ar),
+                "nodes": tree_i_state_class.node_ar,
                 "values": tree_i_state_class.value_ar,
             }
 

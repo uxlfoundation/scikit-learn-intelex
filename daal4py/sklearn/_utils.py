@@ -174,10 +174,6 @@ def get_number_of_types(dataframe):
         return 1
 
 
-def check_tree_nodes(tree_nodes):
-    return tree_nodes
-
-
 def is_sparse(x):
     return sp.issparse(x) or (is_DataFrame(x) and hasattr(x, "sparse"))
 
