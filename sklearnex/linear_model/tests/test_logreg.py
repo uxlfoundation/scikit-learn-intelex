@@ -485,7 +485,7 @@ def test_custom_solvers_are_correct(multi_class, C, solver, n_classes):
     )
 
     params = {"C": C}
-    if not sklearn_check_version:
+    if multi_class is not None:
         params["multi_class"] = multi_class
 
     with warnings.catch_warnings():
