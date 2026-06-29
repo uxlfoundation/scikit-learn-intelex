@@ -1,4 +1,4 @@
-# AGENTS.md - Extension for Scikit-learn
+# AGENTS.md - Extension for scikit-learn
 
 ## Quick Context
 - **Purpose**: Accelerate scikit-learn using Intel oneDAL optimizations
