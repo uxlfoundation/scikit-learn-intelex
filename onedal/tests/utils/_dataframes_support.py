@@ -141,10 +141,11 @@ def _as_numpy(obj, *args, **kwargs):
         return obj.toarray(*args, **kwargs)
     try:
         return np.asarray(obj, *args, **kwargs)
-    except (TypeError, RuntimeError, ValueError):
+    except (TypeError, RuntimeError, ValueError, BufferError):
         # np.asarray can't read a non-CPU device tensor (e.g. torch on xpu);
-        # fall back to the library's standard dlpack host converter. array_api
-        # libraries that np.asarray already handles never reach this path.
+        # fall back to the library's standard dlpack host converter (which uses
+        # np.from_dlpack). array_api libraries that np.asarray already handles
+        # never reach this path.
         return dlpack_to_numpy(obj)
 
 

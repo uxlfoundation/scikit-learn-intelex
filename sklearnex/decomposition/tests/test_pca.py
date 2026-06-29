@@ -14,6 +14,9 @@
 # limitations under the License.
 # ===============================================================================
 
+from contextlib import nullcontext
+
+import array_api_strict
 import numpy as np
 import pandas as pd
 import polars as pl
@@ -35,13 +38,6 @@ from onedal.tests.utils._dataframes_support import (
 from onedal.tests.utils._device_selection import is_sycl_device_available
 from sklearnex import config_context
 from sklearnex.decomposition import PCA
-
-try:
-    import array_api_strict
-
-    array_api_strict_available = True
-except ImportError:
-    array_api_strict_available = False
 
 if dpnp_available:
     import dpnp
@@ -224,8 +220,7 @@ def _convert(arr, xp, device):
 # (xp, device) array-API input combinations, CPU and GPU; device-specific entries
 # are dropped at collection time when the hardware/library is unavailable.
 _array_api_inputs = (
-    [(np, None)]
-    + ([(array_api_strict, None)] if array_api_strict_available else [])
+    [(np, None), (array_api_strict, None)]
     + ([(dpnp, "cpu")] if dpnp_available else [])
     + ([(dpnp, "gpu")] if dpnp_available and is_sycl_device_available("gpu") else [])
     + ([(torch, "cpu")] if torch_available else [])
@@ -299,5 +294,24 @@ def test_transform_output_dpnp_no_array_api(dataframe, queue, transform_output, 
 def test_transform_output_target_offload(transform_output, method):
     X = load_iris(return_X_y=True)[0]
     with config_context(target_offload="gpu"):
+        pca = PCA(n_components=3).fit(X)
+        _assert_transform_output_matches_default(pca, X, transform_output, method)
+
+
+@pytest.mark.skipif(
+    not sklearn_check_version("1.2"), reason="transform_output requires sklearn >= 1.2"
+)
+@pytest.mark.parametrize("target_offload", [False, True])
+@pytest.mark.parametrize("dataframe", [pd.DataFrame, pl.DataFrame])
+@pytest.mark.parametrize("transform_output", ["polars", "pandas"])
+@pytest.mark.parametrize("method", ["transform", "fit_transform"])
+def test_transform_output_pandas_polars_input(
+    dataframe, target_offload, transform_output, method
+):
+    if target_offload and not is_sycl_device_available("gpu"):
+        pytest.skip("Test for GPU-specific functionality.")
+    X = dataframe(load_iris(return_X_y=True)[0])
+    ctx = config_context(target_offload="gpu") if target_offload else nullcontext()
+    with ctx:
         pca = PCA(n_components=3).fit(X)
         _assert_transform_output_matches_default(pca, X, transform_output, method)
