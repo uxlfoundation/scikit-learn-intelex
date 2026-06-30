@@ -140,7 +140,18 @@ PYBIND11_MODULE(_onedal_py_host, m) {
     init_finiteness_checker(m);
 #endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240700
     init_dummy(m);
-    m.attr("__version__") = std::to_string(MAJOR_VERSION) + "." + std::to_string(MINOR_VERSION) + "." + std::to_string(UPDATE_VERSION);
+
+    // verify thath the proper version of oneDAL at runtime is used versus what was used for compilation
+    // must be done with daal as there is no oneDAL equivalent
+    daal::services::LibraryVersionInfo li;
+    std::string ver = std::to_string(MAJOR_VERSION) + "." + std::to_string(MINOR_VERSION) + "." + std::to_string(UPDATE_VERSION);
+
+    if (li.majorVersion < MAJOR_VERSION || (li.majorVersion == MAJOR_VERSION && (li.minorVersion < MINOR_VERSION || (li.minorVersion == MINOR_VERSION && li.updateVersion < UPDATE_VERSION )))){
+        throw py::import_error("Loaded oneDAL library version is below that used to compile the pybind11 interface (" + ver + ")");
+        }
+    
+    m.attr("__version__") = std::to_string(li.majorVersion) + "." + std::to_string(li.minorVersion) + "." + std::to_string(li.updateVersion);
+    m.attr("__compiled_version__") = ver;
 }
 #endif // ONEDAL_DATA_PARALLEL_SPMD
 
