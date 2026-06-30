@@ -61,14 +61,11 @@ if daal_check_version((2024, "P", 100)):
 
         if sklearn_check_version("1.2"):
             _parameter_constraints: dict = {**_sklearn_PCA._parameter_constraints}
-            # "onedal_svd" solver uses oneDAL's PCA-SVD algorithm
-            # and required for testing purposes to fully enable it in future.
             # "covariance_eigh" solver is added for ability to explicitly request
             # oneDAL's PCA-Covariance algorithm using any sklearn version < 1.5.
             _parameter_constraints["svd_solver"] = [
                 StrOptions(
-                    _parameter_constraints["svd_solver"][0].options
-                    | {"onedal_svd", "covariance_eigh"}
+                    _parameter_constraints["svd_solver"][0].options | {"covariance_eigh"}
                 )
             ]
 
@@ -147,10 +144,9 @@ if daal_check_version((2024, "P", 100)):
                     else self.svd_solver
                 )
                 # Use oneDAL in the following cases:
-                # 1. "onedal_svd" solver is explicitly set
-                # 2. solver is set to "covariance_eigh"
-                # 3. solver is set to "full" and sklearn version < 1.5
-                # 4. solver is set to "auto" and dispatched to "full"
+                # 1. solver is set to "covariance_eigh"
+                # 2. solver is set to "full"
+                # 3. solver is set to "auto" and dispatched to "full" or to "covariance_eigh"
                 force_solver = self._fit_svd_solver == "full" and (
                     not sklearn_check_version("1.5") or self.svd_solver == "auto"
                 )
@@ -163,13 +159,12 @@ if daal_check_version((2024, "P", 100)):
                         ),
                         (
                             force_solver
-                            or self._fit_svd_solver in ["covariance_eigh", "onedal_svd"],
+                            or self._fit_svd_solver in ["covariance_eigh", "full"],
                             (
-                                "Only 'covariance_eigh' and 'onedal_svd' "
+                                "Only 'covariance_eigh' and 'full' "
                                 "solvers are supported."
                                 if sklearn_check_version("1.5")
-                                else "Only 'full', 'covariance_eigh' and 'onedal_svd' "
-                                "solvers are supported."
+                                else "Only 'full' and 'covariance_eigh' solvers are supported."
                             ),
                         ),
                         (not is_sparse(X), "oneDAL PCA does not support sparse data"),
@@ -362,7 +357,7 @@ if daal_check_version((2024, "P", 100)):
             onedal_params = {
                 "n_components": n_components,
                 "is_deterministic": True,
-                "method": "svd" if self._fit_svd_solver == "onedal_svd" else "cov",
+                "method": "svd" if self._fit_svd_solver == "full" else "cov",
                 "whiten": self.whiten,
             }
             self._onedal_estimator = self._onedal_PCA(**onedal_params)
