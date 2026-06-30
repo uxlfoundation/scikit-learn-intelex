@@ -20,7 +20,6 @@ from numbers import Integral
 
 import numpy as np
 from scipy import sparse as sp
-from sklearn.preprocessing import LabelEncoder
 
 from .. import _default_backend as backend
 from ..common._backend import BackendFunction
