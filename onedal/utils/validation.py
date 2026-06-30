@@ -16,26 +16,16 @@
 
 import inspect
 import warnings
-from collections.abc import Sequence
 from numbers import Integral
 
 import numpy as np
 from scipy import sparse as sp
-
-from onedal.common._backend import BackendFunction
-from onedal.utils import _sycl_queue_manager as QM
-
-if np.lib.NumpyVersion(np.__version__) >= np.lib.NumpyVersion("2.0.0a0"):
-    # numpy_version >= 2.0
-    from numpy.exceptions import VisibleDeprecationWarning
-else:
-    # numpy_version < 2.0
-    from numpy import VisibleDeprecationWarning
-
 from sklearn.preprocessing import LabelEncoder
 
-from onedal import _default_backend as backend
-from onedal.datatypes import to_table
+from .. import _default_backend as backend
+from ..common._backend import BackendFunction
+from ..datatypes import to_table
+from ..utils import _sycl_queue_manager as QM
 
 
 class DataConversionWarning(UserWarning):
@@ -50,39 +40,6 @@ def _is_arraylike(x):
 def _is_arraylike_not_scalar(array):
     """Return True if array is array-like and not a scalar"""
     return _is_arraylike(array) and not np.isscalar(array)
-
-
-def _is_integral_float(y):
-    return y.dtype.kind == "f" and np.all(y.astype(int) == y)
-
-
-def _is_multilabel(y):
-    if hasattr(y, "__array__") or isinstance(y, Sequence):
-        # DeprecationWarning will be replaced by ValueError, see NEP 34
-        # https://numpy.org/neps/nep-0034-infer-dtype-is-object.html
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", VisibleDeprecationWarning)
-            try:
-                y = np.asarray(y)
-            except VisibleDeprecationWarning:
-                # dtype=object should be provided explicitly for ragged arrays,
-                # see NEP 34
-                y = np.array(y, dtype=object)
-
-    if not (hasattr(y, "shape") and y.ndim == 2 and y.shape[1] > 1):
-        return False
-
-    if sp.issparse(y):
-        if isinstance(y, (sp.dok_matrix, sp.lil_matrix)):
-            y = y.tocsr()
-        return (
-            len(y.data) == 0
-            or np.unique(y.data).size == 1
-            and (y.dtype.kind in "biu" or _is_integral_float(np.unique(y.data)))
-        )
-    labels = np.unique(y)
-
-    return len(labels) < 3 and (y.dtype.kind in "biu" or _is_integral_float(labels))
 
 
 def _check_n_features(self, X, reset):

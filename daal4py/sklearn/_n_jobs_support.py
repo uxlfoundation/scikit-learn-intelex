@@ -84,7 +84,7 @@ def _run_with_n_jobs(method):
         if not isinstance(threading.current_thread(), threading._MainThread):
             warn(
                 "'Threading' parallel backend is not supported by "
-                "Extension for Scikit-learn*. "
+                "Extension for scikit-learn*. "
                 "Falling back to usage of all available threads."
             )
             result = method(self, *args, **kwargs)
@@ -143,7 +143,7 @@ def control_n_jobs(decorated_methods: list = []):
     Decorator for controlling the 'n_jobs' parameter in an estimator class.
 
     This decorator is designed to be applied to both estimators with and without
-    native support for the 'n_jobs' parameter in the original Scikit-learn APIs.
+    native support for the 'n_jobs' parameter in the original scikit-learn APIs.
     When applied to an estimator without 'n_jobs' support in
     its original '__init__' method, this decorator adds the 'n_jobs' parameter.
 
