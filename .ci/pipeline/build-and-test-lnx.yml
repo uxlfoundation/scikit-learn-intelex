@@ -22,7 +22,7 @@ steps:
       conda config --add channels conda-forge
       conda config --set channel_priority strict
       conda update -y -q conda
-      conda create -q -y -n CB -c conda-forge python=$(PYTHON_VERSION) mpich pyyaml pip setuptools wheel
+      conda create -q -y -n CB -c conda-forge python=$(PYTHON_VERSION) mpich pip setuptools wheel
     displayName: "Conda create"
   - script: |
       . /usr/share/miniconda/etc/profile.d/conda.sh
