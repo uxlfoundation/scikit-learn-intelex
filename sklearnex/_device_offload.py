@@ -120,7 +120,6 @@ def dispatch(
     # backend can only be a boolean or None, None signifies an unverified backend
     backend: "bool | None" = None
 
-    # TODO validate if this comment is valid (e.g. X on GPU, y on CPU)
     # The _sycl_queue_manager verifies all arguments are on a single SYCL device or
     # cpu and will otherwise throw an error. If located on a non-SYCL, non-CPU
     # device, a special queue is set which will cause a failure in ``_get_backend``
