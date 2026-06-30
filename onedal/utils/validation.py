@@ -22,10 +22,6 @@ import numpy as np
 from scipy import sparse as sp
 from sklearn.preprocessing import LabelEncoder
 
-from daal4py.sklearn.utils.validation import (
-    _assert_all_finite as _daal4py_assert_all_finite,
-)
-
 from .. import _default_backend as backend
 from ..common._backend import BackendFunction
 from ..datatypes import to_table
