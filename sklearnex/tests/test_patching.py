@@ -552,15 +552,24 @@ def test_standard_estimator_patching(caplog, dataframe, queue, dtype, estimator,
             "Array API inputs on CPU are not supported for LogisticRegression in sklearn <1.9"
         )
 
-    if dataframe == "array_api":
+    # torch is only supported through array_api_dispatch, so it shares the
+    # array_api dispatch-only path rather than the dpnp dual-pass below.
+    if dataframe in ("array_api", "torch"):
         # as array_api dispatching is experimental, sklearn support isn't guaranteed.
         # the infrastructure from sklearn that sklearnex depends on is also susceptible
         # to failure. In this case compare to sklearn for the same failure. By design
         # the patching of sklearn should act similarly. Technically this is conformance.
         if (
-            (estimator == "PCA" and "transform" in method)
-            or (estimator == "IncrementalEmpiricalCovariance" and method == "mahalanobis")
-        ) and not _package_check_version("2.0", np.__version__):
+            dataframe == "array_api"
+            and (
+                (estimator == "PCA" and "transform" in method)
+                or (
+                    estimator == "IncrementalEmpiricalCovariance"
+                    and method == "mahalanobis"
+                )
+            )
+            and not _package_check_version("2.0", np.__version__)
+        ):
             # issue not to be observed with normal numpy usage
             pytest.skip(
                 f"numpy backend does not properly handle the __dlpack__ attribute."

@@ -39,7 +39,7 @@ from sklearnex.tests.utils.spmd import (
 )
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp,torch", device_filter_="gpu"),
 )
 @pytest.mark.mpi
 def test_kmeans_spmd_gold(dataframe, queue):
@@ -107,7 +107,7 @@ def test_kmeans_spmd_gold(dataframe, queue):
 @pytest.mark.parametrize("n_clusters", [2, 5, 15])
 @pytest.mark.parametrize(
     "dataframe,queue",
-    get_dataframes_and_queues(dataframe_filter_="dpnp", device_filter_="gpu"),
+    get_dataframes_and_queues(dataframe_filter_="dpnp,torch", device_filter_="gpu"),
 )
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 @pytest.mark.parametrize("array_api_dispatch", [True, False])
