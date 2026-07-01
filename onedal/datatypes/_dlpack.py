@@ -16,8 +16,7 @@
 
 import numpy as np
 
-from onedal import _default_backend as backend
-
+from .. import _default_backend as backend
 from ..utils._third_party import convert_sklearnex_queue, lazy_import
 
 cpu_dlpack_device = (backend.kDLCPU, 0)
