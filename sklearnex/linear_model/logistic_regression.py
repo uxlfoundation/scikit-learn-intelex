@@ -51,7 +51,7 @@ if daal_check_version((2024, "P", 1)):
 
     _sparsity_enabled = daal_check_version((2024, "P", 700))
 
-    @enable_array_api("1.5")  # validate_data y_numeric requires sklearn >=1.5
+    @enable_array_api
     @control_n_jobs(
         decorated_methods=[
             "fit",
@@ -64,10 +64,9 @@ if daal_check_version((2024, "P", 1)):
     class LogisticRegression(oneDALEstimator, _sklearn_LogisticRegression):
         __doc__ = _sklearn_LogisticRegression.__doc__
 
-        if sklearn_check_version("1.2"):
-            _parameter_constraints: dict = {
-                **_sklearn_LogisticRegression._parameter_constraints
-            }
+        _parameter_constraints: dict = {
+            **_sklearn_LogisticRegression._parameter_constraints
+        }
 
         if sklearn_check_version("1.8"):
 
@@ -121,7 +120,7 @@ if daal_check_version((2024, "P", 1)):
                 random_state=None,
                 solver="lbfgs",
                 max_iter=100,
-                multi_class="deprecated" if sklearn_check_version("1.5") else "auto",
+                multi_class="deprecated",
                 verbose=0,
                 warm_start=False,
                 n_jobs=None,
@@ -169,8 +168,7 @@ if daal_check_version((2024, "P", 1)):
                 )
 
         def fit(self, X, y, sample_weight=None):
-            if sklearn_check_version("1.2"):
-                self._validate_params()
+            self._validate_params()
 
             if hasattr(self, "_onedal_estimator"):
                 del self._onedal_estimator
@@ -269,11 +267,7 @@ if daal_check_version((2024, "P", 1)):
                 f"sklearn.linear_model.{class_name}.fit"
             )
 
-            target_type = (
-                type_of_target(y, input_name="y")
-                if sklearn_check_version("1.1")
-                else type_of_target(y)
-            )
+            target_type = type_of_target(y, input_name="y")
             patching_status.and_conditions(
                 [
                     (

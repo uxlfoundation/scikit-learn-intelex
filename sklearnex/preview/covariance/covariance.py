@@ -53,16 +53,12 @@ _mahalanobis = support_input_format(partial(pairwise_distances, metric="mahalano
 class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
     __doc__ = _sklearn_EmpiricalCovariance.__doc__
 
-    if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {
-            **_sklearn_EmpiricalCovariance._parameter_constraints,
-        }
+    _parameter_constraints: dict = {
+        **_sklearn_EmpiricalCovariance._parameter_constraints,
+    }
 
     def _set_covariance(self, covariance):
-        if sklearn_check_version("1.6"):
-            covariance = check_array(covariance, ensure_all_finite=False)
-        else:
-            covariance = check_array(covariance, force_all_finite=False)
+        covariance = check_array(covariance, ensure_all_finite=False)
         assert_all_finite(covariance)
         # set covariance
         self.covariance_ = covariance
@@ -128,8 +124,7 @@ class EmpiricalCovariance(oneDALEstimator, _sklearn_EmpiricalCovariance):
         return precision
 
     def fit(self, X, y=None):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
+        self._validate_params()
         dispatch(
             self,
             "fit",

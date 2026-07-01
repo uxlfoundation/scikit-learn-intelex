@@ -25,7 +25,7 @@ from sklearn.dummy import DummyRegressor as _sklearn_DummyRegressor
 from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
-from daal4py.sklearn._utils import daal_check_version, is_sparse, sklearn_check_version
+from daal4py.sklearn._utils import daal_check_version, is_sparse
 from onedal._device_offload import support_input_format
 from onedal.dummy import DummyEstimator as onedal_DummyEstimator
 
@@ -240,8 +240,7 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
     # This is required as part of sklearn conformance, which does checking
     # of parameters set in __init__ when calling self.validate_params (should
     # only be in a fit or fit-derived call)
-    if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {**_sklearn_DummyRegressor._parameter_constraints}
+    _parameter_constraints: dict = {**_sklearn_DummyRegressor._parameter_constraints}
 
     def __init__(self, *, strategy="mean", constant=None, quantile=None):
         # Object instantiation is strictly limited by sklearn. It is only
@@ -301,8 +300,7 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
         # Parameter validation must be done before calls to dispatch. This
         # guarantees that the sklearn and onedal use of parameters are
         # properly typed and valued.
-        if sklearn_check_version("1.2"):
-            self._validate_params()
+        self._validate_params()
 
         # only arguments from the method signature are passed to
         # ``_onedal_*_supported`` and not kwargs. The parameters of the
@@ -366,11 +364,8 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
 
         # The second step must always be to validate the data.
         # This algorithm can accept 2d y inputs (by setting multi_output).
-        # Note the use of "sklearn_check_version". This is required in order
-        # to conform to changes which occur in sklearn over the supported
-        # versions.  The conformance to sklearn should occur in this object,
-        # therefore this function should not be used in the onedal module.
-        # This conformance example is specific to the Dummy Estimators.
+        # The conformance to sklearn should occur in this object, therefore
+        # this function should not be used in the onedal module.
         X, y = validate_data(
             self,
             X,
@@ -378,7 +373,7 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
             dtype=[xp.float64, xp.float32],
             multi_output=True,
             y_numeric=True,
-            ensure_2d=sklearn_check_version("1.2"),
+            ensure_2d=True,
         )
         # validate_data does several things:
         # 1) If not in the proper namespace (depending on array_api configs)
@@ -434,7 +429,7 @@ class DummyRegressor(oneDALEstimator, _sklearn_DummyRegressor):
             X,
             dtype=[xp.float64, xp.float32],
             reset=False,
-            ensure_2d=sklearn_check_version("1.2"),
+            ensure_2d=True,
         )
         # queue must be sent back to the onedal Python estimator object
         y = self._onedal_estimator.predict(X, queue=queue)

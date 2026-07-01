@@ -50,10 +50,9 @@ class KNeighborsClassifier(KNeighborsDispatchingBase, _sklearn_KNeighborsClassif
     # Default onedal estimator class - SPMD subclasses can override this
     _onedal_estimator = onedal_KNeighborsClassifier
 
-    if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {
-            **_sklearn_KNeighborsClassifier._parameter_constraints
-        }
+    _parameter_constraints: dict = {
+        **_sklearn_KNeighborsClassifier._parameter_constraints
+    }
 
     def __init__(
         self,

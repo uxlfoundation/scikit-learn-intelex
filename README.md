@@ -31,7 +31,7 @@
 [![PyPI Version](https://img.shields.io/pypi/v/scikit-learn-intelex)](https://pypi.org/project/scikit-learn-intelex/)
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/scikit-learn-intelex)](https://anaconda.org/conda-forge/scikit-learn-intelex)
 [![python version](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue)](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue)
-[![scikit-learn supported versions](https://img.shields.io/badge/sklearn-1.0%20%7C%201.6%20%7C%201.7%20%7C%201.8%20%7C%201.9-blue)](https://img.shields.io/badge/sklearn-1.0%20%7C%201.6%20%7C%201.7%20%7C%201.8%20%7C%201.9-blue)
+[![scikit-learn supported versions](https://img.shields.io/badge/sklearn-1.6%20%7C%201.7%20%7C%201.8%20%7C%201.9-blue)](https://img.shields.io/badge/sklearn-1.6%20%7C%201.7%20%7C%201.8%20%7C%201.9-blue)
 
 ---
 </h3>
