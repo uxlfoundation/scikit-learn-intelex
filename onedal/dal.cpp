@@ -81,11 +81,6 @@ ONEDAL_PY_INIT_MODULE(finiteness_checker);
 ONEDAL_PY_INIT_MODULE(dummy);
 #endif // ONEDAL_DATA_PARALLEL_SPMD
 
-// function placed here for use within the module generation functions
-bool check_version(const int major, const int minor, const int update){
-    return (
-}
-
 #ifdef ONEDAL_DATA_PARALLEL_SPMD
 PYBIND11_MODULE(_onedal_py_spmd_dpc, m) {
     init_policy(m);
@@ -169,7 +164,6 @@ PYBIND11_MODULE(_onedal_py_host, m) {
     // function
     m.attr("__version_tuple__") = py::make_tuple(li.majorVersion, li.minorVersion, li.updateVersion);
     m.attr("__compiled_version__") = ver;
-
 }
 #endif // ONEDAL_DATA_PARALLEL_SPMD
 
