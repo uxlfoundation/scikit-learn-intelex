@@ -189,9 +189,11 @@ def _ensure_dpc_available(require_spmd: bool = False) -> None:
     )
 
 
-def onedal_check_version(major: int, minor: int, update: int, _v=_default_backend.__version_tuple__) -> bool:
+def onedal_check_version(
+    major: int, minor: int, update: int, _v=_default_backend.__version_tuple__
+) -> bool:
     """Check if runtime onedal library version is greater than or equal to a required version.
-    
+
     Parameters
     ----------
     major : int

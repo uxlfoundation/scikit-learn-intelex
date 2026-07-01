@@ -162,7 +162,8 @@ PYBIND11_MODULE(_onedal_py_host, m) {
     // fastest way (no lru_cache, no C++ conversion, direct python) is to do a tuple version comparison
     // __version__ is exposed for users, __version_tuple__ is used within the onedal_check_version
     // function
-    m.attr("__version_tuple__") = py::make_tuple(li.majorVersion, li.minorVersion, li.updateVersion);
+    m.attr("__version_tuple__") =
+        py::make_tuple(li.majorVersion, li.minorVersion, li.updateVersion);
     m.attr("__compiled_version__") = ver;
 }
 #endif // ONEDAL_DATA_PARALLEL_SPMD
