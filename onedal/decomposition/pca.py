@@ -16,10 +16,9 @@
 
 from abc import ABCMeta
 
-from onedal._device_offload import supports_queue
-from onedal.common._backend import bind_default_backend
-
 from .._config import _get_config
+from .._device_offload import supports_queue
+from ..common._backend import bind_default_backend
 from ..common.hyperparameters import get_hyperparameters
 from ..datatypes import from_table, to_table
 from ..utils._array_api import _get_sycl_namespace

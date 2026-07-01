@@ -14,8 +14,7 @@
 # limitations under the License.
 # ==============================================================================
 
-from onedal import onedal_check_version
-
+from .. import onedal_check_version
 from .dbscan import DBSCAN
 from .kmeans import KMeans
 

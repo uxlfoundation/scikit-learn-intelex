@@ -17,13 +17,13 @@
 import numpy as np
 from sklearn.utils import check_random_state
 
-from onedal import onedal_check_version
-from onedal._device_offload import supports_queue
-from onedal.common._backend import bind_default_backend
-from onedal.utils import _sycl_queue_manager as QM
 from sklearnex._config import config_context, get_config
 
+from .. import onedal_check_version
+from .._device_offload import supports_queue
+from ..common._backend import bind_default_backend
 from ..datatypes import from_table, to_table
+from ..utils import _sycl_queue_manager as QM
 
 if onedal_check_version(2023, 2, 0):
 

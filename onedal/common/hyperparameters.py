@@ -18,8 +18,8 @@ import logging
 from typing import Callable, Dict, Tuple
 from warnings import warn
 
-from onedal import _default_backend as backend
-from onedal import onedal_check_version
+from .. import _default_backend as backend
+from .. import onedal_check_version
 
 if not onedal_check_version(2024, 0, 0):
     warn("Hyperparameters are supported in oneDAL starting from 2024.0.0 version.")

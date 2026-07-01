@@ -18,13 +18,12 @@ import math
 import numbers
 from abc import ABC, abstractmethod
 
-from onedal import onedal_check_version
-from onedal._device_offload import supports_queue
-from onedal.common._backend import bind_default_backend
-from onedal.utils import _sycl_queue_manager as QM
-
+from .. import onedal_check_version
+from .._device_offload import supports_queue
+from ..common._backend import bind_default_backend
 from ..common.hyperparameters import get_hyperparameters
 from ..datatypes import from_table, to_table
+from ..utils import _sycl_queue_manager as QM
 
 
 class BaseForest(ABC):
