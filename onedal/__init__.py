@@ -189,7 +189,27 @@ def _ensure_dpc_available(require_spmd: bool = False) -> None:
     )
 
 
-# Core modules to export
+def onedal_check_version(major: int, minor: int, update: int, _v=_default_backend.__version_tuple__) -> bool:
+    """Check if runtime onedal library version is greater than or equal to a required version.
+    
+    Parameters
+    ----------
+    major : int
+        major version to compare against oneDAL's LibraryVersionInfo.majorVersion
+    minor : int
+        minor version to compare against oneDAL's LibraryVersionInfo.minorVersion
+    update : int
+        update version to compare against oneDAL's LibraryVersionInfo.updateVersion
+
+    Returns
+    -------
+        bool
+            runtime oneDAL version is greater than or equal to the given required oneDAL version
+    """
+    return _v >= (major, minor, update)
+
+
+# Core modules and functions to export
 __all__ = [
     "_ensure_dpc_available",
     "_host_backend",
@@ -201,27 +221,28 @@ __all__ = [
     "dummy",
     "ensemble",
     "neighbors",
+    "onedal_check_version",
     "primitives",
     "svm",
 ]
 
 # Additional features based on version checks
-if daal_check_version((2023, "P", 100)):
+if onedal_check_version(2023, 1, 0):
     __all__ += ["basic_statistics", "linear_model"]
-if daal_check_version((2023, "P", 200)):
+if onedal_check_version(2023, 2, 0):
     __all__ += ["cluster"]
 
 # Exports if SPMD backend is available
 if _spmd_backend is not None:
     __all__ += ["spmd"]
-    if daal_check_version((2023, "P", 100)):
+    if onedal_check_version(2023, 1, 0):
         __all__ += [
             "spmd.basic_statistics",
             "spmd.decomposition",
             "spmd.linear_model",
             "spmd.neighbors",
         ]
-    if daal_check_version((2023, "P", 200)):
+    if onedal_check_version(2023, 2, 0):
         __all__ += ["spmd.cluster"]
 
 __version__ = "2199.9.9"
