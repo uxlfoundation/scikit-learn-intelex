@@ -18,8 +18,6 @@
 import importlib
 import platform
 
-from daal4py.sklearn._utils import daal_check_version
-
 
 class Backend:
 

@@ -18,7 +18,7 @@ from abc import ABCMeta, abstractmethod
 
 import numpy as np
 
-from daal4py.sklearn._utils import daal_check_version
+from onedal import onedal_check_version
 from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
 
@@ -80,7 +80,7 @@ class BaseLogisticRegression(metaclass=ABCMeta):
         self.n_iter_ = np.array([result.iterations_count])
 
         # _n_inner_iter is the total number of cg-solver iterations
-        if daal_check_version((2024, "P", 300)) and self.solver == "newton-cg":
+        if onedal_check_version(2024, 3, 0) and self.solver == "newton-cg":
             self._n_inner_iter = result.inner_iterations_count
 
         coeff = from_table(result.model.packed_coefficients, like=X)
