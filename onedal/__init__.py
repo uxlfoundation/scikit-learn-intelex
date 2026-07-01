@@ -200,7 +200,7 @@ def onedal_check_version(
         Minor version to compare against oneDAL's LibraryVersionInfo.minorVersion.
     update : int
         Update version to compare against oneDAL's LibraryVersionInfo.updateVersion.
-    _v: tuple(int, int, int), default=_default_backend.__version_tuple__
+    _v : tuple(int, int, int), default=_default_backend.__version_tuple__
         Version tuple defined by oneDAL (major, minor, update) to compare against.
 
     Returns
