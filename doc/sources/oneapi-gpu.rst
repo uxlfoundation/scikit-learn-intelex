@@ -90,6 +90,11 @@ On Linux*, non-root users might not have access to GPU devices by default. To gi
     sudo usermod -a -G render "$(whoami)"
     sudo usermod -a -G video "$(whoami)"
 
+BIOS Settings
+-------------
+
+For non-datacenter discrete GPU devices that have a video output, GPU support might require enabling the REBAR BIOS setting, which should be enabled by default in modern motherboards.
+
 Verifying GPU setup
 -------------------
 
