@@ -195,11 +195,13 @@ def onedal_check_version(
     Parameters
     ----------
     major : int
-        major version to compare against oneDAL's LibraryVersionInfo.majorVersion
+        Major version to compare against oneDAL's LibraryVersionInfo.majorVersion.
     minor : int
-        minor version to compare against oneDAL's LibraryVersionInfo.minorVersion
+        Minor version to compare against oneDAL's LibraryVersionInfo.minorVersion.
     update : int
-        update version to compare against oneDAL's LibraryVersionInfo.updateVersion
+        Update version to compare against oneDAL's LibraryVersionInfo.updateVersion.
+    _v: tuple(int, int, int), default=_default_backend.__version_tuple__
+        Version tuple defined by oneDAL (major, minor, update) to compare against.
 
     Returns
     -------
