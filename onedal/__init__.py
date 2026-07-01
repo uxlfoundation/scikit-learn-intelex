@@ -206,7 +206,7 @@ def onedal_check_version(
     Returns
     -------
         bool
-            runtime oneDAL version is greater than or equal to the given required oneDAL version
+        Runtime oneDAL version is greater than or equal to the given required oneDAL version.
     """
     return _v >= (major, minor, update)
 
