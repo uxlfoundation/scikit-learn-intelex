@@ -81,6 +81,14 @@ ONEDAL_PY_INIT_MODULE(finiteness_checker);
 ONEDAL_PY_INIT_MODULE(dummy);
 #endif // ONEDAL_DATA_PARALLEL_SPMD
 
+// function placed here for use within the module generation functions
+bool check_version(const int major, const int minor, const int update){
+    return (major > MAJOR_VERSION ||
+        (major == MAJOR_VERSION &&
+        (minor > MINOR_VERSION ||
+        (minor == MINOR_VERSION && update >= UPDATE_VERSION))));
+}
+
 #ifdef ONEDAL_DATA_PARALLEL_SPMD
 PYBIND11_MODULE(_onedal_py_spmd_dpc, m) {
     init_policy(m);
@@ -141,16 +149,13 @@ PYBIND11_MODULE(_onedal_py_host, m) {
 #endif // defined(ONEDAL_VERSION) && ONEDAL_VERSION >= 20240700
     init_dummy(m);
 
-    // verify thath the proper version of oneDAL at runtime is used versus what was used for compilation
+    // verify that the proper version of oneDAL at runtime is used versus what was used for compilation
     // must be done with daal as there is no oneDAL equivalent
     daal::services::LibraryVersionInfo li;
     std::string ver = std::to_string(MAJOR_VERSION) + "." + std::to_string(MINOR_VERSION) + "." +
                       std::to_string(UPDATE_VERSION);
 
-    if (li.majorVersion < MAJOR_VERSION ||
-        (li.majorVersion == MAJOR_VERSION &&
-         (li.minorVersion < MINOR_VERSION ||
-          (li.minorVersion == MINOR_VERSION && li.updateVersion < UPDATE_VERSION)))) {
+    if (!check_version(li.majorVersion, li.minorVersion, li.updateVersion)) {
         throw py::import_error(
             "Loaded oneDAL library version is below that used to compile the pybind11 interface (" +
             ver + ")");
@@ -160,6 +165,15 @@ PYBIND11_MODULE(_onedal_py_host, m) {
                             std::to_string(li.minorVersion) + "." +
                             std::to_string(li.updateVersion);
     m.attr("__compiled_version__") = ver;
+
+    m.def("onedal_check_version", [](const std::string& version){
+        auto d1 = version.find(".");
+        auto d2 = version.find(".", d1 + 1);
+        int major = std::stoi(version.substr(0,d1));
+        int minor = std::stoi(version.substr(d1 + 1, d2 - d1 - 1));
+        int update = std::stoi(version.substr(d2 + 1));
+        return check_version(major, minor, update);
+    }, "simple interface for checking oneDAL compatability");
 }
 #endif // ONEDAL_DATA_PARALLEL_SPMD
 
