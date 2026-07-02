@@ -31,7 +31,7 @@ if daal_check_version((2024, "P", 100)):
     from daal4py.sklearn._utils import sklearn_check_version
     from onedal._device_offload import _transfer_to_host
 
-    from .._device_offload import dispatch, wrap_output_data
+    from .._device_offload import dispatch, support_sycl_format, wrap_output_data
     from .._utils import PatchingConditionsChain, register_hyperparameters
     from ..base import oneDALEstimator
     from ..utils._array_api import enable_array_api, get_namespace
@@ -45,7 +45,6 @@ if daal_check_version((2024, "P", 100)):
 
     from sklearn.decomposition import PCA as _sklearn_PCA
 
-    from onedal._device_offload import support_sycl_format
     from onedal.decomposition import PCA as onedal_PCA
     from onedal.utils._array_api import _is_numpy_namespace
     from onedal.utils.validation import _num_features, _num_samples
