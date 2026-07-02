@@ -15,7 +15,7 @@
 # limitations under the License.
 # ==============================================================================
 
-import importlib
+import importlib.util
 import platform
 
 
