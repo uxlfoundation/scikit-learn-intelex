@@ -1,5 +1,5 @@
 # ==============================================================================
-# Copyright 2023 Intel Corporation
+# Copyright Contributors to the oneDAL Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,13 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 
-__all__ = [
-    "basic_statistics",
-    "cluster",
-    "covariance",
-    "decomposition",
-    "ensemble",
-    "linear_model",
-    "neighbors",
-    "preprocessing",
-]
+from ._data import MaxAbsScaler
+
+__all__ = ["MaxAbsScaler"]

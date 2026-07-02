@@ -1,5 +1,5 @@
 # ==============================================================================
-# Copyright 2023 Intel Corporation
+# Copyright Contributors to the oneDAL Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,13 +14,14 @@
 # limitations under the License.
 # ==============================================================================
 
-__all__ = [
-    "basic_statistics",
-    "cluster",
-    "covariance",
-    "decomposition",
-    "ensemble",
-    "linear_model",
-    "neighbors",
-    "preprocessing",
-]
+from onedal.spmd.basic_statistics import (
+    IncrementalBasicStatistics as onedalSPMD_IncrementalBasicStatistics,
+)
+
+from ...preview.preprocessing import MaxAbsScaler as base_MaxAbsScaler
+
+
+class MaxAbsScaler(base_MaxAbsScaler):
+    _onedal_incremental_basic_statistics = staticmethod(
+        onedalSPMD_IncrementalBasicStatistics
+    )
