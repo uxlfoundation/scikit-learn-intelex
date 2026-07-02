@@ -31,6 +31,7 @@ else:
     CSR_CTOR = sp.csr_matrix
 
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from onedal import _dpc_backend
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
@@ -187,12 +188,18 @@ def _convert(arr, xp, device):
 # (xp, device) array-API input combinations, mirroring
 # sklearnex/linear_model/tests/test_mixed_inputs.py. Device-specific entries are
 # filtered out at collection time when the hardware/library is unavailable.
-# dpnp arrays are SYCL arrays even on "cpu", so they require a SYCL-enabled build
-# (is_sycl_device_available) -- a CPU-only sklearnex build cannot convert them.
+# dpnp arrays are SYCL arrays even on "cpu", so they need a SYCL-enabled sklearnex
+# build (``_dpc_backend``) to be converted -- a CPU-only build raises "installation
+# does not have SYCL support". ``is_sycl_device_available`` is not enough: it uses a
+# dpctl queue that succeeds regardless of whether sklearnex was built with DPC.
 _array_api_inputs = (
     [(np, None), (array_api_strict, None)]
-    + ([(dpnp, "cpu")] if dpnp_available and is_sycl_device_available("cpu") else [])
-    + ([(dpnp, "gpu")] if dpnp_available and is_sycl_device_available("gpu") else [])
+    + ([(dpnp, "cpu")] if dpnp_available and _dpc_backend is not None else [])
+    + (
+        [(dpnp, "gpu")]
+        if dpnp_available and _dpc_backend is not None and is_sycl_device_available("gpu")
+        else []
+    )
     + ([(torch, "cpu")] if torch_available else [])
     + ([(torch, "xpu")] if torch_xpu_available else [])
 )

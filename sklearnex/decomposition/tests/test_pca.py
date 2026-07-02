@@ -26,6 +26,7 @@ from sklearn.base import clone
 from sklearn.datasets import load_iris
 
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from onedal import _dpc_backend
 from onedal.tests.utils._dataframes_support import (
     _as_numpy,
     _convert_to_dataframe,
@@ -218,14 +219,20 @@ def _convert(arr, xp, device):
 
 # (xp, device) array-API input combinations, CPU and GPU; device-specific entries
 # are dropped at collection time when the hardware/library is unavailable.
-# dpnp arrays are SYCL arrays even on "cpu", so they require a SYCL-enabled build
-# (is_sycl_device_available) -- a CPU-only sklearnex build cannot convert them.
+# dpnp arrays are SYCL arrays even on "cpu", so they need a SYCL-enabled sklearnex
+# build (``_dpc_backend``) to be converted -- a CPU-only build raises "installation
+# does not have SYCL support". ``is_sycl_device_available`` is not enough: it uses a
+# dpctl queue that succeeds regardless of whether sklearnex was built with DPC.
 # array_api_strict is covered by numpy here (both are host arrays exercising the
 # same host-transfer path); KMeans additionally covers array_api_strict directly.
 _array_api_inputs = (
     [(np, None)]
-    + ([(dpnp, "cpu")] if dpnp_available and is_sycl_device_available("cpu") else [])
-    + ([(dpnp, "gpu")] if dpnp_available and is_sycl_device_available("gpu") else [])
+    + ([(dpnp, "cpu")] if dpnp_available and _dpc_backend is not None else [])
+    + (
+        [(dpnp, "gpu")]
+        if dpnp_available and _dpc_backend is not None and is_sycl_device_available("gpu")
+        else []
+    )
     + ([(torch, "cpu")] if torch_available else [])
     + ([(torch, "xpu")] if torch_xpu_available else [])
 )
