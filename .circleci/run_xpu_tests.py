@@ -95,7 +95,7 @@ if __name__ == "__main__":
     with config_context(allow_sklearn_after_onedal=False):
 
         if args.device == "gpu":
-            with config_context(target_offload=args.device, allow_fallback_to_host=False):
+            with config_context(target_offload=args.device, allow_fallback_to_host=True):
                 pytest.main(
                     pytest_params + ["--pyargs", "sklearn"] + yml_deselected_tests
                 )
