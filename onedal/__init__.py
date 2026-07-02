@@ -15,7 +15,7 @@
 # limitations under the License.
 # ==============================================================================
 
-import importlib
+import importlib.util
 import platform
 
 from daal4py.sklearn._utils import daal_check_version
