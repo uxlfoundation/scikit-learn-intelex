@@ -218,11 +218,13 @@ def _convert(arr, xp, device):
 
 # (xp, device) array-API input combinations, CPU and GPU; device-specific entries
 # are dropped at collection time when the hardware/library is unavailable.
+# dpnp arrays are SYCL arrays even on "cpu", so they require a SYCL-enabled build
+# (is_sycl_device_available) -- a CPU-only sklearnex build cannot convert them.
 # array_api_strict is covered by numpy here (both are host arrays exercising the
 # same host-transfer path); KMeans additionally covers array_api_strict directly.
 _array_api_inputs = (
     [(np, None)]
-    + ([(dpnp, "cpu")] if dpnp_available else [])
+    + ([(dpnp, "cpu")] if dpnp_available and is_sycl_device_available("cpu") else [])
     + ([(dpnp, "gpu")] if dpnp_available and is_sycl_device_available("gpu") else [])
     + ([(torch, "cpu")] if torch_available else [])
     + ([(torch, "xpu")] if torch_xpu_available else [])
