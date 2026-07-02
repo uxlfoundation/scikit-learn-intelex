@@ -63,10 +63,16 @@ OneDAL
 
 The |sklearnex| is intended to be backwards-compatible with different versions of the |onedal|, but not forwards-compatible except within a major release series - meaning: it is meant to run with a version of the |onedal| that is lower or equal than the version of the |sklearnex|, such that ``onedal==2025.0`` + ``sklearnex==2025.0`` and ``onedal==2025.0`` + ``sklearnex==2025.2`` should both work correctly, even though the latter might not expose the same functionalities with ``onedal==2025.0`` as with ``onedal==2025.2``.
 
-This is achieved with conditional runtime checks of the library versions in order to determine whether some class or function or similar should be defined or not, through the provided function ``daal_check_version``, which accepts a tuple as argument containing the major version number, the ``"P"`` string (other possibilities for this parameter are not used anymore), and the minor version **multiplied by 100**. So for example, if a given piece of code requires ``onedal>=2025.2``, the function should be called as follows:
+This is achieved with conditional runtime checks of the library versions in order to determine whether some class or function or similar should be defined or not. This is provided through the provided function  ``onedal_check_version`` for ``onedal`` and ``daal_check_version`` for ``daal4py``. ``onedal_check_version`` accepts three integer inputs: major version, minor version, and update version. ``daal_check_version`` accepts a tuple as argument containing the major version number, the ``"P"`` string (other possibilities for this parameter are not used anymore), and the minor version **multiplied by 100**.  So for example, if a given piece of code requires ``onedal>=2025.2``, the function should be called as follows:
 
 .. code-block:: python
 
+    if onedal_check_version(2025, 2, 0):
+        # code branch for onedal>=2025.2
+    else:
+        # code branch for onedal<2025.2
+
+    # equivalent code for the daal4py module
     if daal_check_version((2025, "P", 200)):
         # code branch for onedal>=2025.2
     else:
