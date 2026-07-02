@@ -16,6 +16,7 @@
 
 from contextlib import nullcontext
 
+import array_api_strict
 import numpy as np
 import pandas as pd
 import polars as pl
@@ -223,10 +224,8 @@ def _convert(arr, xp, device):
 # build (``_dpc_backend``) to be converted -- a CPU-only build raises "installation
 # does not have SYCL support". ``is_sycl_device_available`` is not enough: it uses a
 # dpctl queue that succeeds regardless of whether sklearnex was built with DPC.
-# array_api_strict is covered by numpy here (both are host arrays exercising the
-# same host-transfer path); KMeans additionally covers array_api_strict directly.
 _array_api_inputs = (
-    [(np, None)]
+    [(np, None), (array_api_strict, None)]
     + ([(dpnp, "cpu")] if dpnp_available and _dpc_backend is not None else [])
     + (
         [(dpnp, "gpu")]
