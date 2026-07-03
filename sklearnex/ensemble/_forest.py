@@ -50,7 +50,6 @@ from daal4py.sklearn._utils import (
     is_sparse,
     sklearn_check_version,
 )
-from onedal._device_offload import support_input_format
 from onedal.ensemble import ExtraTreesClassifier as onedal_ExtraTreesClassifier
 from onedal.ensemble import ExtraTreesRegressor as onedal_ExtraTreesRegressor
 from onedal.ensemble import RandomForestClassifier as onedal_RandomForestClassifier
@@ -58,7 +57,7 @@ from onedal.ensemble import RandomForestRegressor as onedal_RandomForestRegresso
 from onedal.primitives import get_tree_state_cls, get_tree_state_reg
 from onedal.utils.validation import _num_features
 
-from .._device_offload import dispatch, wrap_output_data
+from .._device_offload import dispatch, support_input_format, wrap_output_data
 from .._utils import PatchingConditionsChain, register_hyperparameters
 from ..base import oneDALEstimator
 from ..utils._array_api import enable_array_api, get_namespace

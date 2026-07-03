@@ -26,10 +26,9 @@ from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import daal_check_version, is_sparse, sklearn_check_version
-from onedal._device_offload import support_input_format
 from onedal.dummy import DummyEstimator as onedal_DummyEstimator
 
-from .._device_offload import dispatch
+from .._device_offload import dispatch, support_input_format
 from .._utils import PatchingConditionsChain
 from ..base import oneDALEstimator
 from ..utils._array_api import enable_array_api, get_namespace
