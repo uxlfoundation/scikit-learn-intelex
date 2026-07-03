@@ -39,7 +39,7 @@ In |sklearn|, several options can be managed through :obj:`sklearn.config_contex
 - ``working_memory``.
 - ``pairwise_dist_chunk_size``.
 - ``enable_cython_pairwise_dist``.
-- ``skip_parameter_validation`` will apply only to hyperparameters.
+- ``skip_parameter_validation``.
 
 Verbosity
 ---------
