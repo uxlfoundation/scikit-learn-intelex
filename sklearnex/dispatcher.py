@@ -482,7 +482,7 @@ def patch_sklearn(
         os.environ["SKLEARNEX_PREVIEW"] = "enabled_via_patch_sklearn"
     if not sklearn_check_version("1.0"):
         raise NotImplementedError(
-            "Extension for Scikit-learn* patches apply "
+            "Extension for scikit-learn* patches apply "
             "for scikit-learn >= 1.0 only ..."
         )
 
@@ -515,7 +515,7 @@ def patch_sklearn(
 
     if verbose and sys.stderr is not None:
         sys.stderr.write(
-            "Extension for Scikit-learn* enabled "
+            "Extension for scikit-learn* enabled "
             "(https://github.com/uxlfoundation/scikit-learn-intelex)\n"
         )
 
