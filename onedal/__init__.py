@@ -82,6 +82,13 @@ if "Windows" in platform.system():
             if os.path.exists(dal_root_redist):
                 os.add_dll_directory(dal_root_redist)
 
+        # duplicates behavior in daal4py.__init__ to allow for independent
+        # loading of the onedal_core.dll without daal4py in onedal.__init__
+        if "TBBROOT" in os.environ:
+            tbb_root_dir = os.path.join(os.environ["TBBROOT"], "bin")
+            if os.path.exists(tbb_root_dir):
+                os.add_dll_directory(tbb_root_dir)
+
         if _backend_binary_present("_onedal_py_dpc"):
             for dep_root in ["CMPLR_ROOT", "MKLROOT"]:
                 if dep_root in os.environ:
