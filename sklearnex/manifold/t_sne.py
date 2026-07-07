@@ -14,11 +14,9 @@
 # limitations under the License.
 # ===============================================================================
 
-from daal4py.sklearn._utils import sklearn_check_version
 from daal4py.sklearn.manifold import TSNE
 
 from ..base import oneDALEstimator
 
-if sklearn_check_version("1.4"):
-    TSNE._doc_link_module = "daal4py"
-    TSNE._doc_link_url_param_generator = oneDALEstimator._doc_link_url_param_generator
+TSNE._doc_link_module = "daal4py"
+TSNE._doc_link_url_param_generator = oneDALEstimator._doc_link_url_param_generator

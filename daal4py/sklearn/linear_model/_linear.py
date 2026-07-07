@@ -14,18 +14,13 @@
 # limitations under the License.
 # ==============================================================================
 
+import logging
+
 import numpy as np
 from scipy import sparse as sp
 from sklearn.linear_model import LinearRegression as LinearRegression_original
 from sklearn.utils import check_array
-
-from .._utils import sklearn_check_version
-from ..utils.validation import _daal_check_array, check_feature_names, validate_data
-
-if not sklearn_check_version("1.2"):
-    from sklearn.linear_model._base import _deprecate_normalize
-
-import logging
+from sklearn.utils.validation import validate_data
 
 import daal4py
 
@@ -37,6 +32,7 @@ from .._utils import (
     is_DataFrame,
     make2d,
 )
+from ..utils.validation import _daal_check_array, check_feature_names
 
 
 def _daal4py_fit(self, X, y_):
@@ -198,53 +194,25 @@ def _predict_linear(self, X):
 class LinearRegression(LinearRegression_original):
     __doc__ = LinearRegression_original.__doc__
 
-    if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {
-            **LinearRegression_original._parameter_constraints
-        }
+    _parameter_constraints: dict = {**LinearRegression_original._parameter_constraints}
 
-        def __init__(
-            self,
-            fit_intercept=True,
-            copy_X=True,
-            n_jobs=None,
-            positive=False,
-        ):
-            super(LinearRegression, self).__init__(
-                fit_intercept=fit_intercept,
-                copy_X=copy_X,
-                n_jobs=n_jobs,
-                positive=positive,
-            )
-
-    else:
-
-        def __init__(
-            self,
-            fit_intercept=True,
-            normalize="deprecated",
-            copy_X=True,
-            n_jobs=None,
-            positive=False,
-        ):
-            super(LinearRegression, self).__init__(
-                fit_intercept=fit_intercept,
-                normalize=normalize,
-                copy_X=copy_X,
-                n_jobs=n_jobs,
-                positive=positive,
-            )
+    def __init__(
+        self,
+        fit_intercept=True,
+        copy_X=True,
+        n_jobs=None,
+        positive=False,
+    ):
+        super(LinearRegression, self).__init__(
+            fit_intercept=fit_intercept,
+            copy_X=copy_X,
+            n_jobs=n_jobs,
+            positive=positive,
+        )
 
     def fit(self, X, y, sample_weight=None):
-        if not sklearn_check_version("1.2"):
-            self._normalize = _deprecate_normalize(
-                self.normalize,
-                default=False,
-                estimator_name=self.__class__.__name__,
-            )
         check_feature_names(self, X, reset=True)
-        if sklearn_check_version("1.2"):
-            self._validate_params()
+        self._validate_params()
 
         _patching_status = PatchingConditionsChain(
             "sklearn.linear_model.LinearRegression.fit"

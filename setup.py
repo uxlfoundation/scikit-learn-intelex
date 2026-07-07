@@ -623,7 +623,7 @@ setup(
     ],
     python_requires=">=3.10",
     install_requires=[
-        "scikit-learn>=1.0",
+        "scikit-learn>=1.6",
         "numpy>=1.21.6 ; python_version <= '3.10'",
         "numpy>=1.23.5 ; python_version >= '3.11'",
         "packaging",

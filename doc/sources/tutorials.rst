@@ -54,6 +54,17 @@ Tutorials
 
       An overview of scikit-learn essentials.
 
+Guides
+------
+
+.. grid:: 1
+
+   .. grid-item-card:: Scikit-learn Optimization Guide
+      :link: https://github.com/intel/optimization-zone/blob/main/software/scikit-learn/README.md
+      :padding: 1
+
+      A guide describing best practices for ensuring optimal performance in machine learning workflows that use scikit-learn.
+
 Blueprints
 ----------
 

@@ -18,7 +18,7 @@ from abc import ABCMeta, abstractmethod
 
 import numpy as np
 
-from daal4py.sklearn._utils import daal_check_version
+from onedal import onedal_check_version
 from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
 
@@ -27,9 +27,17 @@ from ..datatypes import from_table, to_table
 from ..utils.validation import _check_n_features, _is_csr, _num_features
 
 
-class BaseLogisticRegression(metaclass=ABCMeta):
-    @abstractmethod
-    def __init__(self, tol, C, fit_intercept, solver, max_iter, algorithm):
+class LogisticRegression(metaclass=ABCMeta):
+
+    def __init__(
+        self,
+        tol=1e-4,
+        C=1.0,
+        fit_intercept=True,
+        solver="newton-cg",
+        max_iter=100,
+        algorithm="dense_batch",
+    ):
         self.tol = tol
         self.C = C
         self.fit_intercept = fit_intercept
@@ -80,7 +88,7 @@ class BaseLogisticRegression(metaclass=ABCMeta):
         self.n_iter_ = np.array([result.iterations_count])
 
         # _n_inner_iter is the total number of cg-solver iterations
-        if daal_check_version((2024, "P", 300)) and self.solver == "newton-cg":
+        if onedal_check_version(2024, 3, 0) and self.solver == "newton-cg":
             self._n_inner_iter = result.inner_iterations_count
 
         coeff = from_table(result.model.packed_coefficients, like=X)
@@ -145,26 +153,3 @@ class BaseLogisticRegression(metaclass=ABCMeta):
         result = self._infer(X, queue)
         y = from_table(result.probabilities, like=X)
         return y
-
-
-class LogisticRegression(BaseLogisticRegression):
-
-    def __init__(
-        self,
-        tol=1e-4,
-        C=1.0,
-        fit_intercept=True,
-        solver="newton-cg",
-        max_iter=100,
-        *,
-        algorithm="dense_batch",
-        **kwargs,
-    ):
-        super().__init__(
-            tol=tol,
-            C=C,
-            fit_intercept=fit_intercept,
-            solver=solver,
-            max_iter=max_iter,
-            algorithm=algorithm,
-        )
