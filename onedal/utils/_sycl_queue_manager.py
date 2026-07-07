@@ -18,8 +18,7 @@ from contextlib import contextmanager
 from threading import local
 from types import SimpleNamespace
 
-from onedal import _default_backend as backend
-
+from .. import _default_backend as backend
 from .._config import _get_config
 from ..datatypes import get_torch_queue
 from ._third_party import SyclQueue, is_torch_tensor

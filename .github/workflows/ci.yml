@@ -67,18 +67,18 @@ jobs:
       matrix:
         include:
           - PYTHON_VERSION: "3.10"
-            SKLEARN_VERSION: "1.0"
+            SKLEARN_VERSION: "1.6"
           - PYTHON_VERSION: "3.13"
-            SKLEARN_VERSION: "1.7"
-          - PYTHON_VERSION: "3.14"
             SKLEARN_VERSION: "1.8"
+          - PYTHON_VERSION: "3.14"
+            SKLEARN_VERSION: "1.9"
     name: LinuxNightly/venv Python${{ matrix.PYTHON_VERSION }}_Sklearn${{ matrix.SKLEARN_VERSION }}
     runs-on: ubuntu-24.04
     timeout-minutes: 120
 
     steps:
       - name: Checkout Scikit-learn-intelex
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Install Python
         uses: actions/setup-python@v6
         with:
@@ -139,7 +139,6 @@ jobs:
           source .github/scripts/activate_components.sh
           bash .ci/scripts/setup_sklearn.sh ${{ matrix.SKLEARN_VERSION }}
           pip install --upgrade -r requirements-test.txt
-          pip install $(python .ci/scripts/get_compatible_scipy_version.py ${{ matrix.SKLEARN_VERSION }})
           if [ "${{ steps.set-env.outputs.DPCFLAG }}" == "" ]; then pip install dpctl==${{ env.DPCTL_VERSION }} dpnp==${{ env.DPNP_VERSION }}; fi
           pip list
       - name: Sklearnex testing
@@ -182,18 +181,18 @@ jobs:
       matrix:
         include:
           - PYTHON_VERSION: "3.10"
-            SKLEARN_VERSION: "1.0"
+            SKLEARN_VERSION: "1.6"
           - PYTHON_VERSION: "3.13"
-            SKLEARN_VERSION: "1.7"
-          - PYTHON_VERSION: "3.14"
             SKLEARN_VERSION: "1.8"
+          - PYTHON_VERSION: "3.14"
+            SKLEARN_VERSION: "1.9"
     name: WindowsNightly/venv Python${{ matrix.PYTHON_VERSION }}_Sklearn${{ matrix.SKLEARN_VERSION }}
     runs-on: windows-2025
     timeout-minutes: 120
 
     steps:
       - name: Checkout Scikit-learn-intelex
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Install Python
         uses: actions/setup-python@v6
         with:
@@ -276,8 +275,6 @@ jobs:
           call .\.github\scripts\activate_components.bat ${{ steps.set-env.outputs.DPCFLAG }}
           bash .ci/scripts/setup_sklearn.sh ${{ matrix.SKLEARN_VERSION }}
           pip install --upgrade -r requirements-test.txt
-          for /f "delims=" %%c in ('python .ci\scripts\get_compatible_scipy_version.py ${{ matrix.SKLEARN_VERSION }}') do set SCIPY_VERSION=%%c
-          pip install %SCIPY_VERSION%
           if "${{ steps.set-env.outputs.DPCFLAG }}"=="" pip install dpctl==${{ env.DPCTL_VERSION }} dpnp==${{ env.DPNP_VERSION }}
           pip list
       - name: Sklearnex testing
@@ -327,7 +324,7 @@ jobs:
 
     steps:
       - name: Checkout Scikit-learn-intelex
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Install Python
         uses: actions/setup-python@v6
         with:
@@ -403,7 +400,7 @@ jobs:
     timeout-minutes: 120
     steps:
       - name: Checkout Scikit-learn-intelex
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Install Python
         uses: actions/setup-python@v6
         with:
@@ -454,7 +451,6 @@ jobs:
         run: |
           bash .ci/scripts/setup_sklearn.sh ${{ env.UXL_SKLEARNVERSION }}
           pip install --upgrade -r requirements-test.txt
-          pip install $(python .ci/scripts/get_compatible_scipy_version.py ${{ env.UXL_SKLEARNVERSION }})
           pip list
       - name: Download sklearnex wheel
         uses: actions/download-artifact@v8

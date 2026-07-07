@@ -28,12 +28,6 @@ if daal_check_version((2024, "P", 600)):
 
     from daal4py.sklearn._n_jobs_support import control_n_jobs
     from daal4py.sklearn._utils import is_sparse
-
-    if not sklearn_check_version("1.2"):
-        from sklearn.linear_model._base import _deprecate_normalize
-    if sklearn_check_version("1.1") and not sklearn_check_version("1.2"):
-        from sklearn.utils import check_scalar
-
     from onedal.linear_model import Ridge as onedal_Ridge
     from onedal.utils.validation import _num_features, _num_samples
 
@@ -51,67 +45,39 @@ if daal_check_version((2024, "P", 600)):
             move_to,
         )
 
-    @enable_array_api("1.5")  # validate_data y_numeric requires sklearn >=1.5
+    @enable_array_api
     @control_n_jobs(decorated_methods=["fit", "predict", "score"])
     class Ridge(oneDALEstimator, _sklearn_Ridge, _BaseLinearModel):
         __doc__ = _sklearn_Ridge.__doc__
 
-        if sklearn_check_version("1.2"):
-            _parameter_constraints: dict = {**_sklearn_Ridge._parameter_constraints}
+        _parameter_constraints: dict = {**_sklearn_Ridge._parameter_constraints}
 
-            def __init__(
-                self,
-                alpha=1.0,
-                fit_intercept=True,
-                copy_X=True,
-                max_iter=None,
-                tol=1e-4,
-                solver="auto",
-                positive=False,
-                random_state=None,
-            ):
-                super().__init__(
-                    alpha=alpha,
-                    fit_intercept=fit_intercept,
-                    copy_X=copy_X,
-                    max_iter=max_iter,
-                    tol=tol,
-                    solver=solver,
-                    positive=positive,
-                    random_state=random_state,
-                )
-
-        else:
-
-            def __init__(
-                self,
-                alpha=1.0,
-                fit_intercept=True,
-                normalize="deprecated",
-                copy_X=True,
-                max_iter=None,
-                tol=1e-3,
-                solver="auto",
-                positive=False,
-                random_state=None,
-            ):
-                super().__init__(
-                    alpha=alpha,
-                    fit_intercept=fit_intercept,
-                    normalize=normalize,
-                    copy_X=copy_X,
-                    max_iter=max_iter,
-                    solver=solver,
-                    tol=tol,
-                    positive=positive,
-                    random_state=random_state,
-                )
+        def __init__(
+            self,
+            alpha=1.0,
+            fit_intercept=True,
+            copy_X=True,
+            max_iter=None,
+            tol=1e-4,
+            solver="auto",
+            positive=False,
+            random_state=None,
+        ):
+            super().__init__(
+                alpha=alpha,
+                fit_intercept=fit_intercept,
+                copy_X=copy_X,
+                max_iter=max_iter,
+                tol=tol,
+                solver=solver,
+                positive=positive,
+                random_state=random_state,
+            )
 
         _onedal_Ridge = staticmethod(onedal_Ridge)
 
         def fit(self, X, y, sample_weight=None):
-            if sklearn_check_version("1.2"):
-                self._validate_params()
+            self._validate_params()
 
             # It is necessary to properly update coefs for predict if we
             # fallback to sklearn in dispatch
@@ -302,24 +268,7 @@ if daal_check_version((2024, "P", 600)):
             else:
                 xp, _ = get_namespace(X, y)
 
-            if sklearn_check_version("1.2"):
-                self._validate_params()
-            elif sklearn_check_version("1.1"):
-                if self.max_iter is not None:
-                    self.max_iter = check_scalar(
-                        self.max_iter, "max_iter", target_type=numbers.Integral, min_val=1
-                    )
-                self.tol = check_scalar(
-                    self.tol, "tol", target_type=numbers.Real, min_val=0.0
-                )
-                if self.alpha is not None and np.isscalar(self.alpha):
-                    self.alpha = check_scalar(
-                        self.alpha,
-                        "alpha",
-                        target_type=numbers.Real,
-                        min_val=0.0,
-                        include_boundaries="left",
-                    )
+            self._validate_params()
 
             X, y = validate_data(
                 self,
@@ -331,27 +280,15 @@ if daal_check_version((2024, "P", 600)):
                 multi_output=True,
             )
 
-            if not sklearn_check_version("1.2"):
-                self._normalize = _deprecate_normalize(
-                    self.normalize,
-                    default=False,
-                    estimator_name=self.__class__.__name__,
-                )
-
             self._initialize_onedal_estimator()
             self._onedal_estimator.fit(X, y, queue=queue)
             self.n_features_in_ = self._onedal_estimator.n_features_in_
             self._coef_ = self._onedal_estimator.coef_
             self._intercept_ = self._onedal_estimator.intercept_
 
-            if sklearn_check_version("1.6"):
-                if y.ndim == 1 or y.shape[1] == 1:
-                    self._coef_ = self._coef_[0, ...]  # set to 1d
-                    self._intercept_ = self._intercept_[0]  # set 1d to scalar
-            else:
-                if self.coef_.shape[0] == 1 and y.ndim == 1:
-                    self._coef_ = self._coef_[0, ...]  # set to 1d
-                    self._intercept_ = self._intercept_[0]  # set 1d to scalar
+            if y.ndim == 1 or y.shape[1] == 1:
+                self._coef_ = self._coef_[0, ...]  # set to 1d
+                self._intercept_ = self._intercept_[0]  # set 1d to scalar
 
         def _onedal_predict(self, X, queue=None):
             xp, _ = get_namespace(X)
@@ -415,7 +352,8 @@ if daal_check_version((2024, "P", 600)):
 
 else:
     from daal4py.sklearn.linear_model import Ridge
-    from onedal._device_offload import support_input_format
+
+    from .._device_offload import support_input_format
 
     Ridge.fit = support_input_format(Ridge.fit)
     Ridge.predict = support_input_format(Ridge.predict)

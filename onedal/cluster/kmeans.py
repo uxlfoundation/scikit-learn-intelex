@@ -19,13 +19,13 @@ from abc import ABC
 
 import numpy as np
 
-from daal4py.sklearn._utils import daal_check_version
-from onedal._device_offload import supports_queue
-from onedal.basic_statistics import BasicStatistics
-from onedal.common._backend import bind_default_backend
-from onedal.utils import _sycl_queue_manager as QM
+from .. import onedal_check_version
+from .._device_offload import supports_queue
+from ..basic_statistics import BasicStatistics
+from ..common._backend import bind_default_backend
+from ..utils import _sycl_queue_manager as QM
 
-if daal_check_version((2023, "P", 200)):
+if onedal_check_version(2023, 2, 0):
     from .kmeans_init import KMeansInit
 
 from sklearn.cluster._kmeans import _kmeans_plusplus
@@ -212,7 +212,7 @@ class KMeans(ABC):
         random_state = check_random_state(self.random_state)
 
         init = self.init
-        use_onedal_init = daal_check_version((2023, "P", 200)) and not callable(self.init)
+        use_onedal_init = onedal_check_version(2023, 2, 0) and not callable(self.init)
 
         # Resolve n_init from 'auto' to integer if not already resolved
         # by the sklearnex layer (_resolve_n_init).

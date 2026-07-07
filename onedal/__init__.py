@@ -15,10 +15,8 @@
 # limitations under the License.
 # ==============================================================================
 
-import importlib
+import importlib.util
 import platform
-
-from daal4py.sklearn._utils import daal_check_version
 
 
 class Backend:
@@ -84,6 +82,13 @@ if "Windows" in platform.system():
             if os.path.exists(dal_root_redist):
                 os.add_dll_directory(dal_root_redist)
 
+        # duplicates behavior in daal4py.__init__ to allow for independent
+        # loading of the onedal_core.dll without daal4py in onedal.__init__
+        if "TBBROOT" in os.environ:
+            tbb_root_dir = os.path.join(os.environ["TBBROOT"], "bin")
+            if os.path.exists(tbb_root_dir):
+                os.add_dll_directory(tbb_root_dir)
+
         if _backend_binary_present("_onedal_py_dpc"):
             for dep_root in ["CMPLR_ROOT", "MKLROOT"]:
                 if dep_root in os.environ:
@@ -111,9 +116,9 @@ _spmd_file_present = _backend_binary_present("_onedal_py_spmd_dpc")
 
 try:
     # use dpc backend if available
-    import onedal._onedal_py_dpc
+    from . import _onedal_py_dpc
 
-    _dpc_backend = Backend(onedal._onedal_py_dpc, is_dpc=True, is_spmd=False)
+    _dpc_backend = Backend(_onedal_py_dpc, is_dpc=True, is_spmd=False)
 
     _host_backend = None
 except ImportError as _dpc_import_err:
@@ -123,15 +128,15 @@ except ImportError as _dpc_import_err:
     if _dpc_file_present:
         _dpc_load_error = str(_dpc_import_err)
 
-    import onedal._onedal_py_host
+    from . import _onedal_py_host
 
-    _host_backend = Backend(onedal._onedal_py_host, is_dpc=False, is_spmd=False)
+    _host_backend = Backend(_onedal_py_host, is_dpc=False, is_spmd=False)
 
 try:
     # also load spmd backend if available
-    import onedal._onedal_py_spmd_dpc
+    from . import _onedal_py_spmd_dpc
 
-    _spmd_backend = Backend(onedal._onedal_py_spmd_dpc, is_dpc=True, is_spmd=True)
+    _spmd_backend = Backend(_onedal_py_spmd_dpc, is_dpc=True, is_spmd=True)
 except ImportError as _spmd_import_err:
     _spmd_backend = None
     if _spmd_file_present:
@@ -189,7 +194,31 @@ def _ensure_dpc_available(require_spmd: bool = False) -> None:
     )
 
 
-# Core modules to export
+def onedal_check_version(
+    major: int, minor: int, update: int, _v=_default_backend.__version_tuple__
+) -> bool:
+    """Check if runtime onedal library version is greater than or equal to a required version.
+
+    Parameters
+    ----------
+    major : int
+        Major version to compare against oneDAL's LibraryVersionInfo.majorVersion.
+    minor : int
+        Minor version to compare against oneDAL's LibraryVersionInfo.minorVersion.
+    update : int
+        Update version to compare against oneDAL's LibraryVersionInfo.updateVersion.
+    _v : tuple(int, int, int), default=_default_backend.__version_tuple__
+        Version tuple defined by oneDAL (major, minor, update) to compare against.
+
+    Returns
+    -------
+        bool
+            Runtime oneDAL version is greater than or equal to the given required oneDAL version.
+    """
+    return _v >= (major, minor, update)
+
+
+# Core modules and functions to export
 __all__ = [
     "_ensure_dpc_available",
     "_host_backend",
@@ -201,27 +230,28 @@ __all__ = [
     "dummy",
     "ensemble",
     "neighbors",
+    "onedal_check_version",
     "primitives",
     "svm",
 ]
 
 # Additional features based on version checks
-if daal_check_version((2023, "P", 100)):
+if onedal_check_version(2023, 1, 0):
     __all__ += ["basic_statistics", "linear_model"]
-if daal_check_version((2023, "P", 200)):
+if onedal_check_version(2023, 2, 0):
     __all__ += ["cluster"]
 
 # Exports if SPMD backend is available
 if _spmd_backend is not None:
     __all__ += ["spmd"]
-    if daal_check_version((2023, "P", 100)):
+    if onedal_check_version(2023, 1, 0):
         __all__ += [
             "spmd.basic_statistics",
             "spmd.decomposition",
             "spmd.linear_model",
             "spmd.neighbors",
         ]
-    if daal_check_version((2023, "P", 200)):
+    if onedal_check_version(2023, 2, 0):
         __all__ += ["spmd.cluster"]
 
 __version__ = "2199.9.9"

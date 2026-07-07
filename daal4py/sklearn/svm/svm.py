@@ -30,12 +30,12 @@ from sklearn.utils.validation import (
     _num_samples,
     check_consistent_length,
     check_is_fitted,
+    validate_data,
 )
 
 import daal4py
 
 from .._utils import PatchingConditionsChain, getFPType, make2d
-from ..utils.validation import validate_data
 
 
 def _get_libsvm_impl():

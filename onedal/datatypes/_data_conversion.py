@@ -17,8 +17,7 @@
 import numpy as np
 import scipy.sparse as sp
 
-from onedal import _default_backend as backend
-
+from .. import _default_backend as backend
 from ..utils._third_party import is_dpnp_ndarray, lazy_import
 
 
