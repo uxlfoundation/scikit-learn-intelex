@@ -146,23 +146,23 @@ if daal_check_version((2024, "P", 700)):  # Test for > 2024.7.0
     )
 SPARSE_INSTANCES = sklearn_clone_dict({str(i): i for i in _sparse_instances})
 
-STABILITY_INSTANCES = sklearn_clone_dict(
-    {
-        str(i): i
-        for i in [
-            KNeighborsClassifier(algorithm="brute", weights="distance"),
-            KNeighborsClassifier(algorithm="kd_tree", weights="distance"),
-            KNeighborsClassifier(algorithm="kd_tree"),
-            KNeighborsRegressor(algorithm="brute", weights="distance"),
-            KNeighborsRegressor(algorithm="kd_tree", weights="distance"),
-            KNeighborsRegressor(algorithm="kd_tree"),
-            NearestNeighbors(algorithm="kd_tree"),
-            DBSCAN(algorithm="brute"),
-            PCA(n_components=0.5, svd_solver="covariance_eigh"),
-            KMeans(init="random"),
-        ]
-    }
-)
+_stability_instances = [
+    KNeighborsClassifier(algorithm="brute", weights="distance"),
+    KNeighborsClassifier(algorithm="kd_tree", weights="distance"),
+    KNeighborsClassifier(algorithm="kd_tree"),
+    KNeighborsRegressor(algorithm="brute", weights="distance"),
+    KNeighborsRegressor(algorithm="kd_tree", weights="distance"),
+    KNeighborsRegressor(algorithm="kd_tree"),
+    NearestNeighbors(algorithm="kd_tree"),
+    DBSCAN(algorithm="brute"),
+    PCA(n_components=0.5, svd_solver="covariance_eigh"),
+    KMeans(init="random"),
+]
+if sklearn_check_version("1.3") and daal_check_version((2026, "P", 100)):
+    from sklearnex.cluster import HDBSCAN
+
+    _stability_instances.append(HDBSCAN())
+STABILITY_INSTANCES = sklearn_clone_dict({str(i): i for i in _stability_instances})
 
 
 def _skip_neighbors(estimator, method):
