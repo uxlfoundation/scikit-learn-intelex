@@ -16,29 +16,15 @@
 
 import inspect
 import warnings
-from collections.abc import Sequence
 from numbers import Integral
 
 import numpy as np
 from scipy import sparse as sp
 
-from onedal.common._backend import BackendFunction
-from onedal.utils import _sycl_queue_manager as QM
-
-if np.lib.NumpyVersion(np.__version__) >= np.lib.NumpyVersion("2.0.0a0"):
-    # numpy_version >= 2.0
-    from numpy.exceptions import VisibleDeprecationWarning
-else:
-    # numpy_version < 2.0
-    from numpy import VisibleDeprecationWarning
-
-from sklearn.preprocessing import LabelEncoder
-
-from daal4py.sklearn.utils.validation import (
-    _assert_all_finite as _daal4py_assert_all_finite,
-)
-from onedal import _default_backend as backend
-from onedal.datatypes import to_table
+from .. import _default_backend as backend
+from ..common._backend import BackendFunction
+from ..datatypes import to_table
+from ..utils import _sycl_queue_manager as QM
 
 
 class DataConversionWarning(UserWarning):
@@ -53,119 +39,6 @@ def _is_arraylike(x):
 def _is_arraylike_not_scalar(array):
     """Return True if array is array-like and not a scalar"""
     return _is_arraylike(array) and not np.isscalar(array)
-
-
-def _check_classification_targets(y):
-    y_type = _type_of_target(y)
-    if y_type not in [
-        "binary",
-        "multiclass",
-        "multiclass-multioutput",
-        "multilabel-indicator",
-        "multilabel-sequences",
-    ]:
-        raise ValueError("Unknown label type: %r" % y_type)
-
-
-def _type_of_target(y):
-    is_sequence, is_array = isinstance(y, Sequence), hasattr(y, "__array__")
-    is_not_string, is_sparse = not isinstance(y, str), sp.issparse(y)
-    valid = (is_sequence or is_array or is_sparse) and is_not_string
-
-    if not valid:
-        raise ValueError(
-            "Expected array-like (array or non-string sequence), " "got %r" % y
-        )
-
-    sparse_pandas = y.__class__.__name__ in ["SparseSeries", "SparseArray"]
-    if sparse_pandas:
-        raise ValueError("y cannot be class 'SparseSeries' or 'SparseArray'")
-
-    if _is_multilabel(y):
-        return "multilabel-indicator"
-
-    # DeprecationWarning will be replaced by ValueError, see NEP 34
-    # https://numpy.org/neps/nep-0034-infer-dtype-is-object.html
-    with warnings.catch_warnings():
-        warnings.simplefilter("error", VisibleDeprecationWarning)
-        try:
-            y = np.asarray(y)
-        except VisibleDeprecationWarning:
-            # dtype=object should be provided explicitly for ragged arrays,
-            # see NEP 34
-            y = np.asarray(y, dtype=object)
-
-    # The old sequence of sequences format
-    try:
-        if (
-            not hasattr(y[0], "__array__")
-            and isinstance(y[0], Sequence)
-            and not isinstance(y[0], str)
-        ):
-            raise ValueError(
-                "You appear to be using a legacy multi-label data"
-                " representation. Sequence of sequences are no"
-                " longer supported; use a binary array or sparse"
-                " matrix instead - the MultiLabelBinarizer"
-                " transformer can convert to this format."
-            )
-    except IndexError:
-        pass
-
-    # Invalid inputs
-    if y.ndim > 2 or (y.dtype == object and len(y) and not isinstance(y.flat[0], str)):
-        return "unknown"  # [[[1, 2]]] or [obj_1] and not ["label_1"]
-
-    if y.ndim == 2 and y.shape[1] == 0:
-        return "unknown"  # [[]]
-
-    if y.ndim == 2 and y.shape[1] > 1:
-        suffix = "-multioutput"  # [[1, 2], [1, 2]]
-    else:
-        suffix = ""  # [1, 2, 3] or [[1], [2], [3]]
-
-    # check float and contains non-integer float values
-    if y.dtype.kind == "f" and np.any(y != y.astype(int)):
-        # [.1, .2, 3] or [[.1, .2, 3]] or [[1., .2]] and not [1., 2., 3.]
-        _daal4py_assert_all_finite(y)
-        return "continuous" + suffix
-
-    if (len(np.unique(y)) > 2) or (y.ndim >= 2 and len(y[0]) > 1):
-        return "multiclass" + suffix  # [1, 2, 3] or [[1., 2., 3]] or [[1, 2]]
-    return "binary"  # [1, 2] or [["a"], ["b"]]
-
-
-def _is_integral_float(y):
-    return y.dtype.kind == "f" and np.all(y.astype(int) == y)
-
-
-def _is_multilabel(y):
-    if hasattr(y, "__array__") or isinstance(y, Sequence):
-        # DeprecationWarning will be replaced by ValueError, see NEP 34
-        # https://numpy.org/neps/nep-0034-infer-dtype-is-object.html
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", VisibleDeprecationWarning)
-            try:
-                y = np.asarray(y)
-            except VisibleDeprecationWarning:
-                # dtype=object should be provided explicitly for ragged arrays,
-                # see NEP 34
-                y = np.array(y, dtype=object)
-
-    if not (hasattr(y, "shape") and y.ndim == 2 and y.shape[1] > 1):
-        return False
-
-    if sp.issparse(y):
-        if isinstance(y, (sp.dok_matrix, sp.lil_matrix)):
-            y = y.tocsr()
-        return (
-            len(y.data) == 0
-            or np.unique(y.data).size == 1
-            and (y.dtype.kind in "biu" or _is_integral_float(np.unique(y.data)))
-        )
-    labels = np.unique(y)
-
-    return len(labels) < 3 and (y.dtype.kind in "biu" or _is_integral_float(labels))
 
 
 def _check_n_features(self, X, reset):

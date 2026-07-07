@@ -15,7 +15,6 @@
 # ===============================================================================
 
 import pickle
-from contextlib import nullcontext
 
 import array_api_strict
 import numpy as np
@@ -380,8 +379,6 @@ def test_multiple_calls_to_fit():
     + ([(dpnp, True), (dpnp, False)] if dpnp_available else []),
 )
 def test_error_on_sparse_predict_with_dense_fit(estimator, X_xp, array_api):
-    if array_api and not sklearn_check_version("1.5"):
-        pytest.skip("Functionality introduced in later sklearn versions.")
     from sklearnex import svm
 
     rng = np.random.default_rng(seed=123)
@@ -395,12 +392,7 @@ def test_error_on_sparse_predict_with_dense_fit(estimator, X_xp, array_api):
     X = X_xp.from_dlpack(X)
     y = X_xp.from_dlpack(y)
 
-    ctx = (
-        config_context(array_api_dispatch=array_api)
-        if sklearn_check_version("1.5")
-        else nullcontext()
-    )
-    with ctx:
+    with config_context(array_api_dispatch=array_api):
         model = getattr(svm, estimator)().fit(X, y)
         with pytest.raises(ValueError):
             model.predict(X_sp)
@@ -412,8 +404,6 @@ def test_error_on_sparse_predict_with_dense_fit(estimator, X_xp, array_api):
 @pytest.mark.parametrize("estimator", ["SVC", "SVR", "NuSVC", "NuSVR"])
 @pytest.mark.parametrize("array_api", [False, True])
 def test_dense_predict_on_sparse_fit_works(estimator, array_api):
-    if array_api and not sklearn_check_version("1.5"):
-        pytest.skip("Functionality introduced in later sklearn versions.")
     from sklearnex import svm
 
     rng = np.random.default_rng(seed=123)
@@ -424,12 +414,7 @@ def test_dense_predict_on_sparse_fit_works(estimator, array_api):
     X = X_sp.toarray()
     y = rng.integers(2, size=X.shape[0])
 
-    ctx = (
-        config_context(array_api_dispatch=array_api)
-        if sklearn_check_version("1.5")
-        else nullcontext()
-    )
-    with ctx:
+    with config_context(array_api_dispatch=array_api):
         model = getattr(svm, estimator)().fit(X_sp, y)
         pred_dense = model.predict(X)
         pred_sp = model.predict(X_sp)
@@ -443,6 +428,10 @@ def test_dense_predict_on_sparse_fit_works(estimator, array_api):
 @pytest.mark.skipif(
     not sklearn_check_version("1.9"),
     reason="Functionality introduced in later scikit-learn versions.",
+)
+@pytest.mark.skipif(
+    not _package_check_version("2.1", np.__version__),
+    reason="Array API functionality requires more recent version of NumPy.",
 )
 @pytest.mark.parametrize("X_xp", [np, pd, array_api_strict])
 @pytest.mark.parametrize("y_xp", [np, pd, array_api_strict])

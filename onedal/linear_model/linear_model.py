@@ -18,8 +18,7 @@ from abc import ABCMeta, abstractmethod
 
 import numpy as np
 
-from daal4py.sklearn._utils import daal_check_version
-
+from .. import onedal_check_version
 from .._device_offload import supports_queue
 from ..common._backend import bind_default_backend
 from ..common._estimator_checks import _check_is_fitted
@@ -56,7 +55,7 @@ class BaseLinearRegression(metaclass=ABCMeta):
             "intercept": self.fit_intercept,
             "result_option": (intercept + "coefficients"),
         }
-        if daal_check_version((2024, "P", 600)):
+        if onedal_check_version(2024, 6, 0):
             params["alpha"] = self.alpha
 
         return params

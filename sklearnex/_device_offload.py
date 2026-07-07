@@ -14,19 +14,22 @@
 # limitations under the License.
 # ==============================================================================
 
+import inspect
 from collections.abc import Callable
 from functools import wraps
 from typing import Any, Union
 
+from sklearn.utils import get_tags
+
 from daal4py.sklearn._utils import sklearn_check_version
-from onedal._device_offload import _transfer_to_host
+from onedal._device_offload import _get_host_inputs, _transfer_to_host
 from onedal.datatypes import copy_to_dpnp
 from onedal.utils import _sycl_queue_manager as QM
-from onedal.utils._array_api import _asarray, _is_numpy_namespace
+from onedal.utils._array_api import _asarray, _get_sycl_namespace, _is_numpy_namespace
 from onedal.utils._third_party import is_dpnp_ndarray
 
 from ._config import get_config
-from ._utils import PatchingConditionsChain, get_tags
+from ._utils import PatchingConditionsChain
 from .base import oneDALEstimator
 from .utils._array_api import get_namespace
 
@@ -120,7 +123,6 @@ def dispatch(
     # backend can only be a boolean or None, None signifies an unverified backend
     backend: "bool | None" = None
 
-    # TODO validate if this comment is valid (e.g. X on GPU, y on CPU)
     # The _sycl_queue_manager verifies all arguments are on a single SYCL device or
     # cpu and will otherwise throw an error. If located on a non-SYCL, non-CPU
     # device, a special queue is set which will cause a failure in ``_get_backend``
@@ -147,13 +149,12 @@ def dispatch(
                 patching_status.write_log(transferred_to_host=False)
                 return branches["sklearn"](obj, *args, **kwargs)
 
-        # move data to host because of multiple reasons: array_api fallback to host,
-        # non array_api supporting oneDAL code, issues with usm support in sklearn.
-        has_usm_data_for_args, hostargs = _transfer_to_host(*args)
-        has_usm_data_for_kwargs, hostvalues = _transfer_to_host(*kwargs.values())
+        # move data to host because of multiple reasons: array_api fallback to host
+        # and non array_api supporting oneDAL code
+        _, hostargs = _transfer_to_host(*args)
+        _, hostvalues = _transfer_to_host(*kwargs.values())
 
         hostkwargs = dict(zip(kwargs.keys(), hostvalues))
-        has_usm_data = has_usm_data_for_args or has_usm_data_for_kwargs
 
         while backend is None:
             backend, patching_status = _get_backend(obj, method_name, *hostargs)
@@ -163,8 +164,7 @@ def dispatch(
             patching_status.write_log(queue=queue, transferred_to_host=False)
             return branches["onedal"](obj, *hostargs, **hostkwargs, queue=queue)
         else:
-            if sklearn_array_api and not has_usm_data:
-                # dpnp fallback is not handled properly yet.
+            if sklearn_array_api:
                 patching_status.write_log(transferred_to_host=False)
                 return branches["sklearn"](obj, *args, **kwargs)
             else:
@@ -239,5 +239,91 @@ def wrap_output_data(func: Callable) -> Callable:
                         elif not isinstance(result, (int, float)):
                             result = xp.asarray(result, device=device)
         return result
+
+    return wrapper
+
+
+def support_input_format(func):
+    """Transform input and output function arrays to/from host.
+
+    Converts and moves the output arrays of the decorated function
+    to match the input array type and device.
+    Puts SYCLQueue from data to decorated function arguments.
+
+    Parameters
+    ----------
+    func : callable
+       Function or method which has array data as input.
+
+    Returns
+    -------
+    wrapper_impl : callable
+        Wrapped function or method which will return matching format.
+    """
+
+    def invoke_func(self_or_None, *args, **kwargs):
+        if self_or_None is None:
+            return func(*args, **kwargs)
+        else:
+            return func(self_or_None, *args, **kwargs)
+
+    @wraps(func)
+    def wrapper_impl(*args, **kwargs):
+        # remove self from args if it is a class method
+        if inspect.isfunction(func) and "." in func.__qualname__:
+            self = args[0]
+            args = args[1:]
+        else:
+            self = None
+
+        if "queue" not in kwargs and "queue" in inspect.signature(func).parameters:
+            if usm_iface := getattr(args[0], "__sycl_usm_array_interface__", None):
+                kwargs["queue"] = usm_iface["syclobj"]
+
+        if kwargs.get("queue") is not None:
+            # Device path — function accepts queue, pass device data directly
+            result = invoke_func(self, *args, **kwargs)
+        else:
+            # Host path — sklearn function or host data, transfer to host
+            if len(args) == 0 and len(kwargs) == 0:
+                return invoke_func(self, *args, **kwargs)
+
+            with QM.manage_global_queue(None, *args) as queue:
+                hostargs, hostkwargs = _get_host_inputs(*args, **kwargs)
+                result = invoke_func(self, *hostargs, **hostkwargs)
+                if queue and hasattr(args[0], "__sycl_usm_array_interface__"):
+                    return copy_to_dpnp(queue, result)
+
+        data = (*args, *kwargs.values())[0]
+        if get_config().get("transform_output") in ("default", None):
+            input_array_api = getattr(data, "__array_namespace__", lambda: None)()
+            if input_array_api and not _is_numpy_namespace(input_array_api):
+                input_array_api_device = data.device
+                result = _asarray(result, input_array_api, device=input_array_api_device)
+        return result
+
+    return wrapper_impl
+
+
+def support_sycl_format(func):
+    # This wrapper enables scikit-learn functions and methods to work with
+    # all sycl data frameworks as they no longer support numpy implicit
+    # conversion and must be manually converted. This is only necessary
+    # when array API is supported but not active.
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if (
+            not get_config().get("array_api_dispatch", False)
+            and _get_sycl_namespace(*args)[2]
+        ):
+            with QM.manage_global_queue(kwargs.get("queue"), *args):
+                if inspect.isfunction(func) and "." in func.__qualname__:
+                    self, (args, kwargs) = args[0], _get_host_inputs(*args[1:], **kwargs)
+                    return func(self, *args, **kwargs)
+                else:
+                    args, kwargs = _get_host_inputs(*args, **kwargs)
+                    return func(*args, **kwargs)
+        return func(*args, **kwargs)
 
     return wrapper

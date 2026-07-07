@@ -1,7 +1,7 @@
 # Build Configuration Files
 
 ## Purpose
-Build system configuration for Extension for Scikit-learn using setup.py, conda, and environment variables.
+Build system configuration for Extension for scikit-learn using setup.py, conda, and environment variables.
 
 ## Core Build Files
 - `setup.py` - Main build script

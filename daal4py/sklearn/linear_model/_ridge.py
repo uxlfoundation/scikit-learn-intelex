@@ -15,13 +15,13 @@
 # ==============================================================================
 
 import logging
-import numbers
 
 import numpy as np
 from scipy import sparse as sp
 from sklearn.linear_model._ridge import Ridge as Ridge_original
 from sklearn.linear_model._ridge import _BaseRidge
 from sklearn.utils import check_array, check_X_y
+from sklearn.utils.validation import validate_data
 
 import daal4py
 
@@ -31,14 +31,7 @@ from .._utils import (
     get_patch_message,
     getFPType,
     make2d,
-    sklearn_check_version,
 )
-from ..utils.validation import validate_data
-
-if not sklearn_check_version("1.2"):
-    from sklearn.linear_model._base import _deprecate_normalize
-if sklearn_check_version("1.1") and not sklearn_check_version("1.2"):
-    from sklearn.utils import check_scalar
 
 
 def _daal4py_fit(self, X, y_):
@@ -104,26 +97,7 @@ def _daal4py_predict(self, X):
 
 
 def _fit_ridge(self, _X, _y, sample_weight=None):
-    if not sklearn_check_version("1.2"):
-        self._normalize = _deprecate_normalize(
-            self.normalize, default=False, estimator_name=self.__class__.__name__
-        )
-    if sklearn_check_version("1.2"):
-        self._validate_params()
-    elif sklearn_check_version("1.1"):
-        if self.max_iter is not None:
-            self.max_iter = check_scalar(
-                self.max_iter, "max_iter", target_type=numbers.Integral, min_val=1
-            )
-        self.tol = check_scalar(self.tol, "tol", target_type=numbers.Real, min_val=0.0)
-        if self.alpha is not None and not isinstance(self.alpha, (np.ndarray, tuple)):
-            self.alpha = check_scalar(
-                self.alpha,
-                "alpha",
-                target_type=numbers.Real,
-                min_val=0.0,
-                include_boundaries="left",
-            )
+    self._validate_params()
 
     X, y = validate_data(
         self,
@@ -233,52 +207,27 @@ def _predict_ridge(self, _X):
 class Ridge(Ridge_original, _BaseRidge):
     __doc__ = Ridge_original.__doc__
 
-    if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {**Ridge_original._parameter_constraints}
+    _parameter_constraints: dict = {**Ridge_original._parameter_constraints}
 
-        def __init__(
-            self,
-            alpha=1.0,
-            fit_intercept=True,
-            copy_X=True,
-            max_iter=None,
-            tol=1e-4,
-            solver="auto",
-            positive=False,
-            random_state=None,
-        ):
-            self.alpha = alpha
-            self.fit_intercept = fit_intercept
-            self.copy_X = copy_X
-            self.max_iter = max_iter
-            self.tol = tol
-            self.solver = solver
-            self.positive = positive
-            self.random_state = random_state
-
-    else:
-
-        def __init__(
-            self,
-            alpha=1.0,
-            fit_intercept=True,
-            normalize="deprecated",
-            copy_X=True,
-            max_iter=None,
-            tol=1e-3,
-            solver="auto",
-            positive=False,
-            random_state=None,
-        ):
-            self.alpha = alpha
-            self.fit_intercept = fit_intercept
-            self.normalize = normalize
-            self.copy_X = copy_X
-            self.max_iter = max_iter
-            self.tol = tol
-            self.solver = solver
-            self.positive = positive
-            self.random_state = random_state
+    def __init__(
+        self,
+        alpha=1.0,
+        fit_intercept=True,
+        copy_X=True,
+        max_iter=None,
+        tol=1e-4,
+        solver="auto",
+        positive=False,
+        random_state=None,
+    ):
+        self.alpha = alpha
+        self.fit_intercept = fit_intercept
+        self.copy_X = copy_X
+        self.max_iter = max_iter
+        self.tol = tol
+        self.solver = solver
+        self.positive = positive
+        self.random_state = random_state
 
     def fit(self, X, y, sample_weight=None):
         return _fit_ridge(self, X, y, sample_weight=sample_weight)
