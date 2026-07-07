@@ -62,12 +62,7 @@ from .._utils import PatchingConditionsChain, register_hyperparameters
 from ..base import oneDALEstimator
 from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.class_weight import _compute_class_weight
-from ..utils.validation import (
-    _check_sample_weight,
-    _finite_keyword,
-    assert_all_finite,
-    validate_data,
-)
+from ..utils.validation import _check_sample_weight, assert_all_finite, validate_data
 
 if sklearn_check_version("1.9"):
     from sklearn.utils._array_api import get_namespace_and_device, move_to
@@ -78,7 +73,7 @@ __check_kwargs = {
     "ensure_min_samples": 0,
     "ensure_min_features": 0,
     "accept_sparse": True,
-    _finite_keyword: False,
+    "ensure_all_finite": False,
 }
 
 _check_array = partial(check_array, **__check_kwargs)

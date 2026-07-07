@@ -20,8 +20,6 @@ import re
 import sys
 import warnings
 
-from sklearn.utils import get_tags
-
 from daal4py.sklearn._utils import (
     PatchingConditionsChain as daal4py_PatchingConditionsChain,
 )

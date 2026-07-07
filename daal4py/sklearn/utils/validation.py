@@ -392,16 +392,13 @@ def _daal_check_array(
 
     if sp.issparse(array):
         _ensure_no_complex_data(array)
-        kwargs = {
-            "accept_sparse": accept_sparse,
-            "dtype": dtype,
-            "copy": copy,
-            "accept_large_sparse": accept_large_sparse,
-        }
-        kwargs["ensure_all_finite"] = force_all_finite
         array = _ensure_sparse_format(
             array,
-            **kwargs,
+            accept_sparse=accept_sparse,
+            dtype=dtype,
+            copy=copy,
+            accept_large_sparse=accept_large_sparse,
+            ensure_all_finite=force_all_finite,
         )
     else:
         # If np.array(..) gives ComplexWarning, then we convert the warning

@@ -41,9 +41,6 @@ from sklearn.utils.validation import validate_data as _sklearn_validate_data
 from .._config import get_config as _get_config
 from ._array_api import get_namespace
 
-_finite_keyword = "ensure_all_finite"
-
-
 if daal_check_version((2024, "P", 700)):
     from onedal.utils.validation import check_all_finite
 
@@ -171,10 +168,8 @@ def validate_data(
     **kwargs,
 ):
     # force finite check to not occur in sklearn, default is True
-    # `ensure_all_finite` is the most up-to-date keyword name in sklearn
-    # _finite_keyword provides backward compatibility for `force_all_finite`
     ensure_all_finite = kwargs.pop("ensure_all_finite", True)
-    kwargs[_finite_keyword] = False
+    kwargs["ensure_all_finite"] = False
 
     out = _sklearn_validate_data(
         _estimator,
@@ -309,17 +304,16 @@ def _check_sample_weight_internal(
         if sklearn_check_version("1.9"):
             sample_weight = move_to(sample_weight, xp=xp, device=device)
 
-        params = {
-            "accept_sparse": False,
-            "ensure_2d": False,
-            "dtype": dtype,
-            "order": "C",
-            "copy": copy,
-            _finite_keyword: False,
-            "input_name": "sample_weight",
-        }
-
-        sample_weight = check_array(sample_weight, **params)
+        sample_weight = check_array(
+            sample_weight,
+            accept_sparse=False,
+            ensure_2d=False,
+            dtype=dtype,
+            order="C",
+            copy=copy,
+            ensure_all_finite=False,
+            input_name="sample_weight",
+        )
         assert_all_finite(sample_weight, input_name="sample_weight")
 
         if sample_weight.ndim != 1:

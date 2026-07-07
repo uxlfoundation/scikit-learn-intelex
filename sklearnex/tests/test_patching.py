@@ -31,6 +31,7 @@ from scipy import sparse as sp
 from sklearn import get_config as sklearn_get_config
 from sklearn.base import BaseEstimator, is_clusterer, is_regressor
 from sklearn.svm._base import BaseLibSVM
+from sklearn.utils import get_tags
 
 from daal4py.sklearn._utils import (
     _package_check_version,
@@ -43,7 +44,6 @@ from onedal.tests.utils._dataframes_support import (
     get_dataframes_and_queues,
 )
 from sklearnex import config_context, is_patched_instance
-from sklearnex._utils import get_tags
 from sklearnex.dispatcher import _is_preview_enabled
 from sklearnex.metrics import pairwise_distances, roc_auc_score
 from sklearnex.tests.utils import (
