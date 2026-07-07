@@ -18,7 +18,7 @@ import math
 import numbers
 from abc import ABC, abstractmethod
 
-from daal4py.sklearn._utils import daal_check_version
+from onedal import onedal_check_version
 from onedal._device_offload import supports_queue
 from onedal.common._backend import bind_default_backend
 from onedal.utils import _sycl_queue_manager as QM
@@ -138,7 +138,7 @@ class BaseForest(ABC):
             "voting_mode": self.voting_mode,  # used in classification only
         }
 
-        if daal_check_version((2023, "P", 101)):
+        if onedal_check_version(2023, 1, 1):
             onedal_params["splitter_mode"] = self.splitter_mode
         return onedal_params
 
