@@ -17,7 +17,7 @@
 from sklearn.cluster import DBSCAN as _sklearn_DBSCAN
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
-from daal4py.sklearn._utils import is_sparse, sklearn_check_version
+from daal4py.sklearn._utils import is_sparse
 from onedal.cluster import DBSCAN as onedal_DBSCAN
 from onedal.utils._array_api import _is_numpy_namespace
 
@@ -27,19 +27,13 @@ from ..base import oneDALEstimator
 from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.validation import _check_sample_weight, validate_data
 
-if sklearn_check_version("1.1") and not sklearn_check_version("1.2"):
-    import numbers
-
-    from sklearn.utils import check_scalar
-
 
 @enable_array_api
 @control_n_jobs(decorated_methods=["fit"])
 class DBSCAN(oneDALEstimator, _sklearn_DBSCAN):
     __doc__ = _sklearn_DBSCAN.__doc__
 
-    if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {**_sklearn_DBSCAN._parameter_constraints}
+    _parameter_constraints: dict = {**_sklearn_DBSCAN._parameter_constraints}
 
     def __init__(
         self,
@@ -140,43 +134,7 @@ class DBSCAN(oneDALEstimator, _sklearn_DBSCAN):
         return self._onedal_supported(method_name, *data)
 
     def fit(self, X, y=None, sample_weight=None):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
-        elif sklearn_check_version("1.1"):
-            check_scalar(
-                self.eps,
-                "eps",
-                target_type=numbers.Real,
-                min_val=0.0,
-                include_boundaries="neither",
-            )
-            check_scalar(
-                self.min_samples,
-                "min_samples",
-                target_type=numbers.Integral,
-                min_val=1,
-                include_boundaries="left",
-            )
-            check_scalar(
-                self.leaf_size,
-                "leaf_size",
-                target_type=numbers.Integral,
-                min_val=1,
-                include_boundaries="left",
-            )
-            if self.p is not None:
-                check_scalar(
-                    self.p,
-                    "p",
-                    target_type=numbers.Real,
-                    min_val=0.0,
-                    include_boundaries="left",
-                )
-            if self.n_jobs is not None:
-                check_scalar(self.n_jobs, "n_jobs", target_type=numbers.Integral)
-        else:
-            if self.eps <= 0.0:
-                raise ValueError(f"eps == {self.eps}, must be > 0.0.")
+        self._validate_params()
         dispatch(
             self,
             "fit",

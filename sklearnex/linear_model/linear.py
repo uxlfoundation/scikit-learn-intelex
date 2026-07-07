@@ -33,9 +33,6 @@ from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.validation import validate_data
 from ._base_linear_model import _BaseLinearModel
 
-if not sklearn_check_version("1.2"):
-    from sklearn.linear_model._base import _deprecate_normalize
-
 if sklearn_check_version("1.9"):
     from sklearn.utils._array_api import (
         check_same_namespace,
@@ -44,64 +41,43 @@ if sklearn_check_version("1.9"):
     )
 
 
-@enable_array_api("1.5")  # validate_data y_numeric requires sklearn >=1.5
+@enable_array_api
 @register_hyperparameters({"fit": ("linear_regression", "train")})
 @control_n_jobs(decorated_methods=["fit", "predict", "score"])
 class LinearRegression(oneDALEstimator, _sklearn_LinearRegression, _BaseLinearModel):
     __doc__ = _sklearn_LinearRegression.__doc__
 
-    if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {
-            **_sklearn_LinearRegression._parameter_constraints
-        }
+    _parameter_constraints: dict = {**_sklearn_LinearRegression._parameter_constraints}
 
-        if sklearn_check_version("1.7"):
+    if sklearn_check_version("1.7"):
 
-            def __init__(
-                self,
-                fit_intercept=True,
-                copy_X=True,
-                tol=1e-06,  # for sparse solver only, not used by oneDAL
-                n_jobs=None,
-                positive=False,
-            ):
-                super().__init__(
-                    fit_intercept=fit_intercept,
-                    copy_X=copy_X,
-                    tol=tol,
-                    n_jobs=n_jobs,
-                    positive=positive,
-                )
-
-        else:
-
-            def __init__(
-                self,
-                fit_intercept=True,
-                copy_X=True,
-                n_jobs=None,
-                positive=False,
-            ):
-                super().__init__(
-                    fit_intercept=fit_intercept,
-                    copy_X=copy_X,
-                    n_jobs=n_jobs,
-                    positive=positive,
-                )
+        def __init__(
+            self,
+            fit_intercept=True,
+            copy_X=True,
+            tol=1e-06,  # for sparse solver only, not used by oneDAL
+            n_jobs=None,
+            positive=False,
+        ):
+            super().__init__(
+                fit_intercept=fit_intercept,
+                copy_X=copy_X,
+                tol=tol,
+                n_jobs=n_jobs,
+                positive=positive,
+            )
 
     else:
 
         def __init__(
             self,
             fit_intercept=True,
-            normalize="deprecated",
             copy_X=True,
             n_jobs=None,
             positive=False,
         ):
             super().__init__(
                 fit_intercept=fit_intercept,
-                normalize=normalize,
                 copy_X=copy_X,
                 n_jobs=n_jobs,
                 positive=positive,
@@ -110,8 +86,7 @@ class LinearRegression(oneDALEstimator, _sklearn_LinearRegression, _BaseLinearMo
     _onedal_LinearRegression = staticmethod(onedal_LinearRegression)
 
     def fit(self, X, y, sample_weight=None):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
+        self._validate_params()
 
         # It is necessary to properly update coefs for predict if we
         # fallback to sklearn in dispatch
@@ -280,13 +255,6 @@ class LinearRegression(oneDALEstimator, _sklearn_LinearRegression, _BaseLinearMo
             y_numeric=True,
             multi_output=supports_multi_output,
         )
-
-        if not sklearn_check_version("1.2"):
-            self._normalize = _deprecate_normalize(
-                self.normalize,
-                default=False,
-                estimator_name=self.__class__.__name__,
-            )
 
         self._initialize_onedal_estimator()
 

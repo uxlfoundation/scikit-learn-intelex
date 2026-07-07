@@ -16,16 +16,18 @@
 
 import warnings
 from functools import wraps
-from numbers import Real
 
 import numpy as np
 from scipy import sparse as sp
 from sklearn.base import RegressorMixin, is_classifier
-from sklearn.calibration import CalibratedClassifierCV
+from sklearn.calibration import CalibratedClassifierCV, _fit_calibrator
 from sklearn.exceptions import NotFittedError
+from sklearn.frozen import FrozenEstimator
 from sklearn.metrics import accuracy_score, r2_score
 from sklearn.svm._base import BaseLibSVM as _sklearn_BaseLibSVM
 from sklearn.svm._base import BaseSVC as _sklearn_BaseSVC
+from sklearn.utils import indexable
+from sklearn.utils._response import _get_response_values
 from sklearn.utils.metaestimators import available_if
 from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import check_is_fitted, column_or_1d
@@ -48,82 +50,76 @@ from ..utils._array_api import get_namespace
 from ..utils.class_weight import _compute_class_weight
 from ..utils.validation import _check_sample_weight, validate_data
 
-if sklearn_check_version("1.6"):
-    from sklearn.calibration import _fit_calibrator
-    from sklearn.frozen import FrozenEstimator
-    from sklearn.utils import indexable
-    from sklearn.utils._response import _get_response_values
-    from sklearn.utils.validation import check_is_fitted
 
-    def _prefit_CalibratedClassifierCV_fit(self, X, y, **fit_params):
-        # This is a stop-gap solution where the cv='prefit' of CalibratedClassifierCV
-        # was removed and the single fold solution needs to be maintained. Discussion
-        # of the mathematical and performance implications of this choice can be found
-        # here: https://github.com/uxlfoundation/scikit-learn-intelex/pull/1879
-        # This is distilled from the sklearn CalibratedClassifierCV for sklearn <1.8 for
-        # use in sklearn > 1.8 to maintain performance.
+def _prefit_CalibratedClassifierCV_fit(self, X, y, **fit_params):
+    # This is a stop-gap solution where the cv='prefit' of CalibratedClassifierCV
+    # was removed and the single fold solution needs to be maintained. Discussion
+    # of the mathematical and performance implications of this choice can be found
+    # here: https://github.com/uxlfoundation/scikit-learn-intelex/pull/1879
+    # This is distilled from the sklearn CalibratedClassifierCV for sklearn <1.8 for
+    # use in sklearn > 1.8 to maintain performance.
 
-        # Comment 2026-02-16: scikit-learn doesn't have support for array API with the
-        # arguments used for 'CalibratedClassifierCV' inside of '_fit_calibrator', despite
-        # the apparent usage of 'xp' here. As a result, this works when using 'target_offload'
-        # even though some things end up running on CPU (not sure how much of the
-        # workload is CPU vs. GPU in that case), but doesn't work when using array API
-        # classes, and cannot be made to work by simply moving data to host here,
-        # because the metaestimator from scikit-learn will then make calls to
-        # 'SVC.predict' which sklearnex is overriding and which won't work with
-        # NumPy arrays if fitted to array API.
-        # Some discussions throughout scikit-learn GitHub issues indicate that there
-        # is some desire to remove the option for 'probability=True' from SVC, so perhaps
-        # this problem could be ignored as it will disappear in the future.
-        # TODO: find some way to make this work with array API classes. Maybe it
-        # could work by temporarily removing the '_onedal' estimator from the sklearnex
-        # class, casting both the input data and the support vectors to NumPy, and then
-        # reverting all of this.
+    # Comment 2026-02-16: scikit-learn doesn't have support for array API with the
+    # arguments used for 'CalibratedClassifierCV' inside of '_fit_calibrator', despite
+    # the apparent usage of 'xp' here. As a result, this works when using 'target_offload'
+    # even though some things end up running on CPU (not sure how much of the
+    # workload is CPU vs. GPU in that case), but doesn't work when using array API
+    # classes, and cannot be made to work by simply moving data to host here,
+    # because the metaestimator from scikit-learn will then make calls to
+    # 'SVC.predict' which sklearnex is overriding and which won't work with
+    # NumPy arrays if fitted to array API.
+    # Some discussions throughout scikit-learn GitHub issues indicate that there
+    # is some desire to remove the option for 'probability=True' from SVC, so perhaps
+    # this problem could be ignored as it will disappear in the future.
+    # TODO: find some way to make this work with array API classes. Maybe it
+    # could work by temporarily removing the '_onedal' estimator from the sklearnex
+    # class, casting both the input data and the support vectors to NumPy, and then
+    # reverting all of this.
+    xp, _ = get_namespace(X, y)
+    check_classification_targets(y)
+    X, y = indexable(X, y)
+
+    estimator = self._get_estimator()
+
+    self.calibrated_classifiers_ = []
+    check_is_fitted(self.estimator, attributes=["classes_"])
+    self.classes_ = self.estimator.classes_
+
+    predictions, _ = _get_response_values(
+        estimator,
+        X,
+        response_method=["decision_function", "predict_proba"],
+    )
+    if predictions.ndim == 1:
+        # Reshape binary output from `(n_samples,)` to `(n_samples, 1)`
+        predictions = xp.reshape(predictions, (-1, 1))
+
+    if sklearn_check_version("1.8"):
         xp, _ = get_namespace(X, y)
-        check_classification_targets(y)
-        X, y = indexable(X, y)
-
-        estimator = self._get_estimator()
-
-        self.calibrated_classifiers_ = []
-        check_is_fitted(self.estimator, attributes=["classes_"])
-        self.classes_ = self.estimator.classes_
-
-        predictions, _ = _get_response_values(
+        calibrated_classifier = _fit_calibrator(
             estimator,
-            X,
-            response_method=["decision_function", "predict_proba"],
+            predictions,
+            y,
+            self.classes_,
+            self.method,
+            xp,
         )
-        if predictions.ndim == 1:
-            # Reshape binary output from `(n_samples,)` to `(n_samples, 1)`
-            predictions = xp.reshape(predictions, (-1, 1))
+    else:
+        calibrated_classifier = _fit_calibrator(
+            estimator,
+            predictions,
+            y,
+            self.classes_,
+            self.method,
+        )
+    self.calibrated_classifiers_.append(calibrated_classifier)
 
-        if sklearn_check_version("1.8"):
-            xp, _ = get_namespace(X, y)
-            calibrated_classifier = _fit_calibrator(
-                estimator,
-                predictions,
-                y,
-                self.classes_,
-                self.method,
-                xp,
-            )
-        else:
-            calibrated_classifier = _fit_calibrator(
-                estimator,
-                predictions,
-                y,
-                self.classes_,
-                self.method,
-            )
-        self.calibrated_classifiers_.append(calibrated_classifier)
-
-        first_clf = self.calibrated_classifiers_[0].estimator
-        if hasattr(first_clf, "n_features_in_"):
-            self.n_features_in_ = first_clf.n_features_in_
-        if hasattr(first_clf, "feature_names_in_"):
-            self.feature_names_in_ = first_clf.feature_names_in_
-        return self
+    first_clf = self.calibrated_classifiers_[0].estimator
+    if hasattr(first_clf, "n_features_in_"):
+        self.n_features_in_ = first_clf.n_features_in_
+    if hasattr(first_clf, "feature_names_in_"):
+        self.feature_names_in_ = first_clf.feature_names_in_
+    return self
 
 
 class BaseSVM(oneDALEstimator):
@@ -461,24 +457,7 @@ class BaseSVM(oneDALEstimator):
                     "'auto'. Got '{}' instead.".format(self.gamma)
                 )
         else:
-            if sklearn_check_version("1.1") and not sklearn_check_version("1.2"):
-                if isinstance(self.gamma, Real):
-                    if self.gamma <= 0:
-                        msg = (
-                            f"gamma value must be > 0; {self.gamma!r} is invalid. Use"
-                            " a positive number or use 'auto' to set gamma to a"
-                            " value of 1 / n_features."
-                        )
-                        raise ValueError(msg)
-                    _gamma = self.gamma
-                else:
-                    msg = (
-                        "The gamma value should be set to 'scale', 'auto' or a"
-                        f" positive float value. {self.gamma!r} is not a valid option"
-                    )
-                    raise ValueError(msg)
-            else:
-                _gamma = self.gamma
+            _gamma = self.gamma
         return _gamma
 
     # This mimics the error message and type that would be thrown by sklearn
@@ -630,13 +609,6 @@ class BaseSVC(BaseSVM):
         }
 
     def _onedal_fit(self, X, y, sample_weight=None, queue=None):
-        if not sklearn_check_version("1.2"):
-            if self.decision_function_shape not in ("ovr", "ovo", None):
-                raise ValueError(
-                    f"decision_function_shape must be either 'ovr' or 'ovo', "
-                    f"got {self.decision_function_shape}."
-                )
-
         if sklearn_check_version("1.9"):
             xp, is_array_api = get_namespace(X)
         else:
@@ -742,26 +714,17 @@ class BaseSVC(BaseSVM):
             clf_base.fit(X, y)
 
             # Forced use of FrozenEstimator starting in sklearn 1.6
-            if sklearn_check_version("1.6"):
-                clf_base = FrozenEstimator(clf_base)
+            clf_base = FrozenEstimator(clf_base)
 
-                self.clf_prob = CalibratedClassifierCV(
-                    clf_base,
-                    ensemble=False,
-                    method="sigmoid",
-                )
-                # see custom stopgap solution defined above
-                _prefit_CalibratedClassifierCV_fit(
-                    self.clf_prob, X, y, sample_weight=sample_weight
-                )
-            else:
-
-                self.clf_prob = CalibratedClassifierCV(
-                    clf_base,
-                    ensemble=False,
-                    cv="prefit",
-                    method="sigmoid",
-                ).fit(X, y, sample_weight=sample_weight)
+            self.clf_prob = CalibratedClassifierCV(
+                clf_base,
+                ensemble=False,
+                method="sigmoid",
+            )
+            # see custom stopgap solution defined above
+            _prefit_CalibratedClassifierCV_fit(
+                self.clf_prob, X, y, sample_weight=sample_weight
+            )
 
     def _save_attributes(self, X, y, xp=np):
         self._support_vectors_internal = self._onedal_estimator.support_vectors_
@@ -809,11 +772,10 @@ class BaseSVC(BaseSVM):
                 xp.asarray(indices == i, dtype=xp.int64), dtype=xp.int64
             )
 
-        if sklearn_check_version("1.1"):
-            if hasattr(self._onedal_estimator.n_iter_, "shape"):
-                self.n_iter_ = xp.reshape(self._onedal_estimator.n_iter_, (-1,))
-            else:
-                self.n_iter_ = xp.full((length,), self._onedal_estimator.n_iter_)
+        if hasattr(self._onedal_estimator.n_iter_, "shape"):
+            self.n_iter_ = xp.reshape(self._onedal_estimator.n_iter_, (-1,))
+        else:
+            self.n_iter_ = xp.full((length,), self._onedal_estimator.n_iter_)
 
     def _onedal_predict(self, X, queue=None, method_name="predict"):
 
@@ -1089,11 +1051,10 @@ class BaseSVR(BaseSVM):
             self._probA = None
             self._probB = None
 
-        if sklearn_check_version("1.1"):
-            if hasattr(self._onedal_estimator.n_iter_, "shape"):
-                self.n_iter_ = int(xp.reshape(self._onedal_estimator.n_iter_, (-1,))[0])
-            else:
-                self.n_iter_ = self._onedal_estimator.n_iter_
+        if hasattr(self._onedal_estimator.n_iter_, "shape"):
+            self.n_iter_ = int(xp.reshape(self._onedal_estimator.n_iter_, (-1,))[0])
+        else:
+            self.n_iter_ = self._onedal_estimator.n_iter_
 
     def _onedal_score(self, X, y, sample_weight=None, queue=None):
         return r2_score(
