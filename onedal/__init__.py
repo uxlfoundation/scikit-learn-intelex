@@ -15,7 +15,7 @@
 # limitations under the License.
 # ==============================================================================
 
-import importlib
+import importlib.util
 import platform
 
 
@@ -81,6 +81,13 @@ if "Windows" in platform.system():
             dal_root_redist = os.path.join(os.environ["DALROOT"], "redist", arch_dir)
             if os.path.exists(dal_root_redist):
                 os.add_dll_directory(dal_root_redist)
+
+        # duplicates behavior in daal4py.__init__ to allow for independent
+        # loading of the onedal_core.dll without daal4py in onedal.__init__
+        if "TBBROOT" in os.environ:
+            tbb_root_dir = os.path.join(os.environ["TBBROOT"], "bin")
+            if os.path.exists(tbb_root_dir):
+                os.add_dll_directory(tbb_root_dir)
 
         if _backend_binary_present("_onedal_py_dpc"):
             for dep_root in ["CMPLR_ROOT", "MKLROOT"]:
@@ -195,16 +202,18 @@ def onedal_check_version(
     Parameters
     ----------
     major : int
-        major version to compare against oneDAL's LibraryVersionInfo.majorVersion
+        Major version to compare against oneDAL's LibraryVersionInfo.majorVersion.
     minor : int
-        minor version to compare against oneDAL's LibraryVersionInfo.minorVersion
+        Minor version to compare against oneDAL's LibraryVersionInfo.minorVersion.
     update : int
-        update version to compare against oneDAL's LibraryVersionInfo.updateVersion
+        Update version to compare against oneDAL's LibraryVersionInfo.updateVersion.
+    _v : tuple(int, int, int), default=_default_backend.__version_tuple__
+        Version tuple defined by oneDAL (major, minor, update) to compare against.
 
     Returns
     -------
         bool
-            runtime oneDAL version is greater than or equal to the given required oneDAL version
+            Runtime oneDAL version is greater than or equal to the given required oneDAL version.
     """
     return _v >= (major, minor, update)
 

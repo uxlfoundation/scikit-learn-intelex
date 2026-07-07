@@ -27,14 +27,18 @@ from sklearn.utils.validation import _num_features, check_is_fitted
 from daal4py.sklearn._n_jobs_support import control_n_jobs
 from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
 from daal4py.sklearn.metrics import pairwise_distances
-from onedal._device_offload import support_input_format, support_sycl_format
 from onedal.covariance import (
     IncrementalEmpiricalCovariance as onedal_IncrementalEmpiricalCovariance,
 )
 from onedal.utils._array_api import _is_numpy_namespace
 
 from .._config import config_context
-from .._device_offload import dispatch, wrap_output_data
+from .._device_offload import (
+    dispatch,
+    support_input_format,
+    support_sycl_format,
+    wrap_output_data,
+)
 from .._utils import PatchingConditionsChain, _add_inc_serialization_note
 from ..base import oneDALEstimator
 from ..utils._array_api import _pinvh, enable_array_api, get_namespace, log_likelihood
