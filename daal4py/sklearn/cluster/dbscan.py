@@ -14,8 +14,6 @@
 # limitations under the License.
 # ==============================================================================
 
-import numbers
-
 import numpy as np
 from scipy import sparse as sp
 from sklearn.cluster import DBSCAN as DBSCAN_original
@@ -25,11 +23,8 @@ from sklearn.utils.validation import _check_sample_weight
 import daal4py
 
 from .._n_jobs_support import control_n_jobs
-from .._utils import PatchingConditionsChain, getFPType, make2d, sklearn_check_version
+from .._utils import PatchingConditionsChain, getFPType, make2d
 from ..utils.validation import check_feature_names
-
-if sklearn_check_version("1.1") and not sklearn_check_version("1.2"):
-    from sklearn.utils import check_scalar
 
 
 def _daal_dbscan(X, eps=0.5, min_samples=5, sample_weight=None):
@@ -60,8 +55,7 @@ def _daal_dbscan(X, eps=0.5, min_samples=5, sample_weight=None):
 class DBSCAN(DBSCAN_original):
     __doc__ = DBSCAN_original.__doc__
 
-    if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {**DBSCAN_original._parameter_constraints}
+    _parameter_constraints: dict = {**DBSCAN_original._parameter_constraints}
 
     def __init__(
         self,
@@ -84,43 +78,7 @@ class DBSCAN(DBSCAN_original):
         self.n_jobs = n_jobs
 
     def fit(self, X, y=None, sample_weight=None):
-        if sklearn_check_version("1.2"):
-            self._validate_params()
-        elif sklearn_check_version("1.1"):
-            check_scalar(
-                self.eps,
-                "eps",
-                target_type=numbers.Real,
-                min_val=0.0,
-                include_boundaries="neither",
-            )
-            check_scalar(
-                self.min_samples,
-                "min_samples",
-                target_type=numbers.Integral,
-                min_val=1,
-                include_boundaries="left",
-            )
-            check_scalar(
-                self.leaf_size,
-                "leaf_size",
-                target_type=numbers.Integral,
-                min_val=1,
-                include_boundaries="left",
-            )
-            if self.p is not None:
-                check_scalar(
-                    self.p,
-                    "p",
-                    target_type=numbers.Real,
-                    min_val=0.0,
-                    include_boundaries="left",
-                )
-            if self.n_jobs is not None:
-                check_scalar(self.n_jobs, "n_jobs", target_type=numbers.Integral)
-        else:
-            if self.eps <= 0.0:
-                raise ValueError(f"eps == {self.eps}, must be > 0.0.")
+        self._validate_params()
 
         check_feature_names(self, X, reset=True)
 

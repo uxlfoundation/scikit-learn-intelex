@@ -19,6 +19,8 @@ from collections.abc import Callable
 from functools import wraps
 from typing import Any, Union
 
+from sklearn.utils import get_tags
+
 from daal4py.sklearn._utils import sklearn_check_version
 from onedal._device_offload import _get_host_inputs, _transfer_to_host
 from onedal.datatypes import copy_to_dpnp
@@ -27,7 +29,7 @@ from onedal.utils._array_api import _asarray, _get_sycl_namespace, _is_numpy_nam
 from onedal.utils._third_party import is_dpnp_ndarray
 
 from ._config import get_config
-from ._utils import PatchingConditionsChain, get_tags
+from ._utils import PatchingConditionsChain
 from .base import oneDALEstimator
 from .utils._array_api import get_namespace
 

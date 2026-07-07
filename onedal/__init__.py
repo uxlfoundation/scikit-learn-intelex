@@ -116,9 +116,9 @@ _spmd_file_present = _backend_binary_present("_onedal_py_spmd_dpc")
 
 try:
     # use dpc backend if available
-    import onedal._onedal_py_dpc
+    from . import _onedal_py_dpc
 
-    _dpc_backend = Backend(onedal._onedal_py_dpc, is_dpc=True, is_spmd=False)
+    _dpc_backend = Backend(_onedal_py_dpc, is_dpc=True, is_spmd=False)
 
     _host_backend = None
 except ImportError as _dpc_import_err:
@@ -128,15 +128,15 @@ except ImportError as _dpc_import_err:
     if _dpc_file_present:
         _dpc_load_error = str(_dpc_import_err)
 
-    import onedal._onedal_py_host
+    from . import _onedal_py_host
 
-    _host_backend = Backend(onedal._onedal_py_host, is_dpc=False, is_spmd=False)
+    _host_backend = Backend(_onedal_py_host, is_dpc=False, is_spmd=False)
 
 try:
     # also load spmd backend if available
-    import onedal._onedal_py_spmd_dpc
+    from . import _onedal_py_spmd_dpc
 
-    _spmd_backend = Backend(onedal._onedal_py_spmd_dpc, is_dpc=True, is_spmd=True)
+    _spmd_backend = Backend(_onedal_py_spmd_dpc, is_dpc=True, is_spmd=True)
 except ImportError as _spmd_import_err:
     _spmd_backend = None
     if _spmd_file_present:

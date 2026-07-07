@@ -36,7 +36,7 @@ try:
 
     dpctl_available = True
 except ImportError:
-    from onedal import _default_backend as backend
+    from .. import _default_backend as backend
 
     SyclQueue = backend.SyclQueue
     dpctl_available = False

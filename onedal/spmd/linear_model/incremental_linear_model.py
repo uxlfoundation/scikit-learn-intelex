@@ -15,8 +15,7 @@
 # ==============================================================================
 
 
-from onedal.common._backend import bind_spmd_backend
-
+from ...common._backend import bind_spmd_backend
 from ...linear_model import (
     IncrementalLinearRegression as base_IncrementalLinearRegression,
 )

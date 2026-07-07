@@ -21,6 +21,7 @@ from sklearn.base import BaseEstimator, MultiOutputMixin, RegressorMixin
 from sklearn.linear_model import LinearRegression as _sklearn_LinearRegression
 from sklearn.metrics import r2_score
 from sklearn.utils import gen_batches
+from sklearn.utils._param_validation import Interval
 from sklearn.utils.validation import check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
@@ -39,9 +40,6 @@ from ..base import oneDALEstimator
 from ..utils._array_api import enable_array_api, get_namespace
 from ..utils.validation import validate_data
 
-if sklearn_check_version("1.2"):
-    from sklearn.utils._param_validation import Interval
-
 if sklearn_check_version("1.9"):
     from sklearn.utils._array_api import (
         check_same_namespace,
@@ -50,7 +48,7 @@ if sklearn_check_version("1.9"):
     )
 
 
-@enable_array_api("1.5")  # validate_data y_numeric requires sklearn >=1.5
+@enable_array_api
 @register_hyperparameters(
     {
         "fit": ("linear_regression", "train"),
@@ -144,13 +142,12 @@ class IncrementalLinearRegression(
 
     _onedal_incremental_linear = staticmethod(onedal_IncrementalLinearRegression)
 
-    if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {
-            "fit_intercept": ["boolean"],
-            "copy_X": ["boolean"],
-            "n_jobs": [numbers.Integral, None],
-            "batch_size": [Interval(numbers.Integral, 1, None, closed="left"), None],
-        }
+    _parameter_constraints: dict = {
+        "fit_intercept": ["boolean"],
+        "copy_X": ["boolean"],
+        "n_jobs": [numbers.Integral, None],
+        "batch_size": [Interval(numbers.Integral, 1, None, closed="left"), None],
+    }
 
     def __init__(self, *, fit_intercept=True, copy_X=True, n_jobs=None, batch_size=None):
         self.fit_intercept = fit_intercept
@@ -170,8 +167,7 @@ class IncrementalLinearRegression(
     def _onedal_predict(self, X, queue=None):
         xp, _ = get_namespace(X)
 
-        if sklearn_check_version("1.2"):
-            self._validate_params()
+        self._validate_params()
 
         X = validate_data(
             self,
@@ -325,7 +321,7 @@ class IncrementalLinearRegression(
         self : IncrementalLinearRegression
             Returns the instance itself.
         """
-        if sklearn_check_version("1.2") and check_input:
+        if check_input:
             self._validate_params()
 
         dispatch(
@@ -363,8 +359,7 @@ class IncrementalLinearRegression(
         self : IncrementalLinearRegression
             Returns the instance itself.
         """
-        if sklearn_check_version("1.2"):
-            self._validate_params()
+        self._validate_params()
 
         dispatch(
             self,

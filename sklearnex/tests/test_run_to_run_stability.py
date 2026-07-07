@@ -22,6 +22,7 @@ from numbers import Number
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
+from sklearn.base import get_tags
 from sklearn.datasets import (
     load_breast_cancer,
     load_diabetes,
@@ -31,7 +32,7 @@ from sklearn.datasets import (
 )
 
 import daal4py as d4p
-from daal4py.sklearn._utils import daal_check_version, sklearn_check_version
+from daal4py.sklearn._utils import daal_check_version
 from onedal.tests.utils._dataframes_support import _as_numpy, get_dataframes_and_queues
 from sklearnex.basic_statistics import BasicStatistics
 from sklearnex.cluster import DBSCAN, KMeans
@@ -54,9 +55,6 @@ from sklearnex.tests.utils import (
     gen_models_info,
     sklearn_clone_dict,
 )
-
-if sklearn_check_version("1.6"):
-    from sklearn.base import get_tags
 
 # to reproduce errors even in CI
 d4p.daalinit(nthreads=100)
@@ -208,7 +206,7 @@ def test_standard_estimator_stability(estimator, method, dataframe, queue):
     if (
         estimator in ["LogisticRegressionCV", "LogisticRegressionCV()"]
         and dataframe == "array_api"
-        and (not sklearn_check_version("1.6") or not get_tags(est).array_api_support)
+        and not get_tags(est).array_api_support
     ):
         pytest.skip("Array API inputs not supported in estimator")
 

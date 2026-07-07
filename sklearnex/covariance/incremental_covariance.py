@@ -22,6 +22,7 @@ import numpy as np
 from sklearn.base import BaseEstimator, clone
 from sklearn.covariance import EmpiricalCovariance as _sklearn_EmpiricalCovariance
 from sklearn.utils import gen_batches
+from sklearn.utils._param_validation import Interval
 from sklearn.utils.validation import _num_features, check_is_fitted
 
 from daal4py.sklearn._n_jobs_support import control_n_jobs
@@ -43,9 +44,6 @@ from .._utils import PatchingConditionsChain, _add_inc_serialization_note
 from ..base import oneDALEstimator
 from ..utils._array_api import _pinvh, enable_array_api, get_namespace, log_likelihood
 from ..utils.validation import validate_data
-
-if sklearn_check_version("1.2"):
-    from sklearn.utils._param_validation import Interval
 
 if sklearn_check_version("1.9"):
     from sklearn.utils._array_api import check_same_namespace
@@ -134,13 +132,12 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
 
     _onedal_incremental_covariance = staticmethod(onedal_IncrementalEmpiricalCovariance)
 
-    if sklearn_check_version("1.2"):
-        _parameter_constraints: dict = {
-            "store_precision": ["boolean"],
-            "assume_centered": ["boolean"],
-            "batch_size": [Interval(numbers.Integral, 1, None, closed="left"), None],
-            "copy": ["boolean"],
-        }
+    _parameter_constraints: dict = {
+        "store_precision": ["boolean"],
+        "assume_centered": ["boolean"],
+        "batch_size": [Interval(numbers.Integral, 1, None, closed="left"), None],
+        "copy": ["boolean"],
+    }
 
     def __init__(
         self, *, store_precision=False, assume_centered=False, batch_size=None, copy=True
@@ -260,7 +257,7 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         self : IncrementalEmpiricalCovariance
             Returns the instance itself.
         """
-        if sklearn_check_version("1.2") and check_input:
+        if check_input:
             self._validate_params()
         return dispatch(
             self,
@@ -291,8 +288,7 @@ class IncrementalEmpiricalCovariance(oneDALEstimator, BaseEstimator):
         self : IncrementalEmpiricalCovariance
             Returns the instance itself.
         """
-        if sklearn_check_version("1.2"):
-            self._validate_params()
+        self._validate_params()
         return dispatch(
             self,
             "fit",
